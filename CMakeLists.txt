@@ -6,6 +6,8 @@ project(ZKIR
   HOMEPAGE_URL https://github.com/Veridise/zkir-lib
 )
 
+set(ZKIR_TEMPLATE_BACKTRACE_LIMIT "-1" CACHE STRING "Set the value of -ftemplate-backtrace-limit (0 for unlimited)")
+
 include(GNUInstallDirs)
 
 set(CMAKE_CXX_STANDARD 20 CACHE STRING "C++ standard")
@@ -71,6 +73,10 @@ if (CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   enable_coverage(ZKIRAllDialects)
   add_compile_options(-fsanitize=address,undefined)
   add_link_options(-fsanitize=address,undefined)
+endif()
+
+if (ZKIR_TEMPLATE_BACKTRACE_LIMIT STRNEQUAL "-1")
+  add_compile_options(-ftemplate-backtrace-limit=${ZKIR_TEMPLATE_BACKTRACE_LIMIT})
 endif()
 
 # MAYBE FIXME: If we want to hide inline functions we need to setup macros
