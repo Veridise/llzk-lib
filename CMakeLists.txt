@@ -63,12 +63,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "DebugWithASAN")
   add_link_options(-fsanitize=address)
 endif()
 
-set(CMAKE_VISIBILITY_INLINES_HIDDEN ON CACHE BOOL "Hide inlines")
-# For static LLVM, ensure hidden visibility to be consistent with LLVM build
-# TODO: is this actually needed?
-if(NOT ${BUILD_SHARED_LIBS})
-  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-endif()
+# MAYBE FIXME: If we want to hide inline functions we need to setup macros
+# See https://github.com/Veridise/zkir-lib/pull/3#discussion_r1726140891
 
 ### Python bindings
 
