@@ -6,10 +6,6 @@
 
 namespace zkir {
 inline void registerAllDialects(mlir::DialectRegistry &registry) {
-  // clang-format off
-  registry.insert<
-    zkir::ZKIRDialect
-  >();
-  // clang-format on
+  registry.insert<zkir::ZKIRDialect>();
 }
 } // namespace zkir
