@@ -42,7 +42,7 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 add_compile_options(-Werror=switch -Wall -Wextra -Wno-unused-parameter -Wshadow -Wnon-virtual-dtor -pedantic)
 
 if(CMAKE_CONFIGURATION_TYPES)
-  list(APPEND CMAKE_CONFIGURATION_TYPES DebugWithASAN)
+  list(APPEND CMAKE_CONFIGURATION_TYPES DebugWithSanitizers)
   list(REMOVE_DUPLICATES CMAKE_CONFIGURATION_TYPES)
 endif()
 
@@ -57,10 +57,10 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   enable_coverage(ZKIRAllDialects)
 endif()
 
-if (CMAKE_BUILD_TYPE STREQUAL "DebugWithASAN")
+if (CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   enable_coverage(ZKIRAllDialects)
-  add_compile_options(-fsanitize=address)
-  add_link_options(-fsanitize=address)
+  add_compile_options(-fsanitize=address,undefined)
+  add_link_options(-fsanitize=address,undefined)
 endif()
 
 # MAYBE FIXME: If we want to hide inline functions we need to setup macros
