@@ -2,11 +2,11 @@
 find_program(LLVM_EXTERNAL_LIT NAMES lit llvm-lit ${LLVM_EXTERNAL_LIT} REQUIRED)
 message(STATUS "Using lit: ${LLVM_EXTERNAL_LIT}")
 
-# set(ZKIR_TEST_DEPENDS
-#   zkir-opt
+set(ZKIR_TEST_DEPENDS
+  zkir-dump
 #   zkir-driver
 #   zkir-query
-# )
+)
 
 # if(ZKIR_BUILD_DEVTOOLS)
 #   set(zkir_lit_extra_suffixes "\".querytxt\"")
