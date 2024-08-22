@@ -8,7 +8,7 @@ project(ZKIR
 
 include(GNUInstallDirs)
 
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard")
+set(CMAKE_CXX_STANDARD 20 CACHE STRING "C++ standard")
 set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE STRING "")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
@@ -39,7 +39,29 @@ include(HandleLLVMOptions)
 
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
-add_compile_options(-Werror=switch -Wall -Wextra -Wno-unused-parameter)
+add_compile_options(-Werror=switch -Wall -Wextra -Wno-unused-parameter -Wshadow -Wnon-virtual-dtor -pedantic)
+
+if(CMAKE_CONFIGURATION_TYPES)
+  list(APPEND CMAKE_CONFIGURATION_TYPES DebugWithASAN)
+  list(REMOVE_DUPLICATES CMAKE_CONFIGURATION_TYPES)
+endif()
+
+function(enable_coverage _project_name)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+    target_compile_options(${_project_name} INTERFACE --coverage -O0 -g)
+    target_link_libraries(${_project_name} INTERFACE --coverage)
+  endif()
+endfunction()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  enable_coverage(ZKIRAllDialects)
+endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL "DebugWithASAN")
+  enable_coverage(ZKIRAllDialects)
+  add_compile_options(-fsanitize=address)
+  add_link_options(-fsanitize=address)
+endif()
 
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON CACHE BOOL "Hide inlines")
 # For static LLVM, ensure hidden visibility to be consistent with LLVM build
