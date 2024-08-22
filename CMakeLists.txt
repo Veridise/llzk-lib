@@ -29,8 +29,16 @@ find_package(MLIR REQUIRED CONFIG)
 message(STATUS "Using LLVM in: ${LLVM_DIR}")
 message(STATUS "Using MLIR in: ${MLIR_DIR}")
 
+# Adds an INTERFACE library that only includes headers
+function(add_header_library _name _include_dirs)
+  add_library(${_name} INTERFACE)
+  target_include_directories(${_name} INTERFACE ${_include_dirs})
+endfunction()
+
 # LLVM & MLIR do not propagate their include dirs correctly
-include_directories(${LLVM_INCLUDE_DIRS} ${MLIR_INCLUDE_DIRS})
+# We define them as INTERFACE libraries and link against them
+add_header_library(LLVMHeaders ${LLVM_INCLUDE_DIRS})
+add_header_library(MLIRHeaders ${MLIR_INCLUDE_DIRS})
 
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
