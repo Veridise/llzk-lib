@@ -16,7 +16,7 @@ jobs:
           install_url: https://releases.nixos.org/nix/nix-2.13.3/install
       - uses: cachix/cachix-action@v15
         with:
-          name: veridise-public
+          name: veridise-private
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build
         run: nix --print-build-logs build
