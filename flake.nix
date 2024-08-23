@@ -64,6 +64,21 @@
         zkirWithPython = final.zkir.override {
           mlir = final.mlirWithPython;
         };
+        zkirDebugClang = (final.zkir.override { stdenv = final.clangStdenv; }).overrideAttrs(attrs: {
+          cmakeBuildType = "DebWithSans";
+        });
+        # zkirDebugGCC = let 
+        #   gcc = stdenv.gcc;
+        # in final.zkir.overrideAttrs(attrs: {
+        #   cmakeBuildType = "DebWithSans";
+        #   nativeBuildInputs = attrs.nativeBuildInputs ++ [
+        #       gcc
+        #   ];
+        #   cmakeFlags = attrs.cmakeFlags ++ [
+        #     "-DCMAKE_CXX_COMPILER=${gcc}/bin/g++"
+        #     "-DCMAKE_C_COMPILER=${gcc}/bin/gcc"
+        #   ];
+        # });
 
         ccacheStdenv = prev.ccacheStdenv.override {
           extraConfig = ''
@@ -94,6 +109,8 @@
           inherit (pkgs) mlir mlirWithPython;
 
           default = pkgs.zkir;
+          debugClang = pkgs.zkirDebugClang;
+          # debugGCC = pkgs.zkirDebugGCC;
         };
 
         devShells = flake-utils.lib.flattenTree {
