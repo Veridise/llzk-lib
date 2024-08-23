@@ -9,7 +9,10 @@
     {
       "name": "base",
       "hidden": true,
-      "generator": "Ninja"
+      "generator": "Ninja",
+      "cacheVariables": {
+        "ZKIR_BUILD_DEVTOOLS": "ON"
+      }
     },
     {
       "name": "debug",

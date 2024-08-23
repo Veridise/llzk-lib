@@ -12,10 +12,13 @@ config.python_executable = "@Python3_EXECUTABLE@"
 config.enable_bindings_python = @ZKIR_ENABLE_BINDINGS_PYTHON_STRING@
 config.zkir_src_root = "@CMAKE_SOURCE_DIR@"
 config.zkir_obj_root = "@CMAKE_BINARY_DIR@"
+if @ZKIR_LIT_COMPATIBLE_COVERAGE_STRING@:
+    config.per_test_coverage = True
 
 config.extra_suffixes = [@zkir_lit_extra_suffixes@]
 
 import lit.llvm
+
 lit.llvm.initialize(lit_config, config)
 
 # Let the main config do the real work.
