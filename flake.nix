@@ -67,18 +67,9 @@
         zkirDebugClang = (final.zkir.override { stdenv = final.clangStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
         });
-        # zkirDebugGCC = let 
-        #   gcc = stdenv.gcc;
-        # in final.zkir.overrideAttrs(attrs: {
-        #   cmakeBuildType = "DebWithSans";
-        #   nativeBuildInputs = attrs.nativeBuildInputs ++ [
-        #       gcc
-        #   ];
-        #   cmakeFlags = attrs.cmakeFlags ++ [
-        #     "-DCMAKE_CXX_COMPILER=${gcc}/bin/g++"
-        #     "-DCMAKE_C_COMPILER=${gcc}/bin/gcc"
-        #   ];
-        # });
+        zkirDebugGCC = (final.zkir.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
+          cmakeBuildType = "DebWithSans";
+        });
 
         ccacheStdenv = prev.ccacheStdenv.override {
           extraConfig = ''
@@ -110,7 +101,7 @@
 
           default = pkgs.zkir;
           debugClang = pkgs.zkirDebugClang;
-          # debugGCC = pkgs.zkirDebugGCC;
+          debugGCC = pkgs.zkirDebugGCC;
         };
 
         devShells = flake-utils.lib.flattenTree {
@@ -143,6 +134,53 @@
               export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
             '';
           });
+
+          debugClang = pkgs.zkirDebugClang.overrideAttrs (old: {
+            nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
+              doxygen
+
+              # clang-tidy and clang-format
+              clang-tools_18
+
+              # git-clang-format
+              libclang.python
+            ]);
+
+            shellHook = ''
+              # needed to get accurate compile_commands.json
+              export CXXFLAGS="$NIX_CFLAGS_COMPILE"
+
+              # Add binary dir to PATH for convenience
+              export PATH="$PWD"/build/bin:"$PATH"
+
+              # TODO: only enable if python bindings enabled
+              export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
+            '';
+          });
+
+          debugGCC = pkgs.zkirDebugGCC.overrideAttrs (old: {
+            nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
+              doxygen
+
+              # clang-tidy and clang-format
+              clang-tools_18
+
+              # git-clang-format
+              libclang.python
+            ]);
+
+            shellHook = ''
+              # needed to get accurate compile_commands.json
+              export CXXFLAGS="$NIX_CFLAGS_COMPILE"
+
+              # Add binary dir to PATH for convenience
+              export PATH="$PWD"/build/bin:"$PATH"
+
+              # TODO: only enable if python bindings enabled
+              export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
+            '';
+          });
+
 
           llvm = pkgs.mkShell {
             buildInputs = [ pkgs.zkir_llvm.tools.libllvm.dev ];
