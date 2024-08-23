@@ -1,0 +1,60 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja"
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "inherits": "base",
+      "description": "Disables optimizations, includes debug info, and generates coverage data.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "inherits": "base",
+      "description": "Includes optimizations but no debug info.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "minSizeRel",
+      "displayName": "Release (size optimized)",
+      "inherits": "base",
+      "description": "Optimizes for size. No debug info.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "relWithDebInfo",
+      "displayName": "Release (with debug info)",
+      "inherits": "base",
+      "description": "Optimizes for speed but also includes debug info.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "debWithSans",
+      "displayName": "Debug + ASAN + UBSAN",
+      "inherits": "base",
+      "description": "Like Debug but instrumented with ASAN and UBSAN.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "DebWithSans"
+      }
+    }
+  ]
+}
