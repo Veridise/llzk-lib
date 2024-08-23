@@ -92,9 +92,9 @@
             cp cov-summary.txt $out/artifacts/
           '';
         });
-        # zkirDebugGCC = (final.zkir.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
-        #   cmakeBuildType = "DebWithSans";
-        # });
+        zkirDebugGCC = (final.zkir.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
+          cmakeBuildType = "DebWithSans";
+        });
 
         ccacheStdenv = prev.ccacheStdenv.override {
           extraConfig = ''
@@ -127,7 +127,7 @@
           default = pkgs.zkir;
           debugClang = pkgs.zkirDebugClang;
           debugClangCov = pkgs.zkirDebugClangCov;
-          # debugGCC = pkgs.zkirDebugGCC;
+          debugGCC = pkgs.zkirDebugGCC;
         };
 
         devShells = flake-utils.lib.flattenTree {
