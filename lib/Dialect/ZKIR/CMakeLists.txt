@@ -5,7 +5,7 @@ target_link_libraries(ZKIRAllDialects INTERFACE ZKIR::ZKIRDialect)
 file(GLOB_RECURSE ZKIRDialect_SOURCES "**/*.cpp")
 target_sources(ZKIRDialect PRIVATE ${ZKIRDialect_SOURCES})
 target_link_libraries(ZKIRDialect
-  PUBLIC ZKIRDialectHeaders Constraint MLIRIR MLIRPass 
+  PUBLIC ZKIRDialectHeaders MLIRIR MLIRPass
 )
 target_link_libraries(ZKIRDialect
   PRIVATE LLVMHeaders MLIRHeaders)

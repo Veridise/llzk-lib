@@ -27,7 +27,7 @@ config.name = 'ZKIR'
 config.test_format = lit.formats.ShTest(not llvm_config.use_lit_shell)
 
 # suffixes: A list of file extensions to treat as test files.
-config.suffixes = ['.mlir']
+config.suffixes = ['.mlir', '.zkir']
 config.suffixes.extend(config.extra_suffixes)
 
 # test_source_root: The root path where tests are located.
@@ -58,7 +58,7 @@ llvm_config.with_environment('PATH', config.llvm_tools_dir, append_path=True)
 
 tool_dirs = [config.zkir_tools_dir, config.llvm_tools_dir]
 tools = [
-    "zkir-opt"
+    "zkir-dump"
 ]
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)

@@ -48,8 +48,7 @@ Notes:
 ZKIR requires the following to be installed:
 
 * CMake 3.18 or newer
-* LLVM (git tag `llvmorg-18.1.8`) with MLIR enabled
-  (the following script will do this for you)
+* Ninja
 * Doxygen (optional, for generating API documentation during development)
 
 To run tests, you also need:
@@ -122,7 +121,7 @@ you can run the following commands:
 * Generate API docs (in `doc/html`): `cmake --build . --target doc`
 * Run install target (requires `CMAKE_INSTALL_PREFIX` to be set):
   `cmake --build . --target install`
-* Run clang-format: `clang-format -i $(find include -name '*.h' -o -name '*.td' -type f) $(find lib -name '*.cpp' -type f)`
+* Run clang-format: `clang-format -i $(find include -name '*.h' -o -name '*.td' -type f) $(find lib tools -name '*.cpp' -type f)`
 * Run clang-tidy: `clang-tidy -p build/compile_commands.json $(find lib -name '*.cpp' -type f)`
   * Note that due to bugs in clang-tidy, this may segfault if running on all files.
 
