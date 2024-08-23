@@ -1,4 +1,7 @@
 /build/
+cmake-build-*/
+cmake-build-*/
+cmake-build-*/
 
 # Nix
 /result
@@ -7,5 +10,31 @@
 # Visual Studio Code
 .vscode
 
+# Vim
+*.swp
+
+# CLion
+.idea/
+
 #venv
 .venv/
+
+# The user specific presets MUST not be checked in
+CMakeUserPresets.json
+
+# CMake Variants are ignored. If you want to use them,
+# create one using one of the following file names
+cmake-variants.yaml
+cmake-variants.json
+CMakeVariants.yaml
+CMakeVariants.json
+
+# Some LSPs and similar tools require this files
+# at the root of the repository.
+# So a common solution is to `ln` there from
+# the build directory. We should not check them in.
+compile_commands.json
+tablegen_compile_commands.yml
+
+.DS_Store
+__pycache__
