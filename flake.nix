@@ -67,9 +67,34 @@
         zkirDebugClang = (final.zkir.override { stdenv = final.clangStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
         });
-        zkirDebugGCC = (final.zkir.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
-          cmakeBuildType = "DebWithSans";
+        zkirDebugClangCov = final.zkirDebugClang.overrideAttrs(attrs: {
+          # TODO: macOS version
+          postCheck = ''
+            MANIFEST=profiles.manifest
+            PROFDATA=coverage.profdata
+            BINS=bins.lst
+            find bin lib -type f | xargs file | grep ELF | grep executable | cut -f1 -d: > $BINS
+            find test -name "*.profraw" > $MANIFEST
+            llvm-profdata merge -sparse -f $MANIFEST -o $PROFDATA
+            OBJS=$( (head -n 1 $BINS ; tail -n +2 $BINS | sed -e "s/^/-object /") | xargs)
+            echo $OBJS
+            # TODO HTML reports
+            llvm-cov report $OBJS -instr-profile $PROFDATA > cov-summary.txt
+            echo =========== COVERAGE SUMMARY =================
+            cat cov-summary.txt
+            echo ==============================================
+            rm -rf $MANIFEST $PROFDATA $BINS
+          '';
+          
+          postInstall = ''
+            mkdir -p $out/artifacts/
+            echo "Copying coverage summary to $out/artifacts/cov-summary.txt"
+            cp cov-summary.txt $out/artifacts/
+          '';
         });
+        # zkirDebugGCC = (final.zkir.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
+        #   cmakeBuildType = "DebWithSans";
+        # });
 
         ccacheStdenv = prev.ccacheStdenv.override {
           extraConfig = ''
@@ -101,7 +126,8 @@
 
           default = pkgs.zkir;
           debugClang = pkgs.zkirDebugClang;
-          debugGCC = pkgs.zkirDebugGCC;
+          debugClangCov = pkgs.zkirDebugClangCov;
+          # debugGCC = pkgs.zkirDebugGCC;
         };
 
         devShells = flake-utils.lib.flattenTree {
@@ -134,52 +160,52 @@
               export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
             '';
           });
+          #
+          # debugClang = pkgs.zkirDebugClang.overrideAttrs (old: {
+          #   nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
+          #     doxygen
+          #
+          #     # clang-tidy and clang-format
+          #     clang-tools_18
+          #
+          #     # git-clang-format
+          #     libclang.python
+          #   ]);
+          #
+          #   shellHook = ''
+          #     # needed to get accurate compile_commands.json
+          #     export CXXFLAGS="$NIX_CFLAGS_COMPILE"
+          #
+          #     # Add binary dir to PATH for convenience
+          #     export PATH="$PWD"/build/bin:"$PATH"
+          #
+          #     # TODO: only enable if python bindings enabled
+          #     export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
+          #   '';
+          # });
 
-          debugClang = pkgs.zkirDebugClang.overrideAttrs (old: {
-            nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
-              doxygen
-
-              # clang-tidy and clang-format
-              clang-tools_18
-
-              # git-clang-format
-              libclang.python
-            ]);
-
-            shellHook = ''
-              # needed to get accurate compile_commands.json
-              export CXXFLAGS="$NIX_CFLAGS_COMPILE"
-
-              # Add binary dir to PATH for convenience
-              export PATH="$PWD"/build/bin:"$PATH"
-
-              # TODO: only enable if python bindings enabled
-              export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
-            '';
-          });
-
-          debugGCC = pkgs.zkirDebugGCC.overrideAttrs (old: {
-            nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
-              doxygen
-
-              # clang-tidy and clang-format
-              clang-tools_18
-
-              # git-clang-format
-              libclang.python
-            ]);
-
-            shellHook = ''
-              # needed to get accurate compile_commands.json
-              export CXXFLAGS="$NIX_CFLAGS_COMPILE"
-
-              # Add binary dir to PATH for convenience
-              export PATH="$PWD"/build/bin:"$PATH"
-
-              # TODO: only enable if python bindings enabled
-              export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
-            '';
-          });
+          # debugGCC = pkgs.zkirDebugGCC.overrideAttrs (old: {
+          #   nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
+          #     doxygen
+          #
+          #     # clang-tidy and clang-format
+          #     clang-tools_18
+          #
+          #     # git-clang-format
+          #     libclang.python
+          #   ]);
+          #
+          #   shellHook = ''
+          #     # needed to get accurate compile_commands.json
+          #     export CXXFLAGS="$NIX_CFLAGS_COMPILE"
+          #
+          #     # Add binary dir to PATH for convenience
+          #     export PATH="$PWD"/build/bin:"$PATH"
+          #
+          #     # TODO: only enable if python bindings enabled
+          #     export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
+          #   '';
+          # });
 
 
           llvm = pkgs.mkShell {
