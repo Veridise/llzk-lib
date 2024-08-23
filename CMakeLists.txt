@@ -1,5 +1,4 @@
-# cmake_minimum_required(VERSION 3.18) # Kept just in case
-cmake_minimum_required(VERSION 3.25) # For version 6 presets
+cmake_minimum_required(VERSION 3.25) 
 
 project(ZKIR
   DESCRIPTION "Veridise's intermediate representation for zero knowledge languages"
