@@ -18,10 +18,10 @@ if(ZKIR_ENABLE_BINDINGS_PYTHON)
     set(ZKIR_ENABLE_BINDINGS_PYTHON_STRING "True")
 endif()
 
-message(STATUS "ZKIR_LIT_COMPATIBLE_COVERAGE=${ZKIR_LIT_COMPATIBLE_COVERAGE}")
 set(ZKIR_LIT_COMPATIBLE_COVERAGE_STRING "False")
 if(ZKIR_LIT_COMPATIBLE_COVERAGE)
-    set(ZKIR_LIT_COMPATIBLE_COVERAGE_STRING "True")
+  message(STATUS "Lit will generate coverage information for every test")
+  set(ZKIR_LIT_COMPATIBLE_COVERAGE_STRING "True")
 endif()
 
 configure_lit_site_cfg(
