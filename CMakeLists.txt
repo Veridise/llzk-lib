@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.18)
+# cmake_minimum_required(VERSION 3.18) # Kept just in case
+cmake_minimum_required(VERSION 3.25) # For version 6 presets
 
 project(ZKIR
   DESCRIPTION "Veridise's intermediate representation for zero knowledge languages"
@@ -6,7 +7,7 @@ project(ZKIR
   HOMEPAGE_URL https://github.com/Veridise/zkir-lib
 )
 
-set(ZKIR_TEMPLATE_BACKTRACE_LIMIT "-1" CACHE STRING "Set the value of -ftemplate-backtrace-limit (0 for unlimited)")
+option(ZKIR_TEMPLATE_BACKTRACE_LIMIT "Add -ftemplate-backtrace-limit=0 to the compile flags")
 
 include(GNUInstallDirs)
 
@@ -33,6 +34,7 @@ message(STATUS "Using MLIR in: ${MLIR_DIR}")
 function(add_header_library _name _include_dirs)
   add_library(${_name} INTERFACE)
   target_include_directories(${_name} INTERFACE ${_include_dirs})
+  install(TARGETS ${_name} EXPORT ZKIRTargets)
 endfunction()
 
 # LLVM & MLIR do not propagate their include dirs correctly
@@ -83,8 +85,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   add_link_options(-fsanitize=address,undefined)
 endif()
 
-if (ZKIR_TEMPLATE_BACKTRACE_LIMIT STRNEQUAL "-1")
-  add_compile_options(-ftemplate-backtrace-limit=${ZKIR_TEMPLATE_BACKTRACE_LIMIT})
+if (ZKIR_TEMPLATE_BACKTRACE_LIMIT)
+  add_compile_options(-ftemplate-backtrace-limit=0)
 endif()
 
 # MAYBE FIXME: If we want to hide inline functions we need to setup macros
