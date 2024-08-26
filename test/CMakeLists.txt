@@ -24,13 +24,7 @@ if(ZKIR_LIT_COMPATIBLE_COVERAGE)
   set(ZKIR_LIT_COMPATIBLE_COVERAGE_STRING "True")
 endif()
 
-# If we are running inside CI configure lit to emit an XML
-# file with the report
-set(LIT_ARGS "")
-if("$ENV{CI}" STREQUAL "true")
-  message(STATUS "CI environment detected. Lit will generate a xunit report")
-  set(LIT_ARGS "--xunit-xml-output report.xml")
-endif()
+set(LIT_ARGS "--xunit-xml-output report.xml")
 
 configure_lit_site_cfg(
   ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
