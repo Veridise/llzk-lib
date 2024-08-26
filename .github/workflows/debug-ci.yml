@@ -11,8 +11,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup LCOV
-        uses: hrishikesh-kadam/setup-lcov@v1
       - uses: cachix/install-nix-action@v27
         with:
           install_url: https://releases.nixos.org/nix/nix-2.13.3/install
@@ -29,14 +27,6 @@ jobs:
         run: nix --print-build-logs build '.#debugClangCov'
       - name: Copy xUnit report for clang
         run: cp result/artifacts/clang-report.xml xunit-reports
-      - name: Report code coverage
-        uses: zgosalvez/github-actions-report-lcov@v3
-        with:
-          coverage-files: artifacts/*.lcov
-          artifact-name: code-coverage-report
-          github-token: '${{ secrets.GITHUB_TOKEN }}'
-          working-directory: ./result
-          update-comment: true
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
