@@ -122,6 +122,35 @@
             export CCACHE_COMPRESS=1
           '';
         };
+
+        # The default shell is used for ZKIR development.
+        # Because `nix develop` is used to set up a dev shell for a given
+        # derivation, we just need to extend the zkir derivation with any
+        # extra tools we need.
+        devShellBase = { pkgs, zkirEnv ? final.zkir }: {
+          shell = zkirEnv.overrideAttrs (old: {
+            nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
+              doxygen
+
+              # clang-tidy and clang-format
+              clang-tools_18
+
+              # git-clang-format
+              libclang.python
+            ]);
+
+            shellHook = ''
+              # needed to get accurate compile_commands.json
+              export CXXFLAGS="$NIX_CFLAGS_COMPILE"
+
+              # Add binary dir to PATH for convenience
+              export PATH="$PWD"/build/bin:"$PATH"
+
+              # TODO: only enable if python bindings enabled
+              export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
+            '';
+          });
+        };
       };
     } //
     (flake-utils.lib.eachDefaultSystem (system:
@@ -133,7 +162,6 @@
       in
       {
         # Now, we can define the actual outputs of the flake
-
         packages = flake-utils.lib.flattenTree {
           # Copy the packages from the overlay.
           inherit (pkgs) zkir zkirWithPython;
@@ -150,82 +178,13 @@
         };
 
         devShells = flake-utils.lib.flattenTree {
-          # The default shell is used for ZKIR development.
-          # Because `nix develop` is used to set up a dev shell for a given
-          # derivation, we just need to extend the zkir derivation with any
-          # extra tools we need.
-          default = pkgs.zkir.overrideAttrs (old: {
-            nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
-              doxygen
 
-              # clang-tidy and clang-format
-              clang-tools_18
-
-              # git-clang-format
-              libclang.python
-            ]);
-
+          default = (pkgs.devShellBase pkgs).shell.overrideAttrs (_: {
             # Use Debug by default so assertions are enabled by default.
             cmakeBuildType = "Debug";
-
-            shellHook = ''
-              # needed to get accurate compile_commands.json
-              export CXXFLAGS="$NIX_CFLAGS_COMPILE"
-
-              # Add binary dir to PATH for convenience
-              export PATH="$PWD"/build/bin:"$PATH"
-
-              # TODO: only enable if python bindings enabled
-              export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
-            '';
           });
-          #
-          # debugClang = pkgs.zkirDebugClang.overrideAttrs (old: {
-          #   nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
-          #     doxygen
-          #
-          #     # clang-tidy and clang-format
-          #     clang-tools_18
-          #
-          #     # git-clang-format
-          #     libclang.python
-          #   ]);
-          #
-          #   shellHook = ''
-          #     # needed to get accurate compile_commands.json
-          #     export CXXFLAGS="$NIX_CFLAGS_COMPILE"
-          #
-          #     # Add binary dir to PATH for convenience
-          #     export PATH="$PWD"/build/bin:"$PATH"
-          #
-          #     # TODO: only enable if python bindings enabled
-          #     export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
-          #   '';
-          # });
-
-          # debugGCC = pkgs.zkirDebugGCC.overrideAttrs (old: {
-          #   nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
-          #     doxygen
-          #
-          #     # clang-tidy and clang-format
-          #     clang-tools_18
-          #
-          #     # git-clang-format
-          #     libclang.python
-          #   ]);
-          #
-          #   shellHook = ''
-          #     # needed to get accurate compile_commands.json
-          #     export CXXFLAGS="$NIX_CFLAGS_COMPILE"
-          #
-          #     # Add binary dir to PATH for convenience
-          #     export PATH="$PWD"/build/bin:"$PATH"
-          #
-          #     # TODO: only enable if python bindings enabled
-          #     export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
-          #   '';
-          # });
-
+          debugClang = (pkgs.devShellBase pkgs pkgs.zkirDebugClang).shell;
+          debugGCC = (pkgs.devShellBase pkgs pkgs.zkirDebugGCC).shell;
 
           llvm = pkgs.mkShell {
             buildInputs = [ pkgs.zkir_llvm.tools.libllvm.dev ];
