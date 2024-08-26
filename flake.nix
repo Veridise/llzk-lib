@@ -72,8 +72,8 @@
               mkdir -p $out/artifacts
               echo "Copying xUnit report to $out/artifacts/clang-report.xml"
               cp test/report.xml $out/artifacts/clang-report.xml
-            endif
-          ''
+            fi
+          '';
         });
         zkirDebugClangCov = final.zkirDebugClang.overrideAttrs(attrs: {
           # TODO: macOS version
@@ -100,7 +100,7 @@
             if [ -f test/report.xml ]; then
               echo "Copying xUnit report to $out/artifacts/clang-report.xml"
               cp test/report.xml $out/artifacts/clang-report.xml
-            endif
+            fi
           '';
         });
         zkirDebugGCC = (final.zkir.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
@@ -111,8 +111,8 @@
               mkdir -p $out/artifacts
               echo "Copying xUnit report to $out/artifacts/gcc-report.xml"
               cp test/report.xml $out/artifacts/gcc-report.xml
-            endif
-          ''
+            fi
+          '';
         });
 
         ccacheStdenv = prev.ccacheStdenv.override {
