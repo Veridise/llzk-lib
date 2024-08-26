@@ -70,7 +70,7 @@
           postInstall = ''
             if [ -f test/report.xml ]; then
               mkdir -p $out/artifacts
-              echo "Copying xUnit report to $out/artifacts/clang-report.xml"
+              echo "-- Copying xUnit report to $out/artifacts/clang-report.xml"
               cp test/report.xml $out/artifacts/clang-report.xml
             fi
           '';
@@ -90,15 +90,18 @@
             echo =========== COVERAGE SUMMARY =================
             cat cov-summary.txt
             echo ==============================================
+            llvm-cov export -format=lcov -instr-profile $PROFDATA $OBJS > report.lcov
             rm -rf $MANIFEST $PROFDATA $BINS
           '';
           
           postInstall = ''
             mkdir -p $out/artifacts/
-            echo "Copying coverage summary to $out/artifacts/cov-summary.txt"
+            echo "-- Copying coverage summary to $out/artifacts/cov-summary.txt"
             cp cov-summary.txt $out/artifacts/
+            echo "-- Copying lcov report to $out/artifacts/report.lcov"
+            cp report.lcov $out/artifacts/
             if [ -f test/report.xml ]; then
-              echo "Copying xUnit report to $out/artifacts/clang-report.xml"
+              echo "-- Copying xUnit report to $out/artifacts/clang-report.xml"
               cp test/report.xml $out/artifacts/clang-report.xml
             fi
           '';
@@ -109,7 +112,7 @@
           postInstall = ''
             if [ -f test/report.xml ]; then
               mkdir -p $out/artifacts
-              echo "Copying xUnit report to $out/artifacts/gcc-report.xml"
+              echo "-- Copying xUnit report to $out/artifacts/gcc-report.xml"
               cp test/report.xml $out/artifacts/gcc-report.xml
             fi
           '';
