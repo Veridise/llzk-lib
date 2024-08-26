@@ -77,7 +77,6 @@
             find test -name "*.profraw" > $MANIFEST
             llvm-profdata merge -sparse -f $MANIFEST -o $PROFDATA
             OBJS=$( (head -n 1 $BINS ; tail -n +2 $BINS | sed -e "s/^/-object /") | xargs)
-            echo $OBJS
             # TODO HTML reports
             llvm-cov report $OBJS -instr-profile $PROFDATA > cov-summary.txt
             echo =========== COVERAGE SUMMARY =================
