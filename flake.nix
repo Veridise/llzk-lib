@@ -66,6 +66,14 @@
         };
         zkirDebugClang = (final.zkir.override { stdenv = final.clangStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
+
+          postInstall = ''
+            if [ -f test/report.xml ]; then
+              mkdir -p $out/artifacts
+              echo "Copying xUnit report to $out/artifacts/clang-report.xml"
+              cp test/report.xml $out/artifacts/clang-report.xml
+            endif
+          ''
         });
         zkirDebugClangCov = final.zkirDebugClang.overrideAttrs(attrs: {
           # TODO: macOS version
@@ -89,10 +97,22 @@
             mkdir -p $out/artifacts/
             echo "Copying coverage summary to $out/artifacts/cov-summary.txt"
             cp cov-summary.txt $out/artifacts/
+            if [ -f test/report.xml ]; then
+              echo "Copying xUnit report to $out/artifacts/clang-report.xml"
+              cp test/report.xml $out/artifacts/clang-report.xml
+            endif
           '';
         });
         zkirDebugGCC = (final.zkir.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
+
+          postInstall = ''
+            if [ -f test/report.xml ]; then
+              mkdir -p $out/artifacts
+              echo "Copying xUnit report to $out/artifacts/gcc-report.xml"
+              cp test/report.xml $out/artifacts/gcc-report.xml
+            endif
+          ''
         });
 
         ccacheStdenv = prev.ccacheStdenv.override {

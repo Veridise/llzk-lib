@@ -24,6 +24,14 @@ if(ZKIR_LIT_COMPATIBLE_COVERAGE)
   set(ZKIR_LIT_COMPATIBLE_COVERAGE_STRING "True")
 endif()
 
+# If we are running inside CI configure lit to emit an XML
+# file with the report
+set(LIT_ARGS "")
+if("$ENV{CI}" STREQUAL "true")
+  message(STATUS "CI environment detected. Lit will generate a xunit report")
+  set(LIT_ARGS "--xunit-xml-output report.xml")
+endif()
+
 configure_lit_site_cfg(
   ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg.py
@@ -34,4 +42,5 @@ configure_lit_site_cfg(
 add_lit_testsuite(check-lit "Running the lit-based regression tests"
   ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${ZKIR_TEST_DEPENDS}
+  ARGS ${LIT_ARGS}
 )
