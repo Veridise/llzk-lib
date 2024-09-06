@@ -21,17 +21,17 @@
 using namespace zkir;
 namespace cl = llvm::cl;
 
-static cl::opt<std::string> inputFilename(cl::Positional,
-                                          cl::desc("<input zkir file>"),
-                                          cl::Required,
-                                          cl::value_desc("filename"));
+static cl::opt<std::string> inputFilename(
+    cl::Positional, cl::desc("<input zkir file>"), cl::Required, cl::value_desc("filename")
+);
 
 namespace {
 enum Action { None, DumpAST, DumpMLIR };
 } // namespace
 static cl::opt<enum Action> emitAction(
     "emit", cl::desc("Select the kind of output desired"),
-    cl::values(clEnumValN(DumpMLIR, "mlir", "output the MLIR dump")));
+    cl::values(clEnumValN(DumpMLIR, "mlir", "output the MLIR dump"))
+);
 
 int dumpMLIR(mlir::Operation *ownedModule) {
   ownedModule->dump();
@@ -57,8 +57,7 @@ int main(int argc, char **argv) {
 
   // Read the source file
   mlir::OwningOpRef<mlir::Operation *> ownedModule =
-      mlir::parseSourceFile<mlir::ModuleOp>(inputFilename.c_str(), sourceMgr,
-                                            &context);
+      mlir::parseSourceFile<mlir::ModuleOp>(inputFilename.c_str(), sourceMgr, &context);
   if (!ownedModule) {
     return EXIT_FAILURE;
   }
