@@ -18,5 +18,6 @@ jobs:
         with:
           name: veridise-private
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          pushFilter: '(-source$)'
       - name: Build
         run: nix --print-build-logs build
