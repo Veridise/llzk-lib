@@ -1,15 +1,10 @@
 name: Formatting check
 on:
-  # Run whenever a cpp, h, or td file is modified in a PR
-  push:
-    paths:
-      - '**.cpp'
-      - '**.h'
-      - '**.td'
+  push
 
 jobs:
   run-clang-format:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: sudo apt-get update && sudo apt-get install -y clang-format-18
