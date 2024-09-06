@@ -1,6 +1,11 @@
 name: Formatting check
 on:
-  push
+  # Run whenever a cpp, h, or td file is modified in a PR
+  pull_request:
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - '**.td'
 
 jobs:
   run-clang-format:
