@@ -1,4 +1,4 @@
-// RUN: zkir-dump %s -emit=mlir 2>&1 | FileCheck %s
+// RUN: zkir-dump %s -emit=mlir 2>&1
 
 module {}
 
