@@ -1,0 +1,50 @@
+name: Formatting check
+on:
+  # Run whenever a cpp, h, or td file is modified in a PR
+  pull_request:
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - '**.td'
+
+jobs:
+  run-clang-format:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - run: sudo apt-get update && sudo apt-get install -y clang-format-18
+        name: Install clang-format
+      - name: Get fetch depth
+        run: |
+          echo "PR_COMMIT_COUNT=${{ github.event.pull_request.commits }}" >> "${GITHUB_ENV}"
+          echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
+      - uses: actions/checkout@v3
+        with:
+          # Checkout head commit and all commits in the PR, including the merge base
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: ${{ env.PR_FETCH_DEPTH }}
+      - name: Download git-clang-format
+        run: |
+          curl 'https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-18.1.0/clang/tools/clang-format/git-clang-format' -o ./git-clang-format
+          chmod +x ./git-clang-format
+      - name: Run clang-format
+        run: |
+          export tmp_patch="$(mktemp)"
+          export HEAD_COMMIT="$(git rev-parse HEAD)"
+          export BASE_COMMIT="$HEAD_COMMIT"~"$PR_COMMIT_COUNT"
+          EXIT_CODE=0
+          ./git-clang-format --diff "$BASE_COMMIT" "$HEAD_COMMIT" > "$tmp_patch" || EXIT_CODE=$?
+          echo "git-clang-format exited with status $EXIT_CODE"
+          if [[ $EXIT_CODE -eq 0 ]] ; then
+            echo "No formatting problems detected"
+            exit
+          fi
+          echo "::error::The code changes are not formatted."
+          echo "Please run the following command in the repository root:"
+          echo
+          echo "    git clang-format --diff $BASE_COMMIT $HEAD_COMMIT | patch -p1"
+          echo
+          echo "::notice::Alternatively, apply the following patch:"
+          cat "$tmp_patch"
+          rm "$tmp_patch"
+          exit 1
