@@ -88,6 +88,31 @@ def ZKIR_FeltConstantOp : ZKIR_Op<"feltconst", [
   let hasFolder = 1;
 }
 
+def ZKIR_CreateArrayOp : ZKIR_Op<"new_array", [
+    DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
+    Pure,
+    TypesMatchWith<"operand types match result type",
+                   "result", "elements", "::llvm::SmallVector<::mlir::Type, 2>("
+                   "::llvm::cast<::zkir::ArrayType>($_self).getNumElements(), "
+                   "::llvm::cast<::zkir::ArrayType>($_self).getElementType())">
+  ]> {
+  let summary = "creates an array";
+  let description = [{
+    This operation creates a new array with a given elements.
+
+    Example:
+
+    ```zkir
+    %0 = zkir.new_array %a, %b, %c : !zkir.array<3 x !zkir.felt>
+    ```
+  }];
+
+  let arguments = (ins Variadic<AnyZKIRType>:$elements);
+  let results = (outs ZKIR_ArrayType:$result);
+
+  let assemblyFormat = "$elements attr-dict `:` type($result)";
+}
+
 // -----
 // Field element operators
 // -----

@@ -84,4 +84,12 @@ void FeltConstantOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
 
 mlir::OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValue(); }
 
+// -----
+// CreateArrayOp
+// -----
+
+void CreateArrayOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
+  setNameFn(getResult(), "array");
+}
+
 } // namespace zkir
