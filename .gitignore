@@ -1,7 +1,5 @@
 /build/
 cmake-build-*/
-cmake-build-*/
-cmake-build-*/
 
 # Nix
 /result
