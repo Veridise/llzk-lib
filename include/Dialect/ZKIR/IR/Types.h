@@ -3,8 +3,8 @@
 #include "Dialect/ZKIR/IR/Attrs.h"
 #include "Dialect/ZKIR/IR/Dialect.h"
 #include "Dialect/ZKIR/IR/Enums.h"
-#include <mlir/IR/TypeSupport.h>
-#include <mlir/IR/Types.h>
+
+#include <llvm/ADT/TypeSwitch.h>
 
 // forward-declare ops
 #define GET_OP_FWD_DEFINES

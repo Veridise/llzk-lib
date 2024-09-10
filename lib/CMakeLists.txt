@@ -1,9 +1,6 @@
 set(ZKIR_DEP_DIALECT_LIBS
   MLIRFuncDialect
-  MLIRArithDialect
-  MLIRControlFlowDialect
-  MLIRMemRefDialect
-  MLIRSCFDialect
+  MLIRIndexDialect
   PARENT_SCOPE
 )
 add_subdirectory(Dialect/ZKIR)

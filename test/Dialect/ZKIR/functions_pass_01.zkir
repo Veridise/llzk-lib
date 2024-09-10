@@ -1,0 +1,17 @@
+// RUN: zkir-opt %s 2>&1 | FileCheck %s
+
+// External function definitions.
+func.func private @abort()
+func.func private @scribble(!zkir.felt, !zkir.felt)
+
+func.func @identity(%x: !zkir.felt) -> !zkir.felt {
+  return %x: !zkir.felt
+}
+
+//CHECK:      module {
+//CHECK-NEXT:   func.func private @abort()
+//CHECK-NEXT:   func.func private @scribble(!zkir.felt, !zkir.felt)
+//CHECK-NEXT:   func.func @identity(%arg0: !zkir.felt) -> !zkir.felt {
+//CHECK-NEXT:     return %arg0 : !zkir.felt
+//CHECK-NEXT:   }
+//CHECK-NEXT: }

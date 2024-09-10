@@ -1,0 +1,101 @@
+// RUN: zkir-opt %s 2>&1 | FileCheck %s
+
+// Selection of index dialect that is reasonable to use in ZKIR.
+
+func.func private @f_constant() -> index {
+  %0 = index.constant 42
+  return %0: index
+}
+
+func.func private @f_add(%a: index, %b: index) -> index {
+  %c = index.add %a, %b
+  return %c: index
+}
+
+func.func private @f_sub(%a: index, %b: index) -> index {
+  %c = index.sub %a, %b
+  return %c: index
+}
+
+func.func private @f_mul(%a: index, %b: index) -> index {
+  %c = index.mul %a, %b
+  return %c: index
+}
+
+func.func private @f_divu(%a: index, %b: index) -> index {
+  %c = index.divu %a, %b
+  return %c: index
+}
+
+func.func private @f_eq(%a: index, %b: index) -> i1 {
+  %c = index.cmp eq(%a, %b)
+  return %c: i1
+}
+
+func.func private @f_ne(%a: index, %b: index) -> i1 {
+  %c = index.cmp ne(%a, %b)
+  return %c: i1
+}
+
+func.func private @f_slt(%a: index, %b: index) -> i1 {
+  %c = index.cmp slt(%a, %b)
+  return %c: i1
+}
+
+func.func private @f_sle(%a: index, %b: index) -> i1 {
+  %c = index.cmp sle(%a, %b)
+  return %c: i1
+}
+
+//CHECK-LABEL:  func.func private @f_constant() -> index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.constant 42
+//CHECK-NEXT:     return %[[T1]] : index
+//CHECK-NEXT:   }
+//
+//CHECK-LABEL:  func.func private @f_add
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.add %[[A0]], %[[A1]]
+//CHECK-NEXT:     return %[[T1]] : index
+//CHECK-NEXT:   }
+//
+//CHECK-LABEL:  func.func private @f_sub
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.sub %[[A0]], %[[A1]]
+//CHECK-NEXT:     return %[[T1]] : index
+//CHECK-NEXT:   }
+//
+//CHECK-LABEL:  func.func private @f_mul
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.mul %[[A0]], %[[A1]]
+//CHECK-NEXT:     return %[[T1]] : index
+//CHECK-NEXT:   }
+//
+//CHECK-LABEL:  func.func private @f_div
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.divu %[[A0]], %[[A1]]
+//CHECK-NEXT:     return %[[T1]] : index
+//CHECK-NEXT:   }
+//
+//CHECK-LABEL:  func.func private @f_eq
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.cmp eq(%[[A0]], %[[A1]])
+//CHECK-NEXT:     return %[[T1]] : i1
+//CHECK-NEXT:   }
+//
+//CHECK-LABEL:  func.func private @f_ne
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.cmp ne(%[[A0]], %[[A1]])
+//CHECK-NEXT:     return %[[T1]] : i1
+//CHECK-NEXT:   }
+//
+//CHECK-LABEL:  func.func private @f_slt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.cmp slt(%[[A0]], %[[A1]])
+//CHECK-NEXT:     return %[[T1]] : i1
+//CHECK-NEXT:   }
+//
+//CHECK-LABEL:  func.func private @f_sle
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.cmp sle(%[[A0]], %[[A1]])
+//CHECK-NEXT:     return %[[T1]] : i1
+//CHECK-NEXT:   }

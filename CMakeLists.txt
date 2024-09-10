@@ -249,11 +249,3 @@ install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/ZKIRConfigVersion.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ZKIR"
 )
-
-
-
-# TODO: I added this stuff below
-# mlir_tablegen(Dialect.h.inc -gen-dialect-decls -dialect=zkir)
-# mlir_tablegen(Dialect.cpp.inc -gen-dialect-defs -dialect=zkir)
-# mlir_tablegen(Ops.h.inc -gen-op-decls)
-# mlir_tablegen(Ops.cpp.inc -gen-op-defs)
