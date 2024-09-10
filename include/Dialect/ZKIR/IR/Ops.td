@@ -50,7 +50,7 @@ def ZKIR_FieldOp : ZKIR_Op<"field", [HasParent<"StructDefOp">, Symbol]> {
 
     Example:
 
-    ```mlir
+    ```zkir
     zkir.field @f : !zkir.felt
     ```
   }];
@@ -77,7 +77,7 @@ def ZKIR_FeltConstantOp : ZKIR_Op<"feltconst", [
 
     Example:
 
-    ```mlir
+    ```zkir
     %0 = zkir.feltconst 42
     ```
   }];
@@ -93,9 +93,7 @@ def ZKIR_FeltConstantOp : ZKIR_Op<"feltconst", [
 // -----
 
 class ZKIR_BinaryFeltOp<string mnemonic, list<Trait> traits = []>
-    : ZKIR_Op<mnemonic,
-              !listconcat(traits,
-                          [SameOperandsAndResultType, Pure, NoMemoryEffect])> {
+    : ZKIR_Op<mnemonic, traits # [SameOperandsAndResultType, Pure]> {
 
   let arguments = (ins ZKIR_FeltType:$lhs, ZKIR_FeltType:$rhs);
   let results = (outs ZKIR_FeltType:$result);
@@ -141,7 +139,7 @@ def ZKIR_CmpOp : ZKIR_Op<"cmp", [Pure]> {
 
     Example:
 
-    ```mlir
+    ```zkir
     // Less than comparison.
     %0 = zkir.cmp<lt>(%a, %b)
 

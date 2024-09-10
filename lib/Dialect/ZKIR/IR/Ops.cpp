@@ -74,12 +74,10 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
 // FeltConstantOp
 // -----
 
-void FeltConstantOp::getAsmResultNames(
-    llvm::function_ref<void(mlir::Value, llvm::StringRef)> setNameFn
-) {
+void FeltConstantOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
   llvm::SmallString<32> buf;
   llvm::raw_svector_ostream os(buf);
-  os << "felt_const";
+  os << "felt_const_";
   getValue().getValue().toStringUnsigned(buf);
   setNameFn(getResult(), buf);
 }

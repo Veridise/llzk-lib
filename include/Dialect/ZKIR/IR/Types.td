@@ -50,7 +50,8 @@ def ZKIR_ArrayType : ZKIR_Type<"Array", "array", []> {
   let summary = "array type with a static size and homogeneous element type";
   let description = [{}];
 
-  //TODO: I want to restrict element type to be AnyZKIRType but that construct is not generated in the *.inc files.
+  //TODO: I want to restrict element type to be AnyZKIRType but that construct is not
+  //  generated in the *.inc files and it's circular so I can't use before it's defined.
   let parameters = (ins "::mlir::Type":$elementType, "uint64_t":$numElements);
   let assemblyFormat = [{
     `<` $numElements `x` $elementType `>`
