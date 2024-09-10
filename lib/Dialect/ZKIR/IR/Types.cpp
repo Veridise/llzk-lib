@@ -4,14 +4,13 @@
 
 namespace zkir {
 
-StructDefOp StructType::getDefinition(mlir::SymbolTableCollection &symbolTable,
-                                      mlir::Operation *op) {
+StructDefOp
+StructType::getDefinition(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
   return lookupTopLevelSymbol<StructDefOp>(symbolTable, op, getName());
 }
 
 mlir::LogicalResult
-StructType::verifySymbol(mlir::SymbolTableCollection &symbolTable,
-                         mlir::Operation *op) {
+StructType::verifySymbol(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
   if (!getDefinition(symbolTable, op)) {
     op->emitOpError() << "undefined component: " << *this;
     return mlir::failure();

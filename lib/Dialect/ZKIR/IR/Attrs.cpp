@@ -20,8 +20,6 @@ void printAPInt(mlir::AsmPrinter &printer, const llvm::APInt &value) {
   printer << buf;
 }
 
-mlir::Type FeltConstAttr::getType() const {
-  return FeltType::get(this->getContext());
-}
+mlir::Type FeltConstAttr::getType() const { return FeltType::get(this->getContext()); }
 
 } // namespace zkir

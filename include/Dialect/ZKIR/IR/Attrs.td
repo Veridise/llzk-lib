@@ -20,7 +20,8 @@ class ZKIR_EnumAttr<EnumAttrInfo enum, string name, string enumMnemonic,
   let mnemonic = enumMnemonic;
 }
 
-def ZKIR_TypeModiferAttr : ZKIR_EnumAttr<ZKIR_TypeModifiers, "modifier", "modifier"> {
+def ZKIR_TypeModiferAttr
+    : ZKIR_EnumAttr<ZKIR_TypeModifiers, "modifier", "modifier"> {
   let assemblyFormat = [{ `<` $value `>` }];
 }
 

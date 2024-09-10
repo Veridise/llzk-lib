@@ -15,8 +15,7 @@ namespace {
 using namespace mlir;
 
 inline LogicalResult
-msgOneFunction(function_ref<InFlightDiagnostic()> emitError,
-               const Twine &name) {
+msgOneFunction(function_ref<InFlightDiagnostic()> emitError, const Twine &name) {
   return emitError() << "must define exactly one '" << name << "' function";
 }
 
@@ -52,10 +51,9 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
         } else {
           // Must do a little more than a simple call to '?.emitOpError()' to
           // tag the error with correct location and correct op name.
-          return op.emitError()
-                 << "'" << getOperationName() << "' op "
-                 << "must define only 'compute' and 'constrain' functions;"
-                 << " found '" << func_name << "'";
+          return op.emitError() << "'" << getOperationName() << "' op "
+                                << "must define only 'compute' and 'constrain' functions;"
+                                << " found '" << func_name << "'";
         }
       } else {
         return op.emitOpError() << "invalid operation in 'struct'; only 'field'"
@@ -77,7 +75,8 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
 // -----
 
 void FeltConstantOp::getAsmResultNames(
-    llvm::function_ref<void(mlir::Value, llvm::StringRef)> setNameFn) {
+    llvm::function_ref<void(mlir::Value, llvm::StringRef)> setNameFn
+) {
   llvm::SmallString<32> buf;
   llvm::raw_svector_ostream os(buf);
   os << "felt_const";
@@ -85,8 +84,6 @@ void FeltConstantOp::getAsmResultNames(
   setNameFn(getResult(), buf);
 }
 
-mlir::OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) {
-  return getValue();
-}
+mlir::OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValue(); }
 
 } // namespace zkir
