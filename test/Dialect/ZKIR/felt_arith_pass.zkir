@@ -1,4 +1,4 @@
-// RUN: zkir-opt %s 2>&1 | FileCheck %s
+// RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
 
 // Field element basic arithmetic operations
 
@@ -6,118 +6,118 @@ func.func private @f_constant() -> !zkir.felt {
   %c = zkir.feltconst 42
   return %c: !zkir.felt
 }
+//CHECK-LABEL:  func.func private @f_constant() -> !zkir.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.feltconst  42
+//CHECK-NEXT:     return %[[T1]] : !zkir.felt
+//CHECK-NEXT:   }
+// -----
 
 func.func private @f_add(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
   %c = zkir.add %a, %b
   return %c: !zkir.felt
 }
-
-func.func private @f_sub(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
-  %c = zkir.sub %a, %b
-  return %c: !zkir.felt
-}
-
-func.func private @f_mul(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
-  %c = zkir.mul %a, %b
-  return %c: !zkir.felt
-}
-
-func.func private @f_div(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
-  %c = zkir.div %a, %b
-  return %c: !zkir.felt
-}
-
-func.func private @f_eq(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
-  %c = zkir.cmp eq(%a, %b)
-  return %c: i1
-}
-
-func.func private @f_ne(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
-  %c = zkir.cmp ne(%a, %b)
-  return %c: i1
-}
-
-func.func private @f_lt(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
-  %c = zkir.cmp lt(%a, %b)
-  return %c: i1
-}
-
-func.func private @f_le(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
-  %c = zkir.cmp le(%a, %b)
-  return %c: i1
-}
-
-func.func private @f_gt(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
-  %c = zkir.cmp gt(%a, %b)
-  return %c: i1
-}
-
-func.func private @f_ge(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
-  %c = zkir.cmp ge(%a, %b)
-  return %c: i1
-}
-
-//CHECK-LABEL:  func.func private @f_constant() -> !zkir.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.feltconst  42
-//CHECK-NEXT:     return %[[T1]] : !zkir.felt
-//CHECK-NEXT:   }
-//
 //CHECK-LABEL:  func.func private @f_add
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.felt {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.add %[[A0]], %[[A1]]
 //CHECK-NEXT:     return %[[T1]] : !zkir.felt
 //CHECK-NEXT:   }
-//
+// -----
+
+func.func private @f_sub(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
+  %c = zkir.sub %a, %b
+  return %c: !zkir.felt
+}
 //CHECK-LABEL:  func.func private @f_sub
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.felt {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.sub %[[A0]], %[[A1]]
 //CHECK-NEXT:     return %[[T1]] : !zkir.felt
 //CHECK-NEXT:   }
-//
+// -----
+
+func.func private @f_mul(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
+  %c = zkir.mul %a, %b
+  return %c: !zkir.felt
+}
 //CHECK-LABEL:  func.func private @f_mul
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.felt {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.mul %[[A0]], %[[A1]]
 //CHECK-NEXT:     return %[[T1]] : !zkir.felt
 //CHECK-NEXT:   }
-//
+// -----
+
+func.func private @f_div(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
+  %c = zkir.div %a, %b
+  return %c: !zkir.felt
+}
 //CHECK-LABEL:  func.func private @f_div
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.felt {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.div %[[A0]], %[[A1]]
 //CHECK-NEXT:     return %[[T1]] : !zkir.felt
 //CHECK-NEXT:   }
-//
+// -----
+
+func.func private @f_eq(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
+  %c = zkir.cmp eq(%a, %b)
+  return %c: i1
+}
 //CHECK-LABEL:  func.func private @f_eq
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.cmp eq(%[[A0]], %[[A1]])
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
-//
+// -----
+
+func.func private @f_ne(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
+  %c = zkir.cmp ne(%a, %b)
+  return %c: i1
+}
 //CHECK-LABEL:  func.func private @f_ne
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.cmp ne(%[[A0]], %[[A1]])
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
-//
+// -----
+
+func.func private @f_lt(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
+  %c = zkir.cmp lt(%a, %b)
+  return %c: i1
+}
 //CHECK-LABEL:  func.func private @f_lt
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.cmp lt(%[[A0]], %[[A1]])
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
-//
+// -----
+
+func.func private @f_le(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
+  %c = zkir.cmp le(%a, %b)
+  return %c: i1
+}
 //CHECK-LABEL:  func.func private @f_le
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.cmp le(%[[A0]], %[[A1]])
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
-//
+// -----
+
+func.func private @f_gt(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
+  %c = zkir.cmp gt(%a, %b)
+  return %c: i1
+}
 //CHECK-LABEL:  func.func private @f_gt
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.cmp gt(%[[A0]], %[[A1]])
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
-//
+// -----
+
+func.func private @f_ge(%a: !zkir.felt, %b: !zkir.felt) -> i1 {
+  %c = zkir.cmp ge(%a, %b)
+  return %c: i1
+}
 //CHECK-LABEL:  func.func private @f_ge
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = zkir.cmp ge(%[[A0]], %[[A1]])
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
+// -----

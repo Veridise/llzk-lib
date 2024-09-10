@@ -1,0 +1,47 @@
+// RUN: zkir-opt -split-input-file -verify-diagnostics %s
+
+zkir.struct @ComponentD<[@B, @D, @C]> {
+  // expected-error@+1 {{'zkir.struct' op expects parent op 'builtin.module'}}
+  zkir.struct @ComponentA {}
+}
+// -----
+func.func @identity(%x: !zkir.felt) -> !zkir.felt {
+  // expected-error@+1 {{'zkir.struct' op expects parent op 'builtin.module'}}
+  zkir.struct @ComponentA {}
+  return %x: !zkir.felt
+}
+// -----
+zkir.struct @ComponentB<[@B, @D, @C]> {
+  // expected-error@+1 {{'zkir.struct' op must define only 'compute' and 'constrain' functions; found 'invalidname'}}
+  func.func public @invalidname(%a: !zkir.felt, %b: !zkir.felt) {
+    return
+  }
+}
+// -----
+zkir.struct @ComponentE<[@B, @D, @C]> {
+  // expected-note@+1 {{see existing symbol definition here}}
+  func.func public @compute(%a: !zkir.felt, %b: !zkir.felt) {
+    return
+  }
+  // expected-error@+1 {{redefinition of symbol named 'compute'}}
+  func.func public @compute() {
+    return
+  }
+}
+// -----
+// expected-error@+1 {{'zkir.struct' op must define exactly one 'constrain' function}}
+zkir.struct @ComponentF<[@B, @D, @C]> {
+  func.func public @compute(%a: !zkir.felt, %b: !zkir.felt) {
+    return
+  }
+}
+// -----
+zkir.struct @ComponentG<[@B, @D, @C]> {
+  func.func public @compute() {
+    return
+  }
+  // expected-error@+1 {{'builtin.module' op invalid operation in 'struct'; only 'field' and 'func' operations are permitted}}
+  builtin.module {
+  }
+}
+// -----

@@ -1,4 +1,4 @@
-// RUN: zkir-opt %s 2>&1 | FileCheck %s
+// RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
 
 module {}
 

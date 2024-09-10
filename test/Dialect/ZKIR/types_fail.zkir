@@ -1,0 +1,6 @@
+// RUN: zkir-opt -split-input-file -verify-diagnostics %s
+
+func.func private @a()
+// expected-error@+1 {{failed to parse ZKIR_ArrayType parameter 'numElements' which is to be a `uint64_t`}}
+func.func private @c(%x: !zkir.array<@a x !zkir.felt>) // expected-error {{expected integer value}}
+// -----

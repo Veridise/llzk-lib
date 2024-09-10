@@ -1,0 +1,17 @@
+// RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
+
+func.func private @a(!zkir.array<5 x !zkir.felt>, !zkir.struct<@Hello>)
+//CHECK-LABEL:   func.func private @a(!zkir.array<5 x !zkir.felt>, !zkir.struct<@Hello>)
+// -----
+
+func.func private @b(!zkir.array<3 x !zkir.array<2 x !zkir.array<1 x !zkir.felt>>>)
+//CHECK-LABEL:   func.func private @b(!zkir.array<3 x !zkir.array<2 x !zkir.array<1 x !zkir.felt>>>)
+// -----
+
+func.func private @c(%x: !zkir.array<5 x !zkir.struct<@Bob>>) -> !zkir.array<5 x !zkir.struct<@Bob>>
+//CHECK-LABEL:   func.func private @c(!zkir.array<5 x !zkir.struct<@Bob>>) -> !zkir.array<5 x !zkir.struct<@Bob>>
+// -----
+
+func.func private @d(%x: !zkir.array<54 x index>) -> index
+//CHECK-LABEL:   func.func private @d(!zkir.array<54 x index>) -> index
+// -----
