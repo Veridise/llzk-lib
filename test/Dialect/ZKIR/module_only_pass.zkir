@@ -1,0 +1,6 @@
+// RUN: zkir-opt %s 2>&1 | FileCheck %s
+
+module {}
+
+//CHECK:      module {
+//CHECK-NEXT: }

@@ -3,7 +3,7 @@ find_program(LLVM_EXTERNAL_LIT NAMES lit llvm-lit ${LLVM_EXTERNAL_LIT} REQUIRED)
 message(STATUS "Using lit: ${LLVM_EXTERNAL_LIT}")
 
 set(ZKIR_TEST_DEPENDS
-  zkir-dump
+  zkir-opt
 #   zkir-driver
 #   zkir-query
 )
