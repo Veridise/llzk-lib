@@ -1,0 +1,8 @@
+// RUN: zkir-opt %s --split-input-file --verify-diagnostics
+
+// expected-error@+1 {{'zkir.struct' op must define exactly one 'constrain' function}}
+zkir.struct @ComponentD<[@B, @D, @C]> {
+  func.func public @compute(%a: !zkir.felt, %b: !zkir.felt) {
+    return
+  }
+}

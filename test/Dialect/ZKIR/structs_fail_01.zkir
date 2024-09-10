@@ -1,0 +1,6 @@
+// RUN: zkir-opt %s --split-input-file --verify-diagnostics
+
+zkir.struct @ComponentD<[@B, @D, @C]> {
+  // expected-error@+1 {{'zkir.struct' op expects parent op 'builtin.module'}}
+  zkir.struct @ComponentA {}
+}

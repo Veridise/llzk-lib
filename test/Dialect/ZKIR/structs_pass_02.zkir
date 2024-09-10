@@ -1,0 +1,27 @@
+// RUN: zkir-opt %s 2>&1 | FileCheck %s
+
+zkir.struct @ComponentD<[@B, @D, @C]> {
+  zkir.field @f1 : !zkir.felt
+  zkir.field @f2 : [#zkir.modifier<pub>, #zkir.modifier<const>] !zkir.felt
+
+  func.func public @compute(%a: !zkir.felt, %b: !zkir.felt) {
+    return
+  }
+
+  func.func public @constrain(%a: !zkir.felt, %b: !zkir.felt) {
+    return
+  }
+}
+
+//CHECK:      module {
+//CHECK-NEXT:   zkir.struct @ComponentD<[@B, @D, @C]> {
+//CHECK-NEXT:     zkir.field @f1 : !zkir.felt
+//CHECK-NEXT:     zkir.field @f2 : [#zkir.modifier<pub>, #zkir.modifier<const>] !zkir.felt
+//CHECK-NEXT:     func.func public @compute(%arg0: !zkir.felt, %arg1: !zkir.felt) {
+//CHECK-NEXT:       return
+//CHECK-NEXT:     }
+//CHECK-NEXT:     func.func public @constrain(%arg0: !zkir.felt, %arg1: !zkir.felt) {
+//CHECK-NEXT:       return
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }
+//CHECK-NEXT: }

@@ -1,0 +1,8 @@
+// RUN: zkir-opt %s --split-input-file --verify-diagnostics
+
+zkir.struct @ComponentD<[@B, @D, @C]> {
+  // expected-error@+1 {{'zkir.struct' op must define only 'compute' and 'constrain' functions; found 'invalidname'}}
+  func.func public @invalidname(%a: !zkir.felt, %b: !zkir.felt) {
+    return
+  }
+}

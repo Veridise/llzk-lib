@@ -14,7 +14,7 @@ def ZKIRDialect : Dialect {
   let cppNamespace = "zkir";
 
   let useDefaultTypePrinterParser = true;
-  // let useDefaultAttributePrinterParser = true;
+  let useDefaultAttributePrinterParser = true;
   // let hasConstantMaterializer = 1;
 }
 

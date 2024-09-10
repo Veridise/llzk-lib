@@ -4,6 +4,12 @@
 #include "Dialect/ZKIR/IR/Dialect.h"
 #include "Dialect/ZKIR/IR/Enums.h"
 
+#include <mlir/IR/BuiltinTypes.h>
+#include <mlir/IR/SymbolTable.h>
+#include <mlir/IR/Types.h>
+#include <mlir/Interfaces/DataLayoutInterfaces.h>
+#include <mlir/Interfaces/MemorySlotInterfaces.h>
+
 #include <llvm/ADT/TypeSwitch.h>
 
 // forward-declare ops
