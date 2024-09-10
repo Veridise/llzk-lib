@@ -1,5 +1,5 @@
 add_library(ZKIRDialectHeaders INTERFACE)
-target_include_directories(ZKIRDialectHeaders INTERFACE
+target_include_directories(ZKIRDialectHeaders SYSTEM INTERFACE
   # headers in this folder's subdirectories
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   # TableGen'd files
