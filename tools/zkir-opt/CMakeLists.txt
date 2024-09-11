@@ -6,7 +6,7 @@ target_link_libraries(zkir-opt PUBLIC
 )
 zkir_target_add_mlir_link_settings(zkir-opt)
 target_link_libraries(zkir-opt
-  PUBLIC ZKIRDialectHeaders MLIRIR MLIRPass
+  PUBLIC ZKIRDialectHeaders MLIRIR
 )
 include_directories(${MLIR_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS})
 
