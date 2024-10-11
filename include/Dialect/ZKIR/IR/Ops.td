@@ -250,6 +250,24 @@ def ZKIR_EmitContainmentOp : ZKIR_Op<"emit_in", [
   let hasVerifier = 1;
 }
 
+// What other interfaces do we need for this one?
+def ZKIR_ArrayRead : ZKIR_Op<"array_read", [
+  Pure,
+  TypesMatchWith<"result types match with array content",
+                 "lvalue", "result", "::llvm::cast<::zkir::ArrayType>($_self).getElementType()">
+]> {
+  let summary = "Loads the content of index `i` from a ZKIR array";
+  let description = [{}];
+
+  let arguments = (ins ZKIR_ArrayType:$lvalue, AnySignlessIntegerOrIndex:$index);
+  let results = (outs AnyZKIRType:$result);
+
+  let assemblyFormat = [{
+    $lvalue `[` $index `]` `:` `(` type($lvalue) `,` type($index) `)` `->` type($result) attr-dict
+  }];
+
+}
+
 // -----
 // Field element operators
 // -----
@@ -358,5 +376,7 @@ def ZKIR_CmpOp : ZKIR_Op<"cmp", [Pure]> {
   let results = (outs I1:$result);
   let assemblyFormat = "`` $pred `(` $lhs `,` $rhs `)` attr-dict";
 }
+
+
 
 #endif // ZKIR_OPS

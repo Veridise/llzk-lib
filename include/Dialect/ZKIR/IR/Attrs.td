@@ -52,4 +52,26 @@ def ZKIR_PubModifierAttr : ZKIR_Attr<"Public", "pub"> {
   }];
 }
 
+def ZKIR_LoopBounds : ZKIR_Attr<"LoopBounds", "loopbounds"> {
+  let summary = "Annotation with the bounds of a loop";
+  let description = [{
+    This attribute holds information useful for the analysis of loops.
+    Holds the bounds of the loop and the step size.
+
+    Example:
+
+    ```zkir
+    scf.while ... {
+      ...
+    } do {
+      ...
+    } attributes { zkir.loopbounds = #zkir.loopbounds<0 to 10 step 1> }
+    ```
+  }];
+
+  let parameters = (ins "::llvm::APInt":$lower, "::llvm::APInt":$upper, "::llvm::APInt":$step);
+
+  let assemblyFormat = "`<` custom<APInt>($lower) `to` custom<APInt>($upper) `step` custom<APInt>($step) `>`";
+}
+
 #endif // ZKIR_ATTRS

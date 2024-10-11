@@ -1,0 +1,104 @@
+// RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
+
+zkir.struct @ComponentA {
+  func @compute(%a: !zkir.felt) {
+    %res = scf.while (%arg1 = %a) : (!zkir.felt) -> !zkir.felt {
+      %condition = arith.constant 1 : i1
+      scf.condition(%condition) %arg1 : !zkir.felt
+    } do {
+      ^bb0(%arg2: !zkir.felt):
+        %next = zkir.add %arg2, %arg2
+        scf.yield %next : !zkir.felt
+    } attributes {}
+    return
+  }
+
+  func @constrain(%a: !zkir.felt) {
+    return
+  }
+}
+//CHECK-LABEL:  zkir.struct @ComponentA {
+//CHECK-NEXT:     func @compute(%arg0: !zkir.felt) {
+//CHECK-NEXT:       %0 = scf.while (%arg1 = %arg0) : (!zkir.felt) -> !zkir.felt {
+//CHECK-NEXT:         %true = arith.constant true
+//CHECK-NEXT:         scf.condition(%true) %arg1 : !zkir.felt
+//CHECK-NEXT:       } do {
+//CHECK-NEXT:       ^bb0(%arg1: !zkir.felt):
+//CHECK-NEXT:         %1 = zkir.add %arg1, %arg1
+//CHECK-NEXT:         scf.yield %1 : !zkir.felt
+//CHECK-NEXT:       }
+//CHECK-NEXT:       return
+//CHECK-NEXT:     }
+//CHECK-NEXT:     func @constrain(%arg0: !zkir.felt) {
+//CHECK-NEXT:       return
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }
+// -----
+zkir.struct @ComponentA {
+  func @compute(%a: !zkir.felt) {
+    %res = scf.while (%arg1 = %a) : (!zkir.felt) -> !zkir.felt {
+      %condition = arith.constant 1 : i1
+      scf.condition(%condition) %arg1 : !zkir.felt
+    } do {
+      ^bb0(%arg2: !zkir.felt):
+        %next = zkir.add %arg2, %arg2
+        scf.yield %next : !zkir.felt
+    } attributes { zkir.loopbounds = #zkir.loopbounds<0 to 10 step 1> }
+    return
+  }
+
+  func @constrain(%a: !zkir.felt) {
+    return
+  }
+}
+//CHECK-LABEL:  zkir.struct @ComponentA {
+//CHECK-NEXT:     func @compute(%arg0: !zkir.felt) {
+//CHECK-NEXT:       %0 = scf.while (%arg1 = %arg0) : (!zkir.felt) -> !zkir.felt {
+//CHECK-NEXT:         %true = arith.constant true
+//CHECK-NEXT:         scf.condition(%true) %arg1 : !zkir.felt
+//CHECK-NEXT:       } do {
+//CHECK-NEXT:       ^bb0(%arg1: !zkir.felt):
+//CHECK-NEXT:         %1 = zkir.add %arg1, %arg1
+//CHECK-NEXT:         scf.yield %1 : !zkir.felt
+//CHECK-NEXT:       } attributes {zkir.loopbounds = #zkir.loopbounds<0 to 10 step 1>}
+//CHECK-NEXT:       return
+//CHECK-NEXT:     }
+//CHECK-NEXT:     func @constrain(%arg0: !zkir.felt) {
+//CHECK-NEXT:       return
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }
+// -----
+zkir.struct @ComponentA {
+  func @compute(%a: !zkir.felt, %d: !zkir.array<4 x !zkir.felt>) {
+    %lb = index.constant 0
+    %up = index.constant 4
+    %step = index.constant 1
+    %res = scf.for %iv = %lb to %up step %step
+        iter_args(%sum = %a) -> !zkir.felt {
+      %0 = zkir.array_read %d[%iv] : (!zkir.array<4 x !zkir.felt>, index) -> !zkir.felt
+      %1 = zkir.add %sum, %0
+      scf.yield %1 : !zkir.felt
+    }    
+    return
+  }
+
+  func @constrain(%a: !zkir.felt) {
+    return
+  }
+}
+//CHECK-LABEL:  zkir.struct @ComponentA {
+//CHECK-NEXT:     func @compute(%arg0: !zkir.felt, %arg1: !zkir.array<4 x !zkir.felt>) {
+//CHECK-NEXT:       %idx0 = index.constant 0
+//CHECK-NEXT:       %idx4 = index.constant 4
+//CHECK-NEXT:       %idx1 = index.constant 1
+//CHECK-NEXT:       %0 = scf.for %arg2 = %idx0 to %idx4 step %idx1 iter_args(%arg3 = %arg0) -> (!zkir.felt) {
+//CHECK-NEXT:         %1 = zkir.array_read %arg1[%arg2] : (<4 x !zkir.felt>, index) -> !zkir.felt
+//CHECK-NEXT:         %2 = zkir.add %arg3, %1
+//CHECK-NEXT:         scf.yield %2 : !zkir.felt
+//CHECK-NEXT:       }    
+//CHECK-NEXT:       return
+//CHECK-NEXT:     }
+//CHECK-NEXT:     func @constrain(%arg0: !zkir.felt) {
+//CHECK-NEXT:       return
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }

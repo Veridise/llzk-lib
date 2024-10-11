@@ -15,6 +15,7 @@ def ZKIRDialect : Dialect {
 
   let dependentDialects = [
     "::mlir::index::IndexDialect",
+    "::mlir::scf::SCFDialect"
   ];
 
   let useDefaultTypePrinterParser = true;
