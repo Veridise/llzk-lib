@@ -75,7 +75,7 @@ zkir.struct @ComponentA {
     %step = index.constant 1
     %res = scf.for %iv = %lb to %up step %step
         iter_args(%sum = %a) -> !zkir.felt {
-      %0 = zkir.array_read %d[%iv] : (!zkir.array<4 x !zkir.felt>, index) -> !zkir.felt
+      %0 = zkir.array_read %d[%iv] : !zkir.array<4 x !zkir.felt>, !zkir.felt
       %1 = zkir.add %sum, %0
       scf.yield %1 : !zkir.felt
     }    
@@ -92,7 +92,7 @@ zkir.struct @ComponentA {
 //CHECK-NEXT:       %idx4 = index.constant 4
 //CHECK-NEXT:       %idx1 = index.constant 1
 //CHECK-NEXT:       %0 = scf.for %arg2 = %idx0 to %idx4 step %idx1 iter_args(%arg3 = %arg0) -> (!zkir.felt) {
-//CHECK-NEXT:         %1 = zkir.array_read %arg1[%arg2] : (<4 x !zkir.felt>, index) -> !zkir.felt
+//CHECK-NEXT:         %1 = zkir.array_read %arg1[%arg2] : <4 x !zkir.felt>, !zkir.felt
 //CHECK-NEXT:         %2 = zkir.add %arg3, %1
 //CHECK-NEXT:         scf.yield %2 : !zkir.felt
 //CHECK-NEXT:       }    

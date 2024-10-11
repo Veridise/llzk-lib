@@ -259,13 +259,12 @@ def ZKIR_ArrayRead : ZKIR_Op<"array_read", [
   let summary = "Loads the content of index `i` from a ZKIR array";
   let description = [{}];
 
-  let arguments = (ins ZKIR_ArrayType:$lvalue, AnySignlessIntegerOrIndex:$index);
+  let arguments = (ins ZKIR_ArrayType:$lvalue, Index:$index);
   let results = (outs AnyZKIRType:$result);
 
   let assemblyFormat = [{
-    $lvalue `[` $index `]` `:` `(` type($lvalue) `,` type($index) `)` `->` type($result) attr-dict
+    $lvalue `[` $index `]` attr-dict `:` type($lvalue) `,` type($result)
   }];
-
 }
 
 // -----
@@ -376,7 +375,5 @@ def ZKIR_CmpOp : ZKIR_Op<"cmp", [Pure]> {
   let results = (outs I1:$result);
   let assemblyFormat = "`` $pred `(` $lhs `,` $rhs `)` attr-dict";
 }
-
-
 
 #endif // ZKIR_OPS
