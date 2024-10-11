@@ -12,3 +12,6 @@ ColumnLimit: 100
 LambdaBodyIndentation: OuterScope
 AlignAfterOpenBracket: BlockIndent
 InsertBraces: true
+---
+Language: Json
+DisableFormat: true
