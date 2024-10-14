@@ -190,6 +190,10 @@ def ZKIR_CreateStructOp : ZKIR_Op<"new_struct", [
   let assemblyFormat = "attr-dict `:` type($result)";
 }
 
+// -----
+// Array operations
+// -----
+
 def ZKIR_CreateArrayOp : ZKIR_Op<"new_array", [
     DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
     Pure,
@@ -214,6 +218,65 @@ def ZKIR_CreateArrayOp : ZKIR_Op<"new_array", [
 
   let assemblyFormat = "$elements attr-dict `:` type($result)";
 }
+
+// TODO?: Make these operations accept multiple indices for multidimensional arrays?
+def ZKIR_ReadArrayOp : ZKIR_Op<"readarr", [
+  Pure,  TypesMatchWith<"result types match with array content",
+                 "lvalue", "result", "::llvm::cast<::zkir::ArrayType>($_self).getElementType()">
+]> {
+  let summary = "Loads a value from a ZKIR array";
+  let description = [{
+    This operation loads the value from an array at position `$index`.
+
+    Exampl̀e:
+
+    ```zkir 
+    %i = index.constant 0
+    %0 = zkir.new_array %a, %b, %c : !zkir.array<3 x !zkir.felt>
+    // %1 is now equal to %a
+    %1 = zkir.readarr %0[%i] : !zkir.array<3 x !zkir.felt>, !zkir.felt
+    ```
+  }];
+
+  let arguments = (ins ZKIR_ArrayType:$lvalue, Index:$index);
+  let results = (outs AnyZKIRType:$result);
+
+  let assemblyFormat = [{
+    $lvalue `[` $index `]` attr-dict `:` type($lvalue) `,` type($result)
+  }];
+}
+
+def ZKIR_WriteArrayOp : ZKIR_Op<"writearr", [
+   TypesMatchWith<"rvalue types match with array content",
+                 "lvalue", "rvalue", "::llvm::cast<::zkir::ArrayType>($_self).getElementType()">
+]> {
+  let summary = "Writes a value into a ZKIR array";
+  let description = [{
+    This operation writes a value into an array at position `$index`.
+
+    Exampl̀e:
+
+    ```zkir 
+    %i = index.constant 0
+    %0 = zkir.constfelt 42
+    %1 = zkir.new_array %a, %b, %c : !zkir.array<3 x !zkir.felt>
+    // The array now is [%0, %b, %c]
+    zkir.writearr %1[%i] = %0 : !zkir.array<3 x !zkir.felt>, !zkir.felt
+    ```
+
+  }];
+
+  let arguments = (ins ZKIR_ArrayType:$lvalue, Index:$index, AnyZKIRType:$rvalue);
+
+  let assemblyFormat = [{
+    $lvalue `[` $index `]` `=` $rvalue attr-dict `:` type($lvalue) `,` type($rvalue)
+  }];
+}
+
+// -----
+// Constraint emit operations
+// -----
+
 
 def EmitEqType : TypeConstraint<CPred<"::zkir::isValidEmitEqType($_self)">, "non-struct type">;
 

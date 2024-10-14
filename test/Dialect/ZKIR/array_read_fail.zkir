@@ -1,0 +1,39 @@
+// RUN: zkir-opt %s -split-input-file -verify-diagnostics
+
+zkir.func @arr_constant_index() -> index {
+  %a = index.constant 45 // expected-note {{prior use here}}
+  %b = index.constant 214
+  %c = index.constant 2
+  %r = zkir.new_array %a, %b, %c : !zkir.array<3 x index>
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!zkir.array<3 x index>' vs 'index'}}
+  %i = zkir.readarr %a[%c] : !zkir.array<3 x index>, index
+  return %i: index
+}
+
+// -----
+
+zkir.func @arr_mix_index(%a: index, %b: index) -> index {
+  %c = index.constant 324
+  %d = index.constant 999 
+  %i = index.constant 0
+  %r = zkir.new_array %a, %b, %c, %d: !zkir.array<4 x index> // expected-note {{prior use here}}
+  // expected-error@+1 {{use of value '%r' expects different type than prior uses: 'index' vs '!zkir.array<4 x index>'}}
+  %v = zkir.readarr %r[%r] : !zkir.array<4 x index>, index
+  return %v: index
+}
+
+// -----
+
+zkir.func @arr_mix_index(%a: index, %b: index) -> index {
+  %c = index.constant 324
+  %d = index.constant 999 
+  %i = index.constant 0
+  %f = zkir.constfelt 6744573456376 // expected-note {{prior use here}}
+  %r = zkir.new_array %a, %b, %c, %d: !zkir.array<4 x index> 
+  // expected-error@+1 {{use of value '%f' expects different type than prior uses: 'index' vs '!zkir.felt'}}
+  %v = zkir.readarr %r[%f] : !zkir.array<4 x index>, index
+  return %v: index
+}
+
+
+

@@ -1,0 +1,51 @@
+// RUN: zkir-opt %s -split-input-file -verify-diagnostics
+
+zkir.func @arr_constant_index() -> !zkir.array<3 x index> {
+  %a = index.constant 45
+  %b = index.constant 214 // expected-note {{prior use here}}
+  %c = index.constant 2
+  %r = zkir.new_array %a, %b, %c : !zkir.array<3 x index>
+  // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!zkir.array<3 x index>' vs 'index'}}
+  zkir.writearr %b[%c] = %b : !zkir.array<3 x index>, index
+  return %r: !zkir.array<3 x index>
+}
+
+// -----
+
+zkir.func @arr_mix_index(%a: index, %b: index) -> !zkir.array<4 x index> {
+  %c = index.constant 324
+  %d = index.constant 999 
+  %i = index.constant 0
+  %r = zkir.new_array %a, %b, %c, %d: !zkir.array<4 x index> // expected-note {{prior use here}}
+  // expected-error@+1 {{use of value '%r' expects different type than prior uses: 'index' vs '!zkir.array<4 x index>'}}
+  zkir.writearr %r[%r] = %b : !zkir.array<4 x index>, index
+  return %r: !zkir.array<4 x index>
+}
+
+// -----
+
+zkir.func @arr_mix_index(%a: index, %b: index) -> !zkir.array<4 x index> {
+  %c = index.constant 324
+  %d = index.constant 999 
+  %i = index.constant 0
+  %f = zkir.constfelt 6744573456376 // expected-note {{prior use here}}
+  %r = zkir.new_array %a, %b, %c, %d: !zkir.array<4 x index>
+  // expected-error@+1 {{use of value '%f' expects different type than prior uses: 'index' vs '!zkir.felt'}}
+  zkir.writearr %r[%f] = %b : !zkir.array<4 x index>, index
+  return %r: !zkir.array<4 x index>
+}
+
+// -----
+
+zkir.func @arr_mix_index(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.array<4 x !zkir.felt> {
+  %c = zkir.constfelt 324
+  %d = zkir.constfelt 999 
+  %i = index.constant 0
+  %v = index.constant 5751 // expected-note {{prior use here}}
+  %r = zkir.new_array %a, %b, %c, %d: !zkir.array<4 x !zkir.felt>
+  // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!zkir.felt' vs 'index'}}
+  zkir.writearr %r[%i] = %v : !zkir.array<4 x !zkir.felt>, !zkir.felt
+  return %r: !zkir.array<4 x !zkir.felt>
+}
+
+
