@@ -18,18 +18,18 @@ zkir.struct @ComponentA {
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentA {
-//CHECK-NEXT:     func @compute(%arg0: !zkir.felt) {
-//CHECK-NEXT:       %0 = scf.while (%arg1 = %arg0) : (!zkir.felt) -> !zkir.felt {
-//CHECK-NEXT:         %true = arith.constant true
-//CHECK-NEXT:         scf.condition(%true) %arg1 : !zkir.felt
+//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_.]+]]: !zkir.felt) {
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = scf.while (%[[A1:[0-9a-zA-Z_.]+]] = %[[A0]]) : (!zkir.felt) -> !zkir.felt {
+//CHECK-NEXT:         %[[T1:[0-9a-zA-Z_.]+]] = arith.constant true
+//CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !zkir.felt
 //CHECK-NEXT:       } do {
-//CHECK-NEXT:       ^bb0(%arg1: !zkir.felt):
-//CHECK-NEXT:         %1 = zkir.add %arg1, %arg1
-//CHECK-NEXT:         scf.yield %1 : !zkir.felt
+//CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_.]+]]: !zkir.felt):
+//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.]+]] = zkir.add %[[A2]], %[[A2]]
+//CHECK-NEXT:         scf.yield %[[T2]] : !zkir.felt
 //CHECK-NEXT:       }
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%arg0: !zkir.felt) {
+//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_.]+]]: !zkir.felt) {
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
@@ -52,31 +52,30 @@ zkir.struct @ComponentA {
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentA {
-//CHECK-NEXT:     func @compute(%arg0: !zkir.felt) {
-//CHECK-NEXT:       %0 = scf.while (%arg1 = %arg0) : (!zkir.felt) -> !zkir.felt {
-//CHECK-NEXT:         %true = arith.constant true
-//CHECK-NEXT:         scf.condition(%true) %arg1 : !zkir.felt
+//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = scf.while (%[[A1:[0-9a-zA-Z_\.]+]] = %[[A0]]) : (!zkir.felt) -> !zkir.felt {
+//CHECK-NEXT:         %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant true
+//CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !zkir.felt
 //CHECK-NEXT:       } do {
-//CHECK-NEXT:       ^bb0(%arg1: !zkir.felt):
-//CHECK-NEXT:         %1 = zkir.add %arg1, %arg1
-//CHECK-NEXT:         scf.yield %1 : !zkir.felt
+//CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_\.]+]]: !zkir.felt):
+//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_\.]+]] = zkir.add %[[A2]], %[[A2]]
+//CHECK-NEXT:         scf.yield %[[T2]] : !zkir.felt
 //CHECK-NEXT:       } attributes {zkir.loopbounds = #zkir.loopbounds<0 to 10 step 1>}
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%arg0: !zkir.felt) {
+//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 zkir.struct @ComponentA {
-  func @compute(%a: !zkir.felt, %d: !zkir.array<4 x !zkir.felt>) {
+  func @compute(%a: !zkir.felt, %d: !zkir.felt) {
     %lb = index.constant 0
     %up = index.constant 4
     %step = index.constant 1
     %res = scf.for %iv = %lb to %up step %step
-        iter_args(%sum = %a) -> !zkir.felt {
-      %0 = zkir.array_read %d[%iv] : !zkir.array<4 x !zkir.felt>, !zkir.felt
-      %1 = zkir.add %sum, %0
+        iter_args(%sum = %d) -> !zkir.felt {
+      %1 = zkir.add %a, %sum
       scf.yield %1 : !zkir.felt
     }    
     return
@@ -87,18 +86,17 @@ zkir.struct @ComponentA {
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentA {
-//CHECK-NEXT:     func @compute(%arg0: !zkir.felt, %arg1: !zkir.array<4 x !zkir.felt>) {
-//CHECK-NEXT:       %idx0 = index.constant 0
-//CHECK-NEXT:       %idx4 = index.constant 4
-//CHECK-NEXT:       %idx1 = index.constant 1
-//CHECK-NEXT:       %0 = scf.for %arg2 = %idx0 to %idx4 step %idx1 iter_args(%arg3 = %arg0) -> (!zkir.felt) {
-//CHECK-NEXT:         %1 = zkir.array_read %arg1[%arg2] : <4 x !zkir.felt>, !zkir.felt
-//CHECK-NEXT:         %2 = zkir.add %arg3, %1
-//CHECK-NEXT:         scf.yield %2 : !zkir.felt
+//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
+//CHECK-NEXT:       %[[LB:[0-9a-zA-Z_\.]+]] = index.constant 0
+//CHECK-NEXT:       %[[UB:[0-9a-zA-Z_\.]+]] = index.constant 4
+//CHECK-NEXT:       %[[ST:[0-9a-zA-Z_\.]+]] = index.constant 1
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[LB]] to %[[UB]] step %[[ST]] iter_args(%[[T1:[0-9a-zA-Z_\.]+]] = %[[A1]]) -> (!zkir.felt) {
+//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_\.]+]] = zkir.add %[[A0]], %[[T1]]
+//CHECK-NEXT:         scf.yield %[[T2]] : !zkir.felt
 //CHECK-NEXT:       }    
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%arg0: !zkir.felt) {
+//CHECK-NEXT:     func @constrain(%[[T0:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
