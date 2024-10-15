@@ -13,6 +13,7 @@ include "mlir/Interfaces/MemorySlotInterfaces.td"
 class ZKIR_Type<string name, string typeMnemonic, list<Trait> traits = []>
     : TypeDef<ZKIRDialect, name, traits> {
   let mnemonic = typeMnemonic;
+  // let typeName = "zkir." # typeMnemonic;
 }
 
 def AnyZKIRType : Type<
@@ -38,6 +39,7 @@ def ZKIR_StructType : ZKIR_Type<"Struct", "struct"> {
   let assemblyFormat = [{ `<` $name `>` }];
 
   let extraClassDeclaration = [{
+
     /// Gets the `struct` op that defines this struct. Provided `op` is
     /// used as a starting point for the lookup. Should not be assumed to
     /// be non-`null` as we don't verify all types during verification.
@@ -48,13 +50,35 @@ def ZKIR_StructType : ZKIR_Type<"Struct", "struct"> {
   }];
 }
 
-def ZKIR_ArrayType : ZKIR_Type<"Array", "array"> {
-  let summary = "array";
-  let description = [{array type with a static size and homogeneous element type}];
+def ZKIR_ArrayType : ZKIR_Type<"Array", "array", [
+  ShapedTypeInterface
+]> {
+  let summary = "An array of ZKIR types, index or booleans";
+  let description = [{
+    Array type with a ranked shape and homogeneous element type.
+    It can only be instantiated with the following types:
+      - Any ZKIR type
+      - IndexType
+      - Unsigned integers of 1 bit (aka booleans)
 
-  let parameters = (ins "::mlir::Type":$elementType, "uint64_t":$numElements);
-  let assemblyFormat = [{
-    `<` $numElements `x` $elementType `>`
+    Example array of 5 by 2 elements of a `Felt`.
+    ```zkir
+    !zkir.array<5x2 x !zkir.felt>
+    ```
+  }];
+
+  let parameters = (ins "::mlir::Type":$elementType, ArrayRefParameter<"int64_t">:$shape);
+  // Necessary for parsing the dimension list in `$shape`
+  let hasCustomAssemblyFormat = true;
+
+  let extraClassDeclaration = [{
+    /// Returns if this type is ranked, i.e. it has a known number of dimensions.
+    bool hasRank() const;
+
+    /// Clone this type with the given shape and element type. If the
+    /// provided shape is `std::nullopt`, the current shape of the type is used.
+    ArrayType cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape,
+                             Type elementType) const;
   }];
 
   let genVerifyDecl = 1;

@@ -199,7 +199,7 @@ def ZKIR_CreateArrayOp : ZKIR_Op<"new_array", [
     Pure,
     TypesMatchWith<"operand types match result type",
                    "result", "elements", "::llvm::SmallVector<::mlir::Type, 2>("
-                   "::llvm::cast<::zkir::ArrayType>($_self).getNumElements(), "
+                   "::llvm::cast<::zkir::ArrayType>($_self).getShape().front(), "
                    "::llvm::cast<::zkir::ArrayType>($_self).getElementType())">
 ]> {
   let summary = "creates an array";
@@ -237,11 +237,11 @@ def ZKIR_ReadArrayOp : ZKIR_Op<"readarr", [
     ```
   }];
 
-  let arguments = (ins ZKIR_ArrayType:$lvalue, Index:$index);
+  let arguments = (ins ZKIR_ArrayType:$lvalue, Variadic<Index>:$indices);
   let results = (outs AnyZKIRType:$result);
 
   let assemblyFormat = [{
-    $lvalue `[` $index `]` attr-dict `:` type($lvalue) `,` type($result)
+    $lvalue `[` $indices `]` attr-dict `:` type($lvalue) `,` type($result)
   }];
 }
 
@@ -265,10 +265,10 @@ def ZKIR_WriteArrayOp : ZKIR_Op<"writearr", [
 
   }];
 
-  let arguments = (ins ZKIR_ArrayType:$lvalue, Index:$index, AnyZKIRType:$rvalue);
+  let arguments = (ins ZKIR_ArrayType:$lvalue, Variadic<Index>:$indices, AnyZKIRType:$rvalue);
 
   let assemblyFormat = [{
-    $lvalue `[` $index `]` `=` $rvalue attr-dict `:` type($lvalue) `,` type($rvalue)
+    $lvalue `[` $indices `]` `=` $rvalue attr-dict `:` type($lvalue) `,` type($rvalue)
   }];
 }
 

@@ -10,6 +10,7 @@
       "name": "base",
       "hidden": true,
       "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "ZKIR_BUILD_DEVTOOLS": "ON"
       }

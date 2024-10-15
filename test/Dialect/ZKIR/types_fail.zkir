@@ -1,12 +1,16 @@
 // RUN: zkir-opt -split-input-file -verify-diagnostics %s
 
 zkir.func private @a()
-// expected-error@+1 {{failed to parse ZKIR_ArrayType parameter 'numElements' which is to be a `uint64_t`}}
-zkir.func private @b(%x: !zkir.array<@a x !zkir.felt>) // expected-error {{expected integer value}}
+// COM: A shape can be parsed empty, creating an empty array.
+// COM: Parsing here fails because we cannot have a function type.
+// expected-error@+1 {{failed to parse ZKIR_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
+zkir.func private @b(%x: !zkir.array<@a x !zkir.felt>) // expected-error {{expected non-function type}}
 // -----
 
-// expected-error@+1 {{failed to parse ZKIR_ArrayType parameter 'numElements' which is to be a `uint64_t`}}
-zkir.func private @c(%x: !zkir.array<index x i256>) // expected-error {{expected integer value}}
+// COM: An empty shape and a type (index) is parsed.
+// The last token of the rule is `>` but after parsing
+// `index` it will encounter `x`, hence the error.
+zkir.func private @c(%x: !zkir.array<index x i256>) // expected-error {{expected '>'}}
 // -----
 
 // expected-error@+1 {{expected a valid ZKIR type but found 'i256'}}
@@ -16,4 +20,7 @@ zkir.func private @d(%x: !zkir.array<5 x i256>)
 // expected-error@+2 {{expected a valid ZKIR type but found 'i256'}}
 // expected-error@+1 {{failed to parse ZKIR_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
 zkir.func private @f(%x: !zkir.array<2 x !zkir.array<3 x !zkir.array<2 x i256>>>)
+// -----
+// expected-error@+1 {{array must have a shape of at least one element}}
+zkir.func private @b(%x: !zkir.array<!zkir.felt>) 
 // -----

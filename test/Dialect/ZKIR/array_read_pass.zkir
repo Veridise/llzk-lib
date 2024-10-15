@@ -58,5 +58,18 @@ zkir.func @arr_arr_mix_index(%a: !zkir.array<3 x index>) -> !zkir.array<3 x inde
 //CHECK-NEXT:     %[[T6:[0-9a-zA-Z_\.]+]] = readarr %[[T5]][%[[I]]] : <2 x !zkir.array<3 x index>>, !zkir.array<3 x index>
 //CHECK-NEXT:     return %[[T6]] : !zkir.array<3 x index>
 //CHECK-NEXT:   }
+// -----
 
-
+zkir.func @arr_arr_mix_index(%a: !zkir.array<3x4xindex>) -> index {
+  %i0 = index.constant 1
+  %i1 = index.constant 3
+  %e = zkir.readarr %a[%i0, %i1] : !zkir.array<3x4 x index>, index
+  return %e: index
+}
+//CHECK-LABEL:  zkir.func @arr_arr_mix_index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.array<3x4 x index>) -> index {
+//CHECK-NEXT:     %[[I0:[0-9a-zA-Z_\.]+]] = index.constant 1
+//CHECK-NEXT:     %[[I1:[0-9a-zA-Z_\.]+]] = index.constant 3
+//CHECK-NEXT:     %[[T0:[0-9a-zA-Z_\.]+]] = readarr %[[A0]][%[[I0]], %[[I1]]] : <3x4 x index>, index
+//CHECK-NEXT:     return %[[T0]] : index
+//CHECK-NEXT:   }
