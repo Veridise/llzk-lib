@@ -4,7 +4,7 @@ zkir.struct @ComponentA {
   func @compute() { return }
 
   func @constrain(%p: !zkir.struct<@WasNotDefined>) {
-    // expected-error@+1 {{'zkir.readf' op undefined component: '!zkir.struct<@WasNotDefined>'}}
+    // expected-error@+1 {{struct type references undefined component: '!zkir.struct<@WasNotDefined>'}}
     %0 = readf %p[@f2] : !zkir.struct<@WasNotDefined>, !zkir.felt
     return
   }
@@ -60,7 +60,7 @@ zkir.struct @ComponentG {
   func @compute() { return }
 
   func @constrain(%p: !zkir.struct<@WasNotDefined>, %0: !zkir.felt) {
-    // expected-error@+1 {{'zkir.writef' op undefined component: '!zkir.struct<@WasNotDefined>'}}
+    // expected-error@+1 {{struct type references undefined component: '!zkir.struct<@WasNotDefined>'}}
     writef %p[@f2] = %0 : !zkir.struct<@WasNotDefined>, !zkir.felt
     return
   }

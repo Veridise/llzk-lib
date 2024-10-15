@@ -28,7 +28,7 @@ StructType::getDefinition(mlir::SymbolTableCollection &symbolTable, mlir::Operat
 mlir::LogicalResult
 StructType::verifySymbol(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
   if (!getDefinition(symbolTable, op)) {
-    return op->emitOpError() << "undefined component: " << *this;
+    return op->emitError() << "struct type references undefined component: " << *this;
   } else {
     return mlir::success();
   }
