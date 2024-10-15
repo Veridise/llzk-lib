@@ -219,9 +219,8 @@ def ZKIR_CreateArrayOp : ZKIR_Op<"new_array", [
   let assemblyFormat = "$elements attr-dict `:` type($result)";
 }
 
-// TODO?: Make these operations accept multiple indices for multidimensional arrays?
 def ZKIR_ReadArrayOp : ZKIR_Op<"readarr", [
-  Pure,  TypesMatchWith<"result types match with array content",
+   TypesMatchWith<"result types match with array content",
                  "lvalue", "result", "::llvm::cast<::zkir::ArrayType>($_self).getElementType()">
 ]> {
   let summary = "Loads a value from a ZKIR array";
