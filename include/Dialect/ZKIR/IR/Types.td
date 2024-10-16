@@ -79,6 +79,10 @@ def ZKIR_ArrayType : ZKIR_Type<"Array", "array", [
     /// provided shape is `std::nullopt`, the current shape of the type is used.
     ArrayType cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape,
                              Type elementType) const;
+
+    /// Returns the number of elements in the array.
+    /// Aborts if the array has a dynamic dimension.
+    int64_t getNumElements() const;
   }];
 
   let genVerifyDecl = 1;

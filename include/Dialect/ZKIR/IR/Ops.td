@@ -199,17 +199,20 @@ def ZKIR_CreateArrayOp : ZKIR_Op<"new_array", [
     Pure,
     TypesMatchWith<"operand types match result type",
                    "result", "elements", "::llvm::SmallVector<::mlir::Type, 2>("
-                   "::llvm::cast<::zkir::ArrayType>($_self).getShape().front(), "
+                   "::llvm::cast<::zkir::ArrayType>($_self).getNumElements(), "
                    "::llvm::cast<::zkir::ArrayType>($_self).getElementType())">
 ]> {
   let summary = "creates an array";
   let description = [{
-    This operation creates a new array with a given elements.
+    This operation creates a new array with the given elements.
+    The arguments are passed as a flat array but get arranged
+    according the shape declared in the type.
 
-    Example:
+    Examples:
 
     ```zkir
     %0 = zkir.new_array %a, %b, %c : !zkir.array<3 x !zkir.felt>
+    %1 = zkir.new_array %a, %b, %c, %d : !zkir.array<2x2 x !zkir.felt>
     ```
   }];
 

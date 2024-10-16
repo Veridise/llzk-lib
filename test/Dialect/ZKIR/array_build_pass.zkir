@@ -31,6 +31,21 @@ zkir.func @arr_mix_index(%a: index, %b: index) -> !zkir.array<4 x index> {
 //CHECK-NEXT:   }
 // -----
 
+zkir.func @arr_mix_index(%a: index, %b: index) -> !zkir.array<2x2 x index> {
+  %c = index.constant 324
+  %d = index.constant 999
+  %r = zkir.new_array %a, %b, %c, %d: !zkir.array<2x2 x index>
+  return %r: !zkir.array<2x2 x index>
+}
+//CHECK-LABEL:  zkir.func @arr_mix_index
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> !zkir.array<2x2 x index> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.constant 324
+//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = index.constant 999
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = new_array %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <2x2 x index>
+//CHECK-NEXT:     return %[[T3]] : !zkir.array<2x2 x index>
+//CHECK-NEXT:   }
+// -----
+
 zkir.func @arr_arr_mix_index(%a: !zkir.array<3 x index>) -> !zkir.array<2 x !zkir.array<3 x index>> {
   %c = index.constant 343245
   %d = index.constant 345
