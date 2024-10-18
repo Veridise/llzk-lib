@@ -22,3 +22,11 @@ zkir.func @fail_06(%x: (i1) -> i32) -> index {
   return
 }
 // -----
+zkir.func @fail_07() {
+  // expected-error@+1 {{'zkir.func' op expects parent op to be one of 'builtin.module, zkir.struct'}}
+  zkir.func @inner() {
+    return
+  }
+  return
+}
+// -----

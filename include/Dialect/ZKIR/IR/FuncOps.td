@@ -20,6 +20,7 @@ include "Dialect/ZKIR/IR/OpsBase.td"
 //===----------------------------------------------------------------------===//
 
 def FuncOp : ZKIR_Op<"func", [
+  ParentOneOf<["::mlir::ModuleOp", "::zkir::StructDefOp"]>,
   AffineScope, AutomaticAllocationScope,
   FunctionOpInterface, IsolatedFromAbove, OpAsmOpInterface
 ]> {
