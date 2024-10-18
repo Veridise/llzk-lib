@@ -31,3 +31,12 @@ module attributes {veridise.lang = "zkir"} {
   }
 }
 // -----
+module {
+  zkir.func @user() {
+    // expected-error@+2 {{'zkir.call' op has no ancestor module with "veridise.lang" attribute}}
+    // expected-error@+1 {{no function named "@missing_fn"}}
+    zkir.call @missing_fn() : () -> ()
+    return
+  }
+}
+// -----

@@ -150,3 +150,18 @@ module attributes {veridise.lang = "zkir"} {
   }
 }
 // -----
+module {
+  zkir.struct @ComponentP {
+    zkir.field @f2 : !zkir.array<2 x index>
+
+    func @compute() { return }
+
+    func @constrain(%p: !zkir.struct<@MissingComponent>, %0: !zkir.felt) {
+      // expected-error@+2 {{'zkir.writef' op has no ancestor module with "veridise.lang" attribute}}
+      // expected-error@+1 {{no struct named "@MissingComponent"}}
+      writef %p[@f2] = %0 : !zkir.struct<@MissingComponent>, !zkir.felt
+      return
+    }
+  }
+}
+// -----
