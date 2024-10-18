@@ -1,126 +1,152 @@
 // RUN: zkir-opt -split-input-file -verify-diagnostics %s
 
-zkir.struct @ComponentA {
-  func @compute() { return }
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentA {
+    func @compute() { return }
 
-  func @constrain(%p: !zkir.struct<@WasNotDefined>) {
-    // expected-error@+1 {{struct type references undefined component: '!zkir.struct<@WasNotDefined>'}}
-    %0 = readf %p[@f2] : !zkir.struct<@WasNotDefined>, !zkir.felt
-    return
+    func @constrain(%p: !zkir.struct<@WasNotDefined>) {
+      // expected-error@+2 {{'zkir.readf' op references unknown symbol "@WasNotDefined"}}
+      // expected-error@+1 {{no struct named "@WasNotDefined"}}
+      %0 = readf %p[@f2] : !zkir.struct<@WasNotDefined>, !zkir.felt
+      return
+    }
   }
 }
 // -----
-zkir.struct @ComponentB {
-  func @compute() { return }
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentB {
+    func @compute() { return }
 
-  func @constrain(%p: !zkir.struct<@ComponentB>) {
-    // expected-error@+1 {{'zkir.readf' op undefined struct field: @f2}}
-    %0 = readf %p[@f2] : !zkir.struct<@ComponentB>, !zkir.felt
-    return
+    func @constrain(%p: !zkir.struct<@ComponentB>) {
+      // expected-error@+2 {{'zkir.readf' op references unknown symbol "@f2"}}
+      // expected-error@+1 {{no field named "@f2" in "@ComponentB"}}
+      %0 = readf %p[@f2] : !zkir.struct<@ComponentB>, !zkir.felt
+      return
+    }
   }
 }
 // -----
-zkir.struct @ComponentC {
-  zkir.field @f2 : index
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentC {
+    zkir.field @f2 : index
 
-  func @compute() { return }
+    func @compute() { return }
 
-  func @constrain(%p: !zkir.struct<@ComponentC>) {
-    // expected-error@+1 {{'zkir.readf' op field read has wrong type; expected 'index', got '!zkir.felt}}
-    %0 = readf %p[@f2] : !zkir.struct<@ComponentC>, !zkir.felt
-    return
+    func @constrain(%p: !zkir.struct<@ComponentC>) {
+      // expected-error@+1 {{'zkir.readf' op field read has wrong type; expected 'index', got '!zkir.felt}}
+      %0 = readf %p[@f2] : !zkir.struct<@ComponentC>, !zkir.felt
+      return
+    }
   }
 }
 // -----
-zkir.struct @ComponentD {
-  zkir.field @f2 : index
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentD {
+    zkir.field @f2 : index
 
-  func @compute() { return }
+    func @compute() { return }
 
-  func @constrain(%p: !zkir.struct<@ComponentD>) { // expected-note {{prior use here}}
-    // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@WrongComponent>' vs '!zkir.struct<@ComponentD>'}}
-    %0 = readf %p[@f2] : !zkir.struct<@WrongComponent>, index
-    return
+    func @constrain(%p: !zkir.struct<@ComponentD>) { // expected-note {{prior use here}}
+      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@WrongComponent>' vs '!zkir.struct<@ComponentD>'}}
+      %0 = readf %p[@f2] : !zkir.struct<@WrongComponent>, index
+      return
+    }
   }
 }
 // -----
-zkir.struct @ComponentF {
-  zkir.field @f2 : index
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentF {
+    zkir.field @f2 : index
 
-  func @compute() { return }
+    func @compute() { return }
 
-  func @constrain(%p: !zkir.struct<@WrongComponent>) { // expected-note {{prior use here}}
-    // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@ComponentF>' vs '!zkir.struct<@WrongComponent>'}}
-    %0 = readf %p[@f2] : !zkir.struct<@ComponentF>, index
-    return
+    func @constrain(%p: !zkir.struct<@WrongComponent>) { // expected-note {{prior use here}}
+      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@ComponentF>' vs '!zkir.struct<@WrongComponent>'}}
+      %0 = readf %p[@f2] : !zkir.struct<@ComponentF>, index
+      return
+    }
   }
 }
 // -----
-zkir.struct @ComponentG {
-  func @compute() { return }
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentG {
+    func @compute() { return }
 
-  func @constrain(%p: !zkir.struct<@WasNotDefined>, %0: !zkir.felt) {
-    // expected-error@+1 {{struct type references undefined component: '!zkir.struct<@WasNotDefined>'}}
-    writef %p[@f2] = %0 : !zkir.struct<@WasNotDefined>, !zkir.felt
-    return
+    func @constrain(%p: !zkir.struct<@WasNotDefined>, %0: !zkir.felt) {
+      // expected-error@+2 {{'zkir.writef' op references unknown symbol "@WasNotDefined"}}
+      // expected-error@+1 {{no struct named "@WasNotDefined"}}
+      writef %p[@f2] = %0 : !zkir.struct<@WasNotDefined>, !zkir.felt
+      return
+    }
   }
 }
 // -----
-zkir.struct @ComponentH {
-  func @compute() { return }
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentH {
+    func @compute() { return }
 
-  func @constrain(%p: !zkir.struct<@ComponentH>, %0: !zkir.felt) {
-    // expected-error@+1 {{'zkir.writef' op undefined struct field: @f2}}
-    writef %p[@f2] = %0 : !zkir.struct<@ComponentH>, !zkir.felt
-    return
+    func @constrain(%p: !zkir.struct<@ComponentH>, %0: !zkir.felt) {
+      // expected-error@+2 {{'zkir.writef' op references unknown symbol "@f2"}}
+      // expected-error@+1 {{no field named "@f2" in "@ComponentH"}}
+      writef %p[@f2] = %0 : !zkir.struct<@ComponentH>, !zkir.felt
+      return
+    }
   }
 }
 // -----
-zkir.struct @ComponentJ {
-  zkir.field @f2 : index
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentJ {
+    zkir.field @f2 : index
 
-  func @compute() { return }
+    func @compute() { return }
 
-  func @constrain(%p: !zkir.struct<@ComponentJ>, %0: !zkir.felt) {
-    // expected-error@+1 {{'zkir.writef' op field write has wrong type; expected 'index', got '!zkir.felt}}
-    writef %p[@f2] = %0 : !zkir.struct<@ComponentJ>, !zkir.felt
-    return
+    func @constrain(%p: !zkir.struct<@ComponentJ>, %0: !zkir.felt) {
+      // expected-error@+1 {{'zkir.writef' op field write has wrong type; expected 'index', got '!zkir.felt}}
+      writef %p[@f2] = %0 : !zkir.struct<@ComponentJ>, !zkir.felt
+      return
+    }
   }
 }
 // -----
-zkir.struct @ComponentK {
-  zkir.field @f2 : index
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentK {
+    zkir.field @f2 : index
 
-  func @compute() { return }
+    func @compute() { return }
 
-  func @constrain(%p: !zkir.struct<@ComponentK>, %0: !zkir.felt) { // expected-note {{prior use here}}
-    // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@WrongComponent>' vs '!zkir.struct<@ComponentK>'}}
-    writef %p[@f2] = %0 : !zkir.struct<@WrongComponent>, index
-    return
+    func @constrain(%p: !zkir.struct<@ComponentK>, %0: !zkir.felt) { // expected-note {{prior use here}}
+      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@WrongComponent>' vs '!zkir.struct<@ComponentK>'}}
+      writef %p[@f2] = %0 : !zkir.struct<@WrongComponent>, index
+      return
+    }
   }
 }
 // -----
-zkir.struct @ComponentL {
-  zkir.field @f2 : index
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentL {
+    zkir.field @f2 : index
 
-  func @compute() { return }
+    func @compute() { return }
 
-  func @constrain(%p: !zkir.struct<@WrongComponent>, %0: !zkir.felt) { // expected-note {{prior use here}}
-    // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@ComponentL>' vs '!zkir.struct<@WrongComponent>'}}
-    writef %p[@f2] = %0 : !zkir.struct<@ComponentL>, index
-    return
+    func @constrain(%p: !zkir.struct<@WrongComponent>, %0: !zkir.felt) { // expected-note {{prior use here}}
+      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@ComponentL>' vs '!zkir.struct<@WrongComponent>'}}
+      writef %p[@f2] = %0 : !zkir.struct<@ComponentL>, index
+      return
+    }
   }
 }
 // -----
-zkir.struct @ComponentM {
-  zkir.field @f2 : !zkir.array<2 x index>
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentM {
+    zkir.field @f2 : !zkir.array<2 x index>
 
-  func @compute() { return }
+    func @compute() { return }
 
-  func @constrain(%p: !zkir.struct<@ComponentM>, %0: !zkir.array<7 x index>) { // expected-note {{prior use here}}
-    // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!zkir.array<2 x index>' vs '!zkir.array<7 x index>'}}
-    writef %p[@f2] = %0 : !zkir.struct<@ComponentM>, !zkir.array<2 x index>
-    return
+    func @constrain(%p: !zkir.struct<@ComponentM>, %0: !zkir.array<7 x index>) { // expected-note {{prior use here}}
+      // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!zkir.array<2 x index>' vs '!zkir.array<7 x index>'}}
+      writef %p[@f2] = %0 : !zkir.struct<@ComponentM>, !zkir.array<2 x index>
+      return
+    }
   }
 }
 // -----

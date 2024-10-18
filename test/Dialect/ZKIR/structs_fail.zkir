@@ -54,3 +54,18 @@ zkir.struct @ComponentH {
   func @constrain()  { return }
 }
 // -----
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentJ {
+    func @compute() { return }
+    func @constrain()  { return }
+  }
+
+  zkir.func @user() {
+    // expected-error@+2 {{symbol "@ComponentJ" references 'zkir.struct' but expected 'zkir.func'}}
+    // expected-error@+1 {{no function named "@ComponentJ"}}
+    zkir.call @ComponentJ() : () -> ()
+    return
+  }
+}
+// -----
+

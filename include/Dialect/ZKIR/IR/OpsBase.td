@@ -18,7 +18,7 @@ class ZKIR_FieldRefOp<string mnemonic, list<Trait> traits = []>
     StructType getStructType();
 
     /// Gets the `field` definition for the field referenced in this op.
-    FieldDefOp getFieldDefOp(::mlir::SymbolTableCollection &symbolTable);
+    ::mlir::FailureOr<FieldDefOp> getFieldDefOp(::mlir::SymbolTableCollection &symbolTable);
   }];
 }
 

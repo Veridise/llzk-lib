@@ -22,3 +22,12 @@ zkir.func @fail_06(%x: (i1) -> i32) -> index {
   return
 }
 // -----
+module attributes {veridise.lang = "zkir"} {
+  zkir.func @user() {
+    // expected-error@+2 {{'zkir.call' op references unknown symbol "@missing_fn"}}
+    // expected-error@+1 {{no function named "@missing_fn"}}
+    zkir.call @missing_fn() : () -> ()
+    return
+  }
+}
+// -----
