@@ -46,6 +46,21 @@ zkir.func @arr_mix_index(%a: index, %b: index) -> !zkir.array<2x2 x index> {
 //CHECK-NEXT:   }
 // -----
 
+zkir.func @arr_3D(%0: index, %1: index, %2: index, %3: index, %4: index, %5: index, %6: index, %7: index) -> !zkir.array<2x2x2 x index> {
+  %r = zkir.new_array %0, %1, %2, %3, %4, %5, %6, %7: !zkir.array<2x2x2 x index>
+  return %r: !zkir.array<2x2x2 x index>
+}
+//CHECK-LABEL:  zkir.func @arr_3D
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index,
+//CHECK-SAME:    %[[A2:[0-9a-zA-Z_\.]+]]: index, %[[A3:[0-9a-zA-Z_\.]+]]: index,
+//CHECK-SAME:    %[[A4:[0-9a-zA-Z_\.]+]]: index, %[[A5:[0-9a-zA-Z_\.]+]]: index,
+//CHECK-SAME:    %[[A6:[0-9a-zA-Z_\.]+]]: index, %[[A7:[0-9a-zA-Z_\.]+]]: index)
+//CHECK-SAME:   -> !zkir.array<2x2x2 x index> {
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = new_array %[[A0]], %[[A1]], %[[A2]], %[[A3]], %[[A4]], %[[A5]], %[[A6]], %[[A7]] : <2x2x2 x index>
+//CHECK-NEXT:     return %[[T3]] : !zkir.array<2x2x2 x index>
+//CHECK-NEXT:   }
+// -----
+
 zkir.func @arr_arr_mix_index(%a: !zkir.array<3 x index>) -> !zkir.array<2 x !zkir.array<3 x index>> {
   %c = index.constant 343245
   %d = index.constant 345

@@ -78,3 +78,21 @@ zkir.func @inner_array_type_mismatch_to_type_attr_size(
 }
 
 // -----
+
+zkir.func @multi_array_not_enough_values(%a: index, %b: index) -> !zkir.array<2x2 x index> {
+  %c = index.constant 324
+  // expected-error@+1 {{custom op 'zkir.new_array' 3 operands present, but expected 4}}
+  %r = zkir.new_array %a, %b, %c: !zkir.array<2x2 x index>
+  return %r: !zkir.array<2x2 x index>
+}
+// -----
+
+zkir.func @multi_array_too_many_values(%a: index, %b: index) -> !zkir.array<2x2 x index> {
+  %c = index.constant 324
+  %d = index.constant 999
+  %e = index.constant 879
+  // expected-error@+1 {{custom op 'zkir.new_array' 5 operands present, but expected 4}}
+  %r = zkir.new_array %a, %b, %c, %d, %e: !zkir.array<2x2 x index>
+  return %r: !zkir.array<2x2 x index>
+}
+// -----
