@@ -11,7 +11,7 @@
 
 namespace zkir {
 
-mlir::FailureOr<llvm::StringRef> zkir::getParentFuncName(mlir::Operation *op) {
+mlir::FailureOr<llvm::StringRef> getParentFuncName(mlir::Operation *op) {
   if (zkir::FuncOp func = op->getParentOfType<zkir::FuncOp>()) {
     return func.getSymName();
   } else {
