@@ -18,12 +18,8 @@ include "Dialect/ZKIR/IR/FuncOps.td"
 // -----
 
 def ZKIR_StructDefOp : ZKIR_Op<"struct", [
-  HasParent<"::mlir::ModuleOp">,
-  Symbol,
-  SymbolTable,
-  IsolatedFromAbove,
-  GraphRegionNoTerminator,
-  OpAsmOpInterface
+  HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable, IsolatedFromAbove,
+  GraphRegionNoTerminator, OpAsmOpInterface
 ]> {
   let summary = "Circuit struct/component definition";
   let description = [{
@@ -71,13 +67,16 @@ def ZKIR_StructDefOp : ZKIR_Op<"struct", [
     //===------------------------------------------------------------------===//
 
     /// Allow the dialect prefix to be omitted.
-    static ::llvm::StringRef getDefaultDialect() { return "zkir"; }
+    static ::llvm::StringRef getDefaultDialect() {
+      return "zkir";
+    }
   }];
 
   let hasRegionVerifier = 1;
 }
 
-def ZKIR_FieldDefOp : ZKIR_Op<"field", [HasParent<"::zkir::StructDefOp">, Symbol]> {
+def ZKIR_FieldDefOp
+    : ZKIR_Op<"field", [HasParent<"::zkir::StructDefOp">, Symbol]> {
   let summary = "Struct/component field";
   let description = [{
     Describes a field in a struct/component.

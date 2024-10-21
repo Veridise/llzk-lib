@@ -11,15 +11,18 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
 
   let methods = [
     // Requires implementors to have a '$component' argument.
-    InterfaceMethod<"Gets the SSA value with the target component from the FieldRefOp.",
+    InterfaceMethod<
+      [{Gets the SSA value with the target component from the FieldRefOp.}],
       "::mlir::Value", "getComponent", (ins)
     >,
     // Requires implementors to have a '$field_name' argument.
-    InterfaceMethod<"Gets the field name attribute from the FieldRefOp.",
+    InterfaceMethod<
+      [{Gets the field name attribute from the FieldRefOp.}],
       "::llvm::StringRef", "getFieldName", (ins)
     >,
     // Requires the '$component' argument type to be ZKIR_StructType.
-    InterfaceMethod<"Gets the struct type of the target component.",
+    InterfaceMethod<
+      [{Gets the struct type of the target component.}],
       "::zkir::StructType", "getStructType", (ins),
       /*methodBody=*/[{
         mlir::Type t = $_op.getComponent().getType();
