@@ -96,8 +96,7 @@ template <class T> StructType getStructType(T refOp) {
 }
 
 template <class T>
-mlir::FailureOr<FieldDefOp> getFieldDefOp(T refOp, mlir::SymbolTableCollection &symbolTable) {
-  StructType tyStruct = getStructType(refOp);
+mlir::FailureOr<FieldDefOp> getFieldDefOp(T refOp, mlir::SymbolTableCollection &symbolTable, StructType tyStruct) {
   mlir::FailureOr<StructDefOp> structDef =
       tyStruct.getDefinition(symbolTable, refOp->getOperation());
   if (mlir::failed(structDef)) {
@@ -115,6 +114,11 @@ mlir::FailureOr<FieldDefOp> getFieldDefOp(T refOp, mlir::SymbolTableCollection &
 }
 
 template <class T>
+mlir::FailureOr<FieldDefOp> getFieldDefOp(T refOp, mlir::SymbolTableCollection &symbolTable) {
+  return getFieldDefOp(refOp, symbolTable, getStructType(refOp));
+}
+
+template <class T>
 mlir::LogicalResult verifySymbolUses(
     T refOp, mlir::SymbolTableCollection &symbolTable, mlir::Value compareTo, const char *kind
 ) {
@@ -122,7 +126,7 @@ mlir::LogicalResult verifySymbolUses(
   if (mlir::failed(tyStruct.verifySymbol(symbolTable, refOp->getOperation()))) {
     return mlir::failure();
   }
-  mlir::FailureOr<FieldDefOp> field = getFieldDefOp(refOp, symbolTable);
+  mlir::FailureOr<FieldDefOp> field = getFieldDefOp(refOp, symbolTable, tyStruct);
   if (mlir::failed(field)) {
     return field; // getFieldDefOp() already emits a sufficient error message
   }

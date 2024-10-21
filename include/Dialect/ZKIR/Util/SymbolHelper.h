@@ -4,7 +4,7 @@
 
 namespace zkir {
 
-extern const std::string LANG_ATTR_NAME;
+constexpr char LANG_ATTR_NAME[] = "veridise.lang";
 
 mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *op);
 

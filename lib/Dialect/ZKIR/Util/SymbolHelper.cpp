@@ -2,8 +2,6 @@
 
 #include <mlir/IR/BuiltinOps.h>
 
-const std::string zkir::LANG_ATTR_NAME = "veridise.lang";
-
 mlir::FailureOr<mlir::ModuleOp> zkir::getRootModule(mlir::Operation *op) {
   mlir::Operation *check = op;
   do {

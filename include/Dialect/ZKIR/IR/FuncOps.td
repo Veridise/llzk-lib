@@ -188,17 +188,20 @@ def CallOp : ZKIR_Op<"call",
   let description = [{
     The `zkir.call` operation represents a call to another function. The operands
     and result types of the call must match the specified function type. The
-    callee is encoded as a symbol reference attribute named "callee".
+    callee is encoded as a symbol reference attribute named "callee" which must
+    be the full path to the target function from the root module (i.e. the module
+    containing the [zkir::LANG_ATTR_NAME] attribute).
 
     Example:
 
     ```zkir
-    // Call a function within the current component or a global function
-    zkir.call @constrain(%0) : (!zkir.struct<@Bob>) -> ()
+    // Call a global function defined in the root module.
+    zkir.call @do_stuff(%0) : (!zkir.struct<@Bob>) -> ()
     %1, %2 = zkir.call @split(%x) : (index) -> (index, index)
 
-    // Call a function in another component
-    %2 = zkir.call @OtherStruct::@compute(%3, %4) : (index, index) -> index
+    // Call a function within a component
+    %2 = zkir.call @OtherStruct::@compute(%3, %4) : (index, index) -> !zkir.struct<@OtherStruct>
+    zkir.call @OtherStruct::@constrain(%5, %6) : (!zkir.struct<@OtherStruct>, !zkir.felt) -> ()
     ```
   }];
 
