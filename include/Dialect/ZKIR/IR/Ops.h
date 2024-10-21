@@ -21,6 +21,31 @@
 
 #include <optional>
 
+// Types that must come before the "Ops.h.inc" import
+namespace zkir {
+
+constexpr char FUNC_NAME_COMPUTE[] = "compute";
+constexpr char FUNC_NAME_CONSTRAIN[] = "constrain";
+
+mlir::FailureOr<llvm::StringRef> getParentFuncName(mlir::Operation *op);
+
+/// This class provides a verifier for ops that are expecting to have
+/// an ancestor zkir::FuncOp with the given name.
+template <char const *func_name> struct InFunctionWithName {
+  template <typename ConcreteType>
+  class Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
+  public:
+    static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
+      mlir::FailureOr<llvm::StringRef> name = zkir::getParentFuncName(op);
+      if (mlir::failed(name) || name.value() != func_name) {
+        return op->emitOpError() << "only valid within function named \"" << func_name << "\"";
+      }
+      return mlir::success();
+    }
+  };
+};
+} // namespace zkir
+
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
 #include "Dialect/ZKIR/IR/Ops.h.inc"
