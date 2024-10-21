@@ -52,7 +52,7 @@ def ZKIR_StructType : ZKIR_Type<"Struct", "struct"> {
 def ZKIR_ArrayType : ZKIR_Type<"Array", "array", [
   ShapedTypeInterface
 ]> {
-  let summary = "An array of ZKIR types, index or booleans";
+  let summary = "n-dimensional array";
   let description = [{
     Array type with a ranked shape and homogeneous element type.
     It can only be instantiated with the following types:

@@ -230,13 +230,22 @@ def ZKIR_ReadArrayOp : ZKIR_Op<"readarr", [
   let description = [{
     This operation loads the value from an array at position `$index`.
 
-    Exampl̀e:
-
+    Exampl̀e of 1-dimensional array:
     ```zkir 
     %i = index.constant 0
     %0 = zkir.new_array %a, %b, %c : !zkir.array<3 x !zkir.felt>
     // %1 is now equal to %a
     %1 = zkir.readarr %0[%i] : !zkir.array<3 x !zkir.felt>, !zkir.felt
+    ```
+    
+    Exampl̀e of 3-dimensional array:
+    ```zkir 
+    %i = index.constant 0
+    %j = index.constant 1
+    %k = index.constant 4
+    %0 = zkir.new_array ... : !zkir.array<3x10x15 x !zkir.felt>
+    // %1 is now equal to %a
+    %1 = zkir.readarr %0[%i, %j, %k] : !zkir.array<3x10x15 x !zkir.felt>, !zkir.felt
     ```
   }];
 
@@ -256,7 +265,7 @@ def ZKIR_WriteArrayOp : ZKIR_Op<"writearr", [
   let description = [{
     This operation writes a value into an array at position `$index`.
 
-    Exampl̀e:
+    Exampl̀e of 1-dimensional array:
 
     ```zkir 
     %i = index.constant 0
@@ -264,6 +273,17 @@ def ZKIR_WriteArrayOp : ZKIR_Op<"writearr", [
     %1 = zkir.new_array %a, %b, %c : !zkir.array<3 x !zkir.felt>
     // The array now is [%0, %b, %c]
     zkir.writearr %1[%i] = %0 : !zkir.array<3 x !zkir.felt>, !zkir.felt
+    ```
+
+    Exampl̀e of 2-dimensional array:
+
+    ```zkir 
+    %i = index.constant 0
+    %j = index.constant 0
+    %0 = zkir.constfelt 42
+    %1 = zkir.new_array %a, %b, %c, %d : !zkir.array<2x2 x !zkir.felt>
+    // The array now is [[%0, %b], [%c, %d]]
+    zkir.writearr %1[%i, %j] = %0 : !zkir.array<2x2 x !zkir.felt>, !zkir.felt
     ```
 
   }];
