@@ -99,3 +99,45 @@ zkir.func @constrain(%x: index, %y: !zkir.array<5 x index>) {
   zkir.emit_in %x, %y : !zkir.array<5 x index>
   return
 }
+// -----
+zkir.struct @constrain_calls_compute {
+  func @compute() -> !zkir.struct<@constrain_calls_compute> {
+    %self = new_struct : !zkir.struct<@constrain_calls_compute>
+    return %self : !zkir.struct<@constrain_calls_compute>
+  }
+
+  func @constrain(%self: !zkir.struct<@constrain_calls_compute>) {
+    // expected-error@+1 {{'zkir.call' op targeting "compute" only valid within function named "compute"}}
+    call @constrain_calls_compute::@compute() : () -> !zkir.struct<@constrain_calls_compute>
+    return
+  }
+}
+// -----
+zkir.struct @compute_calls_constrain {
+  func @compute() -> !zkir.struct<@compute_calls_constrain> {
+    %self = new_struct : !zkir.struct<@compute_calls_constrain>
+    // expected-error@+1 {{'zkir.call' op targeting "constrain" only valid within function named "constrain"}}
+    call @compute_calls_constrain::@constrain(%self) : (!zkir.struct<@compute_calls_constrain>) -> ()
+    return %self : !zkir.struct<@compute_calls_constrain>
+  }
+
+  func @constrain(%self: !zkir.struct<@compute_calls_constrain>) {
+    return
+  }
+}
+// -----
+zkir.func @globalFunc() {
+  // expected-error@+1 {{'zkir.call' op targeting "compute" only valid within function named "compute"}}
+  call @global_calls_compute::@compute() : () -> !zkir.struct<@global_calls_compute>
+}
+zkir.struct @global_calls_compute {
+  func @compute() -> !zkir.struct<@global_calls_compute> {
+    %self = new_struct : !zkir.struct<@global_calls_compute>
+    return %self : !zkir.struct<@global_calls_compute>
+  }
+
+  func @constrain(%self: !zkir.struct<@global_calls_compute>) {
+    return
+  }
+}
+// -----

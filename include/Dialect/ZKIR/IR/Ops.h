@@ -52,18 +52,27 @@ public:
   }
 };
 
+/// Checks if the given Operation is contained within a FuncOp with the given name, producing an
+/// error if not.
+template <char const *FuncName, unsigned PrefixLen>
+mlir::LogicalResult verifyParentFunction(
+    mlir::Operation *op, llvm::function_ref<llvm::SmallString<PrefixLen>()> prefix
+) {
+  mlir::FailureOr<llvm::StringRef> name = zkir::getParentFuncName(op);
+  if (mlir::failed(name) || name.value() != FuncName) {
+    return op->emitOpError(prefix()) << "only valid within function named \"" << FuncName << "\"";
+  }
+  return mlir::success();
+}
+
 /// This class provides a verifier for ops that are expecting to have
 /// an ancestor zkir::FuncOp with the given name.
-template <char const *func_name> struct InFunctionWithName {
+template <char const *FuncName> struct InFunctionWithName {
   template <typename ConcreteType>
   class Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
   public:
     static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
-      mlir::FailureOr<llvm::StringRef> name = zkir::getParentFuncName(op);
-      if (mlir::failed(name) || name.value() != func_name) {
-        return op->emitOpError() << "only valid within function named \"" << func_name << "\"";
-      }
-      return mlir::success();
+      return verifyParentFunction<FuncName, 0>(op, [] { return llvm::SmallString<0>(); });
     }
   };
 };
