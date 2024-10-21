@@ -75,7 +75,6 @@ int64_t ArrayType::getNumElements() const { return mlir::ShapedType::getNumEleme
 mlir::Type ArrayType::parse(mlir::AsmParser &parser) {
   ::mlir::Builder odsBuilder(parser.getContext());
   ::llvm::SMLoc loc = parser.getCurrentLocation();
-  (void)loc;
   // Parse literal '<'
   if (parser.parseLess()) {
     return {};
