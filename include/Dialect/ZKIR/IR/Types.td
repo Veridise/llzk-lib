@@ -13,7 +13,6 @@ include "mlir/Interfaces/MemorySlotInterfaces.td"
 class ZKIR_Type<string name, string typeMnemonic, list<Trait> traits = []>
     : TypeDef<ZKIRDialect, name, traits> {
   let mnemonic = typeMnemonic;
-  // let typeName = "zkir." # typeMnemonic;
 }
 
 def AnyZKIRType : Type<
