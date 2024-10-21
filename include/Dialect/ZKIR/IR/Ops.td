@@ -364,7 +364,7 @@ def ZKIR_NegFeltOp : ZKIR_UnaryFeltOp<"neg"> {
   let description = [{}];
 }
 
-def ZKIR_InvFeltOp : ZKIR_UnaryFeltOp<"inv"> {
+def ZKIR_InvFeltOp : ZKIR_UnaryFeltOp<"inv", [InFunctionWithName<"::zkir::FUNC_NAME_COMPUTE">]> {
   let summary = "Inverse operator for field elements";
   let description = [{}];
 }

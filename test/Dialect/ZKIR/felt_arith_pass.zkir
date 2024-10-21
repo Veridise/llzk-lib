@@ -78,11 +78,11 @@ zkir.func @f_neg(%a: !zkir.felt) -> !zkir.felt {
 //CHECK-NEXT:   }
 // -----
 
-zkir.func @f_inv(%a: !zkir.felt) -> !zkir.felt {
+zkir.func @compute(%a: !zkir.felt) -> !zkir.felt {
   %c = zkir.inv %a
   return %c: !zkir.felt
 }
-//CHECK-LABEL:  zkir.func @f_inv
+//CHECK-LABEL:  zkir.func @compute
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.felt {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = inv %[[A0]]
 //CHECK-NEXT:     return %[[T1]] : !zkir.felt

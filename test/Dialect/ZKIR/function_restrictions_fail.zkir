@@ -166,3 +166,16 @@ module attributes {veridise.lang = "zkir"} {
   }
 }
 // -----
+// -----
+zkir.struct @inv_in_constrain {
+  func @compute(%a: !zkir.felt) -> !zkir.struct<@inv_in_constrain> {
+    %self = new_struct : !zkir.struct<@inv_in_constrain>
+    return %self : !zkir.struct<@inv_in_constrain>
+  }
+
+  func @constrain(%self: !zkir.struct<@inv_in_constrain>, %a: !zkir.felt) {
+    // expected-error@+1 {{'zkir.inv' op only valid within function named "compute"}}
+    %c = zkir.inv %a
+    return
+  }
+}
