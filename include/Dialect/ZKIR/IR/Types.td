@@ -73,15 +73,18 @@ def ZKIR_ArrayType : ZKIR_Type<"Array", "array", [
 
   let extraClassDeclaration = [{
     /// Returns if this type is ranked, i.e. it has a known number of dimensions.
+    /// Required by the ShapedTypeInterface interface.
     bool hasRank() const;
 
     /// Clone this type with the given shape and element type. If the
     /// provided shape is `std::nullopt`, the current shape of the type is used.
+    /// Required by the ShapedTypeInterface interface.
     ArrayType cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape,
                              Type elementType) const;
 
     /// Returns the number of elements in the array.
     /// Aborts if the array has a dynamic dimension.
+    /// Required by the ShapedTypeInterface interface.
     int64_t getNumElements() const;
   }];
 
