@@ -23,4 +23,8 @@
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
+#include "Dialect/ZKIR/IR/OpInterfaces.h.inc"
+
+// Include TableGen'd declarations
+#define GET_OP_CLASSES
 #include "Dialect/ZKIR/IR/Ops.h.inc"
