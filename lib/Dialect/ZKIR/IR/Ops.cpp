@@ -96,7 +96,8 @@ template <class T> StructType getStructType(T refOp) {
 }
 
 template <class T>
-mlir::FailureOr<FieldDefOp> getFieldDefOp(T refOp, mlir::SymbolTableCollection &symbolTable, StructType tyStruct) {
+mlir::FailureOr<FieldDefOp>
+getFieldDefOp(T refOp, mlir::SymbolTableCollection &symbolTable, StructType tyStruct) {
   mlir::FailureOr<StructDefOp> structDef =
       tyStruct.getDefinition(symbolTable, refOp->getOperation());
   if (mlir::failed(structDef)) {
