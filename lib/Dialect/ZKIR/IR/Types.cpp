@@ -59,7 +59,7 @@ ArrayType::cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, mlir::Type el
   if (shape.has_value()) {
     newShape = *shape;
   }
-  return ArrayType::get(getElementType().getContext(), getElementType(), newShape);
+  return ArrayType::get(elementType.getContext(), elementType, newShape);
 }
 
 int64_t ArrayType::getNumElements() const { return mlir::ShapedType::getNumElements(getShape()); }
