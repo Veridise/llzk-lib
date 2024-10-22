@@ -290,7 +290,8 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   // Call target must be specified via full path from the root module.
   mlir::FailureOr<FuncOp> tgtOpt = lookupTopLevelSymbol<FuncOp>(symbolTable, *this, fnAttr);
   if (mlir::failed(tgtOpt)) {
-    return this->emitError() << "no function named \"" << fnAttr << "\"";
+    return this->emitError() << "no '" << FuncOp::getOperationName() << "' named \"" << fnAttr
+                             << "\"";
   }
   FuncOp tgt = tgtOpt.value();
   // Enforce restrictions on callers of compute/constrain functions within structs.
