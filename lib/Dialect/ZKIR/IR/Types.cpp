@@ -3,15 +3,22 @@
 #include "Dialect/ZKIR/Util/SymbolHelper.h"
 #include "mlir/IR/BuiltinTypeInterfaces.h"
 #include "llvm/ADT/SmallVector.h"
+#include <mlir/Support/LogicalResult.h>
 
 namespace zkir {
+
+/// Checks if the type is a ZKIR Array and it also contains
+/// a valid ZKIR type.
+bool isValidZkirArrayType(mlir::Type type) {
+  return llvm::isa<zkir::ArrayType>(type) &&
+         isValidZkirType(llvm::cast<::zkir::ArrayType>(type).getElementType());
+}
 
 // valid types: I1, Index, ZKIR_FeltType, ZKIR_StructType, ZKIR_ArrayType
 bool isValidZkirType(mlir::Type type) {
   return type.isSignlessInteger(1) || llvm::isa<::mlir::IndexType>(type) ||
          llvm::isa<zkir::FeltType>(type) || llvm::isa<zkir::StructType>(type) ||
-         (llvm::isa<zkir::ArrayType>(type) &&
-          isValidZkirType(llvm::cast<::zkir::ArrayType>(type).getElementType()));
+         isValidZkirArrayType(type);
 }
 
 // valid types: I1, Index, ZKIR_FeltType, ZKIR_ArrayType
@@ -46,7 +53,14 @@ mlir::LogicalResult ArrayType::verify(
   if (shape.size() <= 0) {
     return emitError() << "array must have a shape of at least one element";
   }
-  return checkValidZkirType(emitError, elementType);
+  // An array can hold any ZKIR type bar Arrays
+  auto typeCheckResult = checkValidZkirType(emitError, elementType);
+  if (mlir::succeeded(typeCheckResult)) {
+    if (llvm::isa<zkir::ArrayType>(elementType)) {
+      return emitError() << "array inner type cannot be array";
+    }
+  }
+  return typeCheckResult;
 }
 
 bool ArrayType::hasRank() const {
