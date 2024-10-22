@@ -37,7 +37,6 @@ def ZKIR_StructType : ZKIR_Type<"Struct", "struct"> {
   let assemblyFormat = [{ `<` $name `>` }];
 
   let extraClassDeclaration = [{
-
     /// Gets the `struct` op that defines this struct. Provided `op` is
     /// used as a starting point for the lookup. Should not be assumed to
     /// be non-`null` as we don't verify all types during verification.
