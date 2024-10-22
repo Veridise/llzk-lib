@@ -37,26 +37,32 @@ zkir.func @arr_mix_index(%a: index, %b: index) -> index {
 //CHECK-NEXT:   }
 // -----
 
-zkir.func @arr_arr_mix_index(%a: !zkir.array<3 x index>) -> !zkir.array<3 x index> {
+zkir.func @arr_arr_mix_index(%a: !zkir.array<3 x index>) -> index {
   %c = index.constant 343245
   %d = index.constant 345
   %e = index.constant 2344
   %b = zkir.new_array %e, %c, %d: !zkir.array<3 x index>
   %i = index.constant 1
-  %r = zkir.new_array %a, %b: !zkir.array<2 x !zkir.array<3 x index>>
-  %f = zkir.readarr %r[%i] : !zkir.array<2 x !zkir.array<3 x index>>, !zkir.array<3 x index>
-  return %f: !zkir.array<3 x index>
+  %a1 = zkir.readarr %a[%i] : !zkir.array<3 x index>, index
+  %a2 = zkir.readarr %a[%i] : !zkir.array<3 x index>, index
+  %a3 = zkir.readarr %a[%i] : !zkir.array<3 x index>, index
+  %r = zkir.new_array %a1, %a2, %a3, %c, %d, %e : !zkir.array<2x3 x index>
+  %f = zkir.readarr %r[%i, %i] : !zkir.array<2 x3 x index>, index
+  return %f: index
 }
 //CHECK-LABEL:  zkir.func @arr_arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.array<3 x index>) -> !zkir.array<3 x index> {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.array<3 x index>) -> index {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.constant 343245
 //CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = index.constant 345
 //CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = index.constant 2344
 //CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = new_array %[[T3]], %[[T1]], %[[T2]] : <3 x index>
 //CHECK-NEXT:     %[[I:[0-9a-zA-Z_\.]+]] = index.constant 1
-//CHECK-NEXT:     %[[T5:[0-9a-zA-Z_\.]+]] = new_array %[[A0]], %[[T4]] : <2 x !zkir.array<3 x index>>
-//CHECK-NEXT:     %[[T6:[0-9a-zA-Z_\.]+]] = readarr %[[T5]][%[[I]]] : <2 x !zkir.array<3 x index>>, !zkir.array<3 x index>
-//CHECK-NEXT:     return %[[T6]] : !zkir.array<3 x index>
+//CHECK-NEXT:     %[[T7:[0-9a-zA-Z_\.]+]] = readarr %[[A0]][%[[I]]] : <3 x index>, index
+//CHECK-NEXT:     %[[T8:[0-9a-zA-Z_\.]+]] = readarr %[[A0]][%[[I]]] : <3 x index>, index
+//CHECK-NEXT:     %[[T9:[0-9a-zA-Z_\.]+]] = readarr %[[A0]][%[[I]]] : <3 x index>, index
+//CHECK-NEXT:     %[[T5:[0-9a-zA-Z_\.]+]] = new_array %[[T7]], %[[T8]], %[[T9]], %[[T1]], %[[T2]], %[[T3]] : <2x3 x index>
+//CHECK-NEXT:     %[[T6:[0-9a-zA-Z_\.]+]] = readarr %[[T5]][%[[I]], %[[I]]] : <2x3 x index>, index
+//CHECK-NEXT:     return %[[T6]] : index
 //CHECK-NEXT:   }
 // -----
 

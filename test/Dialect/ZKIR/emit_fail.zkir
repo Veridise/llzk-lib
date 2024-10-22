@@ -169,11 +169,11 @@ zkir.struct @TestComponent12 {
 zkir.struct @TestComponent13 {
   func @compute() { return }
   func @constrain(
-        %a: !zkir.array<3 x !zkir.array<2 x !zkir.struct<@TestComponent13>>>,
-        %b: !zkir.array<3 x !zkir.array<2 x !zkir.struct<@TestComponent13>>>
+        %a: !zkir.array<3x2 x !zkir.struct<@TestComponent13>>,
+        %b: !zkir.array<3x2 x !zkir.struct<@TestComponent13>>
         ) {
-    // expected-error@+1 {{'zkir.emit_eq' op operand #0 must be non-struct type, but got '!zkir.array<3 x !zkir.array<2 x !zkir.struct<@TestComponent13>>>'}}
-    zkir.emit_eq %a, %b : !zkir.array<3 x !zkir.array<2 x !zkir.struct<@TestComponent13>>>
+    // expected-error@+1 {{'zkir.emit_eq' op operand #0 must be non-struct type, but got '!zkir.array<3x2 x !zkir.struct<@TestComponent13>>'}}
+    zkir.emit_eq %a, %b : !zkir.array<3x2 x !zkir.struct<@TestComponent13>>
     return
   }
 }

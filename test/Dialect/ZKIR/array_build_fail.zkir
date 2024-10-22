@@ -20,21 +20,12 @@ zkir.func @param_scalar_mismatch(
 
 // -----
 
-zkir.func @arr_size_mismatch(%a: !zkir.array<3 x index>) {
-  %c = index.constant 23435643245
-  %b = zkir.new_array %c: !zkir.array<1 x index> // expected-note {{prior use here}}
-  // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!zkir.array<3 x index>' vs '!zkir.array<1 x index>'}}
-  %r = zkir.new_array %a, %b: !zkir.array<2 x !zkir.array<3 x index>>
-}
-
-// -----
-
 zkir.func @arr_type_mismatch(
-      %a: !zkir.array<3 x index>,
-      %b: !zkir.array<3 x !zkir.felt> // expected-note {{prior use here}}
+      %a: index,
+      %b: !zkir.felt // expected-note {{prior use here}}
       ) {
-  // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!zkir.array<3 x index>' vs '!zkir.array<3 x !zkir.felt>'}}
-  %r = zkir.new_array %a, %b: !zkir.array<2 x !zkir.array<3 x index>>
+  // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'index' vs '!zkir.felt'}}
+  %r = zkir.new_array %a, %b: !zkir.array<2 x index>>
 }
 
 // -----
@@ -54,8 +45,8 @@ zkir.func @inner_array_type_mismatch_to_type_attr(
       %a: !zkir.array<3 x !zkir.felt>, // expected-note {{prior use here}}
       %b: !zkir.array<3 x !zkir.felt>
       ) {
-  // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!zkir.array<3 x index>' vs '!zkir.array<3 x !zkir.felt>'}}
-  %r = zkir.new_array %a, %b: !zkir.array<2 x !zkir.array<3 x index>>
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!zkir.array<3 x !zkir.felt>'}}
+  %r = zkir.new_array %a, %b: !zkir.array<2 x index>
 }
 
 // -----
@@ -65,16 +56,6 @@ zkir.func @mismatch_to_type_attr_size() {
   %b = zkir.constfelt 381928390103509
   // expected-error@+1 {{custom op 'zkir.new_array' 2 operands present, but expected 3}}
   %r = zkir.new_array %a, %b : !zkir.array<3 x !zkir.felt>
-}
-
-// -----
-
-zkir.func @inner_array_type_mismatch_to_type_attr_size(
-      %a: !zkir.array<3 x index>, // expected-note {{prior use here}}
-      %b: !zkir.array<3 x index>
-      ) {
-  // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!zkir.array<233 x index>' vs '!zkir.array<3 x index>'}}
-  %r = zkir.new_array %a, %b: !zkir.array<2 x !zkir.array<233 x index>>
 }
 
 // -----

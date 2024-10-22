@@ -4,8 +4,8 @@ zkir.func private @a(!zkir.array<5 x !zkir.felt>, !zkir.struct<@Hello>)
 //CHECK-LABEL:  zkir.func private @a(!zkir.array<5 x !zkir.felt>, !zkir.struct<@Hello>)
 // -----
 
-zkir.func private @b(!zkir.array<3 x !zkir.array<2 x !zkir.array<1 x !zkir.felt>>>)
-//CHECK-LABEL:  zkir.func private @b(!zkir.array<3 x !zkir.array<2 x !zkir.array<1 x !zkir.felt>>>)
+zkir.func private @b(!zkir.array<3x2x1 x !zkir.felt>)
+//CHECK-LABEL:  zkir.func private @b(!zkir.array<3x2x1 x !zkir.felt>)
 // -----
 
 zkir.func private @c(%x: !zkir.array<5 x !zkir.struct<@Bob>>) -> !zkir.array<5 x !zkir.struct<@Bob>>
@@ -20,6 +20,6 @@ zkir.func private @f(!zkir.felt) -> i1
 //CHECK-LABEL:  zkir.func private @f(!zkir.felt) -> i1
 // -----
 
-zkir.func private @g(%x: !zkir.array<2 x !zkir.array<3 x !zkir.array<2 x index>>>)
-//CHECK-LABEL:  zkir.func private @g(!zkir.array<2 x !zkir.array<3 x !zkir.array<2 x index>>>)
+zkir.func private @g(%x: !zkir.array<2x3x2 x index>)
+//CHECK-LABEL:  zkir.func private @g(!zkir.array<2x3x2 x index>)
 // -----
