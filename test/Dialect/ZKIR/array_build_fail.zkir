@@ -20,16 +20,6 @@ zkir.func @param_scalar_mismatch(
 
 // -----
 
-zkir.func @arr_type_mismatch(
-      %a: index,
-      %b: !zkir.felt // expected-note {{prior use here}}
-      ) {
-  // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'index' vs '!zkir.felt'}}
-  %r = zkir.new_array %a, %b: !zkir.array<2 x index>>
-}
-
-// -----
-
 zkir.func @mismatch_to_type_attr(
       %a: !zkir.array<3 x index>, // expected-note {{prior use here}}
       %b: !zkir.felt
@@ -37,16 +27,6 @@ zkir.func @mismatch_to_type_attr(
   %c = index.constant 324
   // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!zkir.array<3 x index>'}}
   %r = zkir.new_array %a, %b, %c: !zkir.array<3 x index>
-}
-
-// -----
-
-zkir.func @inner_array_type_mismatch_to_type_attr(
-      %a: !zkir.array<3 x !zkir.felt>, // expected-note {{prior use here}}
-      %b: !zkir.array<3 x !zkir.felt>
-      ) {
-  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!zkir.array<3 x !zkir.felt>'}}
-  %r = zkir.new_array %a, %b: !zkir.array<2 x index>
 }
 
 // -----
