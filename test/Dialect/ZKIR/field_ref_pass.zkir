@@ -1,20 +1,22 @@
 // RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
 
-zkir.struct @ComponentA1 {
-  zkir.field @f1 : !zkir.felt
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentA1 {
+    zkir.field @f1 : !zkir.felt
 
-  func @constrain() { return }
-  func @compute() { return }
-}
-
-zkir.struct @ComponentA2 {
-  func @compute(%p: !zkir.struct<@ComponentA1>) {
-    %r = readf %p[@f1] : !zkir.struct<@ComponentA1>, !zkir.felt
-    return
+    func @constrain() { return }
+    func @compute() { return }
   }
 
-  func @constrain(%p: !zkir.struct<@ComponentA1>) {
-    return
+  zkir.struct @ComponentA2 {
+    func @compute(%p: !zkir.struct<@ComponentA1>) {
+      %r = readf %p[@f1] : !zkir.struct<@ComponentA1>, !zkir.felt
+      return
+    }
+
+    func @constrain(%p: !zkir.struct<@ComponentA1>) {
+      return
+    }
   }
 }
 //CHECK-LABEL: zkir.struct @ComponentA1 {
@@ -37,24 +39,26 @@ zkir.struct @ComponentA2 {
 //CHECK-NEXT:  }
 // -----
 
-zkir.struct @ComponentB1 {
-  zkir.field @f1 : !zkir.felt
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentB1 {
+    zkir.field @f1 : !zkir.felt
 
-  func @compute() { return }
-  func @constrain() { return }
-}
-
-zkir.struct @ComponentB2 {
-  zkir.field @f2 : !zkir.struct<@ComponentB1>
-
-  func @compute() {
-    return
+    func @compute() { return }
+    func @constrain() { return }
   }
 
-  func @constrain(%p: !zkir.struct<@ComponentB2>) {
-    %q = readf %p[@f2] : !zkir.struct<@ComponentB2>, !zkir.struct<@ComponentB1>
-    %r = readf %q[@f1] : !zkir.struct<@ComponentB1>, !zkir.felt
-    return
+  zkir.struct @ComponentB2 {
+    zkir.field @f2 : !zkir.struct<@ComponentB1>
+
+    func @compute() {
+      return
+    }
+
+    func @constrain(%p: !zkir.struct<@ComponentB2>) {
+      %q = readf %p[@f2] : !zkir.struct<@ComponentB2>, !zkir.struct<@ComponentB1>
+      %r = readf %q[@f1] : !zkir.struct<@ComponentB1>, !zkir.felt
+      return
+    }
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentB1 {
@@ -79,21 +83,23 @@ zkir.struct @ComponentB2 {
 //CHECK-NEXT:   }
 // -----
 
-zkir.struct @ComponentC1 {
-  zkir.field @f1 : !zkir.felt
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentC1 {
+    zkir.field @f1 : !zkir.felt
 
-  func @constrain() { return }
-  func @compute() { return }
-}
-
-zkir.struct @ComponentC2 {
-  func @compute(%p: !zkir.struct<@ComponentC1>, %q: !zkir.felt) {
-    writef %p[@f1] = %q : !zkir.struct<@ComponentC1>, !zkir.felt
-    return
+    func @constrain() { return }
+    func @compute() { return }
   }
 
-  func @constrain(%p: !zkir.struct<@ComponentC1>) {
-    return
+  zkir.struct @ComponentC2 {
+    func @compute(%p: !zkir.struct<@ComponentC1>, %q: !zkir.felt) {
+      writef %p[@f1] = %q : !zkir.struct<@ComponentC1>, !zkir.felt
+      return
+    }
+
+    func @constrain(%p: !zkir.struct<@ComponentC1>) {
+      return
+    }
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentC1 {
@@ -116,24 +122,26 @@ zkir.struct @ComponentC2 {
 //CHECK-NEXT:   }
 // -----
 
-zkir.struct @ComponentD1 {
-  zkir.field @f1 : !zkir.felt
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentD1 {
+    zkir.field @f1 : !zkir.felt
 
-  func @constrain() { return }
-  func @compute() { return }
-}
-
-zkir.struct @ComponentD2 {
-  zkir.field @f2 : !zkir.struct<@ComponentD1>
-
-  func @compute() {
-    return
+    func @constrain() { return }
+    func @compute() { return }
   }
 
-  func @constrain(%p: !zkir.struct<@ComponentD2>, %z: !zkir.felt) {
-    %q = readf %p[@f2] : !zkir.struct<@ComponentD2>, !zkir.struct<@ComponentD1>
-    writef %q[@f1] = %z : !zkir.struct<@ComponentD1>, !zkir.felt
-    return
+  zkir.struct @ComponentD2 {
+    zkir.field @f2 : !zkir.struct<@ComponentD1>
+
+    func @compute() {
+      return
+    }
+
+    func @constrain(%p: !zkir.struct<@ComponentD2>, %z: !zkir.felt) {
+      %q = readf %p[@f2] : !zkir.struct<@ComponentD2>, !zkir.struct<@ComponentD1>
+      writef %q[@f1] = %z : !zkir.struct<@ComponentD1>, !zkir.felt
+      return
+    }
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentD1 {
@@ -158,24 +166,26 @@ zkir.struct @ComponentD2 {
 //CHECK-NEXT:   }
 // -----
 
-zkir.struct @ComponentF1 {
-  zkir.field @f1 : !zkir.felt
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentF1 {
+    zkir.field @f1 : !zkir.felt
 
-  func @constrain() { return }
-  func @compute() { return }
-}
-
-zkir.struct @ComponentF2 {
-  zkir.field @f2 : !zkir.struct<@ComponentF1>
-
-  func @compute() {
-    return
+    func @constrain() { return }
+    func @compute() { return }
   }
 
-  func @constrain(%p: !zkir.struct<@ComponentF2>, %q: !zkir.struct<@ComponentF1>, %z: !zkir.felt) {
-    writef %p[@f2] = %q : !zkir.struct<@ComponentF2>, !zkir.struct<@ComponentF1>
-    writef %q[@f1] = %z : !zkir.struct<@ComponentF1>, !zkir.felt
-    return
+  zkir.struct @ComponentF2 {
+    zkir.field @f2 : !zkir.struct<@ComponentF1>
+
+    func @compute() {
+      return
+    }
+
+    func @constrain(%p: !zkir.struct<@ComponentF2>, %q: !zkir.struct<@ComponentF1>, %z: !zkir.felt) {
+      writef %p[@f2] = %q : !zkir.struct<@ComponentF2>, !zkir.struct<@ComponentF1>
+      writef %q[@f1] = %z : !zkir.struct<@ComponentF1>, !zkir.felt
+      return
+    }
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentF1 {

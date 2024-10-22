@@ -20,7 +20,8 @@ class ZKIR_EnumAttr<EnumAttrInfo enum, string name, string enumMnemonic,
   let mnemonic = enumMnemonic;
 }
 
-def ZKIR_CmpPredicateAttr : ZKIR_EnumAttr<ZKIR_FeltCmpPredicate, "cmp_predicate", "cmp"> {
+def ZKIR_CmpPredicateAttr
+    : ZKIR_EnumAttr<ZKIR_FeltCmpPredicate, "cmp_predicate", "cmp"> {
   let assemblyFormat = [{ $value }];
 }
 

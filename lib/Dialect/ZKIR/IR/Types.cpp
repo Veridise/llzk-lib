@@ -29,18 +29,19 @@ bool isValidEmitEqType(mlir::Type type) {
           isValidEmitEqType(llvm::cast<::zkir::ArrayType>(type).getElementType()));
 }
 
-StructDefOp
+mlir::FailureOr<StructDefOp>
 StructType::getDefinition(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
-  return lookupTopLevelSymbol<StructDefOp>(symbolTable, op, getName());
+  mlir::FailureOr<StructDefOp> def = lookupTopLevelSymbol<StructDefOp>(symbolTable, op, getName());
+  if (mlir::failed(def)) {
+    return op->emitError() << "no struct named \"" << getName() << "\"";
+  } else {
+    return def;
+  }
 }
 
 mlir::LogicalResult
 StructType::verifySymbol(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
-  if (!getDefinition(symbolTable, op)) {
-    return op->emitOpError() << "undefined component: " << *this;
-  } else {
-    return mlir::success();
-  }
+  return getDefinition(symbolTable, op);
 }
 
 mlir::LogicalResult ArrayType::verify(

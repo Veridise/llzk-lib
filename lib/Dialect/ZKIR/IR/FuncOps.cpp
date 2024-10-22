@@ -221,19 +221,14 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   if (!fnAttr) {
     return emitOpError("requires a 'callee' symbol reference attribute");
   }
-  // First attempt lookup local to current symbol table scope. If not found,
-  //  then lookup from the top level scope to capture calls to module-level
-  //  functions or calls with a full path to another component/struct.
-  FuncOp fn = symbolTable.lookupNearestSymbolFrom<FuncOp>(*this, fnAttr);
-  if (!fn) {
-    fn = lookupTopLevelSymbol<FuncOp>(symbolTable, *this, fnAttr);
-  }
-  if (!fn) {
-    return emitOpError() << "'" << fnAttr << "' does not reference a valid function";
+  // Call target must be specified via full path from the root module.
+  mlir::FailureOr<FuncOp> fn = lookupTopLevelSymbol<FuncOp>(symbolTable, *this, fnAttr);
+  if (mlir::failed(fn)) {
+    return this->emitError() << "no function named \"" << fnAttr << "\"";
   }
 
   // Verify that the operand and result types match the callee.
-  auto fnType = fn.getFunctionType();
+  auto fnType = fn.value().getFunctionType();
   if (fnType.getNumInputs() != getNumOperands()) {
     return emitOpError("incorrect number of operands for callee");
   }

@@ -7,18 +7,18 @@ include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
 include "Dialect/ZKIR/IR/Types.td"
+include "Dialect/ZKIR/IR/OpInterfaces.td"
 
 class ZKIR_Op<string mnemonic, list<Trait> traits = []>
     : Op<ZKIRDialect, mnemonic, traits>;
 
 class ZKIR_FieldRefOp<string mnemonic, list<Trait> traits = []>
-    : ZKIR_Op<mnemonic, traits # [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+    : ZKIR_Op<mnemonic,
+              traits #[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                       DeclareOpInterfaceMethods<FieldRefOpInterface>]> {
   let extraClassDeclaration = [{
-    /// Gets the struct type.
-    StructType getStructType();
-
     /// Gets the `field` definition for the field referenced in this op.
-    FieldDefOp getFieldDefOp(::mlir::SymbolTableCollection &symbolTable);
+    ::mlir::FailureOr<FieldDefOp> getFieldDefOp(::mlir::SymbolTableCollection &symbolTable);
   }];
 }
 
