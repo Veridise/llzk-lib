@@ -18,7 +18,7 @@ module attributes {veridise.lang = "zkir"} {
 
     func @constrain(%p: !zkir.struct<@ComponentB>) {
       // expected-error@+2 {{'zkir.readf' op references unknown symbol "@f2"}}
-      // expected-error@+1 {{no field named "@f2" in "@ComponentB"}}
+      // expected-error@+1 {{no 'zkir.field' named "@f2" in "@ComponentB"}}
       %0 = readf %p[@f2] : !zkir.struct<@ComponentB>, !zkir.felt
       return
     }
@@ -94,7 +94,7 @@ module attributes {veridise.lang = "zkir"} {
 
     func @constrain(%p: !zkir.struct<@ComponentH>, %0: !zkir.felt) {
       // expected-error@+2 {{'zkir.writef' op references unknown symbol "@f2"}}
-      // expected-error@+1 {{no field named "@f2" in "@ComponentH"}}
+      // expected-error@+1 {{no 'zkir.field' named "@f2" in "@ComponentH"}}
       writef %p[@f2] = %0 : !zkir.struct<@ComponentH>, !zkir.felt
       return
     }

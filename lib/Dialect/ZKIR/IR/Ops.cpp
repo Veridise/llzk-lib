@@ -130,8 +130,8 @@ mlir::FailureOr<FieldDefOp> getFieldDefOp(
       structDef.value(), op
   );
   if (mlir::failed(res)) {
-    return refOp->emitError() << "no field named \"@" << refOp.getFieldName() << "\" in \""
-                              << tyStruct.getName() << "\"";
+    return refOp->emitError() << "no '" << FieldDefOp::getOperationName() << "' named \"@"
+                              << refOp.getFieldName() << "\" in \"" << tyStruct.getName() << "\"";
   }
   return res;
 }

@@ -86,7 +86,7 @@ module attributes {veridise.lang = "zkir"} {
 
   zkir.func @user() {
     // expected-error@+2 {{symbol "@ComponentJ" references a 'zkir.struct' but expected a 'zkir.func'}}
-    // expected-error@+1 {{no function named "@ComponentJ"}}
+    // expected-error@+1 {{no 'zkir.func' named "@ComponentJ"}}
     zkir.call @ComponentJ() : () -> ()
     return
   }
