@@ -38,4 +38,17 @@ class ZKIR_UnaryFeltOp<string mnemonic, list<Trait> traits = []>
   let assemblyFormat = "$operand attr-dict";
 }
 
+//===----------------------------------------------------------------------===//
+// Custom traits that can be applied to Ops
+//===----------------------------------------------------------------------===//
+
+def InStruct : NativeOpTrait<"InStruct">, StructuralOpTrait {
+  string cppNamespace = "::zkir";
+}
+
+class InFunctionWithName<string name>
+    : ParamNativeOpTrait<"InFunctionWithName", name>, StructuralOpTrait {
+  string cppNamespace = "::zkir";
+}
+
 #endif // ZKIR_OPS_BASE

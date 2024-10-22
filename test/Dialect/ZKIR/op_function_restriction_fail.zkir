@@ -87,3 +87,15 @@ zkir.struct @emitin_in_compute_in_deep_branches {
 
   func @constrain(%self: !zkir.struct<@emitin_in_compute_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !zkir.array<5 x index>) { return }
 }
+// -----
+zkir.func @constrain(%a: !zkir.felt, %b: !zkir.felt) {
+  // expected-error@+1 {{'zkir.emit_eq' op can only be used within a 'zkir.struct' ancestor}}
+  zkir.emit_eq %a, %b : !zkir.felt
+  return
+}
+// -----
+zkir.func @constrain(%x: index, %y: !zkir.array<5 x index>) {
+  // expected-error@+1 {{'zkir.emit_in' op can only be used within a 'zkir.struct' ancestor}}
+  zkir.emit_in %x, %y : !zkir.array<5 x index>
+  return
+}

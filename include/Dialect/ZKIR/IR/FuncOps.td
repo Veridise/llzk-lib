@@ -258,13 +258,4 @@ def CallOp : ZKIR_Op<"call",
   }];
 }
 
-//===----------------------------------------------------------------------===//
-// Traits that can be used related to functions
-//===----------------------------------------------------------------------===//
-
-class InFunctionWithName<string name>
-    : ParamNativeOpTrait<"InFunctionWithName", name>, StructuralOpTrait {
-  string cppNamespace = "::zkir";
-}
-
 #endif // ZKIR_FUNC_OPS
