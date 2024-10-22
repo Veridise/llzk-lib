@@ -165,22 +165,77 @@ bool FuncOp::hasArgPublicAttr(unsigned index) {
   }
 }
 
+namespace {
+
+using namespace mlir;
+
+template <typename... Args>
+inline InFlightDiagnostic computeRetErr(FuncOp &func, StructDefOp &expected) {
+  return std::move(func.getOperation()->emitOpError().append(
+      "\"", zkir::FUNC_NAME_COMPUTE, "\" must return type of its parent 'zkir.struct': \"",
+      expected.getSymName(), "\""
+  ));
+}
+
+} // namespace
+
 mlir::LogicalResult FuncOp::verify() {
   auto emitErrorFunc = [op = this->getOperation()]() -> mlir::InFlightDiagnostic {
     return op->emitOpError();
   };
   // Ensure that only valid ZKIR types are used for arguments and return
   FunctionType type = getFunctionType();
-  auto inTypes = type.getInputs();
+  llvm::ArrayRef<mlir::Type> inTypes = type.getInputs();
   for (auto ptr = inTypes.begin(); ptr < inTypes.end(); ptr++) {
     if (zkir::checkValidZkirType(emitErrorFunc, *ptr).failed()) {
       return mlir::failure();
     }
   }
-  auto resTypes = type.getResults();
+  llvm::ArrayRef<mlir::Type> resTypes = type.getResults();
   for (auto ptr = resTypes.begin(); ptr < resTypes.end(); ptr++) {
     if (zkir::checkValidZkirType(emitErrorFunc, *ptr).failed()) {
       return mlir::failure();
+    }
+  }
+  return mlir::success();
+}
+
+mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+  // Verify return type restrictions
+  FunctionType funcType = getFunctionType();
+  llvm::ArrayRef<mlir::Type> resTypes = funcType.getResults();
+  llvm::StringRef func_name = getSymName();
+  if (zkir::FUNC_NAME_COMPUTE == func_name) {
+    // Must return type of parent struct
+    if (resTypes.size() != 1) {
+      return this->getOperation()->emitOpError()
+             << "\"" << func_name << "\" must have exactly one return type";
+    }
+
+    // Lookup the return type StructDefOp and ensure it matches the parent StructDefOp of the
+    // current operation.
+    StructDefOp expectedReturnStruct = this->getOperation()->getParentOfType<StructDefOp>();
+    if (StructType sType = llvm::dyn_cast<StructType>(resTypes.front())) {
+      mlir::FailureOr<StructDefOp> actualReturnStructOpt =
+          lookupTopLevelSymbol<StructDefOp>(symbolTable, *this, sType.getName());
+      if (mlir::failed(actualReturnStructOpt)) {
+        return this->emitError() << "no '" << StructDefOp::getOperationName() << "' named \""
+                                 << sType.getName() << "\"";
+      }
+      StructDefOp actualReturnStruct = actualReturnStructOpt.value();
+      if (actualReturnStruct != expectedReturnStruct) {
+        return computeRetErr(*this, expectedReturnStruct)
+            .attachNote(actualReturnStruct.getLoc())
+            .append("returns this type instead");
+      }
+    } else {
+      return computeRetErr(*this, expectedReturnStruct);
+    }
+  } else if (zkir::FUNC_NAME_CONSTRAIN == func_name) {
+    // Must return '()' type, i.e. have no return types
+    if (resTypes.size() != 0) {
+      return this->getOperation()->emitOpError()
+             << "\"" << func_name << "\" must have no return type";
     }
   }
   return mlir::success();

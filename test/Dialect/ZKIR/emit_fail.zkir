@@ -2,7 +2,10 @@
 
 // Test: [emit_in] type annotation does not match type of parameter 2 in size
 zkir.struct @TestComponent01 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent01> {
+    %self = new_struct : !zkir.struct<@TestComponent01>
+    return %self : !zkir.struct<@TestComponent01>
+  }
   func @constrain(
         %a: !zkir.felt,
         %b: !zkir.array<5 x !zkir.felt> // expected-note {{prior use here}}
@@ -16,7 +19,10 @@ zkir.struct @TestComponent01 {
 
 // Test: [emit_in] type annotation does not match type of parameter 2 in element type
 zkir.struct @TestComponent02 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent02> {
+    %self = new_struct : !zkir.struct<@TestComponent02>
+    return %self : !zkir.struct<@TestComponent02>
+  }
   func @constrain(
         %a: index,
         %b: !zkir.array<5 x !zkir.felt> // expected-note {{prior use here}}
@@ -30,7 +36,10 @@ zkir.struct @TestComponent02 {
 
 // Test: [emit_in] type of parameter 1 does not match array element type of annotation
 zkir.struct @TestComponent03 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent03> {
+    %self = new_struct : !zkir.struct<@TestComponent03>
+    return %self : !zkir.struct<@TestComponent03>
+  }
   func @constrain(
         %a: index, // expected-note {{prior use here}}
         %b: !zkir.array<5 x !zkir.felt>
@@ -44,7 +53,10 @@ zkir.struct @TestComponent03 {
 
 // Test: [emit_in] type annotation is not an array type
 zkir.struct @TestComponent04 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent04> {
+    %self = new_struct : !zkir.struct<@TestComponent04>
+    return %self : !zkir.struct<@TestComponent04>
+  }
   func @constrain(%a: !zkir.felt, %b: !zkir.felt) {
     // expected-error@+1 {{custom op 'zkir.emit_in' invalid kind of Type specified}}
     zkir.emit_in %a, %b : !zkir.felt
@@ -55,7 +67,10 @@ zkir.struct @TestComponent04 {
 
 // Test: [emit_in] type of parameter 2 is not an array
 zkir.struct @TestComponent05 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent05> {
+    %self = new_struct : !zkir.struct<@TestComponent05>
+    return %self : !zkir.struct<@TestComponent05>
+  }
   func @constrain(
         %a: !zkir.felt,
         %b: !zkir.felt  // expected-note {{prior use here}}
@@ -69,7 +84,10 @@ zkir.struct @TestComponent05 {
 
 // Test: [emit_in] type of parameter 1 does not match array element type of parameter 2
 zkir.struct @TestComponent06 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent06> {
+    %self = new_struct : !zkir.struct<@TestComponent06>
+    return %self : !zkir.struct<@TestComponent06>
+  }
   func @constrain(
         %a: index, // expected-note {{prior use here}}
         %b: !zkir.array<5 x !zkir.felt>
@@ -83,7 +101,10 @@ zkir.struct @TestComponent06 {
 
 // Test: [emit_eq] lhs has invalid type
 zkir.struct @TestComponent07 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent07> {
+    %self = new_struct : !zkir.struct<@TestComponent07>
+    return %self : !zkir.struct<@TestComponent07>
+  }
   func @constrain(
         %a: !zkir.struct<@TestComponent07>, // expected-note {{prior use here}}
         %b: !zkir.felt
@@ -97,7 +118,10 @@ zkir.struct @TestComponent07 {
 
 // Test: [emit_eq] rhs has invalid type
 zkir.struct @TestComponent08 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent08> {
+    %self = new_struct : !zkir.struct<@TestComponent08>
+    return %self : !zkir.struct<@TestComponent08>
+  }
   func @constrain(
         %a: index,
         %b: !zkir.struct<@TestComponent08> // expected-note {{prior use here}}
@@ -111,7 +135,10 @@ zkir.struct @TestComponent08 {
 
 // Test: [emit_eq] lhs type does not match the given type
 zkir.struct @TestComponent09 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent09> {
+    %self = new_struct : !zkir.struct<@TestComponent09>
+    return %self : !zkir.struct<@TestComponent09>
+  }
   func @constrain(
         %a: !zkir.felt, // expected-note {{prior use here}}
         %b: index
@@ -125,7 +152,10 @@ zkir.struct @TestComponent09 {
 
 // Test: [emit_eq] rhs type does not match the given type
 zkir.struct @TestComponent10 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent10> {
+    %self = new_struct : !zkir.struct<@TestComponent10>
+    return %self : !zkir.struct<@TestComponent10>
+  }
   func @constrain(
         %a: index,
         %b: !zkir.felt // expected-note {{prior use here}}
@@ -139,7 +169,10 @@ zkir.struct @TestComponent10 {
 
 // Test: [emit_eq] both sides have invalid (although the same) type
 zkir.struct @TestComponent11 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent11> {
+    %self = new_struct : !zkir.struct<@TestComponent11>
+    return %self : !zkir.struct<@TestComponent11>
+  }
   func @constrain(
         %a: !zkir.struct<@TestComponent11>,
         %b: !zkir.struct<@TestComponent11>
@@ -153,7 +186,10 @@ zkir.struct @TestComponent11 {
 
 // Test: [emit_eq] both sides have invalid (although the same) type
 zkir.struct @TestComponent12 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent12> {
+    %self = new_struct : !zkir.struct<@TestComponent12>
+    return %self : !zkir.struct<@TestComponent12>
+  }
   func @constrain(
         %a: !zkir.array<3 x !zkir.struct<@TestComponent12>>,
         %b: !zkir.array<3 x !zkir.struct<@TestComponent12>>
@@ -167,7 +203,10 @@ zkir.struct @TestComponent12 {
 
 // Test: [emit_eq] both sides have invalid (although the same) type
 zkir.struct @TestComponent13 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent13> {
+    %self = new_struct : !zkir.struct<@TestComponent13>
+    return %self : !zkir.struct<@TestComponent13>
+  }
   func @constrain(
         %a: !zkir.array<3x2 x !zkir.struct<@TestComponent13>>,
         %b: !zkir.array<3x2 x !zkir.struct<@TestComponent13>>
@@ -181,7 +220,10 @@ zkir.struct @TestComponent13 {
 
 // Test: [emit_eq] lhs array size does not match the type given
 zkir.struct @TestComponent14 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent14> {
+    %self = new_struct : !zkir.struct<@TestComponent14>
+    return %self : !zkir.struct<@TestComponent14>
+  }
   func @constrain(
         %a: !zkir.array<9 x index>, // expected-note {{prior use here}}
         %b: !zkir.array<3 x index>
@@ -195,7 +237,10 @@ zkir.struct @TestComponent14 {
 
 // Test: [emit_eq] rhs array size does not match the type given
 zkir.struct @TestComponent15 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent15> {
+    %self = new_struct : !zkir.struct<@TestComponent15>
+    return %self : !zkir.struct<@TestComponent15>
+  }
   func @constrain(
         %a: !zkir.array<3 x index>,
         %b: !zkir.array<9 x index> // expected-note {{prior use here}}
@@ -209,7 +254,10 @@ zkir.struct @TestComponent15 {
 
 // Test: [emit_eq] neither array size matches the type given
 zkir.struct @TestComponent16 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent16> {
+    %self = new_struct : !zkir.struct<@TestComponent16>
+    return %self : !zkir.struct<@TestComponent16>
+  }
   func @constrain(
         %a: !zkir.array<9 x index>, // expected-note {{prior use here}}
         %b: !zkir.array<9 x index>
@@ -223,7 +271,10 @@ zkir.struct @TestComponent16 {
 
 // Test: [emit_eq] lhs array size does not match the type given
 zkir.struct @TestComponent17 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent17> {
+    %self = new_struct : !zkir.struct<@TestComponent17>
+    return %self : !zkir.struct<@TestComponent17>
+  }
   func @constrain(
         %a: !zkir.array<3 x !zkir.felt>, // expected-note {{prior use here}}
         %b: !zkir.array<3 x index>
@@ -237,7 +288,10 @@ zkir.struct @TestComponent17 {
 
 // Test: [emit_eq] rhs array size does not match the type given
 zkir.struct @TestComponent18 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent18> {
+    %self = new_struct : !zkir.struct<@TestComponent18>
+    return %self : !zkir.struct<@TestComponent18>
+  }
   func @constrain(
         %a: !zkir.array<3 x index>,
         %b: !zkir.array<3 x !zkir.felt> // expected-note {{prior use here}}
@@ -251,7 +305,10 @@ zkir.struct @TestComponent18 {
 
 // Test: [emit_eq] neither array size matches the type given
 zkir.struct @TestComponent19 {
-  func @compute() { return }
+  func @compute() -> !zkir.struct<@TestComponent19> {
+    %self = new_struct : !zkir.struct<@TestComponent19>
+    return %self : !zkir.struct<@TestComponent19>
+  }
   func @constrain(
         %a: !zkir.array<3 x !zkir.felt>, // expected-note {{prior use here}}
         %b: !zkir.array<3 x !zkir.felt>
@@ -290,8 +347,9 @@ zkir.struct @Component20 {
     return
   }
 
-  func @compute() {
-    return
+  func @compute() -> !zkir.struct<@Component20> {
+    %self = new_struct : !zkir.struct<@Component20>
+    return %self : !zkir.struct<@Component20>
   }
 }
 // -----
@@ -304,8 +362,9 @@ zkir.struct @Component21 {
     return
   }
 
-  func @compute() {
-    return
+  func @compute() -> !zkir.struct<@Component21> {
+    %self = new_struct : !zkir.struct<@Component21>
+    return %self : !zkir.struct<@Component21>
   }
 }
 // -----

@@ -6,7 +6,7 @@ namespace zkir {
 
 constexpr char LANG_ATTR_NAME[] = "veridise.lang";
 
-mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *op);
+mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
 
 template <typename T, typename NameT>
 inline mlir::FailureOr<T> lookupSymbolIn(
@@ -26,13 +26,13 @@ inline mlir::FailureOr<T> lookupSymbolIn(
 
 template <typename T, typename NameT>
 inline mlir::FailureOr<T> lookupTopLevelSymbol(
-    mlir::SymbolTableCollection &symbolTable, mlir::Operation *op, NameT &&symbol
+    mlir::SymbolTableCollection &symbolTable, mlir::Operation *from, NameT &&symbol
 ) {
-  mlir::FailureOr<mlir::ModuleOp> root = getRootModule(op);
+  mlir::FailureOr<mlir::ModuleOp> root = getRootModule(from);
   if (mlir::failed(root)) {
     return root; // getRootModule() already emits a sufficient error message
   }
-  return lookupSymbolIn<T, NameT>(symbolTable, std::forward<NameT>(symbol), root.value(), op);
+  return lookupSymbolIn<T, NameT>(symbolTable, std::forward<NameT>(symbol), root.value(), from);
 }
 
 } // namespace zkir

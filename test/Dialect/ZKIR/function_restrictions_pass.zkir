@@ -1,19 +1,21 @@
 // RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
 
-zkir.struct @emiteq_in_loop {
-  func @compute(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.struct<@emiteq_in_loop> {
-    %self = new_struct : !zkir.struct<@emiteq_in_loop>
-    return %self : !zkir.struct<@emiteq_in_loop>
-  }
-
-  func @constrain(%self: !zkir.struct<@emiteq_in_loop>, %a: !zkir.felt, %b: !zkir.felt) {
-    %lb = index.constant 0
-    %up = index.constant 4
-    %step = index.constant 1
-    scf.for %iv = %lb to %up step %step {
-      zkir.emit_eq %a, %b : !zkir.felt
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @emiteq_in_loop {
+    func @compute(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.struct<@emiteq_in_loop> {
+      %self = new_struct : !zkir.struct<@emiteq_in_loop>
+      return %self : !zkir.struct<@emiteq_in_loop>
     }
-    return
+
+    func @constrain(%self: !zkir.struct<@emiteq_in_loop>, %a: !zkir.felt, %b: !zkir.felt) {
+      %lb = index.constant 0
+      %up = index.constant 4
+      %step = index.constant 1
+      scf.for %iv = %lb to %up step %step {
+        zkir.emit_eq %a, %b : !zkir.felt
+      }
+      return
+    }
   }
 }
 //CHECK-LABEL:  zkir.struct @emiteq_in_loop {
@@ -33,21 +35,23 @@ zkir.struct @emiteq_in_loop {
 //CHECK-NEXT:   }
 // -----
 
-zkir.struct @emiteq_in_deep_branches {
-  func @compute(%a: i1, %b: i1, %c: i1, %x: !zkir.felt, %y: !zkir.felt) -> !zkir.struct<@emiteq_in_deep_branches> {
-    %self = new_struct : !zkir.struct<@emiteq_in_deep_branches>
-    return %self : !zkir.struct<@emiteq_in_deep_branches>
-  }
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @emiteq_in_deep_branches {
+    func @compute(%a: i1, %b: i1, %c: i1, %x: !zkir.felt, %y: !zkir.felt) -> !zkir.struct<@emiteq_in_deep_branches> {
+      %self = new_struct : !zkir.struct<@emiteq_in_deep_branches>
+      return %self : !zkir.struct<@emiteq_in_deep_branches>
+    }
 
-  func @constrain(%self: !zkir.struct<@emiteq_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: !zkir.felt, %y: !zkir.felt) {
-    scf.if %a {
-      scf.if %b {
-        scf.if %c {
-          zkir.emit_eq %x, %y : !zkir.felt
+    func @constrain(%self: !zkir.struct<@emiteq_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: !zkir.felt, %y: !zkir.felt) {
+      scf.if %a {
+        scf.if %b {
+          scf.if %c {
+            zkir.emit_eq %x, %y : !zkir.felt
+          }
         }
       }
+      return
     }
-    return
   }
 }
 //CHECK-LABEL:  zkir.struct @emiteq_in_deep_branches {
@@ -70,20 +74,22 @@ zkir.struct @emiteq_in_deep_branches {
 //CHECK-NEXT:   }
 // -----
 
-zkir.struct @emitin_in_loop {
-  func @compute(%a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) -> !zkir.struct<@emitin_in_loop> {
-    %self = new_struct : !zkir.struct<@emitin_in_loop>
-    return %self : !zkir.struct<@emitin_in_loop>
-  }
-
-  func @constrain(%self: !zkir.struct<@emitin_in_loop>, %a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) {
-    %lb = index.constant 0
-    %up = index.constant 4
-    %step = index.constant 1
-    scf.for %iv = %lb to %up step %step {
-      zkir.emit_in %a, %b : !zkir.array<5 x !zkir.felt>
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @emitin_in_loop {
+    func @compute(%a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) -> !zkir.struct<@emitin_in_loop> {
+      %self = new_struct : !zkir.struct<@emitin_in_loop>
+      return %self : !zkir.struct<@emitin_in_loop>
     }
-    return
+
+    func @constrain(%self: !zkir.struct<@emitin_in_loop>, %a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) {
+      %lb = index.constant 0
+      %up = index.constant 4
+      %step = index.constant 1
+      scf.for %iv = %lb to %up step %step {
+        zkir.emit_in %a, %b : !zkir.array<5 x !zkir.felt>
+      }
+      return
+    }
   }
 }
 //CHECK-LABEL:  zkir.struct @emitin_in_loop {
@@ -105,21 +111,23 @@ zkir.struct @emitin_in_loop {
 //CHECK-NEXT:   }
 // -----
 
-zkir.struct @emitin_in_deep_branches {
-  func @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !zkir.array<5 x index>) -> !zkir.struct<@emitin_in_deep_branches> {
-    %self = new_struct : !zkir.struct<@emitin_in_deep_branches>
-    return %self : !zkir.struct<@emitin_in_deep_branches>
-  }
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @emitin_in_deep_branches {
+    func @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !zkir.array<5 x index>) -> !zkir.struct<@emitin_in_deep_branches> {
+      %self = new_struct : !zkir.struct<@emitin_in_deep_branches>
+      return %self : !zkir.struct<@emitin_in_deep_branches>
+    }
 
-  func @constrain(%self: !zkir.struct<@emitin_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !zkir.array<5 x index>) {
-    scf.if %a {
-      scf.if %b {
-        scf.if %c {
-          zkir.emit_in %x, %y : !zkir.array<5 x index>
+    func @constrain(%self: !zkir.struct<@emitin_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !zkir.array<5 x index>) {
+      scf.if %a {
+        scf.if %b {
+          scf.if %c {
+            zkir.emit_in %x, %y : !zkir.array<5 x index>
+          }
         }
       }
+      return
     }
-    return
   }
 }
 //CHECK-LABEL:  zkir.struct @emitin_in_deep_branches {

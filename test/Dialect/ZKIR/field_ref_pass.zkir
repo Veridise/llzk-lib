@@ -5,13 +5,17 @@ module attributes {veridise.lang = "zkir"} {
     zkir.field @f1 : !zkir.felt
 
     func @constrain() { return }
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentA1> {
+      %self = new_struct : !zkir.struct<@ComponentA1>
+      return %self : !zkir.struct<@ComponentA1>
+    }
   }
 
   zkir.struct @ComponentA2 {
-    func @compute(%p: !zkir.struct<@ComponentA1>) {
+    func @compute(%p: !zkir.struct<@ComponentA1>) -> !zkir.struct<@ComponentA2> {
+      %self = new_struct : !zkir.struct<@ComponentA2>
       %r = readf %p[@f1] : !zkir.struct<@ComponentA1>, !zkir.felt
-      return
+      return %self : !zkir.struct<@ComponentA2>
     }
 
     func @constrain(%p: !zkir.struct<@ComponentA1>) {
@@ -24,14 +28,16 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:    func @constrain() {
 //CHECK-NEXT:      return
 //CHECK-NEXT:    }
-//CHECK-NEXT:    func @compute() {
-//CHECK-NEXT:      return
+//CHECK-NEXT:    func @compute() -> !zkir.struct<@ComponentA1> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA1>
+//CHECK-NEXT:      return %[[SELF]] : !zkir.struct<@ComponentA1>
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: zkir.struct @ComponentA2 {
-//CHECK-NEXT:    func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentA1>) {
+//CHECK-NEXT:    func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentA1>) -> !zkir.struct<@ComponentA2> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA2>
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@f1] : <@ComponentA1>, !zkir.felt
-//CHECK-NEXT:      return
+//CHECK-NEXT:      return %[[SELF]] : !zkir.struct<@ComponentA2>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentA1>) {
 //CHECK-NEXT:      return
@@ -43,15 +49,19 @@ module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentB1 {
     zkir.field @f1 : !zkir.felt
 
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentB1> {
+      %self = new_struct : !zkir.struct<@ComponentB1>
+      return %self : !zkir.struct<@ComponentB1>
+    }
     func @constrain() { return }
   }
 
   zkir.struct @ComponentB2 {
     zkir.field @f2 : !zkir.struct<@ComponentB1>
 
-    func @compute() {
-      return
+    func @compute() -> !zkir.struct<@ComponentB2> {
+      %self = new_struct : !zkir.struct<@ComponentB2>
+      return %self : !zkir.struct<@ComponentB2>
     }
 
     func @constrain(%p: !zkir.struct<@ComponentB2>) {
@@ -63,8 +73,9 @@ module attributes {veridise.lang = "zkir"} {
 }
 //CHECK-LABEL:  zkir.struct @ComponentB1 {
 //CHECK-NEXT:     field @f1 : !zkir.felt
-//CHECK-NEXT:     func @compute() {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     func @compute() -> !zkir.struct<@ComponentB1> {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB1>
+//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@ComponentB1>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @constrain() {
 //CHECK-NEXT:       return
@@ -72,8 +83,9 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:   }
 //CHECK-LABEL:  zkir.struct @ComponentB2 {
 //CHECK-NEXT:     field @f2 : !zkir.struct<@ComponentB1>
-//CHECK-NEXT:     func @compute() {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     func @compute() -> !zkir.struct<@ComponentB2> {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB2>
+//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@ComponentB2>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentB2>) {
 //CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@f2] : <@ComponentB2>, !zkir.struct<@ComponentB1>
@@ -88,13 +100,17 @@ module attributes {veridise.lang = "zkir"} {
     zkir.field @f1 : !zkir.felt
 
     func @constrain() { return }
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentC1> {
+      %self = new_struct : !zkir.struct<@ComponentC1>
+      return %self : !zkir.struct<@ComponentC1>
+    }
   }
 
   zkir.struct @ComponentC2 {
-    func @compute(%p: !zkir.struct<@ComponentC1>, %q: !zkir.felt) {
+    func @compute(%p: !zkir.struct<@ComponentC1>, %q: !zkir.felt) -> !zkir.struct<@ComponentC2> {
+      %self = new_struct : !zkir.struct<@ComponentC2>
       writef %p[@f1] = %q : !zkir.struct<@ComponentC1>, !zkir.felt
-      return
+      return %self : !zkir.struct<@ComponentC2>
     }
 
     func @constrain(%p: !zkir.struct<@ComponentC1>) {
@@ -107,14 +123,16 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:     func @constrain() {
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @compute() {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     func @compute() -> !zkir.struct<@ComponentC1> {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentC1>
+//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@ComponentC1>
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 //CHECK-LABEL:  zkir.struct @ComponentC2 {
-//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentC1>, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
+//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentC1>, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.struct<@ComponentC2> {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentC2>
 //CHECK-NEXT:       writef %[[A0]][@f1] = %[[A1]] : <@ComponentC1>, !zkir.felt
-//CHECK-NEXT:       return
+//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@ComponentC2>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @constrain(%[[A0]]: !zkir.struct<@ComponentC1>) {
 //CHECK-NEXT:       return
@@ -127,14 +145,18 @@ module attributes {veridise.lang = "zkir"} {
     zkir.field @f1 : !zkir.felt
 
     func @constrain() { return }
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentD1> {
+      %self = new_struct : !zkir.struct<@ComponentD1>
+      return %self : !zkir.struct<@ComponentD1>
+    }
   }
 
   zkir.struct @ComponentD2 {
     zkir.field @f2 : !zkir.struct<@ComponentD1>
 
-    func @compute() {
-      return
+    func @compute() -> !zkir.struct<@ComponentD2> {
+      %self = new_struct : !zkir.struct<@ComponentD2>
+      return %self : !zkir.struct<@ComponentD2>
     }
 
     func @constrain(%p: !zkir.struct<@ComponentD2>, %z: !zkir.felt) {
@@ -149,14 +171,16 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:     func @constrain() {
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @compute() {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     func @compute() -> !zkir.struct<@ComponentD1> {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentD1>
+//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@ComponentD1>
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 //CHECK-LABEL:  zkir.struct @ComponentD2 {
 //CHECK-NEXT:     field @f2 : !zkir.struct<@ComponentD1>
-//CHECK-NEXT:     func @compute() {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     func @compute() -> !zkir.struct<@ComponentD2> {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentD2>
+//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@ComponentD2>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentD2>, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
 //CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@f2] : <@ComponentD2>, !zkir.struct<@ComponentD1>
@@ -171,14 +195,18 @@ module attributes {veridise.lang = "zkir"} {
     zkir.field @f1 : !zkir.felt
 
     func @constrain() { return }
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentF1> {
+      %self = new_struct : !zkir.struct<@ComponentF1>
+      return %self : !zkir.struct<@ComponentF1>
+    }
   }
 
   zkir.struct @ComponentF2 {
     zkir.field @f2 : !zkir.struct<@ComponentF1>
 
-    func @compute() {
-      return
+    func @compute() -> !zkir.struct<@ComponentF2> {
+      %self = new_struct : !zkir.struct<@ComponentF2>
+      return %self : !zkir.struct<@ComponentF2>
     }
 
     func @constrain(%p: !zkir.struct<@ComponentF2>, %q: !zkir.struct<@ComponentF1>, %z: !zkir.felt) {
@@ -193,14 +221,16 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:     func @constrain() {
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @compute() {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     func @compute() -> !zkir.struct<@ComponentF1> {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentF1>
+//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@ComponentF1>
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 //CHECK-LABEL:  zkir.struct @ComponentF2 {
 //CHECK-NEXT:     field @f2 : !zkir.struct<@ComponentF1>
-//CHECK-NEXT:     func @compute() {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     func @compute() -> !zkir.struct<@ComponentF2> {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentF2>
+//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@ComponentF2>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentF2>,
 //CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentF1>, %[[A2:[0-9a-zA-Z_\.]+]]: !zkir.felt) {

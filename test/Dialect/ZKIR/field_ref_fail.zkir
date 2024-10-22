@@ -2,7 +2,10 @@
 
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentA {
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentA> {
+      %self = new_struct : !zkir.struct<@ComponentA>
+      return %self : !zkir.struct<@ComponentA>
+    }
 
     func @constrain(%p: !zkir.struct<@WasNotDefined>) {
       // expected-error@+2 {{'zkir.readf' op references unknown symbol "@WasNotDefined"}}
@@ -15,7 +18,10 @@ module attributes {veridise.lang = "zkir"} {
 // -----
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentB {
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentB> {
+      %self = new_struct : !zkir.struct<@ComponentB>
+      return %self : !zkir.struct<@ComponentB>
+    }
 
     func @constrain(%p: !zkir.struct<@ComponentB>) {
       // expected-error@+2 {{'zkir.readf' op references unknown symbol "@f2"}}
@@ -30,7 +36,10 @@ module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentC {
     zkir.field @f2 : index
 
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentC> {
+      %self = new_struct : !zkir.struct<@ComponentC>
+      return %self : !zkir.struct<@ComponentC>
+    }
 
     func @constrain(%p: !zkir.struct<@ComponentC>) {
       // expected-error@+1 {{'zkir.readf' op field read has wrong type; expected 'index', got '!zkir.felt}}
@@ -44,7 +53,10 @@ module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentD {
     zkir.field @f2 : index
 
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentD> {
+      %self = new_struct : !zkir.struct<@ComponentD>
+      return %self : !zkir.struct<@ComponentD>
+    }
 
     func @constrain(%p: !zkir.struct<@ComponentD>) { // expected-note {{prior use here}}
       // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@WrongComponent>' vs '!zkir.struct<@ComponentD>'}}
@@ -58,7 +70,10 @@ module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentF {
     zkir.field @f2 : index
 
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentF> {
+      %self = new_struct : !zkir.struct<@ComponentF>
+      return %self : !zkir.struct<@ComponentF>
+    }
 
     func @constrain(%p: !zkir.struct<@WrongComponent>) { // expected-note {{prior use here}}
       // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@ComponentF>' vs '!zkir.struct<@WrongComponent>'}}
@@ -70,7 +85,10 @@ module attributes {veridise.lang = "zkir"} {
 // -----
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentG {
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentG> {
+      %self = new_struct : !zkir.struct<@ComponentG>
+      return %self : !zkir.struct<@ComponentG>
+    }
 
     func @constrain(%p: !zkir.struct<@WasNotDefined>, %0: !zkir.felt) {
       // expected-error@+2 {{'zkir.writef' op references unknown symbol "@WasNotDefined"}}
@@ -83,7 +101,10 @@ module attributes {veridise.lang = "zkir"} {
 // -----
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentH {
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentH> {
+      %self = new_struct : !zkir.struct<@ComponentH>
+      return %self : !zkir.struct<@ComponentH>
+    }
 
     func @constrain(%p: !zkir.struct<@ComponentH>, %0: !zkir.felt) {
       // expected-error@+2 {{'zkir.writef' op references unknown symbol "@f2"}}
@@ -98,7 +119,10 @@ module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentJ {
     zkir.field @f2 : index
 
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentJ> {
+      %self = new_struct : !zkir.struct<@ComponentJ>
+      return %self : !zkir.struct<@ComponentJ>
+    }
 
     func @constrain(%p: !zkir.struct<@ComponentJ>, %0: !zkir.felt) {
       // expected-error@+1 {{'zkir.writef' op field write has wrong type; expected 'index', got '!zkir.felt}}
@@ -112,7 +136,10 @@ module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentK {
     zkir.field @f2 : index
 
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentK> {
+      %self = new_struct : !zkir.struct<@ComponentK>
+      return %self : !zkir.struct<@ComponentK>
+    }
 
     func @constrain(%p: !zkir.struct<@ComponentK>, %0: !zkir.felt) { // expected-note {{prior use here}}
       // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@WrongComponent>' vs '!zkir.struct<@ComponentK>'}}
@@ -126,7 +153,10 @@ module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentL {
     zkir.field @f2 : index
 
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentL> {
+      %self = new_struct : !zkir.struct<@ComponentL>
+      return %self : !zkir.struct<@ComponentL>
+    }
 
     func @constrain(%p: !zkir.struct<@WrongComponent>, %0: !zkir.felt) { // expected-note {{prior use here}}
       // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!zkir.struct<@ComponentL>' vs '!zkir.struct<@WrongComponent>'}}
@@ -140,7 +170,10 @@ module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentM {
     zkir.field @f2 : !zkir.array<2 x index>
 
-    func @compute() { return }
+    func @compute() -> !zkir.struct<@ComponentM> {
+      %self = new_struct : !zkir.struct<@ComponentM>
+      return %self : !zkir.struct<@ComponentM>
+    }
 
     func @constrain(%p: !zkir.struct<@ComponentM>, %0: !zkir.array<7 x index>) { // expected-note {{prior use here}}
       // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!zkir.array<2 x index>' vs '!zkir.array<7 x index>'}}
@@ -149,19 +182,3 @@ module attributes {veridise.lang = "zkir"} {
     }
   }
 }
-// -----
-module {
-  zkir.struct @ComponentP {
-    zkir.field @f2 : !zkir.array<2 x index>
-
-    func @compute() { return }
-
-    func @constrain(%p: !zkir.struct<@MissingComponent>, %0: !zkir.felt) {
-      // expected-error@+2 {{'zkir.writef' op has no ancestor module with "veridise.lang" attribute}}
-      // expected-error@+1 {{no struct named "@MissingComponent"}}
-      writef %p[@f2] = %0 : !zkir.struct<@MissingComponent>, !zkir.felt
-      return
-    }
-  }
-}
-// -----
