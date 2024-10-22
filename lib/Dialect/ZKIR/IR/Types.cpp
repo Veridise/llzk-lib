@@ -1,9 +1,11 @@
 #include "Dialect/ZKIR/IR/Types.h"
 #include "Dialect/ZKIR/IR/Ops.h"
 #include "Dialect/ZKIR/Util/SymbolHelper.h"
-#include "mlir/IR/BuiltinTypeInterfaces.h"
-#include "llvm/ADT/SmallVector.h"
+
+#include <mlir/IR/BuiltinTypeInterfaces.h>
 #include <mlir/Support/LogicalResult.h>
+
+#include <llvm/ADT/SmallVector.h>
 
 namespace zkir {
 
