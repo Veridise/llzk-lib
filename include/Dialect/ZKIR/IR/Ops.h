@@ -30,8 +30,10 @@ constexpr char FUNC_NAME_CONSTRAIN[] = "constrain";
 mlir::FailureOr<llvm::StringRef> getParentStructName(mlir::Operation *op);
 mlir::FailureOr<llvm::StringRef> getParentFuncName(mlir::Operation *op);
 
-/// This only exists so the compiler doesn't complain about incomplete types.
-template <class OpType> llvm::StringLiteral getOperationName() {
+/// Get the operation name, like "zkir.emit_op" for the given OpType.
+/// This function only exists so the compiler doesn't complain about incomplete types within the
+/// "InStruct" class below.
+template <class OpType> inline llvm::StringLiteral getOperationName() {
   return OpType::getOperationName();
 }
 
