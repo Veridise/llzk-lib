@@ -60,7 +60,8 @@ mlir::LogicalResult verifyParentFunction(
 ) {
   mlir::FailureOr<llvm::StringRef> name = zkir::getParentFuncName(op);
   if (mlir::failed(name) || name.value() != FuncName) {
-    return op->emitOpError(prefix()) << "only valid within function named \"" << FuncName << "\"";
+    return op->emitOpError(prefix()) << "only valid within '" << getOperationName<FuncOp>()
+                                     << "' named \"" << FuncName << "\"";
   }
   return mlir::success();
 }
