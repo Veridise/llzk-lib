@@ -33,7 +33,8 @@ mlir::FailureOr<StructDefOp>
 StructType::getDefinition(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
   mlir::FailureOr<StructDefOp> def = lookupTopLevelSymbol<StructDefOp>(symbolTable, op, getName());
   if (mlir::failed(def)) {
-    return op->emitError() << "no struct named \"" << getName() << "\"";
+    return op->emitError() << "no '" << StructDefOp::getOperationName() << "' named \"" << getName()
+                           << "\"";
   } else {
     return def;
   }

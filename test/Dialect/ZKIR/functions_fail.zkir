@@ -33,7 +33,7 @@ zkir.func @fail_07() {
 module attributes {veridise.lang = "zkir"} {
   zkir.func @user() {
     // expected-error@+2 {{'zkir.call' op references unknown symbol "@missing_fn"}}
-    // expected-error@+1 {{no function named "@missing_fn"}}
+    // expected-error@+1 {{no 'zkir.func' named "@missing_fn"}}
     zkir.call @missing_fn() : () -> ()
     return
   }
@@ -42,7 +42,7 @@ module attributes {veridise.lang = "zkir"} {
 module {
   zkir.func @user() {
     // expected-error@+2 {{'zkir.call' op has no ancestor module with "veridise.lang" attribute}}
-    // expected-error@+1 {{no function named "@missing_fn"}}
+    // expected-error@+1 {{no 'zkir.func' named "@missing_fn"}}
     zkir.call @missing_fn() : () -> ()
     return
   }

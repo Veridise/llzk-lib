@@ -224,7 +224,8 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   // Call target must be specified via full path from the root module.
   mlir::FailureOr<FuncOp> fn = lookupTopLevelSymbol<FuncOp>(symbolTable, *this, fnAttr);
   if (mlir::failed(fn)) {
-    return this->emitError() << "no function named \"" << fnAttr << "\"";
+    return this->emitError() << "no '" << FuncOp::getOperationName() << "' named \"" << fnAttr
+                             << "\"";
   }
 
   // Verify that the operand and result types match the callee.
