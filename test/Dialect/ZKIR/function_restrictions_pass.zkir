@@ -140,3 +140,60 @@ zkir.struct @emitin_in_deep_branches {
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
+// -----
+
+// Global/Pure functions called compute and constrain must not have the restrictions
+//   applied, i.e. parameter and return type requirements and caller restrictions.
+module attributes {veridise.lang = "zkir"} {
+  zkir.func @compute(%x: i1) -> i1 {
+    return %x : i1
+  }
+  zkir.func @constrain(%x: i1) -> i1 {
+    return %x : i1
+  }
+  zkir.func @other_caller(%a: i1, %b: i1) -> (i1, i1) {
+    %1 = zkir.call @compute(%a) : (i1) -> i1
+    %2 = zkir.call @constrain(%a) : (i1) -> i1
+    return %1, %2 : i1, i1
+  }
+  zkir.struct @Test {
+    func @compute(%a: i1) -> !zkir.struct<@Test> {
+      %1 = zkir.call @compute(%a) : (i1) -> i1
+      %2 = zkir.call @constrain(%a) : (i1) -> i1
+      %self = new_struct : !zkir.struct<@Test>
+      return %self : !zkir.struct<@Test>
+    }
+
+    func @constrain(%self: !zkir.struct<@Test>, %a: i1) {
+      %1 = zkir.call @compute(%a) : (i1) -> i1
+      %2 = zkir.call @constrain(%a) : (i1) -> i1
+      return
+    }
+  }
+}
+//CHECK-LABEL:  module attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:     zkir.func @compute(%arg0: i1) -> i1 {
+//CHECK-NEXT:       return %arg0 : i1
+//CHECK-NEXT:     }
+//CHECK-NEXT:     zkir.func @constrain(%arg0: i1) -> i1 {
+//CHECK-NEXT:       return %arg0 : i1
+//CHECK-NEXT:     }
+//CHECK-NEXT:     zkir.func @other_caller(%arg0: i1, %arg1: i1) -> (i1, i1) {
+//CHECK-NEXT:       %0 = call @compute(%arg0) : (i1) -> i1
+//CHECK-NEXT:       %1 = call @constrain(%arg0) : (i1) -> i1
+//CHECK-NEXT:       return %0, %1 : i1, i1
+//CHECK-NEXT:     }
+//CHECK-NEXT:     zkir.struct @Test {
+//CHECK-NEXT:       func @compute(%arg0: i1) -> !zkir.struct<@Test> {
+//CHECK-NEXT:         %0 = call @compute(%arg0) : (i1) -> i1
+//CHECK-NEXT:         %1 = call @constrain(%arg0) : (i1) -> i1
+//CHECK-NEXT:         %self = new_struct : <@Test>
+//CHECK-NEXT:         return %self : !zkir.struct<@Test>
+//CHECK-NEXT:       }
+//CHECK-NEXT:       func @constrain(%arg0: !zkir.struct<@Test>, %arg1: i1) {
+//CHECK-NEXT:         %0 = call @compute(%arg1) : (i1) -> i1
+//CHECK-NEXT:         %1 = call @constrain(%arg1) : (i1) -> i1
+//CHECK-NEXT:         return
+//CHECK-NEXT:       }
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }

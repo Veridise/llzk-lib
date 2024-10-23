@@ -217,18 +217,31 @@ LogicalResult ReturnOp::verify() {
 
 LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   // Check that the callee attribute was specified.
-  auto fnAttr = (*this)->getAttrOfType<SymbolRefAttr>("callee");
+  SymbolRefAttr fnAttr = (*this)->getAttrOfType<SymbolRefAttr>("callee");
   if (!fnAttr) {
     return emitOpError("requires a 'callee' symbol reference attribute");
   }
   // Call target must be specified via full path from the root module.
-  mlir::FailureOr<FuncOp> fn = lookupTopLevelSymbol<FuncOp>(symbolTable, *this, fnAttr);
-  if (mlir::failed(fn)) {
+  mlir::FailureOr<FuncOp> tgtOpt = lookupTopLevelSymbol<FuncOp>(symbolTable, *this, fnAttr);
+  if (mlir::failed(tgtOpt)) {
     return this->emitError() << "no function named \"" << fnAttr << "\"";
+  }
+  FuncOp tgt = tgtOpt.value();
+  // Enforce restrictions on callers of compute/constrain functions within structs.
+  if (isInStruct(tgt.getOperation())) {
+    if (tgt.getSymName().compare(FUNC_NAME_COMPUTE) == 0) {
+      return verifyInStructFunctionNamed<FUNC_NAME_COMPUTE, 32>(*this, [] {
+        return llvm::SmallString<32>({"targeting \"", FUNC_NAME_COMPUTE, "\" "});
+      });
+    } else if (tgt.getSymName().compare(FUNC_NAME_CONSTRAIN) == 0) {
+      return verifyInStructFunctionNamed<FUNC_NAME_CONSTRAIN, 32>(*this, [] {
+        return llvm::SmallString<32>({"targeting \"", FUNC_NAME_CONSTRAIN, "\" "});
+      });
+    }
   }
 
   // Verify that the operand and result types match the callee.
-  auto fnType = fn.value().getFunctionType();
+  auto fnType = tgt.getFunctionType();
   if (fnType.getNumInputs() != getNumOperands()) {
     return emitOpError("incorrect number of operands for callee");
   }
@@ -259,20 +272,6 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
 FunctionType CallOp::getCalleeType() {
   return FunctionType::get(getContext(), getOperandTypes(), getResultTypes());
-}
-
-LogicalResult CallOp::verify() {
-  mlir::StringRef tgtFunc = getCallee().getLeafReference();
-  if (tgtFunc.compare(FUNC_NAME_COMPUTE) == 0) {
-    return verifyParentFunction<FUNC_NAME_COMPUTE, 32>(*this, [] {
-      return llvm::SmallString<32>({"targeting \"", FUNC_NAME_COMPUTE, "\" "});
-    });
-  } else if (tgtFunc.compare(FUNC_NAME_CONSTRAIN) == 0) {
-    return verifyParentFunction<FUNC_NAME_CONSTRAIN, 32>(*this, [] {
-      return llvm::SmallString<32>({"targeting \"", FUNC_NAME_CONSTRAIN, "\" "});
-    });
-  }
-  return mlir::success();
 }
 
 } // namespace zkir

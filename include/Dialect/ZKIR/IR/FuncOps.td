@@ -260,8 +260,6 @@ def CallOp : ZKIR_Op<"call",
   let assemblyFormat = [{
     $callee `(` $operands `)` attr-dict `:` functional-type($operands, results)
   }];
-
-  let hasVerifier = 1;
 }
 
 #endif // ZKIR_FUNC_OPS

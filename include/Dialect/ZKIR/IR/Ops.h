@@ -27,53 +27,57 @@ namespace zkir {
 constexpr char FUNC_NAME_COMPUTE[] = "compute";
 constexpr char FUNC_NAME_CONSTRAIN[] = "constrain";
 
-mlir::FailureOr<llvm::StringRef> getParentStructName(mlir::Operation *op);
-mlir::FailureOr<llvm::StringRef> getParentFuncName(mlir::Operation *op);
-
 /// Get the operation name, like "zkir.emit_op" for the given OpType.
-/// This function only exists so the compiler doesn't complain about incomplete types within the
-/// "InStruct" class below.
-template <class OpType> inline llvm::StringLiteral getOperationName() {
+/// This function can be used when the compiler would complain about
+/// incomplete types if `OpType::getOperationName()` were called directly.
+template <typename OpType> inline llvm::StringLiteral getOperationName() {
   return OpType::getOperationName();
 }
 
-/// This class provides a verifier for ops that are expecting to have
+/// Return the closest surrounding parent operation that is of type 'OpType'.
+template <typename OpType> mlir::FailureOr<OpType> getParentOfType(mlir::Operation *op) {
+  if (OpType p = op->getParentOfType<OpType>()) {
+    return p;
+  } else {
+    return mlir::failure();
+  }
+}
+
+bool isInStruct(mlir::Operation *op);
+
+mlir::LogicalResult verifyInStruct(mlir::Operation *op);
+
+/// This class provides a verifier for ops that are expected to have
 /// an ancestor zkir::StructDefOp.
 template <typename ConcreteType>
 class InStruct : public mlir::OpTrait::TraitBase<ConcreteType, InStruct> {
 public:
-  static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
-    mlir::FailureOr<llvm::StringRef> name = zkir::getParentStructName(op);
-    if (mlir::failed(name)) {
-      return op->emitOpError() << "can only be used within a '" << getOperationName<StructDefOp>()
-                               << "' ancestor";
-    }
-    return mlir::success();
-  }
+  static mlir::LogicalResult verifyTrait(mlir::Operation *op) { return verifyInStruct(op); }
 };
 
-/// Checks if the given Operation is contained within a FuncOp with the given name, producing an
-/// error if not.
+bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName);
+
+/// Checks if the given Operation is contained within a FuncOp with the given name that is itself
+/// with a StructDefOp, producing an error if not.
 template <char const *FuncName, unsigned PrefixLen>
-mlir::LogicalResult verifyParentFunction(
+mlir::LogicalResult verifyInStructFunctionNamed(
     mlir::Operation *op, llvm::function_ref<llvm::SmallString<PrefixLen>()> prefix
 ) {
-  mlir::FailureOr<llvm::StringRef> name = zkir::getParentFuncName(op);
-  if (mlir::failed(name) || name.value() != FuncName) {
-    return op->emitOpError(prefix()) << "only valid within '" << getOperationName<FuncOp>()
-                                     << "' named \"" << FuncName << "\"";
-  }
-  return mlir::success();
+  return isInStructFunctionNamed(op, FuncName)
+             ? mlir::success()
+             : op->emitOpError(prefix())
+                   << "only valid within a '" << getOperationName<FuncOp>() << "' named \""
+                   << FuncName << "\" with '" << getOperationName<StructDefOp>() << "' parent";
 }
 
 /// This class provides a verifier for ops that are expecting to have
 /// an ancestor zkir::FuncOp with the given name.
-template <char const *FuncName> struct InFunctionWithName {
+template <char const *FuncName> struct InStructFunctionNamed {
   template <typename ConcreteType>
   class Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
   public:
     static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
-      return verifyParentFunction<FuncName, 0>(op, [] { return llvm::SmallString<0>(); });
+      return verifyInStructFunctionNamed<FuncName, 0>(op, [] { return llvm::SmallString<0>(); });
     }
   };
 };

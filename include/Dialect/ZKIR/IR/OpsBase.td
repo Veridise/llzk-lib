@@ -46,8 +46,8 @@ def InStruct : NativeOpTrait<"InStruct">, StructuralOpTrait {
   string cppNamespace = "::zkir";
 }
 
-class InFunctionWithName<string name>
-    : ParamNativeOpTrait<"InFunctionWithName", name>, StructuralOpTrait {
+class InStructFunctionNamed<string name>
+    : ParamNativeOpTrait<"InStructFunctionNamed", name>, StructuralOpTrait {
   string cppNamespace = "::zkir";
 }
 

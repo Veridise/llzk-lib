@@ -302,7 +302,7 @@ def ZKIR_WriteArrayOp : ZKIR_Op<"writearr", [
 def EmitEqType : TypeConstraint<CPred<"::zkir::isValidEmitEqType($_self)">, "non-struct type">;
 
 def ZKIR_EmitEqualityOp : ZKIR_Op<"emit_eq", [
-    InStruct, InFunctionWithName<"::zkir::FUNC_NAME_CONSTRAIN">,
+    InStructFunctionNamed<"::zkir::FUNC_NAME_CONSTRAIN">,
     Pure, Commutative, SameTypeOperands, ElementwiseMappable,
 ]> {
   let summary = "";
@@ -316,7 +316,7 @@ def ZKIR_EmitEqualityOp : ZKIR_Op<"emit_eq", [
 }
 
 def ZKIR_EmitContainmentOp : ZKIR_Op<"emit_in", [
-    InStruct, InFunctionWithName<"::zkir::FUNC_NAME_CONSTRAIN">, Pure,
+    InStructFunctionNamed<"::zkir::FUNC_NAME_CONSTRAIN">, Pure,
     TypesMatchWith<"lhs type matches rhs element type", "rhs", "lhs", 
                    "::llvm::cast<::zkir::ArrayType>($_self).getElementType()">
 ]> {

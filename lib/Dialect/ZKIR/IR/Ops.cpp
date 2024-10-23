@@ -16,20 +16,27 @@
 
 namespace zkir {
 
-mlir::FailureOr<llvm::StringRef> getParentStructName(mlir::Operation *op) {
-  if (zkir::StructDefOp sDef = op->getParentOfType<zkir::StructDefOp>()) {
-    return sDef.getSymName();
-  } else {
-    return mlir::failure();
-  }
+bool isInStruct(mlir::Operation *op) { return mlir::succeeded(getParentOfType<StructDefOp>(op)); }
+
+mlir::LogicalResult verifyInStruct(mlir::Operation *op) {
+  return isInStruct(op) ? mlir::success()
+                        : op->emitOpError() << "only valid within a '"
+                                            << getOperationName<StructDefOp>() << "' ancestor";
 }
 
-mlir::FailureOr<llvm::StringRef> getParentFuncName(mlir::Operation *op) {
-  if (zkir::FuncOp func = op->getParentOfType<zkir::FuncOp>()) {
-    return func.getSymName();
-  } else {
-    return mlir::failure();
+bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName) {
+  mlir::FailureOr<FuncOp> parentFuncOpt = getParentOfType<FuncOp>(op);
+  if (mlir::succeeded(parentFuncOpt)) {
+    FuncOp parentFunc = parentFuncOpt.value();
+    mlir::FailureOr<StructDefOp> parentStruct =
+        getParentOfType<StructDefOp>(parentFunc.getOperation());
+    if (mlir::succeeded(parentStruct)) {
+      if (parentFunc.getSymName().compare(funcName) == 0) {
+        return true;
+      }
+    }
   }
+  return false;
 }
 
 // -----

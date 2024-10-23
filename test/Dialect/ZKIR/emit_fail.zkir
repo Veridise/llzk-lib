@@ -267,7 +267,7 @@ zkir.struct @TestComponent19 {
 module {
     %a = zkir.constfelt 7653
     %b = zkir.constfelt 34572
-    // expected-error@+1 {{'zkir.emit_eq' op can only be used within a 'zkir.struct' ancestor}}
+    // expected-error@+1 {{'zkir.emit_eq' op only valid within a 'zkir.func' named "constrain" with 'zkir.struct' parent}}
     zkir.emit_eq %a, %b : !zkir.felt
 }
 // -----
@@ -277,7 +277,7 @@ module {
     %a = index.constant 433
     %b = index.constant 535
     %z = zkir.new_array %a, %b: !zkir.array<2 x index>
-    // expected-error@+1 {{'zkir.emit_in' op can only be used within a 'zkir.struct' ancestor}}
+    // expected-error@+1 {{'zkir.emit_in' op only valid within a 'zkir.func' named "constrain" with 'zkir.struct' parent}}
     zkir.emit_in %a, %z : !zkir.array<2 x index>
 }
 // -----
