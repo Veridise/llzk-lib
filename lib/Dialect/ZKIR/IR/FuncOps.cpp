@@ -169,7 +169,6 @@ namespace {
 
 using namespace mlir;
 
-template <typename... Args>
 inline InFlightDiagnostic computeRetErr(FuncOp &func, StructDefOp &expected) {
   return std::move(func.getOperation()->emitOpError().append(
       "\"", zkir::FUNC_NAME_COMPUTE, "\" must return type of its parent 'zkir.struct': \"",
@@ -204,12 +203,12 @@ mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable)
   // Verify return type restrictions
   FunctionType funcType = getFunctionType();
   llvm::ArrayRef<mlir::Type> resTypes = funcType.getResults();
-  llvm::StringRef func_name = getSymName();
-  if (zkir::FUNC_NAME_COMPUTE == func_name) {
+  llvm::StringRef funcName = getSymName();
+  if (zkir::FUNC_NAME_COMPUTE == funcName) {
     // Must return type of parent struct
     if (resTypes.size() != 1) {
       return this->getOperation()->emitOpError()
-             << "\"" << func_name << "\" must have exactly one return type";
+             << "\"" << funcName << "\" must have exactly one return type";
     }
 
     // Lookup the return type StructDefOp and ensure it matches the parent StructDefOp of the
@@ -231,11 +230,11 @@ mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable)
     } else {
       return computeRetErr(*this, expectedReturnStruct);
     }
-  } else if (zkir::FUNC_NAME_CONSTRAIN == func_name) {
+  } else if (zkir::FUNC_NAME_CONSTRAIN == funcName) {
     // Must return '()' type, i.e. have no return types
     if (resTypes.size() != 0) {
       return this->getOperation()->emitOpError()
-             << "\"" << func_name << "\" must have no return type";
+             << "\"" << funcName << "\" must have no return type";
     }
   }
   return mlir::success();

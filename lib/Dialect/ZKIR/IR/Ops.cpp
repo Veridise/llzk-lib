@@ -63,13 +63,13 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
   for (auto &op : getBody().front()) {
     if (!llvm::isa<FieldDefOp>(op)) {
       if (auto func_def = llvm::dyn_cast<::zkir::FuncOp>(op)) {
-        auto func_name = func_def.getSymName();
-        if (zkir::FUNC_NAME_COMPUTE == func_name) {
+        auto funcName = func_def.getSymName();
+        if (zkir::FUNC_NAME_COMPUTE == funcName) {
           if (foundCompute) {
             return msgOneFunction({emitError}, zkir::FUNC_NAME_COMPUTE);
           }
           foundCompute = true;
-        } else if (zkir::FUNC_NAME_CONSTRAIN == func_name) {
+        } else if (zkir::FUNC_NAME_CONSTRAIN == funcName) {
           if (foundConstrain) {
             return msgOneFunction({emitError}, zkir::FUNC_NAME_CONSTRAIN);
           }
@@ -79,7 +79,7 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
           // tag the error with correct location and correct op name.
           return op.emitError() << "'" << getOperationName() << "' op "
                                 << "must define only 'compute' and 'constrain' functions;"
-                                << " found '" << func_name << "'";
+                                << " found '" << funcName << "'";
         }
       } else {
         return op.emitOpError() << "invalid operation in 'struct'; only 'field'"
