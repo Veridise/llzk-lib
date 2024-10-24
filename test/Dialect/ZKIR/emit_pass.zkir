@@ -2,7 +2,7 @@
 
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentA {
-    func @constrain(%a: !zkir.felt, %b: !zkir.felt) {
+    func @constrain(%self: !zkir.struct<@ComponentA>, %a: !zkir.felt, %b: !zkir.felt) {
       zkir.emit_eq %a, %b : !zkir.felt
       return
     }
@@ -14,7 +14,8 @@ module attributes {veridise.lang = "zkir"} {
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentA {
-//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
+//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentA>,
+//CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
 //CHECK-NEXT:       emit_eq %[[A0]], %[[A1]] : !zkir.felt
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
@@ -27,7 +28,7 @@ module attributes {veridise.lang = "zkir"} {
 
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentB {
-    func @constrain(%a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) {
+    func @constrain(%self: !zkir.struct<@ComponentB>, %a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) {
       zkir.emit_in %a, %b : !zkir.array<5 x !zkir.felt>
       return
     }
@@ -39,7 +40,8 @@ module attributes {veridise.lang = "zkir"} {
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentB {
-//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.array<5 x !zkir.felt>) {
+//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentB>,
+//CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.array<5 x !zkir.felt>) {
 //CHECK-NEXT:       emit_in %[[A0]], %[[A1]] : <5 x !zkir.felt>
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
@@ -52,7 +54,7 @@ module attributes {veridise.lang = "zkir"} {
 
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentC {
-    func @constrain(%a: index, %b: !zkir.array<89 x index>) {
+    func @constrain(%self: !zkir.struct<@ComponentC>, %a: index, %b: !zkir.array<89 x index>) {
       zkir.emit_in %a, %b : !zkir.array<89 x index>
       return
     }
@@ -64,7 +66,8 @@ module attributes {veridise.lang = "zkir"} {
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentC {
-//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.array<89 x index>) {
+//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentC>,
+//CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.array<89 x index>) {
 //CHECK-NEXT:       emit_in %[[A0]], %[[A1]] : <89 x index>
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
@@ -78,8 +81,8 @@ module attributes {veridise.lang = "zkir"} {
 
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentD {
-    func @constrain(%a: !zkir.struct<@ComponentD>, %b: !zkir.array<89 x !zkir.struct<@ComponentD>>) {
-      zkir.emit_in %a, %b : !zkir.array<89 x !zkir.struct<@ComponentD>>
+    func @constrain(%self: !zkir.struct<@ComponentD>, %b: !zkir.array<89 x !zkir.struct<@ComponentD>>) {
+      zkir.emit_in %self, %b : !zkir.array<89 x !zkir.struct<@ComponentD>>
       return
     }
 
@@ -90,7 +93,8 @@ module attributes {veridise.lang = "zkir"} {
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentD {
-//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentD>, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.array<89 x !zkir.struct<@ComponentD>>) {
+//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentD>,
+//CHECK-SAME:     %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.array<89 x !zkir.struct<@ComponentD>>) {
 //CHECK-NEXT:       emit_in %[[A0]], %[[A1]] : <89 x !zkir.struct<@ComponentD>>
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
@@ -103,7 +107,7 @@ module attributes {veridise.lang = "zkir"} {
 
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentE {
-    func @constrain(%a: index, %b: !zkir.array<89 x 2 x index>) {
+    func @constrain(%self: !zkir.struct<@ComponentE>, %a: index, %b: !zkir.array<89 x 2 x index>) {
       zkir.emit_in %a, %b : !zkir.array<89 x 2 x index>
       return
     }
@@ -115,7 +119,8 @@ module attributes {veridise.lang = "zkir"} {
   }
 }
 //CHECK-LABEL:  zkir.struct @ComponentE {
-//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.array<89x2 x index>) {
+//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentE>,
+//CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.array<89x2 x index>) {
 //CHECK-NEXT:       emit_in %[[A0]], %[[A1]] : <89x2 x index>
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
