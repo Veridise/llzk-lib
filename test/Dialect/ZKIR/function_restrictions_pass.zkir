@@ -197,3 +197,30 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:       }
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
+// -----
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @inv_in_compute {
+    func @compute(%a: !zkir.felt) -> !zkir.struct<@inv_in_constrain> {
+      %self = new_struct : !zkir.struct<@inv_in_constrain>
+      %c = zkir.inv %a
+      return %self : !zkir.struct<@inv_in_constrain>
+    }
+
+    func @constrain(%self: !zkir.struct<@inv_in_constrain>, %a: !zkir.felt) {
+      return
+    }
+  }
+}
+//CHECK-LABEL:  module attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:     zkir.struct @inv_in_compute {
+//CHECK-NEXT:       func @compute(%arg0: !zkir.felt) -> !zkir.struct<@inv_in_constrain> {
+//CHECK-NEXT:         %self = new_struct : <@inv_in_constrain>
+//CHECK-NEXT:         %0 = inv %arg0
+//CHECK-NEXT:         return %self : !zkir.struct<@inv_in_constrain>
+//CHECK-NEXT:       }
+//CHECK-NEXT:       func @constrain(%arg0: !zkir.struct<@inv_in_constrain>, %arg1: !zkir.felt) {
+//CHECK-NEXT:         return
+//CHECK-NEXT:       }
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }
