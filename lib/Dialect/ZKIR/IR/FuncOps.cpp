@@ -262,8 +262,7 @@ mlir::LogicalResult verifyFuncTypeConstrain(
     return origin.emitOpError() << "\"@" << zkir::FUNC_NAME_CONSTRAIN
                                 << "\" must have at least one input type";
   }
-  // return compareTypes(symbolTable, parentStruct, inputTypes.front(), origin, "first input");
-  return mlir::success();
+  return compareTypes(symbolTable, parentStruct, inputTypes.front(), origin, "first input");
 }
 
 } // namespace
