@@ -208,42 +208,45 @@ mlir::LogicalResult FuncOp::verify() {
 }
 
 mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
-  // Verify return type restrictions
-  FunctionType funcType = getFunctionType();
-  llvm::ArrayRef<mlir::Type> resTypes = funcType.getResults();
-  llvm::StringRef funcName = getSymName();
-  if (zkir::FUNC_NAME_COMPUTE == funcName) {
-    // Must return type of parent struct
-    if (resTypes.size() != 1) {
-      return this->getOperation()->emitOpError()
-             << "\"" << funcName << "\" must have exactly one return type";
-    }
+  mlir::FailureOr<StructDefOp> parentStruct = getParentOfType<StructDefOp>(*this);
+  if (mlir::succeeded(parentStruct)) {
+    // Verify return type restrictions
+    llvm::ArrayRef<mlir::Type> resTypes = getFunctionType().getResults();
+    llvm::StringRef funcName = getSymName();
+    if (zkir::FUNC_NAME_COMPUTE == funcName) {
+      // Must return type of parent struct
+      if (resTypes.size() != 1) {
+        return this->getOperation()->emitOpError()
+               << "\"" << funcName << "\" must have exactly one return type";
+      }
 
-    // Lookup the return type StructDefOp and ensure it matches the parent StructDefOp of the
-    // current operation.
-    StructDefOp expectedReturnStruct = this->getOperation()->getParentOfType<StructDefOp>();
-    if (StructType sType = llvm::dyn_cast<StructType>(resTypes.front())) {
-      mlir::FailureOr<StructDefOp> actualReturnStructOpt =
-          lookupTopLevelSymbol<StructDefOp>(symbolTable, *this, sType.getName());
-      if (mlir::failed(actualReturnStructOpt)) {
-        return this->emitError().append(
-            "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getName(), "\""
-        );
+      // Lookup the return type StructDefOp and ensure it matches the parent StructDefOp of the
+      // current operation.
+      StructDefOp expectedReturnStruct = parentStruct.value();
+      if (StructType sType = llvm::dyn_cast<StructType>(resTypes.front())) {
+        mlir::FailureOr<StructDefOp> actualReturnStructOpt =
+            lookupTopLevelSymbol<StructDefOp>(symbolTable, *this, sType.getName());
+        if (mlir::failed(actualReturnStructOpt)) {
+          return this->emitError().append(
+              "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getName(),
+              "\""
+          );
+        }
+        StructDefOp actualReturnStruct = actualReturnStructOpt.value();
+        if (actualReturnStruct != expectedReturnStruct) {
+          return computeRetErr(*this, expectedReturnStruct)
+              .attachNote(actualReturnStruct.getLoc())
+              .append("returns this type instead");
+        }
+      } else {
+        return computeRetErr(*this, expectedReturnStruct);
       }
-      StructDefOp actualReturnStruct = actualReturnStructOpt.value();
-      if (actualReturnStruct != expectedReturnStruct) {
-        return computeRetErr(*this, expectedReturnStruct)
-            .attachNote(actualReturnStruct.getLoc())
-            .append("returns this type instead");
+    } else if (zkir::FUNC_NAME_CONSTRAIN == funcName) {
+      // Must return '()' type, i.e. have no return types
+      if (resTypes.size() != 0) {
+        return this->getOperation()->emitOpError()
+               << "\"" << funcName << "\" must have no return type";
       }
-    } else {
-      return computeRetErr(*this, expectedReturnStruct);
-    }
-  } else if (zkir::FUNC_NAME_CONSTRAIN == funcName) {
-    // Must return '()' type, i.e. have no return types
-    if (resTypes.size() != 0) {
-      return this->getOperation()->emitOpError()
-             << "\"" << funcName << "\" must have no return type";
     }
   }
   return mlir::success();
