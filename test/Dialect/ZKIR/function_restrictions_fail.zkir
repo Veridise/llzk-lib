@@ -172,7 +172,7 @@ module attributes {veridise.lang = "zkir"} {
       return %self : !zkir.struct<@global_calls_constrain>
     }
 
-    func @constrain(%self: !zkir.struct<@global_calls_compute>) {
+    func @constrain(%self: !zkir.struct<@global_calls_constrain>) {
       return
     }
   }
@@ -247,7 +247,7 @@ module attributes {veridise.lang = "zkir"} {
 // -----
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'zkir.func' op "compute" must return type of its parent 'zkir.struct'}}
+    // expected-error@+1 {{'zkir.func' op "@compute" must use type of its parent 'zkir.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> index {
       %b = index.constant 2
       return %b : index
@@ -260,7 +260,7 @@ module attributes {veridise.lang = "zkir"} {
 }
 // -----
 module attributes {veridise.lang = "zkir"} {
-  zkir.struct @good { // expected-note {{returns this type instead}}
+  zkir.struct @good { // expected-note {{uses this type instead}}
     func @compute() -> !zkir.struct<@good> {
       %self = new_struct : !zkir.struct<@good>
       return %self : !zkir.struct<@good>
@@ -271,7 +271,7 @@ module attributes {veridise.lang = "zkir"} {
   }
 
   zkir.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'zkir.func' op "compute" must return type of its parent 'zkir.struct': "@compute_with_wrong_ret"}}
+    // expected-error@+1 {{'zkir.func' op "@compute" must use type of its parent 'zkir.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> !zkir.struct<@good> {
       %self = new_struct : !zkir.struct<@good>
       return %self : !zkir.struct<@good>
@@ -285,7 +285,7 @@ module attributes {veridise.lang = "zkir"} {
 // -----
 module attributes {veridise.lang = "zkir"} {
   module @one {
-    zkir.struct @good { // expected-note {{returns this type instead}}
+    zkir.struct @good { // expected-note {{uses this type instead}}
       func @compute() -> !zkir.struct<@one::@good> {
         %self = new_struct : !zkir.struct<@one::@good>
         return %self : !zkir.struct<@one::@good>
@@ -297,7 +297,7 @@ module attributes {veridise.lang = "zkir"} {
   }
   module @two {
     zkir.struct @good {
-      // expected-error@+1 {{'zkir.func' op "compute" must return type of its parent 'zkir.struct': "@two::@good"}}
+      // expected-error@+1 {{'zkir.func' op "@compute" must use type of its parent 'zkir.struct' "@two::@good" as return type}}
       func @compute() -> !zkir.struct<@one::@good> {
         %self = new_struct : !zkir.struct<@one::@good>
         return %self : !zkir.struct<@one::@good>
@@ -330,7 +330,7 @@ module attributes {veridise.lang = "zkir"} {
 module { // expected-note {{unnamed 'builtin.module' here}}
   // expected-error@+1 {{'zkir.struct' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
   zkir.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'zkir.func' op "compute" must return type of its parent 'zkir.struct'}}
+    // expected-error@+1 {{'zkir.func' op "@compute" must use type of its parent 'zkir.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> index {
       %b = index.constant 2
       return %b : index
