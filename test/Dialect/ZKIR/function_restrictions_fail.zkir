@@ -352,3 +352,38 @@ module attributes {veridise.lang = "zkir"} {
     func @constrain() { return }
   }
 }
+// -----
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @constrain_without_self_non_struct {
+    func @compute(%a: !zkir.felt) -> !zkir.struct<@constrain_without_self_non_struct> {
+      %self = new_struct : !zkir.struct<@constrain_without_self_non_struct>
+      return %self : !zkir.struct<@constrain_without_self_non_struct>
+    }
+    // expected-error@+1 {{'zkir.func' op "@constrain" must use type of its parent 'zkir.struct' "@constrain_without_self_non_struct" as first input type}}
+    func @constrain(%self: !zkir.felt) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @other_type { // expected-note {{uses this type instead}}
+    func @compute() -> !zkir.struct<@other_type> {
+      %self = new_struct : !zkir.struct<@other_type>
+      return %self : !zkir.struct<@other_type>
+    }
+    func @constrain(%self: !zkir.struct<@other_type>) {
+      return
+    }
+  }
+  zkir.struct @constrain_without_self_wrong_struct {
+    func @compute() -> !zkir.struct<@constrain_without_self_wrong_struct> {
+      %self = new_struct : !zkir.struct<@constrain_without_self_wrong_struct>
+      return %self : !zkir.struct<@constrain_without_self_wrong_struct>
+    }
+    // expected-error@+1 {{'zkir.func' op "@constrain" must use type of its parent 'zkir.struct' "@constrain_without_self_wrong_struct" as first input type}}
+    func @constrain(%self: !zkir.struct<@other_type>) {
+      return
+    }
+  }
+}
