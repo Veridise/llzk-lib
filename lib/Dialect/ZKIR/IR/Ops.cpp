@@ -62,8 +62,8 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
   bool foundConstrain = false;
   for (auto &op : getBody().front()) {
     if (!llvm::isa<FieldDefOp>(op)) {
-      if (auto func_def = llvm::dyn_cast<::zkir::FuncOp>(op)) {
-        auto funcName = func_def.getSymName();
+      if (auto funcDef = llvm::dyn_cast<::zkir::FuncOp>(op)) {
+        auto funcName = funcDef.getSymName();
         if (zkir::FUNC_NAME_COMPUTE == funcName) {
           if (foundCompute) {
             return msgOneFunction({emitError}, zkir::FUNC_NAME_COMPUTE);
