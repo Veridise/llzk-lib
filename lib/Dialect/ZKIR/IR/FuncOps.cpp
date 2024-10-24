@@ -192,14 +192,14 @@ mlir::InFlightDiagnostic genCompareErr(StructDefOp &expected, FuncOp &origin, co
   mlir::FailureOr<mlir::SymbolRefAttr> pathToExpected = getPathFromRoot(expected);
   if (mlir::succeeded(pathToExpected)) {
     return origin.emitOpError().append(
-        "\"@", zkir::FUNC_NAME_COMPUTE, "\" must use type of its parent '",
+        "\"@", origin.getSymName(), "\" must use type of its parent '",
         StructDefOp::getOperationName(), "' \"", pathToExpected.value(), "\" as ", aspect, " type"
     );
   } else {
     // When there is a failure trying to get the resolved name of the struct,
     //  just print its symbol name directly.
     return origin.emitOpError().append(
-        "\"@", zkir::FUNC_NAME_COMPUTE, "\" must use type of its parent '",
+        "\"@", origin.getSymName(), "\" must use type of its parent '",
         StructDefOp::getOperationName(), "' \"@", expected.getSymName(), "\" as ", aspect, " type"
     );
   }
