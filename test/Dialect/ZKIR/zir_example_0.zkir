@@ -75,48 +75,50 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:      zkir.struct @ValU32 {
 //CHECK-NEXT:        field @low : !zkir.felt
 //CHECK-NEXT:        field @high : !zkir.felt
-//CHECK-NEXT:        func @compute(%arg0: !zkir.felt, %arg1: !zkir.felt) -> !zkir.struct<@risc0::@ValU32> {
-//CHECK-NEXT:          %self = new_struct : <@risc0::@ValU32>
-//CHECK-NEXT:          writef %self[@low] = %arg0 : <@risc0::@ValU32>, !zkir.felt
-//CHECK-NEXT:          writef %self[@high] = %arg1 : <@risc0::@ValU32>, !zkir.felt
-//CHECK-NEXT:          return %self : !zkir.struct<@risc0::@ValU32>
+//CHECK-NEXT:        func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.struct<@risc0::@ValU32> {
+//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@risc0::@ValU32>
+//CHECK-NEXT:          writef %[[SELF]][@low] = %[[A0]] : <@risc0::@ValU32>, !zkir.felt
+//CHECK-NEXT:          writef %[[SELF]][@high] = %[[A1]] : <@risc0::@ValU32>, !zkir.felt
+//CHECK-NEXT:          return %[[SELF]] : !zkir.struct<@risc0::@ValU32>
 //CHECK-NEXT:        }
-//CHECK-NEXT:        func @constrain(%arg0: !zkir.struct<@risc0::@ValU32>, %arg1: !zkir.felt, %arg2: !zkir.felt) {
+//CHECK-NEXT:        func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@risc0::@ValU32>,
+//CHECK-SAME:        %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
 //CHECK-NEXT:          return
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
 //CHECK-NEXT:      zkir.struct @Reg {
 //CHECK-NEXT:        field @reg : !zkir.felt {zkir.pub}
-//CHECK-NEXT:        func @compute(%arg0: !zkir.felt) -> !zkir.struct<@risc0::@Reg> {
-//CHECK-NEXT:          %self = new_struct : <@risc0::@Reg>
-//CHECK-NEXT:          writef %self[@reg] = %arg0 : <@risc0::@Reg>, !zkir.felt
-//CHECK-NEXT:          return %self : !zkir.struct<@risc0::@Reg>
+//CHECK-NEXT:        func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.struct<@risc0::@Reg> {
+//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@risc0::@Reg>
+//CHECK-NEXT:          writef %[[SELF]][@reg] = %[[A0]] : <@risc0::@Reg>, !zkir.felt
+//CHECK-NEXT:          return %[[SELF]] : !zkir.struct<@risc0::@Reg>
 //CHECK-NEXT:        }
-//CHECK-NEXT:        func @constrain(%arg0: !zkir.struct<@risc0::@Reg>, %arg1: !zkir.felt) {
-//CHECK-NEXT:          %0 = readf %arg0[@reg] : <@risc0::@Reg>, !zkir.felt
-//CHECK-NEXT:          emit_eq %arg1, %0 : !zkir.felt
+//CHECK-NEXT:        func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@risc0::@Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
+//CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@reg] : <@risc0::@Reg>, !zkir.felt
+//CHECK-NEXT:          emit_eq %[[A1]], %[[T0]] : !zkir.felt
 //CHECK-NEXT:          return
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
 //CHECK-NEXT:      zkir.struct @Div {
 //CHECK-NEXT:        field @reciprocal : !zkir.felt
 //CHECK-NEXT:        field @synthetic_return : !zkir.felt {zkir.pub}
-//CHECK-NEXT:        func @compute(%arg0: !zkir.felt, %arg1: !zkir.felt) -> !zkir.struct<@risc0::@Div> {
-//CHECK-NEXT:          %self = new_struct : <@risc0::@Div>
-//CHECK-NEXT:          %0 = inv %arg1
-//CHECK-NEXT:          writef %self[@reciprocal] = %0 : <@risc0::@Div>, !zkir.felt
-//CHECK-NEXT:          %1 = mul %0, %arg0
-//CHECK-NEXT:          writef %self[@synthetic_return] = %1 : <@risc0::@Div>, !zkir.felt
-//CHECK-NEXT:          return %self : !zkir.struct<@risc0::@Div>
+//CHECK-NEXT:        func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.struct<@risc0::@Div> {
+//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@risc0::@Div>
+//CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = inv %[[A1]]
+//CHECK-NEXT:          writef %[[SELF]][@reciprocal] = %[[T0]] : <@risc0::@Div>, !zkir.felt
+//CHECK-NEXT:          %[[T1:[0-9a-zA-Z_\.]+]] = mul %[[T0]], %[[A0]]
+//CHECK-NEXT:          writef %[[SELF]][@synthetic_return] = %[[T1]] : <@risc0::@Div>, !zkir.felt
+//CHECK-NEXT:          return %[[SELF]] : !zkir.struct<@risc0::@Div>
 //CHECK-NEXT:        }
-//CHECK-NEXT:        func @constrain(%arg0: !zkir.struct<@risc0::@Div>, %arg1: !zkir.felt, %arg2: !zkir.felt) {
-//CHECK-NEXT:          %0 = readf %arg0[@reciprocal] : <@risc0::@Div>, !zkir.felt
-//CHECK-NEXT:          %1 = mul %0, %arg2
+//CHECK-NEXT:        func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@risc0::@Div>,
+//CHECK-SAME:        %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
+//CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@reciprocal] : <@risc0::@Div>, !zkir.felt
+//CHECK-NEXT:          %[[T1:[0-9a-zA-Z_\.]+]] = mul %[[T0]], %[[A2]]
 //CHECK-NEXT:          %felt_const_1 = constfelt  1
-//CHECK-NEXT:          emit_eq %1, %felt_const_1 : !zkir.felt
-//CHECK-NEXT:          %2 = readf %arg0[@synthetic_return] : <@risc0::@Div>, !zkir.felt
-//CHECK-NEXT:          %3 = mul %0, %arg1
-//CHECK-NEXT:          emit_eq %2, %3 : !zkir.felt
+//CHECK-NEXT:          emit_eq %[[T1]], %felt_const_1 : !zkir.felt
+//CHECK-NEXT:          %[[T2:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@synthetic_return] : <@risc0::@Div>, !zkir.felt
+//CHECK-NEXT:          %[[T3:[0-9a-zA-Z_\.]+]] = mul %[[T0]], %[[A1]]
+//CHECK-NEXT:          emit_eq %[[T2]], %[[T3]] : !zkir.felt
 //CHECK-NEXT:          return
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
