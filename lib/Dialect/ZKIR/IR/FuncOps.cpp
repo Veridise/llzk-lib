@@ -327,11 +327,11 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   if (isInStruct(tgt.getOperation())) {
     if (tgt.getSymName().compare(FUNC_NAME_COMPUTE) == 0) {
       return verifyInStructFunctionNamed<FUNC_NAME_COMPUTE, 32>(*this, [] {
-        return llvm::SmallString<32>({"targeting \"", FUNC_NAME_COMPUTE, "\" "});
+        return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_COMPUTE, "\" "});
       });
     } else if (tgt.getSymName().compare(FUNC_NAME_CONSTRAIN) == 0) {
       return verifyInStructFunctionNamed<FUNC_NAME_CONSTRAIN, 32>(*this, [] {
-        return llvm::SmallString<32>({"targeting \"", FUNC_NAME_CONSTRAIN, "\" "});
+        return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_CONSTRAIN, "\" "});
       });
     }
   }
