@@ -120,7 +120,7 @@ module attributes {veridise.lang = "zkir"} {
     }
 
     func @constrain(%self: !zkir.struct<@constrain_calls_compute>) {
-      // expected-error@+1 {{'zkir.call' op targeting "compute" only valid within a 'zkir.func' named "@compute" within a 'zkir.struct' definition}}
+      // expected-error@+1 {{'zkir.call' op targeting "@compute" only valid within a 'zkir.func' named "@compute" within a 'zkir.struct' definition}}
       call @constrain_calls_compute::@compute() : () -> !zkir.struct<@constrain_calls_compute>
       return
     }
@@ -131,7 +131,7 @@ module attributes {veridise.lang = "zkir"} {
   zkir.struct @compute_calls_constrain {
     func @compute() -> !zkir.struct<@compute_calls_constrain> {
       %self = new_struct : !zkir.struct<@compute_calls_constrain>
-      // expected-error@+1 {{'zkir.call' op targeting "constrain" only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
+      // expected-error@+1 {{'zkir.call' op targeting "@constrain" only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
       call @compute_calls_constrain::@constrain(%self) : (!zkir.struct<@compute_calls_constrain>) -> ()
       return %self : !zkir.struct<@compute_calls_constrain>
     }
@@ -144,7 +144,7 @@ module attributes {veridise.lang = "zkir"} {
 // -----
 module attributes {veridise.lang = "zkir"} {
   zkir.func @globalFunc() {
-    // expected-error@+1 {{'zkir.call' op targeting "compute" only valid within a 'zkir.func' named "@compute" within a 'zkir.struct' definition}}
+    // expected-error@+1 {{'zkir.call' op targeting "@compute" only valid within a 'zkir.func' named "@compute" within a 'zkir.struct' definition}}
     call @global_calls_compute::@compute() : () -> !zkir.struct<@global_calls_compute>
     return
   }
@@ -162,7 +162,7 @@ module attributes {veridise.lang = "zkir"} {
 // -----
 module attributes {veridise.lang = "zkir"} {
   zkir.func @globalFunc(%0: !zkir.struct<@global_calls_constrain>) {
-    // expected-error@+1 {{'zkir.call' op targeting "constrain" only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
+    // expected-error@+1 {{'zkir.call' op targeting "@constrain" only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
     call @global_calls_constrain::@constrain(%0) : (!zkir.struct<@global_calls_constrain>) -> ()
     return
   }
@@ -207,7 +207,7 @@ zkir.struct @inv_in_constrain {
 // -----
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @compute_no_ret {
-    // expected-error@+1 {{'zkir.func' op "compute" must have exactly one return type}}
+    // expected-error@+1 {{'zkir.func' op "@compute" must have exactly one return type}}
     func @compute() {
       return
     }
@@ -220,7 +220,7 @@ module attributes {veridise.lang = "zkir"} {
 // -----
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @compute_multiple_ret {
-    // expected-error@+1 {{'zkir.func' op "compute" must have exactly one return type}}
+    // expected-error@+1 {{'zkir.func' op "@compute" must have exactly one return type}}
     func @compute(%a: i1) -> (!zkir.struct<@compute_multiple_ret>, i1) {
       %self = new_struct : !zkir.struct<@compute_multiple_ret>
       return %self, %a : !zkir.struct<@compute_multiple_ret>, i1
@@ -239,7 +239,7 @@ module attributes {veridise.lang = "zkir"} {
       return %self : !zkir.struct<@constrain_with_ret>
     }
 
-    // expected-error@+1 {{'zkir.func' op "constrain" must have no return type}}
+    // expected-error@+1 {{'zkir.func' op "@constrain" must have no return type}}
     func @constrain(%self: !zkir.struct<@constrain_with_ret>, %a: i1) -> i1 {
       return %a : i1
     }
@@ -248,7 +248,7 @@ module attributes {veridise.lang = "zkir"} {
 // -----
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'zkir.func' op "compute" must return type of its parent 'zkir.struct'}}
+    // expected-error@+1 {{'zkir.func' op "@compute" must return type of its parent 'zkir.struct'}}
     func @compute() -> index {
       %b = index.constant 2
       return %b : index
@@ -272,7 +272,7 @@ module attributes {veridise.lang = "zkir"} {
   }
 
   zkir.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'zkir.func' op "compute" must return type of its parent 'zkir.struct': "@compute_with_wrong_ret"}}
+    // expected-error@+1 {{'zkir.func' op "@compute" must return type of its parent 'zkir.struct': "@compute_with_wrong_ret"}}
     func @compute() -> !zkir.struct<@good> {
       %self = new_struct : !zkir.struct<@good>
       return %self : !zkir.struct<@good>
@@ -298,7 +298,7 @@ module attributes {veridise.lang = "zkir"} {
   }
   module @two {
     zkir.struct @good {
-      // expected-error@+1 {{'zkir.func' op "compute" must return type of its parent 'zkir.struct': "@two::@good"}}
+      // expected-error@+1 {{'zkir.func' op "@compute" must return type of its parent 'zkir.struct': "@two::@good"}}
       func @compute() -> !zkir.struct<@one::@good> {
         %self = new_struct : !zkir.struct<@one::@good>
         return %self : !zkir.struct<@one::@good>
@@ -331,7 +331,7 @@ module attributes {veridise.lang = "zkir"} {
 module { // expected-note {{unnamed 'builtin.module' here}}
   // expected-error@+1 {{'zkir.struct' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
   zkir.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'zkir.func' op "compute" must return type of its parent 'zkir.struct'}}
+    // expected-error@+1 {{'zkir.func' op "@compute" must return type of its parent 'zkir.struct'}}
     func @compute() -> index {
       %b = index.constant 2
       return %b : index

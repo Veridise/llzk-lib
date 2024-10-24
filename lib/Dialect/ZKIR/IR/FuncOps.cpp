@@ -171,14 +171,14 @@ inline mlir::InFlightDiagnostic computeRetErr(FuncOp &func, StructDefOp &expecte
   mlir::FailureOr<mlir::SymbolRefAttr> pathToExpected = getPathFromRoot(expected);
   if (mlir::succeeded(pathToExpected)) {
     return func.getOperation()->emitOpError().append(
-        "\"", zkir::FUNC_NAME_COMPUTE, "\" must return type of its parent 'zkir.struct': \"",
+        "\"@", zkir::FUNC_NAME_COMPUTE, "\" must return type of its parent 'zkir.struct': \"",
         pathToExpected.value(), "\""
     );
   } else {
     // When there is a failure trying to get the resolved name of the struct,
     //  just print its symbol name directly.
     return func.getOperation()->emitOpError().append(
-        "\"", zkir::FUNC_NAME_COMPUTE, "\" must return type of its parent 'zkir.struct': \"",
+        "\"@", zkir::FUNC_NAME_COMPUTE, "\" must return type of its parent 'zkir.struct': \"",
         expected.getSymName(), "\""
     );
   }
@@ -217,7 +217,7 @@ mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable)
       // Must return type of parent struct
       if (resTypes.size() != 1) {
         return this->getOperation()->emitOpError()
-               << "\"" << funcName << "\" must have exactly one return type";
+               << "\"@" << funcName << "\" must have exactly one return type";
       }
 
       // Lookup the return type StructDefOp and ensure it matches the parent StructDefOp of the
@@ -245,7 +245,7 @@ mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable)
       // Must return '()' type, i.e. have no return types
       if (resTypes.size() != 0) {
         return this->getOperation()->emitOpError()
-               << "\"" << funcName << "\" must have no return type";
+               << "\"@" << funcName << "\" must have no return type";
       }
     }
   }
@@ -298,11 +298,11 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   if (isInStruct(tgt.getOperation())) {
     if (tgt.getSymName().compare(FUNC_NAME_COMPUTE) == 0) {
       return verifyInStructFunctionNamed<FUNC_NAME_COMPUTE, 32>(*this, [] {
-        return llvm::SmallString<32>({"targeting \"", FUNC_NAME_COMPUTE, "\" "});
+        return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_COMPUTE, "\" "});
       });
     } else if (tgt.getSymName().compare(FUNC_NAME_CONSTRAIN) == 0) {
       return verifyInStructFunctionNamed<FUNC_NAME_CONSTRAIN, 32>(*this, [] {
-        return llvm::SmallString<32>({"targeting \"", FUNC_NAME_CONSTRAIN, "\" "});
+        return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_CONSTRAIN, "\" "});
       });
     }
   }
