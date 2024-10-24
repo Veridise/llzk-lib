@@ -85,13 +85,13 @@ template <char const *FuncName> struct InStructFunctionNamed {
 /// This class provides a verifier for ops that cannot appear within a
 /// "constrain" function.
 template <typename ConcreteType>
-class NonConstrainable : public mlir::OpTrait::TraitBase<ConcreteType, NonConstrainable> {
+class ComputeOnly : public mlir::OpTrait::TraitBase<ConcreteType, ComputeOnly> {
 public:
   static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
     return !isInStructFunctionNamed(op, FUNC_NAME_CONSTRAIN)
                ? mlir::success()
                : op->emitOpError()
-                     << "is NonConstrainable so it cannot be used within a '"
+                     << "is ComputeOnly so it cannot be used within a '"
                      << getOperationName<FuncOp>() << "' named \"@" << FUNC_NAME_CONSTRAIN
                      << "\" within a '" << getOperationName<StructDefOp>() << "' definition";
   }

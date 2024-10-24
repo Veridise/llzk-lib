@@ -173,7 +173,7 @@ zkir.struct @inv_in_constrain {
   }
 
   func @constrain(%self: !zkir.struct<@inv_in_constrain>, %a: !zkir.felt) {
-    // expected-error@+1 {{'zkir.inv' op is NonConstrainable so it cannot be used within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
+    // expected-error@+1 {{'zkir.inv' op is ComputeOnly so it cannot be used within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
     %c = zkir.inv %a
     return
   }

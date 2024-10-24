@@ -42,7 +42,7 @@ class ZKIR_UnaryFeltOp<string mnemonic, list<Trait> traits = []>
 // Custom traits that can be applied to Ops
 //===----------------------------------------------------------------------===//
 
-def NonConstrainable : NativeOpTrait<"NonConstrainable">, StructuralOpTrait {
+def ComputeOnly : NativeOpTrait<"ComputeOnly">, StructuralOpTrait {
   string cppNamespace = "::zkir";
 }
 
