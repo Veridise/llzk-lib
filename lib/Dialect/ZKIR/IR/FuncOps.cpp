@@ -211,7 +211,8 @@ mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable)
   mlir::FailureOr<StructDefOp> parentStruct = getParentOfType<StructDefOp>(*this);
   if (mlir::succeeded(parentStruct)) {
     // Verify return type restrictions
-    llvm::ArrayRef<mlir::Type> resTypes = getFunctionType().getResults();
+    mlir::FunctionType funcType = getFunctionType();
+    llvm::ArrayRef<mlir::Type> resTypes = funcType.getResults();
     llvm::StringRef funcName = getSymName();
     if (zkir::FUNC_NAME_COMPUTE == funcName) {
       // Must return type of parent struct
@@ -247,6 +248,14 @@ mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable)
         return this->getOperation()->emitOpError()
                << "\"" << funcName << "\" must have no return type";
       }
+
+      // Type of the first parameter must match the parent StructDefOp of the current operation.
+      llvm::ArrayRef<mlir::Type> inputTypes = funcType.getInputs();
+      if (inputTypes.size() < 1) {
+        return this->getOperation()->emitOpError()
+               << "\"@" << funcName << "\" must have at least one input type";
+      }
+      // TODO
     }
   }
   return mlir::success();

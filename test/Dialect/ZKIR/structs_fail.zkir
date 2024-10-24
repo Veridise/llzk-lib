@@ -71,7 +71,7 @@ module attributes {veridise.lang = "zkir"} {
       %self = new_struct : !zkir.struct<@ComponentH>
       return %self : !zkir.struct<@ComponentH>
     }
-    func @constrain()  { return }
+    func @constrain(%self: !zkir.struct<@ComponentH>)  { return }
   }
 }
 // -----
@@ -81,7 +81,7 @@ module attributes {veridise.lang = "zkir"} {
       %self = new_struct : !zkir.struct<@ComponentJ>
       return %self : !zkir.struct<@ComponentJ>
     }
-    func @constrain()  { return }
+    func @constrain(%self: !zkir.struct<@ComponentJ>)  { return }
   }
 
   zkir.func @user() {

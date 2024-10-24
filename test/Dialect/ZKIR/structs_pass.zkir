@@ -123,7 +123,7 @@ module attributes {veridise.lang = "zkir"} {
       %self = new_struct : !zkir.struct<@ComponentG1>
       return %self : !zkir.struct<@ComponentG1>
     }
-    func @constrain(%a: !zkir.felt) { return }
+    func @constrain(%self: !zkir.struct<@ComponentG1>, %a: !zkir.felt) { return }
   }
 
   zkir.struct @ComponentG2 {
@@ -134,7 +134,7 @@ module attributes {veridise.lang = "zkir"} {
       return %self : !zkir.struct<@ComponentG2>
     }
 
-    func @constrain() {
+    func @constrain(%self: !zkir.struct<@ComponentG2>) {
       %b = zkir.nondetfelt
       return
     }
@@ -145,7 +145,7 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentG1>
 //CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@ComponentG1>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
+//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentG1>, %[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
@@ -155,7 +155,7 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentG2>
 //CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@ComponentG2>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain() {
+//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentG2>) {
 //CHECK-NEXT:       %felt_nondet = nondetfelt
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }

@@ -204,7 +204,6 @@ zkir.struct @inv_in_constrain {
   }
 }
 // -----
-// -----
 module attributes {veridise.lang = "zkir"} {
   zkir.struct @compute_no_ret {
     // expected-error@+1 {{'zkir.func' op "compute" must have exactly one return type}}
@@ -340,5 +339,16 @@ module { // expected-note {{unnamed 'builtin.module' here}}
     func @constrain(%self: !zkir.struct<@compute_with_wrong_ret>) {
       return
     }
+  }
+}
+// -----
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @constrain_without_args {
+    func @compute() -> !zkir.struct<@constrain_without_args> {
+      %self = new_struct : !zkir.struct<@constrain_without_args>
+      return %self : !zkir.struct<@constrain_without_args>
+    }
+    // expected-error@+1 {{'zkir.func' op "@constrain" must have at least one input type}}
+    func @constrain() { return }
   }
 }
