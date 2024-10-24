@@ -167,13 +167,21 @@ bool FuncOp::hasArgPublicAttr(unsigned index) {
 
 namespace {
 
-using namespace mlir;
-
-inline InFlightDiagnostic computeRetErr(FuncOp &func, StructDefOp &expected) {
-  return std::move(func.getOperation()->emitOpError().append(
-      "\"", zkir::FUNC_NAME_COMPUTE, "\" must return type of its parent 'zkir.struct': \"",
-      expected.getSymName(), "\""
-  ));
+inline mlir::InFlightDiagnostic computeRetErr(FuncOp &func, StructDefOp &expected) {
+  mlir::FailureOr<mlir::SymbolRefAttr> pathToExpected = getPathFromRoot(expected);
+  if (mlir::succeeded(pathToExpected)) {
+    return func.getOperation()->emitOpError().append(
+        "\"", zkir::FUNC_NAME_COMPUTE, "\" must return type of its parent 'zkir.struct': \"",
+        pathToExpected.value(), "\""
+    );
+  } else {
+    // When there is a failure trying to get the resolved name of the struct,
+    //  just print its symbol name directly.
+    return func.getOperation()->emitOpError().append(
+        "\"", zkir::FUNC_NAME_COMPUTE, "\" must return type of its parent 'zkir.struct': \"",
+        expected.getSymName(), "\""
+    );
+  }
 }
 
 } // namespace
@@ -218,8 +226,9 @@ mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable)
       mlir::FailureOr<StructDefOp> actualReturnStructOpt =
           lookupTopLevelSymbol<StructDefOp>(symbolTable, *this, sType.getName());
       if (mlir::failed(actualReturnStructOpt)) {
-        return this->emitError() << "no '" << StructDefOp::getOperationName() << "' named \""
-                                 << sType.getName() << "\"";
+        return this->emitError().append(
+            "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getName(), "\""
+        );
       }
       StructDefOp actualReturnStruct = actualReturnStructOpt.value();
       if (actualReturnStruct != expectedReturnStruct) {

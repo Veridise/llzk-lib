@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Dialect/ZKIR/IR/Ops.h"
+
 #include <mlir/IR/BuiltinOps.h>
 
 namespace zkir {
@@ -7,6 +9,8 @@ namespace zkir {
 constexpr char LANG_ATTR_NAME[] = "veridise.lang";
 
 mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
+mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(StructDefOp &to);
+mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(FuncOp &to);
 
 template <typename T, typename NameT>
 inline mlir::FailureOr<T> lookupSymbolIn(
