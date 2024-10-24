@@ -364,37 +364,37 @@ def ZKIR_NegFeltOp : ZKIR_UnaryFeltOp<"neg"> {
   let description = [{}];
 }
 
-def ZKIR_InvFeltOp : ZKIR_UnaryFeltOp<"inv", [InFunctionWithName<"::zkir::FUNC_NAME_COMPUTE">]> {
+def ZKIR_InvFeltOp : ZKIR_UnaryFeltOp<"inv", [NonConstrainable]> {
   let summary = "Inverse operator for field elements";
   let description = [{}];
 }
 
-def ZKIR_AndFeltOp : ZKIR_BinaryFeltOp<"and", [Commutative]> {
+def ZKIR_AndFeltOp : ZKIR_BinaryFeltOp<"and", [NonConstrainable, Commutative]> {
   let summary = "Bitwise AND operator for field elements";
   let description = [{}];
 }
 
-def ZKIR_OrFeltOp : ZKIR_BinaryFeltOp<"or", [Commutative]> {
+def ZKIR_OrFeltOp : ZKIR_BinaryFeltOp<"or", [NonConstrainable, Commutative]> {
   let summary = "Bitwise OR operator for field elements";
   let description = [{}];
 }
 
-def ZKIR_XorFeltOp : ZKIR_BinaryFeltOp<"xor", [Commutative]> {
+def ZKIR_XorFeltOp : ZKIR_BinaryFeltOp<"xor", [NonConstrainable, Commutative]> {
   let summary = "Bitwise XOR operator for field elements";
   let description = [{}];
 }
 
-def ZKIR_NotFeltOp : ZKIR_UnaryFeltOp<"not"> {
+def ZKIR_NotFeltOp : ZKIR_UnaryFeltOp<"not", [NonConstrainable]> {
   let summary = "Bit flip operator for field elements";
   let description = [{}];
 }
 
-def ZKIR_ShlFeltOp : ZKIR_BinaryFeltOp<"shl"> {
+def ZKIR_ShlFeltOp : ZKIR_BinaryFeltOp<"shl", [NonConstrainable]> {
   let summary = "Left shift operator for field elements";
   let description = [{}];
 }
 
-def ZKIR_ShrFeltOp : ZKIR_BinaryFeltOp<"shr"> {
+def ZKIR_ShrFeltOp : ZKIR_BinaryFeltOp<"shr", [NonConstrainable]> {
   let summary = "Right shift operator for field elements";
   let description = [{}];
 }

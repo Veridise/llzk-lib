@@ -65,9 +65,9 @@ mlir::LogicalResult verifyInStructFunctionNamed(
 ) {
   return isInStructFunctionNamed(op, FuncName)
              ? mlir::success()
-             : op->emitOpError(prefix())
-                   << "only valid within a '" << getOperationName<FuncOp>() << "' named \""
-                   << FuncName << "\" with '" << getOperationName<StructDefOp>() << "' parent";
+             : op->emitOpError(prefix()) << "only valid within a '" << getOperationName<FuncOp>()
+                                         << "' named \"@" << FuncName << "\" within a '"
+                                         << getOperationName<StructDefOp>() << "' definition";
 }
 
 /// This class provides a verifier for ops that are expecting to have
@@ -80,6 +80,21 @@ template <char const *FuncName> struct InStructFunctionNamed {
       return verifyInStructFunctionNamed<FuncName, 0>(op, [] { return llvm::SmallString<0>(); });
     }
   };
+};
+
+/// This class provides a verifier for ops that cannot appear within a
+/// "constrain" function.
+template <typename ConcreteType>
+class NonConstrainable : public mlir::OpTrait::TraitBase<ConcreteType, NonConstrainable> {
+public:
+  static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
+    return !isInStructFunctionNamed(op, FUNC_NAME_CONSTRAIN)
+               ? mlir::success()
+               : op->emitOpError()
+                     << "is NonConstrainable so it cannot be used within a '"
+                     << getOperationName<FuncOp>() << "' named \"@" << FUNC_NAME_CONSTRAIN
+                     << "\" within a '" << getOperationName<StructDefOp>() << "' definition";
+  }
 };
 } // namespace zkir
 
