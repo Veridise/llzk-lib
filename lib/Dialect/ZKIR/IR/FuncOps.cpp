@@ -260,7 +260,7 @@ LogicalResult ReturnOp::verify() {
   auto function = cast<FuncOp>((*this)->getParentOp());
 
   // The operand number and types must match the function signature.
-  const auto &results = function.getFunctionType().getResults();
+  const auto results = function.getFunctionType().getResults();
   if (getNumOperands() != results.size()) {
     return emitOpError("has ") << getNumOperands() << " operands, but enclosing function (@"
                                << function.getName() << ") returns " << results.size();
