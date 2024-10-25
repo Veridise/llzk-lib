@@ -211,7 +211,7 @@ mlir::LogicalResult compareTypes(
 ) {
   if (StructType sType = llvm::dyn_cast<StructType>(actualType)) {
     mlir::FailureOr<StructDefOp> actualStructOpt =
-        lookupTopLevelSymbol<StructDefOp>(symbolTable, origin, sType.getName());
+        lookupTopLevelSymbol<StructDefOp>(symbolTable, sType.getName(), origin);
     if (mlir::failed(actualStructOpt)) {
       return origin.emitError().append(
           "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getName(), "\""
@@ -317,7 +317,7 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
     return emitOpError("requires a 'callee' symbol reference attribute");
   }
   // Call target must be specified via full path from the root module.
-  mlir::FailureOr<FuncOp> tgtOpt = lookupTopLevelSymbol<FuncOp>(symbolTable, *this, fnAttr);
+  mlir::FailureOr<FuncOp> tgtOpt = lookupTopLevelSymbol<FuncOp>(symbolTable, fnAttr, *this);
   if (mlir::failed(tgtOpt)) {
     return this->emitError() << "no '" << FuncOp::getOperationName() << "' named \"" << fnAttr
                              << "\"";

@@ -30,13 +30,13 @@ inline mlir::FailureOr<T> lookupSymbolIn(
 
 template <typename T, typename NameT>
 inline mlir::FailureOr<T> lookupTopLevelSymbol(
-    mlir::SymbolTableCollection &symbolTable, mlir::Operation *from, NameT &&symbol
+    mlir::SymbolTableCollection &symbolTable, NameT &&symbol, mlir::Operation *origin
 ) {
-  mlir::FailureOr<mlir::ModuleOp> root = getRootModule(from);
+  mlir::FailureOr<mlir::ModuleOp> root = getRootModule(origin);
   if (mlir::failed(root)) {
     return root; // getRootModule() already emits a sufficient error message
   }
-  return lookupSymbolIn<T, NameT>(symbolTable, std::forward<NameT>(symbol), root.value(), from);
+  return lookupSymbolIn<T, NameT>(symbolTable, std::forward<NameT>(symbol), root.value(), origin);
 }
 
 } // namespace zkir
