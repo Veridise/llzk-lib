@@ -297,3 +297,140 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 // -----
+
+module attributes {veridise.lang = "zkir"} {
+  module @mod1 {
+    zkir.struct @ComponentP1 {
+      func @compute() -> !zkir.struct<@mod1::@ComponentP1> {
+        %self = new_struct : !zkir.struct<@mod1::@ComponentP1>
+        return %self : !zkir.struct<@mod1::@ComponentP1>
+      }
+      func @constrain(%self: !zkir.struct<@mod1::@ComponentP1>) { return }
+    }
+    module @mod2 {
+      zkir.struct @ComponentP2 {
+        func @compute() -> !zkir.struct<@mod1::@mod2::@ComponentP2> {
+          %self = new_struct : !zkir.struct<@mod1::@mod2::@ComponentP2>
+          return %self : !zkir.struct<@mod1::@mod2::@ComponentP2>
+        }
+        func @constrain(%self: !zkir.struct<@mod1::@mod2::@ComponentP2>) { return }
+      }
+    }
+  }
+  zkir.struct @ComponentP3 {
+    zkir.field @f1 : !zkir.struct<@mod1::@ComponentP1>
+    zkir.field @f2 : !zkir.struct<@mod1::@mod2::@ComponentP2>
+    zkir.field @f3 : !zkir.array<27x3x2x1x1x7 x !zkir.struct<@mod1::@ComponentP1>>
+    zkir.field @f4 : !zkir.array<2 x !zkir.struct<@mod1::@mod2::@ComponentP2>>
+
+    func @compute() -> !zkir.struct<@ComponentP3> {
+      %self = new_struct : !zkir.struct<@ComponentP3>
+      return %self : !zkir.struct<@ComponentP3>
+    }
+    func @constrain(%self: !zkir.struct<@ComponentP3>) { return }
+  }
+}
+//CHECK-LABEL:  module @mod1 {
+//CHECK-LABEL:    zkir.struct @ComponentP1 {
+//CHECK-NEXT:       func @compute() -> !zkir.struct<@mod1::@ComponentP1> {
+//CHECK-NEXT:         %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@mod1::@ComponentP1>
+//CHECK-NEXT:         return %[[SELF]] : !zkir.struct<@mod1::@ComponentP1>
+//CHECK-NEXT:       }
+//CHECK-NEXT:       func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@mod1::@ComponentP1>) {
+//CHECK-NEXT:         return
+//CHECK-NEXT:       }
+//CHECK-NEXT:     }
+//CHECK-LABEL:    module @mod2 {
+//CHECK-LABEL:      zkir.struct @ComponentP2 {
+//CHECK-NEXT:         func @compute() -> !zkir.struct<@mod1::@mod2::@ComponentP2> {
+//CHECK-NEXT:           %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@mod1::@mod2::@ComponentP2>
+//CHECK-NEXT:           return %[[SELF]] : !zkir.struct<@mod1::@mod2::@ComponentP2>
+//CHECK-NEXT:         }
+//CHECK-NEXT:         func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@mod1::@mod2::@ComponentP2>) {
+//CHECK-NEXT:           return
+//CHECK-NEXT:         }
+//CHECK-NEXT:       }
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }
+//CHECK-LABEL:  zkir.struct @ComponentP3 {
+//CHECK-NEXT:     field @f1 : !zkir.struct<@mod1::@ComponentP1>
+//CHECK-NEXT:     field @f2 : !zkir.struct<@mod1::@mod2::@ComponentP2>
+//CHECK-NEXT:     field @f3 : !zkir.array<27x3x2x1x1x7 x !zkir.struct<@mod1::@ComponentP1>>
+//CHECK-NEXT:     field @f4 : !zkir.array<2 x !zkir.struct<@mod1::@mod2::@ComponentP2>>
+//CHECK-NEXT:     func @compute() -> !zkir.struct<@ComponentP3> {
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentP3>
+//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@ComponentP3>
+//CHECK-NEXT:     }
+//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !zkir.struct<@ComponentP3>) {
+//CHECK-NEXT:       return
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }
+// -----
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentP1 {
+    func @compute() -> !zkir.struct<@ComponentP1> {
+      %self = new_struct : !zkir.struct<@ComponentP1>
+      return %self : !zkir.struct<@ComponentP1>
+    }
+    func @constrain(%self: !zkir.struct<@ComponentP1>) { return }
+  }
+  module @mod2 {
+    zkir.struct @ComponentP2 {
+      func @compute() -> !zkir.struct<@mod2::@ComponentP2> {
+        %self = new_struct : !zkir.struct<@mod2::@ComponentP2>
+        return %self : !zkir.struct<@mod2::@ComponentP2>
+      }
+      func @constrain(%self: !zkir.struct<@mod2::@ComponentP2>) { return }
+    }
+  }
+  module @mod1 {
+    zkir.struct @ComponentP3 {
+      zkir.field @f1 : !zkir.struct<@ComponentP1>
+      zkir.field @f2 : !zkir.struct<@mod2::@ComponentP2>
+      zkir.field @f3 : !zkir.array<27x3x2x1x1x7 x !zkir.struct<@ComponentP1>>
+      zkir.field @f4 : !zkir.array<2 x !zkir.struct<@mod2::@ComponentP2>>
+
+      func @compute() -> !zkir.struct<@mod1::@ComponentP3> {
+        %self = new_struct : !zkir.struct<@mod1::@ComponentP3>
+        return %self : !zkir.struct<@mod1::@ComponentP3>
+      }
+      func @constrain(%self: !zkir.struct<@mod1::@ComponentP3>) { return }
+    }
+  }
+}
+//CHECK-LABEL:  zkir.struct @ComponentP1 {
+//CHECK-NEXT:     func @compute() -> !zkir.struct<@ComponentP1> {
+//CHECK-NEXT:       %self = new_struct : <@ComponentP1>
+//CHECK-NEXT:       return %self : !zkir.struct<@ComponentP1>
+//CHECK-NEXT:     }
+//CHECK-NEXT:     func @constrain(%arg0: !zkir.struct<@ComponentP1>) {
+//CHECK-NEXT:       return
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }
+//CHECK-LABEL:  module @mod2 {
+//CHECK-LABEL:    zkir.struct @ComponentP2 {
+//CHECK-NEXT:       func @compute() -> !zkir.struct<@mod2::@ComponentP2> {
+//CHECK-NEXT:         %self = new_struct : <@mod2::@ComponentP2>
+//CHECK-NEXT:         return %self : !zkir.struct<@mod2::@ComponentP2>
+//CHECK-NEXT:       }
+//CHECK-NEXT:       func @constrain(%arg0: !zkir.struct<@mod2::@ComponentP2>) {
+//CHECK-NEXT:         return
+//CHECK-NEXT:       }
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }
+//CHECK-LABEL:  module @mod1 {
+//CHECK-LABEL:    zkir.struct @ComponentP3 {
+//CHECK-NEXT:       field @f1 : !zkir.struct<@ComponentP1>
+//CHECK-NEXT:       field @f2 : !zkir.struct<@mod2::@ComponentP2>
+//CHECK-NEXT:       field @f3 : !zkir.array<27x3x2x1x1x7 x !zkir.struct<@ComponentP1>>
+//CHECK-NEXT:       field @f4 : !zkir.array<2 x !zkir.struct<@mod2::@ComponentP2>>
+//CHECK-NEXT:       func @compute() -> !zkir.struct<@mod1::@ComponentP3> {
+//CHECK-NEXT:         %self = new_struct : <@mod1::@ComponentP3>
+//CHECK-NEXT:         return %self : !zkir.struct<@mod1::@ComponentP3>
+//CHECK-NEXT:       }
+//CHECK-NEXT:       func @constrain(%arg0: !zkir.struct<@mod1::@ComponentP3>) {
+//CHECK-NEXT:         return
+//CHECK-NEXT:       }
+//CHECK-NEXT:     }
+//CHECK-NEXT:   }

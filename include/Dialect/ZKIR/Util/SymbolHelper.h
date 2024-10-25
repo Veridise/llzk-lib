@@ -39,4 +39,8 @@ inline mlir::FailureOr<T> lookupTopLevelSymbol(
   return lookupSymbolIn<T, NameT>(symbolTable, std::forward<NameT>(symbol), root.value(), origin);
 }
 
+mlir::LogicalResult verifyTypeResolution(
+    mlir::SymbolTableCollection &symbolTable, mlir::Type ty, mlir::Operation *origin
+);
+
 } // namespace zkir

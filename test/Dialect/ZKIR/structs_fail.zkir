@@ -92,3 +92,45 @@ module attributes {veridise.lang = "zkir"} {
   }
 }
 // -----
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentK {
+    // expected-error@+2 {{'zkir.field' op references unknown symbol "@Missing"}}
+    // expected-error@+1 {{no 'zkir.struct' named "@Missing"}}
+    zkir.field @f : !zkir.struct<@Missing>
+
+    func @compute() -> !zkir.struct<@ComponentK> {
+      %self = new_struct : !zkir.struct<@ComponentK>
+      return %self : !zkir.struct<@ComponentK>
+    }
+    func @constrain(%self: !zkir.struct<@ComponentK>)  { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @ComponentL {
+    // expected-error@+2 {{'zkir.field' op references unknown symbol "@Missing"}}
+    // expected-error@+1 {{no 'zkir.struct' named "@Missing"}}
+    zkir.field @f : !zkir.array<2x3x2 x !zkir.struct<@Missing>>
+
+    func @compute() -> !zkir.struct<@ComponentL> {
+      %self = new_struct : !zkir.struct<@ComponentL>
+      return %self : !zkir.struct<@ComponentL>
+    }
+    func @constrain(%self: !zkir.struct<@ComponentL>)  { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "zkir"} {
+  module @path{}
+  zkir.struct @ComponentM {
+    // expected-error@+2 {{'zkir.field' op references unknown symbol "@path::@to::@Missing"}}
+    // expected-error@+1 {{no 'zkir.struct' named "@path::@to::@Missing"}}
+    zkir.field @f : !zkir.array<2x3x2 x !zkir.struct<@path::@to::@Missing>>
+
+    func @compute() -> !zkir.struct<@ComponentM> {
+      %self = new_struct : !zkir.struct<@ComponentM>
+      return %self : !zkir.struct<@ComponentM>
+    }
+    func @constrain(%self: !zkir.struct<@ComponentM>)  { return }
+  }
+}

@@ -113,6 +113,10 @@ FieldDefOp StructDefOp::getFieldDef(::mlir::StringAttr fieldName) {
 // -----
 bool FieldDefOp::hasPublicAttr() { return getOperation()->hasAttr(PublicAttr::name); }
 
+mlir::LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+  return verifyTypeResolution(symbolTable, this->getType(), *this);
+}
+
 // -----
 // FieldRefOp implementations
 // -----
