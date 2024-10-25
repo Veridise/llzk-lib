@@ -1,0 +1,104 @@
+// RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
+
+module attributes {veridise.lang = "zkir"} {
+  // A struct that stores if the input is 0 or not
+  // to showcase `scf.if`.
+  // Only constraints that the stored value is a boolean.
+  // A real circuit would have more stuff
+  zkir.struct @IsZero {
+    zkir.field @bit : !zkir.felt
+
+    func @compute(%a: !zkir.felt) -> !zkir.struct<@IsZero> {
+      %self = new_struct : !zkir.struct<@IsZero>
+      %z = zkir.constfelt 0
+      %b = zkir.cmp eq(%a, %z)
+      %0 = scf.if %b -> !zkir.felt {
+        scf.yield %z : !zkir.felt
+      } else {
+        %2 = zkir.constfelt 1
+        scf.yield %2 : !zkir.felt
+      } 
+      zkir.writef %self[@bit] = %0 : !zkir.struct<@IsZero>, !zkir.felt
+      return %self : !zkir.struct<@IsZero>
+    }
+
+    func @constrain(%self : !zkir.struct<@IsZero>, %a: !zkir.felt) {
+      %0 = zkir.readf %self[@bit] : !zkir.struct<@IsZero>, !zkir.felt
+      %1 = zkir.constfelt 1
+      %2 = zkir.sub %0, %1 
+      %3 = zkir.mul %0, %2  
+      %4 = zkir.constfelt 0
+      zkir.emit_eq %3, %4 : !zkir.felt
+      return
+    }
+  }
+}
+
+// CHECK-LABEL:  zkir.struct @IsZero {
+// CHECK-NEXT:     field @bit : !zkir.felt
+// CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_.]+]]: !zkir.felt) -> !zkir.struct<@IsZero> {
+// CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@IsZero>
+// CHECK-NEXT:       %[[Z:[0-9a-zA-Z_.]+]] = constfelt 0
+// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = cmp eq(%[[A0]], %[[Z]])
+// CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = scf.if %[[T0]] -> (!zkir.felt) {
+// CHECK-NEXT:         scf.yield %[[Z]] : !zkir.felt
+// CHECK-NEXT:       } else {
+// CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.]+]] = zkir.constfelt 1
+// CHECK-NEXT:         scf.yield %[[T2]] : !zkir.felt
+// CHECK-NEXT:       }
+// CHECK-NEXT:       writef %[[SELF]][@bit] = %[[T1]] : <@IsZero>, !zkir.felt
+// CHECK-NEXT:       return %[[SELF]]
+// CHECK-NEXT:     }
+// CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !zkir.struct<@IsZero>, %[[A0:[0-9a-zA-Z_.]+]]: !zkir.felt) {
+// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = readf %[[SELF]][@bit] : <@IsZero>, !zkir.felt
+// CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = constfelt 1
+// CHECK-NEXT:       %[[T2:[0-9a-zA-Z_.]+]] = sub %[[T0]], %[[T1]] 
+// CHECK-NEXT:       %[[T3:[0-9a-zA-Z_.]+]] = mul %[[T0]], %[[T2]]  
+// CHECK-NEXT:       %[[T4:[0-9a-zA-Z_.]+]] = constfelt 0
+// CHECK-NEXT:       emit_eq %[[T3]], %[[T4]] : !zkir.felt
+// CHECK-NEXT:       return
+// CHECK-NEXT:     }
+// CHECK-NEXT: }
+// -----
+
+module attributes {veridise.lang = "zkir"} {
+  // This test case showcases that you don't need to add `scf.yield`
+  // if the `scf.if` operation does not return a value.
+  zkir.struct @C {
+    zkir.field @data : !zkir.felt
+
+    func @compute(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.struct<@C> {
+      %self = new_struct : !zkir.struct<@C>
+      %z = zkir.constfelt 0
+      %0 = zkir.cmp ne(%a, %z)
+      scf.if %0 {
+        zkir.writef %self[@data] = %b : !zkir.struct<@C>, !zkir.felt
+      }
+      return %self : !zkir.struct<@C>
+    }
+
+    func @constrain(%self : !zkir.struct<@C>, %a: !zkir.felt, %b: !zkir.felt) {
+      return
+    }
+  }
+}
+
+// CHECK-LABEL:  zkir.struct @C {
+// CHECK-NEXT:    field @data : !zkir.felt
+// CHECK-NEXT:    func @compute(%[[A0:[0-9a-zA-Z_.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_.]+]]: !zkir.felt) -> !zkir.struct<@C> {
+// CHECK-NEXT:     %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@C>
+// CHECK-NEXT:     %[[T0:[0-9a-zA-Z_.]+]] = constfelt 0
+// CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.]+]] = cmp ne(%[[A0]], %[[T0]])
+// CHECK-NEXT:     scf.if %[[T1]] {
+// CHECK-NEXT:       zkir.writef %[[SELF]][@data] = %[[A1]] : <@C>, !zkir.felt
+// CHECK-NEXT:     }
+// CHECK-NEXT:     return %[[SELF]]
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func @constrain(
+// CHECK-SAME:        %[[SELF:[0-9a-zA-Z_.]+]]: !zkir.struct<@C>, 
+// CHECK-SAME:        %[[A0:[0-9a-zA-Z_.]+]]: !zkir.felt, 
+// CHECK-SAME:        %[[A1:[0-9a-zA-Z_.]+]]: !zkir.felt) {
+// CHECK-NEXT:     return
+// CHECK-NEXT:   }
+// CHECK-NEXT: }
+
