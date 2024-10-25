@@ -168,3 +168,12 @@ module attributes {veridise.lang = "zkir"} {
     }
   }
 }
+// -----
+module { // expected-note {{unnamed 'builtin.module' here}}
+  zkir.func @constrain(%p: !zkir.struct<@MissingComponent>, %0: !zkir.felt) {
+    // expected-error@+2 {{'zkir.writef' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
+    // expected-error@+1 {{no 'zkir.struct' named "@MissingComponent"}}
+    writef %p[@f2] = %0 : !zkir.struct<@MissingComponent>, !zkir.felt
+    return
+  }
+}
