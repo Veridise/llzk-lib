@@ -1,6 +1,15 @@
 // RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
 
-zkir.func private @a(!zkir.array<5 x !zkir.felt>, !zkir.struct<@Hello>)
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @Hello {
+    func @compute() -> !zkir.struct<@Hello> {
+      %self = new_struct : !zkir.struct<@Hello>
+      return %self : !zkir.struct<@Hello>
+    }
+    func @constrain(%self: !zkir.struct<@Hello>) { return }
+  }
+  zkir.func private @a(!zkir.array<5 x !zkir.felt>, !zkir.struct<@Hello>)
+}
 //CHECK-LABEL:  zkir.func private @a(!zkir.array<5 x !zkir.felt>, !zkir.struct<@Hello>)
 // -----
 
@@ -8,7 +17,16 @@ zkir.func private @b(!zkir.array<3x2x1 x !zkir.felt>)
 //CHECK-LABEL:  zkir.func private @b(!zkir.array<3x2x1 x !zkir.felt>)
 // -----
 
-zkir.func private @c(%x: !zkir.array<5 x !zkir.struct<@Bob>>) -> !zkir.array<5 x !zkir.struct<@Bob>>
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @Bob {
+    func @compute() -> !zkir.struct<@Bob> {
+      %self = new_struct : !zkir.struct<@Bob>
+      return %self : !zkir.struct<@Bob>
+    }
+    func @constrain(%self: !zkir.struct<@Bob>) { return }
+  }
+  zkir.func private @c(%x: !zkir.array<5 x !zkir.struct<@Bob>>) -> !zkir.array<5 x !zkir.struct<@Bob>>
+}
 //CHECK-LABEL:  zkir.func private @c(!zkir.array<5 x !zkir.struct<@Bob>>) -> !zkir.array<5 x !zkir.struct<@Bob>>
 // -----
 
