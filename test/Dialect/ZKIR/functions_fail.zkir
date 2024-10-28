@@ -63,3 +63,35 @@ module { // expected-note {{unnamed 'builtin.module' here}}
     return
   }
 }
+// -----
+module attributes {veridise.lang = "zkir"} {
+  // expected-error@+2 {{'zkir.func' op references unknown symbol "@WasNotDefined"}}
+  // expected-error@+1 {{no 'zkir.struct' named "@WasNotDefined"}}
+  zkir.func @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !zkir.struct<@WasNotDefined>) {
+    return
+  }
+}
+// -----
+module attributes {veridise.lang = "zkir"} {
+  // expected-error@+2 {{'zkir.func' op references unknown symbol "@WasNotDefined"}}
+  // expected-error@+1 {{no 'zkir.struct' named "@WasNotDefined"}}
+  zkir.func private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> !zkir.struct<@WasNotDefined>
+}
+// -----
+module attributes {veridise.lang = "zkir"} {
+  // expected-error@+2 {{'zkir.func' op references unknown symbol "@WasNotDefined"}}
+  // expected-error@+1 {{no 'zkir.struct' named "@WasNotDefined"}}
+  zkir.func private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> (!zkir.felt, i1, !zkir.struct<@WasNotDefined>)
+}
+// -----
+module attributes {veridise.lang = "zkir"} {
+  // expected-error@+8 {{'zkir.func' op references unknown symbol "@A"}}
+  // expected-error@+7 {{no 'zkir.struct' named "@A"}}
+  // expected-error@+6 {{'zkir.func' op references unknown symbol "@B"}}
+  // expected-error@+5 {{no 'zkir.struct' named "@B"}}
+  // expected-error@+4 {{'zkir.func' op references unknown symbol "@C"}}
+  // expected-error@+3 {{no 'zkir.struct' named "@C"}}
+  // expected-error@+2 {{'zkir.func' op references unknown symbol "@D"}}
+  // expected-error@+1 {{no 'zkir.struct' named "@D"}}
+  zkir.func private @f(%1: !zkir.struct<@A>, %7: !zkir.struct<@B>) -> (!zkir.struct<@C>, !zkir.struct<@D>)
+}

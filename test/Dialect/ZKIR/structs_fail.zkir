@@ -134,3 +134,56 @@ module attributes {veridise.lang = "zkir"} {
     func @constrain(%self: !zkir.struct<@ComponentM>)  { return }
   }
 }
+
+// -----
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @Test {
+    // expected-error@+2 {{'zkir.func' op references unknown symbol "@X"}}
+    // expected-error@+1 {{no 'zkir.struct' named "@X"}}
+    func @compute(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !zkir.struct<@X>) -> !zkir.struct<@Test> {
+      %self = new_struct : !zkir.struct<@Test>
+      return %self : !zkir.struct<@Test>
+    }
+    func @constrain(%self: !zkir.struct<@Test>)  { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @Test {
+    func @compute() -> !zkir.struct<@Test> {
+      %self = new_struct : !zkir.struct<@Test>
+      return %self : !zkir.struct<@Test>
+    }
+    // expected-error@+2 {{'zkir.func' op references unknown symbol "@X"}}
+    // expected-error@+1 {{no 'zkir.struct' named "@X"}}
+    func @constrain(%self: !zkir.struct<@Test>, %0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !zkir.struct<@X>)  { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @Test {
+    // expected-error@+4 {{'zkir.func' op references unknown symbol "@A"}}
+    // expected-error@+3 {{no 'zkir.struct' named "@A"}}
+    // expected-error@+2 {{'zkir.func' op references unknown symbol "@B"}}
+    // expected-error@+1 {{no 'zkir.struct' named "@B"}}
+    func @compute(%1: !zkir.struct<@A>, %7: !zkir.struct<@B>) -> !zkir.struct<@Test> {
+      %self = new_struct : !zkir.struct<@Test>
+      return %self : !zkir.struct<@Test>
+    }
+    func @constrain(%self: !zkir.struct<@Test>, %1: !zkir.struct<@A>, %7: !zkir.struct<@B>)  { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "zkir"} {
+  zkir.struct @Test {
+    // expected-error@+4 {{'zkir.func' op references unknown symbol "@A"}}
+    // expected-error@+3 {{no 'zkir.struct' named "@A"}}
+    // expected-error@+2 {{'zkir.func' op references unknown symbol "@B"}}
+    // expected-error@+1 {{no 'zkir.struct' named "@B"}}
+    func @constrain(%self: !zkir.struct<@Test>, %1: !zkir.struct<@A>, %7: !zkir.struct<@B>)  { return }
+    func @compute(%1: !zkir.struct<@A>, %7: !zkir.struct<@B>) -> !zkir.struct<@Test> {
+      %self = new_struct : !zkir.struct<@Test>
+      return %self : !zkir.struct<@Test>
+    }
+  }
+}
