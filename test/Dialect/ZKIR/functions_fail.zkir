@@ -48,3 +48,18 @@ module { // expected-note {{unnamed 'builtin.module' here}}
   }
 }
 // -----
+module attributes {veridise.lang = "zkir"} {
+  // expected-error@+2 {{'zkir.func' op references unknown symbol "@WasNotDefined"}}
+  // expected-error@+1 {{no 'zkir.struct' named "@WasNotDefined"}}
+  zkir.func @constrain(%p: !zkir.struct<@WasNotDefined>) {
+    return
+  }
+}
+// -----
+module { // expected-note {{unnamed 'builtin.module' here}}
+  // expected-error@+2 {{'zkir.func' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
+  // expected-error@+1 {{no 'zkir.struct' named "@MissingComponent"}}
+  zkir.func @constrain(%p: !zkir.struct<@MissingComponent>) {
+    return
+  }
+}

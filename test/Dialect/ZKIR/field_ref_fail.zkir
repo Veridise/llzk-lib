@@ -1,15 +1,6 @@
 // RUN: zkir-opt -split-input-file -verify-diagnostics %s
 
 module attributes {veridise.lang = "zkir"} {
-  zkir.func @constrain(%p: !zkir.struct<@WasNotDefined>) {
-    // expected-error@+2 {{'zkir.readf' op references unknown symbol "@WasNotDefined"}}
-    // expected-error@+1 {{no 'zkir.struct' named "@WasNotDefined"}}
-    %0 = readf %p[@f2] : !zkir.struct<@WasNotDefined>, !zkir.felt
-    return
-  }
-}
-// -----
-module attributes {veridise.lang = "zkir"} {
   zkir.struct @ComponentB {
     func @compute() -> !zkir.struct<@ComponentB> {
       %self = new_struct : !zkir.struct<@ComponentB>
@@ -73,15 +64,6 @@ module attributes {veridise.lang = "zkir"} {
       %0 = readf %p[@f2] : !zkir.struct<@ComponentF>, index
       return
     }
-  }
-}
-// -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.func @constrain(%p: !zkir.struct<@WasNotDefined>, %0: !zkir.felt) {
-    // expected-error@+2 {{'zkir.writef' op references unknown symbol "@WasNotDefined"}}
-    // expected-error@+1 {{no 'zkir.struct' named "@WasNotDefined"}}
-    writef %p[@f2] = %0 : !zkir.struct<@WasNotDefined>, !zkir.felt
-    return
   }
 }
 // -----
@@ -166,14 +148,5 @@ module attributes {veridise.lang = "zkir"} {
       writef %p[@f2] = %0 : !zkir.struct<@ComponentM>, !zkir.array<2 x index>
       return
     }
-  }
-}
-// -----
-module { // expected-note {{unnamed 'builtin.module' here}}
-  zkir.func @constrain(%p: !zkir.struct<@MissingComponent>, %0: !zkir.felt) {
-    // expected-error@+2 {{'zkir.writef' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
-    // expected-error@+1 {{no 'zkir.struct' named "@MissingComponent"}}
-    writef %p[@f2] = %0 : !zkir.struct<@MissingComponent>, !zkir.felt
-    return
   }
 }
