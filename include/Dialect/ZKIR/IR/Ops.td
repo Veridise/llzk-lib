@@ -17,6 +17,53 @@ include "Dialect/ZKIR/IR/FuncOps.td"
 // Basic constructs
 // -----
 
+def ZKIR_FeltConstantOp : ZKIR_Op<"constfelt", [
+  ConstantLike, Pure,
+  DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>
+]> {
+  let summary = "field element constant";
+  let description = [{
+    The `zkir.constfelt` operation produces a felt-typed SSA value equal to
+    some felt-typed integer constant.
+
+    Example:
+
+    ```zkir
+    %0 = zkir.constfelt 42
+    ```
+  }];
+
+  let arguments = (ins ZKIR_FeltConstAttr:$value);
+  let results = (outs ZKIR_FeltType:$result);
+  let assemblyFormat = "attr-dict $value";
+  let hasFolder = 1;
+}
+
+def ZKIR_FeltNonDetOp : ZKIR_Op<"nondetfelt", [
+  ConstantLike, Pure,
+  DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>
+]> {
+  let summary = "uninitialized field element";
+  let description = [{
+    The `zkir.nondetfelt` operation produces a felt-typed SSA value. This
+    can be used in `constrain()` functions in place of expressions that
+    cannot be included in constraints.
+
+    Example:
+
+    ```zkir
+    %0 = zkir.nondetfelt
+    ```
+  }];
+
+  let results = (outs ZKIR_FeltType:$result);
+  let assemblyFormat = "attr-dict";
+}
+
+// -----
+// Struct Operations
+// -----
+
 def ZKIR_StructDefOp : ZKIR_Op<"struct", [
   HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable, IsolatedFromAbove,
   GraphRegionNoTerminator, OpAsmOpInterface
@@ -125,49 +172,6 @@ def ZKIR_FieldWriteOp : ZKIR_FieldRefOp<"writef"> {
   let assemblyFormat = [{
     $component `[` $field_name `]` `=` $val attr-dict `:` type($component) `,` type($val)
   }];
-}
-
-def ZKIR_FeltConstantOp : ZKIR_Op<"constfelt", [
-  ConstantLike, Pure,
-  DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>
-]> {
-  let summary = "field element constant";
-  let description = [{
-    The `zkir.constfelt` operation produces a felt-typed SSA value equal to
-    some felt-typed integer constant.
-
-    Example:
-
-    ```zkir
-    %0 = zkir.constfelt 42
-    ```
-  }];
-
-  let arguments = (ins ZKIR_FeltConstAttr:$value);
-  let results = (outs ZKIR_FeltType:$result);
-  let assemblyFormat = "attr-dict $value";
-  let hasFolder = 1;
-}
-
-def ZKIR_FeltNonDetOp : ZKIR_Op<"nondetfelt", [
-  ConstantLike, Pure,
-  DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>
-]> {
-  let summary = "uninitialized field element";
-  let description = [{
-    The `zkir.nondetfelt` operation produces a felt-typed SSA value. This
-    can be used in `constrain()` functions in place of expressions that
-    cannot be included in constraints.
-
-    Example:
-
-    ```zkir
-    %0 = zkir.nondetfelt
-    ```
-  }];
-
-  let results = (outs ZKIR_FeltType:$result);
-  let assemblyFormat = "attr-dict";
 }
 
 def ZKIR_CreateStructOp : ZKIR_Op<"new_struct", [
