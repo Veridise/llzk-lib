@@ -43,4 +43,16 @@ mlir::LogicalResult verifyTypeResolution(
     mlir::SymbolTableCollection &symbolTable, mlir::Type ty, mlir::Operation *origin
 );
 
+mlir::LogicalResult verifyTypeResolution(
+    mlir::SymbolTableCollection &symbolTable, llvm::ArrayRef<mlir::Type>::iterator start,
+    llvm::ArrayRef<mlir::Type>::iterator end, mlir::Operation *origin
+);
+
+inline mlir::LogicalResult verifyTypeResolution(
+    mlir::SymbolTableCollection &symbolTable, llvm::ArrayRef<mlir::Type> types,
+    mlir::Operation *origin
+) {
+  return verifyTypeResolution(symbolTable, types.begin(), types.end(), origin);
+}
+
 } // namespace zkir

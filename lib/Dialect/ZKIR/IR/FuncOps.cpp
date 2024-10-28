@@ -229,25 +229,28 @@ mlir::LogicalResult compareTypes(
   return mlir::success();
 }
 
-mlir::LogicalResult verifyFuncTypeCompute(
-    FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parentStruct
-) {
-  llvm::ArrayRef<mlir::Type> resTypes = origin.getFunctionType().getResults();
+mlir::LogicalResult
+verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parent) {
+  mlir::FunctionType funcType = origin.getFunctionType();
+  llvm::ArrayRef<mlir::Type> resTypes = funcType.getResults();
   // Must return type of parent struct
   if (resTypes.size() != 1) {
     return origin.emitOpError().append(
         "\"@", zkir::FUNC_NAME_COMPUTE, "\" must have exactly one return type"
     );
   }
+  if (mlir::failed(compareTypes(symbolTable, parent, resTypes.front(), origin, "return"))) {
+    return mlir::failure();
+  }
 
-  // Lookup the return type StructDefOp and ensure it matches the parent StructDefOp of the
-  // current operation.
-  return compareTypes(symbolTable, parentStruct, resTypes.front(), origin, "return");
+  // After the more specific checks (to ensure more specific error messages would be produced if
+  // necessary), do the general check that all symbol references in the types are valid. The return
+  // types were already checked so just check the input types.
+  return verifyTypeResolution(symbolTable, funcType.getInputs(), origin);
 }
 
-mlir::LogicalResult verifyFuncTypeConstrain(
-    FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parentStruct
-) {
+mlir::LogicalResult
+verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parent) {
   mlir::FunctionType funcType = origin.getFunctionType();
   llvm::ArrayRef<mlir::Type> resTypes = funcType.getResults();
   // Must return '()' type, i.e. have no return types
@@ -262,12 +265,21 @@ mlir::LogicalResult verifyFuncTypeConstrain(
     return origin.emitOpError() << "\"@" << zkir::FUNC_NAME_CONSTRAIN
                                 << "\" must have at least one input type";
   }
-  return compareTypes(symbolTable, parentStruct, inputTypes.front(), origin, "first input");
+  if (mlir::failed(compareTypes(symbolTable, parent, inputTypes.front(), origin, "first input"))) {
+    return mlir::failure();
+  }
+
+  // After the more specific checks (to ensure more specific error messages would be produced if
+  // necessary), do the general check that all symbol references in the types are valid. There are
+  // no return types, just check the remaining input types (the first was already checked via
+  // the compareTypes() call above).
+  return verifyTypeResolution(symbolTable, inputTypes.begin() + 1, inputTypes.end(), origin);
 }
 
 } // namespace
 
 mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+  // Additional checks for the compute/constrain functions w/in a struct
   mlir::FailureOr<StructDefOp> parentStructOpt = getParentOfType<StructDefOp>(*this);
   if (mlir::succeeded(parentStructOpt)) {
     // Verify return type restrictions for functions within a StructDefOp
@@ -278,7 +290,12 @@ mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable)
       return verifyFuncTypeConstrain(*this, symbolTable, parentStructOpt.value());
     }
   }
-  return mlir::success();
+  // In the general case, verify all input and output types are valid. Check both
+  //  before returning to present all applicable type errors in one compilation.
+  mlir::FunctionType funcType = getFunctionType();
+  mlir::LogicalResult a = verifyTypeResolution(symbolTable, funcType.getResults(), *this);
+  mlir::LogicalResult b = verifyTypeResolution(symbolTable, funcType.getInputs(), *this);
+  return mlir::LogicalResult::success(mlir::succeeded(a) && mlir::succeeded(b));
 }
 
 //===----------------------------------------------------------------------===//
