@@ -120,11 +120,10 @@ def ZKIR_StructDefOp
   let hasRegionVerifier = 1;
 }
 
-def ZKIR_FieldDefOp : ZKIR_Op<"field", [
-  HasParent<"::zkir::StructDefOp">,
-  DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-  Symbol
-]> {
+def ZKIR_FieldDefOp
+    : ZKIR_Op<"field", [HasParent<"::zkir::StructDefOp">,
+                        DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                        Symbol]> {
   let summary = "Struct/component field";
   let description = [{
     Describes a field in a struct/component.
