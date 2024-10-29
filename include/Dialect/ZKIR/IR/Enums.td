@@ -18,13 +18,11 @@ class ZKIR_I32BitEnum<string name, string desc, list<BitEnumAttrCaseBase> cases>
 }
 
 def ZKIR_FeltCmpPredicate
-    : ZKIR_I32Enum<"FeltCmpPredicate", "Field element comparison predicate", [
-      I32EnumAttrCase<"EQ", 0, "eq">,
-      I32EnumAttrCase<"NE", 1, "ne">,
-      I32EnumAttrCase<"LT", 2, "lt">,
-      I32EnumAttrCase<"LE", 3, "le">,
-      I32EnumAttrCase<"GT", 4, "gt">,
-      I32EnumAttrCase<"GE", 5, "ge">,
-    ]>;
+    : ZKIR_I32Enum<
+          "FeltCmpPredicate", "Field element comparison predicate",
+          [I32EnumAttrCase<"EQ", 0, "eq">, I32EnumAttrCase<"NE", 1, "ne">,
+           I32EnumAttrCase<"LT", 2, "lt">, I32EnumAttrCase<"LE", 3, "le">,
+           I32EnumAttrCase<"GT", 4, "gt">, I32EnumAttrCase<"GE", 5, "ge">,
+]>;
 
 #endif // ZKIR_ENUMS

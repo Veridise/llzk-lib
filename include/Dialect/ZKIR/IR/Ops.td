@@ -13,14 +13,61 @@ include "Dialect/ZKIR/IR/Types.td"
 include "Dialect/ZKIR/IR/OpsBase.td"
 include "Dialect/ZKIR/IR/FuncOps.td"
 
-// -----
+//===------------------------------------------------------------------===//
 // Basic constructs
-// -----
+//===------------------------------------------------------------------===//
 
-def ZKIR_StructDefOp : ZKIR_Op<"struct", [
-  HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable, IsolatedFromAbove,
-  GraphRegionNoTerminator, OpAsmOpInterface
-]> {
+def ZKIR_FeltConstantOp
+    : ZKIR_Op<"constfelt", [ConstantLike, Pure,
+                            DeclareOpInterfaceMethods<
+                                OpAsmOpInterface, ["getAsmResultNames"]>]> {
+  let summary = "field element constant";
+  let description = [{
+    The `zkir.constfelt` operation produces a felt-typed SSA value equal to
+    some felt-typed integer constant.
+
+    Example:
+
+    ```zkir
+    %0 = zkir.constfelt 42
+    ```
+  }];
+
+  let arguments = (ins ZKIR_FeltConstAttr:$value);
+  let results = (outs ZKIR_FeltType:$result);
+  let assemblyFormat = "attr-dict $value";
+  let hasFolder = 1;
+}
+
+def ZKIR_FeltNonDetOp
+    : ZKIR_Op<"nondetfelt", [ConstantLike, Pure,
+                             DeclareOpInterfaceMethods<
+                                 OpAsmOpInterface, ["getAsmResultNames"]>]> {
+  let summary = "uninitialized field element";
+  let description = [{
+    The `zkir.nondetfelt` operation produces a felt-typed SSA value. This
+    can be used in `constrain()` functions in place of expressions that
+    cannot be included in constraints.
+
+    Example:
+
+    ```zkir
+    %0 = zkir.nondetfelt
+    ```
+  }];
+
+  let results = (outs ZKIR_FeltType:$result);
+  let assemblyFormat = "attr-dict";
+}
+
+//===------------------------------------------------------------------===//
+// Struct Operations
+//===------------------------------------------------------------------===//
+
+def ZKIR_StructDefOp
+    : ZKIR_Op<"struct", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
+                         IsolatedFromAbove, GraphRegionNoTerminator,
+                         OpAsmOpInterface]> {
   let summary = "Circuit struct/component definition";
   let description = [{
       Describes a struct/component in a circuit.
@@ -46,12 +93,10 @@ def ZKIR_StructDefOp : ZKIR_Op<"struct", [
       ```
   }];
 
-  let arguments = (ins
-    SymbolNameAttr:$sym_name,
-    OptionalAttr<FlatSymbolRefArrayAttr>:$const_params
-  );
+  let arguments = (ins SymbolNameAttr:$sym_name,
+      OptionalAttr<FlatSymbolRefArrayAttr>:$const_params);
 
-  let regions = (region SizedRegion<1> : $body);
+  let regions = (region SizedRegion<1>:$body);
 
   let assemblyFormat = [{
     $sym_name (`<` $const_params^ `>`)? $body attr-dict
@@ -109,7 +154,8 @@ def ZKIR_FieldReadOp : ZKIR_FieldRefOp<"readf"> {
     This operation reads the value from the named field from a struct/component.
   }];
 
-  let arguments = (ins ZKIR_StructType:$component, FlatSymbolRefAttr:$field_name);
+  let arguments = (ins ZKIR_StructType:$component,
+      FlatSymbolRefAttr:$field_name);
   let results = (outs AnyZKIRType:$val);
 
   let assemblyFormat = [{
@@ -123,58 +169,17 @@ def ZKIR_FieldWriteOp : ZKIR_FieldRefOp<"writef"> {
     This operation writes the value to the named field from a struct/component.
   }];
 
-  let arguments = (ins ZKIR_StructType:$component, FlatSymbolRefAttr:$field_name, AnyZKIRType:$val);
+  let arguments = (ins ZKIR_StructType:$component,
+      FlatSymbolRefAttr:$field_name, AnyZKIRType:$val);
 
   let assemblyFormat = [{
     $component `[` $field_name `]` `=` $val attr-dict `:` type($component) `,` type($val)
   }];
 }
 
-def ZKIR_FeltConstantOp : ZKIR_Op<"constfelt", [
-  ConstantLike, Pure,
-  DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>
-]> {
-  let summary = "field element constant";
-  let description = [{
-    The `zkir.constfelt` operation produces a felt-typed SSA value equal to
-    some felt-typed integer constant.
-
-    Example:
-
-    ```zkir
-    %0 = zkir.constfelt 42
-    ```
-  }];
-
-  let arguments = (ins ZKIR_FeltConstAttr:$value);
-  let results = (outs ZKIR_FeltType:$result);
-  let assemblyFormat = "attr-dict $value";
-  let hasFolder = 1;
-}
-
-def ZKIR_FeltNonDetOp : ZKIR_Op<"nondetfelt", [
-  ConstantLike, Pure,
-  DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>
-]> {
-  let summary = "uninitialized field element";
-  let description = [{
-    The `zkir.nondetfelt` operation produces a felt-typed SSA value. This
-    can be used in `constrain()` functions in place of expressions that
-    cannot be included in constraints.
-
-    Example:
-
-    ```zkir
-    %0 = zkir.nondetfelt
-    ```
-  }];
-
-  let results = (outs ZKIR_FeltType:$result);
-  let assemblyFormat = "attr-dict";
-}
-
-def ZKIR_CreateStructOp : ZKIR_Op<"new_struct", [
-    DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
+def ZKIR_CreateStructOp
+    : ZKIR_Op<"new_struct", [DeclareOpInterfaceMethods<
+                                 OpAsmOpInterface, ["getAsmResultNames"]>,
 ]> {
   let summary = "creates a new struct";
   let description = [{
@@ -192,18 +197,20 @@ def ZKIR_CreateStructOp : ZKIR_Op<"new_struct", [
   let assemblyFormat = "attr-dict `:` type($result)";
 }
 
-// -----
+//===------------------------------------------------------------------===//
 // Array operations
-// -----
+//===------------------------------------------------------------------===//
 
-def ZKIR_CreateArrayOp : ZKIR_Op<"new_array", [
-    DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
-    Pure,
-    TypesMatchWith<"operand types match result type",
-                   "result", "elements", "::llvm::SmallVector<::mlir::Type, 2>("
-                   "::llvm::cast<::zkir::ArrayType>($_self).getNumElements(), "
-                   "::llvm::cast<::zkir::ArrayType>($_self).getElementType())">
-]> {
+def ZKIR_CreateArrayOp
+    : ZKIR_Op<
+          "new_array",
+          [DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
+           Pure,
+           TypesMatchWith<
+               "operand types match result type", "result", "elements",
+               "::llvm::SmallVector<::mlir::Type, 2>("
+               "::llvm::cast<::zkir::ArrayType>($_self).getNumElements(), "
+               "::llvm::cast<::zkir::ArrayType>($_self).getElementType())">]> {
   let summary = "creates an array";
   let description = [{
     This operation creates a new array with the given elements.
@@ -224,10 +231,12 @@ def ZKIR_CreateArrayOp : ZKIR_Op<"new_array", [
   let assemblyFormat = "$elements attr-dict `:` type($result)";
 }
 
-def ZKIR_ReadArrayOp : ZKIR_Op<"readarr", [
-   TypesMatchWith<"result types match with array content",
-                 "lvalue", "result", "::llvm::cast<::zkir::ArrayType>($_self).getElementType()">
-]> {
+def ZKIR_ReadArrayOp
+    : ZKIR_Op<
+          "readarr",
+          [TypesMatchWith<
+              "result types match with array content", "lvalue", "result",
+              "::llvm::cast<::zkir::ArrayType>($_self).getElementType()">]> {
   let summary = "Loads a value from a ZKIR array";
   let description = [{
     This operation loads the value from an array at position `$index`.
@@ -259,10 +268,12 @@ def ZKIR_ReadArrayOp : ZKIR_Op<"readarr", [
   }];
 }
 
-def ZKIR_WriteArrayOp : ZKIR_Op<"writearr", [
-   TypesMatchWith<"rvalue types match with array content",
-                 "lvalue", "rvalue", "::llvm::cast<::zkir::ArrayType>($_self).getElementType()">
-]> {
+def ZKIR_WriteArrayOp
+    : ZKIR_Op<
+          "writearr",
+          [TypesMatchWith<
+              "rvalue types match with array content", "lvalue", "rvalue",
+              "::llvm::cast<::zkir::ArrayType>($_self).getElementType()">]> {
   let summary = "Writes a value into a ZKIR array";
   let description = [{
     This operation writes a value into an array at position `$index`.
@@ -290,23 +301,25 @@ def ZKIR_WriteArrayOp : ZKIR_Op<"writearr", [
 
   }];
 
-  let arguments = (ins ZKIR_ArrayType:$lvalue, Variadic<Index>:$indices, AnyZKIRType:$rvalue);
+  let arguments = (ins ZKIR_ArrayType:$lvalue, Variadic<Index>:$indices,
+      AnyZKIRType:$rvalue);
 
   let assemblyFormat = [{
     $lvalue `[` $indices `]` `=` $rvalue attr-dict `:` type($lvalue) `,` type($rvalue)
   }];
 }
 
-// -----
+//===------------------------------------------------------------------===//
 // Constraint emit operations
-// -----
+//===------------------------------------------------------------------===//
 
+def EmitEqType : TypeConstraint<CPred<"::zkir::isValidEmitEqType($_self)">,
+                                "non-struct type">;
 
-def EmitEqType : TypeConstraint<CPred<"::zkir::isValidEmitEqType($_self)">, "non-struct type">;
-
-def ZKIR_EmitEqualityOp : ZKIR_Op<"emit_eq", [
-    InStructFunctionNamed<"::zkir::FUNC_NAME_CONSTRAIN">,
-    Pure, Commutative, SameTypeOperands, ElementwiseMappable,
+def ZKIR_EmitEqualityOp
+    : ZKIR_Op<"emit_eq", [InStructFunctionNamed<"::zkir::FUNC_NAME_CONSTRAIN">,
+                          Pure, Commutative, SameTypeOperands,
+                          ElementwiseMappable,
 ]> {
   let summary = "";
   let description = [{}];
@@ -318,11 +331,12 @@ def ZKIR_EmitEqualityOp : ZKIR_Op<"emit_eq", [
   }];
 }
 
-def ZKIR_EmitContainmentOp : ZKIR_Op<"emit_in", [
-    InStructFunctionNamed<"::zkir::FUNC_NAME_CONSTRAIN">, Pure,
-    TypesMatchWith<"lhs type matches rhs element type", "rhs", "lhs", 
-                   "::llvm::cast<::zkir::ArrayType>($_self).getElementType()">
-]> {
+def ZKIR_EmitContainmentOp
+    : ZKIR_Op<"emit_in",
+              [InStructFunctionNamed<"::zkir::FUNC_NAME_CONSTRAIN">, Pure,
+               TypesMatchWith<"lhs type matches rhs element type", "rhs", "lhs",
+                              "::llvm::cast<::zkir::ArrayType>($_self)."
+                              "getElementType()">]> {
   let summary = "";
   let description = [{}];
 
@@ -333,9 +347,9 @@ def ZKIR_EmitContainmentOp : ZKIR_Op<"emit_in", [
   }];
 }
 
-// -----
+//===------------------------------------------------------------------===//
 // Field element operators
-// -----
+//===------------------------------------------------------------------===//
 
 def ZKIR_AddFeltOp : ZKIR_BinaryFeltOp<"add", [Commutative]> {
   let summary = "Addition operator for field elements";
@@ -437,7 +451,8 @@ def ZKIR_CmpOp : ZKIR_Op<"cmp", [Pure]> {
     ```
   }];
 
-  let arguments = (ins ZKIR_CmpPredicateAttr:$pred, ZKIR_FeltType:$lhs, ZKIR_FeltType:$rhs);
+  let arguments = (ins ZKIR_CmpPredicateAttr:$pred, ZKIR_FeltType:$lhs,
+      ZKIR_FeltType:$rhs);
   let results = (outs I1:$result);
   let assemblyFormat = "`` $pred `(` $lhs `,` $rhs `)` attr-dict";
 }

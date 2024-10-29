@@ -14,8 +14,8 @@ class ZKIR_Op<string mnemonic, list<Trait> traits = []>
 
 class ZKIR_FieldRefOp<string mnemonic, list<Trait> traits = []>
     : ZKIR_Op<mnemonic,
-              traits #[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                       DeclareOpInterfaceMethods<FieldRefOpInterface>]> {
+              traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                      DeclareOpInterfaceMethods<FieldRefOpInterface>]> {
   let extraClassDeclaration = [{
     /// Gets the `field` definition for the field referenced in this op.
     ::mlir::FailureOr<FieldDefOp> getFieldDefOp(::mlir::SymbolTableCollection &symbolTable);
@@ -23,7 +23,7 @@ class ZKIR_FieldRefOp<string mnemonic, list<Trait> traits = []>
 }
 
 class ZKIR_BinaryFeltOp<string mnemonic, list<Trait> traits = []>
-    : ZKIR_Op<mnemonic, traits # [SameOperandsAndResultType, Pure]> {
+    : ZKIR_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
 
   let arguments = (ins ZKIR_FeltType:$lhs, ZKIR_FeltType:$rhs);
   let results = (outs ZKIR_FeltType:$result);
@@ -31,7 +31,7 @@ class ZKIR_BinaryFeltOp<string mnemonic, list<Trait> traits = []>
 }
 
 class ZKIR_UnaryFeltOp<string mnemonic, list<Trait> traits = []>
-    : ZKIR_Op<mnemonic, traits # [SameOperandsAndResultType, Pure]> {
+    : ZKIR_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
 
   let arguments = (ins ZKIR_FeltType:$operand);
   let results = (outs ZKIR_FeltType:$result);
