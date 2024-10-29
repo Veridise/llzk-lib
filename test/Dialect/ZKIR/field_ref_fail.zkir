@@ -35,7 +35,7 @@ module attributes {veridise.lang = "zkir"} {
     }
 
     func @constrain(%p: !zkir.struct<@ComponentC>) {
-      // expected-error@+1 {{'zkir.readf' op field read has wrong type; expected 'index', got '!zkir.felt}}
+      // expected-error@+1 {{'zkir.readf' op has wrong type; expected 'index', got '!zkir.felt}}
       %0 = readf %p[@f2] : !zkir.struct<@ComponentC>, !zkir.felt
       return
     }
@@ -111,7 +111,7 @@ module attributes {veridise.lang = "zkir"} {
     }
 
     func @constrain(%p: !zkir.struct<@ComponentJ>, %0: !zkir.felt) {
-      // expected-error@+1 {{'zkir.writef' op field write has wrong type; expected 'index', got '!zkir.felt}}
+      // expected-error@+1 {{'zkir.writef' op has wrong type; expected 'index', got '!zkir.felt}}
       writef %p[@f2] = %0 : !zkir.struct<@ComponentJ>, !zkir.felt
       return
     }
