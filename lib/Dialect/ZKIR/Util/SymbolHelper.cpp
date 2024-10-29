@@ -116,9 +116,13 @@ mlir::LogicalResult verifyTypeResolution(
     mlir::SymbolTableCollection &symbolTable, llvm::ArrayRef<mlir::Type>::iterator start,
     llvm::ArrayRef<mlir::Type>::iterator end, mlir::Operation *origin
 ) {
-  return mlir::failure(std::any_of(start, end, [&](mlir::Type t) {
-    return mlir::failed(verifyTypeResolution(symbolTable, t, origin));
-  }));
+  mlir::LogicalResult res = mlir::success();
+  for (; start != end; ++start) {
+    if (mlir::failed(verifyTypeResolution(symbolTable, *start, origin))) {
+      res = mlir::failure();
+    }
+  }
+  return res;
 }
 
 } // namespace zkir
