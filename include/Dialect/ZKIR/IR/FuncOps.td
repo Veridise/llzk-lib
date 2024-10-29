@@ -19,12 +19,12 @@ include "Dialect/ZKIR/IR/OpsBase.td"
 // FuncOp
 //===----------------------------------------------------------------------===//
 
-def FuncOp : ZKIR_Op<"func", [
-  ParentOneOf<["::mlir::ModuleOp", "::zkir::StructDefOp"]>,
-  DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-  AffineScope, AutomaticAllocationScope,
-  FunctionOpInterface, IsolatedFromAbove, OpAsmOpInterface
-]> {
+def FuncOp
+    : ZKIR_Op<"func", [ParentOneOf<["::mlir::ModuleOp", "::zkir::StructDefOp"]>,
+                       DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                       AffineScope, AutomaticAllocationScope,
+                       FunctionOpInterface, IsolatedFromAbove,
+                       OpAsmOpInterface]> {
   let summary = "An operation with a name containing a single `SSACFG` region";
   let description = [{
     Operations within the function cannot implicitly capture values defined
@@ -60,31 +60,32 @@ def FuncOp : ZKIR_Op<"func", [
     ```
   }];
 
-  // Duplicated from the pre-defined `func` dialect. We don't store the visibility attribute but, since
-  //  we use `function_interface_impl` for parsing/printing, there is still the requirement that global
-  //  functions declared without a body must specify the `private` visibility. Additionally, the default
-  //  parsing/printing functions allow attributes on the arguments, results, and function itself.
+  // Duplicated from the pre-defined `func` dialect. We don't store the
+  // visibility attribute but, since we use `function_interface_impl` for
+  // parsing/printing, there is still the requirement that global functions
+  // declared without a body must specify the `private` visibility.
+  // Additionally, the default parsing/printing functions allow attributes on
+  // the arguments, results, and function itself.
   //    ```zkir
   //    // Argument attribute
   //    zkir.func private @example_fn_arg(%x: i1 {zkir.pub})
   //
   //    // Result attribute
-  //    zkir.func private @example_fn_result() -> (i1 {dialectName.attrName = 0 : i1})
+  //    zkir.func @example_fn_result() -> (i1 {dialectName.attrName = 0 : i1})
   //
   //    // Function attribute
-  //    zkir.func private @example_fn_attr() attributes {dialectName.attrName = false}
+  //    zkir.func @example_fn_attr() attributes {dialectName.attrName = false}
   //    ```
   let arguments = (ins SymbolNameAttr:$sym_name,
-                       TypeAttrOf<FunctionType>:$function_type,
-                       OptionalAttr<DictArrayAttr>:$arg_attrs,
-                       OptionalAttr<DictArrayAttr>:$res_attrs);
+      TypeAttrOf<FunctionType>:$function_type,
+      OptionalAttr<DictArrayAttr>:$arg_attrs,
+      OptionalAttr<DictArrayAttr>:$res_attrs);
   let regions = (region AnyRegion:$body);
 
-  let builders = [OpBuilder<(ins
-    "::llvm::StringRef":$name, "::mlir::FunctionType":$type,
-    CArg<"::llvm::ArrayRef<::mlir::NamedAttribute>", "{}">:$attrs,
-    CArg<"::llvm::ArrayRef<::mlir::DictionaryAttr>", "{}">:$argAttrs)
-  >];
+  let builders = [OpBuilder<(ins "::llvm::StringRef":$name,
+      "::mlir::FunctionType":$type,
+      CArg<"::llvm::ArrayRef<::mlir::NamedAttribute>", "{}">:$attrs,
+      CArg<"::llvm::ArrayRef<::mlir::DictionaryAttr>", "{}">:$argAttrs)>];
   let extraClassDeclaration = [{
     static FuncOp create(::mlir::Location location, ::llvm::StringRef name, ::mlir::FunctionType type,
                          ::llvm::ArrayRef<::mlir::NamedAttribute> attrs = {});
@@ -150,8 +151,9 @@ def FuncOp : ZKIR_Op<"func", [
 // ReturnOp
 //===----------------------------------------------------------------------===//
 
-def ReturnOp : ZKIR_Op<"return", [HasParent<"::zkir::FuncOp">, Pure, 
-                                MemRefsNormalizable, ReturnLike, Terminator]> {
+def ReturnOp
+    : ZKIR_Op<"return", [HasParent<"::zkir::FuncOp">, Pure, MemRefsNormalizable,
+                         ReturnLike, Terminator]> {
   let summary = "Function return operation";
   let description = [{
     The `zkir.return` operation represents a return operation within a function.
@@ -183,9 +185,9 @@ def ReturnOp : ZKIR_Op<"return", [HasParent<"::zkir::FuncOp">, Pure,
 // CallOp
 //===----------------------------------------------------------------------===//
 
-def CallOp : ZKIR_Op<"call",
-    [MemRefsNormalizable, CallOpInterface,
-     DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+def CallOp
+    : ZKIR_Op<"call", [MemRefsNormalizable, CallOpInterface,
+                       DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "call operation";
   let description = [{
     The `zkir.call` operation represents a call to another function. The operands
@@ -210,27 +212,34 @@ def CallOp : ZKIR_Op<"call",
   let arguments = (ins SymbolRefAttr:$callee, Variadic<AnyZKIRType>:$operands);
   let results = (outs Variadic<AnyZKIRType>);
 
-  let builders = [
-    OpBuilder<(ins "::zkir::FuncOp":$callee, CArg<"::mlir::ValueRange", "{}">:$operands), [{
-      $_state.addOperands(operands);
-      $_state.addAttribute("callee", ::mlir::SymbolRefAttr::get(callee));
-      $_state.addTypes(callee.getFunctionType().getResults());
-    }]>,
-    OpBuilder<(ins "::mlir::SymbolRefAttr":$callee, "::mlir::TypeRange":$results,
-      CArg<"::mlir::ValueRange", "{}">:$operands), [{
-      $_state.addOperands(operands);
-      $_state.addAttribute("callee", callee);
-      $_state.addTypes(results);
-    }]>,
-    OpBuilder<(ins "::mlir::StringAttr":$callee, "::mlir::TypeRange":$results,
-      CArg<"::mlir::ValueRange", "{}">:$operands), [{
-      build($_builder, $_state, ::mlir::SymbolRefAttr::get(callee), results, operands);
-    }]>,
-    OpBuilder<(ins "::llvm::StringRef":$callee, "::mlir::TypeRange":$results,
-      CArg<"::mlir::ValueRange", "{}">:$operands), [{
-      build($_builder, $_state, ::mlir::StringAttr::get($_builder.getContext(), callee),
-            results, operands);
-    }]>];
+  let builders = [OpBuilder<(ins "::zkir::FuncOp":$callee,
+                                CArg<"::mlir::ValueRange", "{}">:$operands),
+                            [{
+                              $_state.addOperands(operands);
+                              $_state.addAttribute("callee", ::mlir::SymbolRefAttr::get(callee));
+                              $_state.addTypes(callee.getFunctionType().getResults());
+                            }]>,
+                  OpBuilder<(ins "::mlir::SymbolRefAttr":$callee,
+                                "::mlir::TypeRange":$results,
+                                CArg<"::mlir::ValueRange", "{}">:$operands),
+                            [{
+                              $_state.addOperands(operands);
+                              $_state.addAttribute("callee", callee);
+                              $_state.addTypes(results);
+                            }]>,
+                  OpBuilder<(ins "::mlir::StringAttr":$callee,
+                                "::mlir::TypeRange":$results,
+                                CArg<"::mlir::ValueRange", "{}">:$operands),
+                            [{
+                              build($_builder, $_state, ::mlir::SymbolRefAttr::get(callee), results, operands);
+                            }]>,
+                  OpBuilder<(ins "::llvm::StringRef":$callee,
+                                "::mlir::TypeRange":$results,
+                                CArg<"::mlir::ValueRange", "{}">:$operands),
+                            [{
+                              build($_builder, $_state, ::mlir::StringAttr::get($_builder.getContext(), callee),
+                                    results, operands);
+                            }]>];
 
   let extraClassDeclaration = [{
     ::mlir::FunctionType getCalleeType();

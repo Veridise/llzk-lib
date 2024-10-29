@@ -14,9 +14,9 @@
 #define GET_ATTRDEF_CLASSES
 #include "Dialect/ZKIR/IR/Attrs.cpp.inc"
 
-// -----
+//===------------------------------------------------------------------===//
 // ZKIRDialect
-// -----
+//===------------------------------------------------------------------===//
 
 auto zkir::ZKIRDialect::initialize() -> void {
   // clang-format off

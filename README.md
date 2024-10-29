@@ -121,8 +121,10 @@ you can run the following commands:
 * Generate API docs (in `doc/html`): `cmake --build . --target doc`
 * Run install target (requires `CMAKE_INSTALL_PREFIX` to be set):
   `cmake --build . --target install`
-* Run clang-format: `clang-format -i $(find include -name '*.h' -o -name '*.td' -type f) $(find lib tools -name '*.cpp' -type f)`
-  * Note that due to bugs in clang-format for tablegen files, those should be manually inspected and fixed after.
+* Run clang-format on C++ files:
+  `clang-format -i $(find include -name '*.h' -type f) $(find lib tools -name '*.cpp' -type f)`
+* Run clang-format (version 19.1 or later) on tablegen files:
+  `clang-format-19 -i $(find include -name '*.td' -type f)`
 * Run clang-tidy: `clang-tidy -p build/compile_commands.json $(find lib -name '*.cpp' -type f)`
   * Note that due to bugs in clang-tidy, this may segfault if running on all files.
 

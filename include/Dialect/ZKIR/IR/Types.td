@@ -47,9 +47,7 @@ def ZKIR_StructType : ZKIR_Type<"Struct", "struct"> {
   }];
 }
 
-def ZKIR_ArrayType : ZKIR_Type<"Array", "array", [
-  ShapedTypeInterface
-]> {
+def ZKIR_ArrayType : ZKIR_Type<"Array", "array", [ShapedTypeInterface]> {
   let summary = "n-dimensional array";
   let description = [{
     Array type with a ranked shape and homogeneous element type.
@@ -64,7 +62,8 @@ def ZKIR_ArrayType : ZKIR_Type<"Array", "array", [
     ```
   }];
 
-  let parameters = (ins "::mlir::Type":$elementType, ArrayRefParameter<"int64_t">:$shape);
+  let parameters = (ins "::mlir::Type":$elementType,
+      ArrayRefParameter<"int64_t">:$shape);
   // Necessary for parsing the dimension list in `$shape`
   let hasCustomAssemblyFormat = true;
 

@@ -25,7 +25,8 @@ def ZKIR_CmpPredicateAttr
   let assemblyFormat = [{ $value }];
 }
 
-def ZKIR_FeltConstAttr : ZKIR_Attr<"FeltConst", "constfelt", [TypedAttrInterface]> {
+def ZKIR_FeltConstAttr
+    : ZKIR_Attr<"FeltConst", "constfelt", [TypedAttrInterface]> {
   let summary = "finite field element";
   let description = [{
     A felt attribute represents a finite field element.
@@ -70,9 +71,11 @@ def ZKIR_LoopBounds : ZKIR_Attr<"LoopBounds", "loopbounds"> {
     ```
   }];
 
-  let parameters = (ins "::llvm::APInt":$lower, "::llvm::APInt":$upper, "::llvm::APInt":$step);
+  let parameters = (ins "::llvm::APInt":$lower, "::llvm::APInt":$upper,
+      "::llvm::APInt":$step);
 
-  let assemblyFormat = "`<` custom<APInt>($lower) `to` custom<APInt>($upper) `step` custom<APInt>($step) `>`";
+  let assemblyFormat = "`<` custom<APInt>($lower) `to` custom<APInt>($upper) "
+                       "`step` custom<APInt>($step) `>`";
 }
 
 #endif // ZKIR_ATTRS

@@ -39,9 +39,9 @@ bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName) {
   return false;
 }
 
-// -----
+//===------------------------------------------------------------------===//
 // StructDefOp
-// -----
+//===------------------------------------------------------------------===//
 namespace {
 
 using namespace mlir;
@@ -108,14 +108,14 @@ FieldDefOp StructDefOp::getFieldDef(::mlir::StringAttr fieldName) {
   return nullptr;
 }
 
-// -----
+//===------------------------------------------------------------------===//
 // FieldDefOp
-// -----
+//===------------------------------------------------------------------===//
 bool FieldDefOp::hasPublicAttr() { return getOperation()->hasAttr(PublicAttr::name); }
 
-// -----
+//===------------------------------------------------------------------===//
 // FieldRefOp implementations
-// -----
+//===------------------------------------------------------------------===//
 namespace {
 mlir::FailureOr<FieldDefOp> getFieldDefOp(
     FieldRefOpInterface refOp, mlir::SymbolTableCollection &symbolTable, StructType tyStruct
@@ -178,9 +178,9 @@ mlir::LogicalResult FieldWriteOp::verifySymbolUses(::mlir::SymbolTableCollection
   return zkir::verifySymbolUses(*this, symbolTable, getVal(), "write");
 }
 
-// -----
+//===------------------------------------------------------------------===//
 // FeltConstantOp
-// -----
+//===------------------------------------------------------------------===//
 
 void FeltConstantOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
   llvm::SmallString<32> buf;
@@ -192,25 +192,25 @@ void FeltConstantOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
 
 mlir::OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValue(); }
 
-// -----
+//===------------------------------------------------------------------===//
 // FeltNonDetOp
-// -----
+//===------------------------------------------------------------------===//
 
 void FeltNonDetOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "felt_nondet");
 }
 
-// -----
+//===------------------------------------------------------------------===//
 // CreateArrayOp
-// -----
+//===------------------------------------------------------------------===//
 
 void CreateArrayOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "array");
 }
 
-// -----
+//===------------------------------------------------------------------===//
 // CreateStructOp
-// -----
+//===------------------------------------------------------------------===//
 
 void CreateStructOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "self");
