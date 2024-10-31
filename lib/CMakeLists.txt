@@ -4,7 +4,7 @@ set(ZKIR_DEP_DIALECT_LIBS
   MLIRSCFDialect
   PARENT_SCOPE
 )
-add_subdirectory(zkir/Dialect/ZKIR)
+add_subdirectory(Dialect/ZKIR)
 
 if(ZKIR_ENABLE_BINDINGS_PYTHON)
   add_subdirectory(Bindings/Python)
