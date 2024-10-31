@@ -1,4 +1,4 @@
-#include "Dialect/InitDialects.h"
+#include "zkir/Dialect/InitDialects.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Tools/mlir-opt/MlirOptMain.h>

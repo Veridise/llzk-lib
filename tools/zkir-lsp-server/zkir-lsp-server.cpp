@@ -1,4 +1,4 @@
-#include "Dialect/InitDialects.h"
+#include "zkir/Dialect/InitDialects.h"
 
 #include <mlir/Tools/mlir-lsp-server/MlirLspServerMain.h>
 
