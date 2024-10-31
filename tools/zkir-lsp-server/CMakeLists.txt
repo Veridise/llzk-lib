@@ -2,7 +2,7 @@ add_executable(zkir-lsp-server zkir-lsp-server.cpp)
 target_link_libraries(zkir-lsp-server PUBLIC
   ${ZKIR_DEP_DIALECT_LIBS}
   MLIRLspServerLib
-  ZKIR::AllDialects
+  ZKIR::DialectRegistration
 )
 zkir_target_add_mlir_link_settings(zkir-lsp-server)
 target_link_libraries(zkir-lsp-server

@@ -2,7 +2,7 @@ add_executable(zkir-opt zkir-opt.cpp)
 target_link_libraries(zkir-opt PUBLIC
   ${ZKIR_DEP_DIALECT_LIBS}
   MLIROptLib
-  ZKIR::AllDialects
+  ZKIR::DialectRegistration
 )
 zkir_target_add_mlir_link_settings(zkir-opt)
 target_link_libraries(zkir-opt
