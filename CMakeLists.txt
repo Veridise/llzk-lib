@@ -151,6 +151,8 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ZKIRMacros.cmake)
 # subdirectory.
 add_library(ZKIRAllDialects INTERFACE)
 add_library(ZKIR::AllDialects ALIAS ZKIRAllDialects)
+# Ensures that the target can be imported as "ZKIR::AllDialects" and not "ZKIR::ZKIRAllDialects"
+set_target_properties(ZKIRAllDialects PROPERTIES EXPORT_NAME "AllDialects")
 install(TARGETS ZKIRAllDialects
   EXPORT ZKIRTargets
 )
