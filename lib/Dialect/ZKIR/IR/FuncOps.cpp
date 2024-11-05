@@ -22,10 +22,7 @@ using namespace mlir;
 FuncOp FuncOp::create(
     Location location, StringRef name, FunctionType type, ArrayRef<NamedAttribute> attrs
 ) {
-  OpBuilder builder(location->getContext());
-  OperationState state(location, getOperationName());
-  FuncOp::build(builder, state, name, type, attrs);
-  return cast<FuncOp>(Operation::create(state));
+  return delegate_to_build<FuncOp>(location, name, type, attrs);
 }
 
 FuncOp FuncOp::create(

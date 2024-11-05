@@ -96,6 +96,14 @@ public:
                      << "\" within a '" << getOperationName<StructDefOp>() << "' definition";
   }
 };
+
+template <typename OpType, typename... Args>
+inline OpType delegate_to_build(mlir::Location location, Args &&...args) {
+  mlir::OpBuilder builder(location->getContext());
+  mlir::OperationState state(location, OpType::getOperationName());
+  OpType::build(builder, state, std::forward<Args>(args)...);
+  return cast<OpType>(mlir::Operation::create(state));
+}
 } // namespace zkir
 
 // Include TableGen'd declarations

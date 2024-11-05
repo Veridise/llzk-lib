@@ -3,12 +3,9 @@
 
 include "mlir/Pass/PassBase.td"
 
-def HelloWorldPass : Pass<"zkir-hello-world", "::zkir::FuncOp"> {
-  let summary = "A hello world pass";
-  let description =
-      [{This pass is an example demonstrating how to create a new MLIR Pass.}];
-
-  let constructor = "zkir::createHelloWorldPass()";
+def InlineIncludesPass : Pass<"zkir-inline-includes", "::mlir::ModuleOp"> {
+  let summary = "Replace all IncludeOp with contents of the referenced file.";
+  let constructor = "zkir::createInlineIncludesPass()";
   let dependentDialects = ["zkir::ZKIRDialect"];
 }
 

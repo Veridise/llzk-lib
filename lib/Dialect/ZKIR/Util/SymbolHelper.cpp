@@ -1,12 +1,13 @@
 #include "zkir/Dialect/ZKIR/Util/SymbolHelper.h"
 #include "zkir/Dialect/ZKIR/IR/Ops.h"
+#include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 
 namespace zkir {
+using namespace mlir;
 
 namespace {
-using namespace mlir;
 
 /// Traverse ModuleOp ancestors of `from` and add their names to `path` until the ModuleOp with the
 /// LANG_ATTR_NAME attribute is reached. If a ModuleOp without a name is reached or a ModuleOp with
@@ -69,19 +70,17 @@ buildPathFromRoot(StructDefOp &to, Operation *origin, std::vector<FlatSymbolRefA
 }
 } // namespace
 
-mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from) {
+FailureOr<ModuleOp> getRootModule(Operation *from) {
   std::vector<FlatSymbolRefAttr> path;
   return collectPathToRoot(from, from, path);
 }
 
-mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(StructDefOp &to) {
+FailureOr<SymbolRefAttr> getPathFromRoot(StructDefOp &to) {
   std::vector<FlatSymbolRefAttr> path;
   return buildPathFromRoot(to, to.getOperation(), std::move(path));
 }
 
-mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(FuncOp &to) {
-  using namespace mlir;
-
+FailureOr<SymbolRefAttr> getPathFromRoot(FuncOp &to) {
   std::vector<FlatSymbolRefAttr> path;
   // Add the name of the function (its name is not optional)
   path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
@@ -100,26 +99,51 @@ mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(FuncOp &to) {
   }
 }
 
-mlir::LogicalResult verifyTypeResolution(
-    mlir::SymbolTableCollection &symbolTable, mlir::Type ty, mlir::Operation *origin
-) {
+namespace {
+inline SymbolRefAttr getTailAsSymbolRefAttr(SymbolRefAttr &symbol) {
+  llvm::ArrayRef<FlatSymbolRefAttr> nest = symbol.getNestedReferences();
+  return SymbolRefAttr::get(nest.front().getAttr(), nest.drop_front());
+}
+} // namespace
+
+Operation *
+lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *symTableOp) {
+  Operation *found = tables.lookupSymbolIn(symTableOp, symbol);
+  if (!found) {
+    // If not found, check if the reference can be found by manually doing a lookup for each part of
+    // the reference in turn, traversing through IncludeOp symbols by parsing the included file.
+    if (Operation *rootOp = tables.lookupSymbolIn(symTableOp, symbol.getRootReference())) {
+      if (IncludeOp rootOpInc = llvm::dyn_cast<IncludeOp>(rootOp)) {
+        FailureOr<ModuleOp> otherMod = loadModule(rootOpInc);
+        if (succeeded(otherMod)) {
+          return lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), *otherMod);
+        }
+      } else if (ModuleOp rootOpMod = llvm::dyn_cast<ModuleOp>(rootOp)) {
+        return lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), rootOpMod);
+      }
+    }
+  }
+  return found;
+}
+
+LogicalResult verifyTypeResolution(SymbolTableCollection &symbolTable, Type ty, Operation *origin) {
   if (StructType sTy = llvm::dyn_cast<StructType>(ty)) {
     return sTy.getDefinition(symbolTable, origin);
   } else if (ArrayType aTy = llvm::dyn_cast<ArrayType>(ty)) {
     return verifyTypeResolution(symbolTable, aTy.getElementType(), origin);
   } else {
-    return mlir::success();
+    return success();
   }
 }
 
-mlir::LogicalResult verifyTypeResolution(
-    mlir::SymbolTableCollection &symbolTable, llvm::ArrayRef<mlir::Type>::iterator start,
-    llvm::ArrayRef<mlir::Type>::iterator end, mlir::Operation *origin
+LogicalResult verifyTypeResolution(
+    SymbolTableCollection &symbolTable, llvm::ArrayRef<Type>::iterator start,
+    llvm::ArrayRef<Type>::iterator end, Operation *origin
 ) {
-  mlir::LogicalResult res = mlir::success();
+  LogicalResult res = success();
   for (; start != end; ++start) {
-    if (mlir::failed(verifyTypeResolution(symbolTable, *start, origin))) {
-      res = mlir::failure();
+    if (failed(verifyTypeResolution(symbolTable, *start, origin))) {
+      res = failure();
     }
   }
   return res;

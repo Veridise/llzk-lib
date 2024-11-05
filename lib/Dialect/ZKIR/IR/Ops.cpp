@@ -40,6 +40,18 @@ bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName) {
 }
 
 //===------------------------------------------------------------------===//
+// IncludeOp
+//===------------------------------------------------------------------===//
+
+IncludeOp IncludeOp::create(mlir::Location location, llvm::StringRef name, llvm::StringRef path) {
+  return delegate_to_build<IncludeOp>(location, name, path);
+}
+
+IncludeOp IncludeOp::create(mlir::Location location, mlir::StringAttr name, mlir::StringAttr path) {
+  return delegate_to_build<IncludeOp>(location, name, path);
+}
+
+//===------------------------------------------------------------------===//
 // StructDefOp
 //===------------------------------------------------------------------===//
 namespace {
@@ -129,7 +141,7 @@ mlir::FailureOr<FieldDefOp> getFieldDefOp(
   if (mlir::failed(structDef)) {
     return structDef; // getDefinition() already emits a sufficient error message
   }
-  auto res = zkir::lookupSymbolIn<FieldDefOp, mlir::SymbolRefAttr>(
+  auto res = zkir::lookupSymbolIn<FieldDefOp>(
       symbolTable, mlir::SymbolRefAttr::get(refOp->getContext(), refOp.getFieldName()),
       structDef.value(), op
   );

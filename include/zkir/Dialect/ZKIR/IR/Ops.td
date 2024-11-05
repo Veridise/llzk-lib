@@ -60,6 +60,30 @@ def ZKIR_FeltNonDetOp
   let assemblyFormat = "attr-dict";
 }
 
+def ZKIR_IncludeOp : ZKIR_Op<"include", [HasParent<"::mlir::ModuleOp">,
+                                         IsolatedFromAbove, Symbol]> {
+  let summary = "Include operation";
+  let description = [{
+    The `include` operation allows to import the contents of another source file.
+
+    Example:
+
+    ```zkir
+    zkir.include "lib.zkir" as @aliasName
+    ```
+  }];
+
+  let arguments = (ins SymbolNameAttr:$sym_name,
+      Arg<StrAttr, "source file to include">:$path);
+
+  let assemblyFormat = [{ $path `as` $sym_name attr-dict }];
+
+  let extraClassDeclaration = [{
+    static IncludeOp create(::mlir::Location location, ::llvm::StringRef name, ::llvm::StringRef path);
+    static IncludeOp create(::mlir::Location location, ::mlir::StringAttr name, ::mlir::StringAttr path);
+  }];
+}
+
 //===------------------------------------------------------------------===//
 // Struct Operations
 //===------------------------------------------------------------------===//

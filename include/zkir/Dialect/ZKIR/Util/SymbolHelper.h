@@ -5,19 +5,21 @@
 #include <mlir/IR/BuiltinOps.h>
 
 namespace zkir {
+using namespace mlir;
 
 constexpr char LANG_ATTR_NAME[] = "veridise.lang";
 
-mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
-mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(StructDefOp &to);
-mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(FuncOp &to);
+FailureOr<ModuleOp> getRootModule(Operation *from);
+FailureOr<SymbolRefAttr> getPathFromRoot(StructDefOp &to);
+FailureOr<SymbolRefAttr> getPathFromRoot(FuncOp &to);
 
-template <typename T, typename NameT>
-inline mlir::FailureOr<T> lookupSymbolIn(
-    mlir::SymbolTableCollection &symbolTable, NameT &&symbol, mlir::Operation *at,
-    mlir::Operation *origin
+Operation *lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr sym, Operation *symTableOp);
+
+template <typename T>
+inline FailureOr<T> lookupSymbolIn(
+    SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *symTableOp, Operation *origin
 ) {
-  auto found = symbolTable.lookupSymbolIn(at, std::forward<NameT>(symbol));
+  Operation *found = lookupSymbolRec(tables, symbol, symTableOp);
   if (!found) {
     return origin->emitOpError() << "references unknown symbol \"" << symbol << "\"";
   }
@@ -28,29 +30,25 @@ inline mlir::FailureOr<T> lookupSymbolIn(
                              << "' but expected a '" << T::getOperationName() << "'";
 }
 
-template <typename T, typename NameT>
-inline mlir::FailureOr<T> lookupTopLevelSymbol(
-    mlir::SymbolTableCollection &symbolTable, NameT &&symbol, mlir::Operation *origin
-) {
-  mlir::FailureOr<mlir::ModuleOp> root = getRootModule(origin);
-  if (mlir::failed(root)) {
+template <typename T>
+inline FailureOr<T>
+lookupTopLevelSymbol(SymbolTableCollection &symbolTable, SymbolRefAttr symbol, Operation *origin) {
+  FailureOr<ModuleOp> root = getRootModule(origin);
+  if (failed(root)) {
     return root; // getRootModule() already emits a sufficient error message
   }
-  return lookupSymbolIn<T, NameT>(symbolTable, std::forward<NameT>(symbol), root.value(), origin);
+  return lookupSymbolIn<T>(symbolTable, symbol, root.value(), origin);
 }
 
-mlir::LogicalResult verifyTypeResolution(
-    mlir::SymbolTableCollection &symbolTable, mlir::Type ty, mlir::Operation *origin
+LogicalResult verifyTypeResolution(SymbolTableCollection &symbolTable, Type ty, Operation *origin);
+
+LogicalResult verifyTypeResolution(
+    SymbolTableCollection &symbolTable, llvm::ArrayRef<Type>::iterator start,
+    llvm::ArrayRef<Type>::iterator end, Operation *origin
 );
 
-mlir::LogicalResult verifyTypeResolution(
-    mlir::SymbolTableCollection &symbolTable, llvm::ArrayRef<mlir::Type>::iterator start,
-    llvm::ArrayRef<mlir::Type>::iterator end, mlir::Operation *origin
-);
-
-inline mlir::LogicalResult verifyTypeResolution(
-    mlir::SymbolTableCollection &symbolTable, llvm::ArrayRef<mlir::Type> types,
-    mlir::Operation *origin
+inline LogicalResult verifyTypeResolution(
+    SymbolTableCollection &symbolTable, llvm::ArrayRef<Type> types, Operation *origin
 ) {
   return verifyTypeResolution(symbolTable, types.begin(), types.end(), origin);
 }

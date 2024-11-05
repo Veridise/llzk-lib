@@ -1,0 +1,219 @@
+// RUN: zkir-opt -pass-pipeline='builtin.module(zkir-inline-includes)' -split-input-file %s 2>&1 | FileCheck %s
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/included_file_1.zkir" as @alias1
+
+  zkir.func @test_func() {
+    zkir.call @alias1::@pkg_two::@my_func_2() : () -> ()
+    return
+  }
+}
+//CHECK-LABEL: module attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:    module @alias1 attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:      zkir.func private @my_func_0()
+//CHECK-NEXT:      module @pkg_one {
+//CHECK-NEXT:        zkir.func private @my_func_1()
+//CHECK-NEXT:      }
+//CHECK-NEXT:      module @pkg_two {
+//CHECK-NEXT:        zkir.func private @my_func_2()
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:    zkir.func @test_func() {
+//CHECK-NEXT:      call @alias1::@pkg_two::@my_func_2() : () -> ()
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "zkir"} {
+  module @outer {
+    zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/included_file_1.zkir" as @alias2
+
+    zkir.func @test_func() {
+      zkir.call @outer::@alias2::@pkg_two::@my_func_2() : () -> ()
+      return
+    }
+  }
+}
+//CHECK-LABEL: module attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:    module @outer {
+//CHECK-NEXT:      module @alias2 attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:        zkir.func private @my_func_0()
+//CHECK-NEXT:        module @pkg_one {
+//CHECK-NEXT:          zkir.func private @my_func_1()
+//CHECK-NEXT:        }
+//CHECK-NEXT:        module @pkg_two {
+//CHECK-NEXT:          zkir.func private @my_func_2()
+//CHECK-NEXT:        }
+//CHECK-NEXT:      }
+//CHECK-NEXT:      zkir.func @test_func() {
+//CHECK-NEXT:        call @outer::@alias2::@pkg_two::@my_func_2() : () -> ()
+//CHECK-NEXT:        return
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "zkir"} {
+  module @a {
+    module @b {
+      module @c {
+        zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/included_file_1.zkir" as @alias3
+      }
+    }
+  }
+
+  zkir.func @test_func() {
+    zkir.call @a::@b::@c::@alias3::@pkg_two::@my_func_2() : () -> ()
+    return
+  }
+}
+//CHECK-LABEL: module attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:    module @a {
+//CHECK-NEXT:      module @b {
+//CHECK-NEXT:        module @c {
+//CHECK-NEXT:          module @alias3 attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:            zkir.func private @my_func_0()
+//CHECK-NEXT:            module @pkg_one {
+//CHECK-NEXT:              zkir.func private @my_func_1()
+//CHECK-NEXT:            }
+//CHECK-NEXT:            module @pkg_two {
+//CHECK-NEXT:              zkir.func private @my_func_2()
+//CHECK-NEXT:            }
+//CHECK-NEXT:          }
+//CHECK-NEXT:        }
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:    zkir.func @test_func() {
+//CHECK-NEXT:      call @a::@b::@c::@alias3::@pkg_two::@my_func_2() : () -> ()
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/included_file_2.zkir" as @double
+
+  zkir.func @test_func() {
+    zkir.call @double::@test_func() : () -> ()
+    zkir.call @double::@std::@pkg_two::@my_func_2() : () -> ()
+    return
+  }
+}
+//CHECK-LABEL: module attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:    module @double attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:      module @std attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:        zkir.func private @my_func_0()
+//CHECK-NEXT:        module @pkg_one {
+//CHECK-NEXT:          zkir.func private @my_func_1()
+//CHECK-NEXT:        }
+//CHECK-NEXT:        module @pkg_two {
+//CHECK-NEXT:          zkir.func private @my_func_2()
+//CHECK-NEXT:        }
+//CHECK-NEXT:      }
+//CHECK-NEXT:      zkir.func @test_func() {
+//CHECK-NEXT:        call @std::@pkg_two::@my_func_2() : () -> ()
+//CHECK-NEXT:        return
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:    zkir.func @test_func() {
+//CHECK-NEXT:      call @double::@test_func() : () -> ()
+//CHECK-NEXT:      call @double::@std::@pkg_two::@my_func_2() : () -> ()
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/zir_example_0.zkir" as @std
+
+  zkir.struct @C1 {
+    field @z : !zkir.struct<@std::@risc0::@Reg> {zkir.pub}
+
+    func @compute(%x: !zkir.felt, %y: !zkir.felt) -> !zkir.struct<@C1> {
+      %self = new_struct : !zkir.struct<@C1>
+      %add_0 = add %x, %y
+      %reg_0 = call @std::@risc0::@Reg::@compute(%add_0) : (!zkir.felt) -> (!zkir.struct<@std::@risc0::@Reg>)
+      writef %self[@z] = %reg_0 : !zkir.struct<@C1>, !zkir.struct<@std::@risc0::@Reg>
+      return %self: !zkir.struct<@C1>
+    }
+
+    func @constrain(%self: !zkir.struct<@C1>, %x: !zkir.felt, %y: !zkir.felt) {
+      %reg_0 = readf %self[@z] : !zkir.struct<@C1>, !zkir.struct<@std::@risc0::@Reg>
+      %add_0 = add %x, %y
+      call @std::@risc0::@Reg::@constrain(%reg_0, %add_0) : (!zkir.struct<@std::@risc0::@Reg>, !zkir.felt) -> ()
+      return
+    }
+  }
+}
+//CHECK-LABEL: module attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:    module @std attributes {veridise.lang = "zkir"} {
+//CHECK-NEXT:      module @risc0 {
+//CHECK-NEXT:        zkir.struct @ValU32 {
+//CHECK-NEXT:          field @low : !zkir.felt
+//CHECK-NEXT:          field @high : !zkir.felt
+//CHECK-NEXT:          func @compute(%arg0: !zkir.felt, %arg1: !zkir.felt) -> !zkir.struct<@risc0::@ValU32> {
+//CHECK-NEXT:            %self = new_struct : <@risc0::@ValU32>
+//CHECK-NEXT:            writef %self[@low] = %arg0 : <@risc0::@ValU32>, !zkir.felt
+//CHECK-NEXT:            writef %self[@high] = %arg1 : <@risc0::@ValU32>, !zkir.felt
+//CHECK-NEXT:            return %self : !zkir.struct<@risc0::@ValU32>
+//CHECK-NEXT:          }
+//CHECK-NEXT:          func @constrain(%arg0: !zkir.struct<@risc0::@ValU32>, %arg1: !zkir.felt, %arg2: !zkir.felt) {
+//CHECK-NEXT:            return
+//CHECK-NEXT:          }
+//CHECK-NEXT:        }
+//CHECK-NEXT:        zkir.struct @Reg {
+//CHECK-NEXT:          field @reg : !zkir.felt {zkir.pub}
+//CHECK-NEXT:          func @compute(%arg0: !zkir.felt) -> !zkir.struct<@risc0::@Reg> {
+//CHECK-NEXT:            %self = new_struct : <@risc0::@Reg>
+//CHECK-NEXT:            writef %self[@reg] = %arg0 : <@risc0::@Reg>, !zkir.felt
+//CHECK-NEXT:            return %self : !zkir.struct<@risc0::@Reg>
+//CHECK-NEXT:          }
+//CHECK-NEXT:          func @constrain(%arg0: !zkir.struct<@risc0::@Reg>, %arg1: !zkir.felt) {
+//CHECK-NEXT:            %0 = readf %arg0[@reg] : <@risc0::@Reg>, !zkir.felt
+//CHECK-NEXT:            emit_eq %arg1, %0 : !zkir.felt
+//CHECK-NEXT:            return
+//CHECK-NEXT:          }
+//CHECK-NEXT:        }
+//CHECK-NEXT:        zkir.struct @Div {
+//CHECK-NEXT:          field @reciprocal : !zkir.felt
+//CHECK-NEXT:          field @synthetic_return : !zkir.felt {zkir.pub}
+//CHECK-NEXT:          func @compute(%arg0: !zkir.felt, %arg1: !zkir.felt) -> !zkir.struct<@risc0::@Div> {
+//CHECK-NEXT:            %self = new_struct : <@risc0::@Div>
+//CHECK-NEXT:            %0 = inv %arg1
+//CHECK-NEXT:            writef %self[@reciprocal] = %0 : <@risc0::@Div>, !zkir.felt
+//CHECK-NEXT:            %1 = mul %0, %arg0
+//CHECK-NEXT:            writef %self[@synthetic_return] = %1 : <@risc0::@Div>, !zkir.felt
+//CHECK-NEXT:            return %self : !zkir.struct<@risc0::@Div>
+//CHECK-NEXT:          }
+//CHECK-NEXT:          func @constrain(%arg0: !zkir.struct<@risc0::@Div>, %arg1: !zkir.felt, %arg2: !zkir.felt) {
+//CHECK-NEXT:            %0 = readf %arg0[@reciprocal] : <@risc0::@Div>, !zkir.felt
+//CHECK-NEXT:            %1 = mul %0, %arg2
+//CHECK-NEXT:            %felt_const_1 = constfelt  1
+//CHECK-NEXT:            emit_eq %1, %felt_const_1 : !zkir.felt
+//CHECK-NEXT:            %2 = readf %arg0[@synthetic_return] : <@risc0::@Div>, !zkir.felt
+//CHECK-NEXT:            %3 = mul %0, %arg1
+//CHECK-NEXT:            emit_eq %2, %3 : !zkir.felt
+//CHECK-NEXT:            return
+//CHECK-NEXT:          }
+//CHECK-NEXT:        }
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:    zkir.struct @C1 {
+//CHECK-NEXT:      field @z : !zkir.struct<@std::@risc0::@Reg> {zkir.pub}
+//CHECK-NEXT:      func @compute(%arg0: !zkir.felt, %arg1: !zkir.felt) -> !zkir.struct<@C1> {
+//CHECK-NEXT:        %self = new_struct : <@C1>
+//CHECK-NEXT:        %0 = add %arg0, %arg1
+//CHECK-NEXT:        %1 = call @std::@risc0::@Reg::@compute(%0) : (!zkir.felt) -> !zkir.struct<@std::@risc0::@Reg>
+//CHECK-NEXT:        writef %self[@z] = %1 : <@C1>, !zkir.struct<@std::@risc0::@Reg>
+//CHECK-NEXT:        return %self : !zkir.struct<@C1>
+//CHECK-NEXT:      }
+//CHECK-NEXT:      func @constrain(%arg0: !zkir.struct<@C1>, %arg1: !zkir.felt, %arg2: !zkir.felt) {
+//CHECK-NEXT:        %0 = readf %arg0[@z] : <@C1>, !zkir.struct<@std::@risc0::@Reg>
+//CHECK-NEXT:        %1 = add %arg1, %arg2
+//CHECK-NEXT:        call @std::@risc0::@Reg::@constrain(%0, %1) : (!zkir.struct<@std::@risc0::@Reg>, !zkir.felt) -> ()
+//CHECK-NEXT:        return
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----

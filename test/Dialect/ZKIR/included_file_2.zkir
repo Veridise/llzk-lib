@@ -1,0 +1,11 @@
+// Do not run this as a lit test but the RUN directive is required or the testing framework complains
+// RUN: 
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/included_file_1.zkir" as @std
+
+  zkir.func @test_func() {
+    zkir.call @std::@pkg_two::@my_func_2() : () -> ()
+    return
+  }
+}
