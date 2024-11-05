@@ -6,6 +6,15 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        compiler:
+          - name: GCC
+            derivation: '.#debugGCC'
+            report: gcc-report.xml
+          - name: Clang
+            derivation: '.#debugClangCov'
+            report: clang-report.xml
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -30,25 +39,35 @@ jobs:
           name: veridise-private
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
           pushFilter: '(-source$)'
-      - run: mkdir -p xunit-reports
-      - name: Build with GCC
-        run: nix --print-build-logs build '.#debugGCC'
+      - name: 'Build with ${{ matrix.compiler.name }}'
+        run: "nix --print-build-logs build '${{ matrix.compiler.derivation }}'"
         env:
           CI_BOT_PAT: "${{ secrets.CI_BUILD_TOKEN }}"
-      - name: Copy xUnit report for GCC
-        run: cp result/artifacts/gcc-report.xml xunit-reports
-      - name: Build with Clang
-        run: nix --print-build-logs build '.#debugClangCov'
-        env:
-          CI_BOT_PAT: "${{ secrets.CI_BUILD_TOKEN }}"
-      - name: Copy xUnit report for clang
-        run: cp result/artifacts/clang-report.xml xunit-reports
+      - name: Upload test results 
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: "Test results (${{ matrix.compiler.name }})"
+          path: "result/artifacts/${{ matrix.compiler.report }}"
+      - name: Clear Git credentials
+        if: "${{ always() }}"
+        run: rm -rf "~/.git-askpass"
+   
+  publish-tests:
+    name: "Publish test results"
+    needs: build 
+    runs-on: ubuntu-24.04
+    if: always()
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
-          files: xunit-reports/*-report.xml
-      - name: Clear Git credentials
-        if: "${{ always() }}"
-        run: rm -rf "~/.git-askpass"
+          files: artifacts/**/*.xml
+          comment_mode: failures
+
 
