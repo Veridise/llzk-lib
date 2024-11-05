@@ -1,5 +1,3 @@
-// Do not run this as a lit test but the RUN directive is required or the testing framework complains
-// RUN: 
 // Imported via `include_fail.zkir`
 
 module @shouldNotBeNamed attributes {veridise.lang = "zkir"} { // expected-note {{this should be unnamed}}

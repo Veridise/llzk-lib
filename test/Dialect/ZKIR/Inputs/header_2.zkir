@@ -1,0 +1,10 @@
+// Imported via `include_pass.zkir`
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_1.zkir" as @std
+
+  zkir.func @test_func() {
+    zkir.call @std::@pkg_two::@my_func_2() : () -> ()
+    return
+  }
+}

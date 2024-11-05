@@ -1,10 +1,8 @@
-// Do not run this as a lit test but the RUN directive is required or the testing framework complains
-// RUN: 
 // Imported via `include_fail.zkir`
 
 module attributes {veridise.lang = "zkir"} {
   // expected-error@+1 {{'zkir.include' op expected 'builtin.module' from included file to have "veridise.lang" attribute}}
-  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/include/header_3.zkir" as @std
+  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_3.zkir" as @std
 
   zkir.func @test_func() {
     zkir.call @std::@pkg_two::@my_func_2() : () -> ()
