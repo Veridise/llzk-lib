@@ -1,7 +1,7 @@
-// RUN: zkir-opt -pass-pipeline='builtin.module(zkir-inline-includes)' -split-input-file %s 2>&1 | FileCheck %s
+// RUN: zkir-opt -I %S -pass-pipeline='builtin.module(zkir-inline-includes)' -split-input-file %s 2>&1 | FileCheck %s
 
 module attributes {veridise.lang = "zkir"} {
-  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_1.zkir" as @alias1
+  zkir.include "Inputs/header_1.zkir" as @alias1
 
   zkir.func @test_func() {
     zkir.call @alias1::@pkg_two::@my_func_2() : () -> ()
@@ -27,7 +27,7 @@ module attributes {veridise.lang = "zkir"} {
 
 module attributes {veridise.lang = "zkir"} {
   module @outer {
-    zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_1.zkir" as @alias2
+    zkir.include "Inputs/header_1.zkir" as @alias2
 
     zkir.func @test_func() {
       zkir.call @outer::@alias2::@pkg_two::@my_func_2() : () -> ()
@@ -58,7 +58,7 @@ module attributes {veridise.lang = "zkir"} {
   module @a {
     module @b {
       module @c {
-        zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_1.zkir" as @alias3
+        zkir.include "Inputs/header_1.zkir" as @alias3
       }
     }
   }
@@ -92,7 +92,7 @@ module attributes {veridise.lang = "zkir"} {
 // -----
 
 module attributes {veridise.lang = "zkir"} {
-  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_2.zkir" as @double
+  zkir.include "Inputs/header_2.zkir" as @double
 
   zkir.func @test_func() {
     zkir.call @double::@test_func() : () -> ()
@@ -125,7 +125,7 @@ module attributes {veridise.lang = "zkir"} {
 // -----
 
 module attributes {veridise.lang = "zkir"} {
-  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/zir_example_0.zkir" as @std
+  zkir.include "zir_example_0.zkir" as @std
 
   zkir.struct @C1 {
     field @z : !zkir.struct<@std::@risc0::@Reg> {zkir.pub}

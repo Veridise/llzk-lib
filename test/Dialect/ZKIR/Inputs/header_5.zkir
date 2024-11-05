@@ -2,7 +2,7 @@
 
 module attributes {veridise.lang = "zkir"} {
   // expected-error@+1 {{'zkir.include' op expected 'builtin.module' from included file to have "veridise.lang" attribute}}
-  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_3.zkir" as @std
+  zkir.include "Inputs/header_3.zkir" as @std
 
   zkir.func @test_func() {
     zkir.call @std::@pkg_two::@my_func_2() : () -> ()

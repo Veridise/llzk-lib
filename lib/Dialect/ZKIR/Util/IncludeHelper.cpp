@@ -12,20 +12,17 @@ using namespace mlir;
 
 /// Parse the given `filename` and return the produced ModuleOp.
 FailureOr<ModuleOp> parseFile(const std::string &filename, Operation *origin) {
-
-  // NOTE: must use the override of parseSourceFile() that accepts SourceMgr instead of std::string
-  // or else an extra error message with Unknown location is printed when the file does not exist.
-  auto fileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(filename);
-  if (fileOrErr.getError()) {
-    return origin->emitOpError() << "could not find file " << filename;
+  std::string resolvedPath;
+  auto buffer = zkir::GlobalSourceMgr::get().openIncludeFile(filename, resolvedPath);
+  if (!buffer) {
+    return origin->emitOpError() << "could not find file \"" << filename << "\"";
   }
-  llvm::SourceMgr sourceMgr;
-  sourceMgr.AddNewSourceBuffer(std::move(*fileOrErr), SMLoc());
   ParserConfig parseConfig(origin->getContext());
-  if (auto r = parseSourceFile<ModuleOp>(sourceMgr, parseConfig)) {
+  llvm::StringRef contents = buffer.get().get()->getBuffer();
+  if (auto r = parseSourceString<ModuleOp>(contents, parseConfig, resolvedPath)) {
     return r.release();
   } else {
-    return origin->emitOpError() << "could not parse file " << filename;
+    return origin->emitOpError() << "could not parse file \"" << filename << "\"";
   }
 }
 

@@ -1,8 +1,8 @@
-// RUN: zkir-opt -pass-pipeline='builtin.module(zkir-inline-includes)' -split-input-file -verify-diagnostics %s
+// RUN: zkir-opt -I %S -pass-pipeline='builtin.module(zkir-inline-includes)' -split-input-file -verify-diagnostics %s
 
 module attributes {veridise.lang = "zkir"} {
   // expected-error@+1 {{'zkir.include' op expected 'builtin.module' from included file to have "veridise.lang" attribute}}
-  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_3.zkir" as @alias1
+  zkir.include "Inputs/header_3.zkir" as @alias1
 
   zkir.func @test_func() {
     zkir.call @alias1::@pkg_two::@my_func_2() : () -> ()
@@ -14,7 +14,7 @@ module attributes {veridise.lang = "zkir"} {
 module attributes {veridise.lang = "zkir"} {
   module @outer {
     // expected-error@+1 {{'zkir.include' op expected 'builtin.module' from included file to be unnamed}}
-    zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_4.zkir" as @alias2
+    zkir.include "Inputs/header_4.zkir" as @alias2
 
     zkir.func @test_func() {
       zkir.call @outer::@alias2::@pkg_two::@my_func_2() : () -> ()
@@ -28,8 +28,8 @@ module attributes {veridise.lang = "zkir"} {
   module @a {
     module @b {
       module @c {
-        // expected-error@+1 {{'zkir.include' op could not find file /Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/include/does_not_exist.zkir}}
-        zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/include/does_not_exist.zkir" as @alias3
+        // expected-error@+1 {{'zkir.include' op could not find file "Inputs/does_not_exist.zkir"}}
+        zkir.include "Inputs/does_not_exist.zkir" as @alias3
       }
     }
   }
@@ -45,14 +45,14 @@ module attributes {veridise.lang = "zkir"} {
 
 module attributes {veridise.lang = "zkir"} {
   // Note: there's also an error within this included file
-  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_5.zkir" as @double
+  zkir.include "Inputs/header_5.zkir" as @double
   // expected-error@+1 {{'zkir.include' op expected 'builtin.module' from included file to be unnamed}}
-  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_4.zkir" as @single
+  zkir.include "Inputs/header_4.zkir" as @single
 }
 // -----
 
 module attributes {veridise.lang = "zkir"} {
-  // expected-error@+1 {{'zkir.include' op could not parse file /Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_6.zkir}}
-  zkir.include "/Users/tim/Documents/GitHub/zkir-lib/test/Dialect/ZKIR/Inputs/header_6.zkir" as @a
+  // expected-error@+1 {{'zkir.include' op could not parse file "Inputs/header_6.zkir"}}
+  zkir.include "Inputs/header_6.zkir" as @a
 }
 // -----
