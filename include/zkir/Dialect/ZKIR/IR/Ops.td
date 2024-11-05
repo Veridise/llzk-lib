@@ -60,8 +60,8 @@ def ZKIR_FeltNonDetOp
   let assemblyFormat = "attr-dict";
 }
 
-def ZKIR_IncludeOp : ZKIR_Op<"include", [HasParent<"::mlir::ModuleOp">,
-                                         IsolatedFromAbove, Symbol]> {
+def ZKIR_IncludeOp
+    : ZKIR_Op<"include", [HasParent<"::mlir::ModuleOp">, Symbol]> {
   let summary = "Include operation";
   let description = [{
     The `include` operation allows to import the contents of another source file.
