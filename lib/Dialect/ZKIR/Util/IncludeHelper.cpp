@@ -5,62 +5,62 @@
 #include <mlir/IR/OwningOpRef.h>
 #include <mlir/Parser/Parser.h>
 
+#include <llvm/Support/SourceMgr.h>
+
 namespace zkir {
 using namespace mlir;
 
-namespace {
-
 /// Parse the given `filename` and return the produced ModuleOp.
-OwningOpRef<ModuleOp> parseFile(MLIRContext *context, const std::string &filename) {
-  ParserConfig parseConfig(context);
-  return parseSourceFile<ModuleOp>(filename, parseConfig);
-}
-} // namespace
+FailureOr<ModuleOp> parseFile(const std::string &filename, Operation *origin) {
 
-FailureOr<ModuleOp> loadModule(IncludeOp incOp) {
-  StringAttr importPath = incOp.getPathAttr();
-  ModuleOp importedMod = parseFile(incOp.getContext(), importPath.str()).release();
-  if (!importedMod) {
-    return incOp.emitOpError() << "could not load file " << importPath;
+  // NOTE: must use the override of parseSourceFile() that accepts SourceMgr instead of std::string
+  // or else an extra error message with Unknown location is printed when the file does not exist.
+  auto fileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(filename);
+  if (fileOrErr.getError()) {
+    return origin->emitOpError() << "could not find file " << filename;
   }
-  return importedMod;
+  llvm::SourceMgr sourceMgr;
+  sourceMgr.AddNewSourceBuffer(std::move(*fileOrErr), SMLoc());
+  ParserConfig parseConfig(origin->getContext());
+  if (auto r = parseSourceFile<ModuleOp>(sourceMgr, parseConfig)) {
+    return r.release();
+  } else {
+    return origin->emitOpError() << "could not parse file " << filename;
+  }
 }
 
 FailureOr<ModuleOp> inlineTheInclude(MLIRContext *ctx, IncludeOp &incOp) {
-  FailureOr<ModuleOp> otherMod = loadModule(incOp);
-  if (failed(otherMod)) {
-    return failure();
+  FailureOr<ModuleOp> loadResult = incOp.loadModule();
+  if (succeeded(loadResult)) {
+    ModuleOp importedMod = loadResult.value();
+    // Check properties of the included file to ensure symbol resolution will still work.
+    if (!importedMod->hasAttr(LANG_ATTR_NAME)) {
+      return incOp.emitOpError()
+          .append(
+              "expected '", ModuleOp::getOperationName(), "' from included file to have \"",
+              LANG_ATTR_NAME, "\" attribute"
+          )
+          .attachNote(importedMod.getLoc())
+          .append("this should have \"", LANG_ATTR_NAME, "\" attribute");
+    }
+    if (importedMod.getSymNameAttr()) {
+      return incOp.emitOpError()
+          .append("expected '", ModuleOp::getOperationName(), "' from included file to be unnamed")
+          .attachNote(importedMod.getLoc())
+          .append("this should be unnamed");
+    }
+
+    // Rename the ModuleOp using the alias symbol name from the IncludeOp.
+    importedMod.setSymNameAttr(incOp.getSymNameAttr());
+
+    // Replace the IncludeOp with the loaded ModuleOp
+    Operation *thisOp = incOp.getOperation();
+    IRRewriter rewriter(ctx);
+    rewriter.setInsertionPointAfter(thisOp);
+    rewriter.insert(importedMod);
+    rewriter.eraseOp(thisOp);
   }
-
-  ModuleOp importedMod = otherMod.value();
-  // Check properties of the included file to ensure symbol resolution will still work.
-  if (!importedMod->hasAttr(LANG_ATTR_NAME)) {
-    return incOp.emitOpError()
-        .append(
-            "expected '", ModuleOp::getOperationName(), "' from included file to have \"",
-            LANG_ATTR_NAME, "\" attribute"
-        )
-        .attachNote(importedMod.getLoc())
-        .append("this should have \"", LANG_ATTR_NAME, "\" attribute");
-  }
-  if (importedMod.getSymNameAttr()) {
-    return incOp.emitOpError()
-        .append("expected '", ModuleOp::getOperationName(), "' from included file to be unnamed")
-        .attachNote(importedMod.getLoc())
-        .append("this should be unnamed");
-  }
-
-  // Rename the ModuleOp using the alias symbol name from the IncludeOp.
-  importedMod.setSymNameAttr(incOp.getSymNameAttr());
-
-  // Replace the IncludeOp with the loaded ModuleOp
-  Operation *thisOp = incOp.getOperation();
-  IRRewriter rewriter(ctx);
-  rewriter.setInsertionPointAfter(thisOp);
-  rewriter.insert(importedMod);
-  rewriter.eraseOp(thisOp);
-
-  return importedMod;
+  return loadResult;
 }
 
 } // namespace zkir

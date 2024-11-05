@@ -114,7 +114,7 @@ lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *
     // the reference in turn, traversing through IncludeOp symbols by parsing the included file.
     if (Operation *rootOp = tables.lookupSymbolIn(symTableOp, symbol.getRootReference())) {
       if (IncludeOp rootOpInc = llvm::dyn_cast<IncludeOp>(rootOp)) {
-        FailureOr<ModuleOp> otherMod = loadModule(rootOpInc);
+        FailureOr<ModuleOp> otherMod = rootOpInc.loadModule();
         if (succeeded(otherMod)) {
           return lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), *otherMod);
         }

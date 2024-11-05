@@ -1,5 +1,6 @@
 #include "zkir/Dialect/ZKIR/IR/Ops.h"
 #include "zkir/Dialect/ZKIR/IR/Types.h"
+#include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
 #include "zkir/Dialect/ZKIR/Util/SymbolHelper.h"
 
 #include <mlir/IR/Diagnostics.h>
@@ -49,6 +50,10 @@ IncludeOp IncludeOp::create(mlir::Location location, llvm::StringRef name, llvm:
 
 IncludeOp IncludeOp::create(mlir::Location location, mlir::StringAttr name, mlir::StringAttr path) {
   return delegate_to_build<IncludeOp>(location, name, path);
+}
+
+mlir::FailureOr<mlir::ModuleOp> IncludeOp::loadModule() {
+  return parseFile(this->getPathAttr().str(), *this);
 }
 
 //===------------------------------------------------------------------===//

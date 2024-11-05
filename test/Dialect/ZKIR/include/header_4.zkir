@@ -1,7 +1,8 @@
 // Do not run this as a lit test but the RUN directive is required or the testing framework complains
 // RUN: 
+// Imported via `include_fail.zkir`
 
-module attributes {veridise.lang = "zkir"} {
+module @shouldNotBeNamed attributes {veridise.lang = "zkir"} { // expected-note {{this should be unnamed}}
   zkir.func private @my_func_0()
   module @pkg_one {
     zkir.func private @my_func_1()

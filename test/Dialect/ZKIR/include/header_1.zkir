@@ -1,0 +1,13 @@
+// Do not run this as a lit test but the RUN directive is required or the testing framework complains
+// RUN: 
+// Imported via `include_pass.zkir`
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.func private @my_func_0()
+  module @pkg_one {
+    zkir.func private @my_func_1()
+  }
+  module @pkg_two {
+    zkir.func private @my_func_2()
+  }
+}

@@ -81,6 +81,7 @@ def ZKIR_IncludeOp : ZKIR_Op<"include", [HasParent<"::mlir::ModuleOp">,
   let extraClassDeclaration = [{
     static IncludeOp create(::mlir::Location location, ::llvm::StringRef name, ::llvm::StringRef path);
     static IncludeOp create(::mlir::Location location, ::mlir::StringAttr name, ::mlir::StringAttr path);
+    ::mlir::FailureOr<::mlir::ModuleOp> loadModule();
   }];
 }
 

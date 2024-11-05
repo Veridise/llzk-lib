@@ -1,0 +1,8 @@
+// Do not run this as a lit test but the RUN directive is required or the testing framework complains
+// RUN: 
+// Imported via `include_fail.zkir`
+
+module attributes {veridise.lang = "zkir"} {
+  // expected-error@+1 {{array must have a shape of at least one element}}
+  zkir.func private @b(%x: !zkir.array<!zkir.felt>) 
+}

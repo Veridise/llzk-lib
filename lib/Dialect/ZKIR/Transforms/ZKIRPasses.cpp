@@ -19,17 +19,16 @@ class InlineIncludesPass : public zkir::impl::InlineIncludesPassBase<InlineInclu
     mlir::ModuleOp topMod = getOperation();
     if (topMod->hasAttr(zkir::LANG_ATTR_NAME)) {
       mlir::MLIRContext *ctx = &getContext();
-
       std::vector<mlir::ModuleOp> currLevel = {topMod};
       do {
         std::vector<mlir::ModuleOp> nextLevel = {};
         for (mlir::ModuleOp currentMod : currLevel) {
           currentMod.walk([ctx, &nextLevel](zkir::IncludeOp mod) {
             mlir::FailureOr<mlir::ModuleOp> result = zkir::inlineTheInclude(ctx, mod);
-            if (mlir::failed(result)) {
-              return mlir::WalkResult::interrupt();
+            if (mlir::succeeded(result)) {
+              nextLevel.push_back(result.value());
             }
-            nextLevel.push_back(result.value());
+            // Advance in either case so as many errors as possible are found in a single run.
             return mlir::WalkResult::advance();
           });
         }
