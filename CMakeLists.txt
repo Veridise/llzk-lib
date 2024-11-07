@@ -94,10 +94,10 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebWithSans"
   add_compile_options(-O0 -g)
 endif()
 
-if (CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
+# if (CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   add_compile_options(-fsanitize=address,undefined)
   add_link_options(-fsanitize=address,undefined)
-endif()
+# endif()
 
 if (ZKIR_TEMPLATE_BACKTRACE_LIMIT)
   add_compile_options(-ftemplate-backtrace-limit=0)

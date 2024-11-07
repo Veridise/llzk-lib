@@ -21,6 +21,10 @@ class InlineIncludesPass : public zkir::impl::InlineIncludesPassBase<InlineInclu
       mlir::MLIRContext *ctx = &getContext();
       std::vector<mlir::ModuleOp> currLevel = {topMod};
       do {
+        // TODO: may want to keep track of the specific include at each level that got
+        //  us to the location where an error occurs so that the include trace can be
+        //  backtracked easily enough. Basically I think each entry in the "levels"
+        //  must also contain an IncludeOp backtrace stack in addition to the ModuleOp.
         std::vector<mlir::ModuleOp> nextLevel = {};
         for (mlir::ModuleOp currentMod : currLevel) {
           currentMod.walk([ctx, &nextLevel](zkir::IncludeOp mod) {

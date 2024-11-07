@@ -1,0 +1,18 @@
+// RUN: zkir-opt -I %S -pass-pipeline='builtin.module(zkir-inline-includes)' -split-input-file %s 2>&1 | FileCheck %s
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.include "zir_example_0.zkir" as @std
+
+  zkir.struct @C1 {
+    field @z : !zkir.struct<@std::@risc0::@Reg> {zkir.pub}
+
+    func @compute() -> !zkir.struct<@C1> {
+      %self = new_struct : !zkir.struct<@C1>
+      return %self: !zkir.struct<@C1>
+    }
+
+    func @constrain(%self: !zkir.struct<@C1>) {
+      return
+    }
+  }
+}

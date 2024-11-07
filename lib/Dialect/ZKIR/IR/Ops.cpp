@@ -52,7 +52,7 @@ IncludeOp IncludeOp::create(mlir::Location location, mlir::StringAttr name, mlir
   return delegate_to_build<IncludeOp>(location, name, path);
 }
 
-mlir::FailureOr<mlir::ModuleOp> IncludeOp::loadModule() {
+mlir::FailureOr<mlir::OwningOpRef<mlir::ModuleOp>> IncludeOp::loadModule() {
   return parseFile(this->getPathAttr().str(), *this);
 }
 
@@ -138,17 +138,21 @@ mlir::LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &symbolTa
 // FieldRefOp implementations
 //===------------------------------------------------------------------===//
 namespace {
-mlir::FailureOr<FieldDefOp> getFieldDefOp(
+mlir::FailureOr<ManagedOpPtr<FieldDefOp>> getFieldDefOp(
     FieldRefOpInterface refOp, mlir::SymbolTableCollection &symbolTable, StructType tyStruct
 ) {
   mlir::Operation *op = refOp.getOperation();
-  mlir::FailureOr<StructDefOp> structDef = tyStruct.getDefinition(symbolTable, op);
+  mlir::FailureOr<ManagedOpPtr<StructDefOp>> structDef = tyStruct.getDefinition(symbolTable, op);
   if (mlir::failed(structDef)) {
-    return structDef; // getDefinition() already emits a sufficient error message
+    return mlir::failure(); // getDefinition() already emits a sufficient error message
   }
+  // Move to a local to hold Module ownership until the end of this function
+  ManagedOpPtr<StructDefOp> structDefPtr = std::move(*structDef);
+  llvm::outs() << "[getFieldDefOp] structDefPtr.op = " << structDefPtr->getOperation() << " as def of " << tyStruct << "\n"; // !zkir.struct<@risc0::@ValU32>
+  llvm::outs() << "[getFieldDefOp] structDefPtr.op.name = " << structDefPtr->getOperation()->getName() << "\n"; //TODO this getName() fails b/c the Op is not valid memory!
   auto res = zkir::lookupSymbolIn<FieldDefOp>(
       symbolTable, mlir::SymbolRefAttr::get(refOp->getContext(), refOp.getFieldName()),
-      structDef.value(), op
+      structDefPtr->getOperation(), op
   );
   if (mlir::failed(res)) {
     return refOp->emitError() << "no '" << FieldDefOp::getOperationName() << "' named \"@"
@@ -157,7 +161,7 @@ mlir::FailureOr<FieldDefOp> getFieldDefOp(
   return res;
 }
 
-inline mlir::FailureOr<FieldDefOp>
+inline mlir::FailureOr<ManagedOpPtr<FieldDefOp>>
 getFieldDefOp(FieldRefOpInterface refOp, mlir::SymbolTableCollection &symbolTable) {
   return getFieldDefOp(refOp, symbolTable, refOp.getStructType());
 }
@@ -170,11 +174,14 @@ mlir::LogicalResult verifySymbolUses(
   if (mlir::failed(tyStruct.verifySymbol(symbolTable, refOp.getOperation()))) {
     return mlir::failure();
   }
-  mlir::FailureOr<FieldDefOp> field = getFieldDefOp(refOp, symbolTable, tyStruct);
-  if (mlir::failed(field)) {
-    return field; // getFieldDefOp() already emits a sufficient error message
+  mlir::FailureOr<ManagedOpPtr<FieldDefOp>> fieldOpt = getFieldDefOp(refOp, symbolTable, tyStruct);
+  if (mlir::failed(fieldOpt)) {
+    return fieldOpt; // getFieldDefOp() already emits a sufficient error message
   }
-  mlir::Type fieldType = field.value().getType();
+  // Move to a local to hold Module ownership until the end of this function
+  ManagedOpPtr<FieldDefOp> fieldPtr = std::move(*fieldOpt);
+
+  mlir::Type fieldType = fieldPtr->getType();
   if (fieldType != compareTo.getType()) {
     return refOp->emitOpError() << "has wrong type; expected " << fieldType << ", got "
                                 << compareTo.getType();
@@ -183,7 +190,8 @@ mlir::LogicalResult verifySymbolUses(
 }
 } // namespace
 
-mlir::FailureOr<FieldDefOp> FieldReadOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
+mlir::FailureOr<ManagedOpPtr<FieldDefOp>>
+FieldReadOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
   return zkir::getFieldDefOp(*this, symbolTable);
 }
 
@@ -191,7 +199,8 @@ mlir::LogicalResult FieldReadOp::verifySymbolUses(::mlir::SymbolTableCollection 
   return zkir::verifySymbolUses(*this, symbolTable, getResult(), "read");
 }
 
-mlir::FailureOr<FieldDefOp> FieldWriteOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
+mlir::FailureOr<ManagedOpPtr<FieldDefOp>>
+FieldWriteOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
   return zkir::getFieldDefOp(*this, symbolTable);
 }
 

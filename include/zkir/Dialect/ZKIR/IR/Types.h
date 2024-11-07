@@ -3,6 +3,7 @@
 #include "zkir/Dialect/ZKIR/IR/Attrs.h"
 #include "zkir/Dialect/ZKIR/IR/Dialect.h"
 #include "zkir/Dialect/ZKIR/IR/Enums.h"
+#include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
 
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/SymbolTable.h>

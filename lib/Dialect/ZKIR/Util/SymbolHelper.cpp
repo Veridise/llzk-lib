@@ -106,24 +106,51 @@ inline SymbolRefAttr getTailAsSymbolRefAttr(SymbolRefAttr &symbol) {
 }
 } // namespace
 
-Operation *
+ManagedOpPtr<Operation>
 lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *symTableOp) {
+  llvm::outs() << "[lookupSymbolRec] symbol = " << symbol << "\n";            // TODO: TEMP
+  if (!symTableOp) {                                                          // TODO: TEMP
+    llvm::outs() << "[lookupSymbolRec] Found null sym table pointer" << "\n"; // TODO: TEMP
+    // std::exit(1);                                                  // TODO: TEMP
+  } // TODO: TEMP
   Operation *found = tables.lookupSymbolIn(symTableOp, symbol);
   if (!found) {
+    llvm::outs() << "[lookupSymbolRec] lookup via root" << "\n";
     // If not found, check if the reference can be found by manually doing a lookup for each part of
     // the reference in turn, traversing through IncludeOp symbols by parsing the included file.
     if (Operation *rootOp = tables.lookupSymbolIn(symTableOp, symbol.getRootReference())) {
       if (IncludeOp rootOpInc = llvm::dyn_cast<IncludeOp>(rootOp)) {
-        FailureOr<ModuleOp> otherMod = rootOpInc.loadModule();
+        llvm::outs() << "[lookupSymbolRec] loading module from \"" << rootOpInc.getPath() << "\"\n";
+        FailureOr<OwningOpRef<ModuleOp>> otherMod = rootOpInc.loadModule();
         if (succeeded(otherMod)) {
-          return lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), *otherMod);
+          llvm::outs() << "[lookupSymbolRec] successfully loaded module "
+                       << otherMod->get().getSymName() << "\n";
+          ManagedOpPtr<Operation> res =
+              lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), otherMod->get());
+          if (!res) {
+            llvm::outs() << "[lookupSymbolRec] RETURN 1" << "\n";
+            return res;
+          }
+          // If recursive lookup returned an Operation*, wrap it in a new ManagedOpPtr that includes
+          // the ModuleOp so they have the same lifetime, controlled by the ManagedOpPtr.
+
+          llvm::outs() << "[lookupSymbolRec] ownsTheModule = "
+                       << (otherMod.value().get() == nullptr) << "\n"; // TODO: TEMP
+          ManagedOpPtr<Operation> x(res.get(), std::move(otherMod.value()));
+          llvm::outs() << "[lookupSymbolRec] '" << res.get()->getName() << "' named '" << symbol
+                       << "' ownsTheModule = " << x.ownsTheModule() << "\n"; // TODO: TEMP
+          llvm::outs() << "[lookupSymbolRec] RETURN 2" << "\n";
+          return x;
         }
       } else if (ModuleOp rootOpMod = llvm::dyn_cast<ModuleOp>(rootOp)) {
-        return lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), rootOpMod);
+        auto x = lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), rootOpMod);
+        llvm::outs() << "[lookupSymbolRec] RETURN 3" << "\n";
+        return x;
       }
     }
   }
-  return found;
+  llvm::outs() << "[lookupSymbolRec] RETURN 4" << "\n";
+  return ManagedOpPtr<Operation>(found);
 }
 
 LogicalResult verifyTypeResolution(SymbolTableCollection &symbolTable, Type ty, Operation *origin) {
