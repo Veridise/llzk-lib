@@ -79,9 +79,27 @@ def ZKIR_IncludeOp
   let assemblyFormat = [{ $path `as` $sym_name attr-dict }];
 
   let extraClassDeclaration = [{
-    static IncludeOp create(::mlir::Location location, ::llvm::StringRef name, ::llvm::StringRef path);
-    static IncludeOp create(::mlir::Location location, ::mlir::StringAttr name, ::mlir::StringAttr path);
-    ::mlir::FailureOr<::mlir::ModuleOp> loadModule();
+    static IncludeOp create(::mlir::Location, ::llvm::StringRef name, ::llvm::StringRef path);
+    static IncludeOp create(::mlir::Location, ::mlir::StringAttr name, ::mlir::StringAttr path);
+    ::mlir::FailureOr<ImportedModuleOp> loadModule();
+  }];
+}
+
+def ZKIR_ImportedModuleOp : ZKIR_Op<"imported"> {
+  // let arguments = (ins "::mlir::OwningOpRef<::mlir::ModuleOp>":$mod);
+  let regions = (region AnyRegion:$content);
+
+  let builders = [
+      // This builder `std::move`s the smart pointer
+      // And assigns the `$content` region to the region pointer of `$mod`
+      OpBuilder<(ins "::mlir::OwningOpRef<::mlir::ModuleOp>&&":$mod)>];
+
+  let skipDefaultBuilders = 1;
+
+  let extraClassDeclaration = [{
+    static ImportedModuleOp create(::mlir::Location, ::mlir::OwningOpRef<::mlir::ModuleOp>&&);
+    static ::mlir::ModuleOp takeModule(ImportedModuleOp&&);
+    ::mlir::ModuleOp getModule();
   }];
 }
 

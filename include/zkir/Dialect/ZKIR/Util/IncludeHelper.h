@@ -46,7 +46,7 @@ public:
   }
 };
 
-mlir::FailureOr<mlir::ModuleOp> parseFile(const std::string &filename, mlir::Operation *origin);
+mlir::FailureOr<ImportedModuleOp> parseFile(const std::string &filename, mlir::Operation *origin);
 
 mlir::FailureOr<mlir::ModuleOp> inlineTheInclude(mlir::MLIRContext *ctx, zkir::IncludeOp &incOp);
 

@@ -11,7 +11,7 @@ namespace zkir {
 using namespace mlir;
 
 /// Parse the given `filename` and return the produced ModuleOp.
-FailureOr<ModuleOp> parseFile(const std::string &filename, Operation *origin) {
+FailureOr<ImportedModuleOp> parseFile(const std::string &filename, Operation *origin) {
   std::string resolvedPath;
   auto buffer = zkir::GlobalSourceMgr::get().openIncludeFile(filename, resolvedPath);
   if (!buffer) {
@@ -20,16 +20,16 @@ FailureOr<ModuleOp> parseFile(const std::string &filename, Operation *origin) {
   ParserConfig parseConfig(origin->getContext());
   llvm::StringRef contents = buffer.get().get()->getBuffer();
   if (auto r = parseSourceString<ModuleOp>(contents, parseConfig, resolvedPath)) {
-    return r.release();
+    return ImportedModuleOp::create(origin->getLoc(), std::move(r));
   } else {
     return origin->emitOpError() << "could not parse file \"" << filename << "\"";
   }
 }
 
 FailureOr<ModuleOp> inlineTheInclude(MLIRContext *ctx, IncludeOp &incOp) {
-  FailureOr<ModuleOp> loadResult = incOp.loadModule();
+  FailureOr<ImportedModuleOp> loadResult = incOp.loadModule();
   if (succeeded(loadResult)) {
-    ModuleOp importedMod = loadResult.value();
+    ModuleOp importedMod = ImportedModuleOp::takeModule(std::move(loadResult.value()));
     // Check properties of the included file to ensure symbol resolution will still work.
     if (!importedMod->hasAttr(LANG_ATTR_NAME)) {
       return incOp.emitOpError()

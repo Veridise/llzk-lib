@@ -44,16 +44,40 @@ bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName) {
 // IncludeOp
 //===------------------------------------------------------------------===//
 
-IncludeOp IncludeOp::create(mlir::Location location, llvm::StringRef name, llvm::StringRef path) {
-  return delegate_to_build<IncludeOp>(location, name, path);
+IncludeOp IncludeOp::create(mlir::Location loc, llvm::StringRef name, llvm::StringRef path) {
+  return delegate_to_build<IncludeOp>(loc, name, path);
 }
 
-IncludeOp IncludeOp::create(mlir::Location location, mlir::StringAttr name, mlir::StringAttr path) {
-  return delegate_to_build<IncludeOp>(location, name, path);
+IncludeOp IncludeOp::create(mlir::Location loc, mlir::StringAttr name, mlir::StringAttr path) {
+  return delegate_to_build<IncludeOp>(loc, name, path);
 }
 
-mlir::FailureOr<mlir::ModuleOp> IncludeOp::loadModule() {
+mlir::FailureOr<ImportedModuleOp> IncludeOp::loadModule() {
   return parseFile(this->getPathAttr().str(), *this);
+}
+
+void ImportedModuleOp::build(
+    mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState,
+    mlir::OwningOpRef<mlir::ModuleOp> &&mod
+) {
+  odsState.addRegion()->emplaceBlock().push_front(mod.release());
+  return;
+}
+
+ImportedModuleOp
+ImportedModuleOp::create(mlir::Location loc, mlir::OwningOpRef<mlir::ModuleOp> &&mod) {
+  return delegate_to_build<ImportedModuleOp>(loc, std::move(mod));
+}
+
+mlir::ModuleOp ImportedModuleOp::getModule() {
+  //  return llvm::cast<mlir::ModuleOp>(&getContent().front().front());
+  return llvm::cast<mlir::ModuleOp>(getContent().front().front());
+}
+
+mlir::ModuleOp ImportedModuleOp::takeModule(ImportedModuleOp &&op) {
+  mlir::Operation &ret = op.getContent().front().front();
+  ret.remove();
+  return llvm::cast<mlir::ModuleOp>(ret);
 }
 
 //===------------------------------------------------------------------===//
@@ -113,7 +137,7 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
   return mlir::success();
 }
 
-FieldDefOp StructDefOp::getFieldDef(::mlir::StringAttr fieldName) {
+FieldDefOp StructDefOp::getFieldDef(mlir::StringAttr fieldName) {
   // The Body Region was verified to have exactly one Block so only need to search front() Block.
   for (mlir::Operation &op : getBody().front()) {
     if (FieldDefOp fieldDef = llvm::dyn_cast_if_present<FieldDefOp>(op)) {
@@ -187,7 +211,7 @@ mlir::FailureOr<FieldDefOp> FieldReadOp::getFieldDefOp(mlir::SymbolTableCollecti
   return zkir::getFieldDefOp(*this, symbolTable);
 }
 
-mlir::LogicalResult FieldReadOp::verifySymbolUses(::mlir::SymbolTableCollection &symbolTable) {
+mlir::LogicalResult FieldReadOp::verifySymbolUses(mlir::SymbolTableCollection &symbolTable) {
   return zkir::verifySymbolUses(*this, symbolTable, getResult(), "read");
 }
 
@@ -195,7 +219,7 @@ mlir::FailureOr<FieldDefOp> FieldWriteOp::getFieldDefOp(mlir::SymbolTableCollect
   return zkir::getFieldDefOp(*this, symbolTable);
 }
 
-mlir::LogicalResult FieldWriteOp::verifySymbolUses(::mlir::SymbolTableCollection &symbolTable) {
+mlir::LogicalResult FieldWriteOp::verifySymbolUses(mlir::SymbolTableCollection &symbolTable) {
   return zkir::verifySymbolUses(*this, symbolTable, getVal(), "write");
 }
 
@@ -203,7 +227,7 @@ mlir::LogicalResult FieldWriteOp::verifySymbolUses(::mlir::SymbolTableCollection
 // FeltConstantOp
 //===------------------------------------------------------------------===//
 
-void FeltConstantOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
+void FeltConstantOp::getAsmResultNames(mlir::OpAsmSetValueNameFn setNameFn) {
   llvm::SmallString<32> buf;
   llvm::raw_svector_ostream os(buf);
   os << "felt_const_";
@@ -217,7 +241,7 @@ mlir::OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return ge
 // FeltNonDetOp
 //===------------------------------------------------------------------===//
 
-void FeltNonDetOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
+void FeltNonDetOp::getAsmResultNames(mlir::OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "felt_nondet");
 }
 
@@ -225,7 +249,7 @@ void FeltNonDetOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
 // CreateArrayOp
 //===------------------------------------------------------------------===//
 
-void CreateArrayOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
+void CreateArrayOp::getAsmResultNames(mlir::OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "array");
 }
 
@@ -233,7 +257,7 @@ void CreateArrayOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
 // CreateStructOp
 //===------------------------------------------------------------------===//
 
-void CreateStructOp::getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn) {
+void CreateStructOp::getAsmResultNames(mlir::OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "self");
 }
 
