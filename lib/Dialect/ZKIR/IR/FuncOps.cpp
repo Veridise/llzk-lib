@@ -207,18 +207,17 @@ mlir::LogicalResult compareTypes(
     FuncOp &origin, const char *aspect
 ) {
   if (StructType sType = llvm::dyn_cast<StructType>(actualType)) {
-    mlir::FailureOr<ManagedOpPtr<StructDefOp>> actualStructOpt =
+    mlir::FailureOr<StructDefOp> actualStructOpt =
         lookupTopLevelSymbol<StructDefOp>(symbolTable, sType.getName(), origin);
     if (mlir::failed(actualStructOpt)) {
       return origin.emitError().append(
           "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getName(), "\""
       );
     }
-    // Move to a local to hold Module ownership until the end of this function
-    ManagedOpPtr<StructDefOp> actualStructPtr = std::move(*actualStructOpt);
-    if (*actualStructPtr != expectedStruct) {
+    StructDefOp actualStruct = actualStructOpt.value();
+    if (actualStruct != expectedStruct) {
       return genCompareErr(expectedStruct, origin, aspect)
-          .attachNote(actualStructPtr->getLoc())
+          .attachNote(actualStruct.getLoc())
           .append("uses this type instead");
     }
   } else {
@@ -332,22 +331,19 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
     return emitOpError("requires a 'callee' symbol reference attribute");
   }
   // Call target must be specified via full path from the root module.
-  mlir::FailureOr<ManagedOpPtr<FuncOp>> tgtOpt =
-      lookupTopLevelSymbol<FuncOp>(symbolTable, fnAttr, *this);
+  mlir::FailureOr<FuncOp> tgtOpt = lookupTopLevelSymbol<FuncOp>(symbolTable, fnAttr, *this);
   if (mlir::failed(tgtOpt)) {
     return this->emitError() << "no '" << FuncOp::getOperationName() << "' named \"" << fnAttr
                              << "\"";
   }
-  // Move to a local to hold Module ownership until the end of this function
-  ManagedOpPtr<FuncOp> tgtPtr = std::move(*tgtOpt);
-
+  FuncOp tgt = tgtOpt.value();
   // Enforce restrictions on callers of compute/constrain functions within structs.
-  if (isInStruct(tgtPtr->getOperation())) {
-    if (tgtPtr->getSymName().compare(FUNC_NAME_COMPUTE) == 0) {
+  if (isInStruct(tgt.getOperation())) {
+    if (tgt.getSymName().compare(FUNC_NAME_COMPUTE) == 0) {
       return verifyInStructFunctionNamed<FUNC_NAME_COMPUTE, 32>(*this, [] {
         return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_COMPUTE, "\" "});
       });
-    } else if (tgtPtr->getSymName().compare(FUNC_NAME_CONSTRAIN) == 0) {
+    } else if (tgt.getSymName().compare(FUNC_NAME_CONSTRAIN) == 0) {
       return verifyInStructFunctionNamed<FUNC_NAME_CONSTRAIN, 32>(*this, [] {
         return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_CONSTRAIN, "\" "});
       });
@@ -355,7 +351,7 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   }
 
   // Verify that the operand and result types match the callee.
-  auto fnType = tgtPtr->getFunctionType();
+  auto fnType = tgt.getFunctionType();
   if (fnType.getNumInputs() != getNumOperands()) {
     return emitOpError("incorrect number of operands for callee");
   }

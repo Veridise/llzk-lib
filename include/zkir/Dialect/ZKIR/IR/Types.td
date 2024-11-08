@@ -40,8 +40,7 @@ def ZKIR_StructType : ZKIR_Type<"Struct", "struct"> {
     /// Gets the `struct` op that defines this struct. Provided `op` is
     /// used as a starting point for the lookup. Should not be assumed to
     /// be non-`null` as we don't verify all types during verification.
-    ::mlir::FailureOr<ManagedOpPtr<StructDefOp>>
-      getDefinition(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
+    ::mlir::FailureOr<StructDefOp> getDefinition(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
 
     // Verifies that this type references a valid struct, relative to the given `op`.
     ::mlir::LogicalResult verifySymbol(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);

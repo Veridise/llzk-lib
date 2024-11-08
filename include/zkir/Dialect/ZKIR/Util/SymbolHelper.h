@@ -12,41 +12,33 @@ mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(StructDefOp &to);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(FuncOp &to);
 
-ManagedOpPtr<mlir::Operation> lookupSymbolRec(
+mlir::Operation *lookupSymbolRec(
     mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr sym, mlir::Operation *symTableOp
 );
 
 template <typename T>
-inline mlir::FailureOr<ManagedOpPtr<T>> lookupSymbolIn(
+inline mlir::FailureOr<T> lookupSymbolIn(
     mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, mlir::Operation *symTableOp,
     mlir::Operation *origin
 ) {
-  // llvm::outs() << "[lookupSymbolIn] symbol = " << symbol << "\n";            // TODO: TEMP
-  // if (!symTableOp) {                                                         // TODO: TEMP
-  //   llvm::outs() << "[lookupSymbolIn] Found null sym table pointer" << "\n"; // TODO: TEMP
-  //   // std::exit(1);                                                  // TODO: TEMP
-  // } // TODO: TEMP
-
-  llvm::outs() << "[lookupSymbolIn] BEFORE [lookupSymbolRec]" << "\n";
-  ManagedOpPtr<mlir::Operation> found = lookupSymbolRec(tables, symbol, symTableOp);
-  llvm::outs() << "[lookupSymbolIn] AFTER [lookupSymbolRec]" << "\n";
+  mlir::Operation *found = lookupSymbolRec(tables, symbol, symTableOp);
   if (!found) {
     return origin->emitOpError() << "references unknown symbol \"" << symbol << "\"";
   }
-  if (T ret = llvm::dyn_cast<T>(found.get())) {
-    return found.replacePtr(&ret);
+  if (T ret = llvm::dyn_cast<T>(found)) {
+    return ret;
   }
   return origin->emitError() << "symbol \"" << symbol << "\" references a '" << found->getName()
                              << "' but expected a '" << T::getOperationName() << "'";
 }
 
 template <typename T>
-inline mlir::FailureOr<ManagedOpPtr<T>> lookupTopLevelSymbol(
+inline mlir::FailureOr<T> lookupTopLevelSymbol(
     mlir::SymbolTableCollection &symbolTable, mlir::SymbolRefAttr symbol, mlir::Operation *origin
 ) {
   mlir::FailureOr<mlir::ModuleOp> root = getRootModule(origin);
   if (mlir::failed(root)) {
-    return mlir::failure(); // getRootModule() already emits a sufficient error message
+    return root; // getRootModule() already emits a sufficient error message
   }
   return lookupSymbolIn<T>(symbolTable, symbol, root.value(), origin);
 }

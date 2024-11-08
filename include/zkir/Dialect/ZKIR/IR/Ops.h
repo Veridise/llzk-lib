@@ -3,7 +3,6 @@
 #include "zkir/Dialect/ZKIR/IR/Attrs.h"
 #include "zkir/Dialect/ZKIR/IR/Dialect.h"
 #include "zkir/Dialect/ZKIR/IR/Types.h"
-#include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
 
 #include <mlir/Bytecode/BytecodeOpInterface.h>
 #include <mlir/IR/BuiltinOps.h>
