@@ -28,36 +28,38 @@ FailureOr<ImportedModuleOp> parseFile(const std::string &filename, Operation *or
 
 FailureOr<ModuleOp> inlineTheInclude(MLIRContext *ctx, IncludeOp &incOp) {
   FailureOr<ImportedModuleOp> loadResult = incOp.loadModule();
-  if (succeeded(loadResult)) {
-    ModuleOp importedMod = ImportedModuleOp::takeModule(std::move(loadResult.value()));
-    // Check properties of the included file to ensure symbol resolution will still work.
-    if (!importedMod->hasAttr(LANG_ATTR_NAME)) {
-      return incOp.emitOpError()
-          .append(
-              "expected '", ModuleOp::getOperationName(), "' from included file to have \"",
-              LANG_ATTR_NAME, "\" attribute"
-          )
-          .attachNote(importedMod.getLoc())
-          .append("this should have \"", LANG_ATTR_NAME, "\" attribute");
-    }
-    if (importedMod.getSymNameAttr()) {
-      return incOp.emitOpError()
-          .append("expected '", ModuleOp::getOperationName(), "' from included file to be unnamed")
-          .attachNote(importedMod.getLoc())
-          .append("this should be unnamed");
-    }
-
-    // Rename the ModuleOp using the alias symbol name from the IncludeOp.
-    importedMod.setSymNameAttr(incOp.getSymNameAttr());
-
-    // Replace the IncludeOp with the loaded ModuleOp
-    Operation *thisOp = incOp.getOperation();
-    IRRewriter rewriter(ctx);
-    rewriter.setInsertionPointAfter(thisOp);
-    rewriter.insert(importedMod);
-    rewriter.eraseOp(thisOp);
+  if (failed(loadResult)) {
+    return loadResult;
   }
-  return loadResult;
+  ModuleOp importedMod = ImportedModuleOp::takeModule(std::move(loadResult.value()));
+  // Check properties of the included file to ensure symbol resolution will still work.
+  if (!importedMod->hasAttr(LANG_ATTR_NAME)) {
+    return incOp.emitOpError()
+        .append(
+            "expected '", ModuleOp::getOperationName(), "' from included file to have \"",
+            LANG_ATTR_NAME, "\" attribute"
+        )
+        .attachNote(importedMod.getLoc())
+        .append("this should have \"", LANG_ATTR_NAME, "\" attribute");
+  }
+  if (importedMod.getSymNameAttr()) {
+    return incOp.emitOpError()
+        .append("expected '", ModuleOp::getOperationName(), "' from included file to be unnamed")
+        .attachNote(importedMod.getLoc())
+        .append("this should be unnamed");
+  }
+
+  // Rename the ModuleOp using the alias symbol name from the IncludeOp.
+  importedMod.setSymNameAttr(incOp.getSymNameAttr());
+
+  // Replace the IncludeOp with the loaded ModuleOp
+  Operation *thisOp = incOp.getOperation();
+  IRRewriter rewriter(ctx);
+  rewriter.setInsertionPointAfter(thisOp);
+  rewriter.insert(importedMod);
+  rewriter.eraseOp(thisOp);
+
+  return importedMod;
 }
 
 } // namespace zkir
