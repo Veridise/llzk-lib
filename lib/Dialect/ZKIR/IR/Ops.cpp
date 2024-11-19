@@ -3,9 +3,12 @@
 #include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
 #include "zkir/Dialect/ZKIR/Util/SymbolHelper.h"
 
+#include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Diagnostics.h>
 
 #include <llvm/ADT/Twine.h>
+#include <mlir/IR/OwningOpRef.h>
+#include <mlir/Support/LogicalResult.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -52,33 +55,46 @@ IncludeOp IncludeOp::create(mlir::Location loc, mlir::StringAttr name, mlir::Str
   return delegate_to_build<IncludeOp>(loc, name, path);
 }
 
-mlir::FailureOr<ImportedModuleOp> IncludeOp::loadModule() {
-  return parseFile(this->getPathAttr().str(), *this);
+mlir::FailureOr<mlir::OwningOpRef<mlir::ModuleOp>> IncludeOp::openModule() {
+  return parseFile(this->getPathAttr(), *this);
 }
 
-void ImportedModuleOp::build(
-    mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState,
-    mlir::OwningOpRef<mlir::ModuleOp> &&mod
-) {
-  odsState.addRegion()->emplaceBlock().push_front(mod.release());
-  return;
+//===------------------------------------------------------------------===//
+// ImportedModuleOp
+//===------------------------------------------------------------------===//
+
+/*void ImportedModuleOp::build(*/
+/*    mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState,*/
+/*    mlir::OwningOpRef<mlir::ModuleOp> &&mod*/
+/*) {*/
+/*  odsState.addRegion()->emplaceBlock().push_front(mod.release());*/
+/*  return;*/
+/*}*/
+
+/*ImportedModuleOp*/
+/*ImportedModuleOp::create(mlir::Location loc, mlir::OwningOpRef<mlir::ModuleOp> &&mod) {*/
+/*  return delegate_to_build<ImportedModuleOp>(loc, std::move(mod));*/
+/*}*/
+
+mlir::FailureOr<mlir::ModuleOp> ImportedModuleOp::getModule() {
+  auto &op = getRegion().front().front();
+  if (!mlir::isa<mlir::ModuleOp>(op)) {
+    return op.emitError()
+        .append(
+            "expected '", mlir::ModuleOp::getOperationName(),
+            "' as top level operation of included file. Got: ", op.getName()
+        )
+        .attachNote(getLoc())
+        .append("from file included here");
+  }
+  return mlir::cast<mlir::ModuleOp>(op);
 }
 
-ImportedModuleOp
-ImportedModuleOp::create(mlir::Location loc, mlir::OwningOpRef<mlir::ModuleOp> &&mod) {
-  return delegate_to_build<ImportedModuleOp>(loc, std::move(mod));
-}
-
-mlir::ModuleOp ImportedModuleOp::getModule() {
-  //  return llvm::cast<mlir::ModuleOp>(&getContent().front().front());
-  return llvm::cast<mlir::ModuleOp>(getContent().front().front());
-}
-
-mlir::ModuleOp ImportedModuleOp::takeModule(ImportedModuleOp &&op) {
-  mlir::Operation &ret = op.getContent().front().front();
-  ret.remove();
-  return llvm::cast<mlir::ModuleOp>(ret);
-}
+/*mlir::ModuleOp ImportedModuleOp::takeModule(ImportedModuleOp &&op) {*/
+/*  mlir::Operation &ret = op.getContent().front().front();*/
+/*  ret.remove();*/
+/*  return llvm::cast<mlir::ModuleOp>(ret);*/
+/*}*/
 
 //===------------------------------------------------------------------===//
 // StructDefOp
@@ -162,26 +178,26 @@ mlir::LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &symbolTa
 // FieldRefOp implementations
 //===------------------------------------------------------------------===//
 namespace {
-mlir::FailureOr<FieldDefOp> getFieldDefOp(
+mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(
     FieldRefOpInterface refOp, mlir::SymbolTableCollection &symbolTable, StructType tyStruct
 ) {
   mlir::Operation *op = refOp.getOperation();
-  mlir::FailureOr<StructDefOp> structDef = tyStruct.getDefinition(symbolTable, op);
+  auto structDef = tyStruct.getDefinition(symbolTable, op);
   if (mlir::failed(structDef)) {
-    return structDef; // getDefinition() already emits a sufficient error message
+    return mlir::failure(); // getDefinition() already emits a sufficient error message
   }
   auto res = zkir::lookupSymbolIn<FieldDefOp>(
       symbolTable, mlir::SymbolRefAttr::get(refOp->getContext(), refOp.getFieldName()),
-      structDef.value(), op
+      structDef.value().get(), op
   );
   if (mlir::failed(res)) {
     return refOp->emitError() << "no '" << FieldDefOp::getOperationName() << "' named \"@"
                               << refOp.getFieldName() << "\" in \"" << tyStruct.getName() << "\"";
   }
-  return res;
+  return std::move(res.value());
 }
 
-inline mlir::FailureOr<FieldDefOp>
+inline mlir::FailureOr<SymbolLookupResult<FieldDefOp>>
 getFieldDefOp(FieldRefOpInterface refOp, mlir::SymbolTableCollection &symbolTable) {
   return getFieldDefOp(refOp, symbolTable, refOp.getStructType());
 }
@@ -194,11 +210,11 @@ mlir::LogicalResult verifySymbolUses(
   if (mlir::failed(tyStruct.verifySymbol(symbolTable, refOp.getOperation()))) {
     return mlir::failure();
   }
-  mlir::FailureOr<FieldDefOp> field = getFieldDefOp(refOp, symbolTable, tyStruct);
+  auto field = getFieldDefOp(refOp, symbolTable, tyStruct);
   if (mlir::failed(field)) {
     return field; // getFieldDefOp() already emits a sufficient error message
   }
-  mlir::Type fieldType = field.value().getType();
+  mlir::Type fieldType = (*field.value()).getType();
   if (fieldType != compareTo.getType()) {
     return refOp->emitOpError() << "has wrong type; expected " << fieldType << ", got "
                                 << compareTo.getType();
@@ -207,7 +223,8 @@ mlir::LogicalResult verifySymbolUses(
 }
 } // namespace
 
-mlir::FailureOr<FieldDefOp> FieldReadOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
+mlir::FailureOr<SymbolLookupResult<FieldDefOp>>
+FieldReadOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
   return zkir::getFieldDefOp(*this, symbolTable);
 }
 
@@ -215,7 +232,8 @@ mlir::LogicalResult FieldReadOp::verifySymbolUses(mlir::SymbolTableCollection &s
   return zkir::verifySymbolUses(*this, symbolTable, getResult(), "read");
 }
 
-mlir::FailureOr<FieldDefOp> FieldWriteOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
+mlir::FailureOr<SymbolLookupResult<FieldDefOp>>
+FieldWriteOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
   return zkir::getFieldDefOp(*this, symbolTable);
 }
 

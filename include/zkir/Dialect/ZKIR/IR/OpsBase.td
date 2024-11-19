@@ -18,7 +18,7 @@ class ZKIR_FieldRefOp<string mnemonic, list<Trait> traits = []>
                       DeclareOpInterfaceMethods<FieldRefOpInterface>]> {
   let extraClassDeclaration = [{
     /// Gets the `field` definition for the field referenced in this op.
-    ::mlir::FailureOr<FieldDefOp> getFieldDefOp(::mlir::SymbolTableCollection &symbolTable);
+    ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &symbolTable);
   }];
 }
 

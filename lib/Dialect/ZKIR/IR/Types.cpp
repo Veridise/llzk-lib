@@ -31,9 +31,9 @@ bool isValidEmitEqType(mlir::Type type) {
           isValidEmitEqType(llvm::cast<::zkir::ArrayType>(type).getElementType()));
 }
 
-mlir::FailureOr<StructDefOp>
+mlir::FailureOr<SymbolLookupResult<StructDefOp>>
 StructType::getDefinition(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
-  mlir::FailureOr<StructDefOp> def = lookupTopLevelSymbol<StructDefOp>(symbolTable, getName(), op);
+  auto def = lookupTopLevelSymbol<StructDefOp>(symbolTable, getName(), op);
   if (mlir::failed(def)) {
     return op->emitError() << "no '" << StructDefOp::getOperationName() << "' named \"" << getName()
                            << "\"";

@@ -2,10 +2,55 @@
 #include "zkir/Dialect/ZKIR/IR/Ops.h"
 #include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
 
+#include <llvm/Support/Debug.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/Operation.h>
+#include <mlir/IR/OwningOpRef.h>
+
+#define DEBUG_TYPE "zkir-symbol-helpers"
 
 namespace zkir {
 using namespace mlir;
+
+//===------------------------------------------------------------------===//
+// SymbolLookupResultUntyped
+//===------------------------------------------------------------------===//
+
+SymbolLookupResultUntyped::SymbolLookupResultUntyped(mlir::Operation *t_op) : op(t_op) {}
+SymbolLookupResultUntyped::SymbolLookupResultUntyped() : op(nullptr) {}
+
+// Move constructor
+SymbolLookupResultUntyped::SymbolLookupResultUntyped(SymbolLookupResultUntyped &&other)
+    : op(other.op), managedResources(std::move(other.managedResources)) {
+  other.op = nullptr;
+}
+
+// Move assigment
+SymbolLookupResultUntyped &SymbolLookupResultUntyped::operator=(SymbolLookupResultUntyped &&other) {
+  if (this != &other) {
+    managedResources.clear();
+    managedResources = std::move(other.managedResources);
+    op = other.op;
+    other.op = nullptr;
+  }
+  return *this;
+}
+
+/// Access the internal operation.
+mlir::Operation *SymbolLookupResultUntyped::operator->() { return op; }
+mlir::Operation &SymbolLookupResultUntyped::operator*() { return *op; }
+mlir::Operation &SymbolLookupResultUntyped::operator*() const { return *op; }
+mlir::Operation *SymbolLookupResultUntyped::get() { return op; }
+mlir::Operation *SymbolLookupResultUntyped::get() const { return op; }
+
+/// True iff the symbol was found.
+SymbolLookupResultUntyped::operator bool() const { return op != nullptr; }
+
+/// Adds a pointer to the set of resources the result has to manage the lifetime of.
+void SymbolLookupResultUntyped::manage(mlir::OwningOpRef<mlir::ModuleOp> &&ptr) {
+  // Hand over the pointer
+  managedResources.push_back(std::move(ptr));
+}
 
 namespace {
 
@@ -106,23 +151,40 @@ inline SymbolRefAttr getTailAsSymbolRefAttr(SymbolRefAttr &symbol) {
 }
 } // namespace
 
-Operation *
+SymbolLookupResultUntyped
 lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *symTableOp) {
   Operation *found = tables.lookupSymbolIn(symTableOp, symbol);
   if (!found) {
+    /*(llvm::dbgs() << "Symbol " << symbol << " was not found directly. Looking recursively.\n");*/
     // If not found, check if the reference can be found by manually doing a lookup for each part of
     // the reference in turn, traversing through IncludeOp symbols by parsing the included file.
     if (Operation *rootOp = tables.lookupSymbolIn(symTableOp, symbol.getRootReference())) {
       if (IncludeOp rootOpInc = llvm::dyn_cast<IncludeOp>(rootOp)) {
-        FailureOr<ImportedModuleOp> otherMod = rootOpInc.loadModule();
+        /*(llvm::dbgs() << "Found an include op that matches the root name: "*/
+        /*              << symbol.getRootReference() << "\n");*/
+        FailureOr<OwningOpRef<ModuleOp>> otherMod = rootOpInc.openModule();
         if (succeeded(otherMod)) {
-          return lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), otherMod->getModule());
+          /*llvm::dbgs() << "Module loaded!\n";*/
+          auto result = lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), otherMod->get());
+          result.manage(std::move(*otherMod));
+          return result;
         }
+        /*llvm::dbgs() << "Failed to load module!\n";*/
       } else if (ModuleOp rootOpMod = llvm::dyn_cast<ModuleOp>(rootOp)) {
+        /*(llvm::dbgs() << "Found a module op that matches the root name: "*/
+        /*              << symbol.getRootReference() << "\n");*/
         return lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), rootOpMod);
+      } else {
+        /*llvm::dbgs() << "Unexpected operation for root symbol. Got " << rootOp->getName() <<
+         * "\n";*/
       }
+    } else {
+      /*llvm::dbgs() << "Could not find an op that matches the name of the root! "*/
+      /*             << symbol.getRootReference() << "\n";*/
     }
   }
+  /*llvm::dbgs() << "Found op associated with the symbol " << symbol << ": " << found->getName()*/
+  /*             << "\n";*/
   return found;
 }
 

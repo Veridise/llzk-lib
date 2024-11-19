@@ -7,6 +7,9 @@
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/SourceMgr.h>
+#include <mlir/IR/OwningOpRef.h>
+#include <mlir/Support/LLVM.h>
+#include <mlir/Support/LogicalResult.h>
 
 namespace zkir {
 
@@ -27,7 +30,7 @@ public:
   // Adapted from mlir::SourceMgr::OpenIncludeFile() because SourceMgr is
   //   not a mature, usable component of MLIR.
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>>
-  openIncludeFile(const std::string &filename, std::string &resolvedFile) {
+  openIncludeFile(const mlir::StringRef filename, std::string &resolvedFile) {
     auto result = llvm::MemoryBuffer::getFile(filename);
 
     llvm::SmallString<64> pathBuffer(filename);
@@ -46,7 +49,13 @@ public:
   }
 };
 
-mlir::FailureOr<ImportedModuleOp> parseFile(const std::string &filename, mlir::Operation *origin);
+/// Parse the IR file and return an unique pointer to its contents
+mlir::FailureOr<mlir::OwningOpRef<mlir::ModuleOp>>
+parseFile(const mlir::StringRef filename, mlir::Operation *origin);
+
+/// Parse the IR file and write its contents into the container block.
+mlir::LogicalResult
+parseFile(const mlir::StringRef filename, mlir::Operation *origin, mlir::Block *container);
 
 mlir::FailureOr<mlir::ModuleOp> inlineTheInclude(mlir::MLIRContext *ctx, zkir::IncludeOp &incOp);
 
