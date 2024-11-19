@@ -44,10 +44,9 @@ parseFile(const mlir::StringRef filename, mlir::Operation *origin) {
 
   ParserConfig parseConfig(origin->getContext());
   llvm::StringRef contents = of->buffer->getBuffer();
-  if (auto r = parseSourceString<ModuleOp>(contents, parseConfig, of->resolvedPath)) {
+  if (auto r =
+          parseSourceString<ModuleOp>(contents, parseConfig, /*sourceName=*/of->resolvedPath)) {
     return r;
-    /*mlir::OpBuilder builder(origin->getContext());*/
-    /*return builder.create<ImportedModuleOp>(origin->getLoc(), std::move(r));*/
   } else {
     return origin->emitOpError() << "could not parse file \"" << filename << "\"";
   }
@@ -65,10 +64,8 @@ LogicalResult parseFile(const mlir::StringRef filename, Operation *origin, Block
   llvm::StringRef contents = of->buffer->getBuffer();
   auto res = parseSourceString(contents, container, parseConfig, /*sourceName=*/of->resolvedPath);
   if (mlir::failed(res)) {
-    /*llvm::dbgs() << "parsing into a block failed\n";*/
     return origin->emitOpError() << "could not parse file \"" << filename << "\"";
   }
-  /*llvm::dbgs() << "parsing into a block went OK\n";*/
   return mlir::success();
 }
 
@@ -157,9 +154,6 @@ public:
         return modRes;
       }
 
-      ModuleOp mod = modRes.value();
-      assert(mod->getContext() != nullptr);
-
       // Add the destination block after the insertion point.
       // dest becomes the source from which to move operations.
       rewriter.inlineBlockBefore(dest, rewriter.getInsertionBlock(), insertionPoint);
@@ -167,26 +161,8 @@ public:
 
     rewriter.setInsertionPointAfter(incOp);
     auto modOp = rewriter.getInsertionPoint();
-    /*llvm::dbgs() << "new mod " << "\n";*/
-    /*modOp->dump();*/
     auto mod = llvm::dyn_cast<ModuleOp>(modOp);
-    /*rewriter.insert(container);*/
 
-    // Locate the symbol table where the include is referenced
-    /*SymbolTable st(SymbolTable::getNearestSymbolTable(incOp));*/
-    // Generate a name for the module we just created
-    /*st.insert(mod);*/
-    // Remove from the symbol table the include op
-    /*st.remove(incOp);*/
-    // Rename the module to the name that now is vacant.
-    /*auto renameRes = st.rename(mod, incOp.getName());*/
-    /*if (failed(renameRes)) {*/
-    /*  auto modName = mod.getName().has_value() ? mod.getName().value() : "<anonymous module>";*/
-    /*  return mod->emitOpError()*/
-    /*      .append("failed to rename inlined module from ", modName, " to ", incOp.getName())*/
-    /*      .attachNote(incOp.getLoc())*/
-    /*      .append("inlined here");*/
-    /*}*/
     mod.setSymNameAttr(incOp.getSymNameAttr());
 
     // All good so we mark as commited and return a reference to the newly generated module.
@@ -198,7 +174,6 @@ private:
   bool commited = false, blockWritten = false;
   IncludeOp &incOp;
   IRRewriter rewriter;
-  /*ImportedModuleOp container;*/
   Block *dest;
 };
 

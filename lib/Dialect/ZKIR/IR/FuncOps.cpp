@@ -213,7 +213,7 @@ mlir::LogicalResult compareTypes(
           "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getName(), "\""
       );
     }
-    StructDefOp actualStruct = *actualStructOpt.value();
+    StructDefOp actualStruct = actualStructOpt.value().get();
     if (actualStruct != expectedStruct) {
       return genCompareErr(expectedStruct, origin, aspect)
           .attachNote(actualStruct.getLoc())

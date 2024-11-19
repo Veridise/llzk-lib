@@ -36,11 +36,7 @@ class InlineIncludesPass : public zkir::impl::InlineIncludesPassBase<InlineInclu
       } while (!currLevel.empty());
     }
 
-    /*markAllAnalysesPreserved();*/
-
-    /*llvm::dbgs(*/
-    /*) << "================================================================ InlineIncludesPass "*/
-    /*     "completed ================================================================\n";*/
+    markAllAnalysesPreserved();
   }
 };
 

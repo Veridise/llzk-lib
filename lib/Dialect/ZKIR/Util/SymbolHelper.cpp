@@ -155,36 +155,21 @@ SymbolLookupResultUntyped
 lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *symTableOp) {
   Operation *found = tables.lookupSymbolIn(symTableOp, symbol);
   if (!found) {
-    /*(llvm::dbgs() << "Symbol " << symbol << " was not found directly. Looking recursively.\n");*/
     // If not found, check if the reference can be found by manually doing a lookup for each part of
     // the reference in turn, traversing through IncludeOp symbols by parsing the included file.
     if (Operation *rootOp = tables.lookupSymbolIn(symTableOp, symbol.getRootReference())) {
       if (IncludeOp rootOpInc = llvm::dyn_cast<IncludeOp>(rootOp)) {
-        /*(llvm::dbgs() << "Found an include op that matches the root name: "*/
-        /*              << symbol.getRootReference() << "\n");*/
         FailureOr<OwningOpRef<ModuleOp>> otherMod = rootOpInc.openModule();
         if (succeeded(otherMod)) {
-          /*llvm::dbgs() << "Module loaded!\n";*/
           auto result = lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), otherMod->get());
           result.manage(std::move(*otherMod));
           return result;
         }
-        /*llvm::dbgs() << "Failed to load module!\n";*/
       } else if (ModuleOp rootOpMod = llvm::dyn_cast<ModuleOp>(rootOp)) {
-        /*(llvm::dbgs() << "Found a module op that matches the root name: "*/
-        /*              << symbol.getRootReference() << "\n");*/
         return lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), rootOpMod);
-      } else {
-        /*llvm::dbgs() << "Unexpected operation for root symbol. Got " << rootOp->getName() <<
-         * "\n";*/
       }
-    } else {
-      /*llvm::dbgs() << "Could not find an op that matches the name of the root! "*/
-      /*             << symbol.getRootReference() << "\n";*/
     }
   }
-  /*llvm::dbgs() << "Found op associated with the symbol " << symbol << ": " << found->getName()*/
-  /*             << "\n";*/
   return found;
 }
 

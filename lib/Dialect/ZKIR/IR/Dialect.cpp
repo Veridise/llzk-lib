@@ -1,4 +1,3 @@
-#include <llvm/ADT/Hashing.h>
 #include <mlir/IR/DialectImplementation.h>
 
 #include "zkir/Dialect/ZKIR/IR/Attrs.h"

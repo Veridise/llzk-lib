@@ -20,14 +20,6 @@ class ZKIR_EnumAttr<EnumAttrInfo enum, string name, string enumMnemonic,
   let mnemonic = enumMnemonic;
 }
 
-/*
-def ZKIR_ImportedModuleSto : ZKIR_Attr<"ImportedModule", "imported_mod"> {
-  let parameters = (ins "::std::shared_ptr<::mlir::ModuleOp>":$mod);
-  // let parameters = (ins "::mlir::OwningOpRef<::mlir::ModuleOp>":$mod);
-  let hasCustomAssemblyFormat = 1;
-}
-*/
-
 def ZKIR_CmpPredicateAttr
     : ZKIR_EnumAttr<ZKIR_FeltCmpPredicate, "cmp_predicate", "cmp"> {
   let assemblyFormat = [{ $value }];

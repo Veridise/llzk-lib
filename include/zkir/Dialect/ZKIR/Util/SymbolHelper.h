@@ -30,7 +30,7 @@ inline mlir::FailureOr<SymbolLookupResult<T>> lookupSymbolIn(
   }
   // Keep a copy of the op ptr in case we need it for displaying diagnostics
   auto *op = found.get();
-  // Since the untyped results gets moved here into a typed result.
+  // Since the untyped result gets moved here into a typed result.
   SymbolLookupResult<T> ret(std::move(found));
   if (!ret) {
     return origin->emitError() << "symbol \"" << symbol << "\" references a '" << op->getName()
@@ -45,7 +45,6 @@ inline mlir::FailureOr<SymbolLookupResult<T>> lookupTopLevelSymbol(
 ) {
   mlir::FailureOr<mlir::ModuleOp> root = getRootModule(origin);
   if (mlir::failed(root)) {
-    // XXX: If we drop `root` here are we missing the diagnostic?
     return mlir::failure(); // getRootModule() already emits a sufficient error message
   }
   return lookupSymbolIn<T>(symbolTable, symbol, root.value(), origin);

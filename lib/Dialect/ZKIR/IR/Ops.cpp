@@ -60,43 +60,6 @@ mlir::FailureOr<mlir::OwningOpRef<mlir::ModuleOp>> IncludeOp::openModule() {
 }
 
 //===------------------------------------------------------------------===//
-// ImportedModuleOp
-//===------------------------------------------------------------------===//
-
-/*void ImportedModuleOp::build(*/
-/*    mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState,*/
-/*    mlir::OwningOpRef<mlir::ModuleOp> &&mod*/
-/*) {*/
-/*  odsState.addRegion()->emplaceBlock().push_front(mod.release());*/
-/*  return;*/
-/*}*/
-
-/*ImportedModuleOp*/
-/*ImportedModuleOp::create(mlir::Location loc, mlir::OwningOpRef<mlir::ModuleOp> &&mod) {*/
-/*  return delegate_to_build<ImportedModuleOp>(loc, std::move(mod));*/
-/*}*/
-
-mlir::FailureOr<mlir::ModuleOp> ImportedModuleOp::getModule() {
-  auto &op = getRegion().front().front();
-  if (!mlir::isa<mlir::ModuleOp>(op)) {
-    return op.emitError()
-        .append(
-            "expected '", mlir::ModuleOp::getOperationName(),
-            "' as top level operation of included file. Got: ", op.getName()
-        )
-        .attachNote(getLoc())
-        .append("from file included here");
-  }
-  return mlir::cast<mlir::ModuleOp>(op);
-}
-
-/*mlir::ModuleOp ImportedModuleOp::takeModule(ImportedModuleOp &&op) {*/
-/*  mlir::Operation &ret = op.getContent().front().front();*/
-/*  ret.remove();*/
-/*  return llvm::cast<mlir::ModuleOp>(ret);*/
-/*}*/
-
-//===------------------------------------------------------------------===//
 // StructDefOp
 //===------------------------------------------------------------------===//
 namespace {
