@@ -41,11 +41,11 @@ bool isValidTypeImpl(mlir::Type type) {
   return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType, TypeVarType>(type) ||
          (AllowStruct && llvm::isa<StructType>(type)) ||
          (AllowString && llvm::isa<StringType>(type)) ||
-         (AllowArray && isValidArrayTypeImpl<AllowStruct>(type));
+         (AllowArray && isValidArrayTypeImpl<AllowStruct, AllowString>(type));
 }
 } // namespace
 
-bool isValidType(mlir::Type type) { return isValidTypeImpl<true, rtue, true>(type); }
+bool isValidType(mlir::Type type) { return isValidTypeImpl<true, true, true>(type); }
 
 bool isValidEmitEqType(mlir::Type type) { return isValidTypeImpl<false, false, true>(type); }
 
