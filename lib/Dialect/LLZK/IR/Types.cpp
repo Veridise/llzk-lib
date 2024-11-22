@@ -17,37 +17,41 @@ namespace llzk {
 //===------------------------------------------------------------------===//
 
 namespace {
-template <bool AllowStruct, bool AllowArray> bool isValidTypeImpl(mlir::Type type);
+template <bool AllowStruct, bool AllowString, bool AllowArray>
+bool isValidTypeImpl(mlir::Type type);
 
-template <bool AllowStruct> bool isValidArrayElemTypeImpl(mlir::Type type) {
+template <bool AllowStruct, bool AllowString> bool isValidArrayElemTypeImpl(mlir::Type type) {
   // ArrayType element can be any valid type sans ArrayType itself.
   //  Pass through the flag indicating if StructType is allowed.
-  return isValidTypeImpl<AllowStruct, false>(type);
+  return isValidTypeImpl<AllowStruct, AllowString, false>(type);
 }
 
-template <bool AllowStruct> bool isValidArrayTypeImpl(mlir::Type type) {
+template <bool AllowStruct, bool AllowString> bool isValidArrayTypeImpl(mlir::Type type) {
   // Pass through the flag indicating if StructType is allowed.
-  return llvm::isa<ArrayType>(type) &&
-         isValidArrayElemTypeImpl<AllowStruct>(llvm::cast<ArrayType>(type).getElementType());
+  return llvm::isa<ArrayType>(type) && isValidArrayElemTypeImpl<AllowStruct, AllowString>(
+                                           llvm::cast<ArrayType>(type).getElementType()
+                                       );
 }
 
-template <bool AllowStruct, bool AllowArray> bool isValidTypeImpl(mlir::Type type) {
+template <bool AllowStruct, bool AllowString, bool AllowArray>
+bool isValidTypeImpl(mlir::Type type) {
   // This is the main check for allowed types.
   //  Allow StructType and ArrayType only if the respective flags are true.
   //  Pass through the flag indicating if StructType is allowed.
   return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType, TypeVarType>(type) ||
          (AllowStruct && llvm::isa<StructType>(type)) ||
+         (AllowString && llvm::isa<StringType>(type)) ||
          (AllowArray && isValidArrayTypeImpl<AllowStruct>(type));
 }
 } // namespace
 
-bool isValidType(mlir::Type type) { return isValidTypeImpl<true, true>(type); }
+bool isValidType(mlir::Type type) { return isValidTypeImpl<true, rtue, true>(type); }
 
-bool isValidEmitEqType(mlir::Type type) { return isValidTypeImpl<false, true>(type); }
+bool isValidEmitEqType(mlir::Type type) { return isValidTypeImpl<false, false, true>(type); }
 
-bool isValidArrayElemType(mlir::Type type) { return isValidArrayElemTypeImpl<true>(type); }
+bool isValidArrayElemType(mlir::Type type) { return isValidArrayElemTypeImpl<true, true>(type); }
 
-bool isValidArrayType(mlir::Type type) { return isValidArrayTypeImpl<true>(type); }
+bool isValidArrayType(mlir::Type type) { return isValidArrayTypeImpl<true, true>(type); }
 
 namespace {
 bool paramAttrUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute &rhsAttr) {
