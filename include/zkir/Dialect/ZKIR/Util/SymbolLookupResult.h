@@ -40,7 +40,7 @@ private:
 
 template <typename T> class SymbolLookupResult {
 public:
-  SymbolLookupResult(SymbolLookupResultUntyped inner) : inner(std::move(inner)) {}
+  SymbolLookupResult(SymbolLookupResultUntyped &&inner) : inner(std::move(inner)) {}
 
   /// Access the internal operation as type T.
   /// Follows the behaviors of llvm::dyn_cast if the internal operation cannot cast to that type.
