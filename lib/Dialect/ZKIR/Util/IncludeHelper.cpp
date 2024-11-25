@@ -23,8 +23,8 @@ struct OpenFile {
   std::unique_ptr<llvm::MemoryBuffer> buffer;
 };
 
-inline mlir::FailureOr<OpenFile>
-openFile(std::function<InFlightDiagnostic()> &&emitError, const mlir::StringRef filename) {
+inline FailureOr<OpenFile>
+openFile(std::function<InFlightDiagnostic()> &&emitError, const StringRef filename) {
   OpenFile r;
 
   auto buffer = zkir::GlobalSourceMgr::get().openIncludeFile(filename, r.resolvedPath);
@@ -35,12 +35,11 @@ openFile(std::function<InFlightDiagnostic()> &&emitError, const mlir::StringRef 
   return std::move(r);
 }
 
-mlir::FailureOr<mlir::OwningOpRef<mlir::ModuleOp>>
-parseFile(const mlir::StringRef filename, mlir::Operation *origin) {
+FailureOr<OwningOpRef<ModuleOp>> parseFile(const StringRef filename, Operation *origin) {
   // Load raw contents of the file
   auto of = openFile([&]() { return origin->emitOpError(); }, filename);
-  if (mlir::failed(of)) {
-    return mlir::failure();
+  if (failed(of)) {
+    return failure();
   }
 
   // Parse the IR and write it in the destination block
@@ -54,18 +53,18 @@ parseFile(const mlir::StringRef filename, mlir::Operation *origin) {
   }
 }
 
-LogicalResult parseFile(const mlir::StringRef filename, Operation *origin, Block *container) {
+LogicalResult parseFile(const StringRef filename, Operation *origin, Block *container) {
   // Load raw contents of the file
   auto of = openFile([&]() { return origin->emitOpError(); }, filename);
-  if (mlir::failed(of)) {
-    return mlir::failure();
+  if (failed(of)) {
+    return failure();
   }
 
   // Parse the IR and write it in the destination block
   ParserConfig parseConfig(origin->getContext());
   llvm::StringRef contents = of->buffer->getBuffer();
   auto res = parseSourceString(contents, container, parseConfig, /*sourceName=*/of->resolvedPath);
-  if (mlir::succeeded(res)) {
+  if (succeeded(res)) {
     return res;
   } else {
     return origin->emitOpError() << "could not parse file \"" << filename << "\"";
@@ -77,7 +76,7 @@ validateLoadedModuleOp(std::function<InFlightDiagnostic()> &&emitError, ModuleOp
   if (!importedMod->hasAttr(LANG_ATTR_NAME)) {
     return emitError()
         .append(
-            "expected '", mlir::ModuleOp::getOperationName(), "' from included file to have \"",
+            "expected '", ModuleOp::getOperationName(), "' from included file to have \"",
             LANG_ATTR_NAME, "\" attribute"
         )
         .attachNote(importedMod.getLoc())
@@ -89,7 +88,7 @@ validateLoadedModuleOp(std::function<InFlightDiagnostic()> &&emitError, ModuleOp
         .attachNote(importedMod.getLoc())
         .append("this should be unnamed");
   }
-  return mlir::success();
+  return success();
 }
 
 /// Manages the inlining and the associated memory used.
@@ -130,16 +129,16 @@ public:
     }
 
     auto &op = dest->front();
-    if (!mlir::isa<mlir::ModuleOp>(op)) {
+    if (!isa<ModuleOp>(op)) {
       return op.emitError()
           .append(
-              "expected '", mlir::ModuleOp::getOperationName(),
+              "expected '", ModuleOp::getOperationName(),
               "' as top level operation of included file. Got: ", op.getName()
           )
           .attachNote(incOp.getLoc())
           .append("from file included here");
     }
-    return mlir::cast<mlir::ModuleOp>(op);
+    return cast<ModuleOp>(op);
   }
 
   Block *getDest() { return dest; }
@@ -152,7 +151,7 @@ public:
       // This op will be invalid after inlining the block
       auto modRes = getModule();
       // Won't commit on a failed result
-      if (mlir::failed(modRes)) {
+      if (failed(modRes)) {
         return modRes;
       }
 
@@ -190,14 +189,14 @@ FailureOr<ModuleOp> inlineTheInclude(MLIRContext *ctx, IncludeOp &incOp) {
   guard.moduleWasLoaded();
 
   auto importedMod = guard.getModule();
-  if (mlir::failed(importedMod)) {
+  if (failed(importedMod)) {
     return importedMod; // getModule() already generates an error message
   }
 
   // Check properties of the included file to ensure symbol resolution will still work.
   auto validationResult =
       validateLoadedModuleOp([&]() { return incOp.emitOpError(); }, *importedMod);
-  if (mlir::failed(validationResult)) {
+  if (failed(validationResult)) {
     return validationResult;
   }
 
