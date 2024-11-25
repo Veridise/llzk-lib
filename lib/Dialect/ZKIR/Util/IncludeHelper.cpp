@@ -37,16 +37,18 @@ openFile(std::function<InFlightDiagnostic()> &&emitError, const mlir::StringRef 
 
 mlir::FailureOr<mlir::OwningOpRef<mlir::ModuleOp>>
 parseFile(const mlir::StringRef filename, mlir::Operation *origin) {
+  // Load raw contents of the file
   auto of = openFile([&]() { return origin->emitOpError(); }, filename);
   if (mlir::failed(of)) {
     return mlir::failure();
   }
 
+  // Parse the IR and write it in the destination block
   ParserConfig parseConfig(origin->getContext());
   llvm::StringRef contents = of->buffer->getBuffer();
-  if (auto r =
-          parseSourceString<ModuleOp>(contents, parseConfig, /*sourceName=*/of->resolvedPath)) {
-    return r;
+  auto res = parseSourceString<ModuleOp>(contents, parseConfig, /*sourceName=*/of->resolvedPath);
+  if (res) {
+    return res;
   } else {
     return origin->emitOpError() << "could not parse file \"" << filename << "\"";
   }
@@ -56,17 +58,18 @@ LogicalResult parseFile(const mlir::StringRef filename, Operation *origin, Block
   // Load raw contents of the file
   auto of = openFile([&]() { return origin->emitOpError(); }, filename);
   if (mlir::failed(of)) {
-    return of;
+    return mlir::failure();
   }
 
   // Parse the IR and write it in the destination block
   ParserConfig parseConfig(origin->getContext());
   llvm::StringRef contents = of->buffer->getBuffer();
   auto res = parseSourceString(contents, container, parseConfig, /*sourceName=*/of->resolvedPath);
-  if (mlir::failed(res)) {
+  if (mlir::succeeded(res)) {
+    return res;
+  } else {
     return origin->emitOpError() << "could not parse file \"" << filename << "\"";
   }
-  return mlir::success();
 }
 
 inline LogicalResult
@@ -90,9 +93,8 @@ validateLoadedModuleOp(std::function<InFlightDiagnostic()> &&emitError, ModuleOp
 }
 
 /// Manages the inlining and the associated memory used.
-/// It has a SQL-esque workflow. The operation can be commited if everything looks fine
-/// Or it will rollback when its lifetime
-/// ends unless it was commited.
+/// It has a SQL-esque workflow. The operation can be commited if everything looks fine or it will
+/// rollback when its lifetime ends unless it was commited.
 class InlineOperationsGuard {
 public:
   InlineOperationsGuard(MLIRContext *ctx, IncludeOp &tIncOp)

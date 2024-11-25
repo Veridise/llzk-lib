@@ -11,8 +11,7 @@ public:
   SymbolLookupResultUntyped();
   SymbolLookupResultUntyped(mlir::Operation *op);
 
-  // Since we don't want to copy around this class
-  // the move operations are manually implemented to
+  // Since we don't want to copy around this class the move operations are manually implemented to
   // respect the rule of 5.
   SymbolLookupResultUntyped(const SymbolLookupResultUntyped &) = delete;
   SymbolLookupResultUntyped(SymbolLookupResultUntyped &&);
@@ -44,8 +43,7 @@ public:
   SymbolLookupResult(SymbolLookupResultUntyped inner) : inner(std::move(inner)) {}
 
   /// Access the internal operation as type T.
-  /// Follows the behaviors of llvm::dyn_cast if the internal operation cannot be casted to that
-  /// type.
+  /// Follows the behaviors of llvm::dyn_cast if the internal operation cannot cast to that type.
   T operator->() { return llvm::dyn_cast<T>(*inner); }
   T operator*() { return llvm::dyn_cast<T>(*inner); }
   const T operator*() const { return llvm::dyn_cast<T>(*inner); }
