@@ -161,8 +161,11 @@ lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *
       if (IncludeOp rootOpInc = llvm::dyn_cast<IncludeOp>(rootOp)) {
         FailureOr<OwningOpRef<ModuleOp>> otherMod = rootOpInc.openModule();
         if (succeeded(otherMod)) {
-          auto result = lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), otherMod->get());
-          result.manage(std::move(*otherMod));
+          SymbolTableCollection external;
+          auto result = lookupSymbolRec(external, getTailAsSymbolRefAttr(symbol), otherMod->get());
+          if (result) {
+            result.manage(std::move(*otherMod));
+          }
           return result;
         }
       } else if (ModuleOp rootOpMod = llvm::dyn_cast<ModuleOp>(rootOp)) {
