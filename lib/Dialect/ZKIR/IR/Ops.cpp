@@ -177,7 +177,7 @@ mlir::LogicalResult verifySymbolUses(
   if (mlir::failed(field)) {
     return field; // getFieldDefOp() already emits a sufficient error message
   }
-  mlir::Type fieldType = (*field.value()).getType();
+  mlir::Type fieldType = field->get().getType();
   if (fieldType != compareTo.getType()) {
     return refOp->emitOpError() << "has wrong type; expected " << fieldType << ", got "
                                 << compareTo.getType();

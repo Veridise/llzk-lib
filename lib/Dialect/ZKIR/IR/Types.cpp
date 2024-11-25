@@ -133,7 +133,7 @@ mlir::Type ArrayType::parse(mlir::AsmParser &parser) {
   assert(::mlir::succeeded(_result_shape));
 
   return parser.getChecked<ArrayType>(
-      loc, parser.getContext(), ::mlir::Type((*_result_elementType)),
+      loc, parser.getContext(), ::mlir::Type(*_result_elementType),
       ::llvm::ArrayRef<int64_t>(parsedShape)
   );
 }
