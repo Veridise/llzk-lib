@@ -612,4 +612,39 @@ def LLZK_NotBoolOp : LLZK_UnaryOpBase<"not", I1, [ComputeOnly]> {
   }];
 }
 
+def LLZK_IntToFeltOp : LLZK_Op<"tofelt", [Pure]> {
+  let summary = "converts an integer into a felt";
+  let description = [{
+    Transforms any builtin integer value into a felt value.
+
+    Example:
+
+    ```llzk
+    %0 = llzk.cmp<lt>(%a, %b)
+    %1 = llzk.tofelt %0 : i1
+    ```
+  }];
+
+  let arguments = (ins AnySignlessInteger:$value);
+  let results = (outs LLZK_FeltType:$result);
+  let assemblyFormat = "$value `:` type($value) attr-dict";
+}
+
+def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
+  let summary = "converts a felt into an index type";
+  let description = [{
+    Transforms a felt type into an index to allow being used as array indices.
+
+    Example:
+    ```llzk 
+    %0 = llzk.toindex %a 
+    %1 = llzk.readarr %b[%0]
+    ```
+  }];
+
+  let arguments = (ins LLZK_FeltType:$value);
+  let results = (outs Index:$result);
+  let assemblyFormat = "$value attr-dict";
+}
+
 #endif // LLZK_OPS
