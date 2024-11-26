@@ -44,7 +44,7 @@ bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName) {
 }
 
 //===------------------------------------------------------------------===//
-// IncludeOp
+// IncludeOp (see IncludeHelper.cpp for other functions)
 //===------------------------------------------------------------------===//
 
 IncludeOp IncludeOp::create(mlir::Location loc, llvm::StringRef name, llvm::StringRef path) {
@@ -53,10 +53,6 @@ IncludeOp IncludeOp::create(mlir::Location loc, llvm::StringRef name, llvm::Stri
 
 IncludeOp IncludeOp::create(mlir::Location loc, mlir::StringAttr name, mlir::StringAttr path) {
   return delegate_to_build<IncludeOp>(loc, name, path);
-}
-
-mlir::FailureOr<mlir::OwningOpRef<mlir::ModuleOp>> IncludeOp::openModule() {
-  return parseFile(this->getPathAttr(), *this);
 }
 
 //===------------------------------------------------------------------===//

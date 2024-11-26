@@ -49,14 +49,4 @@ public:
   }
 };
 
-/// Parse the IR file and return an unique pointer to its contents
-mlir::FailureOr<mlir::OwningOpRef<mlir::ModuleOp>>
-parseFile(const mlir::StringRef filename, mlir::Operation *origin);
-
-/// Parse the IR file and write its contents into the container block.
-mlir::LogicalResult
-parseFile(const mlir::StringRef filename, mlir::Operation *origin, mlir::Block *container);
-
-mlir::FailureOr<mlir::ModuleOp> inlineTheInclude(mlir::MLIRContext *ctx, zkir::IncludeOp &incOp);
-
 } // namespace zkir

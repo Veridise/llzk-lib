@@ -16,6 +16,8 @@
 #include <zkir/Dialect/ZKIR/IR/Ops.h>
 
 namespace zkir {
+
+namespace {
 using namespace mlir;
 
 struct OpenFile {
@@ -27,7 +29,7 @@ inline FailureOr<OpenFile>
 openFile(std::function<InFlightDiagnostic()> &&emitError, const StringRef filename) {
   OpenFile r;
 
-  auto buffer = zkir::GlobalSourceMgr::get().openIncludeFile(filename, r.resolvedPath);
+  auto buffer = GlobalSourceMgr::get().openIncludeFile(filename, r.resolvedPath);
   if (!buffer) {
     return emitError() << "could not find file \"" << filename << "\"";
   }
@@ -176,11 +178,16 @@ private:
   Block *dest;
 };
 
-/// Loads the file referenced by the IncludeOp and returns the ModuleOp contained in included file.
-FailureOr<ModuleOp> inlineTheInclude(MLIRContext *ctx, IncludeOp &incOp) {
-  InlineOperationsGuard guard(ctx, incOp);
+inline bool contains(std::vector<Location> &stack, Location &&loc) {
+  return std::find(stack.begin(), stack.end(), loc) != stack.end();
+}
 
-  auto loadResult = parseFile(incOp.getPath(), incOp.getOperation(), guard.getDest());
+} // namespace
+
+FailureOr<ModuleOp> IncludeOp::inlineAndErase() {
+  InlineOperationsGuard guard(this->getContext(), *this);
+
+  auto loadResult = parseFile(this->getPath(), this->getOperation(), guard.getDest());
   if (failed(loadResult)) {
     return failure();
   }
@@ -193,12 +200,16 @@ FailureOr<ModuleOp> inlineTheInclude(MLIRContext *ctx, IncludeOp &incOp) {
 
   // Check properties of the included file to ensure symbol resolution will still work.
   auto validationResult =
-      validateLoadedModuleOp([&]() { return incOp.emitOpError(); }, *importedMod);
+      validateLoadedModuleOp([&]() { return this->emitOpError(); }, *importedMod);
   if (failed(validationResult)) {
     return failure();
   }
 
   return guard.commit();
+}
+
+FailureOr<OwningOpRef<ModuleOp>> IncludeOp::openModule() {
+  return parseFile(this->getPathAttr(), *this);
 }
 
 } // namespace zkir

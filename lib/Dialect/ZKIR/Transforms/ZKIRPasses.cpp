@@ -13,23 +13,42 @@ namespace zkir {
 } // namespace zkir
 
 namespace {
+using namespace std;
+using namespace mlir;
+
+using IncludeStack = vector<pair<StringRef, Location>>;
+
+inline bool contains(IncludeStack &stack, StringRef &&loc) {
+  auto path_match = [loc](pair<StringRef, Location> &p) { return p.first == loc; };
+  return std::find_if(stack.begin(), stack.end(), path_match) != stack.end();
+}
 
 class InlineIncludesPass : public zkir::impl::InlineIncludesPassBase<InlineIncludesPass> {
   void runOnOperation() override {
-    mlir::ModuleOp topMod = getOperation();
+    ModuleOp topMod = getOperation();
     if (topMod->hasAttr(zkir::LANG_ATTR_NAME)) {
-      mlir::MLIRContext *ctx = &getContext();
-      std::vector<mlir::ModuleOp> currLevel = {topMod};
+      vector<pair<ModuleOp, IncludeStack>> currLevel = {make_pair(topMod, IncludeStack())};
       do {
-        std::vector<mlir::ModuleOp> nextLevel = {};
-        for (mlir::ModuleOp currentMod : currLevel) {
-          currentMod.walk([ctx, &nextLevel](zkir::IncludeOp mod) {
-            mlir::FailureOr<mlir::ModuleOp> result = zkir::inlineTheInclude(ctx, mod);
-            if (mlir::succeeded(result)) {
-              nextLevel.push_back(result.value());
+        vector<pair<ModuleOp, IncludeStack>> nextLevel = {};
+        for (pair<ModuleOp, IncludeStack> &curr : currLevel) {
+          curr.first.walk([includeStack = std::move(curr.second),
+                           &nextLevel](zkir::IncludeOp incOp) mutable {
+            // Check for cyclic includes
+            if (contains(includeStack, incOp.getPath())) {
+              auto err = incOp.emitError().append("found cyclic include");
+              for (auto it = includeStack.rbegin(); it != includeStack.rend(); ++it) {
+                err.attachNote(it->second).append("included from here");
+              }
+            } else {
+              includeStack.push_back(make_pair(incOp.getPath(), incOp.getLoc()));
+              FailureOr<ModuleOp> result = incOp.inlineAndErase();
+              if (succeeded(result)) {
+                ModuleOp newMod = std::move(result.value());
+                nextLevel.push_back(make_pair(newMod, includeStack));
+              }
             }
             // Advance in either case so as many errors as possible are found in a single run.
-            return mlir::WalkResult::advance();
+            return WalkResult::advance();
           });
         }
         currLevel = nextLevel;

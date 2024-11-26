@@ -56,3 +56,19 @@ module attributes {veridise.lang = "zkir"} {
   zkir.include "Inputs/header_6.zkir" as @a
 }
 // -----
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.include "Inputs/header_7A.zkir" as @a // expected-note {{included from here}}
+}
+// -----
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.include "Inputs/header_7A.zkir" as @a // expected-note {{included from here}}
+  zkir.func @test_func() {
+    // Note: The error only occurs during inlining, not during the symbol
+    //  lookup because that process is bounded by the SymbolRefAttr itself.
+    zkir.call @a::@b::@c::@func_in_7c() : () -> ()
+    return
+  }
+}
+// -----
