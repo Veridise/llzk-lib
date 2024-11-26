@@ -100,18 +100,16 @@ public:
       : incOp(tIncOp), rewriter(ctx), dest(rewriter.createBlock(incOp->getBlock()->getParent())) {}
 
   ~InlineOperationsGuard() {
-    // We don't want the include op anymore so we can get rid of it
     if (commited) {
+      // The container was inlined so get rid of the include op.
       rewriter.eraseOp(incOp);
-      return;
+    } else {
+      // The container was not inlined so delete the container.
+      dest->erase();
     }
-
-    // We did not replace the include op with the container
-    // so we need to get cleanup.
-    dest->erase();
   }
 
-  /// Tells the guard that is safe to assume that the module was inserted into the destionation
+  /// Tells the guard that is safe to assume that the module was inserted into the destination
   void moduleWasLoaded() {
     assert(!dest->empty());
     blockWritten = true;
@@ -125,7 +123,7 @@ public:
     }
 
     if (dest->empty()) {
-      return incOp->emitOpError() << "failed to inline the module. No operation was written";
+      return incOp->emitOpError() << "failed to inline the module. No operation was written.";
     }
 
     auto &op = dest->front();
@@ -133,7 +131,7 @@ public:
       return op.emitError()
           .append(
               "expected '", ModuleOp::getOperationName(),
-              "' as top level operation of included file. Got: ", op.getName()
+              "' as top level operation of included file. Got '", op.getName(), "'."
           )
           .attachNote(incOp.getLoc())
           .append("from file included here");
@@ -152,7 +150,7 @@ public:
       auto modRes = getModule();
       // Won't commit on a failed result
       if (failed(modRes)) {
-        return modRes;
+        return failure();
       }
 
       // Add the destination block after the insertion point.
@@ -184,20 +182,20 @@ FailureOr<ModuleOp> inlineTheInclude(MLIRContext *ctx, IncludeOp &incOp) {
 
   auto loadResult = parseFile(incOp.getPath(), incOp.getOperation(), guard.getDest());
   if (failed(loadResult)) {
-    return loadResult;
+    return failure();
   }
   guard.moduleWasLoaded();
 
   auto importedMod = guard.getModule();
   if (failed(importedMod)) {
-    return importedMod; // getModule() already generates an error message
+    return failure(); // getModule() already generates an error message
   }
 
   // Check properties of the included file to ensure symbol resolution will still work.
   auto validationResult =
       validateLoadedModuleOp([&]() { return incOp.emitOpError(); }, *importedMod);
   if (failed(validationResult)) {
-    return validationResult;
+    return failure();
   }
 
   return guard.commit();
