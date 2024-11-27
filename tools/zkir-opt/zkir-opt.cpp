@@ -1,6 +1,5 @@
 #include "zkir/Dialect/InitDialects.h"
 #include "zkir/Dialect/ZKIR/Transforms/ZKIRPasses.h"
-#include "zkir/Dialect/ZKIR/Util/Constants.h"
 #include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
 
 #include <mlir/IR/DialectRegistry.h>
@@ -23,11 +22,7 @@ int main(int argc, char **argv) {
   // MLIR initialization
   mlir::DialectRegistry registry;
   zkir::registerAllDialects(registry);
-
-  mlir::PassPipelineRegistration<>(
-      zkir::getInlineIncludesPassName(), zkir::getInlineIncludesPassSummary(),
-      [](mlir::OpPassManager &pm) { pm.addPass(zkir::createInlineIncludesPass()); }
-  );
+  zkir::registerPasses();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;

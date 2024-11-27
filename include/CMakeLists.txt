@@ -24,4 +24,3 @@ install(DIRECTORY
 # subdirectories will add their IncGen targets as deps to the header folder
 add_subdirectory(zkir/Dialect/ZKIR/IR)
 add_subdirectory(zkir/Dialect/ZKIR/Transforms)
-add_subdirectory(zkir/Dialect/ZKIR/Util)
