@@ -1,4 +1,4 @@
-// RUN: zkir-opt -I %S -pass-pipeline='builtin.module(zkir-inline-includes)' -split-input-file %s 2>&1 | FileCheck %s
+// RUN: zkir-opt -I %S -split-input-file -zkir-inline-includes %s 2>&1 | FileCheck %s
 
 module attributes {veridise.lang = "zkir"} {
   zkir.include "Inputs/header_1.zkir" as @alias1

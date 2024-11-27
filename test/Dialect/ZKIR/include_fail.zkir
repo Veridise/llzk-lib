@@ -1,4 +1,4 @@
-// RUN: zkir-opt -I %S -pass-pipeline='builtin.module(zkir-inline-includes)' -split-input-file -verify-diagnostics %s
+// RUN: zkir-opt -I %S -split-input-file -zkir-inline-includes -verify-diagnostics %s
 
 module attributes {veridise.lang = "zkir"} {
   // expected-error@+1 {{'zkir.include' op expected 'builtin.module' from included file to have "veridise.lang" attribute}}
