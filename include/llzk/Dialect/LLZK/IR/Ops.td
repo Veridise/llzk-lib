@@ -407,6 +407,27 @@ def LLZK_WriteArrayOp
   }];
 }
 
+def LLZK_ArrayLengthOp : LLZK_Op<"array_len", [Pure]> {
+  let summary = "returns the length of an array";
+  let description = [{
+  This operation returns the size of a dimension size of an array.
+
+  Example:
+
+  ```llzk
+  %0 = llzk.new_array : !llzk.array<2,2 x !llzk.felt>
+  %c0 = arith.constant 0 : index
+  %1 = llzk.array_len %0[%c0] : !llzk.array<2,2 x !llzk.felt>
+  ```
+
+  }];
+
+  let arguments = (ins LLZK_ArrayType:$array, Index:$dim);
+  let results = (outs Index:$length);
+
+  let assemblyFormat = "$array `[` $dim `]` `:` type($array) attr-dict";
+}
+
 //===------------------------------------------------------------------===//
 // Constraint emit operations
 //===------------------------------------------------------------------===//
