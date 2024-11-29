@@ -10,7 +10,8 @@ include "mlir/IR/BuiltinAttributeInterfaces.td"
 include "mlir/IR/EnumAttr.td"
 
 // APInts that allows comparison involving different bitwidths.
-class APIntParameter<string desc> : AttrOrTypeParameter<"::llvm::APInt", desc> {
+class APIntParameter<string desc = "">
+    : AttrOrTypeParameter<"::llvm::APInt", desc> {
   let comparator = "::llvm::APInt::isSameValue($_lhs, $_rhs)";
 }
 
@@ -39,7 +40,7 @@ def ZKIR_FeltConstAttr
 
   let parameters = (ins APIntParameter<"The felt constant value">:$value);
 
-  let assemblyFormat = [{ custom<APInt>($value) }];
+  let assemblyFormat = [{ $value }];
 
   let extraClassDeclaration = [{
     ::mlir::Type getType() const;
@@ -81,8 +82,7 @@ def ZKIR_LoopBounds : ZKIR_Attr<"LoopBounds", "loopbounds"> {
           APIntParameter<"Loop variable upper bound (exclusive)">:$upper,
           APIntParameter<"Loop variable step/increment">:$step);
 
-  let assemblyFormat = "`<` custom<APInt>($lower) `to` custom<APInt>($upper) "
-                       "`step` custom<APInt>($step) `>`";
+  let assemblyFormat = "`<` $lower `to` $upper `step` $step `>`";
 }
 
 #endif // ZKIR_ATTRS

@@ -1,14 +1,27 @@
-#include <mlir/IR/DialectImplementation.h>
-
-#include "zkir/Dialect/ZKIR/IR/Attrs.h"
 #include "zkir/Dialect/ZKIR/IR/Dialect.h"
+#include "zkir/Dialect/ZKIR/IR/Attrs.h"
 #include "zkir/Dialect/ZKIR/IR/Ops.h"
 #include "zkir/Dialect/ZKIR/IR/Types.h"
+
+#include <mlir/IR/DialectImplementation.h>
 
 // TableGen'd implementation files
 #include "zkir/Dialect/ZKIR/IR/Dialect.cpp.inc"
 
-// Need a complete declaration of storage classes
+template <> struct mlir::FieldParser<llvm::APInt> {
+  static mlir::FailureOr<llvm::APInt> parse(mlir::AsmParser &parser) {
+    auto loc = parser.getCurrentLocation();
+    llvm::APInt val;
+    auto result = parser.parseOptionalInteger(val);
+    if (!result.has_value() || *result) {
+      return parser.emitError(loc, "expected integer value");
+    } else {
+      return val;
+    }
+  }
+};
+
+// Need a complete declaration of storage classes for below
 #define GET_TYPEDEF_CLASSES
 #include "zkir/Dialect/ZKIR/IR/Types.cpp.inc"
 #define GET_ATTRDEF_CLASSES
