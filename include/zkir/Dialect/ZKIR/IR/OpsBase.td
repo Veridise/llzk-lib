@@ -38,6 +38,22 @@ class ZKIR_UnaryFeltOp<string mnemonic, list<Trait> traits = []>
   let assemblyFormat = "$operand attr-dict";
 }
 
+class ZKIR_BinaryBoolOp<string mnemonic, list<Trait> traits = []>
+    : ZKIR_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
+
+  let arguments = (ins I1:$lhs, I1:$rhs);
+  let results = (outs I1:$result);
+  let assemblyFormat = "$lhs `,` $rhs attr-dict";
+}
+
+class ZKIR_UnaryBoolOp<string mnemonic, list<Trait> traits = []>
+    : ZKIR_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
+
+  let arguments = (ins I1:$operand);
+  let results = (outs I1:$result);
+  let assemblyFormat = "$operand attr-dict";
+}
+
 //===----------------------------------------------------------------------===//
 // Custom traits that can be applied to Ops
 //===----------------------------------------------------------------------===//

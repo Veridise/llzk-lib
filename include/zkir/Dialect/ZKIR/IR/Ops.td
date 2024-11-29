@@ -385,22 +385,22 @@ def ZKIR_InvFeltOp : ZKIR_UnaryFeltOp<"inv", [ComputeOnly]> {
   let description = [{}];
 }
 
-def ZKIR_AndFeltOp : ZKIR_BinaryFeltOp<"and", [ComputeOnly, Commutative]> {
+def ZKIR_AndFeltOp : ZKIR_BinaryFeltOp<"bit_and", [ComputeOnly, Commutative]> {
   let summary = "Bitwise AND operator for field elements";
   let description = [{}];
 }
 
-def ZKIR_OrFeltOp : ZKIR_BinaryFeltOp<"or", [ComputeOnly, Commutative]> {
+def ZKIR_OrFeltOp : ZKIR_BinaryFeltOp<"bit_or", [ComputeOnly, Commutative]> {
   let summary = "Bitwise OR operator for field elements";
   let description = [{}];
 }
 
-def ZKIR_XorFeltOp : ZKIR_BinaryFeltOp<"xor", [ComputeOnly, Commutative]> {
+def ZKIR_XorFeltOp : ZKIR_BinaryFeltOp<"bit_xor", [ComputeOnly, Commutative]> {
   let summary = "Bitwise XOR operator for field elements";
   let description = [{}];
 }
 
-def ZKIR_NotFeltOp : ZKIR_UnaryFeltOp<"not", [ComputeOnly]> {
+def ZKIR_NotFeltOp : ZKIR_UnaryFeltOp<"bit_not", [ComputeOnly]> {
   let summary = "Bit flip operator for field elements";
   let description = [{}];
 }
@@ -454,6 +454,34 @@ def ZKIR_CmpOp : ZKIR_Op<"cmp", [Pure]> {
       ZKIR_FeltType:$rhs);
   let results = (outs I1:$result);
   let assemblyFormat = "`` $pred `(` $lhs `,` $rhs `)` attr-dict";
+}
+
+def ZKIR_AndBoolOp : ZKIR_BinaryBoolOp<"and", [ComputeOnly, Commutative]> {
+  let summary = "logical AND";
+  let description = [{
+    Logical AND (i.e. conjunction) operator. The type of operands and return value is `i1` (i.e. boolean).
+  }];
+}
+
+def ZKIR_OrBoolOp : ZKIR_BinaryBoolOp<"or", [ComputeOnly, Commutative]> {
+  let summary = "logical OR";
+  let description = [{
+    Logical OR (i.e. disjunction) operator. The type of operands and return value is `i1` (i.e. boolean).
+  }];
+}
+
+def ZKIR_XorBoolOp : ZKIR_BinaryBoolOp<"xor", [ComputeOnly, Commutative]> {
+  let summary = "logical XOR";
+  let description = [{
+    Logical ZOR (i.e. exclusive disjunction) operator. The type of operands and return value is `i1` (i.e. boolean).
+  }];
+}
+
+def ZKIR_NotBoolOp : ZKIR_UnaryBoolOp<"not", [ComputeOnly]> {
+  let summary = "logical NOT";
+  let description = [{
+    Logical NOT (i.e. negation) operator. The type of operand and return value is `i1` (i.e. boolean).
+  }];
 }
 
 #endif // ZKIR_OPS

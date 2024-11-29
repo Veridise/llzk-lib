@@ -89,46 +89,46 @@ zkir.func @f_inv(%a: !zkir.felt) -> !zkir.felt {
 //CHECK-NEXT:   }
 // -----
 
-zkir.func @f_and(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
-  %c = zkir.and %a, %b
+zkir.func @f_bit_and(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
+  %c = zkir.bit_and %a, %b
   return %c: !zkir.felt
 }
-//CHECK-LABEL:  zkir.func @f_and
+//CHECK-LABEL:  zkir.func @f_bit_and
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = and %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bit_and %[[A0]], %[[A1]]
 //CHECK-NEXT:     return %[[T1]] : !zkir.felt
 //CHECK-NEXT:   }
 // -----
 
-zkir.func @f_or(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
-  %c = zkir.or %a, %b
+zkir.func @f_bit_or(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
+  %c = zkir.bit_or %a, %b
   return %c: !zkir.felt
 }
-//CHECK-LABEL:  zkir.func @f_or
+//CHECK-LABEL:  zkir.func @f_bit_or
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = or %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bit_or %[[A0]], %[[A1]]
 //CHECK-NEXT:     return %[[T1]] : !zkir.felt
 //CHECK-NEXT:   }
 // -----
 
-zkir.func @f_xor(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
-  %c = zkir.xor %a, %b
+zkir.func @f_bit_xor(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.felt {
+  %c = zkir.bit_xor %a, %b
   return %c: !zkir.felt
 }
-//CHECK-LABEL:  zkir.func @f_xor
+//CHECK-LABEL:  zkir.func @f_bit_xor
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = xor %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bit_xor %[[A0]], %[[A1]]
 //CHECK-NEXT:     return %[[T1]] : !zkir.felt
 //CHECK-NEXT:   }
 // -----
 
-zkir.func @f_not(%a: !zkir.felt) -> !zkir.felt {
-  %c = zkir.not %a
+zkir.func @f_bit_not(%a: !zkir.felt) -> !zkir.felt {
+  %c = zkir.bit_not %a
   return %c: !zkir.felt
 }
-//CHECK-LABEL:  zkir.func @f_not
+//CHECK-LABEL:  zkir.func @f_bit_not
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = not %[[A0]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bit_not %[[A0]]
 //CHECK-NEXT:     return %[[T1]] : !zkir.felt
 //CHECK-NEXT:   }
 // -----
