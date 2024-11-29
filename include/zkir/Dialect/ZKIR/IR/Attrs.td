@@ -37,7 +37,7 @@ def ZKIR_FeltConstAttr
     A felt attribute represents a finite field element.
   }];
 
-  let parameters = (ins APIntParameter<"">:$value);
+  let parameters = (ins APIntParameter<"The felt constant value">:$value);
 
   let assemblyFormat = [{ custom<APInt>($value) }];
 
@@ -76,8 +76,10 @@ def ZKIR_LoopBounds : ZKIR_Attr<"LoopBounds", "loopbounds"> {
     ```
   }];
 
-  let parameters = (ins APIntParameter<"">:$lower, APIntParameter<"">:$upper,
-      APIntParameter<"">:$step);
+  let parameters =
+      (ins APIntParameter<"Loop variable lower bound (inclusive)">:$lower,
+          APIntParameter<"Loop variable upper bound (exclusive)">:$upper,
+          APIntParameter<"Loop variable step/increment">:$step);
 
   let assemblyFormat = "`<` custom<APInt>($lower) `to` custom<APInt>($upper) "
                        "`step` custom<APInt>($step) `>`";
