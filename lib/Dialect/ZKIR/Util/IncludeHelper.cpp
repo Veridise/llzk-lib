@@ -177,11 +177,6 @@ private:
   IRRewriter rewriter;
   Block *dest;
 };
-
-inline bool contains(std::vector<Location> &stack, Location &&loc) {
-  return std::find(stack.begin(), stack.end(), loc) != stack.end();
-}
-
 } // namespace
 
 FailureOr<ModuleOp> IncludeOp::inlineAndErase() {
