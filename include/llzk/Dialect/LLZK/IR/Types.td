@@ -76,7 +76,7 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
     /// Clone this type with the given shape and element type. If the
     /// provided shape is `std::nullopt`, the current shape of the type is used.
     /// Required by the ShapedTypeInterface interface.
-    ArrayType cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, Type elementType) const;
+    ArrayType cloneWith(std::optional<::llvm::ArrayRef<int64_t>> shape, ::mlir::Type elementType) const;
 
     /// Returns the number of elements in the array.
     /// Aborts if the array has a dynamic dimension.
