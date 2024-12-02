@@ -1,19 +1,20 @@
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
-#include <functional>
-#include <llvm/Support/Casting.h>
-#include <llvm/Support/MemoryBuffer.h>
 #include <mlir/IR/AsmState.h>
 #include <mlir/IR/Diagnostics.h>
 #include <mlir/IR/MLIRContext.h>
 #include <mlir/IR/OwningOpRef.h>
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/Parser/Parser.h>
-
-#include <llvm/Support/SourceMgr.h>
 #include <mlir/Support/LogicalResult.h>
-#include <llzk/Dialect/LLZK/IR/Ops.h>
+
+#include <llvm/Support/Casting.h>
+#include <llvm/Support/MemoryBuffer.h>
+#include <llvm/Support/SourceMgr.h>
+
+#include <functional>
 
 namespace llzk {
 
