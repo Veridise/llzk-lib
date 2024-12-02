@@ -1,1 +1,1 @@
-from ._zkir_dialect_ops_gen import *
+from ._llzk_dialect_ops_gen import *

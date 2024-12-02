@@ -1,13 +1,13 @@
 #pragma once
 
-#include "zkir/Dialect/ZKIR/IR/Ops.h"
-#include "zkir/Dialect/ZKIR/Util/SymbolLookupResult.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/SymbolLookupResult.h"
 
 #include <llvm/Support/Casting.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/OwningOpRef.h>
 
-namespace zkir {
+namespace llzk {
 
 constexpr char LANG_ATTR_NAME[] = "veridise.lang";
 
@@ -66,4 +66,4 @@ inline mlir::LogicalResult verifyTypeResolution(
   return verifyTypeResolution(symbolTable, types.begin(), types.end(), origin);
 }
 
-} // namespace zkir
+} // namespace llzk

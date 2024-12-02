@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.25) 
 
-project(ZKIR
+project(LLZK
   DESCRIPTION "Veridise's intermediate representation for zero knowledge languages"
   VERSION 0.1.0
-  HOMEPAGE_URL https://github.com/Veridise/zkir-lib
+  HOMEPAGE_URL https://github.com/Veridise/llzk-lib
 )
 
-option(ZKIR_TEMPLATE_BACKTRACE_LIMIT "Add -ftemplate-backtrace-limit=0 to the compile flags")
+option(LLZK_TEMPLATE_BACKTRACE_LIMIT "Add -ftemplate-backtrace-limit=0 to the compile flags")
 
 include(GNUInstallDirs)
 
@@ -36,11 +36,11 @@ function(add_header_library _name _include_dirs _export_name)
   install(TARGETS ${_name} EXPORT ${_export_name})
 endfunction()
 
-set(ZKIR_EXPORT_TARGETS "ZKIRTargets")
+set(LLZK_EXPORT_TARGETS "LLZKTargets")
 # LLVM & MLIR do not propagate their include dirs correctly
 # We define them as INTERFACE libraries and link against them
-add_header_library(LLVMHeaders ${LLVM_INCLUDE_DIRS} ${ZKIR_EXPORT_TARGETS})
-add_header_library(MLIRHeaders ${MLIR_INCLUDE_DIRS} ${ZKIR_EXPORT_TARGETS})
+add_header_library(LLVMHeaders ${LLVM_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})
+add_header_library(MLIRHeaders ${MLIR_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})
 
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
@@ -68,22 +68,22 @@ if(CMAKE_CONFIGURATION_TYPES)
   list(REMOVE_DUPLICATES CMAKE_CONFIGURATION_TYPES)
 endif()
 
-set(ZKIR_LIT_COMPATIBLE_COVERAGE OFF CACHE INTERNAL "")
+set(LLZK_LIT_COMPATIBLE_COVERAGE OFF CACHE INTERNAL "")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
-  if(ZKIR_LIT_COMPATIBLE_COVERAGE)
-    message(FATAL_ERROR "Don't manually set ZKIR_LIT_COMPATIBLE_COVERAGE.")
+  if(LLZK_LIT_COMPATIBLE_COVERAGE)
+    message(FATAL_ERROR "Don't manually set LLZK_LIT_COMPATIBLE_COVERAGE.")
   endif()
   if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
     message(STATUS "Adding coverage flags")
     add_compile_options(-fprofile-instr-generate -fcoverage-mapping)
     add_link_options(-fprofile-instr-generate -fcoverage-mapping)
-    set(ZKIR_LIT_COMPATIBLE_COVERAGE ON)
-    message(STATUS "ZKIR_LIT_COMPATIBLE_COVERAGE=${ZKIR_LIT_COMPATIBLE_COVERAGE}")
+    set(LLZK_LIT_COMPATIBLE_COVERAGE ON)
+    message(STATUS "LLZK_LIT_COMPATIBLE_COVERAGE=${LLZK_LIT_COMPATIBLE_COVERAGE}")
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     message(WARNING "Gcov reports are not supported by the test environment.")
-    message(WARNING "Set ZKIR_FORCE_GCC_COVERAGE to enable coverage in GCC.")
-    if(ZKIR_FORCE_GCC_COVERAGE)
+    message(WARNING "Set LLZK_FORCE_GCC_COVERAGE to enable coverage in GCC.")
+    if(LLZK_FORCE_GCC_COVERAGE)
       add_compile_options(--coverage -O0 -g)
       add_link_options(--coverage)
     endif()
@@ -99,38 +99,38 @@ if (CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   add_link_options(-fsanitize=address,undefined)
 endif()
 
-if (ZKIR_TEMPLATE_BACKTRACE_LIMIT)
+if (LLZK_TEMPLATE_BACKTRACE_LIMIT)
   add_compile_options(-ftemplate-backtrace-limit=0)
 endif()
 
 # MAYBE FIXME: If we want to hide inline functions we need to setup macros
-# See https://github.com/Veridise/zkir-lib/pull/3#discussion_r1726140891
+# See https://github.com/Veridise/llzk-lib/pull/3#discussion_r1726140891
 
 ### Python bindings
 
 include(CMakeDependentOption)
-cmake_dependent_option(ZKIR_ENABLE_BINDINGS_PYTHON
+cmake_dependent_option(LLZK_ENABLE_BINDINGS_PYTHON
   "Enable Python bindings"
   ON
   MLIR_ENABLE_BINDINGS_PYTHON
   OFF
 )
 
-message(CHECK_START "Checking ZKIR Python bindings")
+message(CHECK_START "Checking LLZK Python bindings")
 list(APPEND CMAKE_MESSAGE_INDENT "  ")
 message(CHECK_START "Checking MLIR Python bindings")
-if(MLIR_ENABLE_BINDINGS_PYTHON AND ZKIR_ENABLE_BINDINGS_PYTHON)
+if(MLIR_ENABLE_BINDINGS_PYTHON AND LLZK_ENABLE_BINDINGS_PYTHON)
   include(MLIRDetectPythonEnv)
   include(AddMLIRPython)
   mlir_configure_python_dev_packages()
   message(CHECK_PASS "found")
 
   list(POP_BACK CMAKE_MESSAGE_INDENT)
-  message(CHECK_PASS "enabling ZKIR Python bindings")
+  message(CHECK_PASS "enabling LLZK Python bindings")
 elseif(MLIR_ENABLE_BINDINGS_PYTHON)
   message(CHECK_PASS "found")
   list(POP_BACK CMAKE_MESSAGE_INDENT)
-  message(CHECK_FAIL "ZKIR_ENABLE_BINDINGS_PYTHON is set to off")
+  message(CHECK_FAIL "LLZK_ENABLE_BINDINGS_PYTHON is set to off")
 else()
   message(CHECK_FAIL "not found")  # mlir bindings
   list(POP_BACK CMAKE_MESSAGE_INDENT)
@@ -140,27 +140,27 @@ endif()
 ### Project files
 
 set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc")
-set(ZKIR_MLIR_DOC_OUTPUT_DIR "${DOXYGEN_OUTPUT_DIRECTORY}/mlir")
+set(LLZK_MLIR_DOC_OUTPUT_DIR "${DOXYGEN_OUTPUT_DIRECTORY}/mlir")
 
 # We need the include dir so we can pass it to mlir-tblgen
-set(ZKIR_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(LLZK_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ZKIRMacros.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LLZKMacros.cmake)
 
 # Create an empty list for the dialect libraries, to be populated in the lib
 # subdirectory.
-add_library(ZKIRAllDialects INTERFACE)
-add_library(ZKIR::AllDialects ALIAS ZKIRAllDialects)
-# Ensures that the target can be imported as "ZKIR::AllDialects" and not "ZKIR::ZKIRAllDialects"
-set_target_properties(ZKIRAllDialects PROPERTIES EXPORT_NAME "AllDialects")
-install(TARGETS ZKIRAllDialects
-  EXPORT ZKIRTargets
+add_library(LLZKAllDialects INTERFACE)
+add_library(LLZK::AllDialects ALIAS LLZKAllDialects)
+# Ensures that the target can be imported as "LLZK::AllDialects" and not "LLZK::LLZKAllDialects"
+set_target_properties(LLZKAllDialects PROPERTIES EXPORT_NAME "AllDialects")
+install(TARGETS LLZKAllDialects
+  EXPORT LLZKTargets
 )
 
 add_subdirectory(include)
 add_subdirectory(lib)
 add_subdirectory(tools)
-if(ZKIR_ENABLE_BINDINGS_PYTHON)
+if(LLZK_ENABLE_BINDINGS_PYTHON)
   add_subdirectory(python)
 endif()
 
@@ -185,10 +185,10 @@ if (Doxygen_FOUND)
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/"
     "${CMAKE_CURRENT_BINARY_DIR}/include/"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/"
-    "${ZKIR_MLIR_DOC_OUTPUT_DIR}"
+    "${LLZK_MLIR_DOC_OUTPUT_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/"
   )
-  add_dependencies(doxygen ZKIRDialectHeaders mlir-doc)
+  add_dependencies(doxygen LLZKDialectHeaders mlir-doc)
   add_dependencies(doc doxygen)
 endif()
 
@@ -231,27 +231,27 @@ add_custom_target(check
 
 ### Install
 
-export(EXPORT ${ZKIR_EXPORT_TARGETS}
-  FILE ${CMAKE_CURRENT_BINARY_DIR}/${ZKIR_EXPORT_TARGETS}.cmake
-  NAMESPACE ZKIR::
+export(EXPORT ${LLZK_EXPORT_TARGETS}
+  FILE ${CMAKE_CURRENT_BINARY_DIR}/${LLZK_EXPORT_TARGETS}.cmake
+  NAMESPACE LLZK::
 )
-install(EXPORT ${ZKIR_EXPORT_TARGETS}
-  NAMESPACE ZKIR::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ZKIR)
+install(EXPORT ${LLZK_EXPORT_TARGETS}
+  NAMESPACE LLZK::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LLZK)
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/ZKIRConfigVersion.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/LLZKConfigVersion.cmake"
   VERSION "${PROJECT_VERSION}"
   COMPATIBILITY AnyNewerVersion
 )
 configure_package_config_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ZKIRConfig.cmake.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/ZKIRConfig.cmake"
-  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ZKIR"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/LLZKConfig.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/LLZKConfig.cmake"
+  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/LLZK"
 )
 install(FILES
-  "${CMAKE_CURRENT_BINARY_DIR}/ZKIRConfig.cmake"
-  "${CMAKE_CURRENT_BINARY_DIR}/ZKIRConfigVersion.cmake"
-  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ZKIR"
+  "${CMAKE_CURRENT_BINARY_DIR}/LLZKConfig.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/LLZKConfigVersion.cmake"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/LLZK"
 )

@@ -2,12 +2,12 @@
 # Top level targets
 ##
 
-declare_mlir_python_sources(ZKIRPythonDialectSources)
-declare_mlir_python_sources(ZKIRPythonDialectSources.Dialects
-  ADD_TO_PARENT ZKIRPythonDialectSources)
+declare_mlir_python_sources(LLZKPythonDialectSources)
+declare_mlir_python_sources(LLZKPythonDialectSources.Dialects
+  ADD_TO_PARENT LLZKPythonDialectSources)
 
 # Include the tablegen files
-include_directories("${ZKIR_INCLUDE_DIR}")
+include_directories("${LLZK_INCLUDE_DIR}")
 
 ##
 # Dialect bindings
@@ -20,47 +20,47 @@ include_directories("${ZKIR_INCLUDE_DIR}")
 # be supported.
 
 declare_mlir_dialect_python_bindings(
-  ADD_TO_PARENT ZKIRPythonDialectSources.Dialects
+  ADD_TO_PARENT LLZKPythonDialectSources.Dialects
   ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/mlir"
-  TD_FILE dialects/ZKIROps.td
-  SOURCES dialects/zkir_dialect.py
-  DIALECT_NAME zkir_dialect)
+  TD_FILE dialects/LLZKOps.td
+  SOURCES dialects/llzk_dialect.py
+  DIALECT_NAME llzk_dialect)
 
 ##
 # Python extensions
 ##
 
-# All other ZKIR Python bindings go under the zkir package.
-declare_mlir_python_sources(ZKIRPythonSources)
+# All other LLZK Python bindings go under the llzk package.
+declare_mlir_python_sources(LLZKPythonSources)
 
-declare_mlir_python_sources(ZKIRPythonSources.Core
-  ADD_TO_PARENT ZKIRPythonSources
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/zkir"
+declare_mlir_python_sources(LLZKPythonSources.Core
+  ADD_TO_PARENT LLZKPythonSources
+  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/llzk"
   SOURCES
     __init__.py
     registration.py
 )
 
-declare_mlir_python_extension(ZKIRPythonExtension
-  ADD_TO_PARENT ZKIRPythonSources
-  MODULE_NAME _zkirRegistration
-  ROOT_DIR "${CMAKE_SOURCE_DIR}/lib/ZKIR/Bindings/Python"
+declare_mlir_python_extension(LLZKPythonExtension
+  ADD_TO_PARENT LLZKPythonSources
+  MODULE_NAME _llzkRegistration
+  ROOT_DIR "${CMAKE_SOURCE_DIR}/lib/LLZK/Bindings/Python"
   SOURCES
-    ZKIRRegistration.cpp
+    LLZKRegistration.cpp
   PRIVATE_LINK_LIBS
     LLVMSupport
-    ZKIRPythonBindings
+    LLZKPythonBindings
 )
 
 ##
 # Final modules
 ##
 
-add_mlir_python_modules(ZKIRPythonDialectModules
+add_mlir_python_modules(LLZKPythonDialectModules
   ROOT_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/mlir"
   INSTALL_PREFIX python/mlir
   DECLARED_SOURCES
-    ZKIRPythonDialectSources
+    LLZKPythonDialectSources
 )
 
 # FIXME: MLIR bug?: the MLIRPythonCAPI library is not exported as a CMake target.
@@ -71,10 +71,10 @@ find_library(MLIRPythonCAPI_DYLIB NAMES MLIRPythonCAPI libMLIRPythonCAPI REQUIRE
 add_library(MLIRPythonCAPI SHARED IMPORTED)
 set_target_properties(MLIRPythonCAPI PROPERTIES IMPORTED_LOCATION ${MLIRPythonCAPI_DYLIB})
 
-add_mlir_python_modules(ZKIRPythonExtensionModules
-  ROOT_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/zkir"
-  INSTALL_PREFIX python/zkir
+add_mlir_python_modules(LLZKPythonExtensionModules
+  ROOT_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/llzk"
+  INSTALL_PREFIX python/llzk
   DECLARED_SOURCES
-    ZKIRPythonSources
+    LLZKPythonSources
   COMMON_CAPI_LINK_LIBS MLIRPythonCAPI
 )

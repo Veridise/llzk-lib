@@ -9,7 +9,7 @@
   };
 
   # Custom colored bash prompt
-  nixConfig.bash-prompt = ''\[\e[0;32m\][ZKIR]\[\e[m\] \[\e[38;5;244m\]\w\[\e[m\] % '';
+  nixConfig.bash-prompt = ''\[\e[0;32m\][LLZK]\[\e[m\] \[\e[38;5;244m\]\w\[\e[m\] % '';
 
   outputs = { self, nixpkgs, flake-utils, veridise-pkgs }:
     {
@@ -19,13 +19,13 @@
           enablePythonBindings = true;
         };
 
-        zkir = final.callPackage ./nix/zkir.nix { clang = final.clang_18; };
+        llzk = final.callPackage ./nix/llzk.nix { clang = final.clang_18; };
 
-        zkirWithPython = final.zkir.override {
+        llzkWithPython = final.llzk.override {
           mlir = final.mlirWithPython;
         };
 
-        zkirDebugClang = (final.zkir.override { stdenv = final.clangStdenv; }).overrideAttrs(attrs: {
+        llzkDebugClang = (final.llzk.override { stdenv = final.clangStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
 
           postInstall = ''
@@ -36,7 +36,7 @@
             fi
           '';
         });
-        zkirDebugClangCov = final.zkirDebugClang.overrideAttrs(attrs: {
+        llzkDebugClangCov = final.llzkDebugClang.overrideAttrs(attrs: {
           postCheck = ''
             MANIFEST=profiles.manifest
             PROFDATA=coverage.profdata
@@ -72,7 +72,7 @@
             fi
           '';
         });
-        zkirDebugGCC = (final.zkir.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
+        llzkDebugGCC = (final.llzk.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
 
           postInstall = ''
@@ -92,12 +92,12 @@
           '';
         };
 
-        # The default shell is used for ZKIR development.
+        # The default shell is used for LLZK development.
         # Because `nix develop` is used to set up a dev shell for a given
-        # derivation, we just need to extend the zkir derivation with any
+        # derivation, we just need to extend the llzk derivation with any
         # extra tools we need.
-        devShellBase = { pkgs, zkirEnv ? final.zkir, ... }: {
-          shell = zkirEnv.overrideAttrs (old: {
+        devShellBase = { pkgs, llzkEnv ? final.llzk, ... }: {
+          shell = llzkEnv.overrideAttrs (old: {
             nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
               doxygen
 
@@ -137,19 +137,19 @@
         # Now, we can define the actual outputs of the flake
         packages = flake-utils.lib.flattenTree {
           # Copy the packages from the overlay.
-          inherit (pkgs) zkir zkirWithPython;
+          inherit (pkgs) llzk llzkWithPython;
 
           # For debug purposes, expose the MLIR/LLVM packages.
           inherit (pkgs) libllvm llvm mlir mlirWithPython;
 
-          default = pkgs.zkir;
-          debugClang = pkgs.zkirDebugClang;
-          debugClangCov = pkgs.zkirDebugClangCov;
-          debugGCC = pkgs.zkirDebugGCC;
+          default = pkgs.llzk;
+          debugClang = pkgs.llzkDebugClang;
+          debugClangCov = pkgs.llzkDebugClangCov;
+          debugGCC = pkgs.llzkDebugGCC;
         };
 
         checks = flake-utils.lib.flattenTree {
-          zkirInstallCheck = pkgs.callPackage ./nix/zkir-installcheck { };
+          llzkInstallCheck = pkgs.callPackage ./nix/llzk-installcheck { };
         };
 
         devShells = flake-utils.lib.flattenTree {
@@ -157,8 +157,8 @@
             # Use Debug by default so assertions are enabled by default.
             cmakeBuildType = "Debug";
           });
-          debugClang = _: (pkgs.devShellBase pkgs pkgs.zkirDebugClang).shell;
-          debugGCC = _: (pkgs.devShellBase pkgs pkgs.zkirDebugGCC).shell;
+          debugClang = _: (pkgs.devShellBase pkgs pkgs.llzkDebugClang).shell;
+          debugGCC = _: (pkgs.devShellBase pkgs pkgs.llzkDebugGCC).shell;
 
           llvm = pkgs.mkShell {
             buildInputs = [ pkgs.libllvm.dev ];

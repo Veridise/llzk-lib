@@ -1,43 +1,43 @@
-// RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
 
-zkir.func @f_and(%a: i1, %b: i1) -> i1 {
-  %c = zkir.and %a, %b
+llzk.func @f_and(%a: i1, %b: i1) -> i1 {
+  %c = llzk.and %a, %b
   return %c: i1
 }
-//CHECK-LABEL:  zkir.func @f_and
+//CHECK-LABEL:  llzk.func @f_and
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = and %[[A0]], %[[A1]]
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
-zkir.func @f_or(%a: i1, %b: i1) -> i1 {
-  %c = zkir.or %a, %b
+llzk.func @f_or(%a: i1, %b: i1) -> i1 {
+  %c = llzk.or %a, %b
   return %c: i1
 }
-//CHECK-LABEL:  zkir.func @f_or
+//CHECK-LABEL:  llzk.func @f_or
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = or %[[A0]], %[[A1]]
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
-zkir.func @f_xor(%a: i1, %b: i1) -> i1 {
-  %c = zkir.xor %a, %b
+llzk.func @f_xor(%a: i1, %b: i1) -> i1 {
+  %c = llzk.xor %a, %b
   return %c: i1
 }
-//CHECK-LABEL:  zkir.func @f_xor
+//CHECK-LABEL:  llzk.func @f_xor
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = xor %[[A0]], %[[A1]]
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
-zkir.func @f_not(%a: i1) -> i1 {
-  %c = zkir.not %a
+llzk.func @f_not(%a: i1) -> i1 {
+  %c = llzk.not %a
   return %c: i1
 }
-//CHECK-LABEL:  zkir.func @f_not
+//CHECK-LABEL:  llzk.func @f_not
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = not %[[A0]]
 //CHECK-NEXT:     return %[[T1]] : i1

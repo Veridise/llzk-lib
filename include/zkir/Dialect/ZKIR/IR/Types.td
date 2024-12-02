@@ -1,35 +1,35 @@
-#ifndef ZKIR_TYPES
-#define ZKIR_TYPES
+#ifndef LLZK_TYPES
+#define LLZK_TYPES
 
-include "zkir/Dialect/ZKIR/IR/Attrs.td"
-include "zkir/Dialect/ZKIR/IR/Dialect.td"
-include "zkir/Dialect/ZKIR/IR/Enums.td"
+include "llzk/Dialect/LLZK/IR/Attrs.td"
+include "llzk/Dialect/LLZK/IR/Dialect.td"
+include "llzk/Dialect/LLZK/IR/Enums.td"
 
 include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinTypes.td"
 include "mlir/Interfaces/DataLayoutInterfaces.td"
 include "mlir/Interfaces/MemorySlotInterfaces.td"
 
-class ZKIR_Type<string name, string typeMnemonic, list<Trait> traits = []>
-    : TypeDef<ZKIRDialect, name, traits> {
+class LLZK_Type<string name, string typeMnemonic, list<Trait> traits = []>
+    : TypeDef<LLZKDialect, name, traits> {
   let mnemonic = typeMnemonic;
 }
 
-def AnyZKIRType : Type<CPred<"::zkir::isValidZkirType($_self)">,
-                       "a valid ZKIR type", "::mlir::Type">;
+def AnyLLZKType : Type<CPred<"::llzk::isValidType($_self)">,
+                       "a valid LLZK type", "::mlir::Type">;
 
-def ZKIR_FeltType : ZKIR_Type<"Felt", "felt"> {
+def LLZK_FeltType : LLZK_Type<"Felt", "felt"> {
   let summary = "finite field element";
   let description = [{}];
 
   let extraClassDeclaration = [{
-    static ::zkir::FeltType get(::mlir::MLIRContext *context) {
+    static ::llzk::FeltType get(::mlir::MLIRContext *context) {
       return Base::get(context);
     }
   }];
 }
 
-def ZKIR_StructType : ZKIR_Type<"Struct", "struct"> {
+def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
   let summary = "circuit component";
   let description = [{}];
 
@@ -47,18 +47,18 @@ def ZKIR_StructType : ZKIR_Type<"Struct", "struct"> {
   }];
 }
 
-def ZKIR_ArrayType : ZKIR_Type<"Array", "array", [ShapedTypeInterface]> {
+def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
   let summary = "n-dimensional array";
   let description = [{
     Array type with a ranked shape and homogeneous element type.
     It can only be instantiated with the following types:
-      - Any ZKIR type
+      - Any LLZK type
       - IndexType
       - Unsigned integers of 1 bit (aka booleans)
 
     Example array of 5 by 2 elements of a `Felt`.
-    ```zkir
-    !zkir.array<5x2 x !zkir.felt>
+    ```llzk
+    !llzk.array<5x2 x !llzk.felt>
     ```
   }];
 
@@ -86,4 +86,4 @@ def ZKIR_ArrayType : ZKIR_Type<"Array", "array", [ShapedTypeInterface]> {
   let genVerifyDecl = 1;
 }
 
-#endif // ZKIR_TYPES
+#endif // LLZK_TYPES

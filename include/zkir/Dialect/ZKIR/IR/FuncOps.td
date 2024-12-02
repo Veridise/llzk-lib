@@ -2,8 +2,8 @@
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#ifndef ZKIR_FUNC_OPS
-#define ZKIR_FUNC_OPS
+#ifndef LLZK_FUNC_OPS
+#define LLZK_FUNC_OPS
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/SymbolInterfaces.td"
@@ -13,14 +13,14 @@ include "mlir/Interfaces/FunctionInterfaces.td"
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-include "zkir/Dialect/ZKIR/IR/OpsBase.td"
+include "llzk/Dialect/LLZK/IR/OpsBase.td"
 
 //===----------------------------------------------------------------------===//
 // FuncOp
 //===----------------------------------------------------------------------===//
 
 def FuncOp
-    : ZKIR_Op<"func", [ParentOneOf<["::mlir::ModuleOp", "::zkir::StructDefOp"]>,
+    : LLZK_Op<"func", [ParentOneOf<["::mlir::ModuleOp", "::llzk::StructDefOp"]>,
                        DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                        AffineScope, AutomaticAllocationScope,
                        FunctionOpInterface, IsolatedFromAbove,
@@ -42,20 +42,20 @@ def FuncOp
 
     Example:
 
-    ```zkir
+    ```llzk
     // External function definitions.
-    zkir.func private @abort()
-    zkir.func private @scribble(!zkir.array<5 x !zkir.felt>, !zkir.struct<@Hello>) -> i1
+    llzk.func private @abort()
+    llzk.func private @scribble(!llzk.array<5 x !llzk.felt>, !llzk.struct<@Hello>) -> i1
 
     // A function that returns its argument twice:
-    zkir.func @count(%x: !zkir.felt) -> (!zkir.felt, !zkir.felt) {
-      return %x, %x: !zkir.felt, !zkir.felt
+    llzk.func @count(%x: !llzk.felt) -> (!llzk.felt, !llzk.felt) {
+      return %x, %x: !llzk.felt, !llzk.felt
     }
 
     // Function definition within a component
-    zkir.struct @NonZero {
-      func @compute(%a: !zkir.felt) { return }
-      func @constrain(%a: !zkir.felt) { return }
+    llzk.struct @NonZero {
+      func @compute(%a: !llzk.felt) { return }
+      func @constrain(%a: !llzk.felt) { return }
     }
     ```
   }];
@@ -66,15 +66,15 @@ def FuncOp
   // declared without a body must specify the `private` visibility.
   // Additionally, the default parsing/printing functions allow attributes on
   // the arguments, results, and function itself.
-  //    ```zkir
+  //    ```llzk
   //    // Argument attribute
-  //    zkir.func private @example_fn_arg(%x: i1 {zkir.pub})
+  //    llzk.func private @example_fn_arg(%x: i1 {llzk.pub})
   //
   //    // Result attribute
-  //    zkir.func @example_fn_result() -> (i1 {dialectName.attrName = 0 : i1})
+  //    llzk.func @example_fn_result() -> (i1 {dialectName.attrName = 0 : i1})
   //
   //    // Function attribute
-  //    zkir.func @example_fn_attr() attributes {dialectName.attrName = false}
+  //    llzk.func @example_fn_attr() attributes {dialectName.attrName = false}
   //    ```
   let arguments = (ins SymbolNameAttr:$sym_name,
       TypeAttrOf<FunctionType>:$function_type,
@@ -134,7 +134,7 @@ def FuncOp
     //===------------------------------------------------------------------===//
 
     /// Allow the dialect prefix to be omitted.
-    static ::llvm::StringRef getDefaultDialect() { return "zkir"; }
+    static ::llvm::StringRef getDefaultDialect() { return "llzk"; }
 
     //===------------------------------------------------------------------===//
     // SymbolOpInterface Methods
@@ -152,26 +152,26 @@ def FuncOp
 //===----------------------------------------------------------------------===//
 
 def ReturnOp
-    : ZKIR_Op<"return", [HasParent<"::zkir::FuncOp">, Pure, MemRefsNormalizable,
+    : LLZK_Op<"return", [HasParent<"::llzk::FuncOp">, Pure, MemRefsNormalizable,
                          ReturnLike, Terminator]> {
   let summary = "Function return operation";
   let description = [{
-    The `zkir.return` operation represents a return operation within a function.
+    The `llzk.return` operation represents a return operation within a function.
     The operation takes variable number of operands and produces no results.
     The operand number and types must match the signature of the function
     that contains the operation.
 
     Example:
 
-    ```zkir
-    zkir.func @foo() : (!zkir.felt, index) {
+    ```llzk
+    llzk.func @foo() : (!llzk.felt, index) {
       ...
-      return %0, %1 : !zkir.felt, index
+      return %0, %1 : !llzk.felt, index
     }
     ```
   }];
 
-  let arguments = (ins Variadic<AnyZKIRType>:$operands);
+  let arguments = (ins Variadic<AnyLLZKType>:$operands);
 
   let builders = [OpBuilder<(ins), [{
     build($_builder, $_state, std::nullopt);
@@ -186,33 +186,33 @@ def ReturnOp
 //===----------------------------------------------------------------------===//
 
 def CallOp
-    : ZKIR_Op<"call", [MemRefsNormalizable, CallOpInterface,
+    : LLZK_Op<"call", [MemRefsNormalizable, CallOpInterface,
                        DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "call operation";
   let description = [{
-    The `zkir.call` operation represents a call to another function. The operands
+    The `llzk.call` operation represents a call to another function. The operands
     and result types of the call must match the specified function type. The
     callee is encoded as a symbol reference attribute named "callee" which must
     be the full path to the target function from the root module (i.e. the module
-    containing the [zkir::LANG_ATTR_NAME] attribute).
+    containing the [llzk::LANG_ATTR_NAME] attribute).
 
     Example:
 
-    ```zkir
+    ```llzk
     // Call a global function defined in the root module.
-    zkir.call @do_stuff(%0) : (!zkir.struct<@Bob>) -> ()
-    %1, %2 = zkir.call @split(%x) : (index) -> (index, index)
+    llzk.call @do_stuff(%0) : (!llzk.struct<@Bob>) -> ()
+    %1, %2 = llzk.call @split(%x) : (index) -> (index, index)
 
     // Call a function within a component
-    %2 = zkir.call @OtherStruct::@compute(%3, %4) : (index, index) -> !zkir.struct<@OtherStruct>
-    zkir.call @OtherStruct::@constrain(%5, %6) : (!zkir.struct<@OtherStruct>, !zkir.felt) -> ()
+    %2 = llzk.call @OtherStruct::@compute(%3, %4) : (index, index) -> !llzk.struct<@OtherStruct>
+    llzk.call @OtherStruct::@constrain(%5, %6) : (!llzk.struct<@OtherStruct>, !llzk.felt) -> ()
     ```
   }];
 
-  let arguments = (ins SymbolRefAttr:$callee, Variadic<AnyZKIRType>:$operands);
-  let results = (outs Variadic<AnyZKIRType>);
+  let arguments = (ins SymbolRefAttr:$callee, Variadic<AnyLLZKType>:$operands);
+  let results = (outs Variadic<AnyLLZKType>);
 
-  let builders = [OpBuilder<(ins "::zkir::FuncOp":$callee,
+  let builders = [OpBuilder<(ins "::llzk::FuncOp":$callee,
                                 CArg<"::mlir::ValueRange", "{}">:$operands),
                             [{
                               $_state.addOperands(operands);
@@ -272,4 +272,4 @@ def CallOp
   }];
 }
 
-#endif // ZKIR_FUNC_OPS
+#endif // LLZK_FUNC_OPS

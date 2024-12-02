@@ -12,7 +12,7 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
-        "ZKIR_BUILD_DEVTOOLS": "ON"
+        "LLZK_BUILD_DEVTOOLS": "ON"
       }
     },
     {

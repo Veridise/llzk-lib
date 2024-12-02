@@ -1,11 +1,11 @@
-macro(zkir_target_add_mlir_link_settings target)
+macro(llzk_target_add_mlir_link_settings target)
   llvm_update_compile_flags(${target})
   mlir_check_all_link_libraries(${target})
 endmacro()
 
-function(zkir_add_mlir_doc target_name out_filename tblgen_flags)
+function(llzk_add_mlir_doc target_name out_filename tblgen_flags)
   # this is a modified version of add_mlir_doc from AddMLIR.cmake
-  set(OUT_FILE "${ZKIR_MLIR_DOC_OUTPUT_DIR}/${out_filename}")
+  set(OUT_FILE "${LLZK_MLIR_DOC_OUTPUT_DIR}/${out_filename}")
   tablegen(MLIR ${out_filename} ${tblgen_flags} ${ARGN})
   add_custom_command(
     OUTPUT ${OUT_FILE}

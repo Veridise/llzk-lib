@@ -5,6 +5,6 @@
 #include <mlir/IR/Dialect.h>
 
 // Include TableGen'd files
-#include "zkir/Dialect/ZKIR/IR/Dialect.h.inc"
+#include "llzk/Dialect/LLZK/IR/Dialect.h.inc"
 
-namespace zkir {} // namespace zkir
+namespace llzk {} // namespace llzk

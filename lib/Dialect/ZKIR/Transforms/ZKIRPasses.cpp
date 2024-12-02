@@ -1,16 +1,16 @@
-#include "zkir/Dialect/ZKIR/Transforms/ZKIRPasses.h"
-#include "zkir/Dialect/ZKIR/IR/Ops.h"
-#include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
-#include <zkir/Dialect/ZKIR/Util/SymbolHelper.h>
+#include "llzk/Dialect/LLZK/Transforms/LLZKPasses.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
+#include <llzk/Dialect/LLZK/Util/SymbolHelper.h>
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>
 
 /// Include the generated base pass class definitions.
-namespace zkir {
+namespace llzk {
 #define GEN_PASS_DEF_INLINEINCLUDESPASS
-#include "zkir/Dialect/ZKIR/Transforms/ZKIRPasses.h.inc"
-} // namespace zkir
+#include "llzk/Dialect/LLZK/Transforms/LLZKPasses.h.inc"
+} // namespace llzk
 
 namespace {
 using namespace std;
@@ -23,14 +23,14 @@ inline bool contains(IncludeStack &stack, StringRef &&loc) {
   return std::find_if(stack.begin(), stack.end(), path_match) != stack.end();
 }
 
-class InlineIncludesPass : public zkir::impl::InlineIncludesPassBase<InlineIncludesPass> {
+class InlineIncludesPass : public llzk::impl::InlineIncludesPassBase<InlineIncludesPass> {
   void runOnOperation() override {
     vector<pair<ModuleOp, IncludeStack>> currLevel = {make_pair(getOperation(), IncludeStack())};
     do {
       vector<pair<ModuleOp, IncludeStack>> nextLevel = {};
       for (pair<ModuleOp, IncludeStack> &curr : currLevel) {
         curr.first.walk([includeStack = std::move(curr.second),
-                         &nextLevel](zkir::IncludeOp incOp) mutable {
+                         &nextLevel](llzk::IncludeOp incOp) mutable {
           // Check for cyclic includes
           if (contains(includeStack, incOp.getPath())) {
             auto err = incOp.emitError().append("found cyclic include");
@@ -58,6 +58,6 @@ class InlineIncludesPass : public zkir::impl::InlineIncludesPassBase<InlineInclu
 
 } // namespace
 
-std::unique_ptr<mlir::Pass> zkir::createInlineIncludesPass() {
+std::unique_ptr<mlir::Pass> llzk::createInlineIncludesPass() {
   return std::make_unique<InlineIncludesPass>();
 };

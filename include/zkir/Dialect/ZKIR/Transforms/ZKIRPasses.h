@@ -2,11 +2,11 @@
 
 #include <mlir/Pass/Pass.h>
 
-namespace zkir {
+namespace llzk {
 
 std::unique_ptr<mlir::Pass> createInlineIncludesPass();
 
 #define GEN_PASS_REGISTRATION
-#include "zkir/Dialect/ZKIR/Transforms/ZKIRPasses.h.inc"
+#include "llzk/Dialect/LLZK/Transforms/LLZKPasses.h.inc"
 
-}; // namespace zkir
+}; // namespace llzk

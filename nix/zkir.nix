@@ -10,13 +10,13 @@
 }:
 
 stdenv.mkDerivation {
-  name = "zkir";
+  name = "llzk";
   version = "0.1.0";
   src =
     let
       src0 = lib.cleanSource (builtins.path {
         path = ./..;
-        name = "zkir-source";
+        name = "llzk-source";
       });
     in
       lib.cleanSourceWith {
@@ -40,7 +40,7 @@ stdenv.mkDerivation {
   ];
 
   cmakeFlags = [
-    "-DZKIR_BUILD_DEVTOOLS=ON"
+    "-DLLZK_BUILD_DEVTOOLS=ON"
   ];
 
   # This is done specifically so that the configure phase can find /usr/bin/sw_vers,

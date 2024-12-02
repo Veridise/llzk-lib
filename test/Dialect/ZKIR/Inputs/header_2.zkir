@@ -1,10 +1,10 @@
-// Imported via `include_pass.zkir`
+// Imported via `include_pass.llzk`
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.include "Inputs/header_1.zkir" as @std
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "Inputs/header_1.llzk" as @std
 
-  zkir.func @test_func() {
-    zkir.call @std::@pkg_two::@my_func_2() : () -> ()
+  llzk.func @test_func() {
+    llzk.call @std::@pkg_two::@my_func_2() : () -> ()
     return
   }
 }

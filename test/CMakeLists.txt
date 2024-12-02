@@ -2,26 +2,26 @@
 find_program(LLVM_EXTERNAL_LIT NAMES lit llvm-lit ${LLVM_EXTERNAL_LIT} REQUIRED)
 message(STATUS "Using lit: ${LLVM_EXTERNAL_LIT}")
 
-set(ZKIR_TEST_DEPENDS
-  zkir-opt
-#   zkir-driver
-#   zkir-query
+set(LLZK_TEST_DEPENDS
+  llzk-opt
+#   llzk-driver
+#   llzk-query
 )
 
-# if(ZKIR_BUILD_DEVTOOLS)
-#   set(zkir_lit_extra_suffixes "\".querytxt\"")
-#   list(APPEND ZKIR_TEST_DEPENDS zkir-query zkir-driver)
+# if(LLZK_BUILD_DEVTOOLS)
+#   set(llzk_lit_extra_suffixes "\".querytxt\"")
+#   list(APPEND LLZK_TEST_DEPENDS llzk-query llzk-driver)
 # endif()
 
-set(ZKIR_ENABLE_BINDINGS_PYTHON_STRING "False")
-if(ZKIR_ENABLE_BINDINGS_PYTHON)
-    set(ZKIR_ENABLE_BINDINGS_PYTHON_STRING "True")
+set(LLZK_ENABLE_BINDINGS_PYTHON_STRING "False")
+if(LLZK_ENABLE_BINDINGS_PYTHON)
+    set(LLZK_ENABLE_BINDINGS_PYTHON_STRING "True")
 endif()
 
-set(ZKIR_LIT_COMPATIBLE_COVERAGE_STRING "False")
-if(ZKIR_LIT_COMPATIBLE_COVERAGE)
+set(LLZK_LIT_COMPATIBLE_COVERAGE_STRING "False")
+if(LLZK_LIT_COMPATIBLE_COVERAGE)
   message(STATUS "Lit will generate coverage information for every test")
-  set(ZKIR_LIT_COMPATIBLE_COVERAGE_STRING "True")
+  set(LLZK_LIT_COMPATIBLE_COVERAGE_STRING "True")
 endif()
 
 set(LIT_ARGS "--xunit-xml-output report.xml")
@@ -35,6 +35,6 @@ configure_lit_site_cfg(
 
 add_lit_testsuite(check-lit "Running the lit-based regression tests"
   ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${ZKIR_TEST_DEPENDS}
+  DEPENDS ${LLZK_TEST_DEPENDS}
   ARGS ${LIT_ARGS}
 )

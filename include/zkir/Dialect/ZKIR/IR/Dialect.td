@@ -1,17 +1,17 @@
-#ifndef ZKIR_DIALECT
-#define ZKIR_DIALECT
+#ifndef LLZK_DIALECT
+#define LLZK_DIALECT
 
 include "mlir/IR/DialectBase.td"
 
-def ZKIRDialect : Dialect {
-  let name = "zkir";
+def LLZKDialect : Dialect {
+  let name = "llzk";
   let summary =
       "Veridise's intermediate representation for zero knowledge languages";
   let description = [{
     This dialect contains types and operations for zero knowledge languages.
   }];
 
-  let cppNamespace = "zkir";
+  let cppNamespace = "llzk";
 
   let dependentDialects = ["::mlir::index::IndexDialect",
                            "::mlir::scf::SCFDialect"];
@@ -20,4 +20,4 @@ def ZKIRDialect : Dialect {
   let useDefaultAttributePrinterParser = true;
 }
 
-#endif // ZKIR_DIALECT
+#endif // LLZK_DIALECT

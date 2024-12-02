@@ -31,7 +31,7 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
           pushFilter: '(-source$)'
       - name: Build
-        run: nix --print-build-logs build '.#checks.x86_64-linux.zkirInstallCheck'
+        run: nix --print-build-logs build '.#checks.x86_64-linux.llzkInstallCheck'
         env:
           CI_BOT_PAT: "${{ secrets.CI_BUILD_TOKEN }}"
       - name: Clear Git credentials

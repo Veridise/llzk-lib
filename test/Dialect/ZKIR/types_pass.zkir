@@ -1,43 +1,43 @@
-// RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @Hello {
-    func @compute() -> !zkir.struct<@Hello> {
-      %self = new_struct : !zkir.struct<@Hello>
-      return %self : !zkir.struct<@Hello>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Hello {
+    func @compute() -> !llzk.struct<@Hello> {
+      %self = new_struct : !llzk.struct<@Hello>
+      return %self : !llzk.struct<@Hello>
     }
-    func @constrain(%self: !zkir.struct<@Hello>) { return }
+    func @constrain(%self: !llzk.struct<@Hello>) { return }
   }
-  zkir.func private @a(!zkir.array<5 x !zkir.felt>, !zkir.struct<@Hello>)
+  llzk.func private @a(!llzk.array<5 x !llzk.felt>, !llzk.struct<@Hello>)
 }
-//CHECK-LABEL:  zkir.func private @a(!zkir.array<5 x !zkir.felt>, !zkir.struct<@Hello>)
+//CHECK-LABEL:  llzk.func private @a(!llzk.array<5 x !llzk.felt>, !llzk.struct<@Hello>)
 // -----
 
-zkir.func private @b(!zkir.array<3x2x1 x !zkir.felt>)
-//CHECK-LABEL:  zkir.func private @b(!zkir.array<3x2x1 x !zkir.felt>)
+llzk.func private @b(!llzk.array<3x2x1 x !llzk.felt>)
+//CHECK-LABEL:  llzk.func private @b(!llzk.array<3x2x1 x !llzk.felt>)
 // -----
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @Bob {
-    func @compute() -> !zkir.struct<@Bob> {
-      %self = new_struct : !zkir.struct<@Bob>
-      return %self : !zkir.struct<@Bob>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Bob {
+    func @compute() -> !llzk.struct<@Bob> {
+      %self = new_struct : !llzk.struct<@Bob>
+      return %self : !llzk.struct<@Bob>
     }
-    func @constrain(%self: !zkir.struct<@Bob>) { return }
+    func @constrain(%self: !llzk.struct<@Bob>) { return }
   }
-  zkir.func private @c(%x: !zkir.array<5 x !zkir.struct<@Bob>>) -> !zkir.array<5 x !zkir.struct<@Bob>>
+  llzk.func private @c(%x: !llzk.array<5 x !llzk.struct<@Bob>>) -> !llzk.array<5 x !llzk.struct<@Bob>>
 }
-//CHECK-LABEL:  zkir.func private @c(!zkir.array<5 x !zkir.struct<@Bob>>) -> !zkir.array<5 x !zkir.struct<@Bob>>
+//CHECK-LABEL:  llzk.func private @c(!llzk.array<5 x !llzk.struct<@Bob>>) -> !llzk.array<5 x !llzk.struct<@Bob>>
 // -----
 
-zkir.func private @d(%x: !zkir.array<54 x index>) -> index
-//CHECK-LABEL:  zkir.func private @d(!zkir.array<54 x index>) -> index
+llzk.func private @d(%x: !llzk.array<54 x index>) -> index
+//CHECK-LABEL:  llzk.func private @d(!llzk.array<54 x index>) -> index
 // -----
 
-zkir.func private @f(!zkir.felt) -> i1
-//CHECK-LABEL:  zkir.func private @f(!zkir.felt) -> i1
+llzk.func private @f(!llzk.felt) -> i1
+//CHECK-LABEL:  llzk.func private @f(!llzk.felt) -> i1
 // -----
 
-zkir.func private @g(%x: !zkir.array<2x3x2 x index>)
-//CHECK-LABEL:  zkir.func private @g(!zkir.array<2x3x2 x index>)
+llzk.func private @g(%x: !llzk.array<2x3x2 x index>)
+//CHECK-LABEL:  llzk.func private @g(!llzk.array<2x3x2 x index>)
 // -----

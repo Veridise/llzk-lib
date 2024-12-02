@@ -1,17 +1,17 @@
-add_library(ZKIRDialect)
-add_library(ZKIR::ZKIRDialect ALIAS ZKIRDialect)
-target_link_libraries(ZKIRAllDialects INTERFACE ZKIR::ZKIRDialect)
+add_library(LLZKDialect)
+add_library(LLZK::LLZKDialect ALIAS LLZKDialect)
+target_link_libraries(LLZKAllDialects INTERFACE LLZK::LLZKDialect)
 
-file(GLOB_RECURSE ZKIRDialect_SOURCES "**/*.cpp")
-target_sources(ZKIRDialect PRIVATE ${ZKIRDialect_SOURCES})
-target_link_libraries(ZKIRDialect
-  PUBLIC ZKIRDialectHeaders MLIRIR MLIRPass
+file(GLOB_RECURSE LLZKDialect_SOURCES "**/*.cpp")
+target_sources(LLZKDialect PRIVATE ${LLZKDialect_SOURCES})
+target_link_libraries(LLZKDialect
+  PUBLIC LLZKDialectHeaders MLIRIR MLIRPass
 )
-target_link_libraries(ZKIRDialect
+target_link_libraries(LLZKDialect
   PRIVATE LLVMHeaders MLIRHeaders)
-add_dependencies(ZKIRDialect ZKIRDialectHeaders)
-zkir_target_add_mlir_link_settings(ZKIRDialect)
+add_dependencies(LLZKDialect LLZKDialectHeaders)
+llzk_target_add_mlir_link_settings(LLZKDialect)
 
-install(TARGETS ZKIRDialect
-  EXPORT ZKIRTargets
+install(TARGETS LLZKDialect
+  EXPORT LLZKTargets
 )

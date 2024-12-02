@@ -1,325 +1,325 @@
-// RUN: zkir-opt -split-input-file -verify-diagnostics %s
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @emiteq_in_compute {
-    func @compute(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.struct<@emiteq_in_compute> {
-      // expected-error@+1 {{'zkir.emit_eq' op only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-      zkir.emit_eq %a, %b : !zkir.felt
-      %self = new_struct : !zkir.struct<@emiteq_in_compute>
-      return %self : !zkir.struct<@emiteq_in_compute>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @emiteq_in_compute {
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@emiteq_in_compute> {
+      // expected-error@+1 {{'llzk.emit_eq' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+      llzk.emit_eq %a, %b : !llzk.felt
+      %self = new_struct : !llzk.struct<@emiteq_in_compute>
+      return %self : !llzk.struct<@emiteq_in_compute>
     }
 
-    func @constrain(%self: !zkir.struct<@emiteq_in_compute>, %a: !zkir.felt, %b: !zkir.felt) { return }
+    func @constrain(%self: !llzk.struct<@emiteq_in_compute>, %a: !llzk.felt, %b: !llzk.felt) { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @emiteq_in_compute_in_loop {
-    func @compute(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.struct<@emiteq_in_compute_in_loop> {
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @emiteq_in_compute_in_loop {
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@emiteq_in_compute_in_loop> {
       %lb = index.constant 0
       %up = index.constant 4
       %step = index.constant 1
       scf.for %iv = %lb to %up step %step {
-        // expected-error@+1 {{'zkir.emit_eq' op only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-        zkir.emit_eq %a, %b : !zkir.felt
+        // expected-error@+1 {{'llzk.emit_eq' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+        llzk.emit_eq %a, %b : !llzk.felt
       }
-      %self = new_struct : !zkir.struct<@emiteq_in_compute_in_loop>
-      return %self : !zkir.struct<@emiteq_in_compute_in_loop>
+      %self = new_struct : !llzk.struct<@emiteq_in_compute_in_loop>
+      return %self : !llzk.struct<@emiteq_in_compute_in_loop>
     }
 
-    func @constrain(%self: !zkir.struct<@emiteq_in_compute_in_loop>, %a: !zkir.felt, %b: !zkir.felt) { return }
+    func @constrain(%self: !llzk.struct<@emiteq_in_compute_in_loop>, %a: !llzk.felt, %b: !llzk.felt) { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @emiteq_in_compute_in_deep_branches {
-    func @compute(%a: i1, %b: i1, %c: i1, %x: !zkir.felt, %y: !zkir.felt) -> !zkir.struct<@emiteq_in_compute_in_deep_branches> {
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @emiteq_in_compute_in_deep_branches {
+    func @compute(%a: i1, %b: i1, %c: i1, %x: !llzk.felt, %y: !llzk.felt) -> !llzk.struct<@emiteq_in_compute_in_deep_branches> {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            // expected-error@+1 {{'zkir.emit_eq' op only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-            zkir.emit_eq %x, %y : !zkir.felt
+            // expected-error@+1 {{'llzk.emit_eq' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+            llzk.emit_eq %x, %y : !llzk.felt
           }
         }
       }
-      %self = new_struct : !zkir.struct<@emiteq_in_compute_in_deep_branches>
-      return %self : !zkir.struct<@emiteq_in_compute_in_deep_branches>
+      %self = new_struct : !llzk.struct<@emiteq_in_compute_in_deep_branches>
+      return %self : !llzk.struct<@emiteq_in_compute_in_deep_branches>
     }
 
-    func @constrain(%self: !zkir.struct<@emiteq_in_compute_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: !zkir.felt, %y: !zkir.felt) { return }
+    func @constrain(%self: !llzk.struct<@emiteq_in_compute_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: !llzk.felt, %y: !llzk.felt) { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @emitin_in_compute {
-    func @compute(%a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) -> !zkir.struct<@emitin_in_compute> {
-      // expected-error@+1 {{'zkir.emit_in' op only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-      zkir.emit_in %a, %b : !zkir.array<5 x !zkir.felt>
-      %self = new_struct : !zkir.struct<@emitin_in_compute>
-      return %self : !zkir.struct<@emitin_in_compute>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @emitin_in_compute {
+    func @compute(%a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_compute> {
+      // expected-error@+1 {{'llzk.emit_in' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+      llzk.emit_in %a, %b : !llzk.array<5 x !llzk.felt>
+      %self = new_struct : !llzk.struct<@emitin_in_compute>
+      return %self : !llzk.struct<@emitin_in_compute>
     }
 
-    func @constrain(%self: !zkir.struct<@emitin_in_compute>, %a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) { return }
+    func @constrain(%self: !llzk.struct<@emitin_in_compute>, %a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @emitin_in_compute_in_loop {
-    func @compute(%a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) -> !zkir.struct<@emitin_in_compute_in_loop> {
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @emitin_in_compute_in_loop {
+    func @compute(%a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_compute_in_loop> {
       %lb = index.constant 0
       %up = index.constant 4
       %step = index.constant 1
       scf.for %iv = %lb to %up step %step {
-        // expected-error@+1 {{'zkir.emit_in' op only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-        zkir.emit_in %a, %b : !zkir.array<5 x !zkir.felt>
+        // expected-error@+1 {{'llzk.emit_in' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+        llzk.emit_in %a, %b : !llzk.array<5 x !llzk.felt>
       }
-      %self = new_struct : !zkir.struct<@emitin_in_compute_in_loop>
-      return %self : !zkir.struct<@emitin_in_compute_in_loop>
+      %self = new_struct : !llzk.struct<@emitin_in_compute_in_loop>
+      return %self : !llzk.struct<@emitin_in_compute_in_loop>
     }
 
-    func @constrain(%self: !zkir.struct<@emitin_in_compute_in_loop>, %a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) { return }
+    func @constrain(%self: !llzk.struct<@emitin_in_compute_in_loop>, %a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @emitin_in_compute_in_deep_branches {
-    func @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !zkir.array<5 x index>) -> !zkir.struct<@emitin_in_compute_in_deep_branches> {
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @emitin_in_compute_in_deep_branches {
+    func @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !llzk.array<5 x index>) -> !llzk.struct<@emitin_in_compute_in_deep_branches> {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            // expected-error@+1 {{'zkir.emit_in' op only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-            zkir.emit_in %x, %y : !zkir.array<5 x index>
+            // expected-error@+1 {{'llzk.emit_in' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+            llzk.emit_in %x, %y : !llzk.array<5 x index>
           }
         }
       }
-      %self = new_struct : !zkir.struct<@emitin_in_compute_in_deep_branches>
-      return %self : !zkir.struct<@emitin_in_compute_in_deep_branches>
+      %self = new_struct : !llzk.struct<@emitin_in_compute_in_deep_branches>
+      return %self : !llzk.struct<@emitin_in_compute_in_deep_branches>
     }
 
-    func @constrain(%self: !zkir.struct<@emitin_in_compute_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !zkir.array<5 x index>) { return }
+    func @constrain(%self: !llzk.struct<@emitin_in_compute_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !llzk.array<5 x index>) { return }
   }
 }
 // -----
-zkir.func @constrain(%a: !zkir.felt, %b: !zkir.felt) {
-  // expected-error@+1 {{'zkir.emit_eq' op only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-  zkir.emit_eq %a, %b : !zkir.felt
+llzk.func @constrain(%a: !llzk.felt, %b: !llzk.felt) {
+  // expected-error@+1 {{'llzk.emit_eq' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+  llzk.emit_eq %a, %b : !llzk.felt
   return
 }
 // -----
-zkir.func @constrain(%x: index, %y: !zkir.array<5 x index>) {
-  // expected-error@+1 {{'zkir.emit_in' op only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-  zkir.emit_in %x, %y : !zkir.array<5 x index>
+llzk.func @constrain(%x: index, %y: !llzk.array<5 x index>) {
+  // expected-error@+1 {{'llzk.emit_in' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+  llzk.emit_in %x, %y : !llzk.array<5 x index>
   return
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @constrain_calls_compute {
-    func @compute() -> !zkir.struct<@constrain_calls_compute> {
-      %self = new_struct : !zkir.struct<@constrain_calls_compute>
-      return %self : !zkir.struct<@constrain_calls_compute>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @constrain_calls_compute {
+    func @compute() -> !llzk.struct<@constrain_calls_compute> {
+      %self = new_struct : !llzk.struct<@constrain_calls_compute>
+      return %self : !llzk.struct<@constrain_calls_compute>
     }
 
-    func @constrain(%self: !zkir.struct<@constrain_calls_compute>) {
-      // expected-error@+1 {{'zkir.call' op targeting "@compute" only valid within a 'zkir.func' named "@compute" within a 'zkir.struct' definition}}
-      call @constrain_calls_compute::@compute() : () -> !zkir.struct<@constrain_calls_compute>
+    func @constrain(%self: !llzk.struct<@constrain_calls_compute>) {
+      // expected-error@+1 {{'llzk.call' op targeting "@compute" only valid within a 'llzk.func' named "@compute" within a 'llzk.struct' definition}}
+      call @constrain_calls_compute::@compute() : () -> !llzk.struct<@constrain_calls_compute>
       return
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @compute_calls_constrain {
-    func @compute() -> !zkir.struct<@compute_calls_constrain> {
-      %self = new_struct : !zkir.struct<@compute_calls_constrain>
-      // expected-error@+1 {{'zkir.call' op targeting "@constrain" only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-      call @compute_calls_constrain::@constrain(%self) : (!zkir.struct<@compute_calls_constrain>) -> ()
-      return %self : !zkir.struct<@compute_calls_constrain>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @compute_calls_constrain {
+    func @compute() -> !llzk.struct<@compute_calls_constrain> {
+      %self = new_struct : !llzk.struct<@compute_calls_constrain>
+      // expected-error@+1 {{'llzk.call' op targeting "@constrain" only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+      call @compute_calls_constrain::@constrain(%self) : (!llzk.struct<@compute_calls_constrain>) -> ()
+      return %self : !llzk.struct<@compute_calls_constrain>
     }
 
-    func @constrain(%self: !zkir.struct<@compute_calls_constrain>) {
+    func @constrain(%self: !llzk.struct<@compute_calls_constrain>) {
       return
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.func @globalFunc() {
-    // expected-error@+1 {{'zkir.call' op targeting "@compute" only valid within a 'zkir.func' named "@compute" within a 'zkir.struct' definition}}
-    call @global_calls_compute::@compute() : () -> !zkir.struct<@global_calls_compute>
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @globalFunc() {
+    // expected-error@+1 {{'llzk.call' op targeting "@compute" only valid within a 'llzk.func' named "@compute" within a 'llzk.struct' definition}}
+    call @global_calls_compute::@compute() : () -> !llzk.struct<@global_calls_compute>
     return
   }
-  zkir.struct @global_calls_compute {
-    func @compute() -> !zkir.struct<@global_calls_compute> {
-      %self = new_struct : !zkir.struct<@global_calls_compute>
-      return %self : !zkir.struct<@global_calls_compute>
+  llzk.struct @global_calls_compute {
+    func @compute() -> !llzk.struct<@global_calls_compute> {
+      %self = new_struct : !llzk.struct<@global_calls_compute>
+      return %self : !llzk.struct<@global_calls_compute>
     }
 
-    func @constrain(%self: !zkir.struct<@global_calls_compute>) {
+    func @constrain(%self: !llzk.struct<@global_calls_compute>) {
       return
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.func @globalFunc(%0: !zkir.struct<@global_calls_constrain>) {
-    // expected-error@+1 {{'zkir.call' op targeting "@constrain" only valid within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-    call @global_calls_constrain::@constrain(%0) : (!zkir.struct<@global_calls_constrain>) -> ()
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @globalFunc(%0: !llzk.struct<@global_calls_constrain>) {
+    // expected-error@+1 {{'llzk.call' op targeting "@constrain" only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+    call @global_calls_constrain::@constrain(%0) : (!llzk.struct<@global_calls_constrain>) -> ()
     return
   }
-  zkir.struct @global_calls_constrain {
-    func @compute() -> !zkir.struct<@global_calls_constrain> {
-      %self = new_struct : !zkir.struct<@global_calls_constrain>
-      return %self : !zkir.struct<@global_calls_constrain>
+  llzk.struct @global_calls_constrain {
+    func @compute() -> !llzk.struct<@global_calls_constrain> {
+      %self = new_struct : !llzk.struct<@global_calls_constrain>
+      return %self : !llzk.struct<@global_calls_constrain>
     }
 
-    func @constrain(%self: !zkir.struct<@global_calls_constrain>) {
+    func @constrain(%self: !llzk.struct<@global_calls_constrain>) {
       return
     }
   }
 }
 // -----
-zkir.struct @inv_in_constrain {
-  func @compute(%a: !zkir.felt) -> !zkir.struct<@inv_in_constrain> {
-    %self = new_struct : !zkir.struct<@inv_in_constrain>
-    return %self : !zkir.struct<@inv_in_constrain>
+llzk.struct @inv_in_constrain {
+  func @compute(%a: !llzk.felt) -> !llzk.struct<@inv_in_constrain> {
+    %self = new_struct : !llzk.struct<@inv_in_constrain>
+    return %self : !llzk.struct<@inv_in_constrain>
   }
 
-  func @constrain(%self: !zkir.struct<@inv_in_constrain>, %a: !zkir.felt) {
-    // expected-error@+1 {{'zkir.inv' op is ComputeOnly so it cannot be used within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-    %c = zkir.inv %a
+  func @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !llzk.felt) {
+    // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+    %c = llzk.inv %a
     return
   }
 }
 // -----
-zkir.struct @inv_in_constrain {
-  func @compute(%a: !zkir.felt) -> !zkir.struct<@inv_in_constrain> {
-    %self = new_struct : !zkir.struct<@inv_in_constrain>
-    return %self : !zkir.struct<@inv_in_constrain>
+llzk.struct @inv_in_constrain {
+  func @compute(%a: !llzk.felt) -> !llzk.struct<@inv_in_constrain> {
+    %self = new_struct : !llzk.struct<@inv_in_constrain>
+    return %self : !llzk.struct<@inv_in_constrain>
   }
 
-  func @constrain(%self: !zkir.struct<@inv_in_constrain>, %a: !zkir.felt) {
-    // expected-error@+1 {{'zkir.inv' op is ComputeOnly so it cannot be used within a 'zkir.func' named "@constrain" within a 'zkir.struct' definition}}
-    %c = zkir.inv %a
+  func @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !llzk.felt) {
+    // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+    %c = llzk.inv %a
     return
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @compute_no_ret {
-    // expected-error@+1 {{'zkir.func' op "@compute" must have exactly one return type}}
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @compute_no_ret {
+    // expected-error@+1 {{'llzk.func' op "@compute" must have exactly one return type}}
     func @compute() {
       return
     }
 
-    func @constrain(%self: !zkir.struct<@compute_no_ret>) {
+    func @constrain(%self: !llzk.struct<@compute_no_ret>) {
       return
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @compute_multiple_ret {
-    // expected-error@+1 {{'zkir.func' op "@compute" must have exactly one return type}}
-    func @compute(%a: i1) -> (!zkir.struct<@compute_multiple_ret>, i1) {
-      %self = new_struct : !zkir.struct<@compute_multiple_ret>
-      return %self, %a : !zkir.struct<@compute_multiple_ret>, i1
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @compute_multiple_ret {
+    // expected-error@+1 {{'llzk.func' op "@compute" must have exactly one return type}}
+    func @compute(%a: i1) -> (!llzk.struct<@compute_multiple_ret>, i1) {
+      %self = new_struct : !llzk.struct<@compute_multiple_ret>
+      return %self, %a : !llzk.struct<@compute_multiple_ret>, i1
     }
 
-    func @constrain(%self: !zkir.struct<@compute_multiple_ret>, %a: i1) {
+    func @constrain(%self: !llzk.struct<@compute_multiple_ret>, %a: i1) {
       return
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @constrain_with_ret {
-    func @compute() -> !zkir.struct<@constrain_with_ret> {
-      %self = new_struct : !zkir.struct<@constrain_with_ret>
-      return %self : !zkir.struct<@constrain_with_ret>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @constrain_with_ret {
+    func @compute() -> !llzk.struct<@constrain_with_ret> {
+      %self = new_struct : !llzk.struct<@constrain_with_ret>
+      return %self : !llzk.struct<@constrain_with_ret>
     }
 
-    // expected-error@+1 {{'zkir.func' op "@constrain" must have no return type}}
-    func @constrain(%self: !zkir.struct<@constrain_with_ret>, %a: i1) -> i1 {
+    // expected-error@+1 {{'llzk.func' op "@constrain" must have no return type}}
+    func @constrain(%self: !llzk.struct<@constrain_with_ret>, %a: i1) -> i1 {
       return %a : i1
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'zkir.func' op "@compute" must use type of its parent 'zkir.struct' "@compute_with_wrong_ret" as return type}}
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @compute_with_wrong_ret {
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> index {
       %b = index.constant 2
       return %b : index
     }
 
-    func @constrain(%self: !zkir.struct<@compute_with_wrong_ret>) {
+    func @constrain(%self: !llzk.struct<@compute_with_wrong_ret>) {
       return
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @good { // expected-note {{uses this type instead}}
-    func @compute() -> !zkir.struct<@good> {
-      %self = new_struct : !zkir.struct<@good>
-      return %self : !zkir.struct<@good>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @good { // expected-note {{uses this type instead}}
+    func @compute() -> !llzk.struct<@good> {
+      %self = new_struct : !llzk.struct<@good>
+      return %self : !llzk.struct<@good>
     }
-    func @constrain(%self: !zkir.struct<@good>) {
+    func @constrain(%self: !llzk.struct<@good>) {
       return
     }
   }
 
-  zkir.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'zkir.func' op "@compute" must use type of its parent 'zkir.struct' "@compute_with_wrong_ret" as return type}}
-    func @compute() -> !zkir.struct<@good> {
-      %self = new_struct : !zkir.struct<@good>
-      return %self : !zkir.struct<@good>
+  llzk.struct @compute_with_wrong_ret {
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@compute_with_wrong_ret" as return type}}
+    func @compute() -> !llzk.struct<@good> {
+      %self = new_struct : !llzk.struct<@good>
+      return %self : !llzk.struct<@good>
     }
 
-    func @constrain(%self: !zkir.struct<@compute_with_wrong_ret>) {
+    func @constrain(%self: !llzk.struct<@compute_with_wrong_ret>) {
       return
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
+module attributes {veridise.lang = "llzk"} {
   module @one {
-    zkir.struct @good { // expected-note {{uses this type instead}}
-      func @compute() -> !zkir.struct<@one::@good> {
-        %self = new_struct : !zkir.struct<@one::@good>
-        return %self : !zkir.struct<@one::@good>
+    llzk.struct @good { // expected-note {{uses this type instead}}
+      func @compute() -> !llzk.struct<@one::@good> {
+        %self = new_struct : !llzk.struct<@one::@good>
+        return %self : !llzk.struct<@one::@good>
       }
-      func @constrain(%self: !zkir.struct<@one::@good>) {
+      func @constrain(%self: !llzk.struct<@one::@good>) {
         return
       }
     }
   }
   module @two {
-    zkir.struct @good {
-      // expected-error@+1 {{'zkir.func' op "@compute" must use type of its parent 'zkir.struct' "@two::@good" as return type}}
-      func @compute() -> !zkir.struct<@one::@good> {
-        %self = new_struct : !zkir.struct<@one::@good>
-        return %self : !zkir.struct<@one::@good>
+    llzk.struct @good {
+      // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@two::@good" as return type}}
+      func @compute() -> !llzk.struct<@one::@good> {
+        %self = new_struct : !llzk.struct<@one::@good>
+        return %self : !llzk.struct<@one::@good>
       }
-      func @constrain(%self: !zkir.struct<@one::@good>) {
+      func @constrain(%self: !llzk.struct<@one::@good>) {
         return
       }
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
+module attributes {veridise.lang = "llzk"} {
   module { // expected-note {{unnamed 'builtin.module' here}}
     module @one {
-      zkir.struct @good {
-        // expected-error@+2 {{'zkir.func' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
-        // expected-error@+1 {{could not find 'zkir.struct' named "@one::@good"}}
-        func @compute() -> !zkir.struct<@one::@good> {
-          %self = new_struct : !zkir.struct<@one::@good>
-          return %self : !zkir.struct<@one::@good>
+      llzk.struct @good {
+        // expected-error@+2 {{'llzk.func' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
+        // expected-error@+1 {{could not find 'llzk.struct' named "@one::@good"}}
+        func @compute() -> !llzk.struct<@one::@good> {
+          %self = new_struct : !llzk.struct<@one::@good>
+          return %self : !llzk.struct<@one::@good>
         }
-        func @constrain(%self: !zkir.struct<@one::@good>) {
+        func @constrain(%self: !llzk.struct<@one::@good>) {
           return
         }
       }
@@ -328,61 +328,61 @@ module attributes {veridise.lang = "zkir"} {
 }
 // -----
 module { // expected-note {{unnamed 'builtin.module' here}}
-  // expected-error@+1 {{'zkir.struct' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
-  zkir.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'zkir.func' op "@compute" must use type of its parent 'zkir.struct' "@compute_with_wrong_ret" as return type}}
+  // expected-error@+1 {{'llzk.struct' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
+  llzk.struct @compute_with_wrong_ret {
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> index {
       %b = index.constant 2
       return %b : index
     }
 
-    func @constrain(%self: !zkir.struct<@compute_with_wrong_ret>) {
+    func @constrain(%self: !llzk.struct<@compute_with_wrong_ret>) {
       return
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @constrain_without_args {
-    func @compute() -> !zkir.struct<@constrain_without_args> {
-      %self = new_struct : !zkir.struct<@constrain_without_args>
-      return %self : !zkir.struct<@constrain_without_args>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @constrain_without_args {
+    func @compute() -> !llzk.struct<@constrain_without_args> {
+      %self = new_struct : !llzk.struct<@constrain_without_args>
+      return %self : !llzk.struct<@constrain_without_args>
     }
-    // expected-error@+1 {{'zkir.func' op "@constrain" must have at least one input type}}
+    // expected-error@+1 {{'llzk.func' op "@constrain" must have at least one input type}}
     func @constrain() { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @constrain_without_self_non_struct {
-    func @compute(%a: !zkir.felt) -> !zkir.struct<@constrain_without_self_non_struct> {
-      %self = new_struct : !zkir.struct<@constrain_without_self_non_struct>
-      return %self : !zkir.struct<@constrain_without_self_non_struct>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @constrain_without_self_non_struct {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@constrain_without_self_non_struct> {
+      %self = new_struct : !llzk.struct<@constrain_without_self_non_struct>
+      return %self : !llzk.struct<@constrain_without_self_non_struct>
     }
-    // expected-error@+1 {{'zkir.func' op "@constrain" must use type of its parent 'zkir.struct' "@constrain_without_self_non_struct" as first input type}}
-    func @constrain(%self: !zkir.felt) {
+    // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its parent 'llzk.struct' "@constrain_without_self_non_struct" as first input type}}
+    func @constrain(%self: !llzk.felt) {
       return
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @other_type { // expected-note {{uses this type instead}}
-    func @compute() -> !zkir.struct<@other_type> {
-      %self = new_struct : !zkir.struct<@other_type>
-      return %self : !zkir.struct<@other_type>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @other_type { // expected-note {{uses this type instead}}
+    func @compute() -> !llzk.struct<@other_type> {
+      %self = new_struct : !llzk.struct<@other_type>
+      return %self : !llzk.struct<@other_type>
     }
-    func @constrain(%self: !zkir.struct<@other_type>) {
+    func @constrain(%self: !llzk.struct<@other_type>) {
       return
     }
   }
-  zkir.struct @constrain_without_self_wrong_struct {
-    func @compute() -> !zkir.struct<@constrain_without_self_wrong_struct> {
-      %self = new_struct : !zkir.struct<@constrain_without_self_wrong_struct>
-      return %self : !zkir.struct<@constrain_without_self_wrong_struct>
+  llzk.struct @constrain_without_self_wrong_struct {
+    func @compute() -> !llzk.struct<@constrain_without_self_wrong_struct> {
+      %self = new_struct : !llzk.struct<@constrain_without_self_wrong_struct>
+      return %self : !llzk.struct<@constrain_without_self_wrong_struct>
     }
-    // expected-error@+1 {{'zkir.func' op "@constrain" must use type of its parent 'zkir.struct' "@constrain_without_self_wrong_struct" as first input type}}
-    func @constrain(%self: !zkir.struct<@other_type>) {
+    // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its parent 'llzk.struct' "@constrain_without_self_wrong_struct" as first input type}}
+    func @constrain(%self: !llzk.struct<@other_type>) {
       return
     }
   }

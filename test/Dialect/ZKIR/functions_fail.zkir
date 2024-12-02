@@ -1,97 +1,97 @@
-// RUN: zkir-opt -split-input-file -verify-diagnostics %s
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-// expected-error@+1 {{'zkir.func' op expected a valid ZKIR type but found 'i32'}}
-zkir.func private @fail_01(i32)
+// expected-error@+1 {{'llzk.func' op expected a valid LLZK type but found 'i32'}}
+llzk.func private @fail_01(i32)
 // -----
-// expected-error@+1 {{'zkir.func' op expected a valid ZKIR type but found 'i32'}}
-zkir.func private @fail_02(i1) -> i32
+// expected-error@+1 {{'llzk.func' op expected a valid LLZK type but found 'i32'}}
+llzk.func private @fail_02(i1) -> i32
 // -----
-// expected-error@+1 {{'zkir.func' op expected a valid ZKIR type but found 'i32'}}
-zkir.func private @fail_03(i1) -> (i32, i32)
+// expected-error@+1 {{'llzk.func' op expected a valid LLZK type but found 'i32'}}
+llzk.func private @fail_03(i1) -> (i32, i32)
 // -----
-// expected-error@+1 {{'zkir.func' op expected a valid ZKIR type but found 'i32'}}
-zkir.func private @fail_04(i1, index, i32)
+// expected-error@+1 {{'llzk.func' op expected a valid LLZK type but found 'i32'}}
+llzk.func private @fail_04(i1, index, i32)
 // -----
-// expected-error@+1 {{'zkir.func' op expected a valid ZKIR type but found 'none'}}
-zkir.func @fail_05(%x: i1) -> none {
+// expected-error@+1 {{'llzk.func' op expected a valid LLZK type but found 'none'}}
+llzk.func @fail_05(%x: i1) -> none {
   return
 }
 // -----
-// expected-error@+1 {{'zkir.func' op expected a valid ZKIR type but found '(i1) -> i32'}}
-zkir.func @fail_06(%x: (i1) -> i32) -> index {
+// expected-error@+1 {{'llzk.func' op expected a valid LLZK type but found '(i1) -> i32'}}
+llzk.func @fail_06(%x: (i1) -> i32) -> index {
   return
 }
 // -----
-zkir.func @fail_07() {
-  // expected-error@+1 {{'zkir.func' op expects parent op to be one of 'builtin.module, zkir.struct'}}
-  zkir.func @inner() {
+llzk.func @fail_07() {
+  // expected-error@+1 {{'llzk.func' op expects parent op to be one of 'builtin.module, llzk.struct'}}
+  llzk.func @inner() {
     return
   }
   return
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.func @user() {
-    // expected-error@+2 {{'zkir.call' op references unknown symbol "@missing_fn"}}
-    // expected-error@+1 {{no 'zkir.func' named "@missing_fn"}}
-    zkir.call @missing_fn() : () -> ()
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @user() {
+    // expected-error@+2 {{'llzk.call' op references unknown symbol "@missing_fn"}}
+    // expected-error@+1 {{no 'llzk.func' named "@missing_fn"}}
+    llzk.call @missing_fn() : () -> ()
     return
   }
 }
 // -----
 module { // expected-note {{unnamed 'builtin.module' here}}
-  zkir.func @user() {
-    // expected-error@+2 {{'zkir.call' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
-    // expected-error@+1 {{no 'zkir.func' named "@missing_fn"}}
-    zkir.call @missing_fn() : () -> ()
+  llzk.func @user() {
+    // expected-error@+2 {{'llzk.call' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
+    // expected-error@+1 {{no 'llzk.func' named "@missing_fn"}}
+    llzk.call @missing_fn() : () -> ()
     return
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  // expected-error@+2 {{'zkir.func' op references unknown symbol "@WasNotDefined"}}
-  // expected-error@+1 {{no 'zkir.struct' named "@WasNotDefined"}}
-  zkir.func @constrain(%p: !zkir.struct<@WasNotDefined>) {
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+2 {{'llzk.func' op references unknown symbol "@WasNotDefined"}}
+  // expected-error@+1 {{no 'llzk.struct' named "@WasNotDefined"}}
+  llzk.func @constrain(%p: !llzk.struct<@WasNotDefined>) {
     return
   }
 }
 // -----
 module { // expected-note {{unnamed 'builtin.module' here}}
-  // expected-error@+2 {{'zkir.func' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
-  // expected-error@+1 {{no 'zkir.struct' named "@MissingComponent"}}
-  zkir.func @constrain(%p: !zkir.struct<@MissingComponent>) {
+  // expected-error@+2 {{'llzk.func' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
+  // expected-error@+1 {{no 'llzk.struct' named "@MissingComponent"}}
+  llzk.func @constrain(%p: !llzk.struct<@MissingComponent>) {
     return
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  // expected-error@+2 {{'zkir.func' op references unknown symbol "@WasNotDefined"}}
-  // expected-error@+1 {{no 'zkir.struct' named "@WasNotDefined"}}
-  zkir.func @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !zkir.struct<@WasNotDefined>) {
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+2 {{'llzk.func' op references unknown symbol "@WasNotDefined"}}
+  // expected-error@+1 {{no 'llzk.struct' named "@WasNotDefined"}}
+  llzk.func @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !llzk.struct<@WasNotDefined>) {
     return
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  // expected-error@+2 {{'zkir.func' op references unknown symbol "@WasNotDefined"}}
-  // expected-error@+1 {{no 'zkir.struct' named "@WasNotDefined"}}
-  zkir.func private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> !zkir.struct<@WasNotDefined>
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+2 {{'llzk.func' op references unknown symbol "@WasNotDefined"}}
+  // expected-error@+1 {{no 'llzk.struct' named "@WasNotDefined"}}
+  llzk.func private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> !llzk.struct<@WasNotDefined>
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  // expected-error@+2 {{'zkir.func' op references unknown symbol "@WasNotDefined"}}
-  // expected-error@+1 {{no 'zkir.struct' named "@WasNotDefined"}}
-  zkir.func private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> (!zkir.felt, i1, !zkir.struct<@WasNotDefined>)
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+2 {{'llzk.func' op references unknown symbol "@WasNotDefined"}}
+  // expected-error@+1 {{no 'llzk.struct' named "@WasNotDefined"}}
+  llzk.func private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> (!llzk.felt, i1, !llzk.struct<@WasNotDefined>)
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  // expected-error@+8 {{'zkir.func' op references unknown symbol "@A"}}
-  // expected-error@+7 {{no 'zkir.struct' named "@A"}}
-  // expected-error@+6 {{'zkir.func' op references unknown symbol "@B"}}
-  // expected-error@+5 {{no 'zkir.struct' named "@B"}}
-  // expected-error@+4 {{'zkir.func' op references unknown symbol "@C"}}
-  // expected-error@+3 {{no 'zkir.struct' named "@C"}}
-  // expected-error@+2 {{'zkir.func' op references unknown symbol "@D"}}
-  // expected-error@+1 {{no 'zkir.struct' named "@D"}}
-  zkir.func private @f(%1: !zkir.struct<@A>, %7: !zkir.struct<@B>) -> (!zkir.struct<@C>, !zkir.struct<@D>)
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+8 {{'llzk.func' op references unknown symbol "@A"}}
+  // expected-error@+7 {{no 'llzk.struct' named "@A"}}
+  // expected-error@+6 {{'llzk.func' op references unknown symbol "@B"}}
+  // expected-error@+5 {{no 'llzk.struct' named "@B"}}
+  // expected-error@+4 {{'llzk.func' op references unknown symbol "@C"}}
+  // expected-error@+3 {{no 'llzk.struct' named "@C"}}
+  // expected-error@+2 {{'llzk.func' op references unknown symbol "@D"}}
+  // expected-error@+1 {{no 'llzk.struct' named "@D"}}
+  llzk.func private @f(%1: !llzk.struct<@A>, %7: !llzk.struct<@B>) -> (!llzk.struct<@C>, !llzk.struct<@D>)
 }

@@ -1,7 +1,7 @@
-#ifndef ZKIR_PYTHON_BINDINGS_ZKIR_OPS
-#define ZKIR_PYTHON_BINDINGS_ZKIR_OPS
+#ifndef LLZK_PYTHON_BINDINGS_LLZK_OPS
+#define LLZK_PYTHON_BINDINGS_LLZK_OPS
 
 include "mlir/Bindings/Python/Attributes.td"
-include "zkir/Dialect/ZKIR/IR/Ops.td"
+include "llzk/Dialect/LLZK/IR/Ops.td"
 
 #endif

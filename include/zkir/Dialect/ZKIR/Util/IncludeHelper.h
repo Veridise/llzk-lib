@@ -1,6 +1,6 @@
 #pragma once
 
-#include "zkir/Dialect/ZKIR/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include <mlir/IR/BuiltinOps.h>
 
@@ -11,7 +11,7 @@
 #include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
 
-namespace zkir {
+namespace llzk {
 
 class GlobalSourceMgr {
   std::vector<std::string> includeDirectories;
@@ -49,4 +49,4 @@ public:
   }
 };
 
-} // namespace zkir
+} // namespace llzk

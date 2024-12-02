@@ -1,7 +1,7 @@
-#include "zkir/Dialect/ZKIR/IR/Ops.h"
-#include "zkir/Dialect/ZKIR/IR/Types.h"
-#include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
-#include "zkir/Dialect/ZKIR/Util/SymbolHelper.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
+#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Diagnostics.h>
@@ -12,13 +12,13 @@
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
-#include "zkir/Dialect/ZKIR/IR/OpInterfaces.cpp.inc"
+#include "llzk/Dialect/LLZK/IR/OpInterfaces.cpp.inc"
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
-#include "zkir/Dialect/ZKIR/IR/Ops.cpp.inc"
+#include "llzk/Dialect/LLZK/IR/Ops.cpp.inc"
 
-namespace zkir {
+namespace llzk {
 
 bool isInStruct(mlir::Operation *op) { return mlir::succeeded(getParentOfType<StructDefOp>(op)); }
 
@@ -78,16 +78,16 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
   bool foundConstrain = false;
   for (auto &op : getBody().front()) {
     if (!llvm::isa<FieldDefOp>(op)) {
-      if (auto funcDef = llvm::dyn_cast<::zkir::FuncOp>(op)) {
+      if (auto funcDef = llvm::dyn_cast<::llzk::FuncOp>(op)) {
         auto funcName = funcDef.getSymName();
-        if (zkir::FUNC_NAME_COMPUTE == funcName) {
+        if (llzk::FUNC_NAME_COMPUTE == funcName) {
           if (foundCompute) {
-            return msgOneFunction({emitError}, zkir::FUNC_NAME_COMPUTE);
+            return msgOneFunction({emitError}, llzk::FUNC_NAME_COMPUTE);
           }
           foundCompute = true;
-        } else if (zkir::FUNC_NAME_CONSTRAIN == funcName) {
+        } else if (llzk::FUNC_NAME_CONSTRAIN == funcName) {
           if (foundConstrain) {
-            return msgOneFunction({emitError}, zkir::FUNC_NAME_CONSTRAIN);
+            return msgOneFunction({emitError}, llzk::FUNC_NAME_CONSTRAIN);
           }
           foundConstrain = true;
         } else {
@@ -104,9 +104,9 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
     }
   }
   if (!foundCompute) {
-    return msgOneFunction({emitError}, zkir::FUNC_NAME_COMPUTE);
+    return msgOneFunction({emitError}, llzk::FUNC_NAME_COMPUTE);
   } else if (!foundConstrain) {
-    return msgOneFunction({emitError}, zkir::FUNC_NAME_CONSTRAIN);
+    return msgOneFunction({emitError}, llzk::FUNC_NAME_CONSTRAIN);
   }
 
   return mlir::success();
@@ -145,7 +145,7 @@ mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(
   if (mlir::failed(structDef)) {
     return mlir::failure(); // getDefinition() already emits a sufficient error message
   }
-  auto res = zkir::lookupSymbolIn<FieldDefOp>(
+  auto res = llzk::lookupSymbolIn<FieldDefOp>(
       symbolTable, mlir::SymbolRefAttr::get(refOp->getContext(), refOp.getFieldName()),
       structDef.value().get(), op
   );
@@ -184,20 +184,20 @@ mlir::LogicalResult verifySymbolUses(
 
 mlir::FailureOr<SymbolLookupResult<FieldDefOp>>
 FieldReadOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
-  return zkir::getFieldDefOp(*this, symbolTable);
+  return llzk::getFieldDefOp(*this, symbolTable);
 }
 
 mlir::LogicalResult FieldReadOp::verifySymbolUses(mlir::SymbolTableCollection &symbolTable) {
-  return zkir::verifySymbolUses(*this, symbolTable, getResult(), "read");
+  return llzk::verifySymbolUses(*this, symbolTable, getResult(), "read");
 }
 
 mlir::FailureOr<SymbolLookupResult<FieldDefOp>>
 FieldWriteOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
-  return zkir::getFieldDefOp(*this, symbolTable);
+  return llzk::getFieldDefOp(*this, symbolTable);
 }
 
 mlir::LogicalResult FieldWriteOp::verifySymbolUses(mlir::SymbolTableCollection &symbolTable) {
-  return zkir::verifySymbolUses(*this, symbolTable, getVal(), "write");
+  return llzk::verifySymbolUses(*this, symbolTable, getVal(), "write");
 }
 
 //===------------------------------------------------------------------===//
@@ -238,4 +238,4 @@ void CreateStructOp::getAsmResultNames(mlir::OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "self");
 }
 
-} // namespace zkir
+} // namespace llzk

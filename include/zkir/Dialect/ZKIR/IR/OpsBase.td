@@ -1,19 +1,19 @@
-#ifndef ZKIR_OPS_BASE
-#define ZKIR_OPS_BASE
+#ifndef LLZK_OPS_BASE
+#define LLZK_OPS_BASE
 
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
-include "zkir/Dialect/ZKIR/IR/Types.td"
-include "zkir/Dialect/ZKIR/IR/OpInterfaces.td"
+include "llzk/Dialect/LLZK/IR/Types.td"
+include "llzk/Dialect/LLZK/IR/OpInterfaces.td"
 
-class ZKIR_Op<string mnemonic, list<Trait> traits = []>
-    : Op<ZKIRDialect, mnemonic, traits>;
+class LLZK_Op<string mnemonic, list<Trait> traits = []>
+    : Op<LLZKDialect, mnemonic, traits>;
 
-class ZKIR_FieldRefOp<string mnemonic, list<Trait> traits = []>
-    : ZKIR_Op<mnemonic,
+class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
+    : LLZK_Op<mnemonic,
               traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                       DeclareOpInterfaceMethods<FieldRefOpInterface>]> {
   let extraClassDeclaration = [{
@@ -22,32 +22,32 @@ class ZKIR_FieldRefOp<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-class ZKIR_BinaryFeltOp<string mnemonic, list<Trait> traits = []>
-    : ZKIR_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
+class LLZK_BinaryFeltOp<string mnemonic, list<Trait> traits = []>
+    : LLZK_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
 
-  let arguments = (ins ZKIR_FeltType:$lhs, ZKIR_FeltType:$rhs);
-  let results = (outs ZKIR_FeltType:$result);
+  let arguments = (ins LLZK_FeltType:$lhs, LLZK_FeltType:$rhs);
+  let results = (outs LLZK_FeltType:$result);
   let assemblyFormat = "$lhs `,` $rhs attr-dict";
 }
 
-class ZKIR_UnaryFeltOp<string mnemonic, list<Trait> traits = []>
-    : ZKIR_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
+class LLZK_UnaryFeltOp<string mnemonic, list<Trait> traits = []>
+    : LLZK_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
 
-  let arguments = (ins ZKIR_FeltType:$operand);
-  let results = (outs ZKIR_FeltType:$result);
+  let arguments = (ins LLZK_FeltType:$operand);
+  let results = (outs LLZK_FeltType:$result);
   let assemblyFormat = "$operand attr-dict";
 }
 
-class ZKIR_BinaryBoolOp<string mnemonic, list<Trait> traits = []>
-    : ZKIR_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
+class LLZK_BinaryBoolOp<string mnemonic, list<Trait> traits = []>
+    : LLZK_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
 
   let arguments = (ins I1:$lhs, I1:$rhs);
   let results = (outs I1:$result);
   let assemblyFormat = "$lhs `,` $rhs attr-dict";
 }
 
-class ZKIR_UnaryBoolOp<string mnemonic, list<Trait> traits = []>
-    : ZKIR_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
+class LLZK_UnaryBoolOp<string mnemonic, list<Trait> traits = []>
+    : LLZK_Op<mnemonic, traits#[SameOperandsAndResultType, Pure]> {
 
   let arguments = (ins I1:$operand);
   let results = (outs I1:$result);
@@ -59,16 +59,16 @@ class ZKIR_UnaryBoolOp<string mnemonic, list<Trait> traits = []>
 //===----------------------------------------------------------------------===//
 
 def ComputeOnly : NativeOpTrait<"ComputeOnly">, StructuralOpTrait {
-  string cppNamespace = "::zkir";
+  string cppNamespace = "::llzk";
 }
 
 def InStruct : NativeOpTrait<"InStruct">, StructuralOpTrait {
-  string cppNamespace = "::zkir";
+  string cppNamespace = "::llzk";
 }
 
 class InStructFunctionNamed<string name>
     : ParamNativeOpTrait<"InStructFunctionNamed", name>, StructuralOpTrait {
-  string cppNamespace = "::zkir";
+  string cppNamespace = "::llzk";
 }
 
-#endif // ZKIR_OPS_BASE
+#endif // LLZK_OPS_BASE

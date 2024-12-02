@@ -1,13 +1,13 @@
-#ifndef ZKIR_OP_INTERFACES
-#define ZKIR_OP_INTERFACES
+#ifndef LLZK_OP_INTERFACES
+#define LLZK_OP_INTERFACES
 
-include "zkir/Dialect/ZKIR/IR/Types.td"
+include "llzk/Dialect/LLZK/IR/Types.td"
 
 def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
   let description = [{
     Common interface for operations that read or write from a field.
   }];
-  let cppNamespace = "::zkir";
+  let cppNamespace = "::llzk";
 
   let methods = [
       // Requires implementors to have a '$component' argument.
@@ -17,9 +17,9 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
       // Requires implementors to have a '$field_name' argument.
       InterfaceMethod<[{Gets the field name attribute from the FieldRefOp.}],
                       "::llvm::StringRef", "getFieldName", (ins)>,
-      // Requires the '$component' argument type to be ZKIR_StructType.
+      // Requires the '$component' argument type to be LLZK_StructType.
       InterfaceMethod<[{Gets the struct type of the target component.}],
-                      "::zkir::StructType", "getStructType", (ins),
+                      "::llzk::StructType", "getStructType", (ins),
                       /*methodBody=*/[{
         mlir::Type t = $_op.getComponent().getType();
         assert(t.isa<StructType>());
@@ -27,4 +27,4 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
       }]>];
 }
 
-#endif // ZKIR_OP_INTERFACES
+#endif // LLZK_OP_INTERFACES

@@ -1,9 +1,9 @@
-#ifndef ZKIR_ATTRS
-#define ZKIR_ATTRS
+#ifndef LLZK_ATTRS
+#define LLZK_ATTRS
 
-include "zkir/Dialect/ZKIR/IR/Dialect.td"
-include "zkir/Dialect/ZKIR/IR/Enums.td"
-include "zkir/Dialect/ZKIR/IR/Types.td"
+include "llzk/Dialect/LLZK/IR/Dialect.td"
+include "llzk/Dialect/LLZK/IR/Enums.td"
+include "llzk/Dialect/LLZK/IR/Types.td"
 
 include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinAttributeInterfaces.td"
@@ -15,24 +15,24 @@ class APIntParameter<string desc = "">
   let comparator = "::llvm::APInt::isSameValue($_lhs, $_rhs)";
 }
 
-class ZKIR_Attr<string name, string attrMnemonic, list<Trait> traits = []>
-    : AttrDef<ZKIRDialect, name, traits> {
+class LLZK_Attr<string name, string attrMnemonic, list<Trait> traits = []>
+    : AttrDef<LLZKDialect, name, traits> {
   let mnemonic = attrMnemonic;
 }
 
-class ZKIR_EnumAttr<EnumAttrInfo enum, string name, string enumMnemonic,
+class LLZK_EnumAttr<EnumAttrInfo enum, string name, string enumMnemonic,
                     list<Trait> traits = []>
-    : EnumAttr<ZKIRDialect, enum, name, traits> {
+    : EnumAttr<LLZKDialect, enum, name, traits> {
   let mnemonic = enumMnemonic;
 }
 
-def ZKIR_CmpPredicateAttr
-    : ZKIR_EnumAttr<ZKIR_FeltCmpPredicate, "cmp_predicate", "cmp"> {
+def LLZK_CmpPredicateAttr
+    : LLZK_EnumAttr<LLZK_FeltCmpPredicate, "cmp_predicate", "cmp"> {
   let assemblyFormat = [{ $value }];
 }
 
-def ZKIR_FeltConstAttr
-    : ZKIR_Attr<"FeltConst", "constfelt", [TypedAttrInterface]> {
+def LLZK_FeltConstAttr
+    : LLZK_Attr<"FeltConst", "constfelt", [TypedAttrInterface]> {
   let summary = "finite field element";
   let description = [{
     A felt attribute represents a finite field element.
@@ -47,20 +47,20 @@ def ZKIR_FeltConstAttr
   }];
 }
 
-def ZKIR_PubModifierAttr : ZKIR_Attr<"Public", "pub"> {
+def LLZK_PubModifierAttr : LLZK_Attr<"Public", "pub"> {
   let summary = "A unit attribute to mark a type as public";
   let description = [{
     Examples:
 
-    ```zkir
-    zkir.field @field_name : !zkir.felt {zkir.pub}
+    ```llzk
+    llzk.field @field_name : !llzk.felt {llzk.pub}
 
-    zkir.func @func_name(%0: !zkir.felt {zkir.pub})
+    llzk.func @func_name(%0: !llzk.felt {llzk.pub})
     ```
   }];
 }
 
-def ZKIR_LoopBounds : ZKIR_Attr<"LoopBounds", "loopbounds"> {
+def LLZK_LoopBounds : LLZK_Attr<"LoopBounds", "loopbounds"> {
   let summary = "Annotation with the bounds of a loop";
   let description = [{
     This attribute holds information useful for the analysis of loops.
@@ -68,12 +68,12 @@ def ZKIR_LoopBounds : ZKIR_Attr<"LoopBounds", "loopbounds"> {
 
     Example:
 
-    ```zkir
+    ```llzk
     scf.while ... {
       ...
     } do {
       ...
-    } attributes { zkir.loopbounds = #zkir.loopbounds<0 to 10 step 1> }
+    } attributes { llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1> }
     ```
   }];
 
@@ -85,4 +85,4 @@ def ZKIR_LoopBounds : ZKIR_Attr<"LoopBounds", "loopbounds"> {
   let assemblyFormat = "`<` $lower `to` $upper `step` $step `>`";
 }
 
-#endif // ZKIR_ATTRS
+#endif // LLZK_ATTRS

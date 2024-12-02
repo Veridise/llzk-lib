@@ -1,11 +1,11 @@
-// Imported via `include_fail.zkir`
+// Imported via `include_fail.llzk`
 
 module { // expected-note {{this should have "veridise.lang" attribute}}
-  zkir.func private @my_func_0()
+  llzk.func private @my_func_0()
   module @pkg_one {
-    zkir.func private @my_func_1()
+    llzk.func private @my_func_1()
   }
   module @pkg_two {
-    zkir.func private @my_func_2()
+    llzk.func private @my_func_2()
   }
 }

@@ -5,7 +5,7 @@
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/OwningOpRef.h>
 
-namespace zkir {
+namespace llzk {
 class SymbolLookupResultUntyped {
 public:
   SymbolLookupResultUntyped();
@@ -56,4 +56,4 @@ private:
   SymbolLookupResultUntyped inner;
 };
 
-} // namespace zkir
+} // namespace llzk

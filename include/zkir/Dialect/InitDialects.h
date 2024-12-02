@@ -4,6 +4,6 @@ namespace mlir {
 class DialectRegistry;
 } // namespace mlir
 
-namespace zkir {
+namespace llzk {
 void registerAllDialects(mlir::DialectRegistry &registry);
-} // namespace zkir
+} // namespace llzk

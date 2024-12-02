@@ -1,8 +1,8 @@
-#include "zkir/Dialect/ZKIR/IR/Attrs.h"
-#include "zkir/Dialect/ZKIR/IR/Types.h"
+#include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/LLZK/IR/Types.h"
 
-namespace zkir {
+namespace llzk {
 
 mlir::Type FeltConstAttr::getType() const { return FeltType::get(this->getContext()); }
 
-} // namespace zkir
+} // namespace llzk

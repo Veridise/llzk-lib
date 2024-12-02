@@ -1,9 +1,9 @@
 #pragma once
 
-#include "zkir/Dialect/ZKIR/IR/Attrs.h"
-#include "zkir/Dialect/ZKIR/IR/Dialect.h"
-#include "zkir/Dialect/ZKIR/IR/Types.h"
-#include "zkir/Dialect/ZKIR/Util/SymbolLookupResult.h" // IWYU pragma: keep
+#include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/LLZK/Util/SymbolLookupResult.h" // IWYU pragma: keep
 
 #include <mlir/Bytecode/BytecodeOpInterface.h>
 #include <mlir/IR/BuiltinOps.h>
@@ -23,12 +23,12 @@
 #include <optional>
 
 // Types that must come before the "Ops.h.inc" import
-namespace zkir {
+namespace llzk {
 
 constexpr char FUNC_NAME_COMPUTE[] = "compute";
 constexpr char FUNC_NAME_CONSTRAIN[] = "constrain";
 
-/// Get the operation name, like "zkir.emit_op" for the given OpType.
+/// Get the operation name, like "llzk.emit_op" for the given OpType.
 /// This function can be used when the compiler would complain about
 /// incomplete types if `OpType::getOperationName()` were called directly.
 template <typename OpType> inline llvm::StringLiteral getOperationName() {
@@ -49,7 +49,7 @@ bool isInStruct(mlir::Operation *op);
 mlir::LogicalResult verifyInStruct(mlir::Operation *op);
 
 /// This class provides a verifier for ops that are expected to have
-/// an ancestor zkir::StructDefOp.
+/// an ancestor llzk::StructDefOp.
 template <typename ConcreteType>
 class InStruct : public mlir::OpTrait::TraitBase<ConcreteType, InStruct> {
 public:
@@ -72,7 +72,7 @@ mlir::LogicalResult verifyInStructFunctionNamed(
 }
 
 /// This class provides a verifier for ops that are expecting to have
-/// an ancestor zkir::FuncOp with the given name.
+/// an ancestor llzk::FuncOp with the given name.
 template <char const *FuncName> struct InStructFunctionNamed {
   template <typename ConcreteType>
   class Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
@@ -103,12 +103,12 @@ inline OpType delegate_to_build(mlir::Location location, Args &&...args) {
   mlir::OpBuilder builder(location->getContext());
   return builder.create<OpType>(location, std::forward<Args>(args)...);
 }
-} // namespace zkir
+} // namespace llzk
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
-#include "zkir/Dialect/ZKIR/IR/OpInterfaces.h.inc"
+#include "llzk/Dialect/LLZK/IR/OpInterfaces.h.inc"
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
-#include "zkir/Dialect/ZKIR/IR/Ops.h.inc"
+#include "llzk/Dialect/LLZK/IR/Ops.h.inc"

@@ -1,11 +1,11 @@
-// RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
 
 module {}
 //CHECK:      module {
 //CHECK-NEXT: }
 // -----
 
-module attributes {veridise.lang = "zkir"} {}
-//CHECK:      module attributes {veridise.lang = "zkir"} {
+module attributes {veridise.lang = "llzk"} {}
+//CHECK:      module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT: }
 // -----

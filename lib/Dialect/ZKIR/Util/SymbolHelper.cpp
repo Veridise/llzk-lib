@@ -1,15 +1,15 @@
-#include "zkir/Dialect/ZKIR/Util/SymbolHelper.h"
-#include "zkir/Dialect/ZKIR/IR/Ops.h"
-#include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
+#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 
 #include <llvm/Support/Debug.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/OwningOpRef.h>
 
-#define DEBUG_TYPE "zkir-symbol-helpers"
+#define DEBUG_TYPE "llzk-symbol-helpers"
 
-namespace zkir {
+namespace llzk {
 using namespace mlir;
 
 //===------------------------------------------------------------------===//
@@ -199,4 +199,4 @@ LogicalResult verifyTypeResolution(
   return res;
 }
 
-} // namespace zkir
+} // namespace llzk

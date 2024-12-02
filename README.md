@@ -1,4 +1,4 @@
-# zkir-lib
+# llzk-lib
 
 Veridise's intermediate representation for zero knowledge languages.
 
@@ -15,7 +15,7 @@ Tip: Following the manual setup steps through cloning the LLVM project in the
 
 This repository is already configured with a Nix flakes environment.
 
-To use the ZKIR derivation to build and test the project, you can run `nix build`
+To use the LLZK derivation to build and test the project, you can run `nix build`
 from the repository root (add `-L` if you want to print the logs while building).
 
 Alternatively, to launch a developer shell, run the following command:
@@ -45,7 +45,7 @@ Notes:
 
 ### Manual build setup
 
-ZKIR requires the following to be installed:
+LLZK requires the following to be installed:
 
 * CMake 3.18 or newer
 * Ninja
@@ -59,10 +59,10 @@ Note that tests are enabled by default; they can be disabled by setting
 `-DBUILD_TESTING=off` when invoking CMake.
 
 Once you have CMake, Ninja, and Python3, you can use the following script to
-build the rest of the dependencies and ZKIR:
+build the rest of the dependencies and LLZK:
 
 ```bash
-# Start from zkir repo top level.
+# Start from llzk repo top level.
 
 # First, build LLVM + MLIR
 mkdir third-party
@@ -88,8 +88,8 @@ cmake ../llvm -GNinja -DCMAKE_BUILD_TYPE=Release \
   -DLLVM_ENABLE_RTTI=on \
   -DLLVM_ENABLE_EH=on \
   -DLLVM_ENABLE_ASSERTIONS=on
-# Note that using llvm dylib will cause zkir to be linked to the built LLVM
-# dylib; if you'd like zkir to be used independent of the build folder, you
+# Note that using llvm dylib will cause llzk to be linked to the built LLVM
+# dylib; if you'd like llzk to be used independent of the build folder, you
 # should leave off the dylib settings.
 
 cmake --build .
@@ -99,7 +99,7 @@ popd
 popd # third-party
 # Should be back at top level.
 
-# Generate ZKIR build configuration.
+# Generate LLZK build configuration.
 # You can set BUILD_TESTING=off if you don't want to enable tests.
 mkdir build && cd build
 cmake .. -GNinja \
@@ -107,7 +107,7 @@ cmake .. -GNinja \
   -DMLIR_DIR="$INSTALL_ROOT"/lib/cmake/mlir \
   -DLLVM_EXTERNAL_LIT="$INSTALL_ROOT"/bin/lit \
   -DGTEST_ROOT="$INSTALL_ROOT" \
-  -DZKIR_BUILD_DEVTOOLS=ON
+  -DLLZK_BUILD_DEVTOOLS=ON
 ```
 
 ## Development workflow
@@ -138,16 +138,16 @@ like include paths, etc.
 
 ### (Experimental) Python bindings
 
-ZKIR has experimental support for MLIR's Python bindings.
+LLZK has experimental support for MLIR's Python bindings.
 
 Prerequisites:
 * The Python packages required for MLIR's Python bindings must be installed, as
   indicated in the `mlir/python/requirements.txt` file in the LLVM monorepo's
   source tree.
-* You must build and link ZKIR against a version of MLIR built with
+* You must build and link LLZK against a version of MLIR built with
   `MLIR_ENABLE_BINDINGS_PYTHON` set to `ON`. In the Nix setup, this can be
-  accessed using the `zkirWithPython` output.
-* ZKIR must be configured with `-DZKIR_ENABLE_BINDINGS_PYTHON=ON`.
+  accessed using the `llzkWithPython` output.
+* LLZK must be configured with `-DLLZK_ENABLE_BINDINGS_PYTHON=ON`.
 
 ## License
 

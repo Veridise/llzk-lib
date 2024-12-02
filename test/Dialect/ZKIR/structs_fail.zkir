@@ -1,59 +1,59 @@
-// RUN: zkir-opt -split-input-file -verify-diagnostics %s
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @ComponentD<[@B, @D, @C]> {
-    // expected-error@+1 {{'zkir.struct' op expects parent op 'builtin.module'}}
-    zkir.struct @ComponentA {}
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentD<[@B, @D, @C]> {
+    // expected-error@+1 {{'llzk.struct' op expects parent op 'builtin.module'}}
+    llzk.struct @ComponentA {}
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.func @identity(%x: !zkir.felt) -> !zkir.felt {
-    // expected-error@+1 {{'zkir.struct' op expects parent op 'builtin.module'}}
-    zkir.struct @ComponentA {}
-    return %x: !zkir.felt
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @identity(%x: !llzk.felt) -> !llzk.felt {
+    // expected-error@+1 {{'llzk.struct' op expects parent op 'builtin.module'}}
+    llzk.struct @ComponentA {}
+    return %x: !llzk.felt
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @ComponentB<[@B, @D, @C]> {
-    // expected-error@+1 {{'zkir.struct' op must define only 'compute' and 'constrain' functions; found 'invalidname'}}
-    func @invalidname(%a: !zkir.felt, %b: !zkir.felt) {
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentB<[@B, @D, @C]> {
+    // expected-error@+1 {{'llzk.struct' op must define only 'compute' and 'constrain' functions; found 'invalidname'}}
+    func @invalidname(%a: !llzk.felt, %b: !llzk.felt) {
       return
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @ComponentE<[@B, @D, @C]> {
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentE<[@B, @D, @C]> {
     // expected-note@+1 {{see existing symbol definition here}}
-    func @compute(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.struct<@ComponentE> {
-      %self = new_struct : !zkir.struct<@ComponentE>
-      return %self : !zkir.struct<@ComponentE>
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentE> {
+      %self = new_struct : !llzk.struct<@ComponentE>
+      return %self : !llzk.struct<@ComponentE>
     }
     // expected-error@+1 {{redefinition of symbol named 'compute'}}
-    func @compute() -> !zkir.struct<@ComponentE> {
-      %self = new_struct : !zkir.struct<@ComponentE>
-      return %self : !zkir.struct<@ComponentE>
+    func @compute() -> !llzk.struct<@ComponentE> {
+      %self = new_struct : !llzk.struct<@ComponentE>
+      return %self : !llzk.struct<@ComponentE>
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  // expected-error@+1 {{'zkir.struct' op must define exactly one 'constrain' function}}
-  zkir.struct @ComponentF<[@B, @D, @C]> {
-    func @compute(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.struct<@ComponentF> {
-      %self = new_struct : !zkir.struct<@ComponentF>
-      return %self : !zkir.struct<@ComponentF>
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+1 {{'llzk.struct' op must define exactly one 'constrain' function}}
+  llzk.struct @ComponentF<[@B, @D, @C]> {
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentF> {
+      %self = new_struct : !llzk.struct<@ComponentF>
+      return %self : !llzk.struct<@ComponentF>
     }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @ComponentG<[@B, @D, @C]> {
-    func @compute() -> !zkir.struct<@ComponentG> {
-      %self = new_struct : !zkir.struct<@ComponentG>
-      return %self : !zkir.struct<@ComponentG>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentG<[@B, @D, @C]> {
+    func @compute() -> !llzk.struct<@ComponentG> {
+      %self = new_struct : !llzk.struct<@ComponentG>
+      return %self : !llzk.struct<@ComponentG>
     }
     // expected-error@+1 {{'builtin.module' op invalid operation in 'struct'; only 'field' and 'func' operations are permitted}}
     builtin.module {
@@ -61,129 +61,129 @@ module attributes {veridise.lang = "zkir"} {
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @ComponentH {
-    zkir.field @f2 : !zkir.felt // expected-note {{see existing symbol definition here}}
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentH {
+    llzk.field @f2 : !llzk.felt // expected-note {{see existing symbol definition here}}
     // expected-error@+1 {{redefinition of symbol named 'f2'}}
-    zkir.field @f2 : !zkir.felt
+    llzk.field @f2 : !llzk.felt
 
-    func @compute() -> !zkir.struct<@ComponentH> {
-      %self = new_struct : !zkir.struct<@ComponentH>
-      return %self : !zkir.struct<@ComponentH>
+    func @compute() -> !llzk.struct<@ComponentH> {
+      %self = new_struct : !llzk.struct<@ComponentH>
+      return %self : !llzk.struct<@ComponentH>
     }
-    func @constrain(%self: !zkir.struct<@ComponentH>)  { return }
+    func @constrain(%self: !llzk.struct<@ComponentH>)  { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @ComponentJ {
-    func @compute() -> !zkir.struct<@ComponentJ> {
-      %self = new_struct : !zkir.struct<@ComponentJ>
-      return %self : !zkir.struct<@ComponentJ>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentJ {
+    func @compute() -> !llzk.struct<@ComponentJ> {
+      %self = new_struct : !llzk.struct<@ComponentJ>
+      return %self : !llzk.struct<@ComponentJ>
     }
-    func @constrain(%self: !zkir.struct<@ComponentJ>)  { return }
+    func @constrain(%self: !llzk.struct<@ComponentJ>)  { return }
   }
 
-  zkir.func @user() {
-    // expected-error@+2 {{symbol "@ComponentJ" references a 'zkir.struct' but expected a 'zkir.func'}}
-    // expected-error@+1 {{no 'zkir.func' named "@ComponentJ"}}
-    zkir.call @ComponentJ() : () -> ()
+  llzk.func @user() {
+    // expected-error@+2 {{symbol "@ComponentJ" references a 'llzk.struct' but expected a 'llzk.func'}}
+    // expected-error@+1 {{no 'llzk.func' named "@ComponentJ"}}
+    llzk.call @ComponentJ() : () -> ()
     return
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @ComponentK {
-    // expected-error@+2 {{'zkir.field' op references unknown symbol "@Missing"}}
-    // expected-error@+1 {{no 'zkir.struct' named "@Missing"}}
-    zkir.field @f : !zkir.struct<@Missing>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentK {
+    // expected-error@+2 {{'llzk.field' op references unknown symbol "@Missing"}}
+    // expected-error@+1 {{no 'llzk.struct' named "@Missing"}}
+    llzk.field @f : !llzk.struct<@Missing>
 
-    func @compute() -> !zkir.struct<@ComponentK> {
-      %self = new_struct : !zkir.struct<@ComponentK>
-      return %self : !zkir.struct<@ComponentK>
+    func @compute() -> !llzk.struct<@ComponentK> {
+      %self = new_struct : !llzk.struct<@ComponentK>
+      return %self : !llzk.struct<@ComponentK>
     }
-    func @constrain(%self: !zkir.struct<@ComponentK>)  { return }
+    func @constrain(%self: !llzk.struct<@ComponentK>)  { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @ComponentL {
-    // expected-error@+2 {{'zkir.field' op references unknown symbol "@Missing"}}
-    // expected-error@+1 {{no 'zkir.struct' named "@Missing"}}
-    zkir.field @f : !zkir.array<2x3x2 x !zkir.struct<@Missing>>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentL {
+    // expected-error@+2 {{'llzk.field' op references unknown symbol "@Missing"}}
+    // expected-error@+1 {{no 'llzk.struct' named "@Missing"}}
+    llzk.field @f : !llzk.array<2x3x2 x !llzk.struct<@Missing>>
 
-    func @compute() -> !zkir.struct<@ComponentL> {
-      %self = new_struct : !zkir.struct<@ComponentL>
-      return %self : !zkir.struct<@ComponentL>
+    func @compute() -> !llzk.struct<@ComponentL> {
+      %self = new_struct : !llzk.struct<@ComponentL>
+      return %self : !llzk.struct<@ComponentL>
     }
-    func @constrain(%self: !zkir.struct<@ComponentL>)  { return }
+    func @constrain(%self: !llzk.struct<@ComponentL>)  { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
+module attributes {veridise.lang = "llzk"} {
   module @path{}
-  zkir.struct @ComponentM {
-    // expected-error@+2 {{'zkir.field' op references unknown symbol "@path::@to::@Missing"}}
-    // expected-error@+1 {{no 'zkir.struct' named "@path::@to::@Missing"}}
-    zkir.field @f : !zkir.array<2x3x2 x !zkir.struct<@path::@to::@Missing>>
+  llzk.struct @ComponentM {
+    // expected-error@+2 {{'llzk.field' op references unknown symbol "@path::@to::@Missing"}}
+    // expected-error@+1 {{no 'llzk.struct' named "@path::@to::@Missing"}}
+    llzk.field @f : !llzk.array<2x3x2 x !llzk.struct<@path::@to::@Missing>>
 
-    func @compute() -> !zkir.struct<@ComponentM> {
-      %self = new_struct : !zkir.struct<@ComponentM>
-      return %self : !zkir.struct<@ComponentM>
+    func @compute() -> !llzk.struct<@ComponentM> {
+      %self = new_struct : !llzk.struct<@ComponentM>
+      return %self : !llzk.struct<@ComponentM>
     }
-    func @constrain(%self: !zkir.struct<@ComponentM>)  { return }
+    func @constrain(%self: !llzk.struct<@ComponentM>)  { return }
   }
 }
 
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @Test {
-    // expected-error@+2 {{'zkir.func' op references unknown symbol "@X"}}
-    // expected-error@+1 {{no 'zkir.struct' named "@X"}}
-    func @compute(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !zkir.struct<@X>) -> !zkir.struct<@Test> {
-      %self = new_struct : !zkir.struct<@Test>
-      return %self : !zkir.struct<@Test>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Test {
+    // expected-error@+2 {{'llzk.func' op references unknown symbol "@X"}}
+    // expected-error@+1 {{no 'llzk.struct' named "@X"}}
+    func @compute(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !llzk.struct<@X>) -> !llzk.struct<@Test> {
+      %self = new_struct : !llzk.struct<@Test>
+      return %self : !llzk.struct<@Test>
     }
-    func @constrain(%self: !zkir.struct<@Test>)  { return }
+    func @constrain(%self: !llzk.struct<@Test>)  { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @Test {
-    func @compute() -> !zkir.struct<@Test> {
-      %self = new_struct : !zkir.struct<@Test>
-      return %self : !zkir.struct<@Test>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Test {
+    func @compute() -> !llzk.struct<@Test> {
+      %self = new_struct : !llzk.struct<@Test>
+      return %self : !llzk.struct<@Test>
     }
-    // expected-error@+2 {{'zkir.func' op references unknown symbol "@X"}}
-    // expected-error@+1 {{no 'zkir.struct' named "@X"}}
-    func @constrain(%self: !zkir.struct<@Test>, %0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !zkir.struct<@X>)  { return }
+    // expected-error@+2 {{'llzk.func' op references unknown symbol "@X"}}
+    // expected-error@+1 {{no 'llzk.struct' named "@X"}}
+    func @constrain(%self: !llzk.struct<@Test>, %0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !llzk.struct<@X>)  { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @Test {
-    // expected-error@+4 {{'zkir.func' op references unknown symbol "@A"}}
-    // expected-error@+3 {{no 'zkir.struct' named "@A"}}
-    // expected-error@+2 {{'zkir.func' op references unknown symbol "@B"}}
-    // expected-error@+1 {{no 'zkir.struct' named "@B"}}
-    func @compute(%1: !zkir.struct<@A>, %7: !zkir.struct<@B>) -> !zkir.struct<@Test> {
-      %self = new_struct : !zkir.struct<@Test>
-      return %self : !zkir.struct<@Test>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Test {
+    // expected-error@+4 {{'llzk.func' op references unknown symbol "@A"}}
+    // expected-error@+3 {{no 'llzk.struct' named "@A"}}
+    // expected-error@+2 {{'llzk.func' op references unknown symbol "@B"}}
+    // expected-error@+1 {{no 'llzk.struct' named "@B"}}
+    func @compute(%1: !llzk.struct<@A>, %7: !llzk.struct<@B>) -> !llzk.struct<@Test> {
+      %self = new_struct : !llzk.struct<@Test>
+      return %self : !llzk.struct<@Test>
     }
-    func @constrain(%self: !zkir.struct<@Test>, %1: !zkir.struct<@A>, %7: !zkir.struct<@B>)  { return }
+    func @constrain(%self: !llzk.struct<@Test>, %1: !llzk.struct<@A>, %7: !llzk.struct<@B>)  { return }
   }
 }
 // -----
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @Test {
-    // expected-error@+4 {{'zkir.func' op references unknown symbol "@A"}}
-    // expected-error@+3 {{no 'zkir.struct' named "@A"}}
-    // expected-error@+2 {{'zkir.func' op references unknown symbol "@B"}}
-    // expected-error@+1 {{no 'zkir.struct' named "@B"}}
-    func @constrain(%self: !zkir.struct<@Test>, %1: !zkir.struct<@A>, %7: !zkir.struct<@B>)  { return }
-    func @compute(%1: !zkir.struct<@A>, %7: !zkir.struct<@B>) -> !zkir.struct<@Test> {
-      %self = new_struct : !zkir.struct<@Test>
-      return %self : !zkir.struct<@Test>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Test {
+    // expected-error@+4 {{'llzk.func' op references unknown symbol "@A"}}
+    // expected-error@+3 {{no 'llzk.struct' named "@A"}}
+    // expected-error@+2 {{'llzk.func' op references unknown symbol "@B"}}
+    // expected-error@+1 {{no 'llzk.struct' named "@B"}}
+    func @constrain(%self: !llzk.struct<@Test>, %1: !llzk.struct<@A>, %7: !llzk.struct<@B>)  { return }
+    func @compute(%1: !llzk.struct<@A>, %7: !llzk.struct<@B>) -> !llzk.struct<@Test> {
+      %self = new_struct : !llzk.struct<@Test>
+      return %self : !llzk.struct<@Test>
     }
   }
 }

@@ -1,5 +1,5 @@
-#include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
-#include "zkir/Dialect/ZKIR/Util/SymbolHelper.h"
+#include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
+#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <functional>
 #include <llvm/Support/Casting.h>
@@ -13,9 +13,9 @@
 
 #include <llvm/Support/SourceMgr.h>
 #include <mlir/Support/LogicalResult.h>
-#include <zkir/Dialect/ZKIR/IR/Ops.h>
+#include <llzk/Dialect/LLZK/IR/Ops.h>
 
-namespace zkir {
+namespace llzk {
 
 namespace {
 using namespace mlir;
@@ -207,4 +207,4 @@ FailureOr<OwningOpRef<ModuleOp>> IncludeOp::openModule() {
   return parseFile(this->getPathAttr(), *this);
 }
 
-} // namespace zkir
+} // namespace llzk

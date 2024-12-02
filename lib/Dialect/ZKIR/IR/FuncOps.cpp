@@ -2,8 +2,8 @@
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include "zkir/Dialect/ZKIR/IR/Ops.h"
-#include "zkir/Dialect/ZKIR/Util/SymbolHelper.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/OpImplementation.h>
@@ -11,7 +11,7 @@
 
 #include <llvm/ADT/MapVector.h>
 
-namespace zkir {
+namespace llzk {
 
 using namespace mlir;
 
@@ -166,17 +166,17 @@ mlir::LogicalResult FuncOp::verify() {
   auto emitErrorFunc = [op = this->getOperation()]() -> mlir::InFlightDiagnostic {
     return op->emitOpError();
   };
-  // Ensure that only valid ZKIR types are used for arguments and return
+  // Ensure that only valid LLZK types are used for arguments and return
   FunctionType type = getFunctionType();
   llvm::ArrayRef<mlir::Type> inTypes = type.getInputs();
   for (auto ptr = inTypes.begin(); ptr < inTypes.end(); ptr++) {
-    if (zkir::checkValidZkirType(emitErrorFunc, *ptr).failed()) {
+    if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
       return mlir::failure();
     }
   }
   llvm::ArrayRef<mlir::Type> resTypes = type.getResults();
   for (auto ptr = resTypes.begin(); ptr < resTypes.end(); ptr++) {
-    if (zkir::checkValidZkirType(emitErrorFunc, *ptr).failed()) {
+    if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
       return mlir::failure();
     }
   }
@@ -232,7 +232,7 @@ verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &symbolTable, Struct
   // Must return type of parent struct
   if (resTypes.size() != 1) {
     return origin.emitOpError().append(
-        "\"@", zkir::FUNC_NAME_COMPUTE, "\" must have exactly one return type"
+        "\"@", llzk::FUNC_NAME_COMPUTE, "\" must have exactly one return type"
     );
   }
   if (mlir::failed(compareTypes(symbolTable, parent, resTypes.front(), origin, "return"))) {
@@ -251,14 +251,14 @@ verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &symbolTable, Stru
   llvm::ArrayRef<mlir::Type> resTypes = funcType.getResults();
   // Must return '()' type, i.e. have no return types
   if (resTypes.size() != 0) {
-    return origin.emitOpError() << "\"@" << zkir::FUNC_NAME_CONSTRAIN
+    return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
                                 << "\" must have no return type";
   }
 
   // Type of the first parameter must match the parent StructDefOp of the current operation.
   llvm::ArrayRef<mlir::Type> inputTypes = funcType.getInputs();
   if (inputTypes.size() < 1) {
-    return origin.emitOpError() << "\"@" << zkir::FUNC_NAME_CONSTRAIN
+    return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
                                 << "\" must have at least one input type";
   }
   if (mlir::failed(compareTypes(symbolTable, parent, inputTypes.front(), origin, "first input"))) {
@@ -280,9 +280,9 @@ mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable)
   if (mlir::succeeded(parentStructOpt)) {
     // Verify return type restrictions for functions within a StructDefOp
     llvm::StringRef funcName = getSymName();
-    if (zkir::FUNC_NAME_COMPUTE == funcName) {
+    if (llzk::FUNC_NAME_COMPUTE == funcName) {
       return verifyFuncTypeCompute(*this, symbolTable, parentStructOpt.value());
-    } else if (zkir::FUNC_NAME_CONSTRAIN == funcName) {
+    } else if (llzk::FUNC_NAME_CONSTRAIN == funcName) {
       return verifyFuncTypeConstrain(*this, symbolTable, parentStructOpt.value());
     }
   }
@@ -383,4 +383,4 @@ FunctionType CallOp::getCalleeType() {
   return FunctionType::get(getContext(), getOperandTypes(), getResultTypes());
 }
 
-} // namespace zkir
+} // namespace llzk

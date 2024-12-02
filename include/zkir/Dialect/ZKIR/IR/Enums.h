@@ -7,6 +7,6 @@
 #include <llvm/Support/raw_ostream.h>
 
 // Include TableGen'd declarations
-#include "zkir/Dialect/ZKIR/IR/Enums.h.inc"
+#include "llzk/Dialect/LLZK/IR/Enums.h.inc"
 
-namespace zkir {} // namespace zkir
+namespace llzk {} // namespace llzk

@@ -1,6 +1,6 @@
-# add_subdirectory(zkir-driver)
+# add_subdirectory(llzk-driver)
 
-if (ZKIR_BUILD_DEVTOOLS)
-  add_subdirectory(zkir-lsp-server)
-  add_subdirectory(zkir-opt)
+if (LLZK_BUILD_DEVTOOLS)
+  add_subdirectory(llzk-lsp-server)
+  add_subdirectory(llzk-opt)
 endif()

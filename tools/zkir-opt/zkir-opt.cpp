@@ -1,6 +1,6 @@
-#include "zkir/Dialect/InitDialects.h"
-#include "zkir/Dialect/ZKIR/Transforms/ZKIRPasses.h"
-#include "zkir/Dialect/ZKIR/Util/IncludeHelper.h"
+#include "llzk/Dialect/InitDialects.h"
+#include "llzk/Dialect/LLZK/Transforms/LLZKPasses.h"
+#include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
@@ -21,16 +21,16 @@ int main(int argc, char **argv) {
 
   // MLIR initialization
   mlir::DialectRegistry registry;
-  zkir::registerAllDialects(registry);
-  zkir::registerPasses();
+  llzk::registerAllDialects(registry);
+  llzk::registerPasses();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;
   std::tie(inputFilename, outputFilename) =
-      registerAndParseCLIOptions(argc, argv, "zkir-opt", registry);
+      registerAndParseCLIOptions(argc, argv, "llzk-opt", registry);
 
   // Set the include directories from CL option
-  if (mlir::failed(zkir::GlobalSourceMgr::get().setup(IncludeDirs))) {
+  if (mlir::failed(llzk::GlobalSourceMgr::get().setup(IncludeDirs))) {
     return EXIT_FAILURE;
   }
 

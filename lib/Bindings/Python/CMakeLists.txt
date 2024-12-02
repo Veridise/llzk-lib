@@ -1,8 +1,8 @@
-add_library(ZKIRPythonBindings OBJECT)
-target_sources(ZKIRPythonBindings PRIVATE ZKIRRegistration.cpp)
-target_link_libraries(ZKIRPythonBindings
+add_library(LLZKPythonBindings OBJECT)
+target_sources(LLZKPythonBindings PRIVATE LLZKRegistration.cpp)
+target_link_libraries(LLZKPythonBindings
   PUBLIC
-    ZKIR::AllDialects
+    LLZK::AllDialects
     Python3::Module
     pybind11::pybind11
 )

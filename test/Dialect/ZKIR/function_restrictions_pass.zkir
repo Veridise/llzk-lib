@@ -1,52 +1,52 @@
-// RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @emiteq_in_loop {
-    func @compute(%a: !zkir.felt, %b: !zkir.felt) -> !zkir.struct<@emiteq_in_loop> {
-      %self = new_struct : !zkir.struct<@emiteq_in_loop>
-      return %self : !zkir.struct<@emiteq_in_loop>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @emiteq_in_loop {
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@emiteq_in_loop> {
+      %self = new_struct : !llzk.struct<@emiteq_in_loop>
+      return %self : !llzk.struct<@emiteq_in_loop>
     }
 
-    func @constrain(%self: !zkir.struct<@emiteq_in_loop>, %a: !zkir.felt, %b: !zkir.felt) {
+    func @constrain(%self: !llzk.struct<@emiteq_in_loop>, %a: !llzk.felt, %b: !llzk.felt) {
       %lb = index.constant 0
       %up = index.constant 4
       %step = index.constant 1
       scf.for %iv = %lb to %up step %step {
-        zkir.emit_eq %a, %b : !zkir.felt
+        llzk.emit_eq %a, %b : !llzk.felt
       }
       return
     }
   }
 }
-//CHECK-LABEL:  zkir.struct @emiteq_in_loop {
-//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.struct<@emiteq_in_loop> {
+//CHECK-LABEL:  llzk.struct @emiteq_in_loop {
+//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@emiteq_in_loop> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@emiteq_in_loop>
-//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@emiteq_in_loop>
+//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@emiteq_in_loop>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[A0]]: !zkir.struct<@emiteq_in_loop>, %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
+//CHECK-NEXT:     func @constrain(%[[A0]]: !llzk.struct<@emiteq_in_loop>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
 //CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = index.constant 0
 //CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = index.constant 4
 //CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = index.constant 1
 //CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_\.]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
-//CHECK-NEXT:         zkir.emit_eq %[[A1]], %[[A2]] : !zkir.felt
+//CHECK-NEXT:         llzk.emit_eq %[[A1]], %[[A2]] : !llzk.felt
 //CHECK-NEXT:       }
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @emiteq_in_deep_branches {
-    func @compute(%a: i1, %b: i1, %c: i1, %x: !zkir.felt, %y: !zkir.felt) -> !zkir.struct<@emiteq_in_deep_branches> {
-      %self = new_struct : !zkir.struct<@emiteq_in_deep_branches>
-      return %self : !zkir.struct<@emiteq_in_deep_branches>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @emiteq_in_deep_branches {
+    func @compute(%a: i1, %b: i1, %c: i1, %x: !llzk.felt, %y: !llzk.felt) -> !llzk.struct<@emiteq_in_deep_branches> {
+      %self = new_struct : !llzk.struct<@emiteq_in_deep_branches>
+      return %self : !llzk.struct<@emiteq_in_deep_branches>
     }
 
-    func @constrain(%self: !zkir.struct<@emiteq_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: !zkir.felt, %y: !zkir.felt) {
+    func @constrain(%self: !llzk.struct<@emiteq_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: !llzk.felt, %y: !llzk.felt) {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            zkir.emit_eq %x, %y : !zkir.felt
+            llzk.emit_eq %x, %y : !llzk.felt
           }
         }
       }
@@ -54,18 +54,18 @@ module attributes {veridise.lang = "zkir"} {
     }
   }
 }
-//CHECK-LABEL:  zkir.struct @emiteq_in_deep_branches {
-//CHECK-NEXT:     func @compute(%[[A0]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1, %[[A3:[0-9a-zA-Z_\.]+]]: !zkir.felt,
-//CHECK-SAME:      %[[A4:[0-9a-zA-Z_\.]+]]: !zkir.felt) -> !zkir.struct<@emiteq_in_deep_branches> {
+//CHECK-LABEL:  llzk.struct @emiteq_in_deep_branches {
+//CHECK-NEXT:     func @compute(%[[A0]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1, %[[A3:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+//CHECK-SAME:      %[[A4:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@emiteq_in_deep_branches> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@emiteq_in_deep_branches>
-//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@emiteq_in_deep_branches>
+//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@emiteq_in_deep_branches>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@emiteq_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1,
-//CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: i1, %[[A3:[0-9a-zA-Z_\.]+]]: i1, %[[A4:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A5:[0-9a-zA-Z_\.]+]]: !zkir.felt) {
+//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@emiteq_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1,
+//CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: i1, %[[A3:[0-9a-zA-Z_\.]+]]: i1, %[[A4:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A5:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
 //CHECK-NEXT:       scf.if %[[A1]] {
 //CHECK-NEXT:         scf.if %[[A2]] {
 //CHECK-NEXT:           scf.if %[[A3]] {
-//CHECK-NEXT:             zkir.emit_eq %[[A4]], %[[A5]] : !zkir.felt
+//CHECK-NEXT:             llzk.emit_eq %[[A4]], %[[A5]] : !llzk.felt
 //CHECK-NEXT:           }
 //CHECK-NEXT:         }
 //CHECK-NEXT:       }
@@ -74,55 +74,55 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @emitin_in_loop {
-    func @compute(%a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) -> !zkir.struct<@emitin_in_loop> {
-      %self = new_struct : !zkir.struct<@emitin_in_loop>
-      return %self : !zkir.struct<@emitin_in_loop>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @emitin_in_loop {
+    func @compute(%a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_loop> {
+      %self = new_struct : !llzk.struct<@emitin_in_loop>
+      return %self : !llzk.struct<@emitin_in_loop>
     }
 
-    func @constrain(%self: !zkir.struct<@emitin_in_loop>, %a: !zkir.felt, %b: !zkir.array<5 x !zkir.felt>) {
+    func @constrain(%self: !llzk.struct<@emitin_in_loop>, %a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) {
       %lb = index.constant 0
       %up = index.constant 4
       %step = index.constant 1
       scf.for %iv = %lb to %up step %step {
-        zkir.emit_in %a, %b : !zkir.array<5 x !zkir.felt>
+        llzk.emit_in %a, %b : !llzk.array<5 x !llzk.felt>
       }
       return
     }
   }
 }
-//CHECK-LABEL:  zkir.struct @emitin_in_loop {
-//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.felt,
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.array<5 x !zkir.felt>) -> !zkir.struct<@emitin_in_loop> {
+//CHECK-LABEL:  llzk.struct @emitin_in_loop {
+//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_loop> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@emitin_in_loop>
-//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@emitin_in_loop>
+//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@emitin_in_loop>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@emitin_in_loop>,
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !zkir.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !zkir.array<5 x !zkir.felt>) {
+//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@emitin_in_loop>,
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.array<5 x !llzk.felt>) {
 //CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = index.constant 0
 //CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = index.constant 4
 //CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = index.constant 1
 //CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_\.]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
-//CHECK-NEXT:         zkir.emit_in %[[A1]], %[[A2]] : <5 x !zkir.felt>
+//CHECK-NEXT:         llzk.emit_in %[[A1]], %[[A2]] : <5 x !llzk.felt>
 //CHECK-NEXT:       }
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @emitin_in_deep_branches {
-    func @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !zkir.array<5 x index>) -> !zkir.struct<@emitin_in_deep_branches> {
-      %self = new_struct : !zkir.struct<@emitin_in_deep_branches>
-      return %self : !zkir.struct<@emitin_in_deep_branches>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @emitin_in_deep_branches {
+    func @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !llzk.array<5 x index>) -> !llzk.struct<@emitin_in_deep_branches> {
+      %self = new_struct : !llzk.struct<@emitin_in_deep_branches>
+      return %self : !llzk.struct<@emitin_in_deep_branches>
     }
 
-    func @constrain(%self: !zkir.struct<@emitin_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !zkir.array<5 x index>) {
+    func @constrain(%self: !llzk.struct<@emitin_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !llzk.array<5 x index>) {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            zkir.emit_in %x, %y : !zkir.array<5 x index>
+            llzk.emit_in %x, %y : !llzk.array<5 x index>
           }
         }
       }
@@ -130,18 +130,18 @@ module attributes {veridise.lang = "zkir"} {
     }
   }
 }
-//CHECK-LABEL:  zkir.struct @emitin_in_deep_branches {
+//CHECK-LABEL:  llzk.struct @emitin_in_deep_branches {
 //CHECK-NEXT:     func @compute(%[[A0]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
-//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: index, %[[A4:[0-9a-zA-Z_\.]+]]: !zkir.array<5 x index>) -> !zkir.struct<@emitin_in_deep_branches> {
+//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: index, %[[A4:[0-9a-zA-Z_\.]+]]: !llzk.array<5 x index>) -> !llzk.struct<@emitin_in_deep_branches> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@emitin_in_deep_branches>
-//CHECK-NEXT:       return %[[SELF]] : !zkir.struct<@emitin_in_deep_branches>
+//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@emitin_in_deep_branches>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !zkir.struct<@emitin_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
-//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: i1, %[[A4:[0-9a-zA-Z_\.]+]]: index, %[[A5:[0-9a-zA-Z_\.]+]]: !zkir.array<5 x index>) {
+//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@emitin_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
+//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: i1, %[[A4:[0-9a-zA-Z_\.]+]]: index, %[[A5:[0-9a-zA-Z_\.]+]]: !llzk.array<5 x index>) {
 //CHECK-NEXT:       scf.if %[[A1]] {
 //CHECK-NEXT:         scf.if %[[A2]] {
 //CHECK-NEXT:           scf.if %[[A3]] {
-//CHECK-NEXT:             zkir.emit_in %[[A4]], %[[A5]] : <5 x index>
+//CHECK-NEXT:             llzk.emit_in %[[A4]], %[[A5]] : <5 x index>
 //CHECK-NEXT:           }
 //CHECK-NEXT:         }
 //CHECK-NEXT:       }
@@ -152,53 +152,53 @@ module attributes {veridise.lang = "zkir"} {
 
 // Global/Pure functions called compute and constrain must not have the restrictions
 //   applied, i.e. parameter and return type requirements and caller restrictions.
-module attributes {veridise.lang = "zkir"} {
-  zkir.func @compute(%x: i1) -> i1 {
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @compute(%x: i1) -> i1 {
     return %x : i1
   }
-  zkir.func @constrain(%x: i1) -> i1 {
+  llzk.func @constrain(%x: i1) -> i1 {
     return %x : i1
   }
-  zkir.func @other_caller(%a: i1, %b: i1) -> (i1, i1) {
-    %1 = zkir.call @compute(%a) : (i1) -> i1
-    %2 = zkir.call @constrain(%a) : (i1) -> i1
+  llzk.func @other_caller(%a: i1, %b: i1) -> (i1, i1) {
+    %1 = llzk.call @compute(%a) : (i1) -> i1
+    %2 = llzk.call @constrain(%a) : (i1) -> i1
     return %1, %2 : i1, i1
   }
-  zkir.struct @Test {
-    func @compute(%a: i1) -> !zkir.struct<@Test> {
-      %1 = zkir.call @compute(%a) : (i1) -> i1
-      %2 = zkir.call @constrain(%a) : (i1) -> i1
-      %self = new_struct : !zkir.struct<@Test>
-      return %self : !zkir.struct<@Test>
+  llzk.struct @Test {
+    func @compute(%a: i1) -> !llzk.struct<@Test> {
+      %1 = llzk.call @compute(%a) : (i1) -> i1
+      %2 = llzk.call @constrain(%a) : (i1) -> i1
+      %self = new_struct : !llzk.struct<@Test>
+      return %self : !llzk.struct<@Test>
     }
 
-    func @constrain(%self: !zkir.struct<@Test>, %a: i1) {
-      %1 = zkir.call @compute(%a) : (i1) -> i1
-      %2 = zkir.call @constrain(%a) : (i1) -> i1
+    func @constrain(%self: !llzk.struct<@Test>, %a: i1) {
+      %1 = llzk.call @compute(%a) : (i1) -> i1
+      %2 = llzk.call @constrain(%a) : (i1) -> i1
       return
     }
   }
 }
-//CHECK-LABEL:  module attributes {veridise.lang = "zkir"} {
-//CHECK-NEXT:     zkir.func @compute(%arg0: i1) -> i1 {
+//CHECK-LABEL:  module attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:     llzk.func @compute(%arg0: i1) -> i1 {
 //CHECK-NEXT:       return %arg0 : i1
 //CHECK-NEXT:     }
-//CHECK-NEXT:     zkir.func @constrain(%arg0: i1) -> i1 {
+//CHECK-NEXT:     llzk.func @constrain(%arg0: i1) -> i1 {
 //CHECK-NEXT:       return %arg0 : i1
 //CHECK-NEXT:     }
-//CHECK-NEXT:     zkir.func @other_caller(%arg0: i1, %arg1: i1) -> (i1, i1) {
+//CHECK-NEXT:     llzk.func @other_caller(%arg0: i1, %arg1: i1) -> (i1, i1) {
 //CHECK-NEXT:       %0 = call @compute(%arg0) : (i1) -> i1
 //CHECK-NEXT:       %1 = call @constrain(%arg0) : (i1) -> i1
 //CHECK-NEXT:       return %0, %1 : i1, i1
 //CHECK-NEXT:     }
-//CHECK-NEXT:     zkir.struct @Test {
-//CHECK-NEXT:       func @compute(%arg0: i1) -> !zkir.struct<@Test> {
+//CHECK-NEXT:     llzk.struct @Test {
+//CHECK-NEXT:       func @compute(%arg0: i1) -> !llzk.struct<@Test> {
 //CHECK-NEXT:         %0 = call @compute(%arg0) : (i1) -> i1
 //CHECK-NEXT:         %1 = call @constrain(%arg0) : (i1) -> i1
 //CHECK-NEXT:         %self = new_struct : <@Test>
-//CHECK-NEXT:         return %self : !zkir.struct<@Test>
+//CHECK-NEXT:         return %self : !llzk.struct<@Test>
 //CHECK-NEXT:       }
-//CHECK-NEXT:       func @constrain(%arg0: !zkir.struct<@Test>, %arg1: i1) {
+//CHECK-NEXT:       func @constrain(%arg0: !llzk.struct<@Test>, %arg1: i1) {
 //CHECK-NEXT:         %0 = call @compute(%arg1) : (i1) -> i1
 //CHECK-NEXT:         %1 = call @constrain(%arg1) : (i1) -> i1
 //CHECK-NEXT:         return
@@ -207,27 +207,27 @@ module attributes {veridise.lang = "zkir"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.struct @inv_in_compute {
-    func @compute(%a: !zkir.felt) -> !zkir.struct<@inv_in_compute> {
-      %self = new_struct : !zkir.struct<@inv_in_compute>
-      %c = zkir.inv %a
-      return %self : !zkir.struct<@inv_in_compute>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @inv_in_compute {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@inv_in_compute> {
+      %self = new_struct : !llzk.struct<@inv_in_compute>
+      %c = llzk.inv %a
+      return %self : !llzk.struct<@inv_in_compute>
     }
 
-    func @constrain(%self: !zkir.struct<@inv_in_compute>, %a: !zkir.felt) {
+    func @constrain(%self: !llzk.struct<@inv_in_compute>, %a: !llzk.felt) {
       return
     }
   }
 }
-//CHECK-LABEL:  module attributes {veridise.lang = "zkir"} {
-//CHECK-NEXT:     zkir.struct @inv_in_compute {
-//CHECK-NEXT:       func @compute(%arg0: !zkir.felt) -> !zkir.struct<@inv_in_compute> {
+//CHECK-LABEL:  module attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:     llzk.struct @inv_in_compute {
+//CHECK-NEXT:       func @compute(%arg0: !llzk.felt) -> !llzk.struct<@inv_in_compute> {
 //CHECK-NEXT:         %self = new_struct : <@inv_in_compute>
 //CHECK-NEXT:         %0 = inv %arg0
-//CHECK-NEXT:         return %self : !zkir.struct<@inv_in_compute>
+//CHECK-NEXT:         return %self : !llzk.struct<@inv_in_compute>
 //CHECK-NEXT:       }
-//CHECK-NEXT:       func @constrain(%arg0: !zkir.struct<@inv_in_compute>, %arg1: !zkir.felt) {
+//CHECK-NEXT:       func @constrain(%arg0: !llzk.struct<@inv_in_compute>, %arg1: !llzk.felt) {
 //CHECK-NEXT:         return
 //CHECK-NEXT:       }
 //CHECK-NEXT:     }

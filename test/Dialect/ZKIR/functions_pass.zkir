@@ -1,51 +1,51 @@
-// RUN: zkir-opt -split-input-file %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
 
-zkir.func private @abort()
-//CHECK-LABEL:  zkir.func private @abort()
+llzk.func private @abort()
+//CHECK-LABEL:  llzk.func private @abort()
 // -----
 
-zkir.func private @scribble(!zkir.felt, !zkir.felt)
-//CHECK-LABEL:  zkir.func private @scribble(!zkir.felt, !zkir.felt)
+llzk.func private @scribble(!llzk.felt, !llzk.felt)
+//CHECK-LABEL:  llzk.func private @scribble(!llzk.felt, !llzk.felt)
 // -----
 
-zkir.func @identity(%x: !zkir.felt) -> !zkir.felt {
-  return %x: !zkir.felt
+llzk.func @identity(%x: !llzk.felt) -> !llzk.felt {
+  return %x: !llzk.felt
 }
-//CHECK-LABEL:  zkir.func @identity(%arg0: !zkir.felt) -> !zkir.felt {
-//CHECK-NEXT:     return %arg0 : !zkir.felt
+//CHECK-LABEL:  llzk.func @identity(%arg0: !llzk.felt) -> !llzk.felt {
+//CHECK-NEXT:     return %arg0 : !llzk.felt
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.func @split(%x: index) -> (index, index) {
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @split(%x: index) -> (index, index) {
     %0 = index.constant 1
     return %x, %0 : index, index
   }
-  zkir.func @user(%x: index) -> (index, index) {
-    %1, %2 = zkir.call @split(%x) : (index) -> (index, index)
+  llzk.func @user(%x: index) -> (index, index) {
+    %1, %2 = llzk.call @split(%x) : (index) -> (index, index)
     return %1, %2 : index, index
   }
 }
-//CHECK-LABEL:  zkir.func @split(%arg0: index) -> (index, index) {
+//CHECK-LABEL:  llzk.func @split(%arg0: index) -> (index, index) {
 //CHECK-NEXT:     %idx1 = index.constant 1
 //CHECK-NEXT:     return %arg0, %idx1 : index, index
 //CHECK-NEXT:   }
-//CHECK-LABEL:  zkir.func @user(%arg0: index) -> (index, index) {
+//CHECK-LABEL:  llzk.func @user(%arg0: index) -> (index, index) {
 //CHECK-NEXT:     %0:2 = call @split(%arg0) : (index) -> (index, index)
 //CHECK-NEXT:     return %0#0, %0#1 : index, index
 //CHECK-NEXT:   }
 // -----
 
-zkir.func private @example_arg_attr1(%x: i1 {zkir.pub}, %y: i1)
-//CHECK-LABEL:  zkir.func private @example_arg_attr1(i1 {zkir.pub}, i1)
+llzk.func private @example_arg_attr1(%x: i1 {llzk.pub}, %y: i1)
+//CHECK-LABEL:  llzk.func private @example_arg_attr1(i1 {llzk.pub}, i1)
 // -----
 
-zkir.func private @example_arg_attr2(
-    %a: !zkir.felt {zkir.pub},
-    %b: index {zkir.pub}) {
+llzk.func private @example_arg_attr2(
+    %a: !llzk.felt {llzk.pub},
+    %b: index {llzk.pub}) {
   return
 }
-//CHECK-LABEL:  zkir.func private @example_arg_attr2(%arg0: !zkir.felt {zkir.pub}, %arg1: index {zkir.pub}) {
+//CHECK-LABEL:  llzk.func private @example_arg_attr2(%arg0: !llzk.felt {llzk.pub}, %arg1: index {llzk.pub}) {
 //CHECK-NEXT:     return
 //CHECK-NEXT:   }
 // -----

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "zkir/Dialect/ZKIR/IR/Dialect.h"
-#include "zkir/Dialect/ZKIR/IR/Enums.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Enums.h"
 
 #include <mlir/IR/DialectImplementation.h>
 
 // Include TableGen'd declarations
 #define GET_ATTRDEF_CLASSES
-#include "zkir/Dialect/ZKIR/IR/Attrs.h.inc"
+#include "llzk/Dialect/LLZK/IR/Attrs.h.inc"
 
-namespace zkir {} // namespace zkir
+namespace llzk {} // namespace llzk

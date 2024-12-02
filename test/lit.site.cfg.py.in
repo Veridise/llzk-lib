@@ -9,13 +9,13 @@ config.llvm_tools_dir = "@LLVM_TOOLS_DIR@"
 config.lit_tools_dir = "@LLVM_LIT_TOOLS_DIR@"
 config.mlir_obj_dir = "@MLIR_BINARY_DIR@"
 config.python_executable = "@Python3_EXECUTABLE@"
-config.enable_bindings_python = @ZKIR_ENABLE_BINDINGS_PYTHON_STRING@
-config.zkir_src_root = "@CMAKE_SOURCE_DIR@"
-config.zkir_obj_root = "@CMAKE_BINARY_DIR@"
-config.per_test_coverage = @ZKIR_LIT_COMPATIBLE_COVERAGE_STRING@
+config.enable_bindings_python = @LLZK_ENABLE_BINDINGS_PYTHON_STRING@
+config.llzk_src_root = "@CMAKE_SOURCE_DIR@"
+config.llzk_obj_root = "@CMAKE_BINARY_DIR@"
+config.per_test_coverage = @LLZK_LIT_COMPATIBLE_COVERAGE_STRING@
 
 
-config.extra_suffixes = [@zkir_lit_extra_suffixes@]
+config.extra_suffixes = [@llzk_lit_extra_suffixes@]
 
 import lit.llvm
 

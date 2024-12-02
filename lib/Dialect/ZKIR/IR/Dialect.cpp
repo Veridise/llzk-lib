@@ -1,12 +1,12 @@
-#include "zkir/Dialect/ZKIR/IR/Dialect.h"
-#include "zkir/Dialect/ZKIR/IR/Attrs.h"
-#include "zkir/Dialect/ZKIR/IR/Ops.h"
-#include "zkir/Dialect/ZKIR/IR/Types.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Types.h"
 
 #include <mlir/IR/DialectImplementation.h>
 
 // TableGen'd implementation files
-#include "zkir/Dialect/ZKIR/IR/Dialect.cpp.inc"
+#include "llzk/Dialect/LLZK/IR/Dialect.cpp.inc"
 
 template <> struct mlir::FieldParser<llvm::APInt> {
   static mlir::FailureOr<llvm::APInt> parse(mlir::AsmParser &parser) {
@@ -23,29 +23,29 @@ template <> struct mlir::FieldParser<llvm::APInt> {
 
 // Need a complete declaration of storage classes for below
 #define GET_TYPEDEF_CLASSES
-#include "zkir/Dialect/ZKIR/IR/Types.cpp.inc"
+#include "llzk/Dialect/LLZK/IR/Types.cpp.inc"
 #define GET_ATTRDEF_CLASSES
-#include "zkir/Dialect/ZKIR/IR/Attrs.cpp.inc"
+#include "llzk/Dialect/LLZK/IR/Attrs.cpp.inc"
 
 //===------------------------------------------------------------------===//
-// ZKIRDialect
+// LLZKDialect
 //===------------------------------------------------------------------===//
 
-auto zkir::ZKIRDialect::initialize() -> void {
+auto llzk::LLZKDialect::initialize() -> void {
   // clang-format off
   addOperations<
     #define GET_OP_LIST
-    #include "zkir/Dialect/ZKIR/IR/Ops.cpp.inc"
+    #include "llzk/Dialect/LLZK/IR/Ops.cpp.inc"
   >();
 
   addTypes<
     #define GET_TYPEDEF_LIST
-    #include "zkir/Dialect/ZKIR/IR/Types.cpp.inc"
+    #include "llzk/Dialect/LLZK/IR/Types.cpp.inc"
   >();
 
   addAttributes<
     #define GET_ATTRDEF_LIST
-    #include "zkir/Dialect/ZKIR/IR/Attrs.cpp.inc"
+    #include "llzk/Dialect/LLZK/IR/Attrs.cpp.inc"
   >();
   // clang-format on
 }

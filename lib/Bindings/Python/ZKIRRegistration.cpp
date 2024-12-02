@@ -1,13 +1,13 @@
-/// This defines a module that can be used to register the ZKIR dialects.
+/// This defines a module that can be used to register the LLZK dialects.
 
-#include "ZKIR/InitDialects.h"
+#include "LLZK/InitDialects.h"
 #include <mlir/Bindings/Python/PybindAdaptors.h>
 #include <mlir/CAPI/IR.h>
 
-PYBIND11_MODULE(_zkirRegistration, m) {
-  m.doc() = "ZKIR dialect registration";
+PYBIND11_MODULE(_llzkRegistration, m) {
+  m.doc() = "LLZK dialect registration";
 
   m.def("register_dialects", [](MlirDialectRegistry registry) {
-    zkir::registerAllDialects(*unwrap(registry));
+    llzk::registerAllDialects(*unwrap(registry));
   });
 }

@@ -1,5 +1,5 @@
-// Imported via `include_fail.zkir`
+// Imported via `include_fail.llzk`
 
-module attributes {veridise.lang = "zkir"} {
-  zkir.include "Inputs/header_7C.zkir" as @c // expected-note {{included from here}}
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "Inputs/header_7C.llzk" as @c // expected-note {{included from here}}
 }
