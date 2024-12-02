@@ -29,7 +29,9 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
   let summary = "circuit component";
   let description = [{}];
 
-  let parameters = (ins "::mlir::SymbolRefAttr":$name);
+  let parameters = (ins TypeParameter<
+      "::mlir::SymbolRefAttr",
+      "Fully-qualified name of the struct definition.">:$name);
   let assemblyFormat = [{ `<` $name `>` }];
 
   let extraClassDeclaration = [{
@@ -58,8 +60,11 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
     ```
   }];
 
-  let parameters = (ins "::mlir::Type":$elementType,
-      ArrayRefParameter<"int64_t">:$shape);
+  let parameters =
+      (ins TypeParameter<"::mlir::Type",
+                         "Type of all elements within the array.">:$elementType,
+          ArrayRefParameter<"int64_t",
+                            "List of array dimension sizes.">:$shape);
   // Necessary for parsing the dimension list in `$shape`
   let hasCustomAssemblyFormat = true;
 
