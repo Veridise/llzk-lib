@@ -5,10 +5,10 @@
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Diagnostics.h>
-
-#include <llvm/ADT/Twine.h>
 #include <mlir/IR/OwningOpRef.h>
 #include <mlir/Support/LogicalResult.h>
+
+#include <llvm/ADT/Twine.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES

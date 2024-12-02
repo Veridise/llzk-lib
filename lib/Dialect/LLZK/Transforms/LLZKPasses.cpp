@@ -1,7 +1,7 @@
 #include "llzk/Dialect/LLZK/Transforms/LLZKPasses.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
-#include <llzk/Dialect/LLZK/Util/SymbolHelper.h>
+#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>

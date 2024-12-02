@@ -2,10 +2,11 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 
-#include <llvm/Support/Debug.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/OwningOpRef.h>
+
+#include <llvm/Support/Debug.h>
 
 #define DEBUG_TYPE "llzk-symbol-helpers"
 
