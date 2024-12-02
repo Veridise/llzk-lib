@@ -450,10 +450,10 @@ def ZKIR_CmpOp : ZKIR_Op<"cmp", [Pure]> {
     ```
   }];
 
-  let arguments = (ins ZKIR_CmpPredicateAttr:$pred, ZKIR_FeltType:$lhs,
+  let arguments = (ins ZKIR_CmpPredicateAttr:$predicate, ZKIR_FeltType:$lhs,
       ZKIR_FeltType:$rhs);
   let results = (outs I1:$result);
-  let assemblyFormat = "`` $pred `(` $lhs `,` $rhs `)` attr-dict";
+  let assemblyFormat = "`` $predicate `(` $lhs `,` $rhs `)` attr-dict";
 }
 
 def ZKIR_AndBoolOp : ZKIR_BinaryBoolOp<"and", [ComputeOnly, Commutative]> {
