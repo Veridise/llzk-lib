@@ -1,13 +1,13 @@
 #ifndef LLZK_OPS_BASE
 #define LLZK_OPS_BASE
 
+include "llzk/Dialect/LLZK/IR/Types.td"
+include "llzk/Dialect/LLZK/IR/OpInterfaces.td"
+
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
-
-include "llzk/Dialect/LLZK/IR/Types.td"
-include "llzk/Dialect/LLZK/IR/OpInterfaces.td"
 
 class LLZK_Op<string mnemonic, list<Trait> traits = []>
     : Op<LLZKDialect, mnemonic, traits>;

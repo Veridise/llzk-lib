@@ -1,14 +1,10 @@
 #ifndef LLZK_TYPES
 #define LLZK_TYPES
 
-include "llzk/Dialect/LLZK/IR/Attrs.td"
 include "llzk/Dialect/LLZK/IR/Dialect.td"
-include "llzk/Dialect/LLZK/IR/Enums.td"
 
 include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinTypes.td"
-include "mlir/Interfaces/DataLayoutInterfaces.td"
-include "mlir/Interfaces/MemorySlotInterfaces.td"
 
 class LLZK_Type<string name, string typeMnemonic, list<Trait> traits = []>
     : TypeDef<LLZKDialect, name, traits> {

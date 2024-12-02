@@ -1,15 +1,11 @@
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
-#include "llzk/Dialect/LLZK/IR/Enums.h"
 #include "llzk/Dialect/LLZK/Util/SymbolLookupResult.h" // IWYU pragma: keep
 
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/IR/Types.h>
-#include <mlir/Interfaces/DataLayoutInterfaces.h>
-#include <mlir/Interfaces/MemorySlotInterfaces.h>
 
 #include <llvm/ADT/TypeSwitch.h>
 

@@ -3,7 +3,6 @@
 
 include "llzk/Dialect/LLZK/IR/Dialect.td"
 include "llzk/Dialect/LLZK/IR/Enums.td"
-include "llzk/Dialect/LLZK/IR/Types.td"
 
 include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinAttributeInterfaces.td"
