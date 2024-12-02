@@ -64,10 +64,21 @@ module attributes {veridise.lang = "zkir"} {
 
 module attributes {veridise.lang = "zkir"} {
   zkir.include "Inputs/header_7A.zkir" as @a // expected-note {{included from here}}
-  zkir.func @test_func() {
+  zkir.func @test_func_A() {
     // Note: The error only occurs during inlining, not during the symbol
     //  lookup because that process is bounded by the SymbolRefAttr itself.
     zkir.call @a::@b::@c::@func_in_7c() : () -> ()
+    return
+  }
+}
+// -----
+
+module attributes {veridise.lang = "zkir"} {
+  zkir.include "Inputs/header_7A.zkir" as @entry // expected-note {{included from here}}
+  zkir.func @test_func_B() {
+    // Note: Even in this case, symbol lookup will traverse the include cycle but
+    //  again, it's bounded by the SymbolRefAttr itself so it will only traverse twice.
+    zkir.call @entry::@b::@c::@cycle::@b::@c::@cycle::@b::@c::@func_in_7c() : () -> ()
     return
   }
 }
