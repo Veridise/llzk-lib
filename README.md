@@ -139,7 +139,8 @@ like include paths, etc.
 
 ### Tools
 
-#TODO
+* llzk-opt : thin wrapper for `mlir-opt` that supports the LLZK dialect and its passes
+* llzk-lsp-server : LSP server for the LLZK dialect
 
 ### (Experimental) Python bindings
 
