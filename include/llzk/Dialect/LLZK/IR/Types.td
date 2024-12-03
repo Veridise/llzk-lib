@@ -30,9 +30,18 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
   let description = [{}];
 
   let parameters = (ins TypeParameter<
-      "::mlir::SymbolRefAttr",
-      "Fully-qualified name of the struct definition.">:$name);
-  let assemblyFormat = [{ `<` $name `>` }];
+                        "::mlir::SymbolRefAttr",
+                        "Fully-qualified name of the struct definition.">:$name,
+      // OptionalArrayRefParameter<"::mlir::FlatSymbolRefAttr", "Struct parameters">:$params
+      // OptionalArrayRefParameter<"unsigned int", "Struct parameters">:$params
+      OptionalParameter<"::mlir::ArrayAttr", "Struct parameters">:$params
+      //NOTE: Using ArrayAttr allows for a combination of pretty much anything. I guess I can
+      //    restrict that in the verifier to allow "@X" references and integer literals.
+      );
+  // TODO: 'params' is not only FlatSymbolRef, could be concrete 'index' value, could be a combination.
+  // let assemblyFormat = [{ `<` $name (`>`) : ( `<` $params^ `>` `>`)? }];
+  let assemblyFormat = [{ `<` $name ( `<` $params^ `>` )? `>` }];
+  //
 
   let extraClassDeclaration = [{
     /// Gets the `struct` op that defines this struct. Provided `op` is
