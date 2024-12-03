@@ -106,6 +106,7 @@ export INSTALL_ROOT=~/llvm-install-root-llzklib-vscode
 # You can set BUILD_TESTING=off if you don't want to enable tests.
 mkdir build && cd build
 cmake .. -GNinja \
+  -DLLVM_ROOT="$INSTALL_ROOT" \
   -DLLVM_DIR="$INSTALL_ROOT"/lib/cmake/llvm \
   -DMLIR_DIR="$INSTALL_ROOT"/lib/cmake/mlir \
   -DLLVM_EXTERNAL_LIT="$INSTALL_ROOT"/bin/lit \
