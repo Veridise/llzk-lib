@@ -347,8 +347,8 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
   for (unsigned i = 0, e = fnType.getNumInputs(); i != e; ++i) {
     if (getOperand(i).getType() != fnType.getInput(i)) {
-      return emitOpError("operand type mismatch: expected operand type ")
-             << fnType.getInput(i) << ", but provided " << getOperand(i).getType()
+      return emitOpError("operand type mismatch: expected type ")
+             << fnType.getInput(i) << ", but found " << getOperand(i).getType()
              << " for operand number " << i;
     }
   }
@@ -359,10 +359,9 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
   for (unsigned i = 0, e = fnType.getNumResults(); i != e; ++i) {
     if (getResult(i).getType() != fnType.getResult(i)) {
-      auto diag = emitOpError("result type mismatch at index ") << i;
-      diag.attachNote() << "      op result types: " << getResultTypes();
-      diag.attachNote() << "function result types: " << fnType.getResults();
-      return diag;
+      return emitOpError("result type mismatch: expected type ")
+             << fnType.getResult(i) << ", but found " << getResult(i).getType()
+             << " for result number " << i;
     }
   }
 

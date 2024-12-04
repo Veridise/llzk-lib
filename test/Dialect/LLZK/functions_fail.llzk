@@ -112,7 +112,7 @@ module attributes {veridise.lang = "llzk"} {
     return %x : index
   }
   llzk.func @user(%x: !llzk.felt) -> (index) {
-    // expected-error@+1 {{'llzk.call' op operand type mismatch: expected operand type 'index', but provided '!llzk.felt' for operand number 0}}
+    // expected-error@+1 {{'llzk.call' op operand type mismatch: expected type 'index', but found '!llzk.felt' for operand number 0}}
     %1 = llzk.call @identity(%x) : (!llzk.felt) -> (index)
     return %1: index
   }
@@ -136,9 +136,7 @@ module attributes {veridise.lang = "llzk"} {
     return %x, %0 : index, index
   }
   llzk.func @user(%x: index) -> (i1, i1) {
-    // expected-error@+3 {{'llzk.call' op result type mismatch at index 0}}
-    // expected-note@+2  {{      op result types: 'i1', 'i1'}}
-    // expected-note@+1  {{function result types: 'index', 'index'}}
+    // expected-error@+1 {{'llzk.call' op result type mismatch: expected type 'index', but found 'i1' for result number 0}}
     %1, %2 = llzk.call @split(%x) : (index) -> (i1, i1)
     return %1, %2 : i1, i1
   }
@@ -181,7 +179,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     func @constrain(%self: !llzk.struct<@ComponentB2>, %0: !llzk.felt) {
-      // expected-error@+1 {{'llzk.call' op operand type mismatch: expected operand type '!llzk.struct<@ComponentB1>', but provided '!llzk.felt' for operand number 0}}
+      // expected-error@+1 {{'llzk.call' op operand type mismatch: expected type '!llzk.struct<@ComponentB1>', but found '!llzk.felt' for operand number 0}}
       call @ComponentB1::@constrain(%0) : (!llzk.felt) -> ()
       return
     }
