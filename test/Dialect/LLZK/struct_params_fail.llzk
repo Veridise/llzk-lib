@@ -1,0 +1,173 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA1<[@A, @B]> {
+    func @compute() -> !llzk.struct<@ComponentA1> {
+      %self = new_struct : !llzk.struct<@ComponentA1>
+      return %self : !llzk.struct<@ComponentA1>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentA1>) { return }
+  }
+
+  llzk.struct @ComponentA2<[@C]> {
+    // expected-error@+1 {{'llzk.struct' type has 3 parameters but "ComponentA1" expects 2}}
+    field @f3 : !llzk.struct<@ComponentA1<[5, @C, 6]>>
+
+    func @compute() -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>) { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentB1<[@A, @B]> {
+    func @compute() -> !llzk.struct<@ComponentB1> {
+      %self = new_struct : !llzk.struct<@ComponentB1>
+      return %self : !llzk.struct<@ComponentB1>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentB1>) { return }
+  }
+
+  llzk.struct @ComponentB2 {
+    field @f3 : !llzk.struct<@ComponentB1<[5,5]>>
+
+    func @compute() -> !llzk.struct<@ComponentB2> {
+      %self = new_struct : !llzk.struct<@ComponentB2>
+      return %self : !llzk.struct<@ComponentB2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentB2>) {
+      // expected-error@+1 {{'llzk.readf' op has wrong type; expected '!llzk.struct<@ComponentB1<[5, 5]>>', got '!llzk.struct<@ComponentB1<[5, 6]>>'}}
+      %b = readf %self[@f3] : !llzk.struct<@ComponentB2>, !llzk.struct<@ComponentB1<[5,6]>>
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentC1<[@A, @B]> {
+    func @compute() -> !llzk.struct<@ComponentC1> {
+      %self = new_struct : !llzk.struct<@ComponentC1>
+      return %self : !llzk.struct<@ComponentC1>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentC1>) { return }
+  }
+
+  llzk.struct @ComponentC2 {
+    field @f3 : !llzk.struct<@ComponentC1<[5,5]>>
+
+    func @compute() -> !llzk.struct<@ComponentC2> {
+      %self = new_struct : !llzk.struct<@ComponentC2>
+      return %self : !llzk.struct<@ComponentC2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentC2>) {
+      // expected-error@+1 {{'llzk.readf' op has wrong type; expected '!llzk.struct<@ComponentC1<[5, 5]>>', got '!llzk.struct<@ComponentC1<[5, 6, 4]>>'}}
+      %b = readf %self[@f3] : !llzk.struct<@ComponentC2>, !llzk.struct<@ComponentC1<[5,6,4]>>
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentD1<[@A, @B]> {
+    func @compute() -> !llzk.struct<@ComponentD1> {
+      %self = new_struct : !llzk.struct<@ComponentD1>
+      return %self : !llzk.struct<@ComponentD1>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentD1>) { return }
+  }
+
+  llzk.struct @ComponentD2 {
+    field @f3 : !llzk.struct<@ComponentD1<[5,5]>>
+
+    func @compute() -> !llzk.struct<@ComponentD2> {
+      %self = new_struct : !llzk.struct<@ComponentD2>
+      return %self : !llzk.struct<@ComponentD2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentD2>) {
+      // expected-error@+1 {{'llzk.readf' op has wrong type; expected '!llzk.struct<@ComponentD1<[5, 5]>>', got '!llzk.struct<@ComponentD1<[5]>>'}}
+      %b = readf %self[@f3] : !llzk.struct<@ComponentD2>, !llzk.struct<@ComponentD1<[5]>>
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentF1<[@A, @B]> {
+    func @compute() -> !llzk.struct<@ComponentF1> {
+      %self = new_struct : !llzk.struct<@ComponentF1>
+      return %self : !llzk.struct<@ComponentF1>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentF1>) { return }
+  }
+
+  llzk.struct @ComponentF2<[@C]> {
+    field @f3 : !llzk.struct<@ComponentF1<[5, @C]>>
+
+    func @compute() -> !llzk.struct<@ComponentF2> {
+      %self = new_struct : !llzk.struct<@ComponentF2>
+      return %self : !llzk.struct<@ComponentF2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentF2>) {
+      // expected-note@+1 {{prior use here}}
+      %b = readf %self[@f3] : !llzk.struct<@ComponentF2>, !llzk.struct<@ComponentF1<[5, @C]>>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!llzk.struct<@ComponentF1<[5, @C, 4]>>' vs '!llzk.struct<@ComponentF1<[5, @C]>>'}}
+      call @ComponentF1::@constrain(%b) : (!llzk.struct<@ComponentF1<[5,@C,4]>>) -> ()
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentG1<[@A, @B]> {
+    func @compute() -> !llzk.struct<@ComponentG1> {
+      %self = new_struct : !llzk.struct<@ComponentG1>
+      return %self : !llzk.struct<@ComponentG1>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentG1>) { return }
+  }
+
+  llzk.struct @ComponentG2<[@C]> {
+    // expected-error@+1 {{'llzk.struct' type has 3 parameters but "ComponentG1" expects 2}}
+    func @compute(%0: !llzk.struct<@ComponentG1<[5,@C,88]>>) -> !llzk.struct<@ComponentG2> {
+      %self = new_struct : !llzk.struct<@ComponentG2>
+      return %self : !llzk.struct<@ComponentG2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentG2>, %0: !llzk.struct<@ComponentG1<[5,@C,88]>>) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentH1<[@A, @B]> {
+    func @compute() -> !llzk.struct<@ComponentH1> {
+      %self = new_struct : !llzk.struct<@ComponentH1>
+      return %self : !llzk.struct<@ComponentH1>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentH1>) { return }
+  }
+
+  llzk.struct @ComponentH2<[@C]> {
+    field @f3 : !llzk.struct<@ComponentH1<[5, @C]>>
+
+    func @compute() -> !llzk.struct<@ComponentH2> {
+      %self = new_struct : !llzk.struct<@ComponentH2>
+      return %self : !llzk.struct<@ComponentH2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentH2>) {
+      %b = readf %self[@f3] : !llzk.struct<@ComponentH2>, !llzk.struct<@ComponentH1<[5, @C]>>
+      call @ComponentH1::@constrain(%b) : (!llzk.struct<@ComponentH1<[5, @C]>>) -> ()
+      return
+    }
+  }
+}
+// -----
