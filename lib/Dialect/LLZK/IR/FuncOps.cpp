@@ -338,18 +338,6 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
                              << "\"";
   }
   FuncOp tgt = tgtOpt.value().get();
-  // Enforce restrictions on callers of compute/constrain functions within structs.
-  if (isInStruct(tgt.getOperation())) {
-    if (tgt.getSymName().compare(FUNC_NAME_COMPUTE) == 0) {
-      return verifyInStructFunctionNamed<FUNC_NAME_COMPUTE, 32>(*this, [] {
-        return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_COMPUTE, "\" "});
-      });
-    } else if (tgt.getSymName().compare(FUNC_NAME_CONSTRAIN) == 0) {
-      return verifyInStructFunctionNamed<FUNC_NAME_CONSTRAIN, 32>(*this, [] {
-        return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_CONSTRAIN, "\" "});
-      });
-    }
-  }
 
   // Verify that the operand and result types match the callee.
   auto fnType = tgt.getFunctionType();
@@ -375,6 +363,19 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
       diag.attachNote() << "      op result types: " << getResultTypes();
       diag.attachNote() << "function result types: " << fnType.getResults();
       return diag;
+    }
+  }
+
+  // Enforce restrictions on callers of compute/constrain functions within structs.
+  if (isInStruct(tgt.getOperation())) {
+    if (tgt.getSymName().compare(FUNC_NAME_COMPUTE) == 0) {
+      return verifyInStructFunctionNamed<FUNC_NAME_COMPUTE, 32>(*this, [] {
+        return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_COMPUTE, "\" "});
+      });
+    } else if (tgt.getSymName().compare(FUNC_NAME_CONSTRAIN) == 0) {
+      return verifyInStructFunctionNamed<FUNC_NAME_CONSTRAIN, 32>(*this, [] {
+        return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_CONSTRAIN, "\" "});
+      });
     }
   }
 
