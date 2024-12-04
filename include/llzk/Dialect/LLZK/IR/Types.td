@@ -31,17 +31,18 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
 
   let parameters = (ins TypeParameter<
       "::mlir::SymbolRefAttr",
-      "Fully-qualified name of the struct definition.">:$name);
-  let assemblyFormat = [{ `<` $name `>` }];
+      "Fully-qualified name of the struct definition.">:$nameRef);
+  let assemblyFormat = [{ `<` $nameRef `>` }];
 
   let extraClassDeclaration = [{
     /// Gets the `struct` op that defines this struct. Provided `op` is
     /// used as a starting point for the lookup. Should not be assumed to
     /// be non-`null` as we don't verify all types during verification.
-    ::mlir::FailureOr<SymbolLookupResult<StructDefOp>> getDefinition(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
+    ::mlir::FailureOr<SymbolLookupResult<StructDefOp>> getDefinition
+        (::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
 
     // Verifies that this type references a valid struct, relative to the given `op`.
-    ::mlir::LogicalResult verifySymbol(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
+    ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
   }];
 }
 

@@ -33,17 +33,17 @@ bool isValidEmitEqType(mlir::Type type) {
 
 mlir::FailureOr<SymbolLookupResult<StructDefOp>>
 StructType::getDefinition(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
-  auto def = lookupTopLevelSymbol<StructDefOp>(symbolTable, getName(), op);
+  auto def = lookupTopLevelSymbol<StructDefOp>(symbolTable, getNameRef(), op);
   if (mlir::failed(def)) {
-    return op->emitError() << "no '" << StructDefOp::getOperationName() << "' named \"" << getName()
-                           << "\"";
+    return op->emitError() << "no '" << StructDefOp::getOperationName() << "' named \""
+                           << getNameRef() << "\"";
   } else {
     return def;
   }
 }
 
 mlir::LogicalResult
-StructType::verifySymbol(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
+StructType::verifySymbolRef(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
   return getDefinition(symbolTable, op);
 }
 

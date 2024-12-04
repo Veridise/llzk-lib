@@ -207,10 +207,12 @@ mlir::LogicalResult compareTypes(
     FuncOp &origin, const char *aspect
 ) {
   if (StructType sType = llvm::dyn_cast<StructType>(actualType)) {
-    auto actualStructOpt = lookupTopLevelSymbol<StructDefOp>(symbolTable, sType.getName(), origin);
+    auto actualStructOpt =
+        lookupTopLevelSymbol<StructDefOp>(symbolTable, sType.getNameRef(), origin);
     if (mlir::failed(actualStructOpt)) {
       return origin.emitError().append(
-          "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getName(), "\""
+          "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getNameRef(),
+          "\""
       );
     }
     StructDefOp actualStruct = actualStructOpt.value().get();
