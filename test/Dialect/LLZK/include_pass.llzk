@@ -217,3 +217,55 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 // -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "Inputs/header_8A.llzk" as @libA
+
+  llzk.struct @D {
+    field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
+
+    func @compute(%x: !llzk.felt, %y: !llzk.felt) -> !llzk.struct<@D> {
+      %self = new_struct : !llzk.struct<@D>
+      %reg_0 = call @libA::@libB::@libC::@StructC::@compute() : () -> (!llzk.struct<@libA::@libB::@libC::@StructC>)
+      writef %self[@z] = %reg_0 : !llzk.struct<@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
+      return %self: !llzk.struct<@D>
+    }
+
+    func @constrain(%self: !llzk.struct<@D>, %x: !llzk.felt, %y: !llzk.felt) {
+      %reg_0 = readf %self[@z] : !llzk.struct<@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
+      call @libA::@libB::@libC::@StructC::@constrain(%reg_0) : (!llzk.struct<@libA::@libB::@libC::@StructC>) -> ()
+      return
+    }
+  }
+}
+//CHECK-LABEL:  module attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:    module @libA attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:      module @libB attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:        module @libC {
+//CHECK-NEXT:          llzk.struct @StructC {
+//CHECK-NEXT:            func @compute() -> !llzk.struct<@libC::@StructC> {
+//CHECK-NEXT:              %self = new_struct : <@libC::@StructC>
+//CHECK-NEXT:              return %self : !llzk.struct<@libC::@StructC>
+//CHECK-NEXT:            }
+//CHECK-NEXT:            func @constrain(%arg0: !llzk.struct<@libC::@StructC>) {
+//CHECK-NEXT:              return
+//CHECK-NEXT:            }
+//CHECK-NEXT:          }
+//CHECK-NEXT:        }
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:    llzk.struct @D {
+//CHECK-NEXT:      field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
+//CHECK-NEXT:      func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@D> {
+//CHECK-NEXT:        %self = new_struct : <@D>
+//CHECK-NEXT:        %0 = call @libA::@libB::@libC::@StructC::@compute() : () -> !llzk.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        writef %self[@z] = %0 : <@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        return %self : !llzk.struct<@D>
+//CHECK-NEXT:      }
+//CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@D>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+//CHECK-NEXT:        %0 = readf %arg0[@z] : <@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        call @libA::@libB::@libC::@StructC::@constrain(%0) : (!llzk.struct<@libA::@libB::@libC::@StructC>) -> ()
+//CHECK-NEXT:        return
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }

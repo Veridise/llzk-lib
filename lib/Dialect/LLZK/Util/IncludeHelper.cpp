@@ -163,8 +163,9 @@ public:
 
     rewriter.setInsertionPointAfter(incOp);
     auto modOp = rewriter.getInsertionPoint();
-    auto mod = llvm::dyn_cast<ModuleOp>(modOp);
+    ModuleOp mod = llvm::dyn_cast<ModuleOp>(modOp);
 
+    // Apply the name from the IncludeOp to the new ModuleOp
     mod.setSymNameAttr(incOp.getSymNameAttr());
 
     // All good so we mark as commited and return a reference to the newly generated module.

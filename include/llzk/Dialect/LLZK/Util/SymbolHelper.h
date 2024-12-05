@@ -11,6 +11,25 @@ namespace llzk {
 
 constexpr char LANG_ATTR_NAME[] = "veridise.lang";
 
+llvm::SmallVector<mlir::StringRef> getNames(const mlir::SymbolRefAttr &ref);
+llvm::SmallVector<mlir::FlatSymbolRefAttr> getPieces(const mlir::SymbolRefAttr &ref);
+
+inline mlir::SymbolRefAttr asSymbolRefAttr(mlir::StringAttr root, mlir::SymbolRefAttr tail) {
+  return mlir::SymbolRefAttr::get(root, getPieces(tail));
+}
+
+inline mlir::SymbolRefAttr asSymbolRefAttr(llvm::ArrayRef<mlir::FlatSymbolRefAttr> path) {
+  return mlir::SymbolRefAttr::get(path.front().getAttr(), path.drop_front());
+}
+
+inline mlir::SymbolRefAttr asSymbolRefAttr(std::vector<mlir::FlatSymbolRefAttr> path) {
+  return asSymbolRefAttr(llvm::ArrayRef<mlir::FlatSymbolRefAttr>(path));
+}
+
+inline mlir::SymbolRefAttr getTailAsSymbolRefAttr(mlir::SymbolRefAttr &symbol) {
+  return asSymbolRefAttr(symbol.getNestedReferences());
+}
+
 mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(StructDefOp &to);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(FuncOp &to);

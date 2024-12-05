@@ -1,9 +1,13 @@
 #pragma once
 
-#include <llvm/Support/Casting.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/OwningOpRef.h>
+
+#include <llvm/ADT/StringRef.h>
+#include <llvm/Support/Casting.h>
+
+#include <vector>
 
 namespace llzk {
 class SymbolLookupResultUntyped {
@@ -28,14 +32,21 @@ public:
   /// True iff the symbol was found.
   operator bool() const;
 
+  std::vector<llvm::StringRef> getIncludeSymNames() { return includeSymNameStack; }
+
   /// Adds a pointer to the set of resources the result has to manage the lifetime of.
-  void manage(mlir::OwningOpRef<mlir::ModuleOp> &&);
+  void manage(mlir::OwningOpRef<mlir::ModuleOp> &&ptr);
+
+  /// Adds the symbol name from the IncludeOp that caused the module to be loaded.
+  void trackIncludeAsName(llvm::StringRef includeOpSymName);
 
 private:
   mlir::Operation *op;
   // It HAS to be a std::vector because llvm::SmallVector doesn't
   // play nice with deleted copy constructor and copy assignment.
   std::vector<mlir::OwningOpRef<mlir::ModuleOp>> managedResources;
+  /// Stack of symbol names from the IncludeOp that were traversed in order to load the Operation.
+  std::vector<llvm::StringRef> includeSymNameStack;
 };
 
 template <typename T> class SymbolLookupResult {
@@ -51,6 +62,8 @@ public:
   T get() const { return llvm::dyn_cast<T>(inner.get()); }
 
   operator bool() const { return inner && llvm::isa<T>(*inner); }
+
+  std::vector<llvm::StringRef> getIncludeSymNames() { return inner.getIncludeSymNames(); }
 
 private:
   SymbolLookupResultUntyped inner;
