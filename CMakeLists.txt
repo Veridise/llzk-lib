@@ -202,30 +202,33 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-# find_package(GTest)
-# if(BUILD_TESTING AND GTest_FOUND)
-#   message(STATUS "gtest found, enabling unit tests...")
-#   include(GoogleTest)
-#
-#   if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20")
-#     set(GTEST_LIB_TARGETS "GTest::gtest;GTest::gmock")
-#     set(GTEST_EXE_TARGET GTest::gtest_main)
-#   else()
-#     set(GTEST_LIB_TARGETS GTest::GTest)
-#     set(GTEST_EXE_TARGET GTest::Main)
-#   endif()
-#
-#   add_subdirectory(unittests)
-# elseif(BUILD_TESTING)
-#   message(STATUS "gtest not found, unit tests will not be run")
-# else()
-#   message(STATUS "Unit tests are disabled")
-# endif()
+find_package(GTest)
+if(BUILD_TESTING AND GTest_FOUND)
+  message(STATUS "gtest found, enabling unit tests...")
+  include(GoogleTest)
+
+  add_custom_target(LLZKUnitTests)
+
+  if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20")
+    set(GTEST_LIB_TARGETS "GTest::gtest;GTest::gmock")
+    set(GTEST_EXE_TARGET GTest::gtest_main)
+  else()
+    set(GTEST_LIB_TARGETS GTest::GTest)
+    set(GTEST_EXE_TARGET GTest::Main)
+  endif()
+
+  add_subdirectory(unittests)
+elseif(BUILD_TESTING)
+  message(STATUS "gtest not found, unit tests will not be run")
+else()
+  message(STATUS "Unit tests are disabled")
+endif()
 
 # Catch-all target for running all tests
 add_custom_target(check
   DEPENDS
   # test targets may not exist if BUILD_TESTING is off
+  $<$<BOOL:BUILD_TESTING>:check-unit>
   $<$<BOOL:BUILD_TESTING>:check-lit>
 )
 
