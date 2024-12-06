@@ -42,18 +42,18 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'llzk.struct' op must define exactly one 'constrain' function}}
   llzk.struct @ComponentF<[@B, @D, @C]> {
-    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentF> {
-      %self = new_struct : !llzk.struct<@ComponentF>
-      return %self : !llzk.struct<@ComponentF>
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentF<[@B, @D, @C]>> {
+      %self = new_struct : !llzk.struct<@ComponentF<[@B, @D, @C]>>
+      return %self : !llzk.struct<@ComponentF<[@B, @D, @C]>>
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentG<[@B, @D, @C]> {
-    func @compute() -> !llzk.struct<@ComponentG> {
-      %self = new_struct : !llzk.struct<@ComponentG>
-      return %self : !llzk.struct<@ComponentG>
+    func @compute() -> !llzk.struct<@ComponentG<[@B, @D, @C]>> {
+      %self = new_struct : !llzk.struct<@ComponentG<[@B, @D, @C]>>
+      return %self : !llzk.struct<@ComponentG<[@B, @D, @C]>>
     }
     // expected-error@+1 {{'builtin.module' op invalid operation in 'struct'; only 'field' and 'func' operations are permitted}}
     builtin.module {

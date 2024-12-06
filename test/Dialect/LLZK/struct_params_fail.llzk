@@ -145,3 +145,63 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+// -----
+// No parameters used to reference self type within component
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentJ<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@ComponentJ<[@A, @B]>" as return type}}
+    func @compute() -> !llzk.struct<@ComponentJ> {
+      %self = new_struct : !llzk.struct<@ComponentJ>
+      return %self : !llzk.struct<@ComponentJ>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentJ>) { return }
+  }
+}
+// -----
+// Fewer parameters used to reference self type within component
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentK<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@ComponentK<[@A, @B]>" as return type}}
+    func @compute() -> !llzk.struct<@ComponentK<[@A]>> {
+      %self = new_struct : !llzk.struct<@ComponentK<[@A]>>
+      return %self : !llzk.struct<@ComponentK<[@A]>>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentK<[@A]>>) { return }
+  }
+}
+// -----
+// More parameters used to reference self type within component
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentL<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@ComponentL<[@A, @B]>" as return type}}
+    func @compute() -> !llzk.struct<@ComponentL<[@A, @B, @B]>> {
+      %self = new_struct : !llzk.struct<@ComponentL<[@A, @B, @B]>>
+      return %self : !llzk.struct<@ComponentL<[@A, @B, @B]>>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentL<[@A, @B, @B]>>) { return }
+  }
+}
+// -----
+// Different parameters used to reference self type within component
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentM<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@ComponentM<[@A, @B]>" as return type}}
+    func @compute() -> !llzk.struct<@ComponentM<[@B, @A]>> {
+      %self = new_struct : !llzk.struct<@ComponentM<[@B, @A]>>
+      return %self : !llzk.struct<@ComponentM<[@B, @A]>>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentM<[@B, @A]>>) { return }
+  }
+}
+// -----
+// Unknown parameters used to reference self type within component
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentP<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@ComponentP<[@A, @B]>" as return type}}
+    func @compute() -> !llzk.struct<@ComponentP<[@C, @D]>> {
+      %self = new_struct : !llzk.struct<@ComponentP<[@C, @D]>>
+      return %self : !llzk.struct<@ComponentP<[@C, @D]>>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentP<[@C, @D]>>) { return }
+  }
+}

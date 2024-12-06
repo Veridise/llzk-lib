@@ -207,7 +207,21 @@ lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *
 
 LogicalResult verifyTypeResolution(SymbolTableCollection &symbolTable, Type ty, Operation *origin) {
   if (StructType sTy = llvm::dyn_cast<StructType>(ty)) {
-    return sTy.getDefinition(symbolTable, origin);
+    auto res = sTy.getDefinition(symbolTable, origin);
+    if (failed(res)) {
+      return failure();
+    }
+    StructDefOp def = res.value().get();
+    if (!structTypesUnify(sTy, def.getType(), res->getIncludeSymNames())) {
+      return origin->emitError()
+          .append(
+              "Parameters of ", sTy, " cannot unify with parameters of \"", def.getSymName(), "\""
+          )
+          .attachNote(def.getLoc())
+          .append("defined here");
+    } else {
+      return success();
+    }
   } else if (ArrayType aTy = llvm::dyn_cast<ArrayType>(ty)) {
     return verifyTypeResolution(symbolTable, aTy.getElementType(), origin);
   } else {

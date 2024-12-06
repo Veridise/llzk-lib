@@ -134,3 +134,54 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
+
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentC1<[@A, @B]> {
+    func @compute() -> !llzk.struct<@ComponentC1<[@A, @B]>> {
+      %self = new_struct : !llzk.struct<@ComponentC1<[@A, @B]>>
+      return %self : !llzk.struct<@ComponentC1<[@A, @B]>>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentC1<[@A, @B]>>) { return }
+  }
+
+  llzk.struct @ComponentC2 {
+    field @f3 : !llzk.struct<@ComponentC1<[4, 5]>>
+
+    func @compute(%a: !llzk.struct<@ComponentC1<[4, 5]>>) -> !llzk.struct<@ComponentC2> {
+      %self = new_struct : !llzk.struct<@ComponentC2>
+      writef %self[@f3] = %a : !llzk.struct<@ComponentC2>, !llzk.struct<@ComponentC1<[4, 5]>>
+      return %self : !llzk.struct<@ComponentC2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentC2>, %a: !llzk.struct<@ComponentC1<[4, 5]>>) {
+      %b = readf %self[@f3] : !llzk.struct<@ComponentC2>, !llzk.struct<@ComponentC1<[4, 5]>>
+      call @ComponentC1::@constrain(%b) : (!llzk.struct<@ComponentC1<[4, 5]>>) -> ()
+      return
+    }
+  }
+}
+//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:    llzk.struct @ComponentC1<[@A, @B]> {
+//CHECK-NEXT:      func @compute() -> !llzk.struct<@ComponentC1<[@A, @B]>> {
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentC1<[@A, @B]>>
+//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@ComponentC1<[@A, @B]>>
+//CHECK-NEXT:      }
+//CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@ComponentC1<[@A, @B]>>) {
+//CHECK-NEXT:        return
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:    llzk.struct @ComponentC2 {
+//CHECK-NEXT:      field @f3 : !llzk.struct<@ComponentC1<[4, 5]>>
+//CHECK-NEXT:      func @compute(%arg0: !llzk.struct<@ComponentC1<[4, 5]>>) -> !llzk.struct<@ComponentC2> {
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentC2>
+//CHECK-NEXT:        writef %[[SELF]][@f3] = %arg0 : <@ComponentC2>, !llzk.struct<@ComponentC1<[4, 5]>>
+//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@ComponentC2>
+//CHECK-NEXT:      }
+//CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@ComponentC2>, %arg1: !llzk.struct<@ComponentC1<[4, 5]>>) {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@f3] : <@ComponentC2>, !llzk.struct<@ComponentC1<[4, 5]>>
+//CHECK-NEXT:        call @ComponentC1::@constrain(%[[T0]]) : (!llzk.struct<@ComponentC1<[4, 5]>>) -> ()
+//CHECK-NEXT:        return
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }

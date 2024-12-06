@@ -131,6 +131,9 @@ def LLZK_StructDefOp
   }];
 
   let extraClassDeclaration = [{
+    /// Gets the StructType representing this struct.
+    StructType getType();
+
     /// Gets the FieldDefOp that defines the field in this
     /// structure with the given name, if present.
     FieldDefOp getFieldDef(::mlir::StringAttr fieldName);

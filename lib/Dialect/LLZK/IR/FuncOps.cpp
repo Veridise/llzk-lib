@@ -186,33 +186,36 @@ mlir::LogicalResult FuncOp::verify() {
 namespace {
 
 mlir::InFlightDiagnostic genCompareErr(StructDefOp &expected, FuncOp &origin, const char *aspect) {
+  auto ret = origin.emitOpError().append(
+      "\"@", origin.getSymName(), "\" must use type of its parent '",
+      StructDefOp::getOperationName(), "' \""
+  );
   mlir::FailureOr<mlir::SymbolRefAttr> pathToExpected = getPathFromRoot(expected);
   if (mlir::succeeded(pathToExpected)) {
-    return origin.emitOpError().append(
-        "\"@", origin.getSymName(), "\" must use type of its parent '",
-        StructDefOp::getOperationName(), "' \"", pathToExpected.value(), "\" as ", aspect, " type"
-    );
+    ret.append(pathToExpected.value());
   } else {
     // When there is a failure trying to get the resolved name of the struct,
     //  just print its symbol name directly.
-    return origin.emitOpError().append(
-        "\"@", origin.getSymName(), "\" must use type of its parent '",
-        StructDefOp::getOperationName(), "' \"@", expected.getSymName(), "\" as ", aspect, " type"
-    );
+    ret.append("@", expected.getSymName());
   }
+  if (auto attr = expected.getConstParamsAttr()) {
+    ret.append("<", attr, ">");
+  }
+  ret.append("\" as ", aspect, " type");
+  return ret;
 }
 
-mlir::LogicalResult compareTypes(
+mlir::LogicalResult checkSelfType(
     SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, const mlir::Type &actualType,
     FuncOp &origin, const char *aspect
 ) {
-  if (StructType sType = llvm::dyn_cast<StructType>(actualType)) {
+  if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {
     auto actualStructOpt =
-        lookupTopLevelSymbol<StructDefOp>(symbolTable, sType.getNameRef(), origin);
+        lookupTopLevelSymbol<StructDefOp>(symbolTable, actualStructType.getNameRef(), origin);
     if (mlir::failed(actualStructOpt)) {
       return origin.emitError().append(
-          "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getNameRef(),
-          "\""
+          "could not find '", StructDefOp::getOperationName(), "' named \"",
+          actualStructType.getNameRef(), "\""
       );
     }
     StructDefOp actualStruct = actualStructOpt.value().get();
@@ -220,6 +223,12 @@ mlir::LogicalResult compareTypes(
       return genCompareErr(expectedStruct, origin, aspect)
           .attachNote(actualStruct.getLoc())
           .append("uses this type instead");
+    }
+    // Check for an EXACT match in the parameter list since it must reference the "self" type.
+    if (expectedStruct.getConstParamsAttr() != actualStructType.getParams()) {
+      return genCompareErr(expectedStruct, origin, aspect)
+          .attachNote(actualStruct.getLoc())
+          .append("should be type of this '", StructDefOp::getOperationName(), "'");
     }
   } else {
     return genCompareErr(expectedStruct, origin, aspect);
@@ -237,7 +246,7 @@ verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &symbolTable, Struct
         "\"@", llzk::FUNC_NAME_COMPUTE, "\" must have exactly one return type"
     );
   }
-  if (mlir::failed(compareTypes(symbolTable, parent, resTypes.front(), origin, "return"))) {
+  if (mlir::failed(checkSelfType(symbolTable, parent, resTypes.front(), origin, "return"))) {
     return mlir::failure();
   }
 
@@ -250,9 +259,8 @@ verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &symbolTable, Struct
 mlir::LogicalResult
 verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parent) {
   mlir::FunctionType funcType = origin.getFunctionType();
-  llvm::ArrayRef<mlir::Type> resTypes = funcType.getResults();
   // Must return '()' type, i.e. have no return types
-  if (resTypes.size() != 0) {
+  if (funcType.getResults().size() != 0) {
     return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
                                 << "\" must have no return type";
   }
@@ -263,14 +271,14 @@ verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &symbolTable, Stru
     return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
                                 << "\" must have at least one input type";
   }
-  if (mlir::failed(compareTypes(symbolTable, parent, inputTypes.front(), origin, "first input"))) {
+  if (mlir::failed(checkSelfType(symbolTable, parent, inputTypes.front(), origin, "first input"))) {
     return mlir::failure();
   }
 
   // After the more specific checks (to ensure more specific error messages would be produced if
   // necessary), do the general check that all symbol references in the types are valid. There are
   // no return types, just check the remaining input types (the first was already checked via
-  // the compareTypes() call above).
+  // the checkSelfType() call above).
   return verifyTypeResolution(symbolTable, inputTypes.begin() + 1, inputTypes.end(), origin);
 }
 

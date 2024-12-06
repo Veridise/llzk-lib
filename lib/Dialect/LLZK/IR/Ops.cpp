@@ -69,6 +69,16 @@ msgOneFunction(function_ref<InFlightDiagnostic()> emitError, const Twine &name) 
 
 } // namespace
 
+StructType StructDefOp::getType() {
+  auto pathRes = getPathFromRoot(*this);
+  if (failed(pathRes)) {
+    // consistent with StructType::getChecked() with invalid args
+    return StructType();
+  }
+  auto emitError = [this] { return this->emitOpError(); };
+  return StructType::getChecked(emitError, getContext(), pathRes.value(), getConstParamsAttr());
+}
+
 mlir::LogicalResult StructDefOp::verifyRegions() {
   if (!getBody().hasOneBlock()) {
     return emitOpError() << "must contain exactly 1 block";

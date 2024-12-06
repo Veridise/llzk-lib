@@ -33,12 +33,23 @@ bool isValidEmitEqType(mlir::Type type) {
 }
 
 namespace {
-bool structParamsUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute &rhsAttr) {
+bool structParamAttrUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute &rhsAttr) {
   return lhsAttr == rhsAttr || lhsAttr.isa<mlir::FlatSymbolRefAttr>() ||
          rhsAttr.isa<mlir::FlatSymbolRefAttr>();
 }
+} // namespace
+
+bool structParamsUnify(const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams) {
+  if (lhsParams && rhsParams) {
+    return (lhsParams.size() == rhsParams.size()) &&
+           std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), structParamAttrUnify);
+  }
+  // When one or the other is null, they're only equivalent if both are null
+  return !lhsParams && !rhsParams;
+}
+
 bool structTypesUnify(
-    const StructType &lhs, const StructType &rhs, const std::vector<llvm::StringRef> &rhsRevPrefix
+    const StructType &lhs, const StructType &rhs, std::vector<llvm::StringRef> rhsRevPrefix
 ) {
   // Check if it references the same StructDefOp, considering the additional RHS path prefix.
   llvm::SmallVector<mlir::StringRef> rhsNames = getNames(rhs.getNameRef());
@@ -46,18 +57,9 @@ bool structTypesUnify(
   if (rhsNames != getNames(lhs.getNameRef())) {
     return false;
   }
-  // Next, check if the parameters unify between the LHS and RHS
-  mlir::ArrayAttr lhsParams = lhs.getParams();
-  mlir::ArrayAttr rhsParams = rhs.getParams();
-  if (lhsParams && rhsParams) {
-    return (lhsParams.size() == rhsParams.size()) &&
-           std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), structParamsUnify);
-  } else {
-    // When one or the other is null, they're only equivalent if both are null
-    return !lhsParams && !rhsParams;
-  }
+  // Check if the parameters unify between the LHS and RHS
+  return structParamsUnify(lhs.getParams(), rhs.getParams());
 }
-} // namespace
 
 bool typesUnify(
     const mlir::Type &lhs, const mlir::Type &rhs, std::vector<llvm::StringRef> rhsRevPrefix
