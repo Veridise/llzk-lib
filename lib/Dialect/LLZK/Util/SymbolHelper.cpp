@@ -174,7 +174,6 @@ lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *
     SmallVector<Operation *, 4> symbolsFound;
     if (succeeded(tables.lookupSymbolIn(symTableOp, symbol, symbolsFound))) {
       SymbolLookupResultUntyped ret(symbolsFound.back());
-      // llvm::outs() << "All syms:" << "\n";
       for (auto it = symbolsFound.rbegin(); it != symbolsFound.rend(); ++it) {
         Operation *op = *it;
         if (op->hasAttr(LANG_ATTR_NAME)) {
