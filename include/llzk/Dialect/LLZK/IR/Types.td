@@ -29,10 +29,15 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
   let summary = "circuit component";
   let description = [{}];
 
-  let parameters = (ins TypeParameter<
-      "::mlir::SymbolRefAttr",
-      "Fully-qualified name of the struct definition.">:$nameRef);
-  let assemblyFormat = [{ `<` $nameRef `>` }];
+  let parameters =
+      (ins TypeParameter<
+           "::mlir::SymbolRefAttr",
+           "Fully-qualified name of the struct definition.">:$nameRef,
+          OptionalParameter<"::mlir::ArrayAttr", "Struct parameters">:$params);
+
+  let assemblyFormat = [{ `<` $nameRef ( `<` $params^ `>` )? `>` }];
+
+  let genVerifyDecl = 1;
 
   let extraClassDeclaration = [{
     /// Gets the `struct` op that defines this struct. Provided `op` is

@@ -176,7 +176,7 @@ mlir::LogicalResult verifySymbolUses(
   }
   mlir::Type fieldType = field->get().getType();
 
-  if (!areSameType(compareTo.getType(), fieldType, field->getIncludeSymNames())) {
+  if (!typesUnify(compareTo.getType(), fieldType, field->getIncludeSymNames())) {
     return refOp->emitOpError() << "has wrong type; expected " << fieldType << ", got "
                                 << compareTo.getType();
   }

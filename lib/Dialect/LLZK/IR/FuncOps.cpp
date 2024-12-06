@@ -317,7 +317,7 @@ LogicalResult ReturnOp::verify() {
   }
 
   for (unsigned i = 0, e = results.size(); i != e; ++i) {
-    if (!areSameType(getOperand(i).getType(), results[i])) {
+    if (!typesUnify(getOperand(i).getType(), results[i])) {
       return emitError() << "type of return operand " << i << " (" << getOperand(i).getType()
                          << ") doesn't match function result type (" << results[i] << ")"
                          << " in function @" << function.getName();
@@ -352,7 +352,7 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   }
 
   for (unsigned i = 0, e = fnType.getNumInputs(); i != e; ++i) {
-    if (!areSameType(getOperand(i).getType(), fnType.getInput(i), tgtOpt->getIncludeSymNames())) {
+    if (!typesUnify(getOperand(i).getType(), fnType.getInput(i), tgtOpt->getIncludeSymNames())) {
       return emitOpError("operand type mismatch: expected type ")
              << fnType.getInput(i) << ", but found " << getOperand(i).getType()
              << " for operand number " << i;
@@ -364,7 +364,7 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   }
 
   for (unsigned i = 0, e = fnType.getNumResults(); i != e; ++i) {
-    if (!areSameType(getResult(i).getType(), fnType.getResult(i), tgtOpt->getIncludeSymNames())) {
+    if (!typesUnify(getResult(i).getType(), fnType.getResult(i), tgtOpt->getIncludeSymNames())) {
       return emitOpError("result type mismatch: expected type ")
              << fnType.getResult(i) << ", but found " << getResult(i).getType()
              << " for result number " << i;

@@ -2,6 +2,7 @@
 #include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
+#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinTypeInterfaces.h>
 #include <mlir/Support/LogicalResult.h>
 
@@ -31,31 +32,87 @@ bool isValidEmitEqType(mlir::Type type) {
           isValidEmitEqType(llvm::cast<::llzk::ArrayType>(type).getElementType()));
 }
 
-bool areSameType(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
+namespace {
+bool structParamsUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute &rhsAttr) {
+  return lhsAttr == rhsAttr || lhsAttr.isa<mlir::FlatSymbolRefAttr>() ||
+         rhsAttr.isa<mlir::FlatSymbolRefAttr>();
+}
+bool structTypesUnify(
+    const StructType &lhs, const StructType &rhs, const std::vector<llvm::StringRef> &rhsRevPrefix
+) {
+  // Check if it references the same StructDefOp, considering the additional RHS path prefix.
+  llvm::SmallVector<mlir::StringRef> rhsNames = getNames(rhs.getNameRef());
+  rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
+  if (rhsNames != getNames(lhs.getNameRef())) {
+    return false;
+  }
+  // Next, check if the parameters unify between the LHS and RHS
+  mlir::ArrayAttr lhsParams = lhs.getParams();
+  mlir::ArrayAttr rhsParams = rhs.getParams();
+  if (lhsParams && rhsParams) {
+    return (lhsParams.size() == rhsParams.size()) &&
+           std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), structParamsUnify);
+  } else {
+    // When one or the other is null, they're only equivalent if both are null
+    return !lhsParams && !rhsParams;
+  }
+}
+} // namespace
+
+bool typesUnify(
+    const mlir::Type &lhs, const mlir::Type &rhs, std::vector<llvm::StringRef> rhsRevPrefix
+) {
   if (lhs == rhs) {
     return true;
   }
   if (llvm::isa<llzk::StructType>(lhs) && llvm::isa<llzk::StructType>(rhs)) {
-    llvm::SmallVector<mlir::StringRef> lhsNames =
-        getNames(llvm::cast<StructType>(lhs).getNameRef());
-    llvm::SmallVector<mlir::StringRef> rhsNames =
-        getNames(llvm::cast<StructType>(rhs).getNameRef());
-    rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
-
-    return lhsNames == rhsNames;
+    return structTypesUnify(llvm::cast<StructType>(lhs), llvm::cast<StructType>(rhs), rhsRevPrefix);
   }
   return false;
 }
 
+mlir::LogicalResult StructType::verify(
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::SymbolRefAttr nameRef,
+    mlir::ArrayAttr params
+) {
+  if (params) {
+    // Ensure the parameters in the StructType are only Integer constants or FlatSymbolRef.
+    for (auto i = params.begin(); i != params.end(); ++i) {
+      if (!i->isa<mlir::IntegerAttr>() && !i->isa<mlir::FlatSymbolRefAttr>()) {
+        return emitError() << "Unexpected struct parameter type: "
+                           << i->getAbstractAttribute().getName();
+      }
+    }
+  }
+  return mlir::success();
+}
+
 mlir::FailureOr<SymbolLookupResult<StructDefOp>>
 StructType::getDefinition(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
-  auto def = lookupTopLevelSymbol<StructDefOp>(symbolTable, getNameRef(), op);
-  if (mlir::failed(def)) {
+  // First ensure this StructType passes verification
+  mlir::ArrayAttr typeParams = this->getParams();
+  if (mlir::failed(StructType::verify([op] {
+    return op->emitError();
+  }, this->getNameRef(), typeParams))) {
+    return mlir::failure();
+  }
+  // Perform lookup and ensure the symbol references a StructDefOp
+  auto res = lookupTopLevelSymbol<StructDefOp>(symbolTable, getNameRef(), op);
+  if (mlir::failed(res) || !res.value()) {
     return op->emitError() << "no '" << StructDefOp::getOperationName() << "' named \""
                            << getNameRef() << "\"";
-  } else {
-    return def;
   }
+  // If this StructType contains parameters, make sure they match the number from the StructDefOp.
+  if (typeParams) {
+    auto defParams = res.value().get().getConstParams();
+    size_t numExpected = defParams ? defParams->size() : 0;
+    if (typeParams.size() != numExpected) {
+      return op->emitError() << "'" << StructType::name << "' type has " << typeParams.size()
+                             << " parameters but \"" << res.value().get().getSymName()
+                             << "\" expects " << numExpected;
+    }
+  }
+  return res;
 }
 
 mlir::LogicalResult
