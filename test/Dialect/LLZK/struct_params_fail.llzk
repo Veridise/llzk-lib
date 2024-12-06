@@ -205,3 +205,47 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@ComponentP<[@C, @D]>>) { return }
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentQ1<[@Z]> { // expected-note {{type parameters must unify with parameters defined here}}
+    func @compute() -> !llzk.struct<@ComponentQ1<[@Z]>> {
+      %self = new_struct : !llzk.struct<@ComponentQ1<[@Z]>>
+      return %self : !llzk.struct<@ComponentQ1<[@Z]>>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentQ1<[@Z]>>)  { return }
+  }
+  llzk.struct @ComponentQ2 {
+    // expected-error@+1 {{Cannot unify parameters of type '!llzk.struct<@ComponentQ1>' with parameters of 'llzk.struct' "@ComponentQ1<[@Z]>"}}
+    llzk.field @f : !llzk.struct<@ComponentQ1>
+
+    func @compute() -> !llzk.struct<@ComponentQ2> {
+      %self = new_struct : !llzk.struct<@ComponentQ2>
+      return %self : !llzk.struct<@ComponentQ2>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentQ2>)  { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  module @a {
+    llzk.struct @ComponentR1<[@Z]> { // expected-note {{type parameters must unify with parameters defined here}}
+      func @compute() -> !llzk.struct<@a::@ComponentR1<[@Z]>> {
+        %self = new_struct : !llzk.struct<@a::@ComponentR1<[@Z]>>
+        return %self : !llzk.struct<@a::@ComponentR1<[@Z]>>
+      }
+      func @constrain(%self: !llzk.struct<@a::@ComponentR1<[@Z]>>)  { return }
+    }
+  }
+  module @b {
+    llzk.struct @ComponentR2 {
+      // expected-error@+1 {{Cannot unify parameters of type '!llzk.struct<@a::@ComponentR1>' with parameters of 'llzk.struct' "@a::@ComponentR1<[@Z]>"}}
+      llzk.field @f : !llzk.struct<@a::@ComponentR1>
+
+      func @compute() -> !llzk.struct<@b::@ComponentR2> {
+        %self = new_struct : !llzk.struct<@b::@ComponentR2>
+        return %self : !llzk.struct<@b::@ComponentR2>
+      }
+      func @constrain(%self: !llzk.struct<@b::@ComponentR2>)  { return }
+    }
+  }
+}
