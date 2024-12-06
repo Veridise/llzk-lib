@@ -205,23 +205,28 @@ lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *
   return SymbolLookupResultUntyped();
 }
 
+FailureOr<StructDefOp>
+verifyStructTypeResolution(SymbolTableCollection &symbolTable, StructType ty, Operation *origin) {
+  auto res = ty.getDefinition(symbolTable, origin);
+  if (failed(res)) {
+    return failure();
+  }
+  StructDefOp def = res.value().get();
+  if (structTypesUnify(ty, def.getType(), res->getIncludeSymNames())) {
+    return def;
+  }
+  return origin->emitError()
+      .append(
+          "Cannot unify parameters of type ", ty, " with parameters of '",
+          StructDefOp::getOperationName(), "' \"", def.getHeaderString(), "\""
+      )
+      .attachNote(def.getLoc())
+      .append("type parameters must unify with parameters defined here");
+}
+
 LogicalResult verifyTypeResolution(SymbolTableCollection &symbolTable, Type ty, Operation *origin) {
   if (StructType sTy = llvm::dyn_cast<StructType>(ty)) {
-    auto res = sTy.getDefinition(symbolTable, origin);
-    if (failed(res)) {
-      return failure();
-    }
-    StructDefOp def = res.value().get();
-    if (!structTypesUnify(sTy, def.getType(), res->getIncludeSymNames())) {
-      return origin->emitError()
-          .append(
-              "Parameters of ", sTy, " cannot unify with parameters of \"", def.getSymName(), "\""
-          )
-          .attachNote(def.getLoc())
-          .append("defined here");
-    } else {
-      return success();
-    }
+    return verifyStructTypeResolution(symbolTable, sTy, origin);
   } else if (ArrayType aTy = llvm::dyn_cast<ArrayType>(ty)) {
     return verifyTypeResolution(symbolTable, aTy.getElementType(), origin);
   } else {

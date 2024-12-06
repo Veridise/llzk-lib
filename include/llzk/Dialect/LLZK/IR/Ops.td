@@ -138,6 +138,9 @@ def LLZK_StructDefOp
     /// structure with the given name, if present.
     FieldDefOp getFieldDef(::mlir::StringAttr fieldName);
 
+    /// Generate header string, in the same format as the assemblyFormat
+    std::string getHeaderString();
+
     //===------------------------------------------------------------------===//
     // OpAsmOpInterface Methods
     //===------------------------------------------------------------------===//

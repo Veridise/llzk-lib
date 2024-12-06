@@ -186,23 +186,10 @@ mlir::LogicalResult FuncOp::verify() {
 namespace {
 
 mlir::InFlightDiagnostic genCompareErr(StructDefOp &expected, FuncOp &origin, const char *aspect) {
-  auto ret = origin.emitOpError().append(
+  return origin.emitOpError().append(
       "\"@", origin.getSymName(), "\" must use type of its parent '",
-      StructDefOp::getOperationName(), "' \""
+      StructDefOp::getOperationName(), "' \"", expected.getHeaderString(), "\" as ", aspect, " type"
   );
-  mlir::FailureOr<mlir::SymbolRefAttr> pathToExpected = getPathFromRoot(expected);
-  if (mlir::succeeded(pathToExpected)) {
-    ret.append(pathToExpected.value());
-  } else {
-    // When there is a failure trying to get the resolved name of the struct,
-    //  just print its symbol name directly.
-    ret.append("@", expected.getSymName());
-  }
-  if (auto attr = expected.getConstParamsAttr()) {
-    ret.append("<", attr, ">");
-  }
-  ret.append("\" as ", aspect, " type");
-  return ret;
 }
 
 mlir::LogicalResult checkSelfType(

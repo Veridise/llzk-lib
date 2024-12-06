@@ -79,6 +79,23 @@ StructType StructDefOp::getType() {
   return StructType::getChecked(emitError, getContext(), pathRes.value(), getConstParamsAttr());
 }
 
+std::string StructDefOp::getHeaderString() {
+  std::string output;
+  llvm::raw_string_ostream oss(output);
+  mlir::FailureOr<mlir::SymbolRefAttr> pathToExpected = getPathFromRoot(*this);
+  if (mlir::succeeded(pathToExpected)) {
+    oss << pathToExpected.value();
+  } else {
+    // When there is a failure trying to get the resolved name of the struct,
+    //  just print its symbol name directly.
+    oss << "@" << this->getSymName();
+  }
+  if (auto attr = this->getConstParamsAttr()) {
+    oss << "<" << attr << ">";
+  }
+  return output;
+}
+
 mlir::LogicalResult StructDefOp::verifyRegions() {
   if (!getBody().hasOneBlock()) {
     return emitOpError() << "must contain exactly 1 block";
@@ -140,7 +157,26 @@ FieldDefOp StructDefOp::getFieldDef(mlir::StringAttr fieldName) {
 bool FieldDefOp::hasPublicAttr() { return getOperation()->hasAttr(PublicAttr::name); }
 
 mlir::LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
-  return verifyTypeResolution(symbolTable, this->getType(), *this);
+  mlir::Type fieldType = this->getType();
+  if (StructType fieldStructType = llvm::dyn_cast<StructType>(fieldType)) {
+    // Special case for StructType verifies that the field type can resolve and that it is NOT the
+    // parent struct (i.e. struct fields cannot create circular references).
+    auto fieldTypeRes = verifyStructTypeResolution(symbolTable, fieldStructType, *this);
+    if (mlir::failed(fieldTypeRes)) {
+      return mlir::failure(); // above already emits a sufficient error message
+    }
+    mlir::FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(*this);
+    assert(mlir::succeeded(parentRes) && "FieldDefOp parent is always StructDefOp");
+    if (fieldTypeRes.value() == parentRes.value()) {
+      return this->emitOpError()
+          .append("type is circular")
+          .attachNote(parentRes.value().getLoc())
+          .append("references parent component defined here");
+    }
+    return mlir::success();
+  } else {
+    return verifyTypeResolution(symbolTable, fieldType, *this);
+  }
 }
 
 //===------------------------------------------------------------------===//

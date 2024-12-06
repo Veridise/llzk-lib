@@ -103,6 +103,10 @@ inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterf
   return resolveCallable<T>(symbolTable, call);
 }
 
+mlir::FailureOr<StructDefOp> verifyStructTypeResolution(
+    mlir::SymbolTableCollection &symbolTable, StructType ty, mlir::Operation *origin
+);
+
 mlir::LogicalResult verifyTypeResolution(
     mlir::SymbolTableCollection &symbolTable, mlir::Type ty, mlir::Operation *origin
 );
