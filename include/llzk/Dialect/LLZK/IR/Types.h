@@ -34,10 +34,6 @@ checkValidType(llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::T
   }
 }
 
-/// Return `true` iff the two ArrayAttr instances containing struct parameters are equivalent or
-/// could be equivalent after full instantiation of struct parameters.
-bool structParamsUnify(const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams);
-
 /// Return `true` iff the two StructType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
 bool structTypesUnify(

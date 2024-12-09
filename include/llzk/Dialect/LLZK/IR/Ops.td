@@ -143,7 +143,7 @@ def LLZK_StructDefOp
     FieldDefOp getFieldDef(::mlir::StringAttr fieldName);
 
     /// Generate header string, in the same format as the assemblyFormat
-    std::string getHeaderString();
+    ::std::string getHeaderString();
 
     //===------------------------------------------------------------------===//
     // OpAsmOpInterface Methods

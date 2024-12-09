@@ -37,8 +37,9 @@ bool structParamAttrUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute 
   return lhsAttr == rhsAttr || lhsAttr.isa<mlir::FlatSymbolRefAttr>() ||
          rhsAttr.isa<mlir::FlatSymbolRefAttr>();
 }
-} // namespace
 
+/// Return `true` iff the two ArrayAttr instances containing struct parameters are equivalent or
+/// could be equivalent after full instantiation of struct parameters.
 bool structParamsUnify(const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams) {
   if (lhsParams && rhsParams) {
     return (lhsParams.size() == rhsParams.size()) &&
@@ -47,6 +48,7 @@ bool structParamsUnify(const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &
   // When one or the other is null, they're only equivalent if both are null
   return !lhsParams && !rhsParams;
 }
+} // namespace
 
 bool structTypesUnify(
     const StructType &lhs, const StructType &rhs, std::vector<llvm::StringRef> rhsRevPrefix
