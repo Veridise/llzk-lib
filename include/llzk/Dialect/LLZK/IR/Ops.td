@@ -121,6 +121,9 @@ def LLZK_StructDefOp
       ```
   }];
 
+  // Note: the `$const_params` are actually symbol definitions that do not use the
+  //  standard SymbolTable mechanism. Instead the hasParamNamed() function can be
+  //  used to check if a certain FlatSymbolRefAttr is a parameter in the function.
   let arguments = (ins SymbolNameAttr:$sym_name,
       OptionalAttr<FlatSymbolRefArrayAttr>:$const_params);
 
@@ -131,8 +134,9 @@ def LLZK_StructDefOp
   }];
 
   let extraClassDeclaration = [{
-    /// Gets the StructType representing this struct.
-    StructType getType();
+    /// Gets the StructType representing this struct. If the `constParams` to use in
+    /// the type are not given, the StructType will use this->getConstParamsAttr().
+    StructType getType(std::optional<::mlir::ArrayAttr> constParams);
 
     /// Gets the FieldDefOp that defines the field in this
     /// structure with the given name, if present.

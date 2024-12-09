@@ -69,14 +69,16 @@ msgOneFunction(function_ref<InFlightDiagnostic()> emitError, const Twine &name) 
 
 } // namespace
 
-StructType StructDefOp::getType() {
+StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
   auto pathRes = getPathFromRoot(*this);
   if (failed(pathRes)) {
     // consistent with StructType::getChecked() with invalid args
     return StructType();
   }
   auto emitError = [this] { return this->emitOpError(); };
-  return StructType::getChecked(emitError, getContext(), pathRes.value(), getConstParamsAttr());
+  return StructType::getChecked(
+      emitError, getContext(), pathRes.value(), constParams.value_or(getConstParamsAttr())
+  );
 }
 
 std::string StructDefOp::getHeaderString() {
