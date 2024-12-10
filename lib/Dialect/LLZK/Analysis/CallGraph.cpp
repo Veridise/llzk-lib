@@ -6,6 +6,7 @@
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/ErrorHandling.h>
 
 namespace llzk {
 
@@ -13,35 +14,26 @@ using namespace ::mlir;
 
 /* CallGraph */
 
-CallGraph::CallGraph(ModuleOp &M)
-    : M(M), ExternalCallingNode(getOrInsertFunction(nullptr)),
-      CallsExternalNode(std::make_unique<CallGraphNode>(this, nullptr)) {
+CallGraph::CallGraph(ModuleOp M) : M(M), EntryNode(getOrInsertFunction(FuncOp(nullptr))) {
   // Add every interesting function to the call graph.
-  for (FuncOp F : M.getOps<FuncOp>()) {
-    addToCallGraph(&F);
-  }
+  M.walk([&](FuncOp F) {
+    addToCallGraph(F);
+  });
 }
 
 CallGraph::CallGraph(CallGraph &&Arg)
     : M(Arg.M), FunctionMap(std::move(Arg.FunctionMap)),
-      ExternalCallingNode(Arg.ExternalCallingNode),
-      CallsExternalNode(std::move(Arg.CallsExternalNode)) {
+      EntryNode(Arg.EntryNode) {
   Arg.FunctionMap.clear();
-  Arg.ExternalCallingNode = nullptr;
 
   // Update parent CG for all call graph's nodes.
-  CallsExternalNode->CG = this;
+  EntryNode->CG = this;
   for (auto &P : FunctionMap) {
     P.second->CG = this;
   }
 }
 
 CallGraph::~CallGraph() {
-  // CallsExternalNode is not in the function map, delete it explicitly.
-  if (CallsExternalNode) {
-    CallsExternalNode->allReferencesDropped();
-  }
-
 // Reset all node's use counts to zero before deleting them to prevent an
 // assertion from firing.
 #ifndef NDEBUG
@@ -51,53 +43,25 @@ CallGraph::~CallGraph() {
 #endif
 }
 
-// bool CallGraph::invalidate(Module &, const PreservedAnalyses &PA,
-//                            ModuleAnalysisManager::Invalidator &) {
-//   // Check whether the analysis, all analyses on functions, or the function's
-//   // CFG have been preserved.
-//   auto PAC = PA.getChecker<CallGraphAnalysis>();
-//   return !(PAC.preserved() || PAC.preservedSet<AllAnalysesOn<Module>>());
-// }
-
-void CallGraph::addToCallGraph(FuncOp *F) {
+void CallGraph::addToCallGraph(FuncOp &F) {
   CallGraphNode *Node = getOrInsertFunction(F);
-
-  // If this function has external linkage or has its address taken and
-  // // it is not a callback, then anything could call it.
-  // if (!F->hasLocalLinkage() ||
-  //     F->hasAddressTaken(nullptr, /*IgnoreCallbackUses=*/true,
-  //                        /* IgnoreAssumeLikeCalls */ true,
-  //                        /* IgnoreLLVMUsed */ false))
-  //   ExternalCallingNode->addCalledFunction(nullptr, Node);
-
+  // TODO: Main component logic.
+  if (F.getName() == FUNC_NAME_COMPUTE || F.getName() == FUNC_NAME_CONSTRAIN) {
+    EntryNode->addCalledFunction(nullptr, Node);
+  }
   populateCallGraphNode(Node);
 }
 
 void CallGraph::populateCallGraphNode(CallGraphNode *Node) {
-  FuncOp *F = Node->getFunction();
-  assert(false);
+  FuncOp F = Node->getFunction();
 
-  // If this function is not defined in this translation unit, it could call
-  // anything.
-  // if (F->isDeclaration() && !F->hasFnAttribute(Attribute::NoCallback))
-  //   Node->addCalledFunction(nullptr, CallsExternalNode.get());
-
-  // // Look for calls by this function.
-  // for (BasicBlock &BB : *F)
-  //   for (Instruction &I : BB) {
-  //     if (auto *Call = dyn_cast<CallBase>(&I)) {
-  //       const Function *Callee = Call->getCalledFunction();
-  //       if (!Callee)
-  //         Node->addCalledFunction(Call, CallsExternalNode.get());
-  //       else if (!isDbgInfoIntrinsic(Callee->getIntrinsicID()))
-  //         Node->addCalledFunction(Call, getOrInsertFunction(Callee));
-
-  //       // Add reference to callback functions.
-  //       forEachCallbackFunction(*Call, [=](Function *CB) {
-  //         Node->addCalledFunction(nullptr, getOrInsertFunction(CB));
-  //       });
-  //     }
-  //   }
+  // Look for calls by this function.
+  F->walk([&](CallOp callOp) {
+    auto calledFnSym = callOp.getCallee();
+    FuncOp calledFn = FuncOp(mlir::SymbolTable::lookupSymbolIn(M, calledFnSym));
+    assert(calledFn != nullptr && "Should be able to find all function!");
+    Node->addCalledFunction(&callOp, getOrInsertFunction(calledFn));
+  });
 }
 
 void CallGraph::print(mlir::raw_ostream &OS) const {
@@ -106,36 +70,25 @@ void CallGraph::print(mlir::raw_ostream &OS) const {
 
   llvm::SmallVector<CallGraphNode *, 16> Nodes;
   Nodes.reserve(FunctionMap.size());
-  assert(false);
 
-  // for (const auto &I : *this)
-  //   Nodes.push_back(I.second.get());
+  for (const auto &I : *this)
+    Nodes.push_back(I.second.get());
 
-  // llvm::sort(Nodes, [](CallGraphNode *LHS, CallGraphNode *RHS) {
-  //   if (Function *LF = LHS->getFunction())
-  //     if (Function *RF = RHS->getFunction())
-  //       return LF->getName() < RF->getName();
+  llvm::sort(Nodes, [](CallGraphNode *LHS, CallGraphNode *RHS) {
+    if (LHS->getFunction() && RHS->getFunction()) {
+      return LHS->getFunction() < RHS->getFunction();
+    }
+    return RHS->getFunction() != nullptr;
+  });
 
-  //   return RHS->getFunction() != nullptr;
-  // });
-
-  for (CallGraphNode *CN : Nodes)
+  for (CallGraphNode *CN : Nodes) {
     CN->print(OS);
+  }
 }
 
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
 LLVM_DUMP_METHOD void CallGraph::dump() const { print(llvm::dbgs()); }
 #endif
-
-void CallGraph::ReplaceExternalCallEdge(CallGraphNode *Old,
-                                        CallGraphNode *New) {
-  for (auto &CR : ExternalCallingNode->CalledFunctions)
-    if (CR.second == Old) {
-      CR.second->DropRef();
-      CR.second = New;
-      CR.second->AddRef();
-    }
-}
 
 // removeFunctionFromModule - Unlink the function from this module, returning
 // it.  Because this removes the function from the module, the call graph node
@@ -143,48 +96,120 @@ void CallGraph::ReplaceExternalCallEdge(CallGraphNode *Old,
 // functions (ie, there are no edges in it's CGN).  The easiest way to do this
 // is to dropAllReferences before calling this.
 //
-FuncOp *CallGraph::removeFunctionFromModule(CallGraphNode *CGN) {
+FuncOp CallGraph::removeFunctionFromModule(CallGraphNode *CGN) {
   assert(CGN->empty() && "Cannot remove function from call "
          "graph if it references other functions!");
-  FuncOp *F = CGN->getFunction(); // Get the function for the call graph node
-  FunctionMap.erase(F);             // Remove the call graph node from the map
+  FuncOp F = CGN->getFunction(); // Get the function for the call graph node
+  FunctionMap.erase(F);          // Remove the call graph node from the map
 
-  assert(false);
-  // M.getFunctionList().remove(F);
+  F->erase();
   return F;
 }
 
 // getOrInsertFunction - This method is identical to calling operator[], but
 // it will insert a new CallGraphNode for the specified function if one does
 // not already exist.
-CallGraphNode *CallGraph::getOrInsertFunction(const FuncOp *F) {
+CallGraphNode *CallGraph::getOrInsertFunction(FuncOp F) {
   auto &CGN = FunctionMap[F];
-  if (CGN)
+  if (CGN) {
     return CGN.get();
+  }
 
-  assert(false);
-  // assert((!F || F->getParent() == &M) && "Function not in current module!");
-  CGN = std::make_unique<CallGraphNode>(this, const_cast<FuncOp *>(F));
+  auto containedInModule = [&] (mlir::Operation *op, FuncOp &f) {
+    assert(f);
+    if (op->hasTrait<mlir::OpTrait::SymbolTable>()) {
+      return mlir::SymbolTable::lookupSymbolIn(op, f.getName()) != nullptr;
+    }
+    return op == f;
+  };
+  bool isContained = false;
+  if (F) {
+    M.walk([&](mlir::Operation *op) {
+      isContained = containedInModule(op, F);
+      if (isContained) {
+        return mlir::WalkResult::interrupt();
+      }
+      return mlir::WalkResult::advance();
+    });
+  }
+  // null checks work on mlir custom dialect ops
+  assert((!F || isContained) && "Function not in current module!");
+  CGN = std::make_unique<CallGraphNode>(this, F);
   return CGN.get();
+}
+
+bool CallGraph::isReachable(FuncOp &A, FuncOp &B) const {
+  if (FunctionMap.find(A) == FunctionMap.end() || FunctionMap.find(B) == FunctionMap.end()) {
+    return false;
+  }
+  const CallGraphNode *start = FunctionMap.at(A).get(), *end = FunctionMap.at(B).get();
+
+  if (cachedReachability.find(end) != cachedReachability.end()) {
+    const auto &s = cachedReachability.at(end);
+    if (s.find(start) != s.end()) {
+      return true;
+    }
+    // We don't return false here because our cached results might come from
+    // a separate ancestry path.
+  }
+
+  /*
+    Simple BFS until we:
+    1. Reach the end pointer, or
+    2. Explore all nodes from start and find nothing.
+  */
+  std::deque<const CallGraphNode *> frontier;
+  std::unordered_set<const CallGraphNode *> visited;
+  frontier.push_back(start);
+  while (!frontier.empty()) {
+    const CallGraphNode *n = frontier.front();
+    frontier.pop_front();
+
+    if (visited.find(n) != visited.end()) {
+      continue;
+    }
+    visited.insert(n);
+
+    for (const auto &[_, child] : *n) {
+      const auto &parentSet = cachedReachability[n]; // default construct in empty case
+      auto &childSet = cachedReachability[child];
+      // update cache, then check, then add to frontier
+      childSet.insert(n); // add parent
+      childSet.insert(parentSet.begin(), parentSet.end()); // add parent's set
+
+      if (child == end) {
+        return true;
+      }
+
+      frontier.push_back(child);
+    }
+  }
+
+  return false;
 }
 
 /* CallGraphNode */
 
-
 void CallGraphNode::print(mlir::raw_ostream &OS) const {
-  // if (FuncOp *F = getFunction())
-  //   OS << "Call graph node for function: '" << F->getName() << "'";
-  // else
-  //   OS << "Call graph node <<null function>>";
+  if (F) {
+    OS << "Call graph node for function: '" << F->getName() << "'";
+  } else {
+    OS << "Entry call graph node (null function)";
+  }
 
   OS << "<<" << this << ">>  #uses=" << getNumReferences() << '\n';
 
   for (const auto &I : *this) {
-    OS << "  CS<" << I.first << "> calls ";
-    // if (FuncOp *FI = I.second->getFunction())
-    //   OS << "function '" << FI->getName() <<"'\n";
-    // else
-    //   OS << "external node\n";
+    OS << "  CS<" << I.first;
+    if (I.first) {
+      OS << " (" << *I.first << ")";
+    }
+    OS << "> calls ";
+    if (const FuncOp &FI = I.second->getFunction()) {
+      OS << "function '" << FI->getName() <<"'\n";
+    } else {
+      OS << "external node\n";
+    }
   }
   OS << '\n';
 }
@@ -197,21 +222,19 @@ LLVM_DUMP_METHOD void CallGraphNode::dump() const { print(llvm::dbgs()); }
 /// specified call site.  Note that this method takes linear time, so it
 /// should be used sparingly.
 void CallGraphNode::removeCallEdgeFor(CallOp *Call) {
-  assert(false);
-  // for (CalledFunctionsVector::iterator I = CalledFunctions.begin(); ; ++I) {
-  //   assert(I != CalledFunctions.end() && "Cannot find callsite to remove!");
-  //   if (I->first && *I->first == &Call) {
-  //     I->second->DropRef();
-  //     *I = CalledFunctions.back();
-  //     CalledFunctions.pop_back();
+  for (CalledFunctionsVector::iterator I = CalledFunctions.begin(); ; ++I) {
+    assert(I != CalledFunctions.end() && "Cannot find callsite to remove!");
+    if (I->first == Call) {
+      I->second->DropRef();
+      *I = CalledFunctions.back();
+      CalledFunctions.pop_back();
 
-  //     // Remove all references to callback functions if there are any.
-  //     forEachCallbackFunction(Call, [=](FuncOp *CB) {
-  //       removeOneAbstractEdgeTo(CG->getOrInsertFunction(CB));
-  //     });
-  //     return;
-  //   }
-  // }
+      // Remove all references to callback functions if there are any.
+      FuncOp op = FuncOp(mlir::SymbolTable::lookupSymbolIn(CG->getModule(), Call->getCallee()));
+      removeOneAbstractEdgeTo(CG->getOrInsertFunction(op));
+      return;
+    }
+  }
 }
 
 // removeAnyCallEdgeTo - This method removes any call edges from this node to
@@ -247,13 +270,11 @@ void CallGraphNode::removeOneAbstractEdgeTo(CallGraphNode *Callee) {
 /// time, so it should be used sparingly.
 void CallGraphNode::replaceCallEdge(CallOp *Call, CallOp *NewCall,
                                     CallGraphNode *NewNode) {
-  assert(false);
-  #if 0
   for (CalledFunctionsVector::iterator I = CalledFunctions.begin(); ; ++I) {
     assert(I != CalledFunctions.end() && "Cannot find callsite to remove!");
-    if (I->first && *I->first == &Call) {
+    if (I->first == Call) {
       I->second->DropRef();
-      I->first = &NewCall;
+      I->first = NewCall;
       I->second = NewNode;
       NewNode->AddRef();
 
@@ -261,116 +282,68 @@ void CallGraphNode::replaceCallEdge(CallOp *Call, CallOp *NewCall,
       // number of callbacks is the same for new and old call sites.
       SmallVector<CallGraphNode *, 4u> OldCBs;
       SmallVector<CallGraphNode *, 4u> NewCBs;
-      forEachCallbackFunction(Call, [this, &OldCBs](Function *CB) {
-        OldCBs.push_back(CG->getOrInsertFunction(CB));
-      });
-      forEachCallbackFunction(NewCall, [this, &NewCBs](Function *CB) {
-        NewCBs.push_back(CG->getOrInsertFunction(CB));
-      });
-      if (OldCBs.size() == NewCBs.size()) {
-        for (unsigned N = 0; N < OldCBs.size(); ++N) {
-          CallGraphNode *OldNode = OldCBs[N];
-          CallGraphNode *NewNode = NewCBs[N];
-          for (auto J = CalledFunctions.begin();; ++J) {
-            assert(J != CalledFunctions.end() &&
-                   "Cannot find callsite to update!");
-            if (!J->first && J->second == OldNode) {
-              J->second = NewNode;
-              OldNode->DropRef();
-              NewNode->AddRef();
-              break;
-            }
-          }
+      FuncOp oldCB = FuncOp(mlir::SymbolTable::lookupSymbolIn(CG->getModule(), Call->getCallee()));
+      auto oldNode = CG->getOrInsertFunction(oldCB);
+
+      for (auto J = CalledFunctions.begin();; ++J) {
+        assert(J != CalledFunctions.end() && "Cannot find callsite to update!");
+        if (!J->first && J->second == oldNode) {
+          J->second = NewNode;
+          oldNode->DropRef();
+          NewNode->AddRef();
+          break;
         }
-      } else {
-        for (auto *CGN : OldCBs)
-          removeOneAbstractEdgeTo(CGN);
-        for (auto *CGN : NewCBs)
-          addCalledFunction(nullptr, CGN);
       }
+
       return;
     }
   }
-  #endif
 }
 
-/* Passes */
+/* Passes and Analyses */
 
-#if 0
-
-// Provide an explicit template instantiation for the static ID.
-AnalysisKey CallGraphAnalysis::Key;
-
-PreservedAnalyses CallGraphPrinterPass::run(Module &M,
-                                            ModuleAnalysisManager &AM) {
-  AM.getResult<CallGraphAnalysis>(M).print(OS);
-  return PreservedAnalyses::all();
+CallGraphAnalysis::CallGraphAnalysis(mlir::Operation *op) : cg(nullptr) {
+  if (auto modOp = mlir::dyn_cast<mlir::ModuleOp>(op)) {
+    cg = std::make_unique<CallGraph>(modOp);
+  } else {
+    auto error_message = "CallGraphAnalysis expects provided op to be a ModuleOp!";
+    op->emitError(error_message);
+    llvm::report_fatal_error(error_message);
+  }
 }
 
-PreservedAnalyses CallGraphSCCsPrinterPass::run(Module &M,
-                                                ModuleAnalysisManager &AM) {
-  auto &CG = AM.getResult<CallGraphAnalysis>(M);
+void CallGraphPrinterPass::runOnOperation() {
+  markAllAnalysesPreserved();
+
+  auto &cga = getAnalysis<CallGraphAnalysis>();
+  cga.getCallGraph().print(OS);
+}
+
+void CallGraphSCCsPrinterPass::runOnOperation() {
+  markAllAnalysesPreserved();
+
+  auto &CG = getAnalysis<CallGraphAnalysis>();
   unsigned sccNum = 0;
   OS << "SCCs for the program in PostOrder:";
-  for (scc_iterator<CallGraph *> SCCI = scc_begin(&CG); !SCCI.isAtEnd();
-       ++SCCI) {
+  for (auto SCCI = llvm::scc_begin(&CG.getCallGraph()); !SCCI.isAtEnd(); ++SCCI) {
     const std::vector<CallGraphNode *> &nextSCC = *SCCI;
     OS << "\nSCC #" << ++sccNum << ": ";
     bool First = true;
     for (CallGraphNode *CGN : nextSCC) {
-      if (First)
+      if (First) {
         First = false;
-      else
+      } else {
         OS << ", ";
-      OS << (CGN->getFunction() ? CGN->getFunction()->getName()
+      }
+      OS << (CGN->getFunction() ? CGN->getFunction()->getName().getStringRef()
                                 : "external node");
     }
 
-    if (nextSCC.size() == 1 && SCCI.hasCycle())
+    if (nextSCC.size() == 1 && SCCI.hasCycle()) {
       OS << " (Has self-loop).";
+    }
   }
   OS << "\n";
-  return PreservedAnalyses::all();
 }
-
-CallGraphWrapperPass::CallGraphWrapperPass() : ModulePass(ID) {
-  initializeCallGraphWrapperPassPass(*PassRegistry::getPassRegistry());
-}
-
-CallGraphWrapperPass::~CallGraphWrapperPass() = default;
-
-void CallGraphWrapperPass::getAnalysisUsage(AnalysisUsage &AU) const {
-  AU.setPreservesAll();
-}
-
-bool CallGraphWrapperPass::runOnModule(Module &M) {
-  // All the real work is done in the constructor for the CallGraph.
-  G.reset(new CallGraph(M));
-  return false;
-}
-
-INITIALIZE_PASS(CallGraphWrapperPass, "basiccg", "CallGraph Construction",
-                false, true)
-
-char CallGraphWrapperPass::ID = 0;
-
-void CallGraphWrapperPass::releaseMemory() { G.reset(); }
-
-void CallGraphWrapperPass::print(mlir::raw_ostream &OS, const Module *) const {
-  if (!G) {
-    OS << "No call graph has been built!\n";
-    return;
-  }
-
-  // Just delegate.
-  G->print(OS);
-}
-
-#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
-LLVM_DUMP_METHOD
-void CallGraphWrapperPass::dump() const { print(dbgs(), nullptr); }
-#endif
-
-#endif
 
 } // namespace llzk

@@ -4,12 +4,18 @@
 
 #pragma once
 
-#include "llvm/ADT/STLExtras.h"
+#include <llvm/ADT/SCCIterator.h>
+#include <llvm/ADT/STLExtras.h>
 #include <cassert>
 #include <map>
 #include <memory>
+#include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include <mlir/Pass/Pass.h>
+
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 
 namespace llvm {
 
@@ -27,8 +33,6 @@ class ModuleOp;
 
 namespace llzk {
 
-class FuncOp;
-class CallOp;
 class CallGraphNode;
 
 /// The basic data container for the call graph of a Module of IR.
@@ -37,24 +41,27 @@ class CallGraphNode;
 ///
 /// The core call graph itself can also be updated to reflect changes to the IR.
 class CallGraph {
-  mlir::ModuleOp &M;
+  mlir::ModuleOp M;
 
   using FunctionMapTy =
-      std::map<const FuncOp *, std::unique_ptr<CallGraphNode>>;
+      std::map<FuncOp, std::unique_ptr<CallGraphNode>>;
 
   // A map from FuncOp* to CallGraphNode*.
   FunctionMapTy FunctionMap;
 
-  /// This node has edges to all external functions and those internal
-  /// functions that have their address taken.
-  CallGraphNode *ExternalCallingNode;
+  /// This node has edges to all compute/constrain functions, as those are currently
+  /// our entry points until main functions are supported.
+  /// Points to a "null" function.
+  CallGraphNode *EntryNode;
 
-  /// This node has edges to it from all functions making indirect calls
-  /// or calling an external function.
-  std::unique_ptr<CallGraphNode> CallsExternalNode;
+  // Maps node -> parents of the node.
+  using AncestorMapTy =
+    std::unordered_map<const CallGraphNode *, std::unordered_set<const CallGraphNode *>>;
+
+  mutable AncestorMapTy cachedReachability;
 
 public:
-  explicit CallGraph(mlir::ModuleOp &M);
+  explicit CallGraph(mlir::ModuleOp M);
   CallGraph(CallGraph &&Arg);
   ~CallGraph();
 
@@ -65,41 +72,33 @@ public:
   using const_iterator = FunctionMapTy::const_iterator;
 
   /// Returns the module the call graph corresponds to.
-  mlir::ModuleOp &getModule() const { return M; }
-
-//   bool invalidate(mlir::ModuleOp &, const PreservedAnalyses &PA,
-//                   ModuleAnalysisManager::Invalidator &);
+  mlir::ModuleOp &getModule() { return M; }
+  const mlir::ModuleOp &getModule() const { return M; }
 
   inline iterator begin() { return FunctionMap.begin(); }
   inline iterator end() { return FunctionMap.end(); }
   inline const_iterator begin() const { return FunctionMap.begin(); }
   inline const_iterator end() const { return FunctionMap.end(); }
+  inline size_t size() const { return FunctionMap.size(); }
 
   /// Returns the call graph node for the provided function.
-  inline const CallGraphNode *operator[](const FuncOp *F) const {
+  inline const CallGraphNode *operator[](const FuncOp &F) const {
     const_iterator I = FunctionMap.find(F);
     assert(I != FunctionMap.end() && "Function not in callgraph!");
     return I->second.get();
   }
 
   /// Returns the call graph node for the provided function.
-  inline CallGraphNode *operator[](const FuncOp *F) {
+  inline CallGraphNode *operator[](const FuncOp &F) {
     const_iterator I = FunctionMap.find(F);
     assert(I != FunctionMap.end() && "Function not in callgraph!");
     return I->second.get();
   }
 
-  /// Returns the \c CallGraphNode which is used to represent
-  /// undetermined calls into the callgraph.
-  CallGraphNode *getExternalCallingNode() const { return ExternalCallingNode; }
-
-  CallGraphNode *getCallsExternalNode() const {
-    return CallsExternalNode.get();
-  }
-
-  /// Old node has been deleted, and New is to be used in its place, update the
-  /// ExternalCallingNode.
-  void ReplaceExternalCallEdge(CallGraphNode *Old, CallGraphNode *New);
+  /**
+   * Returns the node that points to all possible entries, i.e.
+   */
+  CallGraphNode *getEntryNode() const { return EntryNode; }
 
   //===---------------------------------------------------------------------
   // Functions to keep a call graph up to date with a function that has been
@@ -112,18 +111,23 @@ public:
   /// destroyed.  This is only valid if the function does not call any other
   /// functions (ie, there are no edges in it's CGN).  The easiest way to do
   /// this is to dropAllReferences before calling this.
-  FuncOp *removeFunctionFromModule(CallGraphNode *CGN);
+  FuncOp removeFunctionFromModule(CallGraphNode *CGN);
 
   /// Similar to operator[], but this will insert a new CallGraphNode for
   /// \c F if one does not already exist.
-  CallGraphNode *getOrInsertFunction(const FuncOp *F);
+  CallGraphNode *getOrInsertFunction(FuncOp F);
 
   /// Populate \p CGN based on the calls inside the associated function.
   void populateCallGraphNode(CallGraphNode *CGN);
 
   /// Add a function to the call graph, and link the node to all of the
   /// functions that it calls.
-  void addToCallGraph(FuncOp *F);
+  void addToCallGraph(FuncOp &F);
+
+  /**
+   * Returns whether B is reachable from A.
+   */
+  bool isReachable(FuncOp &A, FuncOp &B) const;
 };
 
 /// A node in the call graph for a module.
@@ -139,7 +143,7 @@ public:
   using CalledFunctionsVector = std::vector<CallRecord>;
 
   /// Creates a node for the specified function.
-  inline CallGraphNode(CallGraph *CG, FuncOp *F) : CG(CG), F(F) {}
+  inline CallGraphNode(CallGraph *CG, FuncOp &F) : CG(CG), F(F) {}
 
   CallGraphNode(const CallGraphNode &) = delete;
   CallGraphNode &operator=(const CallGraphNode &) = delete;
@@ -152,7 +156,7 @@ public:
   using const_iterator = std::vector<CallRecord>::const_iterator;
 
   /// Returns the function that this call graph node represents.
-  FuncOp *getFunction() const { return F; }
+  const FuncOp &getFunction() const { return F; }
 
   inline iterator begin() { return CalledFunctions.begin(); }
   inline iterator end() { return CalledFunctions.end(); }
@@ -234,7 +238,7 @@ private:
   friend class CallGraph;
 
   CallGraph *CG;
-  FuncOp *F;
+  FuncOp F;
 
   std::vector<CallRecord> CalledFunctions;
 
@@ -249,139 +253,49 @@ private:
   void allReferencesDropped() { NumReferences = 0; }
 };
 
-/// TODO: Enable passes
-
-#if 0
-
-/// An analysis pass to compute the \c CallGraph for a \c Module.
+/// An analysis wrapper to compute the \c CallGraph for a \c Module.
 ///
 /// This class implements the concept of an analysis pass used by the \c
 /// ModuleAnalysisManager to run an analysis over a module and cache the
 /// resulting data.
-class CallGraphAnalysis : public AnalysisInfoMixin<CallGraphAnalysis> {
-  friend AnalysisInfoMixin<CallGraphAnalysis>;
-
-  static AnalysisKey Key;
+class CallGraphAnalysis {
+  std::unique_ptr<CallGraph> cg;
 
 public:
-  /// A formulaic type to inform clients of the result type.
-  using Result = CallGraph;
+  CallGraphAnalysis(mlir::Operation *op);
 
-  /// Compute the \c CallGraph for the module \c M.
-  ///
-  /// The real work here is done in the \c CallGraph constructor.
-  CallGraph run(Module &M, ModuleAnalysisManager &) { return CallGraph(M); }
+  CallGraph &getCallGraph() { return *cg.get(); }
+  const CallGraph &getCallGraph() const { return *cg.get(); }
 };
 
 /// Printer pass for the \c CallGraphAnalysis results.
-class CallGraphPrinterPass : public PassInfoMixin<CallGraphPrinterPass> {
-  raw_ostream &OS;
+class CallGraphPrinterPass : public mlir::PassWrapper<CallGraphPrinterPass, mlir::OperationPass<mlir::ModuleOp>> {
+  llvm::raw_ostream &OS;
 
 public:
-  explicit CallGraphPrinterPass(raw_ostream &OS) : OS(OS) {}
+  explicit CallGraphPrinterPass(llvm::raw_ostream &OS) : OS(OS) {}
 
-  PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
-
-  static bool isRequired() { return true; }
+  void runOnOperation() override;
 };
+
+static inline std::unique_ptr<mlir::Pass> createCallGraphPrinterPass(llvm::raw_ostream &os) {
+  return std::make_unique<CallGraphPrinterPass>(os);
+}
 
 /// Printer pass for the summarized \c CallGraphAnalysis results.
 class CallGraphSCCsPrinterPass
-    : public PassInfoMixin<CallGraphSCCsPrinterPass> {
-  raw_ostream &OS;
+    : public mlir::PassWrapper<CallGraphSCCsPrinterPass, mlir::OperationPass<mlir::ModuleOp>> {
+  llvm::raw_ostream &OS;
 
 public:
-  explicit CallGraphSCCsPrinterPass(raw_ostream &OS) : OS(OS) {}
+  explicit CallGraphSCCsPrinterPass(llvm::raw_ostream &OS) : OS(OS) {}
 
-  PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
-
-  static bool isRequired() { return true; }
+  void runOnOperation() override;
 };
 
-/// The \c ModulePass which wraps up a \c CallGraph and the logic to
-/// build it.
-///
-/// This class exposes both the interface to the call graph container and the
-/// module pass which runs over a module of IR and produces the call graph. The
-/// call graph interface is entirelly a wrapper around a \c CallGraph object
-/// which is stored internally for each module.
-class CallGraphWrapperPass : public ModulePass {
-  std::unique_ptr<CallGraph> G;
-
-public:
-  static char ID; // Class identification, replacement for typeinfo
-
-  CallGraphWrapperPass();
-  ~CallGraphWrapperPass() override;
-
-  /// The internal \c CallGraph around which the rest of this interface
-  /// is wrapped.
-  const CallGraph &getCallGraph() const { return *G; }
-  CallGraph &getCallGraph() { return *G; }
-
-  using iterator = CallGraph::iterator;
-  using const_iterator = CallGraph::const_iterator;
-
-  /// Returns the module the call graph corresponds to.
-  Module &getModule() const { return G->getModule(); }
-
-  inline iterator begin() { return G->begin(); }
-  inline iterator end() { return G->end(); }
-  inline const_iterator begin() const { return G->begin(); }
-  inline const_iterator end() const { return G->end(); }
-
-  /// Returns the call graph node for the provided function.
-  inline const CallGraphNode *operator[](const Function *F) const {
-    return (*G)[F];
-  }
-
-  /// Returns the call graph node for the provided function.
-  inline CallGraphNode *operator[](const Function *F) { return (*G)[F]; }
-
-  /// Returns the \c CallGraphNode which is used to represent
-  /// undetermined calls into the callgraph.
-  CallGraphNode *getExternalCallingNode() const {
-    return G->getExternalCallingNode();
-  }
-
-  CallGraphNode *getCallsExternalNode() const {
-    return G->getCallsExternalNode();
-  }
-
-  //===---------------------------------------------------------------------
-  // Functions to keep a call graph up to date with a function that has been
-  // modified.
-  //
-
-  /// Unlink the function from this module, returning it.
-  ///
-  /// Because this removes the function from the module, the call graph node is
-  /// destroyed.  This is only valid if the function does not call any other
-  /// functions (ie, there are no edges in it's CGN).  The easiest way to do
-  /// this is to dropAllReferences before calling this.
-  FuncOp *removeFunctionFromModule(CallGraphNode *CGN) {
-    return G->removeFunctionFromModule(CGN);
-  }
-
-  /// Similar to operator[], but this will insert a new CallGraphNode for
-  /// \c F if one does not already exist.
-  CallGraphNode *getOrInsertFunction(const Function *F) {
-    return G->getOrInsertFunction(F);
-  }
-
-  //===---------------------------------------------------------------------
-  // Implementation of the ModulePass interface needed here.
-  //
-
-  void getAnalysisUsage(AnalysisUsage &AU) const override;
-  bool runOnModule(Module &M) override;
-  void releaseMemory() override;
-
-  void print(raw_ostream &o, const Module *) const override;
-  void dump() const;
-};
-
-#endif
+static inline std::unique_ptr<mlir::Pass> createCallGraphSCCsPrinterPass(llvm::raw_ostream &os) {
+  return std::make_unique<CallGraphSCCsPrinterPass>(os);
+}
 
 } // namespace llzk
 
@@ -444,10 +358,10 @@ template <> struct llvm::GraphTraits<const llzk::CallGraphNode *> {
 template <>
 struct GraphTraits<llzk::CallGraph *> : public GraphTraits<llzk::CallGraphNode *> {
   using PairTy =
-      std::pair<const llzk::FuncOp *const, std::unique_ptr<llzk::CallGraphNode>>;
+      std::pair<const llzk::FuncOp, std::unique_ptr<llzk::CallGraphNode>>;
 
   static NodeRef getEntryNode(llzk::CallGraph *CGN) {
-    return CGN->getExternalCallingNode(); // Start at the external node!
+    return CGN->getEntryNode();
   }
 
   static llzk::CallGraphNode *CGGetValuePtr(const PairTy &P) {
@@ -471,10 +385,10 @@ template <>
 struct GraphTraits<const llzk::CallGraph *> : public GraphTraits<
                                             const llzk::CallGraphNode *> {
   using PairTy =
-      std::pair<const llzk::FuncOp *const, std::unique_ptr<llzk::CallGraphNode>>;
+      std::pair<const llzk::FuncOp, std::unique_ptr<llzk::CallGraphNode>>;
 
   static NodeRef getEntryNode(const llzk::CallGraph *CGN) {
-    return CGN->getExternalCallingNode(); // Start at the external node!
+    return CGN->getEntryNode();
   }
 
   static const llzk::CallGraphNode *CGGetValuePtr(const PairTy &P) {

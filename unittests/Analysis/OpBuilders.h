@@ -104,6 +104,14 @@ private:
   std::unordered_map<std::string_view, llzk::FuncOp> computeFnMap;
   std::unordered_map<std::string_view, llzk::FuncOp> constrainFnMap;
 
+  mlir::SymbolRefAttr getFullyQualifiedFuncSymbol(llzk::StructDefOp *s, llzk::FuncOp &op) {
+    return mlir::SymbolRefAttr::get(
+      &context,
+      s->getName(),
+      mlir::ArrayRef{mlir::FlatSymbolRefAttr::get(op)}
+    );
+  }
+
   void updateComputeReachability(llzk::StructDefOp *caller, llzk::StructDefOp *callee) {
     updateReachability(computeNodes, caller, callee);
   }

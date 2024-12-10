@@ -40,7 +40,7 @@ llzk::FuncOp LLZKTestModuleBuilder::insertComputeFn(llzk::StructDefOp *op) {
 
   auto fnOp = opBuilder.create<llzk::FuncOp>(
     UnknownLoc::get(&context),
-    StringAttr::get(&context, "compute"),
+    StringAttr::get(&context, llzk::FUNC_NAME_COMPUTE),
     FunctionType::get(&context, {}, {structType})
   );
   fnOp.addEntryBlock();
@@ -57,7 +57,7 @@ llzk::FuncOp LLZKTestModuleBuilder::insertConstrainFn(llzk::StructDefOp *op) {
 
   auto fnOp = opBuilder.create<llzk::FuncOp>(
     UnknownLoc::get(&context),
-    StringAttr::get(&context, "constrain"),
+    StringAttr::get(&context, llzk::FUNC_NAME_CONSTRAIN),
     FunctionType::get(&context, {structType}, {})
   );
   fnOp.addEntryBlock();
@@ -73,14 +73,18 @@ void LLZKTestModuleBuilder::insertComputeCall(llzk::StructDefOp *caller, llzk::S
   OpBuilder builder(callerFn.getBody());
   builder.create<llzk::CallOp>(
     UnknownLoc::get(&context),
-    calleeFn
+    /*
+      Note that using the FQN for the function call is required, simply using
+      the FuncOp will only insert the function's name, omitting the struct.
+    */
+    getFullyQualifiedFuncSymbol(callee, calleeFn),
+    mlir::ValueRange{}
   );
   updateComputeReachability(caller, callee);
 }
 
 void LLZKTestModuleBuilder::insertConstrainCall(llzk::StructDefOp *caller, llzk::StructDefOp *callee) {
   auto callerFn = constrainFnMap.at(caller->getName());
-  auto callerTy = llzk::StructType::get(&context, SymbolRefAttr::get(*caller));
   auto calleeFn = constrainFnMap.at(callee->getName());
   auto calleeTy = llzk::StructType::get(&context, SymbolRefAttr::get(*callee));
 
@@ -110,7 +114,7 @@ void LLZKTestModuleBuilder::insertConstrainCall(llzk::StructDefOp *caller, llzk:
     );
     builder.create<llzk::CallOp>(
       UnknownLoc::get(&context),
-      calleeFn,
+      getFullyQualifiedFuncSymbol(callee, calleeFn),
       mlir::ValueRange{field}
     );
   }
@@ -201,7 +205,7 @@ TEST(LLZKTestModuleBuilderTests, testConstruction) {
     size_t numFn = 0;
     for (auto fn : s.getOps<llzk::FuncOp>()) {
       numFn++;
-      ASSERT_EQ(fn.getName(), "constrain");
+      ASSERT_EQ(fn.getName(), llzk::FUNC_NAME_CONSTRAIN);
     }
     ASSERT_EQ(numFn, 1);
   }
