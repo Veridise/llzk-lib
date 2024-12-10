@@ -426,3 +426,26 @@ module attributes {veridise.lang = "llzk"} {
     return %0 : !llzk.struct<@a::@ComponentU1<[@D]>>
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @bad(%0: !llzk.felt) {
+    // expected-error@+1 {{'llzk.read_const' op only valid within a 'llzk.struct'}}
+    %1 = read_const @X : !llzk.felt
+    return
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentV<[@A]> { // // expected-note {{must reference a parameter of this struct}}
+    func @compute(%0: !llzk.felt) -> !llzk.struct<@ComponentV<[@A]>> {
+      %self = new_struct : !llzk.struct<@ComponentV<[@A]>>
+      return %self : !llzk.struct<@ComponentV<[@A]>>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentV<[@A]>>, %0: !llzk.felt) {
+      // expected-error@+1 {{'llzk.read_const' op references unknown symbol "@X"}}
+      %1 = read_const @X : !llzk.felt
+      emit_eq %0, %1 : !llzk.felt
+      return
+    }
+  }
+}

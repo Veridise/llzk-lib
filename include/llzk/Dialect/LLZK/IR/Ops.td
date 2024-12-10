@@ -162,6 +162,24 @@ def LLZK_StructDefOp
   let hasRegionVerifier = 1;
 }
 
+def LLZK_ConstReadOp
+    : LLZK_Op<
+          "read_const", [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+  let summary = "Read value from a struct/component constant parameter.";
+  let description = [{
+    This operation reads the value from the named constant parameter of
+    the struct/component in which this op appears. The op itself puts no
+    restriction on the type of this value, instead leaving it to a later
+    type-checking pass to ensure the struct parameters are instantiated
+    with types matching the uses of the parameter within the struct.
+  }];
+
+  let arguments = (ins FlatSymbolRefAttr:$const_name);
+  let results = (outs AnyLLZKType:$val);
+
+  let assemblyFormat = [{ $const_name attr-dict `:` type($val) }];
+}
+
 def LLZK_FieldDefOp
     : LLZK_Op<"field", [HasParent<"::llzk::StructDefOp">,
                         DeclareOpInterfaceMethods<SymbolUserOpInterface>,

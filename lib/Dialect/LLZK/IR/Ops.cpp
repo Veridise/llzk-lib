@@ -178,6 +178,26 @@ FieldDefOp StructDefOp::getFieldDef(mlir::StringAttr fieldName) {
 }
 
 //===------------------------------------------------------------------===//
+// ConstReadOp
+//===------------------------------------------------------------------===//
+
+mlir::LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+  FailureOr<StructDefOp> getParentRes = getParentOfType<StructDefOp>(*this);
+  if (failed(getParentRes)) {
+    return this->emitOpError().append(
+        "only valid within a '", StructDefOp::getOperationName(), "'"
+    );
+  }
+  if (!getParentRes->hasParamNamed(this->getConstNameAttr())) {
+    return this->emitOpError()
+        .append("references unknown symbol \"", this->getConstNameAttr(), "\"")
+        .attachNote(getParentRes->getLoc())
+        .append("must reference a parameter of this struct");
+  }
+  return mlir::success();
+}
+
+//===------------------------------------------------------------------===//
 // FieldDefOp
 //===------------------------------------------------------------------===//
 bool FieldDefOp::hasPublicAttr() { return getOperation()->hasAttr(PublicAttr::name); }
