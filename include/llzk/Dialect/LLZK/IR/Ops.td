@@ -121,9 +121,9 @@ def LLZK_StructDefOp
       ```
   }];
 
-  // Note: the `$const_params` are actually symbol definitions that do not use the
-  //  standard SymbolTable mechanism. Instead the hasParamNamed() function can be
-  //  used to check if a certain FlatSymbolRefAttr is a parameter in the function.
+  // Note: `$const_params` contains symbol definitions that do not use the
+  // standard SymbolTable mechanism. Instead hasParamNamed() can be used to
+  // check if a certain FlatSymbolRefAttr is a parameter in the function.
   let arguments = (ins SymbolNameAttr:$sym_name,
       OptionalAttr<FlatSymbolRefArrayAttr>:$const_params);
 
@@ -144,6 +144,10 @@ def LLZK_StructDefOp
 
     /// Generate header string, in the same format as the assemblyFormat
     ::std::string getHeaderString();
+
+    /// Return `true` iff this StructDefOp has a parameter with the given name
+    bool hasParamNamed(::mlir::FlatSymbolRefAttr find);
+    bool hasParamNamed(::mlir::StringAttr find);
 
     //===------------------------------------------------------------------===//
     // OpAsmOpInterface Methods

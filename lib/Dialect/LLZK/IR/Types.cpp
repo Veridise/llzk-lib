@@ -34,8 +34,10 @@ bool isValidEmitEqType(mlir::Type type) {
 
 namespace {
 bool structParamAttrUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute &rhsAttr) {
-  return lhsAttr == rhsAttr || lhsAttr.isa<mlir::FlatSymbolRefAttr>() ||
-         rhsAttr.isa<mlir::FlatSymbolRefAttr>();
+  // If either attribute is a symbol ref, we assume they unify because a later pass with a
+  //  more involved value analysis is required to check if they are actually the same value.
+  return lhsAttr == rhsAttr || lhsAttr.isa<mlir::SymbolRefAttr>() ||
+         rhsAttr.isa<mlir::SymbolRefAttr>();
 }
 
 /// Return `true` iff the two ArrayAttr instances containing struct parameters are equivalent or
@@ -80,9 +82,11 @@ mlir::LogicalResult StructType::verify(
     mlir::ArrayAttr params
 ) {
   if (params) {
-    // Ensure the parameters in the StructType are only Integer constants or FlatSymbolRef.
+    // Ensure the parameters in the StructType are only
+    //  - Integer constants
+    //  - SymbolRef (global constants defined in another module require non-flat ref)
     for (auto i = params.begin(); i != params.end(); ++i) {
-      if (!i->isa<mlir::IntegerAttr>() && !i->isa<mlir::FlatSymbolRefAttr>()) {
+      if (!i->isa<mlir::IntegerAttr>() && !i->isa<mlir::SymbolRefAttr>()) {
         return emitError() << "Unexpected struct parameter type: "
                            << i->getAbstractAttribute().getName();
       }

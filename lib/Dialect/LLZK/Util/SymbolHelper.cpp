@@ -205,23 +205,70 @@ lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *
   return SymbolLookupResultUntyped();
 }
 
+namespace {
+LogicalResult isValidStructTypeParam(
+    SymbolTableCollection &tables, SymbolRefAttr param, Operation *origin,
+    llvm::function_ref<InFlightDiagnostic(SymbolRefAttr, OperationName)> invalidRef
+) {
+  // Most often, StructType parameters will be defined as parameters of
+  //  the StructDefOp that the current Operation is nested within. These
+  //  are always flat references (i.e. contain no nested references).
+  if (param.getNestedReferences().empty()) {
+    FailureOr<StructDefOp> getParentRes = getParentOfType<StructDefOp>(origin);
+    if (succeeded(getParentRes)) {
+      if (getParentRes->hasParamNamed(param.getRootReference())) {
+        return success();
+      }
+    }
+  }
+  // Otherwise, see if the symbol can be found via lookup from the `origin` Operation.
+  auto lookupRes = lookupTopLevelSymbol(tables, param, origin);
+  if (failed(lookupRes)) {
+    return failure(); // lookupTopLevelSymbol() already emits a sufficient error message
+  }
+  Operation *foundOp = lookupRes->get();
+  // TODO: Currently there is no type of Symbol Operation that is valid here. However, when
+  //  the GlobalConstDef Operation is added, it will be valid to use in this context.
+  return invalidRef(param, foundOp->getName()); // TODO
+}
+} // namespace
+
 FailureOr<StructDefOp>
-verifyStructTypeResolution(SymbolTableCollection &symbolTable, StructType ty, Operation *origin) {
-  auto res = ty.getDefinition(symbolTable, origin);
+verifyStructTypeResolution(SymbolTableCollection &tables, StructType ty, Operation *origin) {
+  auto res = ty.getDefinition(tables, origin);
   if (failed(res)) {
     return failure();
   }
-  StructDefOp def = res.value().get();
-  if (structTypesUnify(ty, def.getType(), res->getIncludeSymNames())) {
-    return def;
+  StructDefOp defForType = res.value().get();
+  if (!structTypesUnify(ty, defForType.getType({}), res->getIncludeSymNames())) {
+    return origin->emitError()
+        .append(
+            "Cannot unify parameters of type ", ty, " with parameters of '",
+            StructDefOp::getOperationName(), "' \"", defForType.getHeaderString(), "\""
+        )
+        .attachNote(defForType.getLoc())
+        .append("type parameters must unify with parameters defined here");
   }
-  return origin->emitError()
-      .append(
-          "Cannot unify parameters of type ", ty, " with parameters of '",
-          StructDefOp::getOperationName(), "' \"", def.getHeaderString(), "\""
-      )
-      .attachNote(def.getLoc())
-      .append("type parameters must unify with parameters defined here");
+  // If there are any SymbolRefAttr parameters on the StructType, ensure those refs are valid.
+  if (ArrayAttr tyParams = ty.getParams()) {
+    auto invalidRef = [origin, ty](SymbolRefAttr r, OperationName foundOp) {
+      return origin->emitError().append(
+          "ref \"", r, "\" in type ", ty, " refers to a '", foundOp, "' which is not allowed"
+      );
+    };
+    LogicalResult paramCheckResult = success();
+    for (Attribute attr : tyParams) {
+      if (SymbolRefAttr paramSymRef = llvm::dyn_cast<SymbolRefAttr>(attr)) {
+        if (failed(isValidStructTypeParam(tables, paramSymRef, origin, invalidRef))) {
+          paramCheckResult = failure();
+        }
+      }
+    }
+    if (failed(paramCheckResult)) {
+      return failure();
+    }
+  }
+  return defForType;
 }
 
 LogicalResult verifyTypeResolution(SymbolTableCollection &symbolTable, Type ty, Operation *origin) {
