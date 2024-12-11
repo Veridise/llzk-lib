@@ -83,3 +83,18 @@ TEST(CallGraphTests, analysisConstructorBadArg) {
 
   ASSERT_DEATH(llzk::CallGraphAnalysis(structOp.getOperation()), "CallGraphAnalysis expects provided op to be a ModuleOp!");
 }
+
+TEST(CallGraphTests, removeTest) {
+  LLZKTestModuleBuilder builder;
+  auto structOp = builder.insertFullStruct("A");
+
+  llzk::CallGraph cgraph(builder.getMod());
+
+  auto removedComputeFn = cgraph.removeFunctionFromModule(cgraph[builder.getComputeFn(&structOp)]);
+  ASSERT_NE(removedComputeFn, nullptr);
+  auto removedConstrainFn = cgraph.removeFunctionFromModule(cgraph[builder.getConstrainFn(&structOp)]);
+  ASSERT_NE(removedConstrainFn, nullptr);
+
+  // Size also include "nullptr" function, so should just be 1
+  ASSERT_EQ(cgraph.size(), 1);
+}

@@ -93,12 +93,18 @@ LLVM_DUMP_METHOD void CallGraph::dump() const { print(llvm::dbgs()); }
 // removeFunctionFromModule - Unlink the function from this module, returning
 // it.  Because this removes the function from the module, the call graph node
 // is destroyed.  This is only valid if the function does not call any other
-// functions (ie, there are no edges in it's CGN).  The easiest way to do this
-// is to dropAllReferences before calling this.
+// functions (ie, there are no edges in it's CGN).
 //
 FuncOp CallGraph::removeFunctionFromModule(CallGraphNode *CGN) {
   assert(CGN->empty() && "Cannot remove function from call "
          "graph if it references other functions!");
+  // Remove from entry node if applicable
+  for (auto it = EntryNode->begin(); it != EntryNode->end(); it++) {
+    if (it->second == CGN) {
+      EntryNode->removeCallEdge(it);
+      break;
+    }
+  }
   FuncOp F = CGN->getFunction(); // Get the function for the call graph node
   FunctionMap.erase(F);          // Remove the call graph node from the map
 
