@@ -3,6 +3,7 @@
 
 #include <mlir/IR/BuiltinOps.h>
 #include <llzk/Dialect/LLZK/IR/Ops.h>
+#include <mlir/Pass/PassManager.h>
 
 #include <llzk/Dialect/LLZK/Analysis/CallGraph.h>
 
@@ -51,21 +52,22 @@ TEST(CallGraphTests, reachabilityTest) {
   builder.insertConstrainCall(&bOp, &aOp);
   builder.insertConstrainCall(&cOp, &aOp);
 
-  llzk::CallGraph cgraph(builder.getMod());
-
   auto aComp = builder.getComputeFn(&aOp), bComp = builder.getComputeFn(&bOp), cComp = builder.getComputeFn(&cOp);
   auto aCons = builder.getConstrainFn(&aOp), bCons = builder.getConstrainFn(&bOp), cCons = builder.getConstrainFn(&cOp);
 
-  ASSERT_TRUE(cgraph.isReachable(aComp, bComp));
-  ASSERT_TRUE(cgraph.isReachable(bComp, cComp));
-  ASSERT_TRUE(cgraph.isReachable(aComp, cComp));
-  ASSERT_TRUE(cgraph.isReachable(aComp, cComp)); // test caching
-  ASSERT_TRUE(cgraph.isReachable(bCons, aCons));
-  ASSERT_TRUE(cgraph.isReachable(cCons, aCons));
+  mlir::ModuleAnalysisManager mam(builder.getMod(), nullptr);
+  mlir::AnalysisManager am = mam;
+  llzk::CallGraphReachabilityAnalysis cgra(builder.getMod().getOperation(), am);
 
-  ASSERT_FALSE(cgraph.isReachable(cComp, bComp));
-  ASSERT_FALSE(cgraph.isReachable(cComp, aCons));
-  ASSERT_FALSE(cgraph.isReachable(aCons, bCons));
+  ASSERT_TRUE(cgra.isReachable(aComp, bComp));
+  ASSERT_TRUE(cgra.isReachable(bComp, cComp));
+  ASSERT_TRUE(cgra.isReachable(aComp, cComp));
+  ASSERT_TRUE(cgra.isReachable(bCons, aCons));
+  ASSERT_TRUE(cgra.isReachable(cCons, aCons));
+
+  ASSERT_FALSE(cgra.isReachable(cComp, bComp));
+  ASSERT_FALSE(cgra.isReachable(cComp, aCons));
+  ASSERT_FALSE(cgra.isReachable(aCons, bCons));
 }
 
 TEST(CallGraphTests, analysisConstructor) {

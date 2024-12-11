@@ -1,4 +1,5 @@
 #include "llzk/Dialect/InitDialects.h"
+#include "llzk/Dialect/LLZK/Analysis/CallGraphPasses.h"
 #include "llzk/Dialect/LLZK/Transforms/LLZKPasses.h"
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 
@@ -22,7 +23,8 @@ int main(int argc, char **argv) {
   // MLIR initialization
   mlir::DialectRegistry registry;
   llzk::registerAllDialects(registry);
-  llzk::registerPasses();
+  llzk::registerAnalysisPasses();
+  llzk::registerTransformationPasses();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;

@@ -294,6 +294,24 @@ mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable)
   return mlir::LogicalResult::success(mlir::succeeded(a) && mlir::succeeded(b));
 }
 
+mlir::SymbolRefAttr FuncOp::getFullyQualifiedName() const {
+  std::vector<mlir::FlatSymbolRefAttr> symbols;
+  auto *current = const_cast<FuncOp *>(this)->getOperation();
+  while (current != nullptr) {
+    if (mlir::isa<mlir::SymbolOpInterface>(current)) {
+      symbols.push_back(mlir::FlatSymbolRefAttr::get(current));
+    }
+    current = current->getParentOp();
+  }
+  std::reverse(symbols.begin(), symbols.end());
+  std::vector<mlir::FlatSymbolRefAttr> nested(symbols.begin() + 1, symbols.end());
+
+  return mlir::SymbolRefAttr::get(
+    symbols.front().getRootReference(),
+    mlir::ArrayRef<mlir::FlatSymbolRefAttr>(nested)
+  );
+}
+
 //===----------------------------------------------------------------------===//
 // ReturnOp
 //===----------------------------------------------------------------------===//

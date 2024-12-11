@@ -138,78 +138,25 @@ CallGraphNode *CallGraph::getOrInsertFunction(FuncOp F) {
   return CGN.get();
 }
 
-bool CallGraph::isReachable(FuncOp &A, FuncOp &B) const {
-  if (FunctionMap.find(A) == FunctionMap.end() || FunctionMap.find(B) == FunctionMap.end()) {
-    return false;
-  }
-  const CallGraphNode *start = FunctionMap.at(A).get(), *end = FunctionMap.at(B).get();
-
-  if (cachedReachability.find(end) != cachedReachability.end()) {
-    const auto &s = cachedReachability.at(end);
-    if (s.find(start) != s.end()) {
-      return true;
-    }
-    // We don't return false here because our cached results might come from
-    // a separate ancestry path.
-  }
-
-  /*
-    Simple BFS until we:
-    1. Reach the end pointer, or
-    2. Explore all nodes from start and find nothing.
-  */
-  std::deque<const CallGraphNode *> frontier;
-  std::unordered_set<const CallGraphNode *> visited;
-  frontier.push_back(start);
-  while (!frontier.empty()) {
-    const CallGraphNode *n = frontier.front();
-    frontier.pop_front();
-
-    if (visited.find(n) != visited.end()) {
-      continue;
-    }
-    visited.insert(n);
-
-    for (const auto &[_, child] : *n) {
-      const auto &parentSet = cachedReachability[n]; // default construct in empty case
-      auto &childSet = cachedReachability[child];
-      // update cache, then check, then add to frontier
-      childSet.insert(n); // add parent
-      childSet.insert(parentSet.begin(), parentSet.end()); // add parent's set
-
-      if (child == end) {
-        return true;
-      }
-
-      frontier.push_back(child);
-    }
-  }
-
-  return false;
-}
-
 /* CallGraphNode */
 
 void CallGraphNode::print(mlir::raw_ostream &OS) const {
   if (F) {
-    OS << "Call graph node for function: '" << F->getName() << "'";
+    OS << "Call graph node for function: '" << F.getFullyQualifiedName() << "'";
   } else {
     OS << "Entry call graph node (null function)";
   }
 
   OS << "<<" << this << ">>  #uses=" << getNumReferences() << '\n';
 
-  for (const auto &I : *this) {
-    OS << "  CS<" << I.first;
-    if (I.first) {
-      OS << " (" << *I.first << ")";
-    }
-    OS << "> calls ";
-    if (const FuncOp &FI = I.second->getFunction()) {
-      OS << "function '" << FI->getName() <<"'\n";
+  for (auto &[callSite, calleeNode] : *this) {
+    OS << "  CS<";
+    if (callSite) {
+      OS << callSite << " (" << *callSite << ")";
     } else {
-      OS << "external node\n";
+      OS << "entry node";
     }
+    OS << "> calls function '" << calleeNode->getFunction().getFullyQualifiedName() <<"'\n";
   }
   OS << '\n';
 }
@@ -300,8 +247,6 @@ void CallGraphNode::replaceCallEdge(CallOp *Call, CallOp *NewCall,
   }
 }
 
-/* Passes and Analyses */
-
 CallGraphAnalysis::CallGraphAnalysis(mlir::Operation *op) : cg(nullptr) {
   if (auto modOp = mlir::dyn_cast<mlir::ModuleOp>(op)) {
     cg = std::make_unique<CallGraph>(modOp);
@@ -312,38 +257,41 @@ CallGraphAnalysis::CallGraphAnalysis(mlir::Operation *op) : cg(nullptr) {
   }
 }
 
-void CallGraphPrinterPass::runOnOperation() {
-  markAllAnalysesPreserved();
+std::unordered_set<const CallGraphNode *> CallGraphReachabilityAnalysis::dfsNodes(
+  const CallGraphNode *currNode,
+  std::unordered_set<const CallGraphNode *> visited
+) {
+  std::unordered_set<const CallGraphNode *> descendents;
+  if (visited.find(currNode) != visited.end()) {
+    return descendents;
+  }
 
-  auto &cga = getAnalysis<CallGraphAnalysis>();
-  cga.getCallGraph().print(OS);
+  visited.insert(currNode);
+  for (const auto &[_, childNode] : *currNode) {
+    auto childDesc = dfsNodes(childNode, visited);
+    descendents.insert(childNode);
+    descendents.insert(childDesc.begin(), childDesc.end());
+  }
+
+  // update cache
+  for (const auto childNode : descendents) {
+    reachabilityMap[currNode->getFunction()].insert(childNode->getFunction());
+  }
+
+  return descendents;
 }
 
-void CallGraphSCCsPrinterPass::runOnOperation() {
-  markAllAnalysesPreserved();
-
-  auto &CG = getAnalysis<CallGraphAnalysis>();
-  unsigned sccNum = 0;
-  OS << "SCCs for the program in PostOrder:";
-  for (auto SCCI = llvm::scc_begin(&CG.getCallGraph()); !SCCI.isAtEnd(); ++SCCI) {
-    const std::vector<CallGraphNode *> &nextSCC = *SCCI;
-    OS << "\nSCC #" << ++sccNum << ": ";
-    bool First = true;
-    for (CallGraphNode *CGN : nextSCC) {
-      if (First) {
-        First = false;
-      } else {
-        OS << ", ";
-      }
-      OS << (CGN->getFunction() ? CGN->getFunction()->getName().getStringRef()
-                                : "external node");
-    }
-
-    if (nextSCC.size() == 1 && SCCI.hasCycle()) {
-      OS << " (Has self-loop).";
-    }
+CallGraphReachabilityAnalysis::CallGraphReachabilityAnalysis(mlir::Operation *op, mlir::AnalysisManager &am) {
+  if (!mlir::isa<mlir::ModuleOp>(op)) {
+    auto error_message = "CallGraphReachabilityAnalysis expects provided op to be a ModuleOp!";
+    op->emitError(error_message);
+    llvm::report_fatal_error(error_message);
   }
-  OS << "\n";
+
+  auto &cg = am.getAnalysis<CallGraphAnalysis>().getCallGraph();
+
+  const CallGraphNode *start = cg.getEntryNode();
+  (void)dfsNodes(start, {});
 }
 
 } // namespace llzk

@@ -1,7 +1,7 @@
 include_directories(${MLIR_INCLUDE_DIRS} ${LLZK_INCLUDE_DIR})
 
 set(LLVM_TARGET_DEFINITIONS "LLZKPasses.td")
-mlir_tablegen(LLZKPasses.h.inc -gen-pass-decls)
+mlir_tablegen(LLZKPasses.h.inc -gen-pass-decls -name=Transformation)
 llzk_add_mlir_doc(LLZKPassesDocGen LLZKPasses.md -gen-pass-doc)
 
 add_public_tablegen_target(LLZKTransformIncGen)

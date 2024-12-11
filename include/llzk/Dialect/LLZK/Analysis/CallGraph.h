@@ -54,12 +54,6 @@ class CallGraph {
   /// Points to a "null" function.
   CallGraphNode *EntryNode;
 
-  // Maps node -> parents of the node.
-  using AncestorMapTy =
-    std::unordered_map<const CallGraphNode *, std::unordered_set<const CallGraphNode *>>;
-
-  mutable AncestorMapTy cachedReachability;
-
 public:
   explicit CallGraph(mlir::ModuleOp M);
   CallGraph(CallGraph &&Arg);
@@ -96,7 +90,7 @@ public:
   }
 
   /**
-   * Returns the node that points to all possible entries, i.e.
+   * Returns the node that points to all possible entry functions.
    */
   CallGraphNode *getEntryNode() const { return EntryNode; }
 
@@ -123,11 +117,6 @@ public:
   /// Add a function to the call graph, and link the node to all of the
   /// functions that it calls.
   void addToCallGraph(FuncOp &F);
-
-  /**
-   * Returns whether B is reachable from A.
-   */
-  bool isReachable(FuncOp &A, FuncOp &B) const;
 };
 
 /// A node in the call graph for a module.
@@ -156,6 +145,7 @@ public:
   using const_iterator = std::vector<CallRecord>::const_iterator;
 
   /// Returns the function that this call graph node represents.
+  FuncOp &getFunction() { return F; }
   const FuncOp &getFunction() const { return F; }
 
   inline iterator begin() { return CalledFunctions.begin(); }
@@ -268,34 +258,39 @@ public:
   const CallGraph &getCallGraph() const { return *cg.get(); }
 };
 
-/// Printer pass for the \c CallGraphAnalysis results.
-class CallGraphPrinterPass : public mlir::PassWrapper<CallGraphPrinterPass, mlir::OperationPass<mlir::ModuleOp>> {
-  llvm::raw_ostream &OS;
+/// Pre-constructed all-pairs reachability analysis.
+class CallGraphReachabilityAnalysis {
+
+  struct FuncOpHash {
+    size_t operator()(const FuncOp &op) const {
+      return std::hash<mlir::Operation *>{}(const_cast<FuncOp&>(op).getOperation());
+    }
+  };
+
+  // Maps function -> callees
+  using CalleeMapTy =
+    std::unordered_map<FuncOp, std::unordered_set<FuncOp, FuncOpHash>, FuncOpHash>;
+
+  CalleeMapTy reachabilityMap;
+
+  std::unordered_set<const CallGraphNode *> dfsNodes(const CallGraphNode *currNode, std::unordered_set<const CallGraphNode *> visited);
 
 public:
-  explicit CallGraphPrinterPass(llvm::raw_ostream &OS) : OS(OS) {}
+  CallGraphReachabilityAnalysis(mlir::Operation *op, mlir::AnalysisManager &am);
 
-  void runOnOperation() override;
+  bool isInvalidated(const mlir::AnalysisManager::PreservedAnalyses &pa) {
+    return !pa.isPreserved<CallGraphReachabilityAnalysis>() ||
+           !pa.isPreserved<CallGraphAnalysis>();
+  }
+
+  /**
+   * Returns whether B is reachable from A.
+   */
+  bool isReachable(FuncOp &A, FuncOp &B) const {
+    auto it = reachabilityMap.find(A);
+    return it != reachabilityMap.end() && it->second.find(B) != it->second.end();
+  }
 };
-
-static inline std::unique_ptr<mlir::Pass> createCallGraphPrinterPass(llvm::raw_ostream &os) {
-  return std::make_unique<CallGraphPrinterPass>(os);
-}
-
-/// Printer pass for the summarized \c CallGraphAnalysis results.
-class CallGraphSCCsPrinterPass
-    : public mlir::PassWrapper<CallGraphSCCsPrinterPass, mlir::OperationPass<mlir::ModuleOp>> {
-  llvm::raw_ostream &OS;
-
-public:
-  explicit CallGraphSCCsPrinterPass(llvm::raw_ostream &OS) : OS(OS) {}
-
-  void runOnOperation() override;
-};
-
-static inline std::unique_ptr<mlir::Pass> createCallGraphSCCsPrinterPass(llvm::raw_ostream &os) {
-  return std::make_unique<CallGraphSCCsPrinterPass>(os);
-}
 
 } // namespace llzk
 
