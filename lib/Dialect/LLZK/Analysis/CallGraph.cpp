@@ -16,14 +16,11 @@ using namespace ::mlir;
 
 CallGraph::CallGraph(ModuleOp M) : M(M), EntryNode(getOrInsertFunction(FuncOp(nullptr))) {
   // Add every interesting function to the call graph.
-  M.walk([&](FuncOp F) {
-    addToCallGraph(F);
-  });
+  M.walk([&](FuncOp F) { addToCallGraph(F); });
 }
 
 CallGraph::CallGraph(CallGraph &&Arg)
-    : M(Arg.M), FunctionMap(std::move(Arg.FunctionMap)),
-      EntryNode(Arg.EntryNode) {
+    : M(Arg.M), FunctionMap(std::move(Arg.FunctionMap)), EntryNode(Arg.EntryNode) {
   Arg.FunctionMap.clear();
 
   // Update parent CG for all call graph's nodes.
@@ -71,8 +68,9 @@ void CallGraph::print(mlir::raw_ostream &OS) const {
   llvm::SmallVector<CallGraphNode *, 16> Nodes;
   Nodes.reserve(FunctionMap.size());
 
-  for (const auto &I : *this)
+  for (const auto &I : *this) {
     Nodes.push_back(I.second.get());
+  }
 
   llvm::sort(Nodes, [](CallGraphNode *LHS, CallGraphNode *RHS) {
     if (LHS->getFunction() && RHS->getFunction()) {
@@ -96,8 +94,10 @@ LLVM_DUMP_METHOD void CallGraph::dump() const { print(llvm::dbgs()); }
 // functions (ie, there are no edges in it's CGN).
 //
 FuncOp CallGraph::removeFunctionFromModule(CallGraphNode *CGN) {
-  assert(CGN->empty() && "Cannot remove function from call "
-         "graph if it references other functions!");
+  assert(
+      CGN->empty() && "Cannot remove function from call "
+                      "graph if it references other functions!"
+  );
   // Remove from entry node if applicable
   for (auto it = EntryNode->begin(); it != EntryNode->end(); it++) {
     if (it->second == CGN) {
@@ -121,7 +121,7 @@ CallGraphNode *CallGraph::getOrInsertFunction(FuncOp F) {
     return CGN.get();
   }
 
-  auto containedInModule = [&] (mlir::Operation *op, FuncOp &f) {
+  auto containedInModule = [&](mlir::Operation *op, FuncOp &f) {
     assert(f);
     if (op->hasTrait<mlir::OpTrait::SymbolTable>()) {
       return mlir::SymbolTable::lookupSymbolIn(op, f.getName()) != nullptr;
@@ -162,7 +162,7 @@ void CallGraphNode::print(mlir::raw_ostream &OS) const {
     } else {
       OS << "entry node";
     }
-    OS << "> calls function '" << calleeNode->getFunction().getFullyQualifiedName() <<"'\n";
+    OS << "> calls function '" << calleeNode->getFunction().getFullyQualifiedName() << "'\n";
   }
   OS << '\n';
 }
@@ -175,7 +175,7 @@ LLVM_DUMP_METHOD void CallGraphNode::dump() const { print(llvm::dbgs()); }
 /// specified call site.  Note that this method takes linear time, so it
 /// should be used sparingly.
 void CallGraphNode::removeCallEdgeFor(CallOp *Call) {
-  for (CalledFunctionsVector::iterator I = CalledFunctions.begin(); ; ++I) {
+  for (CalledFunctionsVector::iterator I = CalledFunctions.begin();; ++I) {
     assert(I != CalledFunctions.end() && "Cannot find callsite to remove!");
     if (I->first == Call) {
       I->second->DropRef();
@@ -194,19 +194,21 @@ void CallGraphNode::removeCallEdgeFor(CallOp *Call) {
 // the specified callee function.  This takes more time to execute than
 // removeCallEdgeTo, so it should not be used unless necessary.
 void CallGraphNode::removeAnyCallEdgeTo(CallGraphNode *Callee) {
-  for (unsigned i = 0, e = CalledFunctions.size(); i != e; ++i)
+  for (unsigned i = 0, e = CalledFunctions.size(); i != e; ++i) {
     if (CalledFunctions[i].second == Callee) {
       Callee->DropRef();
       CalledFunctions[i] = CalledFunctions.back();
       CalledFunctions.pop_back();
-      --i; --e;
+      --i;
+      --e;
     }
+  }
 }
 
 /// removeOneAbstractEdgeTo - Remove one edge associated with a null callsite
 /// from this node to the specified callee function.
 void CallGraphNode::removeOneAbstractEdgeTo(CallGraphNode *Callee) {
-  for (CalledFunctionsVector::iterator I = CalledFunctions.begin(); ; ++I) {
+  for (CalledFunctionsVector::iterator I = CalledFunctions.begin();; ++I) {
     assert(I != CalledFunctions.end() && "Cannot find callee to remove!");
     CallRecord &CR = *I;
     if (CR.second == Callee && !CR.first) {
@@ -221,9 +223,8 @@ void CallGraphNode::removeOneAbstractEdgeTo(CallGraphNode *Callee) {
 /// replaceCallEdge - This method replaces the edge in the node for the
 /// specified call site with a new one.  Note that this method takes linear
 /// time, so it should be used sparingly.
-void CallGraphNode::replaceCallEdge(CallOp *Call, CallOp *NewCall,
-                                    CallGraphNode *NewNode) {
-  for (CalledFunctionsVector::iterator I = CalledFunctions.begin(); ; ++I) {
+void CallGraphNode::replaceCallEdge(CallOp *Call, CallOp *NewCall, CallGraphNode *NewNode) {
+  for (CalledFunctionsVector::iterator I = CalledFunctions.begin();; ++I) {
     assert(I != CalledFunctions.end() && "Cannot find callsite to remove!");
     if (I->first == Call) {
       I->second->DropRef();
@@ -264,8 +265,7 @@ CallGraphAnalysis::CallGraphAnalysis(mlir::Operation *op) : cg(nullptr) {
 }
 
 std::unordered_set<const CallGraphNode *> CallGraphReachabilityAnalysis::dfsNodes(
-  const CallGraphNode *currNode,
-  std::unordered_set<const CallGraphNode *> visited
+    const CallGraphNode *currNode, std::unordered_set<const CallGraphNode *> visited
 ) {
   std::unordered_set<const CallGraphNode *> descendents;
   if (visited.find(currNode) != visited.end()) {
@@ -287,7 +287,9 @@ std::unordered_set<const CallGraphNode *> CallGraphReachabilityAnalysis::dfsNode
   return descendents;
 }
 
-CallGraphReachabilityAnalysis::CallGraphReachabilityAnalysis(mlir::Operation *op, mlir::AnalysisManager &am) {
+CallGraphReachabilityAnalysis::CallGraphReachabilityAnalysis(
+    mlir::Operation *op, mlir::AnalysisManager &am
+) {
   if (!mlir::isa<mlir::ModuleOp>(op)) {
     auto error_message = "CallGraphReachabilityAnalysis expects provided op to be a ModuleOp!";
     op->emitError(error_message);

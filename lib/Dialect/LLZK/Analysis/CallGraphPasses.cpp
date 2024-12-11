@@ -1,8 +1,8 @@
 /**
  * The contents of this file are adapted from llvm/lib/Analysis/CallGraph.cpp
  */
-#include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
 #include "llzk/Dialect/LLZK/Analysis/CallGraphPasses.h"
+#include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include <llvm/ADT/SmallVector.h>
@@ -17,8 +17,10 @@ namespace llzk {
 
 class CallGraphPrinterPass : public impl::CallGraphPrinterPassBase<CallGraphPrinterPass> {
   llvm::raw_ostream &os;
+
 public:
-  explicit CallGraphPrinterPass(llvm::raw_ostream &ostream) : impl::CallGraphPrinterPassBase<CallGraphPrinterPass>(), os(ostream) {}
+  explicit CallGraphPrinterPass(llvm::raw_ostream &ostream)
+      : impl::CallGraphPrinterPassBase<CallGraphPrinterPass>(), os(ostream) {}
 
 protected:
   void runOnOperation() override {
@@ -33,10 +35,13 @@ std::unique_ptr<mlir::Pass> createCallGraphPrinterPass(llvm::raw_ostream &os = l
   return std::make_unique<CallGraphPrinterPass>(os);
 }
 
-class CallGraphSCCsPrinterPass : public impl::CallGraphSCCsPrinterPassBase<CallGraphSCCsPrinterPass> {
+class CallGraphSCCsPrinterPass
+    : public impl::CallGraphSCCsPrinterPassBase<CallGraphSCCsPrinterPass> {
   llvm::raw_ostream &os;
+
 public:
-  explicit CallGraphSCCsPrinterPass(llvm::raw_ostream &ostream) : impl::CallGraphSCCsPrinterPassBase<CallGraphSCCsPrinterPass>(), os(ostream) {}
+  explicit CallGraphSCCsPrinterPass(llvm::raw_ostream &ostream)
+      : impl::CallGraphSCCsPrinterPassBase<CallGraphSCCsPrinterPass>(), os(ostream) {}
 
 protected:
   void runOnOperation() override {

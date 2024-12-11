@@ -1,9 +1,9 @@
 #pragma once
 
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/Builders.h>
-#include <mlir/IR/MLIRContext.h>
 #include <llzk/Dialect/LLZK/IR/Ops.h>
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/MLIRContext.h>
 
 #include <deque>
 #include <unordered_map>
@@ -38,9 +38,7 @@ public:
     return s;
   }
 
-  llzk::StructDefOp getStruct(std::string_view structName) {
-    return structMap.at(structName);
-  }
+  llzk::StructDefOp getStruct(std::string_view structName) { return structMap.at(structName); }
 
   /**
    * compute returns the type of the struct that defines it.
@@ -48,18 +46,14 @@ public:
    */
   llzk::FuncOp insertComputeFn(llzk::StructDefOp *op);
 
-  llzk::FuncOp getComputeFn(llzk::StructDefOp *op) {
-    return computeFnMap.at(op->getName());
-  }
+  llzk::FuncOp getComputeFn(llzk::StructDefOp *op) { return computeFnMap.at(op->getName()); }
 
   /**
    * constrain accepts the struct type as the first argument.
    */
   llzk::FuncOp insertConstrainFn(llzk::StructDefOp *op);
 
-  llzk::FuncOp getConstrainFn(llzk::StructDefOp *op) {
-    return constrainFnMap.at(op->getName());
-  }
+  llzk::FuncOp getConstrainFn(llzk::StructDefOp *op) { return constrainFnMap.at(op->getName()); }
 
   /**
    * Only requirement for compute is the call itself.
@@ -106,9 +100,7 @@ private:
 
   mlir::SymbolRefAttr getFullyQualifiedFuncSymbol(llzk::StructDefOp *s, llzk::FuncOp &op) {
     return mlir::SymbolRefAttr::get(
-      &context,
-      s->getName(),
-      mlir::ArrayRef{mlir::FlatSymbolRefAttr::get(op)}
+        &context, s->getName(), mlir::ArrayRef{mlir::FlatSymbolRefAttr::get(op)}
     );
   }
 
@@ -120,13 +112,19 @@ private:
     updateReachability(constrainNodes, caller, callee);
   }
 
-  void updateReachability(std::unordered_map<llzk::StructDefOp *, CallNode> &m, llzk::StructDefOp *caller, llzk::StructDefOp *callee) {
+  void updateReachability(
+      std::unordered_map<llzk::StructDefOp *, CallNode> &m, llzk::StructDefOp *caller,
+      llzk::StructDefOp *callee
+  ) {
     auto &callerNode = m[caller];
     auto &calleeNode = m[callee];
     callerNode.callees[callee] = &calleeNode;
   }
 
-  bool isReachable(std::unordered_map<llzk::StructDefOp *, CallNode> &m, llzk::StructDefOp *caller, llzk::StructDefOp *callee) {
+  bool isReachable(
+      std::unordered_map<llzk::StructDefOp *, CallNode> &m, llzk::StructDefOp *caller,
+      llzk::StructDefOp *callee
+  ) {
     std::unordered_set<llzk::StructDefOp *> visited;
     std::deque<llzk::StructDefOp *> frontier;
     frontier.push_back(caller);

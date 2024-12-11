@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include <cassert>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/STLExtras.h>
-#include <cassert>
 #include <map>
 #include <memory>
 #include <unordered_set>
@@ -14,7 +14,6 @@
 #include <vector>
 
 #include <mlir/Pass/Pass.h>
-
 
 namespace llzk {
 

@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include <cassert>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/STLExtras.h>
-#include <cassert>
 #include <map>
 #include <memory>
 #include <unordered_set>
@@ -43,8 +43,7 @@ class CallGraphNode;
 class CallGraph {
   mlir::ModuleOp M;
 
-  using FunctionMapTy =
-      std::map<FuncOp, std::unique_ptr<CallGraphNode>>;
+  using FunctionMapTy = std::map<FuncOp, std::unique_ptr<CallGraphNode>>;
 
   // A map from FuncOp* to CallGraphNode*.
   FunctionMapTy FunctionMap;
@@ -137,9 +136,7 @@ public:
   CallGraphNode(const CallGraphNode &) = delete;
   CallGraphNode &operator=(const CallGraphNode &) = delete;
 
-  ~CallGraphNode() {
-    assert(NumReferences == 0 && "Node deleted while references remain");
-  }
+  ~CallGraphNode() { assert(NumReferences == 0 && "Node deleted while references remain"); }
 
   using iterator = std::vector<CallRecord>::iterator;
   using const_iterator = std::vector<CallRecord>::const_iterator;
@@ -184,8 +181,7 @@ public:
 
   /// Moves all the callee information from N to this node.
   void stealCalledFunctionsFrom(CallGraphNode *N) {
-    assert(CalledFunctions.empty() &&
-           "Cannot steal callsite information if I already have some");
+    assert(CalledFunctions.empty() && "Cannot steal callsite information if I already have some");
     std::swap(CalledFunctions, N->CalledFunctions);
   }
 
@@ -221,8 +217,7 @@ public:
   /// new one.
   ///
   /// Note that this method takes linear time, so it should be used sparingly.
-  void replaceCallEdge(CallOp *Call, CallOp *NewCall,
-                       CallGraphNode *NewNode);
+  void replaceCallEdge(CallOp *Call, CallOp *NewCall, CallGraphNode *NewNode);
 
 private:
   friend class CallGraph;
@@ -263,24 +258,24 @@ class CallGraphReachabilityAnalysis {
 
   struct FuncOpHash {
     size_t operator()(const FuncOp &op) const {
-      return std::hash<mlir::Operation *>{}(const_cast<FuncOp&>(op).getOperation());
+      return std::hash<mlir::Operation *>{}(const_cast<FuncOp &>(op).getOperation());
     }
   };
 
   // Maps function -> callees
   using CalleeMapTy =
-    std::unordered_map<FuncOp, std::unordered_set<FuncOp, FuncOpHash>, FuncOpHash>;
+      std::unordered_map<FuncOp, std::unordered_set<FuncOp, FuncOpHash>, FuncOpHash>;
 
   CalleeMapTy reachabilityMap;
 
-  std::unordered_set<const CallGraphNode *> dfsNodes(const CallGraphNode *currNode, std::unordered_set<const CallGraphNode *> visited);
+  std::unordered_set<const CallGraphNode *>
+  dfsNodes(const CallGraphNode *currNode, std::unordered_set<const CallGraphNode *> visited);
 
 public:
   CallGraphReachabilityAnalysis(mlir::Operation *op, mlir::AnalysisManager &am);
 
   bool isInvalidated(const mlir::AnalysisManager::PreservedAnalyses &pa) {
-    return !pa.isPreserved<CallGraphReachabilityAnalysis>() ||
-           !pa.isPreserved<CallGraphAnalysis>();
+    return !pa.isPreserved<CallGraphReachabilityAnalysis>() || !pa.isPreserved<CallGraphAnalysis>();
   }
 
   /**
@@ -342,30 +337,21 @@ template <> struct llvm::GraphTraits<const llzk::CallGraphNode *> {
     return ChildIteratorType(N->end(), &CGNGetValue);
   }
 
-  static ChildEdgeIteratorType child_edge_begin(NodeRef N) {
-    return N->begin();
-  }
+  static ChildEdgeIteratorType child_edge_begin(NodeRef N) { return N->begin(); }
   static ChildEdgeIteratorType child_edge_end(NodeRef N) { return N->end(); }
 
   static NodeRef edge_dest(EdgeRef E) { return E.second; }
 };
 
-template <>
-struct GraphTraits<llzk::CallGraph *> : public GraphTraits<llzk::CallGraphNode *> {
-  using PairTy =
-      std::pair<const llzk::FuncOp, std::unique_ptr<llzk::CallGraphNode>>;
+template <> struct GraphTraits<llzk::CallGraph *> : public GraphTraits<llzk::CallGraphNode *> {
+  using PairTy = std::pair<const llzk::FuncOp, std::unique_ptr<llzk::CallGraphNode>>;
 
-  static NodeRef getEntryNode(llzk::CallGraph *CGN) {
-    return CGN->getEntryNode();
-  }
+  static NodeRef getEntryNode(llzk::CallGraph *CGN) { return CGN->getEntryNode(); }
 
-  static llzk::CallGraphNode *CGGetValuePtr(const PairTy &P) {
-    return P.second.get();
-  }
+  static llzk::CallGraphNode *CGGetValuePtr(const PairTy &P) { return P.second.get(); }
 
   // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-  using nodes_iterator =
-      mapped_iterator<llzk::CallGraph::iterator, decltype(&CGGetValuePtr)>;
+  using nodes_iterator = mapped_iterator<llzk::CallGraph::iterator, decltype(&CGGetValuePtr)>;
 
   static nodes_iterator nodes_begin(llzk::CallGraph *CG) {
     return nodes_iterator(CG->begin(), &CGGetValuePtr);
@@ -377,22 +363,15 @@ struct GraphTraits<llzk::CallGraph *> : public GraphTraits<llzk::CallGraphNode *
 };
 
 template <>
-struct GraphTraits<const llzk::CallGraph *> : public GraphTraits<
-                                            const llzk::CallGraphNode *> {
-  using PairTy =
-      std::pair<const llzk::FuncOp, std::unique_ptr<llzk::CallGraphNode>>;
+struct GraphTraits<const llzk::CallGraph *> : public GraphTraits<const llzk::CallGraphNode *> {
+  using PairTy = std::pair<const llzk::FuncOp, std::unique_ptr<llzk::CallGraphNode>>;
 
-  static NodeRef getEntryNode(const llzk::CallGraph *CGN) {
-    return CGN->getEntryNode();
-  }
+  static NodeRef getEntryNode(const llzk::CallGraph *CGN) { return CGN->getEntryNode(); }
 
-  static const llzk::CallGraphNode *CGGetValuePtr(const PairTy &P) {
-    return P.second.get();
-  }
+  static const llzk::CallGraphNode *CGGetValuePtr(const PairTy &P) { return P.second.get(); }
 
   // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-  using nodes_iterator =
-      mapped_iterator<llzk::CallGraph::const_iterator, decltype(&CGGetValuePtr)>;
+  using nodes_iterator = mapped_iterator<llzk::CallGraph::const_iterator, decltype(&CGGetValuePtr)>;
 
   static nodes_iterator nodes_begin(const llzk::CallGraph *CG) {
     return nodes_iterator(CG->begin(), &CGGetValuePtr);

@@ -1,14 +1,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <mlir/IR/BuiltinOps.h>
 #include <llzk/Dialect/LLZK/IR/Ops.h>
+#include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
 
 #include <llzk/Dialect/LLZK/Analysis/CallGraph.h>
 
 #include "OpBuilders.h"
-
 
 TEST(CallGraphTests, constructorTest) {
   LLZKTestModuleBuilder builder;
@@ -29,7 +28,6 @@ TEST(CallGraphTests, printTest) {
 
   ASSERT_FALSE(sstream.str().empty());
 }
-
 
 TEST(CallGraphTests, numFnTest) {
   LLZKTestModuleBuilder builder;
@@ -52,8 +50,10 @@ TEST(CallGraphTests, reachabilityTest) {
   builder.insertConstrainCall(&bOp, &aOp);
   builder.insertConstrainCall(&cOp, &aOp);
 
-  auto aComp = builder.getComputeFn(&aOp), bComp = builder.getComputeFn(&bOp), cComp = builder.getComputeFn(&cOp);
-  auto aCons = builder.getConstrainFn(&aOp), bCons = builder.getConstrainFn(&bOp), cCons = builder.getConstrainFn(&cOp);
+  auto aComp = builder.getComputeFn(&aOp), bComp = builder.getComputeFn(&bOp),
+       cComp = builder.getComputeFn(&cOp);
+  auto aCons = builder.getConstrainFn(&aOp), bCons = builder.getConstrainFn(&bOp),
+       cCons = builder.getConstrainFn(&cOp);
 
   mlir::ModuleAnalysisManager mam(builder.getMod(), nullptr);
   mlir::AnalysisManager am = mam;
@@ -81,7 +81,10 @@ TEST(CallGraphTests, analysisConstructorBadArg) {
   LLZKTestModuleBuilder builder;
   auto structOp = builder.insertFullStruct("A");
 
-  ASSERT_DEATH(llzk::CallGraphAnalysis(structOp.getOperation()), "CallGraphAnalysis expects provided op to be a ModuleOp!");
+  ASSERT_DEATH(
+      llzk::CallGraphAnalysis(structOp.getOperation()),
+      "CallGraphAnalysis expects provided op to be a ModuleOp!"
+  );
 }
 
 TEST(CallGraphTests, removeTest) {
@@ -92,7 +95,8 @@ TEST(CallGraphTests, removeTest) {
 
   auto removedComputeFn = cgraph.removeFunctionFromModule(cgraph[builder.getComputeFn(&structOp)]);
   ASSERT_NE(removedComputeFn, nullptr);
-  auto removedConstrainFn = cgraph.removeFunctionFromModule(cgraph[builder.getConstrainFn(&structOp)]);
+  auto removedConstrainFn =
+      cgraph.removeFunctionFromModule(cgraph[builder.getConstrainFn(&structOp)]);
   ASSERT_NE(removedConstrainFn, nullptr);
 
   // Size also include "nullptr" function, so should just be 1

@@ -307,8 +307,7 @@ mlir::SymbolRefAttr FuncOp::getFullyQualifiedName() const {
   std::vector<mlir::FlatSymbolRefAttr> nested(symbols.begin() + 1, symbols.end());
 
   return mlir::SymbolRefAttr::get(
-    symbols.front().getRootReference(),
-    mlir::ArrayRef<mlir::FlatSymbolRefAttr>(nested)
+      symbols.front().getRootReference(), mlir::ArrayRef<mlir::FlatSymbolRefAttr>(nested)
   );
 }
 
