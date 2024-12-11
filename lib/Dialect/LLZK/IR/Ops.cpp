@@ -98,17 +98,6 @@ std::string StructDefOp::getHeaderString() {
   return output;
 }
 
-bool StructDefOp::hasParamNamed(FlatSymbolRefAttr find) {
-  if (ArrayAttr params = this->getConstParamsAttr()) {
-    for (Attribute attr : params) {
-      if (attr == find) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 bool StructDefOp::hasParamNamed(StringAttr find) {
   if (ArrayAttr params = this->getConstParamsAttr()) {
     for (Attribute attr : params) {

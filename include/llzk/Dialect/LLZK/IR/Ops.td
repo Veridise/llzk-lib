@@ -146,8 +146,10 @@ def LLZK_StructDefOp
     ::std::string getHeaderString();
 
     /// Return `true` iff this StructDefOp has a parameter with the given name
-    bool hasParamNamed(::mlir::FlatSymbolRefAttr find);
     bool hasParamNamed(::mlir::StringAttr find);
+    inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
+      return hasParamNamed(find.getRootReference());
+    }
 
     //===------------------------------------------------------------------===//
     // OpAsmOpInterface Methods
