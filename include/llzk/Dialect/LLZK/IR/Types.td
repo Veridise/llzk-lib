@@ -60,24 +60,37 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
       - IndexType
       - Unsigned integers of 1 bit (aka booleans)
 
-    Example array of 5 by 2 elements of a `Felt`.
     ```llzk
-    !llzk.array<5x2 x !llzk.felt>
+    // Example array of 5 by 2 elements of `Felt` type.
+    !llzk.array<5,2 x !llzk.felt>
+
+    // Example array using a struct parameter for one dimension.
+    !llzk.array<5,@A x index>
     ```
   }];
 
   let parameters =
       (ins TypeParameter<"::mlir::Type",
                          "Type of all elements within the array.">:$elementType,
-          ArrayRefParameter<"int64_t",
-                            "List of array dimension sizes.">:$shape);
-  // Necessary for parsing the dimension list in `$shape`
-  let hasCustomAssemblyFormat = true;
+          ArrayRefParameter<
+              "::mlir::Attribute",
+              "List of array dimension size specifiers.">:$dimensionSizes,
+          ArrayRefParameter<
+              "int64_t",
+              "Array shape, for ShapedTypeInterface, computed from  .">:$shape);
+
+  let assemblyFormat = [{ 
+    `<` custom<AttrVec>($dimensionSizes) `x` $elementType `>`
+        custom<DerivedShape>($shape, ref($dimensionSizes))
+  }];
+
+  let genVerifyDecl = 1;
 
   let extraClassDeclaration = [{
     /// Returns if this type is ranked, i.e. it has a known number of dimensions.
+    /// LLZK arrays are always ranked, i.e. the number of dimensions is known.
     /// Required by the ShapedTypeInterface interface.
-    bool hasRank() const;
+    inline bool hasRank() const { return true; }
 
     /// Clone this type with the given shape and element type. If the
     /// provided shape is `std::nullopt`, the current shape of the type is used.
@@ -89,8 +102,6 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
     /// Required by the ShapedTypeInterface interface.
     int64_t getNumElements() const;
   }];
-
-  let genVerifyDecl = 1;
 }
 
 #endif // LLZK_TYPES

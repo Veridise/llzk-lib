@@ -4,8 +4,10 @@
 
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinTypeInterfaces.h>
+#include <mlir/IR/DialectImplementation.h>
 #include <mlir/Support/LogicalResult.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 
 namespace llzk {
@@ -34,6 +36,8 @@ bool isValidEmitEqType(mlir::Type type) {
 
 namespace {
 bool structParamAttrUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute &rhsAttr) {
+  // TODO: when TypeAttr is allowed as a parameter, this must use typesUnify() to compare TypeAttr.
+  //
   // If either attribute is a symbol ref, we assume they unify because a later pass with a
   //  more involved value analysis is required to check if they are actually the same value.
   return lhsAttr == rhsAttr || lhsAttr.isa<mlir::SymbolRefAttr>() ||
@@ -89,6 +93,7 @@ mlir::LogicalResult StructType::verify(
     // Ensure the parameters in the StructType are only
     //  - Integer constants
     //  - SymbolRef (global constants defined in another module require non-flat ref)
+    // TODO: must include TypeAttr here to support type parameters on structs
     for (mlir::Attribute p : params) {
       if (!p.isa<mlir::IntegerAttr>() && !p.isa<mlir::SymbolRefAttr>()) {
         return emitError() << "Unexpected struct parameter type: "
@@ -132,107 +137,92 @@ StructType::verifySymbolRef(mlir::SymbolTableCollection &symbolTable, mlir::Oper
   return getDefinition(symbolTable, op);
 }
 
-mlir::LogicalResult ArrayType::verify(
-    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::Type elementType,
-    llvm::ArrayRef<int64_t> shape
-) {
+//===------------------------------------------------------------------===//
+// ArrayType
+//===------------------------------------------------------------------===//
 
-  // If a user of LLZK needs the shape to be statically defined
-  // it should check it here. How to communicate that need to the type is TBD.
-  if (shape.size() <= 0) {
-    return emitError() << "array must have a shape of at least one element";
-  }
-  // An array can hold any LLZK type bar Arrays
-  auto typeCheckResult = checkValidType(emitError, elementType);
-  if (mlir::succeeded(typeCheckResult)) {
-    if (llvm::isa<llzk::ArrayType>(elementType)) {
-      return emitError() << "array inner type cannot be array";
-    }
-  }
-  return typeCheckResult;
+namespace {
+
+inline mlir::InFlightDiagnostic &&
+invalidArrDim(llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::Attribute &a) {
+  // TODO: this needs a test case
+  return emitError() << "Unexpected array dimension type: " << a.getAbstractAttribute().getName();
 }
 
-bool ArrayType::hasRank() const {
-  return true; // A LLZK Array is ranked by construction.
+} // namespace
+
+mlir::LogicalResult
+parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value) {
+  auto parseResult = mlir::FieldParser<llvm::SmallVector<mlir::Attribute>>::parse(parser);
+  if (mlir::failed(parseResult)) {
+    return parser.emitError(parser.getCurrentLocation(), "failed to parse attribute list");
+  }
+  value.insert(value.begin(), parseResult->begin(), parseResult->end());
+  return mlir::success();
+}
+
+void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value) {
+  llvm::raw_ostream &stream = printer.getStream();
+  llvm::interleave(value, stream, [&stream](mlir::Attribute a) { a.print(stream, true); }, ",");
+}
+
+mlir::LogicalResult parseDerivedShape(
+    mlir::AsmParser &parser, llvm::SmallVector<int64_t> &value,
+    llvm::SmallVector<mlir::Attribute> dimensionSizes
+) {
+  // This is not actually parsing. It's computing the derived
+  //  `shape` from the `dimensionSizes` attributes.
+  for (mlir::Attribute a : dimensionSizes) {
+    if (auto p = a.dyn_cast<mlir::IntegerAttr>()) {
+      value.push_back(p.getValue().getSExtValue());
+    } else if (a.isa<mlir::SymbolRefAttr>()) {
+      // The ShapedTypeInterface uses 'kDynamic' for dimensions with non-static size.
+      value.push_back(mlir::ShapedType::kDynamic);
+    } else {
+      return invalidArrDim([&parser] { return parser.emitError(parser.getCurrentLocation()); }, a);
+    }
+  }
+  return mlir::success();
+}
+void printDerivedShape(mlir::AsmPrinter &, llvm::ArrayRef<int64_t>, llvm::ArrayRef<mlir::Attribute>) {
+  // nothing to print, it's derived and therefore not represented in the output
+}
+
+mlir::LogicalResult ArrayType::verify(
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::Type elementType,
+    llvm::ArrayRef<mlir::Attribute> dimensions, llvm::ArrayRef<int64_t> shape
+) {
+  // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
+  if (dimensions.empty()) {
+    return emitError() << "array must have at least one dimension";
+  }
+  // Ensure the parameters in the ArrayType are only
+  //  - Integer constants
+  //  - SymbolRef (global constants defined in another module require non-flat ref)
+  for (mlir::Attribute a : dimensions) {
+    if (!a.isa<mlir::IntegerAttr>() && !a.isa<mlir::SymbolRefAttr>()) {
+      // TODO: ensure symbol lookup succeeds
+      return invalidArrDim(emitError, a);
+    }
+  }
+
+  // An array can hold any LLZK type bar Arrays
+  if (llvm::isa<llzk::ArrayType>(elementType)) {
+    // TODO: this needs a test case
+    return emitError() << "array element type cannot be array";
+  }
+  return checkValidType(emitError, elementType);
 }
 
 ArrayType
 ArrayType::cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, mlir::Type elementType) const {
-  llvm::ArrayRef<int64_t> newShape = getShape();
-  if (shape.has_value()) {
-    newShape = *shape;
-  }
-  return ArrayType::get(elementType.getContext(), elementType, newShape);
+  llvm::ArrayRef<int64_t> newShape = shape.has_value() ? shape.value() : getShape();
+  mlir::Builder builder(getContext());
+  mlir::ArrayAttr newDimensions = builder.getIndexArrayAttr(newShape);
+  auto emitError = [] { return mlir::emitError(mlir::Location(mlir::LocationAttr())); };
+  return ArrayType::getChecked(emitError, getContext(), elementType, newDimensions, newShape);
 }
 
 int64_t ArrayType::getNumElements() const { return mlir::ShapedType::getNumElements(getShape()); }
-
-// The code for these two methods was based on
-// the autogenerated code by TableGen
-
-/// A LLZK Array has a similar format to tensors
-/// and memref types: <$shape x $type>
-/// i.e. !llzk.array<2x2x!llzk.felt>
-///   This will produce a shape of [2,2]
-///   and a type of LLZK's Felt
-mlir::Type ArrayType::parse(mlir::AsmParser &parser) {
-  ::mlir::Builder odsBuilder(parser.getContext());
-  ::llvm::SMLoc loc = parser.getCurrentLocation();
-  // Parse literal '<'
-  if (parser.parseLess()) {
-    return {};
-  }
-
-  // I worry this array may dissapear early can cause
-  // an Use-After-Free but the MLIR code I studied did
-  // it too so it may be fine.  -- Dani
-  llvm::SmallVector<int64_t> parsedShape;
-
-  // The default configuration is good for our purpose
-  //   allowDynamic = true
-  //    This allows ? values.
-  //    Wether an unknown dimension size is allowed or
-  //    not will depend on the semantics the array finds
-  //    itself in.
-  //   withTrailing = true
-  //    The parser will consume a literal `x` token
-  //    if its trailing after the rest of the shape has been
-  //    parsed. This leaves the head right at the type declaration.
-  auto _result_shape = parser.parseDimensionList(parsedShape);
-
-  // Parse variable 'elementType'
-  auto _result_elementType = ::mlir::FieldParser<::mlir::Type>::parse(parser);
-  if (::mlir::failed(_result_elementType)) {
-    parser.emitError(
-        parser.getCurrentLocation(),
-        "failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`"
-    );
-    return {};
-  }
-  // Parse literal '>'
-  if (parser.parseGreater()) {
-    return {};
-  }
-
-  assert(::mlir::succeeded(_result_elementType));
-  assert(::mlir::succeeded(_result_shape));
-
-  return parser.getChecked<ArrayType>(
-      loc, parser.getContext(), ::mlir::Type(*_result_elementType),
-      ::llvm::ArrayRef<int64_t>(parsedShape)
-  );
-}
-
-/// Prints the array type with the following format
-/// <$shape x $type>
-/// i.e. !llzk.array<2x2 x !llzk.felt>
-void ArrayType::print(mlir::AsmPrinter &printer) const {
-  mlir::Builder odsBuilder(getContext());
-  printer << "<";
-  printer.printDimensionList(getShape());
-  printer << " x ";
-  printer.printStrippedAttrOrType(getElementType());
-  printer << ">";
-}
 
 } // namespace llzk

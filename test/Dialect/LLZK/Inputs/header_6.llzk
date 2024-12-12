@@ -1,6 +1,6 @@
 // Imported via `include_fail.llzk`
 
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{array must have a shape of at least one element}}
+  // expected-error@+1 {{array must have at least one dimension}}
   llzk.func private @b(%x: !llzk.array<!llzk.felt>) 
 }

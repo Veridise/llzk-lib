@@ -21,6 +21,6 @@ llzk.func private @d(%x: !llzk.array<5 x i256>)
 // expected-error@+1 {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
 llzk.func private @f(%x: !llzk.array<2 x !llzk.array<3 x !llzk.array<2 x i256>>>)
 // -----
-// expected-error@+1 {{array must have a shape of at least one element}}
+// expected-error@+1 {{array must have at least one dimension}}
 llzk.func private @b(%x: !llzk.array<!llzk.felt>) 
 // -----

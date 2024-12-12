@@ -3,11 +3,14 @@
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/Util/SymbolLookupResult.h" // IWYU pragma: keep
 
+#include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/Diagnostics.h>
+#include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/IR/Types.h>
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/TypeSwitch.h>
@@ -49,6 +52,19 @@ bool structTypesUnify(
 /// instantiation of struct parameters (if applicable within the given types).
 bool typesUnify(
     const mlir::Type &lhs, const mlir::Type &rhs, std::vector<llvm::StringRef> rhsRevPrefix = {}
+);
+
+mlir::LogicalResult
+parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
+void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);
+
+mlir::LogicalResult parseDerivedShape(
+    mlir::AsmParser &parser, llvm::SmallVector<int64_t> &value,
+    llvm::SmallVector<mlir::Attribute> dimensionSizes
+);
+void printDerivedShape(
+    mlir::AsmPrinter &printer, llvm::ArrayRef<int64_t> value,
+    llvm::ArrayRef<mlir::Attribute> dimensionSizes
 );
 
 } // namespace llzk
