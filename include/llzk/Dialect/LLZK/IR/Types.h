@@ -4,10 +4,15 @@
 #include "llzk/Dialect/LLZK/Util/SymbolLookupResult.h" // IWYU pragma: keep
 
 #include <mlir/IR/BuiltinTypes.h>
+#include <mlir/IR/Diagnostics.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/IR/Types.h>
 
+#include <llvm/ADT/STLFunctionalExtras.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/TypeSwitch.h>
+
+#include <vector>
 
 // forward-declare ops
 #define GET_OP_FWD_DEFINES

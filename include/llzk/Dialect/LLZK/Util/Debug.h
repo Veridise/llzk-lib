@@ -1,5 +1,6 @@
 #pragma once
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/raw_ostream.h>
 
@@ -30,6 +31,11 @@ template <typename T> inline std::string toString(const std::vector<T> &vec) {
 
 /// Generate a string representation of a llvm::SmallVector
 template <typename T> inline std::string toString(const llvm::SmallVector<T> &vec) {
+  return toString(vec.begin(), vec.end());
+}
+
+/// Generate a string representation of a llvm::ArrayRef
+template <typename T> inline std::string toString(const llvm::ArrayRef<T> &vec) {
   return toString(vec.begin(), vec.end());
 }
 

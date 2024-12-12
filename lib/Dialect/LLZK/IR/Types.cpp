@@ -19,14 +19,14 @@ bool isValidArrayType(mlir::Type type) {
 
 // valid types: I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType
 bool isValidType(mlir::Type type) {
-  return type.isSignlessInteger(1) || llvm::isa<::mlir::IndexType>(type) ||
+  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType>(type) ||
          llvm::isa<llzk::FeltType>(type) || llvm::isa<llzk::StructType>(type) ||
          isValidArrayType(type);
 }
 
 // valid types: I1, Index, LLZK_FeltType, LLZK_ArrayType
 bool isValidEmitEqType(mlir::Type type) {
-  return type.isSignlessInteger(1) || llvm::isa<::mlir::IndexType>(type) ||
+  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType>(type) ||
          llvm::isa<llzk::FeltType>(type) ||
          (llvm::isa<llzk::ArrayType>(type) &&
           isValidEmitEqType(llvm::cast<::llzk::ArrayType>(type).getElementType()));
@@ -77,6 +77,10 @@ bool typesUnify(
   return false;
 }
 
+//===------------------------------------------------------------------===//
+// StructType
+//===------------------------------------------------------------------===//
+
 mlir::LogicalResult StructType::verify(
     llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::SymbolRefAttr nameRef,
     mlir::ArrayAttr params
@@ -85,10 +89,10 @@ mlir::LogicalResult StructType::verify(
     // Ensure the parameters in the StructType are only
     //  - Integer constants
     //  - SymbolRef (global constants defined in another module require non-flat ref)
-    for (auto i = params.begin(); i != params.end(); ++i) {
-      if (!i->isa<mlir::IntegerAttr>() && !i->isa<mlir::SymbolRefAttr>()) {
+    for (mlir::Attribute p : params) {
+      if (!p.isa<mlir::IntegerAttr>() && !p.isa<mlir::SymbolRefAttr>()) {
         return emitError() << "Unexpected struct parameter type: "
-                           << i->getAbstractAttribute().getName();
+                           << p.getAbstractAttribute().getName();
       }
     }
   }
