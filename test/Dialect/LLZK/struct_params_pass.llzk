@@ -302,3 +302,82 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
+
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentF1<[@A]> {
+    field @f : !llzk.array<@A,@A x index>
+
+    func @compute(%0: !llzk.array<@A,@A x index>) -> !llzk.struct<@ComponentF1<[@A]>> {
+      %self = new_struct : !llzk.struct<@ComponentF1<[@A]>>
+      writef %self[@f] = %0 : !llzk.struct<@ComponentF1<[@A]>>, !llzk.array<@A,@A x index>
+      return %self : !llzk.struct<@ComponentF1<[@A]>>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentF1<[@A]>>, %0: !llzk.array<@A,@A x index>) {
+      %b = readf %self[@f] : !llzk.struct<@ComponentF1<[@A]>>, !llzk.array<@A,@A x index>
+      return
+    }
+  }
+
+  llzk.func @producer() -> !llzk.array<2,2 x index> {
+    %1 = index.constant 11
+    %2 = index.constant 22
+    %3 = index.constant 33
+    %4 = index.constant 44
+    %r = llzk.new_array %1, %2, %3, %4 : !llzk.array<2,2 x index>
+    return %r: !llzk.array<2,2 x index>
+  }
+
+  llzk.struct @ComponentF2 {
+    field @g : !llzk.struct<@ComponentF1<[2]>>
+
+    func @compute() -> !llzk.struct<@ComponentF2> {
+      %self = new_struct : !llzk.struct<@ComponentF2>
+      %0 = call @producer() : () -> !llzk.array<2,2 x index>
+      %1 = call @ComponentF1::@compute(%0) : (!llzk.array<2,2 x index>) -> !llzk.struct<@ComponentF1<[2]>>
+      writef %self[@g] = %1 : !llzk.struct<@ComponentF2>, !llzk.struct<@ComponentF1<[2]>>
+      return %self : !llzk.struct<@ComponentF2>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentF2>) {
+      return
+    }
+  }
+}
+//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:    llzk.struct @ComponentF1<[@A]> {
+//CHECK-NEXT:      field @f : !llzk.array<@A,@A x index>
+//CHECK-NEXT:      func @compute(%arg0: !llzk.array<@A,@A x index>) -> !llzk.struct<@ComponentF1<[@A]>> {
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentF1<[@A]>>
+//CHECK-NEXT:        writef %[[SELF]][@f] = %arg0 : <@ComponentF1<[@A]>>, !llzk.array<@A,@A x index>
+//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@ComponentF1<[@A]>>
+//CHECK-NEXT:      }
+//CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@ComponentF1<[@A]>>, %arg1: !llzk.array<@A,@A x index>) {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@f] : <@ComponentF1<[@A]>>, !llzk.array<@A,@A x index>
+//CHECK-NEXT:        return
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:    llzk.func @producer() -> !llzk.array<2,2 x index> {
+//CHECK-NEXT:      %idx11 = index.constant 11
+//CHECK-NEXT:      %idx22 = index.constant 22
+//CHECK-NEXT:      %idx33 = index.constant 33
+//CHECK-NEXT:      %idx44 = index.constant 44
+//CHECK-NEXT:      %array = new_array %idx11, %idx22, %idx33, %idx44 : <2,2 x index>
+//CHECK-NEXT:      return %array : !llzk.array<2,2 x index>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    llzk.struct @ComponentF2 {
+//CHECK-NEXT:      field @g : !llzk.struct<@ComponentF1<[2]>>
+//CHECK-NEXT:      func @compute() -> !llzk.struct<@ComponentF2> {
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentF2>
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = call @producer() : () -> !llzk.array<2,2 x index>
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = call @ComponentF1::@compute(%[[T0]]) : (!llzk.array<2,2 x index>) -> !llzk.struct<@ComponentF1<[2]>>
+//CHECK-NEXT:        writef %[[SELF]][@g] = %[[T1]] : <@ComponentF2>, !llzk.struct<@ComponentF1<[2]>>
+//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@ComponentF2>
+//CHECK-NEXT:      }
+//CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@ComponentF2>) {
+//CHECK-NEXT:        return
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+
+// -----
+//TODO: may also want to test if the array element types can unify. That will be a more complex example with an array of structs, maybe with diff params.

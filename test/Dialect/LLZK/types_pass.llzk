@@ -41,11 +41,3 @@ llzk.func private @f(!llzk.felt) -> i1
 llzk.func private @g(%x: !llzk.array<2,3,2 x index>)
 //CHECK-LABEL:  llzk.func private @g(!llzk.array<2,3,2 x index>)
 // -----
-
-llzk.func private @h(%x: !llzk.array<5,@B x index>)
-//CHECK-LABEL:  llzk.func private @h(!llzk.array<5,@B x index>)
-// -----
-
-llzk.func private @j(%x: !llzk.array<@A,3,@C x index>)
-//CHECK-LABEL:  llzk.func private @j(!llzk.array<@A,3,@C x index>)
-// -----

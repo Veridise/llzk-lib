@@ -46,8 +46,8 @@ llzk.func @arr_arr_mix_index(%a: !llzk.array<3 x index>) -> index {
   %a1 = llzk.readarr %a[%i] : !llzk.array<3 x index>, index
   %a2 = llzk.readarr %a[%i] : !llzk.array<3 x index>, index
   %a3 = llzk.readarr %a[%i] : !llzk.array<3 x index>, index
-  %r = llzk.new_array %a1, %a2, %a3, %c, %d, %e : !llzk.array<2x3 x index>
-  %f = llzk.readarr %r[%i, %i] : !llzk.array<2 x3 x index>, index
+  %r = llzk.new_array %a1, %a2, %a3, %c, %d, %e : !llzk.array<2,3 x index>
+  %f = llzk.readarr %r[%i, %i] : !llzk.array<2,3 x index>, index
   return %f: index
 }
 //CHECK-LABEL:  llzk.func @arr_arr_mix_index
@@ -60,22 +60,22 @@ llzk.func @arr_arr_mix_index(%a: !llzk.array<3 x index>) -> index {
 //CHECK-NEXT:     %[[T7:[0-9a-zA-Z_\.]+]] = readarr %[[A0]][%[[I]]] : <3 x index>, index
 //CHECK-NEXT:     %[[T8:[0-9a-zA-Z_\.]+]] = readarr %[[A0]][%[[I]]] : <3 x index>, index
 //CHECK-NEXT:     %[[T9:[0-9a-zA-Z_\.]+]] = readarr %[[A0]][%[[I]]] : <3 x index>, index
-//CHECK-NEXT:     %[[T5:[0-9a-zA-Z_\.]+]] = new_array %[[T7]], %[[T8]], %[[T9]], %[[T1]], %[[T2]], %[[T3]] : <2x3 x index>
-//CHECK-NEXT:     %[[T6:[0-9a-zA-Z_\.]+]] = readarr %[[T5]][%[[I]], %[[I]]] : <2x3 x index>, index
+//CHECK-NEXT:     %[[T5:[0-9a-zA-Z_\.]+]] = new_array %[[T7]], %[[T8]], %[[T9]], %[[T1]], %[[T2]], %[[T3]] : <2,3 x index>
+//CHECK-NEXT:     %[[T6:[0-9a-zA-Z_\.]+]] = readarr %[[T5]][%[[I]], %[[I]]] : <2,3 x index>, index
 //CHECK-NEXT:     return %[[T6]] : index
 //CHECK-NEXT:   }
 // -----
 
-llzk.func @arr_arr_mix_index(%a: !llzk.array<3x4xindex>) -> index {
+llzk.func @arr_arr_mix_index(%a: !llzk.array<3,4 x index>) -> index {
   %i0 = index.constant 1
   %i1 = index.constant 3
-  %e = llzk.readarr %a[%i0, %i1] : !llzk.array<3x4 x index>, index
+  %e = llzk.readarr %a[%i0, %i1] : !llzk.array<3,4 x index>, index
   return %e: index
 }
 //CHECK-LABEL:  llzk.func @arr_arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.array<3x4 x index>) -> index {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.array<3,4 x index>) -> index {
 //CHECK-NEXT:     %[[I0:[0-9a-zA-Z_\.]+]] = index.constant 1
 //CHECK-NEXT:     %[[I1:[0-9a-zA-Z_\.]+]] = index.constant 3
-//CHECK-NEXT:     %[[T0:[0-9a-zA-Z_\.]+]] = readarr %[[A0]][%[[I0]], %[[I1]]] : <3x4 x index>, index
+//CHECK-NEXT:     %[[T0:[0-9a-zA-Z_\.]+]] = readarr %[[A0]][%[[I0]], %[[I1]]] : <3,4 x index>, index
 //CHECK-NEXT:     return %[[T0]] : index
 //CHECK-NEXT:   }

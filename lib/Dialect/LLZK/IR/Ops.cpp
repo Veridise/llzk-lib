@@ -62,7 +62,7 @@ namespace {
 
 using namespace mlir;
 
-inline mlir::InFlightDiagnostic &&
+inline mlir::LogicalResult
 msgOneFunction(function_ref<InFlightDiagnostic()> emitError, const Twine &name) {
   return emitError() << "must define exactly one '" << name << "' function";
 }

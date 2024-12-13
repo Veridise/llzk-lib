@@ -193,7 +193,7 @@ mlir::InFlightDiagnostic genCompareErr(StructDefOp &expected, FuncOp &origin, co
 }
 
 mlir::LogicalResult checkSelfType(
-    SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, const mlir::Type &actualType,
+    SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, mlir::Type actualType,
     FuncOp &origin, const char *aspect
 ) {
   if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {

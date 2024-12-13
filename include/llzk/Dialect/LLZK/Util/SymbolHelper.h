@@ -51,13 +51,13 @@ inline mlir::FailureOr<SymbolLookupResultUntyped> lookupSymbolIn(
 }
 
 inline mlir::FailureOr<SymbolLookupResultUntyped> lookupTopLevelSymbol(
-    mlir::SymbolTableCollection &symbolTable, mlir::SymbolRefAttr symbol, mlir::Operation *origin
+    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin
 ) {
   mlir::FailureOr<mlir::ModuleOp> root = getRootModule(origin);
   if (mlir::failed(root)) {
     return mlir::failure(); // getRootModule() already emits a sufficient error message
   }
-  return lookupSymbolIn(symbolTable, symbol, root.value(), origin);
+  return lookupSymbolIn(tables, symbol, root.value(), origin);
 }
 
 template <typename T>
@@ -82,14 +82,24 @@ inline mlir::FailureOr<SymbolLookupResult<T>> lookupSymbolIn(
 
 template <typename T>
 inline mlir::FailureOr<SymbolLookupResult<T>> lookupTopLevelSymbol(
-    mlir::SymbolTableCollection &symbolTable, mlir::SymbolRefAttr symbol, mlir::Operation *origin
+    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin
 ) {
   mlir::FailureOr<mlir::ModuleOp> root = getRootModule(origin);
   if (mlir::failed(root)) {
     return mlir::failure(); // getRootModule() already emits a sufficient error message
   }
-  return lookupSymbolIn<T>(symbolTable, symbol, root.value(), origin);
+  return lookupSymbolIn<T>(tables, symbol, root.value(), origin);
 }
+
+mlir::LogicalResult verifyStructOrArrayParam(
+    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr param, mlir::Type structOrArrayType,
+    mlir::Operation *origin
+);
+
+mlir::LogicalResult verifyStructOrArrayParams(
+    mlir::SymbolTableCollection &tables, mlir::ArrayRef<mlir::Attribute> tyParams,
+    mlir::Type structOrArrayType, mlir::Operation *origin
+);
 
 /// @brief Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers
 /// @tparam T the type of symbol being resolved (e.g., llzk::FuncOp)
@@ -125,23 +135,21 @@ inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterf
 }
 
 mlir::FailureOr<StructDefOp> verifyStructTypeResolution(
-    mlir::SymbolTableCollection &symbolTable, StructType ty, mlir::Operation *origin
+    mlir::SymbolTableCollection &tables, StructType ty, mlir::Operation *origin
 );
 
-mlir::LogicalResult verifyTypeResolution(
-    mlir::SymbolTableCollection &symbolTable, mlir::Type ty, mlir::Operation *origin
-);
+mlir::LogicalResult
+verifyTypeResolution(mlir::SymbolTableCollection &tables, mlir::Type ty, mlir::Operation *origin);
 
 mlir::LogicalResult verifyTypeResolution(
-    mlir::SymbolTableCollection &symbolTable, llvm::ArrayRef<mlir::Type>::iterator start,
+    mlir::SymbolTableCollection &tables, llvm::ArrayRef<mlir::Type>::iterator start,
     llvm::ArrayRef<mlir::Type>::iterator end, mlir::Operation *origin
 );
 
 inline mlir::LogicalResult verifyTypeResolution(
-    mlir::SymbolTableCollection &symbolTable, llvm::ArrayRef<mlir::Type> types,
-    mlir::Operation *origin
+    mlir::SymbolTableCollection &tables, llvm::ArrayRef<mlir::Type> types, mlir::Operation *origin
 ) {
-  return verifyTypeResolution(symbolTable, types.begin(), types.end(), origin);
+  return verifyTypeResolution(tables, types.begin(), types.end(), origin);
 }
 
 } // namespace llzk

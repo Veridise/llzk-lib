@@ -208,11 +208,11 @@ llzk.struct @TestComponent13 {
     return %self : !llzk.struct<@TestComponent13>
   }
   func @constrain(
-        %a: !llzk.array<3x2 x !llzk.struct<@TestComponent13>>,
-        %b: !llzk.array<3x2 x !llzk.struct<@TestComponent13>>
+        %a: !llzk.array<3,2 x !llzk.struct<@TestComponent13>>,
+        %b: !llzk.array<3,2 x !llzk.struct<@TestComponent13>>
         ) {
-    // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be non-struct type, but got '!llzk.array<3x2 x !llzk.struct<@TestComponent13>>'}}
-    llzk.emit_eq %a, %b : !llzk.array<3x2 x !llzk.struct<@TestComponent13>>
+    // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be non-struct type, but got '!llzk.array<3,2 x !llzk.struct<@TestComponent13>>'}}
+    llzk.emit_eq %a, %b : !llzk.array<3,2 x !llzk.struct<@TestComponent13>>
     return
   }
 }

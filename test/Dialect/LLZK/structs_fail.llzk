@@ -110,7 +110,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentL {
     // expected-error@+2 {{'llzk.field' op references unknown symbol "@Missing"}}
     // expected-error@+1 {{no 'llzk.struct' named "@Missing"}}
-    llzk.field @f : !llzk.array<2x3x2 x !llzk.struct<@Missing>>
+    llzk.field @f : !llzk.array<2,3,2 x !llzk.struct<@Missing>>
 
     func @compute() -> !llzk.struct<@ComponentL> {
       %self = new_struct : !llzk.struct<@ComponentL>
@@ -125,7 +125,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentM {
     // expected-error@+2 {{'llzk.field' op references unknown symbol "@path::@to::@Missing"}}
     // expected-error@+1 {{no 'llzk.struct' named "@path::@to::@Missing"}}
-    llzk.field @f : !llzk.array<2x3x2 x !llzk.struct<@path::@to::@Missing>>
+    llzk.field @f : !llzk.array<2,3,2 x !llzk.struct<@path::@to::@Missing>>
 
     func @compute() -> !llzk.struct<@ComponentM> {
       %self = new_struct : !llzk.struct<@ComponentM>

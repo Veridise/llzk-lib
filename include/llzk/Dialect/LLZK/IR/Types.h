@@ -42,17 +42,19 @@ checkValidType(llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::T
   }
 }
 
+/// Return `true` iff the two ArrayType instances are equivalent or could be equivalent after full
+/// instantiation of struct parameters.
+bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, std::vector<llvm::StringRef> rhsRevPrefix = {});
+
 /// Return `true` iff the two StructType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
 bool structTypesUnify(
-    const StructType &lhs, const StructType &rhs, std::vector<llvm::StringRef> rhsRevPrefix = {}
+    StructType lhs, StructType rhs, std::vector<llvm::StringRef> rhsRevPrefix = {}
 );
 
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters (if applicable within the given types).
-bool typesUnify(
-    const mlir::Type &lhs, const mlir::Type &rhs, std::vector<llvm::StringRef> rhsRevPrefix = {}
-);
+bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix = {});
 
 mlir::LogicalResult
 parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);

@@ -107,8 +107,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentE {
-    func @constrain(%self: !llzk.struct<@ComponentE>, %a: index, %b: !llzk.array<89 x 2 x index>) {
-      llzk.emit_in %a, %b : !llzk.array<89 x 2 x index>
+    func @constrain(%self: !llzk.struct<@ComponentE>, %a: index, %b: !llzk.array<89,2 x index>) {
+      llzk.emit_in %a, %b : !llzk.array<89,2 x index>
       return
     }
 
@@ -120,8 +120,8 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL:  llzk.struct @ComponentE {
 //CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentE>,
-//CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.array<89x2 x index>) {
-//CHECK-NEXT:       emit_in %[[A0]], %[[A1]] : <89x2 x index>
+//CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.array<89,2 x index>) {
+//CHECK-NEXT:       emit_in %[[A0]], %[[A1]] : <89,2 x index>
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentE> {

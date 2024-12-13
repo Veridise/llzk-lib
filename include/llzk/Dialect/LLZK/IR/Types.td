@@ -79,9 +79,13 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
               "int64_t",
               "Array shape, for ShapedTypeInterface, computed from  .">:$shape);
 
+  // The custom<DerivedShape>() section is 0-length (it is used to compute the
+  // "$shape" attribute from the "$dimensionSizes" attribute) and the `` before
+  // it avoids excess space in the format. Additionally,
   let assemblyFormat = [{ 
-    `<` custom<AttrVec>($dimensionSizes) `x` $elementType `>`
-        custom<DerivedShape>($shape, ref($dimensionSizes))
+    `<` custom<AttrVec>($dimensionSizes)
+    `` custom<DerivedShape>($shape, ref($dimensionSizes))
+    `x` $elementType `>`
   }];
 
   let genVerifyDecl = 1;
