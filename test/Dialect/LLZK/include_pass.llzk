@@ -153,10 +153,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:          field @low : !llzk.felt
 //CHECK-NEXT:          field @high : !llzk.felt
 //CHECK-NEXT:          func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@risc0::@ValU32> {
-//CHECK-NEXT:            %self = new_struct : <@risc0::@ValU32>
-//CHECK-NEXT:            writef %self[@low] = %arg0 : <@risc0::@ValU32>, !llzk.felt
-//CHECK-NEXT:            writef %self[@high] = %arg1 : <@risc0::@ValU32>, !llzk.felt
-//CHECK-NEXT:            return %self : !llzk.struct<@risc0::@ValU32>
+//CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@risc0::@ValU32>
+//CHECK-NEXT:            writef %[[SELF]][@low] = %arg0 : <@risc0::@ValU32>, !llzk.felt
+//CHECK-NEXT:            writef %[[SELF]][@high] = %arg1 : <@risc0::@ValU32>, !llzk.felt
+//CHECK-NEXT:            return %[[SELF]] : !llzk.struct<@risc0::@ValU32>
 //CHECK-NEXT:          }
 //CHECK-NEXT:          func @constrain(%arg0: !llzk.struct<@risc0::@ValU32>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
 //CHECK-NEXT:            return
@@ -165,13 +165,13 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        llzk.struct @Reg {
 //CHECK-NEXT:          field @reg : !llzk.felt {llzk.pub}
 //CHECK-NEXT:          func @compute(%arg0: !llzk.felt) -> !llzk.struct<@risc0::@Reg> {
-//CHECK-NEXT:            %self = new_struct : <@risc0::@Reg>
-//CHECK-NEXT:            writef %self[@reg] = %arg0 : <@risc0::@Reg>, !llzk.felt
-//CHECK-NEXT:            return %self : !llzk.struct<@risc0::@Reg>
+//CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@risc0::@Reg>
+//CHECK-NEXT:            writef %[[SELF]][@reg] = %arg0 : <@risc0::@Reg>, !llzk.felt
+//CHECK-NEXT:            return %[[SELF]] : !llzk.struct<@risc0::@Reg>
 //CHECK-NEXT:          }
 //CHECK-NEXT:          func @constrain(%arg0: !llzk.struct<@risc0::@Reg>, %arg1: !llzk.felt) {
-//CHECK-NEXT:            %0 = readf %arg0[@reg] : <@risc0::@Reg>, !llzk.felt
-//CHECK-NEXT:            emit_eq %arg1, %0 : !llzk.felt
+//CHECK-NEXT:            %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@reg] : <@risc0::@Reg>, !llzk.felt
+//CHECK-NEXT:            emit_eq %arg1, %[[T0]] : !llzk.felt
 //CHECK-NEXT:            return
 //CHECK-NEXT:          }
 //CHECK-NEXT:        }
@@ -179,21 +179,21 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:          field @reciprocal : !llzk.felt
 //CHECK-NEXT:          field @synthetic_return : !llzk.felt {llzk.pub}
 //CHECK-NEXT:          func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@risc0::@Div> {
-//CHECK-NEXT:            %self = new_struct : <@risc0::@Div>
-//CHECK-NEXT:            %0 = inv %arg1
-//CHECK-NEXT:            writef %self[@reciprocal] = %0 : <@risc0::@Div>, !llzk.felt
-//CHECK-NEXT:            %1 = mul %0, %arg0
-//CHECK-NEXT:            writef %self[@synthetic_return] = %1 : <@risc0::@Div>, !llzk.felt
-//CHECK-NEXT:            return %self : !llzk.struct<@risc0::@Div>
+//CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@risc0::@Div>
+//CHECK-NEXT:            %[[T0:[0-9a-zA-Z_\.]+]] = inv %arg1
+//CHECK-NEXT:            writef %[[SELF]][@reciprocal] = %[[T0]] : <@risc0::@Div>, !llzk.felt
+//CHECK-NEXT:            %[[T1:[0-9a-zA-Z_\.]+]] = mul %[[T0]], %arg0
+//CHECK-NEXT:            writef %[[SELF]][@synthetic_return] = %[[T1]] : <@risc0::@Div>, !llzk.felt
+//CHECK-NEXT:            return %[[SELF]] : !llzk.struct<@risc0::@Div>
 //CHECK-NEXT:          }
 //CHECK-NEXT:          func @constrain(%arg0: !llzk.struct<@risc0::@Div>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
-//CHECK-NEXT:            %0 = readf %arg0[@reciprocal] : <@risc0::@Div>, !llzk.felt
-//CHECK-NEXT:            %1 = mul %0, %arg2
+//CHECK-NEXT:            %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@reciprocal] : <@risc0::@Div>, !llzk.felt
+//CHECK-NEXT:            %[[T1:[0-9a-zA-Z_\.]+]] = mul %[[T0]], %arg2
 //CHECK-NEXT:            %felt_const_1 = constfelt  1
-//CHECK-NEXT:            emit_eq %1, %felt_const_1 : !llzk.felt
-//CHECK-NEXT:            %2 = readf %arg0[@synthetic_return] : <@risc0::@Div>, !llzk.felt
-//CHECK-NEXT:            %3 = mul %0, %arg1
-//CHECK-NEXT:            emit_eq %2, %3 : !llzk.felt
+//CHECK-NEXT:            emit_eq %[[T1]], %felt_const_1 : !llzk.felt
+//CHECK-NEXT:            %[[T2:[0-9a-zA-Z_\.]+]] = readf %arg0[@synthetic_return] : <@risc0::@Div>, !llzk.felt
+//CHECK-NEXT:            %[[T3:[0-9a-zA-Z_\.]+]] = mul %[[T0]], %arg1
+//CHECK-NEXT:            emit_eq %[[T2]], %[[T3]] : !llzk.felt
 //CHECK-NEXT:            return
 //CHECK-NEXT:          }
 //CHECK-NEXT:        }
@@ -202,18 +202,150 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    llzk.struct @C1 {
 //CHECK-NEXT:      field @z : !llzk.struct<@std::@risc0::@Reg> {llzk.pub}
 //CHECK-NEXT:      func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@C1> {
-//CHECK-NEXT:        %self = new_struct : <@C1>
-//CHECK-NEXT:        %0 = add %arg0, %arg1
-//CHECK-NEXT:        %1 = call @std::@risc0::@Reg::@compute(%0) : (!llzk.felt) -> !llzk.struct<@std::@risc0::@Reg>
-//CHECK-NEXT:        writef %self[@z] = %1 : <@C1>, !llzk.struct<@std::@risc0::@Reg>
-//CHECK-NEXT:        return %self : !llzk.struct<@C1>
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@C1>
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = add %arg0, %arg1
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = call @std::@risc0::@Reg::@compute(%[[T0]]) : (!llzk.felt) -> !llzk.struct<@std::@risc0::@Reg>
+//CHECK-NEXT:        writef %[[SELF]][@z] = %[[T1]] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
+//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@C1>
 //CHECK-NEXT:      }
 //CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@C1>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
-//CHECK-NEXT:        %0 = readf %arg0[@z] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
-//CHECK-NEXT:        %1 = add %arg1, %arg2
-//CHECK-NEXT:        call @std::@risc0::@Reg::@constrain(%0, %1) : (!llzk.struct<@std::@risc0::@Reg>, !llzk.felt) -> ()
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@z] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = add %arg1, %arg2
+//CHECK-NEXT:        call @std::@risc0::@Reg::@constrain(%[[T0]], %[[T1]]) : (!llzk.struct<@std::@risc0::@Reg>, !llzk.felt) -> ()
 //CHECK-NEXT:        return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 // -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "Inputs/header_9.llzk" as @libA
+
+  llzk.struct @D {
+    field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
+
+    func @compute(%x: !llzk.felt, %y: !llzk.felt) -> !llzk.struct<@D> {
+      %self = new_struct : !llzk.struct<@D>
+      %reg_0 = call @libA::@libB::@libC::@StructC::@compute() : () -> (!llzk.struct<@libA::@libB::@libC::@StructC>)
+      writef %self[@z] = %reg_0 : !llzk.struct<@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
+      return %self: !llzk.struct<@D>
+    }
+
+    func @constrain(%self: !llzk.struct<@D>, %x: !llzk.felt, %y: !llzk.felt) {
+      %reg_0 = readf %self[@z] : !llzk.struct<@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
+      call @libA::@libB::@libC::@StructC::@constrain(%reg_0) : (!llzk.struct<@libA::@libB::@libC::@StructC>) -> ()
+      return
+    }
+  }
+}
+//CHECK-LABEL:  module attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:    module @libA attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:      module @libB attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:        module @libC {
+//CHECK-NEXT:          llzk.struct @StructC {
+//CHECK-NEXT:            func @compute() -> !llzk.struct<@libC::@StructC> {
+//CHECK-NEXT:              %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@libC::@StructC>
+//CHECK-NEXT:              return %[[SELF]] : !llzk.struct<@libC::@StructC>
+//CHECK-NEXT:            }
+//CHECK-NEXT:            func @constrain(%arg0: !llzk.struct<@libC::@StructC>) {
+//CHECK-NEXT:              return
+//CHECK-NEXT:            }
+//CHECK-NEXT:          }
+//CHECK-NEXT:        }
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:    llzk.struct @D {
+//CHECK-NEXT:      field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
+//CHECK-NEXT:      func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@D> {
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@D>
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = call @libA::@libB::@libC::@StructC::@compute() : () -> !llzk.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        writef %[[SELF]][@z] = %[[T0]] : <@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@D>
+//CHECK-NEXT:      }
+//CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@D>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@z] : <@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        call @libA::@libB::@libC::@StructC::@constrain(%[[T0]]) : (!llzk.struct<@libA::@libB::@libC::@StructC>) -> ()
+//CHECK-NEXT:        return
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "Inputs/header_10.llzk" as @libA
+
+  llzk.struct @StructD {
+    field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
+    field @y : !llzk.struct<@libA::@StructB> {llzk.pub}
+
+    func @compute(%x: !llzk.felt, %y: !llzk.felt) -> !llzk.struct<@StructD> {
+      %self = new_struct : !llzk.struct<@StructD>
+
+      %reg_0 = call @libA::@libB::@libC::@StructC::@compute() : () -> (!llzk.struct<@libA::@libB::@libC::@StructC>)
+      writef %self[@z] = %reg_0 : !llzk.struct<@StructD>, !llzk.struct<@libA::@libB::@libC::@StructC>
+
+      %reg_1 = call @libA::@StructB::@compute() : () -> (!llzk.struct<@libA::@StructB>)
+      writef %self[@y] = %reg_1 : !llzk.struct<@StructD>, !llzk.struct<@libA::@StructB>
+
+      return %self: !llzk.struct<@StructD>
+    }
+
+    func @constrain(%self: !llzk.struct<@StructD>, %x: !llzk.felt, %y: !llzk.felt) {
+      %reg_0 = readf %self[@z] : !llzk.struct<@StructD>, !llzk.struct<@libA::@libB::@libC::@StructC>
+      call @libA::@libB::@libC::@StructC::@constrain(%reg_0) : (!llzk.struct<@libA::@libB::@libC::@StructC>) -> ()
+
+      %reg_1 = readf %self[@y] : !llzk.struct<@StructD>, !llzk.struct<@libA::@StructB>
+      call @libA::@StructB::@constrain(%reg_1) : (!llzk.struct<@libA::@StructB>) -> ()
+
+      return
+    }
+  }
+}
+//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:    module @libA attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:      module @libB attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:        module @libC {
+//CHECK-NEXT:          llzk.struct @StructC {
+//CHECK-NEXT:            func @compute() -> !llzk.struct<@libC::@StructC> {
+//CHECK-NEXT:              %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@libC::@StructC>
+//CHECK-NEXT:              return %[[SELF]] : !llzk.struct<@libC::@StructC>
+//CHECK-NEXT:            }
+//CHECK-NEXT:            func @constrain(%arg0: !llzk.struct<@libC::@StructC>) {
+//CHECK-NEXT:              return
+//CHECK-NEXT:            }
+//CHECK-NEXT:          }
+//CHECK-NEXT:        }
+//CHECK-NEXT:      }
+//CHECK-NEXT:      llzk.struct @StructB {
+//CHECK-NEXT:        field @x : !llzk.struct<@libB::@libC::@StructC>
+//CHECK-NEXT:        func @compute() -> !llzk.struct<@StructB> {
+//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@StructB>
+//CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = call @libB::@libC::@StructC::@compute() : () -> !llzk.struct<@libB::@libC::@StructC>
+//CHECK-NEXT:          writef %[[SELF]][@x] = %[[T0]] : <@StructB>, !llzk.struct<@libB::@libC::@StructC>
+//CHECK-NEXT:          return %[[SELF]] : !llzk.struct<@StructB>
+//CHECK-NEXT:        }
+//CHECK-NEXT:        func @constrain(%arg0: !llzk.struct<@StructB>) {
+//CHECK-NEXT:          return
+//CHECK-NEXT:        }
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:    llzk.struct @StructD {
+//CHECK-NEXT:      field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
+//CHECK-NEXT:      field @y : !llzk.struct<@libA::@StructB> {llzk.pub}
+//CHECK-NEXT:      func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@StructD> {
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@StructD>
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = call @libA::@libB::@libC::@StructC::@compute() : () -> !llzk.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        writef %[[SELF]][@z] = %[[T0]] : <@StructD>, !llzk.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = call @libA::@StructB::@compute() : () -> !llzk.struct<@libA::@StructB>
+//CHECK-NEXT:        writef %[[SELF]][@y] = %[[T1]] : <@StructD>, !llzk.struct<@libA::@StructB>
+//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@StructD>
+//CHECK-NEXT:      }
+//CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@StructD>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@z] : <@StructD>, !llzk.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        call @libA::@libB::@libC::@StructC::@constrain(%[[T0]]) : (!llzk.struct<@libA::@libB::@libC::@StructC>) -> ()
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = readf %arg0[@y] : <@StructD>, !llzk.struct<@libA::@StructB>
+//CHECK-NEXT:        call @libA::@StructB::@constrain(%[[T1]]) : (!llzk.struct<@libA::@StructB>) -> ()
+//CHECK-NEXT:        return
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }

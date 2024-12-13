@@ -1,0 +1,18 @@
+// Imported via `include_pass.llzk`
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "Inputs/header_8.llzk" as @libB
+
+  llzk.struct @StructB {
+    field @x : !llzk.struct<@libB::@libC::@StructC>
+    func @compute() -> !llzk.struct<@StructB> {
+      %self = new_struct : !llzk.struct<@StructB>
+      %0 = call @libB::@libC::@StructC::@compute() : () -> (!llzk.struct<@libB::@libC::@StructC>)
+      writef %self[@x] = %0 : !llzk.struct<@StructB>, !llzk.struct<@libB::@libC::@StructC>
+      return %self : !llzk.struct<@StructB>
+    }
+    func @constrain(%self: !llzk.struct<@StructB>) {
+      return
+    }
+  }
+}

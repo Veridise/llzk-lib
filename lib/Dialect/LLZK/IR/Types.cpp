@@ -31,19 +31,35 @@ bool isValidEmitEqType(mlir::Type type) {
           isValidEmitEqType(llvm::cast<::llzk::ArrayType>(type).getElementType()));
 }
 
+bool areSameType(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
+  if (lhs == rhs) {
+    return true;
+  }
+  if (llvm::isa<llzk::StructType>(lhs) && llvm::isa<llzk::StructType>(rhs)) {
+    llvm::SmallVector<mlir::StringRef> lhsNames =
+        getNames(llvm::cast<StructType>(lhs).getNameRef());
+    llvm::SmallVector<mlir::StringRef> rhsNames =
+        getNames(llvm::cast<StructType>(rhs).getNameRef());
+    rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
+
+    return lhsNames == rhsNames;
+  }
+  return false;
+}
+
 mlir::FailureOr<SymbolLookupResult<StructDefOp>>
 StructType::getDefinition(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
-  auto def = lookupTopLevelSymbol<StructDefOp>(symbolTable, getName(), op);
+  auto def = lookupTopLevelSymbol<StructDefOp>(symbolTable, getNameRef(), op);
   if (mlir::failed(def)) {
-    return op->emitError() << "no '" << StructDefOp::getOperationName() << "' named \"" << getName()
-                           << "\"";
+    return op->emitError() << "no '" << StructDefOp::getOperationName() << "' named \""
+                           << getNameRef() << "\"";
   } else {
     return def;
   }
 }
 
 mlir::LogicalResult
-StructType::verifySymbol(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
+StructType::verifySymbolRef(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
   return getDefinition(symbolTable, op);
 }
 

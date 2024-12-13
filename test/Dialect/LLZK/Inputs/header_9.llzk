@@ -1,0 +1,5 @@
+// Imported via `include_pass.llzk`
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "Inputs/header_8.llzk" as @libB
+}

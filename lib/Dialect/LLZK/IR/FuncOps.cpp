@@ -207,10 +207,12 @@ mlir::LogicalResult compareTypes(
     FuncOp &origin, const char *aspect
 ) {
   if (StructType sType = llvm::dyn_cast<StructType>(actualType)) {
-    auto actualStructOpt = lookupTopLevelSymbol<StructDefOp>(symbolTable, sType.getName(), origin);
+    auto actualStructOpt =
+        lookupTopLevelSymbol<StructDefOp>(symbolTable, sType.getNameRef(), origin);
     if (mlir::failed(actualStructOpt)) {
       return origin.emitError().append(
-          "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getName(), "\""
+          "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getNameRef(),
+          "\""
       );
     }
     StructDefOp actualStruct = actualStructOpt.value().get();
@@ -315,7 +317,7 @@ LogicalResult ReturnOp::verify() {
   }
 
   for (unsigned i = 0, e = results.size(); i != e; ++i) {
-    if (getOperand(i).getType() != results[i]) {
+    if (!areSameType(getOperand(i).getType(), results[i])) {
       return emitError() << "type of return operand " << i << " (" << getOperand(i).getType()
                          << ") doesn't match function result type (" << results[i] << ")"
                          << " in function @" << function.getName();
@@ -342,6 +344,33 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
                              << "\"";
   }
   FuncOp tgt = tgtOpt.value().get();
+
+  // Verify that the operand and result types match the callee.
+  FunctionType fnType = tgt.getFunctionType();
+  if (fnType.getNumInputs() != getNumOperands()) {
+    return emitOpError("incorrect number of operands for callee");
+  }
+
+  for (unsigned i = 0, e = fnType.getNumInputs(); i != e; ++i) {
+    if (!areSameType(getOperand(i).getType(), fnType.getInput(i), tgtOpt->getIncludeSymNames())) {
+      return emitOpError("operand type mismatch: expected type ")
+             << fnType.getInput(i) << ", but found " << getOperand(i).getType()
+             << " for operand number " << i;
+    }
+  }
+
+  if (fnType.getNumResults() != getNumResults()) {
+    return emitOpError("incorrect number of results for callee");
+  }
+
+  for (unsigned i = 0, e = fnType.getNumResults(); i != e; ++i) {
+    if (!areSameType(getResult(i).getType(), fnType.getResult(i), tgtOpt->getIncludeSymNames())) {
+      return emitOpError("result type mismatch: expected type ")
+             << fnType.getResult(i) << ", but found " << getResult(i).getType()
+             << " for result number " << i;
+    }
+  }
+
   // Enforce restrictions on callers of compute/constrain functions within structs.
   if (isInStruct(tgt.getOperation())) {
     if (tgt.getSymName().compare(FUNC_NAME_COMPUTE) == 0) {
@@ -352,33 +381,6 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
       return verifyInStructFunctionNamed<FUNC_NAME_CONSTRAIN, 32>(*this, [] {
         return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_CONSTRAIN, "\" "});
       });
-    }
-  }
-
-  // Verify that the operand and result types match the callee.
-  auto fnType = tgt.getFunctionType();
-  if (fnType.getNumInputs() != getNumOperands()) {
-    return emitOpError("incorrect number of operands for callee");
-  }
-
-  for (unsigned i = 0, e = fnType.getNumInputs(); i != e; ++i) {
-    if (getOperand(i).getType() != fnType.getInput(i)) {
-      return emitOpError("operand type mismatch: expected operand type ")
-             << fnType.getInput(i) << ", but provided " << getOperand(i).getType()
-             << " for operand number " << i;
-    }
-  }
-
-  if (fnType.getNumResults() != getNumResults()) {
-    return emitOpError("incorrect number of results for callee");
-  }
-
-  for (unsigned i = 0, e = fnType.getNumResults(); i != e; ++i) {
-    if (getResult(i).getType() != fnType.getResult(i)) {
-      auto diag = emitOpError("result type mismatch at index ") << i;
-      diag.attachNote() << "      op result types: " << getResultTypes();
-      diag.attachNote() << "function result types: " << fnType.getResults();
-      return diag;
     }
   }
 

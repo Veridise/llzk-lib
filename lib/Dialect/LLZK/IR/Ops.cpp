@@ -151,7 +151,8 @@ mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(
   );
   if (mlir::failed(res)) {
     return refOp->emitError() << "no '" << FieldDefOp::getOperationName() << "' named \"@"
-                              << refOp.getFieldName() << "\" in \"" << tyStruct.getName() << "\"";
+                              << refOp.getFieldName() << "\" in \"" << tyStruct.getNameRef()
+                              << "\"";
   }
   return std::move(res.value());
 }
@@ -166,7 +167,7 @@ mlir::LogicalResult verifySymbolUses(
     const char *kind
 ) {
   StructType tyStruct = refOp.getStructType();
-  if (mlir::failed(tyStruct.verifySymbol(symbolTable, refOp.getOperation()))) {
+  if (mlir::failed(tyStruct.verifySymbolRef(symbolTable, refOp.getOperation()))) {
     return mlir::failure();
   }
   auto field = getFieldDefOp(refOp, symbolTable, tyStruct);
@@ -174,7 +175,8 @@ mlir::LogicalResult verifySymbolUses(
     return field; // getFieldDefOp() already emits a sufficient error message
   }
   mlir::Type fieldType = field->get().getType();
-  if (fieldType != compareTo.getType()) {
+
+  if (!areSameType(compareTo.getType(), fieldType, field->getIncludeSymNames())) {
     return refOp->emitOpError() << "has wrong type; expected " << fieldType << ", got "
                                 << compareTo.getType();
   }

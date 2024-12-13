@@ -95,3 +95,93 @@ module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{no 'llzk.struct' named "@D"}}
   llzk.func private @f(%1: !llzk.struct<@A>, %7: !llzk.struct<@B>) -> (!llzk.struct<@C>, !llzk.struct<@D>)
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @identity(%x: index) -> (index) {
+    return %x : index
+  }
+  llzk.func @user(%x: !llzk.felt) -> (index) {
+    // expected-error@+1 {{'llzk.call' op incorrect number of operands for callee}}
+    %1 = llzk.call @identity(%x, %x) : (!llzk.felt, !llzk.felt) -> (index)
+    return %1 : index
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @identity(%x: index) -> (index) {
+    return %x : index
+  }
+  llzk.func @user(%x: !llzk.felt) -> (index) {
+    // expected-error@+1 {{'llzk.call' op operand type mismatch: expected type 'index', but found '!llzk.felt' for operand number 0}}
+    %1 = llzk.call @identity(%x) : (!llzk.felt) -> (index)
+    return %1: index
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @split(%x: index) -> (index, index) {
+    %0 = index.constant 1
+    return %x, %0 : index, index
+  }
+  llzk.func @user(%x: index) -> index {
+    // expected-error@+1 {{'llzk.call' op incorrect number of results for callee}}
+    %1 = llzk.call @split(%x) : (index) -> (index)
+    return %1 : index
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @split(%x: index) -> (index, index) {
+    %0 = index.constant 1
+    return %x, %0 : index, index
+  }
+  llzk.func @user(%x: index) -> (i1, i1) {
+    // expected-error@+1 {{'llzk.call' op result type mismatch: expected type 'index', but found 'i1' for result number 0}}
+    %1, %2 = llzk.call @split(%x) : (index) -> (i1, i1)
+    return %1, %2 : i1, i1
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA1 {
+    func @compute() -> !llzk.struct<@ComponentA1> {
+      %self = new_struct : !llzk.struct<@ComponentA1>
+      return %self : !llzk.struct<@ComponentA1>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentA1>) { return }
+  }
+
+  llzk.struct @ComponentA2 {
+    func @compute(%0: !llzk.felt) -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      // expected-error@+1 {{'llzk.call' op incorrect number of operands for callee}}
+      %x = call @ComponentA1::@compute(%0) : (!llzk.felt) -> (!llzk.struct<@ComponentA1>)
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>) { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentB1 {
+    func @compute() -> !llzk.struct<@ComponentB1> {
+      %self = new_struct : !llzk.struct<@ComponentB1>
+      return %self : !llzk.struct<@ComponentB1>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentB1>) { return }
+  }
+
+  llzk.struct @ComponentB2 {
+    func @compute(%0: !llzk.struct<@ComponentB1>) -> !llzk.struct<@ComponentB2> {
+      %self = new_struct : !llzk.struct<@ComponentB2>
+      return %self : !llzk.struct<@ComponentB2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentB2>, %0: !llzk.felt) {
+      // expected-error@+1 {{'llzk.call' op operand type mismatch: expected type '!llzk.struct<@ComponentB1>', but found '!llzk.felt' for operand number 0}}
+      call @ComponentB1::@constrain(%0) : (!llzk.felt) -> ()
+      return
+    }
+  }
+}

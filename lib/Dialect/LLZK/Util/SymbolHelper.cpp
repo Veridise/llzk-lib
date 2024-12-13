@@ -22,7 +22,8 @@ SymbolLookupResultUntyped::SymbolLookupResultUntyped() : op(nullptr) {}
 
 // Move constructor
 SymbolLookupResultUntyped::SymbolLookupResultUntyped(SymbolLookupResultUntyped &&other)
-    : op(other.op), managedResources(std::move(other.managedResources)) {
+    : op(other.op), managedResources(std::move(other.managedResources)),
+      includeSymNameStack(std::move(other.includeSymNameStack)) {
   other.op = nullptr;
 }
 
@@ -31,6 +32,8 @@ SymbolLookupResultUntyped &SymbolLookupResultUntyped::operator=(SymbolLookupResu
   if (this != &other) {
     managedResources.clear();
     managedResources = std::move(other.managedResources);
+    includeSymNameStack.clear();
+    includeSymNameStack = std::move(other.includeSymNameStack);
     op = other.op;
     other.op = nullptr;
   }
@@ -49,8 +52,12 @@ SymbolLookupResultUntyped::operator bool() const { return op != nullptr; }
 
 /// Adds a pointer to the set of resources the result has to manage the lifetime of.
 void SymbolLookupResultUntyped::manage(mlir::OwningOpRef<mlir::ModuleOp> &&ptr) {
-  // Hand over the pointer
-  managedResources.push_back(std::move(ptr));
+  managedResources.push_back(std::move(ptr)); // Hand over the pointer
+}
+
+/// Adds a pointer to the set of resources the result has to manage the lifetime of.
+void SymbolLookupResultUntyped::trackIncludeAsName(llvm::StringRef includeOpSymName) {
+  includeSymNameStack.push_back(includeOpSymName);
 }
 
 namespace {
@@ -97,13 +104,9 @@ buildPathFromRoot(Operation *position, Operation *origin, std::vector<FlatSymbol
   if (failed(collectPathToRoot(position, origin, path))) {
     return failure();
   }
-  // Get the root module off the back of the vector
-  FlatSymbolRefAttr root = path.back();
-  path.pop_back();
   // Reverse the vector and convert it to a SymbolRefAttr
   std::vector<FlatSymbolRefAttr> reversedVec(path.rbegin(), path.rend());
-  llvm::ArrayRef<FlatSymbolRefAttr> nestedReferences(reversedVec);
-  return SymbolRefAttr::get(root.getAttr(), nestedReferences);
+  return asSymbolRefAttr(reversedVec);
 }
 
 /// Appends the `path` via `collectPathToRoot()` starting from the given `StructDefOp` and then
@@ -115,6 +118,24 @@ buildPathFromRoot(StructDefOp &to, Operation *origin, std::vector<FlatSymbolRefA
   return buildPathFromRoot(to.getOperation(), origin, std::move(path));
 }
 } // namespace
+
+llvm::SmallVector<StringRef> getNames(const SymbolRefAttr &ref) {
+  llvm::SmallVector<StringRef> names;
+  names.push_back(ref.getRootReference().getValue());
+  for (const FlatSymbolRefAttr &r : ref.getNestedReferences()) {
+    names.push_back(r.getValue());
+  }
+  return names;
+}
+
+llvm::SmallVector<FlatSymbolRefAttr> getPieces(const SymbolRefAttr &ref) {
+  llvm::SmallVector<FlatSymbolRefAttr> pieces;
+  pieces.push_back(FlatSymbolRefAttr::get(ref.getRootReference()));
+  for (const FlatSymbolRefAttr &r : ref.getNestedReferences()) {
+    pieces.push_back(r);
+  }
+  return pieces;
+}
 
 FailureOr<ModuleOp> getRootModule(Operation *from) {
   std::vector<FlatSymbolRefAttr> path;
@@ -145,36 +166,43 @@ FailureOr<SymbolRefAttr> getPathFromRoot(FuncOp &to) {
   }
 }
 
-namespace {
-inline SymbolRefAttr getTailAsSymbolRefAttr(SymbolRefAttr &symbol) {
-  llvm::ArrayRef<FlatSymbolRefAttr> nest = symbol.getNestedReferences();
-  return SymbolRefAttr::get(nest.front().getAttr(), nest.drop_front());
-}
-} // namespace
-
 SymbolLookupResultUntyped
 lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *symTableOp) {
-  Operation *found = tables.lookupSymbolIn(symTableOp, symbol);
-  if (!found) {
-    // If not found, check if the reference can be found by manually doing a lookup for each part of
-    // the reference in turn, traversing through IncludeOp symbols by parsing the included file.
-    if (Operation *rootOp = tables.lookupSymbolIn(symTableOp, symbol.getRootReference())) {
-      if (IncludeOp rootOpInc = llvm::dyn_cast<IncludeOp>(rootOp)) {
-        FailureOr<OwningOpRef<ModuleOp>> otherMod = rootOpInc.openModule();
-        if (succeeded(otherMod)) {
-          SymbolTableCollection external;
-          auto result = lookupSymbolRec(external, getTailAsSymbolRefAttr(symbol), otherMod->get());
-          if (result) {
-            result.manage(std::move(*otherMod));
-          }
-          return result;
+  // First try a direct lookup via the SymbolTableCollection.  Must use a low-level lookup function
+  // in order to properly account for modules that were added due to inlining IncludeOp.
+  {
+    SmallVector<Operation *, 4> symbolsFound;
+    if (succeeded(tables.lookupSymbolIn(symTableOp, symbol, symbolsFound))) {
+      SymbolLookupResultUntyped ret(symbolsFound.back());
+      for (auto it = symbolsFound.rbegin(); it != symbolsFound.rend(); ++it) {
+        Operation *op = *it;
+        if (op->hasAttr(LANG_ATTR_NAME)) {
+          ret.trackIncludeAsName(op->getAttrOfType<StringAttr>(SymbolTable::getSymbolAttrName()));
         }
-      } else if (ModuleOp rootOpMod = llvm::dyn_cast<ModuleOp>(rootOp)) {
-        return lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), rootOpMod);
       }
+      return ret;
     }
   }
-  return found;
+  // Otherwise, check if the reference can be found by manually doing a lookup for each part of
+  // the reference in turn, traversing through IncludeOp symbols by parsing the included file.
+  if (Operation *rootOp = tables.lookupSymbolIn(symTableOp, symbol.getRootReference())) {
+    if (IncludeOp rootOpInc = llvm::dyn_cast<IncludeOp>(rootOp)) {
+      FailureOr<OwningOpRef<ModuleOp>> otherMod = rootOpInc.openModule();
+      if (succeeded(otherMod)) {
+        SymbolTableCollection external;
+        auto result = lookupSymbolRec(external, getTailAsSymbolRefAttr(symbol), otherMod->get());
+        if (result) {
+          result.manage(std::move(*otherMod));
+          result.trackIncludeAsName(rootOpInc.getSymName());
+        }
+        return result;
+      }
+    } else if (ModuleOp rootOpMod = llvm::dyn_cast<ModuleOp>(rootOp)) {
+      return lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), rootOpMod);
+    }
+  }
+  // Otherwise, return empty result
+  return SymbolLookupResultUntyped();
 }
 
 LogicalResult verifyTypeResolution(SymbolTableCollection &symbolTable, Type ty, Operation *origin) {

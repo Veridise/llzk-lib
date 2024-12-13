@@ -25,6 +25,7 @@
 // Types that must come before the "Ops.h.inc" import
 namespace llzk {
 
+constexpr char COMPONENT_NAME_MAIN[] = "Main";
 constexpr char FUNC_NAME_COMPUTE[] = "compute";
 constexpr char FUNC_NAME_CONSTRAIN[] = "constrain";
 

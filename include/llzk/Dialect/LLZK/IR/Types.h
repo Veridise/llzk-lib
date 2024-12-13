@@ -34,4 +34,6 @@ checkValidType(llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::T
   }
 }
 
+bool areSameType(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix = {});
+
 } // namespace llzk
