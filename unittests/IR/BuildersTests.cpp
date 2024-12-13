@@ -17,9 +17,7 @@ protected:
     builder = ModuleBuilder(&context);
   }
 
-  void TearDown() override {
-    builder.getRootModule().erase();
-  }
+  void TearDown() override { builder.getRootModule().erase(); }
 };
 
 TEST_F(ModuleBuilderTests, testModuleOpCreation) { ASSERT_NE(builder.getRootModule(), nullptr); }

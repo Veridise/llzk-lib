@@ -23,9 +23,7 @@ protected:
     builder = ModuleBuilder(&context);
   }
 
-  void TearDown() override {
-    builder.getRootModule().erase();
-  }
+  void TearDown() override { builder.getRootModule().erase(); }
 };
 
 TEST_F(CallGraphTests, constructorTest) {
