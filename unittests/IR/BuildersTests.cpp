@@ -16,6 +16,10 @@ protected:
     // Create a new builder for each test.
     builder = ModuleBuilder(&context);
   }
+
+  void TearDown() override {
+    builder.getRootModule().erase();
+  }
 };
 
 TEST_F(ModuleBuilderTests, testModuleOpCreation) { ASSERT_NE(builder.getRootModule(), nullptr); }
