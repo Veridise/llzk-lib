@@ -7,13 +7,10 @@ using namespace llzk;
 
 class ModuleBuilderTests : public ::testing::Test {
 protected:
-
   mlir::MLIRContext context;
   ModuleBuilder builder;
 
-  ModuleBuilderTests() : context(), builder(&context) {
-    context.loadDialect<llzk::LLZKDialect>();
-  }
+  ModuleBuilderTests() : context(), builder(&context) { context.loadDialect<llzk::LLZKDialect>(); }
 
   void SetUp() override {
     // Create a new builder for each test.
@@ -21,9 +18,7 @@ protected:
   }
 };
 
-TEST_F(ModuleBuilderTests, testModuleOpCreation) {
-  ASSERT_NE(builder.getRootModule(), nullptr);
-}
+TEST_F(ModuleBuilderTests, testModuleOpCreation) { ASSERT_NE(builder.getRootModule(), nullptr); }
 
 TEST_F(ModuleBuilderTests, testStructDefInsertion) {
   auto structDef = builder.insertEmptyStruct("structOne");

@@ -73,9 +73,7 @@ ModuleBuilder::insertComputeCall(llzk::StructDefOp *caller, llzk::StructDefOp *c
 
   OpBuilder builder(callerFn.getBody());
   builder.create<llzk::CallOp>(
-      UnknownLoc::get(context),
-      calleeFn.getFullyQualifiedName(),
-      mlir::ValueRange{}
+      UnknownLoc::get(context), calleeFn.getFullyQualifiedName(), mlir::ValueRange{}
   );
   updateComputeReachability(caller, callee);
   return *this;
@@ -108,9 +106,7 @@ ModuleBuilder::insertConstrainCall(llzk::StructDefOp *caller, llzk::StructDefOp 
         fieldName
     );
     builder.create<llzk::CallOp>(
-        UnknownLoc::get(context),
-        calleeFn.getFullyQualifiedName(),
-        mlir::ValueRange{field}
+        UnknownLoc::get(context), calleeFn.getFullyQualifiedName(), mlir::ValueRange{field}
     );
   }
   updateConstrainReachability(caller, callee);

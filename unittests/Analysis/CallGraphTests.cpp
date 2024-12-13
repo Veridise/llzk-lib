@@ -13,20 +13,16 @@ using namespace llzk;
 
 class CallGraphTests : public ::testing::Test {
 protected:
-
   mlir::MLIRContext context;
   ModuleBuilder builder;
 
-  CallGraphTests() : context(), builder(&context) {
-    context.loadDialect<llzk::LLZKDialect>();
-  }
+  CallGraphTests() : context(), builder(&context) { context.loadDialect<llzk::LLZKDialect>(); }
 
   void SetUp() override {
     // Create a new builder for each test.
     builder = ModuleBuilder(&context);
   }
 };
-
 
 TEST_F(CallGraphTests, constructorTest) {
   builder.insertFullStruct("A");
