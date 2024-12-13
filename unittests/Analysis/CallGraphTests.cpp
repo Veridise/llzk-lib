@@ -1,8 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <llzk/Dialect/LLZK/IR/Ops.h>
 #include <llzk/Dialect/LLZK/IR/Builders.h>
+#include <llzk/Dialect/LLZK/IR/Ops.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
 
@@ -95,7 +95,8 @@ TEST(CallGraphTests, analysisConstructorBadArg) {
 
 //   mlir::CallGraph cgraph(builder.getMod());
 
-//   auto removedComputeFn = cgraph.removeFunctionFromModule(cgraph[builder.getComputeFn(&structOp)]);
+//   auto removedComputeFn =
+//   cgraph.removeFunctionFromModule(cgraph[builder.getComputeFn(&structOp)]);
 //   ASSERT_NE(removedComputeFn, nullptr);
 //   auto removedConstrainFn =
 //       cgraph.removeFunctionFromModule(cgraph[builder.getConstrainFn(&structOp)]);
@@ -117,7 +118,8 @@ TEST(SymbolTableTests, lookupInSymbolTest) {
   // llvm::errs() << vis << "\n";
 
   // nested
-  computeOp = mlir::SymbolTable::lookupSymbolIn(builder.getMod(), computeFn.getFullyQualifiedName());
+  computeOp =
+      mlir::SymbolTable::lookupSymbolIn(builder.getMod(), computeFn.getFullyQualifiedName());
   ASSERT_EQ(computeOp, computeFn);
 }
 
@@ -132,7 +134,10 @@ TEST(SymbolTableTests, lookupInSymbolFQNTest) {
   ASSERT_EQ(computeFn, mlir::SymbolTable::lookupSymbolIn(b, computeFn.getName()));
 
   // You should be able to find B::@compute in the overall module
-  ASSERT_EQ(computeFn, mlir::SymbolTable::lookupSymbolIn(builder.getMod(), computeFn.getFullyQualifiedName()));
+  ASSERT_EQ(
+      computeFn,
+      mlir::SymbolTable::lookupSymbolIn(builder.getMod(), computeFn.getFullyQualifiedName())
+  );
 
   auto bSym = mlir::SymbolTable(b);
   auto modSym = mlir::SymbolTable(builder.getMod());
@@ -145,7 +150,9 @@ TEST(SymbolTableTests, lookupInSymbolFQNTest) {
 
   // ... unless we use the symbol helpers
   mlir::SymbolTableCollection tables;
-  auto res = llzk::lookupTopLevelSymbol<llzk::FuncOp>(tables, computeFn.getFullyQualifiedName(), computeFn.getOperation());
+  auto res = llzk::lookupTopLevelSymbol<llzk::FuncOp>(
+      tables, computeFn.getFullyQualifiedName(), computeFn.getOperation()
+  );
   // ASSERT_EQ(computeFn, res.value().get());
 
   // Since A::compute calls B::compute, you should be able to find B::compute from A

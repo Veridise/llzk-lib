@@ -56,9 +56,8 @@ inline mlir::FailureOr<SymbolLookupResult<T>> lookupTopLevelSymbol(
 /// @param call
 /// @return the symbol or failure
 template <typename T>
-inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(
-    mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface call
-) {
+inline mlir::FailureOr<SymbolLookupResult<T>>
+resolveCallable(mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface call) {
   mlir::CallInterfaceCallable callable = call.getCallableForCallee();
   if (auto symbolVal = dyn_cast<mlir::Value>(callable)) {
     return SymbolLookupResult<T>(symbolVal.getDefiningOp());
@@ -83,8 +82,6 @@ inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterf
   mlir::SymbolTableCollection symbolTable;
   return resolveCallable<T>(symbolTable, call);
 }
-
-
 
 mlir::LogicalResult verifyTypeResolution(
     mlir::SymbolTableCollection &symbolTable, mlir::Type ty, mlir::Operation *origin

@@ -50,7 +50,8 @@ protected:
     auto &CG = getAnalysis<CallGraphAnalysis>();
     unsigned sccNum = 0;
     os << "SCCs for the program in PostOrder:";
-    for (auto SCCI = llvm::scc_begin<const llzk::CallGraph *>(&CG.getCallGraph()); !SCCI.isAtEnd(); ++SCCI) {
+    for (auto SCCI = llvm::scc_begin<const llzk::CallGraph *>(&CG.getCallGraph()); !SCCI.isAtEnd();
+         ++SCCI) {
       const std::vector<const CallGraphNode *> &nextSCC = *SCCI;
       os << "\nSCC #" << ++sccNum << ": ";
       bool First = true;

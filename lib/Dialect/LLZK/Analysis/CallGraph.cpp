@@ -5,15 +5,15 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
-#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/DepthFirstIterator.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/ErrorHandling.h>
 
 #include <mlir/Analysis/CallGraph.h>
-#include <mlir/Interfaces/CallInterfaces.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/SymbolTable.h>
+#include <mlir/Interfaces/CallInterfaces.h>
 
 namespace llzk {
 
@@ -43,14 +43,10 @@ void CallGraphNode::addAbstractEdge(CallGraphNode *node) {
 }
 
 /// Add an outgoing call edge from this node.
-void CallGraphNode::addCallEdge(CallGraphNode *node) {
-  addEdge(node, Edge::Kind::Call);
-}
+void CallGraphNode::addCallEdge(CallGraphNode *node) { addEdge(node, Edge::Kind::Call); }
 
 /// Adds a reference edge to the given child node.
-void CallGraphNode::addChildEdge(CallGraphNode *child) {
-  addEdge(child, Edge::Kind::Child);
-}
+void CallGraphNode::addChildEdge(CallGraphNode *child) { addEdge(child, Edge::Kind::Child); }
 
 /// Returns true if this node has any child edges.
 bool CallGraphNode::hasChildren() const {
@@ -58,9 +54,7 @@ bool CallGraphNode::hasChildren() const {
 }
 
 /// Add an edge to 'node' with the given kind.
-void CallGraphNode::addEdge(CallGraphNode *node, Edge::Kind kind) {
-  edges.insert({node, kind});
-}
+void CallGraphNode::addEdge(CallGraphNode *node, Edge::Kind kind) { edges.insert({node, kind}); }
 
 //===----------------------------------------------------------------------===//
 // CallGraph
@@ -69,12 +63,9 @@ void CallGraphNode::addEdge(CallGraphNode *node, Edge::Kind kind) {
 /// Recursively compute the callgraph edges for the given operation. Computed
 /// edges are placed into the given callgraph object.
 static void computeCallGraph(
-  mlir::Operation *op,
-  CallGraph &cg,
-  mlir::SymbolTableCollection &symbolTable,
-  CallGraphNode *parentNode,
-  bool resolveCalls)
-{
+    mlir::Operation *op, CallGraph &cg, mlir::SymbolTableCollection &symbolTable,
+    CallGraphNode *parentNode, bool resolveCalls
+) {
   if (mlir::CallOpInterface call = mlir::dyn_cast<mlir::CallOpInterface>(op)) {
     // If there is no parent node, we ignore this operation. Even if this
     // operation was a call, there would be no callgraph node to attribute it
@@ -108,17 +99,22 @@ CallGraph::CallGraph(mlir::Operation *op)
   // resolve the calls. We split these up as we may have nested callable objects
   // that need to be reserved before the calls.
   mlir::SymbolTableCollection symbolTable;
-  computeCallGraph(op, *this, symbolTable, /*parentNode=*/nullptr,
-                   /*resolveCalls=*/false);
-  computeCallGraph(op, *this, symbolTable, /*parentNode=*/nullptr,
-                   /*resolveCalls=*/true);
+  computeCallGraph(
+      op, *this, symbolTable, /*parentNode=*/nullptr,
+      /*resolveCalls=*/false
+  );
+  computeCallGraph(
+      op, *this, symbolTable, /*parentNode=*/nullptr,
+      /*resolveCalls=*/true
+  );
 }
 
 /// Get or add a call graph node for the given region.
-CallGraphNode *CallGraph::getOrAddNode(mlir::Region *region,
-                                             CallGraphNode *parentNode) {
-  assert(region && mlir::isa<mlir::CallableOpInterface>(region->getParentOp()) &&
-         "expected parent operation to be callable");
+CallGraphNode *CallGraph::getOrAddNode(mlir::Region *region, CallGraphNode *parentNode) {
+  assert(
+      region && mlir::isa<mlir::CallableOpInterface>(region->getParentOp()) &&
+      "expected parent operation to be callable"
+  );
   std::unique_ptr<CallGraphNode> &node = nodes[region];
   if (!node) {
     node.reset(new CallGraphNode(region));
@@ -149,9 +145,9 @@ CallGraphNode *CallGraph::lookupNode(mlir::Region *region) const {
 /// Resolve the callable for given callee to a node in the callgraph, or the
 /// unknown callee node if a valid node was not resolved.
 /// This function has been modified to work with LLZK.
-CallGraphNode *
-CallGraph::resolveCallable(mlir::CallOpInterface call,
-                           mlir::SymbolTableCollection &symbolTable) const {
+CallGraphNode *CallGraph::resolveCallable(
+    mlir::CallOpInterface call, mlir::SymbolTableCollection &symbolTable
+) const {
   auto res = llzk::resolveCallable<llzk::FuncOp>(symbolTable, call);
   if (mlir::succeeded(res)) {
     if (auto *node = lookupNode(res->get().getCallableRegion())) {
@@ -205,8 +201,9 @@ void CallGraph::print(llvm::raw_ostream &os) const {
     os << "'" << callableRegion->getParentOp()->getName() << "' - Region #"
        << callableRegion->getRegionNumber();
     auto attrs = parentOp->getAttrDictionary();
-    if (!attrs.empty())
+    if (!attrs.empty()) {
       os << " : " << attrs;
+    }
   };
 
   for (auto &nodeIt : nodes) {
@@ -220,10 +217,11 @@ void CallGraph::print(llvm::raw_ostream &os) const {
     // Emit each of the edges.
     for (auto &edge : *node) {
       os << "// -- ";
-      if (edge.isCall())
+      if (edge.isCall()) {
         os << "Call";
-      else if (edge.isChild())
+      } else if (edge.isChild()) {
         os << "Child";
+      }
 
       os << "-Edge : ";
       emitNodeName(edge.getTarget());

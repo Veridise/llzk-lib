@@ -78,7 +78,6 @@ public:
   const llzk::CallGraph &getCallGraph() const { return callGraph.get(); }
 
 private:
-
   inline bool isReachableCached(FuncOp &A, FuncOp &B) const {
     auto it = reachabilityMap.find(A);
     return it != reachabilityMap.end() && it->second.find(B) != it->second.end();

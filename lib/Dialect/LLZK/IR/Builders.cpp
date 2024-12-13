@@ -66,9 +66,8 @@ llzk::FuncOp ModuleBuilder::insertConstrainFn(llzk::StructDefOp *op) {
   return fnOp;
 }
 
-ModuleBuilder &ModuleBuilder::insertComputeCall(
-    llzk::StructDefOp *caller, llzk::StructDefOp *callee
-) {
+ModuleBuilder &
+ModuleBuilder::insertComputeCall(llzk::StructDefOp *caller, llzk::StructDefOp *callee) {
   auto callerFn = computeFnMap.at(caller->getName());
   auto calleeFn = computeFnMap.at(callee->getName());
 
@@ -85,9 +84,8 @@ ModuleBuilder &ModuleBuilder::insertComputeCall(
   return *this;
 }
 
-ModuleBuilder &ModuleBuilder::insertConstrainCall(
-    llzk::StructDefOp *caller, llzk::StructDefOp *callee
-) {
+ModuleBuilder &
+ModuleBuilder::insertConstrainCall(llzk::StructDefOp *caller, llzk::StructDefOp *callee) {
   auto callerFn = constrainFnMap.at(caller->getName());
   auto calleeFn = constrainFnMap.at(callee->getName());
   auto calleeTy = llzk::StructType::get(&context, SymbolRefAttr::get(*callee));

@@ -11,12 +11,11 @@
 
 #include <mlir/Analysis/CallGraph.h>
 
-#include <mlir/Support/LLVM.h>
 #include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/MapVector.h>
 #include <llvm/ADT/PointerIntPair.h>
 #include <llvm/ADT/SetVector.h>
-
+#include <mlir/Support/LLVM.h>
 
 namespace mlir {
 
@@ -70,9 +69,7 @@ public:
     /// Returns the target node for this edge.
     CallGraphNode *getTarget() const { return targetAndKind.getPointer(); }
 
-    bool operator==(const Edge &edge) const {
-      return targetAndKind == edge.targetAndKind;
-    }
+    bool operator==(const Edge &edge) const { return targetAndKind == edge.targetAndKind; }
 
   private:
     Edge(CallGraphNode *node, Kind kind) : targetAndKind(node, kind) {}
@@ -120,8 +117,7 @@ public:
 private:
   /// DenseMap info for callgraph edges.
   struct EdgeKeyInfo {
-    using BaseInfo =
-        mlir::DenseMapInfo<llvm::PointerIntPair<CallGraphNode *, 2, Edge::Kind>>;
+    using BaseInfo = mlir::DenseMapInfo<llvm::PointerIntPair<CallGraphNode *, 2, Edge::Kind>>;
 
     static Edge getEmptyKey() { return Edge(BaseInfo::getEmptyKey()); }
     static Edge getTombstoneKey() { return Edge(BaseInfo::getTombstoneKey()); }
@@ -142,8 +138,7 @@ private:
   mlir::Region *callableRegion;
 
   /// A set of out-going edges from this node to other nodes in the graph.
-  mlir::SetVector<Edge, mlir::SmallVector<Edge, 4>,
-            llvm::SmallDenseSet<Edge, 4, EdgeKeyInfo>>
+  mlir::SetVector<Edge, mlir::SmallVector<Edge, 4>, llvm::SmallDenseSet<Edge, 4, EdgeKeyInfo>>
       edges;
 
   // Provide access to private methods.
@@ -160,18 +155,16 @@ class CallGraph {
   /// class unwraps the map iterator to access the raw node.
   class NodeIterator final
       : public llvm::mapped_iterator<
-            NodeMapT::const_iterator,
-            CallGraphNode *(*)(const NodeMapT::value_type &)> {
-    static CallGraphNode *unwrap(const NodeMapT::value_type &value) {
-      return value.second.get();
-    }
+            NodeMapT::const_iterator, CallGraphNode *(*)(const NodeMapT::value_type &)> {
+    static CallGraphNode *unwrap(const NodeMapT::value_type &value) { return value.second.get(); }
 
   public:
     /// Initializes the result type iterator to the specified result iterator.
     NodeIterator(NodeMapT::const_iterator it)
         : llvm::mapped_iterator<
-              NodeMapT::const_iterator,
-              CallGraphNode *(*)(const NodeMapT::value_type &)>(it, &unwrap) {}
+              NodeMapT::const_iterator, CallGraphNode *(*)(const NodeMapT::value_type &)>(
+              it, &unwrap
+          ) {}
   };
 
 public:
@@ -200,8 +193,8 @@ public:
   /// external node if a valid node was not resolved. The provided symbol table
   /// is used when resolving calls that reference callables via a symbol
   /// reference.
-  CallGraphNode *resolveCallable(mlir::CallOpInterface call,
-                                       mlir::SymbolTableCollection &symbolTable) const;
+  CallGraphNode *
+  resolveCallable(mlir::CallOpInterface call, mlir::SymbolTableCollection &symbolTable) const;
 
   /// Erase the given node from the callgraph.
   void eraseNode(CallGraphNode *node);
@@ -231,33 +224,22 @@ private:
 namespace llvm {
 // Provide graph traits for traversing call graphs using standard graph
 // traversals.
-template <>
-struct GraphTraits<const llzk::CallGraphNode *> {
+template <> struct GraphTraits<const llzk::CallGraphNode *> {
   using NodeRef = const llzk::CallGraphNode *;
   static NodeRef getEntryNode(NodeRef node) { return node; }
 
-  static NodeRef unwrap(const llzk::CallGraphNode::Edge &edge) {
-    return edge.getTarget();
-  }
+  static NodeRef unwrap(const llzk::CallGraphNode::Edge &edge) { return edge.getTarget(); }
 
   // ChildIteratorType/begin/end - Allow iteration over all nodes in the graph.
-  using ChildIteratorType =
-      mapped_iterator<llzk::CallGraphNode::iterator, decltype(&unwrap)>;
-  static ChildIteratorType child_begin(NodeRef node) {
-    return {node->begin(), &unwrap};
-  }
-  static ChildIteratorType child_end(NodeRef node) {
-    return {node->end(), &unwrap};
-  }
+  using ChildIteratorType = mapped_iterator<llzk::CallGraphNode::iterator, decltype(&unwrap)>;
+  static ChildIteratorType child_begin(NodeRef node) { return {node->begin(), &unwrap}; }
+  static ChildIteratorType child_end(NodeRef node) { return {node->end(), &unwrap}; }
 };
 
 template <>
-struct GraphTraits<const llzk::CallGraph *>
-    : public GraphTraits<const llzk::CallGraphNode *> {
+struct GraphTraits<const llzk::CallGraph *> : public GraphTraits<const llzk::CallGraphNode *> {
   /// The entry node into the graph is the external node.
-  static NodeRef getEntryNode(const llzk::CallGraph *cg) {
-    return cg->getExternalCallerNode();
-  }
+  static NodeRef getEntryNode(const llzk::CallGraph *cg) { return cg->getExternalCallerNode(); }
 
   // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
   using nodes_iterator = llzk::CallGraph::iterator;

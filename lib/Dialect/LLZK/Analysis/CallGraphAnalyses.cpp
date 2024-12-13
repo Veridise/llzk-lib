@@ -4,8 +4,8 @@
 #include "llzk/Dialect/LLZK/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
-#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/DepthFirstIterator.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/ErrorHandling.h>
 
@@ -23,7 +23,8 @@ CallGraphAnalysis::CallGraphAnalysis(mlir::Operation *op) : cg(nullptr) {
 
 CallGraphReachabilityAnalysis::CallGraphReachabilityAnalysis(
     mlir::Operation *op, mlir::AnalysisManager &am
-) : callGraph(am.getAnalysis<CallGraphAnalysis>().getCallGraph()) {
+)
+    : callGraph(am.getAnalysis<CallGraphAnalysis>().getCallGraph()) {
   if (!mlir::isa<mlir::ModuleOp>(op)) {
     auto error_message = "CallGraphReachabilityAnalysis expects provided op to be a ModuleOp!";
     op->emitError(error_message);
