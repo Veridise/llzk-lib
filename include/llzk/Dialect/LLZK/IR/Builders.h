@@ -9,11 +9,11 @@
 #include <unordered_map>
 #include <unordered_set>
 
-mlir::ModuleOp createLLZKModule(mlir::MLIRContext *);
+namespace llzk {
 
-class LLZKTestModuleBuilder {
+class ModuleBuilder {
 public:
-  LLZKTestModuleBuilder();
+  ModuleBuilder();
 
   mlir::ModuleOp &getMod() { return mod; }
 
@@ -60,7 +60,7 @@ public:
    * It should also initialize the internal member, but we can ignore those
    * ops for the sake of testing.
    */
-  void insertComputeCall(llzk::StructDefOp *caller, llzk::StructDefOp *callee);
+  ModuleBuilder &insertComputeCall(llzk::StructDefOp *caller, llzk::StructDefOp *callee);
 
   /**
    * To call a constraint function, you must:
@@ -68,7 +68,7 @@ public:
    * 2. Read the callee in the caller's constraint function,
    * 3. Call the callee's constraint function.
    */
-  void insertConstrainCall(llzk::StructDefOp *caller, llzk::StructDefOp *callee);
+  ModuleBuilder &insertConstrainCall(llzk::StructDefOp *caller, llzk::StructDefOp *callee);
 
   /**
    * Returns if the callee compute function is reachable by the caller by construction.
@@ -146,3 +146,5 @@ private:
     return false;
   }
 };
+
+} // namespace llzk

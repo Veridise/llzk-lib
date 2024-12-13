@@ -1,22 +1,25 @@
 #include <llzk/Dialect/LLZK/IR/Builders.h>
+#include <gtest/gtest.h>
 
-/* Tests for the LLZKTestModuleBuilder */
+/* Tests for the ModuleBuilder */
+
+using namespace llzk;
 
 TEST(LLZKTestModuleBuilderTests, testModuleOpCreation) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
 
   ASSERT_NE(builder.getMod(), nullptr);
 }
 
 TEST(LLZKTestModuleBuilderTests, testStructDefInsertion) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
 
   auto structDef = builder.insertEmptyStruct("structOne");
   ASSERT_EQ(builder.getStruct("structOne"), structDef);
 }
 
 TEST(LLZKTestModuleBuilderTests, testFnInsertion) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
 
   auto structOp = builder.insertFullStruct("structOne");
 
@@ -28,7 +31,7 @@ TEST(LLZKTestModuleBuilderTests, testFnInsertion) {
 }
 
 TEST(LLZKTestModuleBuilderTests, testReachabilitySimple) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
 
   auto a = builder.insertComputeOnlyStruct("structA");
   auto b = builder.insertComputeOnlyStruct("structB");
@@ -39,7 +42,7 @@ TEST(LLZKTestModuleBuilderTests, testReachabilitySimple) {
 }
 
 TEST(LLZKTestModuleBuilderTests, testReachabilityTransitive) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
 
   auto a = builder.insertComputeOnlyStruct("structA");
   auto b = builder.insertComputeOnlyStruct("structB");
@@ -56,7 +59,7 @@ TEST(LLZKTestModuleBuilderTests, testReachabilityTransitive) {
 }
 
 TEST(LLZKTestModuleBuilderTests, testReachabilityComputeAndConstrain) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
 
   auto a = builder.insertFullStruct("structA");
   auto b = builder.insertComputeOnlyStruct("structB");
@@ -71,7 +74,7 @@ TEST(LLZKTestModuleBuilderTests, testReachabilityComputeAndConstrain) {
 }
 
 TEST(LLZKTestModuleBuilderTests, testConstruction) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
 
   auto a = builder.insertConstrainOnlyStruct("structA");
   auto b = builder.insertConstrainOnlyStruct("structB");

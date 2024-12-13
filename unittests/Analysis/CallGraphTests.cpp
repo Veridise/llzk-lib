@@ -2,23 +2,24 @@
 #include <gtest/gtest.h>
 
 #include <llzk/Dialect/LLZK/IR/Ops.h>
+#include <llzk/Dialect/LLZK/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
 
 #include <llzk/Dialect/LLZK/Analysis/CallGraphAnalyses.h>
 #include <llzk/Dialect/LLZK/Util/SymbolHelper.h>
 
-#include "OpBuilders.h"
+using namespace llzk;
 
 TEST(CallGraphTests, constructorTest) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
   builder.insertFullStruct("A");
 
   ASSERT_NO_THROW(mlir::CallGraph(builder.getMod()));
 }
 
 TEST(CallGraphTests, printTest) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
   builder.insertFullStruct("A");
 
   std::string s;
@@ -31,7 +32,7 @@ TEST(CallGraphTests, printTest) {
 }
 
 TEST(CallGraphTests, numFnTest) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
   builder.insertFullStruct("A");
 
   llzk::CallGraph cgraph(builder.getMod());
@@ -41,7 +42,7 @@ TEST(CallGraphTests, numFnTest) {
 }
 
 TEST(CallGraphTests, reachabilityTest) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
   auto aOp = builder.insertFullStruct("A");
   auto bOp = builder.insertFullStruct("B");
   auto cOp = builder.insertFullStruct("C");
@@ -72,14 +73,14 @@ TEST(CallGraphTests, reachabilityTest) {
 }
 
 TEST(CallGraphTests, analysisConstructor) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
   builder.insertFullStruct("A");
 
   ASSERT_NO_THROW(llzk::CallGraphAnalysis(builder.getMod()));
 }
 
 TEST(CallGraphTests, analysisConstructorBadArg) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
   auto structOp = builder.insertFullStruct("A");
 
   ASSERT_DEATH(
@@ -105,7 +106,7 @@ TEST(CallGraphTests, analysisConstructorBadArg) {
 // }
 
 TEST(SymbolTableTests, lookupInSymbolTest) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
   auto structOp = builder.insertComputeOnlyStruct("A");
   auto computeFn = builder.getComputeFn(&structOp);
 
@@ -121,7 +122,7 @@ TEST(SymbolTableTests, lookupInSymbolTest) {
 }
 
 TEST(SymbolTableTests, lookupInSymbolFQNTest) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
   auto a = builder.insertComputeOnlyStruct("A");
   auto b = builder.insertComputeOnlyStruct("B");
   builder.insertComputeCall(&a, &b);
@@ -153,7 +154,7 @@ TEST(SymbolTableTests, lookupInSymbolFQNTest) {
 }
 
 TEST(SymbolTableTests, resolveCallableTest) {
-  LLZKTestModuleBuilder builder;
+  ModuleBuilder builder;
   auto a = builder.insertComputeOnlyStruct("A");
   auto b = builder.insertComputeOnlyStruct("B");
   builder.insertComputeCall(&a, &b);

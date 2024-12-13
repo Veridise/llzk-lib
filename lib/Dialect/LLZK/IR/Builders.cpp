@@ -6,16 +6,18 @@
 
 using namespace mlir;
 
-/* LLZKTestModuleBuilder */
+namespace llzk {
 
-LLZKTestModuleBuilder::LLZKTestModuleBuilder() {
+/* ModuleBuilder */
+
+ModuleBuilder::ModuleBuilder() {
   auto dialect = context.getOrLoadDialect<llzk::LLZKDialect>();
   auto langAttr = StringAttr::get(&context, dialect->getNamespace());
   mod = ModuleOp::create(UnknownLoc::get(&context));
   mod->setAttr(llzk::LANG_ATTR_NAME, langAttr);
 }
 
-llzk::StructDefOp LLZKTestModuleBuilder::insertEmptyStruct(std::string_view structName) {
+llzk::StructDefOp ModuleBuilder::insertEmptyStruct(std::string_view structName) {
   assert(structMap.find(structName) == structMap.end());
 
   OpBuilder opBuilder(mod.getBody(), mod.getBody()->begin());
@@ -32,7 +34,7 @@ llzk::StructDefOp LLZKTestModuleBuilder::insertEmptyStruct(std::string_view stru
   return structDef;
 }
 
-llzk::FuncOp LLZKTestModuleBuilder::insertComputeFn(llzk::StructDefOp *op) {
+llzk::FuncOp ModuleBuilder::insertComputeFn(llzk::StructDefOp *op) {
   OpBuilder opBuilder(op->getBody());
   assert(computeFnMap.find(op->getName()) == computeFnMap.end());
 
@@ -47,7 +49,7 @@ llzk::FuncOp LLZKTestModuleBuilder::insertComputeFn(llzk::StructDefOp *op) {
   return fnOp;
 }
 
-llzk::FuncOp LLZKTestModuleBuilder::insertConstrainFn(llzk::StructDefOp *op) {
+llzk::FuncOp ModuleBuilder::insertConstrainFn(llzk::StructDefOp *op) {
   assert(constrainFnMap.find(op->getName()) == constrainFnMap.end());
 
   OpBuilder opBuilder(op->getBody());
@@ -64,7 +66,7 @@ llzk::FuncOp LLZKTestModuleBuilder::insertConstrainFn(llzk::StructDefOp *op) {
   return fnOp;
 }
 
-void LLZKTestModuleBuilder::insertComputeCall(
+ModuleBuilder &ModuleBuilder::insertComputeCall(
     llzk::StructDefOp *caller, llzk::StructDefOp *callee
 ) {
   auto callerFn = computeFnMap.at(caller->getName());
@@ -80,9 +82,10 @@ void LLZKTestModuleBuilder::insertComputeCall(
       getFullyQualifiedFuncSymbol(callee, calleeFn), mlir::ValueRange{}
   );
   updateComputeReachability(caller, callee);
+  return *this;
 }
 
-void LLZKTestModuleBuilder::insertConstrainCall(
+ModuleBuilder &ModuleBuilder::insertConstrainCall(
     llzk::StructDefOp *caller, llzk::StructDefOp *callee
 ) {
   auto callerFn = constrainFnMap.at(caller->getName());
@@ -115,4 +118,7 @@ void LLZKTestModuleBuilder::insertConstrainCall(
     );
   }
   updateConstrainReachability(caller, callee);
+  return *this;
 }
+
+} // namespace llzk
