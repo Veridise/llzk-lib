@@ -17,7 +17,7 @@ namespace llzk {
 /// TODO: this is a WIP, flesh this class out as needed.
 class ModuleBuilder {
 public:
-  ModuleBuilder(mlir::MLIRContext *context);
+  ModuleBuilder(mlir::MLIRContext *c);
 
   /* Builder methods */
 

@@ -10,7 +10,7 @@ namespace llzk {
 
 /* ModuleBuilder */
 
-ModuleBuilder::ModuleBuilder(mlir::MLIRContext *context) : context(context) {
+ModuleBuilder::ModuleBuilder(mlir::MLIRContext *c) : context(c) {
   auto dialect = context->getOrLoadDialect<llzk::LLZKDialect>();
   auto langAttr = StringAttr::get(context, dialect->getNamespace());
   rootModule = ModuleOp::create(UnknownLoc::get(context));
