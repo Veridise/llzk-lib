@@ -3,303 +3,248 @@
  */
 #include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/DepthFirstIterator.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/ErrorHandling.h>
 
+#include <mlir/Analysis/CallGraph.h>
+#include <mlir/Interfaces/CallInterfaces.h>
+#include <mlir/IR/Operation.h>
+#include <mlir/IR/SymbolTable.h>
+
 namespace llzk {
 
-using namespace ::mlir;
+//===----------------------------------------------------------------------===//
+// CallGraphNode
+//===----------------------------------------------------------------------===//
 
-/* CallGraph */
+/// Returns true if this node refers to the indirect/external node.
+bool CallGraphNode::isExternal() const { return !callableRegion; }
 
-CallGraph::CallGraph(ModuleOp M) : M(M), EntryNode(getOrInsertFunction(FuncOp(nullptr))) {
-  // Add every interesting function to the call graph.
-  M.walk([&](FuncOp F) { addToCallGraph(F); });
+/// Return the callable region this node represents. This can only be called
+/// on non-external nodes.
+mlir::Region *CallGraphNode::getCallableRegion() const {
+  assert(!isExternal() && "the external node has no callable region");
+  return callableRegion;
 }
 
-CallGraph::CallGraph(CallGraph &&Arg)
-    : M(Arg.M), FunctionMap(std::move(Arg.FunctionMap)), EntryNode(Arg.EntryNode) {
-  Arg.FunctionMap.clear();
-
-  // Update parent CG for all call graph's nodes.
-  EntryNode->CG = this;
-  for (auto &P : FunctionMap) {
-    P.second->CG = this;
-  }
+llzk::FuncOp CallGraphNode::getCalledFunction() const {
+  return mlir::dyn_cast<llzk::FuncOp>(getCallableRegion()->getParentOp());
 }
 
-CallGraph::~CallGraph() {
-// Reset all node's use counts to zero before deleting them to prevent an
-// assertion from firing.
-#ifndef NDEBUG
-  for (auto &I : FunctionMap) {
-    I.second->allReferencesDropped();
-  }
-#endif
+/// Adds an reference edge to the given node. This is only valid on the
+/// external node.
+void CallGraphNode::addAbstractEdge(CallGraphNode *node) {
+  assert(isExternal() && "abstract edges are only valid on external nodes");
+  addEdge(node, Edge::Kind::Abstract);
 }
 
-void CallGraph::addToCallGraph(FuncOp &F) {
-  CallGraphNode *Node = getOrInsertFunction(F);
-  // TODO: Main component logic.
-  if (F.getName() == FUNC_NAME_COMPUTE || F.getName() == FUNC_NAME_CONSTRAIN) {
-    EntryNode->addCalledFunction(nullptr, Node);
-  }
-  populateCallGraphNode(Node);
+/// Add an outgoing call edge from this node.
+void CallGraphNode::addCallEdge(CallGraphNode *node) {
+  addEdge(node, Edge::Kind::Call);
 }
 
-void CallGraph::populateCallGraphNode(CallGraphNode *Node) {
-  FuncOp F = Node->getFunction();
-
-  // Look for calls by this function.
-  F->walk([&](CallOp callOp) {
-    auto calledFnSym = callOp.getCallee();
-    FuncOp calledFn = FuncOp(mlir::SymbolTable::lookupSymbolIn(M, calledFnSym));
-    assert(calledFn != nullptr && "Should be able to find all function!");
-    Node->addCalledFunction(&callOp, getOrInsertFunction(calledFn));
-  });
+/// Adds a reference edge to the given child node.
+void CallGraphNode::addChildEdge(CallGraphNode *child) {
+  addEdge(child, Edge::Kind::Child);
 }
 
-void CallGraph::print(mlir::raw_ostream &OS) const {
-  // Print in a deterministic order by sorting CallGraphNodes by name.  We do
-  // this here to avoid slowing down the non-printing fast path.
+/// Returns true if this node has any child edges.
+bool CallGraphNode::hasChildren() const {
+  return llvm::any_of(edges, [](const Edge &edge) { return edge.isChild(); });
+}
 
-  llvm::SmallVector<CallGraphNode *, 16> Nodes;
-  Nodes.reserve(FunctionMap.size());
+/// Add an edge to 'node' with the given kind.
+void CallGraphNode::addEdge(CallGraphNode *node, Edge::Kind kind) {
+  edges.insert({node, kind});
+}
 
-  for (const auto &I : *this) {
-    Nodes.push_back(I.second.get());
-  }
+//===----------------------------------------------------------------------===//
+// CallGraph
+//===----------------------------------------------------------------------===//
 
-  llvm::sort(Nodes, [](CallGraphNode *LHS, CallGraphNode *RHS) {
-    if (LHS->getFunction() && RHS->getFunction()) {
-      return LHS->getFunction() < RHS->getFunction();
+/// Recursively compute the callgraph edges for the given operation. Computed
+/// edges are placed into the given callgraph object.
+static void computeCallGraph(
+  mlir::Operation *op,
+  CallGraph &cg,
+  mlir::SymbolTableCollection &symbolTable,
+  CallGraphNode *parentNode,
+  bool resolveCalls)
+{
+  if (mlir::CallOpInterface call = mlir::dyn_cast<mlir::CallOpInterface>(op)) {
+    // If there is no parent node, we ignore this operation. Even if this
+    // operation was a call, there would be no callgraph node to attribute it
+    // to.
+    if (resolveCalls && parentNode) {
+      parentNode->addCallEdge(cg.resolveCallable(call, symbolTable));
     }
-    return RHS->getFunction() != nullptr;
-  });
-
-  for (CallGraphNode *CN : Nodes) {
-    CN->print(OS);
+    return;
   }
-}
 
-#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
-LLVM_DUMP_METHOD void CallGraph::dump() const { print(llvm::dbgs()); }
-#endif
-
-// removeFunctionFromModule - Unlink the function from this module, returning
-// it.  Because this removes the function from the module, the call graph node
-// is destroyed.  This is only valid if the function does not call any other
-// functions (ie, there are no edges in it's CGN).
-//
-FuncOp CallGraph::removeFunctionFromModule(CallGraphNode *CGN) {
-  assert(
-      CGN->empty() && "Cannot remove function from call "
-                      "graph if it references other functions!"
-  );
-  // Remove from entry node if applicable
-  for (auto it = EntryNode->begin(); it != EntryNode->end(); it++) {
-    if (it->second == CGN) {
-      EntryNode->removeCallEdge(it);
-      break;
+  // Compute the callgraph nodes and edges for each of the nested operations.
+  if (mlir::CallableOpInterface callable = mlir::dyn_cast<mlir::CallableOpInterface>(op)) {
+    if (auto *callableRegion = callable.getCallableRegion()) {
+      parentNode = cg.getOrAddNode(callableRegion, parentNode);
+    } else {
+      return;
     }
   }
-  FuncOp F = CGN->getFunction(); // Get the function for the call graph node
-  FunctionMap.erase(F);          // Remove the call graph node from the map
 
-  F->erase();
-  return F;
+  for (mlir::Region &region : op->getRegions()) {
+    for (mlir::Operation &nested : region.getOps()) {
+      computeCallGraph(&nested, cg, symbolTable, parentNode, resolveCalls);
+    }
+  }
 }
 
-// getOrInsertFunction - This method is identical to calling operator[], but
-// it will insert a new CallGraphNode for the specified function if one does
-// not already exist.
-CallGraphNode *CallGraph::getOrInsertFunction(FuncOp F) {
-  auto &CGN = FunctionMap[F];
-  if (CGN) {
-    return CGN.get();
+CallGraph::CallGraph(mlir::Operation *op)
+    : externalCallerNode(/*callableRegion=*/nullptr),
+      unknownCalleeNode(/*callableRegion=*/nullptr) {
+  // Make two passes over the graph, one to compute the callables and one to
+  // resolve the calls. We split these up as we may have nested callable objects
+  // that need to be reserved before the calls.
+  mlir::SymbolTableCollection symbolTable;
+  computeCallGraph(op, *this, symbolTable, /*parentNode=*/nullptr,
+                   /*resolveCalls=*/false);
+  computeCallGraph(op, *this, symbolTable, /*parentNode=*/nullptr,
+                   /*resolveCalls=*/true);
+}
+
+/// Get or add a call graph node for the given region.
+CallGraphNode *CallGraph::getOrAddNode(mlir::Region *region,
+                                             CallGraphNode *parentNode) {
+  assert(region && mlir::isa<mlir::CallableOpInterface>(region->getParentOp()) &&
+         "expected parent operation to be callable");
+  std::unique_ptr<CallGraphNode> &node = nodes[region];
+  if (!node) {
+    node.reset(new CallGraphNode(region));
+
+    // Add this node to the given parent node if necessary.
+    if (parentNode) {
+      parentNode->addChildEdge(node.get());
+    } else {
+      // Otherwise, connect all callable nodes to the external node, this allows
+      // for conservatively including all callable nodes within the graph.
+      // FIXME This isn't correct, this is only necessary for callable nodes
+      // that *could* be called from external sources. This requires extending
+      // the interface for callables to check if they may be referenced
+      // externally.
+      externalCallerNode.addAbstractEdge(node.get());
+    }
+  }
+  return node.get();
+}
+
+/// Lookup a call graph node for the given region, or nullptr if none is
+/// registered.
+CallGraphNode *CallGraph::lookupNode(mlir::Region *region) const {
+  const auto *it = nodes.find(region);
+  return it == nodes.end() ? nullptr : it->second.get();
+}
+
+/// Resolve the callable for given callee to a node in the callgraph, or the
+/// unknown callee node if a valid node was not resolved.
+/// This function has been modified to work with LLZK.
+CallGraphNode *
+CallGraph::resolveCallable(mlir::CallOpInterface call,
+                           mlir::SymbolTableCollection &symbolTable) const {
+  auto res = llzk::resolveCallable<llzk::FuncOp>(symbolTable, call);
+  if (mlir::succeeded(res)) {
+    if (auto *node = lookupNode(res->get().getCallableRegion())) {
+      return node;
+    }
   }
 
-  auto containedInModule = [&](mlir::Operation *op, FuncOp &f) {
-    assert(f);
-    if (op->hasTrait<mlir::OpTrait::SymbolTable>()) {
-      return mlir::SymbolTable::lookupSymbolIn(op, f.getName()) != nullptr;
-    }
-    return op == f;
-  };
-  bool isContained = false;
-  if (F) {
-    M.walk([&](mlir::Operation *op) {
-      isContained = containedInModule(op, F);
-      if (isContained) {
-        return mlir::WalkResult::interrupt();
+  return getUnknownCalleeNode();
+}
+
+/// Erase the given node from the callgraph.
+void CallGraph::eraseNode(CallGraphNode *node) {
+  // Erase any children of this node first.
+  if (node->hasChildren()) {
+    for (const CallGraphNode::Edge &edge : llvm::make_early_inc_range(*node)) {
+      if (edge.isChild()) {
+        eraseNode(edge.getTarget());
       }
-      return mlir::WalkResult::advance();
+    }
+  }
+  // Erase any edges to this node from any other nodes.
+  for (auto &it : nodes) {
+    it.second->edges.remove_if([node](const CallGraphNode::Edge &edge) {
+      return edge.getTarget() == node;
     });
   }
-  // null checks work on mlir custom dialect ops
-  assert((!F || isContained) && "Function not in current module!");
-  CGN = std::make_unique<CallGraphNode>(this, F);
-  return CGN.get();
+  nodes.erase(node->getCallableRegion());
 }
 
-/* CallGraphNode */
+//===----------------------------------------------------------------------===//
+// Printing
 
-void CallGraphNode::print(mlir::raw_ostream &OS) const {
-  if (F) {
-    OS << "Call graph node for function: '" << F.getFullyQualifiedName() << "'";
-  } else {
-    OS << "Entry call graph node (null function)";
-  }
+/// Dump the graph in a human readable format.
+void CallGraph::dump() const { print(llvm::errs()); }
+void CallGraph::print(llvm::raw_ostream &os) const {
+  os << "// ---- CallGraph ----\n";
 
-  OS << "<<" << this << ">>  #uses=" << getNumReferences() << '\n';
-
-  for (auto &[callSite, calleeNode] : *this) {
-    OS << "  CS<";
-    if (callSite) {
-      OS << callSite << " (" << *callSite << ")";
-    } else {
-      OS << "entry node";
-    }
-    OS << "> calls function '" << calleeNode->getFunction().getFullyQualifiedName() << "'\n";
-  }
-  OS << '\n';
-}
-
-#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
-LLVM_DUMP_METHOD void CallGraphNode::dump() const { print(llvm::dbgs()); }
-#endif
-
-/// removeCallEdgeFor - This method removes the edge in the node for the
-/// specified call site.  Note that this method takes linear time, so it
-/// should be used sparingly.
-void CallGraphNode::removeCallEdgeFor(CallOp *Call) {
-  for (CalledFunctionsVector::iterator I = CalledFunctions.begin();; ++I) {
-    assert(I != CalledFunctions.end() && "Cannot find callsite to remove!");
-    if (I->first == Call) {
-      I->second->DropRef();
-      *I = CalledFunctions.back();
-      CalledFunctions.pop_back();
-
-      // Remove all references to callback functions if there are any.
-      FuncOp op = FuncOp(mlir::SymbolTable::lookupSymbolIn(CG->getModule(), Call->getCallee()));
-      removeOneAbstractEdgeTo(CG->getOrInsertFunction(op));
+  // Functor used to output the name for the given node.
+  auto emitNodeName = [&](const CallGraphNode *node) {
+    if (node == getExternalCallerNode()) {
+      os << "<External-Caller-Node>";
       return;
     }
-  }
-}
-
-// removeAnyCallEdgeTo - This method removes any call edges from this node to
-// the specified callee function.  This takes more time to execute than
-// removeCallEdgeTo, so it should not be used unless necessary.
-void CallGraphNode::removeAnyCallEdgeTo(CallGraphNode *Callee) {
-  for (unsigned i = 0, e = CalledFunctions.size(); i != e; ++i) {
-    if (CalledFunctions[i].second == Callee) {
-      Callee->DropRef();
-      CalledFunctions[i] = CalledFunctions.back();
-      CalledFunctions.pop_back();
-      --i;
-      --e;
-    }
-  }
-}
-
-/// removeOneAbstractEdgeTo - Remove one edge associated with a null callsite
-/// from this node to the specified callee function.
-void CallGraphNode::removeOneAbstractEdgeTo(CallGraphNode *Callee) {
-  for (CalledFunctionsVector::iterator I = CalledFunctions.begin();; ++I) {
-    assert(I != CalledFunctions.end() && "Cannot find callee to remove!");
-    CallRecord &CR = *I;
-    if (CR.second == Callee && !CR.first) {
-      Callee->DropRef();
-      *I = CalledFunctions.back();
-      CalledFunctions.pop_back();
+    if (node == getUnknownCalleeNode()) {
+      os << "<Unknown-Callee-Node>";
       return;
     }
-  }
-}
 
-/// replaceCallEdge - This method replaces the edge in the node for the
-/// specified call site with a new one.  Note that this method takes linear
-/// time, so it should be used sparingly.
-void CallGraphNode::replaceCallEdge(CallOp *Call, CallOp *NewCall, CallGraphNode *NewNode) {
-  for (CalledFunctionsVector::iterator I = CalledFunctions.begin();; ++I) {
-    assert(I != CalledFunctions.end() && "Cannot find callsite to remove!");
-    if (I->first == Call) {
-      I->second->DropRef();
-      I->first = NewCall;
-      I->second = NewNode;
-      NewNode->AddRef();
+    auto *callableRegion = node->getCallableRegion();
+    auto *parentOp = callableRegion->getParentOp();
+    os << "'" << callableRegion->getParentOp()->getName() << "' - Region #"
+       << callableRegion->getRegionNumber();
+    auto attrs = parentOp->getAttrDictionary();
+    if (!attrs.empty())
+      os << " : " << attrs;
+  };
 
-      // Refresh callback references. Do not resize CalledFunctions if the
-      // number of callbacks is the same for new and old call sites.
-      SmallVector<CallGraphNode *, 4u> OldCBs;
-      SmallVector<CallGraphNode *, 4u> NewCBs;
-      FuncOp oldCB = FuncOp(mlir::SymbolTable::lookupSymbolIn(CG->getModule(), Call->getCallee()));
-      auto oldNode = CG->getOrInsertFunction(oldCB);
+  for (auto &nodeIt : nodes) {
+    const CallGraphNode *node = nodeIt.second.get();
 
-      for (auto J = CalledFunctions.begin();; ++J) {
-        assert(J != CalledFunctions.end() && "Cannot find callsite to update!");
-        if (!J->first && J->second == oldNode) {
-          J->second = NewNode;
-          oldNode->DropRef();
-          NewNode->AddRef();
-          break;
-        }
-      }
+    // Dump the header for this node.
+    os << "// - Node : ";
+    emitNodeName(node);
+    os << "\n";
 
-      return;
+    // Emit each of the edges.
+    for (auto &edge : *node) {
+      os << "// -- ";
+      if (edge.isCall())
+        os << "Call";
+      else if (edge.isChild())
+        os << "Child";
+
+      os << "-Edge : ";
+      emitNodeName(edge.getTarget());
+      os << "\n";
     }
-  }
-}
-
-CallGraphAnalysis::CallGraphAnalysis(mlir::Operation *op) : cg(nullptr) {
-  if (auto modOp = mlir::dyn_cast<mlir::ModuleOp>(op)) {
-    cg = std::make_unique<CallGraph>(modOp);
-  } else {
-    auto error_message = "CallGraphAnalysis expects provided op to be a ModuleOp!";
-    op->emitError(error_message);
-    llvm::report_fatal_error(error_message);
-  }
-}
-
-std::unordered_set<const CallGraphNode *> CallGraphReachabilityAnalysis::dfsNodes(
-    const CallGraphNode *currNode, std::unordered_set<const CallGraphNode *> visited
-) {
-  std::unordered_set<const CallGraphNode *> descendents;
-  if (visited.find(currNode) != visited.end()) {
-    return descendents;
+    os << "//\n";
   }
 
-  visited.insert(currNode);
-  for (const auto &[_, childNode] : *currNode) {
-    auto childDesc = dfsNodes(childNode, visited);
-    descendents.insert(childNode);
-    descendents.insert(childDesc.begin(), childDesc.end());
+  os << "// -- SCCs --\n";
+
+  for (auto &scc : make_range(llvm::scc_begin(this), llvm::scc_end(this))) {
+    os << "// - SCC : \n";
+    for (auto &node : scc) {
+      os << "// -- Node :";
+      emitNodeName(node);
+      os << "\n";
+    }
+    os << "\n";
   }
 
-  // update cache
-  for (const auto childNode : descendents) {
-    reachabilityMap[currNode->getFunction()].insert(childNode->getFunction());
-  }
-
-  return descendents;
-}
-
-CallGraphReachabilityAnalysis::CallGraphReachabilityAnalysis(
-    mlir::Operation *op, mlir::AnalysisManager &am
-) {
-  if (!mlir::isa<mlir::ModuleOp>(op)) {
-    auto error_message = "CallGraphReachabilityAnalysis expects provided op to be a ModuleOp!";
-    op->emitError(error_message);
-    llvm::report_fatal_error(error_message);
-  }
-
-  auto &cg = am.getAnalysis<CallGraphAnalysis>().getCallGraph();
-
-  const CallGraphNode *start = cg.getEntryNode();
-  (void)dfsNodes(start, {});
+  os << "// -------------------\n";
 }
 
 } // namespace llzk

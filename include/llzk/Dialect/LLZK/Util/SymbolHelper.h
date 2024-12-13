@@ -50,6 +50,42 @@ inline mlir::FailureOr<SymbolLookupResult<T>> lookupTopLevelSymbol(
   return lookupSymbolIn<T>(symbolTable, symbol, root.value(), origin);
 }
 
+/// @brief Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers
+/// @tparam T the type of symbol being resolved (e.g., llzk::FuncOp)
+/// @param symbolTable
+/// @param call
+/// @return the symbol or failure
+template <typename T>
+inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(
+    mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface call
+) {
+  mlir::CallInterfaceCallable callable = call.getCallableForCallee();
+  if (auto symbolVal = dyn_cast<mlir::Value>(callable)) {
+    return SymbolLookupResult<T>(symbolVal.getDefiningOp());
+  }
+
+  // If the callable isn't a value, lookup the symbol reference.
+  // We first try to resolve in the nearest symbol table, as per the default
+  // MLIR behavior. If the resulting operation is not found, we will then
+  // use the LLZK lookup helpers.
+  auto symbolRef = callable.get<mlir::SymbolRefAttr>();
+  mlir::Operation *op = symbolTable.lookupNearestSymbolFrom(call.getOperation(), symbolRef);
+
+  if (op) {
+    return SymbolLookupResult<T>(std::move(op));
+  }
+  // Otherwise, use the top-level lookup.
+  return lookupTopLevelSymbol<T>(symbolTable, symbolRef, call.getOperation());
+}
+
+template <typename T>
+inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterface call) {
+  mlir::SymbolTableCollection symbolTable;
+  return resolveCallable<T>(symbolTable, call);
+}
+
+
+
 mlir::LogicalResult verifyTypeResolution(
     mlir::SymbolTableCollection &symbolTable, mlir::Type ty, mlir::Operation *origin
 );

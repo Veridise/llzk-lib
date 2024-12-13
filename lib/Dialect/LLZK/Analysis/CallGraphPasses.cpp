@@ -2,7 +2,7 @@
  * The contents of this file are adapted from llvm/lib/Analysis/CallGraph.cpp
  */
 #include "llzk/Dialect/LLZK/Analysis/CallGraphPasses.h"
-#include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
+#include "llzk/Dialect/LLZK/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include <llvm/ADT/SmallVector.h>
@@ -50,18 +50,18 @@ protected:
     auto &CG = getAnalysis<CallGraphAnalysis>();
     unsigned sccNum = 0;
     os << "SCCs for the program in PostOrder:";
-    for (auto SCCI = llvm::scc_begin(&CG.getCallGraph()); !SCCI.isAtEnd(); ++SCCI) {
-      const std::vector<CallGraphNode *> &nextSCC = *SCCI;
+    for (auto SCCI = llvm::scc_begin<const llzk::CallGraph *>(&CG.getCallGraph()); !SCCI.isAtEnd(); ++SCCI) {
+      const std::vector<const CallGraphNode *> &nextSCC = *SCCI;
       os << "\nSCC #" << ++sccNum << ": ";
       bool First = true;
-      for (CallGraphNode *CGN : nextSCC) {
+      for (const CallGraphNode *CGN : nextSCC) {
         if (First) {
           First = false;
         } else {
           os << ", ";
         }
-        if (FuncOp fn = CGN->getFunction()) {
-          os << CGN->getFunction().getFullyQualifiedName();
+        if (FuncOp fn = CGN->getCalledFunction()) {
+          os << fn.getFullyQualifiedName();
         } else {
           os << "external node";
         }

@@ -1,7 +1,3 @@
-/**
- * The contents of this file are adapted from llvm/include/llvm/Analysis/CallGraph.h.
- */
-
 #pragma once
 
 #include <cassert>
@@ -13,373 +9,259 @@
 #include <utility>
 #include <vector>
 
-#include <mlir/Pass/Pass.h>
+#include <mlir/Analysis/CallGraph.h>
 
-#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include <mlir/Support/LLVM.h>
+#include <llvm/ADT/GraphTraits.h>
+#include <llvm/ADT/MapVector.h>
+#include <llvm/ADT/PointerIntPair.h>
+#include <llvm/ADT/SetVector.h>
 
-namespace llvm {
-
-template <class GraphType> struct GraphTraits;
-class raw_ostream;
-
-} // namespace llvm
 
 namespace mlir {
 
 class Operation;
-class ModuleOp;
+class CallOpInterface;
+class SymbolTableCollection;
 
 } // namespace mlir
 
 namespace llzk {
 
-class CallGraphNode;
+class FuncOp;
 
-/// The basic data container for the call graph of a Module of IR.
-///
-/// This class exposes both the interface to the call graph for a module of IR.
-///
-/// The core call graph itself can also be updated to reflect changes to the IR.
-class CallGraph {
-  mlir::ModuleOp M;
-
-  using FunctionMapTy = std::map<FuncOp, std::unique_ptr<CallGraphNode>>;
-
-  // A map from FuncOp* to CallGraphNode*.
-  FunctionMapTy FunctionMap;
-
-  /// This node has edges to all compute/constrain functions, as those are currently
-  /// our entry points until main functions are supported.
-  /// Points to a "null" function.
-  CallGraphNode *EntryNode;
-
-public:
-  explicit CallGraph(mlir::ModuleOp M);
-  CallGraph(CallGraph &&Arg);
-  ~CallGraph();
-
-  void print(llvm::raw_ostream &OS) const;
-  void dump() const;
-
-  using iterator = FunctionMapTy::iterator;
-  using const_iterator = FunctionMapTy::const_iterator;
-
-  /// Returns the module the call graph corresponds to.
-  mlir::ModuleOp &getModule() { return M; }
-  const mlir::ModuleOp &getModule() const { return M; }
-
-  inline iterator begin() { return FunctionMap.begin(); }
-  inline iterator end() { return FunctionMap.end(); }
-  inline const_iterator begin() const { return FunctionMap.begin(); }
-  inline const_iterator end() const { return FunctionMap.end(); }
-  inline size_t size() const { return FunctionMap.size(); }
-
-  /// Returns the call graph node for the provided function.
-  inline const CallGraphNode *operator[](const FuncOp &F) const {
-    const_iterator I = FunctionMap.find(F);
-    assert(I != FunctionMap.end() && "Function not in callgraph!");
-    return I->second.get();
-  }
-
-  /// Returns the call graph node for the provided function.
-  inline CallGraphNode *operator[](const FuncOp &F) {
-    const_iterator I = FunctionMap.find(F);
-    assert(I != FunctionMap.end() && "Function not in callgraph!");
-    return I->second.get();
-  }
-
-  /**
-   * Returns the node that points to all possible entry functions.
-   */
-  CallGraphNode *getEntryNode() const { return EntryNode; }
-
-  //===---------------------------------------------------------------------
-  // Functions to keep a call graph up to date with a function that has been
-  // modified.
-  //
-
-  /// Unlink the function from this module, returning it.
-  ///
-  /// Because this removes the function from the module, the call graph node is
-  /// destroyed.  This is only valid if the function does not call any other
-  /// functions (ie, there are no edges in it's CGN).  The easiest way to do
-  /// this is to dropAllReferences before calling this.
-  FuncOp removeFunctionFromModule(CallGraphNode *CGN);
-
-  /// Similar to operator[], but this will insert a new CallGraphNode for
-  /// \c F if one does not already exist.
-  CallGraphNode *getOrInsertFunction(FuncOp F);
-
-  /// Populate \p CGN based on the calls inside the associated function.
-  void populateCallGraphNode(CallGraphNode *CGN);
-
-  /// Add a function to the call graph, and link the node to all of the
-  /// functions that it calls.
-  void addToCallGraph(FuncOp &F);
-};
-
-/// A node in the call graph for a module.
-///
-/// Typically represents a function in the call graph. There are also special
-/// "null" nodes used to represent theoretical entries in the call graph.
+/// This is a simple port of the mlir::CallGraphNode with llzk::CallGraph
+/// as a friend class, for mlir::CallGraphNode has a private constructor and
+/// can only be constructed by mlir::CallGraph. mlir::CallGraphNode is also
+/// not polymorphic, so a port is cleaner than requiring casts on mlir::CallGraphNode
+/// return types.
 class CallGraphNode {
 public:
-  /// A pair of the calling instruction and the call graph node being called.
-  using CallRecord = std::pair<CallOp *, CallGraphNode *>;
+  /// This class represents a directed edge between two nodes in the callgraph.
+  class Edge {
+    enum class Kind {
+      // An 'Abstract' edge represents an opaque, non-operation, reference
+      // between this node and the target. Edges of this type are only valid
+      // from the external node, as there is no valid connection to an operation
+      // in the module.
+      Abstract,
 
-public:
-  using CalledFunctionsVector = std::vector<CallRecord>;
+      // A 'Call' edge represents a direct reference to the target node via a
+      // call-like operation within the callable region of this node.
+      Call,
 
-  /// Creates a node for the specified function.
-  inline CallGraphNode(CallGraph *CG, FuncOp &F) : CG(CG), F(F) {}
+      // A 'Child' edge is used when the region of target node is defined inside
+      // of the callable region of this node. This means that the region of this
+      // node is an ancestor of the region for the target node. As such, this
+      // edge cannot be used on the 'external' node.
+      Child,
+    };
 
-  CallGraphNode(const CallGraphNode &) = delete;
-  CallGraphNode &operator=(const CallGraphNode &) = delete;
+  public:
+    /// Returns true if this edge represents an `Abstract` edge.
+    bool isAbstract() const { return targetAndKind.getInt() == Kind::Abstract; }
 
-  ~CallGraphNode() { assert(NumReferences == 0 && "Node deleted while references remain"); }
+    /// Returns true if this edge represents a `Call` edge.
+    bool isCall() const { return targetAndKind.getInt() == Kind::Call; }
 
-  using iterator = std::vector<CallRecord>::iterator;
-  using const_iterator = std::vector<CallRecord>::const_iterator;
+    /// Returns true if this edge represents a `Child` edge.
+    bool isChild() const { return targetAndKind.getInt() == Kind::Child; }
 
-  /// Returns the function that this call graph node represents.
-  FuncOp &getFunction() { return F; }
-  const FuncOp &getFunction() const { return F; }
+    /// Returns the target node for this edge.
+    CallGraphNode *getTarget() const { return targetAndKind.getPointer(); }
 
-  inline iterator begin() { return CalledFunctions.begin(); }
-  inline iterator end() { return CalledFunctions.end(); }
-  inline const_iterator begin() const { return CalledFunctions.begin(); }
-  inline const_iterator end() const { return CalledFunctions.end(); }
-  inline bool empty() const { return CalledFunctions.empty(); }
-  inline unsigned size() const { return (unsigned)CalledFunctions.size(); }
-
-  /// Returns the number of other CallGraphNodes in this CallGraph that
-  /// reference this node in their callee list.
-  unsigned getNumReferences() const { return NumReferences; }
-
-  /// Returns the i'th called function.
-  CallGraphNode *operator[](unsigned i) const {
-    assert(i < CalledFunctions.size() && "Invalid index");
-    return CalledFunctions[i].second;
-  }
-
-  /// Print out this call graph node.
-  void dump() const;
-  void print(llvm::raw_ostream &OS) const;
-
-  //===---------------------------------------------------------------------
-  // Methods to keep a call graph up to date with a function that has been
-  // modified
-  //
-
-  /// Removes all edges from this CallGraphNode to any functions it calls.
-  void removeAllCalledFunctions() {
-    while (!CalledFunctions.empty()) {
-      CalledFunctions.back().second->DropRef();
-      CalledFunctions.pop_back();
+    bool operator==(const Edge &edge) const {
+      return targetAndKind == edge.targetAndKind;
     }
-  }
 
-  /// Moves all the callee information from N to this node.
-  void stealCalledFunctionsFrom(CallGraphNode *N) {
-    assert(CalledFunctions.empty() && "Cannot steal callsite information if I already have some");
-    std::swap(CalledFunctions, N->CalledFunctions);
-  }
+  private:
+    Edge(CallGraphNode *node, Kind kind) : targetAndKind(node, kind) {}
+    explicit Edge(llvm::PointerIntPair<CallGraphNode *, 2, Kind> targetAndKind)
+        : targetAndKind(targetAndKind) {}
 
-  /// Adds a function to the list of functions called by this one.
-  void addCalledFunction(CallOp *Call, CallGraphNode *M) {
-    CalledFunctions.emplace_back(Call, M);
-    M->AddRef();
-  }
+    /// The target node of this edge, as well as the edge kind.
+    llvm::PointerIntPair<CallGraphNode *, 2, Kind> targetAndKind;
 
-  void removeCallEdge(iterator I) {
-    I->second->DropRef();
-    *I = CalledFunctions.back();
-    CalledFunctions.pop_back();
-  }
-
-  /// Removes the edge in the node for the specified call site.
-  ///
-  /// Note that this method takes linear time, so it should be used sparingly.
-  void removeCallEdgeFor(CallOp *Call);
-
-  /// Removes all call edges from this node to the specified callee
-  /// function.
-  ///
-  /// This takes more time to execute than removeCallEdgeTo, so it should not
-  /// be used unless necessary.
-  void removeAnyCallEdgeTo(CallGraphNode *Callee);
-
-  /// Removes one edge associated with a null callsite from this node to
-  /// the specified callee function.
-  void removeOneAbstractEdgeTo(CallGraphNode *Callee);
-
-  /// Replaces the edge in the node for the specified call site with a
-  /// new one.
-  ///
-  /// Note that this method takes linear time, so it should be used sparingly.
-  void replaceCallEdge(CallOp *Call, CallOp *NewCall, CallGraphNode *NewNode);
-
-private:
-  friend class CallGraph;
-
-  CallGraph *CG;
-  FuncOp F;
-
-  std::vector<CallRecord> CalledFunctions;
-
-  /// The number of times that this CallGraphNode occurs in the
-  /// CalledFunctions array of this or other CallGraphNodes.
-  unsigned NumReferences = 0;
-
-  void DropRef() { --NumReferences; }
-  void AddRef() { ++NumReferences; }
-
-  /// A special function that should only be used by the CallGraph class.
-  void allReferencesDropped() { NumReferences = 0; }
-};
-
-/// An analysis wrapper to compute the \c CallGraph for a \c Module.
-///
-/// This class implements the concept of an analysis pass used by the \c
-/// ModuleAnalysisManager to run an analysis over a module and cache the
-/// resulting data.
-class CallGraphAnalysis {
-  std::unique_ptr<CallGraph> cg;
-
-public:
-  CallGraphAnalysis(mlir::Operation *op);
-
-  CallGraph &getCallGraph() { return *cg.get(); }
-  const CallGraph &getCallGraph() const { return *cg.get(); }
-};
-
-/// Pre-constructed all-pairs reachability analysis.
-class CallGraphReachabilityAnalysis {
-
-  struct FuncOpHash {
-    size_t operator()(const FuncOp &op) const {
-      return std::hash<mlir::Operation *>{}(const_cast<FuncOp &>(op).getOperation());
-    }
+    // Provide access to the constructor and Kind.
+    friend class CallGraphNode;
   };
 
-  // Maps function -> callees
-  using CalleeMapTy =
-      std::unordered_map<FuncOp, std::unordered_set<FuncOp, FuncOpHash>, FuncOpHash>;
+  /// Returns true if this node is an external node.
+  bool isExternal() const;
 
-  CalleeMapTy reachabilityMap;
+  /// Returns the callable region this node represents. This can only be called
+  /// on non-external nodes.
+  mlir::Region *getCallableRegion() const;
 
-  std::unordered_set<const CallGraphNode *>
-  dfsNodes(const CallGraphNode *currNode, std::unordered_set<const CallGraphNode *> visited);
+  /// Returns the called function that the callable region represents.
+  /// As per getCallableRegion, this can only be called on non-external nodes.
+  /// This is an LLZK-specific addition.
+  llzk::FuncOp getCalledFunction() const;
+
+  /// Adds an abstract reference edge to the given node. An abstract edge does
+  /// not come from any observable operations, so this is only valid on the
+  /// external node.
+  void addAbstractEdge(CallGraphNode *node);
+
+  /// Add an outgoing call edge from this node.
+  void addCallEdge(CallGraphNode *node);
+
+  /// Adds a reference edge to the given child node.
+  void addChildEdge(CallGraphNode *child);
+
+  /// Iterator over the outgoing edges of this node.
+  using iterator = mlir::SmallVectorImpl<Edge>::const_iterator;
+  iterator begin() const { return edges.begin(); }
+  iterator end() const { return edges.end(); }
+
+  /// Returns true if this node has any child edges.
+  bool hasChildren() const;
+
+private:
+  /// DenseMap info for callgraph edges.
+  struct EdgeKeyInfo {
+    using BaseInfo =
+        mlir::DenseMapInfo<llvm::PointerIntPair<CallGraphNode *, 2, Edge::Kind>>;
+
+    static Edge getEmptyKey() { return Edge(BaseInfo::getEmptyKey()); }
+    static Edge getTombstoneKey() { return Edge(BaseInfo::getTombstoneKey()); }
+    static unsigned getHashValue(const Edge &edge) {
+      return BaseInfo::getHashValue(edge.targetAndKind);
+    }
+    static bool isEqual(const Edge &lhs, const Edge &rhs) { return lhs == rhs; }
+  };
+
+  CallGraphNode(mlir::Region *callableRegion) : callableRegion(callableRegion) {}
+
+  /// Add an edge to 'node' with the given kind.
+  void addEdge(CallGraphNode *node, Edge::Kind kind);
+
+  /// The callable region defines the boundary of the call graph node. This is
+  /// the region referenced by 'call' operations. This is at a per-region
+  /// boundary as operations may define multiple callable regions.
+  mlir::Region *callableRegion;
+
+  /// A set of out-going edges from this node to other nodes in the graph.
+  mlir::SetVector<Edge, mlir::SmallVector<Edge, 4>,
+            llvm::SmallDenseSet<Edge, 4, EdgeKeyInfo>>
+      edges;
+
+  // Provide access to private methods.
+  friend class CallGraph;
+};
+
+/// This is a port of mlir::CallGraph that has been adapted to use the custom
+/// symbol lookup helpers (see SymbolHelpers.h). Unfortunately the mlir::CallGraph
+/// is not readily extensible, so we will define our own with a similar interface.
+class CallGraph {
+  using NodeMapT = llvm::MapVector<mlir::Region *, std::unique_ptr<CallGraphNode>>;
+
+  /// This class represents an iterator over the internal call graph nodes. This
+  /// class unwraps the map iterator to access the raw node.
+  class NodeIterator final
+      : public llvm::mapped_iterator<
+            NodeMapT::const_iterator,
+            CallGraphNode *(*)(const NodeMapT::value_type &)> {
+    static CallGraphNode *unwrap(const NodeMapT::value_type &value) {
+      return value.second.get();
+    }
+
+  public:
+    /// Initializes the result type iterator to the specified result iterator.
+    NodeIterator(NodeMapT::const_iterator it)
+        : llvm::mapped_iterator<
+              NodeMapT::const_iterator,
+              CallGraphNode *(*)(const NodeMapT::value_type &)>(it, &unwrap) {}
+  };
 
 public:
-  CallGraphReachabilityAnalysis(mlir::Operation *op, mlir::AnalysisManager &am);
+  CallGraph(mlir::Operation *op);
 
-  bool isInvalidated(const mlir::AnalysisManager::PreservedAnalyses &pa) {
-    return !pa.isPreserved<CallGraphReachabilityAnalysis>() || !pa.isPreserved<CallGraphAnalysis>();
+  /// Get or add a call graph node for the given region. `parentNode`
+  /// corresponds to the direct node in the callgraph that contains the parent
+  /// operation of `region`, or nullptr if there is no parent node.
+  CallGraphNode *getOrAddNode(mlir::Region *region, CallGraphNode *parentNode);
+
+  /// Lookup a call graph node for the given region, or nullptr if none is
+  /// registered.
+  CallGraphNode *lookupNode(mlir::Region *region) const;
+
+  /// Return the callgraph node representing an external caller.
+  CallGraphNode *getExternalCallerNode() const {
+    return const_cast<CallGraphNode *>(&externalCallerNode);
   }
 
-  /**
-   * Returns whether B is reachable from A.
-   */
-  bool isReachable(FuncOp &A, FuncOp &B) const {
-    auto it = reachabilityMap.find(A);
-    return it != reachabilityMap.end() && it->second.find(B) != it->second.end();
+  /// Return the callgraph node representing an indirect callee.
+  CallGraphNode *getUnknownCalleeNode() const {
+    return const_cast<CallGraphNode *>(&unknownCalleeNode);
   }
+
+  /// Resolve the callable for given callee to a node in the callgraph, or the
+  /// external node if a valid node was not resolved. The provided symbol table
+  /// is used when resolving calls that reference callables via a symbol
+  /// reference.
+  CallGraphNode *resolveCallable(mlir::CallOpInterface call,
+                                       mlir::SymbolTableCollection &symbolTable) const;
+
+  /// Erase the given node from the callgraph.
+  void eraseNode(CallGraphNode *node);
+
+  /// An iterator over the nodes of the graph.
+  using iterator = NodeIterator;
+  iterator begin() const { return nodes.begin(); }
+  iterator end() const { return nodes.end(); }
+
+  /// Dump the graph in a human readable format.
+  void dump() const;
+  void print(llvm::raw_ostream &os) const;
+
+private:
+  /// The set of nodes within the callgraph.
+  NodeMapT nodes;
+
+  /// A special node used to indicate an external caller.
+  CallGraphNode externalCallerNode;
+
+  /// A special node used to indicate an unknown callee.
+  CallGraphNode unknownCalleeNode;
 };
 
 } // namespace llzk
 
-//===----------------------------------------------------------------------===//
-// GraphTraits specializations for call graphs so that they can be treated as
-// graphs by the generic graph algorithms.
-//
-
 namespace llvm {
-
 // Provide graph traits for traversing call graphs using standard graph
 // traversals.
-template <> struct GraphTraits<llzk::CallGraphNode *> {
-  using NodeRef = llzk::CallGraphNode *;
-  using CGNPairTy = llzk::CallGraphNode::CallRecord;
-
-  static NodeRef getEntryNode(llzk::CallGraphNode *CGN) { return CGN; }
-  static llzk::CallGraphNode *CGNGetValue(CGNPairTy P) { return P.second; }
-
-  using ChildIteratorType =
-      llvm::mapped_iterator<llzk::CallGraphNode::iterator, decltype(&CGNGetValue)>;
-
-  static ChildIteratorType child_begin(NodeRef N) {
-    return ChildIteratorType(N->begin(), &CGNGetValue);
-  }
-
-  static ChildIteratorType child_end(NodeRef N) {
-    return ChildIteratorType(N->end(), &CGNGetValue);
-  }
-};
-
-template <> struct llvm::GraphTraits<const llzk::CallGraphNode *> {
+template <>
+struct GraphTraits<const llzk::CallGraphNode *> {
   using NodeRef = const llzk::CallGraphNode *;
-  using CGNPairTy = llzk::CallGraphNode::CallRecord;
-  using EdgeRef = const llzk::CallGraphNode::CallRecord &;
+  static NodeRef getEntryNode(NodeRef node) { return node; }
 
-  static NodeRef getEntryNode(const llzk::CallGraphNode *CGN) { return CGN; }
-  static const llzk::CallGraphNode *CGNGetValue(CGNPairTy P) { return P.second; }
+  static NodeRef unwrap(const llzk::CallGraphNode::Edge &edge) {
+    return edge.getTarget();
+  }
 
+  // ChildIteratorType/begin/end - Allow iteration over all nodes in the graph.
   using ChildIteratorType =
-      mapped_iterator<llzk::CallGraphNode::const_iterator, decltype(&CGNGetValue)>;
-  using ChildEdgeIteratorType = llzk::CallGraphNode::const_iterator;
-
-  static ChildIteratorType child_begin(NodeRef N) {
-    return ChildIteratorType(N->begin(), &CGNGetValue);
+      mapped_iterator<llzk::CallGraphNode::iterator, decltype(&unwrap)>;
+  static ChildIteratorType child_begin(NodeRef node) {
+    return {node->begin(), &unwrap};
   }
-
-  static ChildIteratorType child_end(NodeRef N) {
-    return ChildIteratorType(N->end(), &CGNGetValue);
-  }
-
-  static ChildEdgeIteratorType child_edge_begin(NodeRef N) { return N->begin(); }
-  static ChildEdgeIteratorType child_edge_end(NodeRef N) { return N->end(); }
-
-  static NodeRef edge_dest(EdgeRef E) { return E.second; }
-};
-
-template <> struct GraphTraits<llzk::CallGraph *> : public GraphTraits<llzk::CallGraphNode *> {
-  using PairTy = std::pair<const llzk::FuncOp, std::unique_ptr<llzk::CallGraphNode>>;
-
-  static NodeRef getEntryNode(llzk::CallGraph *CGN) { return CGN->getEntryNode(); }
-
-  static llzk::CallGraphNode *CGGetValuePtr(const PairTy &P) { return P.second.get(); }
-
-  // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-  using nodes_iterator = mapped_iterator<llzk::CallGraph::iterator, decltype(&CGGetValuePtr)>;
-
-  static nodes_iterator nodes_begin(llzk::CallGraph *CG) {
-    return nodes_iterator(CG->begin(), &CGGetValuePtr);
-  }
-
-  static nodes_iterator nodes_end(llzk::CallGraph *CG) {
-    return nodes_iterator(CG->end(), &CGGetValuePtr);
+  static ChildIteratorType child_end(NodeRef node) {
+    return {node->end(), &unwrap};
   }
 };
 
 template <>
-struct GraphTraits<const llzk::CallGraph *> : public GraphTraits<const llzk::CallGraphNode *> {
-  using PairTy = std::pair<const llzk::FuncOp, std::unique_ptr<llzk::CallGraphNode>>;
-
-  static NodeRef getEntryNode(const llzk::CallGraph *CGN) { return CGN->getEntryNode(); }
-
-  static const llzk::CallGraphNode *CGGetValuePtr(const PairTy &P) { return P.second.get(); }
+struct GraphTraits<const llzk::CallGraph *>
+    : public GraphTraits<const llzk::CallGraphNode *> {
+  /// The entry node into the graph is the external node.
+  static NodeRef getEntryNode(const llzk::CallGraph *cg) {
+    return cg->getExternalCallerNode();
+  }
 
   // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-  using nodes_iterator = mapped_iterator<llzk::CallGraph::const_iterator, decltype(&CGGetValuePtr)>;
-
-  static nodes_iterator nodes_begin(const llzk::CallGraph *CG) {
-    return nodes_iterator(CG->begin(), &CGGetValuePtr);
-  }
-
-  static nodes_iterator nodes_end(const llzk::CallGraph *CG) {
-    return nodes_iterator(CG->end(), &CGGetValuePtr);
-  }
+  using nodes_iterator = llzk::CallGraph::iterator;
+  static nodes_iterator nodes_begin(llzk::CallGraph *cg) { return cg->begin(); }
+  static nodes_iterator nodes_end(llzk::CallGraph *cg) { return cg->end(); }
 };
-
 } // namespace llvm

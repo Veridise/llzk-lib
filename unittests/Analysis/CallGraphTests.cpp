@@ -5,7 +5,8 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
 
-#include <llzk/Dialect/LLZK/Analysis/CallGraph.h>
+#include <llzk/Dialect/LLZK/Analysis/CallGraphAnalyses.h>
+#include <llzk/Dialect/LLZK/Util/SymbolHelper.h>
 
 #include "OpBuilders.h"
 
@@ -13,7 +14,7 @@ TEST(CallGraphTests, constructorTest) {
   LLZKTestModuleBuilder builder;
   builder.insertFullStruct("A");
 
-  ASSERT_NO_THROW(llzk::CallGraph(builder.getMod()));
+  ASSERT_NO_THROW(mlir::CallGraph(builder.getMod()));
 }
 
 TEST(CallGraphTests, printTest) {
