@@ -1,6 +1,5 @@
 add_executable(LLZKCallGraphTests
   CallGraphTests.cpp
-  OpBuilders.cpp
 )
 
 target_link_libraries(LLZKCallGraphTests

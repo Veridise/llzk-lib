@@ -5,6 +5,7 @@ function(llzk_gtest_suite target)
 endfunction()
 
 add_subdirectory(Analysis)
+add_subdirectory(IR)
 
 add_custom_target(check-unit
   DEPENDS ${LLZK_UNITTESTS}
