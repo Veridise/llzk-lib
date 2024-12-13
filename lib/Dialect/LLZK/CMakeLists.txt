@@ -5,7 +5,7 @@ target_link_libraries(LLZKAllDialects INTERFACE LLZK::LLZKDialect)
 file(GLOB_RECURSE LLZKDialect_SOURCES "**/*.cpp")
 target_sources(LLZKDialect PRIVATE ${LLZKDialect_SOURCES})
 target_link_libraries(LLZKDialect
-  PUBLIC LLZKDialectHeaders MLIRIR MLIRPass
+  PUBLIC LLZKDialectHeaders MLIRIR MLIRPass MLIRParser
 )
 target_link_libraries(LLZKDialect
   PRIVATE LLVMHeaders MLIRHeaders)
