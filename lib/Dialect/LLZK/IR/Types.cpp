@@ -167,6 +167,7 @@ mlir::LogicalResult parseDerivedShape(
       value.push_back(mlir::ShapedType::kDynamic);
     } else {
       llvm::errs() << "FATAL: parseDerivedShape() is out of sync with ArrayDimensionTypes\n";
+      assert(false);
       return mlir::failure();
     }
   }
@@ -228,14 +229,13 @@ bool isValidArrayType(mlir::Type type) {
 
 // valid types: I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType
 bool isValidType(mlir::Type type) {
-  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType>(type) ||
-         llvm::isa<FeltType>(type) || llvm::isa<StructType>(type) || isValidArrayType(type);
+  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType, StructType>(type) ||
+         isValidArrayType(type);
 }
 
 // valid types: I1, Index, LLZK_FeltType, LLZK_ArrayType
 bool isValidEmitEqType(mlir::Type type) {
-  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType>(type) ||
-         llvm::isa<FeltType>(type) ||
+  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType>(type) ||
          (llvm::isa<ArrayType>(type) &&
           isValidEmitEqType(llvm::cast<ArrayType>(type).getElementType()));
 }

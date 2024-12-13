@@ -75,13 +75,16 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
           ArrayRefParameter<
               "::mlir::Attribute",
               "List of array dimension size specifiers.">:$dimensionSizes,
-          ArrayRefParameter<
-              "int64_t",
-              "Array shape, for ShapedTypeInterface, computed from  .">:$shape);
+          ArrayRefParameter<"int64_t",
+                            "Array shape, for ShapedTypeInterface, computed "
+                            "from `$dimensionSizes`.">:$shape);
 
   // The custom<DerivedShape>() section is 0-length (it is used to compute the
   // "$shape" attribute from the "$dimensionSizes" attribute) and the `` before
-  // it avoids excess space in the format. Additionally,
+  // it avoids excess space in the format. Additionally, it is placed right
+  // after parsing "$dimensionSizes" so the source location pointer in the
+  // parser remains at "$dimensionSizes" in case an error occurs during the
+  // conversion.
   let assemblyFormat = [{ 
     `<` custom<AttrVec>($dimensionSizes)
     `` custom<DerivedShape>($shape, ref($dimensionSizes))
