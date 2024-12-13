@@ -5,22 +5,32 @@
 
 using namespace llzk;
 
-TEST(LLZKTestModuleBuilderTests, testModuleOpCreation) {
+class ModuleBuilderTests : public ::testing::Test {
+protected:
+
+  mlir::MLIRContext context;
   ModuleBuilder builder;
 
-  ASSERT_NE(builder.getMod(), nullptr);
+  ModuleBuilderTests() : context(), builder(&context) {
+    context.loadDialect<llzk::LLZKDialect>();
+  }
+
+  void SetUp() override {
+    // Create a new builder for each test.
+    builder = ModuleBuilder(&context);
+  }
+};
+
+TEST_F(ModuleBuilderTests, testModuleOpCreation) {
+  ASSERT_NE(builder.getRootModule(), nullptr);
 }
 
-TEST(LLZKTestModuleBuilderTests, testStructDefInsertion) {
-  ModuleBuilder builder;
-
+TEST_F(ModuleBuilderTests, testStructDefInsertion) {
   auto structDef = builder.insertEmptyStruct("structOne");
   ASSERT_EQ(builder.getStruct("structOne"), structDef);
 }
 
-TEST(LLZKTestModuleBuilderTests, testFnInsertion) {
-  ModuleBuilder builder;
-
+TEST_F(ModuleBuilderTests, testFnInsertion) {
   auto structOp = builder.insertFullStruct("structOne");
 
   auto computeFn = builder.getComputeFn(&structOp);
@@ -30,9 +40,7 @@ TEST(LLZKTestModuleBuilderTests, testFnInsertion) {
   ASSERT_EQ(constrainFn.getBody().getArguments().size(), 1);
 }
 
-TEST(LLZKTestModuleBuilderTests, testReachabilitySimple) {
-  ModuleBuilder builder;
-
+TEST_F(ModuleBuilderTests, testReachabilitySimple) {
   auto a = builder.insertComputeOnlyStruct("structA");
   auto b = builder.insertComputeOnlyStruct("structB");
   builder.insertComputeCall(&a, &b);
@@ -41,9 +49,7 @@ TEST(LLZKTestModuleBuilderTests, testReachabilitySimple) {
   ASSERT_FALSE(builder.computeReachable(&b, &a));
 }
 
-TEST(LLZKTestModuleBuilderTests, testReachabilityTransitive) {
-  ModuleBuilder builder;
-
+TEST_F(ModuleBuilderTests, testReachabilityTransitive) {
   auto a = builder.insertComputeOnlyStruct("structA");
   auto b = builder.insertComputeOnlyStruct("structB");
   auto c = builder.insertComputeOnlyStruct("structC");
@@ -58,9 +64,7 @@ TEST(LLZKTestModuleBuilderTests, testReachabilityTransitive) {
   ASSERT_TRUE(builder.computeReachable(&a, &a));
 }
 
-TEST(LLZKTestModuleBuilderTests, testReachabilityComputeAndConstrain) {
-  ModuleBuilder builder;
-
+TEST_F(ModuleBuilderTests, testReachabilityComputeAndConstrain) {
   auto a = builder.insertFullStruct("structA");
   auto b = builder.insertComputeOnlyStruct("structB");
   auto c = builder.insertConstrainOnlyStruct("structC");
@@ -73,16 +77,14 @@ TEST(LLZKTestModuleBuilderTests, testReachabilityComputeAndConstrain) {
   ASSERT_FALSE(builder.computeReachable(&a, &c));
 }
 
-TEST(LLZKTestModuleBuilderTests, testConstruction) {
-  ModuleBuilder builder;
-
+TEST_F(ModuleBuilderTests, testConstruction) {
   auto a = builder.insertConstrainOnlyStruct("structA");
   auto b = builder.insertConstrainOnlyStruct("structB");
   builder.insertConstrainOnlyStruct("structC");
   builder.insertConstrainCall(&a, &b);
 
   size_t numStructs = 0;
-  for (auto s : builder.getMod().getOps<llzk::StructDefOp>()) {
+  for (auto s : builder.getRootModule().getOps<llzk::StructDefOp>()) {
     numStructs++;
     size_t numFn = 0;
     for (auto fn : s.getOps<llzk::FuncOp>()) {

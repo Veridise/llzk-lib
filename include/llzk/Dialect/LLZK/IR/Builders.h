@@ -17,12 +17,16 @@ namespace llzk {
 /// TODO: this is a WIP, flesh this class out as needed.
 class ModuleBuilder {
 public:
-  ModuleBuilder();
+  ModuleBuilder(mlir::MLIRContext *context);
 
-  /// Get the top-level LLZK module.
-  mlir::ModuleOp &getMod() { return mod; }
+  /* Builder methods */
 
   llzk::StructDefOp insertEmptyStruct(std::string_view structName);
+
+  /* Getter methods */
+
+  /// Get the top-level LLZK module.
+  mlir::ModuleOp &getRootModule() { return rootModule; }
 
   llzk::StructDefOp insertComputeOnlyStruct(std::string_view structName) {
     auto s = insertEmptyStruct(structName);
@@ -90,8 +94,8 @@ public:
   }
 
 private:
-  mlir::MLIRContext context;
-  mlir::ModuleOp mod;
+  mlir::MLIRContext *context;
+  mlir::ModuleOp rootModule;
 
   struct CallNode {
     std::unordered_map<llzk::StructDefOp *, CallNode *> callees;
@@ -102,12 +106,6 @@ private:
   std::unordered_map<std::string_view, llzk::StructDefOp> structMap;
   std::unordered_map<std::string_view, llzk::FuncOp> computeFnMap;
   std::unordered_map<std::string_view, llzk::FuncOp> constrainFnMap;
-
-  mlir::SymbolRefAttr getFullyQualifiedFuncSymbol(llzk::StructDefOp *s, llzk::FuncOp &op) {
-    return mlir::SymbolRefAttr::get(
-        &context, s->getName(), mlir::ArrayRef{mlir::FlatSymbolRefAttr::get(op)}
-    );
-  }
 
   void updateComputeReachability(llzk::StructDefOp *caller, llzk::StructDefOp *callee) {
     updateReachability(computeNodes, caller, callee);
