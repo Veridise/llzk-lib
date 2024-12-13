@@ -1,4 +1,6 @@
-// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
+// RUN: llzk-opt %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -llzk-print-call-graph %s 2>&1 | FileCheck %s --check-prefix CG
+// RUN: llzk-opt -llzk-print-call-graph-sccs %s 2>&1 | FileCheck %s --check-prefix SCC
 
 module attributes {veridise.lang = "llzk"} {
 
@@ -154,3 +156,63 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
+
+// CG: // ---- CallGraph ----
+// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@risc0::@ValU32>, sym_name = "compute"}
+// CG-NEXT: //
+// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-NEXT: //
+// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.felt) -> !llzk.struct<@risc0::@Reg>, sym_name = "compute"}
+// CG-NEXT: //
+// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@Reg>, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-NEXT: //
+// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>, sym_name = "compute"}
+// CG-NEXT: // -- Call-Edge : 'llzk.func' - Region #0 : {function_type = (!llzk.felt) -> !llzk.struct<@risc0::@Reg>, sym_name = "compute"}
+// CG-NEXT: //
+// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-NEXT: // -- Call-Edge : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@Reg>, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-NEXT: //
+// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>) -> !llzk.struct<@C2>, sym_name = "compute"}
+// CG-NEXT: // -- Call-Edge : 'llzk.func' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>, sym_name = "compute"}
+// CG-NEXT: //
+// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@C2>, !llzk.struct<@risc0::@ValU32>) -> (), sym_name = "constrain"}
+// CG-NEXT: // -- Call-Edge : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-NEXT: //
+// CG-NEXT: // -- SCCs --
+// CG-DAG: // - SCC :
+// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@risc0::@ValU32>, sym_name = "compute"}
+// CG-EMPTY:
+// CG-DAG: // - SCC :
+// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-EMPTY:
+// CG-DAG: // - SCC :
+// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.felt) -> !llzk.struct<@risc0::@Reg>, sym_name = "compute"}
+// CG-EMPTY:
+// CG-DAG: // - SCC :
+// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@Reg>, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-EMPTY:
+// CG-DAG: // - SCC :
+// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>, sym_name = "compute"}
+// CG-NEMPTY
+// CG-DAG: // - SCC :
+// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-EMPTY:
+// CG-DAG: // - SCC :
+// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>) -> !llzk.struct<@C2>, sym_name = "compute"}
+// CG-EMPTY:
+// CG-DAG: // - SCC :
+// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.struct<@C2>, !llzk.struct<@risc0::@ValU32>) -> (), sym_name = "constrain"}
+// CG-EMPTY:
+// CG-DAG: // - SCC :
+// CG-NEXT: // -- Node :<External-Caller-Node>
+
+// SCC: SCCs for the program in PostOrder:
+// SCC-NEXT: SCC #1: @risc0::@ValU32::@compute
+// SCC-NEXT: SCC #2: @risc0::@ValU32::@constrain
+// SCC-NEXT: SCC #3: @risc0::@Reg::@compute
+// SCC-NEXT: SCC #4: @risc0::@Reg::@constrain
+// SCC-NEXT: SCC #5: @C1::@compute
+// SCC-NEXT: SCC #6: @C1::@constrain
+// SCC-NEXT: SCC #7: @C2::@compute
+// SCC-NEXT: SCC #8: @C2::@constrain
+// SCC-NEXT: SCC #9: external node

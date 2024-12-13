@@ -60,10 +60,10 @@ protected:
         } else {
           os << ", ";
         }
-        if (FuncOp fn = CGN->getCalledFunction()) {
-          os << fn.getFullyQualifiedName();
-        } else {
+        if (CGN->isExternal()) {
           os << "external node";
+        } else {
+          os << CGN->getCalledFunction().getFullyQualifiedName();
         }
       }
 
