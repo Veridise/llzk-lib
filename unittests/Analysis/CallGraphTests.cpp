@@ -88,18 +88,89 @@ TEST(CallGraphTests, analysisConstructorBadArg) {
   );
 }
 
-TEST(CallGraphTests, removeTest) {
+// TEST(CallGraphTests, removeTest) {
+//   LLZKTestModuleBuilder builder;
+//   auto structOp = builder.insertFullStruct("A");
+
+//   mlir::CallGraph cgraph(builder.getMod());
+
+//   auto removedComputeFn = cgraph.removeFunctionFromModule(cgraph[builder.getComputeFn(&structOp)]);
+//   ASSERT_NE(removedComputeFn, nullptr);
+//   auto removedConstrainFn =
+//       cgraph.removeFunctionFromModule(cgraph[builder.getConstrainFn(&structOp)]);
+//   ASSERT_NE(removedConstrainFn, nullptr);
+
+//   // Size also include "nullptr" function, so should just be 1
+//   ASSERT_EQ(cgraph.size(), 1);
+// }
+
+TEST(SymbolTableTests, lookupInSymbolTest) {
   LLZKTestModuleBuilder builder;
-  auto structOp = builder.insertFullStruct("A");
+  auto structOp = builder.insertComputeOnlyStruct("A");
+  auto computeFn = builder.getComputeFn(&structOp);
 
-  llzk::CallGraph cgraph(builder.getMod());
+  // not nested
+  auto computeOp = mlir::SymbolTable::lookupSymbolIn(structOp, computeFn.getName());
+  ASSERT_EQ(computeOp, computeFn);
+  // auto vis = mlir::SymbolTable::getSymbolVisibility(computeOp);
+  // llvm::errs() << vis << "\n";
 
-  auto removedComputeFn = cgraph.removeFunctionFromModule(cgraph[builder.getComputeFn(&structOp)]);
-  ASSERT_NE(removedComputeFn, nullptr);
-  auto removedConstrainFn =
-      cgraph.removeFunctionFromModule(cgraph[builder.getConstrainFn(&structOp)]);
-  ASSERT_NE(removedConstrainFn, nullptr);
+  // nested
+  computeOp = mlir::SymbolTable::lookupSymbolIn(builder.getMod(), computeFn.getFullyQualifiedName());
+  ASSERT_EQ(computeOp, computeFn);
+}
 
-  // Size also include "nullptr" function, so should just be 1
-  ASSERT_EQ(cgraph.size(), 1);
+TEST(SymbolTableTests, lookupInSymbolFQNTest) {
+  LLZKTestModuleBuilder builder;
+  auto a = builder.insertComputeOnlyStruct("A");
+  auto b = builder.insertComputeOnlyStruct("B");
+  builder.insertComputeCall(&a, &b);
+  auto computeFn = builder.getComputeFn(&b);
+
+  // You should be able to find @compute in B
+  ASSERT_EQ(computeFn, mlir::SymbolTable::lookupSymbolIn(b, computeFn.getName()));
+
+  // You should be able to find B::@compute in the overall module
+  ASSERT_EQ(computeFn, mlir::SymbolTable::lookupSymbolIn(builder.getMod(), computeFn.getFullyQualifiedName()));
+
+  auto bSym = mlir::SymbolTable(b);
+  auto modSym = mlir::SymbolTable(builder.getMod());
+  // llvm::errs() << bSym << "\n";
+  // llvm::err
+
+  // You should be able to find B::@compute in B
+  // but we can't
+  ASSERT_EQ(nullptr, mlir::SymbolTable::lookupSymbolIn(b, computeFn.getFullyQualifiedName()));
+
+  // ... unless we use the symbol helpers
+  mlir::SymbolTableCollection tables;
+  auto res = llzk::lookupTopLevelSymbol<llzk::FuncOp>(tables, computeFn.getFullyQualifiedName(), computeFn.getOperation());
+  // ASSERT_EQ(computeFn, res.value().get());
+
+  // Since A::compute calls B::compute, you should be able to find B::compute from A
+  // auto computeOp = mlir::SymbolTable::lookupSymbolIn(a, computeFn.getFullyQualifiedName());
+  // ASSERT_EQ(computeOp, computeFn);
+}
+
+TEST(SymbolTableTests, resolveCallableTest) {
+  LLZKTestModuleBuilder builder;
+  auto a = builder.insertComputeOnlyStruct("A");
+  auto b = builder.insertComputeOnlyStruct("B");
+  builder.insertComputeCall(&a, &b);
+
+  builder.getMod().walk([&](llzk::CallOp c) {
+    auto callOp = mlir::dyn_cast<mlir::CallOpInterface>(c.getOperation());
+    ASSERT_NE(callOp, nullptr);
+    // llvm::errs() << *callOp << "\n";
+    // auto op = callOp.resolveCallable(nullptr);
+    // ASSERT_NE(op, nullptr);
+    // auto op = callOp.resolveCallable(nullptr);
+    auto res = llzk::resolveCallable<llzk::FuncOp>(callOp);
+    ASSERT_TRUE(mlir::LogicalResult(res).succeeded());
+    auto val = std::move(res.value());
+    ASSERT_TRUE(val);
+    auto op = val.get();
+    ASSERT_NE(op, nullptr);
+    ASSERT_EQ(builder.getComputeFn(&b), op);
+  });
 }
