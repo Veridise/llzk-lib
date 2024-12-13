@@ -4,8 +4,10 @@ function(llzk_gtest_suite target)
   set(LLZK_UNITTESTS ${LLZK_UNITTESTS} CACHE INTERNAL "")
 endfunction()
 
+
 add_subdirectory(Analysis)
 add_subdirectory(IR)
+add_subdirectory(helloworld) # example
 
 add_custom_target(check-unit
   DEPENDS ${LLZK_UNITTESTS}
