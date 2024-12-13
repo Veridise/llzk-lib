@@ -146,7 +146,8 @@ def FuncOp
     // Utility Methods
     //===------------------------------------------------------------------===//
 
-    /// Return the full name for this function, including module and struct scopes.
+    /// Return the full name for this function from the root module, including
+    /// all module and struct scopes.
     ::mlir::SymbolRefAttr getFullyQualifiedName() const;
   }];
   let hasCustomAssemblyFormat = 1;
