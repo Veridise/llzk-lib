@@ -27,7 +27,7 @@ llzk::StructDefOp ModuleBuilder::insertEmptyStruct(std::string_view structName) 
   // populate the initial region
   auto &region = structDef.getRegion();
   if (region.empty()) {
-    region.push_back(new mlir::Block());
+    (void)region.emplaceBlock();
   }
   structMap[structName] = structDef;
 
