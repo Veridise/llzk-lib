@@ -134,6 +134,42 @@ using ArrayDimensionTypes = TypeList<mlir::IntegerAttr, mlir::SymbolRefAttr>;
 
 } // namespace
 
+mlir::LogicalResult computeDimsFromShape(
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
+    llvm::ArrayRef<int64_t> shape, llvm::SmallVector<mlir::Attribute> &dimensionSizes
+) {
+  mlir::Builder builder(ctx);
+  auto attrs = llvm::map_range(shape, [&builder](int64_t v) -> mlir::Attribute {
+    return builder.getIndexAttr(v);
+  });
+  dimensionSizes.insert(dimensionSizes.begin(), attrs.begin(), attrs.end());
+  return mlir::success();
+}
+
+mlir::LogicalResult computeShapeFromDims(
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
+    llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::SmallVector<int64_t> &value
+) {
+  auto emitErrFunc =
+      emitError ? emitError : emitErrorUnknownLoc(ctx, "computeShapeFromDims() failed: ");
+  for (mlir::Attribute a : dimensionSizes) {
+    if (!ArrayDimensionTypes::matches(a)) {
+      return ArrayDimensionTypes::reportInvalid(emitErrFunc, a, "Array dimension");
+    }
+    if (auto p = a.dyn_cast<mlir::IntegerAttr>()) {
+      value.push_back(p.getValue().getSExtValue());
+    } else if (a.isa<mlir::SymbolRefAttr>()) {
+      // The ShapedTypeInterface uses 'kDynamic' for dimensions with non-static size.
+      value.push_back(mlir::ShapedType::kDynamic);
+    } else {
+      llvm::errs() << "FATAL: parseDerivedShape() is out of sync with ArrayDimensionTypes\n";
+      assert(false);
+      return mlir::failure();
+    }
+  }
+  return mlir::success();
+}
+
 mlir::LogicalResult
 parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value) {
   auto parseResult = mlir::FieldParser<llvm::SmallVector<mlir::Attribute>>::parse(parser);
@@ -155,23 +191,8 @@ mlir::LogicalResult parseDerivedShape(
 ) {
   // This is not actually parsing. It's computing the derived
   //  `shape` from the `dimensionSizes` attributes.
-  for (mlir::Attribute a : dimensionSizes) {
-    if (!ArrayDimensionTypes::matches(a)) {
-      auto emitError = [&parser] { return parser.emitError(parser.getCurrentLocation()); };
-      return ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
-    }
-    if (auto p = a.dyn_cast<mlir::IntegerAttr>()) {
-      value.push_back(p.getValue().getSExtValue());
-    } else if (a.isa<mlir::SymbolRefAttr>()) {
-      // The ShapedTypeInterface uses 'kDynamic' for dimensions with non-static size.
-      value.push_back(mlir::ShapedType::kDynamic);
-    } else {
-      llvm::errs() << "FATAL: parseDerivedShape() is out of sync with ArrayDimensionTypes\n";
-      assert(false);
-      return mlir::failure();
-    }
-  }
-  return mlir::success();
+  auto emitError = [&parser] { return parser.emitError(parser.getCurrentLocation()); };
+  return computeShapeFromDims(emitError, parser.getContext(), dimensionSizes, value);
 }
 void printDerivedShape(mlir::AsmPrinter &, llvm::ArrayRef<int64_t>, llvm::ArrayRef<mlir::Attribute>) {
   // nothing to print, it's derived and therefore not represented in the output
@@ -205,14 +226,8 @@ ArrayType
 ArrayType::cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, mlir::Type elementType) const {
   // TODO: can't test this via an ArrayType created from the parser. Need another way.
   llvm::ArrayRef<int64_t> newShape = shape.has_value() ? shape.value() : getShape();
-  mlir::MLIRContext *ctx = getContext();
-  mlir::Builder builder(ctx);
-  mlir::ArrayAttr newDimensions = builder.getIndexArrayAttr(newShape);
-  auto emitError = [ctx] {
-    return mlir::emitError(mlir::Location(mlir::UnknownLoc::get(ctx)))
-        .append("ArrayType::cloneWith() failed: ");
-  };
-  return ArrayType::getChecked(emitError, ctx, elementType, newDimensions.getValue(), newShape);
+  auto emitError = emitErrorUnknownLoc(getContext(), "ArrayType::cloneWith() failed: ");
+  return ArrayType::getChecked(emitError, elementType, newShape);
 }
 
 int64_t ArrayType::getNumElements() const { return mlir::ShapedType::getNumElements(getShape()); }
@@ -300,6 +315,13 @@ bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhs
     return arrayTypesUnify(llvm::cast<ArrayType>(lhs), llvm::cast<ArrayType>(rhs), rhsRevPrefix);
   }
   return false;
+}
+
+llvm::function_ref<mlir::InFlightDiagnostic()>
+emitErrorUnknownLoc(mlir::MLIRContext *ctx, const char *msg) {
+  return [ctx, msg] {
+    return mlir::emitError(mlir::Location(mlir::UnknownLoc::get(ctx))).append(msg);
+  };
 }
 
 } // namespace llzk

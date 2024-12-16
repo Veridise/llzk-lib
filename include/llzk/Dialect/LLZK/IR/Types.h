@@ -56,6 +56,16 @@ bool structTypesUnify(
 /// instantiation of struct parameters (if applicable within the given types).
 bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix = {});
 
+mlir::LogicalResult computeDimsFromShape(
+    llvm ::function_ref<::mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
+    llvm::ArrayRef<int64_t> shape, llvm::SmallVector<mlir::Attribute> &dimensionSizes
+);
+
+mlir::LogicalResult computeShapeFromDims(
+    llvm ::function_ref<::mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
+    llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::SmallVector<int64_t> &value
+);
+
 mlir::LogicalResult
 parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
 void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);
@@ -68,5 +78,8 @@ void printDerivedShape(
     mlir::AsmPrinter &printer, llvm::ArrayRef<int64_t> value,
     llvm::ArrayRef<mlir::Attribute> dimensionSizes
 );
+
+::llvm::function_ref<::mlir::InFlightDiagnostic()>
+emitErrorUnknownLoc(::mlir::MLIRContext *ctx, const char *msg);
 
 } // namespace llzk
