@@ -170,8 +170,7 @@ mlir::LogicalResult computeShapeFromDims(
   return mlir::success();
 }
 
-mlir::LogicalResult
-parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value) {
+mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value) {
   auto parseResult = mlir::FieldParser<llvm::SmallVector<mlir::Attribute>>::parse(parser);
   if (mlir::failed(parseResult)) {
     return parser.emitError(parser.getCurrentLocation(), "cannot parse array dimensions");
@@ -185,7 +184,7 @@ void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> val
   llvm::interleave(value, stream, [&stream](mlir::Attribute a) { a.print(stream, true); }, ",");
 }
 
-mlir::LogicalResult parseDerivedShape(
+mlir::ParseResult parseDerivedShape(
     mlir::AsmParser &parser, llvm::SmallVector<int64_t> &value,
     llvm::SmallVector<mlir::Attribute> dimensionSizes
 ) {

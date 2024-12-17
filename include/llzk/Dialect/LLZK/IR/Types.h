@@ -66,11 +66,10 @@ mlir::LogicalResult computeShapeFromDims(
     llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::SmallVector<int64_t> &value
 );
 
-mlir::LogicalResult
-parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
+mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
 void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);
 
-mlir::LogicalResult parseDerivedShape(
+mlir::ParseResult parseDerivedShape(
     mlir::AsmParser &parser, llvm::SmallVector<int64_t> &value,
     llvm::SmallVector<mlir::Attribute> dimensionSizes
 );
