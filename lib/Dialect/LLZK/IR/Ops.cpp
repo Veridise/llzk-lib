@@ -313,6 +313,32 @@ void CreateArrayOp::getAsmResultNames(mlir::OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "array");
 }
 
+llvm::SmallVector<mlir::Type> CreateArrayOp::resultTypeToElementsTypes(mlir::Type resultType) {
+  // The ODS restricts $result with LLZK_ArrayType so this cast is safe.
+  ArrayType a = llvm::cast<ArrayType>(resultType);
+  return llvm::SmallVector<mlir::Type>(a.getNumElements(), a.getElementType());
+}
+
+mlir::ParseResult CreateArrayOp::parseInferredArrayType(
+    mlir::AsmParser &parser, llvm::SmallVector<mlir::Type, 1> &elementsTypes,
+    mlir::ArrayRef<mlir::OpAsmParser::UnresolvedOperand> elements, mlir::Type resultType
+) {
+  assert(elementsTypes.size() == 0); // it was not yet initialized
+  // If the '$elements' operand is not empty, then the expected type for the operand
+  //  is computed to match the type of the '$result'. Otherwise, it remains empty.
+  if (elements.size() > 0) {
+    elementsTypes.append(resultTypeToElementsTypes(resultType));
+  }
+  return mlir::ParseResult::success();
+}
+
+void CreateArrayOp::printInferredArrayType(
+    mlir::AsmPrinter &printer, CreateArrayOp, mlir::Operation::operand_range::type_range,
+    mlir::Operation::operand_range, mlir::Type
+) {
+  // nothing to print, it's derived and therefore not represented in the output
+}
+
 //===------------------------------------------------------------------===//
 // CreateStructOp
 //===------------------------------------------------------------------===//

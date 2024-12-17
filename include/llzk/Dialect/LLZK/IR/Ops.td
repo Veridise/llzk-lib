@@ -264,14 +264,12 @@ def LLZK_CreateStructOp
 
 def LLZK_CreateArrayOp
     : LLZK_Op<
-          "new_array",
-          [DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
-           Pure,
-           TypesMatchWith<
-               "operand types match result type", "result", "elements",
-               "::llvm::SmallVector<::mlir::Type, 2>("
-               "::llvm::cast<::llzk::ArrayType>($_self).getNumElements(), "
-               "::llvm::cast<::llzk::ArrayType>($_self).getElementType())">]> {
+          "new_array", [Pure,
+                        DeclareOpInterfaceMethods<
+                            OpAsmOpInterface, ["getAsmResultNames"]>,
+                        VariadicTypesMatchWith<
+                            "operand types match result type", "result",
+                            "elements", "resultTypeToElementsTypes($_self)">]> {
   let summary = "creates an array";
   let description = [{
     This operation creates a new array with the given elements.
@@ -285,13 +283,35 @@ def LLZK_CreateArrayOp
 
     // Create an array from the given values using the specified shape
     %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2,2 x !llzk.felt>
+
+    // Create an uninitialized array
+    %2 = llzk.new_array : !llzk.array<3,2 x !llzk.felt>
     ```
   }];
 
   let arguments = (ins Variadic<AnyLLZKType>:$elements);
   let results = (outs LLZK_ArrayType:$result);
 
-  let assemblyFormat = "$elements attr-dict `:` type($result)";
+  // This uses the custom parseInferredArrayType function to compute the type
+  //  of '$elements' to match the type of '$result', except when '$elements'
+  //  is empty, then the type of '$elements' must also be empty (size == 0).
+  let assemblyFormat = [{
+        $elements attr-dict `:` type($result)
+        `` custom<InferredArrayType>(type($elements), ref($elements), ref(type($result)))
+      }];
+
+  let extraClassDeclaration = [{
+    static ::mlir::ParseResult parseInferredArrayType(::mlir::AsmParser &parser,
+        ::llvm::SmallVector<::mlir::Type,1> &elementsTypes,
+        ::mlir::ArrayRef<::mlir::OpAsmParser::UnresolvedOperand> elements,
+        ::mlir::Type resultType
+    );
+    static void printInferredArrayType(::mlir::AsmPrinter &printer, CreateArrayOp,
+        ::mlir::Operation::operand_range::type_range, ::mlir::Operation::operand_range, ::mlir::Type
+    );
+  private:
+    static ::llvm::SmallVector<::mlir::Type> resultTypeToElementsTypes(::mlir::Type resultType);
+  }];
 }
 
 def LLZK_ReadArrayOp

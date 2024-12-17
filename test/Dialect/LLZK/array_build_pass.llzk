@@ -100,4 +100,13 @@ llzk.func @arr_params_felt(%a: !llzk.felt, %b: !llzk.felt, %c: !llzk.felt, %d: !
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = new_array %[[A0]], %[[A1]], %[[A2]], %[[A3]] : <4 x !llzk.felt>
 //CHECK-NEXT:     return %[[T1]] : !llzk.array<4 x !llzk.felt>
 //CHECK-NEXT:   }
+// -----
 
+llzk.func @arr_uninitialized() -> !llzk.array<3 x index> {
+  %r = llzk.new_array : !llzk.array<3 x index>
+  return %r: !llzk.array<3 x index>
+}
+//CHECK-LABEL:  llzk.func @arr_uninitialized() -> !llzk.array<3 x index> {
+//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = new_array : <3 x index>
+//CHECK-NEXT:     return %[[T4]] : !llzk.array<3 x index>
+//CHECK-NEXT:   }

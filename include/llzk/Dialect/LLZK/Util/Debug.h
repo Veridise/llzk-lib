@@ -30,7 +30,7 @@ template <typename T> inline std::string toString(const std::vector<T> &vec) {
 }
 
 /// Generate a string representation of a llvm::SmallVector
-template <typename T> inline std::string toString(const llvm::SmallVector<T> &vec) {
+template <typename T, unsigned N> inline std::string toString(const llvm::SmallVector<T, N> &vec) {
   return toString(vec.begin(), vec.end());
 }
 

@@ -71,4 +71,12 @@ class InStructFunctionNamed<string name>
   string cppNamespace = "::llzk";
 }
 
+// Same as TypesMatchWith but if `rhsArg` is Variadic and empty returns success.
+class VariadicTypesMatchWith<string summary, string lhsArg, string rhsArg,
+                             string transform,
+                             string comparator = "std::equal_to<>()">
+    : TypesMatchWith<
+          summary, lhsArg, rhsArg, transform,
+          "get"#snakeCaseToCamelCase<rhsArg>.ret#"().empty() || "#comparator>;
+
 #endif // LLZK_OPS_BASE
