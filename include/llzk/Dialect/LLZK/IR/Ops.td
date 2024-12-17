@@ -282,7 +282,9 @@ def LLZK_CreateArrayOp
 
     ```llzk
     %0 = llzk.new_array %a, %b, %c : !llzk.array<3 x !llzk.felt>
-    %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2x2 x !llzk.felt>
+
+    // Create an array from the given values using the specified shape
+    %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2,2 x !llzk.felt>
     ```
   }];
 
@@ -315,9 +317,9 @@ def LLZK_ReadArrayOp
     %i = index.constant 0
     %j = index.constant 1
     %k = index.constant 4
-    %0 = llzk.new_array ... : !llzk.array<3x10x15 x !llzk.felt>
+    %0 = llzk.new_array ... : !llzk.array<3,10,15 x !llzk.felt>
     // %1 is now equal to %a
-    %1 = llzk.readarr %0[%i, %j, %k] : !llzk.array<3x10x15 x !llzk.felt>, !llzk.felt
+    %1 = llzk.readarr %0[%i, %j, %k] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.felt
     ```
   }];
 
@@ -355,11 +357,10 @@ def LLZK_WriteArrayOp
     %i = index.constant 0
     %j = index.constant 0
     %0 = llzk.constfelt 42
-    %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2x2 x !llzk.felt>
+    %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2,2 x !llzk.felt>
     // The array now is [[%0, %b], [%c, %d]]
-    llzk.writearr %1[%i, %j] = %0 : !llzk.array<2x2 x !llzk.felt>, !llzk.felt
+    llzk.writearr %1[%i, %j] = %0 : !llzk.array<2,2 x !llzk.felt>, !llzk.felt
     ```
-
   }];
 
   let arguments = (ins LLZK_ArrayType:$lvalue, Variadic<Index>:$indices,
