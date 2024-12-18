@@ -27,11 +27,17 @@
 
 namespace llzk {
 
-// valid types: I1, Index, LLZK_FeltType, LLZK_ArrayType
+/// valid types: {I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType}
+bool isValidType(mlir::Type type);
+
+/// valid types: isValidType() - {LLZK_StructType (including within LLZK_ArrayType)}
 bool isValidEmitEqType(mlir::Type type);
 
-// valid types: I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType
-bool isValidType(mlir::Type type);
+/// valid types: isValidType() - {LLZK_ArrayType}
+bool isValidArrayElemType(mlir::Type type);
+
+/// Checks if the type is a LLZK Array and it also contains a valid LLZK type.
+bool isValidArrayType(mlir::Type type);
 
 inline mlir::LogicalResult
 checkValidType(llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::Type type) {

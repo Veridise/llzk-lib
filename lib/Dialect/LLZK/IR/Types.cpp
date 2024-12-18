@@ -16,24 +16,38 @@ namespace llzk {
 // Helpers
 //===------------------------------------------------------------------===//
 
-/// Checks if the type is a LLZK Array and it also contains
-/// a valid LLZK type.
-bool isValidArrayType(mlir::Type type) {
-  return llvm::isa<ArrayType>(type) && isValidType(llvm::cast<ArrayType>(type).getElementType());
+namespace {
+template <bool AllowStruct, bool AllowArray> bool isValidTypeImpl(mlir::Type type);
+
+template <bool AllowStruct> bool isValidArrayElemTypeImpl(mlir::Type type) {
+  // ArrayType element can be any valid type sans ArrayType itself.
+  //  Pass through the flag indicating if StructType is allowed.
+  return isValidTypeImpl<AllowStruct, false>(type);
 }
 
-// valid types: I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType
-bool isValidType(mlir::Type type) {
-  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType, StructType>(type) ||
-         isValidArrayType(type);
+template <bool AllowStruct> bool isValidArrayTypeImpl(mlir::Type type) {
+  // Pass through the flag indicating if StructType is allowed.
+  return llvm::isa<ArrayType>(type) &&
+         isValidArrayElemTypeImpl<AllowStruct>(llvm::cast<ArrayType>(type).getElementType());
 }
 
-// valid types: I1, Index, LLZK_FeltType, LLZK_ArrayType
-bool isValidEmitEqType(mlir::Type type) {
+template <bool AllowStruct, bool AllowArray> bool isValidTypeImpl(mlir::Type type) {
+  // This is the main check for allowed types.
+  //  Allow StructType and ArrayType only if the respective flags are true.
+  //  Pass through the flag indicating if StructType is allowed.
   return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType>(type) ||
-         (llvm::isa<ArrayType>(type) &&
-          isValidEmitEqType(llvm::cast<ArrayType>(type).getElementType()));
+         (AllowStruct && llvm::isa<StructType>(type)) ||
+         (AllowArray && isValidArrayTypeImpl<AllowStruct>(type));
 }
+} // namespace
+
+bool isValidType(mlir::Type type) { return isValidTypeImpl<true, true>(type); }
+
+bool isValidEmitEqType(mlir::Type type) { return isValidTypeImpl<false, true>(type); }
+
+bool isValidArrayElemType(mlir::Type type) { return isValidArrayElemTypeImpl<true>(type); }
+
+bool isValidArrayType(mlir::Type type) { return isValidArrayTypeImpl<true>(type); }
 
 namespace {
 bool paramAttrUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute &rhsAttr) {
@@ -303,14 +317,20 @@ mlir::LogicalResult ArrayType::verify(
       return ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
     }
   }
-
-  // An array can hold any LLZK type bar Arrays
-  if (llvm::isa<ArrayType>(elementType)) {
-    return emitError().append(
-        "'", ArrayType::name, "' element type cannot be '", ArrayType::name, "'"
-    );
+  // Ensure array element type is valid
+  if (!isValidArrayElemType(elementType)) {
+    // Print proper message if `elementType` is not a valid LLZK type or
+    //  if it's simply not the right kind of type for an array element.
+    if (mlir::failed(checkValidType(emitError, elementType))) {
+      return mlir::failure();
+    } else {
+      return emitError().append(
+          "'", ArrayType::name, "' element type cannot be '",
+          elementType.getAbstractType().getName(), "'"
+      );
+    }
   }
-  return checkValidType(emitError, elementType);
+  return mlir::success();
 }
 
 ArrayType
