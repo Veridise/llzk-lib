@@ -12,6 +12,98 @@
 
 namespace llzk {
 
+//===------------------------------------------------------------------===//
+// Helpers
+//===------------------------------------------------------------------===//
+
+/// Checks if the type is a LLZK Array and it also contains
+/// a valid LLZK type.
+bool isValidArrayType(mlir::Type type) {
+  return llvm::isa<ArrayType>(type) && isValidType(llvm::cast<ArrayType>(type).getElementType());
+}
+
+// valid types: I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType
+bool isValidType(mlir::Type type) {
+  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType, StructType>(type) ||
+         isValidArrayType(type);
+}
+
+// valid types: I1, Index, LLZK_FeltType, LLZK_ArrayType
+bool isValidEmitEqType(mlir::Type type) {
+  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType>(type) ||
+         (llvm::isa<ArrayType>(type) &&
+          isValidEmitEqType(llvm::cast<ArrayType>(type).getElementType()));
+}
+
+namespace {
+bool paramAttrUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute &rhsAttr) {
+  // TODO: when TypeAttr is allowed as a parameter, this must use typesUnify() to compare TypeAttr.
+  //
+  // If either attribute is a symbol ref, we assume they unify because a later pass with a
+  //  more involved value analysis is required to check if they are actually the same value.
+  return lhsAttr == rhsAttr || lhsAttr.isa<mlir::SymbolRefAttr>() ||
+         rhsAttr.isa<mlir::SymbolRefAttr>();
+}
+
+bool paramsUnify(
+    const mlir::ArrayRef<mlir::Attribute> &lhsParams,
+    const mlir::ArrayRef<mlir::Attribute> &rhsParams
+) {
+  return (lhsParams.size() == rhsParams.size()) &&
+         std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), paramAttrUnify);
+}
+
+/// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
+/// are equivalent or could be equivalent after full instantiation of struct parameters.
+bool paramsUnify(const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams) {
+  if (lhsParams && rhsParams) {
+    return paramsUnify(lhsParams.getValue(), rhsParams.getValue());
+  }
+  // When one or the other is null, they're only equivalent if both are null
+  return !lhsParams && !rhsParams;
+}
+} // namespace
+
+bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
+  // Check if the element types of the two arrays can unify
+  if (!typesUnify(lhs.getElementType(), rhs.getElementType(), rhsRevPrefix)) {
+    return false;
+  }
+  // Check if the dimension size attributes unify between the LHS and RHS
+  return paramsUnify(lhs.getDimensionSizes(), rhs.getDimensionSizes());
+}
+
+bool structTypesUnify(StructType lhs, StructType rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
+  // Check if it references the same StructDefOp, considering the additional RHS path prefix.
+  llvm::SmallVector<mlir::StringRef> rhsNames = getNames(rhs.getNameRef());
+  rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
+  if (rhsNames != getNames(lhs.getNameRef())) {
+    return false;
+  }
+  // Check if the parameters unify between the LHS and RHS
+  return paramsUnify(lhs.getParams(), rhs.getParams());
+}
+
+bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
+  if (lhs == rhs) {
+    return true;
+  }
+  if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
+    return structTypesUnify(llvm::cast<StructType>(lhs), llvm::cast<StructType>(rhs), rhsRevPrefix);
+  }
+  if (llvm::isa<ArrayType>(lhs) && llvm::isa<ArrayType>(rhs)) {
+    return arrayTypesUnify(llvm::cast<ArrayType>(lhs), llvm::cast<ArrayType>(rhs), rhsRevPrefix);
+  }
+  return false;
+}
+
+llvm::function_ref<mlir::InFlightDiagnostic()>
+emitErrorUnknownLoc(mlir::MLIRContext *ctx, const char *msg) {
+  return [ctx, msg] {
+    return mlir::emitError(mlir::Location(mlir::UnknownLoc::get(ctx))).append(msg);
+  };
+}
+
 namespace {
 
 template <typename... Types> struct TypeList {
@@ -230,97 +322,5 @@ ArrayType::cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, mlir::Type el
 }
 
 int64_t ArrayType::getNumElements() const { return mlir::ShapedType::getNumElements(getShape()); }
-
-//===------------------------------------------------------------------===//
-// Helpers
-//===------------------------------------------------------------------===//
-
-/// Checks if the type is a LLZK Array and it also contains
-/// a valid LLZK type.
-bool isValidArrayType(mlir::Type type) {
-  return llvm::isa<ArrayType>(type) && isValidType(llvm::cast<ArrayType>(type).getElementType());
-}
-
-// valid types: I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType
-bool isValidType(mlir::Type type) {
-  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType, StructType>(type) ||
-         isValidArrayType(type);
-}
-
-// valid types: I1, Index, LLZK_FeltType, LLZK_ArrayType
-bool isValidEmitEqType(mlir::Type type) {
-  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType>(type) ||
-         (llvm::isa<ArrayType>(type) &&
-          isValidEmitEqType(llvm::cast<ArrayType>(type).getElementType()));
-}
-
-namespace {
-bool paramAttrUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute &rhsAttr) {
-  // TODO: when TypeAttr is allowed as a parameter, this must use typesUnify() to compare TypeAttr.
-  //
-  // If either attribute is a symbol ref, we assume they unify because a later pass with a
-  //  more involved value analysis is required to check if they are actually the same value.
-  return lhsAttr == rhsAttr || lhsAttr.isa<mlir::SymbolRefAttr>() ||
-         rhsAttr.isa<mlir::SymbolRefAttr>();
-}
-
-bool paramsUnify(
-    const mlir::ArrayRef<mlir::Attribute> &lhsParams,
-    const mlir::ArrayRef<mlir::Attribute> &rhsParams
-) {
-  return (lhsParams.size() == rhsParams.size()) &&
-         std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), paramAttrUnify);
-}
-
-/// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
-/// are equivalent or could be equivalent after full instantiation of struct parameters.
-bool paramsUnify(const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams) {
-  if (lhsParams && rhsParams) {
-    return paramsUnify(lhsParams.getValue(), rhsParams.getValue());
-  }
-  // When one or the other is null, they're only equivalent if both are null
-  return !lhsParams && !rhsParams;
-}
-} // namespace
-
-bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
-  // Check if the element types of the two arrays can unify
-  if (!typesUnify(lhs.getElementType(), rhs.getElementType(), rhsRevPrefix)) {
-    return false;
-  }
-  // Check if the dimension size attributes unify between the LHS and RHS
-  return paramsUnify(lhs.getDimensionSizes(), rhs.getDimensionSizes());
-}
-
-bool structTypesUnify(StructType lhs, StructType rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
-  // Check if it references the same StructDefOp, considering the additional RHS path prefix.
-  llvm::SmallVector<mlir::StringRef> rhsNames = getNames(rhs.getNameRef());
-  rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
-  if (rhsNames != getNames(lhs.getNameRef())) {
-    return false;
-  }
-  // Check if the parameters unify between the LHS and RHS
-  return paramsUnify(lhs.getParams(), rhs.getParams());
-}
-
-bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
-  if (lhs == rhs) {
-    return true;
-  }
-  if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
-    return structTypesUnify(llvm::cast<StructType>(lhs), llvm::cast<StructType>(rhs), rhsRevPrefix);
-  }
-  if (llvm::isa<ArrayType>(lhs) && llvm::isa<ArrayType>(rhs)) {
-    return arrayTypesUnify(llvm::cast<ArrayType>(lhs), llvm::cast<ArrayType>(rhs), rhsRevPrefix);
-  }
-  return false;
-}
-
-llvm::function_ref<mlir::InFlightDiagnostic()>
-emitErrorUnknownLoc(mlir::MLIRContext *ctx, const char *msg) {
-  return [ctx, msg] {
-    return mlir::emitError(mlir::Location(mlir::UnknownLoc::get(ctx))).append(msg);
-  };
-}
 
 } // namespace llzk
