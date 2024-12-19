@@ -1,7 +1,5 @@
 #pragma once
 
-#include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <string>
@@ -10,6 +8,8 @@
 namespace llzk {
 namespace debug {
 
+/// Generate a comma-separated string representation by traversing elements from `begin` to `end`
+/// where the element type implements `operator<<`.
 template <class InputIt> std::string toString(InputIt begin, InputIt end) {
   std::string output;
   llvm::raw_string_ostream oss(output);
@@ -24,19 +24,10 @@ template <class InputIt> std::string toString(InputIt begin, InputIt end) {
   return output;
 }
 
-/// Generate a string representation of a std::vector
-template <typename T> inline std::string toString(const std::vector<T> &vec) {
-  return toString(vec.begin(), vec.end());
-}
-
-/// Generate a string representation of a llvm::SmallVector
-template <typename T, unsigned N> inline std::string toString(const llvm::SmallVector<T, N> &vec) {
-  return toString(vec.begin(), vec.end());
-}
-
-/// Generate a string representation of a llvm::ArrayRef
-template <typename T> inline std::string toString(const llvm::ArrayRef<T> &vec) {
-  return toString(vec.begin(), vec.end());
+/// Generate a comma-separated string representation by traversing elements from
+/// `collection.begin()` to `collection.end()` where the element type implements `operator<<`.
+template <class InputIt> inline std::string toString(const InputIt &collection) {
+  return toString(collection.begin(), collection.end());
 }
 
 } // namespace debug
