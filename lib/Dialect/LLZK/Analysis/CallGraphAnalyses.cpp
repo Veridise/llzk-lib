@@ -21,16 +21,19 @@ CallGraphAnalysis::CallGraphAnalysis(mlir::Operation *op) : cg(nullptr) {
   }
 }
 
+/**
+ * NOTE: the need for the mlir::Operation argument is a requirement of the mlir::getAnalysis
+ * method, which requires template types to define a constructor that either takes
+ * only an mlir::Operation* (as in the CallGraphAnalysis above) or the signature below.
+ * See:
+ *  https://github.com/llvm/llvm-project/blob/415cfaf339dc4383acd44248584bcc6376213c8d/mlir/include/mlir/Pass/AnalysisManager.h#L220-L234
+ *  https://mlir.llvm.org/docs/PassManagement/#querying-analyses
+ */
 CallGraphReachabilityAnalysis::CallGraphReachabilityAnalysis(
-    mlir::Operation *op, mlir::AnalysisManager &am
+    mlir::Operation *, mlir::AnalysisManager &am
 )
-    : callGraph(am.getAnalysis<CallGraphAnalysis>().getCallGraph()) {
-  if (!mlir::isa<mlir::ModuleOp>(op)) {
-    auto error_message = "CallGraphReachabilityAnalysis expects provided op to be a ModuleOp!";
-    op->emitError(error_message);
-    llvm::report_fatal_error(error_message);
-  }
-}
+    // getting the CallGraphAnalysis will enforce the need for a module op
+    : callGraph(am.getAnalysis<CallGraphAnalysis>().getCallGraph()) {}
 
 bool CallGraphReachabilityAnalysis::isReachable(FuncOp &A, FuncOp &B) const {
   if (isReachableCached(A, B)) {

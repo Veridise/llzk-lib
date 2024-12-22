@@ -64,15 +64,13 @@ class CallGraphReachabilityAnalysis {
   std::reference_wrapper<llzk::CallGraph> callGraph;
 
 public:
-  CallGraphReachabilityAnalysis(mlir::Operation *op, mlir::AnalysisManager &am);
+  CallGraphReachabilityAnalysis(mlir::Operation *, mlir::AnalysisManager &am);
 
   bool isInvalidated(const mlir::AnalysisManager::PreservedAnalyses &pa) {
     return !pa.isPreserved<CallGraphReachabilityAnalysis>() || !pa.isPreserved<CallGraphAnalysis>();
   }
 
-  /**
-   * Returns whether B is reachable from A.
-   */
+  /// Returns whether B is reachable from A.
   bool isReachable(FuncOp &A, FuncOp &B) const;
 
   const llzk::CallGraph &getCallGraph() const { return callGraph.get(); }
