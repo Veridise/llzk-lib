@@ -1,7 +1,6 @@
 /**
  * The contents of this file are adapted from llvm/lib/Analysis/CallGraph.cpp
  */
-
 #include "llzk/Dialect/LLZK/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
@@ -39,6 +38,13 @@ bool CallGraphReachabilityAnalysis::isReachable(FuncOp &A, FuncOp &B) const {
   }
 
   auto startNode = callGraph.get().lookupNode(A.getCallableRegion());
+  /**
+   * NOTE: This is a potential cause of performance issues, as some circuits
+   * may perform poorly for DFS. However, we don't have enough examples at this
+   * time to demonstrate such an issue, so we will stick with DFS for simplicity
+   * for now. If performance issues arise, it may be beneficial to switch to
+   * inverse DFS or a different algorithm entirely.
+   */
   auto dfsIt = llvm::df_begin<const CallGraphNode *>(startNode);
   auto dfsEnd = llvm::df_end<const CallGraphNode *>(startNode);
   for (; dfsIt != dfsEnd; ++dfsIt) {
