@@ -3,9 +3,10 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/SymbolLookupResult.h"
 
-#include <llvm/Support/Casting.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/OwningOpRef.h>
+
+#include <llvm/Support/Casting.h>
 
 namespace llzk {
 

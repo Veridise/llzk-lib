@@ -1,21 +1,21 @@
 #pragma once
 
-#include <cassert>
+#include <mlir/Analysis/CallGraph.h>
+#include <mlir/Support/LLVM.h>
+
+#include <llvm/ADT/GraphTraits.h>
+#include <llvm/ADT/MapVector.h>
+#include <llvm/ADT/PointerIntPair.h>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SetVector.h>
+
+#include <cassert>
 #include <map>
 #include <memory>
 #include <unordered_set>
 #include <utility>
 #include <vector>
-
-#include <mlir/Analysis/CallGraph.h>
-
-#include <llvm/ADT/GraphTraits.h>
-#include <llvm/ADT/MapVector.h>
-#include <llvm/ADT/PointerIntPair.h>
-#include <llvm/ADT/SetVector.h>
-#include <mlir/Support/LLVM.h>
 
 namespace mlir {
 

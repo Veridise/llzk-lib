@@ -1,6 +1,7 @@
 /// This defines a module that can be used to register the LLZK dialects.
 
 #include "LLZK/InitDialects.h"
+
 #include <mlir/Bindings/Python/PybindAdaptors.h>
 #include <mlir/CAPI/IR.h>
 

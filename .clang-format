@@ -12,6 +12,20 @@ ColumnLimit: 100
 LambdaBodyIndentation: OuterScope
 AlignAfterOpenBracket: BlockIndent
 InsertBraces: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^("|<)llzk/.*("|>)$'  # LLZK headers
+    Priority: 0                   # - Priority 0 forces LLZK headers to be grouped with the "main" header for a file,
+                                  # see https://clang.llvm.org/docs/ClangFormatStyleOptions.html#includecategories
+  - Regex: '^<mlir/.*>$'          # MLIR headers
+    Priority: 1
+  - Regex: '^<llvm/.*>$'          # LLVM headers
+    Priority: 2
+  - Regex: '^<.*(\.h)?>$'         # Standard library headers
+    Priority: 3
+  - Regex: '^.*$'                 # Everything else
+    Priority: 4
+SortIncludes: true
 ---
 Language: Json
 DisableFormat: true

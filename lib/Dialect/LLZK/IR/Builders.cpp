@@ -1,5 +1,4 @@
 #include "llzk/Dialect/LLZK/IR/Builders.h"
-
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <cassert>

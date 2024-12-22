@@ -1,6 +1,7 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/MLIRContext.h>

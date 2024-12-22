@@ -1,19 +1,19 @@
 #pragma once
 
-#include <mlir/Analysis/CallGraph.h>
+#include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 
-#include <cassert>
+#include <mlir/Analysis/CallGraph.h>
+#include <mlir/Pass/AnalysisManager.h>
+
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/STLExtras.h>
+
+#include <cassert>
 #include <memory>
 #include <unordered_set>
 #include <utility>
 #include <vector>
-
-#include <mlir/Pass/AnalysisManager.h>
-
-#include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
-#include "llzk/Dialect/LLZK/IR/Ops.h"
 
 namespace llvm {
 

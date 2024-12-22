@@ -1,5 +1,6 @@
-#include <gtest/gtest.h>
 #include <llzk/Dialect/LLZK/IR/Builders.h>
+
+#include <gtest/gtest.h>
 
 /* Tests for the ModuleBuilder */
 

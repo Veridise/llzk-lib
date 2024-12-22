@@ -1,6 +1,7 @@
 /**
  * The contents of this file are adapted from llvm/lib/Analysis/CallGraph.cpp
  */
+
 #include "llzk/Dialect/LLZK/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 

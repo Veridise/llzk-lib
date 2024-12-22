@@ -3,13 +3,13 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/OwningOpRef.h>
+#include <mlir/Support/LLVM.h>
+#include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/SourceMgr.h>
-#include <mlir/IR/OwningOpRef.h>
-#include <mlir/Support/LLVM.h>
-#include <mlir/Support/LogicalResult.h>
 
 namespace llzk {
 

@@ -5,15 +5,15 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
-#include <llvm/ADT/DepthFirstIterator.h>
-#include <llvm/ADT/SmallVector.h>
-#include <llvm/Support/Debug.h>
-#include <llvm/Support/ErrorHandling.h>
-
 #include <mlir/Analysis/CallGraph.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Interfaces/CallInterfaces.h>
+
+#include <llvm/ADT/DepthFirstIterator.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/Debug.h>
+#include <llvm/Support/ErrorHandling.h>
 
 namespace llzk {
 

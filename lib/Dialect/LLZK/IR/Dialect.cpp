@@ -1,5 +1,5 @@
-#include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
 

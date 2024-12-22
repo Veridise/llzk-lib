@@ -1,5 +1,5 @@
-#include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/AsmState.h>
