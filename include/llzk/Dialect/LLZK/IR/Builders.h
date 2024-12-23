@@ -75,7 +75,7 @@ public:
    */
   ModuleBuilder &insertComputeFn(llzk::StructDefOp op, mlir::Location loc);
   ModuleBuilder &insertComputeFn(std::string_view structName, mlir::Location loc) {
-    return insertComputeFn(getStruct(structName), loc);
+    return insertComputeFn(*getStruct(structName), loc);
   }
   ModuleBuilder &insertComputeFn(std::string_view structName) {
     return insertComputeFn(structName, mlir::UnknownLoc::get(context));
@@ -86,7 +86,7 @@ public:
    */
   ModuleBuilder &insertConstrainFn(llzk::StructDefOp op, mlir::Location loc);
   ModuleBuilder &insertConstrainFn(std::string_view structName, mlir::Location loc) {
-    return insertConstrainFn(getStruct(structName), mlir::UnknownLoc::get(context));
+    return insertConstrainFn(*getStruct(structName), mlir::UnknownLoc::get(context));
   }
   ModuleBuilder &insertConstrainFn(std::string_view structName) {
     return insertConstrainFn(structName, mlir::UnknownLoc::get(context));
@@ -101,7 +101,7 @@ public:
   insertComputeCall(llzk::StructDefOp caller, llzk::StructDefOp callee, mlir::Location callLoc);
   ModuleBuilder &
   insertComputeCall(std::string_view caller, std::string_view callee, mlir::Location callLoc) {
-    return insertComputeCall(getStruct(caller), getStruct(callee), callLoc);
+    return insertComputeCall(*getStruct(caller), *getStruct(callee), callLoc);
   }
   ModuleBuilder &insertComputeCall(std::string_view caller, std::string_view callee) {
     return insertComputeCall(caller, callee, mlir::UnknownLoc::get(context));
@@ -117,7 +117,7 @@ public:
   insertConstrainCall(llzk::StructDefOp caller, llzk::StructDefOp callee, mlir::Location callLoc);
   ModuleBuilder &
   insertConstrainCall(std::string_view caller, std::string_view callee, mlir::Location callLoc) {
-    return insertConstrainCall(getStruct(caller), getStruct(callee), callLoc);
+    return insertConstrainCall(*getStruct(caller), *getStruct(callee), callLoc);
   }
   ModuleBuilder &insertConstrainCall(std::string_view caller, std::string_view callee) {
     return insertConstrainCall(caller, callee, mlir::UnknownLoc::get(context));
@@ -128,17 +128,32 @@ public:
   /// Get the top-level LLZK module.
   mlir::ModuleOp &getRootModule() { return rootModule; }
 
-  llzk::StructDefOp getStruct(std::string_view structName) const {
-    return structMap.at(structName);
+  mlir::FailureOr<llzk::StructDefOp> getStruct(std::string_view structName) const {
+    if (structMap.find(structName) != structMap.end()) {
+      return structMap.at(structName);
+    }
+    return mlir::failure();
   }
 
-  llzk::FuncOp getComputeFn(std::string_view structName) const {
-    return computeFnMap.at(structName);
+  mlir::FailureOr<llzk::FuncOp> getComputeFn(std::string_view structName) const {
+    if (computeFnMap.find(structName) != computeFnMap.end()) {
+      return computeFnMap.at(structName);
+    }
+    return mlir::failure();
   }
-  llzk::FuncOp getComputeFn(llzk::StructDefOp op) const { return getComputeFn(op.getName()); }
+  mlir::FailureOr<llzk::FuncOp> getComputeFn(llzk::StructDefOp op) const {
+    return getComputeFn(op.getName());
+  }
 
-  llzk::FuncOp getConstrainFn(std::string_view structName) { return constrainFnMap.at(structName); }
-  llzk::FuncOp getConstrainFn(llzk::StructDefOp op) { return getConstrainFn(op.getName()); }
+  mlir::FailureOr<llzk::FuncOp> getConstrainFn(std::string_view structName) {
+    if (constrainFnMap.find(structName) != constrainFnMap.end()) {
+      return constrainFnMap.at(structName);
+    }
+    return mlir::failure();
+  }
+  mlir::FailureOr<llzk::FuncOp> getConstrainFn(llzk::StructDefOp op) {
+    return getConstrainFn(op.getName());
+  }
 
   /* Helper functions */
 
@@ -149,7 +164,7 @@ public:
     return isReachable(computeNodes, caller, callee);
   }
   bool computeReachable(std::string_view caller, std::string_view callee) {
-    return computeReachable(getStruct(caller), getStruct(callee));
+    return computeReachable(*getStruct(caller), *getStruct(callee));
   }
 
   /**
@@ -159,7 +174,7 @@ public:
     return isReachable(constrainNodes, caller, callee);
   }
   bool constrainReachable(std::string_view caller, std::string_view callee) {
-    return constrainReachable(getStruct(caller), getStruct(callee));
+    return constrainReachable(*getStruct(caller), *getStruct(callee));
   }
 
 private:

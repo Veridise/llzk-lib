@@ -6,6 +6,8 @@
 
 using namespace llzk;
 
+/// TODO: likely a good candidate for property-based testing.
+/// A potential good option for a future date: https://github.com/emil-e/rapidcheck
 class ModuleBuilderTests : public ::testing::Test {
 protected:
   static constexpr auto structAName = "structA";
@@ -36,10 +38,12 @@ TEST_F(ModuleBuilderTests, testFnInsertion) {
   builder.insertFullStruct(structAName);
 
   auto computeFn = builder.getComputeFn(structAName);
-  ASSERT_EQ(computeFn.getBody().getArguments().size(), 0);
+  ASSERT_TRUE(mlir::succeeded(computeFn));
+  ASSERT_EQ(computeFn->getBody().getArguments().size(), 0);
 
   auto constrainFn = builder.getConstrainFn(structAName);
-  ASSERT_EQ(constrainFn.getBody().getArguments().size(), 1);
+  ASSERT_TRUE(mlir::succeeded(constrainFn));
+  ASSERT_EQ(constrainFn->getBody().getArguments().size(), 1);
 }
 
 TEST_F(ModuleBuilderTests, testReachabilitySimple) {
@@ -98,8 +102,9 @@ TEST_F(ModuleBuilderTests, testConstruction) {
   ASSERT_EQ(numStructs, 3);
 
   auto aFn = builder.getConstrainFn(structAName);
+  ASSERT_TRUE(mlir::succeeded(aFn));
   size_t numOps = 0;
-  for (auto &_ : aFn.getOps()) {
+  for (auto &_ : aFn->getOps()) {
     numOps++;
   }
   ASSERT_EQ(numOps, 2);

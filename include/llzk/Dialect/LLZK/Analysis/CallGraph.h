@@ -204,6 +204,8 @@ public:
   iterator begin() const { return nodes.begin(); }
   iterator end() const { return nodes.end(); }
 
+  size_t size() const { return nodes.size(); }
+
   /// Dump the graph in a human readable format.
   void dump() const;
   void print(llvm::raw_ostream &os) const;

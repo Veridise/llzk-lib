@@ -53,8 +53,7 @@ TEST_F(CallGraphTests, numFnTest) {
 
   llzk::CallGraph cgraph(builder.getRootModule());
 
-  // Size also include "nullptr" function, so it is number of real functions + 1
-  // ASSERT_EQ(cgraph.size(), 3);
+  ASSERT_EQ(cgraph.size(), 2);
 }
 
 TEST_F(CallGraphTests, reachabilityTest) {
@@ -66,10 +65,10 @@ TEST_F(CallGraphTests, reachabilityTest) {
       .insertConstrainCall(structBName, structAName)
       .insertConstrainCall(structCName, structAName);
 
-  auto aComp = builder.getComputeFn(structAName), bComp = builder.getComputeFn(structBName),
-       cComp = builder.getComputeFn(structCName);
-  auto aCons = builder.getConstrainFn(structAName), bCons = builder.getConstrainFn(structBName),
-       cCons = builder.getConstrainFn(structCName);
+  auto aComp = *builder.getComputeFn(structAName), bComp = *builder.getComputeFn(structBName),
+       cComp = *builder.getComputeFn(structCName);
+  auto aCons = *builder.getConstrainFn(structAName), bCons = *builder.getConstrainFn(structBName),
+       cCons = *builder.getConstrainFn(structCName);
 
   mlir::ModuleAnalysisManager mam(builder.getRootModule(), nullptr);
   mlir::AnalysisManager am = mam;
@@ -95,76 +94,57 @@ TEST_F(CallGraphTests, analysisConstructor) {
 TEST_F(CallGraphTests, analysisConstructorBadArg) {
   builder.insertFullStruct(structAName);
 
+  auto s = builder.getStruct(structAName);
+  ASSERT_TRUE(mlir::succeeded(s));
   ASSERT_DEATH(
-      llzk::CallGraphAnalysis(builder.getStruct(structAName).getOperation()),
+      llzk::CallGraphAnalysis(s->getOperation()),
       "CallGraphAnalysis expects provided op to be a ModuleOp!"
   );
 }
 
-// TEST_F(CallGraphTests, removeTest) {
-//   LLZKTestModuleBuilder builder;
-//   auto structOp = builder.insertFullStruct(structAName);
-
-//   mlir::CallGraph cgraph(builder.getRootModule());
-
-//   auto removedComputeFn =
-//   cgraph.removeFunctionFromModule(cgraph[builder.getComputeFn(&structOp)]);
-//   ASSERT_NE(removedComputeFn, nullptr);
-//   auto removedConstrainFn =
-//       cgraph.removeFunctionFromModule(cgraph[builder.getConstrainFn(&structOp)]);
-//   ASSERT_NE(removedConstrainFn, nullptr);
-
-//   // Size also include "nullptr" function, so should just be 1
-//   ASSERT_EQ(cgraph.size(), 1);
-// }
-
 TEST_F(CallGraphTests, lookupInSymbolTest) {
   builder.insertComputeOnlyStruct(structAName);
   auto computeFn = builder.getComputeFn(structAName);
+  ASSERT_TRUE(mlir::succeeded(computeFn));
 
   // not nested
   auto computeOp =
-      mlir::SymbolTable::lookupSymbolIn(builder.getStruct(structAName), computeFn.getName());
-  ASSERT_EQ(computeOp, computeFn);
+      mlir::SymbolTable::lookupSymbolIn(*builder.getStruct(structAName), computeFn->getName());
+  ASSERT_EQ(computeOp, *computeFn);
 
   // nested
-  computeOp =
-      mlir::SymbolTable::lookupSymbolIn(builder.getRootModule(), computeFn.getFullyQualifiedName());
-  ASSERT_EQ(computeOp, computeFn);
+  computeOp = mlir::SymbolTable::lookupSymbolIn(
+      builder.getRootModule(), computeFn->getFullyQualifiedName()
+  );
+  ASSERT_EQ(computeOp, *computeFn);
 }
 
 TEST_F(CallGraphTests, lookupInSymbolFQNTest) {
   builder.insertComputeOnlyStruct(structAName)
       .insertComputeOnlyStruct(structBName)
-      .insertComputeCall(structAName, structBName)
-      .getComputeFn(structAName);
+      .insertComputeCall(structAName, structBName);
 
   auto b = builder.getStruct(structBName);
   auto computeFn = builder.getComputeFn(structBName);
   // You should be able to find @compute in B
-  ASSERT_EQ(computeFn, mlir::SymbolTable::lookupSymbolIn(b, computeFn.getName()));
+  ASSERT_EQ(*computeFn, mlir::SymbolTable::lookupSymbolIn(*b, computeFn->getName()));
 
   // You should be able to find B::@compute in the overall module
   ASSERT_EQ(
-      computeFn,
-      mlir::SymbolTable::lookupSymbolIn(builder.getRootModule(), computeFn.getFullyQualifiedName())
+      *computeFn,
+      mlir::SymbolTable::lookupSymbolIn(builder.getRootModule(), computeFn->getFullyQualifiedName())
   );
 
-  auto bSym = mlir::SymbolTable(b);
+  auto bSym = mlir::SymbolTable(*b);
   auto modSym = mlir::SymbolTable(builder.getRootModule());
 
-  // You should be able to find B::@compute in B
-  // but we can't
-  ASSERT_EQ(nullptr, mlir::SymbolTable::lookupSymbolIn(b, computeFn.getFullyQualifiedName()));
+  // You should be able to find B::@compute in B, but we can't with built-in symbol tables
+  ASSERT_EQ(nullptr, mlir::SymbolTable::lookupSymbolIn(*b, computeFn->getFullyQualifiedName()));
 
-  // ... unless we use the symbol helpers
+  // But we can find B::@compute in B with the symbol helpers
   mlir::SymbolTableCollection tables;
   auto res = llzk::lookupTopLevelSymbol<llzk::FuncOp>(
-      tables, computeFn.getFullyQualifiedName(), computeFn.getOperation()
+      tables, computeFn->getFullyQualifiedName(), computeFn->getOperation()
   );
-  // ASSERT_EQ(computeFn, res.value().get());
-
-  // Since A::compute calls B::compute, you should be able to find B::compute from A
-  // auto computeOp = mlir::SymbolTable::lookupSymbolIn(a, computeFn.getFullyQualifiedName());
-  // ASSERT_EQ(computeOp, computeFn);
+  ASSERT_EQ(*computeFn, res.value().get());
 }

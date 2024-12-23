@@ -34,6 +34,7 @@ ModuleBuilder &ModuleBuilder::insertComputeFn(llzk::StructDefOp op, mlir::Locati
   OpBuilder opBuilder(op.getBody());
   assert(computeFnMap.find(op.getName()) == computeFnMap.end());
 
+  /// TODO: Replace with llzk::StructDefOp::getType() when available.
   auto structType = llzk::StructType::get(context, SymbolRefAttr::get(op));
 
   auto fnOp = opBuilder.create<llzk::FuncOp>(
