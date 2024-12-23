@@ -18,59 +18,94 @@ namespace llzk {
 /// TODO: this is a WIP, flesh this class out as needed.
 class ModuleBuilder {
 public:
-  ModuleBuilder(mlir::MLIRContext *c);
+  ModuleBuilder(mlir::MLIRContext *c, mlir::Location loc);
+  ModuleBuilder(mlir::MLIRContext *c) : ModuleBuilder(c, mlir::UnknownLoc::get(c)) {}
 
   /* Builder methods */
 
-  llzk::StructDefOp insertEmptyStruct(std::string_view structName);
-
-  /* Getter methods */
-
-  /// Get the top-level LLZK module.
-  mlir::ModuleOp &getRootModule() { return rootModule; }
-
-  llzk::StructDefOp insertComputeOnlyStruct(std::string_view structName) {
-    auto s = insertEmptyStruct(structName);
-    insertComputeFn(&s);
-    return s;
+  ModuleBuilder &insertEmptyStruct(std::string_view structName, mlir::Location loc);
+  ModuleBuilder &insertEmptyStruct(std::string_view structName) {
+    return insertEmptyStruct(structName, mlir::UnknownLoc::get(context));
   }
 
-  llzk::StructDefOp insertConstrainOnlyStruct(std::string_view structName) {
-    auto s = insertEmptyStruct(structName);
-    insertConstrainFn(&s);
-    return s;
+  ModuleBuilder &insertComputeOnlyStruct(
+      std::string_view structName, mlir::Location structLoc, mlir::Location computeLoc
+  ) {
+    insertEmptyStruct(structName, structLoc);
+    insertComputeFn(structName, computeLoc);
+    return *this;
+  }
+  ModuleBuilder &insertComputeOnlyStruct(std::string_view structName) {
+    auto unk = mlir::UnknownLoc::get(context);
+    return insertComputeOnlyStruct(structName, unk, unk);
   }
 
-  llzk::StructDefOp insertFullStruct(std::string_view structName) {
-    auto s = insertEmptyStruct(structName);
-    insertComputeFn(&s);
-    insertConstrainFn(&s);
-    return s;
+  ModuleBuilder &insertConstrainOnlyStruct(
+      std::string_view structName, mlir::Location structLoc, mlir::Location constrainLoc
+  ) {
+    insertEmptyStruct(structName, structLoc);
+    insertConstrainFn(structName, constrainLoc);
+    return *this;
   }
 
-  llzk::StructDefOp getStruct(std::string_view structName) { return structMap.at(structName); }
+  ModuleBuilder &insertConstrainOnlyStruct(std::string_view structName) {
+    auto unk = mlir::UnknownLoc::get(context);
+    return insertConstrainOnlyStruct(structName, unk, unk);
+  }
+
+  ModuleBuilder &insertFullStruct(
+      std::string_view structName, mlir::Location structLoc, mlir::Location computeLoc,
+      mlir::Location constrainLoc
+  ) {
+    insertEmptyStruct(structName, structLoc);
+    insertComputeFn(structName, computeLoc);
+    insertConstrainFn(structName, constrainLoc);
+    return *this;
+  }
+
+  /// Inserts a struct with both compute and constrain functions.
+  ModuleBuilder &insertFullStruct(std::string_view structName) {
+    auto unk = mlir::UnknownLoc::get(context);
+    return insertFullStruct(structName, unk, unk, unk);
+  }
 
   /**
    * compute returns the type of the struct that defines it.
    * Since this is for testing, we accept no arguments.
    */
-  llzk::FuncOp insertComputeFn(llzk::StructDefOp *op);
-
-  llzk::FuncOp getComputeFn(llzk::StructDefOp *op) { return computeFnMap.at(op->getName()); }
+  ModuleBuilder &insertComputeFn(llzk::StructDefOp op, mlir::Location loc);
+  ModuleBuilder &insertComputeFn(std::string_view structName, mlir::Location loc) {
+    return insertComputeFn(getStruct(structName), loc);
+  }
+  ModuleBuilder &insertComputeFn(std::string_view structName) {
+    return insertComputeFn(structName, mlir::UnknownLoc::get(context));
+  }
 
   /**
    * constrain accepts the struct type as the first argument.
    */
-  llzk::FuncOp insertConstrainFn(llzk::StructDefOp *op);
-
-  llzk::FuncOp getConstrainFn(llzk::StructDefOp *op) { return constrainFnMap.at(op->getName()); }
+  ModuleBuilder &insertConstrainFn(llzk::StructDefOp op, mlir::Location loc);
+  ModuleBuilder &insertConstrainFn(std::string_view structName, mlir::Location loc) {
+    return insertConstrainFn(getStruct(structName), mlir::UnknownLoc::get(context));
+  }
+  ModuleBuilder &insertConstrainFn(std::string_view structName) {
+    return insertConstrainFn(structName, mlir::UnknownLoc::get(context));
+  }
 
   /**
    * Only requirement for compute is the call itself.
    * It should also initialize the internal member, but we can ignore those
    * ops for the sake of testing.
    */
-  ModuleBuilder &insertComputeCall(llzk::StructDefOp *caller, llzk::StructDefOp *callee);
+  ModuleBuilder &
+  insertComputeCall(llzk::StructDefOp caller, llzk::StructDefOp callee, mlir::Location callLoc);
+  ModuleBuilder &
+  insertComputeCall(std::string_view caller, std::string_view callee, mlir::Location callLoc) {
+    return insertComputeCall(getStruct(caller), getStruct(callee), callLoc);
+  }
+  ModuleBuilder &insertComputeCall(std::string_view caller, std::string_view callee) {
+    return insertComputeCall(caller, callee, mlir::UnknownLoc::get(context));
+  }
 
   /**
    * To call a constraint function, you must:
@@ -78,63 +113,99 @@ public:
    * 2. Read the callee in the caller's constraint function,
    * 3. Call the callee's constraint function.
    */
-  ModuleBuilder &insertConstrainCall(llzk::StructDefOp *caller, llzk::StructDefOp *callee);
+  ModuleBuilder &
+  insertConstrainCall(llzk::StructDefOp caller, llzk::StructDefOp callee, mlir::Location callLoc);
+  ModuleBuilder &
+  insertConstrainCall(std::string_view caller, std::string_view callee, mlir::Location callLoc) {
+    return insertConstrainCall(getStruct(caller), getStruct(callee), callLoc);
+  }
+  ModuleBuilder &insertConstrainCall(std::string_view caller, std::string_view callee) {
+    return insertConstrainCall(caller, callee, mlir::UnknownLoc::get(context));
+  }
+
+  /* Getter methods */
+
+  /// Get the top-level LLZK module.
+  mlir::ModuleOp &getRootModule() { return rootModule; }
+
+  llzk::StructDefOp getStruct(std::string_view structName) const {
+    return structMap.at(structName);
+  }
+
+  llzk::FuncOp getComputeFn(std::string_view structName) const {
+    return computeFnMap.at(structName);
+  }
+  llzk::FuncOp getComputeFn(llzk::StructDefOp op) const { return getComputeFn(op.getName()); }
+
+  llzk::FuncOp getConstrainFn(std::string_view structName) { return constrainFnMap.at(structName); }
+  llzk::FuncOp getConstrainFn(llzk::StructDefOp op) { return getConstrainFn(op.getName()); }
+
+  /* Helper functions */
 
   /**
    * Returns if the callee compute function is reachable by the caller by construction.
    */
-  bool computeReachable(llzk::StructDefOp *caller, llzk::StructDefOp *callee) {
+  bool computeReachable(llzk::StructDefOp caller, llzk::StructDefOp callee) {
     return isReachable(computeNodes, caller, callee);
+  }
+  bool computeReachable(std::string_view caller, std::string_view callee) {
+    return computeReachable(getStruct(caller), getStruct(callee));
   }
 
   /**
    * Returns if the callee compute function is reachable by the caller by construction.
    */
-  bool constrainReachable(llzk::StructDefOp *caller, llzk::StructDefOp *callee) {
+  bool constrainReachable(llzk::StructDefOp caller, llzk::StructDefOp callee) {
     return isReachable(constrainNodes, caller, callee);
+  }
+  bool constrainReachable(std::string_view caller, std::string_view callee) {
+    return constrainReachable(getStruct(caller), getStruct(callee));
   }
 
 private:
   mlir::MLIRContext *context;
   mlir::ModuleOp rootModule;
 
-  struct CallNode {
-    std::unordered_map<llzk::StructDefOp *, CallNode *> callees;
+  struct StructDefOpHash {
+    size_t operator()(const StructDefOp &op) const {
+      return std::hash<mlir::Operation *>{}(const_cast<StructDefOp &>(op).getOperation());
+    }
   };
 
-  std::unordered_map<llzk::StructDefOp *, CallNode> computeNodes, constrainNodes;
+  struct CallNode {
+    std::unordered_map<llzk::StructDefOp, CallNode *, StructDefOpHash> callees;
+  };
+
+  using Def2NodeMap = std::unordered_map<llzk::StructDefOp, CallNode, StructDefOpHash>;
+  using StructDefSet = std::unordered_set<llzk::StructDefOp, StructDefOpHash>;
+
+  Def2NodeMap computeNodes, constrainNodes;
 
   std::unordered_map<std::string_view, llzk::StructDefOp> structMap;
   std::unordered_map<std::string_view, llzk::FuncOp> computeFnMap;
   std::unordered_map<std::string_view, llzk::FuncOp> constrainFnMap;
 
-  void updateComputeReachability(llzk::StructDefOp *caller, llzk::StructDefOp *callee) {
+  void updateComputeReachability(llzk::StructDefOp caller, llzk::StructDefOp callee) {
     updateReachability(computeNodes, caller, callee);
   }
 
-  void updateConstrainReachability(llzk::StructDefOp *caller, llzk::StructDefOp *callee) {
+  void updateConstrainReachability(llzk::StructDefOp caller, llzk::StructDefOp callee) {
     updateReachability(constrainNodes, caller, callee);
   }
 
-  void updateReachability(
-      std::unordered_map<llzk::StructDefOp *, CallNode> &m, llzk::StructDefOp *caller,
-      llzk::StructDefOp *callee
-  ) {
+  void updateReachability(Def2NodeMap &m, llzk::StructDefOp caller, llzk::StructDefOp callee) {
     auto &callerNode = m[caller];
     auto &calleeNode = m[callee];
     callerNode.callees[callee] = &calleeNode;
   }
 
-  bool isReachable(
-      std::unordered_map<llzk::StructDefOp *, CallNode> &m, llzk::StructDefOp *caller,
-      llzk::StructDefOp *callee
-  ) {
-    std::unordered_set<llzk::StructDefOp *> visited;
-    std::deque<llzk::StructDefOp *> frontier;
+  bool isReachable(Def2NodeMap &m, llzk::StructDefOp caller, llzk::StructDefOp callee) {
+    StructDefSet visited;
+    std::deque<llzk::StructDefOp> frontier;
     frontier.push_back(caller);
 
     while (!frontier.empty()) {
-      auto *s = frontier.front();
+      auto s = frontier.front();
       frontier.pop_front();
       if (!visited.insert(s).second) {
         continue;

@@ -8,6 +8,10 @@ using namespace llzk;
 
 class ModuleBuilderTests : public ::testing::Test {
 protected:
+  static constexpr auto structAName = "structA";
+  static constexpr auto structBName = "structB";
+  static constexpr auto structCName = "structC";
+
   mlir::MLIRContext context;
   ModuleBuilder builder;
 
@@ -24,62 +28,62 @@ protected:
 TEST_F(ModuleBuilderTests, testModuleOpCreation) { ASSERT_NE(builder.getRootModule(), nullptr); }
 
 TEST_F(ModuleBuilderTests, testStructDefInsertion) {
-  auto structDef = builder.insertEmptyStruct("structOne");
-  ASSERT_EQ(builder.getStruct("structOne"), structDef);
+  builder.insertEmptyStruct(structAName);
+  ASSERT_NE(builder.getStruct(structAName), nullptr);
 }
 
 TEST_F(ModuleBuilderTests, testFnInsertion) {
-  auto structOp = builder.insertFullStruct("structOne");
+  builder.insertFullStruct(structAName);
 
-  auto computeFn = builder.getComputeFn(&structOp);
+  auto computeFn = builder.getComputeFn(structAName);
   ASSERT_EQ(computeFn.getBody().getArguments().size(), 0);
 
-  auto constrainFn = builder.getConstrainFn(&structOp);
+  auto constrainFn = builder.getConstrainFn(structAName);
   ASSERT_EQ(constrainFn.getBody().getArguments().size(), 1);
 }
 
 TEST_F(ModuleBuilderTests, testReachabilitySimple) {
-  auto a = builder.insertComputeOnlyStruct("structA");
-  auto b = builder.insertComputeOnlyStruct("structB");
-  builder.insertComputeCall(&a, &b);
+  builder.insertComputeOnlyStruct(structAName)
+      .insertComputeOnlyStruct(structBName)
+      .insertComputeCall(structAName, structBName);
 
-  ASSERT_TRUE(builder.computeReachable(&a, &b));
-  ASSERT_FALSE(builder.computeReachable(&b, &a));
+  ASSERT_TRUE(builder.computeReachable(structAName, structBName));
+  ASSERT_FALSE(builder.computeReachable(structBName, structAName));
 }
 
 TEST_F(ModuleBuilderTests, testReachabilityTransitive) {
-  auto a = builder.insertComputeOnlyStruct("structA");
-  auto b = builder.insertComputeOnlyStruct("structB");
-  auto c = builder.insertComputeOnlyStruct("structC");
-  builder.insertComputeCall(&a, &b);
-  builder.insertComputeCall(&b, &c);
+  builder.insertComputeOnlyStruct(structAName)
+      .insertComputeOnlyStruct(structBName)
+      .insertComputeOnlyStruct(structCName)
+      .insertComputeCall(structAName, structBName)
+      .insertComputeCall(structBName, structCName);
 
-  ASSERT_TRUE(builder.computeReachable(&a, &b));
-  ASSERT_TRUE(builder.computeReachable(&b, &c));
-  ASSERT_TRUE(builder.computeReachable(&a, &c));
-  ASSERT_FALSE(builder.computeReachable(&b, &a));
-  ASSERT_FALSE(builder.computeReachable(&c, &a));
-  ASSERT_TRUE(builder.computeReachable(&a, &a));
+  ASSERT_TRUE(builder.computeReachable(structAName, structBName));
+  ASSERT_TRUE(builder.computeReachable(structBName, structCName));
+  ASSERT_TRUE(builder.computeReachable(structAName, structCName));
+  ASSERT_FALSE(builder.computeReachable(structBName, structAName));
+  ASSERT_FALSE(builder.computeReachable(structCName, structAName));
+  ASSERT_TRUE(builder.computeReachable(structAName, structAName));
 }
 
 TEST_F(ModuleBuilderTests, testReachabilityComputeAndConstrain) {
-  auto a = builder.insertFullStruct("structA");
-  auto b = builder.insertComputeOnlyStruct("structB");
-  auto c = builder.insertConstrainOnlyStruct("structC");
-  builder.insertComputeCall(&a, &b);
-  builder.insertConstrainCall(&a, &c);
+  builder.insertFullStruct(structAName)
+      .insertComputeOnlyStruct(structBName)
+      .insertConstrainOnlyStruct(structCName)
+      .insertComputeCall(structAName, structBName)
+      .insertConstrainCall(structAName, structCName);
 
-  ASSERT_TRUE(builder.computeReachable(&a, &b));
-  ASSERT_TRUE(builder.constrainReachable(&a, &c));
-  ASSERT_FALSE(builder.constrainReachable(&a, &b));
-  ASSERT_FALSE(builder.computeReachable(&a, &c));
+  ASSERT_TRUE(builder.computeReachable(structAName, structBName));
+  ASSERT_TRUE(builder.constrainReachable(structAName, structCName));
+  ASSERT_FALSE(builder.constrainReachable(structAName, structBName));
+  ASSERT_FALSE(builder.computeReachable(structAName, structCName));
 }
 
 TEST_F(ModuleBuilderTests, testConstruction) {
-  auto a = builder.insertConstrainOnlyStruct("structA");
-  auto b = builder.insertConstrainOnlyStruct("structB");
-  builder.insertConstrainOnlyStruct("structC");
-  builder.insertConstrainCall(&a, &b);
+  builder.insertConstrainOnlyStruct(structAName)
+      .insertConstrainOnlyStruct(structBName)
+      .insertConstrainOnlyStruct(structCName)
+      .insertConstrainCall(structAName, structBName);
 
   size_t numStructs = 0;
   for (auto s : builder.getRootModule().getOps<llzk::StructDefOp>()) {
@@ -93,7 +97,7 @@ TEST_F(ModuleBuilderTests, testConstruction) {
   }
   ASSERT_EQ(numStructs, 3);
 
-  auto aFn = builder.getConstrainFn(&a);
+  auto aFn = builder.getConstrainFn(structAName);
   size_t numOps = 0;
   for (auto &_ : aFn.getOps()) {
     numOps++;

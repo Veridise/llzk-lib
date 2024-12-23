@@ -13,6 +13,10 @@ using namespace llzk;
 
 class CallGraphTests : public ::testing::Test {
 protected:
+  static constexpr auto structAName = "structA";
+  static constexpr auto structBName = "structB";
+  static constexpr auto structCName = "structC";
+
   mlir::MLIRContext context;
   ModuleBuilder builder;
 
@@ -27,13 +31,13 @@ protected:
 };
 
 TEST_F(CallGraphTests, constructorTest) {
-  builder.insertFullStruct("A");
+  builder.insertFullStruct(structAName);
 
   ASSERT_NO_THROW(mlir::CallGraph(builder.getRootModule()));
 }
 
 TEST_F(CallGraphTests, printTest) {
-  builder.insertFullStruct("A");
+  builder.insertFullStruct(structAName);
 
   std::string s;
   llvm::raw_string_ostream sstream(s);
@@ -45,7 +49,7 @@ TEST_F(CallGraphTests, printTest) {
 }
 
 TEST_F(CallGraphTests, numFnTest) {
-  builder.insertFullStruct("A");
+  builder.insertFullStruct(structAName);
 
   llzk::CallGraph cgraph(builder.getRootModule());
 
@@ -54,19 +58,18 @@ TEST_F(CallGraphTests, numFnTest) {
 }
 
 TEST_F(CallGraphTests, reachabilityTest) {
-  auto aOp = builder.insertFullStruct("A");
-  auto bOp = builder.insertFullStruct("B");
-  auto cOp = builder.insertFullStruct("C");
+  builder.insertFullStruct(structAName)
+      .insertFullStruct(structBName)
+      .insertFullStruct(structCName)
+      .insertComputeCall(structAName, structBName)
+      .insertComputeCall(structBName, structCName)
+      .insertConstrainCall(structBName, structAName)
+      .insertConstrainCall(structCName, structAName);
 
-  builder.insertComputeCall(&aOp, &bOp);
-  builder.insertComputeCall(&bOp, &cOp);
-  builder.insertConstrainCall(&bOp, &aOp);
-  builder.insertConstrainCall(&cOp, &aOp);
-
-  auto aComp = builder.getComputeFn(&aOp), bComp = builder.getComputeFn(&bOp),
-       cComp = builder.getComputeFn(&cOp);
-  auto aCons = builder.getConstrainFn(&aOp), bCons = builder.getConstrainFn(&bOp),
-       cCons = builder.getConstrainFn(&cOp);
+  auto aComp = builder.getComputeFn(structAName), bComp = builder.getComputeFn(structBName),
+       cComp = builder.getComputeFn(structCName);
+  auto aCons = builder.getConstrainFn(structAName), bCons = builder.getConstrainFn(structBName),
+       cCons = builder.getConstrainFn(structCName);
 
   mlir::ModuleAnalysisManager mam(builder.getRootModule(), nullptr);
   mlir::AnalysisManager am = mam;
@@ -84,23 +87,23 @@ TEST_F(CallGraphTests, reachabilityTest) {
 }
 
 TEST_F(CallGraphTests, analysisConstructor) {
-  builder.insertFullStruct("A");
+  builder.insertFullStruct(structAName);
 
   ASSERT_NO_THROW(llzk::CallGraphAnalysis(builder.getRootModule()));
 }
 
 TEST_F(CallGraphTests, analysisConstructorBadArg) {
-  auto structOp = builder.insertFullStruct("A");
+  builder.insertFullStruct(structAName);
 
   ASSERT_DEATH(
-      llzk::CallGraphAnalysis(structOp.getOperation()),
+      llzk::CallGraphAnalysis(builder.getStruct(structAName).getOperation()),
       "CallGraphAnalysis expects provided op to be a ModuleOp!"
   );
 }
 
 // TEST_F(CallGraphTests, removeTest) {
 //   LLZKTestModuleBuilder builder;
-//   auto structOp = builder.insertFullStruct("A");
+//   auto structOp = builder.insertFullStruct(structAName);
 
 //   mlir::CallGraph cgraph(builder.getRootModule());
 
@@ -116,11 +119,12 @@ TEST_F(CallGraphTests, analysisConstructorBadArg) {
 // }
 
 TEST_F(CallGraphTests, lookupInSymbolTest) {
-  auto structOp = builder.insertComputeOnlyStruct("A");
-  auto computeFn = builder.getComputeFn(&structOp);
+  builder.insertComputeOnlyStruct(structAName);
+  auto computeFn = builder.getComputeFn(structAName);
 
   // not nested
-  auto computeOp = mlir::SymbolTable::lookupSymbolIn(structOp, computeFn.getName());
+  auto computeOp =
+      mlir::SymbolTable::lookupSymbolIn(builder.getStruct(structAName), computeFn.getName());
   ASSERT_EQ(computeOp, computeFn);
 
   // nested
@@ -130,11 +134,13 @@ TEST_F(CallGraphTests, lookupInSymbolTest) {
 }
 
 TEST_F(CallGraphTests, lookupInSymbolFQNTest) {
-  auto a = builder.insertComputeOnlyStruct("A");
-  auto b = builder.insertComputeOnlyStruct("B");
-  builder.insertComputeCall(&a, &b);
-  auto computeFn = builder.getComputeFn(&b);
+  builder.insertComputeOnlyStruct(structAName)
+      .insertComputeOnlyStruct(structBName)
+      .insertComputeCall(structAName, structBName)
+      .getComputeFn(structAName);
 
+  auto b = builder.getStruct(structBName);
+  auto computeFn = builder.getComputeFn(structBName);
   // You should be able to find @compute in B
   ASSERT_EQ(computeFn, mlir::SymbolTable::lookupSymbolIn(b, computeFn.getName()));
 
