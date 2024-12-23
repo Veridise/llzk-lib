@@ -12,14 +12,16 @@
 
 namespace llzk {
 
-/// @brief Builds a LLZK-compliant module and provides utilities for populating
+mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context, mlir::Location loc);
+mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context);
+
+/// @brief Builds out a LLZK-compliant module and provides utilities for populating
 /// that module. This class is designed to be used by front-ends looking to
 /// generate LLZK IR programatically and is also a useful unit testing facility.
 /// TODO: this is a WIP, flesh this class out as needed.
 class ModuleBuilder {
 public:
-  ModuleBuilder(mlir::MLIRContext *c, mlir::Location loc);
-  ModuleBuilder(mlir::MLIRContext *c) : ModuleBuilder(c, mlir::UnknownLoc::get(c)) {}
+  ModuleBuilder(mlir::ModuleOp m);
 
   /* Builder methods */
 

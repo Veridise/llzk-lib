@@ -7,14 +7,21 @@ using namespace mlir;
 
 namespace llzk {
 
-/* ModuleBuilder */
-
-ModuleBuilder::ModuleBuilder(mlir::MLIRContext *c, mlir::Location loc) : context(c) {
+mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context, mlir::Location loc) {
   auto dialect = context->getOrLoadDialect<llzk::LLZKDialect>();
   auto langAttr = StringAttr::get(context, dialect->getNamespace());
-  rootModule = ModuleOp::create(loc);
-  rootModule->setAttr(llzk::LANG_ATTR_NAME, langAttr);
+  auto mod = ModuleOp::create(loc);
+  mod->setAttr(llzk::LANG_ATTR_NAME, langAttr);
+  return mod;
 }
+
+mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context) {
+  return createLLZKModule(context, mlir::UnknownLoc::get(context));
+}
+
+/* ModuleBuilder */
+
+ModuleBuilder::ModuleBuilder(mlir::ModuleOp m) : context(m.getContext()), rootModule(m) {}
 
 ModuleBuilder &ModuleBuilder::insertEmptyStruct(std::string_view structName, mlir::Location loc) {
   assert(structMap.find(structName) == structMap.end());

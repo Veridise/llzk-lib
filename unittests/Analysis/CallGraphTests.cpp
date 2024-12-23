@@ -18,16 +18,18 @@ protected:
   static constexpr auto structCName = "structC";
 
   mlir::MLIRContext context;
+  mlir::OwningOpRef<mlir::ModuleOp> mod;
   ModuleBuilder builder;
 
-  CallGraphTests() : context(), builder(&context) { context.loadDialect<llzk::LLZKDialect>(); }
-
-  void SetUp() override {
-    // Create a new builder for each test.
-    builder = ModuleBuilder(&context);
+  CallGraphTests() : context(), mod(createLLZKModule(&context)), builder(mod.get()) {
+    context.loadDialect<llzk::LLZKDialect>();
   }
 
-  void TearDown() override { builder.getRootModule().erase(); }
+  void SetUp() override {
+    // Create a new module and builder for each test.
+    mod = createLLZKModule(&context);
+    builder = ModuleBuilder(mod.get());
+  }
 };
 
 TEST_F(CallGraphTests, constructorTest) {
