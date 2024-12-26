@@ -33,13 +33,14 @@ TEST_F(TypeTests, testCloneSuccessNewType) {
   auto a = ArrayType::get(tyIndex, {2, 2});
   auto b = a.cloneWith(std::nullopt, tyBool);
   ASSERT_EQ(b.getElementType(), tyBool);
-  ASSERT_EQ(b.getShape(), mlir::ArrayRef({2LL, 2LL}));
+  ASSERT_EQ(b.getShape(), mlir::ArrayRef(std::vector<int64_t>({2, 2})));
 }
 
 TEST_F(TypeTests, testCloneSuccessNewShape) {
   auto tyIndex = bldr.getIndexType();
   auto a = ArrayType::get(tyIndex, {2, 2});
-  auto newShape = mlir::ArrayRef({2LL, 3LL, 2LL});
+  std::vector<int64_t> newShapeVec({2, 3, 2});
+  mlir::ArrayRef newShape(newShapeVec);
   auto b = a.cloneWith(std::make_optional(newShape), tyIndex);
   ASSERT_EQ(b.getElementType(), tyIndex);
   ASSERT_EQ(b.getShape(), newShape);
