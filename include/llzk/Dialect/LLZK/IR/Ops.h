@@ -84,8 +84,7 @@ template <char const *FuncName> struct InStructFunctionNamed {
   };
 };
 
-/// This class provides a verifier for ops that cannot appear within a
-/// "constrain" function.
+/// This class provides a verifier for ops that cannot appear within a "constrain" function.
 template <typename ConcreteType>
 class ComputeOnly : public mlir::OpTrait::TraitBase<ConcreteType, ComputeOnly> {
 public:

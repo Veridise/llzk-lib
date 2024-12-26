@@ -254,8 +254,8 @@ using ArrayDimensionTypes = TypeList<mlir::IntegerAttr, mlir::SymbolRefAttr>;
 } // namespace
 
 mlir::LogicalResult computeDimsFromShape(
-    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
-    llvm::ArrayRef<int64_t> shape, llvm::SmallVector<mlir::Attribute> &dimensionSizes
+    mlir::MLIRContext *ctx, llvm::ArrayRef<int64_t> shape,
+    llvm::SmallVector<mlir::Attribute> &dimensionSizes
 ) {
   mlir::Builder builder(ctx);
   auto attrs = llvm::map_range(shape, [&builder](int64_t v) -> mlir::Attribute {

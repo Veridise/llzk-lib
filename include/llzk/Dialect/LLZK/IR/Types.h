@@ -87,8 +87,8 @@ inline bool typeListsUnify(Iter1 lhs, Iter2 rhs, std::vector<llvm::StringRef> rh
 }
 
 mlir::LogicalResult computeDimsFromShape(
-    llvm ::function_ref<::mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
-    llvm::ArrayRef<int64_t> shape, llvm::SmallVector<mlir::Attribute> &dimensionSizes
+    mlir::MLIRContext *ctx, llvm::ArrayRef<int64_t> shape,
+    llvm::SmallVector<mlir::Attribute> &dimensionSizes
 );
 
 mlir::LogicalResult computeShapeFromDims(
