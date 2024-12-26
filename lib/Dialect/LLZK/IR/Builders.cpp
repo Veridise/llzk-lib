@@ -1,7 +1,7 @@
 #include "llzk/Dialect/LLZK/IR/Builders.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
-#include <cassert>
+#include <llvm/Support/ErrorHandling.h>
 
 using namespace mlir;
 
@@ -9,6 +9,9 @@ namespace llzk {
 
 mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context, mlir::Location loc) {
   auto dialect = context->getOrLoadDialect<llzk::LLZKDialect>();
+  if (!dialect) {
+    llvm::report_fatal_error("Could not load LLZK dialect!");
+  }
   auto langAttr = StringAttr::get(context, dialect->getNamespace());
   auto mod = ModuleOp::create(loc);
   mod->setAttr(llzk::LANG_ATTR_NAME, langAttr);
@@ -23,8 +26,43 @@ mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context) {
 
 ModuleBuilder::ModuleBuilder(mlir::ModuleOp m) : context(m.getContext()), rootModule(m) {}
 
+void ModuleBuilder::ensureNoSuchStruct(std::string_view structName) {
+  if (structMap.find(structName) != structMap.end()) {
+    auto error_message = "struct " + mlir::Twine(structName) + " already exists!";
+    llvm::report_fatal_error(error_message);
+  }
+}
+
+void ModuleBuilder::ensureNoSuchComputeFn(std::string_view structName) {
+  if (computeFnMap.find(structName) != computeFnMap.end()) {
+    auto error_message = "struct " + mlir::Twine(structName) + " already has a compute function!";
+    llvm::report_fatal_error(error_message);
+  }
+}
+
+void ModuleBuilder::ensureComputeFnExists(std::string_view structName) {
+  if (computeFnMap.find(structName) == computeFnMap.end()) {
+    auto error_message = "struct " + mlir::Twine(structName) + " has no compute function!";
+    llvm::report_fatal_error(error_message);
+  }
+}
+
+void ModuleBuilder::ensureNoSuchConstrainFn(std::string_view structName) {
+  if (constrainFnMap.find(structName) != constrainFnMap.end()) {
+    auto error_message = "struct " + mlir::Twine(structName) + " already has a constrain function!";
+    llvm::report_fatal_error(error_message);
+  }
+}
+
+void ModuleBuilder::ensureConstrainFnExists(std::string_view structName) {
+  if (constrainFnMap.find(structName) == constrainFnMap.end()) {
+    auto error_message = "struct " + mlir::Twine(structName) + " has no constrain function!";
+    llvm::report_fatal_error(error_message);
+  }
+}
+
 ModuleBuilder &ModuleBuilder::insertEmptyStruct(std::string_view structName, mlir::Location loc) {
-  assert(structMap.find(structName) == structMap.end());
+  ensureNoSuchStruct(structName);
 
   OpBuilder opBuilder(rootModule.getBody(), rootModule.getBody()->begin());
   auto structNameAtrr = StringAttr::get(context, structName);
@@ -38,8 +76,9 @@ ModuleBuilder &ModuleBuilder::insertEmptyStruct(std::string_view structName, mli
 }
 
 ModuleBuilder &ModuleBuilder::insertComputeFn(llzk::StructDefOp op, mlir::Location loc) {
+  ensureNoSuchComputeFn(op.getName());
+
   OpBuilder opBuilder(op.getBody());
-  assert(computeFnMap.find(op.getName()) == computeFnMap.end());
 
   /// TODO: Replace with llzk::StructDefOp::getType() when available.
   auto structType = llzk::StructType::get(context, SymbolRefAttr::get(op));
@@ -54,7 +93,7 @@ ModuleBuilder &ModuleBuilder::insertComputeFn(llzk::StructDefOp op, mlir::Locati
 }
 
 ModuleBuilder &ModuleBuilder::insertConstrainFn(llzk::StructDefOp op, mlir::Location loc) {
-  assert(constrainFnMap.find(op.getName()) == constrainFnMap.end());
+  ensureNoSuchConstrainFn(op.getName());
 
   OpBuilder opBuilder(op.getBody());
 
@@ -72,6 +111,9 @@ ModuleBuilder &ModuleBuilder::insertConstrainFn(llzk::StructDefOp op, mlir::Loca
 ModuleBuilder &ModuleBuilder::insertComputeCall(
     llzk::StructDefOp caller, llzk::StructDefOp callee, mlir::Location callLoc
 ) {
+  ensureComputeFnExists(caller.getName());
+  ensureComputeFnExists(callee.getName());
+
   auto callerFn = computeFnMap.at(caller.getName());
   auto calleeFn = computeFnMap.at(callee.getName());
 
@@ -84,6 +126,9 @@ ModuleBuilder &ModuleBuilder::insertComputeCall(
 ModuleBuilder &ModuleBuilder::insertConstrainCall(
     llzk::StructDefOp caller, llzk::StructDefOp callee, mlir::Location callLoc
 ) {
+  ensureConstrainFnExists(caller.getName());
+  ensureConstrainFnExists(callee.getName());
+
   auto callerFn = constrainFnMap.at(caller.getName());
   auto calleeFn = constrainFnMap.at(callee.getName());
   auto calleeTy = llzk::StructType::get(context, SymbolRefAttr::get(callee));

@@ -10,7 +10,6 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SetVector.h>
 
-#include <cassert>
 #include <map>
 #include <memory>
 #include <unordered_set>
@@ -41,8 +40,8 @@ public:
     enum class Kind {
       // An 'Abstract' edge represents an opaque, non-operation, reference
       // between this node and the target. Edges of this type are only valid
-      // from the external node, as there is no valid connection to an operation
-      // in the module.
+      // from the external node (e.g., an external library call),
+      // as there is no valid connection to an operation in the module.
       Abstract,
 
       // A 'Call' edge represents a direct reference to the target node via a
@@ -66,15 +65,26 @@ public:
     /// Returns true if this edge represents a `Child` edge.
     bool isChild() const { return targetAndKind.getInt() == Kind::Child; }
 
+    /// Returns the source node of this edge.
+    /// Note: added by LLZK
+    CallGraphNode *getSource() const { return source; }
+
     /// Returns the target node for this edge.
     CallGraphNode *getTarget() const { return targetAndKind.getPointer(); }
 
-    bool operator==(const Edge &edge) const { return targetAndKind == edge.targetAndKind; }
+    bool operator==(const Edge &edge) const {
+      return source == edge.source && targetAndKind == edge.targetAndKind;
+    }
 
   private:
-    Edge(CallGraphNode *node, Kind kind) : targetAndKind(node, kind) {}
-    explicit Edge(llvm::PointerIntPair<CallGraphNode *, 2, Kind> targetAndKind)
-        : targetAndKind(targetAndKind) {}
+    Edge(CallGraphNode *src, CallGraphNode *target, Kind kind)
+        : source(src), targetAndKind(target, kind) {}
+    Edge(CallGraphNode *src, llvm::PointerIntPair<CallGraphNode *, 2, Kind> targetAndKind)
+        : source(src), targetAndKind(targetAndKind) {}
+
+    /// The source node of this edge.
+    /// Note: added by LLZK.
+    CallGraphNode *source;
 
     /// The target node of this edge, as well as the edge kind.
     llvm::PointerIntPair<CallGraphNode *, 2, Kind> targetAndKind;
@@ -117,12 +127,13 @@ public:
 private:
   /// DenseMap info for callgraph edges.
   struct EdgeKeyInfo {
+    using SourceInfo = mlir::DenseMapInfo<CallGraphNode *>;
     using BaseInfo = mlir::DenseMapInfo<llvm::PointerIntPair<CallGraphNode *, 2, Edge::Kind>>;
 
-    static Edge getEmptyKey() { return Edge(BaseInfo::getEmptyKey()); }
-    static Edge getTombstoneKey() { return Edge(BaseInfo::getTombstoneKey()); }
+    static Edge getEmptyKey() { return Edge(nullptr, BaseInfo::getEmptyKey()); }
+    static Edge getTombstoneKey() { return Edge(nullptr, BaseInfo::getTombstoneKey()); }
     static unsigned getHashValue(const Edge &edge) {
-      return BaseInfo::getHashValue(edge.targetAndKind);
+      return SourceInfo::getHashValue(edge.source) ^ BaseInfo::getHashValue(edge.targetAndKind);
     }
     static bool isEqual(const Edge &lhs, const Edge &rhs) { return lhs == rhs; }
   };

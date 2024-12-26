@@ -2,17 +2,16 @@
 
 #include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/LLZK/Util/Hash.h"
 
 #include <mlir/Analysis/CallGraph.h>
 #include <mlir/Pass/AnalysisManager.h>
 
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/STLExtras.h>
 
-#include <cassert>
 #include <memory>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -50,11 +49,8 @@ public:
 /// Lazily-constructed reachability analysis.
 class CallGraphReachabilityAnalysis {
 
-  using FuncOpHash = OpHash<FuncOp>;
-
   // Maps function -> callees
-  using CalleeMapTy =
-      std::unordered_map<FuncOp, std::unordered_set<FuncOp, FuncOpHash>, FuncOpHash>;
+  using CalleeMapTy = mlir::DenseMap<FuncOp, mlir::DenseSet<FuncOp>>;
 
   mutable CalleeMapTy reachabilityMap;
 

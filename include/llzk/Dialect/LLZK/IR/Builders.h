@@ -1,15 +1,16 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/LLZK/Util/Hash.h"
 
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/MLIRContext.h>
 
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
+
 #include <deque>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace llzk {
 
@@ -184,20 +185,43 @@ private:
   mlir::MLIRContext *context;
   mlir::ModuleOp rootModule;
 
-  using StructDefOpHash = OpHash<StructDefOp>;
-
   struct CallNode {
-    std::unordered_map<llzk::StructDefOp, CallNode *, StructDefOpHash> callees;
+    mlir::DenseMap<llzk::StructDefOp, CallNode *> callees;
   };
 
-  using Def2NodeMap = std::unordered_map<llzk::StructDefOp, CallNode, StructDefOpHash>;
-  using StructDefSet = std::unordered_set<llzk::StructDefOp, StructDefOpHash>;
+  using Def2NodeMap = mlir::DenseMap<llzk::StructDefOp, CallNode>;
+  using StructDefSet = mlir::DenseSet<llzk::StructDefOp>;
 
   Def2NodeMap computeNodes, constrainNodes;
 
   std::unordered_map<std::string_view, llzk::StructDefOp> structMap;
   std::unordered_map<std::string_view, llzk::FuncOp> computeFnMap;
   std::unordered_map<std::string_view, llzk::FuncOp> constrainFnMap;
+
+  /// @brief Ensure that a struct with the given structName has not been added,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureNoSuchStruct(std::string_view structName);
+
+  /// @brief Ensure that the given struct does not have a compute function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureNoSuchComputeFn(std::string_view structName);
+
+  /// @brief Ensure that the given struct has a compute function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureComputeFnExists(std::string_view structName);
+
+  /// @brief Ensure that the given struct does not have a constrain function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureNoSuchConstrainFn(std::string_view structName);
+
+  /// @brief Ensure that the given struct has a constrain function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureConstrainFnExists(std::string_view structName);
 
   void updateComputeReachability(llzk::StructDefOp caller, llzk::StructDefOp callee) {
     updateReachability(computeNodes, caller, callee);

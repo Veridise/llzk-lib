@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25) 
+cmake_minimum_required(VERSION 3.25)
 
 project(LLZK
   DESCRIPTION "Veridise's intermediate representation for zero knowledge languages"
@@ -52,14 +52,14 @@ include(HandleLLVMOptions)
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 add_compile_options(
-  -Werror=switch 
-  -Werror=return-type 
-  -Wall 
-  -Wextra 
-  -Wno-unused-parameter 
-  -Wshadow 
-  -Wnon-virtual-dtor 
-  -pedantic 
+  -Werror=switch
+  -Werror=return-type
+  -Wall
+  -Wextra
+  -Wno-unused-parameter
+  -Wshadow
+  -Wnon-virtual-dtor
+  -pedantic
   -fno-omit-frame-pointer
 )
 
@@ -97,8 +97,8 @@ endif()
 if (CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   # NOTE: undefined behavior sanitizer ("undefined") has been removed due to its
   # poor interaction with gtest fixtures and other standard MLIR/LLVM operations.
-  add_compile_options(-fsanitize=address)
-  add_link_options(-fsanitize=address)
+  add_compile_options(-fsanitize=address,leak)
+  add_link_options(-fsanitize=address,leak)
 endif()
 
 if (LLZK_TEMPLATE_BACKTRACE_LIMIT)
