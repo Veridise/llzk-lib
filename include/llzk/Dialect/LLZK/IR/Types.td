@@ -39,6 +39,10 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
 
   let genVerifyDecl = 1;
 
+  let builders = [TypeBuilder<(ins "::mlir::SymbolRefAttr":$structName), [{
+      return $_get($_ctxt, structName, ::mlir::ArrayAttr::get($_ctxt, {}));
+    }]>];
+
   let extraClassDeclaration = [{
     /// Gets the `struct` op that defines this struct. Provided `op` is
     /// used as a starting point for the lookup. Should not be assumed to

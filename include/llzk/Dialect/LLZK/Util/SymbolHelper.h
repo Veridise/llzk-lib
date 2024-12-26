@@ -91,16 +91,6 @@ inline mlir::FailureOr<SymbolLookupResult<T>> lookupTopLevelSymbol(
   return lookupSymbolIn<T>(tables, symbol, root.value(), origin);
 }
 
-mlir::LogicalResult verifyParamOfType(
-    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr param, mlir::Type structOrArrayType,
-    mlir::Operation *origin
-);
-
-mlir::LogicalResult verifyParamsOfType(
-    mlir::SymbolTableCollection &tables, mlir::ArrayRef<mlir::Attribute> tyParams,
-    mlir::Type structOrArrayType, mlir::Operation *origin
-);
-
 /// @brief Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers
 /// @tparam T the type of symbol being resolved (e.g., llzk::FuncOp)
 /// @param symbolTable
@@ -127,6 +117,16 @@ resolveCallable(mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface 
   // Otherwise, use the top-level lookup.
   return lookupTopLevelSymbol<T>(symbolTable, symbolRef, call.getOperation());
 }
+
+mlir::LogicalResult verifyParamOfType(
+    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr param, mlir::Type structOrArrayType,
+    mlir::Operation *origin
+);
+
+mlir::LogicalResult verifyParamsOfType(
+    mlir::SymbolTableCollection &tables, mlir::ArrayRef<mlir::Attribute> tyParams,
+    mlir::Type structOrArrayType, mlir::Operation *origin
+);
 
 template <typename T>
 inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterface call) {

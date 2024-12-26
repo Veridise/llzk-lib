@@ -80,12 +80,9 @@ ModuleBuilder &ModuleBuilder::insertComputeFn(llzk::StructDefOp op, mlir::Locati
 
   OpBuilder opBuilder(op.getBody());
 
-  /// TODO: Replace with llzk::StructDefOp::getType() when available.
-  auto structType = llzk::StructType::get(context, SymbolRefAttr::get(op));
-
   auto fnOp = opBuilder.create<llzk::FuncOp>(
       loc, StringAttr::get(context, llzk::FUNC_NAME_COMPUTE),
-      FunctionType::get(context, {}, {structType})
+      FunctionType::get(context, {}, {op.getType()})
   );
   fnOp.addEntryBlock();
   computeFnMap[op.getName()] = fnOp;
@@ -97,11 +94,9 @@ ModuleBuilder &ModuleBuilder::insertConstrainFn(llzk::StructDefOp op, mlir::Loca
 
   OpBuilder opBuilder(op.getBody());
 
-  auto structType = llzk::StructType::get(context, SymbolRefAttr::get(op));
-
   auto fnOp = opBuilder.create<llzk::FuncOp>(
       loc, StringAttr::get(context, llzk::FUNC_NAME_CONSTRAIN),
-      FunctionType::get(context, {structType}, {})
+      FunctionType::get(context, {op.getType()}, {})
   );
   fnOp.addEntryBlock();
   constrainFnMap[op.getName()] = fnOp;
@@ -131,7 +126,7 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
 
   auto callerFn = constrainFnMap.at(caller.getName());
   auto calleeFn = constrainFnMap.at(callee.getName());
-  auto calleeTy = llzk::StructType::get(context, SymbolRefAttr::get(callee));
+  auto calleeTy = callee.getType();
 
   size_t numOps = 0;
   for (auto it = caller.getBody().begin(); it != caller.getBody().end(); it++, numOps++)
