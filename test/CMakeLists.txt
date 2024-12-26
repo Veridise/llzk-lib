@@ -4,14 +4,7 @@ message(STATUS "Using lit: ${LLVM_EXTERNAL_LIT}")
 
 set(LLZK_TEST_DEPENDS
   llzk-opt
-#   llzk-driver
-#   llzk-query
 )
-
-# if(LLZK_BUILD_DEVTOOLS)
-#   set(llzk_lit_extra_suffixes "\".querytxt\"")
-#   list(APPEND LLZK_TEST_DEPENDS llzk-query llzk-driver)
-# endif()
 
 set(LLZK_ENABLE_BINDINGS_PYTHON_STRING "False")
 if(LLZK_ENABLE_BINDINGS_PYTHON)
