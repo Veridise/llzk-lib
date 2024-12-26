@@ -28,41 +28,36 @@ ModuleBuilder::ModuleBuilder(mlir::ModuleOp m) : context(m.getContext()), rootMo
 
 void ModuleBuilder::ensureNoSuchStruct(std::string_view structName) {
   if (structMap.find(structName) != structMap.end()) {
-    auto error_message =
-        std::string("struct ") + std::string(structName) + std::string(" already exists!");
-    llvm::report_fatal_error(error_message.c_str());
+    auto error_message = "struct " + mlir::Twine(structName) + " already exists!";
+    llvm::report_fatal_error(error_message);
   }
 }
 
 void ModuleBuilder::ensureNoSuchComputeFn(std::string_view structName) {
   if (computeFnMap.find(structName) != computeFnMap.end()) {
-    auto error_message = std::string("struct ") + std::string(structName) +
-                         std::string(" already has a compute function!");
-    llvm::report_fatal_error(error_message.c_str());
+    auto error_message = "struct " + mlir::Twine(structName) + " already has a compute function!";
+    llvm::report_fatal_error(error_message);
   }
 }
 
 void ModuleBuilder::ensureComputeFnExists(std::string_view structName) {
   if (computeFnMap.find(structName) == computeFnMap.end()) {
-    auto error_message =
-        std::string("struct ") + std::string(structName) + std::string(" has no compute function!");
-    llvm::report_fatal_error(error_message.c_str());
+    auto error_message = "struct " + mlir::Twine(structName) + " has no compute function!";
+    llvm::report_fatal_error(error_message);
   }
 }
 
 void ModuleBuilder::ensureNoSuchConstrainFn(std::string_view structName) {
   if (constrainFnMap.find(structName) != constrainFnMap.end()) {
-    auto error_message = std::string("struct ") + std::string(structName) +
-                         std::string(" already has a constrain function!");
-    llvm::report_fatal_error(error_message.c_str());
+    auto error_message = "struct " + mlir::Twine(structName) + " already has a constrain function!";
+    llvm::report_fatal_error(error_message);
   }
 }
 
 void ModuleBuilder::ensureConstrainFnExists(std::string_view structName) {
   if (constrainFnMap.find(structName) == constrainFnMap.end()) {
-    auto error_message = std::string("struct ") + std::string(structName) +
-                         std::string(" has no constrain function!");
-    llvm::report_fatal_error(error_message.c_str());
+    auto error_message = "struct " + mlir::Twine(structName) + " has no constrain function!";
+    llvm::report_fatal_error(error_message);
   }
 }
 
