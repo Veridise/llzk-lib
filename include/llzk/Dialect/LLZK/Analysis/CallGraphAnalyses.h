@@ -6,11 +6,12 @@
 #include <mlir/Analysis/CallGraph.h>
 #include <mlir/Pass/AnalysisManager.h>
 
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/STLExtras.h>
 
 #include <memory>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -48,15 +49,8 @@ public:
 /// Lazily-constructed reachability analysis.
 class CallGraphReachabilityAnalysis {
 
-  struct FuncOpHash {
-    size_t operator()(const FuncOp &op) const {
-      return std::hash<mlir::Operation *>{}(const_cast<FuncOp &>(op).getOperation());
-    }
-  };
-
   // Maps function -> callees
-  using CalleeMapTy =
-      std::unordered_map<FuncOp, std::unordered_set<FuncOp, FuncOpHash>, FuncOpHash>;
+  using CalleeMapTy = mlir::DenseMap<FuncOp, mlir::DenseSet<FuncOp>>;
 
   mutable CalleeMapTy reachabilityMap;
 

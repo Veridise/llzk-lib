@@ -6,9 +6,11 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/MLIRContext.h>
 
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
+
 #include <deque>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace llzk {
 
@@ -183,18 +185,12 @@ private:
   mlir::MLIRContext *context;
   mlir::ModuleOp rootModule;
 
-  struct StructDefOpHash {
-    size_t operator()(const StructDefOp &op) const {
-      return std::hash<mlir::Operation *>{}(const_cast<StructDefOp &>(op).getOperation());
-    }
-  };
-
   struct CallNode {
-    std::unordered_map<llzk::StructDefOp, CallNode *, StructDefOpHash> callees;
+    mlir::DenseMap<llzk::StructDefOp, CallNode *> callees;
   };
 
-  using Def2NodeMap = std::unordered_map<llzk::StructDefOp, CallNode, StructDefOpHash>;
-  using StructDefSet = std::unordered_set<llzk::StructDefOp, StructDefOpHash>;
+  using Def2NodeMap = mlir::DenseMap<llzk::StructDefOp, CallNode>;
+  using StructDefSet = mlir::DenseSet<llzk::StructDefOp>;
 
   Def2NodeMap computeNodes, constrainNodes;
 
