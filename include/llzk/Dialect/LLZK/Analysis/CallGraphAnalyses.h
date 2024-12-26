@@ -2,6 +2,7 @@
 
 #include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/Hash.h"
 
 #include <mlir/Analysis/CallGraph.h>
 #include <mlir/Pass/AnalysisManager.h>
@@ -49,11 +50,7 @@ public:
 /// Lazily-constructed reachability analysis.
 class CallGraphReachabilityAnalysis {
 
-  struct FuncOpHash {
-    size_t operator()(const FuncOp &op) const {
-      return std::hash<mlir::Operation *>{}(const_cast<FuncOp &>(op).getOperation());
-    }
-  };
+  using FuncOpHash = OpHash<FuncOp>;
 
   // Maps function -> callees
   using CalleeMapTy =

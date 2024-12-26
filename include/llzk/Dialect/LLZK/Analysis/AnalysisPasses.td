@@ -1,5 +1,5 @@
-#ifndef LLZK_CALLGRAPH_TD
-#define LLZK_CALLGRAPH_TD
+#ifndef LLZK_ANALYSIS_TD
+#define LLZK_ANALYSIS_TD
 
 include "mlir/Pass/PassBase.td"
 
@@ -15,4 +15,10 @@ def CallGraphSCCsPrinterPass : Pass<"llzk-print-call-graph-sccs", "::mlir::Modul
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
-#endif // LLZK_CALLGRAPH_TD
+def ConstraintSummaryPrinterPass : Pass<"llzk-print-constraint-summaries", "::mlir::ModuleOp"> {
+  let summary = "Print constraint summaries for all LLZK structs.";
+  let constructor = "llzk::createConstraintSummaryPrinterPass(llvm::errs())";
+  let dependentDialects = ["llzk::LLZKDialect"];
+}
+
+#endif // LLZK_ANALYSIS_TD

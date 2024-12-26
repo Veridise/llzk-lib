@@ -1,5 +1,5 @@
 #include "llzk/Dialect/InitDialects.h"
-#include "llzk/Dialect/LLZK/Analysis/CallGraphPasses.h"
+#include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h"
 #include "llzk/Dialect/LLZK/Transforms/LLZKPasses.h"
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 

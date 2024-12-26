@@ -1,6 +1,7 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/Hash.h"
 
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
@@ -183,11 +184,7 @@ private:
   mlir::MLIRContext *context;
   mlir::ModuleOp rootModule;
 
-  struct StructDefOpHash {
-    size_t operator()(const StructDefOp &op) const {
-      return std::hash<mlir::Operation *>{}(const_cast<StructDefOp &>(op).getOperation());
-    }
-  };
+  using StructDefOpHash = OpHash<StructDefOp>;
 
   struct CallNode {
     std::unordered_map<llzk::StructDefOp, CallNode *, StructDefOpHash> callees;
