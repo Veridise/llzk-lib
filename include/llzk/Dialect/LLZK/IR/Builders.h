@@ -198,6 +198,31 @@ private:
   std::unordered_map<std::string_view, llzk::FuncOp> computeFnMap;
   std::unordered_map<std::string_view, llzk::FuncOp> constrainFnMap;
 
+  /// @brief Ensure that a struct with the given structName has not been added,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureNoSuchStruct(std::string_view structName);
+
+  /// @brief Ensure that the given struct does not have a compute function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureNoSuchComputeFn(std::string_view structName);
+
+  /// @brief Ensure that the given struct has a compute function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureComputeFnExists(std::string_view structName);
+
+  /// @brief Ensure that the given struct does not have a constrain function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureNoSuchConstrainFn(std::string_view structName);
+
+  /// @brief Ensure that the given struct has a constrain function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureConstrainFnExists(std::string_view structName);
+
   void updateComputeReachability(llzk::StructDefOp caller, llzk::StructDefOp callee) {
     updateReachability(computeNodes, caller, callee);
   }

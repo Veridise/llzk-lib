@@ -41,6 +41,11 @@ bool CallGraphReachabilityAnalysis::isReachable(FuncOp &A, FuncOp &B) const {
   }
 
   auto startNode = callGraph.get().lookupNode(A.getCallableRegion());
+  if (!startNode) {
+    auto msg = "CallGraph contains no starting node!";
+    A.emitError() << msg;
+    llvm::report_fatal_error(msg);
+  }
   /**
    * NOTE: This is a potential cause of performance issues, as some circuits
    * may perform poorly for DFS. However, we don't have enough examples at this
