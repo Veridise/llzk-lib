@@ -9,7 +9,6 @@
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/STLExtras.h>
 
-#include <cassert>
 #include <memory>
 #include <unordered_set>
 #include <utility>

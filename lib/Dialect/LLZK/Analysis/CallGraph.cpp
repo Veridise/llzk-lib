@@ -54,7 +54,9 @@ bool CallGraphNode::hasChildren() const {
 }
 
 /// Add an edge to 'node' with the given kind.
-void CallGraphNode::addEdge(CallGraphNode *node, Edge::Kind kind) { edges.insert({node, kind}); }
+void CallGraphNode::addEdge(CallGraphNode *node, Edge::Kind kind) {
+  edges.insert({this, node, kind});
+}
 
 //===----------------------------------------------------------------------===//
 // CallGraph
