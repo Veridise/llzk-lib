@@ -321,7 +321,6 @@ mlir::LogicalResult ArrayType::verify(
 ) {
   // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
   if (dimensionSizes.empty()) {
-    // TODO: can't test this via an ArrayType created from the parser. Need another way.
     return emitError().append("array must have at least one dimension");
   }
   for (mlir::Attribute a : dimensionSizes) {
@@ -347,7 +346,6 @@ mlir::LogicalResult ArrayType::verify(
 
 ArrayType
 ArrayType::cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, mlir::Type elementType) const {
-  // TODO: can't test this via an ArrayType created from the parser. Need another way.
   llvm::ArrayRef<int64_t> newShape = shape.has_value() ? shape.value() : getShape();
   auto emitError = emitErrorUnknownLoc(getContext(), "ArrayType::cloneWith() failed: ");
   return ArrayType::getChecked(emitError, elementType, newShape);

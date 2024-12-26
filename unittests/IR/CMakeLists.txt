@@ -1,5 +1,6 @@
 add_executable(LLZKBuildersTests
   BuildersTests.cpp
+  TypesTests.cpp
 )
 
 target_link_libraries(LLZKBuildersTests
