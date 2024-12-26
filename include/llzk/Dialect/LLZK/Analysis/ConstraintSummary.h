@@ -7,8 +7,8 @@
 
 #include <llvm/ADT/EquivalenceClasses.h>
 
-#include <memory>
 #include <map>
+#include <memory>
 
 namespace mlir {
 
@@ -29,13 +29,13 @@ public:
 private:
   StructDefOp structDef;
   llvm::EquivalenceClasses<SignalUsage> constrainSets;
-
 };
 
 /// @brief An analysis wrapper around the ConstraintSummary that performs additional checks.
 class ConstraintSummaryAnalysis {
   // Using a map to keep insertion order for iteration.
   using SummaryMap = std::map<StructDefOp, ConstraintSummary>;
+
 public:
   ConstraintSummaryAnalysis(mlir::Operation *op, mlir::AnalysisManager &am);
 
