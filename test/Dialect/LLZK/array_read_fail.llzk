@@ -9,7 +9,6 @@ llzk.func @arr_constant_index() -> index {
   %i = llzk.readarr %a[%c] : !llzk.array<3 x index>, index
   return %i: index
 }
-
 // -----
 
 llzk.func @arr_mix_index(%a: index, %b: index) -> index {
@@ -21,7 +20,6 @@ llzk.func @arr_mix_index(%a: index, %b: index) -> index {
   %v = llzk.readarr %r[%r] : !llzk.array<4 x index>, index
   return %v: index
 }
-
 // -----
 
 llzk.func @arr_mix_index(%a: index, %b: index) -> index {
@@ -34,6 +32,12 @@ llzk.func @arr_mix_index(%a: index, %b: index) -> index {
   %v = llzk.readarr %r[%f] : !llzk.array<4 x index>, index
   return %v: index
 }
+// -----
 
-
-
+llzk.func @arr_wrong_array_elem_type(%a: !llzk.felt) -> !llzk.array<1 x !llzk.felt> {
+  %i = index.constant 0
+  %r = llzk.new_array %a: !llzk.array<1 x !llzk.felt>
+  // expected-error@+1 {{'llzk.readarr' op failed to verify that result type matches with lvalue element type}}
+  %v = llzk.readarr %r[%i] : !llzk.array<1 x !llzk.felt>, index
+  return %r: !llzk.array<1 x !llzk.felt>
+}

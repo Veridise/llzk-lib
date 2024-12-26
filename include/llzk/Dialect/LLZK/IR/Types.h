@@ -1,6 +1,7 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/Util/Debug.h"
 #include "llzk/Dialect/LLZK/Util/SymbolLookupResult.h" // IWYU pragma: keep
 
 #include <mlir/IR/Attributes.h>
@@ -27,7 +28,19 @@
 
 namespace llzk {
 
-/// valid types: {I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType}
+/// The allowed attribute types in ArrayType, StructType, and TypeVarType are IntegerAttr,
+/// SymbolRefAttr, and TypeAttr. Throw a fatal error if anything else if found indicating that the
+/// caller of this function should be updated.
+inline void assertValidAttrForParamOfType(mlir::Attribute attr) {
+  if (!llvm::isa<mlir::IntegerAttr, mlir::SymbolRefAttr, mlir::TypeAttr>(attr)) {
+    llvm::report_fatal_error(
+        "Legal type parameters are inconsistent. Encountered " +
+        attr.getAbstractAttribute().getName()
+    );
+  }
+}
+
+/// valid types: {I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType, LLZK_TypeVarType}
 bool isValidType(mlir::Type type);
 
 /// valid types: isValidType() - {LLZK_StructType (including within LLZK_ArrayType)}
@@ -61,6 +74,17 @@ bool structTypesUnify(
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters (if applicable within the given types).
 bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix = {});
+
+/// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
+/// full instantiation of struct parameters (if applicable within the given types).
+template <typename Iter1, typename Iter2>
+inline bool typeListsUnify(Iter1 lhs, Iter2 rhs, std::vector<llvm::StringRef> rhsRevPrefix = {}) {
+  return (lhs.size() == rhs.size()) &&
+         std::equal(
+             lhs.begin(), lhs.end(), rhs.begin(),
+             [&rhsRevPrefix](mlir::Type a, mlir::Type b) { return typesUnify(a, b, rhsRevPrefix); }
+         );
+}
 
 mlir::LogicalResult computeDimsFromShape(
     llvm ::function_ref<::mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,

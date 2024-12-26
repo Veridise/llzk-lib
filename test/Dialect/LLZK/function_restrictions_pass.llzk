@@ -28,7 +28,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = index.constant 4
 //CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = index.constant 1
 //CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_\.]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
-//CHECK-NEXT:         llzk.emit_eq %[[A1]], %[[A2]] : !llzk.felt
+//CHECK-NEXT:         llzk.emit_eq %[[A1]], %[[A2]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:       }
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
@@ -65,7 +65,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       scf.if %[[A1]] {
 //CHECK-NEXT:         scf.if %[[A2]] {
 //CHECK-NEXT:           scf.if %[[A3]] {
-//CHECK-NEXT:             llzk.emit_eq %[[A4]], %[[A5]] : !llzk.felt
+//CHECK-NEXT:             llzk.emit_eq %[[A4]], %[[A5]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:           }
 //CHECK-NEXT:         }
 //CHECK-NEXT:       }
@@ -86,7 +86,7 @@ module attributes {veridise.lang = "llzk"} {
       %up = index.constant 4
       %step = index.constant 1
       scf.for %iv = %lb to %up step %step {
-        llzk.emit_in %a, %b : !llzk.array<5 x !llzk.felt>
+        llzk.emit_in %b, %a : !llzk.array<5 x !llzk.felt>
       }
       return
     }
@@ -104,7 +104,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = index.constant 4
 //CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = index.constant 1
 //CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_\.]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
-//CHECK-NEXT:         llzk.emit_in %[[A1]], %[[A2]] : <5 x !llzk.felt>
+//CHECK-NEXT:         llzk.emit_in %[[A2]], %[[A1]] : <5 x !llzk.felt>, !llzk.felt
 //CHECK-NEXT:       }
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
@@ -122,7 +122,7 @@ module attributes {veridise.lang = "llzk"} {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            llzk.emit_in %x, %y : !llzk.array<5 x index>
+            llzk.emit_in %y, %x : !llzk.array<5 x index>
           }
         }
       }
@@ -141,7 +141,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       scf.if %[[A1]] {
 //CHECK-NEXT:         scf.if %[[A2]] {
 //CHECK-NEXT:           scf.if %[[A3]] {
-//CHECK-NEXT:             llzk.emit_in %[[A4]], %[[A5]] : <5 x index>
+//CHECK-NEXT:             llzk.emit_in %[[A5]], %[[A4]] : <5 x index>, index
 //CHECK-NEXT:           }
 //CHECK-NEXT:         }
 //CHECK-NEXT:       }

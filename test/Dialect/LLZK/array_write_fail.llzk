@@ -9,7 +9,6 @@ llzk.func @arr_constant_index() -> !llzk.array<3 x index> {
   llzk.writearr %b[%c] = %b : !llzk.array<3 x index>, index
   return %r: !llzk.array<3 x index>
 }
-
 // -----
 
 llzk.func @arr_mix_index(%a: index, %b: index) -> !llzk.array<4 x index> {
@@ -21,7 +20,6 @@ llzk.func @arr_mix_index(%a: index, %b: index) -> !llzk.array<4 x index> {
   llzk.writearr %r[%r] = %b : !llzk.array<4 x index>, index
   return %r: !llzk.array<4 x index>
 }
-
 // -----
 
 llzk.func @arr_mix_index(%a: index, %b: index) -> !llzk.array<4 x index> {
@@ -34,7 +32,6 @@ llzk.func @arr_mix_index(%a: index, %b: index) -> !llzk.array<4 x index> {
   llzk.writearr %r[%f] = %b : !llzk.array<4 x index>, index
   return %r: !llzk.array<4 x index>
 }
-
 // -----
 
 llzk.func @arr_mix_index(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.array<4 x !llzk.felt> {
@@ -47,5 +44,13 @@ llzk.func @arr_mix_index(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.array<4 x !llz
   llzk.writearr %r[%i] = %v : !llzk.array<4 x !llzk.felt>, !llzk.felt
   return %r: !llzk.array<4 x !llzk.felt>
 }
+// -----
 
-
+llzk.func @arr_wrong_array_elem_type(%a: !llzk.felt) -> !llzk.array<1 x !llzk.felt> {
+  %i = index.constant 0
+  %v = index.constant 632
+  %r = llzk.new_array %a: !llzk.array<1 x !llzk.felt>
+  // expected-error@+1 {{'llzk.writearr' op failed to verify that rvalue type matches with lvalue element type}}
+  llzk.writearr %r[%i] = %v : !llzk.array<1 x !llzk.felt>, index
+  return %r: !llzk.array<1 x !llzk.felt>
+}

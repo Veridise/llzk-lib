@@ -16,7 +16,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  llzk.struct @ComponentA {
 //CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA>,
 //CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
-//CHECK-NEXT:       emit_eq %[[A0]], %[[A1]] : !llzk.felt
+//CHECK-NEXT:       emit_eq %[[A0]], %[[A1]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentA> {
@@ -29,7 +29,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentB {
     func @constrain(%self: !llzk.struct<@ComponentB>, %a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) {
-      llzk.emit_in %a, %b : !llzk.array<5 x !llzk.felt>
+      llzk.emit_in %b, %a : !llzk.array<5 x !llzk.felt>
       return
     }
 
@@ -42,7 +42,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  llzk.struct @ComponentB {
 //CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB>,
 //CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.array<5 x !llzk.felt>) {
-//CHECK-NEXT:       emit_in %[[A0]], %[[A1]] : <5 x !llzk.felt>
+//CHECK-NEXT:       emit_in %[[A1]], %[[A0]] : <5 x !llzk.felt>, !llzk.felt
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentB> {
@@ -55,7 +55,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentC {
     func @constrain(%self: !llzk.struct<@ComponentC>, %a: index, %b: !llzk.array<89 x index>) {
-      llzk.emit_in %a, %b : !llzk.array<89 x index>
+      llzk.emit_in %b, %a : !llzk.array<89 x index>
       return
     }
 
@@ -68,7 +68,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  llzk.struct @ComponentC {
 //CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentC>,
 //CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.array<89 x index>) {
-//CHECK-NEXT:       emit_in %[[A0]], %[[A1]] : <89 x index>
+//CHECK-NEXT:       emit_in %[[A1]], %[[A0]] : <89 x index>, index
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentC> {
@@ -82,7 +82,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentD {
     func @constrain(%self: !llzk.struct<@ComponentD>, %b: !llzk.array<89 x !llzk.struct<@ComponentD>>) {
-      llzk.emit_in %self, %b : !llzk.array<89 x !llzk.struct<@ComponentD>>
+      llzk.emit_in %b, %self : !llzk.array<89 x !llzk.struct<@ComponentD>>
       return
     }
 
@@ -95,7 +95,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  llzk.struct @ComponentD {
 //CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentD>,
 //CHECK-SAME:     %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.array<89 x !llzk.struct<@ComponentD>>) {
-//CHECK-NEXT:       emit_in %[[A0]], %[[A1]] : <89 x !llzk.struct<@ComponentD>>
+//CHECK-NEXT:       emit_in %[[A1]], %[[A0]] : <89 x !llzk.struct<@ComponentD>>, !llzk.struct<@ComponentD>
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentD> {
@@ -108,7 +108,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentE {
     func @constrain(%self: !llzk.struct<@ComponentE>, %a: index, %b: !llzk.array<89,2 x index>) {
-      llzk.emit_in %a, %b : !llzk.array<89,2 x index>
+      llzk.emit_in %b, %a : !llzk.array<89,2 x index>
       return
     }
 
@@ -121,7 +121,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  llzk.struct @ComponentE {
 //CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentE>,
 //CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.array<89,2 x index>) {
-//CHECK-NEXT:       emit_in %[[A0]], %[[A1]] : <89,2 x index>
+//CHECK-NEXT:       emit_in %[[A1]], %[[A0]] : <89,2 x index>, index
 //CHECK-NEXT:       return
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentE> {

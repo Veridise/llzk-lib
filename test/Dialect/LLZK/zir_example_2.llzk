@@ -350,7 +350,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        }
 //CHECK-NEXT:        func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@risc0::@Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
 //CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@reg] : <@risc0::@Reg>, !llzk.felt
-//CHECK-NEXT:          emit_eq %[[A1]], %[[T0]] : !llzk.felt
+//CHECK-NEXT:          emit_eq %[[A1]], %[[T0]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:          return
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
@@ -370,10 +370,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:          %[[T00:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@reciprocal] : <@risc0::@Div>, !llzk.felt
 //CHECK-NEXT:          %[[T01:[0-9a-zA-Z_\.]+]] = mul %[[T00]], %[[A2]]
 //CHECK-NEXT:          %[[C1:[0-9a-zA-Z_\.]+]] = constfelt  1
-//CHECK-NEXT:          emit_eq %[[T01]], %[[C1]] : !llzk.felt
+//CHECK-NEXT:          emit_eq %[[T01]], %[[C1]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:          %[[T02:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@synthetic_return] : <@risc0::@Div>, !llzk.felt
 //CHECK-NEXT:          %[[T03:[0-9a-zA-Z_\.]+]] = mul %[[T00]], %[[A1]]
-//CHECK-NEXT:          emit_eq %[[T02]], %[[T03]] : !llzk.felt
+//CHECK-NEXT:          emit_eq %[[T02]], %[[T03]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:          return
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
@@ -389,7 +389,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = sub %[[C1]], %[[A1]]
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = mul %[[T00]], %[[A1]]
 //CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = constfelt  0
-//CHECK-NEXT:        emit_eq %[[T01]], %[[C0]] : !llzk.felt
+//CHECK-NEXT:        emit_eq %[[T01]], %[[C0]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
@@ -410,7 +410,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@reg] : <@NondetBitReg>, !llzk.felt
 //CHECK-NEXT:        call @AssertBit::@constrain(%[[T00]], %[[T01]]) : (!llzk.struct<@AssertBit>, !llzk.felt) -> ()
 //CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@synthetic_return] : <@NondetBitReg>, !llzk.felt
-//CHECK-NEXT:        emit_eq %[[T02]], %[[T01]] : !llzk.felt
+//CHECK-NEXT:        emit_eq %[[T02]], %[[T01]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
@@ -447,10 +447,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@arg] : <@NondetU16Reg>, !llzk.struct<@ArgU16>
 //CHECK-NEXT:        call @ArgU16::@constrain(%[[T00]], %[[C1]], %[[A1]]) : (!llzk.struct<@ArgU16>, !llzk.felt, !llzk.felt) -> ()
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = readf %[[T00]][@count] : <@ArgU16>, !llzk.felt
-//CHECK-NEXT:        emit_eq %[[C1]], %[[T01]] : !llzk.felt
+//CHECK-NEXT:        emit_eq %[[C1]], %[[T01]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = readf %[[T00]][@val] : <@ArgU16>, !llzk.felt
 //CHECK-NEXT:        %[[T03:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@synthetic_return] : <@NondetU16Reg>, !llzk.felt
-//CHECK-NEXT:        emit_eq %[[T03]], %[[T02]] : !llzk.felt
+//CHECK-NEXT:        emit_eq %[[T03]], %[[T02]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
@@ -468,9 +468,9 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@ret] : <@U16Reg>, !llzk.struct<@NondetU16Reg>
 //CHECK-NEXT:        call @NondetU16Reg::@constrain(%[[T00]], %[[A1]]) : (!llzk.struct<@NondetU16Reg>, !llzk.felt) -> ()
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = readf %[[T00]][@synthetic_return] : <@NondetU16Reg>, !llzk.felt
-//CHECK-NEXT:        emit_eq %[[T01]], %[[A1]] : !llzk.felt
+//CHECK-NEXT:        emit_eq %[[T01]], %[[A1]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@synthetic_return] : <@U16Reg>, !llzk.felt
-//CHECK-NEXT:        emit_eq %[[T02]], %[[A1]] : !llzk.felt
+//CHECK-NEXT:        emit_eq %[[T02]], %[[A1]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
@@ -542,7 +542,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T04:[0-9a-zA-Z_\.]+]] = mul %[[T03]], %[[C2]]
 //CHECK-NEXT:        %[[T05:[0-9a-zA-Z_\.]+]] = readf %[[T00]][@synthetic_return] : <@NondetBitReg>, !llzk.felt
 //CHECK-NEXT:        %[[T06:[0-9a-zA-Z_\.]+]] = add %[[T04]], %[[T05]]
-//CHECK-NEXT:        emit_eq %[[T02]], %[[T06]] : !llzk.felt
+//CHECK-NEXT:        emit_eq %[[T02]], %[[T06]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        %[[C65535:[0-9a-zA-Z_\.]+]] = constfelt  65535
 //CHECK-NEXT:        %[[T07:[0-9a-zA-Z_\.]+]] = mul %[[A2]], %[[C65535]]
 //CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = constfelt  1
@@ -566,17 +566,17 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T21:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@low2] : <@AddrDecomposeBits>, !llzk.felt
 //CHECK-NEXT:        %[[T22:[0-9a-zA-Z_\.]+]] = add %[[T20]], %[[T21]]
 //CHECK-NEXT:        %[[T23:[0-9a-zA-Z_\.]+]] = readf %[[A1]][@low] : <@risc0::@ValU32>, !llzk.felt
-//CHECK-NEXT:        emit_eq %[[T22]], %[[T23]] : !llzk.felt
+//CHECK-NEXT:        emit_eq %[[T22]], %[[T23]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        %[[T24:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@addr] : <@AddrDecomposeBits>, !llzk.felt
 //CHECK-NEXT:        %[[C16384:[0-9a-zA-Z_\.]+]] = constfelt  16384
 //CHECK-NEXT:        %[[T25:[0-9a-zA-Z_\.]+]] = readf %[[A1]][@high] : <@risc0::@ValU32>, !llzk.felt
 //CHECK-NEXT:        %[[T26:[0-9a-zA-Z_\.]+]] = mul %[[C16384]], %[[T25]]
 //CHECK-NEXT:        %[[T27:[0-9a-zA-Z_\.]+]] = readf %[[T18]][@synthetic_return] : <@NondetU16Reg>, !llzk.felt
 //CHECK-NEXT:        %[[T28:[0-9a-zA-Z_\.]+]] = add %[[T26]], %[[T27]]
-//CHECK-NEXT:        emit_eq %[[T24]], %[[T28]] : !llzk.felt
+//CHECK-NEXT:        emit_eq %[[T24]], %[[T28]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        %[[T29:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@synthetic_return] : <@AddrDecomposeBits>, !llzk.felt
 //CHECK-NEXT:        %[[T30:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@addr] : <@AddrDecomposeBits>, !llzk.felt
-//CHECK-NEXT:        emit_eq %[[T29]], %[[T30]] : !llzk.felt
+//CHECK-NEXT:        emit_eq %[[T29]], %[[T30]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }

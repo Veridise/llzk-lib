@@ -1,0 +1,38 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+llzk.func @f_neg(
+    %a: !llzk.felt // expected-note {{prior use here}}
+) -> !llzk.felt {
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!llzk.felt'}}
+  %c = llzk.neg %a : index
+  return %c: !llzk.felt
+}
+// -----
+
+llzk.func @f_inv(
+    %a: index
+) -> !llzk.felt {
+  // expected-error@+1 {{'llzk.inv' op operand #0 must be finite field element or type variable, but got 'index'}}
+  %c = llzk.inv %a : index
+  return %c: !llzk.felt
+}
+// -----
+
+llzk.func @f_sub(
+    %a: !llzk.felt,
+    %b: !llzk.felt // expected-note {{prior use here}}
+) -> !llzk.felt {
+  // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'i1' vs '!llzk.felt'}}
+  %c = llzk.sub %a, %b : !llzk.felt, i1
+  return %c: !llzk.felt
+}
+// -----
+
+llzk.func @f_add(
+    %a: !llzk.felt,
+    %b: !llzk.array<5 x i1>
+) -> !llzk.felt {
+  // expected-error@+1 {{'llzk.add' op operand #1 must be finite field element or type variable, but got '!llzk.array<5 x i1>'}}
+  %c = llzk.add %a, %b : !llzk.felt, !llzk.array<5 x i1>
+  return %c: !llzk.felt
+}

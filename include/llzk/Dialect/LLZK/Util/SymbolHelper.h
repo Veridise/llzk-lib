@@ -91,12 +91,12 @@ inline mlir::FailureOr<SymbolLookupResult<T>> lookupTopLevelSymbol(
   return lookupSymbolIn<T>(tables, symbol, root.value(), origin);
 }
 
-mlir::LogicalResult verifyStructOrArrayParam(
+mlir::LogicalResult verifyParamOfType(
     mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr param, mlir::Type structOrArrayType,
     mlir::Operation *origin
 );
 
-mlir::LogicalResult verifyStructOrArrayParams(
+mlir::LogicalResult verifyParamsOfType(
     mlir::SymbolTableCollection &tables, mlir::ArrayRef<mlir::Attribute> tyParams,
     mlir::Type structOrArrayType, mlir::Operation *origin
 );

@@ -244,8 +244,7 @@ getFieldDefOp(FieldRefOpInterface refOp, mlir::SymbolTableCollection &symbolTabl
 }
 
 mlir::LogicalResult verifySymbolUses(
-    FieldRefOpInterface refOp, mlir::SymbolTableCollection &symbolTable, mlir::Value compareTo,
-    const char *kind
+    FieldRefOpInterface refOp, mlir::SymbolTableCollection &symbolTable, mlir::Value compareTo
 ) {
   StructType tyStruct = refOp.getStructType();
   if (mlir::failed(tyStruct.verifySymbolRef(symbolTable, refOp.getOperation()))) {
@@ -271,7 +270,7 @@ FieldReadOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
 }
 
 mlir::LogicalResult FieldReadOp::verifySymbolUses(mlir::SymbolTableCollection &symbolTable) {
-  return llzk::verifySymbolUses(*this, symbolTable, getResult(), "read");
+  return llzk::verifySymbolUses(*this, symbolTable, getResult());
 }
 
 mlir::FailureOr<SymbolLookupResult<FieldDefOp>>
@@ -280,7 +279,7 @@ FieldWriteOp::getFieldDefOp(mlir::SymbolTableCollection &symbolTable) {
 }
 
 mlir::LogicalResult FieldWriteOp::verifySymbolUses(mlir::SymbolTableCollection &symbolTable) {
-  return llzk::verifySymbolUses(*this, symbolTable, getVal(), "write");
+  return llzk::verifySymbolUses(*this, symbolTable, getVal());
 }
 
 //===------------------------------------------------------------------===//
@@ -337,6 +336,41 @@ void CreateArrayOp::printInferredArrayType(
     mlir::Operation::operand_range, mlir::Type
 ) {
   // nothing to print, it's derived and therefore not represented in the output
+}
+
+//===------------------------------------------------------------------===//
+// ReadArrayOp
+//===------------------------------------------------------------------===//
+
+mlir::LogicalResult ReadArrayOp::inferReturnTypes(
+    mlir::MLIRContext *context, std::optional<mlir::Location> location, ReadArrayOpAdaptor adaptor,
+    ::llvm::SmallVectorImpl<mlir::Type> &inferredReturnTypes
+) {
+  inferredReturnTypes.resize(1);
+  mlir::Type lvalType = adaptor.getLvalue().getType();
+  assert(llvm::isa<ArrayType>(lvalType)); // per ODS spec of ReadArrayOp
+  inferredReturnTypes[0] = llvm::cast<ArrayType>(lvalType).getElementType();
+  return mlir::success();
+}
+
+bool ReadArrayOp::isCompatibleReturnTypes(mlir::TypeRange l, mlir::TypeRange r) {
+  // There is a single return tpye per ODS spec of ReadArrayOp
+  return l.size() == 1 && r.size() == 1 && typesUnify(l.front(), r.front());
+}
+
+//===------------------------------------------------------------------===//
+// EmitEqualityOp
+//===------------------------------------------------------------------===//
+
+mlir::Type EmitEqualityOp::inferRHS(mlir::Type lhsType) { return lhsType; }
+
+//===------------------------------------------------------------------===//
+// EmitContainmentOp
+//===------------------------------------------------------------------===//
+
+mlir::Type EmitContainmentOp::inferRHS(mlir::Type lhsType) {
+  assert(llvm::isa<ArrayType>(lhsType)); // per ODS spec of EmitContainmentOp
+  return llvm::cast<ArrayType>(lhsType).getElementType();
 }
 
 //===------------------------------------------------------------------===//

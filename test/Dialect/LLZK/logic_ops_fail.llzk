@@ -1,0 +1,33 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+llzk.func @f_and(
+    %a: !llzk.felt, // expected-note {{prior use here}}
+    %b: !llzk.felt
+) -> i1 {
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'i1' vs '!llzk.felt'}}
+  %c = llzk.and %a, %b
+  return %c: i1
+}
+// -----
+
+llzk.func @f_or(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
+  // expected-error@+1 {{'llzk.or' op operand #0 must be 1-bit signless integer or type variable, but got '!llzk.felt'}}
+  %c = llzk.or %a, %b : !llzk.felt, !llzk.felt
+  return %c: i1
+}
+// -----
+
+llzk.func @f_not1(
+    %a: !llzk.array<4 x !llzk.felt> // expected-note {{prior use here}}
+) -> i1 {
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'i1' vs '!llzk.array<4 x !llzk.felt>'}}
+  %c = llzk.not %a
+  return %c: i1
+}
+// -----
+
+llzk.func @f_not2(%a: !llzk.array<4 x !llzk.felt>) -> i1 {
+  // expected-error@+1 {{'llzk.not' op operand #0 must be 1-bit signless integer or type variable, but got '!llzk.array<4 x !llzk.felt>'}}
+  %c = llzk.not %a : !llzk.array<4 x !llzk.felt>
+  return %c: i1
+}

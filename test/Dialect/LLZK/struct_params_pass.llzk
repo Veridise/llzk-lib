@@ -283,7 +283,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@ComponentE1<[@A]>>, %arg1: !llzk.felt) {
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = read_const @A : !llzk.felt
-//CHECK-NEXT:        emit_eq %arg1, %[[T0]] : !llzk.felt
+//CHECK-NEXT:        emit_eq %arg1, %[[T0]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
@@ -294,7 +294,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@ComponentE2<[@A, @B, @C]>>, %arg1: !llzk.array<54 x index>, %arg2: !llzk.struct<@ComponentE1<[@C]>>) {
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = read_const @A : !llzk.array<54 x index>
-//CHECK-NEXT:        emit_eq %arg1, %[[T0]] : !llzk.array<54 x index>
+//CHECK-NEXT:        emit_eq %arg1, %[[T0]] : !llzk.array<54 x index>, !llzk.array<54 x index>
 //CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = read_const @B : !llzk.struct<@ComponentE1<[@C]>>
 //CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = constfelt  5
 //CHECK-NEXT:        call @ComponentE1::@constrain(%[[T1]], %[[T2]]) : (!llzk.struct<@ComponentE1<[@C]>>, !llzk.felt) -> ()
@@ -378,6 +378,3 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
-
-// -----
-//TODO: may also want to test if the array element types can unify. That will be a more complex example with an array of structs, maybe with diff params.

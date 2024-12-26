@@ -35,7 +35,7 @@ template <bool AllowStruct, bool AllowArray> bool isValidTypeImpl(mlir::Type typ
   // This is the main check for allowed types.
   //  Allow StructType and ArrayType only if the respective flags are true.
   //  Pass through the flag indicating if StructType is allowed.
-  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType>(type) ||
+  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType, TypeVarType>(type) ||
          (AllowStruct && llvm::isa<StructType>(type)) ||
          (AllowArray && isValidArrayTypeImpl<AllowStruct>(type));
 }
@@ -51,12 +51,21 @@ bool isValidArrayType(mlir::Type type) { return isValidArrayTypeImpl<true>(type)
 
 namespace {
 bool paramAttrUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute &rhsAttr) {
-  // TODO: when TypeAttr is allowed as a parameter, this must use typesUnify() to compare TypeAttr.
-  //
+  assertValidAttrForParamOfType(lhsAttr);
+  assertValidAttrForParamOfType(rhsAttr);
   // If either attribute is a symbol ref, we assume they unify because a later pass with a
   //  more involved value analysis is required to check if they are actually the same value.
-  return lhsAttr == rhsAttr || lhsAttr.isa<mlir::SymbolRefAttr>() ||
-         rhsAttr.isa<mlir::SymbolRefAttr>();
+  if (lhsAttr == rhsAttr || lhsAttr.isa<mlir::SymbolRefAttr>() ||
+      rhsAttr.isa<mlir::SymbolRefAttr>()) {
+    return true;
+  }
+  // If both are type refs, check for unification of the types.
+  if (mlir::TypeAttr lhsTy = lhsAttr.dyn_cast<mlir::TypeAttr>()) {
+    if (mlir::TypeAttr rhsTy = rhsAttr.dyn_cast<mlir::TypeAttr>()) {
+      return typesUnify(lhsTy.getValue(), rhsTy.getValue());
+    }
+  }
+  return false;
 }
 
 bool paramsUnify(
@@ -100,6 +109,10 @@ bool structTypesUnify(StructType lhs, StructType rhs, std::vector<llvm::StringRe
 
 bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
   if (lhs == rhs) {
+    return true;
+  }
+  if (llvm::isa<TypeVarType>(lhs) || llvm::isa<TypeVarType>(rhs)) {
+    // A type variable can be any type, thus it unifies with anything.
     return true;
   }
   if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
@@ -175,8 +188,8 @@ namespace {
 // Parameters in the StructType must be one of the following:
 //  - Integer constants
 //  - SymbolRef (global constants defined in another module require non-flat ref)
-// TODO: must include TypeAttr here to support type parameters on structs
-using StructParamTypes = TypeList<mlir::IntegerAttr, mlir::SymbolRefAttr>;
+//  - Type
+using StructParamTypes = TypeList<mlir::IntegerAttr, mlir::SymbolRefAttr, mlir::TypeAttr>;
 
 } // namespace
 
@@ -268,8 +281,7 @@ mlir::LogicalResult computeShapeFromDims(
       // The ShapedTypeInterface uses 'kDynamic' for dimensions with non-static size.
       value.push_back(mlir::ShapedType::kDynamic);
     } else {
-      llvm::errs() << "FATAL: parseDerivedShape() is out of sync with ArrayDimensionTypes\n";
-      assert(false);
+      llvm::report_fatal_error("parseDerivedShape() is out of sync with ArrayDimensionTypes");
       return mlir::failure();
     }
   }
