@@ -26,9 +26,16 @@ protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
-    auto &cs = getAnalysis<ConstraintSummaryAnalysis>();
-    for (auto &[_, summary] : cs) {
-      summary.print(os);
+    if (!mlir::isa<mlir::ModuleOp>(getOperation())) {
+      auto msg = "ConstraintSummaryPrinterPass error: should be run on ModuleOp!";
+      getOperation()->emitError(msg);
+      llvm::report_fatal_error(msg);
+    }
+
+    auto &cs = getAnalysis<ConstraintSummaryModuleAnalysis>();
+    for (auto &[structDef, summary_ptr] : cs) {
+      os << "Constraint Summary for " << const_cast<StructDefOp &>(structDef).getName() << ":\n";
+      summary_ptr->print(os);
     }
   }
 };

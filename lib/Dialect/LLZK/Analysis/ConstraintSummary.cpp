@@ -14,91 +14,6 @@ namespace llzk {
 
 /* Utilities */
 
-/// @brief Defines a signal usage.
-/// A signal usage is:
-/// - The block argument index (all signals, even internal, are referenced via inputs arguments)
-///   - "self", or internal signals, will always be block argument 0.
-/// - The field definitions within the argument, if present. This would be if an input argument is
-/// another struct.
-///   - Like array references, this may be nested (e.g., signal foo of struct X within struct Y
-///   would be Y[X[foo]]).
-class SignalUsage {
-public:
-  /// Try to create a SignalUsage out of a given operation.
-  static mlir::FailureOr<SignalUsage> get(mlir::Value val) {
-    // If it's a field read, it reads a field def from a component.
-    // If it's a felt, it doesn't need a field read
-
-    // Due to the way constrain is defined, all signals are read from inputs.
-    if (auto blockArg = mlir::dyn_cast_or_null<mlir::BlockArgument>(val)) {
-      // to use this constructor, the block arg must be a felt
-      return SignalUsage(blockArg.getArgNumber());
-    }
-
-    if (auto fieldRead = mlir::dyn_cast_or_null<FieldReadOp>(val.getDefiningOp())) {
-      std::deque<FieldDefOp> fields;
-      mlir::SymbolTableCollection tables;
-      mlir::BlockArgument arg;
-      FieldReadOp currRead = fieldRead;
-      while (currRead != nullptr) {
-        auto component = currRead.getComponent();
-        auto res = currRead.getFieldDefOp(tables);
-        if (mlir::failed(res)) {
-          fieldRead.emitError() << "could not find field read\n";
-          return mlir::failure();
-        }
-        fields.push_front(res->get());
-        arg = mlir::dyn_cast_or_null<mlir::BlockArgument>(component);
-        currRead = mlir::dyn_cast_or_null<FieldReadOp>(component.getDefiningOp());
-      }
-      if (arg == nullptr) {
-        fieldRead.emitError() << "could not follow a read chain!\n";
-        return mlir::failure();
-      }
-      // We only want to generate this if the end value is a felt
-      return SignalUsage(arg.getArgNumber(), std::vector<FieldDefOp>(fields.begin(), fields.end()));
-    }
-
-    return mlir::failure();
-  }
-
-  SignalUsage(unsigned b) : blockArgIdx(b), fieldRefs({}) {}
-  SignalUsage(unsigned b, std::vector<FieldDefOp> f) : blockArgIdx(b), fieldRefs(f) {}
-
-  unsigned getInputNum() const { return blockArgIdx; }
-
-  void print(mlir::raw_ostream &os) const {
-    os << "<input: " << getInputNum();
-    for (auto f : fieldRefs) {
-      os << ", field: " << f;
-    }
-    os << ">";
-    // TODO: the rest
-  }
-
-  bool operator==(const SignalUsage &rhs) const {
-    return blockArgIdx == rhs.blockArgIdx && fieldRefs == rhs.fieldRefs;
-  }
-
-  struct Hash {
-    size_t operator()(const SignalUsage &val) const {
-      size_t hash = std::hash<unsigned>{}(val.blockArgIdx);
-      for (auto f : val.fieldRefs) {
-        hash ^= OpHash<FieldDefOp>{}(f);
-      }
-      return hash;
-    }
-  };
-
-private:
-  /**
-   * If the block arg is 0, then it refers to "self", meaning the signal is internal or an output
-   * (public means an output) Otherwise, it is an input, either public or private.
-   */
-  unsigned blockArgIdx;
-  std::vector<FieldDefOp> fieldRefs;
-};
-
 /**
  * Tracks the signals that operations use.
  * See value requirements:
@@ -152,7 +67,7 @@ public:
     for (auto &operand : op->getOpOperands()) {
       auto res = SignalUsage::get(operand.get());
       if (mlir::succeeded(res)) {
-        operandVals.signals.insert(*res);
+        operandVals.signals.insert(res->begin(), res->end());
       }
     }
 
@@ -189,29 +104,90 @@ protected:
   }
 };
 
-void reportUnconstrainedSignals(StructDefOp &component) {
-  llvm::errs() << "Component is " << component << "\n";
-  /**
-   * Report two types of bugs:
-   * 1. Signals that are read or written in the compute function but do not appear
-   * in emitted constraints in the constraint function.
-   * 2. Signals that are completely unused.
-   *
-   * To report both of these kinds of issues uniquely, we will apply the following
-   * approach:
-   * 1. Find all signals.
-   * 2. Find all compute uses of signals.
-   * 3. Find all constraint uses of signals.
-   *
-   * For any signal that has an empty constraint set, we report a bug. The text
-   * of this bug will differ if the compute set is empty or non-empty; if empty,
-   * this is an unused signal, and if non-empty, this signal is unconstrained.
-   * References will be added in the latter case.
-   */
+/* ConstraintSummary */
 
-  // This will be slightly more complicated based on the fact that we may have
-  // function calls and such. So, we will need a form of dataflow analysis here.
+mlir::FailureOr<ConstraintSummary> ConstraintSummary::compute(
+    mlir::ModuleOp m, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
+) {
+  ConstraintSummary summary(m, s);
+  if (summary.computeConstraints(solver, am).failed()) {
+    return mlir::failure();
+  }
+  return summary;
+}
 
+void ConstraintSummary::dump() const { print(llvm::errs()); }
+
+void ConstraintSummary::print(llvm::raw_ostream &os) const {
+  os << "ConstraintSummary {\n";
+  for (auto leaderIt = constraintSets.begin(); leaderIt != constraintSets.end(); leaderIt++) {
+    if (!leaderIt->isLeader()) {
+      continue;
+    }
+
+    os << "    { ";
+    for (auto mit = constraintSets.member_begin(leaderIt); mit != constraintSets.member_end();) {
+      mit->print(os);
+      mit++;
+      if (mit != constraintSets.member_end()) {
+        os << ", ";
+      }
+    }
+    os << " }\n";
+  }
+  os << "}\n";
+}
+
+auto getSignalUsages(
+    mlir::ModuleOp mod, StructDefOp s, unsigned blockArgNum, std::vector<FieldDefOp> fields = {}
+) -> std::vector<SignalUsage> {
+  std::vector<SignalUsage> res;
+  for (auto f : s.getOps<FieldDefOp>()) {
+    llvm::errs() << __FUNCTION__ << " special: " << f << "\n";
+    std::vector<FieldDefOp> subFields = fields;
+    subFields.push_back(f);
+    if (auto structTy = mlir::dyn_cast<llzk::StructType>(f.getType())) {
+      mlir::SymbolTableCollection tables;
+      auto sDef = structTy.getDefinition(tables, mod);
+      if (mlir::failed(sDef)) {
+        llvm::report_fatal_error("could not find struct definition from struct type");
+      }
+      auto subRes = getSignalUsages(mod, sDef->get(), blockArgNum, subFields);
+      res.insert(res.end(), subRes.begin(), subRes.end());
+    } else {
+      res.push_back(SignalUsage(blockArgNum, subFields));
+    }
+  }
+  return res;
+}
+
+auto getSignalUsages(mlir::ModuleOp mod, mlir::BlockArgument arg) -> std::vector<SignalUsage> {
+  llvm::errs() << __FUNCTION__ << " type: " << arg.getType() << "\n";
+  auto ty = arg.getType();
+  std::vector<SignalUsage> res;
+  if (auto structTy = mlir::dyn_cast<llzk::StructType>(ty)) {
+    llvm::errs() << "\tSTRUCT TYPE\n";
+    mlir::SymbolTableCollection tables;
+    auto sDef = structTy.getDefinition(tables, mod);
+    if (mlir::failed(sDef)) {
+      llvm::report_fatal_error("could not find struct definition from struct type");
+    }
+    res = getSignalUsages(mod, sDef->get(), arg.getArgNumber());
+  } else if (mlir::isa<llzk::FeltType>(ty) || mlir::isa<mlir::IndexType>(ty)) {
+    // Scalar type
+    res.push_back(SignalUsage(arg.getArgNumber()));
+  } else {
+    std::string msg = "unsupported type: ";
+    llvm::raw_string_ostream ss(msg);
+    ss << ty;
+    llvm::report_fatal_error(ss.str().c_str());
+  }
+  return res;
+}
+
+mlir::LogicalResult
+ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::AnalysisManager &am) {
+  llvm::errs() << "ComputeConstraints for " << structDef.getName() << "\n";
   /**
    * The dataflow analysis I think would best be represented as:
    * - Compute the set of fields used for each operation
@@ -220,41 +196,21 @@ void reportUnconstrainedSignals(StructDefOp &component) {
    */
 
   std::vector<FieldDefOp> fields;
-  for (auto field : component.getOps<FieldDefOp>()) {
+  for (auto field : structDef.getOps<FieldDefOp>()) {
     fields.emplace_back(std::move(field));
   }
 
-  auto computeFnOp = mlir::cast_or_null<FuncOp>(component.lookupSymbol("compute"));
-  auto constrainFnOp = mlir::cast_or_null<FuncOp>(component.lookupSymbol("constrain"));
-  // ENSURE(computeFnOp != nullptr && constrainFnOp != nullptr, "component must have compute and
-  // constrain function");
+  auto constrainFnOp = mlir::cast_or_null<FuncOp>(structDef.lookupSymbol("constrain"));
 
   // Run the analysis
-
-  // The dataflow solver only runs on live operations, so we force everything to be live
-  makeLive(solver, component.getOperation());
-  auto analysis = solver.load<SignalUsageAnalysis>();
-  // auto res = solver.initializeAndRun(computeFnOp);
+  solver.load<SignalUsageAnalysis>();
   auto res = solver.initializeAndRun(constrainFnOp);
   if (res.failed()) {
     llvm::errs() << "Analysis failed!\n";
-    return;
+    return mlir::failure();
   }
   llvm::errs() << "We have run the analysis!\n";
 
-  // query the analysis
-  for (auto &op : constrainFnOp.getOps()) {
-    for (auto r : op.getOpResults()) {
-      auto resState = solver.lookupState<SignalUsageLattice>(r);
-      if (resState) {
-        llvm::errs() << "\t\tResult state for " << r << ": ";
-        resState->print(llvm::errs());
-        llvm::errs() << '\n';
-      } else {
-        llvm::errs() << "\t\tNo result state for " << r << '\n';
-      }
-    }
-  }
   /**
    * Now, given the analysis, construct the summary
    * 1. Add all signals
@@ -262,9 +218,55 @@ void reportUnconstrainedSignals(StructDefOp &component) {
    * 3. Union all signals based on nested summaries
    */
 
-  llvm::EquivalenceClasses<SignalUsage> constraints;
+  // Thanks to the self argument, we can just do everything through the
+  // arguments to constrain
+  for (auto a : constrainFnOp.getArguments()) {
+    for (auto sigUsage : getSignalUsages(mod, a)) {
+      llvm::errs() << "SIG USE: " << sigUsage << "\n";
+      constraintSets.insert(sigUsage);
+    }
+  }
 
-  // Add all the constraints from the analysis
+  // Union all constraints from the analysis
+  // This requires iterating over all of the emit operations
+  constrainFnOp.walk([this, &solver](EmitEqualityOp emitOp) {
+    std::vector<SignalUsage> usages;
+    for (auto operand : emitOp.getOperands()) {
+      // It may also be the case that the operand is just the argument value.
+      auto signalVals = SignalUsage::get(operand);
+      if (mlir::succeeded(signalVals)) {
+        usages.insert(usages.end(), signalVals->begin(), signalVals->end());
+      } else {
+        auto analysisRes = solver.lookupState<SignalUsageLattice>(operand);
+        if (!analysisRes) {
+          llvm::report_fatal_error("untraversed value");
+        }
+
+        auto &signals = analysisRes->getValue().signals;
+        llvm::errs() << "Operand " << operand << " has " << signals.size() << " signals\n";
+        usages.insert(usages.end(), signals.begin(), signals.end());
+      }
+    }
+
+    for (auto &s : usages) {
+      llvm::errs() << "walk thing " << s << "\n";
+    }
+
+    auto it = usages.begin();
+    auto leader = *it;
+    for (it++; it != usages.end(); it++) {
+      llvm::errs() << "CONSTRAINING: " << leader << " and " << *it << "\n";
+      /// TODO:
+      // should do some scalar filtering in here, cuz currently some signal
+      // usages are to structs due to the way we read fields
+      // or maybe not, maybe we want to use higher-level objects for ease of use.
+      constraintSets.unionSets(leader, *it);
+    }
+  });
+
+  constrainFnOp.walk([this](EmitContainmentOp emitOp) {
+    llvm::report_fatal_error("todo, containment not supported!");
+  });
 
   /**
    * Step two of the analysis is to traverse all of the constrain calls.
@@ -274,7 +276,7 @@ void reportUnconstrainedSignals(StructDefOp &component) {
    * add them to the transitive closures.
    */
   mlir::SymbolTableCollection tables;
-  constrainFnOp.walk([&tables](CallOp fnCall) mutable {
+  constrainFnOp.walk([this, &tables, &am](CallOp fnCall) mutable {
     auto res = resolveCallable<FuncOp>(tables, fnCall);
     if (mlir::failed(res)) {
       fnCall.emitError() << "Could not resolve callable!\n";
@@ -283,45 +285,170 @@ void reportUnconstrainedSignals(StructDefOp &component) {
     auto fn = res->get();
     if (fn.getName() == FUNC_NAME_CONSTRAIN) {
       // Nested
-      llvm::errs() << "nested thing\n";
+      StructDefOp calledStruct(fn.getOperation()->getParentOp());
+      llvm::errs() << "CALLING: " << calledStruct.getName() << " from " << this->structDef.getName()
+                   << "\n";
+      SignalUsageRemappings translations;
+      // Map fn parameters to args in the call op
+      for (unsigned i = 0; i < fn.getNumArguments(); i++) {
+        llvm::errs() << "arg 0: mapping " << fn.getArgument(i) << " to " << fnCall.getOperand(i)
+                     << "\n";
+        auto prefix = SignalUsage::get(fn.getArgument(i));
+        auto replacements = SignalUsage::get(fnCall.getOperand(i));
+        if (mlir::failed(prefix)) {
+          llvm::report_fatal_error("failed to look up prefix translation symbols");
+        }
+        if (prefix->size() != 1) {
+          llvm::report_fatal_error("should only have one prefix symbol!");
+        }
+        if (mlir::failed(replacements)) {
+          llvm::report_fatal_error("failed to look up replacement translation symbols");
+        }
+        // insert this value if not exists
+        // constraintSets.insert(*replacement);
+        // value should exist?
+        // if (constraintSets.findValue(*replacement) == constraintSets.end()) {
+        //   llvm::report_fatal_error("failed to add argument value from constrain call");
+        // }
+        for (auto &s : *replacements) {
+          translations.push_back({prefix->at(0), s});
+        }
+      }
+      auto summary = am.getChildAnalysis<ConstraintSummaryAnalysis>(calledStruct).getSummary();
+      llvm::errs() << "pre translation summary: ";
+      summary.dump();
+      auto translatedSummary = summary.translate(translations);
+      llvm::errs() << "post translation summary: ";
+      translatedSummary.dump();
+
+      // Now, union sets based on the translation
+      // We should be able to just merge what is in the translatedSummary to the current summary
+      auto &tSets = translatedSummary.constraintSets;
+      for (auto lit = tSets.begin(); lit != tSets.end(); lit++) {
+        if (!lit->isLeader()) {
+          continue;
+        }
+        auto leader = lit->getData();
+        for (auto mit = tSets.member_begin(lit); mit != tSets.member_end(); mit++) {
+          // ensure there's nothing new being added
+          // the member iterator includes the leader
+          if (constraintSets.findValue(*mit) == constraintSets.end()) {
+            llvm::report_fatal_error("translation returned an unknown value!");
+          }
+          constraintSets.unionSets(leader, *mit);
+        }
+      }
     }
   });
+
+  dump();
+
+  return mlir::success();
 }
 
-/* ConstraintSummary */
+ConstraintSummary ConstraintSummary::translate(SignalUsageRemappings translation) {
+  ConstraintSummary res(mod, structDef);
+  auto translate = [&translation](const SignalUsage &elem
+                   ) -> mlir::FailureOr<std::vector<SignalUsage>> {
+    std::vector<SignalUsage> res;
+    for (auto &[prefix, replacement] : translation) {
+      auto translated = elem.translate(prefix, replacement);
+      if (mlir::succeeded(translated)) {
+        res.push_back(translated.value());
+      }
+    }
+    if (res.empty()) {
+      return mlir::failure();
+    }
+    return res;
+  };
+  for (auto leaderIt = constraintSets.begin(); leaderIt != constraintSets.end(); leaderIt++) {
+    if (!leaderIt->isLeader()) {
+      continue;
+    }
+    // translate everything in this set first
+    std::vector<SignalUsage> translated;
+    for (auto mit = constraintSets.member_begin(leaderIt); mit != constraintSets.member_end();
+         mit++) {
+      auto member = translate(*mit);
+      if (mlir::succeeded(member)) {
+        translated.insert(translated.end(), member->begin(), member->end());
+      }
+    }
 
-ConstraintSummary::ConstraintSummary(
-    StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
-)
-    : structDef(s) {
-  reportUnconstrainedSignals(s);
+    if (translated.empty()) {
+      continue;
+    }
+
+    // Now we can insert
+    auto it = translated.begin();
+    auto leader = *it;
+    res.constraintSets.insert(leader);
+    for (it++; it != translated.end(); it++) {
+      res.constraintSets.insert(*it);
+      res.constraintSets.unionSets(leader, *it);
+    }
+  }
+  return res;
 }
-
-void ConstraintSummary::dump() const { print(llvm::errs()); }
-
-void ConstraintSummary::print(llvm::raw_ostream &os) const { os << "todo!\n"; }
 
 /* ConstraintSummaryAnalysis */
 
-ConstraintSummaryAnalysis::ConstraintSummaryAnalysis(
+ConstraintSummaryAnalysis::ConstraintSummaryAnalysis(mlir::Operation *op) {
+  structDefOp = mlir::dyn_cast<StructDefOp>(op);
+  if (!structDefOp) {
+    auto error_message = "ConstraintSummaryAnalysis expects provided op to be a StructDefOp!";
+    op->emitError(error_message);
+    llvm::report_fatal_error(error_message);
+  }
+  auto maybeModOp = getRootModule(op);
+  if (mlir::failed(maybeModOp)) {
+    auto error_message = "ConstraintSummaryAnalysis could not find root module from StructDefOp!";
+    op->emitError(error_message);
+    llvm::report_fatal_error(error_message);
+  }
+  modOp = *maybeModOp;
+}
+
+mlir::LogicalResult ConstraintSummaryAnalysis::constructSummary(
+    mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager
+) {
+  auto summaryRes = ConstraintSummary::compute(modOp, structDefOp, solver, moduleAnalysisManager);
+  if (mlir::failed(summaryRes)) {
+    return mlir::failure();
+  }
+  summary = std::make_shared<ConstraintSummary>(*summaryRes);
+  return mlir::success();
+}
+
+/* ConstraintSummaryModuleAnalysis */
+
+ConstraintSummaryModuleAnalysis::ConstraintSummaryModuleAnalysis(
     mlir::Operation *op, mlir::AnalysisManager &am
 ) {
   if (auto modOp = mlir::dyn_cast<mlir::ModuleOp>(op)) {
     mlir::DataFlowSolver solver;
     makeLive(solver, modOp);
 
-    modOp.walk([this, &solver, &am](StructDefOp structOp) mutable {
-      ConstraintSummary summary(structOp, solver, am);
-      summaries.emplace(std::make_pair(structOp, summary));
+    modOp.walk([this, &solver, &am](StructDefOp s) {
+      auto &csa = am.getChildAnalysis<ConstraintSummaryAnalysis>(s);
+      if (mlir::failed(csa.constructSummary(solver, am))) {
+        auto error_message =
+            "ConstraintSummaryAnalysis failed to compute summary for " + mlir::Twine(s.getName());
+        s->emitError(error_message);
+        llvm::report_fatal_error(error_message);
+      }
+      summaries[s] = csa.summary;
     });
   } else {
-    auto error_message = "ConstraintSummaryAnalysis expects provided op to be a StructDefOp!";
+    auto error_message =
+        "ConstraintSummaryModuleAnalysis expects provided op to be an mlir::ModuleOp!";
     op->emitError(error_message);
     llvm::report_fatal_error(error_message);
   }
 }
 
-void ConstraintSummaryAnalysis::makeLive(mlir::DataFlowSolver &solver, mlir::Operation *top) {
+void ConstraintSummaryModuleAnalysis::makeLive(mlir::DataFlowSolver &solver, mlir::Operation *top) {
   for (mlir::Region &region : top->getRegions()) {
     for (mlir::Block &block : region) {
       (void)solver.getOrCreateState<mlir::dataflow::Executable>(&block)->setToLive();
