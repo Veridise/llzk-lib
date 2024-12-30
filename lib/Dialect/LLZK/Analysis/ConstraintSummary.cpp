@@ -4,7 +4,6 @@
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Analysis/DataFlow/SparseAnalysis.h>
-#include <mlir/Analysis/DataFlowFramework.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/Value.h>
 
@@ -241,7 +240,8 @@ auto getSignalUsages(mlir::ModuleOp mod, mlir::BlockArgument arg) -> std::vector
       llvm::report_fatal_error("could not find struct definition from struct type");
     }
     res = getSignalUsages(mod, sDef->get(), arg);
-  } else if (mlir::isa<llzk::FeltType>(ty) || mlir::isa<mlir::IndexType>(ty)) {
+  } else if (mlir::isa<llzk::FeltType>(ty) || mlir::isa<mlir::IndexType>(ty) ||
+             mlir::isa<llzk::ArrayType>(ty)) {
     // Scalar type
     res.push_back(SignalUsage(arg));
   } else {
@@ -291,9 +291,7 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
     }
   }
 
-  // Union all constraints from the analysis
-  // This requires iterating over all of the emit operations
-  constrainFnOp.walk([this, &solver](EmitEqualityOp emitOp) {
+  auto constrainOpWalker = [this, &solver]<typename EmitOp>(EmitOp emitOp) {
     std::vector<SignalUsage> usages;
     for (auto operand : emitOp.getOperands()) {
       // It may also be the case that the operand is just the argument value.
@@ -320,10 +318,16 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
       // or maybe not, maybe we want to use higher-level objects for ease of use.
       constraintSets.unionSets(leader, *it);
     }
+  };
+
+  // Union all constraints from the analysis
+  // This requires iterating over all of the emit operations
+  constrainFnOp.walk([this, &solver](EmitEqualityOp emitOp) {
+    this->walkConstrainOp(solver, emitOp);
   });
 
-  constrainFnOp.walk([this](EmitContainmentOp emitOp) {
-    llvm::report_fatal_error("todo, containment not supported!");
+  constrainFnOp.walk([this, &solver](EmitContainmentOp emitOp) {
+    this->walkConstrainOp(solver, emitOp);
   });
 
   /**
@@ -399,9 +403,36 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
     }
   });
 
-  dump();
-
   return mlir::success();
+}
+
+void ConstraintSummary::walkConstrainOp(mlir::DataFlowSolver &solver, mlir::Operation *emitOp) {
+  std::vector<SignalUsage> usages;
+  for (auto operand : emitOp->getOperands()) {
+    // It may also be the case that the operand is just the argument value.
+    auto signalVals = SignalUsage::get(operand);
+    if (mlir::succeeded(signalVals)) {
+      usages.insert(usages.end(), signalVals->begin(), signalVals->end());
+    } else {
+      auto analysisRes = solver.lookupState<SignalUsageLattice>(operand);
+      if (!analysisRes) {
+        llvm::report_fatal_error("untraversed value");
+      }
+
+      auto &signals = analysisRes->getValue().signals;
+      usages.insert(usages.end(), signals.begin(), signals.end());
+    }
+  }
+
+  auto it = usages.begin();
+  auto leader = *it;
+  for (it++; it != usages.end(); it++) {
+    /// TODO:
+    // should do some scalar filtering in here, cuz currently some signal
+    // usages are to structs due to the way we read fields
+    // or maybe not, maybe we want to use higher-level objects for ease of use.
+    constraintSets.unionSets(leader, *it);
+  }
 }
 
 ConstraintSummary ConstraintSummary::translate(SignalUsageRemappings translation) {

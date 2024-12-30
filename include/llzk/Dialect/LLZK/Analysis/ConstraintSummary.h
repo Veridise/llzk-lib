@@ -3,6 +3,7 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/Hash.h"
 
+#include <mlir/Analysis/DataFlowFramework.h>
 #include <mlir/Pass/AnalysisManager.h>
 
 #include <llvm/ADT/EquivalenceClasses.h>
@@ -140,6 +141,8 @@ private:
   ConstraintSummary(mlir::ModuleOp m, StructDefOp s) : mod(m), structDef(s), constraintSets() {}
 
   mlir::LogicalResult computeConstraints(mlir::DataFlowSolver &solver, mlir::AnalysisManager &am);
+
+  void walkConstrainOp(mlir::DataFlowSolver &solver, mlir::Operation *emitOp);
 };
 
 class ConstraintSummaryModuleAnalysis;

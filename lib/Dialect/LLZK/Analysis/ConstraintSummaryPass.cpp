@@ -34,7 +34,7 @@ protected:
 
     auto &cs = getAnalysis<ConstraintSummaryModuleAnalysis>();
     for (auto &[structDef, summary_ptr] : cs) {
-      os << "Constraint Summary for " << const_cast<StructDefOp &>(structDef).getName() << ":\n";
+      os << const_cast<StructDefOp &>(structDef).getName() << ' ';
       summary_ptr->print(os);
     }
   }
