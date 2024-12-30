@@ -32,7 +32,7 @@ TEST_F(TypeTests, testCloneSuccessNewShape) {
   ASSERT_EQ(b.getShape(), newShape);
 }
 
-TEST_F(TypeTests, testVerifyErrorEmptyShape) {
+TEST_F(TypeTests, testCloneWithEmptyShapeError) {
   EXPECT_DEATH(
       {
         IndexType tyIndex = IndexType::get(&ctx);
@@ -42,5 +42,29 @@ TEST_F(TypeTests, testVerifyErrorEmptyShape) {
         a.cloneWith(std::make_optional(newShape), tyIndex);
       },
       "error: array must have at least one dimension"
+  );
+}
+
+TEST_F(TypeTests, testGetWithAttributeEmptyShapeError) {
+  EXPECT_DEATH(
+      {
+        IndexType tyIndex = IndexType::get(&ctx);
+        std::vector<Attribute> newDimsVec;
+        ArrayRef<Attribute> dimensionSizes(newDimsVec);
+        ArrayType::get(tyIndex, dimensionSizes);
+      },
+      "error: array must have at least one dimension"
+  );
+}
+
+TEST_F(TypeTests, testGetWithAttributeWrongAttrKindError) {
+  EXPECT_DEATH(
+      {
+        IndexType tyIndex = IndexType::get(&ctx);
+        std::vector<Attribute> newDimsVec = {UnitAttr::get(&ctx)};
+        ArrayRef<Attribute> dimensionSizes(newDimsVec);
+        ArrayType::get(tyIndex, dimensionSizes);
+      },
+      "error: Array dimension must be one of .* but found 'builtin.unit'"
   );
 }

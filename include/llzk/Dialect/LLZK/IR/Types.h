@@ -92,7 +92,7 @@ mlir::LogicalResult computeDimsFromShape(
 );
 
 mlir::LogicalResult computeShapeFromDims(
-    llvm ::function_ref<::mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
+    llvm::function_ref<::mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
     llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::SmallVector<int64_t> &value
 );
 
@@ -107,8 +107,5 @@ void printDerivedShape(
     mlir::AsmPrinter &printer, llvm::ArrayRef<int64_t> value,
     llvm::ArrayRef<mlir::Attribute> dimensionSizes
 );
-
-::llvm::function_ref<::mlir::InFlightDiagnostic()>
-emitErrorUnknownLoc(::mlir::MLIRContext *ctx, const char *msg);
 
 } // namespace llzk

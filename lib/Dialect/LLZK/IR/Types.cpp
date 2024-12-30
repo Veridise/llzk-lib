@@ -124,13 +124,6 @@ bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhs
   return false;
 }
 
-llvm::function_ref<mlir::InFlightDiagnostic()>
-emitErrorUnknownLoc(mlir::MLIRContext *ctx, const char *msg) {
-  return [ctx, msg] {
-    return mlir::emitError(mlir::Location(mlir::UnknownLoc::get(ctx))).append(msg);
-  };
-}
-
 namespace {
 
 template <typename... Types> struct TypeList {
@@ -269,11 +262,14 @@ mlir::LogicalResult computeShapeFromDims(
     llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
     llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::SmallVector<int64_t> &value
 ) {
-  auto emitErrFunc =
-      emitError ? emitError : emitErrorUnknownLoc(ctx, "computeShapeFromDims() failed: ");
   for (mlir::Attribute a : dimensionSizes) {
     if (!ArrayDimensionTypes::matches(a)) {
-      return ArrayDimensionTypes::reportInvalid(emitErrFunc, a, "Array dimension");
+      if (emitError) {
+        return ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
+      } else {
+        auto errFunc = mlir::detail::getDefaultDiagnosticEmitFn(ctx);
+        assert(mlir::succeeded(ArrayDimensionTypes::reportInvalid(errFunc, a, "Array dimension")));
+      }
     }
     if (auto p = a.dyn_cast<mlir::IntegerAttr>()) {
       value.push_back(p.getValue().getSExtValue());
