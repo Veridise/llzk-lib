@@ -39,7 +39,7 @@ TEST_F(TypeTests, testVerifyErrorEmptyShape) {
         ArrayType a = ArrayType::get(tyIndex, {2, 2});
         std::vector<int64_t> newShapeVec;
         ArrayRef newShape(newShapeVec);
-        ArrayType b = a.cloneWith(std::make_optional(newShape), tyIndex);
+        a.cloneWith(std::make_optional(newShape), tyIndex);
       },
       "error: array must have at least one dimension"
   );
