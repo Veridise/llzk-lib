@@ -127,6 +127,7 @@ bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhs
 llvm::function_ref<mlir::InFlightDiagnostic()>
 emitErrorUnknownLoc(mlir::MLIRContext *ctx, const char *msg) {
   return [ctx, msg] {
+    llvm::outs() << "----- TODO: within emitErrorUnknownLoc() lambda\n";
     return mlir::emitError(mlir::Location(mlir::UnknownLoc::get(ctx))).append(msg);
   };
 }
@@ -321,6 +322,7 @@ mlir::LogicalResult ArrayType::verify(
 ) {
   // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
   if (dimensionSizes.empty()) {
+    llvm::outs() << "----- TODO: About to print ArrayType::verify error!\n";
     return emitError().append("array must have at least one dimension");
   }
   for (mlir::Attribute a : dimensionSizes) {
