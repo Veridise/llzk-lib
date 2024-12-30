@@ -324,7 +324,7 @@ mlir::LogicalResult ArrayType::verify(
 ) {
   // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
   if (dimensionSizes.empty()) {
-    return mlir::failure();//.append("array must have at least one dimension");
+    return emitError().append("array must have at least one dimension");
   }
   for (mlir::Attribute a : dimensionSizes) {
     if (!ArrayDimensionTypes::matches(a)) {
