@@ -12,6 +12,82 @@
 
 namespace llzk {
 
+/* SignalUsage */
+
+mlir::FailureOr<std::vector<SignalUsage>> SignalUsage::get(mlir::Value val) {
+  std::vector<SignalUsage> res;
+
+  // If it's a field read, it reads a field def from a component.
+  // If it's a felt, it doesn't need a field read
+
+  // Due to the way constrain is defined, all signals are read from inputs.
+  if (auto blockArg = mlir::dyn_cast_or_null<mlir::BlockArgument>(val)) {
+    // to use this constructor, the block arg must be a felt
+    res.push_back(SignalUsage(blockArg));
+  } else if (auto fieldRead = mlir::dyn_cast_or_null<FieldReadOp>(val.getDefiningOp())) {
+    std::deque<FieldDefOp> fields;
+    mlir::SymbolTableCollection tables;
+    mlir::BlockArgument arg;
+    FieldReadOp currRead = fieldRead;
+    while (currRead != nullptr) {
+      auto component = currRead.getComponent();
+      auto res = currRead.getFieldDefOp(tables);
+      if (mlir::failed(res)) {
+        fieldRead.emitError() << "could not find field read\n";
+        return mlir::failure();
+      }
+      fields.push_front(res->get());
+      arg = mlir::dyn_cast_or_null<mlir::BlockArgument>(component);
+      currRead = mlir::dyn_cast_or_null<FieldReadOp>(component.getDefiningOp());
+    }
+    if (arg == nullptr) {
+      fieldRead.emitError() << "could not follow a read chain!\n";
+      return mlir::failure();
+    }
+    // We only want to generate this if the end value is a felt
+    res.push_back(SignalUsage(arg, std::vector<FieldDefOp>(fields.begin(), fields.end())));
+  } else if (val.getDefiningOp() != nullptr && mlir::isa<FeltConstantOp>(val.getDefiningOp())) {
+    auto constFelt = mlir::dyn_cast<FeltConstantOp>(val.getDefiningOp());
+    res.push_back(SignalUsage(constFelt));
+  } else if (val.getDefiningOp() != nullptr) {
+    // Fallback for every other type of operation
+    // This also works for global func call ops, since we use an interprocedural dataflow solver
+    for (auto operand : val.getDefiningOp()->getOperands()) {
+      auto uses = SignalUsage::get(operand);
+      if (mlir::succeeded(uses)) {
+        res.insert(res.end(), uses->begin(), uses->end());
+      }
+    }
+  } else {
+    std::string str;
+    llvm::raw_string_ostream ss(str);
+    ss << val;
+    llvm::report_fatal_error("unsupported value in SignalUsage::get: " + mlir::Twine(ss.str()));
+  }
+
+  if (res.empty()) {
+    return mlir::failure();
+  }
+  return res;
+}
+
+mlir::FailureOr<SignalUsage>
+SignalUsage::translate(const SignalUsage &prefix, const SignalUsage &other) const {
+  if (blockArg != prefix.blockArg || fieldRefs.size() < prefix.fieldRefs.size()) {
+    return mlir::failure();
+  }
+  for (size_t i = 0; i < prefix.fieldRefs.size(); i++) {
+    if (fieldRefs[i] != prefix.fieldRefs[i]) {
+      return mlir::failure();
+    }
+  }
+  auto newSignalUsage = other;
+  for (size_t i = prefix.fieldRefs.size(); i < fieldRefs.size(); i++) {
+    newSignalUsage.fieldRefs.push_back(fieldRefs[i]);
+  }
+  return newSignalUsage;
+}
+
 /* Utilities */
 
 /**
@@ -81,16 +157,10 @@ public:
       // add in the values from the operands
       mlir::ChangeResult changed = res->join(operandVals);
 
-      res->useDefSubscribe(this);
-      llvm::errs() << "Subscribing result at point " << res->getPoint() << "\n";
+      // res->useDefSubscribe(this);
+      // llvm::errs() << "Subscribing result at point " << res->getPoint() << "\n";
 
       for (const auto *operand : operands) {
-        llvm::errs() << "\tjoining ";
-        res->print(llvm::errs());
-        llvm::errs() << " and ";
-        operand->print(llvm::errs());
-        llvm::errs() << '\n';
-
         changed |= res->join(*operand);
       }
 
@@ -139,11 +209,11 @@ void ConstraintSummary::print(llvm::raw_ostream &os) const {
 }
 
 auto getSignalUsages(
-    mlir::ModuleOp mod, StructDefOp s, unsigned blockArgNum, std::vector<FieldDefOp> fields = {}
+    mlir::ModuleOp mod, StructDefOp s, mlir::BlockArgument blockArg,
+    std::vector<FieldDefOp> fields = {}
 ) -> std::vector<SignalUsage> {
   std::vector<SignalUsage> res;
   for (auto f : s.getOps<FieldDefOp>()) {
-    llvm::errs() << __FUNCTION__ << " special: " << f << "\n";
     std::vector<FieldDefOp> subFields = fields;
     subFields.push_back(f);
     if (auto structTy = mlir::dyn_cast<llzk::StructType>(f.getType())) {
@@ -152,30 +222,28 @@ auto getSignalUsages(
       if (mlir::failed(sDef)) {
         llvm::report_fatal_error("could not find struct definition from struct type");
       }
-      auto subRes = getSignalUsages(mod, sDef->get(), blockArgNum, subFields);
+      auto subRes = getSignalUsages(mod, sDef->get(), blockArg, subFields);
       res.insert(res.end(), subRes.begin(), subRes.end());
     } else {
-      res.push_back(SignalUsage(blockArgNum, subFields));
+      res.push_back(SignalUsage(blockArg, subFields));
     }
   }
   return res;
 }
 
 auto getSignalUsages(mlir::ModuleOp mod, mlir::BlockArgument arg) -> std::vector<SignalUsage> {
-  llvm::errs() << __FUNCTION__ << " type: " << arg.getType() << "\n";
   auto ty = arg.getType();
   std::vector<SignalUsage> res;
   if (auto structTy = mlir::dyn_cast<llzk::StructType>(ty)) {
-    llvm::errs() << "\tSTRUCT TYPE\n";
     mlir::SymbolTableCollection tables;
     auto sDef = structTy.getDefinition(tables, mod);
     if (mlir::failed(sDef)) {
       llvm::report_fatal_error("could not find struct definition from struct type");
     }
-    res = getSignalUsages(mod, sDef->get(), arg.getArgNumber());
+    res = getSignalUsages(mod, sDef->get(), arg);
   } else if (mlir::isa<llzk::FeltType>(ty) || mlir::isa<mlir::IndexType>(ty)) {
     // Scalar type
-    res.push_back(SignalUsage(arg.getArgNumber()));
+    res.push_back(SignalUsage(arg));
   } else {
     std::string msg = "unsupported type: ";
     llvm::raw_string_ostream ss(msg);
@@ -187,7 +255,6 @@ auto getSignalUsages(mlir::ModuleOp mod, mlir::BlockArgument arg) -> std::vector
 
 mlir::LogicalResult
 ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::AnalysisManager &am) {
-  llvm::errs() << "ComputeConstraints for " << structDef.getName() << "\n";
   /**
    * The dataflow analysis I think would best be represented as:
    * - Compute the set of fields used for each operation
@@ -206,10 +273,8 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
   solver.load<SignalUsageAnalysis>();
   auto res = solver.initializeAndRun(constrainFnOp);
   if (res.failed()) {
-    llvm::errs() << "Analysis failed!\n";
     return mlir::failure();
   }
-  llvm::errs() << "We have run the analysis!\n";
 
   /**
    * Now, given the analysis, construct the summary
@@ -222,7 +287,6 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
   // arguments to constrain
   for (auto a : constrainFnOp.getArguments()) {
     for (auto sigUsage : getSignalUsages(mod, a)) {
-      llvm::errs() << "SIG USE: " << sigUsage << "\n";
       constraintSets.insert(sigUsage);
     }
   }
@@ -243,19 +307,13 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
         }
 
         auto &signals = analysisRes->getValue().signals;
-        llvm::errs() << "Operand " << operand << " has " << signals.size() << " signals\n";
         usages.insert(usages.end(), signals.begin(), signals.end());
       }
-    }
-
-    for (auto &s : usages) {
-      llvm::errs() << "walk thing " << s << "\n";
     }
 
     auto it = usages.begin();
     auto leader = *it;
     for (it++; it != usages.end(); it++) {
-      llvm::errs() << "CONSTRAINING: " << leader << " and " << *it << "\n";
       /// TODO:
       // should do some scalar filtering in here, cuz currently some signal
       // usages are to structs due to the way we read fields

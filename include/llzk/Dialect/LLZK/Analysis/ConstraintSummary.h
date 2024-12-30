@@ -30,113 +30,52 @@ class SignalUsage {
 public:
   /// Try to create SignalUsages out of a given operation.
   /// A single operation may contain multiple usages, e.g. addition of signals.
-  static mlir::FailureOr<std::vector<SignalUsage>> get(mlir::Value val) {
-    std::vector<SignalUsage> res;
+  static mlir::FailureOr<std::vector<SignalUsage>> get(mlir::Value val);
 
-    // If it's a field read, it reads a field def from a component.
-    // If it's a felt, it doesn't need a field read
+  explicit SignalUsage(mlir::BlockArgument b) : blockArg(b), fieldRefs({}), constFelt(nullptr) {}
+  SignalUsage(mlir::BlockArgument b, std::vector<FieldDefOp> f)
+      : blockArg(b), fieldRefs(f), constFelt(nullptr) {}
+  explicit SignalUsage(FeltConstantOp c) : blockArg(nullptr), fieldRefs({}), constFelt(c) {}
 
-    // Due to the way constrain is defined, all signals are read from inputs.
-    if (auto blockArg = mlir::dyn_cast_or_null<mlir::BlockArgument>(val)) {
-      // to use this constructor, the block arg must be a felt
-      res.push_back(SignalUsage(blockArg.getArgNumber()));
-    } else if (auto fieldRead = mlir::dyn_cast_or_null<FieldReadOp>(val.getDefiningOp())) {
-      std::deque<FieldDefOp> fields;
-      mlir::SymbolTableCollection tables;
-      mlir::BlockArgument arg;
-      FieldReadOp currRead = fieldRead;
-      while (currRead != nullptr) {
-        auto component = currRead.getComponent();
-        auto res = currRead.getFieldDefOp(tables);
-        if (mlir::failed(res)) {
-          fieldRead.emitError() << "could not find field read\n";
-          return mlir::failure();
-        }
-        fields.push_front(res->get());
-        arg = mlir::dyn_cast_or_null<mlir::BlockArgument>(component);
-        currRead = mlir::dyn_cast_or_null<FieldReadOp>(component.getDefiningOp());
-      }
-      if (arg == nullptr) {
-        fieldRead.emitError() << "could not follow a read chain!\n";
-        return mlir::failure();
-      }
-      // We only want to generate this if the end value is a felt
-      res.push_back(
-          SignalUsage(arg.getArgNumber(), std::vector<FieldDefOp>(fields.begin(), fields.end()))
-      );
-    } else if (val.getDefiningOp() != nullptr && mlir::isa<FeltConstantOp>(val.getDefiningOp())) {
-      auto constFelt = mlir::dyn_cast<FeltConstantOp>(val.getDefiningOp());
-      res.push_back(SignalUsage(constFelt));
-    } else if (val.getDefiningOp() != nullptr && !mlir::isa<FuncOp>(val.getDefiningOp())) {
-      // Fallback for non-function calls
-      llvm::errs() << "fallback: " << *val.getDefiningOp() << "\n";
-      for (auto operand : val.getDefiningOp()->getOperands()) {
-        auto uses = SignalUsage::get(operand);
-        if (mlir::succeeded(uses)) {
-          res.insert(res.end(), uses->begin(), uses->end());
-        }
-      }
-    } else {
-      std::string str;
-      llvm::raw_string_ostream ss(str);
-      ss << val;
-      llvm::report_fatal_error("unsupported value in SignalUsage::get: " + mlir::Twine(ss.str()));
-    }
-
-    if (res.empty()) {
-      return mlir::failure();
-    }
-    return res;
-  }
-
-  SignalUsage(unsigned b) : blockArgIdx(b), fieldRefs({}), constFelt(nullptr) {}
-  SignalUsage(unsigned b, std::vector<FieldDefOp> f)
-      : blockArgIdx(b), fieldRefs(f), constFelt(nullptr) {}
-  SignalUsage(FeltConstantOp c) : blockArgIdx(0), fieldRefs({}), constFelt(c) {}
-
-  unsigned getInputNum() const { return blockArgIdx; }
+  bool isConstant() const { return constFelt != nullptr; }
+  unsigned getInputNum() const { return blockArg.getArgNumber(); }
 
   /// @brief Resolve
   /// @param other
   /// @return
-  mlir::FailureOr<SignalUsage>
-  translate(const SignalUsage &prefix, const SignalUsage &other) const {
-    if (blockArgIdx != prefix.blockArgIdx || fieldRefs.size() < prefix.fieldRefs.size()) {
-      return mlir::failure();
-    }
-    for (size_t i = 0; i < prefix.fieldRefs.size(); i++) {
-      if (fieldRefs[i] != prefix.fieldRefs[i]) {
-        return mlir::failure();
-      }
-    }
-    auto newSignalUsage = other;
-    for (size_t i = prefix.fieldRefs.size(); i < fieldRefs.size(); i++) {
-      newSignalUsage.fieldRefs.push_back(fieldRefs[i]);
-    }
-    return newSignalUsage;
-  }
+  mlir::FailureOr<SignalUsage> translate(const SignalUsage &prefix, const SignalUsage &other) const;
 
   void print(mlir::raw_ostream &os) const {
-    if (constFelt) {
-      os << "<const: " << const_cast<FeltConstantOp &>(constFelt) << ">";
+    if (isConstant()) {
+      os << "<constfelt: " << const_cast<FeltConstantOp &>(constFelt).getValueAttr().getValue()
+         << ">";
     } else {
-      os << "<input: " << getInputNum();
+      os << "\%arg" << blockArg.getArgNumber();
       for (auto f : fieldRefs) {
-        os << ", field: " << f.getName();
+        os << "[@" << f.getName() << "]";
       }
-      os << ">";
     }
   }
 
   bool operator==(const SignalUsage &rhs) const {
-    return blockArgIdx == rhs.blockArgIdx && fieldRefs == rhs.fieldRefs;
+    return blockArg == rhs.blockArg && fieldRefs == rhs.fieldRefs;
   }
 
   // required for EquivalenceClasses usage
   bool operator<(const SignalUsage &rhs) const {
-    if (blockArgIdx < rhs.blockArgIdx) {
+    if (isConstant() && !rhs.isConstant()) {
+      // Put all constants at the end
+      return false;
+    } else if (!isConstant() && rhs.isConstant()) {
       return true;
-    } else if (blockArgIdx > rhs.blockArgIdx) {
+    } else if (isConstant() && rhs.isConstant()) {
+      return constFelt < rhs.constFelt;
+    }
+
+    // both are not constants
+    if (blockArg.getArgNumber() < rhs.blockArg.getArgNumber()) {
+      return true;
+    } else if (blockArg.getArgNumber() > rhs.blockArg.getArgNumber()) {
       return false;
     }
     for (size_t i = 0; i < fieldRefs.size() && i < rhs.fieldRefs.size(); i++) {
@@ -151,11 +90,15 @@ public:
 
   struct Hash {
     size_t operator()(const SignalUsage &val) const {
-      size_t hash = std::hash<unsigned>{}(val.blockArgIdx);
-      for (auto f : val.fieldRefs) {
-        hash ^= OpHash<FieldDefOp>{}(f);
+      if (val.isConstant()) {
+        return OpHash<FeltConstantOp>{}(val.constFelt);
+      } else {
+        size_t hash = std::hash<unsigned>{}(val.blockArg.getArgNumber());
+        for (auto f : val.fieldRefs) {
+          hash ^= OpHash<FieldDefOp>{}(f);
+        }
+        return hash;
       }
-      return hash;
     }
   };
 
@@ -164,7 +107,7 @@ private:
    * If the block arg is 0, then it refers to "self", meaning the signal is internal or an output
    * (public means an output) Otherwise, it is an input, either public or private.
    */
-  unsigned blockArgIdx;
+  mlir::BlockArgument blockArg;
   std::vector<FieldDefOp> fieldRefs;
   FeltConstantOp constFelt;
 };
