@@ -127,10 +127,7 @@ bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhs
 llvm::function_ref<mlir::InFlightDiagnostic()>
 emitErrorUnknownLoc(mlir::MLIRContext *ctx, const char *msg) {
   return [ctx, msg] {
-    mlir::MLIRContext *ctx2 = ctx;
-    mlir::UnknownLoc uloc = mlir::UnknownLoc::get(ctx2);
-    mlir::Location loc = mlir::Location(uloc);
-    return mlir::emitError(loc).append(msg);
+    return mlir::emitError(mlir::Location(mlir::UnknownLoc::get(ctx))).append(msg);
   };
 }
 
