@@ -346,9 +346,7 @@ mlir::LogicalResult ArrayType::verify(
 
 ArrayType
 ArrayType::cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, mlir::Type elementType) const {
-  llvm::ArrayRef<int64_t> newShape = shape.has_value() ? shape.value() : getShape();
-  auto emitError = emitErrorUnknownLoc(getContext(), "ArrayType::cloneWith() failed: ");
-  return ArrayType::getChecked(emitError, elementType, newShape);
+  return ArrayType::get(elementType, shape.has_value() ? shape.value() : getShape());
 }
 
 int64_t ArrayType::getNumElements() const { return mlir::ShapedType::getNumElements(getShape()); }
