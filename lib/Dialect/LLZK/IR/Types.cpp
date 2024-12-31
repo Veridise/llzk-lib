@@ -267,6 +267,9 @@ mlir::LogicalResult computeShapeFromDims(
       if (emitError) {
         return ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
       } else {
+        // This approach is based on how the verification failure is handled by `*Type::get()` via
+        // `StorageUserBase`. See:
+        // https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180
         auto errFunc = mlir::detail::getDefaultDiagnosticEmitFn(ctx);
         assert(mlir::succeeded(ArrayDimensionTypes::reportInvalid(errFunc, a, "Array dimension")));
       }
