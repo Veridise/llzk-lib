@@ -350,6 +350,15 @@ FieldWriteOp::getFieldDefOp(mlir::SymbolTableCollection &tables) {
 }
 
 mlir::LogicalResult FieldWriteOp::verifySymbolUses(mlir::SymbolTableCollection &tables) {
+  mlir::FailureOr<StructDefOp> getParentRes = verifyInStruct(*this);
+  if (mlir::failed(getParentRes)) {
+    return mlir::failure(); // verifyInStruct() already emits a sufficient error message
+  }
+  if (mlir::failed(
+          checkSelfType(symbolTable, *getParentRes, this->getComponent().getType(), *this, "result")
+      )) {
+    return mlir::failure();
+  }
   return llzk::verifySymbolUses(*this, tables, getVal());
 }
 
