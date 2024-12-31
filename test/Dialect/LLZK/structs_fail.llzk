@@ -27,14 +27,14 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentE<[@B, @D, @C]> {
     // expected-note@+1 {{see existing symbol definition here}}
-    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentE> {
-      %self = new_struct : !llzk.struct<@ComponentE>
-      return %self : !llzk.struct<@ComponentE>
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentE<[@B, @D, @C]>> {
+      %self = new_struct : !llzk.struct<@ComponentE<[@B, @D, @C]>>
+      return %self : !llzk.struct<@ComponentE<[@B, @D, @C]>>
     }
     // expected-error@+1 {{redefinition of symbol named 'compute'}}
-    func @compute() -> !llzk.struct<@ComponentE> {
-      %self = new_struct : !llzk.struct<@ComponentE>
-      return %self : !llzk.struct<@ComponentE>
+    func @compute() -> !llzk.struct<@ComponentE<[@B, @D, @C]>> {
+      %self = new_struct : !llzk.struct<@ComponentE<[@B, @D, @C]>>
+      return %self : !llzk.struct<@ComponentE<[@B, @D, @C]>>
     }
   }
 }

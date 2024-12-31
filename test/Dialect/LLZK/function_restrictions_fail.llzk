@@ -178,29 +178,33 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-llzk.struct @inv_in_constrain {
-  func @compute(%a: !llzk.felt) -> !llzk.struct<@inv_in_constrain> {
-    %self = new_struct : !llzk.struct<@inv_in_constrain>
-    return %self : !llzk.struct<@inv_in_constrain>
-  }
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @inv_in_constrain {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@inv_in_constrain> {
+      %self = new_struct : !llzk.struct<@inv_in_constrain>
+      return %self : !llzk.struct<@inv_in_constrain>
+    }
 
-  func @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !llzk.felt) {
-    // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
-    %c = llzk.inv %a
-    return
+    func @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !llzk.felt) {
+      // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+      %c = llzk.inv %a
+      return
+    }
   }
 }
 // -----
-llzk.struct @inv_in_constrain {
-  func @compute(%a: !llzk.felt) -> !llzk.struct<@inv_in_constrain> {
-    %self = new_struct : !llzk.struct<@inv_in_constrain>
-    return %self : !llzk.struct<@inv_in_constrain>
-  }
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @inv_in_constrain {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@inv_in_constrain> {
+      %self = new_struct : !llzk.struct<@inv_in_constrain>
+      return %self : !llzk.struct<@inv_in_constrain>
+    }
 
-  func @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !llzk.felt) {
-    // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
-    %c = llzk.inv %a
-    return
+    func @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !llzk.felt) {
+      // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+      %c = llzk.inv %a
+      return
+    }
   }
 }
 // -----
