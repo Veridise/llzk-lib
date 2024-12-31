@@ -251,7 +251,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@compute_with_wrong_ret" as return type}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> index {
       %b = index.constant 2
       return %b : index
@@ -275,7 +275,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@compute_with_wrong_ret" as return type}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> !llzk.struct<@good> {
       %self = new_struct : !llzk.struct<@good>
       return %self : !llzk.struct<@good>
@@ -301,7 +301,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   module @two {
     llzk.struct @good {
-      // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@two::@good" as return type}}
+      // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@two::@good" as return type}}
       func @compute() -> !llzk.struct<@one::@good> {
         %self = new_struct : !llzk.struct<@one::@good>
         return %self : !llzk.struct<@one::@good>
@@ -334,7 +334,7 @@ module attributes {veridise.lang = "llzk"} {
 module { // expected-note {{unnamed 'builtin.module' here}}
   // expected-error@+1 {{'llzk.struct' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
   llzk.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@compute_with_wrong_ret" as return type}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> index {
       %b = index.constant 2
       return %b : index
@@ -363,7 +363,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = new_struct : !llzk.struct<@constrain_without_self_non_struct>
       return %self : !llzk.struct<@constrain_without_self_non_struct>
     }
-    // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its parent 'llzk.struct' "@constrain_without_self_non_struct" as first input type}}
+    // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its ancestor 'llzk.struct' "@constrain_without_self_non_struct" as first input type}}
     func @constrain(%self: !llzk.felt) {
       return
     }
@@ -385,7 +385,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = new_struct : !llzk.struct<@constrain_without_self_wrong_struct>
       return %self : !llzk.struct<@constrain_without_self_wrong_struct>
     }
-    // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its parent 'llzk.struct' "@constrain_without_self_wrong_struct" as first input type}}
+    // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its ancestor 'llzk.struct' "@constrain_without_self_wrong_struct" as first input type}}
     func @constrain(%self: !llzk.struct<@other_type>) {
       return
     }

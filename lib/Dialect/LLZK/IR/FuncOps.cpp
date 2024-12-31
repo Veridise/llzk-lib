@@ -185,44 +185,6 @@ mlir::LogicalResult FuncOp::verify() {
 
 namespace {
 
-mlir::InFlightDiagnostic genCompareErr(StructDefOp &expected, FuncOp &origin, const char *aspect) {
-  return origin.emitOpError().append(
-      "\"@", origin.getSymName(), "\" must use type of its parent '",
-      StructDefOp::getOperationName(), "' \"", expected.getHeaderString(), "\" as ", aspect, " type"
-  );
-}
-
-mlir::LogicalResult checkSelfType(
-    SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, mlir::Type actualType,
-    FuncOp &origin, const char *aspect
-) {
-  if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {
-    auto actualStructOpt =
-        lookupTopLevelSymbol<StructDefOp>(symbolTable, actualStructType.getNameRef(), origin);
-    if (mlir::failed(actualStructOpt)) {
-      return origin.emitError().append(
-          "could not find '", StructDefOp::getOperationName(), "' named \"",
-          actualStructType.getNameRef(), "\""
-      );
-    }
-    StructDefOp actualStruct = actualStructOpt.value().get();
-    if (actualStruct != expectedStruct) {
-      return genCompareErr(expectedStruct, origin, aspect)
-          .attachNote(actualStruct.getLoc())
-          .append("uses this type instead");
-    }
-    // Check for an EXACT match in the parameter list since it must reference the "self" type.
-    if (expectedStruct.getConstParamsAttr() != actualStructType.getParams()) {
-      return genCompareErr(expectedStruct, origin, aspect)
-          .attachNote(actualStruct.getLoc())
-          .append("should be type of this '", StructDefOp::getOperationName(), "'");
-    }
-  } else {
-    return genCompareErr(expectedStruct, origin, aspect);
-  }
-  return mlir::success();
-}
-
 mlir::LogicalResult
 verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parent) {
   mlir::FunctionType funcType = origin.getFunctionType();

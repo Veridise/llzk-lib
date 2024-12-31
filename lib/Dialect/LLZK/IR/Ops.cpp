@@ -23,10 +23,13 @@ namespace llzk {
 
 bool isInStruct(mlir::Operation *op) { return mlir::succeeded(getParentOfType<StructDefOp>(op)); }
 
-mlir::LogicalResult verifyInStruct(mlir::Operation *op) {
-  return isInStruct(op) ? mlir::success()
-                        : op->emitOpError() << "only valid within a '"
-                                            << getOperationName<StructDefOp>() << "' ancestor";
+mlir::FailureOr<StructDefOp> verifyInStruct(mlir::Operation *op) {
+  mlir::FailureOr<StructDefOp> res = getParentOfType<StructDefOp>(op);
+  if (mlir::failed(res)) {
+    return op->emitOpError() << "only valid within a '" << getOperationName<StructDefOp>()
+                             << "' ancestor";
+  }
+  return res;
 }
 
 bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName) {
@@ -44,6 +47,11 @@ bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName) {
   return false;
 }
 
+template <typename ConcreteType>
+mlir::LogicalResult InStruct<ConcreteType>::verifyTrait(mlir::Operation *op) {
+  return verifyInStruct(op);
+}
+
 //===------------------------------------------------------------------===//
 // IncludeOp (see IncludeHelper.cpp for other functions)
 //===------------------------------------------------------------------===//
@@ -54,6 +62,51 @@ IncludeOp IncludeOp::create(mlir::Location loc, llvm::StringRef name, llvm::Stri
 
 IncludeOp IncludeOp::create(mlir::Location loc, mlir::StringAttr name, mlir::StringAttr path) {
   return delegate_to_build<IncludeOp>(loc, name, path);
+}
+
+mlir::InFlightDiagnostic
+genCompareErr(StructDefOp &expected, mlir::Operation *origin, const char *aspect) {
+  std::string prefix = std::string();
+  if (mlir::SymbolOpInterface symbol = llvm::dyn_cast<mlir::SymbolOpInterface>(origin)) {
+    prefix += "\"@";
+    prefix += symbol.getName();
+    prefix += "\" ";
+  }
+  return origin->emitOpError().append(
+      prefix, "must use type of its ancestor '", StructDefOp::getOperationName(), "' \"",
+      expected.getHeaderString(), "\" as ", aspect, " type"
+  );
+}
+
+mlir::LogicalResult checkSelfType(
+    mlir::SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, mlir::Type actualType,
+    mlir::Operation *origin, const char *aspect
+) {
+  if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {
+    auto actualStructOpt =
+        lookupTopLevelSymbol<StructDefOp>(symbolTable, actualStructType.getNameRef(), origin);
+    if (mlir::failed(actualStructOpt)) {
+      return origin->emitError().append(
+          "could not find '", StructDefOp::getOperationName(), "' named \"",
+          actualStructType.getNameRef(), "\""
+      );
+    }
+    StructDefOp actualStruct = actualStructOpt.value().get();
+    if (actualStruct != expectedStruct) {
+      return genCompareErr(expectedStruct, origin, aspect)
+          .attachNote(actualStruct.getLoc())
+          .append("uses this type instead");
+    }
+    // Check for an EXACT match in the parameter list since it must reference the "self" type.
+    if (expectedStruct.getConstParamsAttr() != actualStructType.getParams()) {
+      return genCompareErr(expectedStruct, origin, aspect)
+          .attachNote(actualStruct.getLoc())
+          .append("should be type of this '", StructDefOp::getOperationName(), "'");
+    }
+  } else {
+    return genCompareErr(expectedStruct, origin, aspect);
+  }
+  return mlir::success();
 }
 
 //===------------------------------------------------------------------===//
@@ -192,11 +245,9 @@ FieldDefOp StructDefOp::getFieldDef(mlir::StringAttr fieldName) {
 //===------------------------------------------------------------------===//
 
 mlir::LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  FailureOr<StructDefOp> getParentRes = getParentOfType<StructDefOp>(*this);
+  FailureOr<StructDefOp> getParentRes = verifyInStruct(*this);
   if (failed(getParentRes)) {
-    return this->emitOpError().append(
-        "only valid within a '", StructDefOp::getOperationName(), "'"
-    );
+    return failure(); // verifyInStruct() already emits a sufficient error message
   }
   if (!getParentRes->hasParamNamed(this->getConstNameAttr())) {
     return this->emitOpError()
@@ -222,7 +273,7 @@ mlir::LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) 
       return mlir::failure(); // above already emits a sufficient error message
     }
     mlir::FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(*this);
-    assert(mlir::succeeded(parentRes) && "FieldDefOp parent is always StructDefOp");
+    assert(mlir::succeeded(parentRes) && "FieldDefOp parent is always StructDefOp"); // per ODS def
     if (fieldTypeRes.value() == parentRes.value()) {
       return this->emitOpError()
           .append("type is circular")
@@ -399,6 +450,17 @@ mlir::Type EmitContainmentOp::inferRHS(mlir::Type lhsType) {
 
 void CreateStructOp::getAsmResultNames(mlir::OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "self");
+}
+
+mlir::LogicalResult CreateStructOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+  mlir::FailureOr<StructDefOp> getParentRes = verifyInStruct(*this);
+  if (mlir::failed(getParentRes)) {
+    return mlir::failure(); // verifyInStruct() already emits a sufficient error message
+  }
+  if (mlir::failed(checkSelfType(symbolTable, *getParentRes, this->getType(), *this, "result"))) {
+    return mlir::failure();
+  }
+  return mlir::success();
 }
 
 } // namespace llzk

@@ -45,22 +45,27 @@ template <typename OpType> mlir::FailureOr<OpType> getParentOfType(mlir::Operati
   }
 }
 
+/// Return true iff the given Operation is nested somewhere within a StructDefOp.
 bool isInStruct(mlir::Operation *op);
 
-mlir::LogicalResult verifyInStruct(mlir::Operation *op);
+/// If the given Operation is nested somewhere within a StructDefOp, return a success result
+/// containing that StructDefOp. Otherwise emit an error and return a failure result.
+mlir::FailureOr<StructDefOp> verifyInStruct(mlir::Operation *op);
 
 /// This class provides a verifier for ops that are expected to have
 /// an ancestor llzk::StructDefOp.
 template <typename ConcreteType>
 class InStruct : public mlir::OpTrait::TraitBase<ConcreteType, InStruct> {
 public:
-  static mlir::LogicalResult verifyTrait(mlir::Operation *op) { return verifyInStruct(op); }
+  static mlir::LogicalResult verifyTrait(mlir::Operation *op);
 };
 
+/// Return true iff the given Operation is contained within a FuncOp with the given name that is
+/// itself contained within a StructDefOp.
 bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName);
 
 /// Checks if the given Operation is contained within a FuncOp with the given name that is itself
-/// with a StructDefOp, producing an error if not.
+/// contained within a StructDefOp, producing an error if not.
 template <char const *FuncName, unsigned PrefixLen>
 mlir::LogicalResult verifyInStructFunctionNamed(
     mlir::Operation *op, llvm::function_ref<llvm::SmallString<PrefixLen>()> prefix
@@ -112,3 +117,15 @@ inline OpType delegate_to_build(mlir::Location location, Args &&...args) {
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
 #include "llzk/Dialect/LLZK/IR/Ops.h.inc"
+
+namespace llzk {
+
+mlir::InFlightDiagnostic
+genCompareErr(StructDefOp &expected, mlir::Operation *origin, const char *aspect);
+
+mlir::LogicalResult checkSelfType(
+    mlir::SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, mlir::Type actualType,
+    mlir::Operation *origin, const char *aspect
+);
+
+} // namespace llzk

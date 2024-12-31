@@ -243,6 +243,7 @@ def LLZK_CreateStructOp
     : LLZK_Op<"new_struct", [ComputeOnly,
                              DeclareOpInterfaceMethods<
                                  OpAsmOpInterface, ["getAsmResultNames"]>,
+                             DeclareOpInterfaceMethods<SymbolUserOpInterface>,
 ]> {
   let summary = "creates a new struct";
   let description = [{

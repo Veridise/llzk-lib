@@ -149,7 +149,7 @@ module attributes {veridise.lang = "llzk"} {
 // No parameters used to reference self type within component
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentG<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
-    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@ComponentG<[@A, @B]>" as return type}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@ComponentG<[@A, @B]>" as return type}}
     func @compute() -> !llzk.struct<@ComponentG> {
       %self = new_struct : !llzk.struct<@ComponentG>
       return %self : !llzk.struct<@ComponentG>
@@ -161,7 +161,7 @@ module attributes {veridise.lang = "llzk"} {
 // Fewer parameters used to reference self type within component
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentH<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
-    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@ComponentH<[@A, @B]>" as return type}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@ComponentH<[@A, @B]>" as return type}}
     func @compute() -> !llzk.struct<@ComponentH<[@A]>> {
       %self = new_struct : !llzk.struct<@ComponentH<[@A]>>
       return %self : !llzk.struct<@ComponentH<[@A]>>
@@ -173,7 +173,7 @@ module attributes {veridise.lang = "llzk"} {
 // More parameters used to reference self type within component
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentI<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
-    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@ComponentI<[@A, @B]>" as return type}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@ComponentI<[@A, @B]>" as return type}}
     func @compute() -> !llzk.struct<@ComponentI<[@A, @B, @B]>> {
       %self = new_struct : !llzk.struct<@ComponentI<[@A, @B, @B]>>
       return %self : !llzk.struct<@ComponentI<[@A, @B, @B]>>
@@ -185,7 +185,7 @@ module attributes {veridise.lang = "llzk"} {
 // Different parameters used to reference self type within component
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentJ<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
-    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@ComponentJ<[@A, @B]>" as return type}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@ComponentJ<[@A, @B]>" as return type}}
     func @compute() -> !llzk.struct<@ComponentJ<[@B, @A]>> {
       %self = new_struct : !llzk.struct<@ComponentJ<[@B, @A]>>
       return %self : !llzk.struct<@ComponentJ<[@B, @A]>>
@@ -197,7 +197,7 @@ module attributes {veridise.lang = "llzk"} {
 // Unknown parameters used to reference self type within component
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentK<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
-    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@ComponentK<[@A, @B]>" as return type}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@ComponentK<[@A, @B]>" as return type}}
     func @compute() -> !llzk.struct<@ComponentK<[@C, @D]>> {
       %self = new_struct : !llzk.struct<@ComponentK<[@C, @D]>>
       return %self : !llzk.struct<@ComponentK<[@C, @D]>>
@@ -429,7 +429,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.func @bad(%0: !llzk.felt) {
-    // expected-error@+1 {{'llzk.read_const' op only valid within a 'llzk.struct'}}
+    // expected-error@+1 {{'llzk.read_const' op only valid within a 'llzk.struct' ancestor}}
     %1 = read_const @X : !llzk.felt
     return
   }
