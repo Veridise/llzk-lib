@@ -215,3 +215,17 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentY {
+    func @compute() -> !llzk.struct<@ComponentY> {
+      %self = new_struct : !llzk.struct<@ComponentY>
+      return %self : !llzk.struct<@ComponentY>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentY>)  {
+      // expected-error@+1 {{'llzk.new_struct' op is ComputeOnly so it cannot be used within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+      %0 = llzk.new_struct : !llzk.struct<@ComponentY>
+      return
+    }
+  }
+}
