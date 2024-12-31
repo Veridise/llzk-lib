@@ -107,9 +107,11 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @ComponentC2 {
+    llzk.field @f1 : !llzk.struct<@ComponentC1>
+
     func @compute(%p: !llzk.struct<@ComponentC1>, %q: !llzk.felt) -> !llzk.struct<@ComponentC2> {
       %self = new_struct : !llzk.struct<@ComponentC2>
-      writef %p[@f1] = %q : !llzk.struct<@ComponentC1>, !llzk.felt
+      writef %self[@f1] = %p : !llzk.struct<@ComponentC2>, !llzk.struct<@ComponentC1>
       return %self : !llzk.struct<@ComponentC2>
     }
 
@@ -129,9 +131,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 //CHECK-LABEL:  llzk.struct @ComponentC2 {
+//CHECK-NEXT:     field @f1 : !llzk.struct<@ComponentC1>
 //CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentC1>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentC2> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentC2>
-//CHECK-NEXT:       writef %[[A0]][@f1] = %[[A1]] : <@ComponentC1>, !llzk.felt
+//CHECK-NEXT:       writef %[[SELF]][@f1] = %[[A0]] : <@ComponentC2>, !llzk.struct<@ComponentC1>
 //CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentC2>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentC2>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentC1>) {
@@ -213,7 +216,6 @@ module attributes {veridise.lang = "llzk"} {
     func @compute(%q: !llzk.struct<@ComponentF1>, %z: !llzk.felt) -> !llzk.struct<@ComponentF2> {
       %self = new_struct : !llzk.struct<@ComponentF2>
       writef %self[@f2] = %q : !llzk.struct<@ComponentF2>, !llzk.struct<@ComponentF1>
-      writef %q[@f1] = %z : !llzk.struct<@ComponentF1>, !llzk.felt
       return %self : !llzk.struct<@ComponentF2>
     }
 
@@ -238,7 +240,6 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-SAME:           %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentF2> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentF2>
 //CHECK-NEXT:       writef %[[SELF]][@f2] = %[[A1]] : <@ComponentF2>, !llzk.struct<@ComponentF1>
-//CHECK-NEXT:       writef %[[A1]][@f1] = %[[A2]] : <@ComponentF1>, !llzk.felt
 //CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentF2>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentF2>,
