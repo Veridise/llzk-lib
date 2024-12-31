@@ -224,7 +224,7 @@ def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf"> {
   }];
 }
 
-def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef"> {
+def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef", [ComputeOnly]> {
   let summary = "Write value to a struct/component field.";
   let description = [{
     This operation writes the value to the named field from a struct/component.
@@ -239,7 +239,8 @@ def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef"> {
 }
 
 def LLZK_CreateStructOp
-    : LLZK_Op<"new_struct", [DeclareOpInterfaceMethods<
+    : LLZK_Op<"new_struct", [ComputeOnly,
+                             DeclareOpInterfaceMethods<
                                  OpAsmOpInterface, ["getAsmResultNames"]>,
 ]> {
   let summary = "creates a new struct";

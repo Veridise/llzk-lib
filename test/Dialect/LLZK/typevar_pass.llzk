@@ -584,7 +584,6 @@ module attributes {veridise.lang = "llzk"} {
         %temp = llzk.readarr %arr[%iv] : !llzk.array<@S x !llzk.tvar<@T>>, !llzk.tvar<@T>
         llzk.emit_eq %temp, %iv : !llzk.tvar<@T>, index
       }
-      writef %self[@f] = %arr : !llzk.struct<@ComponentG<[@S, @T]>>, !llzk.array<@S x !llzk.tvar<@T>>
       return
     }
   }
@@ -612,7 +611,6 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[T0]][%arg1] : <@S x !llzk.tvar<@T>>, !llzk.tvar<@T>
 //CHECK-NEXT:        llzk.emit_eq %[[T2]], %arg1 : !llzk.tvar<@T>, index
 //CHECK-NEXT:      }
-//CHECK-NEXT:      writef %arg0[@f] = %[[T0]] : <@ComponentG<[@S, @T]>>, !llzk.array<@S x !llzk.tvar<@T>>
 //CHECK-NEXT:      return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
