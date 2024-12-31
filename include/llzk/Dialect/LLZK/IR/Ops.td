@@ -95,7 +95,8 @@ def LLZK_IncludeOp
 def LLZK_StructDefOp
     : LLZK_Op<"struct", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
                          IsolatedFromAbove, GraphRegionNoTerminator,
-                         OpAsmOpInterface]> {
+                         OpAsmOpInterface,
+                         DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "Circuit struct/component definition";
   let description = [{
       Describes a struct/component in a circuit.

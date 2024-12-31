@@ -8,6 +8,7 @@
 #include <mlir/IR/OwningOpRef.h>
 #include <mlir/Support/LogicalResult.h>
 
+#include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/Twine.h>
 
 // TableGen'd implementation files
@@ -95,14 +96,40 @@ std::string StructDefOp::getHeaderString() {
 bool StructDefOp::hasParamNamed(StringAttr find) {
   if (ArrayAttr params = this->getConstParamsAttr()) {
     for (Attribute attr : params) {
-      if (FlatSymbolRefAttr flatter = llvm::dyn_cast<FlatSymbolRefAttr>(attr)) {
-        if (flatter.getRootReference() == find) {
-          return true;
-        }
+      assert(llvm::isa<FlatSymbolRefAttr>(attr)); // per ODS
+      if (llvm::cast<FlatSymbolRefAttr>(attr).getRootReference() == find) {
+        return true;
       }
     }
   }
   return false;
+}
+
+LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
+  if (ArrayAttr params = this->getConstParamsAttr()) {
+    // Ensure struct parameter names are unique
+    llvm::StringSet<> uniqNames;
+    for (Attribute attr : params) {
+      assert(llvm::isa<FlatSymbolRefAttr>(attr)); // per ODS
+      StringRef name = llvm::cast<FlatSymbolRefAttr>(attr).getValue();
+      if (!uniqNames.insert(name).second) {
+        return this->emitOpError().append("has more than one parameter named \"@", name, "\"");
+      }
+    }
+    // Ensure they do not conflict with existing symbols
+    for (Attribute attr : params) {
+      auto res = lookupTopLevelSymbol(tables, llvm::cast<FlatSymbolRefAttr>(attr), *this, false);
+      if (mlir::succeeded(res)) {
+        return this->emitOpError()
+            .append("parameter name \"@")
+            .append(llvm::cast<FlatSymbolRefAttr>(attr).getValue())
+            .append("\" conflicts with an existing symbol")
+            .attachNote(res->get()->getLoc())
+            .append("symbol already defined here");
+      }
+    }
+  }
+  return success();
 }
 
 mlir::LogicalResult StructDefOp::verifyRegions() {

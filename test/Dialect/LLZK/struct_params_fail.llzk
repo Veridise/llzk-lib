@@ -436,7 +436,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentV<[@A]> { // // expected-note {{must reference a parameter of this struct}}
+  llzk.struct @ComponentV<[@A]> { // expected-note {{must reference a parameter of this struct}}
     func @compute(%0: !llzk.felt) -> !llzk.struct<@ComponentV<[@A]>> {
       %self = new_struct : !llzk.struct<@ComponentV<[@A]>>
       return %self : !llzk.struct<@ComponentV<[@A]>>
@@ -447,5 +447,28 @@ module attributes {veridise.lang = "llzk"} {
       emit_eq %0, %1 : !llzk.felt
       return
     }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+1 {{'llzk.struct' op has more than one parameter named "@A"}}
+  llzk.struct @ComponentW<[@A, @A]> {
+    func @compute() -> !llzk.struct<@ComponentW<[@A, @A]>> {
+      %self = new_struct : !llzk.struct<@ComponentW<[@A, @A]>>
+      return %self : !llzk.struct<@ComponentW<[@A, @A]>>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentW<[@A, @A]>>) { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @F() { return } // expected-note {{symbol already defined here}}
+  // expected-error@+1 {{'llzk.struct' op parameter name "@F" conflicts with an existing symbol}}
+  llzk.struct @ComponentX<[@F]> {
+    func @compute() -> !llzk.struct<@ComponentX<[@F]>> {
+      %self = new_struct : !llzk.struct<@ComponentX<[@F]>>
+      return %self : !llzk.struct<@ComponentX<[@F]>>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentX<[@F]>>) { return }
   }
 }

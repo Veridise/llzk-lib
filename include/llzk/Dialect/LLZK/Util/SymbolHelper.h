@@ -36,28 +36,32 @@ mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(StructDefOp &to);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(FuncOp &to);
 
 SymbolLookupResultUntyped lookupSymbolRec(
-    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr sym, mlir::Operation *symTableOp
+    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, mlir::Operation *symTableOp
 );
 
 inline mlir::FailureOr<SymbolLookupResultUntyped> lookupSymbolIn(
     mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, mlir::Operation *symTableOp,
-    mlir::Operation *origin
+    mlir::Operation *origin, bool reportMissing = true
 ) {
-  auto found = lookupSymbolRec(tables, symbol, symTableOp);
-  if (!found) {
-    return origin->emitOpError() << "references unknown symbol \"" << symbol << "\"";
+  if (auto found = lookupSymbolRec(tables, symbol, symTableOp)) {
+    return found;
   }
-  return found;
+  if (reportMissing) {
+    return origin->emitOpError() << "references unknown symbol \"" << symbol << "\"";
+  } else {
+    return mlir::failure();
+  }
 }
 
 inline mlir::FailureOr<SymbolLookupResultUntyped> lookupTopLevelSymbol(
-    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin
+    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin,
+    bool reportMissing = true
 ) {
   mlir::FailureOr<mlir::ModuleOp> root = getRootModule(origin);
   if (mlir::failed(root)) {
     return mlir::failure(); // getRootModule() already emits a sufficient error message
   }
-  return lookupSymbolIn(tables, symbol, root.value(), origin);
+  return lookupSymbolIn(tables, symbol, root.value(), origin, reportMissing);
 }
 
 template <typename T>
