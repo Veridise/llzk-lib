@@ -54,10 +54,68 @@ public:
   /// references within subcomponents that are inaccessible to the caller.
   ConstraintSummary translate(ConstrainRefRemappings translation);
 
+  /// @brief Get the values that are connected to the given ref via emitted constraints.
+  /// This method looks for constraints to the value in the ref and constraints to any
+  /// prefix of this value.
+  /// For example, if ref is an array element (foo[2]), this looks for constraints on
+  /// foo[2] as well as foo, as arrays may be constrained in their entirity via emit_in operations.
+  /// @param ref
+  /// @return The set of references that are connected to ref via constraints.
+  std::set<ConstrainRef> getConstrainingValues(const ConstrainRef &ref) const;
+
+  /*
+  Rule of three, needed for the mlir::SymbolTableCollection, which has no copy constructor.
+  Since the mlir::SymbolTableCollection is a caching mechanism, we simply allow default, empty
+  construction for copies.
+  */
+
+  /// Copy constructor.
+  ConstraintSummary(const ConstraintSummary &other)
+      : mod(other.mod), structDef(other.structDef), constraintSets(other.constraintSets), tables() {
+  }
+  /// Copy assignment.
+  ConstraintSummary &operator=(const ConstraintSummary &other) {
+    mod = other.mod;
+    structDef = other.structDef;
+    constraintSets = other.constraintSets;
+  }
+  /// Destructor. Just default.
+  ~ConstraintSummary() = default;
+
 private:
   mlir::ModuleOp mod;
   StructDefOp structDef;
   llvm::EquivalenceClasses<ConstrainRef> constraintSets;
+
+  mlir::SymbolTableCollection tables;
+
+  StructDefOp getStructDef(StructType ty) {
+    auto sDef = ty.getDefinition(tables, mod);
+    if (mlir::failed(sDef)) {
+      llvm::report_fatal_error("could not find struct definition from struct type");
+    }
+    return sDef->get();
+  }
+
+  /// Produce all possible ConstraintRefs that are present starting from the given BlockArgument.
+  std::vector<ConstrainRef> getAllConstrainRefs(mlir::BlockArgument arg);
+
+  /// Produce all possible ConstraintRefs that are present starting from the given
+  /// BlockArgument and partially-specified indices into that object (fields).
+  /// This produces refs for composite types (e.g., full structs and full arrays)
+  /// as well as individual fields and constants.
+  std::vector<ConstrainRef> getAllConstrainRefs(
+      StructDefOp s, mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields = {}
+  );
+
+  /// Produce all possible ConstraintRefs that are present starting from the given
+  /// arrayField, originating from a given blockArg,
+  /// and partially-specified indices into that object (fields).
+  /// This produces refs for composite types (e.g., full structs and full arrays)
+  /// as well as individual fields and constants.
+  std::vector<ConstrainRef> getAllConstrainRefs(
+      ArrayType arrayTy, mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields = {}
+  );
 
   /// @brief Constructs an empty summary. The summary is populated using computeConstraints.
   /// @param m The parent LLZK-compliant module.

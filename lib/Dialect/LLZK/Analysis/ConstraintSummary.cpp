@@ -208,47 +208,76 @@ void ConstraintSummary::print(llvm::raw_ostream &os) const {
   os << "}\n";
 }
 
-/// Produce all possible ConstraintRefs that are present starting from the given
-/// BlockArgument and partially-specified indices into that object (fields).
-std::vector<ConstrainRef> getAllConstrainRefs(
-    mlir::ModuleOp mod, StructDefOp s, mlir::BlockArgument blockArg,
-    std::vector<FieldDefOp> fields = {}
+std::vector<ConstrainRef> ConstraintSummary::getAllConstrainRefs(
+    ArrayType arrayTy, mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields
 ) {
   std::vector<ConstrainRef> res;
-  // Recurse into struct types by iterating over all their field definitions
-  for (auto f : s.getOps<FieldDefOp>()) {
-    std::vector<FieldDefOp> subFields = fields;
-    subFields.push_back(f);
-    if (auto structTy = mlir::dyn_cast<llzk::StructType>(f.getType())) {
-      mlir::SymbolTableCollection tables;
-      auto sDef = structTy.getDefinition(tables, mod);
-      if (mlir::failed(sDef)) {
-        llvm::report_fatal_error("could not find struct definition from struct type");
-      }
-      auto subRes = getAllConstrainRefs(mod, sDef->get(), blockArg, subFields);
+  // Add root item
+  res.emplace_back(blockArg, fields);
+
+  // Recurse into arrays by iterating over their elements
+  int64_t maxSz = arrayTy.getDimSize(0);
+  for (int64_t i = 0; i < maxSz; i++) {
+    auto elemTy = arrayTy.getElementType();
+
+    std::vector<ConstrainRefIndex> subFields = fields;
+    subFields.emplace_back(i);
+
+    if (auto arrayElemTy = mlir::dyn_cast<ArrayType>(elemTy)) {
+      // recurse
+      auto subRes = getAllConstrainRefs(arrayElemTy, blockArg, subFields);
+      res.insert(res.end(), subRes.begin(), subRes.end());
+    } else if (auto structTy = mlir::dyn_cast<StructType>(elemTy)) {
+      // recurse into struct def
+      auto subRes = getAllConstrainRefs(getStructDef(structTy), blockArg, subFields);
       res.insert(res.end(), subRes.begin(), subRes.end());
     } else {
-      res.push_back(ConstrainRef(blockArg, subFields));
+      // scalar type
+      res.emplace_back(blockArg, subFields);
+    }
+  }
+
+  return res;
+}
+
+std::vector<ConstrainRef> ConstraintSummary::getAllConstrainRefs(
+    StructDefOp s, mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields
+) {
+  std::vector<ConstrainRef> res;
+  // Add root item
+  res.emplace_back(blockArg, fields);
+  // Recurse into struct types by iterating over all their field definitions
+  for (auto f : s.getOps<FieldDefOp>()) {
+    std::vector<ConstrainRefIndex> subFields = fields;
+    subFields.emplace_back(f);
+    // Make a reference to the current field, regardless of if it is a composite
+    // type or not.
+    res.emplace_back(blockArg, subFields);
+    if (auto structTy = mlir::dyn_cast<llzk::StructType>(f.getType())) {
+      // Create refs for each field
+      auto subRes = getAllConstrainRefs(getStructDef(structTy), blockArg, subFields);
+      res.insert(res.end(), subRes.begin(), subRes.end());
+    } else if (auto arrayTy = mlir::dyn_cast<llzk::ArrayType>(f.getType())) {
+      // Create refs for each array element
+      auto subRes = getAllConstrainRefs(arrayTy, blockArg, subFields);
+      res.insert(res.end(), subRes.begin(), subRes.end());
     }
   }
   return res;
 }
 
 /// Produce all possible ConstraintRefs that are present starting from the given BlockArgument.
-std::vector<ConstrainRef> getAllConstrainRefs(mlir::ModuleOp mod, mlir::BlockArgument arg) {
+std::vector<ConstrainRef> ConstraintSummary::getAllConstrainRefs(mlir::BlockArgument arg) {
   auto ty = arg.getType();
   std::vector<ConstrainRef> res;
   if (auto structTy = mlir::dyn_cast<llzk::StructType>(ty)) {
-    mlir::SymbolTableCollection tables;
-    auto sDef = structTy.getDefinition(tables, mod);
-    if (mlir::failed(sDef)) {
-      llvm::report_fatal_error("could not find struct definition from struct type");
-    }
-    res = getAllConstrainRefs(mod, sDef->get(), arg);
-  } else if (mlir::isa<llzk::FeltType>(ty) || mlir::isa<mlir::IndexType>(ty) ||
-             mlir::isa<llzk::ArrayType>(ty)) {
+    // recurse over fields
+    res = getAllConstrainRefs(getStructDef(structTy), arg);
+  } else if (auto arrayType = mlir::dyn_cast<llzk::ArrayType>(ty)) {
+    res = getAllConstrainRefs(arrayType, arg);
+  } else if (mlir::isa<llzk::FeltType>(ty) || mlir::isa<mlir::IndexType>(ty)) {
     // Scalar type
-    res.push_back(ConstrainRef(arg));
+    res.emplace_back(arg);
   } else {
     std::string msg = "unsupported type: ";
     llvm::raw_string_ostream ss(msg);
@@ -287,7 +316,7 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
   // Thanks to the self argument, we can just do everything through the
   // blocks arguments to constrain.
   for (auto a : constrainFnOp.getArguments()) {
-    for (auto sigUsage : getAllConstrainRefs(mod, a)) {
+    for (auto sigUsage : getAllConstrainRefs(a)) {
       constraintSets.insert(sigUsage);
     }
   }
@@ -309,8 +338,7 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
    * the call. We just need to see what constraints are generated here, and
    * add them to the transitive closures.
    */
-  mlir::SymbolTableCollection tables;
-  constrainFnOp.walk([this, &tables, &am](CallOp fnCall) mutable {
+  constrainFnOp.walk([this, &am](CallOp fnCall) mutable {
     auto res = resolveCallable<FuncOp>(tables, fnCall);
     if (mlir::failed(res)) {
       fnCall.emitError() << "Could not resolve callable!\n";
@@ -432,6 +460,21 @@ ConstraintSummary ConstraintSummary::translate(ConstrainRefRemappings translatio
       res.constraintSets.insert(*it);
       res.constraintSets.unionSets(leader, *it);
     }
+  }
+  return res;
+}
+
+std::set<ConstrainRef> ConstraintSummary::getConstrainingValues(const ConstrainRef &ref) const {
+  std::set<ConstrainRef> res;
+  auto currRef = mlir::FailureOr<ConstrainRef>(ref);
+  while (mlir::succeeded(currRef)) {
+    auto it = constraintSets.findLeader(currRef.value());
+    for (; it != constraintSets.member_end(); it++) {
+      if (currRef.value() != *it) {
+        res.insert(*it);
+      }
+    }
+    currRef = currRef->getParentPrefix();
   }
   return res;
 }
