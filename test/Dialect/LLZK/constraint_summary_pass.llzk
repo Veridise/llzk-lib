@@ -1,4 +1,23 @@
-// RUN: llzk -split-input-file -llzk-inline-includes -llzk-print-constraint-summaries %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -split-input-file -llzk-inline-includes -llzk-print-constraint-summaries %s 2>&1 | FileCheck %s
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @NoConstraints {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@NoConstraints> {
+      %self = new_struct : !llzk.struct<@NoConstraints>
+      return %self : !llzk.struct<@NoConstraints>
+    }
+
+    func @constrain(%self: !llzk.struct<@NoConstraints>, %a: !llzk.felt) {
+      return
+    }
+  }
+}
+
+// CHECK-LABEL: NoConstraints ConstraintSummary {
+// CHECK-NEXT:     { %arg1 }
+// CHECK-NEXT: }
+
+// -----
 
 module attributes {veridise.lang = "llzk"} {
 
@@ -74,3 +93,85 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK: ComponentB ConstraintSummary {
 // CHECK-NEXT:     { %arg1, %arg2 }
 // CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.struct @EnsureZero {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@EnsureZero> {
+      %self = new_struct : !llzk.struct<@EnsureZero>
+      return %self : !llzk.struct<@EnsureZero>
+    }
+
+    func @constrain(%self: !llzk.struct<@EnsureZero>, %a: !llzk.felt) {
+      %zero = llzk.constfelt 0
+      emit_eq %a, %zero : !llzk.felt
+      return
+    }
+  }
+
+  llzk.struct @EnsureBothZero {
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@EnsureBothZero> {
+      %self = new_struct : !llzk.struct<@EnsureBothZero>
+      return %self : !llzk.struct<@EnsureBothZero>
+    }
+
+    // NOTE: This test case demonstrates where this analysis is currently overly conservative,
+    // as it does not determine that %a and %b must be precisely equal to 0.
+    func @constrain(%self: !llzk.struct<@EnsureBothZero>, %a: !llzk.felt, %b: !llzk.felt) {
+      %zero = llzk.constfelt 0
+      emit_eq %a, %b : !llzk.felt
+      emit_eq %a, %zero : !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK-LABEL: EnsureZero ConstraintSummary {
+// CHECK-NEXT:     { %arg1, <constfelt: 0> }
+// CHECK-NEXT: }
+// CHECK-NEXT: EnsureBothZero ConstraintSummary {
+// CHECK-NEXT:     { %arg1, %arg2, <constfelt: 0> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.struct @Passthrough {
+    field @out : !llzk.felt {llzk.pub}
+
+    func @compute(%in: !llzk.felt) -> !llzk.struct<@Passthrough> {
+      %self = new_struct : !llzk.struct<@Passthrough>
+      writef %self[@out] = %in : !llzk.struct<@Passthrough>, !llzk.felt
+      return %self : !llzk.struct<@Passthrough>
+    }
+
+    func @constrain(%self: !llzk.struct<@Passthrough>, %in: !llzk.felt) {
+      %out = readf %self[@out] : !llzk.struct<@Passthrough>, !llzk.felt
+      emit_eq %in, %out : !llzk.felt
+      return
+    }
+  }
+
+  llzk.struct @EnsureIsZero {
+    field @p : !llzk.struct<@Passthrough>
+
+    func @compute(%in: !llzk.felt) -> !llzk.struct<@EnsureIsZero> {
+      %self = new_struct : !llzk.struct<@EnsureIsZero>
+      %p_0 = call @Passthrough::@compute(%in) : (!llzk.felt) -> (!llzk.struct<@Passthrough>)
+      writef %self[@p] = %p_0 : !llzk.struct<@EnsureIsZero>, !llzk.struct<@Passthrough>
+      return %self : !llzk.struct<@EnsureIsZero>
+    }
+
+    func @constrain(%self: !llzk.struct<@EnsureIsZero>, %in: !llzk.felt) {
+      %zero = llzk.constfelt 0
+      %p_0 = readf %self[@p] : !llzk.struct<@EnsureIsZero>, !llzk.struct<@Passthrough>
+      call @Passthrough::@constrain(%p_0, %zero) : (!llzk.struct<@Passthrough>, !llzk.felt) -> ()
+      %out = readf %p_0[@out] : !llzk.struct<@Passthrough>, !llzk.felt
+      emit_eq %in, %out : !llzk.felt
+      return
+    }
+  }
+}

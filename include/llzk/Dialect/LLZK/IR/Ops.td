@@ -135,6 +135,12 @@ def LLZK_StructDefOp
     /// structure with the given name, if present.
     FieldDefOp getFieldDef(::mlir::StringAttr fieldName);
 
+    /// Gets the FuncOp that defines the compute function in this structure, if present.
+    FuncOp getComputeFuncOp();
+
+    /// Gets the FuncOp that defines the constrain function in this structure, if present.
+    FuncOp getConstrainFuncOp();
+
     //===------------------------------------------------------------------===//
     // OpAsmOpInterface Methods
     //===------------------------------------------------------------------===//

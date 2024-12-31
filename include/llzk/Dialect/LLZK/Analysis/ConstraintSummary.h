@@ -1,5 +1,6 @@
 #pragma once
 
+#include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/Hash.h"
 
@@ -19,176 +20,89 @@ class DataFlowSolver;
 
 namespace llzk {
 
-/// @brief Defines a signal usage.
-/// A signal usage is:
-/// - The block argument index (all signals, even internal, are referenced via inputs arguments)
-///   - "self", or internal signals, will always be block argument 0.
-/// - The field definitions within the argument, if present. This would be if an input argument is
-/// another struct.
-///   - Like array references, this may be nested (e.g., signal foo of struct X within struct Y
-///   would be Y[X[foo]]).
-class SignalUsage {
-public:
-  /// Try to create SignalUsages out of a given operation.
-  /// A single operation may contain multiple usages, e.g. addition of signals.
-  static mlir::FailureOr<std::vector<SignalUsage>> get(mlir::Value val);
-
-  explicit SignalUsage(mlir::BlockArgument b) : blockArg(b), fieldRefs({}), constFelt(nullptr) {}
-  SignalUsage(mlir::BlockArgument b, std::vector<FieldDefOp> f)
-      : blockArg(b), fieldRefs(f), constFelt(nullptr) {}
-  explicit SignalUsage(FeltConstantOp c) : blockArg(nullptr), fieldRefs({}), constFelt(c) {}
-
-  bool isConstant() const { return constFelt != nullptr; }
-  unsigned getInputNum() const { return blockArg.getArgNumber(); }
-
-  /// @brief Resolve
-  /// @param other
-  /// @return
-  mlir::FailureOr<SignalUsage> translate(const SignalUsage &prefix, const SignalUsage &other) const;
-
-  void print(mlir::raw_ostream &os) const {
-    if (isConstant()) {
-      os << "<constfelt: " << const_cast<FeltConstantOp &>(constFelt).getValueAttr().getValue()
-         << ">";
-    } else {
-      os << "\%arg" << blockArg.getArgNumber();
-      for (auto f : fieldRefs) {
-        os << "[@" << f.getName() << "]";
-      }
-    }
-  }
-
-  bool operator==(const SignalUsage &rhs) const {
-    return blockArg == rhs.blockArg && fieldRefs == rhs.fieldRefs;
-  }
-
-  // required for EquivalenceClasses usage
-  bool operator<(const SignalUsage &rhs) const {
-    if (isConstant() && !rhs.isConstant()) {
-      // Put all constants at the end
-      return false;
-    } else if (!isConstant() && rhs.isConstant()) {
-      return true;
-    } else if (isConstant() && rhs.isConstant()) {
-      return constFelt < rhs.constFelt;
-    }
-
-    // both are not constants
-    if (blockArg.getArgNumber() < rhs.blockArg.getArgNumber()) {
-      return true;
-    } else if (blockArg.getArgNumber() > rhs.blockArg.getArgNumber()) {
-      return false;
-    }
-    for (size_t i = 0; i < fieldRefs.size() && i < rhs.fieldRefs.size(); i++) {
-      if (fieldRefs[i] < rhs.fieldRefs[i]) {
-        return true;
-      } else if (fieldRefs[i] > rhs.fieldRefs[i]) {
-        return false;
-      }
-    }
-    return fieldRefs.size() < rhs.fieldRefs.size();
-  }
-
-  struct Hash {
-    size_t operator()(const SignalUsage &val) const {
-      if (val.isConstant()) {
-        return OpHash<FeltConstantOp>{}(val.constFelt);
-      } else {
-        size_t hash = std::hash<unsigned>{}(val.blockArg.getArgNumber());
-        for (auto f : val.fieldRefs) {
-          hash ^= OpHash<FieldDefOp>{}(f);
-        }
-        return hash;
-      }
-    }
-  };
-
-private:
-  /**
-   * If the block arg is 0, then it refers to "self", meaning the signal is internal or an output
-   * (public means an output) Otherwise, it is an input, either public or private.
-   */
-  mlir::BlockArgument blockArg;
-  std::vector<FieldDefOp> fieldRefs;
-  FeltConstantOp constFelt;
-};
-
-using SignalUsageRemappings = std::vector<std::pair<SignalUsage, SignalUsage>>;
-
-static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SignalUsage &s) {
-  s.print(os);
-  return os;
-}
+using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRef>>;
 
 /// @brief A summary of constraints enforced by an LLZK struct.
+/// The summary
 class ConstraintSummary {
 public:
+  /// @brief Compute a ConstraintSummary
+  /// @param mod The LLZK-complaint module that is the parent of struct `s`.
+  /// @param s The struct to compute the summary for.
+  /// @param solver A pre-configured DataFlowSolver. The liveness of the struct must
+  /// already be computed in this solver in order for the constraint analysis to run.
+  /// @param am A module-level analysis manager. This analysis manager needs to originate
+  /// from a module-level analysis (i.e., for the `mod` module) so that analyses
+  /// for other constraints can be queried via the getChildAnalysis method.
+  /// @return
   static mlir::FailureOr<ConstraintSummary> compute(
       mlir::ModuleOp mod, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
   );
 
+  /// @brief Dumps the ConstraintSummary to stderr.
   void dump() const;
-  void print(llvm::raw_ostream &os) const;
+  /// @brief Print the constraintSummary to the specified output stream.
+  /// @param os The LLVM/MLIR output stream.
+  void print(mlir::raw_ostream &os) const;
 
-  /// Omit untranslated signals, those are internal.
-  ConstraintSummary translate(SignalUsageRemappings translation);
+  /// @brief Translate the ConstrainRefs in this summary to that of a different
+  /// context. Used to translate a summary of a struct to a summary for a called subcomponent.
+  /// @param translation A vector of mappings of current reference prefix -> translated reference
+  /// prefix.
+  /// @return A summary that contains only translated references. Non-constant references with
+  /// no translation are omitted. This omissions allows calling components to ignore internal
+  /// references within subcomponents that are inaccessible to the caller.
+  ConstraintSummary translate(ConstrainRefRemappings translation);
 
 private:
   mlir::ModuleOp mod;
   StructDefOp structDef;
-  llvm::EquivalenceClasses<SignalUsage> constraintSets;
+  llvm::EquivalenceClasses<ConstrainRef> constraintSets;
 
+  /// @brief Constructs an empty summary. The summary is populated using computeConstraints.
+  /// @param m The parent LLZK-compliant module.
+  /// @param s The struct to summarize.
   ConstraintSummary(mlir::ModuleOp m, StructDefOp s) : mod(m), structDef(s), constraintSets() {}
 
+  /// @brief Runs the constraint analysis to compute a transitive closure over ConstrainRefs
+  /// as operated over by emit operations.
+  /// @param solver The pre-configured solver.
+  /// @param am The module-level AnalysisManager.
+  /// @return mlir::success() if no issues were encountered, mlir::failure() otherwise
   mlir::LogicalResult computeConstraints(mlir::DataFlowSolver &solver, mlir::AnalysisManager &am);
 
+  /// @brief Update the constraintSets EquivalenceClasses based on the given
+  /// emit operation. Relies on the caller to verify that `emitOp` is either
+  /// an EmitEqualityOp or an EmitContainmentOp, as the logic for both is currently
+  /// the same.
+  /// @param solver The pre-configured solver.
+  /// @param emitOp The emit operation that is creating a constraint.
   void walkConstrainOp(mlir::DataFlowSolver &solver, mlir::Operation *emitOp);
 };
 
-class ConstraintSummaryModuleAnalysis;
-
-/// @brief An analysis wrapper around the ConstraintSummary that performs additional checks.
-class ConstraintSummaryAnalysis {
-public:
-  ConstraintSummaryAnalysis(mlir::Operation *op);
-
-  mlir::LogicalResult
-  constructSummary(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager);
-
-  ConstraintSummary &getSummary() {
-    ensureSummaryCreated();
-    return *summary;
-  }
-  const ConstraintSummary &getSummary() const {
-    ensureSummaryCreated();
-    return *summary;
-  }
-
-private:
-  mlir::ModuleOp modOp;
-  StructDefOp structDefOp;
-  std::shared_ptr<ConstraintSummary> summary;
-
-  void ensureSummaryCreated() const {
-    if (!summary) {
-      llvm::report_fatal_error("constraint summary does not exist; must invoke constructSummary");
-    }
-  }
-
-  friend class ConstraintSummaryModuleAnalysis;
-};
-
-///
+/// @brief A module-level analysis for constructing ConstraintSummary objects for
+/// all structs in the given LLZK module.
 class ConstraintSummaryModuleAnalysis {
-  // Using a map to keep insertion order for iteration.
+  // Using a map, not an unordered map, to keep insertion order for iteration.
   using SummaryMap = std::map<StructDefOp, std::shared_ptr<ConstraintSummary>>;
 
 public:
+  /// @brief Computes ConstraintSummary objects for all structs contained within the
+  /// given op, if the op is a module op.
+  /// @param op The top-level op. If op is not an LLZK-compliant mlir::ModuleOp, the
+  /// analysis will fail.
+  /// @param am The analysis manager used to query sub-analyses per StructDefOperation.
   ConstraintSummaryModuleAnalysis(mlir::Operation *op, mlir::AnalysisManager &am);
 
   bool hasSummary(StructDefOp op) const { return summaries.find(op) != summaries.end(); }
-  ConstraintSummary &getSummary(StructDefOp op) { return *summaries.at(op); }
-  const ConstraintSummary &getSummary(StructDefOp op) const { return *summaries.at(op); }
+  ConstraintSummary &getSummary(StructDefOp op) {
+    ensureSummaryCreated(op);
+    return *summaries.at(op);
+  }
+  const ConstraintSummary &getSummary(StructDefOp op) const {
+    ensureSummaryCreated(op);
+    return *summaries.at(op);
+  }
 
   SummaryMap::iterator begin() { return summaries.begin(); }
   SummaryMap::iterator end() { return summaries.end(); }
@@ -198,10 +112,20 @@ public:
 private:
   SummaryMap summaries;
 
+  /// @brief Ensures that the given struct has a summary.
+  /// @param op The struct to ensure has a summary.
+  void ensureSummaryCreated(StructDefOp op) const {
+    if (!hasSummary(op)) {
+      llvm::report_fatal_error(
+          "constraint summary does not exist for StructDefOp " + mlir::Twine(op.getName())
+      );
+    }
+  }
+
   /// @brief Mark all operations from the top and included in the top operation
   /// as live so the solver will perform dataflow analyses.
-  /// @param solver
-  /// @param top
+  /// @param solver The solver.
+  /// @param top The top-level operation.
   void makeLive(mlir::DataFlowSolver &solver, mlir::Operation *top);
 };
 
