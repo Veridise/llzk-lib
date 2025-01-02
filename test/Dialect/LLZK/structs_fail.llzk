@@ -17,7 +17,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentB<[@B, @D, @C]> {
-    // expected-error@+1 {{'llzk.struct' op must define only 'compute' and 'constrain' functions; found 'invalidname'}}
+    // expected-error@+1 {{'llzk.struct' op must define only "@compute" and "@constrain" functions; found "@invalidname"}}
     func @invalidname(%a: !llzk.felt, %b: !llzk.felt) {
       return
     }

@@ -137,28 +137,29 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
     return emitOpError() << "must contain exactly 1 block";
   }
   auto emitError = [this] { return this->emitOpError(); };
-  bool foundCompute = false;
-  bool foundConstrain = false;
+  std::optional<FuncOp> foundCompute = std::nullopt;
+  std::optional<FuncOp> foundConstrain = std::nullopt;
   for (auto &op : getBody().front()) {
     if (!llvm::isa<FieldDefOp>(op)) {
-      if (auto funcDef = llvm::dyn_cast<::llzk::FuncOp>(op)) {
+      if (FuncOp funcDef = llvm::dyn_cast<FuncOp>(op)) {
         auto funcName = funcDef.getSymName();
-        if (llzk::FUNC_NAME_COMPUTE == funcName) {
+        if (FUNC_NAME_COMPUTE == funcName) {
           if (foundCompute) {
-            return msgOneFunction({emitError}, llzk::FUNC_NAME_COMPUTE);
+            return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
           }
-          foundCompute = true;
-        } else if (llzk::FUNC_NAME_CONSTRAIN == funcName) {
+          foundCompute = std::make_optional(funcDef);
+        } else if (FUNC_NAME_CONSTRAIN == funcName) {
           if (foundConstrain) {
-            return msgOneFunction({emitError}, llzk::FUNC_NAME_CONSTRAIN);
+            return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
           }
-          foundConstrain = true;
+          foundConstrain = std::make_optional(funcDef);
         } else {
           // Must do a little more than a simple call to '?.emitOpError()' to
           // tag the error with correct location and correct op name.
           return op.emitError() << "'" << getOperationName() << "' op "
-                                << "must define only 'compute' and 'constrain' functions;"
-                                << " found '" << funcName << "'";
+                                << "must define only \"@" << FUNC_NAME_COMPUTE << "\" and \"@"
+                                << FUNC_NAME_CONSTRAIN << "\" functions;"
+                                << " found \"@" << funcName << "\"";
         }
       } else {
         return op.emitOpError() << "invalid operation in 'struct'; only 'field'"
@@ -166,10 +167,28 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
       }
     }
   }
-  if (!foundCompute) {
-    return msgOneFunction({emitError}, llzk::FUNC_NAME_COMPUTE);
-  } else if (!foundConstrain) {
-    return msgOneFunction({emitError}, llzk::FUNC_NAME_CONSTRAIN);
+  if (!foundCompute.has_value()) {
+    return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
+  }
+  if (!foundConstrain.has_value()) {
+    return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
+  }
+
+  // Ensure function input types from compute and constrain match, sans the first parameter of
+  // constrain which is the instance of the parent struct.
+  if (!typeListsUnify(
+          foundCompute.value().getFunctionType().getInputs(),
+          foundConstrain.value().getFunctionType().getInputs().drop_front()
+      )) {
+    return foundConstrain.value()
+        .emitError()
+        .append(
+            "expected \"@", FUNC_NAME_CONSTRAIN,
+            "\" function argument types (sans the first one) to match \"@", FUNC_NAME_COMPUTE,
+            "\" function argument types"
+        )
+        .attachNote(foundCompute.value().getLoc())
+        .append("\"@", FUNC_NAME_COMPUTE, "\" function defined here");
   }
 
   return mlir::success();

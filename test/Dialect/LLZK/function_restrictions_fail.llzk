@@ -387,3 +387,45 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @mismatch_arg_types_1 {
+    // expected-note@+1 {{"@compute" function defined here}}
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@mismatch_arg_types_1> {
+      %self = new_struct : !llzk.struct<@mismatch_arg_types_1>
+      return %self : !llzk.struct<@mismatch_arg_types_1>
+    }
+    // expected-error@+1 {{expected "@constrain" function argument types (sans the first one) to match "@compute" function argument types}}
+    func @constrain(%self: !llzk.struct<@mismatch_arg_types_1>) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @mismatch_arg_types_2 {
+    // expected-note@+1 {{"@compute" function defined here}}
+    func @compute() -> !llzk.struct<@mismatch_arg_types_2> {
+      %self = new_struct : !llzk.struct<@mismatch_arg_types_2>
+      return %self : !llzk.struct<@mismatch_arg_types_2>
+    }
+    // expected-error@+1 {{expected "@constrain" function argument types (sans the first one) to match "@compute" function argument types}}
+    func @constrain(%self: !llzk.struct<@mismatch_arg_types_2>, %a: !llzk.felt) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @mismatch_arg_types_3 {
+    // expected-note@+1 {{"@compute" function defined here}}
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@mismatch_arg_types_3> {
+      %self = new_struct : !llzk.struct<@mismatch_arg_types_3>
+      return %self : !llzk.struct<@mismatch_arg_types_3>
+    }
+    // expected-error@+1 {{expected "@constrain" function argument types (sans the first one) to match "@compute" function argument types}}
+    func @constrain(%self: !llzk.struct<@mismatch_arg_types_3>, %a: i1) {
+      return
+    }
+  }
+}

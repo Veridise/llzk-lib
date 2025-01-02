@@ -122,7 +122,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentG1 {
-    func @compute() -> !llzk.struct<@ComponentG1> {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentG1> {
       %self = new_struct : !llzk.struct<@ComponentG1>
       return %self : !llzk.struct<@ComponentG1>
     }
@@ -144,7 +144,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentG1 {
-//CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentG1> {
+//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentG1> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentG1>
 //CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentG1>
 //CHECK-NEXT:     }
@@ -250,7 +250,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @ComponentK {
-    func @compute() -> !llzk.struct<@ComponentK> {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentK> {
       %self = new_struct : !llzk.struct<@ComponentK>
       return %self : !llzk.struct<@ComponentK>
     }
@@ -266,7 +266,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     return %[[A0:[0-9a-zA-Z_\.]+]] : !llzk.felt
 //CHECK-NEXT:   }
 //CHECK-LABEL:  llzk.struct @ComponentK {
-//CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentK> {
+//CHECK-NEXT:     func @compute(%[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentK> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentK>
 //CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentK>
 //CHECK-NEXT:     }
