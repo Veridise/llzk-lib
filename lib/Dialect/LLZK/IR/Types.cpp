@@ -128,17 +128,33 @@ bool typesUnify(mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> 
 
 namespace {
 
-template <typename... Types> struct TypeList {
-  // Returns a comma-separated list formatted string of the names of `Types`
-  static std::string getNames() {
-    std::string output;
-    llvm::raw_string_ostream oss(output);
-    oss << "[";
-    append<Types...>(oss);
-    oss << "]";
-    return output;
-  }
+template <typename... Types> class TypeList {
 
+  /// Helper class that handles appending the 'Types' names to some kind of stream
+  template <typename StreamType> struct Appender {
+
+    // single
+    template <typename Ty> static inline void append(StreamType &stream) {
+      stream << "'" << Ty::name << "'";
+    }
+
+    // multiple
+    template <typename First, typename Second, typename... Rest>
+    static void append(StreamType &stream) {
+      append<First>(stream);
+      stream << ", ";
+      append<Second, Rest...>(stream);
+    }
+
+    // full list with wrapping brackets
+    static inline void append(StreamType &stream) {
+      stream << "[";
+      append<Types...>(stream);
+      stream << "]";
+    }
+  };
+
+public:
   // Checks if the provided value is an instance of any of `Types`
   template <typename T> static inline bool matches(const T &value) {
     return llvm::isa<Types...>(value);
@@ -151,8 +167,9 @@ template <typename... Types> struct TypeList {
   ) {
     // The implicit conversion from InFlightDiagnostic to LogicalResult in the return causes the
     // diagnostic to be printed.
-    return emitError() << aspect << " must be one of " << getNames() << " but found '" << foundName
-                       << "'";
+    auto diag = emitError() << aspect << " must be one of ";
+    Appender<mlir::InFlightDiagnostic>::append(diag);
+    return diag << " but found '" << foundName << "'";
   }
 
   // This always returns failure()
@@ -163,16 +180,12 @@ template <typename... Types> struct TypeList {
     return reportInvalid(emitError, found.getAbstractAttribute().getName(), aspect);
   }
 
-private:
-  template <typename T> static inline void append(llvm::raw_string_ostream &stream) {
-    stream << "'" << T::name << "'";
-  }
-
-  template <typename First, typename Second, typename... Rest>
-  static void append(llvm::raw_string_ostream &stream) {
-    append<First>(stream);
-    stream << ", ";
-    append<Second, Rest...>(stream);
+  // Returns a comma-separated list formatted string of the names of `Types`
+  static std::string getNames() {
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    Appender<llvm::raw_string_ostream>::append(oss);
+    return output;
   }
 };
 
