@@ -156,10 +156,9 @@ mlir::LogicalResult StructDefOp::verifyRegions() {
         } else {
           // Must do a little more than a simple call to '?.emitOpError()' to
           // tag the error with correct location and correct op name.
-          return op.emitError() << "'" << getOperationName() << "' op "
-                                << "must define only \"@" << FUNC_NAME_COMPUTE << "\" and \"@"
-                                << FUNC_NAME_CONSTRAIN << "\" functions;"
-                                << " found \"@" << funcName << "\"";
+          return op.emitError() << "'" << getOperationName() << "' op " << "must define only \"@"
+                                << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
+                                << "\" functions;" << " found \"@" << funcName << "\"";
         }
       } else {
         return op.emitOpError() << "invalid operation in 'struct'; only 'field'"
