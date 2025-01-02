@@ -1,7 +1,7 @@
-#include <llzk/Dialect/LLZK/Analysis/CallGraphAnalyses.h>
-#include <llzk/Dialect/LLZK/IR/Builders.h>
-#include <llzk/Dialect/LLZK/IR/Ops.h>
-#include <llzk/Dialect/LLZK/Util/SymbolHelper.h>
+#include "llzk/Dialect/LLZK/Analysis/CallGraphAnalyses.h"
+#include "llzk/Dialect/LLZK/IR/Builders.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
