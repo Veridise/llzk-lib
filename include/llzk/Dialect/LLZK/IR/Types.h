@@ -63,22 +63,25 @@ checkValidType(llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::T
 
 /// Return `true` iff the two ArrayType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
-bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, std::vector<llvm::StringRef> rhsRevPrefix = {});
+bool arrayTypesUnify(
+    ArrayType lhs, ArrayType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}
+);
 
 /// Return `true` iff the two StructType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
 bool structTypesUnify(
-    StructType lhs, StructType rhs, std::vector<llvm::StringRef> rhsRevPrefix = {}
+    StructType lhs, StructType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}
 );
 
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters (if applicable within the given types).
-bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix = {});
+bool typesUnify(mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {});
 
 /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
 /// full instantiation of struct parameters (if applicable within the given types).
 template <typename Iter1, typename Iter2>
-inline bool typeListsUnify(Iter1 lhs, Iter2 rhs, std::vector<llvm::StringRef> rhsRevPrefix = {}) {
+inline bool
+typeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}) {
   return (lhs.size() == rhs.size()) &&
          std::equal(
              lhs.begin(), lhs.end(), rhs.begin(),
@@ -93,18 +96,18 @@ mlir::LogicalResult computeDimsFromShape(
 
 mlir::LogicalResult computeShapeFromDims(
     llvm::function_ref<::mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
-    llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::SmallVector<int64_t> &value
+    llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::SmallVector<int64_t> &shape
 );
 
 mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
 void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);
 
 mlir::ParseResult parseDerivedShape(
-    mlir::AsmParser &parser, llvm::SmallVector<int64_t> &value,
+    mlir::AsmParser &parser, llvm::SmallVector<int64_t> &shape,
     llvm::SmallVector<mlir::Attribute> dimensionSizes
 );
 void printDerivedShape(
-    mlir::AsmPrinter &printer, llvm::ArrayRef<int64_t> value,
+    mlir::AsmPrinter &printer, llvm::ArrayRef<int64_t> shape,
     llvm::ArrayRef<mlir::Attribute> dimensionSizes
 );
 

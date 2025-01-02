@@ -87,7 +87,7 @@ bool paramsUnify(const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsPar
 }
 } // namespace
 
-bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
+bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix) {
   // Check if the element types of the two arrays can unify
   if (!typesUnify(lhs.getElementType(), rhs.getElementType(), rhsRevPrefix)) {
     return false;
@@ -96,7 +96,9 @@ bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, std::vector<llvm::StringRef> 
   return paramsUnify(lhs.getDimensionSizes(), rhs.getDimensionSizes());
 }
 
-bool structTypesUnify(StructType lhs, StructType rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
+bool structTypesUnify(
+    StructType lhs, StructType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix
+) {
   // Check if it references the same StructDefOp, considering the additional RHS path prefix.
   llvm::SmallVector<mlir::StringRef> rhsNames = getNames(rhs.getNameRef());
   rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
@@ -107,7 +109,7 @@ bool structTypesUnify(StructType lhs, StructType rhs, std::vector<llvm::StringRe
   return paramsUnify(lhs.getParams(), rhs.getParams());
 }
 
-bool typesUnify(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
+bool typesUnify(mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix) {
   if (lhs == rhs) {
     return true;
   }
@@ -142,14 +144,18 @@ template <typename... Types> struct TypeList {
     return llvm::isa<Types...>(value);
   }
 
+  // This always returns failure()
   static inline mlir::LogicalResult reportInvalid(
       llvm::function_ref<mlir::InFlightDiagnostic()> emitError, llvm::StringRef foundName,
       const char *aspect
   ) {
+    // The implicit conversion from InFlightDiagnostic to LogicalResult in the return causes the
+    // diagnostic to be printed.
     return emitError() << aspect << " must be one of " << getNames() << " but found '" << foundName
                        << "'";
   }
 
+  // This always returns failure()
   static inline mlir::LogicalResult reportInvalid(
       llvm::function_ref<mlir::InFlightDiagnostic()> emitError, const mlir::Attribute &found,
       const char *aspect
@@ -244,46 +250,74 @@ namespace {
 //  - SymbolRef (global constants defined in another module require non-flat ref)
 using ArrayDimensionTypes = TypeList<mlir::IntegerAttr, mlir::SymbolRefAttr>;
 
+mlir::LogicalResult verifyArrayDimensionSizes(
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError,
+    llvm::ArrayRef<mlir::Attribute> dimensionSizes
+) {
+  // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
+  if (dimensionSizes.empty()) {
+    return emitError().append("array must have at least one dimension");
+  }
+  // Rather than immediately returning on failure, we check all dimensions and aggregate to provide
+  // as many errors are possible in a single verifier run.
+  mlir::LogicalResult aggregateResult = mlir::success();
+  for (mlir::Attribute a : dimensionSizes) {
+    if (!ArrayDimensionTypes::matches(a)) {
+      aggregateResult = ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
+      assert(mlir::failed(aggregateResult)); // reportInvalid() always returns failure()
+    }
+  }
+  return aggregateResult;
+}
+
 } // namespace
 
 mlir::LogicalResult computeDimsFromShape(
     mlir::MLIRContext *ctx, llvm::ArrayRef<int64_t> shape,
     llvm::SmallVector<mlir::Attribute> &dimensionSizes
 ) {
+  assert(dimensionSizes.empty()); // fully computed by this function
   mlir::Builder builder(ctx);
   auto attrs = llvm::map_range(shape, [&builder](int64_t v) -> mlir::Attribute {
     return builder.getIndexAttr(v);
   });
   dimensionSizes.insert(dimensionSizes.begin(), attrs.begin(), attrs.end());
+  assert(dimensionSizes.size() == shape.size()); // fully computed by this function
   return mlir::success();
 }
 
 mlir::LogicalResult computeShapeFromDims(
     llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
-    llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::SmallVector<int64_t> &value
+    llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::SmallVector<int64_t> &shape
 ) {
+  assert(shape.empty()); // fully computed by this function
+  // Ensure all Attributes are valid Attribute classes for ArrayType.
+  // In the case where `emitError==null`, we mirror how the verification failure is handled by
+  // `*Type::get()` via `StorageUserBase` (i.e. use DefaultDiagnosticEmitFn and assert). See:
+  //  https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180
+  auto errFunc = emitError ? emitError
+                           : llvm::function_ref<mlir::InFlightDiagnostic()>(
+                                 mlir::detail::getDefaultDiagnosticEmitFn(ctx)
+                             );
+  if (mlir::failed(verifyArrayDimensionSizes(errFunc, dimensionSizes))) {
+    assert(emitError);
+    return mlir::failure();
+  }
+
+  // Convert the Attributes to int64_t
   for (mlir::Attribute a : dimensionSizes) {
-    if (!ArrayDimensionTypes::matches(a)) {
-      if (emitError) {
-        return ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
-      } else {
-        // This approach is based on how the verification failure is handled by `*Type::get()` via
-        // `StorageUserBase`. See:
-        // https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180
-        auto errFunc = mlir::detail::getDefaultDiagnosticEmitFn(ctx);
-        assert(mlir::succeeded(ArrayDimensionTypes::reportInvalid(errFunc, a, "Array dimension")));
-      }
-    }
     if (auto p = a.dyn_cast<mlir::IntegerAttr>()) {
-      value.push_back(p.getValue().getSExtValue());
+      shape.push_back(p.getValue().getSExtValue());
     } else if (a.isa<mlir::SymbolRefAttr>()) {
       // The ShapedTypeInterface uses 'kDynamic' for dimensions with non-static size.
-      value.push_back(mlir::ShapedType::kDynamic);
+      shape.push_back(mlir::ShapedType::kDynamic);
     } else {
-      llvm::report_fatal_error("parseDerivedShape() is out of sync with ArrayDimensionTypes");
+      // For every Attribute class in ArrayDimensionTypes, there should be a case here.
+      llvm::report_fatal_error("computeShapeFromDims() is out of sync with ArrayDimensionTypes");
       return mlir::failure();
     }
   }
+  assert(shape.size() == dimensionSizes.size()); // fully computed by this function
   return mlir::success();
 }
 
@@ -302,13 +336,13 @@ void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> val
 }
 
 mlir::ParseResult parseDerivedShape(
-    mlir::AsmParser &parser, llvm::SmallVector<int64_t> &value,
+    mlir::AsmParser &parser, llvm::SmallVector<int64_t> &shape,
     llvm::SmallVector<mlir::Attribute> dimensionSizes
 ) {
   // This is not actually parsing. It's computing the derived
   //  `shape` from the `dimensionSizes` attributes.
   auto emitError = [&parser] { return parser.emitError(parser.getCurrentLocation()); };
-  return computeShapeFromDims(emitError, parser.getContext(), dimensionSizes, value);
+  return computeShapeFromDims(emitError, parser.getContext(), dimensionSizes, shape);
 }
 void printDerivedShape(mlir::AsmPrinter &, llvm::ArrayRef<int64_t>, llvm::ArrayRef<mlir::Attribute>) {
   // nothing to print, it's derived and therefore not represented in the output
@@ -318,27 +352,21 @@ mlir::LogicalResult ArrayType::verify(
     llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::Type elementType,
     llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::ArrayRef<int64_t> shape
 ) {
-  // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
-  if (dimensionSizes.empty()) {
-    return emitError().append("array must have at least one dimension");
+  if (mlir::failed(verifyArrayDimensionSizes(emitError, dimensionSizes))) {
+    return mlir::failure();
   }
-  for (mlir::Attribute a : dimensionSizes) {
-    if (!ArrayDimensionTypes::matches(a)) {
-      return ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
-    }
-  }
+
   // Ensure array element type is valid
   if (!isValidArrayElemType(elementType)) {
     // Print proper message if `elementType` is not a valid LLZK type or
     //  if it's simply not the right kind of type for an array element.
     if (mlir::failed(checkValidType(emitError, elementType))) {
       return mlir::failure();
-    } else {
-      return emitError().append(
-          "'", ArrayType::name, "' element type cannot be '",
-          elementType.getAbstractType().getName(), "'"
-      );
     }
+    return emitError().append(
+        "'", ArrayType::name, "' element type cannot be '", elementType.getAbstractType().getName(),
+        "'"
+    );
   }
   return mlir::success();
 }

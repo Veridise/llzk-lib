@@ -177,7 +177,7 @@ llzk.struct @TestComponent11 {
         %a: !llzk.struct<@TestComponent11>,
         %b: !llzk.struct<@TestComponent11>
         ) {
-    // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be non-struct type, but got '!llzk.struct<@TestComponent11>'}}
+    // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be free from struct type, but got '!llzk.struct<@TestComponent11>'}}
     llzk.emit_eq %a, %b : !llzk.struct<@TestComponent11>
     return
   }
@@ -194,7 +194,7 @@ llzk.struct @TestComponent12 {
         %a: !llzk.array<3 x !llzk.struct<@TestComponent12>>,
         %b: !llzk.array<3 x !llzk.struct<@TestComponent12>>
         ) {
-    // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be non-struct type, but got '!llzk.array<3 x !llzk.struct<@TestComponent12>>'}}
+    // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be free from struct type, but got '!llzk.array<3 x !llzk.struct<@TestComponent12>>'}}
     llzk.emit_eq %a, %b : !llzk.array<3 x !llzk.struct<@TestComponent12>>
     return
   }
@@ -211,7 +211,7 @@ llzk.struct @TestComponent13 {
         %a: !llzk.array<3,2 x !llzk.struct<@TestComponent13>>,
         %b: !llzk.array<3,2 x !llzk.struct<@TestComponent13>>
         ) {
-    // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be non-struct type, but got '!llzk.array<3,2 x !llzk.struct<@TestComponent13>>'}}
+    // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be free from struct type, but got '!llzk.array<3,2 x !llzk.struct<@TestComponent13>>'}}
     llzk.emit_eq %a, %b : !llzk.array<3,2 x !llzk.struct<@TestComponent13>>
     return
   }

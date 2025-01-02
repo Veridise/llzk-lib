@@ -62,7 +62,7 @@ namespace {
 
 using namespace mlir;
 
-inline mlir::LogicalResult
+inline LogicalResult
 msgOneFunction(function_ref<InFlightDiagnostic()> emitError, const Twine &name) {
   return emitError() << "must define exactly one '" << name << "' function";
 }
@@ -71,14 +71,8 @@ msgOneFunction(function_ref<InFlightDiagnostic()> emitError, const Twine &name) 
 
 StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
   auto pathRes = getPathFromRoot(*this);
-  if (failed(pathRes)) {
-    // consistent with StructType::getChecked() with invalid args
-    return StructType();
-  }
-  auto emitError = [this] { return this->emitOpError(); };
-  return StructType::getChecked(
-      emitError, getContext(), pathRes.value(), constParams.value_or(getConstParamsAttr())
-  );
+  assert(succeeded(pathRes)); // consistent with StructType::get() with invalid args
+  return StructType::get(getContext(), pathRes.value(), constParams.value_or(getConstParamsAttr()));
 }
 
 std::string StructDefOp::getHeaderString() {
@@ -354,7 +348,7 @@ mlir::LogicalResult ReadArrayOp::inferReturnTypes(
 }
 
 bool ReadArrayOp::isCompatibleReturnTypes(mlir::TypeRange l, mlir::TypeRange r) {
-  // There is a single return tpye per ODS spec of ReadArrayOp
+  // There is a single return type per ODS spec of ReadArrayOp
   return l.size() == 1 && r.size() == 1 && typesUnify(l.front(), r.front());
 }
 
