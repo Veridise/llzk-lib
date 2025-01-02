@@ -79,12 +79,12 @@ genCompareErr(StructDefOp &expected, mlir::Operation *origin, const char *aspect
 }
 
 mlir::LogicalResult checkSelfType(
-    mlir::SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, mlir::Type actualType,
+    mlir::SymbolTableCollection &tables, StructDefOp &expectedStruct, mlir::Type actualType,
     mlir::Operation *origin, const char *aspect
 ) {
   if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {
     auto actualStructOpt =
-        lookupTopLevelSymbol<StructDefOp>(symbolTable, actualStructType.getNameRef(), origin);
+        lookupTopLevelSymbol<StructDefOp>(tables, actualStructType.getNameRef(), origin);
     if (mlir::failed(actualStructOpt)) {
       return origin->emitError().append(
           "could not find '", StructDefOp::getOperationName(), "' named \"",
@@ -355,7 +355,7 @@ mlir::LogicalResult FieldWriteOp::verifySymbolUses(mlir::SymbolTableCollection &
     return mlir::failure(); // verifyInStruct() already emits a sufficient error message
   }
   if (mlir::failed(
-          checkSelfType(symbolTable, *getParentRes, this->getComponent().getType(), *this, "result")
+          checkSelfType(tables, *getParentRes, this->getComponent().getType(), *this, "result")
       )) {
     return mlir::failure();
   }
@@ -461,12 +461,12 @@ void CreateStructOp::getAsmResultNames(mlir::OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "self");
 }
 
-mlir::LogicalResult CreateStructOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+mlir::LogicalResult CreateStructOp::verifySymbolUses(SymbolTableCollection &tables) {
   mlir::FailureOr<StructDefOp> getParentRes = verifyInStruct(*this);
   if (mlir::failed(getParentRes)) {
     return mlir::failure(); // verifyInStruct() already emits a sufficient error message
   }
-  if (mlir::failed(checkSelfType(symbolTable, *getParentRes, this->getType(), *this, "result"))) {
+  if (mlir::failed(checkSelfType(tables, *getParentRes, this->getType(), *this, "result"))) {
     return mlir::failure();
   }
   return mlir::success();
