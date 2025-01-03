@@ -154,7 +154,7 @@ FuncOp FuncOp::clone() {
 
 bool FuncOp::hasArgPublicAttr(unsigned index) {
   if (index < this->getNumArguments()) {
-    DictionaryAttr res = mlir::function_interface_impl::getArgAttrDict(*this, index);
+    DictionaryAttr res = function_interface_impl::getArgAttrDict(*this, index);
     return res ? res.contains(PublicAttr::name) : false;
   } else {
     // TODO: print error? requested attribute for non-existant argument index
@@ -162,41 +162,41 @@ bool FuncOp::hasArgPublicAttr(unsigned index) {
   }
 }
 
-mlir::LogicalResult FuncOp::verify() {
-  auto emitErrorFunc = [op = this->getOperation()]() -> mlir::InFlightDiagnostic {
+LogicalResult FuncOp::verify() {
+  auto emitErrorFunc = [op = this->getOperation()]() -> InFlightDiagnostic {
     return op->emitOpError();
   };
   // Ensure that only valid LLZK types are used for arguments and return
   FunctionType type = getFunctionType();
-  llvm::ArrayRef<mlir::Type> inTypes = type.getInputs();
+  llvm::ArrayRef<Type> inTypes = type.getInputs();
   for (auto ptr = inTypes.begin(); ptr < inTypes.end(); ptr++) {
     if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
-      return mlir::failure();
+      return failure();
     }
   }
-  llvm::ArrayRef<mlir::Type> resTypes = type.getResults();
+  llvm::ArrayRef<Type> resTypes = type.getResults();
   for (auto ptr = resTypes.begin(); ptr < resTypes.end(); ptr++) {
     if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
-      return mlir::failure();
+      return failure();
     }
   }
-  return mlir::success();
+  return success();
 }
 
 namespace {
 
-mlir::LogicalResult
+LogicalResult
 verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parent) {
-  mlir::FunctionType funcType = origin.getFunctionType();
-  llvm::ArrayRef<mlir::Type> resTypes = funcType.getResults();
+  FunctionType funcType = origin.getFunctionType();
+  llvm::ArrayRef<Type> resTypes = funcType.getResults();
   // Must return type of parent struct
   if (resTypes.size() != 1) {
     return origin.emitOpError().append(
         "\"@", llzk::FUNC_NAME_COMPUTE, "\" must have exactly one return type"
     );
   }
-  if (mlir::failed(checkSelfType(symbolTable, parent, resTypes.front(), origin, "return"))) {
-    return mlir::failure();
+  if (failed(checkSelfType(symbolTable, parent, resTypes.front(), origin, "return"))) {
+    return failure();
   }
 
   // After the more specific checks (to ensure more specific error messages would be produced if
@@ -205,9 +205,9 @@ verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &symbolTable, Struct
   return verifyTypeResolution(symbolTable, funcType.getInputs(), origin);
 }
 
-mlir::LogicalResult
+LogicalResult
 verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parent) {
-  mlir::FunctionType funcType = origin.getFunctionType();
+  FunctionType funcType = origin.getFunctionType();
   // Must return '()' type, i.e. have no return types
   if (funcType.getResults().size() != 0) {
     return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
@@ -215,13 +215,13 @@ verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &symbolTable, Stru
   }
 
   // Type of the first parameter must match the parent StructDefOp of the current operation.
-  llvm::ArrayRef<mlir::Type> inputTypes = funcType.getInputs();
+  llvm::ArrayRef<Type> inputTypes = funcType.getInputs();
   if (inputTypes.size() < 1) {
     return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
                                 << "\" must have at least one input type";
   }
-  if (mlir::failed(checkSelfType(symbolTable, parent, inputTypes.front(), origin, "first input"))) {
-    return mlir::failure();
+  if (failed(checkSelfType(symbolTable, parent, inputTypes.front(), origin, "first input"))) {
+    return failure();
   }
 
   // After the more specific checks (to ensure more specific error messages would be produced if
@@ -233,10 +233,10 @@ verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &symbolTable, Stru
 
 } // namespace
 
-mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   // Additional checks for the compute/constrain functions w/in a struct
-  mlir::FailureOr<StructDefOp> parentStructOpt = getParentOfType<StructDefOp>(*this);
-  if (mlir::succeeded(parentStructOpt)) {
+  FailureOr<StructDefOp> parentStructOpt = getParentOfType<StructDefOp>(*this);
+  if (succeeded(parentStructOpt)) {
     // Verify return type restrictions for functions within a StructDefOp
     llvm::StringRef funcName = getSymName();
     if (llzk::FUNC_NAME_COMPUTE == funcName) {
@@ -247,15 +247,15 @@ mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable)
   }
   // In the general case, verify all input and output types are valid. Check both
   //  before returning to present all applicable type errors in one compilation.
-  mlir::FunctionType funcType = getFunctionType();
-  mlir::LogicalResult a = verifyTypeResolution(symbolTable, funcType.getResults(), *this);
-  mlir::LogicalResult b = verifyTypeResolution(symbolTable, funcType.getInputs(), *this);
-  return mlir::LogicalResult::success(mlir::succeeded(a) && mlir::succeeded(b));
+  FunctionType funcType = getFunctionType();
+  LogicalResult a = verifyTypeResolution(symbolTable, funcType.getResults(), *this);
+  LogicalResult b = verifyTypeResolution(symbolTable, funcType.getInputs(), *this);
+  return LogicalResult::success(succeeded(a) && succeeded(b));
 }
 
-mlir::SymbolRefAttr FuncOp::getFullyQualifiedName() const {
+SymbolRefAttr FuncOp::getFullyQualifiedName() const {
   auto res = getPathFromRoot(*const_cast<FuncOp *>(this));
-  assert(mlir::succeeded(res));
+  assert(succeeded(res));
   return res.value();
 }
 
@@ -296,7 +296,7 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   }
   // Call target must be specified via full path from the root module.
   auto tgtOpt = lookupTopLevelSymbol<FuncOp>(symbolTable, fnAttr, *this);
-  if (mlir::failed(tgtOpt)) {
+  if (failed(tgtOpt)) {
     return this->emitError() << "no '" << FuncOp::getOperationName() << "' named \"" << fnAttr
                              << "\"";
   }

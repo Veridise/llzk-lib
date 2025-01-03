@@ -17,7 +17,7 @@ using namespace mlir;
 // SymbolLookupResultUntyped
 //===------------------------------------------------------------------===//
 
-SymbolLookupResultUntyped::SymbolLookupResultUntyped(mlir::Operation *t_op) : op(t_op) {}
+SymbolLookupResultUntyped::SymbolLookupResultUntyped(Operation *t_op) : op(t_op) {}
 SymbolLookupResultUntyped::SymbolLookupResultUntyped() : op(nullptr) {}
 
 // Move constructor
@@ -41,17 +41,17 @@ SymbolLookupResultUntyped &SymbolLookupResultUntyped::operator=(SymbolLookupResu
 }
 
 /// Access the internal operation.
-mlir::Operation *SymbolLookupResultUntyped::operator->() { return op; }
-mlir::Operation &SymbolLookupResultUntyped::operator*() { return *op; }
-mlir::Operation &SymbolLookupResultUntyped::operator*() const { return *op; }
-mlir::Operation *SymbolLookupResultUntyped::get() { return op; }
-mlir::Operation *SymbolLookupResultUntyped::get() const { return op; }
+Operation *SymbolLookupResultUntyped::operator->() { return op; }
+Operation &SymbolLookupResultUntyped::operator*() { return *op; }
+Operation &SymbolLookupResultUntyped::operator*() const { return *op; }
+Operation *SymbolLookupResultUntyped::get() { return op; }
+Operation *SymbolLookupResultUntyped::get() const { return op; }
 
 /// True iff the symbol was found.
 SymbolLookupResultUntyped::operator bool() const { return op != nullptr; }
 
 /// Adds a pointer to the set of resources the result has to manage the lifetime of.
-void SymbolLookupResultUntyped::manage(mlir::OwningOpRef<mlir::ModuleOp> &&ptr) {
+void SymbolLookupResultUntyped::manage(OwningOpRef<ModuleOp> &&ptr) {
   managedResources.push_back(std::move(ptr)); // Hand over the pointer
 }
 
