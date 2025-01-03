@@ -211,8 +211,10 @@ LogicalResult StructDefOp::verifyRegions() {
                                 << "\" functions;" << " found \"@" << funcName << "\"";
         }
       } else {
-        return op.emitOpError() << "invalid operation in 'struct'; only 'field'"
-                                << " and 'func' operations are permitted";
+        return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
+                                << "'; only '" << FieldDefOp::getOperationName() << "'"
+                                << " and '" << FuncOp::getOperationName()
+                                << "' operations are permitted";
       }
     }
   }

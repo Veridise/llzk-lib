@@ -55,7 +55,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = new_struct : !llzk.struct<@ComponentG<[@B, @D, @C]>>
       return %self : !llzk.struct<@ComponentG<[@B, @D, @C]>>
     }
-    // expected-error@+1 {{'builtin.module' op invalid operation in 'struct'; only 'field' and 'func' operations are permitted}}
+    // expected-error@+1 {{'builtin.module' op invalid operation in 'llzk.struct'; only 'llzk.field' and 'llzk.func' operations are permitted}}
     builtin.module {
     }
   }
@@ -223,7 +223,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentW {
-    // expected-error@+1 {{'llzk.new_struct' op invalid operation in 'struct'; only 'field' and 'func' operations are permitted}}
+    // expected-error@+1 {{'llzk.new_struct' op invalid operation in 'llzk.struct'; only 'llzk.field' and 'llzk.func' operations are permitted}}
     llzk.new_struct : !llzk.struct<@ComponentW>
 
     func @compute() -> !llzk.struct<@ComponentW> {
