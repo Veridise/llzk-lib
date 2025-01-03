@@ -104,7 +104,7 @@ template <typename T>
 inline mlir::FailureOr<SymbolLookupResult<T>>
 resolveCallable(mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface call) {
   mlir::CallInterfaceCallable callable = call.getCallableForCallee();
-  if (auto symbolVal = dyn_cast<mlir::Value>(callable)) {
+  if (auto symbolVal = mlir::dyn_cast<mlir::Value>(callable)) {
     return SymbolLookupResult<T>(symbolVal.getDefiningOp());
   }
 
