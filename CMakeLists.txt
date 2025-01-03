@@ -91,7 +91,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
     set(LLZK_LIT_COMPATIBLE_COVERAGE ON)
     message(
       STATUS "LLZK_LIT_COMPATIBLE_COVERAGE=${LLZK_LIT_COMPATIBLE_COVERAGE}")
-
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     message(WARNING "Gcov reports are not supported by the test environment.")
     message(WARNING "Set LLZK_FORCE_GCC_COVERAGE to enable coverage in GCC.")

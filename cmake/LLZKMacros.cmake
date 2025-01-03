@@ -10,10 +10,8 @@ function(llzk_add_mlir_doc target_name out_filename tblgen_flags)
   add_custom_command(
     OUTPUT ${OUT_FILE}
     COMMAND ${CMAKE_COMMAND} -E copy
-    "${CMAKE_CURRENT_BINARY_DIR}/${out_filename}"
-    "${OUT_FILE}"
-    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/${out_filename}"
-  )
+            "${CMAKE_CURRENT_BINARY_DIR}/${out_filename}" "${OUT_FILE}"
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/${out_filename}")
   add_custom_target(${target_name} DEPENDS ${OUT_FILE})
   add_dependencies(mlir-doc ${target_name})
 endfunction()
