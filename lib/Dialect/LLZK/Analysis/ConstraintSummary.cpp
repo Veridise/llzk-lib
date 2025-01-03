@@ -3,7 +3,7 @@
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
-#include <mlir/Analysis/DataFlow/SparseAnalysis.h>
+#include <mlir/Analysis/DataFlow/DenseAnalysis.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Index/IR/IndexOps.h>
 #include <mlir/IR/Value.h>
@@ -18,6 +18,21 @@ Private Utilities:
 These classes are defined here and not in the header as they are not designed
 for use outside of this specific ConstraintSummary analysis.
 */
+
+/// @brief Mark all operations from the top and included in the top operation
+/// as live so the solver will perform dataflow analyses.
+/// @param solver The solver.
+/// @param top The top-level operation.
+void makeLive(mlir::DataFlowSolver &solver, mlir::Operation *top) {
+  for (mlir::Region &region : top->getRegions()) {
+    for (mlir::Block &block : region) {
+      (void)solver.getOrCreateState<mlir::dataflow::Executable>(&block)->setToLive();
+      for (mlir::Operation &oper : block) {
+        makeLive(solver, &oper);
+      }
+    }
+  }
+}
 
 /// Tracks the references that operations use and produce.
 /// See lattice value requirements here:
@@ -104,17 +119,104 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLatticeVa
   return os;
 }
 
-using ConstrainRefLattice = mlir::dataflow::Lattice<ConstrainRefLatticeValue>;
+/// NOTE: Duplicated from SparseAnalysis.h, as DenseAnalysis does not define
+/// a default base lattice.
+/// This class represents a lattice holding a specific value of type `ValueT`.
+/// Lattice values (`ValueT`) are required to adhere to the following:
+///
+///   * static ValueT join(const ValueT &lhs, const ValueT &rhs);
+///     - This method conservatively joins the information held by `lhs`
+///       and `rhs` into a new value. This method is required to be monotonic.
+///   * bool operator==(const ValueT &rhs) const;
+///
+template <typename ValueT> class Lattice : public AbstractDenseLattice {
+public:
+  using AbstractDenseLattice::AbstractDenseLattice;
+
+  /// Return the program point this lattice is located at.
+  Value getPoint() const { return point.get<Value>(); }
+
+  /// Return the value held by this lattice. This requires that the value is
+  /// initialized.
+  ValueT &getValue() { return value; }
+  const ValueT &getValue() const { return const_cast<Lattice<ValueT> *>(this)->getValue(); }
+
+  using LatticeT = Lattice<ValueT>;
+
+  /// Join the information contained in the 'rhs' lattice into this
+  /// lattice. Returns if the state of the current lattice changed.
+  ChangeResult join(const AbstractSparseLattice &rhs) override {
+    return join(static_cast<const LatticeT &>(rhs).getValue());
+  }
+
+  /// Meet (intersect) the information contained in the 'rhs' lattice with
+  /// this lattice. Returns if the state of the current lattice changed.
+  ChangeResult meet(const AbstractSparseLattice &rhs) override {
+    return meet(static_cast<const LatticeT &>(rhs).getValue());
+  }
+
+  /// Join the information contained in the 'rhs' value into this
+  /// lattice. Returns if the state of the current lattice changed.
+  ChangeResult join(const ValueT &rhs) {
+    // Otherwise, join rhs with the current optimistic value.
+    ValueT newValue = ValueT::join(value, rhs);
+    assert(ValueT::join(newValue, value) == newValue && "expected `join` to be monotonic");
+    assert(ValueT::join(newValue, rhs) == newValue && "expected `join` to be monotonic");
+
+    // Update the current optimistic value if something changed.
+    if (newValue == value) {
+      return ChangeResult::NoChange;
+    }
+
+    value = newValue;
+    return ChangeResult::Change;
+  }
+
+  /// Trait to check if `T` provides a `meet` method. Needed since for forward
+  /// analysis, lattices will only have a `join`, no `meet`, but we want to use
+  /// the same `Lattice` class for both directions.
+  template <typename T, typename... Args> using has_meet = decltype(std::declval<T>().meet());
+  template <typename T> using lattice_has_meet = llvm::is_detected<has_meet, T>;
+
+  /// Meet (intersect) the information contained in the 'rhs' value with this
+  /// lattice. Returns if the state of the current lattice changed.  If the
+  /// lattice elements don't have a `meet` method, this is a no-op (see below.)
+  template <typename VT, std::enable_if_t<lattice_has_meet<VT>::value>>
+  ChangeResult meet(const VT &rhs) {
+    ValueT newValue = ValueT::meet(value, rhs);
+    assert(ValueT::meet(newValue, value) == newValue && "expected `meet` to be monotonic");
+    assert(ValueT::meet(newValue, rhs) == newValue && "expected `meet` to be monotonic");
+
+    // Update the current optimistic value if something changed.
+    if (newValue == value) {
+      return ChangeResult::NoChange;
+    }
+
+    value = newValue;
+    return ChangeResult::Change;
+  }
+
+  template <typename VT> ChangeResult meet(const VT &rhs) { return ChangeResult::NoChange; }
+
+  /// Print the lattice element.
+  void print(raw_ostream &os) const override { value.print(os); }
+
+private:
+  /// The currently computed value that is optimistically assumed to be true.
+  ValueT value;
+};
+
+using ConstrainRefLattice = Lattice<ConstrainRefLatticeValue>;
 
 /// @brief The dataflow analysis that computes the set of references that
 /// LLZK operations use and produce. The analysis is simple: any operation will
 /// simply output a union of its input references, regardless of what type of
 /// operation it performs, as the analysis is operator-insensitive.
 class ConstrainRefAnalysis
-    : public mlir::dataflow::SparseForwardDataFlowAnalysis<ConstrainRefLattice> {
+    : public mlir::dataflow::DenseForwardDataFlowAnalysis<ConstrainRefLattice> {
 public:
-  using mlir::dataflow::SparseForwardDataFlowAnalysis<
-      ConstrainRefLattice>::SparseForwardDataFlowAnalysis;
+  using mlir::dataflow::DenseForwardDataFlowAnalysis<
+      ConstrainRefLattice>::DenseForwardDataFlowAnalysis;
 
   /// If val is the source of other values (i.e., a block argument from the function
   /// args or a constant), create the base reference to the val. Otherwise,
@@ -158,11 +260,91 @@ public:
       mlir::Operation *op, mlir::ArrayRef<const ConstrainRefLattice *> operands,
       mlir::ArrayRef<ConstrainRefLattice *> results
   ) override {
-    // First, see if any of this operations operands are direct references.
+    // this->visitExternalCall
+    // auto resolveCalls = [this, &solver, &am](CallOp fnCall) mutable {
+    //   auto res = resolveCallable<FuncOp>(tables, fnCall);
+    //   if (mlir::failed(res)) {
+    //     fnCall.emitError() << "Could not resolve callable!\n";
+    //     return;
+    //   }
+    //   auto fn = res->get();
+    //   if (fn.getName() != FUNC_NAME_CONSTRAIN) {
+    //     return;
+    //   }
+    //   // Nested
+    //   StructDefOp calledStruct(fn.getOperation()->getParentOp());
+    //   ConstrainRefRemappings translations;
+    //   // Map fn parameters to args in the call op
+    //   for (unsigned i = 0; i < fn.getNumArguments(); i++) {
+    //     auto prefix = ConstrainRef(fn.getArgument(i));
+    //     auto replacements = solver.lookupState<ConstrainRefLattice>(fnCall.getOperand(i));
+
+    //     if (!replacements) {
+    //       llvm::report_fatal_error("failed to look up replacement translation symbols");
+    //     }
+
+    //     for (auto &s : replacements->getValue().signals) {
+    //       translations.push_back({prefix, s});
+    //     }
+    //   }
+    //   auto summary = am.getChildAnalysis<ConstraintSummaryAnalysis>(calledStruct).getSummary();
+    //   auto translatedSummary = summary.translate(translations);
+
+    //   // Now, union sets based on the translation
+    //   // We should be able to just merge what is in the translatedSummary to the current summary
+    //   auto &tSets = translatedSummary.constraintSets;
+    //   for (auto lit = tSets.begin(); lit != tSets.end(); lit++) {
+    //     if (!lit->isLeader()) {
+    //       continue;
+    //     }
+    //     auto leader = lit->getData();
+    //     for (auto mit = tSets.member_begin(lit); mit != tSets.member_end(); mit++) {
+    //       constraintSets.unionSets(leader, *mit);
+    //     }
+    //   }
+    // };
+
+    // First, see if any of this operations operands are direct references,
+    // or if we need to resolve function calls
     std::vector<ConstrainRefLatticeValue> operandVals;
     for (unsigned i = 0; i < op->getOpOperands().size(); i++) {
       auto refs = operands[i]->getValue().signals;
       auto &operand = op->getOpOperands()[i];
+
+      if (auto callOp = mlir::dyn_cast_or_null<CallOp>(operand.get().getDefiningOp())) {
+        std::vector<ConstrainRefLattice *> callResults;
+        std::vector<const ConstrainRefLattice *> callOperands;
+        llvm::errs() << "visiting " << callOp << "\n";
+
+        for (auto res : callOp.getResults()) {
+          callResults.push_back(getLatticeElement(res));
+          llvm::errs() << "  RES " << getLatticeElement(res)->getValue() << "\n";
+        }
+
+        for (auto arg : callOp.getArgOperands()) {
+          callResults.push_back(getLatticeElement(arg));
+          llvm::errs() << "  ARG " << getLatticeElement(arg)->getValue() << "\n";
+
+          auto sourceRef = getSourceRef(arg);
+          if (mlir::succeeded(sourceRef)) {
+            getLatticeElement(arg)->getValue().signals.insert(sourceRef.value());
+          }
+
+          llvm::errs() << "  AFTER ARG " << getLatticeElement(arg)->getValue() << "\n";
+        }
+
+        mlir::CallOpInterface callOpI =
+            mlir::dyn_cast<mlir::CallOpInterface>(operand.get().getDefiningOp());
+        if (!callOpI) {
+          llvm::report_fatal_error("hmm?");
+        }
+        visitExternalCall(callOpI, callOperands, callResults);
+
+        for (auto res : callOp.getResults()) {
+          llvm::errs() << "  AFTER RES " << getLatticeElement(res)->getValue() << "\n";
+        }
+        llvm::errs() << "done!\n";
+      }
 
       auto sourceVal = getSourceRef(operand.get());
       if (mlir::succeeded(sourceVal)) {
@@ -170,6 +352,8 @@ public:
       }
       operandVals.emplace_back(refs);
     }
+
+    llvm::errs() << "running " << *op << "\n";
 
     // We will now join the the operand refs based on the type of operand.
 
@@ -222,6 +406,7 @@ public:
         mlir::ChangeResult changed = mlir::ChangeResult::NoChange;
         for (auto operand : operandVals) {
           changed |= res->join(operand);
+          llvm::errs() << ">> joining " << operand << "\n";
         }
         propagateIfChanged(res, changed);
       }
@@ -303,6 +488,57 @@ private:
   }
 
   friend class ConstraintSummaryModuleAnalysis;
+};
+
+class GlobalFuncAnalysis {
+public:
+  GlobalFuncAnalysis(mlir::Operation *op) {
+    funcOp = mlir::dyn_cast<FuncOp>(op);
+    if (!funcOp) {
+      auto error_message = "GlobalFuncAnalysis expects provided op to be a FuncOp!";
+      op->emitError(error_message);
+      llvm::report_fatal_error(error_message);
+    }
+    auto maybeModOp = getRootModule(op);
+    if (mlir::failed(maybeModOp)) {
+      auto error_message = "GlobalFuncAnalysis could not find root module from FuncOp!";
+      op->emitError(error_message);
+      llvm::report_fatal_error(error_message);
+    }
+    modOp = *maybeModOp;
+  }
+
+  mlir::LogicalResult
+  computeAnalysis(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager) {
+    if (solver.initializeAndRun(funcOp).failed()) {
+      return mlir::failure();
+    }
+
+    retRefs.resize(funcOp.getNumResults());
+
+    funcOp.walk([this, &solver](ReturnOp r) {
+      for (unsigned i = 0; i < r.getNumOperands(); i++) {
+        auto operand = r.getOperand(i);
+        if (auto operandVals = solver.lookupState<ConstrainRefLattice>(operand)) {
+          auto &refs = operandVals->getValue().signals;
+
+          retRefs[i].insert(refs.begin(), refs.end());
+        }
+      }
+    });
+
+    return mlir::success();
+  }
+
+  const std::vector<ConstrainRefSet> &getReturnVals() { return retRefs; }
+
+  const ConstrainRefSet &getReturnVal(unsigned i) { return retRefs[i]; }
+
+private:
+  mlir::ModuleOp modOp;
+  FuncOp funcOp;
+
+  std::vector<ConstrainRefSet> retRefs;
 };
 
 /* ConstraintSummary */
@@ -532,20 +768,70 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
 
   /**
    * Now, given the analysis, construct the summary:
-   * 1. Union all references based on solver results.
-   * 2. Union all references based on nested summaries.
+   * - Union all references based on solver results.
+   * - Union all referenced based on function calls.
+   * - Union all references based on nested summaries.
    */
 
-  // 1. Collect all references.
-  // Thanks to the self argument, we can just do everything through the
-  // blocks arguments to constrain.
-  // for (auto a : constrainFnOp.getArguments()) {
-  //   for (auto sigUsage : getAllConstrainRefs(a)) {
-  //     constraintSets.insert(sigUsage);
+  /// NOTE: no?
+  /// or will this work ONLY if we have some kind of op that uses the return val?
+  /// Yes, s
+  // insert solver state based on global functions
+  // constrainFnOp.walk([this, &solver, &am](CallOp fnCall) mutable {
+  //   auto res = resolveCallable<FuncOp>(tables, fnCall);
+  //   if (mlir::failed(res)) {
+  //     fnCall.emitError() << "Could not resolve callable!\n";
+  //     return;
   //   }
-  // }
+  //   auto fn = res->get();
+  //   if (fn.getName() == FUNC_NAME_CONSTRAIN) {
+  //     return;
+  //   }
 
-  // 1. Union all constraints from the analysis
+  //   // recurse over function
+  //   ConstrainRefRemappings translations;
+  //   // Map fn parameters to args in the call op
+  //   for (unsigned i = 0; i < fn.getNumArguments(); i++) {
+  //     auto prefix = ConstrainRef(fn.getArgument(i));
+  //     auto replacements = solver.lookupState<ConstrainRefLattice>(fnCall.getOperand(i));
+
+  //     if (!replacements) {
+  //       llvm::report_fatal_error("failed to look up replacement translation symbols");
+  //     }
+
+  //     for (auto &s : replacements->getValue().signals) {
+  //       translations.push_back({prefix, s});
+  //     }
+  //   }
+  //   auto retAnalysis = am.getChildAnalysis<GlobalFuncAnalysis>(fn);
+  //   if (retAnalysis.computeAnalysis(solver, am).failed()) {
+  //     llvm::report_fatal_error("failed to run global function analysis");
+  //   }
+
+  //   llvm::errs() << "Confirm we have no values\n";
+  //   for (auto ret : fnCall.getResults()) {
+  //     auto val = solver.lookupState<ConstrainRefLattice>(ret);
+  //     llvm::errs() << "ret of " << ret << " is " << *val << "\n";
+  //   }
+
+  //   // Now, insert state into the solver values.
+  //   for (unsigned i = 0; i < fnCall.getNumResults(); i++) {
+  //     auto state = solver.lookupState<ConstrainRefLattice>(fnCall.getResult(i));
+  //     if (!state) {
+  //       llvm::report_fatal_error("state not created");
+  //     }
+  //     auto &untranslated = retAnalysis.getReturnVal(i);
+  //     // auto &retState = solver.getProgramPoint
+  //     for (const auto &ref : untranslated) {
+  //       // state->getValue().
+  //     }
+  //   }
+
+  //   llvm::report_fatal_error("todo! thingy");
+
+  // });
+
+  // - Union all constraints from the analysis
   // This requires iterating over all of the emit operations
   constrainFnOp.walk([this, &solver](EmitEqualityOp emitOp) {
     this->walkConstrainOp(solver, emitOp);
@@ -569,37 +855,38 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
       return;
     }
     auto fn = res->get();
-    if (fn.getName() == FUNC_NAME_CONSTRAIN) {
-      // Nested
-      StructDefOp calledStruct(fn.getOperation()->getParentOp());
-      ConstrainRefRemappings translations;
-      // Map fn parameters to args in the call op
-      for (unsigned i = 0; i < fn.getNumArguments(); i++) {
-        auto prefix = ConstrainRef(fn.getArgument(i));
-        auto replacements = solver.lookupState<ConstrainRefLattice>(fnCall.getOperand(i));
+    if (fn.getName() != FUNC_NAME_CONSTRAIN) {
+      return;
+    }
+    // Nested
+    StructDefOp calledStruct(fn.getOperation()->getParentOp());
+    ConstrainRefRemappings translations;
+    // Map fn parameters to args in the call op
+    for (unsigned i = 0; i < fn.getNumArguments(); i++) {
+      auto prefix = ConstrainRef(fn.getArgument(i));
+      auto replacements = solver.lookupState<ConstrainRefLattice>(fnCall.getOperand(i));
 
-        if (!replacements) {
-          llvm::report_fatal_error("failed to look up replacement translation symbols");
-        }
-
-        for (auto &s : replacements->getValue().signals) {
-          translations.push_back({prefix, s});
-        }
+      if (!replacements) {
+        llvm::report_fatal_error("failed to look up replacement translation symbols");
       }
-      auto summary = am.getChildAnalysis<ConstraintSummaryAnalysis>(calledStruct).getSummary();
-      auto translatedSummary = summary.translate(translations);
 
-      // Now, union sets based on the translation
-      // We should be able to just merge what is in the translatedSummary to the current summary
-      auto &tSets = translatedSummary.constraintSets;
-      for (auto lit = tSets.begin(); lit != tSets.end(); lit++) {
-        if (!lit->isLeader()) {
-          continue;
-        }
-        auto leader = lit->getData();
-        for (auto mit = tSets.member_begin(lit); mit != tSets.member_end(); mit++) {
-          constraintSets.unionSets(leader, *mit);
-        }
+      for (auto &s : replacements->getValue().signals) {
+        translations.push_back({prefix, s});
+      }
+    }
+    auto summary = am.getChildAnalysis<ConstraintSummaryAnalysis>(calledStruct).getSummary();
+    auto translatedSummary = summary.translate(translations);
+
+    // Now, union sets based on the translation
+    // We should be able to just merge what is in the translatedSummary to the current summary
+    auto &tSets = translatedSummary.constraintSets;
+    for (auto lit = tSets.begin(); lit != tSets.end(); lit++) {
+      if (!lit->isLeader()) {
+        continue;
+      }
+      auto leader = lit->getData();
+      for (auto mit = tSets.member_begin(lit); mit != tSets.member_end(); mit++) {
+        constraintSets.unionSets(leader, *mit);
       }
     }
   });
@@ -688,7 +975,11 @@ ConstraintSummaryModuleAnalysis::ConstraintSummaryModuleAnalysis(
     mlir::Operation *op, mlir::AnalysisManager &am
 ) {
   if (auto modOp = mlir::dyn_cast<mlir::ModuleOp>(op)) {
-    mlir::DataFlowSolver solver;
+    mlir::DataFlowConfig config;
+    /// NOTE: interprocedural analysis does not work by default since we use
+    /// custom call and function ops, but this way we are explicit.
+    config.setInterprocedural(true);
+    mlir::DataFlowSolver solver(config);
     makeLive(solver, modOp);
 
     modOp.walk([this, &solver, &am](StructDefOp s) {
@@ -706,17 +997,6 @@ ConstraintSummaryModuleAnalysis::ConstraintSummaryModuleAnalysis(
         "ConstraintSummaryModuleAnalysis expects provided op to be an mlir::ModuleOp!";
     op->emitError(error_message);
     llvm::report_fatal_error(error_message);
-  }
-}
-
-void ConstraintSummaryModuleAnalysis::makeLive(mlir::DataFlowSolver &solver, mlir::Operation *top) {
-  for (mlir::Region &region : top->getRegions()) {
-    for (mlir::Block &block : region) {
-      (void)solver.getOrCreateState<mlir::dataflow::Executable>(&block)->setToLive();
-      for (mlir::Operation &oper : block) {
-        makeLive(solver, &oper);
-      }
-    }
   }
 }
 

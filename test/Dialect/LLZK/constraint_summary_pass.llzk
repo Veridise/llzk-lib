@@ -13,9 +13,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK-LABEL: NoConstraints ConstraintSummary {
-// CHECK-NEXT:     { %arg1 }
-// CHECK-NEXT: }
+// CHECK-LABEL: NoConstraints ConstraintSummary { }
 
 // -----
 
@@ -48,6 +46,35 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: Adder ConstraintSummary {
 // CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
 // CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.func @global_add(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
+    %c = add %a, %b
+    return %c : !llzk.felt
+  }
+
+  llzk.struct @Adder2 {
+    field @sum : !llzk.felt {llzk.pub}
+
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@Adder2> {
+      %self = new_struct : !llzk.struct<@Adder2>
+      %sum = call @global_add(%a, %b) : (!llzk.felt, !llzk.felt) -> (!llzk.felt)
+      writef %self[@sum] = %sum : !llzk.struct<@Adder2>, !llzk.felt
+      return %self : !llzk.struct<@Adder2>
+    }
+
+    func @constrain(%self: !llzk.struct<@Adder2>, %a: !llzk.felt, %b: !llzk.felt) {
+      %sum = readf %self[@sum] : !llzk.struct<@Adder2>, !llzk.felt
+      %c = call @global_add(%a, %b) : (!llzk.felt, !llzk.felt) -> (!llzk.felt)
+      %d = add %c, %c
+      emit_eq %sum, %d : !llzk.felt
+      return
+    }
+  }
+}
 
 // -----
 

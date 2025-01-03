@@ -11,7 +11,7 @@
 
 using namespace llzk;
 
-class CallGraphTests : public ::testing::Test {
+class ConstraintSummaryTests : public ::testing::Test {
 protected:
   static constexpr auto structAName = "structA";
   static constexpr auto structBName = "structB";
@@ -21,7 +21,7 @@ protected:
   mlir::OwningOpRef<mlir::ModuleOp> mod;
   ModuleBuilder builder;
 
-  CallGraphTests() : context(), mod(createLLZKModule(&context)), builder(mod.get()) {
+  ConstraintSummaryTests() : context(), mod(createLLZKModule(&context)), builder(mod.get()) {
     context.loadDialect<llzk::LLZKDialect>();
   }
 
@@ -32,13 +32,13 @@ protected:
   }
 };
 
-TEST_F(CallGraphTests, constructorTest) {
+TEST_F(ConstraintSummaryTests, constructorTest) {
   builder.insertFullStruct(structAName);
 
   ASSERT_NO_THROW(mlir::CallGraph(builder.getRootModule()));
 }
 
-TEST_F(CallGraphTests, printTest) {
+TEST_F(ConstraintSummaryTests, printTest) {
   builder.insertFullStruct(structAName);
 
   std::string s;
@@ -50,7 +50,7 @@ TEST_F(CallGraphTests, printTest) {
   ASSERT_FALSE(sstream.str().empty());
 }
 
-TEST_F(CallGraphTests, numFnTest) {
+TEST_F(ConstraintSummaryTests, numFnTest) {
   builder.insertFullStruct(structAName);
 
   llzk::CallGraph cgraph(builder.getRootModule());
@@ -58,7 +58,7 @@ TEST_F(CallGraphTests, numFnTest) {
   ASSERT_EQ(cgraph.size(), 2);
 }
 
-TEST_F(CallGraphTests, reachabilityTest) {
+TEST_F(ConstraintSummaryTests, reachabilityTest) {
   builder.insertFullStruct(structAName)
       .insertFullStruct(structBName)
       .insertFullStruct(structCName)
@@ -87,13 +87,13 @@ TEST_F(CallGraphTests, reachabilityTest) {
   ASSERT_FALSE(cgra.isReachable(aCons, bCons));
 }
 
-TEST_F(CallGraphTests, analysisConstructor) {
+TEST_F(ConstraintSummaryTests, analysisConstructor) {
   builder.insertFullStruct(structAName);
 
   ASSERT_NO_THROW(llzk::CallGraphAnalysis(builder.getRootModule()));
 }
 
-TEST_F(CallGraphTests, analysisConstructorBadArg) {
+TEST_F(ConstraintSummaryTests, analysisConstructorBadArg) {
   builder.insertFullStruct(structAName);
 
   auto s = builder.getStruct(structAName);
@@ -104,7 +104,7 @@ TEST_F(CallGraphTests, analysisConstructorBadArg) {
   );
 }
 
-TEST_F(CallGraphTests, lookupInSymbolTest) {
+TEST_F(ConstraintSummaryTests, lookupInSymbolTest) {
   builder.insertComputeOnlyStruct(structAName);
   auto computeFn = builder.getComputeFn(structAName);
   ASSERT_TRUE(mlir::succeeded(computeFn));
@@ -121,7 +121,7 @@ TEST_F(CallGraphTests, lookupInSymbolTest) {
   ASSERT_EQ(computeOp, *computeFn);
 }
 
-TEST_F(CallGraphTests, lookupInSymbolFQNTest) {
+TEST_F(ConstraintSummaryTests, lookupInSymbolFQNTest) {
   builder.insertComputeOnlyStruct(structAName)
       .insertComputeOnlyStruct(structBName)
       .insertComputeCall(structAName, structBName);

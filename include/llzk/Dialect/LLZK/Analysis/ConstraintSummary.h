@@ -189,12 +189,6 @@ private:
       );
     }
   }
-
-  /// @brief Mark all operations from the top and included in the top operation
-  /// as live so the solver will perform dataflow analyses.
-  /// @param solver The solver.
-  /// @param top The top-level operation.
-  void makeLive(mlir::DataFlowSolver &solver, mlir::Operation *top);
 };
 
 } // namespace llzk
