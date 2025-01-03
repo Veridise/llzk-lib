@@ -82,7 +82,6 @@ set(LLZK_LIT_COMPATIBLE_COVERAGE
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   if(LLZK_LIT_COMPATIBLE_COVERAGE)
     message(FATAL_ERROR "Don't manually set LLZK_LIT_COMPATIBLE_COVERAGE.")
-
   endif()
   if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
     message(STATUS "Adding coverage flags")
