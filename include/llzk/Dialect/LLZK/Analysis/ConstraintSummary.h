@@ -84,12 +84,14 @@ public:
 
 private:
   mlir::ModuleOp mod;
-  StructDefOp structDef;
+  // Using mutable because many operations are not const by default, even for "const"-like
+  // operations, like "getName()", and this reduces const_casts.
+  mutable StructDefOp structDef;
   llvm::EquivalenceClasses<ConstrainRef> constraintSets;
 
-  mlir::SymbolTableCollection tables;
+  mutable mlir::SymbolTableCollection tables;
 
-  StructDefOp getStructDef(StructType ty) {
+  StructDefOp getStructDef(StructType ty) const {
     auto sDef = ty.getDefinition(tables, mod);
     if (mlir::failed(sDef)) {
       llvm::report_fatal_error("could not find struct definition from struct type");
@@ -97,8 +99,16 @@ private:
     return sDef->get();
   }
 
+  /// Try to create references out of a given operation.
+  /// A single operation may contain multiple usages, e.g. addition of signals.
+  mlir::FailureOr<std::vector<ConstrainRef>>
+  getConstrainRefs(mlir::DataFlowSolver &solver, mlir::Value val);
+
+  /// Produce all possible ConstraintRefs that are present from the struct's constrain function.
+  std::vector<ConstrainRef> getAllConstrainRefs() const;
+
   /// Produce all possible ConstraintRefs that are present starting from the given BlockArgument.
-  std::vector<ConstrainRef> getAllConstrainRefs(mlir::BlockArgument arg);
+  std::vector<ConstrainRef> getAllConstrainRefs(mlir::BlockArgument arg) const;
 
   /// Produce all possible ConstraintRefs that are present starting from the given
   /// BlockArgument and partially-specified indices into that object (fields).
@@ -106,7 +116,7 @@ private:
   /// as well as individual fields and constants.
   std::vector<ConstrainRef> getAllConstrainRefs(
       StructDefOp s, mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields = {}
-  );
+  ) const;
 
   /// Produce all possible ConstraintRefs that are present starting from the given
   /// arrayField, originating from a given blockArg,
@@ -115,7 +125,7 @@ private:
   /// as well as individual fields and constants.
   std::vector<ConstrainRef> getAllConstrainRefs(
       ArrayType arrayTy, mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields = {}
-  );
+  ) const;
 
   /// @brief Constructs an empty summary. The summary is populated using computeConstraints.
   /// @param m The parent LLZK-compliant module.

@@ -2,63 +2,6 @@
 
 namespace llzk {
 
-mlir::FailureOr<std::vector<ConstrainRef>> ConstrainRef::get(mlir::Value val) {
-  std::vector<ConstrainRef> res;
-
-  // If it's a field read, it reads a field def from a component.
-  // If it's a felt, it doesn't need a field read
-
-  // Due to the way constrain is defined, all signals are read from inputs.
-  if (auto blockArg = mlir::dyn_cast_or_null<mlir::BlockArgument>(val)) {
-    // to use this constructor, the block arg must be a felt
-    res.push_back(ConstrainRef(blockArg));
-  } else if (auto fieldRead = mlir::dyn_cast_or_null<FieldReadOp>(val.getDefiningOp())) {
-    std::deque<FieldDefOp> fields;
-    mlir::SymbolTableCollection tables;
-    mlir::BlockArgument arg;
-    FieldReadOp currRead = fieldRead;
-    while (currRead != nullptr) {
-      auto component = currRead.getComponent();
-      auto fieldOpRes = currRead.getFieldDefOp(tables);
-      if (mlir::failed(fieldOpRes)) {
-        fieldRead.emitError() << "could not find field read\n";
-        return mlir::failure();
-      }
-      fields.push_front(fieldOpRes->get());
-      arg = mlir::dyn_cast_or_null<mlir::BlockArgument>(component);
-      currRead = mlir::dyn_cast_or_null<FieldReadOp>(component.getDefiningOp());
-    }
-    if (arg == nullptr) {
-      fieldRead.emitError() << "could not follow a read chain!\n";
-      return mlir::failure();
-    }
-    // We only want to generate this if the end value is a felt
-    res.emplace_back(arg, std::vector<ConstrainRefIndex>(fields.begin(), fields.end()));
-  } else if (val.getDefiningOp() != nullptr && mlir::isa<FeltConstantOp>(val.getDefiningOp())) {
-    auto constFelt = mlir::dyn_cast<FeltConstantOp>(val.getDefiningOp());
-    res.emplace_back(constFelt);
-  } else if (val.getDefiningOp() != nullptr) {
-    // Fallback for every other type of operation
-    // This also works for global func call ops, since we use an interprocedural dataflow solver
-    for (auto operand : val.getDefiningOp()->getOperands()) {
-      auto uses = ConstrainRef::get(operand);
-      if (mlir::succeeded(uses)) {
-        res.insert(res.end(), uses->begin(), uses->end());
-      }
-    }
-  } else {
-    std::string str;
-    llvm::raw_string_ostream ss(str);
-    ss << val;
-    llvm::report_fatal_error("unsupported value in SignalUsage::get: " + mlir::Twine(ss.str()));
-  }
-
-  if (res.empty()) {
-    return mlir::failure();
-  }
-  return res;
-}
-
 mlir::FailureOr<ConstrainRef>
 ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) const {
   if (isConstant()) {
@@ -81,9 +24,10 @@ ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) c
 }
 
 void ConstrainRef::print(mlir::raw_ostream &os) const {
-  if (isConstant()) {
-    os << "<constfelt: " << const_cast<FeltConstantOp &>(constFelt).getValueAttr().getValue()
-       << ">";
+  if (isConstantFelt()) {
+    os << "<constfelt: " << getConstantFeltValue() << '>';
+  } else if (isConstantIndex()) {
+    os << "<index: " << getConstantIndexValue() << '>';
   } else {
     os << "%arg" << blockArg.getArgNumber();
     for (auto f : fieldRefs) {
@@ -98,12 +42,12 @@ bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
 
 // required for EquivalenceClasses usage
 bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
-  if (isConstant() && !rhs.isConstant()) {
+  if (isConstantFelt() && !rhs.isConstantFelt()) {
     // Put all constants at the end
     return false;
-  } else if (!isConstant() && rhs.isConstant()) {
+  } else if (!isConstantFelt() && rhs.isConstantFelt()) {
     return true;
-  } else if (isConstant() && rhs.isConstant()) {
+  } else if (isConstantFelt() && rhs.isConstantFelt()) {
     return constFelt < rhs.constFelt;
   }
 
@@ -124,8 +68,10 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
 }
 
 size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
-  if (val.isConstant()) {
+  if (val.isConstantFelt()) {
     return OpHash<FeltConstantOp>{}(val.constFelt);
+  } else if (val.isConstantIndex()) {
+    return OpHash<mlir::index::ConstantOp>{}(val.constIdx);
   } else {
     size_t hash = std::hash<unsigned>{}(val.blockArg.getArgNumber());
     for (auto f : val.fieldRefs) {

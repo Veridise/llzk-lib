@@ -175,3 +175,45 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ArrayCheck {
+    func @constrain(%self: !llzk.struct<@ArrayCheck>, %in: !llzk.array<5 x !llzk.felt>) {
+      %fval = llzk.constfelt 7
+      %idx = index.constant 3
+      %elem = llzk.readarr %in[%idx] : !llzk.array<5 x !llzk.felt>, !llzk.felt
+      llzk.emit_eq %elem, %fval : !llzk.felt
+      return
+    }
+
+    func @compute() -> !llzk.struct<@ArrayCheck> {
+      %self = new_struct : !llzk.struct<@ArrayCheck>
+      return %self : !llzk.struct<@ArrayCheck>
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ArrayForCheck {
+    func @constrain(%self: !llzk.struct<@ArrayForCheck>, %in: !llzk.array<5 x !llzk.felt>) {
+      %lb = index.constant 0
+      %up = index.constant 5
+      %step = index.constant 1
+      %fval = llzk.constfelt 7
+      scf.for %iv = %lb to %up step %step {
+        %elem = llzk.readarr %in[%iv] : !llzk.array<5 x !llzk.felt>, !llzk.felt
+        llzk.emit_eq %elem, %fval : !llzk.felt
+      }
+      return
+    }
+
+    func @compute() -> !llzk.struct<@ArrayForCheck> {
+      %self = new_struct : !llzk.struct<@ArrayForCheck>
+      return %self : !llzk.struct<@ArrayForCheck>
+    }
+  }
+}

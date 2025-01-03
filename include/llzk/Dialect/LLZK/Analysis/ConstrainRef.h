@@ -4,10 +4,12 @@
 #include "llzk/Dialect/LLZK/Util/Hash.h"
 
 #include <mlir/Analysis/DataFlowFramework.h>
+#include <mlir/Dialect/Index/IR/IndexOps.h>
 #include <mlir/Pass/AnalysisManager.h>
 
 #include <llvm/ADT/EquivalenceClasses.h>
 
+#include <unordered_set>
 #include <vector>
 
 namespace llzk {
@@ -16,9 +18,14 @@ namespace llzk {
 /// definition, and for arrays, this is an element index.
 /// Effectively a wrapper around a std::variant with extra utility methods.
 class ConstrainRefIndex {
+  using IndexRange = std::pair<mlir::APInt, mlir::APInt>;
+
 public:
   explicit ConstrainRefIndex(FieldDefOp f) : index(f) {}
-  explicit ConstrainRefIndex(int64_t i) : index(i) {}
+  explicit ConstrainRefIndex(mlir::APInt i) : index(i) {}
+  explicit ConstrainRefIndex(int64_t i) : index(mlir::APInt(64, i)) {}
+  ConstrainRefIndex(mlir::APInt low, mlir::APInt high) : index(IndexRange{low, high}) {}
+  explicit ConstrainRefIndex(IndexRange r) : index(r) {}
 
   bool isField() const { return std::holds_alternative<FieldDefOp>(index); }
   FieldDefOp getField() const {
@@ -26,31 +33,65 @@ public:
     return std::get<FieldDefOp>(index);
   }
 
-  bool isIndex() const { return std::holds_alternative<int64_t>(index); }
-  int64_t getIndex() const {
+  bool isIndex() const { return std::holds_alternative<mlir::APInt>(index); }
+  mlir::APInt getIndex() const {
     ensureIsIndex();
-    return std::get<int64_t>(index);
+    return std::get<mlir::APInt>(index);
+  }
+
+  bool isIndexRange() const { return std::holds_alternative<IndexRange>(index); }
+  IndexRange getIndexRange() const {
+    ensureIsIndexRange();
+    return std::get<IndexRange>(index);
   }
 
   void dump() const { print(llvm::errs()); }
   void print(mlir::raw_ostream &os) const {
     if (isField()) {
       os << '@' << getField().getName();
-    } else {
+    } else if (isIndex()) {
       os << getIndex();
+    } else {
+      auto r = getIndexRange();
+      os << std::get<0>(r) << ':' << std::get<1>(r);
     }
   }
 
   bool operator==(const ConstrainRefIndex &rhs) const { return index == rhs.index; }
 
-  bool operator<(const ConstrainRefIndex &rhs) const { return index < rhs.index; }
+  bool operator<(const ConstrainRefIndex &rhs) const {
+    if (isField() && rhs.isField()) {
+      return getField() < rhs.getField();
+    }
+    if (isIndex() && rhs.isIndex()) {
+      return getIndex().ult(rhs.getIndex());
+    }
+    if (isIndexRange() && rhs.isIndexRange()) {
+      auto l = getIndexRange(), r = rhs.getIndexRange();
+      auto ll = std::get<0>(l), lu = std::get<1>(l);
+      auto rl = std::get<0>(r), ru = std::get<1>(r);
+      return ll.ult(rl) || (ll == rl && lu.ult(ru));
+    }
+
+    if (isField()) {
+      return true;
+    }
+    if (isIndex() && !rhs.isField()) {
+      return true;
+    }
+
+    return false;
+  }
 
   bool operator>(const ConstrainRefIndex &rhs) const { return rhs < *this; }
 
   struct Hash {
     size_t operator()(const ConstrainRefIndex &c) const {
       if (c.isIndex()) {
-        return std::hash<int64_t>{}(c.getIndex());
+        return llvm::hash_value(c.getIndex());
+      } else if (c.isIndexRange()) {
+        auto r = c.getIndexRange();
+        return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
       } else {
         return OpHash<FieldDefOp>{}(c.getField());
       }
@@ -60,17 +101,28 @@ public:
   size_t getHash() const { return Hash{}(*this); }
 
 private:
-  std::variant<FieldDefOp, int64_t> index;
+  /// Either:
+  /// 1. A field within a struct
+  /// 2. An index into an array
+  /// 3. A half-open range of indices into an array, for when we're unsure about a specifc index.
+  /// Likely, this will be from [0, size) at this point.
+  std::variant<FieldDefOp, mlir::APInt, IndexRange> index;
 
   void ensureIsField() const {
     if (!isField()) {
-      llvm::report_fatal_error("ConstrainRefIndex: field requested, but holds index type");
+      llvm::report_fatal_error("ConstrainRefIndex: field requested but not contained");
     }
   }
 
   void ensureIsIndex() const {
     if (!isIndex()) {
-      llvm::report_fatal_error("ConstrainRefIndex: index requested, but holds field type");
+      llvm::report_fatal_error("ConstrainRefIndex: index requested but not contained");
+    }
+  }
+
+  void ensureIsIndexRange() const {
+    if (!isIndexRange()) {
+      llvm::report_fatal_error("ConstrainRefIndex: index range requested but not contained");
     }
   }
 };
@@ -91,44 +143,57 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Constra
 /// array).
 class ConstrainRef {
 public:
-  /// Try to create references out of a given operation.
-  /// A single operation may contain multiple usages, e.g. addition of signals.
-  static mlir::FailureOr<std::vector<ConstrainRef>> get(mlir::Value val);
-
-  explicit ConstrainRef(mlir::BlockArgument b) : blockArg(b), fieldRefs({}), constFelt(nullptr) {}
+  explicit ConstrainRef(mlir::BlockArgument b)
+      : blockArg(b), fieldRefs({}), constFelt(nullptr), constIdx(nullptr) {}
   ConstrainRef(mlir::BlockArgument b, std::vector<ConstrainRefIndex> f)
-      : blockArg(b), fieldRefs(f), constFelt(nullptr) {}
-  explicit ConstrainRef(FeltConstantOp c) : blockArg(nullptr), fieldRefs({}), constFelt(c) {}
+      : blockArg(b), fieldRefs(f), constFelt(nullptr), constIdx(nullptr) {}
+  explicit ConstrainRef(FeltConstantOp c)
+      : blockArg(nullptr), fieldRefs({}), constFelt(c), constIdx(nullptr) {}
+  explicit ConstrainRef(mlir::index::ConstantOp c)
+      : blockArg(nullptr), fieldRefs({}), constFelt(nullptr), constIdx(c) {}
 
   mlir::Type getType() const {
-    if (isConstant()) {
+    if (isConstantFelt()) {
       return const_cast<FeltConstantOp &>(constFelt).getType();
+    } else if (isConstantIndex()) {
+      return const_cast<mlir::index::ConstantOp &>(constIdx).getType();
     } else {
-      unsigned array_derefs = 0;
+      int array_derefs = 0;
       int idx = fieldRefs.size() - 1;
       while (idx >= 0 && fieldRefs[idx].isIndex()) {
         array_derefs++;
         idx--;
       }
-      mlir::Type currTy;
+
       if (idx >= 0) {
-        currTy = fieldRefs[idx].getField().getType();
+        mlir::Type currTy = fieldRefs[idx].getField().getType();
+        while (array_derefs > 0) {
+          currTy = mlir::dyn_cast<ArrayType>(currTy).getElementType();
+          array_derefs--;
+        }
+        return currTy;
       } else {
-        currTy = blockArg.getType();
+        return blockArg.getType();
       }
-      while (array_derefs > 0) {
-        currTy = mlir::dyn_cast<ArrayType>(currTy).getElementType();
-      }
-      return currTy;
     }
   }
 
-  bool isConstant() const { return constFelt != nullptr; }
-  bool isFelt() const { mlir::isa<FeltType>(getType()); }
-  bool isIndex() const { mlir::isa<mlir::IndexType>(getType()); }
-  bool isInteger() const { mlir::isa<mlir::IntegerType>(getType()); }
-  bool isScalar() const { return isConstant() || isFelt() || isIndex() || isInteger(); }
+  bool isConstantFelt() const { return constFelt != nullptr; }
+  bool isConstantIndex() const { return constIdx != nullptr; }
+  bool isConstant() const { return isConstantFelt() || isConstantIndex(); }
+
+  bool isFeltVal() const { return mlir::isa<FeltType>(getType()); }
+  bool isIndexVal() const { return mlir::isa<mlir::IndexType>(getType()); }
+  bool isIntegerVal() const { return mlir::isa<mlir::IntegerType>(getType()); }
+  bool isScalar() const { return isConstant() || isFeltVal() || isIndexVal() || isIntegerVal(); }
+
   unsigned getInputNum() const { return blockArg.getArgNumber(); }
+  mlir::APInt getConstantFeltValue() const {
+    return const_cast<FeltConstantOp &>(constFelt).getValueAttr().getValue();
+  }
+  mlir::APInt getConstantIndexValue() const {
+    return const_cast<mlir::index::ConstantOp &>(constIdx).getValue();
+  }
 
   /// @brief Create a new reference with prefix replaced with other iff prefix is a valid prefix for
   /// this reference. If this reference is a constfelt, the translation will always succeed and
@@ -142,11 +207,24 @@ public:
   /// @brief Create a new reference that is the immediate prefix of this reference if possible.
   /// @return
   mlir::FailureOr<ConstrainRef> getParentPrefix() const {
-    if (isConstant() || fieldRefs.empty()) {
+    if (isConstantFelt() || fieldRefs.empty()) {
       return mlir::failure();
     }
     auto copy = *this;
     copy.fieldRefs.pop_back();
+    return copy;
+  }
+
+  ConstrainRef createChild(ConstrainRefIndex r) const {
+    auto copy = *this;
+    copy.fieldRefs.push_back(r);
+    return copy;
+  }
+
+  ConstrainRef createChild(ConstrainRef other) const {
+    auto copy = *this;
+    assert(other.isConstantIndex());
+    copy.fieldRefs.push_back(ConstrainRefIndex(other.getConstantIndexValue()));
     return copy;
   }
 
@@ -165,13 +243,16 @@ public:
 private:
   /**
    * If the block arg is 0, then it refers to "self", meaning the signal is internal or an output
-   * (public means an output) Otherwise, it is an input, either public or private.
+   * (public means an output). Otherwise, it is an input, either public or private.
    */
   mlir::BlockArgument blockArg;
   std::vector<ConstrainRefIndex> fieldRefs;
   FeltConstantOp constFelt;
+  mlir::index::ConstantOp constIdx;
 };
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRef &rhs);
+
+using ConstrainRefSet = std::unordered_set<ConstrainRef, ConstrainRef::Hash>;
 
 } // namespace llzk
