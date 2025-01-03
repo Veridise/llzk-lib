@@ -212,9 +212,8 @@ LogicalResult StructDefOp::verifyRegions() {
         }
       } else {
         return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
-                                << "'; only '" << FieldDefOp::getOperationName() << "'"
-                                << " and '" << FuncOp::getOperationName()
-                                << "' operations are permitted";
+                                << "'; only '" << FieldDefOp::getOperationName() << "'" << " and '"
+                                << FuncOp::getOperationName() << "' operations are permitted";
       }
     }
   }

@@ -40,8 +40,8 @@ class VariadicTypesMatchWith<string summary, string lhsArg, string rhsArg,
 // instead as this is likely too restrictive when type variables are involved.
 class TypesUnify<string lhsArg, string rhsArg, string lhsSummary = lhsArg,
                  string rhsSummary = rhsArg, string transform = "$_self">
-    : TypesMatchWith<rhsSummary#" type matches with "#lhsSummary#" type", lhsArg,
-                     rhsArg, transform, "::llzk::typesUnify">;
+    : TypesMatchWith<rhsSummary#" type matches with "#lhsSummary#" type",
+                     lhsArg, rhsArg, transform, "::llzk::typesUnify">;
 
 // Returns success if `elementArg` unifies with the `arrayArg` element type.
 class ArrayElemTypeUnifyWith<string arrayArg, string elementArg>
