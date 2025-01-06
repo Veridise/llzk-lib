@@ -1,6 +1,6 @@
 // RUN: llzk-opt -I %S -llzk-inline-includes %s 2>&1 | FileCheck %s
-// RUN: llzk-opt -llzk-print-call-graph %s 2>&1 | FileCheck %s --check-prefix CG
-// RUN: llzk-opt -llzk-print-call-graph-sccs %s 2>&1 | FileCheck %s --check-prefix SCC
+// RUN: llzk-opt -I %S -llzk-print-call-graph %s 2>&1 | FileCheck %s --check-prefix CG
+// RUN: llzk-opt -I %S -llzk-print-call-graph-sccs %s 2>&1 | FileCheck %s --check-prefix SCC
 
 module attributes {veridise.lang = "llzk"} {
   llzk.include "zir_example_0.llzk" as @std
