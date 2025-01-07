@@ -29,6 +29,10 @@ Within the developer shell, run the following command to generate the CMake conf
 ```bash
 phases=configurePhase genericBuild
 ```
+or (since v23.11)
+```bash
+runPhase configurePhase
+```
 
 By default, the developer shell is set up to build in debug mode. If you want to
 generate a release build, append `-DCMAKE_BUILD_TYPE=Release` to `cmakeFlags`:
