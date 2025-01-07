@@ -1,64 +1,14 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
+#include "llzk/Dialect/LLZK/Util/SymbolLookup.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Operation.h>
-#include <mlir/IR/OwningOpRef.h>
-
-#include <llvm/Support/Debug.h>
 
 #define DEBUG_TYPE "llzk-symbol-helpers"
 
 namespace llzk {
 using namespace mlir;
-
-//===------------------------------------------------------------------===//
-// SymbolLookupResultUntyped
-//===------------------------------------------------------------------===//
-
-SymbolLookupResultUntyped::SymbolLookupResultUntyped(Operation *t_op) : op(t_op) {}
-SymbolLookupResultUntyped::SymbolLookupResultUntyped() : op(nullptr) {}
-
-// Move constructor
-SymbolLookupResultUntyped::SymbolLookupResultUntyped(SymbolLookupResultUntyped &&other)
-    : op(other.op), managedResources(std::move(other.managedResources)),
-      includeSymNameStack(std::move(other.includeSymNameStack)) {
-  other.op = nullptr;
-}
-
-// Move assigment
-SymbolLookupResultUntyped &SymbolLookupResultUntyped::operator=(SymbolLookupResultUntyped &&other) {
-  if (this != &other) {
-    managedResources.clear();
-    managedResources = std::move(other.managedResources);
-    includeSymNameStack.clear();
-    includeSymNameStack = std::move(other.includeSymNameStack);
-    op = other.op;
-    other.op = nullptr;
-  }
-  return *this;
-}
-
-/// Access the internal operation.
-Operation *SymbolLookupResultUntyped::operator->() { return op; }
-Operation &SymbolLookupResultUntyped::operator*() { return *op; }
-Operation &SymbolLookupResultUntyped::operator*() const { return *op; }
-Operation *SymbolLookupResultUntyped::get() { return op; }
-Operation *SymbolLookupResultUntyped::get() const { return op; }
-
-/// True iff the symbol was found.
-SymbolLookupResultUntyped::operator bool() const { return op != nullptr; }
-
-/// Adds a pointer to the set of resources the result has to manage the lifetime of.
-void SymbolLookupResultUntyped::manage(OwningOpRef<ModuleOp> &&ptr) {
-  managedResources.push_back(std::move(ptr)); // Hand over the pointer
-}
-
-/// Adds the symbol name from the IncludeOp that caused the module to be loaded.
-void SymbolLookupResultUntyped::trackIncludeAsName(llvm::StringRef includeOpSymName) {
-  includeSymNameStack.push_back(includeOpSymName);
-}
 
 namespace {
 
@@ -164,49 +114,6 @@ FailureOr<SymbolRefAttr> getPathFromRoot(FuncOp &to) {
     //  FuncOp must have either StructDefOp or ModuleOp as its parent.
     return current->emitError().append("orphaned '", FuncOp::getOperationName(), "'");
   }
-}
-
-SymbolLookupResultUntyped
-lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *symTableOp) {
-  // First try a direct lookup via the SymbolTableCollection.  Must use a low-level lookup function
-  // in order to properly account for modules that were added due to inlining IncludeOp.
-  {
-    SmallVector<Operation *, 4> symbolsFound;
-    if (succeeded(tables.lookupSymbolIn(symTableOp, symbol, symbolsFound))) {
-      SymbolLookupResultUntyped ret(symbolsFound.back());
-      for (auto it = symbolsFound.rbegin(); it != symbolsFound.rend(); ++it) {
-        Operation *op = *it;
-        if (op->hasAttr(LANG_ATTR_NAME)) {
-          ret.trackIncludeAsName(op->getAttrOfType<StringAttr>(SymbolTable::getSymbolAttrName()));
-        }
-      }
-      return ret;
-    }
-  }
-  // Otherwise, check if the reference can be found by manually doing a lookup for each part of
-  // the reference in turn, traversing through IncludeOp symbols by parsing the included file.
-  if (Operation *rootOp = tables.lookupSymbolIn(symTableOp, symbol.getRootReference())) {
-    if (IncludeOp rootOpInc = llvm::dyn_cast<IncludeOp>(rootOp)) {
-      FailureOr<OwningOpRef<ModuleOp>> otherMod = rootOpInc.openModule();
-      if (succeeded(otherMod)) {
-        // Create a temporary SymbolTableCollection for caching the external symbols from the
-        // included module rather than adding these symbols to the existing SymbolTableCollection
-        // because it has no means of removing entries from its internal map and it is not safe to
-        // leave the dangling pointers in that map after the external module has been freed.
-        SymbolTableCollection external;
-        auto result = lookupSymbolRec(external, getTailAsSymbolRefAttr(symbol), otherMod->get());
-        if (result) {
-          result.manage(std::move(*otherMod));
-          result.trackIncludeAsName(rootOpInc.getSymName());
-        }
-        return result;
-      }
-    } else if (ModuleOp rootOpMod = llvm::dyn_cast<ModuleOp>(rootOp)) {
-      return lookupSymbolRec(tables, getTailAsSymbolRefAttr(symbol), rootOpMod);
-    }
-  }
-  // Otherwise, return empty result
-  return SymbolLookupResultUntyped();
 }
 
 LogicalResult verifyParamOfType(

@@ -309,13 +309,13 @@ namespace {
 FailureOr<SymbolLookupResult<FieldDefOp>>
 getFieldDefOp(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructType tyStruct) {
   Operation *op = refOp.getOperation();
-  auto structDef = tyStruct.getDefinition(tables, op);
-  if (failed(structDef)) {
+  auto structDefRes = tyStruct.getDefinition(tables, op);
+  if (failed(structDefRes)) {
     return failure(); // getDefinition() already emits a sufficient error message
   }
   auto res = llzk::lookupSymbolIn<FieldDefOp>(
       tables, SymbolRefAttr::get(refOp->getContext(), refOp.getFieldName()),
-      structDef.value().get(), op
+      std::move(*structDefRes), op
   );
   if (failed(res)) {
     return refOp->emitError() << "no '" << FieldDefOp::getOperationName() << "' named \"@"
