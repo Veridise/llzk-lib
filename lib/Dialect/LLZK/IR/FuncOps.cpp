@@ -391,4 +391,19 @@ FunctionType CallOp::getCalleeType() {
   return FunctionType::get(getContext(), getOperandTypes(), getResultTypes());
 }
 
+/// Get the argument operands to the called function.
+CallOp::operand_range CallOp::getArgOperands() { return {arg_operand_begin(), arg_operand_end()}; }
+
+mlir::MutableOperandRange CallOp::getArgOperandsMutable() { return getOperandsMutable(); }
+
+/// Return the callee of this operation.
+mlir::CallInterfaceCallable CallOp::getCallableForCallee() {
+  return (*this)->getAttrOfType<mlir::SymbolRefAttr>("callee");
+}
+
+/// Set the callee for this operation.
+void CallOp::setCalleeFromCallable(mlir::CallInterfaceCallable callee) {
+  (*this)->setAttr("callee", callee.get<mlir::SymbolRefAttr>());
+}
+
 } // namespace llzk

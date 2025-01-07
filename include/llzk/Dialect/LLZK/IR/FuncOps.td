@@ -194,8 +194,10 @@ def ReturnOp
 //===----------------------------------------------------------------------===//
 
 def CallOp
-    : LLZK_Op<"call", [MemRefsNormalizable, CallOpInterface,
-                       DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+    : LLZK_Op<"call", [MemRefsNormalizable,
+                       DeclareOpInterfaceMethods<CallOpInterface>,
+                       DeclareOpInterfaceMethods<SymbolUserOpInterface>
+                       ]> {
   let summary = "call operation";
   let description = [{
     The `llzk.call` operation represents a call to another function. The operands
@@ -252,27 +254,8 @@ def CallOp
   let extraClassDeclaration = [{
     ::mlir::FunctionType getCalleeType();
 
-    /// Get the argument operands to the called function.
-    operand_range getArgOperands() {
-      return {arg_operand_begin(), arg_operand_end()};
-    }
-
-    ::mlir::MutableOperandRange getArgOperandsMutable() {
-      return getOperandsMutable();
-    }
-
     operand_iterator arg_operand_begin() { return operand_begin(); }
     operand_iterator arg_operand_end() { return operand_end(); }
-
-    /// Return the callee of this operation.
-    ::mlir::CallInterfaceCallable getCallableForCallee() {
-      return (*this)->getAttrOfType<::mlir::SymbolRefAttr>("callee");
-    }
-
-    /// Set the callee for this operation.
-    void setCalleeFromCallable(::mlir::CallInterfaceCallable callee) {
-      (*this)->setAttr("callee", callee.get<::mlir::SymbolRefAttr>());
-    }
   }];
 
   let assemblyFormat = [{

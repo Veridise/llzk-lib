@@ -51,6 +51,15 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
     return constFelt < rhs.constFelt;
   }
 
+  if (isConstantIndex() && !rhs.isConstantIndex()) {
+    // Put all constant indices next at the end
+    return false;
+  } else if (!isConstantIndex() && rhs.isConstantIndex()) {
+    return true;
+  } else if (isConstantIndex() && rhs.isConstantIndex()) {
+    return getConstantIndexValue().ult(rhs.getConstantIndexValue());
+  }
+
   // both are not constants
   if (blockArg.getArgNumber() < rhs.blockArg.getArgNumber()) {
     return true;
