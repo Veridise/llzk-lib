@@ -55,7 +55,7 @@ void SymbolLookupResultUntyped::manage(OwningOpRef<ModuleOp> &&ptr) {
   managedResources.push_back(std::move(ptr)); // Hand over the pointer
 }
 
-/// Adds a pointer to the set of resources the result has to manage the lifetime of.
+/// Adds the symbol name from the IncludeOp that caused the module to be loaded.
 void SymbolLookupResultUntyped::trackIncludeAsName(llvm::StringRef includeOpSymName) {
   includeSymNameStack.push_back(includeOpSymName);
 }
@@ -189,6 +189,10 @@ lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *
     if (IncludeOp rootOpInc = llvm::dyn_cast<IncludeOp>(rootOp)) {
       FailureOr<OwningOpRef<ModuleOp>> otherMod = rootOpInc.openModule();
       if (succeeded(otherMod)) {
+        // Create a temporary SymbolTableCollection for caching the external symbols from the
+        // included module rather than adding these symbols to the existing SymbolTableCollection
+        // because it has no means of removing entries from its internal map and it is not safe to
+        // leave the dangling pointers in that map after the external module has been freed.
         SymbolTableCollection external;
         auto result = lookupSymbolRec(external, getTailAsSymbolRefAttr(symbol), otherMod->get());
         if (result) {

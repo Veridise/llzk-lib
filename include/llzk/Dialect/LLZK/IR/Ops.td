@@ -136,7 +136,7 @@ def LLZK_StructDefOp
 
   let extraClassDeclaration = [{
     /// Gets the StructType representing this struct. If the `constParams` to use in
-    /// the type are not given, the StructType will use this->getConstParamsAttr().
+    /// the type are not given, the StructType will use `this->getConstParamsAttr()`.
     StructType getType(std::optional<::mlir::ArrayAttr> constParams = {});
 
     /// Gets the FieldDefOp that defines the field in this
