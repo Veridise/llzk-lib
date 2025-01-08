@@ -69,17 +69,14 @@ public:
   construction for copies.
   */
 
-  /// Copy constructor.
   ConstraintSummary(const ConstraintSummary &other)
       : mod(other.mod), structDef(other.structDef), constraintSets(other.constraintSets), tables() {
   }
-  /// Copy assignment.
   ConstraintSummary &operator=(const ConstraintSummary &other) {
     mod = other.mod;
     structDef = other.structDef;
     constraintSets = other.constraintSets;
   }
-  /// Destructor. Just default.
   ~ConstraintSummary() = default;
 
 private:
@@ -89,15 +86,8 @@ private:
   mutable StructDefOp structDef;
   llvm::EquivalenceClasses<ConstrainRef> constraintSets;
 
+  // Also mutable for caching within otherwise const lookup operations.
   mutable mlir::SymbolTableCollection tables;
-
-  StructDefOp getStructDef(StructType ty) const {
-    auto sDef = ty.getDefinition(tables, mod);
-    if (mlir::failed(sDef)) {
-      llvm::report_fatal_error("could not find struct definition from struct type");
-    }
-    return sDef->get();
-  }
 
   /// @brief Constructs an empty summary. The summary is populated using computeConstraints.
   /// @param m The parent LLZK-compliant module.

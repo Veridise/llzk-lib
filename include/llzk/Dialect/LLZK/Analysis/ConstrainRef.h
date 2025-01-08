@@ -45,43 +45,12 @@ public:
     return std::get<IndexRange>(index);
   }
 
-  void dump() const { print(llvm::errs()); }
-  void print(mlir::raw_ostream &os) const {
-    if (isField()) {
-      os << '@' << getField().getName();
-    } else if (isIndex()) {
-      os << getIndex();
-    } else {
-      auto r = getIndexRange();
-      os << std::get<0>(r) << ':' << std::get<1>(r);
-    }
-  }
+  inline void dump() const { print(llvm::errs()); }
+  void print(mlir::raw_ostream &os) const;
 
-  bool operator==(const ConstrainRefIndex &rhs) const { return index == rhs.index; }
+  inline bool operator==(const ConstrainRefIndex &rhs) const { return index == rhs.index; }
 
-  bool operator<(const ConstrainRefIndex &rhs) const {
-    if (isField() && rhs.isField()) {
-      return getField() < rhs.getField();
-    }
-    if (isIndex() && rhs.isIndex()) {
-      return getIndex().ult(rhs.getIndex());
-    }
-    if (isIndexRange() && rhs.isIndexRange()) {
-      auto l = getIndexRange(), r = rhs.getIndexRange();
-      auto ll = std::get<0>(l), lu = std::get<1>(l);
-      auto rl = std::get<0>(r), ru = std::get<1>(r);
-      return ll.ult(rl) || (ll == rl && lu.ult(ru));
-    }
-
-    if (isField()) {
-      return true;
-    }
-    if (isIndex() && !rhs.isField()) {
-      return true;
-    }
-
-    return false;
-  }
+  bool operator<(const ConstrainRefIndex &rhs) const;
 
   bool operator>(const ConstrainRefIndex &rhs) const { return rhs < *this; }
 
@@ -142,7 +111,35 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Constra
 /// contain indices into that block argument (e.g., a field reference in a struct or a index into an
 /// array).
 class ConstrainRef {
+
+  /// Produce all possible ConstraintRefs that are present starting from the given
+  /// arrayField, originating from a given blockArg,
+  /// and partially-specified indices into that object (fields).
+  /// This produces refs for composite types (e.g., full structs and full arrays)
+  /// as well as individual fields and constants.
+  static std::vector<ConstrainRef> getAllConstrainRefs(
+      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ArrayType arrayTy,
+      mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields
+  );
+
+  /// Produce all possible ConstraintRefs that are present starting from the given
+  /// BlockArgument and partially-specified indices into that object (fields).
+  /// This produces refs for composite types (e.g., full structs and full arrays)
+  /// as well as individual fields and constants.
+  static std::vector<ConstrainRef> getAllConstrainRefs(
+      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, StructDefOp s,
+      mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields
+  );
+
+  /// Produce all possible ConstraintRefs that are present starting from the given BlockArgument.
+  static std::vector<ConstrainRef> getAllConstrainRefs(
+      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, mlir::BlockArgument arg
+  );
+
 public:
+  /// Produce all possible ConstraintRefs that are present from the struct's constrain function.
+  static std::vector<ConstrainRef> getAllConstrainRefs(StructDefOp structDef);
+
   explicit ConstrainRef(mlir::BlockArgument b)
       : blockArg(b), fieldRefs({}), constFelt(nullptr), constIdx(nullptr) {}
   ConstrainRef(mlir::BlockArgument b, std::vector<ConstrainRefIndex> f)
@@ -152,31 +149,7 @@ public:
   explicit ConstrainRef(mlir::index::ConstantOp c)
       : blockArg(nullptr), fieldRefs({}), constFelt(nullptr), constIdx(c) {}
 
-  mlir::Type getType() const {
-    if (isConstantFelt()) {
-      return const_cast<FeltConstantOp &>(constFelt).getType();
-    } else if (isConstantIndex()) {
-      return const_cast<mlir::index::ConstantOp &>(constIdx).getType();
-    } else {
-      int array_derefs = 0;
-      int idx = fieldRefs.size() - 1;
-      while (idx >= 0 && fieldRefs[idx].isIndex()) {
-        array_derefs++;
-        idx--;
-      }
-
-      if (idx >= 0) {
-        mlir::Type currTy = fieldRefs[idx].getField().getType();
-        while (array_derefs > 0) {
-          currTy = mlir::dyn_cast<ArrayType>(currTy).getElementType();
-          array_derefs--;
-        }
-        return currTy;
-      } else {
-        return blockArg.getType();
-      }
-    }
-  }
+  mlir::Type getType() const;
 
   bool isConstantFelt() const { return constFelt != nullptr; }
   bool isConstantIndex() const { return constIdx != nullptr; }
