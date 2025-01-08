@@ -167,6 +167,9 @@ public:
   mlir::APInt getConstantIndexValue() const {
     return const_cast<mlir::index::ConstantOp &>(constIdx).getValue();
   }
+  mlir::APInt getConstantValue() const {
+    return isConstantFelt() ? getConstantFeltValue() : getConstantIndexValue();
+  }
 
   /// @brief Create a new reference with prefix replaced with other iff prefix is a valid prefix for
   /// this reference. If this reference is a constfelt, the translation will always succeed and

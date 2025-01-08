@@ -8,6 +8,7 @@
 #include <mlir/Dialect/Index/IR/IndexOps.h>
 #include <mlir/IR/Value.h>
 
+#include <numeric>
 #include <unordered_set>
 
 namespace llzk {
@@ -19,6 +20,7 @@ These classes are defined here and not in the header as they are not designed
 for use outside of this specific ConstraintSummary analysis.
 */
 
+using ConstantMap = mlir::DenseMap<mlir::Value, mlir::APInt>;
 using ConstrainRefSetMap = mlir::DenseMap<mlir::Value, ConstrainRefSet>;
 using ArgumentMap = mlir::DenseMap<mlir::BlockArgument, ConstrainRefSet>;
 
@@ -64,8 +66,8 @@ public:
 
   /// Minimum lower bound
   virtual mlir::ChangeResult meet(const AbstractDenseLattice &rhs) override {
-    llvm::report_fatal_error("what");
-    mlir::ChangeResult::NoChange;
+    llvm::report_fatal_error("meet operation is not supported for ConstrainRefLattice");
+    return mlir::ChangeResult::NoChange;
   }
 
   void print(mlir::raw_ostream &os) const override {
@@ -171,7 +173,7 @@ public:
     join(after, before);
 
     auto fnOp = fnOpRes->get();
-    if (fnOp.getName() == FUNC_NAME_CONSTRAIN) {
+    if (fnOp.getName() == FUNC_NAME_CONSTRAIN || fnOp.getName() == FUNC_NAME_COMPUTE) {
       // Do nothing special.
       return;
     }
@@ -180,9 +182,7 @@ public:
     ///   - `before` is the state before the call operation;
     ///   - `after` is the state at the beginning of the callee entry block;
     if (action == dataflow::CallControlFlowAction::EnterCallee) {
-      // Set up the transition function.
-
-      // Here, we add all of the argument values to the lattice
+      // Add all of the argument values to the lattice.
       auto calledFnRes = resolveCallable<FuncOp>(tables, call);
       if (mlir::failed(calledFnRes)) {
         llvm::report_fatal_error("could not resolve function call");
@@ -191,7 +191,6 @@ public:
 
       auto updated = mlir::ChangeResult::NoChange;
       for (auto arg : calledFn->getRegion(0).getArguments()) {
-        // llvm::errs() << "arg is " << arg << "\n";
         auto sourceRef = ConstrainRefLattice::getSourceRef(arg);
         if (mlir::failed(sourceRef)) {
           llvm::report_fatal_error("Failed to get source ref");
@@ -205,9 +204,7 @@ public:
     ///   - `before` is the state at the end of a callee exit block;
     ///   - `after` is the state after the call operation.
     if (action == dataflow::CallControlFlowAction::ExitCallee) {
-      // Set up the transition function.
-
-      // Translate argument values
+      // Translate argument values based on the operands given at the call site.
       std::unordered_map<ConstrainRef, ConstrainRefSet, ConstrainRef::Hash> translation;
       auto funcOpRes = resolveCallable<FuncOp>(tables, call);
       if (mlir::failed(funcOpRes)) {
@@ -256,8 +253,7 @@ public:
   void visitOperation(
       mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
   ) override {
-    // First, see if any of this operations operands are direct references,
-    // or if we need to resolve function calls
+    // Collect the references that are made by the operands to `op`.
     ConstrainRefSetMap operandVals;
     for (auto &operand : op->getOpOperands()) {
       operandVals[operand.get()] = before.getOrDefault(operand.get());
@@ -268,6 +264,7 @@ public:
 
     // We will now join the the operand refs based on the type of operand.
     if (auto fieldRead = mlir::dyn_cast<FieldReadOp>(op)) {
+      // In the readf case, the operand is indexed into by the read's fielddefop.
       assert(operandVals.size() == 1);
       assert(fieldRead->getNumResults() == 1);
 
@@ -284,6 +281,7 @@ public:
       }
       propagateIfChanged(after, after->setValue(res, fieldVals));
     } else if (auto arrayRead = mlir::dyn_cast<ReadArrayOp>(op)) {
+      // In the readarr case, we index the first operand by all remaining indices
       assert(arrayRead->getNumResults() == 1);
       auto res = arrayRead->getResult(0);
 
@@ -315,24 +313,33 @@ public:
 
       propagateIfChanged(after, after->setValue(res, currVals));
     } else {
-      // Standard union of operands, unless all operands are constants,
-      // in which case we can easily propagate more precise updates.
-      auto updated = mlir::ChangeResult::NoChange;
-      for (auto res : op->getResults()) {
-        auto cur = before.getOrDefault(res);
-
-        for (auto &[_, set] : operandVals) {
-          cur.insert(set.begin(), set.end());
-        }
-        updated |= after->setValue(res, cur);
-      }
-      propagateIfChanged(after, updated);
+      // Standard union of operands into the results value.
+      // TODO: Could perform constant computation/propagation here for, e.g., arithmetic
+      // over constants, but such analysis may be better suited for a dedicated pass.
+      propagateIfChanged(after, fallbackOpUpdate(op, operandVals, before, after));
     }
   }
 
 protected:
   void setToEntryState(ConstrainRefLattice *lattice) override {
     // the entry state is empty, so do nothing.
+  }
+
+  // Perform a standard union of operands into the results value.
+  mlir::ChangeResult fallbackOpUpdate(
+      mlir::Operation *op, const ConstrainRefSetMap &operandVals, const ConstrainRefLattice &before,
+      ConstrainRefLattice *after
+  ) {
+    auto updated = mlir::ChangeResult::NoChange;
+    for (auto res : op->getResults()) {
+      auto cur = before.getOrDefault(res);
+
+      for (auto &[_, set] : operandVals) {
+        cur.insert(set.begin(), set.end());
+      }
+      updated |= after->setValue(res, cur);
+    }
+    return updated;
   }
 
 private:
@@ -418,10 +425,7 @@ mlir::FailureOr<ConstraintSummary> ConstraintSummary::compute(
 
 void ConstraintSummary::dump() const { print(llvm::errs()); }
 
-/// NOTE: Only prints scalar elements. The constraintSets also contains
-/// references to composite elements to help with construction and lookup, but
-/// for printing clarity, we omit these elements.
-/// For each reference within the struct, print the set that constrains that reference.
+/// Print all constraints. Any element that is unconstrained is omitted.
 void ConstraintSummary::print(llvm::raw_ostream &os) const {
   // the EquivalenceClasses::iterator is sorted, but the EquivalenceClasses::member_iterator is
   // not guaranteed to be sorted. So, we will sort members before printing them.
@@ -466,7 +470,7 @@ mlir::LogicalResult
 ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::AnalysisManager &am) {
   // Fetch the constrain function. This is a required feature for all LLZK structs.
   auto constrainFnOp = structDef.getConstrainFuncOp();
-  if (constrainFnOp == nullptr) {
+  if (!constrainFnOp) {
     llvm::report_fatal_error(
         "malformed struct " + mlir::Twine(structDef.getName()) + " must define a constrain function"
     );
