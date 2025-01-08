@@ -61,7 +61,7 @@ public:
   /// foo[2] as well as foo, as arrays may be constrained in their entirity via emit_in operations.
   /// @param ref
   /// @return The set of references that are connected to ref via constraints.
-  std::set<ConstrainRef> getConstrainingValues(const ConstrainRef &ref) const;
+  ConstrainRefSet getConstrainingValues(const ConstrainRef &ref) const;
 
   /*
   Rule of three, needed for the mlir::SymbolTableCollection, which has no copy constructor.
@@ -98,34 +98,6 @@ private:
     }
     return sDef->get();
   }
-
-  /// Try to create references out of a given operation.
-  /// A single operation may contain multiple usages, e.g. addition of signals.
-  mlir::FailureOr<std::vector<ConstrainRef>>
-  getConstrainRefs(mlir::DataFlowSolver &solver, mlir::Value val);
-
-  /// Produce all possible ConstraintRefs that are present from the struct's constrain function.
-  std::vector<ConstrainRef> getAllConstrainRefs() const;
-
-  /// Produce all possible ConstraintRefs that are present starting from the given BlockArgument.
-  std::vector<ConstrainRef> getAllConstrainRefs(mlir::BlockArgument arg) const;
-
-  /// Produce all possible ConstraintRefs that are present starting from the given
-  /// BlockArgument and partially-specified indices into that object (fields).
-  /// This produces refs for composite types (e.g., full structs and full arrays)
-  /// as well as individual fields and constants.
-  std::vector<ConstrainRef> getAllConstrainRefs(
-      StructDefOp s, mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields = {}
-  ) const;
-
-  /// Produce all possible ConstraintRefs that are present starting from the given
-  /// arrayField, originating from a given blockArg,
-  /// and partially-specified indices into that object (fields).
-  /// This produces refs for composite types (e.g., full structs and full arrays)
-  /// as well as individual fields and constants.
-  std::vector<ConstrainRef> getAllConstrainRefs(
-      ArrayType arrayTy, mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields = {}
-  ) const;
 
   /// @brief Constructs an empty summary. The summary is populated using computeConstraints.
   /// @param m The parent LLZK-compliant module.
