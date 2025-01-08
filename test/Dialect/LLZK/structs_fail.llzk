@@ -86,7 +86,7 @@ module attributes {veridise.lang = "llzk"} {
 
   llzk.func @user() {
     // expected-error@+2 {{symbol "@ComponentJ" references a 'llzk.struct' but expected a 'llzk.func'}}
-    // expected-error@+1 {{no 'llzk.func' named "@ComponentJ"}}
+    // expected-error@+1 {{expected 'llzk.func' named "@ComponentJ"}}
     llzk.call @ComponentJ() : () -> ()
     return
   }
