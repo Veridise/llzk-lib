@@ -185,48 +185,6 @@ mlir::LogicalResult FuncOp::verify() {
 
 namespace {
 
-mlir::InFlightDiagnostic genCompareErr(StructDefOp &expected, FuncOp &origin, const char *aspect) {
-  mlir::FailureOr<mlir::SymbolRefAttr> pathToExpected = getPathFromRoot(expected);
-  if (mlir::succeeded(pathToExpected)) {
-    return origin.emitOpError().append(
-        "\"@", origin.getSymName(), "\" must use type of its parent '",
-        StructDefOp::getOperationName(), "' \"", pathToExpected.value(), "\" as ", aspect, " type"
-    );
-  } else {
-    // When there is a failure trying to get the resolved name of the struct,
-    //  just print its symbol name directly.
-    return origin.emitOpError().append(
-        "\"@", origin.getSymName(), "\" must use type of its parent '",
-        StructDefOp::getOperationName(), "' \"@", expected.getSymName(), "\" as ", aspect, " type"
-    );
-  }
-}
-
-mlir::LogicalResult compareTypes(
-    SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, const mlir::Type &actualType,
-    FuncOp &origin, const char *aspect
-) {
-  if (StructType sType = llvm::dyn_cast<StructType>(actualType)) {
-    auto actualStructOpt =
-        lookupTopLevelSymbol<StructDefOp>(symbolTable, sType.getNameRef(), origin);
-    if (mlir::failed(actualStructOpt)) {
-      return origin.emitError().append(
-          "could not find '", StructDefOp::getOperationName(), "' named \"", sType.getNameRef(),
-          "\""
-      );
-    }
-    StructDefOp actualStruct = actualStructOpt.value().get();
-    if (actualStruct != expectedStruct) {
-      return genCompareErr(expectedStruct, origin, aspect)
-          .attachNote(actualStruct.getLoc())
-          .append("uses this type instead");
-    }
-  } else {
-    return genCompareErr(expectedStruct, origin, aspect);
-  }
-  return mlir::success();
-}
-
 mlir::LogicalResult
 verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parent) {
   mlir::FunctionType funcType = origin.getFunctionType();
@@ -237,7 +195,7 @@ verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &symbolTable, Struct
         "\"@", llzk::FUNC_NAME_COMPUTE, "\" must have exactly one return type"
     );
   }
-  if (mlir::failed(compareTypes(symbolTable, parent, resTypes.front(), origin, "return"))) {
+  if (mlir::failed(checkSelfType(symbolTable, parent, resTypes.front(), origin, "return"))) {
     return mlir::failure();
   }
 
@@ -250,9 +208,8 @@ verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &symbolTable, Struct
 mlir::LogicalResult
 verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parent) {
   mlir::FunctionType funcType = origin.getFunctionType();
-  llvm::ArrayRef<mlir::Type> resTypes = funcType.getResults();
   // Must return '()' type, i.e. have no return types
-  if (resTypes.size() != 0) {
+  if (funcType.getResults().size() != 0) {
     return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
                                 << "\" must have no return type";
   }
@@ -263,14 +220,14 @@ verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &symbolTable, Stru
     return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
                                 << "\" must have at least one input type";
   }
-  if (mlir::failed(compareTypes(symbolTable, parent, inputTypes.front(), origin, "first input"))) {
+  if (mlir::failed(checkSelfType(symbolTable, parent, inputTypes.front(), origin, "first input"))) {
     return mlir::failure();
   }
 
   // After the more specific checks (to ensure more specific error messages would be produced if
   // necessary), do the general check that all symbol references in the types are valid. There are
   // no return types, just check the remaining input types (the first was already checked via
-  // the compareTypes() call above).
+  // the checkSelfType() call above).
   return verifyTypeResolution(symbolTable, inputTypes.begin() + 1, inputTypes.end(), origin);
 }
 
@@ -317,7 +274,7 @@ LogicalResult ReturnOp::verify() {
   }
 
   for (unsigned i = 0, e = results.size(); i != e; ++i) {
-    if (!areSameType(getOperand(i).getType(), results[i])) {
+    if (!typesUnify(getOperand(i).getType(), results[i])) {
       return emitError() << "type of return operand " << i << " (" << getOperand(i).getType()
                          << ") doesn't match function result type (" << results[i] << ")"
                          << " in function @" << function.getName();
@@ -352,7 +309,7 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   }
 
   for (unsigned i = 0, e = fnType.getNumInputs(); i != e; ++i) {
-    if (!areSameType(getOperand(i).getType(), fnType.getInput(i), tgtOpt->getIncludeSymNames())) {
+    if (!typesUnify(getOperand(i).getType(), fnType.getInput(i), tgtOpt->getIncludeSymNames())) {
       return emitOpError("operand type mismatch: expected type ")
              << fnType.getInput(i) << ", but found " << getOperand(i).getType()
              << " for operand number " << i;
@@ -364,7 +321,7 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   }
 
   for (unsigned i = 0, e = fnType.getNumResults(); i != e; ++i) {
-    if (!areSameType(getResult(i).getType(), fnType.getResult(i), tgtOpt->getIncludeSymNames())) {
+    if (!typesUnify(getResult(i).getType(), fnType.getResult(i), tgtOpt->getIncludeSymNames())) {
       return emitOpError("result type mismatch: expected type ")
              << fnType.getResult(i) << ", but found " << getResult(i).getType()
              << " for result number " << i;

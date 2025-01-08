@@ -9,7 +9,8 @@ def CallGraphPrinterPass : Pass<"llzk-print-call-graph", "::mlir::ModuleOp"> {
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
-def CallGraphSCCsPrinterPass : Pass<"llzk-print-call-graph-sccs", "::mlir::ModuleOp"> {
+def CallGraphSCCsPrinterPass
+    : Pass<"llzk-print-call-graph-sccs", "::mlir::ModuleOp"> {
   let summary = "Print the SCCs from the LLZK module's call graph.";
   let constructor = "llzk::createCallGraphSCCsPrinterPass(llvm::errs())";
   let dependentDialects = ["llzk::LLZKDialect"];

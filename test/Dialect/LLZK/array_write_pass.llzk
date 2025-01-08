@@ -37,7 +37,7 @@ llzk.func @arr_mix_index(%a: index, %b: index) -> !llzk.array<4 x index> {
 //CHECK-NEXT:   }
 // -----
 
-llzk.func @arr_arr_mix_index(%a: index) -> !llzk.array<2x3 x index> {
+llzk.func @arr_arr_mix_index(%a: index) -> !llzk.array<2,3 x index> {
   %c = index.constant 343245
   %d = index.constant 345
   %e = index.constant 2344
@@ -45,12 +45,12 @@ llzk.func @arr_arr_mix_index(%a: index) -> !llzk.array<2x3 x index> {
   %d1 = index.constant 547
   %e1 = index.constant 54795
   %i = index.constant 1
-  %r = llzk.new_array %c, %d, %e, %c1, %d1, %e1: !llzk.array<2x3 x index>
-  llzk.writearr %r[%i, %i] = %a : !llzk.array<2x3 x index>, index
-  return %r: !llzk.array<2x3 x index>
+  %r = llzk.new_array %c, %d, %e, %c1, %d1, %e1: !llzk.array<2,3 x index>
+  llzk.writearr %r[%i, %i] = %a : !llzk.array<2,3 x index>, index
+  return %r: !llzk.array<2,3 x index>
 }
 //CHECK-LABEL:  llzk.func @arr_arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.array<2x3 x index> {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.array<2,3 x index> {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.constant 343245
 //CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = index.constant 345
 //CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = index.constant 2344
@@ -58,9 +58,9 @@ llzk.func @arr_arr_mix_index(%a: index) -> !llzk.array<2x3 x index> {
 //CHECK-NEXT:     %[[T6:[0-9a-zA-Z_\.]+]] = index.constant 547
 //CHECK-NEXT:     %[[T7:[0-9a-zA-Z_\.]+]] = index.constant 54795
 //CHECK-NEXT:     %[[I:[0-9a-zA-Z_\.]+]] = index.constant 1
-//CHECK-NEXT:     %[[T9:[0-9a-zA-Z_\.]+]] = new_array %[[T1]], %[[T2]], %[[T3]], %[[T5]], %[[T6]], %[[T7]] : <2x3 x index>
-//CHECK-NEXT:     writearr %[[T9]][%[[I]], %[[I]]] = %[[A0]] : <2x3 x index>, index
-//CHECK-NEXT:     return %[[T9]] : !llzk.array<2x3 x index>
+//CHECK-NEXT:     %[[T9:[0-9a-zA-Z_\.]+]] = new_array %[[T1]], %[[T2]], %[[T3]], %[[T5]], %[[T6]], %[[T7]] : <2,3 x index>
+//CHECK-NEXT:     writearr %[[T9]][%[[I]], %[[I]]] = %[[A0]] : <2,3 x index>, index
+//CHECK-NEXT:     return %[[T9]] : !llzk.array<2,3 x index>
 //CHECK-NEXT:   }
 
 

@@ -205,23 +205,101 @@ lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *
   return SymbolLookupResultUntyped();
 }
 
-LogicalResult verifyTypeResolution(SymbolTableCollection &symbolTable, Type ty, Operation *origin) {
+LogicalResult verifyParamOfType(
+    SymbolTableCollection &tables, SymbolRefAttr param, Type parameterizedType, Operation *origin
+) {
+  // Most often, StructType and ArrayType SymbolRefAttr parameters will be defined as parameters of
+  // the StructDefOp that the current Operation is nested within. These are always flat references
+  // (i.e. contain no nested references).
+  if (param.getNestedReferences().empty()) {
+    FailureOr<StructDefOp> getParentRes = getParentOfType<StructDefOp>(origin);
+    if (succeeded(getParentRes)) {
+      if (getParentRes->hasParamNamed(param.getRootReference())) {
+        return success();
+      }
+    }
+  }
+  // Otherwise, see if the symbol can be found via lookup from the `origin` Operation.
+  auto lookupRes = lookupTopLevelSymbol(tables, param, origin);
+  if (failed(lookupRes)) {
+    return failure(); // lookupTopLevelSymbol() already emits a sufficient error message
+  }
+  Operation *foundOp = lookupRes->get();
+  // TODO: Currently there is no type of Symbol Operation that is valid here. However, when
+  //  the GlobalConstDef Operation is added, it will be valid to use in this context.
+  return origin->emitError() << "ref \"" << param << "\" in type " << parameterizedType
+                             << " refers to a '" << foundOp->getName() << "' which is not allowed";
+}
+
+LogicalResult verifyParamsOfType(
+    SymbolTableCollection &tables, ArrayRef<Attribute> tyParams, Type parameterizedType,
+    Operation *origin
+) {
+  // Rather than immediately returning on failure, we check all params and aggregate to provide as
+  // many errors are possible in a single verifier run.
+  LogicalResult paramCheckResult = success();
+  for (Attribute attr : tyParams) {
+    assertValidAttrForParamOfType(attr);
+    if (SymbolRefAttr symRefParam = llvm::dyn_cast<SymbolRefAttr>(attr)) {
+      if (failed(verifyParamOfType(tables, symRefParam, parameterizedType, origin))) {
+        paramCheckResult = failure();
+      }
+    } else if (TypeAttr typeParam = llvm::dyn_cast<TypeAttr>(attr)) {
+      if (failed(verifyTypeResolution(tables, typeParam.getValue(), origin))) {
+        paramCheckResult = failure();
+      }
+    }
+  }
+  return paramCheckResult;
+}
+
+FailureOr<StructDefOp>
+verifyStructTypeResolution(SymbolTableCollection &tables, StructType ty, Operation *origin) {
+  auto res = ty.getDefinition(tables, origin);
+  if (failed(res)) {
+    return failure();
+  }
+  StructDefOp defForType = res.value().get();
+  if (!structTypesUnify(ty, defForType.getType({}), res->getIncludeSymNames())) {
+    return origin->emitError()
+        .append(
+            "Cannot unify parameters of type ", ty, " with parameters of '",
+            StructDefOp::getOperationName(), "' \"", defForType.getHeaderString(), "\""
+        )
+        .attachNote(defForType.getLoc())
+        .append("type parameters must unify with parameters defined here");
+  }
+  // If there are any SymbolRefAttr parameters on the StructType, ensure those refs are valid.
+  if (ArrayAttr tyParams = ty.getParams()) {
+    if (failed(verifyParamsOfType(tables, tyParams.getValue(), ty, origin))) {
+      return failure();
+    }
+  }
+  return defForType;
+}
+
+LogicalResult verifyTypeResolution(SymbolTableCollection &tables, Type ty, Operation *origin) {
   if (StructType sTy = llvm::dyn_cast<StructType>(ty)) {
-    return sTy.getDefinition(symbolTable, origin);
+    return verifyStructTypeResolution(tables, sTy, origin);
   } else if (ArrayType aTy = llvm::dyn_cast<ArrayType>(ty)) {
-    return verifyTypeResolution(symbolTable, aTy.getElementType(), origin);
+    if (failed(verifyParamsOfType(tables, aTy.getDimensionSizes(), aTy, origin))) {
+      return failure();
+    }
+    return verifyTypeResolution(tables, aTy.getElementType(), origin);
+  } else if (TypeVarType vTy = llvm::dyn_cast<TypeVarType>(ty)) {
+    return verifyParamOfType(tables, vTy.getNameRef(), vTy, origin);
   } else {
     return success();
   }
 }
 
 LogicalResult verifyTypeResolution(
-    SymbolTableCollection &symbolTable, llvm::ArrayRef<Type>::iterator start,
+    SymbolTableCollection &tables, llvm::ArrayRef<Type>::iterator start,
     llvm::ArrayRef<Type>::iterator end, Operation *origin
 ) {
   LogicalResult res = success();
   for (; start != end; ++start) {
-    if (failed(verifyTypeResolution(symbolTable, *start, origin))) {
+    if (failed(verifyTypeResolution(tables, *start, origin))) {
       res = failure();
     }
   }

@@ -54,7 +54,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @emitin_in_compute {
     func @compute(%a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_compute> {
       // expected-error@+1 {{'llzk.emit_in' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
-      llzk.emit_in %a, %b : !llzk.array<5 x !llzk.felt>
+      llzk.emit_in %b, %a : !llzk.array<5 x !llzk.felt>
       %self = new_struct : !llzk.struct<@emitin_in_compute>
       return %self : !llzk.struct<@emitin_in_compute>
     }
@@ -71,7 +71,7 @@ module attributes {veridise.lang = "llzk"} {
       %step = index.constant 1
       scf.for %iv = %lb to %up step %step {
         // expected-error@+1 {{'llzk.emit_in' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
-        llzk.emit_in %a, %b : !llzk.array<5 x !llzk.felt>
+        llzk.emit_in %b, %a : !llzk.array<5 x !llzk.felt>
       }
       %self = new_struct : !llzk.struct<@emitin_in_compute_in_loop>
       return %self : !llzk.struct<@emitin_in_compute_in_loop>
@@ -88,7 +88,7 @@ module attributes {veridise.lang = "llzk"} {
         scf.if %b {
           scf.if %c {
             // expected-error@+1 {{'llzk.emit_in' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
-            llzk.emit_in %x, %y : !llzk.array<5 x index>
+            llzk.emit_in %y, %x : !llzk.array<5 x index>
           }
         }
       }
@@ -108,7 +108,7 @@ llzk.func @constrain(%a: !llzk.felt, %b: !llzk.felt) {
 // -----
 llzk.func @constrain(%x: index, %y: !llzk.array<5 x index>) {
   // expected-error@+1 {{'llzk.emit_in' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
-  llzk.emit_in %x, %y : !llzk.array<5 x index>
+  llzk.emit_in %y, %x : !llzk.array<5 x index>
   return
 }
 // -----
@@ -178,29 +178,33 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-llzk.struct @inv_in_constrain {
-  func @compute(%a: !llzk.felt) -> !llzk.struct<@inv_in_constrain> {
-    %self = new_struct : !llzk.struct<@inv_in_constrain>
-    return %self : !llzk.struct<@inv_in_constrain>
-  }
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @inv_in_constrain {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@inv_in_constrain> {
+      %self = new_struct : !llzk.struct<@inv_in_constrain>
+      return %self : !llzk.struct<@inv_in_constrain>
+    }
 
-  func @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !llzk.felt) {
-    // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
-    %c = llzk.inv %a
-    return
+    func @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !llzk.felt) {
+      // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+      %c = llzk.inv %a
+      return
+    }
   }
 }
 // -----
-llzk.struct @inv_in_constrain {
-  func @compute(%a: !llzk.felt) -> !llzk.struct<@inv_in_constrain> {
-    %self = new_struct : !llzk.struct<@inv_in_constrain>
-    return %self : !llzk.struct<@inv_in_constrain>
-  }
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @inv_in_constrain {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@inv_in_constrain> {
+      %self = new_struct : !llzk.struct<@inv_in_constrain>
+      return %self : !llzk.struct<@inv_in_constrain>
+    }
 
-  func @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !llzk.felt) {
-    // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
-    %c = llzk.inv %a
-    return
+    func @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !llzk.felt) {
+      // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
+      %c = llzk.inv %a
+      return
+    }
   }
 }
 // -----
@@ -247,7 +251,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@compute_with_wrong_ret" as return type}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> index {
       %b = index.constant 2
       return %b : index
@@ -271,7 +275,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@compute_with_wrong_ret" as return type}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> !llzk.struct<@good> {
       %self = new_struct : !llzk.struct<@good>
       return %self : !llzk.struct<@good>
@@ -297,7 +301,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   module @two {
     llzk.struct @good {
-      // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@two::@good" as return type}}
+      // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@two::@good" as return type}}
       func @compute() -> !llzk.struct<@one::@good> {
         %self = new_struct : !llzk.struct<@one::@good>
         return %self : !llzk.struct<@one::@good>
@@ -330,7 +334,7 @@ module attributes {veridise.lang = "llzk"} {
 module { // expected-note {{unnamed 'builtin.module' here}}
   // expected-error@+1 {{'llzk.struct' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
   llzk.struct @compute_with_wrong_ret {
-    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its parent 'llzk.struct' "@compute_with_wrong_ret" as return type}}
+    // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> index {
       %b = index.constant 2
       return %b : index
@@ -359,7 +363,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = new_struct : !llzk.struct<@constrain_without_self_non_struct>
       return %self : !llzk.struct<@constrain_without_self_non_struct>
     }
-    // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its parent 'llzk.struct' "@constrain_without_self_non_struct" as first input type}}
+    // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its ancestor 'llzk.struct' "@constrain_without_self_non_struct" as first input type}}
     func @constrain(%self: !llzk.felt) {
       return
     }
@@ -381,8 +385,50 @@ module attributes {veridise.lang = "llzk"} {
       %self = new_struct : !llzk.struct<@constrain_without_self_wrong_struct>
       return %self : !llzk.struct<@constrain_without_self_wrong_struct>
     }
-    // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its parent 'llzk.struct' "@constrain_without_self_wrong_struct" as first input type}}
+    // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its ancestor 'llzk.struct' "@constrain_without_self_wrong_struct" as first input type}}
     func @constrain(%self: !llzk.struct<@other_type>) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @mismatch_arg_types_1 {
+    // expected-note@+1 {{"@compute" function defined here}}
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@mismatch_arg_types_1> {
+      %self = new_struct : !llzk.struct<@mismatch_arg_types_1>
+      return %self : !llzk.struct<@mismatch_arg_types_1>
+    }
+    // expected-error@+1 {{expected "@constrain" function argument types (sans the first one) to match "@compute" function argument types}}
+    func @constrain(%self: !llzk.struct<@mismatch_arg_types_1>) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @mismatch_arg_types_2 {
+    // expected-note@+1 {{"@compute" function defined here}}
+    func @compute() -> !llzk.struct<@mismatch_arg_types_2> {
+      %self = new_struct : !llzk.struct<@mismatch_arg_types_2>
+      return %self : !llzk.struct<@mismatch_arg_types_2>
+    }
+    // expected-error@+1 {{expected "@constrain" function argument types (sans the first one) to match "@compute" function argument types}}
+    func @constrain(%self: !llzk.struct<@mismatch_arg_types_2>, %a: !llzk.felt) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @mismatch_arg_types_3 {
+    // expected-note@+1 {{"@compute" function defined here}}
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@mismatch_arg_types_3> {
+      %self = new_struct : !llzk.struct<@mismatch_arg_types_3>
+      return %self : !llzk.struct<@mismatch_arg_types_3>
+    }
+    // expected-error@+1 {{expected "@constrain" function argument types (sans the first one) to match "@compute" function argument types}}
+    func @constrain(%self: !llzk.struct<@mismatch_arg_types_3>, %a: i1) {
       return
     }
   }

@@ -95,7 +95,8 @@ def LLZK_IncludeOp
 def LLZK_StructDefOp
     : LLZK_Op<"struct", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
                          IsolatedFromAbove, GraphRegionNoTerminator,
-                         OpAsmOpInterface]> {
+                         OpAsmOpInterface,
+                         DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "Circuit struct/component definition";
   let description = [{
       Describes a struct/component in a circuit.
@@ -121,6 +122,9 @@ def LLZK_StructDefOp
       ```
   }];
 
+  // Note: `$const_params` contains symbol definitions that do not use the
+  // standard SymbolTable mechanism. Instead hasParamNamed() can be used to
+  // check if a certain FlatSymbolRefAttr is a parameter in the function.
   let arguments = (ins SymbolNameAttr:$sym_name,
       OptionalAttr<FlatSymbolRefArrayAttr>:$const_params);
 
@@ -131,6 +135,10 @@ def LLZK_StructDefOp
   }];
 
   let extraClassDeclaration = [{
+    /// Gets the StructType representing this struct. If the `constParams` to use in
+    /// the type are not given, the StructType will use this->getConstParamsAttr().
+    StructType getType(std::optional<::mlir::ArrayAttr> constParams = {});
+
     /// Gets the FieldDefOp that defines the field in this
     /// structure with the given name, if present.
     FieldDefOp getFieldDef(::mlir::StringAttr fieldName);
@@ -140,6 +148,15 @@ def LLZK_StructDefOp
 
     /// Gets the FuncOp that defines the constrain function in this structure, if present.
     FuncOp getConstrainFuncOp();
+
+    /// Generate header string, in the same format as the assemblyFormat
+    ::std::string getHeaderString();
+
+    /// Return `true` iff this StructDefOp has a parameter with the given name
+    bool hasParamNamed(::mlir::StringAttr find);
+    inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
+      return hasParamNamed(find.getRootReference());
+    }
 
     //===------------------------------------------------------------------===//
     // OpAsmOpInterface Methods
@@ -152,6 +169,24 @@ def LLZK_StructDefOp
   }];
 
   let hasRegionVerifier = 1;
+}
+
+def LLZK_ConstReadOp
+    : LLZK_Op<
+          "read_const", [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+  let summary = "Read value from a struct/component constant parameter.";
+  let description = [{
+    This operation reads the value from the named constant parameter of
+    the struct/component in which this op appears. The op itself puts no
+    restriction on the type of this value, instead leaving it to a later
+    type-checking pass to ensure the struct parameters are instantiated
+    with types matching the uses of the parameter within the struct.
+  }];
+
+  let arguments = (ins FlatSymbolRefAttr:$const_name);
+  let results = (outs AnyLLZKType:$val);
+
+  let assemblyFormat = [{ $const_name attr-dict `:` type($val) }];
 }
 
 def LLZK_FieldDefOp
@@ -196,7 +231,7 @@ def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf"> {
   }];
 }
 
-def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef"> {
+def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef", [ComputeOnly]> {
   let summary = "Write value to a struct/component field.";
   let description = [{
     This operation writes the value to the named field from a struct/component.
@@ -211,8 +246,10 @@ def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef"> {
 }
 
 def LLZK_CreateStructOp
-    : LLZK_Op<"new_struct", [DeclareOpInterfaceMethods<
+    : LLZK_Op<"new_struct", [ComputeOnly,
+                             DeclareOpInterfaceMethods<
                                  OpAsmOpInterface, ["getAsmResultNames"]>,
+                             DeclareOpInterfaceMethods<SymbolUserOpInterface>,
 ]> {
   let summary = "creates a new struct";
   let description = [{
@@ -237,13 +274,11 @@ def LLZK_CreateStructOp
 def LLZK_CreateArrayOp
     : LLZK_Op<
           "new_array",
-          [DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
-           Pure,
-           TypesMatchWith<
+          [Pure,
+           DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
+           VariadicTypesMatchWith<
                "operand types match result type", "result", "elements",
-               "::llvm::SmallVector<::mlir::Type, 2>("
-               "::llvm::cast<::llzk::ArrayType>($_self).getNumElements(), "
-               "::llvm::cast<::llzk::ArrayType>($_self).getElementType())">]> {
+               "resultTypeToElementsTypes($_self)", "std::equal_to<>()">]> {
   let summary = "creates an array";
   let description = [{
     This operation creates a new array with the given elements.
@@ -254,22 +289,63 @@ def LLZK_CreateArrayOp
 
     ```llzk
     %0 = llzk.new_array %a, %b, %c : !llzk.array<3 x !llzk.felt>
-    %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2x2 x !llzk.felt>
+
+    // Create an array from the given values using the specified shape
+    %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2,2 x !llzk.felt>
+
+    // Create an uninitialized array
+    %2 = llzk.new_array : !llzk.array<3,2 x !llzk.felt>
     ```
+
+    The values used to construct the array must have type that exactly matches
+    the element type of the specified array type. This is true even if a `tvar`
+    type is used. In other words, cannot mix `tvar<@X>` with `tvar<@Y>` or any
+    concrete type. In such a scenario, first create an uninitialized array, as
+    shown in the examples above, and then use `writearr` to write each element
+    of the array.
+
+    Implementation note: This restriction exists due to a combination of:
+    (1) we have chosen to infer the type of `$elements` from the `$result`
+    ArrayType, via parseInferredArrayType(), rather than requiring the type of
+    every element be listed in the assembly format and,
+    (2) within the parser for an Op, there is no way to get the Value instances
+    for the operands aside from `OpAsmParser::resolveOperands()` which requires
+    the type of every operand to be known and ends up comparing the expected
+    to actual type via `operator==`. Thus, there is no way for this to be
+    successful apart from all elements having the exact type inferred in (1).
+
+    Also note that `std::equal_to` is used in the `VariadicTypesMatchWith`
+    trait on this Op so that the verifier function mirrors the aforementioned
+    restriction in the parser.
   }];
 
   let arguments = (ins Variadic<AnyLLZKType>:$elements);
   let results = (outs LLZK_ArrayType:$result);
 
-  let assemblyFormat = "$elements attr-dict `:` type($result)";
+  // This uses the custom parseInferredArrayType function to compute the type
+  //  of '$elements' to match the type of '$result', except when '$elements'
+  //  is empty, then the type of '$elements' must also be empty (size == 0).
+  let assemblyFormat = [{
+        $elements attr-dict `:` type($result)
+        `` custom<InferredArrayType>(type($elements), ref($elements), ref(type($result)))
+      }];
+
+  let extraClassDeclaration = [{
+    static ::mlir::ParseResult parseInferredArrayType(::mlir::AsmParser &parser,
+        ::llvm::SmallVector<::mlir::Type,1> &elementsTypes,
+        ::mlir::ArrayRef<::mlir::OpAsmParser::UnresolvedOperand> elements,
+        ::mlir::Type resultType
+    );
+    static void printInferredArrayType(::mlir::AsmPrinter &printer, CreateArrayOp,
+        ::mlir::Operation::operand_range::type_range, ::mlir::Operation::operand_range, ::mlir::Type
+    );
+  private:
+    static ::llvm::SmallVector<::mlir::Type> resultTypeToElementsTypes(::mlir::Type resultType);
+  }];
 }
 
 def LLZK_ReadArrayOp
-    : LLZK_Op<
-          "readarr",
-          [TypesMatchWith<
-              "result types match with array content", "lvalue", "result",
-              "::llvm::cast<::llzk::ArrayType>($_self).getElementType()">]> {
+    : LLZK_Op<"readarr", [ArrayTypeElemsUnifyWithResultCustomInfer<"lvalue">]> {
   let summary = "Loads a value from a LLZK array";
   let description = [{
     This operation loads the value from an array at position `$index`.
@@ -287,9 +363,9 @@ def LLZK_ReadArrayOp
     %i = index.constant 0
     %j = index.constant 1
     %k = index.constant 4
-    %0 = llzk.new_array ... : !llzk.array<3x10x15 x !llzk.felt>
+    %0 = llzk.new_array ... : !llzk.array<3,10,15 x !llzk.felt>
     // %1 is now equal to %a
-    %1 = llzk.readarr %0[%i, %j, %k] : !llzk.array<3x10x15 x !llzk.felt>, !llzk.felt
+    %1 = llzk.readarr %0[%i, %j, %k] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.felt
     ```
   }];
 
@@ -302,11 +378,7 @@ def LLZK_ReadArrayOp
 }
 
 def LLZK_WriteArrayOp
-    : LLZK_Op<
-          "writearr",
-          [TypesMatchWith<
-              "rvalue types match with array content", "lvalue", "rvalue",
-              "::llvm::cast<::llzk::ArrayType>($_self).getElementType()">]> {
+    : LLZK_Op<"writearr", [ArrayElemTypeUnifyWith<"lvalue", "rvalue">]> {
   let summary = "Writes a value into a LLZK array";
   let description = [{
     This operation writes a value into an array at position `$index`.
@@ -327,11 +399,10 @@ def LLZK_WriteArrayOp
     %i = index.constant 0
     %j = index.constant 0
     %0 = llzk.constfelt 42
-    %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2x2 x !llzk.felt>
+    %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2,2 x !llzk.felt>
     // The array now is [[%0, %b], [%c, %d]]
-    llzk.writearr %1[%i, %j] = %0 : !llzk.array<2x2 x !llzk.felt>, !llzk.felt
+    llzk.writearr %1[%i, %j] = %0 : !llzk.array<2,2 x !llzk.felt>, !llzk.felt
     ```
-
   }];
 
   let arguments = (ins LLZK_ArrayType:$lvalue, Variadic<Index>:$indices,
@@ -346,105 +417,134 @@ def LLZK_WriteArrayOp
 // Constraint emit operations
 //===------------------------------------------------------------------===//
 
+class LLZK_EmitOp<string mnemonic, list<Trait> traits = []>
+    : LLZK_Op<mnemonic,
+              traits#[InStructFunctionNamed<"::llzk::FUNC_NAME_CONSTRAIN">]> {
+
+  let assemblyFormat = [{
+    $lhs `,` $rhs `:` type($lhs)
+    `` custom<InferredOrParsedType>(type($rhs), ref(type($lhs)))
+    attr-dict
+  }];
+
+  let extraClassDeclaration = [{
+    static ::mlir::Type inferRHS(::mlir::Type lhsType);
+
+    static ::mlir::ParseResult parseInferredOrParsedType(::mlir::AsmParser &parser,
+        ::mlir::Type &rhsType, ::mlir::Type lhsType
+    ) {
+      if (mlir::succeeded(parser.parseOptionalComma())) {
+        // If there is a comma, parse the `rhsType`
+        mlir::Type type;
+        if (parser.parseCustomTypeWithFallback(type)) {
+          return mlir::failure();
+        }
+        rhsType = type;
+      } else {
+        // Otherwise, infer the `rhsType` from `lhsType`
+        rhsType = inferRHS(lhsType);
+      }
+      return mlir::success();
+    }
+
+    static void printInferredOrParsedType(::mlir::AsmPrinter &printer,
+        ::mlir::Operation *op, ::mlir::Type rhsType, ::mlir::Type lhsType
+    ) {
+      printer << ", ";
+      printer.printStrippedAttrOrType(rhsType);
+    }
+  }];
+}
+
 def EmitEqType : TypeConstraint<CPred<"::llzk::isValidEmitEqType($_self)">,
-                                "non-struct type">;
+                                "free from struct type">;
 
 def LLZK_EmitEqualityOp
-    : LLZK_Op<"emit_eq", [InStructFunctionNamed<"::llzk::FUNC_NAME_CONSTRAIN">,
-                          Pure, Commutative, SameTypeOperands,
-                          ElementwiseMappable,
+    : LLZK_EmitOp<"emit_eq", [Commutative, ElementwiseMappable,
+                              TypesUnify<"lhs", "rhs">,
 ]> {
   let summary = "";
   let description = [{}];
 
   let arguments = (ins EmitEqType:$lhs, EmitEqType:$rhs);
-
-  let assemblyFormat = [{
-    $lhs `,` $rhs `:` type($rhs) attr-dict
-  }];
 }
 
 def LLZK_EmitContainmentOp
-    : LLZK_Op<"emit_in",
-              [InStructFunctionNamed<"::llzk::FUNC_NAME_CONSTRAIN">, Pure,
-               TypesMatchWith<"lhs type matches rhs element type", "rhs", "lhs",
-                              "::llvm::cast<::llzk::ArrayType>($_self)."
-                              "getElementType()">]> {
+    : LLZK_EmitOp<"emit_in", [ArrayElemTypeUnifyWith<"lhs", "rhs">]> {
   let summary = "";
   let description = [{}];
 
-  let arguments = (ins AnyLLZKType:$lhs, LLZK_ArrayType:$rhs);
-
-  let assemblyFormat = [{
-    $lhs `,` $rhs `:` type($rhs) attr-dict
-  }];
+  let arguments = (ins LLZK_ArrayType:$lhs, AnyLLZKType:$rhs);
 }
 
 //===------------------------------------------------------------------===//
 // Field element operators
 //===------------------------------------------------------------------===//
 
-def LLZK_AddFeltOp : LLZK_BinaryFeltOp<"add", [Commutative]> {
+def LLZK_AddFeltOp : LLZK_BinaryOpBase<"add", LLZK_FeltType, [Commutative]> {
   let summary = "Addition operator for field elements";
   let description = [{}];
 }
 
-def LLZK_SubFeltOp : LLZK_BinaryFeltOp<"sub"> {
+def LLZK_SubFeltOp : LLZK_BinaryOpBase<"sub", LLZK_FeltType> {
   let summary = "Subtraction operator for field elements";
   let description = [{}];
 }
 
-def LLZK_MulFeltOp : LLZK_BinaryFeltOp<"mul", [Commutative]> {
+def LLZK_MulFeltOp : LLZK_BinaryOpBase<"mul", LLZK_FeltType, [Commutative]> {
   let summary = "Multiplication operator for field elements";
   let description = [{}];
 }
 
-def LLZK_DivFeltOp : LLZK_BinaryFeltOp<"div"> {
+def LLZK_DivFeltOp : LLZK_BinaryOpBase<"div", LLZK_FeltType> {
   let summary = "Division operator for field elements";
   let description = [{}];
 }
 
-def LLZK_ModFeltOp : LLZK_BinaryFeltOp<"mod"> {
+def LLZK_ModFeltOp : LLZK_BinaryOpBase<"mod", LLZK_FeltType> {
   let summary = "Modulus/remainder operator for field elements";
   let description = [{}];
 }
 
-def LLZK_NegFeltOp : LLZK_UnaryFeltOp<"neg"> {
+def LLZK_NegFeltOp : LLZK_UnaryOpBase<"neg", LLZK_FeltType> {
   let summary = "Negation operator for field elements";
   let description = [{}];
 }
 
-def LLZK_InvFeltOp : LLZK_UnaryFeltOp<"inv", [ComputeOnly]> {
+def LLZK_InvFeltOp : LLZK_UnaryOpBase<"inv", LLZK_FeltType, [ComputeOnly]> {
   let summary = "Inverse operator for field elements";
   let description = [{}];
 }
 
-def LLZK_AndFeltOp : LLZK_BinaryFeltOp<"bit_and", [ComputeOnly, Commutative]> {
+def LLZK_AndFeltOp
+    : LLZK_BinaryOpBase<"bit_and", LLZK_FeltType, [ComputeOnly, Commutative]> {
   let summary = "Bitwise AND operator for field elements";
   let description = [{}];
 }
 
-def LLZK_OrFeltOp : LLZK_BinaryFeltOp<"bit_or", [ComputeOnly, Commutative]> {
+def LLZK_OrFeltOp
+    : LLZK_BinaryOpBase<"bit_or", LLZK_FeltType, [ComputeOnly, Commutative]> {
   let summary = "Bitwise OR operator for field elements";
   let description = [{}];
 }
 
-def LLZK_XorFeltOp : LLZK_BinaryFeltOp<"bit_xor", [ComputeOnly, Commutative]> {
+def LLZK_XorFeltOp
+    : LLZK_BinaryOpBase<"bit_xor", LLZK_FeltType, [ComputeOnly, Commutative]> {
   let summary = "Bitwise XOR operator for field elements";
   let description = [{}];
 }
 
-def LLZK_NotFeltOp : LLZK_UnaryFeltOp<"bit_not", [ComputeOnly]> {
+def LLZK_NotFeltOp : LLZK_UnaryOpBase<"bit_not", LLZK_FeltType, [ComputeOnly]> {
   let summary = "Bit flip operator for field elements";
   let description = [{}];
 }
 
-def LLZK_ShlFeltOp : LLZK_BinaryFeltOp<"shl", [ComputeOnly]> {
+def LLZK_ShlFeltOp : LLZK_BinaryOpBase<"shl", LLZK_FeltType, [ComputeOnly]> {
   let summary = "Left shift operator for field elements";
   let description = [{}];
 }
 
-def LLZK_ShrFeltOp : LLZK_BinaryFeltOp<"shr", [ComputeOnly]> {
+def LLZK_ShrFeltOp : LLZK_BinaryOpBase<"shr", LLZK_FeltType, [ComputeOnly]> {
   let summary = "Right shift operator for field elements";
   let description = [{}];
 }
@@ -490,28 +590,28 @@ def LLZK_CmpOp : LLZK_Op<"cmp", [Pure]> {
   let assemblyFormat = "`` $predicate `(` $lhs `,` $rhs `)` attr-dict";
 }
 
-def LLZK_AndBoolOp : LLZK_BinaryBoolOp<"and", [ComputeOnly, Commutative]> {
+def LLZK_AndBoolOp : LLZK_BinaryOpBase<"and", I1, [ComputeOnly, Commutative]> {
   let summary = "logical AND";
   let description = [{
     Logical AND (i.e. conjunction) operator. The type of operands and return value is `i1` (i.e. boolean).
   }];
 }
 
-def LLZK_OrBoolOp : LLZK_BinaryBoolOp<"or", [ComputeOnly, Commutative]> {
+def LLZK_OrBoolOp : LLZK_BinaryOpBase<"or", I1, [ComputeOnly, Commutative]> {
   let summary = "logical OR";
   let description = [{
     Logical OR (i.e. disjunction) operator. The type of operands and return value is `i1` (i.e. boolean).
   }];
 }
 
-def LLZK_XorBoolOp : LLZK_BinaryBoolOp<"xor", [ComputeOnly, Commutative]> {
+def LLZK_XorBoolOp : LLZK_BinaryOpBase<"xor", I1, [ComputeOnly, Commutative]> {
   let summary = "logical XOR";
   let description = [{
     Logical ZOR (i.e. exclusive disjunction) operator. The type of operands and return value is `i1` (i.e. boolean).
   }];
 }
 
-def LLZK_NotBoolOp : LLZK_UnaryBoolOp<"not", [ComputeOnly]> {
+def LLZK_NotBoolOp : LLZK_UnaryOpBase<"not", I1, [ComputeOnly]> {
   let summary = "logical NOT";
   let description = [{
     Logical NOT (i.e. negation) operator. The type of operand and return value is `i1` (i.e. boolean).

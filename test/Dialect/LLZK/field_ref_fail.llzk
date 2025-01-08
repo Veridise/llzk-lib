@@ -69,15 +69,15 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentH {
-    func @compute() -> !llzk.struct<@ComponentH> {
+    func @compute(%0: !llzk.felt) -> !llzk.struct<@ComponentH> {
       %self = new_struct : !llzk.struct<@ComponentH>
+      // expected-error@+2 {{'llzk.writef' op references unknown symbol "@f2"}}
+      // expected-error@+1 {{no 'llzk.field' named "@f2" in "@ComponentH"}}
+      writef %self[@f2] = %0 : !llzk.struct<@ComponentH>, !llzk.felt
       return %self : !llzk.struct<@ComponentH>
     }
 
-    func @constrain(%p: !llzk.struct<@ComponentH>, %0: !llzk.felt) {
-      // expected-error@+2 {{'llzk.writef' op references unknown symbol "@f2"}}
-      // expected-error@+1 {{no 'llzk.field' named "@f2" in "@ComponentH"}}
-      writef %p[@f2] = %0 : !llzk.struct<@ComponentH>, !llzk.felt
+    func @constrain(%self: !llzk.struct<@ComponentH>, %0: !llzk.felt) {
       return
     }
   }
@@ -87,14 +87,14 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentJ {
     llzk.field @f2 : index
 
-    func @compute() -> !llzk.struct<@ComponentJ> {
+    func @compute(%0: !llzk.felt) -> !llzk.struct<@ComponentJ> {
       %self = new_struct : !llzk.struct<@ComponentJ>
+      // expected-error@+1 {{'llzk.writef' op has wrong type; expected 'index', got '!llzk.felt}}
+      writef %self[@f2] = %0 : !llzk.struct<@ComponentJ>, !llzk.felt
       return %self : !llzk.struct<@ComponentJ>
     }
 
-    func @constrain(%p: !llzk.struct<@ComponentJ>, %0: !llzk.felt) {
-      // expected-error@+1 {{'llzk.writef' op has wrong type; expected 'index', got '!llzk.felt}}
-      writef %p[@f2] = %0 : !llzk.struct<@ComponentJ>, !llzk.felt
+    func @constrain(%self: !llzk.struct<@ComponentJ>, %0: !llzk.felt) {
       return
     }
   }
@@ -148,5 +148,26 @@ module attributes {veridise.lang = "llzk"} {
       writef %p[@f2] = %0 : !llzk.struct<@ComponentM>, !llzk.array<2 x index>
       return
     }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @WrongComponent { // expected-note {{uses this type instead}}
+    llzk.field @f : !llzk.felt
+    func @compute() -> !llzk.struct<@WrongComponent> {
+      %self = new_struct : !llzk.struct<@WrongComponent>
+      return %self : !llzk.struct<@WrongComponent>
+    }
+    func @constrain(%self: !llzk.struct<@WrongComponent>)  { return }
+  }
+
+  llzk.struct @ComponentN {
+    func @compute(%0: !llzk.struct<@WrongComponent>, %1: !llzk.felt) -> !llzk.struct<@ComponentN> {
+      %self = new_struct : !llzk.struct<@ComponentN>
+      // expected-error@+1 {{'llzk.writef' op must use type of its ancestor 'llzk.struct' "@ComponentN" as result type}}
+      writef %0[@f] = %1 : !llzk.struct<@WrongComponent>, !llzk.felt
+      return %self : !llzk.struct<@ComponentN>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentN>, %0: !llzk.struct<@WrongComponent>, %1: !llzk.felt)  { return }
   }
 }

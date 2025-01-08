@@ -1,0 +1,109 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+2 {{expected attribute value}}
+  // expected-error@+1 {{failed to parse LLZK_TypeVarType parameter 'nameRef' which is to be a `::mlir::FlatSymbolRefAttr`}}
+  llzk.func private @p(%x: !llzk.tvar<>)
+}
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+1 {{expected '<'}}
+  llzk.func private @q(%x: !llzk.tvar)
+}
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+2 {{invalid kind of attribute specified}}
+  // expected-error@+1 {{failed to parse LLZK_TypeVarType parameter 'nameRef' which is to be a `::mlir::FlatSymbolRefAttr`}}
+  llzk.func private @r(%x: !llzk.tvar<5>)
+}
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+2 {{invalid kind of attribute specified}}
+  // expected-error@+1 {{failed to parse LLZK_TypeVarType parameter 'nameRef' which is to be a `::mlir::FlatSymbolRefAttr`}}
+  llzk.func private @s(%x: !llzk.tvar<index>)
+}
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+2 {{invalid kind of attribute specified}}
+  // expected-error@+1 {{failed to parse LLZK_TypeVarType parameter 'nameRef' which is to be a `::mlir::FlatSymbolRefAttr`}}
+  llzk.func private @t(%x: !llzk.tvar<!llzk.tvar<index>>)
+}
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+1 {{'llzk.func' op references unknown symbol "@A"}}
+  llzk.func private @u(%x: !llzk.tvar<@A>)
+}
+
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA {
+    // expected-error@+1 {{'llzk.field' op references unknown symbol "@T"}}
+    field @f3 : !llzk.tvar<@T>
+
+    func @compute() -> !llzk.struct<@ComponentA> {
+      %self = new_struct : !llzk.struct<@ComponentA>
+      return %self : !llzk.struct<@ComponentA>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA>) { return }
+  }
+}
+
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentB1<[@T]> {
+    func @compute() -> !llzk.struct<@ComponentB1<[@T]>> {
+      %self = new_struct : !llzk.struct<@ComponentB1<[@T]>>
+      return %self : !llzk.struct<@ComponentB1<[@T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentB1<[@T]>>) { return }
+  }
+  
+  llzk.struct @ComponentB2 {
+    // Note: If @X were defined (see ComponentB* tests in types_pass.llzk), using
+    //  "!llzk.tvar<@X>" is redundant. Just "@X" for the parameter would be equivalent.
+    //
+    // expected-error@+1 {{'llzk.func' op references unknown symbol "@X"}}
+    func @compute(%0: !llzk.struct<@ComponentB1<[!llzk.tvar<@X>]>>) -> !llzk.struct<@ComponentB2> {
+      %self = new_struct : !llzk.struct<@ComponentB2>
+      return %self : !llzk.struct<@ComponentB2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentB2>, %0: !llzk.struct<@ComponentB1<[!llzk.tvar<@X>]>>) { return }
+  }
+}
+// -----
+
+// TypeVarType in CreateArrayOp (`new_array`), non-exact match via unification of `tvar`
+// See description of LLZK_CreateArrayOp for full explanation of why this fails.
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentC1<[@T]> {
+    func @compute() -> !llzk.struct<@ComponentC1<[@T]>> {
+      %self = new_struct : !llzk.struct<@ComponentC1<[@T]>>
+      return %self : !llzk.struct<@ComponentC1<[@T]>>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentC1<[@T]>>) { return }
+  }
+
+  llzk.struct @ComponentC2<[@T]> {
+    field @f : !llzk.array<2 x !llzk.tvar<@T>>
+
+    func @compute() -> !llzk.struct<@ComponentC2<[@T]>> {
+      %self = new_struct : !llzk.struct<@ComponentC2<[@T]>>
+      %a1 = call @ComponentC1::@compute() : () -> !llzk.struct<@ComponentC1<[5]>> // expected-note {{prior use here}}
+      %a2 = call @ComponentC1::@compute() : () -> !llzk.struct<@ComponentC1<[7]>>
+      // expected-error@+1 {{use of value '%a1' expects different type than prior uses: '!llzk.tvar<@T>' vs '!llzk.struct<@ComponentC1<[5]>>'}}
+      %arr = new_array %a1, %a2 : !llzk.array<2 x !llzk.tvar<@T>>
+      writef %self[@f] = %arr : !llzk.struct<@ComponentC2<[@T]>>, !llzk.array<2 x !llzk.tvar<@T>>
+      return %self : !llzk.struct<@ComponentC2<[@T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentC2<[@T]>>) { return }
+  }
+}

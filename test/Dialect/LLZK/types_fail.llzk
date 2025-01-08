@@ -1,26 +1,77 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-llzk.func private @a()
-// COM: A shape can be parsed empty, creating an empty array.
-// COM: Parsing here fails because we cannot have a function type.
-// expected-error@+1 {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
-llzk.func private @b(%x: !llzk.array<@a x !llzk.felt>) // expected-error {{expected non-function type}}
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.func private @a()
+  // expected-error@+1 {{ref "@a" in type '!llzk.array<@a x !llzk.felt>' refers to a 'llzk.func' which is not allowed}}
+  llzk.func private @b(%x: !llzk.array<@a x !llzk.felt>)
+}
 // -----
 
-// COM: An empty shape and a type (index) is parsed.
-// The last token of the rule is `>` but after parsing
-// `index` it will encounter `x`, hence the error.
-llzk.func private @c(%x: !llzk.array<index x i256>) // expected-error {{expected '>'}}
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+1 {{'llzk.func' op references unknown symbol "@B"}}
+  llzk.func private @c1(%x: !llzk.array<5,@B x index>)
+}
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+2 {{'llzk.func' op references unknown symbol "@A"}}
+  // expected-error@+1 {{'llzk.func' op references unknown symbol "@C"}}
+  llzk.func private @c2(%x: !llzk.array<@A,3,@C x index>)
+}
+// -----
+
+// expected-error@+1 {{Array dimension must be one of ['builtin.integer', 'builtin.symbol_ref'] but found 'builtin.type'}}
+llzk.func private @d(%x: !llzk.array<index x i256>)
+// -----
+
+// expected-error@+3 {{Array dimension must be one of ['builtin.integer', 'builtin.symbol_ref'] but found 'builtin.type'}}
+// expected-error@+2 {{Array dimension must be one of ['builtin.integer', 'builtin.symbol_ref'] but found 'builtin.string'}}
+// expected-error@+1 {{Array dimension must be one of ['builtin.integer', 'builtin.symbol_ref'] but found 'builtin.array'}}
+llzk.func private @e(%x: !llzk.array<index,"string",[] x !llzk.felt>)
 // -----
 
 // expected-error@+1 {{expected a valid LLZK type but found 'i256'}}
-llzk.func private @d(%x: !llzk.array<5 x i256>)
+llzk.func private @f(%x: !llzk.array<5 x i256>)
 // -----
 
-// expected-error@+2 {{expected a valid LLZK type but found 'i256'}}
+// expected-error@+2 {{'llzk.array' element type cannot be 'llzk.array'}}
 // expected-error@+1 {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
-llzk.func private @f(%x: !llzk.array<2 x !llzk.array<3 x !llzk.array<2 x i256>>>)
+llzk.func private @g(%x: !llzk.array<2 x !llzk.array<3 x !llzk.array<2 x i1>>>)
 // -----
-// expected-error@+1 {{array must have a shape of at least one element}}
-llzk.func private @b(%x: !llzk.array<!llzk.felt>) 
+
+// expected-error@+1 {{Array dimension must be one of ['builtin.integer', 'builtin.symbol_ref'] but found 'builtin.type'}}
+llzk.func private @h(%x: !llzk.array<!llzk.felt>) 
+// -----
+
+// expected-error@+2 {{expected attribute value}}
+// expected-error@+1 {{cannot parse array dimensions}}
+llzk.func private @i(%x: !llzk.array<,, x !llzk.felt>) 
+// -----
+
+// expected-error@+2 {{expected attribute value}}
+// expected-error@+1 {{cannot parse array dimensions}}
+llzk.func private @j(%x: !llzk.array< x !llzk.felt>) 
+// -----
+
+// expected-error@+2 {{expected attribute value}}
+// expected-error@+1 {{cannot parse array dimensions}}
+llzk.func private @k(%x: !llzk.array<1,private, x !llzk.felt>) 
+// -----
+
+// expected-error@+2 {{expected attribute value}}
+// expected-error@+1 {{cannot parse array dimensions}}
+llzk.func private @l(%x: !llzk.array<1,3, x !llzk.felt>) 
+// -----
+
+// expected-error@+1 {{Array dimension must be one of ['builtin.integer', 'builtin.symbol_ref'] but found 'builtin.string'}}
+llzk.func private @m(%x: !llzk.array<1,"string",3 x !llzk.felt>) 
+// -----
+
+// expected-error@+1 {{'llzk.array' element type cannot be 'llzk.array'}}
+llzk.func private @n(%x: !llzk.array<1,3 x !llzk.array<2 x !llzk.felt>>) 
+// -----
+
+// expected-error@+1 {{Array dimension must be one of ['builtin.integer', 'builtin.symbol_ref'] but found 'builtin.array'}}
+llzk.func private @o(%x: !llzk.array<[] x !llzk.felt>) 
 // -----

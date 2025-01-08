@@ -2,60 +2,249 @@
 #include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
+#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinTypeInterfaces.h>
+#include <mlir/IR/DialectImplementation.h>
 #include <mlir/Support/LogicalResult.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 
 namespace llzk {
 
-/// Checks if the type is a LLZK Array and it also contains
-/// a valid LLZK type.
-bool isValidArrayType(mlir::Type type) {
-  return llvm::isa<llzk::ArrayType>(type) &&
-         isValidType(llvm::cast<::llzk::ArrayType>(type).getElementType());
+//===------------------------------------------------------------------===//
+// Helpers
+//===------------------------------------------------------------------===//
+
+namespace {
+template <bool AllowStruct, bool AllowArray> bool isValidTypeImpl(mlir::Type type);
+
+template <bool AllowStruct> bool isValidArrayElemTypeImpl(mlir::Type type) {
+  // ArrayType element can be any valid type sans ArrayType itself.
+  //  Pass through the flag indicating if StructType is allowed.
+  return isValidTypeImpl<AllowStruct, false>(type);
 }
 
-// valid types: I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType
-bool isValidType(mlir::Type type) {
-  return type.isSignlessInteger(1) || llvm::isa<::mlir::IndexType>(type) ||
-         llvm::isa<llzk::FeltType>(type) || llvm::isa<llzk::StructType>(type) ||
-         isValidArrayType(type);
+template <bool AllowStruct> bool isValidArrayTypeImpl(mlir::Type type) {
+  // Pass through the flag indicating if StructType is allowed.
+  return llvm::isa<ArrayType>(type) &&
+         isValidArrayElemTypeImpl<AllowStruct>(llvm::cast<ArrayType>(type).getElementType());
 }
 
-// valid types: I1, Index, LLZK_FeltType, LLZK_ArrayType
-bool isValidEmitEqType(mlir::Type type) {
-  return type.isSignlessInteger(1) || llvm::isa<::mlir::IndexType>(type) ||
-         llvm::isa<llzk::FeltType>(type) ||
-         (llvm::isa<llzk::ArrayType>(type) &&
-          isValidEmitEqType(llvm::cast<::llzk::ArrayType>(type).getElementType()));
+template <bool AllowStruct, bool AllowArray> bool isValidTypeImpl(mlir::Type type) {
+  // This is the main check for allowed types.
+  //  Allow StructType and ArrayType only if the respective flags are true.
+  //  Pass through the flag indicating if StructType is allowed.
+  return type.isSignlessInteger(1) || llvm::isa<mlir::IndexType, FeltType, TypeVarType>(type) ||
+         (AllowStruct && llvm::isa<StructType>(type)) ||
+         (AllowArray && isValidArrayTypeImpl<AllowStruct>(type));
 }
+} // namespace
 
-bool areSameType(mlir::Type lhs, mlir::Type rhs, std::vector<llvm::StringRef> rhsRevPrefix) {
-  if (lhs == rhs) {
+bool isValidType(mlir::Type type) { return isValidTypeImpl<true, true>(type); }
+
+bool isValidEmitEqType(mlir::Type type) { return isValidTypeImpl<false, true>(type); }
+
+bool isValidArrayElemType(mlir::Type type) { return isValidArrayElemTypeImpl<true>(type); }
+
+bool isValidArrayType(mlir::Type type) { return isValidArrayTypeImpl<true>(type); }
+
+namespace {
+bool paramAttrUnify(const mlir::Attribute &lhsAttr, const mlir::Attribute &rhsAttr) {
+  assertValidAttrForParamOfType(lhsAttr);
+  assertValidAttrForParamOfType(rhsAttr);
+  // If either attribute is a symbol ref, we assume they unify because a later pass with a
+  //  more involved value analysis is required to check if they are actually the same value.
+  if (lhsAttr == rhsAttr || lhsAttr.isa<mlir::SymbolRefAttr>() ||
+      rhsAttr.isa<mlir::SymbolRefAttr>()) {
     return true;
   }
-  if (llvm::isa<llzk::StructType>(lhs) && llvm::isa<llzk::StructType>(rhs)) {
-    llvm::SmallVector<mlir::StringRef> lhsNames =
-        getNames(llvm::cast<StructType>(lhs).getNameRef());
-    llvm::SmallVector<mlir::StringRef> rhsNames =
-        getNames(llvm::cast<StructType>(rhs).getNameRef());
-    rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
-
-    return lhsNames == rhsNames;
+  // If both are type refs, check for unification of the types.
+  if (mlir::TypeAttr lhsTy = lhsAttr.dyn_cast<mlir::TypeAttr>()) {
+    if (mlir::TypeAttr rhsTy = rhsAttr.dyn_cast<mlir::TypeAttr>()) {
+      return typesUnify(lhsTy.getValue(), rhsTy.getValue());
+    }
   }
   return false;
 }
 
+bool paramsUnify(
+    const mlir::ArrayRef<mlir::Attribute> &lhsParams,
+    const mlir::ArrayRef<mlir::Attribute> &rhsParams
+) {
+  return (lhsParams.size() == rhsParams.size()) &&
+         std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), paramAttrUnify);
+}
+
+/// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
+/// are equivalent or could be equivalent after full instantiation of struct parameters.
+bool paramsUnify(const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams) {
+  if (lhsParams && rhsParams) {
+    return paramsUnify(lhsParams.getValue(), rhsParams.getValue());
+  }
+  // When one or the other is null, they're only equivalent if both are null
+  return !lhsParams && !rhsParams;
+}
+} // namespace
+
+bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix) {
+  // Check if the element types of the two arrays can unify
+  if (!typesUnify(lhs.getElementType(), rhs.getElementType(), rhsRevPrefix)) {
+    return false;
+  }
+  // Check if the dimension size attributes unify between the LHS and RHS
+  return paramsUnify(lhs.getDimensionSizes(), rhs.getDimensionSizes());
+}
+
+bool structTypesUnify(
+    StructType lhs, StructType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix
+) {
+  // Check if it references the same StructDefOp, considering the additional RHS path prefix.
+  llvm::SmallVector<mlir::StringRef> rhsNames = getNames(rhs.getNameRef());
+  rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
+  if (rhsNames != getNames(lhs.getNameRef())) {
+    return false;
+  }
+  // Check if the parameters unify between the LHS and RHS
+  return paramsUnify(lhs.getParams(), rhs.getParams());
+}
+
+bool typesUnify(mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix) {
+  if (lhs == rhs) {
+    return true;
+  }
+  if (llvm::isa<TypeVarType>(lhs) || llvm::isa<TypeVarType>(rhs)) {
+    // A type variable can be any type, thus it unifies with anything.
+    return true;
+  }
+  if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
+    return structTypesUnify(llvm::cast<StructType>(lhs), llvm::cast<StructType>(rhs), rhsRevPrefix);
+  }
+  if (llvm::isa<ArrayType>(lhs) && llvm::isa<ArrayType>(rhs)) {
+    return arrayTypesUnify(llvm::cast<ArrayType>(lhs), llvm::cast<ArrayType>(rhs), rhsRevPrefix);
+  }
+  return false;
+}
+
+namespace {
+
+template <typename... Types> class TypeList {
+
+  /// Helper class that handles appending the 'Types' names to some kind of stream
+  template <typename StreamType> struct Appender {
+
+    // single
+    template <typename Ty> static inline void append(StreamType &stream) {
+      stream << "'" << Ty::name << "'";
+    }
+
+    // multiple
+    template <typename First, typename Second, typename... Rest>
+    static void append(StreamType &stream) {
+      append<First>(stream);
+      stream << ", ";
+      append<Second, Rest...>(stream);
+    }
+
+    // full list with wrapping brackets
+    static inline void append(StreamType &stream) {
+      stream << "[";
+      append<Types...>(stream);
+      stream << "]";
+    }
+  };
+
+public:
+  // Checks if the provided value is an instance of any of `Types`
+  template <typename T> static inline bool matches(const T &value) {
+    return llvm::isa<Types...>(value);
+  }
+
+  // This always returns failure()
+  static inline mlir::LogicalResult reportInvalid(
+      llvm::function_ref<mlir::InFlightDiagnostic()> emitError, llvm::StringRef foundName,
+      const char *aspect
+  ) {
+    // The implicit conversion from InFlightDiagnostic to LogicalResult in the return causes the
+    // diagnostic to be printed.
+    auto diag = emitError() << aspect << " must be one of ";
+    Appender<mlir::InFlightDiagnostic>::append(diag);
+    return diag << " but found '" << foundName << "'";
+  }
+
+  // This always returns failure()
+  static inline mlir::LogicalResult reportInvalid(
+      llvm::function_ref<mlir::InFlightDiagnostic()> emitError, const mlir::Attribute &found,
+      const char *aspect
+  ) {
+    return reportInvalid(emitError, found.getAbstractAttribute().getName(), aspect);
+  }
+
+  // Returns a comma-separated list formatted string of the names of `Types`
+  static std::string getNames() {
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    Appender<llvm::raw_string_ostream>::append(oss);
+    return output;
+  }
+};
+
+} // namespace
+
+//===------------------------------------------------------------------===//
+// StructType
+//===------------------------------------------------------------------===//
+
+namespace {
+
+// Parameters in the StructType must be one of the following:
+//  - Integer constants
+//  - SymbolRef (global constants defined in another module require non-flat ref)
+//  - Type
+using StructParamTypes = TypeList<mlir::IntegerAttr, mlir::SymbolRefAttr, mlir::TypeAttr>;
+
+} // namespace
+
+mlir::LogicalResult StructType::verify(
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::SymbolRefAttr nameRef,
+    mlir::ArrayAttr params
+) {
+  if (params) {
+    for (mlir::Attribute p : params) {
+      if (!StructParamTypes::matches(p)) {
+        return StructParamTypes::reportInvalid(emitError, p, "Struct parameter");
+      }
+    }
+  }
+  return mlir::success();
+}
+
 mlir::FailureOr<SymbolLookupResult<StructDefOp>>
 StructType::getDefinition(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) {
-  auto def = lookupTopLevelSymbol<StructDefOp>(symbolTable, getNameRef(), op);
-  if (mlir::failed(def)) {
+  // First ensure this StructType passes verification
+  mlir::ArrayAttr typeParams = this->getParams();
+  if (mlir::failed(StructType::verify([op] {
+    return op->emitError();
+  }, this->getNameRef(), typeParams))) {
+    return mlir::failure();
+  }
+  // Perform lookup and ensure the symbol references a StructDefOp
+  auto res = lookupTopLevelSymbol<StructDefOp>(symbolTable, getNameRef(), op);
+  if (mlir::failed(res) || !res.value()) {
     return op->emitError() << "no '" << StructDefOp::getOperationName() << "' named \""
                            << getNameRef() << "\"";
-  } else {
-    return def;
   }
+  // If this StructType contains parameters, make sure they match the number from the StructDefOp.
+  if (typeParams) {
+    auto defParams = res.value().get().getConstParams();
+    size_t numExpected = defParams ? defParams->size() : 0;
+    if (typeParams.size() != numExpected) {
+      return op->emitError() << "'" << StructType::name << "' type has " << typeParams.size()
+                             << " parameters but \"" << res.value().get().getSymName()
+                             << "\" expects " << numExpected;
+    }
+  }
+  return res;
 }
 
 mlir::LogicalResult
@@ -63,107 +252,141 @@ StructType::verifySymbolRef(mlir::SymbolTableCollection &symbolTable, mlir::Oper
   return getDefinition(symbolTable, op);
 }
 
-mlir::LogicalResult ArrayType::verify(
-    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::Type elementType,
-    llvm::ArrayRef<int64_t> shape
-) {
+//===------------------------------------------------------------------===//
+// ArrayType
+//===------------------------------------------------------------------===//
 
-  // If a user of LLZK needs the shape to be statically defined
-  // it should check it here. How to communicate that need to the type is TBD.
-  if (shape.size() <= 0) {
-    return emitError() << "array must have a shape of at least one element";
+namespace {
+
+// Dimensions in the ArrayType must be one of the following:
+//  - Integer constants
+//  - SymbolRef (global constants defined in another module require non-flat ref)
+using ArrayDimensionTypes = TypeList<mlir::IntegerAttr, mlir::SymbolRefAttr>;
+
+mlir::LogicalResult verifyArrayDimensionSizes(
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError,
+    llvm::ArrayRef<mlir::Attribute> dimensionSizes
+) {
+  // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
+  if (dimensionSizes.empty()) {
+    return emitError().append("array must have at least one dimension");
   }
-  // An array can hold any LLZK type bar Arrays
-  auto typeCheckResult = checkValidType(emitError, elementType);
-  if (mlir::succeeded(typeCheckResult)) {
-    if (llvm::isa<llzk::ArrayType>(elementType)) {
-      return emitError() << "array inner type cannot be array";
+  // Rather than immediately returning on failure, we check all dimensions and aggregate to provide
+  // as many errors are possible in a single verifier run.
+  mlir::LogicalResult aggregateResult = mlir::success();
+  for (mlir::Attribute a : dimensionSizes) {
+    if (!ArrayDimensionTypes::matches(a)) {
+      aggregateResult = ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
+      assert(mlir::failed(aggregateResult)); // reportInvalid() always returns failure()
     }
   }
-  return typeCheckResult;
+  return aggregateResult;
 }
 
-bool ArrayType::hasRank() const {
-  return true; // A LLZK Array is ranked by construction.
+} // namespace
+
+mlir::LogicalResult computeDimsFromShape(
+    mlir::MLIRContext *ctx, llvm::ArrayRef<int64_t> shape,
+    llvm::SmallVector<mlir::Attribute> &dimensionSizes
+) {
+  assert(dimensionSizes.empty()); // fully computed by this function
+  mlir::Builder builder(ctx);
+  auto attrs = llvm::map_range(shape, [&builder](int64_t v) -> mlir::Attribute {
+    return builder.getIndexAttr(v);
+  });
+  dimensionSizes.insert(dimensionSizes.begin(), attrs.begin(), attrs.end());
+  assert(dimensionSizes.size() == shape.size()); // fully computed by this function
+  return mlir::success();
+}
+
+mlir::LogicalResult computeShapeFromDims(
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
+    llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::SmallVector<int64_t> &shape
+) {
+  assert(shape.empty()); // fully computed by this function
+  // Ensure all Attributes are valid Attribute classes for ArrayType.
+  // In the case where `emitError==null`, we mirror how the verification failure is handled by
+  // `*Type::get()` via `StorageUserBase` (i.e. use DefaultDiagnosticEmitFn and assert). See:
+  //  https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180
+  auto errFunc = emitError ? llvm::unique_function<mlir::InFlightDiagnostic()>(emitError)
+                           : mlir::detail::getDefaultDiagnosticEmitFn(ctx);
+  if (mlir::failed(verifyArrayDimensionSizes(errFunc, dimensionSizes))) {
+    assert(emitError);
+    return mlir::failure();
+  }
+
+  // Convert the Attributes to int64_t
+  for (mlir::Attribute a : dimensionSizes) {
+    if (auto p = a.dyn_cast<mlir::IntegerAttr>()) {
+      shape.push_back(p.getValue().getSExtValue());
+    } else if (a.isa<mlir::SymbolRefAttr>()) {
+      // The ShapedTypeInterface uses 'kDynamic' for dimensions with non-static size.
+      shape.push_back(mlir::ShapedType::kDynamic);
+    } else {
+      // For every Attribute class in ArrayDimensionTypes, there should be a case here.
+      llvm::report_fatal_error("computeShapeFromDims() is out of sync with ArrayDimensionTypes");
+      return mlir::failure();
+    }
+  }
+  assert(shape.size() == dimensionSizes.size()); // fully computed by this function
+  return mlir::success();
+}
+
+mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value) {
+  auto parseResult = mlir::FieldParser<llvm::SmallVector<mlir::Attribute>>::parse(parser);
+  if (mlir::failed(parseResult)) {
+    return parser.emitError(parser.getCurrentLocation(), "cannot parse array dimensions");
+  }
+  value.insert(value.begin(), parseResult->begin(), parseResult->end());
+  return mlir::success();
+}
+
+void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value) {
+  llvm::raw_ostream &stream = printer.getStream();
+  llvm::interleave(value, stream, [&stream](mlir::Attribute a) { a.print(stream, true); }, ",");
+}
+
+mlir::ParseResult parseDerivedShape(
+    mlir::AsmParser &parser, llvm::SmallVector<int64_t> &shape,
+    llvm::SmallVector<mlir::Attribute> dimensionSizes
+) {
+  // This is not actually parsing. It's computing the derived
+  //  `shape` from the `dimensionSizes` attributes.
+  auto emitError = [&parser] { return parser.emitError(parser.getCurrentLocation()); };
+  return computeShapeFromDims(emitError, parser.getContext(), dimensionSizes, shape);
+}
+void printDerivedShape(mlir::AsmPrinter &, llvm::ArrayRef<int64_t>, llvm::ArrayRef<mlir::Attribute>) {
+  // nothing to print, it's derived and therefore not represented in the output
+}
+
+mlir::LogicalResult ArrayType::verify(
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::Type elementType,
+    llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::ArrayRef<int64_t> shape
+) {
+  if (mlir::failed(verifyArrayDimensionSizes(emitError, dimensionSizes))) {
+    return mlir::failure();
+  }
+
+  // Ensure array element type is valid
+  if (!isValidArrayElemType(elementType)) {
+    // Print proper message if `elementType` is not a valid LLZK type or
+    //  if it's simply not the right kind of type for an array element.
+    if (mlir::failed(checkValidType(emitError, elementType))) {
+      return mlir::failure();
+    }
+    return emitError().append(
+        "'", ArrayType::name, "' element type cannot be '", elementType.getAbstractType().getName(),
+        "'"
+    );
+  }
+  return mlir::success();
 }
 
 ArrayType
 ArrayType::cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, mlir::Type elementType) const {
-  llvm::ArrayRef<int64_t> newShape = getShape();
-  if (shape.has_value()) {
-    newShape = *shape;
-  }
-  return ArrayType::get(elementType.getContext(), elementType, newShape);
+  return ArrayType::get(elementType, shape.has_value() ? shape.value() : getShape());
 }
 
 int64_t ArrayType::getNumElements() const { return mlir::ShapedType::getNumElements(getShape()); }
-
-// The code for these two methods was based on
-// the autogenerated code by TableGen
-
-/// A LLZK Array has a similar format to tensors
-/// and memref types: <$shape x $type>
-/// i.e. !llzk.array<2x2x!llzk.felt>
-///   This will produce a shape of [2,2]
-///   and a type of LLZK's Felt
-mlir::Type ArrayType::parse(mlir::AsmParser &parser) {
-  ::mlir::Builder odsBuilder(parser.getContext());
-  ::llvm::SMLoc loc = parser.getCurrentLocation();
-  // Parse literal '<'
-  if (parser.parseLess()) {
-    return {};
-  }
-
-  // I worry this array may dissapear early can cause
-  // an Use-After-Free but the MLIR code I studied did
-  // it too so it may be fine.  -- Dani
-  llvm::SmallVector<int64_t> parsedShape;
-
-  // The default configuration is good for our purpose
-  //   allowDynamic = true
-  //    This allows ? values.
-  //    Wether an unknown dimension size is allowed or
-  //    not will depend on the semantics the array finds
-  //    itself in.
-  //   withTrailing = true
-  //    The parser will consume a literal `x` token
-  //    if its trailing after the rest of the shape has been
-  //    parsed. This leaves the head right at the type declaration.
-  auto _result_shape = parser.parseDimensionList(parsedShape);
-
-  // Parse variable 'elementType'
-  auto _result_elementType = ::mlir::FieldParser<::mlir::Type>::parse(parser);
-  if (::mlir::failed(_result_elementType)) {
-    parser.emitError(
-        parser.getCurrentLocation(),
-        "failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`"
-    );
-    return {};
-  }
-  // Parse literal '>'
-  if (parser.parseGreater()) {
-    return {};
-  }
-
-  assert(::mlir::succeeded(_result_elementType));
-  assert(::mlir::succeeded(_result_shape));
-
-  return parser.getChecked<ArrayType>(
-      loc, parser.getContext(), ::mlir::Type(*_result_elementType),
-      ::llvm::ArrayRef<int64_t>(parsedShape)
-  );
-}
-
-/// Prints the array type with the following format
-/// <$shape x $type>
-/// i.e. !llzk.array<2x2 x !llzk.felt>
-void ArrayType::print(mlir::AsmPrinter &printer) const {
-  mlir::Builder odsBuilder(getContext());
-  printer << "<";
-  printer.printDimensionList(getShape());
-  printer << " x ";
-  printer.printStrippedAttrOrType(getElementType());
-  printer << ">";
-}
 
 } // namespace llzk

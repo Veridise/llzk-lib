@@ -13,8 +13,8 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  llzk.func private @a(!llzk.array<5 x !llzk.felt>, !llzk.struct<@Hello>)
 // -----
 
-llzk.func private @b(!llzk.array<3x2x1 x !llzk.felt>)
-//CHECK-LABEL:  llzk.func private @b(!llzk.array<3x2x1 x !llzk.felt>)
+llzk.func private @b(!llzk.array<3,2,1 x !llzk.felt>)
+//CHECK-LABEL:  llzk.func private @b(!llzk.array<3,2,1 x !llzk.felt>)
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -38,6 +38,6 @@ llzk.func private @f(!llzk.felt) -> i1
 //CHECK-LABEL:  llzk.func private @f(!llzk.felt) -> i1
 // -----
 
-llzk.func private @g(%x: !llzk.array<2x3x2 x index>)
-//CHECK-LABEL:  llzk.func private @g(!llzk.array<2x3x2 x index>)
+llzk.func private @g(%x: !llzk.array<2,3,2 x index>)
+//CHECK-LABEL:  llzk.func private @g(!llzk.array<2,3,2 x index>)
 // -----

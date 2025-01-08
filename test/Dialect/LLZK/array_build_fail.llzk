@@ -40,20 +40,20 @@ llzk.func @mismatch_to_type_attr_size() {
 
 // -----
 
-llzk.func @multi_array_not_enough_values(%a: index, %b: index) -> !llzk.array<2x2 x index> {
+llzk.func @multi_array_not_enough_values(%a: index, %b: index) -> !llzk.array<2,2 x index> {
   %c = index.constant 324
   // expected-error@+1 {{custom op 'llzk.new_array' 3 operands present, but expected 4}}
-  %r = llzk.new_array %a, %b, %c: !llzk.array<2x2 x index>
-  return %r: !llzk.array<2x2 x index>
+  %r = llzk.new_array %a, %b, %c: !llzk.array<2,2 x index>
+  return %r: !llzk.array<2,2 x index>
 }
 // -----
 
-llzk.func @multi_array_too_many_values(%a: index, %b: index) -> !llzk.array<2x2 x index> {
+llzk.func @multi_array_too_many_values(%a: index, %b: index) -> !llzk.array<2,2 x index> {
   %c = index.constant 324
   %d = index.constant 999
   %e = index.constant 879
   // expected-error@+1 {{custom op 'llzk.new_array' 5 operands present, but expected 4}}
-  %r = llzk.new_array %a, %b, %c, %d, %e: !llzk.array<2x2 x index>
-  return %r: !llzk.array<2x2 x index>
+  %r = llzk.new_array %a, %b, %c, %d, %e: !llzk.array<2,2 x index>
+  return %r: !llzk.array<2,2 x index>
 }
 // -----
