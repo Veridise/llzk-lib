@@ -151,8 +151,25 @@ private:
 /// @brief A module-level analysis for constructing ConstraintSummary objects for
 /// all structs in the given LLZK module.
 class ConstraintSummaryModuleAnalysis {
-  // Using a map, not an unordered map, to keep insertion order for iteration.
-  using SummaryMap = std::map<StructDefOp, std::shared_ptr<ConstraintSummary>>;
+  struct StructDefOpLess {
+    bool operator()(const StructDefOp &lhs, const StructDefOp &rhs) const {
+      // Try sorting by location first, then name.
+      auto lhsLoc = lhs->getLoc().dyn_cast<mlir::FileLineColLoc>();
+      auto rhsLoc = rhs->getLoc().dyn_cast<mlir::FileLineColLoc>();
+      if (lhsLoc && rhsLoc) {
+        auto filenameCmp = lhsLoc.getFilename().compare(rhsLoc.getFilename());
+        return filenameCmp < 0 || (filenameCmp == 0 && lhsLoc.getLine() < rhsLoc.getLine()) ||
+               (filenameCmp == 0 && lhsLoc.getLine() == rhsLoc.getLine() &&
+                lhsLoc.getColumn() < rhsLoc.getColumn());
+      }
+
+      auto lhsName = const_cast<StructDefOp &>(lhs).getName();
+      auto rhsName = const_cast<StructDefOp &>(rhs).getName();
+      return lhsName.compare(rhsName) < 0;
+    }
+  };
+  /// Using a map, not an unordered map, to control sorting order for iteration.
+  using SummaryMap = std::map<StructDefOp, std::shared_ptr<ConstraintSummary>, StructDefOpLess>;
 
 public:
   /// @brief Computes ConstraintSummary objects for all structs contained within the

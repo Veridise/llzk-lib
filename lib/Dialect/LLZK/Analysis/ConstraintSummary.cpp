@@ -246,7 +246,7 @@ public:
       mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
       const ConstrainRefLattice &before, ConstrainRefLattice *after
   ) override {
-    llvm::errs() << "CALL CALL CALL " << call << '\n';
+    // llvm::errs() << "CALL CALL CALL " << call << '\n';
 
     auto fnOpRes = resolveCallable<FuncOp>(tables, call);
     if (failed(fnOpRes)) {
@@ -278,7 +278,7 @@ public:
 
       auto updated = mlir::ChangeResult::NoChange;
       for (auto arg : calledFn->getRegion(0).getArguments()) {
-        llvm::errs() << "arg is " << arg << "\n";
+        // llvm::errs() << "arg is " << arg << "\n";
         auto sourceRef = ConstrainRefLattice::getSourceRef(arg);
         if (mlir::failed(sourceRef)) {
           llvm::report_fatal_error("Failed to get source ref");
@@ -287,9 +287,9 @@ public:
       }
       propagateIfChanged(after, updated);
 
-      llvm::errs() << "EnterCallee:\n";
-      llvm::errs() << before << "\n";
-      llvm::errs() << *after << "\n";
+      // llvm::errs() << "EnterCallee:\n";
+      // llvm::errs() << before << "\n";
+      // llvm::errs() << *after << "\n";
     }
 
     /// `action == CallControlFlowAction::Exit` indicates that:
@@ -314,31 +314,31 @@ public:
 
       for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
         auto key = ConstrainRef(funcOp.getArgument(i));
-        llvm::errs() << "key: " << key << "\n";
-        llvm::errs() << "val: " << callOp.getOperand(i) << "\n";
+        // llvm::errs() << "key: " << key << "\n";
+        // llvm::errs() << "val: " << callOp.getOperand(i) << "\n";
         auto val = before.getOrDefault(callOp.getOperand(i));
 
-        llvm::errs() << "  val size " << val.size() << "\n";
-        for (auto &v : val) {
-          llvm::errs() << "    " << v << "\n";
-        }
+        // llvm::errs() << "  val size " << val.size() << "\n";
+        // for (auto &v : val) {
+        //   llvm::errs() << "    " << v << "\n";
+        // }
         translation[key] = val;
       }
 
       mlir::ChangeResult updated = mlir::ChangeResult::NoChange;
       for (unsigned i = 0; i < callOp.getNumResults(); i++) {
-        llvm::errs() << "translating " << callOp << " return " << i << "\n";
+        // llvm::errs() << "translating " << callOp << " return " << i << "\n";
         auto retRef = before.getReturnValue(i);
         ConstrainRefSet translated;
-        llvm::errs() << "     ret value " << callOp->getResult(i) << ":\n";
+        // llvm::errs() << "     ret value " << callOp->getResult(i) << ":\n";
         for (auto &ref : retRef) {
           if (translation.find(ref) != translation.end()) {
             auto &retVal = translation.at(ref);
             translated.insert(retVal.begin(), retVal.end());
-            llvm::errs() << "        translated " << ref << " to:\n";
-            for (auto &q : retVal) {
-              llvm::errs() << "            " << q << "\n";
-            }
+            // llvm::errs() << "        translated " << ref << " to:\n";
+            // for (auto &q : retVal) {
+            //   llvm::errs() << "            " << q << "\n";
+            // }
           }
         }
 
@@ -346,9 +346,9 @@ public:
       }
       propagateIfChanged(after, updated);
 
-      llvm::errs() << "ExitCallee:\n";
-      llvm::errs() << before << "\n";
-      llvm::errs() << *after << "\n";
+      // llvm::errs() << "ExitCallee:\n";
+      // llvm::errs() << before << "\n";
+      // llvm::errs() << *after << "\n";
     }
     // Note that `setToEntryState` may be a "partial fixpoint" for some
     // lattices, e.g., lattices that are lists of maps of other lattices will
@@ -473,55 +473,14 @@ public:
     // or if we need to resolve function calls
     ConstrainRefSetMap operandVals;
     for (auto &operand : op->getOpOperands()) {
-      auto refSet = before.getOrDefault(operand.get());
-
-      // TODO: fix me for dense analysis
-      // if (auto callOp = mlir::dyn_cast_or_null<CallOp>(operand.get().getDefiningOp())) {
-      //   std::vector<ConstrainRefLattice *> callResults;
-      //   std::vector<const ConstrainRefLattice *> callOperands;
-      //   llvm::errs() << "visiting " << callOp << "\n";
-
-      //   for (auto res : callOp.getResults()) {
-      //     callResults.push_back(getLatticeElement(res));
-      //     llvm::errs() << "  RES " << getLatticeElement(res)->getValue() << "\n";
-      //   }
-
-      //   for (auto arg : callOp.getArgOperands()) {
-      //     callResults.push_back(getLatticeElement(arg));
-      //     llvm::errs() << "  ARG " << getLatticeElement(arg)->getValue() << "\n";
-
-      //     auto sourceRef = getSourceRef(arg);
-      //     if (mlir::succeeded(sourceRef)) {
-      //       getLatticeElement(arg)->getValue().signals.insert(sourceRef.value());
-      //     }
-
-      //     llvm::errs() << "  AFTER ARG " << getLatticeElement(arg)->getValue() << "\n";
-      //   }
-
-      //   mlir::CallOpInterface callOpI =
-      //       mlir::dyn_cast<mlir::CallOpInterface>(operand.get().getDefiningOp());
-      //   if (!callOpI) {
-      //     llvm::report_fatal_error("hmm?");
-      //   }
-      //   visitExternalCall(callOpI, callOperands, callResults);
-
-      //   for (auto res : callOp.getResults()) {
-      //     llvm::errs() << "  AFTER RES " << getLatticeElement(res)->getValue() << "\n";
-      //   }
-      //   llvm::errs() << "done!\n";
-      // }
-
-      auto sourceVal = ConstrainRefLattice::getSourceRef(operand.get());
-      if (mlir::succeeded(sourceVal)) {
-        refSet.emplace(sourceVal.value());
-      }
-      operandVals[operand.get()] = refSet;
+      operandVals[operand.get()] = before.getOrDefault(operand.get());
+      ;
     }
 
-    llvm::errs() << "running " << *op << "\n";
-    if (auto retOp = mlir::dyn_cast<ReturnOp>(op)) {
-      llvm::errs() << "    return op has " << op->getResults().size() << " results\n";
-    }
+    // llvm::errs() << "running " << *op << "\n";
+    // if (auto retOp = mlir::dyn_cast<ReturnOp>(op)) {
+    //   llvm::errs() << "    return op has " << op->getResults().size() << " results\n";
+    // }
 
     // for (auto &[v, set] : operandVals) {
     //   llvm::errs() << "    " << v << " => { ";
@@ -531,86 +490,92 @@ public:
     //   llvm::errs() << " }\n";
     // }
 
-    auto updated = after->join(before);
+    /* Not doing this, we don't want the default values. */
+    // auto updated = after->join(before);
 
-    updated |= after->setValues(operandVals);
+    // updated |= after->setValues(operandVals);
 
     // simple union.
-    for (auto res : op->getResults()) {
-      auto cur = before.getOrDefault(res);
+    // for (auto res : op->getResults()) {
+    //   auto cur = before.getOrDefault(res);
 
-      for (auto &[_, set] : operandVals) {
-        cur.insert(set.begin(), set.end());
-      }
-      updated |= after->setValue(res, cur);
-    }
+    //   for (auto &[_, set] : operandVals) {
+    //     cur.insert(set.begin(), set.end());
+    //   }
+    //   updated |= after->setValue(res, cur);
+    // }
 
-    propagateIfChanged(after, updated);
+    // propagateIfChanged(after, updated);
+    /* end */
 
-    llvm::errs() << "BEFORE " << before;
-    llvm::errs() << "AFTER " << *after;
+    // Propagate existing state.
+    join(after, before);
 
-    // llvm::report_fatal_error("todo! fix analysis!");
+    // llvm::errs() << "BEFORE " << before;
+    // llvm::errs() << "AFTER " << *after;
 
     // We will now join the the operand refs based on the type of operand.
+    if (auto fieldRead = mlir::dyn_cast<FieldReadOp>(op)) {
+      assert(operandVals.size() == 1);
+      assert(fieldRead->getNumResults() == 1);
 
-    // auto isJoiningOp = [op]() -> bool {
-    //   return mlir::isa<AddFeltOp>(op) // TODO: we can be fancy here
-    //          || mlir::isa<FeltConstantOp>(op) || mlir::isa<mlir::index::ConstantOp>(op);
-    // };
+      auto fieldOpRes = fieldRead.getFieldDefOp(tables);
+      if (mlir::failed(fieldOpRes)) {
+        llvm::report_fatal_error("could not find field read\n");
+      }
 
-    // if (auto fieldRead = mlir::dyn_cast<FieldReadOp>(op)) {
-    //   assert(operandVals.size() == 1);
-    //   assert(results.size() == 1);
+      auto res = fieldRead->getResult(0);
+      const auto &ops = operandVals.at(fieldRead->getOpOperand(0).get());
+      ConstrainRefSet fieldVals;
+      for (auto &r : ops) {
+        fieldVals.insert(r.createChild(ConstrainRefIndex(fieldOpRes->get())));
+      }
+      propagateIfChanged(after, after->setValue(res, fieldVals));
+    } else if (auto arrayRead = mlir::dyn_cast<ReadArrayOp>(op)) {
+      assert(arrayRead->getNumResults() == 1);
+      auto res = arrayRead->getResult(0);
 
-    //   auto fieldOpRes = fieldRead.getFieldDefOp(tables);
-    //   if (mlir::failed(fieldOpRes)) {
-    //     llvm::report_fatal_error("could not find field read\n");
-    //   }
+      auto array = arrayRead.getOperand(0);
+      auto currVals = operandVals[array];
 
-    //   auto &res = results.front();
-    //   const auto &ops = operandVals.front();
-    //   auto childOps = ops.createChildren(fieldOpRes->get());
+      for (size_t i = 1; i < arrayRead.getNumOperands(); i++) {
+        auto currentOp = arrayRead.getOperand(i);
+        auto &idxVals = operandVals[currentOp];
 
-    //   propagateIfChanged(res, res->join(childOps));
-    // } else if (auto arrayRead = mlir::dyn_cast<ReadArrayOp>(op)) {
-    //   assert(results.size() == 1);
-    //   auto &res = results.front();
+        ConstrainRefSet newVals;
+        if (idxVals.size() == 1 && idxVals.begin()->isConstantIndex()) {
+          auto idxVal = *idxVals.begin();
+          for (auto &r : currVals) {
+            newVals.insert(r.createChild(idxVal));
+          }
+        } else {
+          // Otherwise, assume any range is valid.
+          auto arrayType = mlir::dyn_cast<ArrayType>(array.getType());
+          auto lower = mlir::APInt::getZero(64);
+          mlir::APInt upper(64, arrayType.getDimSize(i - 1));
+          auto idxRange = ConstrainRefIndex(lower, upper);
+          for (auto &r : currVals) {
+            newVals.insert(r.createChild(idxRange));
+          }
+        }
+        currVals = newVals;
+      }
 
-    //   auto array = arrayRead.getOperand(0);
-    //   auto currVals = operandVals[0];
+      propagateIfChanged(after, after->setValue(res, currVals));
+    } else {
+      // Standard union of operands, unless all operands are constants,
+      // in which case we can easily propagate more precise updates.
+      auto updated = mlir::ChangeResult::NoChange;
+      for (auto res : op->getResults()) {
+        auto cur = before.getOrDefault(res);
 
-    //   for (size_t i = 1; i < arrayRead.getNumOperands(); i++) {
-    //     auto &idxVals = operandVals[i];
-
-    //     auto singleIdxVal = idxVals.getSingleValue();
-    //     if (mlir::succeeded(singleIdxVal) && singleIdxVal->isConstantIndex()) {
-    //       currVals = currVals.createChildren(singleIdxVal->getConstantIndexValue());
-    //     } else {
-    //       // Otherwise, assume any range is valid.
-    //       auto arrayType = mlir::dyn_cast<ArrayType>(array.getType());
-    //       auto lower = mlir::APInt::getZero(64);
-    //       mlir::APInt upper(64, arrayType.getDimSize(i - 1));
-    //       currVals = currVals.createChildren(lower, upper);
-    //     }
-    //   }
-
-    //   propagateIfChanged(res, res->join(currVals));
-    // } else if (isJoiningOp()) {
-    //   // Standard union of operands, unless all operands are constants,
-    //   // in which case we can easily propagate more precise updates.
-    //   for (auto res : results) {
-    //     mlir::ChangeResult changed = mlir::ChangeResult::NoChange;
-    //     for (auto operand : operandVals) {
-    //       changed |= res->join(operand);
-    //       llvm::errs() << ">> joining " << operand << "\n";
-    //     }
-    //     propagateIfChanged(res, changed);
-    //   }
-    // } else {
-    //   llvm::errs() << "op is " << *op << "\n";
-    //   llvm::report_fatal_error("todo!");
-    // }
+        for (auto &[_, set] : operandVals) {
+          cur.insert(set.begin(), set.end());
+        }
+        updated |= after->setValue(res, cur);
+      }
+      propagateIfChanged(after, updated);
+    }
   }
 
 protected:
@@ -1084,10 +1049,10 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
       }
       auto leader = lit->getData();
       for (auto mit = tSets.member_begin(lit); mit != tSets.member_end(); mit++) {
-        llvm::errs() << "union:\n";
-        llvm::errs() << "  " << leader << "\n";
-        llvm::errs() << "  " << *mit << "\n";
-        llvm::errs() << "  --\n";
+        // llvm::errs() << "union:\n";
+        // llvm::errs() << "  " << leader << "\n";
+        // llvm::errs() << "  " << *mit << "\n";
+        // llvm::errs() << "  --\n";
         constraintSets.unionSets(leader, *mit);
       }
     }
@@ -1110,7 +1075,7 @@ void ConstraintSummary::walkConstrainOp(mlir::DataFlowSolver &solver, mlir::Oper
   auto it = usages.begin();
   auto leader = constraintSets.getOrInsertLeaderValue(*it);
   for (it++; it != usages.end(); it++) {
-    llvm::errs() << "unioning:\n  " << leader << "\n  " << *it << "\n  done\n";
+    // llvm::errs() << "unioning:\n  " << leader << "\n  " << *it << "\n  done\n";
     constraintSets.unionSets(leader, *it);
   }
 }
