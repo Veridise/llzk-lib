@@ -159,9 +159,7 @@ public:
   ) override {
 
     auto fnOpRes = resolveCallable<FuncOp>(tables, call);
-    if (failed(fnOpRes)) {
-      llvm::report_fatal_error("could not resolve called function");
-    }
+    debug::ensure(succeeded(fnOpRes), "could not resolve called function");
 
     join(after, before);
 
@@ -192,11 +190,10 @@ public:
       }
       propagateIfChanged(after, updated);
     }
-
     /// `action == CallControlFlowAction::Exit` indicates that:
     ///   - `before` is the state at the end of a callee exit block;
     ///   - `after` is the state after the call operation.
-    if (action == dataflow::CallControlFlowAction::ExitCallee) {
+    else if (action == dataflow::CallControlFlowAction::ExitCallee) {
       // Translate argument values based on the operands given at the call site.
       std::unordered_map<ConstrainRef, ConstrainRefSet, ConstrainRef::Hash> translation;
       auto funcOpRes = resolveCallable<FuncOp>(tables, call);
@@ -234,7 +231,7 @@ public:
     // Note that `setToEntryState` may be a "partial fixpoint" for some
     // lattices, e.g., lattices that are lists of maps of other lattices will
     // only set fixpoint for "known" lattices.
-    if (action == mlir::dataflow::CallControlFlowAction::ExternalCallee) {
+    else if (action == mlir::dataflow::CallControlFlowAction::ExternalCallee) {
       setToEntryState(after);
     }
   }
