@@ -23,7 +23,20 @@ namespace llzk {
 using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRef>>;
 
 /// @brief A summary of constraints enforced by an LLZK struct.
-/// The summary
+/// A constraint summary is a set of values that constrain one another through
+/// one or more emit operations (`emit_in` or `emit_eq`). The summaries only
+/// indicate that values are connected by constraints, but do not include information
+/// about the type of computation that binds them together.
+///
+/// For example, a constraint summary of the form: {
+///     {%arg1, %arg2[@foo], <constfelt: 1>}
+/// }
+/// Means that %arg1, field @foo of %arg2, and the constant felt 1 are connected
+/// via some constraints. These constraints could take the form of (in Circom notation):
+///     %arg1 + %arg2[@foo] === 1
+/// Or
+///     %arg1 === 1 / %arg2[@foo]
+/// Or any other form of constraint including those values.
 class ConstraintSummary {
 public:
   /// @brief Compute a ConstraintSummary
@@ -162,11 +175,10 @@ private:
   /// @brief Ensures that the given struct has a summary.
   /// @param op The struct to ensure has a summary.
   void ensureSummaryCreated(StructDefOp op) const {
-    if (!hasSummary(op)) {
-      llvm::report_fatal_error(
-          "constraint summary does not exist for StructDefOp " + mlir::Twine(op.getName())
-      );
-    }
+    debug::ensure(
+        hasSummary(op),
+        "constraint summary does not exist for StructDefOp " + mlir::Twine(op.getName())
+    );
   }
 };
 
