@@ -50,18 +50,11 @@ public:
 
   /// Maximum upper bound
   mlir::ChangeResult join(const AbstractDenseLattice &rhs) override {
-    auto res = mlir::ChangeResult::NoChange;
     if (auto *r = dynamic_cast<const ConstrainRefLattice *>(&rhs)) {
-      for (auto &[v, s] : r->refSetMap) {
-        for (auto &ref : s) {
-          auto [_, inserted] = refSetMap[v].insert(ref);
-          res = inserted ? mlir::ChangeResult::Change : res;
-        }
-      }
-    } else {
-      llvm::report_fatal_error("invalid join lattice type");
+      return setValues(r->refSetMap);
     }
-    return res;
+    llvm::report_fatal_error("invalid join lattice type");
+    return mlir::ChangeResult::NoChange;
   }
 
   /// Minimum lower bound
