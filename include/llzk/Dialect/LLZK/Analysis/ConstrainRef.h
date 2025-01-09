@@ -29,19 +29,19 @@ public:
 
   bool isField() const { return std::holds_alternative<FieldDefOp>(index); }
   FieldDefOp getField() const {
-    ensureIsField();
+    debug::ensure(isField(), "ConstrainRefIndex: field requested but not contained");
     return std::get<FieldDefOp>(index);
   }
 
   bool isIndex() const { return std::holds_alternative<mlir::APInt>(index); }
   mlir::APInt getIndex() const {
-    ensureIsIndex();
+    debug::ensure(isIndex(), "ConstrainRefIndex: index requested but not contained");
     return std::get<mlir::APInt>(index);
   }
 
   bool isIndexRange() const { return std::holds_alternative<IndexRange>(index); }
   IndexRange getIndexRange() const {
-    ensureIsIndexRange();
+    debug::ensure(isIndexRange(), "ConstrainRefIndex: index range requested but not contained");
     return std::get<IndexRange>(index);
   }
 
@@ -76,24 +76,6 @@ private:
   /// 3. A half-open range of indices into an array, for when we're unsure about a specifc index.
   /// Likely, this will be from [0, size) at this point.
   std::variant<FieldDefOp, mlir::APInt, IndexRange> index;
-
-  void ensureIsField() const {
-    if (!isField()) {
-      llvm::report_fatal_error("ConstrainRefIndex: field requested but not contained");
-    }
-  }
-
-  void ensureIsIndex() const {
-    if (!isIndex()) {
-      llvm::report_fatal_error("ConstrainRefIndex: index requested but not contained");
-    }
-  }
-
-  void ensureIsIndexRange() const {
-    if (!isIndexRange()) {
-      llvm::report_fatal_error("ConstrainRefIndex: index range requested but not contained");
-    }
-  }
 };
 
 static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefIndex &rhs) {
@@ -162,12 +144,15 @@ public:
 
   unsigned getInputNum() const { return blockArg.getArgNumber(); }
   mlir::APInt getConstantFeltValue() const {
-    return const_cast<FeltConstantOp &>(constFelt).getValueAttr().getValue();
+    debug::ensure(isConstantFelt(), __FUNCTION__ + mlir::Twine(" requires a constant felt!"));
+    return constFelt.getValueAttr().getValue();
   }
   mlir::APInt getConstantIndexValue() const {
-    return const_cast<mlir::index::ConstantOp &>(constIdx).getValue();
+    debug::ensure(isConstantIndex(), __FUNCTION__ + mlir::Twine(" requires a constant index!"));
+    return constIdx.getValue();
   }
   mlir::APInt getConstantValue() const {
+    debug::ensure(isConstant(), __FUNCTION__ + mlir::Twine(" requires a constant!"));
     return isConstantFelt() ? getConstantFeltValue() : getConstantIndexValue();
   }
 
@@ -223,8 +208,9 @@ private:
    */
   mlir::BlockArgument blockArg;
   std::vector<ConstrainRefIndex> fieldRefs;
-  FeltConstantOp constFelt;
-  mlir::index::ConstantOp constIdx;
+  // using mutable to reduce constant casts for certain get* functions.
+  mutable FeltConstantOp constFelt;
+  mutable mlir::index::ConstantOp constIdx;
 };
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRef &rhs);
