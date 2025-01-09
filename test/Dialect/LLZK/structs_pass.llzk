@@ -1,6 +1,50 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
 
 module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Main {
+    func @compute() -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%self: !llzk.struct<@Main>)  {
+      return
+    }
+  }
+}
+//CHECK-LABEL: llzk.struct @Main {
+//CHECK-NEXT:    func @compute() -> !llzk.struct<@Main> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+//CHECK-NEXT:      return %[[SELF:[0-9a-zA-Z_\.]+]] : !llzk.struct<@Main>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Main<[]> {
+    func @compute() -> !llzk.struct<@Main<[]>> {
+      %self = new_struct : !llzk.struct<@Main<[]>>
+      return %self : !llzk.struct<@Main<[]>>
+    }
+    func @constrain(%self: !llzk.struct<@Main<[]>>)  {
+      return
+    }
+  }
+}
+//CHECK-LABEL: llzk.struct @Main<[]> {
+//CHECK-NEXT:    func @compute() -> !llzk.struct<@Main<[]>> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Main<[]>>
+//CHECK-NEXT:      return %[[SELF:[0-9a-zA-Z_\.]+]] : !llzk.struct<@Main<[]>>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main<[]>>) {
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
     func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>

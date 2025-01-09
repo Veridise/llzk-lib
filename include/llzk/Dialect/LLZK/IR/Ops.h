@@ -25,7 +25,12 @@
 // Types that must come before the "Ops.h.inc" import
 namespace llzk {
 
+/// Symbol name for the main entry point struct/component (if any). There are additional
+/// restrictions on the struct with this name:
+/// 1. It cannot have struct parameters
+/// 2. It’s functions cannot have parameters (besides the required "self" parameter)
 constexpr char COMPONENT_NAME_MAIN[] = "Main";
+
 constexpr char FUNC_NAME_COMPUTE[] = "compute";
 constexpr char FUNC_NAME_CONSTRAIN[] = "constrain";
 

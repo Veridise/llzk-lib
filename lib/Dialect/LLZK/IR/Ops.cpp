@@ -186,59 +186,90 @@ LogicalResult StructDefOp::verifyRegions() {
   if (!getBody().hasOneBlock()) {
     return emitOpError() << "must contain exactly 1 block";
   }
-  auto emitError = [this] { return this->emitOpError(); };
   std::optional<FuncOp> foundCompute = std::nullopt;
   std::optional<FuncOp> foundConstrain = std::nullopt;
-  for (auto &op : getBody().front()) {
-    if (!llvm::isa<FieldDefOp>(op)) {
-      if (FuncOp funcDef = llvm::dyn_cast<FuncOp>(op)) {
-        auto funcName = funcDef.getSymName();
-        if (FUNC_NAME_COMPUTE == funcName) {
-          if (foundCompute) {
-            return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
+  {
+    // Verify the following:
+    // 1. The only ops within the body are field and function definitions
+    // 2. The only functions defined in the struct are `compute()` and `constrain()`
+    auto emitError = [this] { return this->emitOpError(); };
+    for (Operation &op : getBody().front()) {
+      if (!llvm::isa<FieldDefOp>(op)) {
+        if (FuncOp funcDef = llvm::dyn_cast<FuncOp>(op)) {
+          StringRef funcName = funcDef.getSymName();
+          if (FUNC_NAME_COMPUTE == funcName) {
+            if (foundCompute) {
+              return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
+            }
+            foundCompute = std::make_optional(funcDef);
+          } else if (FUNC_NAME_CONSTRAIN == funcName) {
+            if (foundConstrain) {
+              return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
+            }
+            foundConstrain = std::make_optional(funcDef);
+          } else {
+            // Must do a little more than a simple call to '?.emitOpError()' to
+            // tag the error with correct location and correct op name.
+            return op.emitError() << "'" << getOperationName() << "' op " << "must define only \"@"
+                                  << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
+                                  << "\" functions;" << " found \"@" << funcName << "\"";
           }
-          foundCompute = std::make_optional(funcDef);
-        } else if (FUNC_NAME_CONSTRAIN == funcName) {
-          if (foundConstrain) {
-            return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
-          }
-          foundConstrain = std::make_optional(funcDef);
         } else {
-          // Must do a little more than a simple call to '?.emitOpError()' to
-          // tag the error with correct location and correct op name.
-          return op.emitError() << "'" << getOperationName() << "' op " << "must define only \"@"
-                                << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
-                                << "\" functions;" << " found \"@" << funcName << "\"";
+          return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
+                                  << "'; only '" << FieldDefOp::getOperationName() << "'"
+                                  << " and '" << FuncOp::getOperationName()
+                                  << "' operations are permitted";
         }
-      } else {
-        return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
-                                << "'; only '" << FieldDefOp::getOperationName() << "'" << " and '"
-                                << FuncOp::getOperationName() << "' operations are permitted";
       }
     }
-  }
-  if (!foundCompute.has_value()) {
-    return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
-  }
-  if (!foundConstrain.has_value()) {
-    return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
+    if (!foundCompute.has_value()) {
+      return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
+    }
+    if (!foundConstrain.has_value()) {
+      return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
+    }
   }
 
-  // Ensure function input types from compute and constrain match, sans the first parameter of
-  // constrain which is the instance of the parent struct.
-  if (!typeListsUnify(
-          foundCompute.value().getFunctionType().getInputs(),
-          foundConstrain.value().getFunctionType().getInputs().drop_front()
-      )) {
-    return foundConstrain.value()
-        .emitError()
-        .append(
-            "expected \"@", FUNC_NAME_CONSTRAIN,
-            "\" function argument types (sans the first one) to match \"@", FUNC_NAME_COMPUTE,
-            "\" function argument types"
-        )
-        .attachNote(foundCompute.value().getLoc())
-        .append("\"@", FUNC_NAME_COMPUTE, "\" function defined here");
+  ArrayRef<Type> computeArgs = foundCompute->getFunctionType().getInputs();
+  ArrayRef<Type> constrainArgs = foundConstrain->getFunctionType().getInputs().drop_front();
+  if (COMPONENT_NAME_MAIN == this->getSymName()) {
+    // Verify that functions have no input parameters, sans the first parameter of `constrain()`
+    // which is the instance of the parent struct.
+    if (!computeArgs.empty()) {
+      return foundCompute->emitError().append(
+          "The \"@", COMPONENT_NAME_MAIN, "\" component \"@", FUNC_NAME_COMPUTE,
+          "\" function must have no parameters"
+      );
+    }
+    if (!constrainArgs.empty()) {
+      return foundConstrain->emitError().append(
+          "The \"@", COMPONENT_NAME_MAIN, "\" component \"@", FUNC_NAME_CONSTRAIN,
+          "\" function must have only the \"self\" parameter"
+      );
+    }
+    // Verify that the Struct has no paramters
+    // llvm::outs() << "const params = " << this->getConstParamsAttr() << "\n";
+    // auto attr = getConstParamsAttr();
+    // return attr ? ::std::optional< ::mlir::ArrayAttr >(attr) : (::std::nullopt);
+    auto structParams = this->getConstParamsAttr();
+    if (structParams && !structParams.empty()) {
+      return this->emitError().append(
+          "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
+      );
+    }
+  } else {
+    // Verify that function input types from `compute()` and `constrain()` match, sans the first
+    // parameter of `constrain()` which is the instance of the parent struct.
+    if (!typeListsUnify(computeArgs, constrainArgs)) {
+      return foundConstrain->emitError()
+          .append(
+              "expected \"@", FUNC_NAME_CONSTRAIN,
+              "\" function argument types (sans the first one) to match \"@", FUNC_NAME_COMPUTE,
+              "\" function argument types"
+          )
+          .attachNote(foundCompute->getLoc())
+          .append("\"@", FUNC_NAME_COMPUTE, "\" function defined here");
+    }
   }
 
   return success();

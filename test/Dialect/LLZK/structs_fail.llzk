@@ -267,3 +267,42 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Main {
+    // expected-error@+1 {{The "@Main" component "@compute" function must have no parameters}}
+    func @compute(%0: i1) -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%self: !llzk.struct<@Main>)  {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Main {
+    func @compute() -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      return %self : !llzk.struct<@Main>
+    }
+    // expected-error@+1 {{The "@Main" component "@constrain" function must have only the "self" parameter}}
+    func @constrain(%self: !llzk.struct<@Main>, %0: i1)  {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+1 {{The "@Main" component must have no parameters}}
+  llzk.struct @Main<[@T]> {
+    func @compute() -> !llzk.struct<@Main<[@T]>> {
+      %self = new_struct : !llzk.struct<@Main<[@T]>>
+      return %self : !llzk.struct<@Main<[@T]>>
+    }
+    func @constrain(%self: !llzk.struct<@Main<[@T]>>)  {
+      return
+    }
+  }
+}
