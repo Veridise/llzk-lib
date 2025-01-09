@@ -109,7 +109,7 @@ class ConstrainRef {
   /// This produces refs for composite types (e.g., full structs and full arrays)
   /// as well as individual fields and constants.
   static std::vector<ConstrainRef> getAllConstrainRefs(
-      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, StructDefOp s,
+      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, SymbolLookupResult<StructDefOp> s,
       mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields
   );
 

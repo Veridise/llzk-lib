@@ -1,5 +1,7 @@
 #include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
+#include "llzk/Dialect/LLZK/Util/SymbolLookupResult.h"
+
 namespace llzk {
 
 /* ConstrainRefIndex */
@@ -41,12 +43,20 @@ bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
 
 /* ConstrainRef */
 
-StructDefOp getStructDef(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, StructType ty) {
+/// @brief Lookup a `StructDefOp` from a given `StructType`.
+/// @param tables
+/// @param mod
+/// @param ty
+/// @return A `SymbolLookupResult` for the `StructDefOp` found. Note that returning the
+/// lookup result is important, as it may manage a ModuleOp if the struct is found
+/// via an include.
+SymbolLookupResult<StructDefOp>
+getStructDef(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, StructType ty) {
   auto sDef = ty.getDefinition(tables, mod);
   if (mlir::failed(sDef)) {
     llvm::report_fatal_error("could not find struct definition from struct type");
   }
-  return sDef->get();
+  return std::move(sDef.value());
 }
 
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
@@ -85,14 +95,14 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
 }
 
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
-    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, StructDefOp s,
+    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, SymbolLookupResult<StructDefOp> s,
     mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields = {}
 ) {
   std::vector<ConstrainRef> res;
   // Add root item
   res.emplace_back(blockArg, fields);
   // Recurse into struct types by iterating over all their field definitions
-  for (auto f : s.getOps<FieldDefOp>()) {
+  for (auto f : s.get().getOps<FieldDefOp>()) {
     std::vector<ConstrainRefIndex> subFields = fields;
     subFields.emplace_back(f);
     // Make a reference to the current field, regardless of if it is a composite
