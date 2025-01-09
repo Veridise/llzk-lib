@@ -30,7 +30,7 @@ template <class InputIt> inline std::string toString(const InputIt &collection) 
   return toString(collection.begin(), collection.end());
 }
 
-void ensure(bool condition, mlir::Twine errMsg) {
+inline void ensure(bool condition, mlir::Twine errMsg) {
   if (!condition) {
     llvm::report_fatal_error(errMsg);
   }
