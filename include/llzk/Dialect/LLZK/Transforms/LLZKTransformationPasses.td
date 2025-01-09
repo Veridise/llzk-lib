@@ -1,5 +1,5 @@
-#ifndef LLZK_LLZKPASSES_TD
-#define LLZK_LLZKPASSES_TD
+#ifndef LLZK_TRANSFORMATION_PASSES_TD
+#define LLZK_TRANSFORMATION_PASSES_TD
 
 include "mlir/Pass/PassBase.td"
 
@@ -9,4 +9,4 @@ def InlineIncludesPass : Pass<"llzk-inline-includes", "::mlir::ModuleOp"> {
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
-#endif // LLZK_LLZKPASSES_TD
+#endif // LLZK_TRANSFORMATION_PASSES_TD

@@ -1,0 +1,54 @@
+// RUN: llzk-opt -split-input-file -llzk-validate-field-writes -verify-diagnostics %s
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @MultipleWrites {
+    llzk.field @f : !llzk.felt
+
+    func @compute(%1: !llzk.felt) -> !llzk.struct<@MultipleWrites> {
+      %self = new_struct : !llzk.struct<@MultipleWrites>
+      // expected-note@+1 {{earlier write here}}
+      writef %self[@f] = %1 : !llzk.struct<@MultipleWrites>, !llzk.felt
+      // expected-warning@+1 {{found multiple writes to 'llzk.field' named "@f"}}
+      writef %self[@f] = %1 : !llzk.struct<@MultipleWrites>, !llzk.felt
+      return %self : !llzk.struct<@MultipleWrites>
+    }
+
+    func @constrain(%self: !llzk.struct<@MultipleWrites>, %1: !llzk.felt)  { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @MissingWrite {
+    llzk.field @a : index
+    llzk.field @b : index
+    llzk.field @c : index
+
+    // expected-warning@+1 {{'llzk.func' op "@compute" missing write to 'llzk.field' named "@b"}}
+    func @compute(%1: index) -> !llzk.struct<@MissingWrite> {
+      %self = new_struct : !llzk.struct<@MissingWrite>
+      writef %self[@a] = %1 : !llzk.struct<@MissingWrite>, index
+      writef %self[@c] = %1 : !llzk.struct<@MissingWrite>, index
+      return %self : !llzk.struct<@MissingWrite>
+    }
+
+    func @constrain(%self: !llzk.struct<@MissingWrite>, %1: index)  { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @NoWrites {
+    llzk.field @a : !llzk.felt
+    llzk.field @b : !llzk.felt
+    llzk.field @c : !llzk.felt
+
+    // expected-warning@+3 {{'llzk.func' op "@compute" missing write to 'llzk.field' named "@a"}}
+    // expected-warning@+2 {{'llzk.func' op "@compute" missing write to 'llzk.field' named "@b"}}
+    // expected-warning@+1 {{'llzk.func' op "@compute" missing write to 'llzk.field' named "@c"}}
+    func @compute() -> !llzk.struct<@NoWrites> {
+      %self = new_struct : !llzk.struct<@NoWrites>
+      return %self : !llzk.struct<@NoWrites>
+    }
+
+    func @constrain(%self: !llzk.struct<@NoWrites>)  { return }
+  }
+}

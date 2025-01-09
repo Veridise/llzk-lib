@@ -183,9 +183,8 @@ LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult StructDefOp::verifyRegions() {
-  if (!getBody().hasOneBlock()) {
-    return emitOpError() << "must contain exactly 1 block";
-  }
+  assert(getBody().hasOneBlock()); // per ODS, SizedRegion<1>
+  auto emitError = [this] { return this->emitOpError(); };
   std::optional<FuncOp> foundCompute = std::nullopt;
   std::optional<FuncOp> foundConstrain = std::nullopt;
   {
@@ -276,7 +275,8 @@ LogicalResult StructDefOp::verifyRegions() {
 }
 
 FieldDefOp StructDefOp::getFieldDef(StringAttr fieldName) {
-  // The Body Region was verified to have exactly one Block so only need to search front() Block.
+  assert(getBody().hasOneBlock()); // per ODS, SizedRegion<1>
+  // Just search front() since there's only one Block.
   for (Operation &op : getBody().front()) {
     if (FieldDefOp fieldDef = llvm::dyn_cast_if_present<FieldDefOp>(op)) {
       if (fieldName.compare(fieldDef.getSymNameAttr()) == 0) {
@@ -285,6 +285,18 @@ FieldDefOp StructDefOp::getFieldDef(StringAttr fieldName) {
     }
   }
   return nullptr;
+}
+
+std::vector<FieldDefOp> StructDefOp::getFieldDefs() {
+  assert(getBody().hasOneBlock()); // per ODS, SizedRegion<1>
+  // Just search front() since there's only one Block.
+  std::vector<FieldDefOp> res;
+  for (Operation &op : getBody().front()) {
+    if (FieldDefOp fieldDef = llvm::dyn_cast_if_present<FieldDefOp>(op)) {
+      res.push_back(fieldDef);
+    }
+  }
+  return res;
 }
 
 FuncOp StructDefOp::getComputeFuncOp() {
