@@ -3,11 +3,11 @@
 
 #include <llvm/Support/ErrorHandling.h>
 
-using namespace mlir;
-
 namespace llzk {
 
-mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context, mlir::Location loc) {
+using namespace mlir;
+
+OwningOpRef<ModuleOp> createLLZKModule(MLIRContext *context, Location loc) {
   auto dialect = context->getOrLoadDialect<llzk::LLZKDialect>();
   if (!dialect) {
     llvm::report_fatal_error("Could not load LLZK dialect!");
@@ -18,50 +18,50 @@ mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context, m
   return mod;
 }
 
-mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context) {
-  return createLLZKModule(context, mlir::UnknownLoc::get(context));
+OwningOpRef<ModuleOp> createLLZKModule(MLIRContext *context) {
+  return createLLZKModule(context, UnknownLoc::get(context));
 }
 
 /* ModuleBuilder */
 
-ModuleBuilder::ModuleBuilder(mlir::ModuleOp m) : context(m.getContext()), rootModule(m) {}
+ModuleBuilder::ModuleBuilder(ModuleOp m) : context(m.getContext()), rootModule(m) {}
 
 void ModuleBuilder::ensureNoSuchStruct(std::string_view structName) {
   if (structMap.find(structName) != structMap.end()) {
-    auto error_message = "struct " + mlir::Twine(structName) + " already exists!";
+    auto error_message = "struct " + Twine(structName) + " already exists!";
     llvm::report_fatal_error(error_message);
   }
 }
 
 void ModuleBuilder::ensureNoSuchComputeFn(std::string_view structName) {
   if (computeFnMap.find(structName) != computeFnMap.end()) {
-    auto error_message = "struct " + mlir::Twine(structName) + " already has a compute function!";
+    auto error_message = "struct " + Twine(structName) + " already has a compute function!";
     llvm::report_fatal_error(error_message);
   }
 }
 
 void ModuleBuilder::ensureComputeFnExists(std::string_view structName) {
   if (computeFnMap.find(structName) == computeFnMap.end()) {
-    auto error_message = "struct " + mlir::Twine(structName) + " has no compute function!";
+    auto error_message = "struct " + Twine(structName) + " has no compute function!";
     llvm::report_fatal_error(error_message);
   }
 }
 
 void ModuleBuilder::ensureNoSuchConstrainFn(std::string_view structName) {
   if (constrainFnMap.find(structName) != constrainFnMap.end()) {
-    auto error_message = "struct " + mlir::Twine(structName) + " already has a constrain function!";
+    auto error_message = "struct " + Twine(structName) + " already has a constrain function!";
     llvm::report_fatal_error(error_message);
   }
 }
 
 void ModuleBuilder::ensureConstrainFnExists(std::string_view structName) {
   if (constrainFnMap.find(structName) == constrainFnMap.end()) {
-    auto error_message = "struct " + mlir::Twine(structName) + " has no constrain function!";
+    auto error_message = "struct " + Twine(structName) + " has no constrain function!";
     llvm::report_fatal_error(error_message);
   }
 }
 
-ModuleBuilder &ModuleBuilder::insertEmptyStruct(std::string_view structName, mlir::Location loc) {
+ModuleBuilder &ModuleBuilder::insertEmptyStruct(std::string_view structName, Location loc) {
   ensureNoSuchStruct(structName);
 
   OpBuilder opBuilder(rootModule.getBody(), rootModule.getBody()->begin());
@@ -75,7 +75,7 @@ ModuleBuilder &ModuleBuilder::insertEmptyStruct(std::string_view structName, mli
   return *this;
 }
 
-ModuleBuilder &ModuleBuilder::insertComputeFn(llzk::StructDefOp op, mlir::Location loc) {
+ModuleBuilder &ModuleBuilder::insertComputeFn(llzk::StructDefOp op, Location loc) {
   ensureNoSuchComputeFn(op.getName());
 
   OpBuilder opBuilder(op.getBody());
@@ -89,7 +89,7 @@ ModuleBuilder &ModuleBuilder::insertComputeFn(llzk::StructDefOp op, mlir::Locati
   return *this;
 }
 
-ModuleBuilder &ModuleBuilder::insertConstrainFn(llzk::StructDefOp op, mlir::Location loc) {
+ModuleBuilder &ModuleBuilder::insertConstrainFn(llzk::StructDefOp op, Location loc) {
   ensureNoSuchConstrainFn(op.getName());
 
   OpBuilder opBuilder(op.getBody());
@@ -104,7 +104,7 @@ ModuleBuilder &ModuleBuilder::insertConstrainFn(llzk::StructDefOp op, mlir::Loca
 }
 
 ModuleBuilder &ModuleBuilder::insertComputeCall(
-    llzk::StructDefOp caller, llzk::StructDefOp callee, mlir::Location callLoc
+    llzk::StructDefOp caller, llzk::StructDefOp callee, Location callLoc
 ) {
   ensureComputeFnExists(caller.getName());
   ensureComputeFnExists(callee.getName());
@@ -113,13 +113,13 @@ ModuleBuilder &ModuleBuilder::insertComputeCall(
   auto calleeFn = computeFnMap.at(callee.getName());
 
   OpBuilder builder(callerFn.getBody());
-  builder.create<llzk::CallOp>(callLoc, calleeFn.getFullyQualifiedName(), mlir::ValueRange{});
+  builder.create<llzk::CallOp>(callLoc, calleeFn.getFullyQualifiedName(), ValueRange {});
   updateComputeReachability(caller, callee);
   return *this;
 }
 
 ModuleBuilder &ModuleBuilder::insertConstrainCall(
-    llzk::StructDefOp caller, llzk::StructDefOp callee, mlir::Location callLoc
+    llzk::StructDefOp caller, llzk::StructDefOp callee, Location callLoc
 ) {
   ensureConstrainFnExists(caller.getName());
   ensureConstrainFnExists(callee.getName());
@@ -149,9 +149,7 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
         callerFn.getBody().getArgument(0), // first arg is self
         fieldName
     );
-    builder.create<llzk::CallOp>(
-        callLoc, calleeFn.getFullyQualifiedName(), mlir::ValueRange{field}
-    );
+    builder.create<llzk::CallOp>(callLoc, calleeFn.getFullyQualifiedName(), ValueRange {field});
   }
   updateConstrainReachability(caller, callee);
   return *this;

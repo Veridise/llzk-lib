@@ -154,7 +154,7 @@ FuncOp FuncOp::clone() {
 
 bool FuncOp::hasArgPublicAttr(unsigned index) {
   if (index < this->getNumArguments()) {
-    DictionaryAttr res = mlir::function_interface_impl::getArgAttrDict(*this, index);
+    DictionaryAttr res = function_interface_impl::getArgAttrDict(*this, index);
     return res ? res.contains(PublicAttr::name) : false;
   } else {
     // TODO: print error? requested attribute for non-existant argument index
@@ -162,52 +162,52 @@ bool FuncOp::hasArgPublicAttr(unsigned index) {
   }
 }
 
-mlir::LogicalResult FuncOp::verify() {
-  auto emitErrorFunc = [op = this->getOperation()]() -> mlir::InFlightDiagnostic {
+LogicalResult FuncOp::verify() {
+  auto emitErrorFunc = [op = this->getOperation()]() -> InFlightDiagnostic {
     return op->emitOpError();
   };
   // Ensure that only valid LLZK types are used for arguments and return
   FunctionType type = getFunctionType();
-  llvm::ArrayRef<mlir::Type> inTypes = type.getInputs();
+  llvm::ArrayRef<Type> inTypes = type.getInputs();
   for (auto ptr = inTypes.begin(); ptr < inTypes.end(); ptr++) {
     if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
-      return mlir::failure();
+      return failure();
     }
   }
-  llvm::ArrayRef<mlir::Type> resTypes = type.getResults();
+  llvm::ArrayRef<Type> resTypes = type.getResults();
   for (auto ptr = resTypes.begin(); ptr < resTypes.end(); ptr++) {
     if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
-      return mlir::failure();
+      return failure();
     }
   }
-  return mlir::success();
+  return success();
 }
 
 namespace {
 
-mlir::LogicalResult
-verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parent) {
-  mlir::FunctionType funcType = origin.getFunctionType();
-  llvm::ArrayRef<mlir::Type> resTypes = funcType.getResults();
+LogicalResult
+verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
+  FunctionType funcType = origin.getFunctionType();
+  llvm::ArrayRef<Type> resTypes = funcType.getResults();
   // Must return type of parent struct
   if (resTypes.size() != 1) {
     return origin.emitOpError().append(
         "\"@", llzk::FUNC_NAME_COMPUTE, "\" must have exactly one return type"
     );
   }
-  if (mlir::failed(checkSelfType(symbolTable, parent, resTypes.front(), origin, "return"))) {
-    return mlir::failure();
+  if (failed(checkSelfType(tables, parent, resTypes.front(), origin, "return"))) {
+    return failure();
   }
 
   // After the more specific checks (to ensure more specific error messages would be produced if
   // necessary), do the general check that all symbol references in the types are valid. The return
   // types were already checked so just check the input types.
-  return verifyTypeResolution(symbolTable, funcType.getInputs(), origin);
+  return verifyTypeResolution(tables, funcType.getInputs(), origin);
 }
 
-mlir::LogicalResult
-verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &symbolTable, StructDefOp &parent) {
-  mlir::FunctionType funcType = origin.getFunctionType();
+LogicalResult
+verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
+  FunctionType funcType = origin.getFunctionType();
   // Must return '()' type, i.e. have no return types
   if (funcType.getResults().size() != 0) {
     return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
@@ -215,47 +215,47 @@ verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &symbolTable, Stru
   }
 
   // Type of the first parameter must match the parent StructDefOp of the current operation.
-  llvm::ArrayRef<mlir::Type> inputTypes = funcType.getInputs();
+  llvm::ArrayRef<Type> inputTypes = funcType.getInputs();
   if (inputTypes.size() < 1) {
     return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
                                 << "\" must have at least one input type";
   }
-  if (mlir::failed(checkSelfType(symbolTable, parent, inputTypes.front(), origin, "first input"))) {
-    return mlir::failure();
+  if (failed(checkSelfType(tables, parent, inputTypes.front(), origin, "first input"))) {
+    return failure();
   }
 
   // After the more specific checks (to ensure more specific error messages would be produced if
   // necessary), do the general check that all symbol references in the types are valid. There are
   // no return types, just check the remaining input types (the first was already checked via
   // the checkSelfType() call above).
-  return verifyTypeResolution(symbolTable, inputTypes.begin() + 1, inputTypes.end(), origin);
+  return verifyTypeResolution(tables, inputTypes.begin() + 1, inputTypes.end(), origin);
 }
 
 } // namespace
 
-mlir::LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Additional checks for the compute/constrain functions w/in a struct
-  mlir::FailureOr<StructDefOp> parentStructOpt = getParentOfType<StructDefOp>(*this);
-  if (mlir::succeeded(parentStructOpt)) {
+  FailureOr<StructDefOp> parentStructOpt = getParentOfType<StructDefOp>(*this);
+  if (succeeded(parentStructOpt)) {
     // Verify return type restrictions for functions within a StructDefOp
     llvm::StringRef funcName = getSymName();
     if (llzk::FUNC_NAME_COMPUTE == funcName) {
-      return verifyFuncTypeCompute(*this, symbolTable, parentStructOpt.value());
+      return verifyFuncTypeCompute(*this, tables, parentStructOpt.value());
     } else if (llzk::FUNC_NAME_CONSTRAIN == funcName) {
-      return verifyFuncTypeConstrain(*this, symbolTable, parentStructOpt.value());
+      return verifyFuncTypeConstrain(*this, tables, parentStructOpt.value());
     }
   }
   // In the general case, verify all input and output types are valid. Check both
   //  before returning to present all applicable type errors in one compilation.
-  mlir::FunctionType funcType = getFunctionType();
-  mlir::LogicalResult a = verifyTypeResolution(symbolTable, funcType.getResults(), *this);
-  mlir::LogicalResult b = verifyTypeResolution(symbolTable, funcType.getInputs(), *this);
-  return mlir::LogicalResult::success(mlir::succeeded(a) && mlir::succeeded(b));
+  FunctionType funcType = getFunctionType();
+  LogicalResult a = verifyTypeResolution(tables, funcType.getResults(), *this);
+  LogicalResult b = verifyTypeResolution(tables, funcType.getInputs(), *this);
+  return LogicalResult::success(succeeded(a) && succeeded(b));
 }
 
-mlir::SymbolRefAttr FuncOp::getFullyQualifiedName() const {
+SymbolRefAttr FuncOp::getFullyQualifiedName() const {
   auto res = getPathFromRoot(*const_cast<FuncOp *>(this));
-  assert(mlir::succeeded(res));
+  assert(succeeded(res));
   return res.value();
 }
 
@@ -288,60 +288,141 @@ LogicalResult ReturnOp::verify() {
 // CallOp
 //===----------------------------------------------------------------------===//
 
-LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
-  // Check that the callee attribute was specified.
-  SymbolRefAttr fnAttr = (*this)->getAttrOfType<SymbolRefAttr>("callee");
-  if (!fnAttr) {
-    return emitOpError("requires a 'callee' symbol reference attribute");
-  }
-  // Call target must be specified via full path from the root module.
-  auto tgtOpt = lookupTopLevelSymbol<FuncOp>(symbolTable, fnAttr, *this);
-  if (mlir::failed(tgtOpt)) {
-    return this->emitError() << "no '" << FuncOp::getOperationName() << "' named \"" << fnAttr
-                             << "\"";
-  }
-  FuncOp tgt = tgtOpt.value().get();
+namespace {
 
-  // Verify that the operand and result types match the callee.
-  FunctionType fnType = tgt.getFunctionType();
-  if (fnType.getNumInputs() != getNumOperands()) {
-    return emitOpError("incorrect number of operands for callee");
-  }
+struct CallOpVerifier {
+  CallOpVerifier(CallOp *callOp) : callOp(callOp) {}
+  virtual ~CallOpVerifier() {};
 
-  for (unsigned i = 0, e = fnType.getNumInputs(); i != e; ++i) {
-    if (!typesUnify(getOperand(i).getType(), fnType.getInput(i), tgtOpt->getIncludeSymNames())) {
-      return emitOpError("operand type mismatch: expected type ")
-             << fnType.getInput(i) << ", but found " << getOperand(i).getType()
-             << " for operand number " << i;
+  LogicalResult verify() {
+    // Rather than immediately returning on failure, we check all verifier steps and aggregate to
+    // provide as many errors are possible in a single verifier run.
+    LogicalResult aggregateResult = success();
+    if (failed(verifyInputs())) {
+      aggregateResult = failure();
     }
-  }
-
-  if (fnType.getNumResults() != getNumResults()) {
-    return emitOpError("incorrect number of results for callee");
-  }
-
-  for (unsigned i = 0, e = fnType.getNumResults(); i != e; ++i) {
-    if (!typesUnify(getResult(i).getType(), fnType.getResult(i), tgtOpt->getIncludeSymNames())) {
-      return emitOpError("result type mismatch: expected type ")
-             << fnType.getResult(i) << ", but found " << getResult(i).getType()
-             << " for result number " << i;
+    if (failed(verifyOutputs())) {
+      aggregateResult = failure();
     }
+    if (failed(verifyStructTarget())) {
+      aggregateResult = failure();
+    }
+    return aggregateResult;
   }
 
-  // Enforce restrictions on callers of compute/constrain functions within structs.
-  if (isInStruct(tgt.getOperation())) {
-    if (tgt.getSymName().compare(FUNC_NAME_COMPUTE) == 0) {
-      return verifyInStructFunctionNamed<FUNC_NAME_COMPUTE, 32>(*this, [] {
+protected:
+  CallOp *callOp;
+
+  virtual LogicalResult verifyInputs() = 0;
+  virtual LogicalResult verifyOutputs() = 0;
+  virtual LogicalResult verifyStructTarget() = 0;
+
+  LogicalResult verifyStructTarget(StringRef tgtName) {
+    if (tgtName.compare(FUNC_NAME_COMPUTE) == 0) {
+      return verifyInStructFunctionNamed<FUNC_NAME_COMPUTE, 32>(*callOp, [] {
         return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_COMPUTE, "\" "});
       });
-    } else if (tgt.getSymName().compare(FUNC_NAME_CONSTRAIN) == 0) {
-      return verifyInStructFunctionNamed<FUNC_NAME_CONSTRAIN, 32>(*this, [] {
+    } else if (tgtName.compare(FUNC_NAME_CONSTRAIN) == 0) {
+      return verifyInStructFunctionNamed<FUNC_NAME_CONSTRAIN, 32>(*callOp, [] {
         return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_CONSTRAIN, "\" "});
       });
     }
+    return success();
+  }
+};
+
+struct KnownTargetVerifier : public CallOpVerifier {
+  KnownTargetVerifier(CallOp *callOp, SymbolLookupResult<FuncOp> &&tgtRes)
+      : CallOpVerifier(callOp), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
+        includeSymNames(tgtRes.getIncludeSymNames()) {}
+
+  LogicalResult verifyInputs() override {
+    if (tgtType.getNumInputs() != callOp->getNumOperands()) {
+      return callOp->emitOpError()
+          .append("incorrect number of operands for callee, expected ", tgtType.getNumInputs())
+          .attachNote(tgt.getLoc())
+          .append("callee defined here");
+    }
+    for (unsigned i = 0, e = tgtType.getNumInputs(); i != e; ++i) {
+      if (!typesUnify(callOp->getOperand(i).getType(), tgtType.getInput(i), includeSymNames)) {
+        return callOp->emitOpError("operand type mismatch: expected type ")
+               << tgtType.getInput(i) << ", but found " << callOp->getOperand(i).getType()
+               << " for operand number " << i;
+      }
+    }
+    return success();
   }
 
-  return success();
+  LogicalResult verifyOutputs() override {
+    if (tgtType.getNumResults() != callOp->getNumResults()) {
+      return callOp->emitOpError()
+          .append("incorrect number of results for callee, expected ", tgtType.getNumResults())
+          .attachNote(tgt.getLoc())
+          .append("callee defined here");
+    }
+    for (unsigned i = 0, e = tgtType.getNumResults(); i != e; ++i) {
+      if (!typesUnify(callOp->getResult(i).getType(), tgtType.getResult(i), includeSymNames)) {
+        return callOp->emitOpError("result type mismatch: expected type ")
+               << tgtType.getResult(i) << ", but found " << callOp->getResult(i).getType()
+               << " for result number " << i;
+      }
+    }
+    return success();
+  }
+
+  LogicalResult verifyStructTarget() override {
+    if (isInStruct(tgt.getOperation())) {
+      return CallOpVerifier::verifyStructTarget(tgt.getSymName());
+    }
+    return success();
+  }
+
+private:
+  FuncOp tgt;
+  FunctionType tgtType;
+  std::vector<llvm::StringRef> includeSymNames;
+};
+
+struct UnknownTargetVerifier : public CallOpVerifier {
+  UnknownTargetVerifier(CallOp *callOp, SymbolRefAttr calleeAttr)
+      : CallOpVerifier(callOp), calleeAttr(calleeAttr) {}
+
+  LogicalResult verifyInputs() override { return success(); }
+  LogicalResult verifyOutputs() override { return success(); }
+  LogicalResult verifyStructTarget() override {
+    return CallOpVerifier::verifyStructTarget(calleeAttr.getLeafReference().getValue());
+  }
+
+private:
+  SymbolRefAttr calleeAttr;
+};
+
+} // namespace
+
+LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Check that the callee attribute was specified.
+  SymbolRefAttr calleeAttr = (*this)->getAttrOfType<SymbolRefAttr>("callee");
+  if (!calleeAttr) {
+    return emitOpError("requires a 'callee' symbol reference attribute");
+  }
+
+  // If the callee references a parameter of the struct where this call appears, perform the subset
+  // of checks that can be done even though the target is unknown.
+  if (calleeAttr.getNestedReferences().size() == 1) {
+    FailureOr<StructDefOp> parent = getParentOfType<StructDefOp>(*this);
+    if (succeeded(parent) && parent->hasParamNamed(calleeAttr.getRootReference())) {
+      return UnknownTargetVerifier(this, calleeAttr).verify();
+    }
+  }
+
+  // Otherwise, callee must be specified via full path from the root module. Perform the full set of
+  // checks against the known target function.
+  auto tgtOpt = lookupTopLevelSymbol<FuncOp>(tables, calleeAttr, *this);
+  if (failed(tgtOpt)) {
+    return this->emitError() << "expected '" << FuncOp::getOperationName() << "' named \""
+                             << calleeAttr << "\"";
+  }
+  return KnownTargetVerifier(this, std::move(*tgtOpt)).verify();
 }
 
 FunctionType CallOp::getCalleeType() {

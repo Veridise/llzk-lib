@@ -40,12 +40,12 @@ class VariadicTypesMatchWith<string summary, string lhsArg, string rhsArg,
 // instead as this is likely too restrictive when type variables are involved.
 class TypesUnify<string lhsArg, string rhsArg, string lhsSummary = lhsArg,
                  string rhsSummary = rhsArg, string transform = "$_self">
-    : TypesMatchWith<rhsSummary#" type matches with "#lhsSummary, lhsArg,
-                     rhsArg, transform, "::llzk::typesUnify">;
+    : TypesMatchWith<rhsSummary#" type matches with "#lhsSummary#" type",
+                     lhsArg, rhsArg, transform, "::llzk::typesUnify">;
 
 // Returns success if `elementArg` unifies with the `arrayArg` element type.
 class ArrayElemTypeUnifyWith<string arrayArg, string elementArg>
-    : TypesUnify<arrayArg, elementArg, arrayArg#" element type", elementArg,
+    : TypesUnify<arrayArg, elementArg, arrayArg#" element", elementArg,
                  "::llvm::cast<::llzk::ArrayType>($_self).getElementType()">;
 
 // Identical to `TypesMatchWith` with `rhsArg = result`. This should be used
@@ -56,7 +56,7 @@ class TypeMatchResultWith<string lhsArg, string lhsSummary = lhsArg,
                           string transform,
                           string comparator = "std::equal_to<>()">
     : PredOpTrait<
-          "result type matches with "#lhsSummary,
+          "result type matches with "#lhsSummary#" type",
           CPred<comparator#"("#!subst("$_self", "$"#lhsArg#".getType()",
                                       transform)#", $result.getType())">> {
   string lhs = lhsArg;

@@ -3,7 +3,7 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
-#include "llzk/Dialect/LLZK/Util/SymbolLookupResult.h" // IWYU pragma: keep
+#include "llzk/Dialect/LLZK/Util/SymbolLookup.h" // IWYU pragma: keep
 
 #include <mlir/Bytecode/BytecodeOpInterface.h>
 #include <mlir/IR/BuiltinOps.h>

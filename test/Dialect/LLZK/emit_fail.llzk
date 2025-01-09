@@ -415,7 +415,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component22 {
     func @constrain(%a: !llzk.felt, %b: index) {
-      // expected-error@+1 {{'llzk.emit_eq' op failed to verify that rhs type matches with lhs}}
+      // expected-error@+1 {{'llzk.emit_eq' op failed to verify that rhs type matches with lhs type}}
       llzk.emit_eq %a, %b : !llzk.felt, index
       return
     }
