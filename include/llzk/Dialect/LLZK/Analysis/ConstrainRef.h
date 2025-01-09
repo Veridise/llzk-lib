@@ -21,16 +21,16 @@ class ConstrainRefIndex {
   using IndexRange = std::pair<mlir::APInt, mlir::APInt>;
 
 public:
-  explicit ConstrainRefIndex(FieldDefOp f) : index(f) {}
+  explicit ConstrainRefIndex(SymbolLookupResult<FieldDefOp> f) : index(f) {}
   explicit ConstrainRefIndex(mlir::APInt i) : index(i) {}
   explicit ConstrainRefIndex(int64_t i) : index(mlir::APInt(64, i)) {}
   ConstrainRefIndex(mlir::APInt low, mlir::APInt high) : index(IndexRange{low, high}) {}
   explicit ConstrainRefIndex(IndexRange r) : index(r) {}
 
-  bool isField() const { return std::holds_alternative<FieldDefOp>(index); }
+  bool isField() const { return std::holds_alternative<SymbolLookupResult<FieldDefOp>>(index); }
   FieldDefOp getField() const {
     debug::ensure(isField(), "ConstrainRefIndex: field requested but not contained");
-    return std::get<FieldDefOp>(index);
+    return std::get<SymbolLookupResult<FieldDefOp>>(index).get();
   }
 
   bool isIndex() const { return std::holds_alternative<mlir::APInt>(index); }
@@ -71,11 +71,11 @@ public:
 
 private:
   /// Either:
-  /// 1. A field within a struct
+  /// 1. A field within a struct (as a SymbolLookupResult to be cautious of external module scopes)
   /// 2. An index into an array
-  /// 3. A half-open range of indices into an array, for when we're unsure about a specifc index.
+  /// 3. A half-open range of indices into an array, for when we're unsure about a specifc index
   /// Likely, this will be from [0, size) at this point.
-  std::variant<FieldDefOp, mlir::APInt, IndexRange> index;
+  std::variant<SymbolLookupResult<FieldDefOp>, mlir::APInt, IndexRange> index;
 };
 
 static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefIndex &rhs) {
@@ -123,13 +123,13 @@ public:
   static std::vector<ConstrainRef> getAllConstrainRefs(StructDefOp structDef);
 
   explicit ConstrainRef(mlir::BlockArgument b)
-      : blockArg(b), fieldRefs({}), constFelt(nullptr), constIdx(nullptr) {}
+      : blockArg(b), fieldRefs(), constFelt(nullptr), constIdx(nullptr) {}
   ConstrainRef(mlir::BlockArgument b, std::vector<ConstrainRefIndex> f)
-      : blockArg(b), fieldRefs(f), constFelt(nullptr), constIdx(nullptr) {}
+      : blockArg(b), fieldRefs(std::move(f)), constFelt(nullptr), constIdx(nullptr) {}
   explicit ConstrainRef(FeltConstantOp c)
-      : blockArg(nullptr), fieldRefs({}), constFelt(c), constIdx(nullptr) {}
+      : blockArg(nullptr), fieldRefs(), constFelt(c), constIdx(nullptr) {}
   explicit ConstrainRef(mlir::index::ConstantOp c)
-      : blockArg(nullptr), fieldRefs({}), constFelt(nullptr), constIdx(c) {}
+      : blockArg(nullptr), fieldRefs(), constFelt(nullptr), constIdx(c) {}
 
   mlir::Type getType() const;
 

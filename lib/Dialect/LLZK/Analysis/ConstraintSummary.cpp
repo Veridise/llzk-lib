@@ -266,7 +266,7 @@ public:
       const auto &ops = operandVals.at(fieldRead->getOpOperand(0).get());
       ConstrainRefSet fieldVals;
       for (auto &r : ops) {
-        fieldVals.insert(r.createChild(ConstrainRefIndex(fieldOpRes->get())));
+        fieldVals.insert(r.createChild(ConstrainRefIndex(fieldOpRes.value())));
       }
       propagateIfChanged(after, after->setValue(res, fieldVals));
     } else if (auto arrayRead = mlir::dyn_cast<ReadArrayOp>(op)) {

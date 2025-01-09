@@ -15,13 +15,6 @@ public:
   SymbolLookupResultUntyped();
   SymbolLookupResultUntyped(mlir::Operation *op);
 
-  // Since we don't want to copy around this class the move operations are manually implemented to
-  // respect the rule of 5.
-  SymbolLookupResultUntyped(const SymbolLookupResultUntyped &) = delete;
-  SymbolLookupResultUntyped(SymbolLookupResultUntyped &&);
-  SymbolLookupResultUntyped &operator=(const SymbolLookupResultUntyped &) = delete;
-  SymbolLookupResultUntyped &operator=(SymbolLookupResultUntyped &&);
-
   /// Access the internal operation.
   mlir::Operation *operator->();
   mlir::Operation &operator*();
@@ -32,7 +25,7 @@ public:
   /// True iff the symbol was found.
   operator bool() const;
 
-  std::vector<llvm::StringRef> getIncludeSymNames() { return includeSymNameStack; }
+  mlir::SmallVector<llvm::StringRef> getIncludeSymNames() { return includeSymNameStack; }
 
   /// Adds a pointer to the set of resources the result has to manage the lifetime of.
   void manage(mlir::OwningOpRef<mlir::ModuleOp> &&ptr);
@@ -42,11 +35,10 @@ public:
 
 private:
   mlir::Operation *op;
-  // It HAS to be a std::vector because llvm::SmallVector doesn't
-  // play nice with deleted copy constructor and copy assignment.
-  std::vector<mlir::OwningOpRef<mlir::ModuleOp>> managedResources;
+  // Wrap owning refs in shared pointers to enable copying.
+  mlir::SmallVector<std::shared_ptr<mlir::OwningOpRef<mlir::ModuleOp>>> managedResources;
   /// Stack of symbol names from the IncludeOp that were traversed in order to load the Operation.
-  std::vector<llvm::StringRef> includeSymNameStack;
+  mlir::SmallVector<llvm::StringRef> includeSymNameStack;
 };
 
 template <typename T> class SymbolLookupResult {
@@ -63,7 +55,7 @@ public:
 
   operator bool() const { return inner && llvm::isa<T>(*inner); }
 
-  std::vector<llvm::StringRef> getIncludeSymNames() { return inner.getIncludeSymNames(); }
+  mlir::SmallVector<llvm::StringRef> getIncludeSymNames() { return inner.getIncludeSymNames(); }
 
 private:
   SymbolLookupResultUntyped inner;

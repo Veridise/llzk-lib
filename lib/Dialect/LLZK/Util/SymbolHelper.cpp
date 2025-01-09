@@ -20,26 +20,6 @@ using namespace mlir;
 SymbolLookupResultUntyped::SymbolLookupResultUntyped(mlir::Operation *t_op) : op(t_op) {}
 SymbolLookupResultUntyped::SymbolLookupResultUntyped() : op(nullptr) {}
 
-// Move constructor
-SymbolLookupResultUntyped::SymbolLookupResultUntyped(SymbolLookupResultUntyped &&other)
-    : op(other.op), managedResources(std::move(other.managedResources)),
-      includeSymNameStack(std::move(other.includeSymNameStack)) {
-  other.op = nullptr;
-}
-
-// Move assigment
-SymbolLookupResultUntyped &SymbolLookupResultUntyped::operator=(SymbolLookupResultUntyped &&other) {
-  if (this != &other) {
-    managedResources.clear();
-    managedResources = std::move(other.managedResources);
-    includeSymNameStack.clear();
-    includeSymNameStack = std::move(other.includeSymNameStack);
-    op = other.op;
-    other.op = nullptr;
-  }
-  return *this;
-}
-
 /// Access the internal operation.
 mlir::Operation *SymbolLookupResultUntyped::operator->() { return op; }
 mlir::Operation &SymbolLookupResultUntyped::operator*() { return *op; }
@@ -52,7 +32,8 @@ SymbolLookupResultUntyped::operator bool() const { return op != nullptr; }
 
 /// Adds a pointer to the set of resources the result has to manage the lifetime of.
 void SymbolLookupResultUntyped::manage(mlir::OwningOpRef<mlir::ModuleOp> &&ptr) {
-  managedResources.push_back(std::move(ptr)); // Hand over the pointer
+  // Hand over the pointer
+  managedResources.push_back(std::make_shared<mlir::OwningOpRef<mlir::ModuleOp>>(std::move(ptr)));
 }
 
 /// Adds a pointer to the set of resources the result has to manage the lifetime of.

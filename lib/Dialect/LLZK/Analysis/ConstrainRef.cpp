@@ -104,7 +104,19 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
   // Recurse into struct types by iterating over all their field definitions
   for (auto f : s.get().getOps<FieldDefOp>()) {
     std::vector<ConstrainRefIndex> subFields = fields;
-    subFields.emplace_back(f);
+    // We want to store the FieldDefOp, but without the possibility of accidentally dropping the
+    // reference, so we need to re-lookup the symbol to create a SymbolLookupResult, which will
+    // manage the external module containing the field defs, if needed.
+    // TODO: It would be nice if we could manage module op references differently
+    // so we don't have to do this.
+    auto fieldLookup = lookupSymbolIn<FieldDefOp>(
+        tables, mlir::SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()), s.get(),
+        mod.getOperation()
+    );
+    debug::ensure(
+        mlir::succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp"
+    );
+    subFields.emplace_back(fieldLookup.value());
     // Make a reference to the current field, regardless of if it is a composite
     // type or not.
     res.emplace_back(blockArg, subFields);
