@@ -91,10 +91,7 @@ public:
     auto res = mlir::ChangeResult::NoChange;
 
     for (auto &[v, s] : rhs) {
-      for (auto &r : s) {
-        auto [_, inserted] = refSetMap[v].insert(r);
-        res = inserted ? mlir::ChangeResult::Change : res;
-      }
+      res |= setValue(v, s);
     }
     return res;
   }
@@ -499,7 +496,7 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
       return;
     }
     // Nested
-    StructDefOp calledStruct(fn.getOperation()->getParentOp());
+    auto calledStruct = fn.getOperation()->getParentOfType<StructDefOp>();
     ConstrainRefRemappings translations;
 
     auto lattice = solver.lookupState<ConstrainRefLattice>(fnCall.getOperation());
@@ -535,11 +532,10 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
 
 void ConstraintSummary::walkConstrainOp(mlir::DataFlowSolver &solver, mlir::Operation *emitOp) {
   std::vector<ConstrainRef> usages;
+  auto lattice = solver.lookupState<ConstrainRefLattice>(emitOp);
+  debug::ensure(lattice, "failed to get lattice for emit operation");
+
   for (auto operand : emitOp->getOperands()) {
-    auto lattice = solver.lookupState<ConstrainRefLattice>(emitOp);
-    if (!lattice) {
-      llvm::report_fatal_error("failed to get lattice for emit operation");
-    }
     auto refs = lattice->getOrDefault(operand);
     usages.insert(usages.end(), refs.begin(), refs.end());
   }
