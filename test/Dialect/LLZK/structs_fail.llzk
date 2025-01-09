@@ -269,6 +269,20 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentZ {
+    func @compute() -> !llzk.struct<@ComponentZ> {
+      %self = new_struct : !llzk.struct<@ComponentZ>
+      return %self : !llzk.struct<@ComponentZ>
+    }
+    func @constrain(%self: !llzk.struct<@ComponentZ>)  {
+      return
+    }
+    // expected-error@+1 {{'llzk.struct' op must define only "@compute" and "@constrain" functions; found "@extra"}}
+    func @extra() { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
   llzk.struct @Main {
     // expected-error@+1 {{The "@Main" component "@compute" function must have no parameters}}
     func @compute(%0: i1) -> !llzk.struct<@Main> {
