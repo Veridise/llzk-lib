@@ -218,8 +218,9 @@ public:
         auto retRef = before.getReturnValue(i);
         ConstrainRefSet translated;
         for (auto &ref : retRef) {
-          if (translation.find(ref) != translation.end()) {
-            auto &retVal = translation.at(ref);
+          auto f = translation.find(ref);
+          if (f != translation.end()) {
+            auto &retVal = f->second;
             translated.insert(retVal.begin(), retVal.end());
           }
         }
@@ -259,9 +260,7 @@ public:
       assert(fieldRead->getNumResults() == 1);
 
       auto fieldOpRes = fieldRead.getFieldDefOp(tables);
-      if (mlir::failed(fieldOpRes)) {
-        llvm::report_fatal_error("could not find field read\n");
-      }
+      debug::ensure(mlir::succeeded(fieldOpRes), "could not find field read");
 
       auto res = fieldRead->getResult(0);
       const auto &ops = operandVals.at(fieldRead->getOpOperand(0).get());
@@ -504,9 +503,8 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
     ConstrainRefRemappings translations;
 
     auto lattice = solver.lookupState<ConstrainRefLattice>(fnCall.getOperation());
-    if (!lattice) {
-      llvm::report_fatal_error("could not find lattice for call operation");
-    }
+    debug::ensure(lattice, "could not find lattice for call operation");
+
     // Map fn parameters to args in the call op
     for (unsigned i = 0; i < fn.getNumArguments(); i++) {
       auto prefix = ConstrainRef(fn.getArgument(i));
