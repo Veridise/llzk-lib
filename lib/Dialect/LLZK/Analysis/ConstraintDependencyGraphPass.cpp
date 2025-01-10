@@ -2,7 +2,7 @@
  * The contents of this file are adapted from llvm/lib/Analysis/CallGraph.cpp
  */
 #include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h"
-#include "llzk/Dialect/LLZK/Analysis/ConstraintSummary.h"
+#include "llzk/Dialect/LLZK/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
@@ -12,28 +12,29 @@
 
 namespace llzk {
 
-#define GEN_PASS_DEF_CONSTRAINTSUMMARYPRINTERPASS
+#define GEN_PASS_DEF_CONSTRAINTDEPENDENCYGRAPHPRINTERPASS
 #include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h.inc"
 
-class ConstraintSummaryPrinterPass
-    : public impl::ConstraintSummaryPrinterPassBase<ConstraintSummaryPrinterPass> {
+class ConstraintDependencyGraphPrinterPass
+    : public impl::ConstraintDependencyGraphPrinterPassBase<ConstraintDependencyGraphPrinterPass> {
   llvm::raw_ostream &os;
 
 public:
-  explicit ConstraintSummaryPrinterPass(llvm::raw_ostream &ostream)
-      : impl::ConstraintSummaryPrinterPassBase<ConstraintSummaryPrinterPass>(), os(ostream) {}
+  explicit ConstraintDependencyGraphPrinterPass(llvm::raw_ostream &ostream)
+      : impl::ConstraintDependencyGraphPrinterPassBase<ConstraintDependencyGraphPrinterPass>(),
+        os(ostream) {}
 
 protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
     if (!mlir::isa<mlir::ModuleOp>(getOperation())) {
-      auto msg = "ConstraintSummaryPrinterPass error: should be run on ModuleOp!";
+      auto msg = "ConstraintDependencyGraphPrinterPass error: should be run on ModuleOp!";
       getOperation()->emitError(msg);
       llvm::report_fatal_error(msg);
     }
 
-    auto &cs = getAnalysis<ConstraintSummaryModuleAnalysis>();
+    auto &cs = getAnalysis<ConstraintDependencyGraphModuleAnalysis>();
     for (auto &[s, summary_ptr] : cs) {
       auto &structDef = const_cast<StructDefOp &>(s);
       auto fullName = getPathFromRoot(structDef);
@@ -48,8 +49,8 @@ protected:
 };
 
 std::unique_ptr<mlir::Pass>
-createConstraintSummaryPrinterPass(llvm::raw_ostream &os = llvm::errs()) {
-  return std::make_unique<ConstraintSummaryPrinterPass>(os);
+createConstraintDependencyGraphPrinterPass(llvm::raw_ostream &os = llvm::errs()) {
+  return std::make_unique<ConstraintDependencyGraphPrinterPass>(os);
 }
 
 } // namespace llzk

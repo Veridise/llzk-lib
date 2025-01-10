@@ -44,9 +44,9 @@ using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRef>
 /// Or any other form of constraint including those values.
 ///
 /// NOTE:
-class ConstraintSummary {
+class ConstraintDependencyGraph {
 public:
-  /// @brief Compute a ConstraintSummary
+  /// @brief Compute a ConstraintDependencyGraph
   /// @param mod The LLZK-complaint module that is the parent of struct `s`.
   /// @param s The struct to compute the summary for.
   /// @param solver A pre-configured DataFlowSolver. The liveness of the struct must
@@ -55,11 +55,11 @@ public:
   /// from a module-level analysis (i.e., for the `mod` module) so that analyses
   /// for other constraints can be queried via the getChildAnalysis method.
   /// @return
-  static mlir::FailureOr<ConstraintSummary> compute(
+  static mlir::FailureOr<ConstraintDependencyGraph> compute(
       mlir::ModuleOp mod, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
   );
 
-  /// @brief Dumps the ConstraintSummary to stderr.
+  /// @brief Dumps the ConstraintDependencyGraph to stderr.
   void dump() const;
   /// @brief Print the constraintSummary to the specified output stream.
   /// @param os The LLVM/MLIR output stream.
@@ -72,7 +72,7 @@ public:
   /// @return A summary that contains only translated references. Non-constant references with
   /// no translation are omitted. This omissions allows calling components to ignore internal
   /// references within subcomponents that are inaccessible to the caller.
-  ConstraintSummary translate(ConstrainRefRemappings translation);
+  ConstraintDependencyGraph translate(ConstrainRefRemappings translation);
 
   /// @brief Get the values that are connected to the given ref via emitted constraints.
   /// This method looks for constraints to the value in the ref and constraints to any
@@ -89,16 +89,16 @@ public:
   construction for copies.
   */
 
-  ConstraintSummary(const ConstraintSummary &other)
+  ConstraintDependencyGraph(const ConstraintDependencyGraph &other)
       : mod(other.mod), structDef(other.structDef), signalSets(other.signalSets),
         constantSets(other.constantSets), tables() {}
-  ConstraintSummary &operator=(const ConstraintSummary &other) {
+  ConstraintDependencyGraph &operator=(const ConstraintDependencyGraph &other) {
     mod = other.mod;
     structDef = other.structDef;
     signalSets = other.signalSets;
     constantSets = other.constantSets;
   }
-  ~ConstraintSummary() = default;
+  ~ConstraintDependencyGraph() = default;
 
 private:
   mlir::ModuleOp mod;
@@ -118,7 +118,7 @@ private:
   /// @brief Constructs an empty summary. The summary is populated using computeConstraints.
   /// @param m The parent LLZK-compliant module.
   /// @param s The struct to summarize.
-  ConstraintSummary(mlir::ModuleOp m, StructDefOp s) : mod(m), structDef(s), signalSets() {}
+  ConstraintDependencyGraph(mlir::ModuleOp m, StructDefOp s) : mod(m), structDef(s), signalSets() {}
 
   /// @brief Runs the constraint analysis to compute a transitive closure over ConstrainRefs
   /// as operated over by emit operations.
@@ -136,27 +136,27 @@ private:
   void walkConstrainOp(mlir::DataFlowSolver &solver, mlir::Operation *emitOp);
 };
 
-/// @brief A module-level analysis for constructing ConstraintSummary objects for
+/// @brief A module-level analysis for constructing ConstraintDependencyGraph objects for
 /// all structs in the given LLZK module.
-class ConstraintSummaryModuleAnalysis {
+class ConstraintDependencyGraphModuleAnalysis {
   /// Using a map, not an unordered map, to control sorting order for iteration.
-  using SummaryMap =
-      std::map<StructDefOp, std::shared_ptr<ConstraintSummary>, OpLocationLess<StructDefOp>>;
+  using SummaryMap = std::map<
+      StructDefOp, std::shared_ptr<ConstraintDependencyGraph>, OpLocationLess<StructDefOp>>;
 
 public:
-  /// @brief Computes ConstraintSummary objects for all structs contained within the
+  /// @brief Computes ConstraintDependencyGraph objects for all structs contained within the
   /// given op, if the op is a module op.
   /// @param op The top-level op. If op is not an LLZK-compliant mlir::ModuleOp, the
   /// analysis will fail.
   /// @param am The analysis manager used to query sub-analyses per StructDefOperation.
-  ConstraintSummaryModuleAnalysis(mlir::Operation *op, mlir::AnalysisManager &am);
+  ConstraintDependencyGraphModuleAnalysis(mlir::Operation *op, mlir::AnalysisManager &am);
 
   bool hasSummary(StructDefOp op) const { return summaries.find(op) != summaries.end(); }
-  ConstraintSummary &getSummary(StructDefOp op) {
+  ConstraintDependencyGraph &getSummary(StructDefOp op) {
     ensureSummaryCreated(op);
     return *summaries.at(op);
   }
-  const ConstraintSummary &getSummary(StructDefOp op) const {
+  const ConstraintDependencyGraph &getSummary(StructDefOp op) const {
     ensureSummaryCreated(op);
     return *summaries.at(op);
   }

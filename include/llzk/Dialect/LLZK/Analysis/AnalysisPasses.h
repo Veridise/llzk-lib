@@ -22,7 +22,7 @@ std::unique_ptr<mlir::Pass> createCallGraphPrinterPass(llvm::raw_ostream &os);
 
 std::unique_ptr<mlir::Pass> createCallGraphSCCsPrinterPass(llvm::raw_ostream &os);
 
-std::unique_ptr<mlir::Pass> createConstraintSummaryPrinterPass(llvm::raw_ostream &os);
+std::unique_ptr<mlir::Pass> createConstraintDependencyGraphPrinterPass(llvm::raw_ostream &os);
 
 #define GEN_PASS_REGISTRATION
 #include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h.inc"

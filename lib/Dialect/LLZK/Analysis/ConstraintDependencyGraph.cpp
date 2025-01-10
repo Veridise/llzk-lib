@@ -1,4 +1,4 @@
-#include "llzk/Dialect/LLZK/Analysis/ConstraintSummary.h"
+#include "llzk/Dialect/LLZK/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
 #include "llzk/Dialect/LLZK/Util/Hash.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
@@ -17,7 +17,7 @@ namespace llzk {
 Private Utilities:
 
 These classes are defined here and not in the header as they are not designed
-for use outside of this specific ConstraintSummary analysis.
+for use outside of this specific ConstraintDependencyGraph analysis.
 */
 
 using ConstantMap = mlir::DenseMap<mlir::Value, mlir::APInt>;
@@ -323,28 +323,30 @@ private:
 };
 
 /*
-ConstraintSummaryAnalysis
+ConstraintDependencyGraphAnalysis
 
-Needs to be declared before implementing the ConstraintSummary functions, as
-they reference the ConstraintSummaryAnalysis.
+Needs to be declared before implementing the ConstraintDependencyGraph functions, as
+they reference the ConstraintDependencyGraphAnalysis.
 */
 
-/// @brief An analysis wrapper around the ConstraintSummary for a given struct.
+/// @brief An analysis wrapper around the ConstraintDependencyGraph for a given struct.
 /// This analysis is a StructDefOp-level analysis that should not be directly
-/// interacted with---rather, it is a utility used by the ConstraintSummaryModuleAnalysis
+/// interacted with---rather, it is a utility used by the ConstraintDependencyGraphModuleAnalysis
 /// that helps use MLIR's AnalysisManager to cache summaries for sub-components.
-class ConstraintSummaryAnalysis {
+class ConstraintDependencyGraphAnalysis {
 public:
-  ConstraintSummaryAnalysis(mlir::Operation *op) {
+  ConstraintDependencyGraphAnalysis(mlir::Operation *op) {
     structDefOp = mlir::dyn_cast<StructDefOp>(op);
     if (!structDefOp) {
-      auto error_message = "ConstraintSummaryAnalysis expects provided op to be a StructDefOp!";
+      auto error_message =
+          "ConstraintDependencyGraphAnalysis expects provided op to be a StructDefOp!";
       op->emitError(error_message);
       llvm::report_fatal_error(error_message);
     }
     auto maybeModOp = getRootModule(op);
     if (mlir::failed(maybeModOp)) {
-      auto error_message = "ConstraintSummaryAnalysis could not find root module from StructDefOp!";
+      auto error_message =
+          "ConstraintDependencyGraphAnalysis could not find root module from StructDefOp!";
       op->emitError(error_message);
       llvm::report_fatal_error(error_message);
     }
@@ -352,23 +354,24 @@ public:
   }
 
   /// @brief Construct a summary, using the module's analysis manager to query
-  /// ConstraintSummary objects for nested components.
+  /// ConstraintDependencyGraph objects for nested components.
   mlir::LogicalResult
   constructSummary(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager) {
-    auto summaryRes = ConstraintSummary::compute(modOp, structDefOp, solver, moduleAnalysisManager);
+    auto summaryRes =
+        ConstraintDependencyGraph::compute(modOp, structDefOp, solver, moduleAnalysisManager);
     if (mlir::failed(summaryRes)) {
       return mlir::failure();
     }
-    summary = std::make_shared<ConstraintSummary>(*summaryRes);
+    summary = std::make_shared<ConstraintDependencyGraph>(*summaryRes);
     return mlir::success();
   }
 
-  ConstraintSummary &getSummary() {
+  ConstraintDependencyGraph &getSummary() {
     ensureSummaryCreated();
     return *summary;
   }
 
-  const ConstraintSummary &getSummary() const {
+  const ConstraintDependencyGraph &getSummary() const {
     ensureSummaryCreated();
     return *summary;
   }
@@ -376,7 +379,7 @@ public:
 private:
   mlir::ModuleOp modOp;
   StructDefOp structDefOp;
-  std::shared_ptr<ConstraintSummary> summary;
+  std::shared_ptr<ConstraintDependencyGraph> summary;
 
   void ensureSummaryCreated() const {
     if (!summary) {
@@ -384,25 +387,25 @@ private:
     }
   }
 
-  friend class ConstraintSummaryModuleAnalysis;
+  friend class ConstraintDependencyGraphModuleAnalysis;
 };
 
-/* ConstraintSummary */
+/* ConstraintDependencyGraph */
 
-mlir::FailureOr<ConstraintSummary> ConstraintSummary::compute(
+mlir::FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
     mlir::ModuleOp m, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
 ) {
-  ConstraintSummary summary(m, s);
+  ConstraintDependencyGraph summary(m, s);
   if (summary.computeConstraints(solver, am).failed()) {
     return mlir::failure();
   }
   return summary;
 }
 
-void ConstraintSummary::dump() const { print(llvm::errs()); }
+void ConstraintDependencyGraph::dump() const { print(llvm::errs()); }
 
 /// Print all constraints. Any element that is unconstrained is omitted.
-void ConstraintSummary::print(llvm::raw_ostream &os) const {
+void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
   // the EquivalenceClasses::iterator is sorted, but the EquivalenceClasses::member_iterator is
   // not guaranteed to be sorted. So, we will sort members before printing them.
   // We also want to add the constant values into the printing.
@@ -433,7 +436,7 @@ void ConstraintSummary::print(llvm::raw_ostream &os) const {
     sortedSets.insert(sortedMembers);
   }
 
-  os << "ConstraintSummary {";
+  os << "ConstraintDependencyGraph {";
 
   for (auto it = sortedSets.begin(); it != sortedSets.end();) {
     os << "\n    { ";
@@ -456,8 +459,9 @@ void ConstraintSummary::print(llvm::raw_ostream &os) const {
   os << "}\n";
 }
 
-mlir::LogicalResult
-ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::AnalysisManager &am) {
+mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
+    mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
+) {
   // Fetch the constrain function. This is a required feature for all LLZK structs.
   auto constrainFnOp = structDef.getConstrainFuncOp();
   debug::ensure(
@@ -511,7 +515,8 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
         translations.push_back({prefix, s});
       }
     }
-    auto summary = am.getChildAnalysis<ConstraintSummaryAnalysis>(calledStruct).getSummary();
+    auto summary =
+        am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(calledStruct).getSummary();
     auto translatedSummary = summary.translate(translations);
 
     // Now, union sets based on the translation
@@ -531,7 +536,9 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
   return mlir::success();
 }
 
-void ConstraintSummary::walkConstrainOp(mlir::DataFlowSolver &solver, mlir::Operation *emitOp) {
+void ConstraintDependencyGraph::walkConstrainOp(
+    mlir::DataFlowSolver &solver, mlir::Operation *emitOp
+) {
   std::vector<ConstrainRef> signalUsages, constUsages;
   auto lattice = solver.lookupState<ConstrainRefLattice>(emitOp);
   debug::ensure(lattice, "failed to get lattice for emit operation");
@@ -559,8 +566,8 @@ void ConstraintSummary::walkConstrainOp(mlir::DataFlowSolver &solver, mlir::Oper
   }
 }
 
-ConstraintSummary ConstraintSummary::translate(ConstrainRefRemappings translation) {
-  ConstraintSummary res(mod, structDef);
+ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemappings translation) {
+  ConstraintDependencyGraph res(mod, structDef);
   auto translate = [&translation](const ConstrainRef &elem
                    ) -> mlir::FailureOr<std::vector<ConstrainRef>> {
     std::vector<ConstrainRef> refs;
@@ -619,7 +626,7 @@ ConstraintSummary ConstraintSummary::translate(ConstrainRefRemappings translatio
   return res;
 }
 
-ConstrainRefSet ConstraintSummary::getConstrainingValues(const ConstrainRef &ref) const {
+ConstrainRefSet ConstraintDependencyGraph::getConstrainingValues(const ConstrainRef &ref) const {
   ConstrainRefSet res;
   auto currRef = mlir::FailureOr<ConstrainRef>(ref);
   while (mlir::succeeded(currRef)) {
@@ -641,9 +648,9 @@ ConstrainRefSet ConstraintSummary::getConstrainingValues(const ConstrainRef &ref
   return res;
 }
 
-/* ConstraintSummaryModuleAnalysis */
+/* ConstraintDependencyGraphModuleAnalysis */
 
-ConstraintSummaryModuleAnalysis::ConstraintSummaryModuleAnalysis(
+ConstraintDependencyGraphModuleAnalysis::ConstraintDependencyGraphModuleAnalysis(
     mlir::Operation *op, mlir::AnalysisManager &am
 ) {
   if (auto modOp = mlir::dyn_cast<mlir::ModuleOp>(op)) {
@@ -658,10 +665,10 @@ ConstraintSummaryModuleAnalysis::ConstraintSummaryModuleAnalysis(
     debug::ensure(res.succeeded(), "solver failed to run on module!");
 
     modOp.walk([this, &solver, &am](StructDefOp s) {
-      auto &csa = am.getChildAnalysis<ConstraintSummaryAnalysis>(s);
+      auto &csa = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(s);
       if (mlir::failed(csa.constructSummary(solver, am))) {
-        auto error_message =
-            "ConstraintSummaryAnalysis failed to compute summary for " + mlir::Twine(s.getName());
+        auto error_message = "ConstraintDependencyGraphAnalysis failed to compute summary for " +
+                             mlir::Twine(s.getName());
         s->emitError(error_message);
         llvm::report_fatal_error(error_message);
       }
@@ -669,7 +676,7 @@ ConstraintSummaryModuleAnalysis::ConstraintSummaryModuleAnalysis(
     });
   } else {
     auto error_message =
-        "ConstraintSummaryModuleAnalysis expects provided op to be an mlir::ModuleOp!";
+        "ConstraintDependencyGraphModuleAnalysis expects provided op to be an mlir::ModuleOp!";
     op->emitError(error_message);
     llvm::report_fatal_error(error_message);
   }

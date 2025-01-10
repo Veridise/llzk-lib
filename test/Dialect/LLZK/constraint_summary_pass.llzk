@@ -13,7 +13,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @NoConstraints ConstraintSummary { }
+// CHECK: @NoConstraints ConstraintDependencyGraph { }
 
 // -----
 
@@ -43,7 +43,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @Adder ConstraintSummary {
+// CHECK: @Adder ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
 // CHECK-NEXT: }
 
@@ -76,7 +76,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @Adder2 ConstraintSummary {
+// CHECK: @Adder2 ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
 // CHECK-NEXT: }
 
@@ -180,19 +180,19 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @risc0::@ValU32 ConstraintSummary { }
-// CHECK-NEXT: @risc0::@Reg ConstraintSummary {
+// CHECK: @risc0::@ValU32 ConstraintDependencyGraph { }
+// CHECK-NEXT: @risc0::@Reg ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@reg], %arg1 }
 // CHECK-NEXT: }
-// CHECK-NEXT: @risc0::@Div ConstraintSummary {
+// CHECK-NEXT: @risc0::@Div ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
 // CHECK-NEXT:     { %arg0[@reciprocal], <constfelt: 1> },
 // CHECK-NEXT:     { %arg2, <constfelt: 1> }
 // CHECK-NEXT: }
-// CHECK-NEXT: @C1 ConstraintSummary {
+// CHECK-NEXT: @C1 ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@z][@reg], %arg1, %arg2 }
 // CHECK-NEXT: }
-// CHECK-NEXT: @C2 ConstraintSummary {
+// CHECK-NEXT: @C2 ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@fc1][@z][@reg], %arg1[@low], %arg1[@high] },
 // CHECK-NEXT:     { %arg0[@fc1][@z][@reg], <constfelt: 0> }
 // CHECK-NEXT: }
@@ -213,7 +213,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @ComponentB ConstraintSummary {
+// CHECK: @ComponentB ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1, %arg2 }
 // CHECK-NEXT: }
 
@@ -251,10 +251,10 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @EnsureZero ConstraintSummary {
+// CHECK: @EnsureZero ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1, <constfelt: 0> }
 // CHECK-NEXT: }
-// CHECK-NEXT: @EnsureBothZero ConstraintSummary {
+// CHECK-NEXT: @EnsureBothZero ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1, %arg2 },
 // CHECK-NEXT:     { %arg1, <constfelt: 0> }
 // CHECK-NEXT: }
@@ -300,10 +300,10 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @Passthrough ConstraintSummary {
+// CHECK: @Passthrough ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@out], %arg1 }
 // CHECK-NEXT: }
-// CHECK-NEXT: @EnsureIsZero ConstraintSummary {
+// CHECK-NEXT: @EnsureIsZero ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@p][@out], %arg1, <constfelt: 0> }
 // CHECK-NEXT: }
 
@@ -326,7 +326,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @ArrayCheck ConstraintSummary {
+// CHECK: @ArrayCheck ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1[3], <constfelt: 7> }
 // CHECK-NEXT: }
 
@@ -353,7 +353,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @ArrayForCheck ConstraintSummary {
+// CHECK: @ArrayForCheck ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1[0:5], <constfelt: 7> }
 // CHECK-NEXT: }
 
@@ -376,7 +376,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @ConstConstraints ConstraintSummary {
+// CHECK: @ConstConstraints ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1, <constfelt: 1> },
 // CHECK-NEXT:     { %arg2, <constfelt: 1> }
 // CHECK-NEXT: }
