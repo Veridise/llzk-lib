@@ -538,17 +538,17 @@ ConstraintSummary ConstraintSummary::translate(ConstrainRefRemappings translatio
   ConstraintSummary res(mod, structDef);
   auto translate = [&translation](const ConstrainRef &elem
                    ) -> mlir::FailureOr<std::vector<ConstrainRef>> {
-    std::vector<ConstrainRef> res;
+    std::vector<ConstrainRef> refs;
     for (auto &[prefix, replacement] : translation) {
       auto translated = elem.translate(prefix, replacement);
       if (mlir::succeeded(translated)) {
-        res.push_back(translated.value());
+        refs.push_back(translated.value());
       }
     }
-    if (res.empty()) {
+    if (refs.empty()) {
       return mlir::failure();
     }
-    return res;
+    return refs;
   };
   for (auto leaderIt = constraintSets.begin(); leaderIt != constraintSets.end(); leaderIt++) {
     if (!leaderIt->isLeader()) {

@@ -106,7 +106,7 @@ TEST_F(ModuleBuilderTests, testConstruction) {
   auto aFn = builder.getConstrainFn(structAName);
   ASSERT_TRUE(mlir::succeeded(aFn));
   size_t numOps = 0;
-  for (auto &_ : aFn->getOps()) {
+  for ([[maybe_unused]] auto &_ : aFn->getOps()) {
     numOps++;
   }
   ASSERT_EQ(numOps, 2);
