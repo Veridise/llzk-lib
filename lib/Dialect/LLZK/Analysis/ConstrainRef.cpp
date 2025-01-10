@@ -1,4 +1,6 @@
 #include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
+#include "llzk/Dialect/LLZK/Util/Compare.h"
+#include "llzk/Dialect/LLZK/Util/Debug.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolLookup.h"
 
@@ -19,7 +21,7 @@ void ConstrainRefIndex::print(mlir::raw_ostream &os) const {
 
 bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
   if (isField() && rhs.isField()) {
-    return getField().getName().compare(rhs.getField().getName()) < 0;
+    return OpLocationLess<FieldDefOp> {}(getField(), rhs.getField());
   }
   if (isIndex() && rhs.isIndex()) {
     return getIndex().ult(rhs.getIndex());
@@ -53,9 +55,8 @@ bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
 SymbolLookupResult<StructDefOp>
 getStructDef(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, StructType ty) {
   auto sDef = ty.getDefinition(tables, mod);
-  if (mlir::failed(sDef)) {
-    llvm::report_fatal_error("could not find struct definition from struct type");
-  }
+  debug::ensure(mlir::succeeded(sDef), "could not find struct definition from struct type");
+
   return std::move(sDef.value());
 }
 
@@ -160,18 +161,16 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDef) {
   std::vector<ConstrainRef> res;
   auto constrainFnOp = structDef.getConstrainFuncOp();
-  if (constrainFnOp == nullptr) {
-    llvm::report_fatal_error(
-        "malformed struct " + mlir::Twine(structDef.getName()) + " must define a constrain function"
-    );
-  }
+  debug::ensure(
+      constrainFnOp,
+      "malformed struct " + mlir::Twine(structDef.getName()) + " must define a constrain function"
+  );
 
   auto modOp = getRootModule(structDef);
-  if (mlir::failed(modOp)) {
-    llvm::report_fatal_error(
-        "could not lookup module from struct " + mlir::Twine(structDef.getName())
-    );
-  }
+  debug::ensure(
+      mlir::succeeded(modOp),
+      "could not lookup module from struct " + mlir::Twine(structDef.getName())
+  );
 
   mlir::SymbolTableCollection tables;
   for (auto a : constrainFnOp.getArguments()) {
