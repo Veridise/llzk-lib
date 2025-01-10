@@ -24,7 +24,7 @@ public:
   explicit ConstrainRefIndex(SymbolLookupResult<FieldDefOp> f) : index(f) {}
   explicit ConstrainRefIndex(mlir::APInt i) : index(i) {}
   explicit ConstrainRefIndex(int64_t i) : index(mlir::APInt(64, i)) {}
-  ConstrainRefIndex(mlir::APInt low, mlir::APInt high) : index(IndexRange{low, high}) {}
+  ConstrainRefIndex(mlir::APInt low, mlir::APInt high) : index(IndexRange {low, high}) {}
   explicit ConstrainRefIndex(IndexRange r) : index(r) {}
 
   bool isField() const { return std::holds_alternative<SymbolLookupResult<FieldDefOp>>(index); }
@@ -62,12 +62,12 @@ public:
         auto r = c.getIndexRange();
         return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
       } else {
-        return OpHash<FieldDefOp>{}(c.getField());
+        return OpHash<FieldDefOp> {}(c.getField());
       }
     }
   };
 
-  size_t getHash() const { return Hash{}(*this); }
+  size_t getHash() const { return Hash {}(*this); }
 
 private:
   /// Either:

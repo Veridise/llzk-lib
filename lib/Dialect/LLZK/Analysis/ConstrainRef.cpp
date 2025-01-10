@@ -283,11 +283,11 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
 
 size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
   if (val.isConstantFelt()) {
-    return OpHash<FeltConstantOp>{}(val.constFelt);
+    return OpHash<FeltConstantOp> {}(val.constFelt);
   } else if (val.isConstantIndex()) {
-    return OpHash<mlir::index::ConstantOp>{}(val.constIdx);
+    return OpHash<mlir::index::ConstantOp> {}(val.constIdx);
   } else {
-    size_t hash = std::hash<unsigned>{}(val.blockArg.getArgNumber());
+    size_t hash = std::hash<unsigned> {}(val.blockArg.getArgNumber());
     for (auto f : val.fieldRefs) {
       hash ^= f.getHash();
     }

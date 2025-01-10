@@ -11,7 +11,7 @@ concept OpHashable = requires(Op op) { op.getOperation(); };
 
 template <OpHashable Op> struct OpHash {
   size_t operator()(const Op &op) const {
-    return std::hash<mlir::Operation *>{}(const_cast<Op &>(op).getOperation());
+    return std::hash<mlir::Operation *> {}(const_cast<Op &>(op).getOperation());
   }
 };
 
