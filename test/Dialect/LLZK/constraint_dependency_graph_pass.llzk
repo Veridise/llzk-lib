@@ -1,0 +1,383 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-inline-includes -llzk-print-constraint-dependency-graphs %s 2>&1 | FileCheck %s
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @NoConstraints {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@NoConstraints> {
+      %self = new_struct : !llzk.struct<@NoConstraints>
+      return %self : !llzk.struct<@NoConstraints>
+    }
+
+    func @constrain(%self: !llzk.struct<@NoConstraints>, %a: !llzk.felt) {
+      return
+    }
+  }
+}
+
+// CHECK: @NoConstraints ConstraintDependencyGraph { }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.func @global_add(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
+    %c = add %a, %b
+    return %c : !llzk.felt
+  }
+
+  llzk.struct @Adder {
+    field @sum : !llzk.felt {llzk.pub}
+
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@Adder> {
+      %self = new_struct : !llzk.struct<@Adder>
+      %sum = call @global_add(%a, %b) : (!llzk.felt, !llzk.felt) -> (!llzk.felt)
+      writef %self[@sum] = %sum : !llzk.struct<@Adder>, !llzk.felt
+      return %self : !llzk.struct<@Adder>
+    }
+
+    func @constrain(%self: !llzk.struct<@Adder>, %a: !llzk.felt, %b: !llzk.felt) {
+      %sum = readf %self[@sum] : !llzk.struct<@Adder>, !llzk.felt
+      %c = call @global_add(%a, %b) : (!llzk.felt, !llzk.felt) -> (!llzk.felt)
+      emit_eq %sum, %c : !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK: @Adder ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.func @global_add(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
+    %c = add %a, %b
+    return %c : !llzk.felt
+  }
+
+  llzk.struct @Adder2 {
+    field @sum : !llzk.felt {llzk.pub}
+
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@Adder2> {
+      %self = new_struct : !llzk.struct<@Adder2>
+      %sum = call @global_add(%a, %b) : (!llzk.felt, !llzk.felt) -> (!llzk.felt)
+      writef %self[@sum] = %sum : !llzk.struct<@Adder2>, !llzk.felt
+      return %self : !llzk.struct<@Adder2>
+    }
+
+    func @constrain(%self: !llzk.struct<@Adder2>, %a: !llzk.felt, %b: !llzk.felt) {
+      %sum = readf %self[@sum] : !llzk.struct<@Adder2>, !llzk.felt
+      %c = call @global_add(%a, %b) : (!llzk.felt, !llzk.felt) -> (!llzk.felt)
+      %d = add %c, %c
+      emit_eq %sum, %d : !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK: @Adder2 ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
+// CHECK-NEXT: }
+
+// -----
+
+// NOTE: using inline includes pass here to remove test file redundancy
+// and to avoid polluting the original ZIR example file with the expected
+// outputs of this pass.
+// module attributes {veridise.lang = "llzk"} {
+//   llzk.include "zir_example_1.llzk" as @zir
+// }
+// TODO: fix the include version
+module attributes {veridise.lang = "llzk"} {
+  module @risc0 {
+    llzk.struct @ValU32 {
+      field @low : !llzk.felt
+      field @high : !llzk.felt
+      func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@risc0::@ValU32> {
+        %self = new_struct : <@risc0::@ValU32>
+        writef %self[@low] = %arg0 : <@risc0::@ValU32>, !llzk.felt
+        writef %self[@high] = %arg1 : <@risc0::@ValU32>, !llzk.felt
+        return %self : !llzk.struct<@risc0::@ValU32>
+      }
+      func @constrain(%arg0: !llzk.struct<@risc0::@ValU32>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+        return
+      }
+    }
+    llzk.struct @Reg {
+      field @reg : !llzk.felt {llzk.pub}
+      func @compute(%arg0: !llzk.felt) -> !llzk.struct<@risc0::@Reg> {
+        %self = new_struct : <@risc0::@Reg>
+        writef %self[@reg] = %arg0 : <@risc0::@Reg>, !llzk.felt
+        return %self : !llzk.struct<@risc0::@Reg>
+      }
+      func @constrain(%arg0: !llzk.struct<@risc0::@Reg>, %arg1: !llzk.felt) {
+        %0 = readf %arg0[@reg] : <@risc0::@Reg>, !llzk.felt
+        emit_eq %arg1, %0 : !llzk.felt, !llzk.felt
+        return
+      }
+    }
+    llzk.struct @Div {
+      field @reciprocal : !llzk.felt
+      field @synthetic_return : !llzk.felt {llzk.pub}
+      func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@risc0::@Div> {
+        %self = new_struct : <@risc0::@Div>
+        %0 = inv %arg1 : !llzk.felt
+        writef %self[@reciprocal] = %0 : <@risc0::@Div>, !llzk.felt
+        %1 = mul %0, %arg0 : !llzk.felt, !llzk.felt
+        writef %self[@synthetic_return] = %1 : <@risc0::@Div>, !llzk.felt
+        return %self : !llzk.struct<@risc0::@Div>
+      }
+      func @constrain(%arg0: !llzk.struct<@risc0::@Div>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+        %0 = readf %arg0[@reciprocal] : <@risc0::@Div>, !llzk.felt
+        %1 = mul %0, %arg2 : !llzk.felt, !llzk.felt
+        %felt_const_1 = constfelt  1
+        emit_eq %1, %felt_const_1 : !llzk.felt, !llzk.felt
+        %2 = readf %arg0[@synthetic_return] : <@risc0::@Div>, !llzk.felt
+        %3 = mul %0, %arg1 : !llzk.felt, !llzk.felt
+        emit_eq %2, %3 : !llzk.felt, !llzk.felt
+        return
+      }
+    }
+  }
+  llzk.struct @C1 {
+    field @z : !llzk.struct<@risc0::@Reg> {llzk.pub}
+    func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@C1> {
+      %self = new_struct : <@C1>
+      %0 = add %arg0, %arg1 : !llzk.felt, !llzk.felt
+      %1 = call @risc0::@Reg::@compute(%0) : (!llzk.felt) -> !llzk.struct<@risc0::@Reg>
+      writef %self[@z] = %1 : <@C1>, !llzk.struct<@risc0::@Reg>
+      return %self : !llzk.struct<@C1>
+    }
+    func @constrain(%arg0: !llzk.struct<@C1>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+      %0 = readf %arg0[@z] : <@C1>, !llzk.struct<@risc0::@Reg>
+      %1 = add %arg1, %arg2 : !llzk.felt, !llzk.felt
+      call @risc0::@Reg::@constrain(%0, %1) : (!llzk.struct<@risc0::@Reg>, !llzk.felt) -> ()
+      return
+    }
+  }
+  llzk.struct @C2 {
+    field @fc1 : !llzk.struct<@C1>
+    func @compute(%arg0: !llzk.struct<@risc0::@ValU32>) -> !llzk.struct<@C2> {
+      %self = new_struct : <@C2>
+      %0 = readf %arg0[@low] : <@risc0::@ValU32>, !llzk.felt
+      %1 = readf %arg0[@high] : <@risc0::@ValU32>, !llzk.felt
+      %2 = call @C1::@compute(%0, %1) : (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>
+      writef %self[@fc1] = %2 : <@C2>, !llzk.struct<@C1>
+      return %self : !llzk.struct<@C2>
+    }
+    func @constrain(%arg0: !llzk.struct<@C2>, %arg1: !llzk.struct<@risc0::@ValU32>) {
+      %0 = readf %arg0[@fc1] : <@C2>, !llzk.struct<@C1>
+      %1 = readf %arg1[@low] : <@risc0::@ValU32>, !llzk.felt
+      %2 = readf %arg1[@high] : <@risc0::@ValU32>, !llzk.felt
+      call @C1::@constrain(%0, %1, %2) : (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> ()
+      %3 = readf %0[@z] : <@C1>, !llzk.struct<@risc0::@Reg>
+      %4 = readf %3[@reg] : <@risc0::@Reg>, !llzk.felt
+      %felt_const_0 = constfelt  0
+      emit_eq %4, %felt_const_0 : !llzk.felt, !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK: @risc0::@ValU32 ConstraintDependencyGraph { }
+// CHECK-NEXT: @risc0::@Reg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg], %arg1 }
+// CHECK-NEXT: }
+// CHECK-NEXT: @risc0::@Div ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
+// CHECK-NEXT:     { %arg0[@reciprocal], <constfelt: 1> },
+// CHECK-NEXT:     { %arg2, <constfelt: 1> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @C1 ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@z][@reg], %arg1, %arg2 }
+// CHECK-NEXT: }
+// CHECK-NEXT: @C2 ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@fc1][@z][@reg], %arg1[@low], %arg1[@high] },
+// CHECK-NEXT:     { %arg0[@fc1][@z][@reg], <constfelt: 0> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentB {
+    func @constrain(%self: !llzk.struct<@ComponentB>, %a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) {
+      llzk.emit_in %b, %a : !llzk.array<5 x !llzk.felt>
+      return
+    }
+
+    func @compute(%a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@ComponentB> {
+      %self = new_struct : !llzk.struct<@ComponentB>
+      return %self : !llzk.struct<@ComponentB>
+    }
+  }
+}
+
+// CHECK: @ComponentB ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, %arg2 }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.struct @EnsureZero {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@EnsureZero> {
+      %self = new_struct : !llzk.struct<@EnsureZero>
+      return %self : !llzk.struct<@EnsureZero>
+    }
+
+    func @constrain(%self: !llzk.struct<@EnsureZero>, %a: !llzk.felt) {
+      %zero = llzk.constfelt 0
+      emit_eq %a, %zero : !llzk.felt
+      return
+    }
+  }
+
+  llzk.struct @EnsureBothZero {
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@EnsureBothZero> {
+      %self = new_struct : !llzk.struct<@EnsureBothZero>
+      return %self : !llzk.struct<@EnsureBothZero>
+    }
+
+    // NOTE: This test case demonstrates where this analysis is currently overly conservative,
+    // as it does not determine that %a and %b must be precisely equal to 0.
+    func @constrain(%self: !llzk.struct<@EnsureBothZero>, %a: !llzk.felt, %b: !llzk.felt) {
+      %zero = llzk.constfelt 0
+      emit_eq %a, %b : !llzk.felt
+      emit_eq %a, %zero : !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK: @EnsureZero ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <constfelt: 0> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @EnsureBothZero ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, %arg2 },
+// CHECK-NEXT:     { %arg1, <constfelt: 0> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.struct @Passthrough {
+    field @out : !llzk.felt {llzk.pub}
+
+    func @compute(%in: !llzk.felt) -> !llzk.struct<@Passthrough> {
+      %self = new_struct : !llzk.struct<@Passthrough>
+      writef %self[@out] = %in : !llzk.struct<@Passthrough>, !llzk.felt
+      return %self : !llzk.struct<@Passthrough>
+    }
+
+    func @constrain(%self: !llzk.struct<@Passthrough>, %in: !llzk.felt) {
+      %out = readf %self[@out] : !llzk.struct<@Passthrough>, !llzk.felt
+      emit_eq %in, %out : !llzk.felt
+      return
+    }
+  }
+
+  llzk.struct @EnsureIsZero {
+    field @p : !llzk.struct<@Passthrough>
+
+    func @compute(%in: !llzk.felt) -> !llzk.struct<@EnsureIsZero> {
+      %self = new_struct : !llzk.struct<@EnsureIsZero>
+      %p_0 = call @Passthrough::@compute(%in) : (!llzk.felt) -> (!llzk.struct<@Passthrough>)
+      writef %self[@p] = %p_0 : !llzk.struct<@EnsureIsZero>, !llzk.struct<@Passthrough>
+      return %self : !llzk.struct<@EnsureIsZero>
+    }
+
+    func @constrain(%self: !llzk.struct<@EnsureIsZero>, %in: !llzk.felt) {
+      %zero = llzk.constfelt 0
+      %p_0 = readf %self[@p] : !llzk.struct<@EnsureIsZero>, !llzk.struct<@Passthrough>
+      call @Passthrough::@constrain(%p_0, %zero) : (!llzk.struct<@Passthrough>, !llzk.felt) -> ()
+      %out = readf %p_0[@out] : !llzk.struct<@Passthrough>, !llzk.felt
+      emit_eq %in, %out : !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK: @Passthrough ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@out], %arg1 }
+// CHECK-NEXT: }
+// CHECK-NEXT: @EnsureIsZero ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@p][@out], %arg1 },
+// CHECK-NEXT:     { %arg0[@p][@out], <constfelt: 0> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ArrayCheck {
+    func @constrain(%self: !llzk.struct<@ArrayCheck>, %in: !llzk.array<5 x !llzk.felt>) {
+      %fval = llzk.constfelt 7
+      %idx = index.constant 3
+      %elem = llzk.readarr %in[%idx] : !llzk.array<5 x !llzk.felt>, !llzk.felt
+      llzk.emit_eq %elem, %fval : !llzk.felt
+      return
+    }
+
+    func @compute(%in: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@ArrayCheck> {
+      %self = new_struct : !llzk.struct<@ArrayCheck>
+      return %self : !llzk.struct<@ArrayCheck>
+    }
+  }
+}
+
+// CHECK: @ArrayCheck ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1[3], <constfelt: 7> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ArrayForCheck {
+    func @constrain(%self: !llzk.struct<@ArrayForCheck>, %in: !llzk.array<5 x !llzk.felt>) {
+      %lb = index.constant 0
+      %up = index.constant 5
+      %step = index.constant 1
+      %fval = llzk.constfelt 7
+      scf.for %iv = %lb to %up step %step {
+        %elem = llzk.readarr %in[%iv] : !llzk.array<5 x !llzk.felt>, !llzk.felt
+        llzk.emit_eq %elem, %fval : !llzk.felt
+      }
+      return
+    }
+
+    func @compute(%in: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@ArrayForCheck> {
+      %self = new_struct : !llzk.struct<@ArrayForCheck>
+      return %self : !llzk.struct<@ArrayForCheck>
+    }
+  }
+}
+
+// CHECK: @ArrayForCheck ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1[0:5], <constfelt: 7> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.struct @ConstConstraints {
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ConstConstraints> {
+      %self = new_struct : !llzk.struct<@ConstConstraints>
+      return %self : !llzk.struct<@ConstConstraints>
+    }
+
+    func @constrain(%self: !llzk.struct<@ConstConstraints>, %a: !llzk.felt, %b: !llzk.felt) {
+      %c = llzk.constfelt 1
+      emit_eq %a, %c : !llzk.felt
+      emit_eq %b, %c : !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK: @ConstConstraints ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <constfelt: 1> },
+// CHECK-NEXT:     { %arg2, <constfelt: 1> }
+// CHECK-NEXT: }

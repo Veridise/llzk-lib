@@ -332,7 +332,7 @@ they reference the ConstraintDependencyGraphAnalysis.
 /// @brief An analysis wrapper around the ConstraintDependencyGraph for a given struct.
 /// This analysis is a StructDefOp-level analysis that should not be directly
 /// interacted with---rather, it is a utility used by the ConstraintDependencyGraphModuleAnalysis
-/// that helps use MLIR's AnalysisManager to cache summaries for sub-components.
+/// that helps use MLIR's AnalysisManager to cache dependencies for sub-components.
 class ConstraintDependencyGraphAnalysis {
 public:
   ConstraintDependencyGraphAnalysis(mlir::Operation *op) {
@@ -366,13 +366,13 @@ public:
     return mlir::success();
   }
 
-  ConstraintDependencyGraph &getSummary() {
-    ensureSummaryCreated();
+  ConstraintDependencyGraph &getCDG() {
+    ensureCDGCreated();
     return *summary;
   }
 
-  const ConstraintDependencyGraph &getSummary() const {
-    ensureSummaryCreated();
+  const ConstraintDependencyGraph &getCDG() const {
+    ensureCDGCreated();
     return *summary;
   }
 
@@ -381,7 +381,7 @@ private:
   StructDefOp structDefOp;
   std::shared_ptr<ConstraintDependencyGraph> summary;
 
-  void ensureSummaryCreated() const {
+  void ensureCDGCreated() const {
     if (!summary) {
       llvm::report_fatal_error("constraint summary does not exist; must invoke constructSummary");
     }
@@ -472,7 +472,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
   /**
    * Now, given the analysis, construct the summary:
    * - Union all references based on solver results.
-   * - Union all references based on nested summaries.
+   * - Union all references based on nested dependencies.
    */
 
   // - Union all constraints from the analysis
@@ -515,8 +515,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
         translations.push_back({prefix, s});
       }
     }
-    auto summary =
-        am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(calledStruct).getSummary();
+    auto summary = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(calledStruct).getCDG();
     auto translatedSummary = summary.translate(translations);
 
     // Now, union sets based on the translation
@@ -678,7 +677,7 @@ ConstraintDependencyGraphModuleAnalysis::ConstraintDependencyGraphModuleAnalysis
         s->emitError(error_message);
         llvm::report_fatal_error(error_message);
       }
-      summaries[s] = csa.summary;
+      dependencies[s] = csa.summary;
     });
   } else {
     auto error_message =

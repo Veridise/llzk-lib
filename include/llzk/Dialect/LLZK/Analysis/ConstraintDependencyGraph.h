@@ -23,7 +23,7 @@ namespace llzk {
 
 using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRef>>;
 
-/// @brief A summary of constraints enforced by an LLZK struct.
+/// @brief A dependency graph of constraints enforced by an LLZK struct.
 ///
 /// Mathmatically speaking, a constraint dependency graph (CDG) is a transitive closure
 /// of edges between where there is an edge between signals `a` and `b`
@@ -51,9 +51,9 @@ using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRef>
 /// constant 0, but does not enforce a dependency between a, b, c, and d).
 class ConstraintDependencyGraph {
 public:
-  /// @brief Compute a ConstraintDependencyGraph
+  /// @brief Compute a ConstraintDependencyGraph (CDG)
   /// @param mod The LLZK-complaint module that is the parent of struct `s`.
-  /// @param s The struct to compute the summary for.
+  /// @param s The struct to compute the CDG for.
   /// @param solver A pre-configured DataFlowSolver. The liveness of the struct must
   /// already be computed in this solver in order for the constraint analysis to run.
   /// @param am A module-level analysis manager. This analysis manager needs to originate
@@ -64,17 +64,17 @@ public:
       mlir::ModuleOp mod, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
   );
 
-  /// @brief Dumps the ConstraintDependencyGraph to stderr.
+  /// @brief Dumps the CDG to stderr.
   void dump() const;
-  /// @brief Print the constraintSummary to the specified output stream.
+  /// @brief Print the CDG to the specified output stream.
   /// @param os The LLVM/MLIR output stream.
   void print(mlir::raw_ostream &os) const;
 
-  /// @brief Translate the ConstrainRefs in this summary to that of a different
-  /// context. Used to translate a summary of a struct to a summary for a called subcomponent.
+  /// @brief Translate the ConstrainRefs in this CDG to that of a different
+  /// context. Used to translate a CDG of a struct to a CDG for a called subcomponent.
   /// @param translation A vector of mappings of current reference prefix -> translated reference
   /// prefix.
-  /// @return A summary that contains only translated references. Non-constant references with
+  /// @return A CDG that contains only translated references. Non-constant references with
   /// no translation are omitted. This omissions allows calling components to ignore internal
   /// references within subcomponents that are inaccessible to the caller.
   ConstraintDependencyGraph translate(ConstrainRefRemappings translation);
@@ -120,9 +120,9 @@ private:
   // Also mutable for caching within otherwise const lookup operations.
   mutable mlir::SymbolTableCollection tables;
 
-  /// @brief Constructs an empty summary. The summary is populated using computeConstraints.
+  /// @brief Constructs an empty CDG. The CDG is populated using computeConstraints.
   /// @param m The parent LLZK-compliant module.
-  /// @param s The struct to summarize.
+  /// @param s The struct to analyze.
   ConstraintDependencyGraph(mlir::ModuleOp m, StructDefOp s) : mod(m), structDef(s), signalSets() {}
 
   /// @brief Runs the constraint analysis to compute a transitive closure over ConstrainRefs
@@ -145,7 +145,7 @@ private:
 /// all structs in the given LLZK module.
 class ConstraintDependencyGraphModuleAnalysis {
   /// Using a map, not an unordered map, to control sorting order for iteration.
-  using SummaryMap = std::map<
+  using DependencyMap = std::map<
       StructDefOp, std::shared_ptr<ConstraintDependencyGraph>, OpLocationLess<StructDefOp>>;
 
 public:
@@ -156,31 +156,28 @@ public:
   /// @param am The analysis manager used to query sub-analyses per StructDefOperation.
   ConstraintDependencyGraphModuleAnalysis(mlir::Operation *op, mlir::AnalysisManager &am);
 
-  bool hasSummary(StructDefOp op) const { return summaries.find(op) != summaries.end(); }
-  ConstraintDependencyGraph &getSummary(StructDefOp op) {
-    ensureSummaryCreated(op);
-    return *summaries.at(op);
+  bool hasCDG(StructDefOp op) const { return dependencies.find(op) != dependencies.end(); }
+  ConstraintDependencyGraph &getCDG(StructDefOp op) {
+    ensureCDGCreated(op);
+    return *dependencies.at(op);
   }
-  const ConstraintDependencyGraph &getSummary(StructDefOp op) const {
-    ensureSummaryCreated(op);
-    return *summaries.at(op);
+  const ConstraintDependencyGraph &getCDG(StructDefOp op) const {
+    ensureCDGCreated(op);
+    return *dependencies.at(op);
   }
 
-  SummaryMap::iterator begin() { return summaries.begin(); }
-  SummaryMap::iterator end() { return summaries.end(); }
-  SummaryMap::const_iterator cbegin() const { return summaries.cbegin(); }
-  SummaryMap::const_iterator cend() const { return summaries.cend(); }
+  DependencyMap::iterator begin() { return dependencies.begin(); }
+  DependencyMap::iterator end() { return dependencies.end(); }
+  DependencyMap::const_iterator cbegin() const { return dependencies.cbegin(); }
+  DependencyMap::const_iterator cend() const { return dependencies.cend(); }
 
 private:
-  SummaryMap summaries;
+  DependencyMap dependencies;
 
-  /// @brief Ensures that the given struct has a summary.
-  /// @param op The struct to ensure has a summary.
-  void ensureSummaryCreated(StructDefOp op) const {
-    debug::ensure(
-        hasSummary(op),
-        "constraint summary does not exist for StructDefOp " + mlir::Twine(op.getName())
-    );
+  /// @brief Ensures that the given struct has a CDG.
+  /// @param op The struct to ensure has a CDG.
+  void ensureCDGCreated(StructDefOp op) const {
+    debug::ensure(hasCDG(op), "CDG does not exist for StructDefOp " + mlir::Twine(op.getName()));
   }
 };
 
