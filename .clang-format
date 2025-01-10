@@ -27,6 +27,7 @@ IncludeCategories:
   - Regex: '^.*$'                 # Everything else
     Priority: 4
 SortIncludes: true
+InsertNewlineAtEOF: true
 ---
 Language: Json
 DisableFormat: true

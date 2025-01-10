@@ -96,23 +96,25 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
 }
 
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
-    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, SymbolLookupResult<StructDefOp> s,
-    mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields = {}
+    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod,
+    SymbolLookupResult<StructDefOp> structDefRes, mlir::BlockArgument blockArg,
+    std::vector<ConstrainRefIndex> fields = {}
 ) {
   std::vector<ConstrainRef> res;
   // Add root item
   res.emplace_back(blockArg, fields);
   // Recurse into struct types by iterating over all their field definitions
-  for (auto f : s.get().getOps<FieldDefOp>()) {
+  for (auto f : structDefRes.get().getOps<FieldDefOp>()) {
     std::vector<ConstrainRefIndex> subFields = fields;
     // We want to store the FieldDefOp, but without the possibility of accidentally dropping the
     // reference, so we need to re-lookup the symbol to create a SymbolLookupResult, which will
     // manage the external module containing the field defs, if needed.
     // TODO: It would be nice if we could manage module op references differently
     // so we don't have to do this.
+    auto structDefCopy = structDefRes;
     auto fieldLookup = lookupSymbolIn<FieldDefOp>(
-        tables, mlir::SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()), Within(s.get()),
-        mod.getOperation()
+        tables, mlir::SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()),
+        std::move(structDefCopy), mod.getOperation()
     );
     debug::ensure(
         mlir::succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp"
