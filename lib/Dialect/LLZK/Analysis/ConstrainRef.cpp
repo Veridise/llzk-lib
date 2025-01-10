@@ -19,7 +19,7 @@ void ConstrainRefIndex::print(mlir::raw_ostream &os) const {
 
 bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
   if (isField() && rhs.isField()) {
-    return getField() < rhs.getField();
+    return getField().getName().compare(rhs.getField().getName()) < 0;
   }
   if (isIndex() && rhs.isIndex()) {
     return getIndex().ult(rhs.getIndex());
