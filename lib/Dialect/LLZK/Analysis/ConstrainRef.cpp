@@ -1,6 +1,6 @@
 #include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
-#include "llzk/Dialect/LLZK/Util/SymbolLookupResult.h"
+#include "llzk/Dialect/LLZK/Util/SymbolLookup.h"
 
 namespace llzk {
 
@@ -110,7 +110,7 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
     // TODO: It would be nice if we could manage module op references differently
     // so we don't have to do this.
     auto fieldLookup = lookupSymbolIn<FieldDefOp>(
-        tables, mlir::SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()), s.get(),
+        tables, mlir::SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()), Within(s.get()),
         mod.getOperation()
     );
     debug::ensure(

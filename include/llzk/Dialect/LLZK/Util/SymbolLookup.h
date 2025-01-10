@@ -13,8 +13,8 @@ namespace llzk {
 
 constexpr char LANG_ATTR_NAME[] = "veridise.lang";
 
-using ManagedResources = std::optional<
-    std::pair<std::shared_ptr<mlir::OwningOpRef<mlir::ModuleOp>>, mlir::SymbolTableCollection>>;
+using ManagedResources =
+    std::shared_ptr<std::pair<mlir::OwningOpRef<mlir::ModuleOp>, mlir::SymbolTableCollection>>;
 
 class SymbolLookupResultUntyped {
 public:
@@ -31,10 +31,10 @@ public:
   /// True iff the symbol was found.
   operator bool() const;
 
-  mlir::SmallVector<llvm::StringRef> getIncludeSymNames() { return includeSymNameStack; }
+  std::vector<llvm::StringRef> getIncludeSymNames() { return includeSymNameStack; }
 
   mlir::SymbolTableCollection *getSymbolTableCache() {
-    if (managedResources.has_value()) {
+    if (managedResources) {
       return &managedResources->second;
     } else {
       return nullptr;
@@ -53,7 +53,7 @@ private:
   /// SymbolTableCollection for that ModuleOp which should be used for lookups involving 'op'.
   ManagedResources managedResources;
   /// Stack of symbol names from the IncludeOp that were traversed in order to load the Operation.
-  mlir::SmallVector<llvm::StringRef> includeSymNameStack;
+  std::vector<llvm::StringRef> includeSymNameStack;
 
   friend class Within;
 };
@@ -72,7 +72,7 @@ public:
 
   operator bool() const { return inner && llvm::isa<T>(*inner); }
 
-  mlir::SmallVector<llvm::StringRef> getIncludeSymNames() { return inner.getIncludeSymNames(); }
+  std::vector<llvm::StringRef> getIncludeSymNames() { return inner.getIncludeSymNames(); }
 
 private:
   SymbolLookupResultUntyped inner;

@@ -158,31 +158,25 @@ public:
     auto fnOpRes = resolveCallable<FuncOp>(tables, call);
     debug::ensure(succeeded(fnOpRes), "could not resolve called function");
 
-    join(after, before);
-
     auto fnOp = fnOpRes->get();
     if (fnOp.getName() == FUNC_NAME_CONSTRAIN || fnOp.getName() == FUNC_NAME_COMPUTE) {
       // Do nothing special.
+      join(after, before);
       return;
     }
-
     /// `action == CallControlFlowAction::Enter` indicates that:
     ///   - `before` is the state before the call operation;
     ///   - `after` is the state at the beginning of the callee entry block;
-    if (action == dataflow::CallControlFlowAction::EnterCallee) {
+    else if (action == dataflow::CallControlFlowAction::EnterCallee) {
       // Add all of the argument values to the lattice.
       auto calledFnRes = resolveCallable<FuncOp>(tables, call);
-      if (mlir::failed(calledFnRes)) {
-        llvm::report_fatal_error("could not resolve function call");
-      }
+      debug::ensure(mlir::succeeded(calledFnRes), "could not resolve function call");
       auto calledFn = calledFnRes->get();
 
-      auto updated = mlir::ChangeResult::NoChange;
+      auto updated = after->join(before);
       for (auto arg : calledFn->getRegion(0).getArguments()) {
         auto sourceRef = ConstrainRefLattice::getSourceRef(arg);
-        if (mlir::failed(sourceRef)) {
-          llvm::report_fatal_error("Failed to get source ref");
-        }
+        debug::ensure(mlir::succeeded(sourceRef), "failed to get source ref");
         updated |= after->setValue(arg, sourceRef.value());
       }
       propagateIfChanged(after, updated);
@@ -194,15 +188,11 @@ public:
       // Translate argument values based on the operands given at the call site.
       std::unordered_map<ConstrainRef, ConstrainRefSet, ConstrainRef::Hash> translation;
       auto funcOpRes = resolveCallable<FuncOp>(tables, call);
-      if (mlir::failed(funcOpRes)) {
-        llvm::report_fatal_error("could not lookup called function");
-      }
+      debug::ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
       auto funcOp = funcOpRes->get();
 
       auto callOp = mlir::dyn_cast<CallOp>(call.getOperation());
-      if (!callOp) {
-        llvm::report_fatal_error("call is not a call op!");
-      }
+      debug::ensure(callOp, "call is not a llzk::CallOp");
 
       for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
         auto key = ConstrainRef(funcOp.getArgument(i));
@@ -210,7 +200,7 @@ public:
         translation[key] = val;
       }
 
-      mlir::ChangeResult updated = mlir::ChangeResult::NoChange;
+      mlir::ChangeResult updated = after->join(before);
       for (unsigned i = 0; i < callOp.getNumResults(); i++) {
         auto retRef = before.getReturnValue(i);
         ConstrainRefSet translated;
@@ -456,11 +446,10 @@ mlir::LogicalResult
 ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::AnalysisManager &am) {
   // Fetch the constrain function. This is a required feature for all LLZK structs.
   auto constrainFnOp = structDef.getConstrainFuncOp();
-  if (!constrainFnOp) {
-    llvm::report_fatal_error(
-        "malformed struct " + mlir::Twine(structDef.getName()) + " must define a constrain function"
-    );
-  }
+  debug::ensure(
+      constrainFnOp,
+      "malformed struct " + mlir::Twine(structDef.getName()) + " must define a constrain function"
+  );
 
   /**
    * Now, given the analysis, construct the summary:
@@ -487,10 +476,8 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
    */
   constrainFnOp.walk([this, &solver, &am](CallOp fnCall) mutable {
     auto res = resolveCallable<FuncOp>(tables, fnCall);
-    if (mlir::failed(res)) {
-      fnCall.emitError() << "Could not resolve callable!\n";
-      return;
-    }
+    debug::ensure(mlir::succeeded(res), "could not resolve constrain call");
+
     auto fn = res->get();
     if (fn.getName() != FUNC_NAME_CONSTRAIN) {
       return;

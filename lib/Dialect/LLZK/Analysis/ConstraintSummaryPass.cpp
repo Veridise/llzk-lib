@@ -4,6 +4,7 @@
 #include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h"
 #include "llzk/Dialect/LLZK/Analysis/ConstraintSummary.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
@@ -33,8 +34,14 @@ protected:
     }
 
     auto &cs = getAnalysis<ConstraintSummaryModuleAnalysis>();
-    for (auto &[structDef, summary_ptr] : cs) {
-      os << const_cast<StructDefOp &>(structDef).getName() << ' ';
+    for (auto &[s, summary_ptr] : cs) {
+      auto &structDef = const_cast<StructDefOp &>(s);
+      auto fullName = getPathFromRoot(structDef);
+      debug::ensure(
+          mlir::succeeded(fullName),
+          "could not resolve fully qualified name of struct " + mlir::Twine(structDef.getName())
+      );
+      os << fullName.value() << ' ';
       summary_ptr->print(os);
     }
   }

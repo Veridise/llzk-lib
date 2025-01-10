@@ -76,8 +76,9 @@ void SymbolLookupResultUntyped::manage(
   // resources from the first call because that call will contain the final ModuleOp loaded in a
   // chain of IncludeOp and that is the one which contains the result Operation*.
   if (!managedResources) {
-    managedResources =
-        std::make_pair(std::make_shared<OwningOpRef<ModuleOp>>(std::move(ptr)), std::move(tables));
+    managedResources = std::make_shared<std::pair<OwningOpRef<ModuleOp>, SymbolTableCollection>>(
+        std::make_pair(std::move(ptr), std::move(tables))
+    );
   }
 }
 

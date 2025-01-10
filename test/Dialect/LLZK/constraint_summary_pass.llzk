@@ -85,8 +85,99 @@ module attributes {veridise.lang = "llzk"} {
 // NOTE: using inline includes pass here to remove test file redundancy
 // and to avoid polluting the original ZIR example file with the expected
 // outputs of this pass.
+// module attributes {veridise.lang = "llzk"} {
+//   llzk.include "zir_example_1.llzk" as @zir
+// }
+// TODO: fix the include version
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "zir_example_1.llzk" as @zir
+  module @risc0 {
+    llzk.struct @ValU32 {
+      field @low : !llzk.felt
+      field @high : !llzk.felt
+      func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@risc0::@ValU32> {
+        %self = new_struct : <@risc0::@ValU32>
+        writef %self[@low] = %arg0 : <@risc0::@ValU32>, !llzk.felt
+        writef %self[@high] = %arg1 : <@risc0::@ValU32>, !llzk.felt
+        return %self : !llzk.struct<@risc0::@ValU32>
+      }
+      func @constrain(%arg0: !llzk.struct<@risc0::@ValU32>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+        return
+      }
+    }
+    llzk.struct @Reg {
+      field @reg : !llzk.felt {llzk.pub}
+      func @compute(%arg0: !llzk.felt) -> !llzk.struct<@risc0::@Reg> {
+        %self = new_struct : <@risc0::@Reg>
+        writef %self[@reg] = %arg0 : <@risc0::@Reg>, !llzk.felt
+        return %self : !llzk.struct<@risc0::@Reg>
+      }
+      func @constrain(%arg0: !llzk.struct<@risc0::@Reg>, %arg1: !llzk.felt) {
+        %0 = readf %arg0[@reg] : <@risc0::@Reg>, !llzk.felt
+        emit_eq %arg1, %0 : !llzk.felt, !llzk.felt
+        return
+      }
+    }
+    llzk.struct @Div {
+      field @reciprocal : !llzk.felt
+      field @synthetic_return : !llzk.felt {llzk.pub}
+      func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@risc0::@Div> {
+        %self = new_struct : <@risc0::@Div>
+        %0 = inv %arg1 : !llzk.felt
+        writef %self[@reciprocal] = %0 : <@risc0::@Div>, !llzk.felt
+        %1 = mul %0, %arg0 : !llzk.felt, !llzk.felt
+        writef %self[@synthetic_return] = %1 : <@risc0::@Div>, !llzk.felt
+        return %self : !llzk.struct<@risc0::@Div>
+      }
+      func @constrain(%arg0: !llzk.struct<@risc0::@Div>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+        %0 = readf %arg0[@reciprocal] : <@risc0::@Div>, !llzk.felt
+        %1 = mul %0, %arg2 : !llzk.felt, !llzk.felt
+        %felt_const_1 = constfelt  1
+        emit_eq %1, %felt_const_1 : !llzk.felt, !llzk.felt
+        %2 = readf %arg0[@synthetic_return] : <@risc0::@Div>, !llzk.felt
+        %3 = mul %0, %arg1 : !llzk.felt, !llzk.felt
+        emit_eq %2, %3 : !llzk.felt, !llzk.felt
+        return
+      }
+    }
+  }
+  llzk.struct @C1 {
+    field @z : !llzk.struct<@risc0::@Reg> {llzk.pub}
+    func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@C1> {
+      %self = new_struct : <@C1>
+      %0 = add %arg0, %arg1 : !llzk.felt, !llzk.felt
+      %1 = call @risc0::@Reg::@compute(%0) : (!llzk.felt) -> !llzk.struct<@risc0::@Reg>
+      writef %self[@z] = %1 : <@C1>, !llzk.struct<@risc0::@Reg>
+      return %self : !llzk.struct<@C1>
+    }
+    func @constrain(%arg0: !llzk.struct<@C1>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+      %0 = readf %arg0[@z] : <@C1>, !llzk.struct<@risc0::@Reg>
+      %1 = add %arg1, %arg2 : !llzk.felt, !llzk.felt
+      call @risc0::@Reg::@constrain(%0, %1) : (!llzk.struct<@risc0::@Reg>, !llzk.felt) -> ()
+      return
+    }
+  }
+  llzk.struct @C2 {
+    field @fc1 : !llzk.struct<@C1>
+    func @compute(%arg0: !llzk.struct<@risc0::@ValU32>) -> !llzk.struct<@C2> {
+      %self = new_struct : <@C2>
+      %0 = readf %arg0[@low] : <@risc0::@ValU32>, !llzk.felt
+      %1 = readf %arg0[@high] : <@risc0::@ValU32>, !llzk.felt
+      %2 = call @C1::@compute(%0, %1) : (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>
+      writef %self[@fc1] = %2 : <@C2>, !llzk.struct<@C1>
+      return %self : !llzk.struct<@C2>
+    }
+    func @constrain(%arg0: !llzk.struct<@C2>, %arg1: !llzk.struct<@risc0::@ValU32>) {
+      %0 = readf %arg0[@fc1] : <@C2>, !llzk.struct<@C1>
+      %1 = readf %arg1[@low] : <@risc0::@ValU32>, !llzk.felt
+      %2 = readf %arg1[@high] : <@risc0::@ValU32>, !llzk.felt
+      call @C1::@constrain(%0, %1, %2) : (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> ()
+      %3 = readf %0[@z] : <@C1>, !llzk.struct<@risc0::@Reg>
+      %4 = readf %3[@reg] : <@risc0::@Reg>, !llzk.felt
+      %felt_const_0 = constfelt  0
+      emit_eq %4, %felt_const_0 : !llzk.felt, !llzk.felt
+      return
+    }
+  }
 }
 
 // CHECK: ValU32 ConstraintSummary { }
