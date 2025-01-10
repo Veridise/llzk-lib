@@ -25,25 +25,30 @@ using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRef>
 
 /// @brief A summary of constraints enforced by an LLZK struct.
 ///
-/// Mathmatically speaking, a constraint summary is a transitive closure
-/// computed over constrained values.
+/// Mathmatically speaking, a constraint dependency graph (CDG) is a transitive closure
+/// of edges between where there is an edge between signals `a` and `b`
+/// iff `a` and `b` appear in the same constraint.
 ///
-/// Less formally, a constraint summary is a set of values that constrain one another through
-/// one or more emit operations (`emit_in` or `emit_eq`). The summaries only
-/// indicate that values are connected by constraints, but do not include information
+/// Less formally, a CDG is a set of signals that constrain one another through
+/// one or more emit operations (`emit_in` or `emit_eq`). The CDG only
+/// indicate that signals are connected by constraints, but do not include information
 /// about the type of computation that binds them together.
 ///
-/// For example, a constraint summary of the form: {
-///     {%arg1, %arg2[@foo], <constfelt: 1>}
+/// For example, a CDG of the form: {
+///     {%arg1, %arg2, %arg3[@foo]}
 /// }
-/// Means that %arg1, field @foo of %arg2, and the constant felt 1 are connected
+/// Means that %arg1, %arg2, and field @foo of %arg3, are connected
 /// via some constraints. These constraints could take the form of (in Circom notation):
-///     %arg1 + %arg2[@foo] === 1
+///     %arg1 + %arg3[@foo] === %arg2
 /// Or
-///     %arg1 === 1 / %arg2[@foo]
+///     %arg2 === %arg2 / %arg3[@foo]
 /// Or any other form of constraint including those values.
 ///
-/// NOTE:
+/// The CDG also records information about constant values (e.g., constfelt) that
+/// are included in constraints, but does not compute a transitive closure over
+/// constant values, as constant value usage in constraints does not imply any
+/// dependency between signal values (e.g., constraints a + b === 0 and c + d === 0 both use
+/// constant 0, but does not enforce a dependency between a, b, c, and d).
 class ConstraintDependencyGraph {
 public:
   /// @brief Compute a ConstraintDependencyGraph
