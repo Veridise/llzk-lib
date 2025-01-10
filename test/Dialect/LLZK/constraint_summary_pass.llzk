@@ -185,13 +185,16 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     { %arg0[@reg], %arg1 }
 // CHECK-NEXT: }
 // CHECK-NEXT: @risc0::@Div ConstraintSummary {
-// CHECK-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2, <constfelt: 1> }
+// CHECK-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
+// CHECK-NEXT:     { %arg0[@reciprocal], <constfelt: 1> },
+// CHECK-NEXT:     { %arg2, <constfelt: 1> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @C1 ConstraintSummary {
 // CHECK-NEXT:     { %arg0[@z][@reg], %arg1, %arg2 }
 // CHECK-NEXT: }
 // CHECK-NEXT: @C2 ConstraintSummary {
-// CHECK-NEXT:     { %arg0[@fc1][@z][@reg], %arg1[@low], %arg1[@high], <constfelt: 0> }
+// CHECK-NEXT:     { %arg0[@fc1][@z][@reg], %arg1[@low], %arg1[@high] },
+// CHECK-NEXT:     { %arg0[@fc1][@z][@reg], <constfelt: 0> }
 // CHECK-NEXT: }
 
 // -----
@@ -252,7 +255,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     { %arg1, <constfelt: 0> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @EnsureBothZero ConstraintSummary {
-// CHECK-NEXT:     { %arg1, %arg2, <constfelt: 0> }
+// CHECK-NEXT:     { %arg1, %arg2 },
+// CHECK-NEXT:     { %arg1, <constfelt: 0> }
 // CHECK-NEXT: }
 
 // -----
@@ -351,4 +355,28 @@ module attributes {veridise.lang = "llzk"} {
 
 // CHECK: @ArrayForCheck ConstraintSummary {
 // CHECK-NEXT:     { %arg1[0:5], <constfelt: 7> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.struct @ConstConstraints {
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ConstConstraints> {
+      %self = new_struct : !llzk.struct<@ConstConstraints>
+      return %self : !llzk.struct<@ConstConstraints>
+    }
+
+    func @constrain(%self: !llzk.struct<@ConstConstraints>, %a: !llzk.felt, %b: !llzk.felt) {
+      %c = llzk.constfelt 1
+      emit_eq %a, %c : !llzk.felt
+      emit_eq %b, %c : !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK: @ConstConstraints ConstraintSummary {
+// CHECK-NEXT:     { %arg1, <constfelt: 1> },
+// CHECK-NEXT:     { %arg2, <constfelt: 1> }
 // CHECK-NEXT: }

@@ -42,6 +42,8 @@ using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRef>
 /// Or
 ///     %arg1 === 1 / %arg2[@foo]
 /// Or any other form of constraint including those values.
+///
+/// NOTE:
 class ConstraintSummary {
 public:
   /// @brief Compute a ConstraintSummary
@@ -88,12 +90,13 @@ public:
   */
 
   ConstraintSummary(const ConstraintSummary &other)
-      : mod(other.mod), structDef(other.structDef), constraintSets(other.constraintSets), tables() {
-  }
+      : mod(other.mod), structDef(other.structDef), signalSets(other.signalSets),
+        constantSets(other.constantSets), tables() {}
   ConstraintSummary &operator=(const ConstraintSummary &other) {
     mod = other.mod;
     structDef = other.structDef;
-    constraintSets = other.constraintSets;
+    signalSets = other.signalSets;
+    constantSets = other.constantSets;
   }
   ~ConstraintSummary() = default;
 
@@ -102,7 +105,12 @@ private:
   // Using mutable because many operations are not const by default, even for "const"-like
   // operations, like "getName()", and this reduces const_casts.
   mutable StructDefOp structDef;
-  llvm::EquivalenceClasses<ConstrainRef> constraintSets;
+
+  // Transitive closure only over signals.
+  llvm::EquivalenceClasses<ConstrainRef> signalSets;
+  // A simple set mapping of constants, as we do not want to compute a transitive closure over
+  // constants.
+  std::unordered_map<ConstrainRef, ConstrainRefSet, ConstrainRef::Hash> constantSets;
 
   // Also mutable for caching within otherwise const lookup operations.
   mutable mlir::SymbolTableCollection tables;
@@ -110,7 +118,7 @@ private:
   /// @brief Constructs an empty summary. The summary is populated using computeConstraints.
   /// @param m The parent LLZK-compliant module.
   /// @param s The struct to summarize.
-  ConstraintSummary(mlir::ModuleOp m, StructDefOp s) : mod(m), structDef(s), constraintSets() {}
+  ConstraintSummary(mlir::ModuleOp m, StructDefOp s) : mod(m), structDef(s), signalSets() {}
 
   /// @brief Runs the constraint analysis to compute a transitive closure over ConstrainRefs
   /// as operated over by emit operations.
@@ -119,7 +127,7 @@ private:
   /// @return mlir::success() if no issues were encountered, mlir::failure() otherwise
   mlir::LogicalResult computeConstraints(mlir::DataFlowSolver &solver, mlir::AnalysisManager &am);
 
-  /// @brief Update the constraintSets EquivalenceClasses based on the given
+  /// @brief Update the signalSets EquivalenceClasses based on the given
   /// emit operation. Relies on the caller to verify that `emitOp` is either
   /// an EmitEqualityOp or an EmitContainmentOp, as the logic for both is currently
   /// the same.

@@ -405,21 +405,35 @@ void ConstraintSummary::dump() const { print(llvm::errs()); }
 void ConstraintSummary::print(llvm::raw_ostream &os) const {
   // the EquivalenceClasses::iterator is sorted, but the EquivalenceClasses::member_iterator is
   // not guaranteed to be sorted. So, we will sort members before printing them.
+  // We also want to add the constant values into the printing.
   std::set<std::set<ConstrainRef>> sortedSets;
-  for (auto it = constraintSets.begin(); it != constraintSets.end(); it++) {
+  for (auto it = signalSets.begin(); it != signalSets.end(); it++) {
     if (!it->isLeader()) {
       continue;
     }
 
     std::set<ConstrainRef> sortedMembers;
-    for (auto mit = constraintSets.member_begin(it); mit != constraintSets.member_end(); mit++) {
+    for (auto mit = signalSets.member_begin(it); mit != signalSets.member_end(); mit++) {
       sortedMembers.insert(*mit);
     }
 
+    // We only want to print sets with a size > 1, because size == 1 means the
+    // signal is not in a constraint.
+    if (sortedMembers.size() > 1) {
+      sortedSets.insert(sortedMembers);
+    }
+  }
+  // Add the constants in separately.
+  for (auto &[ref, constSet] : constantSets) {
+    if (constSet.empty()) {
+      continue;
+    }
+    std::set<ConstrainRef> sortedMembers(constSet.begin(), constSet.end());
+    sortedMembers.insert(ref);
     sortedSets.insert(sortedMembers);
   }
 
-  os << "ConstraintSummary { ";
+  os << "ConstraintSummary {";
 
   for (auto it = sortedSets.begin(); it != sortedSets.end();) {
     os << "\n    { ";
@@ -435,7 +449,7 @@ void ConstraintSummary::print(llvm::raw_ostream &os) const {
     if (it == sortedSets.end()) {
       os << " }\n";
     } else {
-      os << " },\n";
+      os << " },";
     }
   }
 
@@ -502,14 +516,14 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
 
     // Now, union sets based on the translation
     // We should be able to just merge what is in the translatedSummary to the current summary
-    auto &tSets = translatedSummary.constraintSets;
+    auto &tSets = translatedSummary.signalSets;
     for (auto lit = tSets.begin(); lit != tSets.end(); lit++) {
       if (!lit->isLeader()) {
         continue;
       }
       auto leader = lit->getData();
       for (auto mit = tSets.member_begin(lit); mit != tSets.member_end(); mit++) {
-        constraintSets.unionSets(leader, *mit);
+        signalSets.unionSets(leader, *mit);
       }
     }
   });
@@ -518,19 +532,30 @@ ConstraintSummary::computeConstraints(mlir::DataFlowSolver &solver, mlir::Analys
 }
 
 void ConstraintSummary::walkConstrainOp(mlir::DataFlowSolver &solver, mlir::Operation *emitOp) {
-  std::vector<ConstrainRef> usages;
+  std::vector<ConstrainRef> signalUsages, constUsages;
   auto lattice = solver.lookupState<ConstrainRefLattice>(emitOp);
   debug::ensure(lattice, "failed to get lattice for emit operation");
 
   for (auto operand : emitOp->getOperands()) {
     auto refs = lattice->getOrDefault(operand);
-    usages.insert(usages.end(), refs.begin(), refs.end());
+    for (auto &ref : refs) {
+      if (ref.isConstant()) {
+        constUsages.push_back(ref);
+      } else {
+        signalUsages.push_back(ref);
+      }
+    }
   }
 
-  auto it = usages.begin();
-  auto leader = constraintSets.getOrInsertLeaderValue(*it);
-  for (it++; it != usages.end(); it++) {
-    constraintSets.unionSets(leader, *it);
+  // Compute a transitive closure over the signals.
+  auto it = signalUsages.begin();
+  auto leader = signalSets.getOrInsertLeaderValue(*it);
+  for (it++; it != signalUsages.end(); it++) {
+    signalSets.unionSets(leader, *it);
+  }
+  // Also update constant references for each value.
+  for (auto &sig : signalUsages) {
+    constantSets[sig].insert(constUsages.begin(), constUsages.end());
   }
 }
 
@@ -550,31 +575,45 @@ ConstraintSummary ConstraintSummary::translate(ConstrainRefRemappings translatio
     }
     return refs;
   };
-  for (auto leaderIt = constraintSets.begin(); leaderIt != constraintSets.end(); leaderIt++) {
+  for (auto leaderIt = signalSets.begin(); leaderIt != signalSets.end(); leaderIt++) {
     if (!leaderIt->isLeader()) {
       continue;
     }
     // translate everything in this set first
-    std::vector<ConstrainRef> translated;
-    for (auto mit = constraintSets.member_begin(leaderIt); mit != constraintSets.member_end();
-         mit++) {
+    std::vector<ConstrainRef> translatedSignals, translatedConsts;
+    for (auto mit = signalSets.member_begin(leaderIt); mit != signalSets.member_end(); mit++) {
       auto member = translate(*mit);
-      if (mlir::succeeded(member)) {
-        translated.insert(translated.end(), member->begin(), member->end());
+      if (mlir::failed(member)) {
+        continue;
       }
+      for (auto &ref : *member) {
+        if (ref.isConstant()) {
+          translatedConsts.push_back(ref);
+        } else {
+          translatedSignals.push_back(ref);
+        }
+      }
+      // Also add the constants from the original summary
+      auto &origConstSet = constantSets[*mit];
+      translatedConsts.insert(translatedConsts.end(), origConstSet.begin(), origConstSet.end());
     }
 
-    if (translated.empty()) {
+    if (translatedSignals.empty()) {
       continue;
     }
 
-    // Now we can insert
-    auto it = translated.begin();
+    // Now we can insert the translated signals
+    auto it = translatedSignals.begin();
     auto leader = *it;
-    res.constraintSets.insert(leader);
-    for (it++; it != translated.end(); it++) {
-      res.constraintSets.insert(*it);
-      res.constraintSets.unionSets(leader, *it);
+    res.signalSets.insert(leader);
+    for (it++; it != translatedSignals.end(); it++) {
+      res.signalSets.insert(*it);
+      res.signalSets.unionSets(leader, *it);
+    }
+
+    // And update the constant references
+    for (auto &ref : translatedSignals) {
+      res.constantSets[ref].insert(translatedConsts.begin(), translatedConsts.end());
     }
   }
   return res;
@@ -584,12 +623,19 @@ ConstrainRefSet ConstraintSummary::getConstrainingValues(const ConstrainRef &ref
   ConstrainRefSet res;
   auto currRef = mlir::FailureOr<ConstrainRef>(ref);
   while (mlir::succeeded(currRef)) {
-    auto it = constraintSets.findLeader(currRef.value());
-    for (; it != constraintSets.member_end(); it++) {
+    // Add signals
+    auto it = signalSets.findLeader(currRef.value());
+    for (; it != signalSets.member_end(); it++) {
       if (currRef.value() != *it) {
         res.insert(*it);
       }
     }
+    // Add constants
+    auto constIt = constantSets.find(*currRef);
+    if (constIt != constantSets.end()) {
+      res.insert(constIt->second.begin(), constIt->second.end());
+    }
+    // Go to parent
     currRef = currRef->getParentPrefix();
   }
   return res;
@@ -609,9 +655,7 @@ ConstraintSummaryModuleAnalysis::ConstraintSummaryModuleAnalysis(
     // for global functions as well.
     solver.load<ConstrainRefAnalysis>();
     auto res = solver.initializeAndRun(modOp);
-    if (res.failed()) {
-      llvm::report_fatal_error("solver failed to run on module!");
-    }
+    debug::ensure(res.succeeded(), "solver failed to run on module!");
 
     modOp.walk([this, &solver, &am](StructDefOp s) {
       auto &csa = am.getChildAnalysis<ConstraintSummaryAnalysis>(s);
