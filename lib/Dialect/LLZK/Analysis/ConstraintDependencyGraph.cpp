@@ -436,7 +436,7 @@ void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
     sortedSets.insert(sortedMembers);
   }
 
-  os << "ConstraintDependencyGraph {";
+  os << "ConstraintDependencyGraph { ";
 
   for (auto it = sortedSets.begin(); it != sortedSets.end();) {
     os << "\n    { ";
@@ -531,6 +531,10 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
         signalSets.unionSets(leader, *mit);
       }
     }
+    // And update the constant sets
+    for (auto &[ref, constSet] : translatedSummary.constantSets) {
+      constantSets[ref].insert(constSet.begin(), constSet.end());
+    }
   });
 
   return mlir::success();
@@ -555,10 +559,12 @@ void ConstraintDependencyGraph::walkConstrainOp(
   }
 
   // Compute a transitive closure over the signals.
-  auto it = signalUsages.begin();
-  auto leader = signalSets.getOrInsertLeaderValue(*it);
-  for (it++; it != signalUsages.end(); it++) {
-    signalSets.unionSets(leader, *it);
+  if (!signalUsages.empty()) {
+    auto it = signalUsages.begin();
+    auto leader = signalSets.getOrInsertLeaderValue(*it);
+    for (it++; it != signalUsages.end(); it++) {
+      signalSets.unionSets(leader, *it);
+    }
   }
   // Also update constant references for each value.
   for (auto &sig : signalUsages) {
