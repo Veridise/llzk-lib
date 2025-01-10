@@ -24,7 +24,11 @@ namespace llzk {
 using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRef>>;
 
 /// @brief A summary of constraints enforced by an LLZK struct.
-/// A constraint summary is a set of values that constrain one another through
+///
+/// Mathmatically speaking, a constraint summary is a transitive closure
+/// computed over constrained values.
+///
+/// Less formally, a constraint summary is a set of values that constrain one another through
 /// one or more emit operations (`emit_in` or `emit_eq`). The summaries only
 /// indicate that values are connected by constraints, but do not include information
 /// about the type of computation that binds them together.
