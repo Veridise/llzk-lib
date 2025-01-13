@@ -353,7 +353,7 @@ def LLZK_ReadArrayOp
   let description = [{
     This operation loads the value from an array at position `$index`.
 
-    Exampl̀e of 1-dimensional array:
+    Example of 1-dimensional array:
     ```llzk
     %i = index.constant 0
     %0 = llzk.new_array %a, %b, %c : !llzk.array<3 x !llzk.felt>
@@ -361,7 +361,7 @@ def LLZK_ReadArrayOp
     %1 = llzk.readarr %0[%i] : !llzk.array<3 x !llzk.felt>, !llzk.felt
     ```
 
-    Exampl̀e of 3-dimensional array:
+    Example of 3-dimensional array:
     ```llzk
     %i = index.constant 0
     %j = index.constant 1
@@ -386,7 +386,7 @@ def LLZK_WriteArrayOp
   let description = [{
     This operation writes a value into an array at position `$index`.
 
-    Exampl̀e of 1-dimensional array:
+    Example of 1-dimensional array:
 
     ```llzk
     %i = index.constant 0
@@ -396,7 +396,7 @@ def LLZK_WriteArrayOp
     llzk.writearr %1[%i] = %0 : !llzk.array<3 x !llzk.felt>, !llzk.felt
     ```
 
-    Exampl̀e of 2-dimensional array:
+    Example of 2-dimensional array:
 
     ```llzk
     %i = index.constant 0
