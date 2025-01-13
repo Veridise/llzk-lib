@@ -189,6 +189,8 @@ public:
     return copy;
   }
 
+  const std::vector<ConstrainRefIndex> &getPieces() const { return fieldRefs; }
+
   void print(mlir::raw_ostream &os) const;
   void dump() const { print(llvm::errs()); }
 
