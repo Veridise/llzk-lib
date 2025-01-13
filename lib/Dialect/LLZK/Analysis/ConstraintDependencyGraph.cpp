@@ -353,37 +353,37 @@ public:
     modOp = *maybeModOp;
   }
 
-  /// @brief Construct a summary, using the module's analysis manager to query
+  /// @brief Construct a CDG, using the module's analysis manager to query
   /// ConstraintDependencyGraph objects for nested components.
   mlir::LogicalResult
-  constructSummary(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager) {
-    auto summaryRes =
+  constructCDG(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager) {
+    auto res =
         ConstraintDependencyGraph::compute(modOp, structDefOp, solver, moduleAnalysisManager);
-    if (mlir::failed(summaryRes)) {
+    if (mlir::failed(res)) {
       return mlir::failure();
     }
-    summary = std::make_shared<ConstraintDependencyGraph>(*summaryRes);
+    cdg = std::make_shared<ConstraintDependencyGraph>(*res);
     return mlir::success();
   }
 
   ConstraintDependencyGraph &getCDG() {
     ensureCDGCreated();
-    return *summary;
+    return *cdg;
   }
 
   const ConstraintDependencyGraph &getCDG() const {
     ensureCDGCreated();
-    return *summary;
+    return *cdg;
   }
 
 private:
   mlir::ModuleOp modOp;
   StructDefOp structDefOp;
-  std::shared_ptr<ConstraintDependencyGraph> summary;
+  std::shared_ptr<ConstraintDependencyGraph> cdg;
 
   void ensureCDGCreated() const {
-    if (!summary) {
-      llvm::report_fatal_error("constraint summary does not exist; must invoke constructSummary");
+    if (!cdg) {
+      llvm::report_fatal_error("CDG does not exist; must invoke constructCDG");
     }
   }
 
@@ -395,11 +395,11 @@ private:
 mlir::FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
     mlir::ModuleOp m, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
 ) {
-  ConstraintDependencyGraph summary(m, s);
-  if (summary.computeConstraints(solver, am).failed()) {
+  ConstraintDependencyGraph cdg(m, s);
+  if (cdg.computeConstraints(solver, am).failed()) {
     return mlir::failure();
   }
-  return summary;
+  return cdg;
 }
 
 void ConstraintDependencyGraph::dump() const { print(llvm::errs()); }
@@ -470,7 +470,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
   );
 
   /**
-   * Now, given the analysis, construct the summary:
+   * Now, given the analysis, construct the CDG:
    * - Union all references based on solver results.
    * - Union all references based on nested dependencies.
    */
@@ -515,12 +515,12 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
         translations.push_back({prefix, s});
       }
     }
-    auto summary = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(calledStruct).getCDG();
-    auto translatedSummary = summary.translate(translations);
+    auto cdg = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(calledStruct).getCDG();
+    auto translatedCDG = cdg.translate(translations);
 
     // Now, union sets based on the translation
-    // We should be able to just merge what is in the translatedSummary to the current summary
-    auto &tSets = translatedSummary.signalSets;
+    // We should be able to just merge what is in the translatedCDG to the current CDG
+    auto &tSets = translatedCDG.signalSets;
     for (auto lit = tSets.begin(); lit != tSets.end(); lit++) {
       if (!lit->isLeader()) {
         continue;
@@ -531,7 +531,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
       }
     }
     // And update the constant sets
-    for (auto &[ref, constSet] : translatedSummary.constantSets) {
+    for (auto &[ref, constSet] : translatedCDG.constantSets) {
       constantSets[ref].insert(constSet.begin(), constSet.end());
     }
   });
@@ -605,7 +605,7 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemap
           translatedSignals.push_back(ref);
         }
       }
-      // Also add the constants from the original summary
+      // Also add the constants from the original CDG
       auto &origConstSet = constantSets[*mit];
       translatedConsts.insert(translatedConsts.end(), origConstSet.begin(), origConstSet.end());
     }
@@ -671,13 +671,13 @@ ConstraintDependencyGraphModuleAnalysis::ConstraintDependencyGraphModuleAnalysis
 
     modOp.walk([this, &solver, &am](StructDefOp s) {
       auto &csa = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(s);
-      if (mlir::failed(csa.constructSummary(solver, am))) {
-        auto error_message = "ConstraintDependencyGraphAnalysis failed to compute summary for " +
+      if (mlir::failed(csa.constructCDG(solver, am))) {
+        auto error_message = "ConstraintDependencyGraphAnalysis failed to compute CDG for " +
                              mlir::Twine(s.getName());
         s->emitError(error_message);
         llvm::report_fatal_error(error_message);
       }
-      dependencies[s] = csa.summary;
+      dependencies[s] = csa.cdg;
     });
   } else {
     auto error_message =
