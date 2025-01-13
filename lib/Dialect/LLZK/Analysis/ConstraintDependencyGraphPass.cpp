@@ -37,7 +37,7 @@ protected:
     auto &cs = getAnalysis<ConstraintDependencyGraphModuleAnalysis>();
     for (auto &[s, cdg_ptr] : cs) {
       auto &structDef = const_cast<StructDefOp &>(s);
-      auto fullName = getPathFromRoot(structDef);
+      auto fullName = getPathFromTopRoot(structDef);
       debug::ensure(
           mlir::succeeded(fullName),
           "could not resolve fully qualified name of struct " + mlir::Twine(structDef.getName())

@@ -32,6 +32,12 @@ mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(StructDefOp &to);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(FuncOp &to);
 
+/// @brief With include statements, there may be root modules nested within
+/// other root modules. This function resolves the topmost root module.
+mlir::FailureOr<mlir::ModuleOp> getTopRootModule(mlir::Operation *from);
+mlir::FailureOr<mlir::SymbolRefAttr> getPathFromTopRoot(StructDefOp &to);
+mlir::FailureOr<mlir::SymbolRefAttr> getPathFromTopRoot(FuncOp &to);
+
 /// @brief Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers
 /// @tparam T the type of symbol being resolved (e.g., llzk::FuncOp)
 /// @param symbolTable

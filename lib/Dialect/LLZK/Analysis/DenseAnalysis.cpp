@@ -182,10 +182,9 @@ void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
         return setToEntryState(after);
       }
       /// LLZK: Get callsites of the callable as the predecessors.
-      auto moduleOpRes = getRootModule(callable.getOperation());
-      if (mlir::failed(moduleOpRes)) {
-        llvm::report_fatal_error("could not get root module from callable");
-      }
+      auto moduleOpRes = getTopRootModule(callable.getOperation());
+      debug::ensure(mlir::succeeded(moduleOpRes), "could not get root module from callable");
+
       SmallVector<Operation *> callsites;
       moduleOpRes->walk([this, &callable, &callsites](CallOp call) mutable {
         auto calledFnRes = resolveCallable<FuncOp>(tables, call);
