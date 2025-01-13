@@ -184,7 +184,6 @@ LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 LogicalResult StructDefOp::verifyRegions() {
   assert(getBody().hasOneBlock()); // per ODS, SizedRegion<1>
-  auto emitError = [this] { return this->emitOpError(); };
   std::optional<FuncOp> foundCompute = std::nullopt;
   std::optional<FuncOp> foundConstrain = std::nullopt;
   {
