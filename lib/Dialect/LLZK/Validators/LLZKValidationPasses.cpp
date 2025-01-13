@@ -18,7 +18,7 @@ class FieldWriteValidatorPass
     : public llzk::impl::FieldWriteValidatorPassBase<FieldWriteValidatorPass> {
   void runOnOperation() override {
     StructDefOp structDef = getOperation();
-    FuncOp computeFunc = structDef.lookupSymbol<FuncOp>(FUNC_NAME_COMPUTE);
+    FuncOp computeFunc = structDef.getComputeFuncOp();
 
     // Initialize map with all field names mapped to nullptr (i.e. no write found).
     llvm::StringMap<FieldWriteOp> fieldNameToWriteOp;
