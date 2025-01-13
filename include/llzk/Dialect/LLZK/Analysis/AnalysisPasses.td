@@ -16,9 +16,11 @@ def CallGraphSCCsPrinterPass
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
-def ConstraintDependencyGraphPrinterPass : Pass<"llzk-print-constraint-dependency-graphs", "::mlir::ModuleOp"> {
+def ConstraintDependencyGraphPrinterPass
+    : Pass<"llzk-print-constraint-dependency-graphs", "::mlir::ModuleOp"> {
   let summary = "Print constraint dependency graph for all LLZK structs.";
-  let constructor = "llzk::createConstraintDependencyGraphPrinterPass(llvm::errs())";
+  let constructor =
+      "llzk::createConstraintDependencyGraphPrinterPass(llvm::errs())";
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 

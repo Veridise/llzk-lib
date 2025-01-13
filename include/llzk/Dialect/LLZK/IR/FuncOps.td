@@ -196,8 +196,7 @@ def ReturnOp
 def CallOp
     : LLZK_Op<"call", [MemRefsNormalizable,
                        DeclareOpInterfaceMethods<CallOpInterface>,
-                       DeclareOpInterfaceMethods<SymbolUserOpInterface>
-                       ]> {
+                       DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "call operation";
   let description = [{
     The `llzk.call` operation represents a call to another function. The operands
