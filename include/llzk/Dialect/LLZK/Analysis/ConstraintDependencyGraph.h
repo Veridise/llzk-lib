@@ -26,7 +26,7 @@ using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRef>
 /// @brief A dependency graph of constraints enforced by an LLZK struct.
 ///
 /// Mathmatically speaking, a constraint dependency graph (CDG) is a transitive closure
-/// of edges between where there is an edge between signals `a` and `b`
+/// of edges where there is an edge between signals `a` and `b`
 /// iff `a` and `b` appear in the same constraint.
 ///
 /// Less formally, a CDG is a set of signals that constrain one another through

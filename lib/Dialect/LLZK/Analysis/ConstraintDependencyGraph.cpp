@@ -112,14 +112,15 @@ public:
   }
 
   ConstrainRefSet getOrDefault(mlir::Value v) const {
-    if (refSetMap.find(v) == refSetMap.end()) {
+    auto it = refSetMap.find(v);
+    if (it == refSetMap.end()) {
       auto sourceRef = getSourceRef(v);
       if (mlir::succeeded(sourceRef)) {
         return {sourceRef.value()};
       }
       return {};
     }
-    return refSetMap.at(v);
+    return it->second;
   }
 
   ConstrainRefSet getReturnValue(unsigned i) const {
