@@ -499,6 +499,28 @@ bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 }
 
 //===------------------------------------------------------------------===//
+// ProjectArrayOp
+//===------------------------------------------------------------------===//
+
+LogicalResult ProjectArrayOp::inferReturnTypes(
+    MLIRContext *context, std::optional<Location> location, ProjectArrayOpAdaptor adaptor,
+    llvm::SmallVectorImpl<Type> &inferredReturnTypes
+) {
+  inferredReturnTypes.resize(1);
+  inferredReturnTypes[0] = computeReturnType(adaptor.getArrRef().getType(), adaptor.getIndices());
+  return success();
+}
+
+bool ProjectArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
+  return singletonTypeListsUnify(l, r);
+}
+
+ArrayType ProjectArrayOp::computeReturnType(Type arrRefType, ValueRange indices) {
+  assert(llvm::isa<ArrayType>(arrRefType)); // per ODS spec of ProjectArrayOp
+  return llvm::cast<ArrayType>(arrRefType).cloneWithReducedRank(indices.size());
+}
+
+//===------------------------------------------------------------------===//
 // EmitEqualityOp
 //===------------------------------------------------------------------===//
 

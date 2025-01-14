@@ -379,4 +379,8 @@ ArrayType::cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, Type elementT
 
 int64_t ArrayType::getNumElements() const { return ShapedType::getNumElements(getShape()); }
 
+ArrayType ArrayType::cloneWithReducedRank(size_t ranksToSkip) const {
+  return ArrayType::get(getElementType(), getDimensionSizes().drop_front(ranksToSkip));
+}
+
 } // namespace llzk

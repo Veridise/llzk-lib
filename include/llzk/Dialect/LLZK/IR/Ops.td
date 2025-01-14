@@ -417,6 +417,46 @@ def LLZK_WriteArrayOp
   }];
 }
 
+def LLZK_ProjectArrayOp
+    : LLZK_Op<"projectarr", [Pure, InferTypeOpAdaptorWithIsCompatible,
+                             TypeUnifyWithResult<
+                                 "arr_ref", "dimension-reduced array",
+                                 "computeReturnType($_self, $indices)">]> {
+  let summary = "Return a subarray from a multi-dimensional array.";
+  let description = [{
+    Takes an N-dimensional array and K indices and extracts the (N-K)-dimensional
+    array by applying the given indices to the first `K` dimensions of the array.
+    Error if `N-K < 1`. Use `readarr` instead if `N-K == 1`.
+
+    Projecting a 3-dimensional array to 1 dimension:
+    ```llzk
+    %i = index.constant 1
+    %0 = llzk.new_array ... : !llzk.array<3,10,15 x !llzk.felt>
+    %1 = llzk.projectarr %0[%i,%i] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.array<15 x !llzk.felt>
+    ```
+
+    Projecting a 2-dimensional array to 1-dimensional arrays for subcomponents:
+    ```llzk
+    scf.for %iv = %lb to %up step %step {
+      %p = llzk.projectarr %in[%iv] : !llzk.array<@N,2 x !llzk.felt>
+      %c = llzk.readarr %a[%iv] : !llzk.array<@N x !llzk.struct<@SubC>>, !llzk.struct<@SubC>
+      llzk.call @SubC::@constrain(%c, %p) : (!llzk.struct<@SubC>, !llzk.array<2 x !llzk.felt>) -> ()
+    }
+    ```
+  }];
+
+  let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices);
+  let results = (outs LLZK_ArrayType:$result);
+
+  let assemblyFormat = [{
+    $arr_ref `[` $indices `]` attr-dict `:` type($arr_ref)
+  }];
+
+  let extraClassDeclaration = [{
+    static ArrayType computeReturnType(::mlir::Type arrRefType, ::mlir::ValueRange indices);
+  }];
+}
+
 //===------------------------------------------------------------------===//
 // Constraint emit operations
 //===------------------------------------------------------------------===//
