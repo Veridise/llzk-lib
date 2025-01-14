@@ -50,7 +50,7 @@ llzk.func @arr_wrong_array_elem_type(%a: !llzk.felt) -> !llzk.array<1 x !llzk.fe
   %i = index.constant 0
   %v = index.constant 632
   %r = llzk.new_array %a: !llzk.array<1 x !llzk.felt>
-  // expected-error@+1 {{'llzk.writearr' op failed to verify that rvalue type matches with lvalue element type}}
+  // expected-error@+1 {{'llzk.writearr' op failed to verify that rvalue type matches with arr_ref element type}}
   llzk.writearr %r[%i] = %v : !llzk.array<1 x !llzk.felt>, index
   return %r: !llzk.array<1 x !llzk.felt>
 }
