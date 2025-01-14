@@ -246,9 +246,6 @@ LogicalResult StructDefOp::verifyRegions() {
       );
     }
     // Verify that the Struct has no paramters
-    // llvm::outs() << "const params = " << this->getConstParamsAttr() << "\n";
-    // auto attr = getConstParamsAttr();
-    // return attr ? ::std::optional< ::mlir::ArrayAttr >(attr) : (::std::nullopt);
     auto structParams = this->getConstParamsAttr();
     if (structParams && !structParams.empty()) {
       return this->emitError().append(
