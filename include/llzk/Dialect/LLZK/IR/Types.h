@@ -89,6 +89,12 @@ typeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefi
          );
 }
 
+template <typename Iter1, typename Iter2>
+inline bool
+singletonTypeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}) {
+  return lhs.size() == 1 && rhs.size() == 1 && typesUnify(lhs.front(), rhs.front());
+}
+
 mlir::LogicalResult computeDimsFromShape(
     mlir::MLIRContext *ctx, llvm::ArrayRef<int64_t> shape,
     llvm::SmallVector<mlir::Attribute> &dimensionSizes

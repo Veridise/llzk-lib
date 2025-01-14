@@ -495,8 +495,7 @@ LogicalResult ReadArrayOp::inferReturnTypes(
 }
 
 bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
-  // There is a single return type per ODS spec of ReadArrayOp
-  return l.size() == 1 && r.size() == 1 && typesUnify(l.front(), r.front());
+  return singletonTypeListsUnify(l, r);
 }
 
 //===------------------------------------------------------------------===//
