@@ -282,7 +282,7 @@ LogicalResult computeDimsFromShape(
   assert(dimensionSizes.empty()); // fully computed by this function
   Builder builder(ctx);
   auto attrs = llvm::map_range(shape, [&builder](int64_t v) -> Attribute {
-    return builder.getIndexAttr(v);
+    return builder.getI64IntegerAttr(v);
   });
   dimensionSizes.insert(dimensionSizes.begin(), attrs.begin(), attrs.end());
   assert(dimensionSizes.size() == shape.size()); // fully computed by this function
