@@ -367,6 +367,9 @@ public:
     return mlir::success();
   }
 
+  /// @brief Return true iff the CDG has been constructed
+  bool constructed() const { return cdg != nullptr; }
+
   ConstraintDependencyGraph &getCDG() {
     ensureCDGCreated();
     return *cdg;
@@ -383,9 +386,7 @@ private:
   std::shared_ptr<ConstraintDependencyGraph> cdg;
 
   void ensureCDGCreated() const {
-    if (!cdg) {
-      llvm::report_fatal_error("CDG does not exist; must invoke constructCDG");
-    }
+    debug::ensure(cdg != nullptr, "CDG does not exist; must invoke constructCDG");
   }
 
   friend class ConstraintDependencyGraphModuleAnalysis;
@@ -516,8 +517,14 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
         translations.push_back({prefix, s});
       }
     }
-    auto cdg = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(calledStruct).getCDG();
-    auto translatedCDG = cdg.translate(translations);
+    auto &childAnalysis = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(calledStruct);
+    if (!childAnalysis.constructed()) {
+      debug::ensure(
+          mlir::succeeded(childAnalysis.constructCDG(solver, am)),
+          "could not construct CDG for child struct"
+      );
+    }
+    auto translatedCDG = childAnalysis.getCDG().translate(translations);
 
     // Now, union sets based on the translation
     // We should be able to just merge what is in the translatedCDG to the current CDG
