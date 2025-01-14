@@ -488,7 +488,7 @@ LogicalResult ReadArrayOp::inferReturnTypes(
     llvm::SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   inferredReturnTypes.resize(1);
-  Type lvalType = adaptor.getLvalue().getType();
+  Type lvalType = adaptor.getArrRef().getType();
   assert(llvm::isa<ArrayType>(lvalType)); // per ODS spec of ReadArrayOp
   inferredReturnTypes[0] = llvm::cast<ArrayType>(lvalType).getElementType();
   return success();

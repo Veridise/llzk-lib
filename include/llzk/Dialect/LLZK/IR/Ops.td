@@ -348,7 +348,8 @@ def LLZK_CreateArrayOp
 }
 
 def LLZK_ReadArrayOp
-    : LLZK_Op<"readarr", [ArrayTypeElemsUnifyWithResultCustomInfer<"lvalue">]> {
+    : LLZK_Op<
+          "readarr", [ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
   let summary = "Loads a value from a LLZK array";
   let description = [{
     This operation loads the value from an array at position `$index`.
@@ -372,16 +373,16 @@ def LLZK_ReadArrayOp
     ```
   }];
 
-  let arguments = (ins LLZK_ArrayType:$lvalue, Variadic<Index>:$indices);
+  let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices);
   let results = (outs AnyLLZKType:$result);
 
   let assemblyFormat = [{
-    $lvalue `[` $indices `]` attr-dict `:` type($lvalue) `,` type($result)
+    $arr_ref `[` $indices `]` attr-dict `:` type($arr_ref) `,` type($result)
   }];
 }
 
 def LLZK_WriteArrayOp
-    : LLZK_Op<"writearr", [ArrayElemTypeUnifyWith<"lvalue", "rvalue">]> {
+    : LLZK_Op<"writearr", [ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
   let summary = "Writes a value into a LLZK array";
   let description = [{
     This operation writes a value into an array at position `$index`.
@@ -408,11 +409,11 @@ def LLZK_WriteArrayOp
     ```
   }];
 
-  let arguments = (ins LLZK_ArrayType:$lvalue, Variadic<Index>:$indices,
+  let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices,
       AnyLLZKType:$rvalue);
 
   let assemblyFormat = [{
-    $lvalue `[` $indices `]` `=` $rvalue attr-dict `:` type($lvalue) `,` type($rvalue)
+    $arr_ref `[` $indices `]` `=` $rvalue attr-dict `:` type($arr_ref) `,` type($rvalue)
   }];
 }
 
