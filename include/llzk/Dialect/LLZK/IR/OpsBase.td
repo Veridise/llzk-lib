@@ -76,7 +76,8 @@ class ArrayElemTypeUnifyWithResult<string arrayArg>
           "::llvm::cast<::llzk::ArrayType>($_self).getElementType()",
           "::llzk::typesUnify">;
 
-// ArrayElemTypeUnifyWithResult + InferTypeOpAdaptorWithIsCompatible
+// ArrayElemTypeUnifyWithResult + InferTypeOpAdaptorWithIsCompatible (i.e.
+// generate inferReturnTypes() and isCompatibleReturnTypes() functions)
 class ArrayTypeElemsUnifyWithResultCustomInfer<string arrayArg>
     : TraitList<[ArrayElemTypeUnifyWithResult<arrayArg>,
                  InferTypeOpAdaptorWithIsCompatible]>;

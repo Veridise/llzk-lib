@@ -488,7 +488,7 @@ void CreateArrayOp::printInferredArrayType(
 
 LogicalResult ReadArrayOp::inferReturnTypes(
     MLIRContext *context, std::optional<Location> location, ReadArrayOpAdaptor adaptor,
-    ::llvm::SmallVectorImpl<Type> &inferredReturnTypes
+    llvm::SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   inferredReturnTypes.resize(1);
   Type lvalType = adaptor.getLvalue().getType();
