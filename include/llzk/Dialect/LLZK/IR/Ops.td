@@ -97,17 +97,22 @@ def LLZK_AssertOp
     the assertion is preserved. All assertions that appear in `constrain()` functions
     must evaluate statically, i.e. they cannot depend on inputs to the circuit.
 
-    Example:
-
+    Assertion without message:
     ```llzk
     %1 = llzk.cmp lt(%a, %b)
     llzk.assert %1
     ```
+
+    Assertion with a message:
+    ```llzk
+    %1 = llzk.cmp eq(%a, %b)
+    llzk.assert %1, "expected equal values"
+    ```
   }];
 
-  let arguments = (ins I1:$condition);
+  let arguments = (ins I1:$condition, OptionalAttr<StrAttr>:$msg);
 
-  let assemblyFormat = [{ $condition attr-dict }];
+  let assemblyFormat = [{ $condition (`,` $msg^)? attr-dict }];
 }
 
 //===------------------------------------------------------------------===//

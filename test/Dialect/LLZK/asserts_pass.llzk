@@ -57,3 +57,14 @@ llzk.func @just_assert(%c: i1) -> i1 {
 //CHECK-NEXT:    assert %[[A]]
 //CHECK-NEXT:    return %[[A]] : i1
 //CHECK-NEXT:  }
+// -----
+
+llzk.func @assert_with_message(%c: i1) -> i1 {
+  assert %c, "Expected a `true` value"
+  return %c : i1
+}
+//CHECK-LABEL: llzk.func @assert_with_message
+//CHECK-SAME:  (%[[A:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
+//CHECK-NEXT:    assert %[[A]], "Expected a `true` value"
+//CHECK-NEXT:    return %[[A]] : i1
+//CHECK-NEXT:  }
