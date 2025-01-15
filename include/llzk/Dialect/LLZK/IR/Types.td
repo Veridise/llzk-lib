@@ -14,6 +14,8 @@ class LLZK_Type<string name, string typeMnemonic, list<Trait> traits = []>
 def AnyLLZKType : Type<CPred<"::llzk::isValidType($_self)">,
                        "a valid LLZK type", "::mlir::Type">;
 
+def AnyLLZKIntType : AnyTypeOf<[I1, Index]>;
+
 def LLZK_FeltType : LLZK_Type<"Felt", "felt"> {
   let summary = "finite field element";
   let description = [{}];

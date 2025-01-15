@@ -690,7 +690,7 @@ def LLZK_IntToFeltOp : LLZK_Op<"tofelt", [Pure]> {
     ```
   }];
 
-  let arguments = (ins AnySignlessInteger:$value);
+  let arguments = (ins AnyLLZKIntType:$value);
   let results = (outs LLZK_FeltType:$result);
   let assemblyFormat = "$value `:` type($value) attr-dict";
 }

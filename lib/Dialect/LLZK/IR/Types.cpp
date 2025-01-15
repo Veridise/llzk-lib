@@ -23,12 +23,12 @@ template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeI
 
 template <bool AllowStruct, bool AllowString> bool isValidArrayElemTypeImpl(Type type) {
   // ArrayType element can be any valid type sans ArrayType itself.
-  //  Pass through the flag indicating if StructType is allowed.
+  //  Pass through the flags indicating which types are allowed.
   return isValidTypeImpl<AllowStruct, AllowString, false>(type);
 }
 
 template <bool AllowStruct, bool AllowString> bool isValidArrayTypeImpl(Type type) {
-  // Pass through the flag indicating if StructType is allowed.
+  //  Pass through the flags indicating which types are allowed.
   return llvm::isa<ArrayType>(type) && isValidArrayElemTypeImpl<AllowStruct, AllowString>(
                                            llvm::cast<ArrayType>(type).getElementType()
                                        );
@@ -37,7 +37,7 @@ template <bool AllowStruct, bool AllowString> bool isValidArrayTypeImpl(Type typ
 template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeImpl(Type type) {
   // This is the main check for allowed types.
   //  Allow StructType and ArrayType only if the respective flags are true.
-  //  Pass through the flag indicating if StructType is allowed.
+  //  Pass through the flags indicating which types are allowed.
   return type.isSignlessInteger(1) || llvm::isa<IndexType, FeltType, TypeVarType>(type) ||
          (AllowStruct && llvm::isa<StructType>(type)) ||
          (AllowString && llvm::isa<StringType>(type)) ||
