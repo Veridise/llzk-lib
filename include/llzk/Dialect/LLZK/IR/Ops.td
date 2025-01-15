@@ -137,7 +137,7 @@ def LLZK_StructDefOp
   let extraClassDeclaration = [{
     /// Gets the StructType representing this struct. If the `constParams` to use in
     /// the type are not given, the StructType will use `this->getConstParamsAttr()`.
-    StructType getType(std::optional<::mlir::ArrayAttr> constParams = {});
+    StructType getType(::std::optional<::mlir::ArrayAttr> constParams = {});
 
     /// Gets the FieldDefOp that defines the field in this
     /// structure with the given name, if present.
@@ -418,15 +418,12 @@ def LLZK_WriteArrayOp
 }
 
 def LLZK_ProjectArrayOp
-    : LLZK_Op<"projectarr", [Pure, InferTypeOpAdaptorWithIsCompatible,
-                             TypeUnifyWithResult<
-                                 "arr_ref", "dimension-reduced array",
-                                 "computeReturnType($_self, $indices)">]> {
+    : LLZK_Op<"projectarr", [Pure, InferTypeOpAdaptorWithIsCompatible]> {
   let summary = "Return a subarray from a multi-dimensional array.";
   let description = [{
     Takes an N-dimensional array and K indices and extracts the (N-K)-dimensional
     array by applying the given indices to the first `K` dimensions of the array.
-    Error if `N-K < 1`. Use `readarr` instead if `N-K == 1`.
+    Error if `K > N`. Use `readarr` instead if `K == N`.
 
     Projecting a 3-dimensional array to 1 dimension:
     ```llzk
@@ -450,10 +447,6 @@ def LLZK_ProjectArrayOp
 
   let assemblyFormat = [{
     $arr_ref `[` $indices `]` attr-dict `:` type($arr_ref)
-  }];
-
-  let extraClassDeclaration = [{
-    static ArrayType computeReturnType(::mlir::Type arrRefType, ::mlir::ValueRange indices);
   }];
 }
 

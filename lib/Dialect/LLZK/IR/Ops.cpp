@@ -506,18 +506,36 @@ LogicalResult ProjectArrayOp::inferReturnTypes(
     MLIRContext *context, std::optional<Location> location, ProjectArrayOpAdaptor adaptor,
     llvm::SmallVectorImpl<Type> &inferredReturnTypes
 ) {
+  size_t numToSkip = adaptor.getIndices().size();
+  Type arrRefType = adaptor.getArrRef().getType();
+  assert(llvm::isa<ArrayType>(arrRefType)); // per ODS spec of ProjectArrayOp
+  ArrayType arrayType = llvm::cast<ArrayType>(arrRefType);
+  ArrayRef<Attribute> dimSizes = arrayType.getDimensionSizes();
+
+  // Check for invalid cases
+  auto compare = numToSkip <=> dimSizes.size();
+  if (compare == 0) {
+    return mlir::emitOptionalError(
+        location, "'", ProjectArrayOp::getOperationName(),
+        "' op cannot fix all dimensions of an array. Use '", ReadArrayOp::getOperationName(),
+        "' instead."
+    );
+  } else if (compare > 0) {
+    return mlir::emitOptionalError(
+        location, "'", ProjectArrayOp::getOperationName(),
+        "' op cannot fix more dimensions than exist in the source array"
+    );
+  }
+
+  // Generate and store reduced array type
   inferredReturnTypes.resize(1);
-  inferredReturnTypes[0] = computeReturnType(adaptor.getArrRef().getType(), adaptor.getIndices());
+  inferredReturnTypes[0] =
+      ArrayType::get(arrayType.getElementType(), dimSizes.drop_front(numToSkip));
   return success();
 }
 
 bool ProjectArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
   return singletonTypeListsUnify(l, r);
-}
-
-ArrayType ProjectArrayOp::computeReturnType(Type arrRefType, ValueRange indices) {
-  assert(llvm::isa<ArrayType>(arrRefType)); // per ODS spec of ProjectArrayOp
-  return llvm::cast<ArrayType>(arrRefType).cloneWithReducedRank(indices.size());
 }
 
 //===------------------------------------------------------------------===//

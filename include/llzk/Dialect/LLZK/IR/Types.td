@@ -135,10 +135,6 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
     /// Aborts if the array has a dynamic dimension.
     /// Required by the ShapedTypeInterface interface.
     int64_t getNumElements() const;
-
-    /// Clone this type with the same element type and with the
-    /// `ranksToSkip` high-order dimensions of the shape removed.
-    ArrayType cloneWithReducedRank(size_t ranksToSkip) const;
   }];
 
   let extraClassDefinition = [{
