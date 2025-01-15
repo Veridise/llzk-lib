@@ -94,7 +94,7 @@ def LLZK_AssertOp
   let description = [{
     Assertions are checked statically when possible. If the condition evaluates to
     `true`, the assertion is removed. If `false`, an error is reported. Otherwise,
-    the assertion is preserved. All assertions that appear in `compute()` functions
+    the assertion is preserved. All assertions that appear in `constrain()` functions
     must evaluate statically, i.e. they cannot depend on inputs to the circuit.
 
     Example:
