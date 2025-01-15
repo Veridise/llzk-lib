@@ -460,16 +460,16 @@ def LLZK_ArrayLengthOp : LLZK_Op<"array_len", [Pure]> {
     ```llzk
     %a = llzk.new_array : !llzk.array<2,3 x !llzk.felt>
     %0 = index.constant 0
-    %x = llzk.array_len %a[%0] : !llzk.array<2,3 x !llzk.felt> // result is 2
+    %x = llzk.array_len %a, %0 : !llzk.array<2,3 x !llzk.felt> // result is 2
     %1 = index.constant 1
-    %y = llzk.array_len %a[%1] : !llzk.array<2,3 x !llzk.felt> // result is 3
+    %y = llzk.array_len %a, %1 : !llzk.array<2,3 x !llzk.felt> // result is 3
     ```
   }];
 
   let arguments = (ins LLZK_ArrayType:$array, Index:$dim);
   let results = (outs Index:$length);
 
-  let assemblyFormat = "$array `[` $dim `]` `:` type($array) attr-dict";
+  let assemblyFormat = "$array `,` $dim `:` type($array) attr-dict";
 }
 
 //===------------------------------------------------------------------===//
