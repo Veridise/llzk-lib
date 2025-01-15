@@ -88,6 +88,28 @@ def LLZK_IncludeOp
   }];
 }
 
+def LLZK_AssertOp
+    : LLZK_Op<"assert", [DeclareOpInterfaceMethods<MemoryEffectsOpInterface>]> {
+  let summary = "Assertion operation";
+  let description = [{
+    Assertions are checked statically when possible. If the condition evaluates to
+    `true`, the assertion is removed. If `false`, an error is reported. Otherwise,
+    the assertion is preserved. All assertions that appear in `compute()` functions
+    must evaluate statically, i.e. they cannot depend on inputs to the circuit.
+
+    Example:
+
+    ```llzk
+    %1 = llzk.cmp lt(%a, %b)
+    llzk.assert %1
+    ```
+  }];
+
+  let arguments = (ins I1:$condition);
+
+  let assemblyFormat = [{ $condition attr-dict }];
+}
+
 //===------------------------------------------------------------------===//
 // Struct Operations
 //===------------------------------------------------------------------===//
