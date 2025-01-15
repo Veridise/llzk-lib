@@ -198,7 +198,7 @@ module attributes {veridise.lang = "llzk"} {
           %a: !llzk.struct<@TestComponent11>,
           %b: !llzk.struct<@TestComponent11>
           ) {
-      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be free from struct type, but got '!llzk.struct<@TestComponent11>'}}
+      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be free from struct and string type, but got '!llzk.struct<@TestComponent11>'}}
       llzk.emit_eq %a, %b : !llzk.struct<@TestComponent11>
       return
     }
@@ -217,7 +217,7 @@ module attributes {veridise.lang = "llzk"} {
           %a: !llzk.array<3 x !llzk.struct<@TestComponent12>>,
           %b: !llzk.array<3 x !llzk.struct<@TestComponent12>>
           ) {
-      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be free from struct type, but got '!llzk.array<3 x !llzk.struct<@TestComponent12>>'}}
+      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be free from struct and string type, but got '!llzk.array<3 x !llzk.struct<@TestComponent12>>'}}
       llzk.emit_eq %a, %b : !llzk.array<3 x !llzk.struct<@TestComponent12>>
       return
     }
@@ -236,7 +236,7 @@ module attributes {veridise.lang = "llzk"} {
           %a: !llzk.array<3,2 x !llzk.struct<@TestComponent13>>,
           %b: !llzk.array<3,2 x !llzk.struct<@TestComponent13>>
           ) {
-      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be free from struct type, but got '!llzk.array<3,2 x !llzk.struct<@TestComponent13>>'}}
+      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be free from struct and string type, but got '!llzk.array<3,2 x !llzk.struct<@TestComponent13>>'}}
       llzk.emit_eq %a, %b : !llzk.array<3,2 x !llzk.struct<@TestComponent13>>
       return
     }
@@ -440,6 +440,38 @@ module attributes {veridise.lang = "llzk"} {
     func @compute() -> !llzk.struct<@Component23> {
       %self = new_struct : !llzk.struct<@Component23>
       return %self : !llzk.struct<@Component23>
+    }
+  }
+}
+// -----
+
+// Test: cannot use string type with [emit_eq] op 
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component24 {
+    func @compute(%a: !llzk.string, %b: !llzk.string) -> !llzk.struct<@Component24> {
+      %self = new_struct : !llzk.struct<@Component24>
+      return %self : !llzk.struct<@Component24>
+    }
+    func @constrain(%a: !llzk.string, %b: !llzk.string) {
+      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be free from struct and string type, but got '!llzk.string'}}
+      llzk.emit_eq %a, %b : !llzk.string
+      return
+    }
+  }
+}
+// -----
+
+// Test: cannot use string type with [emit_eq] op (at depth)
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component25 {
+    func @compute(%a: !llzk.array<2 x !llzk.string>, %b: !llzk.array<2 x !llzk.string>) -> !llzk.struct<@Component25> {
+      %self = new_struct : !llzk.struct<@Component25>
+      return %self : !llzk.struct<@Component25>
+    }
+    func @constrain(%self: !llzk.struct<@Component25>, %a: !llzk.array<2 x !llzk.string>, %b: !llzk.array<2 x !llzk.string>) {
+      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be free from struct and string type, but got '!llzk.array<2 x !llzk.string>'}}
+      llzk.emit_eq %a, %b : !llzk.array<2 x !llzk.string>
+      return
     }
   }
 }

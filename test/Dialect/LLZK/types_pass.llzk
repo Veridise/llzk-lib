@@ -41,3 +41,32 @@ llzk.func private @f(!llzk.felt) -> i1
 llzk.func private @g(%x: !llzk.array<2,3,2 x index>)
 //CHECK-LABEL:  llzk.func private @g(!llzk.array<2,3,2 x index>)
 // -----
+
+llzk.func private @h(%x: !llzk.string)
+//CHECK-LABEL:  llzk.func private @h(!llzk.string)
+// -----
+
+llzk.func private @i(%x: !llzk.array<4 x !llzk.string>)
+//CHECK-LABEL:  llzk.func private @i(!llzk.array<4 x !llzk.string>)
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @CJ {
+    field @s : !llzk.string
+    func @compute() -> !llzk.struct<@CJ> {
+      %self = new_struct : !llzk.struct<@CJ>
+      return %self : !llzk.struct<@CJ>
+    }
+    func @constrain(%self: !llzk.struct<@CJ>) { return }
+  }
+}
+//CHECK-LABEL: llzk.struct @CJ {
+//CHECK-NEXT:    field @s : !llzk.string
+//CHECK-NEXT:    func @compute() -> !llzk.struct<@CJ> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@CJ>
+//CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@CJ>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@CJ>) {
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }

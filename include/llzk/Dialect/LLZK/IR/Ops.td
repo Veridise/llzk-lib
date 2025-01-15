@@ -516,7 +516,7 @@ class LLZK_EmitOp<string mnemonic, list<Trait> traits = []>
 }
 
 def EmitEqType : TypeConstraint<CPred<"::llzk::isValidEmitEqType($_self)">,
-                                "free from struct type">;
+                                "free from struct and string type">;
 
 def LLZK_EmitEqualityOp
     : LLZK_EmitOp<"emit_eq", [Commutative, ElementwiseMappable,
