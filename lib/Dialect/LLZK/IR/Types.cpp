@@ -19,8 +19,7 @@ using namespace mlir;
 //===------------------------------------------------------------------===//
 
 namespace {
-template <bool AllowStruct, bool AllowString, bool AllowArray>
-bool isValidTypeImpl(Type type);
+template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeImpl(Type type);
 
 template <bool AllowStruct, bool AllowString> bool isValidArrayElemTypeImpl(Type type) {
   // ArrayType element can be any valid type sans ArrayType itself.
@@ -35,8 +34,7 @@ template <bool AllowStruct, bool AllowString> bool isValidArrayTypeImpl(Type typ
                                        );
 }
 
-template <bool AllowStruct, bool AllowString, bool AllowArray>
-bool isValidTypeImpl(Type type) {
+template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeImpl(Type type) {
   // This is the main check for allowed types.
   //  Allow StructType and ArrayType only if the respective flags are true.
   //  Pass through the flag indicating if StructType is allowed.
