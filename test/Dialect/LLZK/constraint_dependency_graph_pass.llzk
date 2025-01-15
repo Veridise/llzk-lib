@@ -287,3 +287,22 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     { %arg1, <constfelt: 1> },
 // CHECK-NEXT:     { %arg2, <constfelt: 1> }
 // CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "zir_example_3.llzk" as @zir
+}
+
+// CHECK: @zir::@Head ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@$super], %arg1[0] }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@A ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@$super][@$super], <constfelt: 1>, <constfelt: 2> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@B ConstraintDependencyGraph { }
+// CHECK-NEXT: @zir::@Top ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@a][@$super][@$super], %arg0[@b][@$super][@$super][@$super][@$super] },
+// CHECK-NEXT:     { %arg0[@a][@$super][@$super], <constfelt: 1>, <constfelt: 2> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@VoidComponent ConstraintDependencyGraph { }

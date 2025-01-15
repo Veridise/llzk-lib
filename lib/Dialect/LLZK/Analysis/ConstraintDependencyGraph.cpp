@@ -22,7 +22,59 @@ for use outside of this specific ConstraintDependencyGraph analysis.
 
 using ConstantMap = mlir::DenseMap<mlir::Value, mlir::APInt>;
 using ConstrainRefSetMap = mlir::DenseMap<mlir::Value, ConstrainRefSet>;
+using ConstrainRefSetVec = std::vector<ConstrainRefSet>;
 using ArgumentMap = mlir::DenseMap<mlir::BlockArgument, ConstrainRefSet>;
+
+/// @brief A value at a given point of the ConstrainRefLattice.
+class ConstrainRefLatticeValue {
+  /// For scalar values.
+  using ScalarTy = ConstrainRefSet;
+  /// For arrays of values created by, e.g., the LLZK new_array op. A recursive
+  /// definition to support arrays of arbitrary dimensions. The references
+  /// are held by a map within the lattice.
+  using ArrayTy = std::vector<std::reference_wrapper<ConstrainRefLatticeValue>>;
+
+public:
+  explicit ConstrainRefLatticeValue(ScalarTy s) : value(s) {}
+  explicit ConstrainRefLatticeValue(ArrayTy a) : value(a) {}
+
+  bool isScalar() const { return std::holds_alternative<ScalarTy>(value); }
+  bool isArray() const { return std::holds_alternative<ArrayTy>(value); }
+
+  const ScalarTy &getScalarValue() const {
+    debug::ensure(isScalar(), "not a scalar value");
+    return std::get<ScalarTy>(value);
+  }
+
+  const ArrayTy &getArrayValue() const { debug::ensure(isArray(), "not an array value"); }
+
+  void print(mlir::raw_ostream &os) const {
+    if (isScalar()) {
+      os << getScalarValue();
+    } else {
+      os << "[ ";
+      const auto &arr = getArrayValue();
+      for (auto it = arr.begin(); it != arr.end();) {
+        (*it)->print(os);
+        it++;
+        if (it != arr.end()) {
+          os << ", ";
+        } else {
+          os << ' ';
+        }
+      }
+      os << ']';
+    }
+  }
+
+private:
+  std::variant<ScalarTy, ArrayTy> value;
+};
+
+mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLatticeValue &v) {
+  v.print(os);
+  return os;
+}
 
 /// A lattice for use in dense analysis.
 class ConstrainRefLattice : public dataflow::AbstractDenseLattice {
@@ -42,6 +94,8 @@ public:
       return ConstrainRef(constFelt);
     } else if (auto constIdx = mlir::dyn_cast<mlir::index::ConstantOp>(val.getDefiningOp())) {
       return ConstrainRef(constIdx);
+    } else if (auto readConst = mlir::dyn_cast<ConstReadOp>(val.getDefiningOp())) {
+      return ConstrainRef(readConst);
     }
     return mlir::failure();
   }
@@ -135,7 +189,7 @@ public:
   }
 
 private:
-  ConstrainRefSetMap refSetMap;
+  mlir::DenseMap<mlir::Value, ConstrainRefLatticeValue> valueMap;
 };
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLattice &v) {

@@ -123,19 +123,26 @@ public:
   static std::vector<ConstrainRef> getAllConstrainRefs(StructDefOp structDef);
 
   explicit ConstrainRef(mlir::BlockArgument b)
-      : blockArg(b), fieldRefs(), constFelt(nullptr), constIdx(nullptr) {}
+      : blockArg(b), fieldRefs(), constantVal(std::nullopt) {}
   ConstrainRef(mlir::BlockArgument b, std::vector<ConstrainRefIndex> f)
-      : blockArg(b), fieldRefs(std::move(f)), constFelt(nullptr), constIdx(nullptr) {}
-  explicit ConstrainRef(FeltConstantOp c)
-      : blockArg(nullptr), fieldRefs(), constFelt(c), constIdx(nullptr) {}
+      : blockArg(b), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
+  explicit ConstrainRef(FeltConstantOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
   explicit ConstrainRef(mlir::index::ConstantOp c)
-      : blockArg(nullptr), fieldRefs(), constFelt(nullptr), constIdx(c) {}
+      : blockArg(nullptr), fieldRefs(), constantVal(c) {}
+  explicit ConstrainRef(ConstReadOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
 
   mlir::Type getType() const;
 
-  bool isConstantFelt() const { return constFelt != nullptr; }
-  bool isConstantIndex() const { return constIdx != nullptr; }
-  bool isConstant() const { return isConstantFelt() || isConstantIndex(); }
+  bool isConstantFelt() const {
+    return constantVal.has_value() && std::holds_alternative<FeltConstantOp>(*constantVal);
+  }
+  bool isConstantIndex() const {
+    return constantVal.has_value() && std::holds_alternative<mlir::index::ConstantOp>(*constantVal);
+  }
+  bool isTemplateConstant() const {
+    return constantVal.has_value() && std::holds_alternative<ConstReadOp>(*constantVal);
+  }
+  bool isConstant() const { return constantVal.has_value(); }
 
   bool isFeltVal() const { return mlir::isa<FeltType>(getType()); }
   bool isIndexVal() const { return mlir::isa<mlir::IndexType>(getType()); }
@@ -146,14 +153,17 @@ public:
   unsigned getInputNum() const { return blockArg.getArgNumber(); }
   mlir::APInt getConstantFeltValue() const {
     debug::ensure(isConstantFelt(), __FUNCTION__ + mlir::Twine(" requires a constant felt!"));
-    return constFelt.getValueAttr().getValue();
+    return std::get<FeltConstantOp>(*constantVal).getValueAttr().getValue();
   }
   mlir::APInt getConstantIndexValue() const {
     debug::ensure(isConstantIndex(), __FUNCTION__ + mlir::Twine(" requires a constant index!"));
-    return constIdx.getValue();
+    return std::get<mlir::index::ConstantOp>(*constantVal).getValue();
   }
-  mlir::APInt getConstantValue() const {
-    debug::ensure(isConstant(), __FUNCTION__ + mlir::Twine(" requires a constant!"));
+  mlir::APInt getConstantInt() const {
+    debug::ensure(
+        isConstantFelt() || isConstantIndex(),
+        __FUNCTION__ + mlir::Twine(" requires a constant int type!")
+    );
     return isConstantFelt() ? getConstantFeltValue() : getConstantIndexValue();
   }
 
@@ -212,12 +222,14 @@ private:
   mlir::BlockArgument blockArg;
   std::vector<ConstrainRefIndex> fieldRefs;
   // using mutable to reduce constant casts for certain get* functions.
-  mutable FeltConstantOp constFelt;
-  mutable mlir::index::ConstantOp constIdx;
+  mutable std::optional<std::variant<FeltConstantOp, mlir::index::ConstantOp, ConstReadOp>>
+      constantVal;
 };
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRef &rhs);
 
 using ConstrainRefSet = std::unordered_set<ConstrainRef, ConstrainRef::Hash>;
+
+mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefSet &rhs);
 
 } // namespace llzk

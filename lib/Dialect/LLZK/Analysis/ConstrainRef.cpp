@@ -184,9 +184,11 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDe
 
 mlir::Type ConstrainRef::getType() const {
   if (isConstantFelt()) {
-    return const_cast<FeltConstantOp &>(constFelt).getType();
+    return std::get<FeltConstantOp>(*constantVal).getType();
   } else if (isConstantIndex()) {
-    return const_cast<mlir::index::ConstantOp &>(constIdx).getType();
+    return std::get<mlir::index::ConstantOp>(*constantVal).getType();
+  } else if (isTemplateConstant()) {
+    return std::get<ConstReadOp>(*constantVal).getType();
   } else {
     int array_derefs = 0;
     int idx = fieldRefs.size() - 1;
@@ -234,6 +236,8 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
     os << "<constfelt: " << getConstantFeltValue() << '>';
   } else if (isConstantIndex()) {
     os << "<index: " << getConstantIndexValue() << '>';
+  } else if (isTemplateConstant()) {
+    os << "<template: " << std::get<ConstReadOp>(*constantVal).getConstName() << '>';
   } else {
     os << "%arg" << blockArg.getArgNumber();
     for (auto f : fieldRefs) {
@@ -243,7 +247,7 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
 }
 
 bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
-  return blockArg == rhs.blockArg && fieldRefs == rhs.fieldRefs && constFelt == rhs.constFelt;
+  return blockArg == rhs.blockArg && fieldRefs == rhs.fieldRefs && constantVal == rhs.constantVal;
 }
 
 // required for EquivalenceClasses usage
@@ -254,7 +258,7 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   } else if (!isConstantFelt() && rhs.isConstantFelt()) {
     return true;
   } else if (isConstantFelt() && rhs.isConstantFelt()) {
-    return constFelt < rhs.constFelt;
+    return getConstantFeltValue().ult(rhs.getConstantFeltValue());
   }
 
   if (isConstantIndex() && !rhs.isConstantIndex()) {
@@ -264,6 +268,17 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
     return true;
   } else if (isConstantIndex() && rhs.isConstantIndex()) {
     return getConstantIndexValue().ult(rhs.getConstantIndexValue());
+  }
+
+  if (isTemplateConstant() && !rhs.isTemplateConstant()) {
+    // Put all template constants next at the end
+    return false;
+  } else if (!isTemplateConstant() && rhs.isTemplateConstant()) {
+    return true;
+  } else if (isTemplateConstant() && rhs.isTemplateConstant()) {
+    auto lhsName = std::get<ConstReadOp>(*constantVal).getConstName();
+    auto rhsName = std::get<ConstReadOp>(*rhs.constantVal).getConstName();
+    return lhsName.compare(rhsName) < 0;
   }
 
   // both are not constants
@@ -284,9 +299,11 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
 
 size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
   if (val.isConstantFelt()) {
-    return OpHash<FeltConstantOp> {}(val.constFelt);
+    return OpHash<FeltConstantOp> {}(std::get<FeltConstantOp>(*val.constantVal));
   } else if (val.isConstantIndex()) {
-    return OpHash<mlir::index::ConstantOp> {}(val.constIdx);
+    return OpHash<mlir::index::ConstantOp> {}(std::get<mlir::index::ConstantOp>(*val.constantVal));
+  } else if (val.isTemplateConstant()) {
+    return OpHash<ConstReadOp> {}(std::get<ConstReadOp>(*val.constantVal));
   } else {
     size_t hash = std::hash<unsigned> {}(val.blockArg.getArgNumber());
     for (auto f : val.fieldRefs) {
@@ -298,6 +315,21 @@ size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRef &rhs) {
   rhs.print(os);
+  return os;
+}
+
+mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefSet &rhs) {
+  os << "{ ";
+  for (auto it = rhs.begin(); it != rhs.end();) {
+    os << *it;
+    it++;
+    if (it != rhs.end()) {
+      os << ", ";
+    } else {
+      os << ' ';
+    }
+  }
+  os << '}';
   return os;
 }
 
