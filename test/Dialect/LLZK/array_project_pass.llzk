@@ -7,7 +7,7 @@ llzk.func @project_constant_index() -> !llzk.array<2 x index> {
   %d = index.constant 52
   %r = llzk.new_array %a, %b, %c, %d : !llzk.array<2,2 x index>
   %i = index.constant 1
-  %s = llzk.projectarr %r[%i] : !llzk.array<2,2 x index>
+  %s = llzk.extractarr %r[%i] : !llzk.array<2,2 x index>
   return %s: !llzk.array<2 x index>
 }
 //CHECK-LABEL: llzk.func @project_constant_index() -> !llzk.array<2 x index> {
@@ -17,7 +17,7 @@ llzk.func @project_constant_index() -> !llzk.array<2 x index> {
 //CHECK-NEXT:    %[[T4:[0-9a-zA-Z_\.]+]] = index.constant 52
 //CHECK-NEXT:    %[[T5:[0-9a-zA-Z_\.]+]] = new_array %[[T1]], %[[T2]], %[[T3]], %[[T4]] : <2,2 x index>
 //CHECK-NEXT:    %[[T6:[0-9a-zA-Z_\.]+]] = index.constant 1
-//CHECK-NEXT:    %[[T7:[0-9a-zA-Z_\.]+]] = projectarr %[[T5]][%[[T6]]] : <2,2 x index>
+//CHECK-NEXT:    %[[T7:[0-9a-zA-Z_\.]+]] = extractarr %[[T5]][%[[T6]]] : <2,2 x index>
 //CHECK-NEXT:    return %[[T7]] : !llzk.array<2 x index>
 //CHECK-NEXT:  }
 // -----
@@ -28,7 +28,7 @@ llzk.func @project_empty_index() -> !llzk.array<2,2 x index> {
   %c = index.constant 2
   %d = index.constant 52
   %r = llzk.new_array %a, %b, %c, %d : !llzk.array<2,2 x index>
-  %s = llzk.projectarr %r[] : !llzk.array<2,2 x index>
+  %s = llzk.extractarr %r[] : !llzk.array<2,2 x index>
   return %s: !llzk.array<2,2 x index>
 }
 //CHECK-LABEL: llzk.func @project_empty_index() -> !llzk.array<2,2 x index> {
@@ -37,19 +37,19 @@ llzk.func @project_empty_index() -> !llzk.array<2,2 x index> {
 //CHECK-NEXT:    %[[T3:[0-9a-zA-Z_\.]+]] = index.constant 2
 //CHECK-NEXT:    %[[T4:[0-9a-zA-Z_\.]+]] = index.constant 52
 //CHECK-NEXT:    %[[T5:[0-9a-zA-Z_\.]+]] = new_array %[[T1]], %[[T2]], %[[T3]], %[[T4]] : <2,2 x index>
-//CHECK-NEXT:    %[[T7:[0-9a-zA-Z_\.]+]] = projectarr %[[T5]][] : <2,2 x index>
+//CHECK-NEXT:    %[[T7:[0-9a-zA-Z_\.]+]] = extractarr %[[T5]][] : <2,2 x index>
 //CHECK-NEXT:    return %[[T7]] : !llzk.array<2,2 x index>
 //CHECK-NEXT:  }
 // -----
 
 llzk.func @project_trival() -> !llzk.array<0 x index> {
   %r = llzk.new_array : !llzk.array<0 x index>
-  %s = llzk.projectarr %r[] : !llzk.array<0 x index>
+  %s = llzk.extractarr %r[] : !llzk.array<0 x index>
   return %s: !llzk.array<0 x index>
 }
 //CHECK-LABEL: llzk.func @project_trival() -> !llzk.array<0 x index> {
 //CHECK-NEXT:    %[[T5:[0-9a-zA-Z_\.]+]] = new_array : <0 x index>
-//CHECK-NEXT:    %[[T7:[0-9a-zA-Z_\.]+]] = projectarr %[[T5]][] : <0 x index>
+//CHECK-NEXT:    %[[T7:[0-9a-zA-Z_\.]+]] = extractarr %[[T5]][] : <0 x index>
 //CHECK-NEXT:    return %[[T7]] : !llzk.array<0 x index>
 //CHECK-NEXT:  }
 // -----
@@ -81,7 +81,7 @@ module attributes {veridise.lang = "llzk"} {
       %up = read_const @N : index
       %step = index.constant 1
       scf.for %iv = %lb to %up step %step {
-        %p = llzk.projectarr %in[%iv] : !llzk.array<@N,2 x !llzk.felt>
+        %p = llzk.extractarr %in[%iv] : !llzk.array<@N,2 x !llzk.felt>
         %c = llzk.call @Component01::@compute(%p) : (!llzk.array<2 x !llzk.felt>) -> !llzk.struct<@Component01>
         llzk.writearr %a[%iv] = %c : !llzk.array<@N x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
       }
@@ -97,7 +97,7 @@ module attributes {veridise.lang = "llzk"} {
       %up = read_const @N : index
       %step = index.constant 1
       scf.for %iv = %lb to %up step %step {
-        %p = llzk.projectarr %in[%iv] : !llzk.array<@N,2 x !llzk.felt>
+        %p = llzk.extractarr %in[%iv] : !llzk.array<@N,2 x !llzk.felt>
         %c = llzk.readarr %a[%iv] : !llzk.array<@N x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
         llzk.call @Component01::@constrain(%c, %p) : (!llzk.struct<@Component01>, !llzk.array<2 x !llzk.felt>) -> ()
       }
@@ -127,7 +127,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = read_const @N : index
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = index.constant 1
 //CHECK-NEXT:      scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[T3]] to %[[T0]] step %[[T4]] {
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = llzk.projectarr %[[A0]][%[[IV]]] : <@N,2 x !llzk.felt>
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = llzk.extractarr %[[A0]][%[[IV]]] : <@N,2 x !llzk.felt>
 //CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = llzk.call @Component01::@compute(%[[T1]]) : (!llzk.array<2 x !llzk.felt>) -> !llzk.struct<@Component01>
 //CHECK-NEXT:        llzk.writearr %array[%[[IV]]] = %[[T2]] : <@N x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
 //CHECK-NEXT:      }
@@ -140,7 +140,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = read_const @N : index
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = index.constant 1
 //CHECK-NEXT:      scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[T3]] to %[[T1]] step %[[T4]] {
-//CHECK-NEXT:        %[[T5:[0-9a-zA-Z_\.]+]] = llzk.projectarr %[[A1]][%[[IV]]] : <@N,2 x !llzk.felt>
+//CHECK-NEXT:        %[[T5:[0-9a-zA-Z_\.]+]] = llzk.extractarr %[[A1]][%[[IV]]] : <@N,2 x !llzk.felt>
 //CHECK-NEXT:        %[[T6:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[T0]][%[[IV]]] : <@N x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
 //CHECK-NEXT:        llzk.call @Component01::@constrain(%[[T6]], %[[T5]]) : (!llzk.struct<@Component01>, !llzk.array<2 x !llzk.felt>) -> ()
 //CHECK-NEXT:      }

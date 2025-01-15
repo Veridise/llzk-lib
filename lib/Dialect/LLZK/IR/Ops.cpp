@@ -499,16 +499,16 @@ bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 }
 
 //===------------------------------------------------------------------===//
-// ProjectArrayOp
+// ExtractArrayOp
 //===------------------------------------------------------------------===//
 
-LogicalResult ProjectArrayOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ProjectArrayOpAdaptor adaptor,
+LogicalResult ExtractArrayOp::inferReturnTypes(
+    MLIRContext *context, std::optional<Location> location, ExtractArrayOpAdaptor adaptor,
     llvm::SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   size_t numToSkip = adaptor.getIndices().size();
   Type arrRefType = adaptor.getArrRef().getType();
-  assert(llvm::isa<ArrayType>(arrRefType)); // per ODS spec of ProjectArrayOp
+  assert(llvm::isa<ArrayType>(arrRefType)); // per ODS spec of ExtractArrayOp
   ArrayType arrayType = llvm::cast<ArrayType>(arrRefType);
   ArrayRef<Attribute> dimSizes = arrayType.getDimensionSizes();
 
@@ -516,14 +516,14 @@ LogicalResult ProjectArrayOp::inferReturnTypes(
   auto compare = numToSkip <=> dimSizes.size();
   if (compare == 0) {
     return mlir::emitOptionalError(
-        location, "'", ProjectArrayOp::getOperationName(),
-        "' op cannot fix all dimensions of an array. Use '", ReadArrayOp::getOperationName(),
+        location, "'", ExtractArrayOp::getOperationName(),
+        "' op cannot select all dimensions of an array. Use '", ReadArrayOp::getOperationName(),
         "' instead."
     );
   } else if (compare > 0) {
     return mlir::emitOptionalError(
-        location, "'", ProjectArrayOp::getOperationName(),
-        "' op cannot fix more dimensions than exist in the source array"
+        location, "'", ExtractArrayOp::getOperationName(),
+        "' op cannot select more dimensions than exist in the source array"
     );
   }
 
@@ -534,7 +534,7 @@ LogicalResult ProjectArrayOp::inferReturnTypes(
   return success();
 }
 
-bool ProjectArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
+bool ExtractArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
   return singletonTypeListsUnify(l, r);
 }
 

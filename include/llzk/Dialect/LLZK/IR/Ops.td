@@ -417,25 +417,25 @@ def LLZK_WriteArrayOp
   }];
 }
 
-def LLZK_ProjectArrayOp
-    : LLZK_Op<"projectarr", [Pure, InferTypeOpAdaptorWithIsCompatible]> {
-  let summary = "Return a subarray from a multi-dimensional array.";
+def LLZK_ExtractArrayOp
+    : LLZK_Op<"extractarr", [Pure, InferTypeOpAdaptorWithIsCompatible]> {
+  let summary = "Get subarray from a multi-dimensional array.";
   let description = [{
     Takes an N-dimensional array and K indices and extracts the (N-K)-dimensional
     array by applying the given indices to the first `K` dimensions of the array.
     Error if `K > N`. Use `readarr` instead if `K == N`.
 
-    Projecting a 3-dimensional array to 1 dimension:
+    Extracting a 1-D array from 3-D array by selecting the index of 2 dimensions:
     ```llzk
     %i = index.constant 1
     %0 = llzk.new_array ... : !llzk.array<3,10,15 x !llzk.felt>
-    %1 = llzk.projectarr %0[%i,%i] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.array<15 x !llzk.felt>
+    %1 = llzk.extractarr %0[%i,%i] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.array<15 x !llzk.felt>
     ```
 
-    Projecting a 2-dimensional array to 1-dimensional arrays for subcomponents:
+    Extracting 1-D arrays for subcomponents:
     ```llzk
     scf.for %iv = %lb to %up step %step {
-      %p = llzk.projectarr %in[%iv] : !llzk.array<@N,2 x !llzk.felt>
+      %p = llzk.extractarr %in[%iv] : !llzk.array<@N,2 x !llzk.felt>
       %c = llzk.readarr %a[%iv] : !llzk.array<@N x !llzk.struct<@SubC>>, !llzk.struct<@SubC>
       llzk.call @SubC::@constrain(%c, %p) : (!llzk.struct<@SubC>, !llzk.array<2 x !llzk.felt>) -> ()
     }
