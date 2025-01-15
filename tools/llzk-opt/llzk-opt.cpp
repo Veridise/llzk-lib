@@ -1,7 +1,8 @@
 #include "llzk/Dialect/InitDialects.h"
-#include "llzk/Dialect/LLZK/Analysis/CallGraphPasses.h"
-#include "llzk/Dialect/LLZK/Transforms/LLZKPasses.h"
+#include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h"
+#include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
+#include "llzk/Dialect/LLZK/Validators/LLZKValidationPasses.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
@@ -25,6 +26,7 @@ int main(int argc, char **argv) {
   llzk::registerAllDialects(registry);
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
+  llzk::registerValidationPasses();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;

@@ -22,3 +22,4 @@ install(
 add_subdirectory(llzk/Dialect/LLZK/Analysis)
 add_subdirectory(llzk/Dialect/LLZK/IR)
 add_subdirectory(llzk/Dialect/LLZK/Transforms)
+add_subdirectory(llzk/Dialect/LLZK/Validators)

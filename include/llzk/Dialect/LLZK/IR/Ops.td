@@ -136,12 +136,21 @@ def LLZK_StructDefOp
 
   let extraClassDeclaration = [{
     /// Gets the StructType representing this struct. If the `constParams` to use in
-    /// the type are not given, the StructType will use this->getConstParamsAttr().
-    StructType getType(std::optional<::mlir::ArrayAttr> constParams = {});
+    /// the type are not given, the StructType will use `this->getConstParamsAttr()`.
+    StructType getType(::std::optional<::mlir::ArrayAttr> constParams = {});
 
     /// Gets the FieldDefOp that defines the field in this
     /// structure with the given name, if present.
     FieldDefOp getFieldDef(::mlir::StringAttr fieldName);
+
+    /// Get all FieldDefOp in this structure.
+    ::std::vector<FieldDefOp> getFieldDefs();
+
+    /// Gets the FuncOp that defines the compute function in this structure, if present.
+    FuncOp getComputeFuncOp();
+
+    /// Gets the FuncOp that defines the constrain function in this structure, if present.
+    FuncOp getConstrainFuncOp();
 
     /// Generate header string, in the same format as the assemblyFormat
     ::std::string getHeaderString();
@@ -339,12 +348,13 @@ def LLZK_CreateArrayOp
 }
 
 def LLZK_ReadArrayOp
-    : LLZK_Op<"readarr", [ArrayTypeElemsUnifyWithResultCustomInfer<"lvalue">]> {
+    : LLZK_Op<
+          "readarr", [ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
   let summary = "Loads a value from a LLZK array";
   let description = [{
     This operation loads the value from an array at position `$index`.
 
-    Exampl̀e of 1-dimensional array:
+    Example of 1-dimensional array:
     ```llzk
     %i = index.constant 0
     %0 = llzk.new_array %a, %b, %c : !llzk.array<3 x !llzk.felt>
@@ -352,7 +362,7 @@ def LLZK_ReadArrayOp
     %1 = llzk.readarr %0[%i] : !llzk.array<3 x !llzk.felt>, !llzk.felt
     ```
 
-    Exampl̀e of 3-dimensional array:
+    Example of 3-dimensional array:
     ```llzk
     %i = index.constant 0
     %j = index.constant 1
@@ -363,21 +373,21 @@ def LLZK_ReadArrayOp
     ```
   }];
 
-  let arguments = (ins LLZK_ArrayType:$lvalue, Variadic<Index>:$indices);
+  let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices);
   let results = (outs AnyLLZKType:$result);
 
   let assemblyFormat = [{
-    $lvalue `[` $indices `]` attr-dict `:` type($lvalue) `,` type($result)
+    $arr_ref `[` $indices `]` attr-dict `:` type($arr_ref) `,` type($result)
   }];
 }
 
 def LLZK_WriteArrayOp
-    : LLZK_Op<"writearr", [ArrayElemTypeUnifyWith<"lvalue", "rvalue">]> {
+    : LLZK_Op<"writearr", [ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
   let summary = "Writes a value into a LLZK array";
   let description = [{
     This operation writes a value into an array at position `$index`.
 
-    Exampl̀e of 1-dimensional array:
+    Example of 1-dimensional array:
 
     ```llzk
     %i = index.constant 0
@@ -387,7 +397,7 @@ def LLZK_WriteArrayOp
     llzk.writearr %1[%i] = %0 : !llzk.array<3 x !llzk.felt>, !llzk.felt
     ```
 
-    Exampl̀e of 2-dimensional array:
+    Example of 2-dimensional array:
 
     ```llzk
     %i = index.constant 0
@@ -399,11 +409,44 @@ def LLZK_WriteArrayOp
     ```
   }];
 
-  let arguments = (ins LLZK_ArrayType:$lvalue, Variadic<Index>:$indices,
+  let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices,
       AnyLLZKType:$rvalue);
 
   let assemblyFormat = [{
-    $lvalue `[` $indices `]` `=` $rvalue attr-dict `:` type($lvalue) `,` type($rvalue)
+    $arr_ref `[` $indices `]` `=` $rvalue attr-dict `:` type($arr_ref) `,` type($rvalue)
+  }];
+}
+
+def LLZK_ExtractArrayOp
+    : LLZK_Op<"extractarr", [Pure, InferTypeOpAdaptorWithIsCompatible]> {
+  let summary = "Get subarray from a multi-dimensional array.";
+  let description = [{
+    Takes an N-dimensional array and K indices and extracts the (N-K)-dimensional
+    array by applying the given indices to the first `K` dimensions of the array.
+    Error if `K > N`. Use `readarr` instead if `K == N`.
+
+    Extracting a 1-D array from 3-D array by selecting the index of 2 dimensions:
+    ```llzk
+    %i = index.constant 1
+    %0 = llzk.new_array ... : !llzk.array<3,10,15 x !llzk.felt>
+    %1 = llzk.extractarr %0[%i,%i] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.array<15 x !llzk.felt>
+    ```
+
+    Extracting 1-D arrays for subcomponents:
+    ```llzk
+    scf.for %iv = %lb to %up step %step {
+      %p = llzk.extractarr %in[%iv] : !llzk.array<@N,2 x !llzk.felt>
+      %c = llzk.readarr %a[%iv] : !llzk.array<@N x !llzk.struct<@SubC>>, !llzk.struct<@SubC>
+      llzk.call @SubC::@constrain(%c, %p) : (!llzk.struct<@SubC>, !llzk.array<2 x !llzk.felt>) -> ()
+    }
+    ```
+  }];
+
+  let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices);
+  let results = (outs LLZK_ArrayType:$result);
+
+  let assemblyFormat = [{
+    $arr_ref `[` $indices `]` attr-dict `:` type($arr_ref)
   }];
 }
 

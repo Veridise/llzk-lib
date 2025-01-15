@@ -1,7 +1,6 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/LLZK/Transforms/LLZKPasses.h"
+#include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
-#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>
@@ -9,28 +8,30 @@
 /// Include the generated base pass class definitions.
 namespace llzk {
 #define GEN_PASS_DEF_INLINEINCLUDESPASS
-#include "llzk/Dialect/LLZK/Transforms/LLZKPasses.h.inc"
+#include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
 
-namespace {
-using namespace std;
 using namespace mlir;
+using namespace llzk;
 
-using IncludeStack = vector<pair<StringRef, Location>>;
+namespace {
+using IncludeStack = std::vector<std::pair<StringRef, Location>>;
 
 inline bool contains(IncludeStack &stack, StringRef &&loc) {
-  auto path_match = [loc](pair<StringRef, Location> &p) { return p.first == loc; };
+  auto path_match = [loc](std::pair<StringRef, Location> &p) { return p.first == loc; };
   return std::find_if(stack.begin(), stack.end(), path_match) != stack.end();
 }
 
 class InlineIncludesPass : public llzk::impl::InlineIncludesPassBase<InlineIncludesPass> {
   void runOnOperation() override {
-    vector<pair<ModuleOp, IncludeStack>> currLevel = {make_pair(getOperation(), IncludeStack())};
+    std::vector<std::pair<ModuleOp, IncludeStack>> currLevel = {
+        std::make_pair(getOperation(), IncludeStack())
+    };
     do {
-      vector<pair<ModuleOp, IncludeStack>> nextLevel = {};
-      for (pair<ModuleOp, IncludeStack> &curr : currLevel) {
+      std::vector<std::pair<ModuleOp, IncludeStack>> nextLevel = {};
+      for (std::pair<ModuleOp, IncludeStack> &curr : currLevel) {
         curr.first.walk([includeStack = std::move(curr.second),
-                         &nextLevel](llzk::IncludeOp incOp) mutable {
+                         &nextLevel](IncludeOp incOp) mutable {
           // Check for cyclic includes
           if (contains(includeStack, incOp.getPath())) {
             auto err = incOp.emitError().append("found cyclic include");
@@ -38,7 +39,7 @@ class InlineIncludesPass : public llzk::impl::InlineIncludesPassBase<InlineInclu
               err.attachNote(it->second).append("included from here");
             }
           } else {
-            includeStack.push_back(make_pair(incOp.getPath(), incOp.getLoc()));
+            includeStack.push_back(std::make_pair(incOp.getPath(), incOp.getLoc()));
             FailureOr<ModuleOp> result = incOp.inlineAndErase();
             if (succeeded(result)) {
               ModuleOp newMod = std::move(result.value());

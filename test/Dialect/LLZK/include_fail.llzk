@@ -36,7 +36,7 @@ module attributes {veridise.lang = "llzk"} {
 
   llzk.func @test_func() {
     // expected-error@+2 {{'llzk.call' op references unknown symbol "@a::@b::@c::@alias3::@pkg_two::@my_func_2"}}
-    // expected-error@+1 {{no 'llzk.func' named "@a::@b::@c::@alias3::@pkg_two::@my_func_2"}}
+    // expected-error@+1 {{expected 'llzk.func' named "@a::@b::@c::@alias3::@pkg_two::@my_func_2"}}
     llzk.call @a::@b::@c::@alias3::@pkg_two::@my_func_2() : () -> ()
     return
   }

@@ -2,7 +2,7 @@
 
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/Util/Debug.h"
-#include "llzk/Dialect/LLZK/Util/SymbolLookupResult.h" // IWYU pragma: keep
+#include "llzk/Dialect/LLZK/Util/SymbolLookup.h" // IWYU pragma: keep
 
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinTypes.h>
@@ -87,6 +87,12 @@ typeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefi
              lhs.begin(), lhs.end(), rhs.begin(),
              [&rhsRevPrefix](mlir::Type a, mlir::Type b) { return typesUnify(a, b, rhsRevPrefix); }
          );
+}
+
+template <typename Iter1, typename Iter2>
+inline bool
+singletonTypeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}) {
+  return lhs.size() == 1 && rhs.size() == 1 && typesUnify(lhs.front(), rhs.front());
 }
 
 mlir::LogicalResult computeDimsFromShape(

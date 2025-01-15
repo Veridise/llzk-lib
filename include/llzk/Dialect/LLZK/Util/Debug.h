@@ -1,5 +1,11 @@
 #pragma once
 
+#include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/Operation.h>
+#include <mlir/IR/SymbolTable.h>
+
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <string>
@@ -28,6 +34,70 @@ template <class InputIt> std::string toString(InputIt begin, InputIt end) {
 /// `collection.begin()` to `collection.end()` where the element type implements `operator<<`.
 template <class InputIt> inline std::string toString(const InputIt &collection) {
   return toString(collection.begin(), collection.end());
+}
+
+inline void ensure(bool condition, mlir::Twine errMsg) {
+  if (!condition) {
+    llvm::report_fatal_error(errMsg);
+  }
+}
+
+inline void dumpSymbolTableWalk(mlir::Operation *symbolTableOp) {
+  std::string output; // buffer to avoid multi-threaded mess
+  llvm::raw_string_ostream oss(output);
+  oss << "Dumping symbol walk (self = [" << symbolTableOp << "]): \n";
+  auto walkFn = [&](mlir::Operation *op, bool allUsesVisible) {
+    oss << "  found op [" << op << "] " << op->getName() << " named "
+        << op->getAttrOfType<mlir::StringAttr>(mlir::SymbolTable::getSymbolAttrName()) << "\n";
+  };
+  mlir::SymbolTable::walkSymbolTables(symbolTableOp, /*allSymUsesVisible=*/true, walkFn);
+  llvm::outs() << output;
+}
+
+inline void
+dumpSymbolTable(llvm::raw_ostream &stream, mlir::SymbolTable &symTab, unsigned indent = 0) {
+  for (unsigned i = 0; i < indent; ++i) {
+    stream << "  ";
+  }
+  stream << "Dumping SymbolTable [" << &symTab << "]: \n";
+  auto *rawSymbolTablePtr = reinterpret_cast<char *>(&symTab);
+  auto *privateFieldPtr =
+      reinterpret_cast<llvm::DenseMap<mlir::Attribute, mlir::Operation *> *>(rawSymbolTablePtr + 8);
+  for (llvm::detail::DenseMapPair<mlir::Attribute, mlir::Operation *> &p : *privateFieldPtr) {
+    for (unsigned i = 0; i < indent; ++i) {
+      stream << "  ";
+    }
+    mlir::Operation *op = p.second;
+    stream << "  " << p.first << " -> [" << op << "] " << op->getName() << "\n";
+  }
+}
+
+inline void dumpSymbolTable(mlir::SymbolTable &symTab) {
+  std::string output; // buffer to avoid multi-threaded mess
+  llvm::raw_string_ostream oss(output);
+  dumpSymbolTable(oss, symTab);
+  llvm::outs() << output;
+}
+
+inline void dumpSymbolTables(llvm::raw_ostream &stream, mlir::SymbolTableCollection &tables) {
+  stream << "Dumping SymbolTableCollection [" << &tables << "]: \n";
+  auto *rawObjectPtr = reinterpret_cast<char *>(&tables);
+  auto *privateFieldPtr =
+      reinterpret_cast<llvm::DenseMap<mlir::Operation *, std::unique_ptr<mlir::SymbolTable>> *>(
+          rawObjectPtr + 0
+      );
+  for (llvm::detail::DenseMapPair<mlir::Operation *, std::unique_ptr<mlir::SymbolTable>> &p :
+       *privateFieldPtr) {
+    stream << "  [" << p.first << "] " << p.first->getName() << " -> " << "\n";
+    dumpSymbolTable(stream, *p.second.get(), 2);
+  }
+}
+
+inline void dumpSymbolTables(mlir::SymbolTableCollection &tables) {
+  std::string output; // buffer to avoid multi-threaded mess
+  llvm::raw_string_ostream oss(output);
+  dumpSymbolTables(oss, tables);
+  llvm::outs() << output;
 }
 
 } // namespace debug
