@@ -410,14 +410,16 @@ def LLZK_WriteArrayOp
 def LLZK_ArrayLengthOp : LLZK_Op<"array_len", [Pure]> {
   let summary = "returns the length of an array";
   let description = [{
-    This operation returns the size of a dimension size of an array.
+    This operation returns the size of the specified dimension of an array.
 
     Example:
 
     ```llzk
-    %0 = llzk.new_array : !llzk.array<2,2 x !llzk.felt>
-    %c0 = arith.constant 0 : index
-    %1 = llzk.array_len %0[%c0] : !llzk.array<2,2 x !llzk.felt>
+    %a = llzk.new_array : !llzk.array<2,3 x !llzk.felt>
+    %0 = index.constant 0
+    %x = llzk.array_len %a[%0] : !llzk.array<2,3 x !llzk.felt> // result is 2
+    %1 = index.constant 1
+    %y = llzk.array_len %a[%1] : !llzk.array<2,3 x !llzk.felt> // result is 3
     ```
   }];
 
@@ -640,7 +642,7 @@ def LLZK_IntToFeltOp : LLZK_Op<"tofelt", [Pure]> {
     Example:
 
     ```llzk
-    %0 = llzk.cmp<lt>(%a, %b)
+    %0 = llzk.cmp lt(%a, %b)
     %1 = llzk.tofelt %0 : i1
     ```
   }];
@@ -656,7 +658,7 @@ def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
     Transforms a felt type into an index to allow being used as array indices.
 
     Example:
-    ```llzk 
+    ```llzk
     %0 = llzk.toindex %a 
     %1 = llzk.readarr %b[%0]
     ```
