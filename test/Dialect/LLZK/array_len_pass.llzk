@@ -1,0 +1,27 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
+
+llzk.func @array_len_test() -> index {
+  %a = llzk.new_array : !llzk.array<2,3 x !llzk.felt>
+  %0 = index.constant 0
+  %x = llzk.array_len %a[%0] : !llzk.array<2,3 x !llzk.felt> // result is 2
+  return %x: index
+}
+//CHECK-LABEL: llzk.func @array_len_test() -> index {
+//CHECK-NEXT:    %[[A:[0-9a-zA-Z_\.]+]] = new_array  : <2,3 x !llzk.felt>
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = index.constant 0
+//CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = array_len %[[A]][%[[T0]]] : <2,3 x !llzk.felt>
+//CHECK-NEXT:    return %[[T1]] : index
+//CHECK-NEXT:  }
+// -----
+
+llzk.func @array_len_test_unknown_idx_value(%0: index) -> index {
+  %a = llzk.new_array : !llzk.array<2,3 x !llzk.felt>
+  %x = llzk.array_len %a[%0] : !llzk.array<2,3 x !llzk.felt>
+  return %x: index
+}
+//CHECK-LABEL: llzk.func @array_len_test
+//CHECK-SAME:  (%[[A0:[0-9a-zA-Z_\.]+]]: index) -> index {
+//CHECK-NEXT:    %[[A:[0-9a-zA-Z_\.]+]] = new_array  : <2,3 x !llzk.felt>
+//CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = array_len %[[A]][%[[A0]]] : <2,3 x !llzk.felt>
+//CHECK-NEXT:    return %[[T1]] : index
+//CHECK-NEXT:  }

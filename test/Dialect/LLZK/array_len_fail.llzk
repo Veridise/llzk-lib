@@ -1,0 +1,41 @@
+// RUN: llzk-opt %s -split-input-file -verify-diagnostics
+
+llzk.func @only_one_index() -> index {
+  %a = llzk.new_array : !llzk.array<2,3 x !llzk.felt>
+  %0 = index.constant 0
+  // expected-error@+1 {{expected ']'}}
+  %x = llzk.array_len %a[%0, %0] : !llzk.array<2,3 x !llzk.felt>
+  return %x: index
+}
+// -----
+
+llzk.func @not_array_type_01(%a: !llzk.felt) -> index { // expected-note {{prior use here}}
+  %0 = index.constant 0
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!llzk.array<2,3 x !llzk.felt>' vs '!llzk.felt'}}
+  %x = llzk.array_len %a[%0] : !llzk.array<2,3 x !llzk.felt>
+  return %x: index
+}
+// -----
+
+llzk.func @not_array_type_02(%a: !llzk.felt) -> index {
+  %0 = index.constant 0
+  // expected-error@+1 {{custom op 'llzk.array_len' invalid kind of Type specified}}
+  %x = llzk.array_len %a[%0] : !llzk.felt
+  return %x: index
+}
+// -----
+
+llzk.func @wrong_result_type(%a: !llzk.array<2,3 x !llzk.felt>) -> i1 {
+  %0 = index.constant 0
+  %x = llzk.array_len %a[%0] : !llzk.array<2,3 x !llzk.felt> // expected-note {{prior use here}}
+  // expected-error@+1 {{use of value '%x' expects different type than prior uses: 'i1' vs 'index'}}
+  return %x: i1
+}
+// -----
+
+llzk.func @wrong_index_type(%a: !llzk.array<2,3 x !llzk.felt>) -> index {
+  %0 = constfelt 0 // expected-note {{prior use here}}
+  // expected-error@+1 {{use of value '%0' expects different type than prior uses: 'index' vs '!llzk.felt'}}
+  %x = llzk.array_len %a[%0] : !llzk.array<2,3 x !llzk.felt>
+  return %x: index
+}
