@@ -35,14 +35,25 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-llzk.func @external(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
+llzk.func @test_in_global_func(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
   %c = cmp gt(%a, %b)
   assert %c
   return %c : i1
 }
-//CHECK-LABEL: llzk.func @external
+//CHECK-LABEL: llzk.func @test_in_global_func
 //CHECK-SAME:  (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> i1 {
 //CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cmp gt(%[[A0]], %[[A1]])
 //CHECK-NEXT:    assert %[[T0]]
 //CHECK-NEXT:    return %[[T0]] : i1
+//CHECK-NEXT:  }
+// -----
+
+llzk.func @just_assert(%c: i1) -> i1 {
+  assert %c
+  return %c : i1
+}
+//CHECK-LABEL: llzk.func @just_assert
+//CHECK-SAME:  (%[[A:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
+//CHECK-NEXT:    assert %[[A]]
+//CHECK-NEXT:    return %[[A]] : i1
 //CHECK-NEXT:  }
