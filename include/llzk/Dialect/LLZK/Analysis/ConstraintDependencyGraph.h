@@ -21,7 +21,9 @@ class DataFlowSolver;
 
 namespace llzk {
 
-using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRef>>;
+class ConstrainRefLatticeValue;
+
+using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRefLatticeValue>>;
 
 /// @brief A dependency graph of constraints enforced by an LLZK struct.
 ///

@@ -298,7 +298,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     { %arg0[@$super], %arg1[0] }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@A ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@$super][@$super], <constfelt: 1>, <constfelt: 2> }
+// CHECK-NEXT:     { %arg0[@$super][@$super], <template: N>, <constfelt: 1>, <constfelt: 2> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@B ConstraintDependencyGraph { }
 // CHECK-NEXT: @zir::@Top ConstraintDependencyGraph {

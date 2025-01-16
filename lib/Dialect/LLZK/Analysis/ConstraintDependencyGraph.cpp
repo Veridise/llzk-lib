@@ -20,25 +20,48 @@ These classes are defined here and not in the header as they are not designed
 for use outside of this specific ConstraintDependencyGraph analysis.
 */
 
+class ConstrainRefLatticeValue;
+
 using ConstantMap = mlir::DenseMap<mlir::Value, mlir::APInt>;
 using ConstrainRefSetMap = mlir::DenseMap<mlir::Value, ConstrainRefSet>;
 using ConstrainRefSetVec = std::vector<ConstrainRefSet>;
 using ArgumentMap = mlir::DenseMap<mlir::BlockArgument, ConstrainRefSet>;
+using TranslationMap =
+    std::unordered_map<ConstrainRef, ConstrainRefLatticeValue, ConstrainRef::Hash>;
 
 /// @brief A value at a given point of the ConstrainRefLattice.
 class ConstrainRefLatticeValue {
   /// For scalar values.
   using ScalarTy = ConstrainRefSet;
   /// For arrays of values created by, e.g., the LLZK new_array op. A recursive
-  /// definition to support arrays of arbitrary dimensions. The references
-  /// are held by a map within the lattice.
-  using ArrayTy = std::vector<std::reference_wrapper<ConstrainRefLatticeValue>>;
+  /// definition to support arrays of arbitrary dimensions.
+  /// Unique pointers are used as each value must be self contained for the
+  /// sake of consistent translations.
+  using ArrayTy = std::vector<std::unique_ptr<ConstrainRefLatticeValue>>;
 
 public:
   explicit ConstrainRefLatticeValue(ScalarTy s) : value(s) {}
-  explicit ConstrainRefLatticeValue(ArrayTy a) : value(a) {}
+  explicit ConstrainRefLatticeValue(ConstrainRef r) : ConstrainRefLatticeValue(ScalarTy {r}) {}
+  ConstrainRefLatticeValue() : ConstrainRefLatticeValue(ScalarTy {}) {}
+
+  // Enable copying by duplicating unique_ptrs
+  ConstrainRefLatticeValue(const ConstrainRefLatticeValue &rhs) { *this = rhs; }
+
+  ConstrainRefLatticeValue &operator=(const ConstrainRefLatticeValue &rhs) {
+    if (rhs.isScalar()) {
+      getScalarValue() = rhs.getScalarValue();
+    } else {
+      auto &arr = getArrayValue();
+      for (auto &v : rhs.getArrayValue()) {
+        auto newElem = *v;
+        arr.emplace_back(std::make_unique<ConstrainRefLatticeValue>(newElem));
+      }
+    }
+    return *this;
+  }
 
   bool isScalar() const { return std::holds_alternative<ScalarTy>(value); }
+  bool isSingleValue() const { return isScalar() && getScalarValue().size() == 1; }
   bool isArray() const { return std::holds_alternative<ArrayTy>(value); }
 
   const ScalarTy &getScalarValue() const {
@@ -46,7 +69,104 @@ public:
     return std::get<ScalarTy>(value);
   }
 
-  const ArrayTy &getArrayValue() const { debug::ensure(isArray(), "not an array value"); }
+  ScalarTy &getScalarValue() {
+    debug::ensure(isScalar(), "not a scalar value");
+    return std::get<ScalarTy>(value);
+  }
+
+  const ConstrainRef &getSingleValue() const {
+    debug::ensure(isSingleValue(), "not a single value");
+    return *getScalarValue().begin();
+  }
+
+  const ArrayTy &getArrayValue() const {
+    debug::ensure(isArray(), "not an array value");
+    return std::get<ArrayTy>(value);
+  }
+
+  size_t getArraySize() const { return getArrayValue().size(); }
+
+  ArrayTy &getArrayValue() {
+    debug::ensure(isArray(), "not an array value");
+    return std::get<ArrayTy>(value);
+  }
+
+  const ConstrainRefLatticeValue &getElem(unsigned i) const {
+    debug::ensure(isArray(), "not an array value");
+    auto &arr = getArrayValue();
+    debug::ensure(i < arr.size(), "index out of range");
+    return *arr.at(i);
+  }
+
+  ConstrainRefLatticeValue &getElem(unsigned i) {
+    debug::ensure(isArray(), "not an array value");
+    auto &arr = getArrayValue();
+    debug::ensure(i < arr.size(), "index out of range");
+    return *arr.at(i);
+  }
+
+  mlir::ChangeResult update(const ConstrainRefLatticeValue &rhs) {
+    if (isScalar() && rhs.isScalar()) {
+      return updateScalar(rhs.getScalarValue());
+    } else if (isArray() && rhs.isArray() && getArraySize() == rhs.getArraySize()) {
+      return updateArray(rhs.getArrayValue());
+    } else {
+      return foldAndUpdate(rhs);
+    }
+  }
+
+  mlir::ChangeResult insert(const ConstrainRef &rhs) {
+    auto rhsVal = ConstrainRefLatticeValue(rhs);
+    if (isScalar()) {
+      return updateScalar(rhsVal.getScalarValue());
+    } else {
+      return foldAndUpdate(rhsVal);
+    }
+  }
+
+  /// Translate
+  std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
+  translate(const TranslationMap &translation) const {
+    auto newVal = *this;
+    auto res = mlir::ChangeResult::NoChange;
+    if (newVal.isScalar()) {
+      res = newVal.translateScalar(translation);
+    } else {
+      for (auto &elem : newVal.getArrayValue()) {
+        auto [newElem, elemRes] = elem->translate(translation);
+        (*elem) = newElem;
+        res |= elemRes;
+      }
+    }
+    return {newVal, res};
+  }
+
+  std::pair<ConstrainRefLatticeValue, mlir::ChangeResult> index(const ConstrainRefIndex &idx
+  ) const {
+    auto transform = [&idx](const ConstrainRef &r) -> ConstrainRef { return r.createChild(idx); };
+    return elementwiseTransform(transform);
+  }
+
+  std::pair<ConstrainRefLatticeValue, mlir::ChangeResult> index(const ConstrainRef &fieldRef
+  ) const {
+    auto transform = [&fieldRef](const ConstrainRef &r) -> ConstrainRef {
+      return r.createChild(fieldRef);
+    };
+    return elementwiseTransform(transform);
+  }
+
+  ScalarTy foldToScalar() const {
+    if (isScalar()) {
+      return getScalarValue();
+    }
+
+    ScalarTy res;
+    for (auto &val : getArrayValue()) {
+      auto rhs = val->foldToScalar();
+      res.insert(rhs.begin(), rhs.end());
+    }
+    return res;
+  }
 
   void print(mlir::raw_ostream &os) const {
     if (isScalar()) {
@@ -69,6 +189,71 @@ public:
 
 private:
   std::variant<ScalarTy, ArrayTy> value;
+
+  mlir::ChangeResult updateScalar(const ScalarTy &rhs) {
+    mlir::ChangeResult res = mlir::ChangeResult::NoChange;
+    auto &lhs = getScalarValue();
+    for (auto &ref : rhs) {
+      auto [_, inserted] = lhs.insert(ref);
+      res |= inserted ? mlir::ChangeResult::Change : mlir::ChangeResult::NoChange;
+    }
+    return res;
+  }
+
+  mlir::ChangeResult updateArray(const ArrayTy &rhs) {
+    mlir::ChangeResult res = mlir::ChangeResult::NoChange;
+    auto &lhs = getArrayValue();
+    for (size_t i = 0; i < getArraySize(); i++) {
+      res |= lhs[i]->update(*rhs.at(i));
+    }
+    return res;
+  }
+
+  mlir::ChangeResult foldAndUpdate(const ConstrainRefLatticeValue &rhs) {
+    auto folded = foldToScalar();
+    auto rhsScalar = rhs.foldToScalar();
+    folded.insert(rhsScalar.begin(), rhsScalar.end());
+    if (isScalar() && getScalarValue() == folded) {
+      return mlir::ChangeResult::NoChange;
+    }
+    value = folded;
+    return mlir::ChangeResult::Change;
+  }
+
+  mlir::ChangeResult translateScalar(const TranslationMap &translation) {
+    auto res = mlir::ChangeResult::NoChange;
+    auto &lhs = getScalarValue();
+    for (auto &[ref, val] : translation) {
+      auto it = lhs.find(ref);
+      if (it != lhs.end()) {
+        res |= update(val);
+      }
+    }
+    return res;
+  }
+
+  std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
+  elementwiseTransform(std::function<ConstrainRef(const ConstrainRef &)> transform) const {
+    auto newVal = *this;
+    auto res = mlir::ChangeResult::NoChange;
+    if (newVal.isScalar()) {
+      ScalarTy indexed;
+      for (auto &ref : newVal.getScalarValue()) {
+        auto [_, inserted] = indexed.insert(transform(ref));
+        if (inserted) {
+          res |= mlir::ChangeResult::Change;
+        }
+      }
+      newVal.getScalarValue() = indexed;
+    } else {
+      for (auto &elem : newVal.getArrayValue()) {
+        auto [newElem, elemRes] = elem->elementwiseTransform(transform);
+        (*elem) = newElem;
+        res |= elemRes;
+      }
+    }
+    return {newVal, res};
+  }
 };
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLatticeValue &v) {
@@ -79,6 +264,7 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLatticeVa
 /// A lattice for use in dense analysis.
 class ConstrainRefLattice : public dataflow::AbstractDenseLattice {
 public:
+  using ValueMap = mlir::DenseMap<mlir::Value, ConstrainRefLatticeValue>;
   using AbstractDenseLattice::AbstractDenseLattice;
 
   /* Static utilities */
@@ -88,14 +274,23 @@ public:
   /// return failure.
   /// Our lattice values must originate from somewhere.
   static mlir::FailureOr<ConstrainRef> getSourceRef(mlir::Value val) {
+    auto defOp = val.getDefiningOp();
     if (auto blockArg = mlir::dyn_cast<mlir::BlockArgument>(val)) {
       return ConstrainRef(blockArg);
-    } else if (auto constFelt = mlir::dyn_cast<FeltConstantOp>(val.getDefiningOp())) {
-      return ConstrainRef(constFelt);
-    } else if (auto constIdx = mlir::dyn_cast<mlir::index::ConstantOp>(val.getDefiningOp())) {
-      return ConstrainRef(constIdx);
-    } else if (auto readConst = mlir::dyn_cast<ConstReadOp>(val.getDefiningOp())) {
-      return ConstrainRef(readConst);
+    } else if (auto defOp = val.getDefiningOp()) {
+      if (auto constFelt = mlir::dyn_cast<FeltConstantOp>(defOp)) {
+        return ConstrainRef(constFelt);
+      } else if (auto constIdx = mlir::dyn_cast<mlir::index::ConstantOp>(defOp)) {
+        return ConstrainRef(constIdx);
+      } else if (auto readConst = mlir::dyn_cast<ConstReadOp>(defOp)) {
+        return ConstrainRef(readConst);
+      } else if (auto newArray = mlir::dyn_cast<CreateArrayOp>(defOp)) {
+        // new_array without arguments can be used for struct types, which will create
+        // a new base reference. new_array with arguments does not operate this way.
+        if (newArray.getNumOperands() == 0) {
+          return ConstrainRef(newArray);
+        }
+      }
     }
     return mlir::failure();
   }
@@ -105,7 +300,7 @@ public:
   /// Maximum upper bound
   mlir::ChangeResult join(const AbstractDenseLattice &rhs) override {
     if (auto *r = dynamic_cast<const ConstrainRefLattice *>(&rhs)) {
-      return setValues(r->refSetMap);
+      return setValues(r->valMap);
     }
     llvm::report_fatal_error("invalid join lattice type");
     return mlir::ChangeResult::NoChange;
@@ -119,21 +314,14 @@ public:
 
   void print(mlir::raw_ostream &os) const override {
     os << "ConstrainRefLattice { ";
-    for (auto mit = refSetMap.begin(); mit != refSetMap.end();) {
-      auto &[v, refSet] = *mit;
-      os << "\n    (" << v << ") => { ";
-      for (auto it = refSet.begin(); it != refSet.end();) {
-        it->print(os);
-        it++;
-        if (it != refSet.end()) {
-          os << ", ";
-        }
-      }
+    for (auto mit = valMap.begin(); mit != valMap.end();) {
+      auto &[val, latticeVal] = *mit;
+      os << "\n    (" << val << ") => " << latticeVal;
       mit++;
-      if (mit != refSetMap.end()) {
-        os << " },";
+      if (mit != valMap.end()) {
+        os << ',';
       } else {
-        os << " }\n";
+        os << '\n';
       }
     }
     os << "}\n";
@@ -141,7 +329,7 @@ public:
 
   /* Update utility methods */
 
-  mlir::ChangeResult setValues(const ConstrainRefSetMap &rhs) {
+  mlir::ChangeResult setValues(const ValueMap &rhs) {
     auto res = mlir::ChangeResult::NoChange;
 
     for (auto &[v, s] : rhs) {
@@ -150,34 +338,27 @@ public:
     return res;
   }
 
-  mlir::ChangeResult setValue(mlir::Value v, const ConstrainRefSet &rhs) {
-    auto res = mlir::ChangeResult::NoChange;
-
-    for (auto &r : rhs) {
-      auto [_, inserted] = refSetMap[v].insert(r);
-      res = inserted ? mlir::ChangeResult::Change : res;
-    }
-    return res;
+  mlir::ChangeResult setValue(mlir::Value v, const ConstrainRefLatticeValue &rhs) {
+    return valMap[v].update(rhs);
   }
 
   mlir::ChangeResult setValue(mlir::Value v, const ConstrainRef &ref) {
-    auto [_, inserted] = refSetMap[v].insert(ref);
-    return inserted ? mlir::ChangeResult::Change : mlir::ChangeResult::NoChange;
+    return valMap[v].insert(ref);
   }
 
-  ConstrainRefSet getOrDefault(mlir::Value v) const {
-    auto it = refSetMap.find(v);
-    if (it == refSetMap.end()) {
+  ConstrainRefLatticeValue getOrDefault(mlir::Value v) const {
+    auto it = valMap.find(v);
+    if (it == valMap.end()) {
       auto sourceRef = getSourceRef(v);
       if (mlir::succeeded(sourceRef)) {
-        return {sourceRef.value()};
+        return ConstrainRefLatticeValue(sourceRef.value());
       }
-      return {};
+      return ConstrainRefLatticeValue();
     }
     return it->second;
   }
 
-  ConstrainRefSet getReturnValue(unsigned i) const {
+  ConstrainRefLatticeValue getReturnValue(unsigned i) const {
     auto op = this->getPoint().get<mlir::Operation *>();
     if (auto retOp = mlir::dyn_cast<ReturnOp>(op)) {
       if (i >= retOp.getNumOperands()) {
@@ -185,11 +366,11 @@ public:
       }
       return this->getOrDefault(retOp.getOperand(i));
     }
-    return ConstrainRefSet();
+    return ConstrainRefLatticeValue();
   }
 
 private:
-  mlir::DenseMap<mlir::Value, ConstrainRefLatticeValue> valueMap;
+  ValueMap valMap;
 };
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLattice &v) {
@@ -241,7 +422,7 @@ public:
     ///   - `after` is the state after the call operation.
     else if (action == dataflow::CallControlFlowAction::ExitCallee) {
       // Translate argument values based on the operands given at the call site.
-      std::unordered_map<ConstrainRef, ConstrainRefSet, ConstrainRef::Hash> translation;
+      std::unordered_map<ConstrainRef, ConstrainRefLatticeValue, ConstrainRef::Hash> translation;
       auto funcOpRes = resolveCallable<FuncOp>(tables, call);
       debug::ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
       auto funcOp = funcOpRes->get();
@@ -257,17 +438,10 @@ public:
 
       mlir::ChangeResult updated = after->join(before);
       for (unsigned i = 0; i < callOp.getNumResults(); i++) {
-        auto retRef = before.getReturnValue(i);
-        ConstrainRefSet translated;
-        for (auto &ref : retRef) {
-          auto f = translation.find(ref);
-          if (f != translation.end()) {
-            auto &retVal = f->second;
-            translated.insert(retVal.begin(), retVal.end());
-          }
-        }
+        auto retVal = before.getReturnValue(i);
+        auto [translatedVal, _] = retVal.translate(translation);
 
-        updated |= after->setValue(callOp->getResult(i), translated);
+        updated |= after->setValue(callOp->getResult(i), translatedVal);
       }
       propagateIfChanged(after, updated);
     }
@@ -287,7 +461,7 @@ public:
       mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
   ) override {
     // Collect the references that are made by the operands to `op`.
-    ConstrainRefSetMap operandVals;
+    ConstrainRefLattice::ValueMap operandVals;
     for (auto &operand : op->getOpOperands()) {
       operandVals[operand.get()] = before.getOrDefault(operand.get());
     }
@@ -305,11 +479,10 @@ public:
       debug::ensure(mlir::succeeded(fieldOpRes), "could not find field read");
 
       auto res = fieldRead->getResult(0);
+      auto idx = ConstrainRefIndex(fieldOpRes.value());
       const auto &ops = operandVals.at(fieldRead->getOpOperand(0).get());
-      ConstrainRefSet fieldVals;
-      for (auto &r : ops) {
-        fieldVals.insert(r.createChild(ConstrainRefIndex(fieldOpRes.value())));
-      }
+      auto [fieldVals, _] = ops.index(idx);
+
       propagateIfChanged(after, after->setValue(res, fieldVals));
     } else if (auto arrayRead = mlir::dyn_cast<ReadArrayOp>(op)) {
       // In the readarr case, we index the first operand by all remaining indices
@@ -323,23 +496,19 @@ public:
         auto currentOp = arrayRead.getOperand(i);
         auto &idxVals = operandVals[currentOp];
 
-        ConstrainRefSet newVals;
-        if (idxVals.size() == 1 && idxVals.begin()->isConstantIndex()) {
-          auto idxVal = *idxVals.begin();
-          for (auto &r : currVals) {
-            newVals.insert(r.createChild(idxVal));
-          }
+        if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstantIndex()) {
+          auto [newVals, _] = currVals.index(idxVals.getSingleValue());
+          currVals = newVals;
         } else {
           // Otherwise, assume any range is valid.
           auto arrayType = mlir::dyn_cast<ArrayType>(array.getType());
           auto lower = mlir::APInt::getZero(64);
           mlir::APInt upper(64, arrayType.getDimSize(i - 1));
           auto idxRange = ConstrainRefIndex(lower, upper);
-          for (auto &r : currVals) {
-            newVals.insert(r.createChild(idxRange));
-          }
+
+          auto [newVals, _] = currVals.index(idxRange);
+          currVals = newVals;
         }
-        currVals = newVals;
       }
 
       propagateIfChanged(after, after->setValue(res, currVals));
@@ -358,15 +527,15 @@ protected:
 
   // Perform a standard union of operands into the results value.
   mlir::ChangeResult fallbackOpUpdate(
-      mlir::Operation *op, const ConstrainRefSetMap &operandVals, const ConstrainRefLattice &before,
-      ConstrainRefLattice *after
+      mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
+      const ConstrainRefLattice &before, ConstrainRefLattice *after
   ) {
     auto updated = mlir::ChangeResult::NoChange;
     for (auto res : op->getResults()) {
       auto cur = before.getOrDefault(res);
 
-      for (auto &[_, set] : operandVals) {
-        cur.insert(set.begin(), set.end());
+      for (auto &[_, opVal] : operandVals) {
+        (void)cur.update(opVal);
       }
       updated |= after->setValue(res, cur);
     }
@@ -566,10 +735,8 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     // Map fn parameters to args in the call op
     for (unsigned i = 0; i < fn.getNumArguments(); i++) {
       auto prefix = ConstrainRef(fn.getArgument(i));
-
-      for (auto &s : lattice->getOrDefault(fnCall.getOperand(i))) {
-        translations.push_back({prefix, s});
-      }
+      auto val = lattice->getOrDefault(fnCall.getOperand(i));
+      translations.push_back({prefix, val});
     }
     auto &childAnalysis = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(calledStruct);
     if (!childAnalysis.constructed()) {
@@ -609,8 +776,8 @@ void ConstraintDependencyGraph::walkConstrainOp(
   debug::ensure(lattice, "failed to get lattice for emit operation");
 
   for (auto operand : emitOp->getOperands()) {
-    auto refs = lattice->getOrDefault(operand);
-    for (auto &ref : refs) {
+    auto latticeVal = lattice->getOrDefault(operand);
+    for (auto &ref : latticeVal.foldToScalar()) {
       if (ref.isConstant()) {
         constUsages.push_back(ref);
       } else {
@@ -638,10 +805,12 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemap
   auto translate = [&translation](const ConstrainRef &elem
                    ) -> mlir::FailureOr<std::vector<ConstrainRef>> {
     std::vector<ConstrainRef> refs;
-    for (auto &[prefix, replacement] : translation) {
-      auto translated = elem.translate(prefix, replacement);
-      if (mlir::succeeded(translated)) {
-        refs.push_back(translated.value());
+    for (auto &[prefix, vals] : translation) {
+      for (auto &replacement : vals.foldToScalar()) {
+        auto translated = elem.translate(prefix, replacement);
+        if (mlir::succeeded(translated)) {
+          refs.push_back(translated.value());
+        }
       }
     }
     if (refs.empty()) {

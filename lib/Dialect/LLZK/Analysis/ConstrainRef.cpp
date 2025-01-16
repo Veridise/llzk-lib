@@ -21,7 +21,7 @@ void ConstrainRefIndex::print(mlir::raw_ostream &os) const {
 
 bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
   if (isField() && rhs.isField()) {
-    return OpLocationLess<FieldDefOp> {}(getField(), rhs.getField());
+    return NamedOpLocationLess<FieldDefOp> {}(getField(), rhs.getField());
   }
   if (isIndex() && rhs.isIndex()) {
     return getIndex().ult(rhs.getIndex());
@@ -204,8 +204,10 @@ mlir::Type ConstrainRef::getType() const {
         array_derefs--;
       }
       return currTy;
+    } else if (isBlockArgument()) {
+      return getBlockArgument().getType();
     } else {
-      return blockArg.getType();
+      return getCreateArrayOp().getType();
     }
   }
 }
@@ -216,7 +218,7 @@ ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) c
     return *this;
   }
 
-  if (blockArg != prefix.blockArg || fieldRefs.size() < prefix.fieldRefs.size()) {
+  if (rootVal != prefix.rootVal || fieldRefs.size() < prefix.fieldRefs.size()) {
     return mlir::failure();
   }
   for (size_t i = 0; i < prefix.fieldRefs.size(); i++) {
@@ -238,16 +240,20 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
     os << "<index: " << getConstantIndexValue() << '>';
   } else if (isTemplateConstant()) {
     os << "<template: " << std::get<ConstReadOp>(*constantVal).getConstName() << '>';
-  } else {
-    os << "%arg" << blockArg.getArgNumber();
+  } else if (isBlockArgument()) {
+    os << "%arg" << getInputNum();
     for (auto f : fieldRefs) {
       os << "[" << f << "]";
     }
+  } else if (isCreateArrayOp()) {
+    os << "<new array @ " << getCreateArrayOp().getLoc() << '>';
+  } else {
+    llvm::report_fatal_error("unhandled print case");
   }
 }
 
 bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
-  return blockArg == rhs.blockArg && fieldRefs == rhs.fieldRefs && constantVal == rhs.constantVal;
+  return rootVal == rhs.rootVal && fieldRefs == rhs.fieldRefs && constantVal == rhs.constantVal;
 }
 
 // required for EquivalenceClasses usage
@@ -282,10 +288,22 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   }
 
   // both are not constants
-  if (blockArg.getArgNumber() < rhs.blockArg.getArgNumber()) {
-    return true;
-  } else if (blockArg.getArgNumber() > rhs.blockArg.getArgNumber()) {
+  if (isCreateArrayOp() && !rhs.isCreateArrayOp()) {
     return false;
+  } else if (!isCreateArrayOp() && rhs.isCreateArrayOp()) {
+    return true;
+  } else if (isCreateArrayOp() && rhs.isCreateArrayOp()) {
+    if (OpLocationLess<CreateArrayOp> {}(getCreateArrayOp(), rhs.getCreateArrayOp())) {
+      return true;
+    } else if (OpLocationLess<CreateArrayOp> {}(rhs.getCreateArrayOp(), getCreateArrayOp())) {
+      return false;
+    }
+  } else if (isBlockArgument() && rhs.isBlockArgument()) {
+    if (getInputNum() < rhs.getInputNum()) {
+      return true;
+    } else if (getInputNum() > rhs.getInputNum()) {
+      return false;
+    }
   }
   for (size_t i = 0; i < fieldRefs.size() && i < rhs.fieldRefs.size(); i++) {
     if (fieldRefs[i] < rhs.fieldRefs[i]) {
@@ -305,7 +323,14 @@ size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
   } else if (val.isTemplateConstant()) {
     return OpHash<ConstReadOp> {}(std::get<ConstReadOp>(*val.constantVal));
   } else {
-    size_t hash = std::hash<unsigned> {}(val.blockArg.getArgNumber());
+    debug::ensure(val.isBlockArgument() || val.isCreateArrayOp(), "unhandled case");
+
+    size_t hash;
+    if (val.isCreateArrayOp()) {
+      hash = OpHash<CreateArrayOp> {}(val.getCreateArrayOp());
+    } else {
+      hash = std::hash<unsigned> {}(val.getInputNum());
+    }
     for (auto f : val.fieldRefs) {
       hash ^= f.getHash();
     }
@@ -320,10 +345,12 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRef &rhs) {
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefSet &rhs) {
   os << "{ ";
-  for (auto it = rhs.begin(); it != rhs.end();) {
+  std::vector<ConstrainRef> sortedRefs(rhs.begin(), rhs.end());
+  std::sort(sortedRefs.begin(), sortedRefs.end());
+  for (auto it = sortedRefs.begin(); it != sortedRefs.end();) {
     os << *it;
     it++;
-    if (it != rhs.end()) {
+    if (it != sortedRefs.end()) {
       os << ", ";
     } else {
       os << ' ';

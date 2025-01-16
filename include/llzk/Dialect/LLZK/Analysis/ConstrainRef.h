@@ -123,13 +123,14 @@ public:
   static std::vector<ConstrainRef> getAllConstrainRefs(StructDefOp structDef);
 
   explicit ConstrainRef(mlir::BlockArgument b)
-      : blockArg(b), fieldRefs(), constantVal(std::nullopt) {}
+      : rootVal(b), fieldRefs(), constantVal(std::nullopt) {}
   ConstrainRef(mlir::BlockArgument b, std::vector<ConstrainRefIndex> f)
-      : blockArg(b), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
-  explicit ConstrainRef(FeltConstantOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
+      : rootVal(b), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
+  explicit ConstrainRef(FeltConstantOp c) : rootVal(std::nullopt), fieldRefs(), constantVal(c) {}
   explicit ConstrainRef(mlir::index::ConstantOp c)
-      : blockArg(nullptr), fieldRefs(), constantVal(c) {}
-  explicit ConstrainRef(ConstReadOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
+      : rootVal(std::nullopt), fieldRefs(), constantVal(c) {}
+  explicit ConstrainRef(ConstReadOp c) : rootVal(std::nullopt), fieldRefs(), constantVal(c) {}
+  explicit ConstrainRef(CreateArrayOp c) : rootVal(c), fieldRefs(), constantVal(std::nullopt) {}
 
   mlir::Type getType() const;
 
@@ -149,8 +150,23 @@ public:
   bool isIntegerVal() const { return mlir::isa<mlir::IntegerType>(getType()); }
   bool isScalar() const { return isConstant() || isFeltVal() || isIndexVal() || isIntegerVal(); }
 
-  mlir::BlockArgument getBlockArgument() const { return blockArg; }
-  unsigned getInputNum() const { return blockArg.getArgNumber(); }
+  bool isBlockArgument() const {
+    return rootVal.has_value() && std::holds_alternative<mlir::BlockArgument>(rootVal.value());
+  }
+  mlir::BlockArgument getBlockArgument() const {
+    debug::ensure(isBlockArgument(), "is not a block argument");
+    return std::get<mlir::BlockArgument>(rootVal.value());
+  }
+  unsigned getInputNum() const { return getBlockArgument().getArgNumber(); }
+
+  bool isCreateArrayOp() const {
+    return rootVal.has_value() && std::holds_alternative<CreateArrayOp>(rootVal.value());
+  }
+  CreateArrayOp getCreateArrayOp() const {
+    debug::ensure(isCreateArrayOp(), "is not create array op");
+    return std::get<CreateArrayOp>(rootVal.value());
+  }
+
   mlir::APInt getConstantFeltValue() const {
     debug::ensure(isConstantFelt(), __FUNCTION__ + mlir::Twine(" requires a constant felt!"));
     return std::get<FeltConstantOp>(*constantVal).getValueAttr().getValue();
@@ -219,7 +235,8 @@ private:
    * If the block arg is 0, then it refers to "self", meaning the signal is internal or an output
    * (public means an output). Otherwise, it is an input, either public or private.
    */
-  mlir::BlockArgument blockArg;
+  std::optional<std::variant<mlir::BlockArgument, CreateArrayOp>> rootVal;
+
   std::vector<ConstrainRefIndex> fieldRefs;
   // using mutable to reduce constant casts for certain get* functions.
   mutable std::optional<std::variant<FeltConstantOp, mlir::index::ConstantOp, ConstReadOp>>
