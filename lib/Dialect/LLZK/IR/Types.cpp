@@ -19,37 +19,39 @@ using namespace mlir;
 //===------------------------------------------------------------------===//
 
 namespace {
-template <bool AllowStruct, bool AllowArray> bool isValidTypeImpl(Type type);
+template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeImpl(Type type);
 
-template <bool AllowStruct> bool isValidArrayElemTypeImpl(Type type) {
+template <bool AllowStruct, bool AllowString> bool isValidArrayElemTypeImpl(Type type) {
   // ArrayType element can be any valid type sans ArrayType itself.
-  //  Pass through the flag indicating if StructType is allowed.
-  return isValidTypeImpl<AllowStruct, false>(type);
+  //  Pass through the flags indicating which types are allowed.
+  return isValidTypeImpl<AllowStruct, AllowString, false>(type);
 }
 
-template <bool AllowStruct> bool isValidArrayTypeImpl(Type type) {
-  // Pass through the flag indicating if StructType is allowed.
-  return llvm::isa<ArrayType>(type) &&
-         isValidArrayElemTypeImpl<AllowStruct>(llvm::cast<ArrayType>(type).getElementType());
+template <bool AllowStruct, bool AllowString> bool isValidArrayTypeImpl(Type type) {
+  //  Pass through the flags indicating which types are allowed.
+  return llvm::isa<ArrayType>(type) && isValidArrayElemTypeImpl<AllowStruct, AllowString>(
+                                           llvm::cast<ArrayType>(type).getElementType()
+                                       );
 }
 
-template <bool AllowStruct, bool AllowArray> bool isValidTypeImpl(Type type) {
+template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeImpl(Type type) {
   // This is the main check for allowed types.
   //  Allow StructType and ArrayType only if the respective flags are true.
-  //  Pass through the flag indicating if StructType is allowed.
+  //  Pass through the flags indicating which types are allowed.
   return type.isSignlessInteger(1) || llvm::isa<IndexType, FeltType, TypeVarType>(type) ||
          (AllowStruct && llvm::isa<StructType>(type)) ||
-         (AllowArray && isValidArrayTypeImpl<AllowStruct>(type));
+         (AllowString && llvm::isa<StringType>(type)) ||
+         (AllowArray && isValidArrayTypeImpl<AllowStruct, AllowString>(type));
 }
 } // namespace
 
-bool isValidType(Type type) { return isValidTypeImpl<true, true>(type); }
+bool isValidType(Type type) { return isValidTypeImpl<true, true, true>(type); }
 
-bool isValidEmitEqType(Type type) { return isValidTypeImpl<false, true>(type); }
+bool isValidEmitEqType(Type type) { return isValidTypeImpl<false, false, true>(type); }
 
-bool isValidArrayElemType(Type type) { return isValidArrayElemTypeImpl<true>(type); }
+bool isValidArrayElemType(Type type) { return isValidArrayElemTypeImpl<true, true>(type); }
 
-bool isValidArrayType(Type type) { return isValidArrayTypeImpl<true>(type); }
+bool isValidArrayType(Type type) { return isValidArrayTypeImpl<true, true>(type); }
 
 namespace {
 bool paramAttrUnify(const Attribute &lhsAttr, const Attribute &rhsAttr) {
@@ -282,7 +284,7 @@ LogicalResult computeDimsFromShape(
   assert(dimensionSizes.empty()); // fully computed by this function
   Builder builder(ctx);
   auto attrs = llvm::map_range(shape, [&builder](int64_t v) -> Attribute {
-    return builder.getIndexAttr(v);
+    return builder.getI64IntegerAttr(v);
   });
   dimensionSizes.insert(dimensionSizes.begin(), attrs.begin(), attrs.end());
   assert(dimensionSizes.size() == shape.size()); // fully computed by this function

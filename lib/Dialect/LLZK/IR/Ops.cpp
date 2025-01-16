@@ -109,6 +109,19 @@ LogicalResult checkSelfType(
 }
 
 //===------------------------------------------------------------------===//
+// AssertOp
+//===------------------------------------------------------------------===//
+
+// This side effect models "program termination".
+// Based on
+// https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97
+void AssertOp::getEffects(
+    SmallVectorImpl<SideEffects::EffectInstance<MemoryEffects::Effect>> &effects
+) {
+  effects.emplace_back(MemoryEffects::Write::get());
+}
+
+//===------------------------------------------------------------------===//
 // StructDefOp
 //===------------------------------------------------------------------===//
 namespace {
@@ -246,9 +259,6 @@ LogicalResult StructDefOp::verifyRegions() {
       );
     }
     // Verify that the Struct has no paramters
-    // llvm::outs() << "const params = " << this->getConstParamsAttr() << "\n";
-    // auto attr = getConstParamsAttr();
-    // return attr ? ::std::optional< ::mlir::ArrayAttr >(attr) : (::std::nullopt);
     auto structParams = this->getConstParamsAttr();
     if (structParams && !structParams.empty()) {
       return this->emitError().append(
@@ -488,18 +498,57 @@ void CreateArrayOp::printInferredArrayType(
 
 LogicalResult ReadArrayOp::inferReturnTypes(
     MLIRContext *context, std::optional<Location> location, ReadArrayOpAdaptor adaptor,
-    ::llvm::SmallVectorImpl<Type> &inferredReturnTypes
+    llvm::SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   inferredReturnTypes.resize(1);
-  Type lvalType = adaptor.getLvalue().getType();
+  Type lvalType = adaptor.getArrRef().getType();
   assert(llvm::isa<ArrayType>(lvalType)); // per ODS spec of ReadArrayOp
   inferredReturnTypes[0] = llvm::cast<ArrayType>(lvalType).getElementType();
   return success();
 }
 
 bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
-  // There is a single return type per ODS spec of ReadArrayOp
-  return l.size() == 1 && r.size() == 1 && typesUnify(l.front(), r.front());
+  return singletonTypeListsUnify(l, r);
+}
+
+//===------------------------------------------------------------------===//
+// ExtractArrayOp
+//===------------------------------------------------------------------===//
+
+LogicalResult ExtractArrayOp::inferReturnTypes(
+    MLIRContext *context, std::optional<Location> location, ExtractArrayOpAdaptor adaptor,
+    llvm::SmallVectorImpl<Type> &inferredReturnTypes
+) {
+  size_t numToSkip = adaptor.getIndices().size();
+  Type arrRefType = adaptor.getArrRef().getType();
+  assert(llvm::isa<ArrayType>(arrRefType)); // per ODS spec of ExtractArrayOp
+  ArrayType arrayType = llvm::cast<ArrayType>(arrRefType);
+  ArrayRef<Attribute> dimSizes = arrayType.getDimensionSizes();
+
+  // Check for invalid cases
+  auto compare = numToSkip <=> dimSizes.size();
+  if (compare == 0) {
+    return mlir::emitOptionalError(
+        location, "'", ExtractArrayOp::getOperationName(),
+        "' op cannot select all dimensions of an array. Use '", ReadArrayOp::getOperationName(),
+        "' instead."
+    );
+  } else if (compare > 0) {
+    return mlir::emitOptionalError(
+        location, "'", ExtractArrayOp::getOperationName(),
+        "' op cannot select more dimensions than exist in the source array"
+    );
+  }
+
+  // Generate and store reduced array type
+  inferredReturnTypes.resize(1);
+  inferredReturnTypes[0] =
+      ArrayType::get(arrayType.getElementType(), dimSizes.drop_front(numToSkip));
+  return success();
+}
+
+bool ExtractArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
+  return singletonTypeListsUnify(l, r);
 }
 
 //===------------------------------------------------------------------===//

@@ -1,0 +1,70 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component01<[@C]> {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@Component01<[@C]>> {
+      %self = new_struct : !llzk.struct<@Component01<[@C]>>
+      %b = read_const @C : !llzk.felt
+      %c = cmp gt(%a, %b)
+      assert %c
+      return %self : !llzk.struct<@Component01<[@C]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component01<[@C]>>, %a: !llzk.felt) {
+      %b = read_const @C : !llzk.felt
+      %c = cmp gt(%a, %b)
+      assert %c
+      return
+    }
+  }
+}
+//CHECK-LABEL: llzk.struct @Component01<[@C]> {
+//CHECK-NEXT:    func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@Component01<[@C]>> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Component01<[@C]>>
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = read_const @C : !llzk.felt
+//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = cmp gt(%[[A0]], %[[T0]])
+//CHECK-NEXT:      assert %[[T1]]
+//CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@Component01<[@C]>>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01<[@C]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = read_const @C : !llzk.felt
+//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = cmp gt(%[[A1]], %[[T0]])
+//CHECK-NEXT:      assert %[[T1]]
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+llzk.func @test_in_global_func(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
+  %c = cmp gt(%a, %b)
+  assert %c
+  return %c : i1
+}
+//CHECK-LABEL: llzk.func @test_in_global_func
+//CHECK-SAME:  (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> i1 {
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cmp gt(%[[A0]], %[[A1]])
+//CHECK-NEXT:    assert %[[T0]]
+//CHECK-NEXT:    return %[[T0]] : i1
+//CHECK-NEXT:  }
+// -----
+
+llzk.func @just_assert(%c: i1) -> i1 {
+  assert %c
+  return %c : i1
+}
+//CHECK-LABEL: llzk.func @just_assert
+//CHECK-SAME:  (%[[A:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
+//CHECK-NEXT:    assert %[[A]]
+//CHECK-NEXT:    return %[[A]] : i1
+//CHECK-NEXT:  }
+// -----
+
+llzk.func @assert_with_message(%c: i1) -> i1 {
+  assert %c, "Expected a `true` value"
+  return %c : i1
+}
+//CHECK-LABEL: llzk.func @assert_with_message
+//CHECK-SAME:  (%[[A:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
+//CHECK-NEXT:    assert %[[A]], "Expected a `true` value"
+//CHECK-NEXT:    return %[[A]] : i1
+//CHECK-NEXT:  }

@@ -1,0 +1,23 @@
+// RUN: llzk-opt %s -split-input-file -verify-diagnostics
+
+llzk.func @should_use_readarr_instead_of_extractarr() -> index {
+  %a = index.constant 946
+  %b = index.constant 413
+  %r = llzk.new_array %a, %b : !llzk.array<2 x index>
+  %i = index.constant 1
+  // expected-error@+1 {{'llzk.extractarr' op cannot select all dimensions of an array. Use 'llzk.readarr' instead.}}
+  %s = llzk.extractarr %r[%i] : !llzk.array<2 x index>
+  return %s: index
+}
+// -----
+
+llzk.func @extractarr_with_more_dims_than_available() -> index {
+  %a = index.constant 946
+  %b = index.constant 413
+  %r = llzk.new_array %a, %b : !llzk.array<2 x index>
+  %i = index.constant 0
+  // expected-error@+1 {{'llzk.extractarr' op cannot select more dimensions than exist in the source array}}
+  %s = llzk.extractarr %r[%i,%i] : !llzk.array<2 x index>
+  return %s: index
+}
+// -----
