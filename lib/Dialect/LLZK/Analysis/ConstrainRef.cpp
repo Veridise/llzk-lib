@@ -210,24 +210,46 @@ mlir::Type ConstrainRef::getType() const {
   }
 }
 
+bool ConstrainRef::isValidPrefix(const ConstrainRef &prefix) const {
+  if (isConstant()) {
+    return false;
+  }
+
+  if (blockArg != prefix.blockArg || fieldRefs.size() < prefix.fieldRefs.size()) {
+    return false;
+  }
+  for (size_t i = 0; i < prefix.fieldRefs.size(); i++) {
+    if (fieldRefs[i] != prefix.fieldRefs[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+mlir::FailureOr<std::vector<ConstrainRefIndex>> ConstrainRef::getSuffix(const ConstrainRef &prefix
+) const {
+  if (!isValidPrefix(prefix)) {
+    return mlir::failure();
+  }
+  std::vector<ConstrainRefIndex> suffix;
+  for (size_t i = prefix.fieldRefs.size(); i < fieldRefs.size(); i++) {
+    suffix.push_back(fieldRefs[i]);
+  }
+  return suffix;
+}
+
 mlir::FailureOr<ConstrainRef>
 ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) const {
   if (isConstant()) {
     return *this;
   }
-
-  if (blockArg != prefix.blockArg || fieldRefs.size() < prefix.fieldRefs.size()) {
+  auto suffix = getSuffix(prefix);
+  if (mlir::failed(suffix)) {
     return mlir::failure();
   }
-  for (size_t i = 0; i < prefix.fieldRefs.size(); i++) {
-    if (fieldRefs[i] != prefix.fieldRefs[i]) {
-      return mlir::failure();
-    }
-  }
+
   auto newSignalUsage = other;
-  for (size_t i = prefix.fieldRefs.size(); i < fieldRefs.size(); i++) {
-    newSignalUsage.fieldRefs.push_back(fieldRefs[i]);
-  }
+  newSignalUsage.fieldRefs.insert(newSignalUsage.fieldRefs.end(), suffix->begin(), suffix->end());
   return newSignalUsage;
 }
 

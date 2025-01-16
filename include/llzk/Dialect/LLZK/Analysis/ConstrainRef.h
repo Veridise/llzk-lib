@@ -172,6 +172,11 @@ public:
     return isConstantFelt() ? getConstantFeltValue() : getConstantIndexValue();
   }
 
+  /// @brief Returns true iff `prefix` is a valid prefix of this reference.
+  bool isValidPrefix(const ConstrainRef &prefix) const;
+
+  mlir::FailureOr<std::vector<ConstrainRefIndex>> getSuffix(const ConstrainRef &prefix) const;
+
   /// @brief Create a new reference with prefix replaced with other iff prefix is a valid prefix for
   /// this reference. If this reference is a constfelt, the translation will always succeed and
   /// return the constfelt unchanged.
