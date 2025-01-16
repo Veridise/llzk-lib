@@ -37,24 +37,45 @@ class ConstrainRefLatticeValue {
   /// definition to support arrays of arbitrary dimensions.
   /// Unique pointers are used as each value must be self contained for the
   /// sake of consistent translations.
+  /// This array is flattened.
   using ArrayTy = std::vector<std::unique_ptr<ConstrainRefLatticeValue>>;
 
+  static ArrayTy constructArrayTy(const mlir::ArrayRef<int64_t> &shape) {
+    size_t totalElem = 1;
+    for (auto dim : shape) {
+      totalElem *= dim;
+    }
+    ArrayTy arr(totalElem);
+    for (auto it = arr.begin(); it != arr.end(); it++) {
+      *it = std::make_unique<ConstrainRefLatticeValue>();
+    }
+    return arr;
+  }
+
 public:
-  explicit ConstrainRefLatticeValue(ScalarTy s) : value(s) {}
+  explicit ConstrainRefLatticeValue(ScalarTy s) : value(s), arrayShape(std::nullopt) {}
   explicit ConstrainRefLatticeValue(ConstrainRef r) : ConstrainRefLatticeValue(ScalarTy {r}) {}
   ConstrainRefLatticeValue() : ConstrainRefLatticeValue(ScalarTy {}) {}
+
+  // Create an empty array of the given shape.
+  explicit ConstrainRefLatticeValue(mlir::ArrayRef<int64_t> shape)
+      : value(constructArrayTy(shape)), arrayShape(shape) {}
 
   // Enable copying by duplicating unique_ptrs
   ConstrainRefLatticeValue(const ConstrainRefLatticeValue &rhs) { *this = rhs; }
 
   ConstrainRefLatticeValue &operator=(const ConstrainRefLatticeValue &rhs) {
+    arrayShape = rhs.arrayShape;
     if (rhs.isScalar()) {
-      getScalarValue() = rhs.getScalarValue();
+      value = rhs.getScalarValue();
     } else {
-      auto &arr = getArrayValue();
-      for (auto &v : rhs.getArrayValue()) {
-        auto newElem = *v;
-        arr.emplace_back(std::make_unique<ConstrainRefLatticeValue>(newElem));
+      // create an empty array of the same size
+      value = constructArrayTy(rhs.arrayShape.value());
+      auto &lhsArr = getArrayValue();
+      auto &rhsArr = rhs.getArrayValue();
+      for (unsigned i = 0; i < lhsArr.size(); i++) {
+        // Recursive copy assignment of lattice values
+        *lhsArr[i] = *rhsArr[i];
       }
     }
     return *this;
@@ -91,20 +112,32 @@ public:
     return std::get<ArrayTy>(value);
   }
 
-  const ConstrainRefLatticeValue &getElem(unsigned i) const {
+  const ConstrainRefLatticeValue &getElemFlatIdx(unsigned i) const {
     debug::ensure(isArray(), "not an array value");
     auto &arr = getArrayValue();
     debug::ensure(i < arr.size(), "index out of range");
     return *arr.at(i);
   }
 
-  ConstrainRefLatticeValue &getElem(unsigned i) {
+  ConstrainRefLatticeValue &getElemFlatIdx(unsigned i) {
     debug::ensure(isArray(), "not an array value");
     auto &arr = getArrayValue();
     debug::ensure(i < arr.size(), "index out of range");
     return *arr.at(i);
   }
 
+  /// @brief Sets this value to be equal to `rhs`.
+  /// Like the assignment operator, but returns a mlir::ChangeResult if an update
+  /// is created,
+  mlir::ChangeResult setValue(const ConstrainRefLatticeValue &rhs) {
+    if (*this == rhs) {
+      return mlir::ChangeResult::NoChange;
+    }
+    *this = rhs;
+    return mlir::ChangeResult::Change;
+  }
+
+  /// @brief Union this value with that of rhs.
   mlir::ChangeResult update(const ConstrainRefLatticeValue &rhs) {
     if (isScalar() && rhs.isScalar()) {
       return updateScalar(rhs.getScalarValue());
@@ -155,6 +188,11 @@ public:
     return elementwiseTransform(transform);
   }
 
+  std::pair<ConstrainRefLatticeValue, mlir::ChangeResult> extract() const {
+    llvm::report_fatal_error("todo!");
+    return {};
+  }
+
   ScalarTy foldToScalar() const {
     if (isScalar()) {
       return getScalarValue();
@@ -187,8 +225,23 @@ public:
     }
   }
 
+  bool operator==(const ConstrainRefLatticeValue &rhs) const {
+    if (isScalar() && rhs.isScalar()) {
+      return getScalarValue() == rhs.getScalarValue();
+    } else if (isArray() && rhs.isArray() && getArraySize() == rhs.getArraySize()) {
+      for (size_t i = 0; i < getArraySize(); i++) {
+        if (getElemFlatIdx(i) != rhs.getElemFlatIdx(i)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
 private:
   std::variant<ScalarTy, ArrayTy> value;
+  std::optional<mlir::ArrayRef<int64_t>> arrayShape;
 
   mlir::ChangeResult updateScalar(const ScalarTy &rhs) {
     mlir::ChangeResult res = mlir::ChangeResult::NoChange;
@@ -222,10 +275,13 @@ private:
 
   mlir::ChangeResult translateScalar(const TranslationMap &translation) {
     auto res = mlir::ChangeResult::NoChange;
-    auto &lhs = getScalarValue();
+    // copy the current value
+    auto currVal = getScalarValue();
+    // reset this value
+    value = ScalarTy();
     for (auto &[ref, val] : translation) {
-      auto it = lhs.find(ref);
-      if (it != lhs.end()) {
+      auto it = currVal.find(ref);
+      if (it != currVal.end()) {
         res |= update(val);
       }
     }
@@ -332,11 +388,11 @@ public:
   }
 
   mlir::ChangeResult setValue(mlir::Value v, const ConstrainRefLatticeValue &rhs) {
-    return valMap[v].update(rhs);
+    return valMap[v].setValue(rhs);
   }
 
   mlir::ChangeResult setValue(mlir::Value v, const ConstrainRef &ref) {
-    return valMap[v].insert(ref);
+    return valMap[v].setValue(ConstrainRefLatticeValue(ref));
   }
 
   ConstrainRefLatticeValue getOrDefault(mlir::Value v) const {
@@ -427,13 +483,13 @@ public:
         auto key = ConstrainRef(funcOp.getArgument(i));
         auto val = before.getOrDefault(callOp.getOperand(i));
         translation[key] = val;
+        llvm::errs() << "Translating " << key << " to " << val << "\n";
       }
 
       mlir::ChangeResult updated = after->join(before);
       for (unsigned i = 0; i < callOp.getNumResults(); i++) {
         auto retVal = before.getReturnValue(i);
         auto [translatedVal, _] = retVal.translate(translation);
-
         updated |= after->setValue(callOp->getResult(i), translatedVal);
       }
       propagateIfChanged(after, updated);
@@ -505,6 +561,24 @@ public:
       }
 
       propagateIfChanged(after, after->setValue(res, currVals));
+    } else if (auto createArray = mlir::dyn_cast<CreateArrayOp>(op)) {
+      // Create an array using the operand values, if they exist.
+      // Currently, the new array must either be fully initialized or uninitialized.
+
+      auto newArrayVal = ConstrainRefLatticeValue(createArray.getType().getShape());
+      // If the array is initialized, iterate through all operands and initialize the array value.
+      for (unsigned i = 0; i < createArray.getNumOperands(); i++) {
+        auto currentOp = createArray.getOperand(i);
+        auto &opVals = operandVals[currentOp];
+        (void)newArrayVal.getElemFlatIdx(i).setValue(opVals);
+      }
+
+      assert(createArray->getNumResults() == 1);
+      auto res = createArray->getResult(0);
+
+      propagateIfChanged(after, after->setValue(res, newArrayVal));
+    } else if (false) {
+      // TODO: extract array
     } else {
       // Standard union of operands into the results value.
       // TODO: Could perform constant computation/propagation here for, e.g., arithmetic
@@ -775,6 +849,7 @@ void ConstraintDependencyGraph::walkConstrainOp(
         constUsages.push_back(ref);
       } else {
         signalUsages.push_back(ref);
+        llvm::errs() << "Constrain ref " << ref << "\n";
       }
     }
   }
