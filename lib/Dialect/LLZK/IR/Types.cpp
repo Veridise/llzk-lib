@@ -186,6 +186,22 @@ public:
   }
 };
 
+/// Helpers to compute the union of multiple TypeList without repetition.
+/// Use as: TypeListUnion<TypeList<...>, TypeList<...>, ...>
+template <class... Ts> struct make_unique {
+  using type = TypeList<Ts...>;
+};
+
+template <class... Ts> struct make_unique<TypeList<>, Ts...> : make_unique<Ts...> {};
+
+template <class U, class... Us, class... Ts>
+struct make_unique<TypeList<U, Us...>, Ts...>
+    : std::conditional_t<
+          (std::is_same_v<U, Us> || ...) || (std::is_same_v<U, Ts> || ...),
+          make_unique<TypeList<Us...>, Ts...>, make_unique<TypeList<Us...>, Ts..., U>> {};
+
+template <class... Ts> using TypeListUnion = typename make_unique<Ts...>::type;
+
 } // namespace
 
 //===------------------------------------------------------------------===//
@@ -380,5 +396,20 @@ ArrayType::cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, Type elementT
 }
 
 int64_t ArrayType::getNumElements() const { return ShapedType::getNumElements(getShape()); }
+
+//===------------------------------------------------------------------===//
+// Additional Helpers
+//===------------------------------------------------------------------===//
+
+void assertValidAttrForParamOfType(Attribute attr) {
+  // Must be the union of valid attribute types within ArrayType, StructType, and TypeVarType.
+  using TypeVarAttrs = TypeList<SymbolRefAttr>; // per ODS spec of TypeVarType
+  if (!TypeListUnion<ArrayDimensionTypes, StructParamTypes, TypeVarAttrs>::matches(attr)) {
+    llvm::report_fatal_error(
+        "Legal type parameters are inconsistent. Encountered " +
+        attr.getAbstractAttribute().getName()
+    );
+  }
+}
 
 } // namespace llzk

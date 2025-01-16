@@ -28,17 +28,13 @@
 
 namespace llzk {
 
-/// The allowed attribute types in ArrayType, StructType, and TypeVarType are IntegerAttr,
-/// SymbolRefAttr, and TypeAttr. Throw a fatal error if anything else if found indicating that the
-/// caller of this function should be updated.
-inline void assertValidAttrForParamOfType(mlir::Attribute attr) {
-  if (!llvm::isa<mlir::IntegerAttr, mlir::SymbolRefAttr, mlir::TypeAttr>(attr)) {
-    llvm::report_fatal_error(
-        "Legal type parameters are inconsistent. Encountered " +
-        attr.getAbstractAttribute().getName()
-    );
-  }
-}
+// This function asserts that the given Attribute kind is legal within the LLZK types that can
+// contain Attribute parameters (i.e. ArrayType, StructType, and TypeVarType). This should be used
+// in any function that examines the attribute parameters within parameterized LLZK types to ensure
+// that the function handles all possible cases properly, especially if more legal attributes are
+// added in the future. Throw a fatal error if anything illegal if found indicating that the caller
+// of this function should be updated.
+void assertValidAttrForParamOfType(mlir::Attribute attr);
 
 /// valid types: {I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType, LLZK_TypeVarType}
 bool isValidType(mlir::Type type);
