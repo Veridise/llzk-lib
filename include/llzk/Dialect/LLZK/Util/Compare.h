@@ -55,7 +55,6 @@ template <NamedOpComparable Op> struct NamedOpLocationLess {
 
     Op &lhs = const_cast<Op &>(l);
     Op &rhs = const_cast<Op &>(r);
-
     return lhs.getName().compare(rhs.getName()) < 0;
   }
 };

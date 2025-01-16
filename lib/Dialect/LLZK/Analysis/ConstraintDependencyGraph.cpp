@@ -274,7 +274,6 @@ public:
   /// return failure.
   /// Our lattice values must originate from somewhere.
   static mlir::FailureOr<ConstrainRef> getSourceRef(mlir::Value val) {
-    auto defOp = val.getDefiningOp();
     if (auto blockArg = mlir::dyn_cast<mlir::BlockArgument>(val)) {
       return ConstrainRef(blockArg);
     } else if (auto defOp = val.getDefiningOp()) {
@@ -284,12 +283,6 @@ public:
         return ConstrainRef(constIdx);
       } else if (auto readConst = mlir::dyn_cast<ConstReadOp>(defOp)) {
         return ConstrainRef(readConst);
-      } else if (auto newArray = mlir::dyn_cast<CreateArrayOp>(defOp)) {
-        // new_array without arguments can be used for struct types, which will create
-        // a new base reference. new_array with arguments does not operate this way.
-        if (newArray.getNumOperands() == 0) {
-          return ConstrainRef(newArray);
-        }
       }
     }
     return mlir::failure();

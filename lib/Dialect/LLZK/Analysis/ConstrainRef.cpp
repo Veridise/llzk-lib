@@ -204,10 +204,8 @@ mlir::Type ConstrainRef::getType() const {
         array_derefs--;
       }
       return currTy;
-    } else if (isBlockArgument()) {
-      return getBlockArgument().getType();
     } else {
-      return getCreateArrayOp().getType();
+      return blockArg.getType();
     }
   }
 }
@@ -218,7 +216,7 @@ ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) c
     return *this;
   }
 
-  if (rootVal != prefix.rootVal || fieldRefs.size() < prefix.fieldRefs.size()) {
+  if (blockArg != prefix.blockArg || fieldRefs.size() < prefix.fieldRefs.size()) {
     return mlir::failure();
   }
   for (size_t i = 0; i < prefix.fieldRefs.size(); i++) {
@@ -240,20 +238,17 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
     os << "<index: " << getConstantIndexValue() << '>';
   } else if (isTemplateConstant()) {
     os << "<template: " << std::get<ConstReadOp>(*constantVal).getConstName() << '>';
-  } else if (isBlockArgument()) {
+  } else {
+    debug::ensure(isBlockArgument(), "unhandled print case");
     os << "%arg" << getInputNum();
     for (auto f : fieldRefs) {
       os << "[" << f << "]";
     }
-  } else if (isCreateArrayOp()) {
-    os << "<new array @ " << getCreateArrayOp().getLoc() << '>';
-  } else {
-    llvm::report_fatal_error("unhandled print case");
   }
 }
 
 bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
-  return rootVal == rhs.rootVal && fieldRefs == rhs.fieldRefs && constantVal == rhs.constantVal;
+  return blockArg == rhs.blockArg && fieldRefs == rhs.fieldRefs && constantVal == rhs.constantVal;
 }
 
 // required for EquivalenceClasses usage
@@ -288,23 +283,13 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   }
 
   // both are not constants
-  if (isCreateArrayOp() && !rhs.isCreateArrayOp()) {
-    return false;
-  } else if (!isCreateArrayOp() && rhs.isCreateArrayOp()) {
+  debug::ensure(isBlockArgument() && rhs.isBlockArgument(), "unhandled operator< case");
+  if (getInputNum() < rhs.getInputNum()) {
     return true;
-  } else if (isCreateArrayOp() && rhs.isCreateArrayOp()) {
-    if (OpLocationLess<CreateArrayOp> {}(getCreateArrayOp(), rhs.getCreateArrayOp())) {
-      return true;
-    } else if (OpLocationLess<CreateArrayOp> {}(rhs.getCreateArrayOp(), getCreateArrayOp())) {
-      return false;
-    }
-  } else if (isBlockArgument() && rhs.isBlockArgument()) {
-    if (getInputNum() < rhs.getInputNum()) {
-      return true;
-    } else if (getInputNum() > rhs.getInputNum()) {
-      return false;
-    }
+  } else if (getInputNum() > rhs.getInputNum()) {
+    return false;
   }
+
   for (size_t i = 0; i < fieldRefs.size() && i < rhs.fieldRefs.size(); i++) {
     if (fieldRefs[i] < rhs.fieldRefs[i]) {
       return true;
@@ -323,14 +308,9 @@ size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
   } else if (val.isTemplateConstant()) {
     return OpHash<ConstReadOp> {}(std::get<ConstReadOp>(*val.constantVal));
   } else {
-    debug::ensure(val.isBlockArgument() || val.isCreateArrayOp(), "unhandled case");
+    debug::ensure(val.isBlockArgument(), "unhandled operator() case");
 
-    size_t hash;
-    if (val.isCreateArrayOp()) {
-      hash = OpHash<CreateArrayOp> {}(val.getCreateArrayOp());
-    } else {
-      hash = std::hash<unsigned> {}(val.getInputNum());
-    }
+    size_t hash = std::hash<unsigned> {}(val.getInputNum());
     for (auto f : val.fieldRefs) {
       hash ^= f.getHash();
     }
