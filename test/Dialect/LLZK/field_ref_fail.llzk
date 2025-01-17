@@ -164,7 +164,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentN {
     func @compute(%0: !llzk.struct<@WrongComponent>, %1: !llzk.felt) -> !llzk.struct<@ComponentN> {
       %self = new_struct : !llzk.struct<@ComponentN>
-      // expected-error@+1 {{'llzk.writef' op must use type of its ancestor 'llzk.struct' "@ComponentN" as result type}}
+      // expected-error@+1 {{'llzk.writef' op must use type of its ancestor 'llzk.struct' "@ComponentN" as base value type}}
       writef %0[@f] = %1 : !llzk.struct<@WrongComponent>, !llzk.felt
       return %self : !llzk.struct<@ComponentN>
     }

@@ -403,21 +403,24 @@ getFieldDefOp(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
 
 LogicalResult
 verifySymbolUses(FieldRefOpInterface refOp, SymbolTableCollection &tables, Value compareTo) {
+  // Ensure the base component/struct type reference can be resolved.
   StructType tyStruct = refOp.getStructType();
   if (failed(tyStruct.verifySymbolRef(tables, refOp.getOperation()))) {
     return failure();
   }
+  // Ensure the field name can be resolved in that struct.
   auto field = getFieldDefOp(refOp, tables, tyStruct);
   if (failed(field)) {
     return field; // getFieldDefOp() already emits a sufficient error message
   }
+  // Ensure the type of the referenced field declaration matches the type used in this op.
   Type fieldType = field->get().getType();
-
   if (!typesUnify(compareTo.getType(), fieldType, field->getIncludeSymNames())) {
     return refOp->emitOpError() << "has wrong type; expected " << fieldType << ", got "
                                 << compareTo.getType();
   }
-  return success();
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, compareTo.getType(), refOp.getOperation());
 }
 } // namespace
 
@@ -436,14 +439,15 @@ FailureOr<SymbolLookupResult<FieldDefOp>> FieldWriteOp::getFieldDefOp(SymbolTabl
 }
 
 LogicalResult FieldWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure the write op only targets fields in the current struct.
   FailureOr<StructDefOp> getParentRes = verifyInStruct(*this);
   if (failed(getParentRes)) {
     return failure(); // verifyInStruct() already emits a sufficient error message
   }
-  if (failed(checkSelfType(tables, *getParentRes, this->getComponent().getType(), *this, "result")
-      )) {
-    return failure();
+  if (failed(checkSelfType(tables, *getParentRes, getComponent().getType(), *this, "base value"))) {
+    return failure(); // checkSelfType() already emits a sufficient error message
   }
+  // Perform the standard field ref checks.
   return llzk::verifySymbolUses(*this, tables, getVal());
 }
 
