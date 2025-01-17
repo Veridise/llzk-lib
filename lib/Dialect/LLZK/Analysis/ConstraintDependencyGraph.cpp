@@ -174,61 +174,6 @@ public:
     return {newVal, res};
   }
 
-  std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
-  index(const std::vector<ConstrainRefIndex> &indices) const {
-    if (isArray()) {
-      debug::ensure(indices.size() == arrayShape->size(), "dimension mismatch");
-      // if all the indices are concrete, then we can resolve to a specific element. Otherwise,
-      // we'll fold the values together.
-
-      // the set of indices to fold together
-      std::vector<size_t> currIdxs {0};
-      for (unsigned i = 0; i < indices.size(); i++) {
-        auto &idx = indices[i];
-        auto currDim = arrayShape.value()[i];
-
-        std::vector<size_t> newIdxs;
-        debug::ensure(idx.isIndex() || idx.isIndexRange(), "wrong type of index for array");
-        if (idx.isIndex()) {
-          auto idxVal = idx.getIndex().getZExtValue();
-          std::transform(
-              currIdxs.begin(), currIdxs.end(), std::back_inserter(newIdxs),
-              [&currDim, &idxVal](size_t i) { return i * currDim + idxVal; }
-          );
-        } else {
-          auto [low, high] = idx.getIndexRange();
-          for (auto idxVal = low.getZExtValue(); idxVal < high.getZExtValue(); idxVal++) {
-            std::transform(
-                currIdxs.begin(), currIdxs.end(), std::back_inserter(newIdxs),
-                [&currDim, &idxVal](size_t i) { return i * currDim + idxVal; }
-            );
-          }
-        }
-        currIdxs = newIdxs;
-      }
-
-      // Now, get and fold all the values together.
-      auto &arr = getArrayValue();
-      auto currLatticeVal = *arr.at(currIdxs[0]);
-      for (unsigned i = 1; i < currIdxs.size(); i++) {
-        (void)currLatticeVal.update(*arr.at(currIdxs[i]));
-      }
-      return {currLatticeVal, mlir::ChangeResult::Change};
-    } else {
-      auto currVal = *this;
-      auto res = mlir::ChangeResult::NoChange;
-      for (auto &idx : indices) {
-        auto transform = [&idx](const ConstrainRef &r) -> ConstrainRef {
-          return r.createChild(idx);
-        };
-        auto [newVal, transformRes] = currVal.elementwiseTransform(transform);
-        currVal = std::move(newVal);
-        res |= transformRes;
-      }
-      return {currVal, res};
-    }
-  }
-
   std::pair<ConstrainRefLatticeValue, mlir::ChangeResult> index(const ConstrainRefIndex &idx
   ) const {
     auto transform = [&idx](const ConstrainRef &r) -> ConstrainRef { return r.createChild(idx); };
@@ -243,11 +188,12 @@ public:
     return elementwiseTransform(transform);
   }
 
-  /// Perform an extract_arr operation
+  /// Perform an extractarr or readarr operation, depending on how many indices
+  /// are provided.
   std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
   extract(const std::vector<ConstrainRefIndex> &indices) const {
     if (isArray()) {
-      debug::ensure(indices.size() < arrayShape->size(), "invalid extract array operands");
+      debug::ensure(indices.size() <= arrayShape->size(), "invalid extract array operands");
 
       // First, compute what chunk(s) to index
       std::vector<size_t> currIdxs {0};
@@ -303,15 +249,6 @@ public:
       }
       return {currVal, res};
     }
-  }
-
-  /// A convenience wrapper to either extract a sub array or fully index the array.
-  std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
-  extractOrIndex(const std::vector<ConstrainRefIndex> &indices) const {
-    if (isArray() && indices.size() < arrayShape->size()) {
-      return extract(indices);
-    }
-    return index(indices);
   }
 
   ScalarTy foldToScalar() const {
@@ -683,7 +620,7 @@ public:
         }
       }
 
-      auto [newVals, _] = currVals.index(indices);
+      auto [newVals, _] = currVals.extract(indices);
 
       propagateIfChanged(after, after->setValue(res, newVals));
     } else if (auto createArray = mlir::dyn_cast<CreateArrayOp>(op)) {
@@ -1040,7 +977,7 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemap
             mlir::succeeded(suffix), "failure is nonsensical, we already checked for valid prefix"
         );
 
-        auto [resolvedVals, _] = vals.extractOrIndex(suffix.value());
+        auto [resolvedVals, _] = vals.extract(suffix.value());
         auto folded = resolvedVals.foldToScalar();
         refs.insert(refs.end(), folded.begin(), folded.end());
       } else {
