@@ -334,13 +334,15 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (failed(getParentRes)) {
     return failure(); // verifyInStruct() already emits a sufficient error message
   }
+  // Ensure the named constant is a a parameter of the parent struct
   if (!getParentRes->hasParamNamed(this->getConstNameAttr())) {
     return this->emitOpError()
         .append("references unknown symbol \"", this->getConstNameAttr(), "\"")
         .attachNote(getParentRes->getLoc())
         .append("must reference a parameter of this struct");
   }
-  return success();
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, getType(), *this);
 }
 
 //===------------------------------------------------------------------===//
