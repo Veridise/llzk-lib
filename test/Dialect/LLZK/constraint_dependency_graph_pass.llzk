@@ -429,3 +429,69 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT: @MatrixConstrain ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@b], <constfelt: 7> }
 // CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @UnknownArrayConstrain<[@N]> {
+    func @compute(%arr: !llzk.array<@N x !llzk.felt>) -> !llzk.struct<@UnknownArrayConstrain<[@N]>> {
+      %self = new_struct : !llzk.struct<@UnknownArrayConstrain<[@N]>>
+      return %self : !llzk.struct<@UnknownArrayConstrain<[@N]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@UnknownArrayConstrain<[@N]>>, %arr: !llzk.array<@N x !llzk.felt>) {
+      %const = constfelt 7
+      %1 = index.constant 1
+      %elem = readarr %arr[%1] : !llzk.array<@N x !llzk.felt>, !llzk.felt
+      emit_eq %elem, %const : !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK: @UnknownArrayConstrain ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1[1], <constfelt: 7> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @UnknownArrayConstrain<[@N]> {
+    func @compute(%arr: !llzk.array<@N x !llzk.felt>) -> !llzk.struct<@UnknownArrayConstrain<[@N]>> {
+      %self = new_struct : !llzk.struct<@UnknownArrayConstrain<[@N]>>
+      return %self : !llzk.struct<@UnknownArrayConstrain<[@N]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@UnknownArrayConstrain<[@N]>>, %arr: !llzk.array<@N x !llzk.felt>) {
+      %const = constfelt 7
+      %1 = index.constant 1
+      %elem = readarr %arr[%1] : !llzk.array<@N x !llzk.felt>, !llzk.felt
+      emit_eq %elem, %const : !llzk.felt
+      return
+    }
+  }
+
+  llzk.struct @UnknownMatrixConstrain<[@M, @N]> {
+    field @check : !llzk.struct<@UnknownArrayConstrain<[@N]>>
+
+    func @compute(%mat: !llzk.array<@M,@N x !llzk.felt>) -> !llzk.struct<@UnknownMatrixConstrain<[@M, @N]>> {
+      %self = new_struct : !llzk.struct<@UnknownMatrixConstrain<[@M, @N]>>
+      return %self : !llzk.struct<@UnknownMatrixConstrain<[@M, @N]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@UnknownMatrixConstrain<[@M, @N]>>, %mat: !llzk.array<@M,@N x !llzk.felt>) {
+      %check = readf %self[@check] : !llzk.struct<@UnknownMatrixConstrain<[@M, @N]>>, !llzk.struct<@UnknownArrayConstrain<[@N]>>
+      %0 = index.constant 0
+      %arr = extractarr %mat[%0] : !llzk.array<@M,@N x !llzk.felt>
+      call @UnknownArrayConstrain::@constrain(%check, %arr) : (!llzk.struct<@UnknownArrayConstrain<[@N]>>, !llzk.array<@N x !llzk.felt>) -> ()
+      return
+    }
+  }
+}
+
+// CHECK: @UnknownArrayConstrain ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1[1], <constfelt: 7> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @UnknownMatrixConstrain ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1[0][1], <constfelt: 7> }
+// CHECK-NEXT: }
