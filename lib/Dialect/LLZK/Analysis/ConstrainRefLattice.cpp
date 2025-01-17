@@ -300,8 +300,6 @@ mlir::FailureOr<ConstrainRef> ConstrainRefLattice::getSourceRef(mlir::Value val)
   return mlir::failure();
 }
 
-/* Required methods */
-
 void ConstrainRefLattice::print(mlir::raw_ostream &os) const {
   os << "ConstrainRefLattice { ";
   for (auto mit = valMap.begin(); mit != valMap.end();) {
@@ -316,8 +314,6 @@ void ConstrainRefLattice::print(mlir::raw_ostream &os) const {
   }
   os << "}\n";
 }
-
-/* Update utility methods */
 
 mlir::ChangeResult ConstrainRefLattice::setValues(const ValueMap &rhs) {
   auto res = mlir::ChangeResult::NoChange;

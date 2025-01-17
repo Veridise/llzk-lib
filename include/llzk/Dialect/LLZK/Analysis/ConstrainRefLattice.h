@@ -12,12 +12,16 @@ class ConstrainRefLatticeValue {
   /// For scalar values.
   using ScalarTy = ConstrainRefSet;
   /// For arrays of values created by, e.g., the LLZK new_array op. A recursive
-  /// definition to support arrays of arbitrary dimensions.
-  /// Unique pointers are used as each value must be self contained for the
-  /// sake of consistent translations.
-  /// This array is flattened.
+  /// definition allows arrays to be constructed of other existing values, which is
+  /// how the `new_array` operator works.
+  /// - Unique pointers are used as each value must be self contained for the
+  /// sake of consistent translations. Copies are explicit.
+  /// - This array is flattened, with the dimensions stored in another structure.
+  /// This simplifies the construction of multidimensional arrays.
   using ArrayTy = std::vector<std::unique_ptr<ConstrainRefLatticeValue>>;
 
+  /// @brief Create a new array with the given `shape`. The values are pre-allocated
+  /// to empty scalar values.
   static ArrayTy constructArrayTy(const mlir::ArrayRef<int64_t> &shape);
 
 public:
@@ -29,9 +33,9 @@ public:
   explicit ConstrainRefLatticeValue(mlir::ArrayRef<int64_t> shape)
       : value(constructArrayTy(shape)), arrayShape(shape) {}
 
-  // Enable copying by duplicating unique_ptrs
   ConstrainRefLatticeValue(const ConstrainRefLatticeValue &rhs) { *this = rhs; }
 
+  // Enable copying by duplicating unique_ptrs and copying the contained values.
   ConstrainRefLatticeValue &operator=(const ConstrainRefLatticeValue &rhs);
 
   bool isScalar() const { return std::holds_alternative<ScalarTy>(value); }
@@ -65,6 +69,7 @@ public:
     return std::get<ArrayTy>(value);
   }
 
+  /// @brief Directly indect into the flattened array using a single index.
   const ConstrainRefLatticeValue &getElemFlatIdx(unsigned i) const {
     debug::ensure(isArray(), "not an array value");
     auto &arr = getArrayValue();
@@ -87,9 +92,13 @@ public:
   /// @brief Union this value with that of rhs.
   mlir::ChangeResult update(const ConstrainRefLatticeValue &rhs);
 
+  /// @brief Directly insert the ref into this value. If this is a scalar value,
+  /// insert the ref into the value's set. If this is an array value, the array
+  /// is folded into a single scalar, then the ref is inserted.
   mlir::ChangeResult insert(const ConstrainRef &rhs);
 
-  /// Translate
+  /// @brief For the refs contained in this value, translate them given the `translation`
+  /// map and return the transformed value.
   std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
   translate(const TranslationMap &translation) const;
 
@@ -97,11 +106,13 @@ public:
 
   std::pair<ConstrainRefLatticeValue, mlir::ChangeResult> index(const ConstrainRef &fieldRef) const;
 
-  /// Perform an extractarr or readarr operation, depending on how many indices
+  /// @brief Perform an extractarr or readarr operation, depending on how many indices
   /// are provided.
   std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
   extract(const std::vector<ConstrainRefIndex> &indices) const;
 
+  /// @brief If this is an array value, combine all elements into a single scalar
+  /// value and return it. If this is already a scalar value, return the scalar value.
   ScalarTy foldToScalar() const;
 
   void print(mlir::raw_ostream &os) const;
@@ -112,12 +123,18 @@ private:
   std::variant<ScalarTy, ArrayTy> value;
   std::optional<std::vector<int64_t>> arrayShape;
 
+  /// @brief Union this value with the given scalar.
   mlir::ChangeResult updateScalar(const ScalarTy &rhs);
 
+  /// @brief Union this value with the given array.
   mlir::ChangeResult updateArray(const ArrayTy &rhs);
 
+  /// @brief Folds the current value into a scalar and folds `rhs` to a scalar and updates
+  /// the current value to the union of the two scalars.
   mlir::ChangeResult foldAndUpdate(const ConstrainRefLatticeValue &rhs);
 
+  /// @brief Translate this value using the translation map, assuming this value
+  /// is a scalar.
   mlir::ChangeResult translateScalar(const TranslationMap &translation);
 
   /// @brief Perform a recursive transformation over all elements of this value and
