@@ -247,16 +247,56 @@ public:
   std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
   extract(const std::vector<ConstrainRefIndex> &indices) const {
     debug::ensure(
-        isArray() && arrayShape->size() < indices.size(), "invalid extract array operands"
+        isArray() && indices.size() < arrayShape->size(), "invalid extract array operands"
     );
-    llvm::report_fatal_error("todo!");
-    return {};
+
+    // First, compute what chunk(s) to index
+    std::vector<size_t> currIdxs {0};
+    for (unsigned i = 0; i < indices.size(); i++) {
+      auto &idx = indices[i];
+      auto currDim = arrayShape.value()[i];
+
+      std::vector<size_t> newIdxs;
+      debug::ensure(idx.isIndex() || idx.isIndexRange(), "wrong type of index for array");
+      if (idx.isIndex()) {
+        auto idxVal = idx.getIndex().getZExtValue();
+        std::transform(
+            currIdxs.begin(), currIdxs.end(), std::back_inserter(newIdxs),
+            [&currDim, &idxVal](size_t i) { return i * currDim + idxVal; }
+        );
+      } else {
+        auto [low, high] = idx.getIndexRange();
+        for (auto idxVal = low.getZExtValue(); idxVal < high.getZExtValue(); idxVal++) {
+          std::transform(
+              currIdxs.begin(), currIdxs.end(), std::back_inserter(newIdxs),
+              [&currDim, &idxVal](size_t i) { return i * currDim + idxVal; }
+          );
+        }
+      }
+
+      currIdxs = newIdxs;
+    }
+    std::vector<int64_t> newArrayDims;
+    size_t chunkSz = 1;
+    for (unsigned i = indices.size(); i < arrayShape->size(); i++) {
+      auto dim = arrayShape->at(i);
+      newArrayDims.push_back(dim);
+      chunkSz *= dim;
+    }
+    auto extractedVal = ConstrainRefLatticeValue(newArrayDims);
+    for (auto chunkStart : currIdxs) {
+      for (size_t i = 0; i < chunkSz; i++) {
+        (void)extractedVal.getElemFlatIdx(i).update(getElemFlatIdx(chunkStart + i));
+      }
+    }
+
+    return {extractedVal, mlir::ChangeResult::Change};
   }
 
   /// A convenience wrapper to either extract a sub array or fully index the array.
   std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
   extractOrIndex(const std::vector<ConstrainRefIndex> &indices) const {
-    if (isArray() && arrayShape->size() < indices.size()) {
+    if (isArray() && indices.size() < arrayShape->size()) {
       return extract(indices);
     }
     return index(indices);
@@ -310,7 +350,7 @@ public:
 
 private:
   std::variant<ScalarTy, ArrayTy> value;
-  std::optional<mlir::ArrayRef<int64_t>> arrayShape;
+  std::optional<std::vector<int64_t>> arrayShape;
 
   mlir::ChangeResult updateScalar(const ScalarTy &rhs) {
     mlir::ChangeResult res = mlir::ChangeResult::NoChange;
@@ -954,8 +994,8 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemap
       }
 
       mlir::FailureOr<ConstrainRef> translated = mlir::failure();
-      auto translateFn = [&refs, &elem, &prefix](const ConstrainRefSet &vals) mutable {
-        for (auto &replacement : vals) {
+      auto translateFn = [&refs, &elem, &prefix](const ConstrainRefSet &replacementVals) mutable {
+        for (auto &replacement : replacementVals) {
           auto translated = elem.translate(prefix, replacement);
           if (mlir::succeeded(translated)) {
             refs.push_back(translated.value());
@@ -980,6 +1020,7 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemap
     }
     return refs;
   };
+
   for (auto leaderIt = signalSets.begin(); leaderIt != signalSets.end(); leaderIt++) {
     if (!leaderIt->isLeader()) {
       continue;

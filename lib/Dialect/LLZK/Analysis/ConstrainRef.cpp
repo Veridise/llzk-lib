@@ -259,7 +259,10 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
   } else if (isConstantIndex()) {
     os << "<index: " << getConstantIndexValue() << '>';
   } else if (isTemplateConstant()) {
-    os << "<template: " << std::get<ConstReadOp>(*constantVal).getConstName() << '>';
+    auto constRead = std::get<ConstReadOp>(*constantVal);
+    auto structDefOp = constRead->getParentOfType<StructDefOp>();
+    debug::ensure(structDefOp, "struct template should have a struct parent");
+    os << '@' << structDefOp.getName() << "<[@" << constRead.getConstName() << "]>";
   } else {
     debug::ensure(isBlockArgument(), "unhandled print case");
     os << "%arg" << getInputNum();

@@ -294,16 +294,16 @@ module attributes {veridise.lang = "llzk"} {
   llzk.include "zir_example_3.llzk" as @zir
 }
 
+// COM: @zir::@B is empty since it uses an uninitialized array
 // CHECK: @zir::@Head ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@$super], %arg1[0] }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@A ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@$super][@$super], <template: N>, <constfelt: 1>, <constfelt: 2> }
+// CHECK-NEXT:     { %arg0[@$super][@$super], @A<[@N]> }
 // CHECK-NEXT: }
-// COM: @zir::@B is empty since it uses an uninitialized array
 // CHECK-NEXT: @zir::@B ConstraintDependencyGraph { }
 // CHECK-NEXT: @zir::@Top ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@a][@$super][@$super], %arg0[@b][@$super][@$super][@$super][@$super] },
-// CHECK-NEXT:     { %arg0[@a][@$super][@$super], <template: N>, <constfelt: 1>, <constfelt: 2> }
+// CHECK-NEXT:     { %arg0[@a][@$super][@$super], @A<[@N]> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@VoidComponent ConstraintDependencyGraph { }
