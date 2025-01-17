@@ -304,7 +304,7 @@ def LLZK_CreateStructOp
 def LLZK_CreateArrayOp
     : LLZK_Op<
           "new_array",
-          [Pure,
+          [Pure, DeclareOpInterfaceMethods<SymbolUserOpInterface>,
            DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
            VariadicTypesMatchWith<
                "operand types match result type", "result", "elements",

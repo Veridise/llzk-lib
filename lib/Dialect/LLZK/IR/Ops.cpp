@@ -477,6 +477,11 @@ void FeltNonDetOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
 // CreateArrayOp
 //===------------------------------------------------------------------===//
 
+LogicalResult CreateArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, getType(), *this);
+}
+
 void CreateArrayOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "array");
 }
