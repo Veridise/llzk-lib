@@ -36,14 +36,7 @@ template <OpComparable Op> mlir::FailureOr<bool> isLocationLess(const Op &l, con
 }
 
 template <OpComparable Op> struct OpLocationLess {
-  bool operator()(const Op &l, const Op &r) const {
-    auto res = isLocationLess(l, r);
-    if (mlir::succeeded(res)) {
-      return res.value();
-    }
-
-    return false;
-  }
+  bool operator()(const Op &l, const Op &r) const { return isLocationLess(l, r).value_or(false); }
 };
 
 template <NamedOpComparable Op> struct NamedOpLocationLess {

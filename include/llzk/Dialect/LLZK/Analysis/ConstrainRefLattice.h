@@ -71,7 +71,7 @@ public:
     return std::get<ArrayTy>(value);
   }
 
-  /// @brief Directly indect into the flattened array using a single index.
+  /// @brief Directly index into the flattened array using a single index.
   const ConstrainRefLatticeValue &getElemFlatIdx(unsigned i) const {
     debug::ensure(isArray(), "not an array value");
     auto &arr = getArrayValue();
@@ -87,8 +87,7 @@ public:
   }
 
   /// @brief Sets this value to be equal to `rhs`.
-  /// Like the assignment operator, but returns a mlir::ChangeResult if an update
-  /// is created,
+  /// @return A `mlir::ChangeResult` indicating if an update was performed or not.
   mlir::ChangeResult setValue(const ConstrainRefLatticeValue &rhs);
 
   /// @brief Union this value with that of rhs.
@@ -104,9 +103,14 @@ public:
   std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
   translate(const TranslationMap &translation) const;
 
-  std::pair<ConstrainRefLatticeValue, mlir::ChangeResult> index(const ConstrainRefIndex &idx) const;
-
-  std::pair<ConstrainRefLatticeValue, mlir::ChangeResult> index(const ConstrainRef &fieldRef) const;
+  /// @brief Add the given `fieldRef` to the constrain refs contained within this value.
+  /// For example, if `fieldRef` is a field reference `@foo` and this value represents `%self`,
+  /// the new value will represent `%self[@foo]`.
+  /// @param fieldRef The field reference into the current value.
+  /// @return The new value and a change result indicating if the value is different than the
+  /// original value.
+  std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
+  referenceField(SymbolLookupResult<FieldDefOp> fieldRef) const;
 
   /// @brief Perform an extractarr or readarr operation, depending on how many indices
   /// are provided.

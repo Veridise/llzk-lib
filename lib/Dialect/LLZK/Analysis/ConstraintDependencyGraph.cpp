@@ -77,7 +77,6 @@ public:
         auto key = ConstrainRef(funcOp.getArgument(i));
         auto val = before.getOrDefault(callOp.getOperand(i));
         translation[key] = val;
-        llvm::errs() << "Translating " << key << " to " << val << "\n";
       }
 
       mlir::ChangeResult updated = after->join(before);
@@ -122,9 +121,8 @@ public:
       debug::ensure(mlir::succeeded(fieldOpRes), "could not find field read");
 
       auto res = fieldRead->getResult(0);
-      auto idx = ConstrainRefIndex(fieldOpRes.value());
       const auto &ops = operandVals.at(fieldRead->getOpOperand(0).get());
-      auto [fieldVals, _] = ops.index(idx);
+      auto [fieldVals, _] = ops.referenceField(fieldOpRes.value());
 
       propagateIfChanged(after, after->setValue(res, fieldVals));
     } else if (mlir::isa<ReadArrayOp>(op)) {

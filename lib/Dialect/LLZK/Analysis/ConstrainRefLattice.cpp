@@ -90,16 +90,9 @@ ConstrainRefLatticeValue::translate(const TranslationMap &translation) const {
 }
 
 std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
-ConstrainRefLatticeValue::index(const ConstrainRefIndex &idx) const {
+ConstrainRefLatticeValue::referenceField(SymbolLookupResult<FieldDefOp> fieldRef) const {
+  ConstrainRefIndex idx(fieldRef);
   auto transform = [&idx](const ConstrainRef &r) -> ConstrainRef { return r.createChild(idx); };
-  return elementwiseTransform(transform);
-}
-
-std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
-ConstrainRefLatticeValue::index(const ConstrainRef &fieldRef) const {
-  auto transform = [&fieldRef](const ConstrainRef &r) -> ConstrainRef {
-    return r.createChild(fieldRef);
-  };
   return elementwiseTransform(transform);
 }
 
