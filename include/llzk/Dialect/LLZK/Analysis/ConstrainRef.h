@@ -175,6 +175,10 @@ public:
   /// @brief Returns true iff `prefix` is a valid prefix of this reference.
   bool isValidPrefix(const ConstrainRef &prefix) const;
 
+  /// @brief If `prefix` is a valid prefix of this reference, return the suffix that
+  /// remains after removing the prefix. I.e., `this` = `prefix` + `suffix`
+  /// @param prefix
+  /// @return the suffix
   mlir::FailureOr<std::vector<ConstrainRefIndex>> getSuffix(const ConstrainRef &prefix) const;
 
   /// @brief Create a new reference with prefix replaced with other iff prefix is a valid prefix for
