@@ -9,7 +9,7 @@ module attributes {veridise.lang = "llzk"} {
 
     func @constrain(%p: !llzk.struct<@ComponentB>) {
       // expected-error@+2 {{'llzk.readf' op references unknown symbol "@f2"}}
-      // expected-error@+1 {{no 'llzk.field' named "@f2" in "@ComponentB"}}
+      // expected-error@+1 {{could not find 'llzk.field' named "@f2" in "@ComponentB"}}
       %0 = readf %p[@f2] : !llzk.struct<@ComponentB>, !llzk.felt
       return
     }
@@ -72,7 +72,7 @@ module attributes {veridise.lang = "llzk"} {
     func @compute(%0: !llzk.felt) -> !llzk.struct<@ComponentH> {
       %self = new_struct : !llzk.struct<@ComponentH>
       // expected-error@+2 {{'llzk.writef' op references unknown symbol "@f2"}}
-      // expected-error@+1 {{no 'llzk.field' named "@f2" in "@ComponentH"}}
+      // expected-error@+1 {{could not find 'llzk.field' named "@f2" in "@ComponentH"}}
       writef %self[@f2] = %0 : !llzk.struct<@ComponentH>, !llzk.felt
       return %self : !llzk.struct<@ComponentH>
     }

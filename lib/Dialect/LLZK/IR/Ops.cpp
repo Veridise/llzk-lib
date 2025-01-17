@@ -378,9 +378,9 @@ getFieldDefOp(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructTy
       std::move(*structDefRes), op
   );
   if (failed(res)) {
-    return refOp->emitError() << "no '" << FieldDefOp::getOperationName() << "' named \"@"
-                              << refOp.getFieldName() << "\" in \"" << tyStruct.getNameRef()
-                              << "\"";
+    return refOp->emitError() << "could not find '" << FieldDefOp::getOperationName()
+                              << "' named \"@" << refOp.getFieldName() << "\" in \""
+                              << tyStruct.getNameRef() << "\"";
   }
   return std::move(res.value());
 }

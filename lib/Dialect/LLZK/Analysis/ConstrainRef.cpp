@@ -55,7 +55,10 @@ bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
 SymbolLookupResult<StructDefOp>
 getStructDef(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, StructType ty) {
   auto sDef = ty.getDefinition(tables, mod);
-  debug::ensure(mlir::succeeded(sDef), "could not find struct definition from struct type");
+  debug::ensure(
+      mlir::succeeded(sDef),
+      "could not find '" + StructDefOp::getOperationName() + "' op from struct type"
+  );
 
   return std::move(sDef.value());
 }

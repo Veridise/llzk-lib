@@ -95,7 +95,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentK {
     // expected-error@+2 {{'llzk.field' op references unknown symbol "@Missing"}}
-    // expected-error@+1 {{no 'llzk.struct' named "@Missing"}}
+    // expected-error@+1 {{could not find 'llzk.struct' named "@Missing"}}
     llzk.field @f : !llzk.struct<@Missing>
 
     func @compute() -> !llzk.struct<@ComponentK> {
@@ -109,7 +109,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentL {
     // expected-error@+2 {{'llzk.field' op references unknown symbol "@Missing"}}
-    // expected-error@+1 {{no 'llzk.struct' named "@Missing"}}
+    // expected-error@+1 {{could not find 'llzk.struct' named "@Missing"}}
     llzk.field @f : !llzk.array<2,3,2 x !llzk.struct<@Missing>>
 
     func @compute() -> !llzk.struct<@ComponentL> {
@@ -124,7 +124,7 @@ module attributes {veridise.lang = "llzk"} {
   module @path{}
   llzk.struct @ComponentM {
     // expected-error@+2 {{'llzk.field' op references unknown symbol "@path::@to::@Missing"}}
-    // expected-error@+1 {{no 'llzk.struct' named "@path::@to::@Missing"}}
+    // expected-error@+1 {{could not find 'llzk.struct' named "@path::@to::@Missing"}}
     llzk.field @f : !llzk.array<2,3,2 x !llzk.struct<@path::@to::@Missing>>
 
     func @compute() -> !llzk.struct<@ComponentM> {
@@ -139,7 +139,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentP {
     // expected-error@+2 {{'llzk.func' op references unknown symbol "@X"}}
-    // expected-error@+1 {{no 'llzk.struct' named "@X"}}
+    // expected-error@+1 {{could not find 'llzk.struct' named "@X"}}
     func @compute(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !llzk.struct<@X>) -> !llzk.struct<@ComponentP> {
       %self = new_struct : !llzk.struct<@ComponentP>
       return %self : !llzk.struct<@ComponentP>
@@ -155,7 +155,7 @@ module attributes {veridise.lang = "llzk"} {
       return %self : !llzk.struct<@ComponentQ>
     }
     // expected-error@+2 {{'llzk.func' op references unknown symbol "@X"}}
-    // expected-error@+1 {{no 'llzk.struct' named "@X"}}
+    // expected-error@+1 {{could not find 'llzk.struct' named "@X"}}
     func @constrain(%self: !llzk.struct<@ComponentQ>, %0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !llzk.struct<@X>)  { return }
   }
 }
@@ -163,9 +163,9 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentR {
     // expected-error@+4 {{'llzk.func' op references unknown symbol "@A"}}
-    // expected-error@+3 {{no 'llzk.struct' named "@A"}}
+    // expected-error@+3 {{could not find 'llzk.struct' named "@A"}}
     // expected-error@+2 {{'llzk.func' op references unknown symbol "@B"}}
-    // expected-error@+1 {{no 'llzk.struct' named "@B"}}
+    // expected-error@+1 {{could not find 'llzk.struct' named "@B"}}
     func @compute(%1: !llzk.struct<@A>, %7: !llzk.struct<@B>) -> !llzk.struct<@ComponentR> {
       %self = new_struct : !llzk.struct<@ComponentR>
       return %self : !llzk.struct<@ComponentR>
@@ -177,9 +177,9 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentS {
     // expected-error@+4 {{'llzk.func' op references unknown symbol "@A"}}
-    // expected-error@+3 {{no 'llzk.struct' named "@A"}}
+    // expected-error@+3 {{could not find 'llzk.struct' named "@A"}}
     // expected-error@+2 {{'llzk.func' op references unknown symbol "@B"}}
-    // expected-error@+1 {{no 'llzk.struct' named "@B"}}
+    // expected-error@+1 {{could not find 'llzk.struct' named "@B"}}
     func @constrain(%self: !llzk.struct<@ComponentS>, %1: !llzk.struct<@A>, %7: !llzk.struct<@B>)  { return }
     func @compute(%1: !llzk.struct<@A>, %7: !llzk.struct<@B>) -> !llzk.struct<@ComponentS> {
       %self = new_struct : !llzk.struct<@ComponentS>

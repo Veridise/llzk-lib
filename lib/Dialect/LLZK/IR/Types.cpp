@@ -235,14 +235,13 @@ FailureOr<SymbolLookupResult<StructDefOp>>
 StructType::getDefinition(SymbolTableCollection &symbolTable, Operation *op) {
   // First ensure this StructType passes verification
   ArrayAttr typeParams = this->getParams();
-  if (failed(StructType::verify([op] { return op->emitError(); }, this->getNameRef(), typeParams)
-      )) {
+  if (failed(StructType::verify([op] { return op->emitError(); }, getNameRef(), typeParams))) {
     return failure();
   }
   // Perform lookup and ensure the symbol references a StructDefOp
   auto res = lookupTopLevelSymbol<StructDefOp>(symbolTable, getNameRef(), op);
   if (failed(res) || !res.value()) {
-    return op->emitError() << "no '" << StructDefOp::getOperationName() << "' named \""
+    return op->emitError() << "could not find '" << StructDefOp::getOperationName() << "' named \""
                            << getNameRef() << "\"";
   }
   // If this StructType contains parameters, make sure they match the number from the StructDefOp.
