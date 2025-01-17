@@ -197,8 +197,6 @@ protected:
     debug::ensure(it != operandVals.end(), "improperly constructed operandVals map");
     auto currVals = it->second;
 
-    // read_arr must fully index the array. We'll accumulate all indices
-    // and index the value all at once.
     std::vector<ConstrainRefIndex> indices;
 
     for (size_t i = 1; i < op->getNumOperands(); i++) {

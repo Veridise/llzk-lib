@@ -1,9 +1,11 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
+#include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
 
 namespace llzk {
 
+class ConstrainRefLatticeValue;
 using TranslationMap =
     std::unordered_map<ConstrainRef, ConstrainRefLatticeValue, ConstrainRef::Hash>;
 
