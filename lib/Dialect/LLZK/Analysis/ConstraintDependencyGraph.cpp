@@ -591,38 +591,8 @@ public:
       auto [fieldVals, _] = ops.index(idx);
 
       propagateIfChanged(after, after->setValue(res, fieldVals));
-    } else if (auto arrayRead = mlir::dyn_cast<ReadArrayOp>(op)) {
-      // In the readarr case, we index the first operand by all remaining indices
-      assert(arrayRead->getNumResults() == 1);
-      auto res = arrayRead->getResult(0);
-
-      auto array = arrayRead.getOperand(0);
-      auto currVals = operandVals[array];
-
-      // read_arr must fully index the array. We'll accumulate all indices
-      // and index the value all at once.
-      std::vector<ConstrainRefIndex> indices;
-
-      for (size_t i = 1; i < arrayRead.getNumOperands(); i++) {
-        auto currentOp = arrayRead.getOperand(i);
-        auto &idxVals = operandVals[currentOp];
-
-        if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstantIndex()) {
-          ConstrainRefIndex idx(idxVals.getSingleValue().getConstantIndexValue());
-          indices.push_back(idx);
-        } else {
-          // Otherwise, assume any range is valid.
-          auto arrayType = mlir::dyn_cast<ArrayType>(array.getType());
-          auto lower = mlir::APInt::getZero(64);
-          mlir::APInt upper(64, arrayType.getDimSize(i - 1));
-          auto idxRange = ConstrainRefIndex(lower, upper);
-          indices.push_back(idxRange);
-        }
-      }
-
-      auto [newVals, _] = currVals.extract(indices);
-
-      propagateIfChanged(after, after->setValue(res, newVals));
+    } else if (mlir::isa<ReadArrayOp>(op)) {
+      arraySubdivisionOpUpdate(op, operandVals, before, after);
     } else if (auto createArray = mlir::dyn_cast<CreateArrayOp>(op)) {
       // Create an array using the operand values, if they exist.
       // Currently, the new array must either be fully initialized or uninitialized.
@@ -640,38 +610,7 @@ public:
 
       propagateIfChanged(after, after->setValue(res, newArrayVal));
     } else if (auto extractArray = mlir::dyn_cast<ExtractArrayOp>(op)) {
-      // Pretty similar to the readarr case
-      // In the extract case, we index the first operand by all remaining indices
-      assert(extractArray->getNumResults() == 1);
-      auto res = extractArray->getResult(0);
-
-      auto array = extractArray.getOperand(0);
-      auto currVals = operandVals[array];
-
-      // extractarr must partially index the array. We'll accumulate all indices
-      // and index the value all at once.
-      std::vector<ConstrainRefIndex> indices;
-
-      for (size_t i = 1; i < extractArray.getNumOperands(); i++) {
-        auto currentOp = extractArray.getOperand(i);
-        auto &idxVals = operandVals[currentOp];
-
-        if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstantIndex()) {
-          ConstrainRefIndex idx(idxVals.getSingleValue().getConstantIndexValue());
-          indices.push_back(idx);
-        } else {
-          // Otherwise, assume any range is valid.
-          auto arrayType = mlir::dyn_cast<ArrayType>(array.getType());
-          auto lower = mlir::APInt::getZero(64);
-          mlir::APInt upper(64, arrayType.getDimSize(i - 1));
-          auto idxRange = ConstrainRefIndex(lower, upper);
-          indices.push_back(idxRange);
-        }
-      }
-
-      auto [newVals, _] = currVals.extract(indices);
-
-      propagateIfChanged(after, after->setValue(res, newVals));
+      arraySubdivisionOpUpdate(op, operandVals, before, after);
     } else {
       // Standard union of operands into the results value.
       // TODO: Could perform constant computation/propagation here for, e.g., arithmetic
@@ -700,6 +639,54 @@ protected:
       updated |= after->setValue(res, cur);
     }
     return updated;
+  }
+
+  // Perform the update for either a readarr op or an extractarr op, which
+  // operate very similarly: index into the first operand using a variable number
+  // of provided indices.
+  void arraySubdivisionOpUpdate(
+      mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
+      const ConstrainRefLattice &before, ConstrainRefLattice *after
+  ) {
+    debug::ensure(
+        mlir::isa<ReadArrayOp>(op) || mlir::isa<ExtractArrayOp>(op), "wrong type of op provided!"
+    );
+
+    // We index the first operand by all remaining indices.
+    assert(op->getNumResults() == 1);
+    auto res = op->getResult(0);
+
+    auto array = op->getOperand(0);
+    auto it = operandVals.find(array);
+    debug::ensure(it != operandVals.end(), "improperly constructed operandVals map");
+    auto currVals = it->second;
+
+    // read_arr must fully index the array. We'll accumulate all indices
+    // and index the value all at once.
+    std::vector<ConstrainRefIndex> indices;
+
+    for (size_t i = 1; i < op->getNumOperands(); i++) {
+      auto currentOp = op->getOperand(i);
+      auto idxIt = operandVals.find(currentOp);
+      debug::ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
+      auto &idxVals = idxIt->second;
+
+      if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstantIndex()) {
+        ConstrainRefIndex idx(idxVals.getSingleValue().getConstantIndexValue());
+        indices.push_back(idx);
+      } else {
+        // Otherwise, assume any range is valid.
+        auto arrayType = mlir::dyn_cast<ArrayType>(array.getType());
+        auto lower = mlir::APInt::getZero(64);
+        mlir::APInt upper(64, arrayType.getDimSize(i - 1));
+        auto idxRange = ConstrainRefIndex(lower, upper);
+        indices.push_back(idxRange);
+      }
+    }
+
+    auto [newVals, _] = currVals.extract(indices);
+
+    propagateIfChanged(after, after->setValue(res, newVals));
   }
 
 private:
