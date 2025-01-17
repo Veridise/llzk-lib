@@ -473,3 +473,45 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@ComponentX<[@F]>>) { return }
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ReadConstBadTypeA<[@T]> {
+    func @compute() -> !llzk.struct<@ReadConstBadTypeA<[@T]>> {
+      %self = new_struct : !llzk.struct<@ReadConstBadTypeA<[@T]>>
+      return %self : !llzk.struct<@ReadConstBadTypeA<[@T]>>
+    }
+    func @constrain(%self: !llzk.struct<@ReadConstBadTypeA<[@T]>>) {
+      // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!llzk.array<54 x index>'}}
+      %0 = read_const @T : !llzk.array<54 x index>
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ReadConstBadTypeB<[@T]> {
+    func @compute() -> !llzk.struct<@ReadConstBadTypeB<[@T]>> {
+      %self = new_struct : !llzk.struct<@ReadConstBadTypeB<[@T]>>
+      return %self : !llzk.struct<@ReadConstBadTypeB<[@T]>>
+    }
+    func @constrain(%self: !llzk.struct<@ReadConstBadTypeB<[@T]>>) {
+      // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!llzk.struct<@ReadConstBadTypeB<[@T]>>'}}
+      %0 = read_const @T : !llzk.struct<@ReadConstBadTypeB<[@T]>>
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ReadConstBadTypeC<[@T]> {
+    func @compute() -> !llzk.struct<@ReadConstBadTypeC<[@T]>> {
+      %self = new_struct : !llzk.struct<@ReadConstBadTypeC<[@T]>>
+      return %self : !llzk.struct<@ReadConstBadTypeC<[@T]>>
+    }
+    func @constrain(%self: !llzk.struct<@ReadConstBadTypeC<[@T]>>) {
+      // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!llzk.string'}}
+      %0 = read_const @T : !llzk.string
+      return
+    }
+  }
+}

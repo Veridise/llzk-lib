@@ -260,20 +260,6 @@ module attributes {veridise.lang = "llzk"} {
       return
     }
   }
-  llzk.struct @ComponentE2<[@A, @B, @C]> {
-    func @compute(%0: !llzk.array<54 x index>, %1: !llzk.struct<@ComponentE1<[@C]>>) -> !llzk.struct<@ComponentE2<[@A, @B, @C]>> {
-      %self = new_struct : !llzk.struct<@ComponentE2<[@A, @B, @C]>>
-      return %self : !llzk.struct<@ComponentE2<[@A, @B, @C]>>
-    }
-    func @constrain(%self: !llzk.struct<@ComponentE2<[@A, @B, @C]>>, %0: !llzk.array<54 x index>, %1: !llzk.struct<@ComponentE1<[@C]>>) {
-      %2 = read_const @A : !llzk.array<54 x index>
-      emit_eq %0, %2 : !llzk.array<54 x index>
-      %3 = read_const @B : !llzk.struct<@ComponentE1<[@C]>>
-      %4 = constfelt 5
-      call @ComponentE1::@constrain(%3, %4) :  (!llzk.struct<@ComponentE1<[@C]>>, !llzk.felt) -> ()
-      return
-    }
-  }
 }
 //CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    llzk.struct @ComponentE1<[@A]> {
@@ -284,20 +270,6 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@ComponentE1<[@A]>>, %arg1: !llzk.felt) {
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = read_const @A : !llzk.felt
 //CHECK-NEXT:        emit_eq %arg1, %[[T0]] : !llzk.felt, !llzk.felt
-//CHECK-NEXT:        return
-//CHECK-NEXT:      }
-//CHECK-NEXT:    }
-//CHECK-NEXT:    llzk.struct @ComponentE2<[@A, @B, @C]> {
-//CHECK-NEXT:      func @compute(%arg0: !llzk.array<54 x index>, %arg1: !llzk.struct<@ComponentE1<[@C]>>) -> !llzk.struct<@ComponentE2<[@A, @B, @C]>> {
-//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentE2<[@A, @B, @C]>>
-//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@ComponentE2<[@A, @B, @C]>>
-//CHECK-NEXT:      }
-//CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@ComponentE2<[@A, @B, @C]>>, %arg1: !llzk.array<54 x index>, %arg2: !llzk.struct<@ComponentE1<[@C]>>) {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = read_const @A : !llzk.array<54 x index>
-//CHECK-NEXT:        emit_eq %arg1, %[[T0]] : !llzk.array<54 x index>, !llzk.array<54 x index>
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = read_const @B : !llzk.struct<@ComponentE1<[@C]>>
-//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = constfelt  5
-//CHECK-NEXT:        call @ComponentE1::@constrain(%[[T1]], %[[T2]]) : (!llzk.struct<@ComponentE1<[@C]>>, !llzk.felt) -> ()
 //CHECK-NEXT:        return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }

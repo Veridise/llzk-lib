@@ -24,6 +24,8 @@ template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeI
 template <bool AllowStruct, bool AllowString> bool isValidArrayElemTypeImpl(Type type) {
   // ArrayType element can be any valid type sans ArrayType itself.
   //  Pass through the flags indicating which types are allowed.
+  // [TH]: Maybe the array type should not be excluded beyond the immediate element type itself.
+  //  i.e. should `!llzk.array<2 x !llzk.struct<@A<[!llzk.array<2 x i1>]>>>` be allowed?
   return isValidTypeImpl<AllowStruct, AllowString, false>(type);
 }
 
@@ -48,6 +50,9 @@ template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeI
 bool isValidType(Type type) { return isValidTypeImpl<true, true, true>(type); }
 
 bool isValidEmitEqType(Type type) { return isValidTypeImpl<false, false, true>(type); }
+
+// Allowed types must align with StructParamTypes (defined below)
+bool isValidConstReadType(Type type) { return isValidTypeImpl<false, false, false>(type); }
 
 bool isValidArrayElemType(Type type) { return isValidArrayElemTypeImpl<true, true>(type); }
 

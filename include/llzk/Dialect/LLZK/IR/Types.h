@@ -36,13 +36,16 @@ namespace llzk {
 // of this function should be updated.
 void assertValidAttrForParamOfType(mlir::Attribute attr);
 
-/// valid types: {I1, Index, LLZK_FeltType, LLZK_StructType, LLZK_ArrayType, LLZK_TypeVarType}
+/// valid types: {I1, Index, String, FeltType, StructType, ArrayType, TypeVarType}
 bool isValidType(mlir::Type type);
 
-/// valid types: isValidType() - {LLZK_StructType (including within LLZK_ArrayType)}
+/// valid types: isValidType() - {String, StructType} (excluded via any type parameter nesting)
 bool isValidEmitEqType(mlir::Type type);
 
-/// valid types: isValidType() - {LLZK_ArrayType}
+/// valid types: {I1, Index, FeltType, TypeVarType}
+bool isValidConstReadType(mlir::Type type);
+
+/// valid types: isValidType() - {ArrayType}
 bool isValidArrayElemType(mlir::Type type);
 
 /// Checks if the type is a LLZK Array and it also contains a valid LLZK type.
