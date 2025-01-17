@@ -221,7 +221,7 @@ verifyStructTypeResolution(SymbolTableCollection &tables, StructType ty, Operati
   // If there are any SymbolRefAttr parameters on the StructType, ensure those refs are valid.
   if (ArrayAttr tyParams = ty.getParams()) {
     if (failed(verifyParamsOfType(tables, tyParams.getValue(), ty, origin))) {
-      return failure();
+      return failure(); // verifyParamsOfType() already emits a sufficient error message
     }
   }
   return defForType;

@@ -98,6 +98,15 @@ LogicalResult checkSelfType(
     }
     // Check for an EXACT match in the parameter list since it must reference the "self" type.
     if (expectedStruct.getConstParamsAttr() != actualStructType.getParams()) {
+      // To make error messages more consistent and meaningful, if the parameters don't match
+      // because the actual type uses symbols that are not defined, generate an error about the
+      // undefined symbol(s).
+      if (ArrayAttr tyParams = actualStructType.getParams()) {
+        if (failed(verifyParamsOfType(tables, tyParams.getValue(), actualStructType, origin))) {
+          return failure();
+        }
+      }
+      // Otherwise, generate an error stating the parent struct type must be used.
       return genCompareErr(expectedStruct, origin, aspect)
           .attachNote(actualStruct.getLoc())
           .append("should be type of this '", StructDefOp::getOperationName(), "'");
