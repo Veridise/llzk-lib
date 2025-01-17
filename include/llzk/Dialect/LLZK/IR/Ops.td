@@ -376,7 +376,8 @@ def LLZK_CreateArrayOp
 
 def LLZK_ReadArrayOp
     : LLZK_Op<
-          "readarr", [ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
+          "readarr", [DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                      ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
   let summary = "Loads a value from a LLZK array";
   let description = [{
     This operation loads the value from an array at position `$index`.
@@ -409,7 +410,8 @@ def LLZK_ReadArrayOp
 }
 
 def LLZK_WriteArrayOp
-    : LLZK_Op<"writearr", [ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
+    : LLZK_Op<"writearr", [DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                           ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
   let summary = "Writes a value into a LLZK array";
   let description = [{
     This operation writes a value into an array at position `$index`.

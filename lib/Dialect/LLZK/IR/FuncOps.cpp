@@ -19,10 +19,7 @@ namespace {
 /// Ensure that all symbols used within the FunctionType can be resolved.
 inline LogicalResult
 verifyTypeResolution(SymbolTableCollection &tables, FunctionType funcType, Operation *origin) {
-  // Check both before returning to present all applicable type errors in one compilation.
-  LogicalResult a = llzk::verifyTypeResolution(tables, funcType.getResults(), origin);
-  LogicalResult b = llzk::verifyTypeResolution(tables, funcType.getInputs(), origin);
-  return LogicalResult::success(succeeded(a) && succeeded(b));
+  return llzk::verifyTypeResolution(tables, origin, funcType.getInputs(), funcType.getResults());
 }
 } // namespace
 

@@ -516,6 +516,11 @@ void CreateArrayOp::printInferredArrayType(
 // ReadArrayOp
 //===------------------------------------------------------------------===//
 
+LogicalResult ReadArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, *this, getArrRef().getType(), getType());
+}
+
 LogicalResult ReadArrayOp::inferReturnTypes(
     MLIRContext *context, std::optional<Location> location, ReadArrayOpAdaptor adaptor,
     llvm::SmallVectorImpl<Type> &inferredReturnTypes
@@ -529,6 +534,15 @@ LogicalResult ReadArrayOp::inferReturnTypes(
 
 bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
   return singletonTypeListsUnify(l, r);
+}
+
+//===------------------------------------------------------------------===//
+// WriteArrayOp
+//===------------------------------------------------------------------===//
+
+LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, *this, getArrRef().getType(), getRvalue().getType());
 }
 
 //===------------------------------------------------------------------===//

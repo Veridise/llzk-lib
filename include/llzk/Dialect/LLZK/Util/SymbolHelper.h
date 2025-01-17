@@ -106,4 +106,15 @@ inline mlir::LogicalResult verifyTypeResolution(
   return verifyTypeResolution(tables, types.begin(), types.end(), origin);
 }
 
+template <typename... Types>
+inline mlir::LogicalResult
+verifyTypeResolution(mlir::SymbolTableCollection &tables, mlir::Operation *origin, Types... types) {
+  // Check all before returning to present all applicable type errors in one compilation.
+  bool success = true;
+  for (auto t : {types...}) {
+    success |= mlir::succeeded(llzk::verifyTypeResolution(tables, t, origin));
+  }
+  return mlir::LogicalResult::success(success);
+}
+
 } // namespace llzk
