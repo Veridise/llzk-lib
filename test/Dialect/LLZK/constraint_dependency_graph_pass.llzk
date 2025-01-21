@@ -83,29 +83,6 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "zir_example_1.llzk" as @zir
-}
-
-// CHECK: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
-// CHECK-NEXT: @zir::@std::@risc0::@Reg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg], %arg1 }
-// CHECK-NEXT: }
-// CHECK-NEXT: @zir::@std::@risc0::@Div ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
-// CHECK-NEXT:     { %arg0[@reciprocal], <constfelt: 1> },
-// CHECK-NEXT:     { %arg2, <constfelt: 1> }
-// CHECK-NEXT: }
-// CHECK-NEXT: @zir::@C1 ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@z][@reg], %arg1, %arg2 }
-// CHECK-NEXT: }
-// CHECK-NEXT: @zir::@C2 ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@fc1][@z][@reg], %arg1[@low], %arg1[@high] },
-// CHECK-NEXT:     { %arg0[@fc1][@z][@reg], <constfelt: 0> }
-// CHECK-NEXT: }
-
-// -----
-
-module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentB {
     func @constrain(%self: !llzk.struct<@ComponentB>, %a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) {
       llzk.emit_in %b, %a : !llzk.array<5 x !llzk.felt>
@@ -287,26 +264,6 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     { %arg1, <constfelt: 1> },
 // CHECK-NEXT:     { %arg2, <constfelt: 1> }
 // CHECK-NEXT: }
-
-// -----
-
-module attributes {veridise.lang = "llzk"} {
-  llzk.include "zir_example_3.llzk" as @zir
-}
-
-// COM: @zir::@B is empty since it uses an uninitialized array
-// CHECK: @zir::@Head ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@$super], %arg1[0] }
-// CHECK-NEXT: }
-// CHECK-NEXT: @zir::@A ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@$super][@$super], @A<[@N]> }
-// CHECK-NEXT: }
-// CHECK-NEXT: @zir::@B ConstraintDependencyGraph { }
-// CHECK-NEXT: @zir::@Top ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@a][@$super][@$super], %arg0[@b][@$super][@$super][@$super][@$super] },
-// CHECK-NEXT:     { %arg0[@a][@$super][@$super], @A<[@N]> }
-// CHECK-NEXT: }
-// CHECK-NEXT: @zir::@VoidComponent ConstraintDependencyGraph { }
 
 // -----
 
@@ -495,3 +452,112 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT: @UnknownMatrixConstrain ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1[0][1], <constfelt: 7> }
 // CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "zir_example_0.llzk" as @zir
+}
+
+// CHECK: @zir::@risc0::@ValU32 ConstraintDependencyGraph { }
+// CHECK-NEXT: @zir::@risc0::@Reg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg], %arg1 }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@risc0::@Div ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
+// CHECK-NEXT:     { %arg0[@reciprocal], <constfelt: 1> },
+// CHECK-NEXT:     { %arg2, <constfelt: 1> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "zir_example_1.llzk" as @zir
+}
+
+// CHECK: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
+// CHECK-NEXT: @zir::@std::@risc0::@Reg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg], %arg1 }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@std::@risc0::@Div ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
+// CHECK-NEXT:     { %arg0[@reciprocal], <constfelt: 1> },
+// CHECK-NEXT:     { %arg2, <constfelt: 1> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@C1 ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@z][@reg], %arg1, %arg2 }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@C2 ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@fc1][@z][@reg], %arg1[@low], %arg1[@high] },
+// CHECK-NEXT:     { %arg0[@fc1][@z][@reg], <constfelt: 0> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "zir_example_2.llzk" as @zir
+}
+
+// CHECK: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
+// CHECK-NEXT: @zir::@std::@risc0::@Reg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg], %arg1 }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@std::@risc0::@Div ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
+// CHECK-NEXT:     { %arg0[@reciprocal], <constfelt: 1> },
+// CHECK-NEXT:     { %arg2, <constfelt: 1> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@AssertBit ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <constfelt: 0>, <constfelt: 1> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@NondetBitReg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg], %arg0[@synthetic_return] },
+// CHECK-NEXT:     { %arg0[@reg], <constfelt: 0>, <constfelt: 1> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@ArgU16 ConstraintDependencyGraph { }
+// CHECK-NEXT: @zir::@NondetU16Reg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@arg][@count], <constfelt: 1> },
+// CHECK-NEXT:     { %arg0[@arg][@val], %arg0[@synthetic_return] }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@U16Reg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@ret][@arg][@count], <constfelt: 1> },
+// CHECK-NEXT:     { %arg0[@ret][@arg][@val], %arg0[@ret][@synthetic_return], %arg0[@synthetic_return], %arg1 }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@AddrDecomposeBits ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@low0][@reg], %arg0[@low0][@synthetic_return], %arg0[@low1][@reg], %arg0[@low1][@synthetic_return], %arg0[@low2], %arg0[@upperDiff][@ret][@arg][@val], %arg0[@upperDiff][@ret][@synthetic_return], %arg0[@upperDiff][@synthetic_return], %arg0[@med14][@arg][@val], %arg0[@med14][@synthetic_return], %arg0[@addr], %arg0[@synthetic_return], %arg1[@low], %arg1[@high], %arg2 },
+// CHECK-NEXT:     { %arg0[@low0][@reg], <constfelt: 0>, <constfelt: 1> },
+// CHECK-NEXT:     { %arg0[@low0][@synthetic_return], <constfelt: 0>, <constfelt: 1>, <constfelt: 2> },
+// CHECK-NEXT:     { %arg0[@low1][@reg], <constfelt: 0>, <constfelt: 1> },
+// CHECK-NEXT:     { %arg0[@low1][@synthetic_return], <constfelt: 0>, <constfelt: 1>, <constfelt: 2> },
+// CHECK-NEXT:     { %arg0[@low2], <constfelt: 2>, <constfelt: 4> },
+// CHECK-NEXT:     { %arg0[@upperDiff][@ret][@arg][@count], <constfelt: 1> },
+// CHECK-NEXT:     { %arg0[@upperDiff][@ret][@arg][@val], <constfelt: 1>, <constfelt: 49151>, <constfelt: 65535> },
+// CHECK-NEXT:     { %arg0[@upperDiff][@ret][@synthetic_return], <constfelt: 1>, <constfelt: 49151>, <constfelt: 65535> },
+// CHECK-NEXT:     { %arg0[@upperDiff][@synthetic_return], <constfelt: 1>, <constfelt: 49151>, <constfelt: 65535> },
+// CHECK-NEXT:     { %arg0[@med14][@arg][@count], <constfelt: 1> },
+// CHECK-NEXT:     { %arg0[@med14][@synthetic_return], <constfelt: 4>, <constfelt: 16384> },
+// CHECK-NEXT:     { %arg0[@addr], <constfelt: 16384> },
+// CHECK-NEXT:     { %arg1[@low], <constfelt: 4> },
+// CHECK-NEXT:     { %arg1[@high], <constfelt: 1>, <constfelt: 16384>, <constfelt: 49151>, <constfelt: 65535> },
+// CHECK-NEXT:     { %arg2, <constfelt: 1>, <constfelt: 49151>, <constfelt: 65535> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "zir_example_3.llzk" as @zir
+}
+
+// COM: @zir::@B is empty since it uses an uninitialized array
+// CHECK: @zir::@Head ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@$super], %arg1[0] }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@A ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@$super][@$super], @A<[@N]> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@B ConstraintDependencyGraph { }
+// CHECK-NEXT: @zir::@Top ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@a][@$super][@$super], %arg0[@b][@$super][@$super][@$super][@$super] },
+// CHECK-NEXT:     { %arg0[@a][@$super][@$super], @A<[@N]> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @zir::@VoidComponent ConstraintDependencyGraph { }

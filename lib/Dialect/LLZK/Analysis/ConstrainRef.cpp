@@ -273,7 +273,8 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
 }
 
 bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
-  return blockArg == rhs.blockArg && fieldRefs == rhs.fieldRefs && constantVal == rhs.constantVal;
+  return (blockArg == rhs.blockArg) && (fieldRefs == rhs.fieldRefs) &&
+         (constantVal == rhs.constantVal);
 }
 
 // required for EquivalenceClasses usage
@@ -284,7 +285,10 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   } else if (!isConstantFelt() && rhs.isConstantFelt()) {
     return true;
   } else if (isConstantFelt() && rhs.isConstantFelt()) {
-    return getConstantFeltValue().ult(rhs.getConstantFeltValue());
+    auto lhsInt = getConstantFeltValue();
+    auto rhsInt = rhs.getConstantFeltValue();
+    auto bitWidthMax = std::max(lhsInt.getBitWidth(), rhsInt.getBitWidth());
+    return lhsInt.zext(bitWidthMax).ult(rhsInt.zext(bitWidthMax));
   }
 
   if (isConstantIndex() && !rhs.isConstantIndex()) {

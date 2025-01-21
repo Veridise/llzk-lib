@@ -221,8 +221,12 @@ public:
 
   bool operator==(const ConstrainRef &rhs) const;
 
+  bool operator!=(const ConstrainRef &rhs) const { return !(*this == rhs); }
+
   // required for EquivalenceClasses usage
   bool operator<(const ConstrainRef &rhs) const;
+
+  bool operator>(const ConstrainRef &rhs) const { return rhs < *this; }
 
   struct Hash {
     size_t operator()(const ConstrainRef &val) const;

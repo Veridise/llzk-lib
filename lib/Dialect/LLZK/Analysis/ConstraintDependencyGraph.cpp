@@ -563,8 +563,7 @@ ConstrainRefSet ConstraintDependencyGraph::getConstrainingValues(const Constrain
   auto currRef = mlir::FailureOr<ConstrainRef>(ref);
   while (mlir::succeeded(currRef)) {
     // Add signals
-    auto it = signalSets.findLeader(currRef.value());
-    for (; it != signalSets.member_end(); it++) {
+    for (auto it = signalSets.findLeader(*currRef); it != signalSets.member_end(); it++) {
       if (currRef.value() != *it) {
         res.insert(*it);
       }

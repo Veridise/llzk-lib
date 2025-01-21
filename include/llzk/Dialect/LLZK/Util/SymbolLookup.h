@@ -47,6 +47,8 @@ public:
   /// Adds the symbol name from the IncludeOp that caused the module to be loaded.
   void trackIncludeAsName(llvm::StringRef includeOpSymName);
 
+  bool operator==(const SymbolLookupResultUntyped &rhs) const { return op == rhs.op; }
+
 private:
   mlir::Operation *op;
   /// Owns the ModuleOp that contains 'op' if it was loaded via an IncludeOp along with the
@@ -73,6 +75,8 @@ public:
   operator bool() const { return inner && llvm::isa<T>(*inner); }
 
   std::vector<llvm::StringRef> getIncludeSymNames() { return inner.getIncludeSymNames(); }
+
+  bool operator==(const SymbolLookupResult<T> &rhs) const { return inner == rhs.inner; }
 
 private:
   SymbolLookupResultUntyped inner;
