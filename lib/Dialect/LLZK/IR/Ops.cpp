@@ -549,6 +549,11 @@ LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 // ExtractArrayOp
 //===------------------------------------------------------------------===//
 
+LogicalResult ExtractArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, getArrRef().getType(), *this);
+}
+
 LogicalResult ExtractArrayOp::inferReturnTypes(
     MLIRContext *context, std::optional<Location> location, ExtractArrayOpAdaptor adaptor,
     llvm::SmallVectorImpl<Type> &inferredReturnTypes
@@ -586,14 +591,33 @@ bool ExtractArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 }
 
 //===------------------------------------------------------------------===//
+// ArrayLengthOp
+//===------------------------------------------------------------------===//
+
+LogicalResult ArrayLengthOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, getArrRef().getType(), *this);
+}
+
+//===------------------------------------------------------------------===//
 // EmitEqualityOp
 //===------------------------------------------------------------------===//
+
+LogicalResult EmitEqualityOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, *this, getLhs().getType(), getRhs().getType());
+}
 
 Type EmitEqualityOp::inferRHS(Type lhsType) { return lhsType; }
 
 //===------------------------------------------------------------------===//
 // EmitContainmentOp
 //===------------------------------------------------------------------===//
+
+LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, *this, getLhs().getType(), getRhs().getType());
+}
 
 Type EmitContainmentOp::inferRHS(Type lhsType) {
   assert(llvm::isa<ArrayType>(lhsType)); // per ODS spec of EmitContainmentOp

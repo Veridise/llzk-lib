@@ -447,7 +447,9 @@ def LLZK_WriteArrayOp
 }
 
 def LLZK_ExtractArrayOp
-    : LLZK_Op<"extractarr", [Pure, InferTypeOpAdaptorWithIsCompatible]> {
+    : LLZK_Op<
+          "extractarr", [Pure, InferTypeOpAdaptorWithIsCompatible,
+                         DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "Get subarray from a multi-dimensional array.";
   let description = [{
     Takes an N-dimensional array and K indices and extracts the (N-K)-dimensional
@@ -479,7 +481,9 @@ def LLZK_ExtractArrayOp
   }];
 }
 
-def LLZK_ArrayLengthOp : LLZK_Op<"array_len", [Pure]> {
+def LLZK_ArrayLengthOp
+    : LLZK_Op<"array_len", [Pure,
+                            DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "returns the length of an array";
   let description = [{
     This operation returns the size of the specified dimension of an array.
@@ -507,7 +511,8 @@ def LLZK_ArrayLengthOp : LLZK_Op<"array_len", [Pure]> {
 
 class LLZK_EmitOp<string mnemonic, list<Trait> traits = []>
     : LLZK_Op<mnemonic,
-              traits#[InStructFunctionNamed<"::llzk::FUNC_NAME_CONSTRAIN">]> {
+              traits#[InStructFunctionNamed<"::llzk::FUNC_NAME_CONSTRAIN">,
+                      DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
 
   let assemblyFormat = [{
     $lhs `,` $rhs `:` type($lhs)
