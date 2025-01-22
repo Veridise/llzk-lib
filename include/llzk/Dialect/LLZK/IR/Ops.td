@@ -495,10 +495,10 @@ def LLZK_ArrayLengthOp : LLZK_Op<"array_len", [Pure]> {
     ```
   }];
 
-  let arguments = (ins LLZK_ArrayType:$array, Index:$dim);
+  let arguments = (ins LLZK_ArrayType:$arr_ref, Index:$dim);
   let results = (outs Index:$length);
 
-  let assemblyFormat = "$array `,` $dim `:` type($array) attr-dict";
+  let assemblyFormat = "$arr_ref `,` $dim `:` type($arr_ref) attr-dict";
 }
 
 //===------------------------------------------------------------------===//
