@@ -16,11 +16,10 @@ namespace llzk {
 class GlobalSourceMgr {
   std::vector<std::string> includeDirectories;
 
+  static GlobalSourceMgr theInstance;
+
 public:
-  static GlobalSourceMgr &get() {
-    static GlobalSourceMgr theInstance;
-    return theInstance;
-  }
+  static GlobalSourceMgr &get() { return theInstance; }
 
   mlir::LogicalResult setup(const std::vector<std::string> &includeDirs) {
     includeDirectories = includeDirs;

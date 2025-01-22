@@ -18,6 +18,8 @@
 
 namespace llzk {
 
+GlobalSourceMgr GlobalSourceMgr::theInstance;
+
 namespace {
 using namespace mlir;
 
