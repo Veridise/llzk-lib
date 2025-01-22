@@ -2,8 +2,6 @@ add_library(LLZKDialect)
 add_library(LLZK::LLZKDialect ALIAS LLZKDialect)
 target_link_libraries(LLZKAllDialects INTERFACE LLZK::LLZKDialect)
 
-set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
-
 file(GLOB_RECURSE LLZKDialect_SOURCES "**/*.cpp")
 target_sources(LLZKDialect PRIVATE ${LLZKDialect_SOURCES})
 target_link_libraries(
