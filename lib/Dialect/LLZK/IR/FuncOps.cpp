@@ -18,8 +18,10 @@ using namespace mlir;
 namespace {
 /// Ensure that all symbols used within the FunctionType can be resolved.
 inline LogicalResult
-verifyTypeResolution(SymbolTableCollection &tables, FunctionType funcType, Operation *origin) {
-  return llzk::verifyTypeResolution(tables, origin, funcType.getInputs(), funcType.getResults());
+verifyTypeResolution(SymbolTableCollection &tables, Operation *origin, FunctionType funcType) {
+  return llzk::verifyTypeResolution(
+      tables, origin, ArrayRef<ArrayRef<Type>> {funcType.getInputs(), funcType.getResults()}
+  );
 }
 } // namespace
 
@@ -210,7 +212,7 @@ verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &tables, StructDefOp
   // After the more specific checks (to ensure more specific error messages would be produced if
   // necessary), do the general check that all symbol references in the types are valid. The return
   // types were already checked so just check the input types.
-  return verifyTypeResolution(tables, funcType.getInputs(), origin);
+  return verifyTypeResolution(tables, origin, funcType.getInputs());
 }
 
 LogicalResult
@@ -236,7 +238,7 @@ verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &tables, StructDef
   // necessary), do the general check that all symbol references in the types are valid. There are
   // no return types, just check the remaining input types (the first was already checked via
   // the checkSelfType() call above).
-  return verifyTypeResolution(tables, inputTypes.begin() + 1, inputTypes.end(), origin);
+  return verifyTypeResolution(tables, origin, inputTypes.drop_front());
 }
 
 } // namespace
@@ -254,7 +256,7 @@ LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &tables) {
     }
   }
   // In the general case, verify symbol resolution in all input and output types.
-  return verifyTypeResolution(tables, getFunctionType(), *this);
+  return verifyTypeResolution(tables, *this, getFunctionType());
 }
 
 SymbolRefAttr FuncOp::getFullyQualifiedName() const {
@@ -405,7 +407,7 @@ private:
 
 LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
   // First, verify symbol resolution in all input and output types.
-  if (failed(verifyTypeResolution(tables, getCalleeType(), *this))) {
+  if (failed(verifyTypeResolution(tables, *this, getCalleeType()))) {
     return failure(); // verifyTypeResolution() already emits a sufficient error message
   }
 

@@ -140,7 +140,7 @@ FailureOr<SymbolRefAttr> getPathFromRoot(FuncOp &to) {
   return getPathFromRoot(to, RootSelector::CLOSEST);
 }
 
-mlir::FailureOr<mlir::ModuleOp> getTopRootModule(mlir::Operation *from) {
+FailureOr<ModuleOp> getTopRootModule(Operation *from) {
   std::vector<FlatSymbolRefAttr> path;
   return collectPathToRoot(from, from, path, RootSelector::FURTHEST);
 }
@@ -193,7 +193,7 @@ LogicalResult verifyParamsOfType(
         paramCheckResult = failure();
       }
     } else if (TypeAttr typeParam = llvm::dyn_cast<TypeAttr>(attr)) {
-      if (failed(verifyTypeResolution(tables, typeParam.getValue(), origin))) {
+      if (failed(verifyTypeResolution(tables, origin, typeParam.getValue()))) {
         paramCheckResult = failure();
       }
     }
@@ -227,32 +227,19 @@ verifyStructTypeResolution(SymbolTableCollection &tables, StructType ty, Operati
   return defForType;
 }
 
-LogicalResult verifyTypeResolution(SymbolTableCollection &tables, Type ty, Operation *origin) {
+LogicalResult verifyTypeResolution(SymbolTableCollection &tables, Operation *origin, Type ty) {
   if (StructType sTy = llvm::dyn_cast<StructType>(ty)) {
     return verifyStructTypeResolution(tables, sTy, origin);
   } else if (ArrayType aTy = llvm::dyn_cast<ArrayType>(ty)) {
     if (failed(verifyParamsOfType(tables, aTy.getDimensionSizes(), aTy, origin))) {
       return failure();
     }
-    return verifyTypeResolution(tables, aTy.getElementType(), origin);
+    return verifyTypeResolution(tables, origin, aTy.getElementType());
   } else if (TypeVarType vTy = llvm::dyn_cast<TypeVarType>(ty)) {
     return verifyParamOfType(tables, vTy.getNameRef(), vTy, origin);
   } else {
     return success();
   }
-}
-
-LogicalResult verifyTypeResolution(
-    SymbolTableCollection &tables, llvm::ArrayRef<Type>::iterator start,
-    llvm::ArrayRef<Type>::iterator end, Operation *origin
-) {
-  LogicalResult res = success();
-  for (; start != end; ++start) {
-    if (failed(verifyTypeResolution(tables, *start, origin))) {
-      res = failure();
-    }
-  }
-  return res;
 }
 
 } // namespace llzk

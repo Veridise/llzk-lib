@@ -342,7 +342,7 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
         .append("must reference a parameter of this struct");
   }
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, getType(), *this);
+  return verifyTypeResolution(tables, *this, getType());
 }
 
 //===------------------------------------------------------------------===//
@@ -369,7 +369,7 @@ LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
     }
     return success();
   } else {
-    return verifyTypeResolution(tables, fieldType, *this);
+    return verifyTypeResolution(tables, *this, fieldType);
   }
 }
 
@@ -420,7 +420,7 @@ verifySymbolUses(FieldRefOpInterface refOp, SymbolTableCollection &tables, Value
                                 << compareTo.getType();
   }
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, compareTo.getType(), refOp.getOperation());
+  return verifyTypeResolution(tables, refOp.getOperation(), compareTo.getType());
 }
 } // namespace
 
@@ -479,7 +479,7 @@ void FeltNonDetOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
 
 LogicalResult CreateArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, getType(), *this);
+  return verifyTypeResolution(tables, *this, llvm::cast<Type>(getType()));
 }
 
 void CreateArrayOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
@@ -518,7 +518,7 @@ void CreateArrayOp::printInferredArrayType(
 
 LogicalResult ReadArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getArrRef().getType(), getType());
+  return verifyTypeResolution(tables, *this, ArrayRef<Type> {getArrRef().getType(), getType()});
 }
 
 LogicalResult ReadArrayOp::inferReturnTypes(
@@ -542,7 +542,9 @@ bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 
 LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getArrRef().getType(), getRvalue().getType());
+  return verifyTypeResolution(
+      tables, *this, ArrayRef<Type> {getArrRef().getType(), getRvalue().getType()}
+  );
 }
 
 //===------------------------------------------------------------------===//
@@ -551,7 +553,7 @@ LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 LogicalResult ExtractArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, getArrRef().getType(), *this);
+  return verifyTypeResolution(tables, *this, getArrRef().getType());
 }
 
 LogicalResult ExtractArrayOp::inferReturnTypes(
@@ -596,7 +598,7 @@ bool ExtractArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 
 LogicalResult ArrayLengthOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, getArrRef().getType(), *this);
+  return verifyTypeResolution(tables, *this, getArrRef().getType());
 }
 
 //===------------------------------------------------------------------===//
@@ -605,7 +607,9 @@ LogicalResult ArrayLengthOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 LogicalResult EmitEqualityOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getLhs().getType(), getRhs().getType());
+  return verifyTypeResolution(
+      tables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
+  );
 }
 
 Type EmitEqualityOp::inferRHS(Type lhsType) { return lhsType; }
@@ -616,7 +620,9 @@ Type EmitEqualityOp::inferRHS(Type lhsType) { return lhsType; }
 
 LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getLhs().getType(), getRhs().getType());
+  return verifyTypeResolution(
+      tables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
+  );
 }
 
 Type EmitContainmentOp::inferRHS(Type lhsType) {

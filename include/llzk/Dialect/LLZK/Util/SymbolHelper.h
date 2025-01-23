@@ -7,6 +7,8 @@
 
 #include <llvm/Support/Casting.h>
 
+#include <ranges>
+
 namespace llzk {
 
 llvm::SmallVector<mlir::StringRef> getNames(const mlir::SymbolRefAttr &ref);
@@ -89,32 +91,21 @@ mlir::FailureOr<StructDefOp> verifyStructTypeResolution(
     mlir::SymbolTableCollection &tables, StructType ty, mlir::Operation *origin
 );
 
-/// Ensure that all symbols used within the type can be resolved.
+/// Ensure that all symbols used within the given Type instance can be resolved.
 mlir::LogicalResult
-verifyTypeResolution(mlir::SymbolTableCollection &tables, mlir::Type ty, mlir::Operation *origin);
+verifyTypeResolution(mlir::SymbolTableCollection &tables, mlir::Operation *origin, mlir::Type type);
 
-/// Ensure that all symbols used within the types can be resolved.
+/// Ensure that all symbols used within all Type instances can be resolved.
+template <std::ranges::input_range Range>
 mlir::LogicalResult verifyTypeResolution(
-    mlir::SymbolTableCollection &tables, llvm::ArrayRef<mlir::Type>::iterator start,
-    llvm::ArrayRef<mlir::Type>::iterator end, mlir::Operation *origin
-);
-
-/// Ensure that all symbols used within the types can be resolved.
-inline mlir::LogicalResult verifyTypeResolution(
-    mlir::SymbolTableCollection &tables, llvm::ArrayRef<mlir::Type> types, mlir::Operation *origin
+    mlir::SymbolTableCollection &tables, mlir::Operation *origin, Range const &types
 ) {
-  return verifyTypeResolution(tables, types.begin(), types.end(), origin);
-}
-
-template <typename... Types>
-inline mlir::LogicalResult
-verifyTypeResolution(mlir::SymbolTableCollection &tables, mlir::Operation *origin, Types... types) {
   // Check all before returning to present all applicable type errors in one compilation.
-  bool success = true;
-  for (auto t : {types...}) {
-    success |= mlir::succeeded(llzk::verifyTypeResolution(tables, t, origin));
+  bool failed = false;
+  for (const auto &t : types) {
+    failed |= mlir::failed(verifyTypeResolution(tables, origin, t));
   }
-  return mlir::LogicalResult::success(success);
+  return mlir::LogicalResult::failure(failed);
 }
 
 } // namespace llzk
