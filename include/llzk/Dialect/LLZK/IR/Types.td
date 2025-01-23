@@ -14,12 +14,14 @@ class LLZK_Type<string name, string typeMnemonic, list<Trait> traits = []>
 def AnyLLZKType : Type<CPred<"::llzk::isValidType($_self)">,
                        "a valid LLZK type", "::mlir::Type">;
 
-def EmitEqType : TypeConstraint<CPred<"::llzk::isValidEmitEqType($_self)">,
-                                "free from struct and string type">;
+def EmitEqType : Type<CPred<"::llzk::isValidEmitEqType($_self)">,
+                      "free from struct and string type">;
 
-def ConstReadType
-    : TypeConstraint<CPred<"::llzk::isValidConstReadType($_self)">,
-                     "integral, felt, or typevar type">;
+def ConstReadType : Type<CPred<"::llzk::isValidConstReadType($_self)">,
+                         "integral, felt, or typevar type">;
+
+def ArrayElemType : Type<CPred<"::llzk::isValidArrayElemType($_self)">,
+                         "a valid array element type">;
 
 def AnyLLZKIntType : AnyTypeOf<[I1, Index]>;
 

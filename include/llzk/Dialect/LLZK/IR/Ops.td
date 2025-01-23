@@ -349,7 +349,7 @@ def LLZK_CreateArrayOp
     restriction in the parser.
   }];
 
-  let arguments = (ins Variadic<AnyLLZKType>:$elements);
+  let arguments = (ins Variadic<ArrayElemType>:$elements);
   let results = (outs LLZK_ArrayType:$result);
 
   // This uses the custom parseInferredArrayType function to compute the type
@@ -402,7 +402,7 @@ def LLZK_ReadArrayOp
   }];
 
   let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices);
-  let results = (outs AnyLLZKType:$result);
+  let results = (outs ArrayElemType:$result);
 
   let assemblyFormat = [{
     $arr_ref `[` $indices `]` attr-dict `:` type($arr_ref) `,` type($result)
@@ -439,7 +439,7 @@ def LLZK_WriteArrayOp
   }];
 
   let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices,
-      AnyLLZKType:$rvalue);
+      ArrayElemType:$rvalue);
 
   let assemblyFormat = [{
     $arr_ref `[` $indices `]` `=` $rvalue attr-dict `:` type($arr_ref) `,` type($rvalue)
