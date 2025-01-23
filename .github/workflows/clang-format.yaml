@@ -25,11 +25,9 @@ jobs:
           fetch-depth: ${{ env.PR_FETCH_DEPTH }}
       - name: Download git-clang-format
         run: |
-          curl -L \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/rate_limit
+          curl --fail --header "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            --url "https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-18.1.0/clang/tools/clang-format/git-clang-format" \
+            -o ./git-clang-format
           chmod +x ./git-clang-format
       - name: Run clang-format
         run: |
