@@ -32,7 +32,7 @@ namespace llzk {
 // contain Attribute parameters (i.e. ArrayType, StructType, and TypeVarType). This should be used
 // in any function that examines the attribute parameters within parameterized LLZK types to ensure
 // that the function handles all possible cases properly, especially if more legal attributes are
-// added in the future. Throw a fatal error if anything illegal if found indicating that the caller
+// added in the future. Throw a fatal error if anything illegal is found, indicating that the caller
 // of this function should be updated.
 void assertValidAttrForParamOfType(mlir::Attribute attr);
 
