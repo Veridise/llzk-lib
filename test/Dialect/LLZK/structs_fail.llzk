@@ -284,7 +284,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Main {
-    // expected-error@+1 {{The "@Main" component "@compute" function must have no parameters}}
+    // expected-error@+1 {{"@Main" component "@compute" function parameters must be one of: {!llzk.struct<@Signal>, !llzk.array<.. x !llzk.struct<@Signal>>}}}
     func @compute(%0: i1) -> !llzk.struct<@Main> {
       %self = new_struct : !llzk.struct<@Main>
       return %self : !llzk.struct<@Main>
@@ -301,7 +301,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = new_struct : !llzk.struct<@Main>
       return %self : !llzk.struct<@Main>
     }
-    // expected-error@+1 {{The "@Main" component "@constrain" function must have only the "self" parameter}}
+    // expected-error@+1 {{"@Main" component "@constrain" function parameters must be one of: {!llzk.struct<@Main>, !llzk.struct<@Signal>, !llzk.array<.. x !llzk.struct<@Signal>>}}}
     func @constrain(%self: !llzk.struct<@Main>, %0: i1)  {
       return
     }

@@ -58,6 +58,16 @@ bool isValidArrayElemType(Type type) { return isValidArrayElemTypeImpl<true, tru
 
 bool isValidArrayType(Type type) { return isValidArrayTypeImpl<true, true>(type); }
 
+bool isSignalType(Type type) {
+  if (auto structParamTy = mlir::dyn_cast<StructType>(type)) {
+    // Only check the leaf part of the reference (i.e. just the struct name itself) to allow cases
+    // where the `COMPONENT_NAME_SIGNAL` struct may be placed within some nesting of modules, as
+    // happens when it's imported via an IncludeOp.
+    return structParamTy.getNameRef().getLeafReference() == COMPONENT_NAME_SIGNAL;
+  }
+  return false;
+}
+
 namespace {
 bool paramAttrUnify(const Attribute &lhsAttr, const Attribute &rhsAttr) {
   assertValidAttrForParamOfType(lhsAttr);
