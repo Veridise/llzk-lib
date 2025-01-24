@@ -72,7 +72,8 @@ namespace {
 bool paramAttrUnify(const Attribute &lhsAttr, const Attribute &rhsAttr) {
   assertValidAttrForParamOfType(lhsAttr);
   assertValidAttrForParamOfType(rhsAttr);
-  // If either attribute is a symbol ref, we assume they unify because a later pass with a
+  // IntegerAttr and AffineMapAttr only unify via equality and the others may. Additionally,
+  //  if either attribute is a symbol ref, we assume they unify because a later pass with a
   //  more involved value analysis is required to check if they are actually the same value.
   if (lhsAttr == rhsAttr || lhsAttr.isa<SymbolRefAttr>() || rhsAttr.isa<SymbolRefAttr>()) {
     return true;
@@ -229,7 +230,8 @@ namespace {
 //  - Integer constants
 //  - SymbolRef (global constants defined in another module require non-flat ref)
 //  - Type
-using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr>;
+//  - AffineMap (for array of non-homogeneous structs)
+using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
 
 } // namespace
 
@@ -285,7 +287,8 @@ namespace {
 // Dimensions in the ArrayType must be one of the following:
 //  - Integer constants
 //  - SymbolRef (global constants defined in another module require non-flat ref)
-using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr>;
+//  - AffineMap (for array created within a loop where size depends on loop variable)
+using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
 
 LogicalResult verifyArrayDimensionSizes(
     llvm::function_ref<InFlightDiagnostic()> emitError, llvm::ArrayRef<Attribute> dimensionSizes
@@ -341,7 +344,7 @@ LogicalResult computeShapeFromDims(
   for (Attribute a : dimensionSizes) {
     if (auto p = a.dyn_cast<IntegerAttr>()) {
       shape.push_back(p.getValue().getSExtValue());
-    } else if (a.isa<SymbolRefAttr>()) {
+    } else if (a.isa<SymbolRefAttr, AffineMapAttr>()) {
       // The ShapedTypeInterface uses 'kDynamic' for dimensions with non-static size.
       shape.push_back(ShapedType::kDynamic);
     } else {

@@ -197,7 +197,7 @@ LogicalResult verifyParamsOfType(
         paramCheckResult = failure();
       }
     }
-    // IntegerAttr cannot contain symbol references
+    // IntegerAttr and AffineMapAttr cannot contain symbol references
   }
   return paramCheckResult;
 }
