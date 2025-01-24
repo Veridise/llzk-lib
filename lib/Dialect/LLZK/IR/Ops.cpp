@@ -278,8 +278,8 @@ LogicalResult StructDefOp::verifyRegions() {
 
   // Verify parameter types are valid. Skip the first parameter of the "constrain" function; it is
   // already checked via verifyFuncTypeConstrain() in FuncOps.cpp.
-  ArrayRef<Type> computeArgs = foundCompute->getFunctionType().getInputs();
-  ArrayRef<Type> constrainArgs = foundConstrain->getFunctionType().getInputs().drop_front();
+  ArrayRef<Type> computeParams = foundCompute->getFunctionType().getInputs();
+  ArrayRef<Type> constrainParams = foundConstrain->getFunctionType().getInputs().drop_front();
   if (COMPONENT_NAME_MAIN == this->getSymName()) {
     // Verify that the Struct has no parameters.
     auto structParams = this->getConstParamsAttr();
@@ -288,30 +288,31 @@ LogicalResult StructDefOp::verifyRegions() {
           "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
       );
     }
-    // Verify the input parameter types are legal.
-    for (Type t : computeArgs) {
+    // Verify the input parameter types are legal. The error message is explicit about what types
+    // are allowed so there is no benefit to report multiple errors if more than one parameter in
+    // the referenced function has an illegal type.
+    for (Type t : computeParams) {
       if (failed(checkMainFuncParamType(t, *foundCompute, false))) {
         return failure(); // checkMainFuncParamType() already emits a sufficient error message
       }
     }
-    for (Type t : constrainArgs) {
+    for (Type t : constrainParams) {
       if (failed(checkMainFuncParamType(t, *foundConstrain, true))) {
         return failure(); // checkMainFuncParamType() already emits a sufficient error message
       }
     }
-  } else {
-    // Verify that function input types from `compute()` and `constrain()` match, sans the first
-    // parameter of `constrain()` which is the instance of the parent struct.
-    if (!typeListsUnify(computeArgs, constrainArgs)) {
-      return foundConstrain->emitError()
-          .append(
-              "expected \"@", FUNC_NAME_CONSTRAIN,
-              "\" function argument types (sans the first one) to match \"@", FUNC_NAME_COMPUTE,
-              "\" function argument types"
-          )
-          .attachNote(foundCompute->getLoc())
-          .append("\"@", FUNC_NAME_COMPUTE, "\" function defined here");
-    }
+  }
+  // Verify that function input types from `compute()` and `constrain()` match, sans the first
+  // parameter of `constrain()` which is the instance of the parent struct.
+  if (!typeListsUnify(computeParams, constrainParams)) {
+    return foundConstrain->emitError()
+        .append(
+            "expected \"@", FUNC_NAME_CONSTRAIN,
+            "\" function argument types (sans the first one) to match \"@", FUNC_NAME_COMPUTE,
+            "\" function argument types"
+        )
+        .attachNote(foundCompute->getLoc())
+        .append("\"@", FUNC_NAME_COMPUTE, "\" function defined here");
   }
 
   return success();

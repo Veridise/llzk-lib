@@ -320,3 +320,56 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Signal {
+    field @reg : !llzk.felt {llzk.pub}
+
+    func @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
+      %self = new_struct : !llzk.struct<@Signal>
+      writef %self[@reg] = %v : !llzk.struct<@Signal>, !llzk.felt
+      return %self : !llzk.struct<@Signal>
+    }
+
+    func @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
+      return
+    }
+  }
+  llzk.struct @Main {
+    func @compute(%0: !llzk.struct<@Signal>) -> !llzk.struct<@Main> { // expected-note {{"@compute" function defined here}}
+      %self = new_struct : !llzk.struct<@Main>
+      return %self : !llzk.struct<@Main>
+    }
+    // expected-error@+1 {{expected "@constrain" function argument types (sans the first one) to match "@compute" function argument types}}
+    func @constrain(%self: !llzk.struct<@Main>, %0: !llzk.struct<@Signal>, %1: !llzk.struct<@Signal>)  {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Signal {
+    field @reg : !llzk.felt {llzk.pub}
+
+    func @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
+      %self = new_struct : !llzk.struct<@Signal>
+      writef %self[@reg] = %v : !llzk.struct<@Signal>, !llzk.felt
+      return %self : !llzk.struct<@Signal>
+    }
+
+    func @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
+      return
+    }
+  }
+  llzk.struct @Main {
+    func @compute(%0: !llzk.struct<@Signal>) -> !llzk.struct<@Main> { // expected-note {{"@compute" function defined here}}
+      %self = new_struct : !llzk.struct<@Main>
+      return %self : !llzk.struct<@Main>
+    }
+    // expected-error@+1 {{expected "@constrain" function argument types (sans the first one) to match "@compute" function argument types}}
+    func @constrain(%self: !llzk.struct<@Main>, %0: !llzk.array<4 x !llzk.struct<@Signal>>)  {
+      return
+    }
+  }
+}
+
