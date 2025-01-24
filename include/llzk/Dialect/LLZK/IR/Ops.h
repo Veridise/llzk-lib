@@ -25,7 +25,7 @@
 // Types that must come before the "Ops.h.inc" import
 namespace llzk {
 
-/// Symbol name for the struct/component representing a signal. A “signal” has direct correspondence
+/// Symbol name for the struct/component representing a signal. A "signal" has direct correspondence
 /// to a circom signal or AIR/PLONK column, opposed to intermediate values or other expressions.
 constexpr char COMPONENT_NAME_SIGNAL[] = "Signal";
 
