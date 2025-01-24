@@ -23,8 +23,7 @@ def LLZK_FeltConstantOp
                                 OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "field element constant";
   let description = [{
-    The `llzk.constfelt` operation produces a felt-typed SSA value equal to
-    some felt-typed integer constant.
+    This operation produces a felt-typed SSA value holding an integer constant.
 
     Example:
 
@@ -35,7 +34,7 @@ def LLZK_FeltConstantOp
 
   let arguments = (ins LLZK_FeltConstAttr:$value);
   let results = (outs LLZK_FeltType:$result);
-  let assemblyFormat = "attr-dict $value";
+  let assemblyFormat = [{ $value attr-dict }];
   let hasFolder = 1;
 }
 
@@ -45,8 +44,8 @@ def LLZK_FeltNonDetOp
                                  OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "uninitialized field element";
   let description = [{
-    The `llzk.nondetfelt` operation produces a felt-typed SSA value. This
-    can be used in `constrain()` functions in place of expressions that
+    This operation produces a felt-typed SSA value without a specified value.
+    This can be used in `constrain()` functions in place of expressions that
     cannot be included in constraints.
 
     Example:
@@ -57,14 +56,14 @@ def LLZK_FeltNonDetOp
   }];
 
   let results = (outs LLZK_FeltType:$result);
-  let assemblyFormat = "attr-dict";
+  let assemblyFormat = [{ attr-dict }];
 }
 
 def LLZK_IncludeOp
     : LLZK_Op<"include", [HasParent<"::mlir::ModuleOp">, Symbol]> {
-  let summary = "Include operation";
+  let summary = "include operation";
   let description = [{
-    The `include` operation allows to import the contents of another source file.
+    This operation imports the contents of another source file in place of itself.
 
     Example:
 
@@ -90,12 +89,13 @@ def LLZK_IncludeOp
 
 def LLZK_AssertOp
     : LLZK_Op<"assert", [DeclareOpInterfaceMethods<MemoryEffectsOpInterface>]> {
-  let summary = "Assertion operation";
+  let summary = "assertion operation";
   let description = [{
-    Assertions are checked statically when possible. If the condition evaluates to
-    `true`, the assertion is removed. If `false`, an error is reported. Otherwise,
-    the assertion is preserved. All assertions that appear in `constrain()` functions
-    must evaluate statically, i.e. they cannot depend on inputs to the circuit.
+    This operation asserts that a given boolean value is true. Assertions are checked
+    statically when possible. If the condition evaluates to `true`, the assertion is
+    removed. If `false`, an error is reported. Otherwise, the assertion is preserved.
+    All assertions that appear in `constrain()` functions must evaluate statically
+    (i.e. they cannot depend on inputs to the circuit) else an error is reported.
 
     Assertion without message:
     ```llzk
@@ -124,9 +124,13 @@ def LLZK_StructDefOp
                          IsolatedFromAbove, GraphRegionNoTerminator,
                          OpAsmOpInterface,
                          DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-  let summary = "Circuit struct/component definition";
+  let summary = "circuit component definition";
   let description = [{
-      Describes a struct/component in a circuit.
+      This operation describes a component in a circuit. It can contain any number
+      of fields that hold inputs, outputs, intermediate values, and subcomponents
+      of the defined component. It also contains a `compute()` function that holds
+      the witness generation code for the component and a `constrain()` function
+      that holds that constraint generation code for the component. 
 
       Example:
 
@@ -204,7 +208,7 @@ def LLZK_StructDefOp
 def LLZK_ConstReadOp
     : LLZK_Op<
           "read_const", [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-  let summary = "Read value from a struct/component constant parameter.";
+  let summary = "read value of a struct parameter";
   let description = [{
     This operation reads the value from the named constant parameter of
     the struct/component in which this op appears. The op itself puts
@@ -216,16 +220,16 @@ def LLZK_ConstReadOp
   let arguments = (ins FlatSymbolRefAttr:$const_name);
   let results = (outs ConstReadType:$val);
 
-  let assemblyFormat = [{ $const_name attr-dict `:` type($val) }];
+  let assemblyFormat = [{ $const_name `:` type($val) attr-dict }];
 }
 
 def LLZK_FieldDefOp
     : LLZK_Op<"field", [HasParent<"::llzk::StructDefOp">,
                         DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                         Symbol]> {
-  let summary = "Struct/component field";
+  let summary = "struct field definition";
   let description = [{
-    Describes a field in a struct/component.
+    This operation describes a field in a struct/component.
 
     Example:
 
@@ -237,9 +241,7 @@ def LLZK_FieldDefOp
 
   let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<AnyLLZKType>:$type);
 
-  let assemblyFormat = [{
-    $sym_name `:` $type attr-dict
-  }];
+  let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 
   let extraClassDeclaration = [{
     bool hasPublicAttr();
@@ -247,9 +249,9 @@ def LLZK_FieldDefOp
 }
 
 def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf"> {
-  let summary = "Read value from a struct/component field.";
+  let summary = "read value of a struct field";
   let description = [{
-    This operation reads the value from the named field from a struct/component.
+    This operation reads the value of a named field in a struct/component.
   }];
 
   let arguments = (ins LLZK_StructType:$component,
@@ -257,21 +259,21 @@ def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf"> {
   let results = (outs AnyLLZKType:$val);
 
   let assemblyFormat = [{
-    $component `[` $field_name `]` attr-dict `:` type($component) `,` type($val)
+    $component `[` $field_name `]` `:` type($component) `,` type($val) attr-dict
   }];
 }
 
 def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef", [ComputeOnly]> {
-  let summary = "Write value to a struct/component field.";
+  let summary = "write value to a struct field";
   let description = [{
-    This operation writes the value to the named field from a struct/component.
+    This operation writes a value to a named field in a struct/component.
   }];
 
   let arguments = (ins LLZK_StructType:$component,
       FlatSymbolRefAttr:$field_name, AnyLLZKType:$val);
 
   let assemblyFormat = [{
-    $component `[` $field_name `]` `=` $val attr-dict `:` type($component) `,` type($val)
+    $component `[` $field_name `]` `=` $val `:` type($component) `,` type($val) attr-dict
   }];
 }
 
@@ -281,7 +283,7 @@ def LLZK_CreateStructOp
                                  OpAsmOpInterface, ["getAsmResultNames"]>,
                              DeclareOpInterfaceMethods<SymbolUserOpInterface>,
 ]> {
-  let summary = "creates a new struct";
+  let summary = "create a new struct";
   let description = [{
     This operation creates a new, uninitialized instance of a struct.
 
@@ -294,7 +296,7 @@ def LLZK_CreateStructOp
 
   let results = (outs LLZK_StructType:$result);
 
-  let assemblyFormat = "attr-dict `:` type($result)";
+  let assemblyFormat = [{ `:` type($result) attr-dict }];
 }
 
 //===------------------------------------------------------------------===//
@@ -309,7 +311,7 @@ def LLZK_CreateArrayOp
            VariadicTypesMatchWith<
                "operand types match result type", "result", "elements",
                "resultTypeToElementsTypes($_self)", "std::equal_to<>()">]> {
-  let summary = "creates an array";
+  let summary = "create a new array";
   let description = [{
     This operation creates a new array with the given elements.
     The arguments are passed as a flat array but get arranged
@@ -356,8 +358,9 @@ def LLZK_CreateArrayOp
   //  of '$elements' to match the type of '$result', except when '$elements'
   //  is empty, then the type of '$elements' must also be empty (size == 0).
   let assemblyFormat = [{
-        $elements attr-dict `:` type($result)
+        $elements `:` type($result)
         `` custom<InferredArrayType>(type($elements), ref($elements), ref(type($result)))
+        attr-dict
       }];
 
   let extraClassDeclaration = [{
@@ -378,9 +381,9 @@ def LLZK_ReadArrayOp
     : LLZK_Op<
           "readarr", [DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                       ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
-  let summary = "Loads a value from a LLZK array";
+  let summary = "read scalar from an array";
   let description = [{
-    This operation loads the value from an array at position `$index`.
+    This operation reads the value from an array at the specified position.
 
     Example of 1-dimensional array:
     ```llzk
@@ -405,19 +408,18 @@ def LLZK_ReadArrayOp
   let results = (outs ArrayElemType:$result);
 
   let assemblyFormat = [{
-    $arr_ref `[` $indices `]` attr-dict `:` type($arr_ref) `,` type($result)
+    $arr_ref `[` $indices `]` `:` type($arr_ref) `,` type($result) attr-dict
   }];
 }
 
 def LLZK_WriteArrayOp
     : LLZK_Op<"writearr", [DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                            ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
-  let summary = "Writes a value into a LLZK array";
+  let summary = "write scalar to an array";
   let description = [{
-    This operation writes a value into an array at position `$index`.
+    This operation writes a value into an array at the specified position.
 
     Example of 1-dimensional array:
-
     ```llzk
     %i = index.constant 0
     %0 = llzk.constfelt 42
@@ -427,7 +429,6 @@ def LLZK_WriteArrayOp
     ```
 
     Example of 2-dimensional array:
-
     ```llzk
     %i = index.constant 0
     %j = index.constant 0
@@ -442,19 +443,18 @@ def LLZK_WriteArrayOp
       ArrayElemType:$rvalue);
 
   let assemblyFormat = [{
-    $arr_ref `[` $indices `]` `=` $rvalue attr-dict `:` type($arr_ref) `,` type($rvalue)
+    $arr_ref `[` $indices `]` `=` $rvalue `:` type($arr_ref) `,` type($rvalue) attr-dict
   }];
 }
 
 def LLZK_ExtractArrayOp
-    : LLZK_Op<
-          "extractarr", [Pure, InferTypeOpAdaptorWithIsCompatible,
-                         DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-  let summary = "Get subarray from a multi-dimensional array.";
+    : LLZK_Op<"extractarr", [DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                             InferTypeOpAdaptorWithIsCompatible]> {
+  let summary = "read subarray from a multi-dimensional array";
   let description = [{
-    Takes an N-dimensional array and K indices and extracts the (N-K)-dimensional
-    array by applying the given indices to the first `K` dimensions of the array.
-    Error if `K > N`. Use `readarr` instead if `K == N`.
+    This operation takes an N-dimensional array and K indices and extracts the
+    (N-K)-dimensional array by applying the given indices to the first `K`
+    dimensions of the array. Error if `K > N`. Use `readarr` instead if `K == N`.
 
     Extracting a 1-D array from 3-D array by selecting the index of 2 dimensions:
     ```llzk
@@ -477,19 +477,18 @@ def LLZK_ExtractArrayOp
   let results = (outs LLZK_ArrayType:$result);
 
   let assemblyFormat = [{
-    $arr_ref `[` $indices `]` attr-dict `:` type($arr_ref)
+    $arr_ref `[` $indices `]` `:` type($arr_ref) attr-dict
   }];
 }
 
 def LLZK_ArrayLengthOp
     : LLZK_Op<"array_len", [Pure,
                             DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-  let summary = "returns the length of an array";
+  let summary = "return the length of an array";
   let description = [{
     This operation returns the size of the specified dimension of an array.
 
     Example:
-
     ```llzk
     %a = llzk.new_array : !llzk.array<2,3 x !llzk.felt>
     %0 = index.constant 0
@@ -502,7 +501,7 @@ def LLZK_ArrayLengthOp
   let arguments = (ins LLZK_ArrayType:$arr_ref, Index:$dim);
   let results = (outs Index:$length);
 
-  let assemblyFormat = "$arr_ref `,` $dim `:` type($arr_ref) attr-dict";
+  let assemblyFormat = [{ $arr_ref `,` $dim `:` type($arr_ref) attr-dict }];
 }
 
 //===------------------------------------------------------------------===//
@@ -553,7 +552,7 @@ def LLZK_EmitEqualityOp
     : LLZK_EmitOp<"emit_eq", [Commutative, ElementwiseMappable,
                               TypesUnify<"lhs", "rhs">,
 ]> {
-  let summary = "";
+  let summary = "emit an equality constraint";
   let description = [{}];
 
   let arguments = (ins EmitEqType:$lhs, EmitEqType:$rhs);
@@ -561,7 +560,7 @@ def LLZK_EmitEqualityOp
 
 def LLZK_EmitContainmentOp
     : LLZK_EmitOp<"emit_in", [ArrayElemTypeUnifyWith<"lhs", "rhs">]> {
-  let summary = "";
+  let summary = "emit a containment constraint";
   let description = [{}];
 
   let arguments = (ins LLZK_ArrayType:$lhs, AnyLLZKType:$rhs);
@@ -572,80 +571,79 @@ def LLZK_EmitContainmentOp
 //===------------------------------------------------------------------===//
 
 def LLZK_AddFeltOp : LLZK_BinaryOpBase<"add", LLZK_FeltType, [Commutative]> {
-  let summary = "Addition operator for field elements";
+  let summary = "addition operator for field elements";
   let description = [{}];
 }
 
 def LLZK_SubFeltOp : LLZK_BinaryOpBase<"sub", LLZK_FeltType> {
-  let summary = "Subtraction operator for field elements";
+  let summary = "subtraction operator for field elements";
   let description = [{}];
 }
 
 def LLZK_MulFeltOp : LLZK_BinaryOpBase<"mul", LLZK_FeltType, [Commutative]> {
-  let summary = "Multiplication operator for field elements";
+  let summary = "multiplication operator for field elements";
   let description = [{}];
 }
 
 def LLZK_DivFeltOp : LLZK_BinaryOpBase<"div", LLZK_FeltType> {
-  let summary = "Division operator for field elements";
+  let summary = "division operator for field elements";
   let description = [{}];
 }
 
 def LLZK_ModFeltOp : LLZK_BinaryOpBase<"mod", LLZK_FeltType> {
-  let summary = "Modulus/remainder operator for field elements";
+  let summary = "modulus/remainder operator for field elements";
   let description = [{}];
 }
 
 def LLZK_NegFeltOp : LLZK_UnaryOpBase<"neg", LLZK_FeltType> {
-  let summary = "Negation operator for field elements";
+  let summary = "negation operator for field elements";
   let description = [{}];
 }
 
 def LLZK_InvFeltOp : LLZK_UnaryOpBase<"inv", LLZK_FeltType, [ComputeOnly]> {
-  let summary = "Inverse operator for field elements";
+  let summary = "inverse operator for field elements";
   let description = [{}];
 }
 
 def LLZK_AndFeltOp
     : LLZK_BinaryOpBase<"bit_and", LLZK_FeltType, [ComputeOnly, Commutative]> {
-  let summary = "Bitwise AND operator for field elements";
+  let summary = "bitwise AND operator for field elements";
   let description = [{}];
 }
 
 def LLZK_OrFeltOp
     : LLZK_BinaryOpBase<"bit_or", LLZK_FeltType, [ComputeOnly, Commutative]> {
-  let summary = "Bitwise OR operator for field elements";
+  let summary = "bitwise OR operator for field elements";
   let description = [{}];
 }
 
 def LLZK_XorFeltOp
     : LLZK_BinaryOpBase<"bit_xor", LLZK_FeltType, [ComputeOnly, Commutative]> {
-  let summary = "Bitwise XOR operator for field elements";
+  let summary = "bitwise XOR operator for field elements";
   let description = [{}];
 }
 
 def LLZK_NotFeltOp : LLZK_UnaryOpBase<"bit_not", LLZK_FeltType, [ComputeOnly]> {
-  let summary = "Bit flip operator for field elements";
+  let summary = "bit flip operator for field elements";
   let description = [{}];
 }
 
 def LLZK_ShlFeltOp : LLZK_BinaryOpBase<"shl", LLZK_FeltType, [ComputeOnly]> {
-  let summary = "Left shift operator for field elements";
+  let summary = "left shift operator for field elements";
   let description = [{}];
 }
 
 def LLZK_ShrFeltOp : LLZK_BinaryOpBase<"shr", LLZK_FeltType, [ComputeOnly]> {
-  let summary = "Right shift operator for field elements";
+  let summary = "right shift operator for field elements";
   let description = [{}];
 }
 
 // Match format of Index comparisons (for now)
 def LLZK_CmpOp : LLZK_Op<"cmp", [Pure]> {
-  let summary = "field element comparison operation";
+  let summary = "compare field element values";
   let description = [{
-    The `llzk.cmp` operation takes two field element values and compares them
-    according to the comparison predicate and returns an `i1`. The following
-    comparisons are supported:
+    This operation takes two field element values and compares them according to the
+    comparison predicate and returns an `i1`. The following comparisons are supported:
 
     -   `eq`: equal
     -   `ne`: not equal
@@ -677,41 +675,53 @@ def LLZK_CmpOp : LLZK_Op<"cmp", [Pure]> {
   let arguments = (ins LLZK_CmpPredicateAttr:$predicate, LLZK_FeltType:$lhs,
       LLZK_FeltType:$rhs);
   let results = (outs I1:$result);
-  let assemblyFormat = "`` $predicate `(` $lhs `,` $rhs `)` attr-dict";
+  let assemblyFormat = [{ `` $predicate `(` $lhs `,` $rhs `)` attr-dict }];
 }
 
+//===------------------------------------------------------------------===//
+// Boolean operators
+//===------------------------------------------------------------------===//
+
 def LLZK_AndBoolOp : LLZK_BinaryOpBase<"and", I1, [ComputeOnly, Commutative]> {
-  let summary = "logical AND";
+  let summary = "logical AND operator";
   let description = [{
-    Logical AND (i.e. conjunction) operator. The type of operands and return value is `i1` (i.e. boolean).
+    This operation computes the logical AND (i.e. conjunction) of two `i1` (i.e. boolean)
+    values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
   }];
 }
 
 def LLZK_OrBoolOp : LLZK_BinaryOpBase<"or", I1, [ComputeOnly, Commutative]> {
-  let summary = "logical OR";
+  let summary = "logical OR operator";
   let description = [{
-    Logical OR (i.e. disjunction) operator. The type of operands and return value is `i1` (i.e. boolean).
+    This operation computes the logical OR (i.e. disjunction) of two `i1` (i.e. boolean)
+    values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
   }];
 }
 
 def LLZK_XorBoolOp : LLZK_BinaryOpBase<"xor", I1, [ComputeOnly, Commutative]> {
-  let summary = "logical XOR";
+  let summary = "logical XOR operator";
   let description = [{
-    Logical ZOR (i.e. exclusive disjunction) operator. The type of operands and return value is `i1` (i.e. boolean).
+    This operation computes the logical XOR (i.e. exclusive disjunction) of two `i1` (i.e. boolean)
+    values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
   }];
 }
 
 def LLZK_NotBoolOp : LLZK_UnaryOpBase<"not", I1, [ComputeOnly]> {
-  let summary = "logical NOT";
+  let summary = "logical NOT operator";
   let description = [{
-    Logical NOT (i.e. negation) operator. The type of operand and return value is `i1` (i.e. boolean).
+    This operation computes the logical NOT (i.e. negation) of an `i1` (i.e. boolean)
+    value as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
   }];
 }
 
+//===------------------------------------------------------------------===//
+// Conversion operators
+//===------------------------------------------------------------------===//
+
 def LLZK_IntToFeltOp : LLZK_Op<"tofelt", [Pure]> {
-  let summary = "converts an integer into a felt";
+  let summary = "convert an integer into a field element";
   let description = [{
-    Transforms any builtin integer value into a felt value.
+    This operation converts a supported integer type value into a field element value.
 
     Example:
 
@@ -723,13 +733,14 @@ def LLZK_IntToFeltOp : LLZK_Op<"tofelt", [Pure]> {
 
   let arguments = (ins AnyLLZKIntType:$value);
   let results = (outs LLZK_FeltType:$result);
-  let assemblyFormat = "$value `:` type($value) attr-dict";
+  let assemblyFormat = [{ $value `:` type($value) attr-dict }];
 }
 
 def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
-  let summary = "converts a felt into an index type";
+  let summary = "convert a field element into an index";
   let description = [{
-    Transforms a felt type into an index to allow being used as array indices.
+    This operation converts a field element value into an index value to allow
+    use as an array index or loop bound.
 
     Example:
     ```llzk
@@ -740,7 +751,7 @@ def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
 
   let arguments = (ins LLZK_FeltType:$value);
   let results = (outs Index:$result);
-  let assemblyFormat = "$value attr-dict";
+  let assemblyFormat = [{ $value attr-dict }];
 }
 
 #endif // LLZK_OPS
