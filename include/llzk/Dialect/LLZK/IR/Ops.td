@@ -454,7 +454,7 @@ def LLZK_ExtractArrayOp
   let description = [{
     This operation takes an N-dimensional array and K indices and extracts the
     (N-K)-dimensional array by applying the given indices to the first `K`
-    dimensions of the array. Error if `K > N`. Use `readarr` instead if `K == N`.
+    dimensions of the array. Error if `K >= N`. Use `readarr` instead if `K == N`.
 
     Extracting a 1-D array from 3-D array by selecting the index of 2 dimensions:
     ```llzk
