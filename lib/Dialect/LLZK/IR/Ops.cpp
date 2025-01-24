@@ -224,8 +224,7 @@ inline LogicalResult checkMainFuncParamType(Type pType, FuncOp inFunc, bool appe
   }
   ss << "!" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL << ">, ";
   ss << "!" << ArrayType::name << "<.. x !" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL
-     << ">>";
-  ss << "}";
+     << ">>}";
   return inFunc.emitError(message);
 }
 
