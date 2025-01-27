@@ -117,6 +117,31 @@ LogicalResult checkSelfType(
   return success();
 }
 
+ParseResult parseDimAndSymbolList(
+    OpAsmParser &parser, SmallVector<OpAsmParser::UnresolvedOperand, 4> &mapOperands,
+    IntegerAttr &numDims
+) {
+  // Parse the required dimension operands.
+  if (parser.parseOperandList(mapOperands, OpAsmParser::Delimiter::Paren)) {
+    return failure();
+  }
+  // Store number of dimensions for validation by caller.
+  numDims = parser.getBuilder().getIndexAttr(mapOperands.size());
+
+  // Parse the optional symbol operands.
+  return parser.parseOperandList(mapOperands, OpAsmParser::Delimiter::OptionalSquare);
+}
+
+void printDimAndSymbolList(
+    OpAsmPrinter &printer, Operation *op, OperandRange mapOperands, IntegerAttr numDims
+) {
+  size_t dims = numDims.getInt();
+  printer << '(' << mapOperands.take_front(dims) << ')';
+  if (mapOperands.size() > dims) {
+    printer << '[' << mapOperands.drop_front(dims) << ']';
+  }
+}
+
 //===------------------------------------------------------------------===//
 // AssertOp
 //===------------------------------------------------------------------===//
@@ -532,8 +557,7 @@ ParseResult CreateArrayOp::parseInferredArrayType(
 }
 
 void CreateArrayOp::printInferredArrayType(
-    AsmPrinter &printer, CreateArrayOp, Operation::operand_range::type_range,
-    Operation::operand_range, Type
+    AsmPrinter &printer, CreateArrayOp, OperandRange::type_range, OperandRange, Type
 ) {
   // nothing to print, it's derived and therefore not represented in the output
 }
@@ -734,6 +758,30 @@ LogicalResult CreateStructOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (failed(checkSelfType(tables, *getParentRes, this->getType(), *this, "result"))) {
     return failure();
   }
+  return success();
+}
+
+//===------------------------------------------------------------------===//
+// ApplyMapOp
+//===------------------------------------------------------------------===//
+
+LogicalResult ApplyMapOp::verify() {
+  // Check input and output dimensions match.
+  AffineMap map = getMap();
+
+  // Verify that the map only produces one result.
+  if (map.getNumResults() != 1) {
+    return emitOpError("must produce exactly one value");
+  }
+
+  // Verify that operand count matches affine map dimension and symbol count.
+  unsigned mapDims = map.getNumDims();
+  if (getNumOperands() != mapDims + map.getNumSymbols()) {
+    return emitOpError("operand count must equal affine map dimension+symbol count");
+  } else if (mapDims != getNumDimsAttr().getInt()) {
+    return emitOpError("dimension operand count must equal affine map dimension count");
+  }
+
   return success();
 }
 

@@ -6,6 +6,8 @@
 #include "llzk/Dialect/LLZK/Util/SymbolLookup.h" // IWYU pragma: keep
 
 #include <mlir/Bytecode/BytecodeOpInterface.h>
+#include <mlir/Dialect/Affine/IR/AffineValueMap.h>
+#include <mlir/IR/AffineMap.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/OpDefinition.h>
 #include <mlir/IR/OpImplementation.h>
@@ -118,6 +120,19 @@ inline OpType delegate_to_build(mlir::Location location, Args &&...args) {
   mlir::OpBuilder builder(location->getContext());
   return builder.create<OpType>(location, std::forward<Args>(args)...);
 }
+
+/// Parses dimension and symbol list for an AffineMap instantiation.
+mlir::ParseResult parseDimAndSymbolList(
+    mlir::OpAsmParser &parser,
+    mlir::SmallVector<mlir::OpAsmParser::UnresolvedOperand, 4> &mapOperands,
+    mlir::IntegerAttr &numDims
+);
+
+/// Prints dimension and symbol list for an AffineMap instantiation.
+void printDimAndSymbolList(
+    mlir::OpAsmPrinter &printer, mlir::Operation *op, mlir::OperandRange mapOperands,
+    mlir::IntegerAttr numDims
+);
 } // namespace llzk
 
 // Include TableGen'd declarations

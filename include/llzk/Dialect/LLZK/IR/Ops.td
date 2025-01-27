@@ -370,7 +370,7 @@ def LLZK_CreateArrayOp
         ::mlir::Type resultType
     );
     static void printInferredArrayType(::mlir::AsmPrinter &printer, CreateArrayOp,
-        ::mlir::Operation::operand_range::type_range, ::mlir::Operation::operand_range, ::mlir::Type
+        ::mlir::OperandRange::type_range, ::mlir::OperandRange, ::mlir::Type
     );
   private:
     static ::llvm::SmallVector<::mlir::Type> resultTypeToElementsTypes(::mlir::Type resultType);
@@ -787,6 +787,90 @@ def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
   let arguments = (ins LLZK_FeltType:$value);
   let results = (outs Index:$result);
   let assemblyFormat = [{ $value attr-dict }];
+}
+
+//===------------------------------------------------------------------===//
+// Other operators
+//===------------------------------------------------------------------===//
+
+def LLZK_ApplyMapOp : LLZK_Op<"applymap", [Pure]> {
+  let summary = "apply an AffineMap";
+  let description = [{
+    This operation applies an AffineMap to a list of SSA values, yielding a single
+    SSA value. The number of dimension and symbol arguments must be equal to the
+    respective number of dimensional and symbolic inputs to the AffineMap; the
+    AffineMap has to be one-dimensional, and so this operation always returns one
+    value. The input operands and result all have `index` type.
+
+    Named map example:
+    ```llzk
+    #map10 = affine_map<(d0, d1) -> (d0 floordiv 8 + d1 floordiv 128)>
+    ...
+    %1 = llzk.applymap(%s, %t) #map10
+    ```
+  
+    Inline example:
+    ```llzk
+    %2 = llzk.applymap(%42)[%n] affine_map<(i)[s0] -> (i+s0)>
+    ```
+  }];
+
+  let arguments = (ins AffineMapAttr:$map, Variadic<Index>:$mapOperands,
+      IndexAttr:$numDims);
+  let results = (outs Index);
+
+  let skipDefaultBuilders = 1;
+  let builders = [OpBuilder<(ins "::mlir::AffineMapAttr":$map,
+                                CArg<"::mlir::ValueRange", "{}">:$mapOperands),
+                            [{
+                  $_state.addOperands(mapOperands);
+                  $_state.getOrAddProperties<Properties>().map = map;
+                  $_state.getOrAddProperties<Properties>().numDims = $_builder.getIntegerAttr(
+                                                                          $_builder.getIndexType(),
+                                                                          map.getAffineMap().getNumDims());
+                  $_state.addTypes($_builder.getIndexType());
+                }]>,
+                  OpBuilder<(ins "::mlir::AffineMap":$map,
+                                CArg<"::mlir::ValueRange", "{}">:$mapOperands),
+                            [{
+                  build($_builder, $_state, ::mlir::AffineMapAttr::get(map), mapOperands);
+                }]>,
+                  OpBuilder<(ins "::mlir::AffineExpr":$expr,
+                                CArg<"::mlir::ValueRange", "{}">:$mapOperands),
+                            [{
+                  auto map = ::mlir::AffineMap::inferFromExprList({expr}).front();
+                  build($_builder, $_state, map, mapOperands);
+                }]>];
+
+  let assemblyFormat = [{
+    custom<DimAndSymbolList>($mapOperands, $numDims) $map attr-dict
+  }];
+
+  let hasVerifier = 1;
+
+  let extraClassDeclaration = [{
+    /// Returns the affine map to be applied by this operation.
+    ::mlir::AffineMap inline getAffineMap() { return getMap(); }
+
+    /// Returns the affine value map computed from this operation.
+    ::mlir::affine::AffineValueMap getAffineValueMap() {
+      return ::mlir::affine::AffineValueMap(getAffineMap(), getOperands(), getResult());
+    }
+
+    /// Returns all dimension operands.
+    ::mlir::ValueRange getDimOperands() {
+      return ::mlir::OperandRange{
+                          getOperands().begin(),
+                          getOperands().begin() + getMap().getNumDims()};
+    }
+
+    /// Returns all symbol operands.
+    ::mlir::ValueRange getSymbolOperands() {
+      return ::mlir::OperandRange{
+                          getOperands().begin() + getMap().getNumDims(),
+                          getOperands().end()};
+    }
+  }];
 }
 
 #endif // LLZK_OPS

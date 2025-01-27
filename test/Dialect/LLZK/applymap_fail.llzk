@@ -1,0 +1,38 @@
+// RUN: llzk-opt %s -split-input-file -verify-diagnostics
+
+llzk.func @produces_0() -> index {
+  // expected-error@+1 {{'llzk.applymap' op must produce exactly one value}}
+  %x = llzk.applymap() affine_map<() -> ()>
+  return %x : index
+}
+// -----
+#mapB = affine_map<()[] -> (22, 34)>
+llzk.func @produces_too_many() -> index {
+  // expected-error@+1 {{'llzk.applymap' op must produce exactly one value}}
+  %x = llzk.applymap() #mapB
+  return %x : index
+}
+// -----
+llzk.func @no_dim_brackets(%a: index) -> index {
+  // expected-error@+1 {{expected '(' in operand list}}
+  %x = llzk.applymap[%a] affine_map<()[s] -> (s)>
+  return %x : index
+}
+// -----
+llzk.func @has_dim_expected_sym(%a: index) -> index {
+  // expected-error@+1 {{dimension operand count must equal affine map dimension count}}
+  %x = llzk.applymap(%a) affine_map<()[s] -> (s)>
+  return %x : index
+}
+// -----
+llzk.func @has_sym_expected_dim(%a: index) -> index {
+  // expected-error@+1 {{dimension operand count must equal affine map dimension count}}
+  %x = llzk.applymap()[%a] affine_map<(s)[] -> (s)>
+  return %x : index
+}
+// -----
+llzk.func @has_sym_expected_none(%a: index) -> index {
+  // expected-error@+1 {{'llzk.applymap' op operand count must equal affine map dimension+symbol count}}
+  %x = llzk.applymap(%a)[%a] affine_map<(s)[] -> (s)>
+  return %x : index
+}
