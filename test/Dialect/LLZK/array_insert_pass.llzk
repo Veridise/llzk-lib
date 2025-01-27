@@ -1,0 +1,228 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
+
+llzk.func @constant_index() {
+  %a = index.constant 1
+  %b = index.constant 2
+  %c = index.constant 3
+  %d = index.constant 4
+  %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2,2 x index>
+  // %1 = [ [1, 2], [3, 4] ]
+  %x = index.constant 9
+  %y = index.constant 8
+
+  %i = index.constant 0
+  %2 = llzk.new_array %x, %y : !llzk.array<2 x index>
+  llzk.insertarr %1[%i] = %2 : !llzk.array<2,2 x index>, !llzk.array<2 x index>
+  // %1 = [ [9, 8], [3, 4] ]
+
+  %j = index.constant 1
+  %3 = llzk.new_array %y, %x : !llzk.array<2 x index>
+  llzk.insertarr %1[%j] = %3 : !llzk.array<2,2 x index>, !llzk.array<2 x index>
+  // %1 = [ [9, 8], [8, 9] ]
+
+  return
+}
+// CHECK-LABEL: llzk.func @constant_index() {
+// CHECK-NEXT:    %[[VAL_0:[0-9a-zA-Z_\.]+]] = index.constant 1
+// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = index.constant 2
+// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = index.constant 3
+// CHECK-NEXT:    %[[VAL_3:[0-9a-zA-Z_\.]+]] = index.constant 4
+// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.]+]] = new_array %[[VAL_0]], %[[VAL_1]], %[[VAL_2]], %[[VAL_3]] : <2,2 x index>
+// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_\.]+]] = index.constant 9
+// CHECK-NEXT:    %[[VAL_6:[0-9a-zA-Z_\.]+]] = index.constant 8
+// CHECK-NEXT:    %[[VAL_7:[0-9a-zA-Z_\.]+]] = index.constant 0
+// CHECK-NEXT:    %[[VAL_8:[0-9a-zA-Z_\.]+]] = new_array %[[VAL_5]], %[[VAL_6]] : <2 x index>
+// CHECK-NEXT:    insertarr %[[VAL_4]]{{\[}}%[[VAL_7]]] = %[[VAL_8]] : <2,2 x index>, <2 x index>
+// CHECK-NEXT:    %[[VAL_9:[0-9a-zA-Z_\.]+]] = index.constant 1
+// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.]+]] = new_array %[[VAL_6]], %[[VAL_5]] : <2 x index>
+// CHECK-NEXT:    insertarr %[[VAL_4]]{{\[}}%[[VAL_9]]] = %[[VAL_10]] : <2,2 x index>, <2 x index>
+// CHECK-NEXT:    return
+// CHECK-NEXT:  }
+// -----
+
+llzk.func @empty_index(%0: !llzk.felt, %1: !llzk.felt, %z: !llzk.array<84,22,67 x !llzk.felt>) {
+  %r = llzk.new_array : !llzk.array<84,22,67 x !llzk.felt>
+  llzk.insertarr %r[] = %z : !llzk.array<84,22,67 x !llzk.felt>, !llzk.array<84,22,67 x !llzk.felt>
+  // %r is completely overwritten with contents of %z
+  return
+}
+// CHECK-LABEL: llzk.func @empty_index(
+// CHECK-SAME:                         %[[VAL_0:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:                         %[[VAL_1:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:                         %[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.array<84,22,67 x !llzk.felt>) {
+// CHECK-NEXT:    %[[VAL_3:[0-9a-zA-Z_\.]+]] = new_array  : <84,22,67 x !llzk.felt>
+// CHECK-NEXT:    insertarr %[[VAL_3]][] = %[[VAL_2]] : <84,22,67 x !llzk.felt>, <84,22,67 x !llzk.felt>
+// CHECK-NEXT:    return
+// CHECK-NEXT:  }
+// -----
+
+llzk.func @trival(%z: !llzk.array<0 x index>) {
+  %r = llzk.new_array : !llzk.array<0 x index>
+  llzk.insertarr %r[] = %z : !llzk.array<0 x index>, !llzk.array<0 x index>
+  return
+}
+// CHECK-LABEL: llzk.func @trival(
+// CHECK-SAME:                    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !llzk.array<0 x index>) {
+// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = new_array  : <0 x index>
+// CHECK-NEXT:    insertarr %[[VAL_1]][] = %[[VAL_0]] : <0 x index>, <0 x index>
+// CHECK-NEXT:    return
+// CHECK-NEXT:  }
+// -----
+
+llzk.func @doc_example(%r: i1, %s: i1, %t: i1, %x: i1, %y: i1, %z: i1) {
+  %c = llzk.new_array : !llzk.array<2,3 x i1>
+  // Array %c is uninitialized [[?, ?, ?], [?, ?, ?]]
+  %0 = index.constant 0
+  %a = llzk.new_array %r, %s, %t : !llzk.array<3 x i1>
+  llzk.insertarr %c[%0] = %a : !llzk.array<2,3 x i1>, !llzk.array<3 x i1>
+  // Array %c is now [[%r, %s, %t], [?, ?, ?]]
+  %1 = index.constant 1
+  %b = llzk.new_array %x, %y, %z : !llzk.array<3 x i1>
+  llzk.insertarr %c[%1] = %b : !llzk.array<2,3 x i1>, !llzk.array<3 x i1>
+  // Array %c is now [[%r, %s, %t], [%x, %y, %z]]
+  return
+}
+// CHECK-LABEL: llzk.func @doc_example(
+// CHECK-SAME:                         %[[VAL_0:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:                         %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:                         %[[VAL_2:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:                         %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:                         %[[VAL_4:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:                         %[[VAL_5:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:    %[[VAL_6:[0-9a-zA-Z_\.]+]] = new_array  : <2,3 x i1>
+// CHECK-NEXT:    %[[VAL_7:[0-9a-zA-Z_\.]+]] = index.constant 0
+// CHECK-NEXT:    %[[VAL_8:[0-9a-zA-Z_\.]+]] = new_array %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : <3 x i1>
+// CHECK-NEXT:    insertarr %[[VAL_6]]{{\[}}%[[VAL_7]]] = %[[VAL_8]] : <2,3 x i1>, <3 x i1>
+// CHECK-NEXT:    %[[VAL_9:[0-9a-zA-Z_\.]+]] = index.constant 1
+// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.]+]] = new_array %[[VAL_3]], %[[VAL_4]], %[[VAL_5]] : <3 x i1>
+// CHECK-NEXT:    insertarr %[[VAL_6]]{{\[}}%[[VAL_9]]] = %[[VAL_10]] : <2,3 x i1>, <3 x i1>
+// CHECK-NEXT:    return
+// CHECK-NEXT:  }
+// -----
+
+llzk.func @more_dimensions(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i1) {
+  %a0 = llzk.new_array : !llzk.array<2,3,2,3 x i1>
+
+  %0 = index.constant 0
+  %1 = index.constant 1
+  %2 = index.constant 2
+
+  %a1 = llzk.new_array %a, %b, %c, %d, %e, %f : !llzk.array<2,3 x i1>
+  llzk.insertarr %a0[%0, %0] = %a1 : !llzk.array<2,3,2,3 x i1>, !llzk.array<2,3 x i1>
+  %a2 = llzk.new_array %c, %d, %e, %f, %a, %b : !llzk.array<2,3 x i1>
+  llzk.insertarr %a0[%0, %1] = %a2 : !llzk.array<2,3,2,3 x i1>, !llzk.array<2,3 x i1>
+  %a3 = llzk.new_array %e, %f, %a, %b, %c, %d : !llzk.array<2,3 x i1>
+  llzk.insertarr %a0[%0, %2] = %a3 : !llzk.array<2,3,2,3 x i1>, !llzk.array<2,3 x i1>
+
+  %b0 = llzk.new_array : !llzk.array<3,2,3 x i1>
+
+  %b1 = llzk.new_array %a, %b, %c, %d, %e, %f : !llzk.array<2,3 x i1>
+  llzk.insertarr %b0[%0] = %b1 : !llzk.array<3,2,3 x i1>, !llzk.array<2,3 x i1>
+  %b2 = llzk.new_array %c, %d, %e, %f, %a, %b : !llzk.array<2,3 x i1>
+  llzk.insertarr %b0[%1] = %b2 : !llzk.array<3,2,3 x i1>, !llzk.array<2,3 x i1>
+  %b3 = llzk.new_array %e, %f, %a, %b, %c, %d : !llzk.array<2,3 x i1>
+  llzk.insertarr %b0[%2] = %b3 : !llzk.array<3,2,3 x i1>, !llzk.array<2,3 x i1>
+  
+  llzk.insertarr %a0[%1] = %b0 : !llzk.array<2,3,2,3 x i1>, !llzk.array<3,2,3 x i1>
+
+  return
+}
+// CHECK-LABEL: llzk.func @more_dimensions(
+// CHECK-SAME:                             %[[V_0:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:                             %[[V_1:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:                             %[[V_2:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:                             %[[V_3:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:                             %[[V_4:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:                             %[[V_5:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:    %[[V_6:[0-9a-zA-Z_\.]+]] = new_array  : <2,3,2,3 x i1>
+// CHECK-NEXT:    %[[V_7:[0-9a-zA-Z_\.]+]] = index.constant 0
+// CHECK-NEXT:    %[[V_8:[0-9a-zA-Z_\.]+]] = index.constant 1
+// CHECK-NEXT:    %[[V_9:[0-9a-zA-Z_\.]+]] = index.constant 2
+// CHECK-NEXT:    %[[V_10:[0-9a-zA-Z_\.]+]] = new_array %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]] : <2,3 x i1>
+// CHECK-NEXT:    insertarr %[[V_6]]{{\[}}%[[V_7]], %[[V_7]]] = %[[V_10]] : <2,3,2,3 x i1>, <2,3 x i1>
+// CHECK-NEXT:    %[[V_11:[0-9a-zA-Z_\.]+]] = new_array %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]] : <2,3 x i1>
+// CHECK-NEXT:    insertarr %[[V_6]]{{\[}}%[[V_7]], %[[V_8]]] = %[[V_11]] : <2,3,2,3 x i1>, <2,3 x i1>
+// CHECK-NEXT:    %[[V_12:[0-9a-zA-Z_\.]+]] = new_array %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]] : <2,3 x i1>
+// CHECK-NEXT:    insertarr %[[V_6]]{{\[}}%[[V_7]], %[[V_9]]] = %[[V_12]] : <2,3,2,3 x i1>, <2,3 x i1>
+// CHECK-NEXT:    %[[V_13:[0-9a-zA-Z_\.]+]] = new_array  : <3,2,3 x i1>
+// CHECK-NEXT:    %[[V_14:[0-9a-zA-Z_\.]+]] = new_array %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]] : <2,3 x i1>
+// CHECK-NEXT:    insertarr %[[V_13]]{{\[}}%[[V_7]]] = %[[V_14]] : <3,2,3 x i1>, <2,3 x i1>
+// CHECK-NEXT:    %[[V_15:[0-9a-zA-Z_\.]+]] = new_array %[[V_2]], %[[V_3]], %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]] : <2,3 x i1>
+// CHECK-NEXT:    insertarr %[[V_13]]{{\[}}%[[V_8]]] = %[[V_15]] : <3,2,3 x i1>, <2,3 x i1>
+// CHECK-NEXT:    %[[V_16:[0-9a-zA-Z_\.]+]] = new_array %[[V_4]], %[[V_5]], %[[V_0]], %[[V_1]], %[[V_2]], %[[V_3]] : <2,3 x i1>
+// CHECK-NEXT:    insertarr %[[V_13]]{{\[}}%[[V_9]]] = %[[V_16]] : <3,2,3 x i1>, <2,3 x i1>
+// CHECK-NEXT:    insertarr %[[V_6]]{{\[}}%[[V_8]]] = %[[V_13]] : <2,3,2,3 x i1>, <3,2,3 x i1>
+// CHECK-NEXT:    return
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @UnificationInDims<[@A, @B]> {
+    func @compute(%a: !llzk.array<@A x i1>, %b: !llzk.array<@B x i1>) -> !llzk.struct<@UnificationInDims<[@A, @B]>> {
+      %self = new_struct : !llzk.struct<@UnificationInDims<[@A, @B]>>
+      %c = llzk.new_array : !llzk.array<2,3 x i1>
+      %0 = index.constant 0
+      llzk.insertarr %c[%0] = %a : !llzk.array<2,3 x i1>, !llzk.array<@A x i1>
+      %1 = index.constant 1
+      llzk.insertarr %c[%1] = %b : !llzk.array<2,3 x i1>, !llzk.array<@B x i1>
+      return %self : !llzk.struct<@UnificationInDims<[@A, @B]>>
+    }
+    func @constrain(%self: !llzk.struct<@UnificationInDims<[@A, @B]>>, %a: !llzk.array<@A x i1>, %b: !llzk.array<@B x i1>) { return }
+  }
+}
+// CHECK-LABEL: llzk.struct @UnificationInDims<[@A, @B]> {
+// CHECK-NEXT:    func @compute(
+// CHECK-SAME:                  %[[V_0:[0-9a-zA-Z_\.]+]]: !llzk.array<@A x i1>,
+// CHECK-SAME:                  %[[V_1:[0-9a-zA-Z_\.]+]]: !llzk.array<@B x i1>
+// CHECK-SAME:                  ) -> !llzk.struct<@UnificationInDims<[@A, @B]>> {
+// CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = new_struct : <@UnificationInDims<[@A, @B]>>
+// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = new_array  : <2,3 x i1>
+// CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = index.constant 0
+// CHECK-NEXT:      insertarr %[[V_3]]{{\[}}%[[V_4]]] = %[[V_0]] : <2,3 x i1>, <@A x i1>
+// CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = index.constant 1
+// CHECK-NEXT:      insertarr %[[V_3]]{{\[}}%[[V_5]]] = %[[V_1]] : <2,3 x i1>, <@B x i1>
+// CHECK-NEXT:      return %[[V_2]] : !llzk.struct<@UnificationInDims<[@A, @B]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(
+// CHECK-SAME:                    %[[V_6:[0-9a-zA-Z_\.]+]]: !llzk.struct<@UnificationInDims<[@A, @B]>>,
+// CHECK-SAME:                    %[[V_7:[0-9a-zA-Z_\.]+]]: !llzk.array<@A x i1>,
+// CHECK-SAME:                    %[[V_8:[0-9a-zA-Z_\.]+]]: !llzk.array<@B x i1>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @UnificationInTypes<[@A, @B]> {
+    func @compute(%a: !llzk.array<3 x !llzk.tvar<@A>>, %b: !llzk.array<3 x !llzk.tvar<@B>>) -> !llzk.struct<@UnificationInTypes<[@A, @B]>> {
+      %self = new_struct : !llzk.struct<@UnificationInTypes<[@A, @B]>>
+      %c = llzk.new_array : !llzk.array<2,3 x i1>
+      %0 = index.constant 0
+      llzk.insertarr %c[%0] = %a : !llzk.array<2,3 x i1>, !llzk.array<3 x !llzk.tvar<@A>>
+      %1 = index.constant 1
+      llzk.insertarr %c[%1] = %b : !llzk.array<2,3 x i1>, !llzk.array<3 x !llzk.tvar<@B>>
+      return %self : !llzk.struct<@UnificationInTypes<[@A, @B]>>
+    }
+    func @constrain(%self: !llzk.struct<@UnificationInTypes<[@A, @B]>>, %a: !llzk.array<3 x !llzk.tvar<@A>>, %b: !llzk.array<3 x !llzk.tvar<@B>>) { return }
+  }
+}
+// CHECK-LABEL: llzk.struct @UnificationInTypes<[@A, @B]> {
+// CHECK-NEXT:    func @compute(
+// CHECK-SAME:                  %[[V_0:[0-9a-zA-Z_\.]+]]: !llzk.array<3 x !llzk.tvar<@A>>,
+// CHECK-SAME:                  %[[V_1:[0-9a-zA-Z_\.]+]]: !llzk.array<3 x !llzk.tvar<@B>>
+// CHECK-SAME:                  ) -> !llzk.struct<@UnificationInTypes<[@A, @B]>> {
+// CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = new_struct : <@UnificationInTypes<[@A, @B]>>
+// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = new_array  : <2,3 x i1>
+// CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = index.constant 0
+// CHECK-NEXT:      insertarr %[[V_3]]{{\[}}%[[V_4]]] = %[[V_0]] : <2,3 x i1>, <3 x !llzk.tvar<@A>>
+// CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = index.constant 1
+// CHECK-NEXT:      insertarr %[[V_3]]{{\[}}%[[V_5]]] = %[[V_1]] : <2,3 x i1>, <3 x !llzk.tvar<@B>>
+// CHECK-NEXT:      return %[[V_2]] : !llzk.struct<@UnificationInTypes<[@A, @B]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(
+// CHECK-SAME:                    %[[V_6:[0-9a-zA-Z_\.]+]]: !llzk.struct<@UnificationInTypes<[@A, @B]>>,
+// CHECK-SAME:                    %[[V_7:[0-9a-zA-Z_\.]+]]: !llzk.array<3 x !llzk.tvar<@A>>,
+// CHECK-SAME:                    %[[V_8:[0-9a-zA-Z_\.]+]]: !llzk.array<3 x !llzk.tvar<@B>>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

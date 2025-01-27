@@ -1,0 +1,62 @@
+// RUN: llzk-opt %s -split-input-file -verify-diagnostics
+
+llzk.func @more_indices_than_source(%z: !llzk.array<2,2,2 x !llzk.string>) {
+  %r = llzk.new_array : !llzk.array<44,2 x !llzk.string>
+  %0 = index.constant 0
+  // expected-error@+1 {{'llzk.insertarr' op cannot select more dimensions than exist in the source array}}
+  llzk.insertarr %r[%0,%0,%0] = %z : !llzk.array<44,2 x !llzk.string>, !llzk.array<2,2,2 x !llzk.string>
+  return
+}
+// -----
+llzk.func @insufficient_indices_none(%0: !llzk.felt, %1: !llzk.felt, %z: !llzk.array<2 x !llzk.felt>) {
+  %r = llzk.new_array : !llzk.array<4,2 x !llzk.felt>
+  // expected-error@+1 {{'llzk.insertarr' op has insufficient indexed dimensions: expected 1 but found 0}}
+  llzk.insertarr %r[] = %z : !llzk.array<4,2 x !llzk.felt>, !llzk.array<2 x !llzk.felt>
+  return
+}
+// -----
+llzk.func @insufficient_indices(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i1) {
+  %a0 = llzk.new_array : !llzk.array<2,3,2,3 x i1>
+
+  %0 = index.constant 0
+
+  %a1 = llzk.new_array %a, %b, %c, %d, %e, %f : !llzk.array<2,3 x i1>
+  // expected-error@+1 {{'llzk.insertarr' op has insufficient indexed dimensions: expected 2 but found 1}}
+  llzk.insertarr %a0[%0] = %a1 : !llzk.array<2,3,2,3 x i1>, !llzk.array<2,3 x i1>
+  return
+}
+// -----
+llzk.func @excess_indices(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i1) {
+  %a0 = llzk.new_array : !llzk.array<2,3,2,3 x i1>
+
+  %0 = index.constant 0
+
+  %a1 = llzk.new_array %a, %b, %c, %d, %e, %f : !llzk.array<2,3 x i1>
+  // expected-error@+1 {{'llzk.insertarr' op has too many indexed dimensions: expected 2 but found 3}}
+  llzk.insertarr %a0[%0, %0, %0] = %a1 : !llzk.array<2,3,2,3 x i1>, !llzk.array<2,3 x i1>
+  return
+}
+// -----
+llzk.func @incorrect_elem_type(%z: !llzk.array<2 x index>) {
+  %r = llzk.new_array : !llzk.array<44,2 x !llzk.felt>
+  %0 = index.constant 0
+  // expected-error@+1 {{'llzk.insertarr' op incorrect array element type; expected: '!llzk.felt', found: 'index'}}
+  llzk.insertarr %r[%0] = %z : !llzk.array<44,2 x !llzk.felt>, !llzk.array<2 x index>
+  return
+}
+// -----
+llzk.func @dimensions_not_unify_A(%z: !llzk.array<5 x index>) {
+  %r = llzk.new_array : !llzk.array<44,2 x !llzk.felt>
+  %0 = index.constant 0
+  // expected-error@+1 {{'llzk.insertarr' op cannot unify array dimensions [2] with [5]}}
+  llzk.insertarr %r[%0] = %z : !llzk.array<44,2 x !llzk.felt>, !llzk.array<5 x index>
+  return
+}
+// -----
+llzk.func @dimensions_not_unify_B(%z: !llzk.array<affine_map<(i)[] -> (i)> x index>) {
+  %r = llzk.new_array : !llzk.array<44,2 x !llzk.felt>
+  %0 = index.constant 0
+  // expected-error@+1 {{'llzk.insertarr' op cannot unify array dimensions [2] with [affine_map<(d0) -> (d0)>]}}
+  llzk.insertarr %r[%0] = %z : !llzk.array<44,2 x !llzk.felt>, !llzk.array<affine_map<(i)->(i)> x index>
+  return
+}

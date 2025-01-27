@@ -481,6 +481,41 @@ def LLZK_ExtractArrayOp
   }];
 }
 
+def LLZK_InsertArrayOp
+    : LLZK_Op<"insertarr", [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+  let summary = "write subarray into a multi-dimensional array";
+  let description = [{
+    This operation takes an N-dimensional array, K indices, and an (N+K)-dimensional
+    array and inserts the N-dimensional array into the (N+K)-dimensional array at the
+    position specified by applying the given indices to the first `K` dimensions of
+    the (N+K)-dimensional array. Use `writearr` instead if `N == 0` (LLZK array type
+    must have at least 1 dimension so a 0-dimensional array cannot exist anyway).
+
+    Inserting 1-D arrays into a 2-D array:
+    ```llzk
+    %c = llzk.new_array : !llzk.array<2,3 x index>
+    // Array %c is uninitialized [[?, ?, ?], [?, ?, ?]]
+    %0 = index.constant 0
+    %a = llzk.new_array %r, %s, %t : !llzk.array<3 x index>
+    llzk.insertarr %c[%0] = %a : !llzk.array<2,3 x index>, !llzk.array<3 x index>
+    // Array %c is now [[%r, %s, %t], [?, ?, ?]]
+    %1 = index.constant 1
+    %b = llzk.new_array %x, %y, %z : !llzk.array<3 x index>
+    llzk.insertarr %c[%1] = %b : !llzk.array<2,3 x index>, !llzk.array<3 x index>
+    // Array %c is now [[%r, %s, %t], [%x, %y, %z]]
+    ```
+  }];
+
+  let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices,
+      LLZK_ArrayType:$rvalue);
+
+  let assemblyFormat = [{
+    $arr_ref `[` $indices `]` `=` $rvalue `:` type($arr_ref) `,` type($rvalue) attr-dict
+  }];
+
+  let hasVerifier = 1;
+}
+
 def LLZK_ArrayLengthOp
     : LLZK_Op<"array_len", [Pure,
                             DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {

@@ -86,22 +86,22 @@ bool paramAttrUnify(const Attribute &lhsAttr, const Attribute &rhsAttr) {
   }
   return false;
 }
+} // namespace
 
-bool paramsUnify(const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams) {
+bool typeParamsUnify(const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams) {
   return (lhsParams.size() == rhsParams.size()) &&
          std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), paramAttrUnify);
 }
 
 /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
 /// are equivalent or could be equivalent after full instantiation of struct parameters.
-bool paramsUnify(const ArrayAttr &lhsParams, const ArrayAttr &rhsParams) {
+bool typeParamsUnify(const ArrayAttr &lhsParams, const ArrayAttr &rhsParams) {
   if (lhsParams && rhsParams) {
-    return paramsUnify(lhsParams.getValue(), rhsParams.getValue());
+    return typeParamsUnify(lhsParams.getValue(), rhsParams.getValue());
   }
   // When one or the other is null, they're only equivalent if both are null
   return !lhsParams && !rhsParams;
 }
-} // namespace
 
 bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, ArrayRef<llvm::StringRef> rhsRevPrefix) {
   // Check if the element types of the two arrays can unify
@@ -109,7 +109,7 @@ bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, ArrayRef<llvm::StringRef> rhs
     return false;
   }
   // Check if the dimension size attributes unify between the LHS and RHS
-  return paramsUnify(lhs.getDimensionSizes(), rhs.getDimensionSizes());
+  return typeParamsUnify(lhs.getDimensionSizes(), rhs.getDimensionSizes());
 }
 
 bool structTypesUnify(StructType lhs, StructType rhs, ArrayRef<llvm::StringRef> rhsRevPrefix) {
@@ -120,7 +120,7 @@ bool structTypesUnify(StructType lhs, StructType rhs, ArrayRef<llvm::StringRef> 
     return false;
   }
   // Check if the parameters unify between the LHS and RHS
-  return paramsUnify(lhs.getParams(), rhs.getParams());
+  return typeParamsUnify(lhs.getParams(), rhs.getParams());
 }
 
 bool typesUnify(Type lhs, Type rhs, ArrayRef<llvm::StringRef> rhsRevPrefix) {

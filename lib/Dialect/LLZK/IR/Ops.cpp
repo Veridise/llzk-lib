@@ -528,7 +528,7 @@ ParseResult CreateArrayOp::parseInferredArrayType(
   if (elements.size() > 0) {
     elementsTypes.append(resultTypeToElementsTypes(resultType));
   }
-  return ParseResult::success();
+  return success();
 }
 
 void CreateArrayOp::printInferredArrayType(
@@ -589,11 +589,11 @@ LogicalResult ExtractArrayOp::inferReturnTypes(
   size_t numToSkip = adaptor.getIndices().size();
   Type arrRefType = adaptor.getArrRef().getType();
   assert(llvm::isa<ArrayType>(arrRefType)); // per ODS spec of ExtractArrayOp
-  ArrayType arrayType = llvm::cast<ArrayType>(arrRefType);
-  ArrayRef<Attribute> dimSizes = arrayType.getDimensionSizes();
+  ArrayType arrRefArrType = llvm::cast<ArrayType>(arrRefType);
+  ArrayRef<Attribute> arrRefDimSizes = arrRefArrType.getDimensionSizes();
 
   // Check for invalid cases
-  auto compare = numToSkip <=> dimSizes.size();
+  auto compare = numToSkip <=> arrRefDimSizes.size();
   if (compare == 0) {
     return mlir::emitOptionalError(
         location, "'", ExtractArrayOp::getOperationName(),
@@ -610,12 +610,74 @@ LogicalResult ExtractArrayOp::inferReturnTypes(
   // Generate and store reduced array type
   inferredReturnTypes.resize(1);
   inferredReturnTypes[0] =
-      ArrayType::get(arrayType.getElementType(), dimSizes.drop_front(numToSkip));
+      ArrayType::get(arrRefArrType.getElementType(), arrRefDimSizes.drop_front(numToSkip));
   return success();
 }
 
 bool ExtractArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
   return singletonTypeListsUnify(l, r);
+}
+
+//===------------------------------------------------------------------===//
+// InsertArrayOp
+//===------------------------------------------------------------------===//
+
+LogicalResult InsertArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure any SymbolRef used in the types are valid
+  return verifyTypeResolution(
+      tables, *this, ArrayRef<Type> {getArrRef().getType(), getRvalue().getType()}
+  );
+}
+
+LogicalResult InsertArrayOp::verify() {
+  size_t numIndices = getIndices().size();
+
+  Type baseArrRefType = getArrRef().getType();
+  assert(llvm::isa<ArrayType>(baseArrRefType)); // per ODS spec of InsertArrayOp
+  ArrayType baseArrRefArrType = llvm::cast<ArrayType>(baseArrRefType);
+
+  Type rValueType = getRvalue().getType();
+  assert(llvm::isa<ArrayType>(rValueType)); // per ODS spec of InsertArrayOp
+  ArrayType rValueArrType = llvm::cast<ArrayType>(rValueType);
+
+  ArrayRef<Attribute> dimsFromBase = baseArrRefArrType.getDimensionSizes();
+  // Ensure the number of indices specified does not exceed base dimension count.
+  if (numIndices > dimsFromBase.size()) {
+    return emitOpError("cannot select more dimensions than exist in the source array");
+  }
+
+  ArrayRef<Attribute> dimsFromRValue = rValueArrType.getDimensionSizes();
+  ArrayRef<Attribute> dimsFromBaseReduced = dimsFromBase.drop_front(numIndices);
+  // Ensure the rValue dimension count equals the base reduced dimension count
+  auto compare = dimsFromRValue.size() <=> dimsFromBaseReduced.size();
+  if (compare != 0) {
+    return emitOpError().append(
+        "has ", (compare < 0 ? "insufficient" : "too many"), " indexed dimensions: expected ",
+        (dimsFromBase.size() - dimsFromRValue.size()), " but found ", numIndices
+    );
+  }
+
+  // Ensure dimension sizes are compatible (ignoring the indexed dimensions)
+  if (!typeParamsUnify(dimsFromBaseReduced, dimsFromRValue)) {
+    std::string message;
+    llvm::raw_string_ostream ss(message);
+    ss << "cannot unify array dimensions [";
+    llvm::interleaveComma(dimsFromBaseReduced, ss, [&ss](Attribute a) { a.print(ss, true); });
+    ss << "] with [";
+    llvm::interleaveComma(dimsFromRValue, ss, [&ss](Attribute a) { a.print(ss, true); });
+    ss << "]";
+    return emitOpError().append(message);
+  }
+
+  // Ensure element types of the arrays are compatible
+  if (!typesUnify(baseArrRefArrType.getElementType(), rValueArrType.getElementType())) {
+    return emitOpError().append(
+        "incorrect array element type; expected: ", baseArrRefArrType.getElementType(),
+        ", found: ", rValueArrType.getElementType()
+    );
+  }
+
+  return success();
 }
 
 //===------------------------------------------------------------------===//

@@ -63,6 +63,17 @@ checkValidType(llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::T
 /// Return `true` iff the given type is a StructType referencing the `COMPONENT_NAME_SIGNAL` struct.
 bool isSignalType(mlir::Type type);
 
+/// Return `true` iff the two ArrayRef instances containing StructType or ArrayType parameters
+/// are equivalent or could be equivalent after full instantiation of struct parameters.
+bool typeParamsUnify(
+    const mlir::ArrayRef<mlir::Attribute> &lhsParams,
+    const mlir::ArrayRef<mlir::Attribute> &rhsParams
+);
+
+/// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
+/// are equivalent or could be equivalent after full instantiation of struct parameters.
+bool typeParamsUnify(const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams);
+
 /// Return `true` iff the two ArrayType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
 bool arrayTypesUnify(
