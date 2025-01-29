@@ -323,7 +323,8 @@ protected:
   virtual LogicalResult verifyOutputs() = 0;
   virtual LogicalResult verifyStructTarget() = 0;
 
-  LogicalResult verifyStructTarget(StringRef tgtName) {
+  /// Ensure compute/constrain functions are only called by a like-named function.
+  LogicalResult verifyStructTargetMatch(StringRef tgtName) {
     if (tgtName.compare(FUNC_NAME_COMPUTE) == 0) {
       return verifyInStructFunctionNamed<FUNC_NAME_COMPUTE, 32>(*callOp, [] {
         return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_COMPUTE, "\" "});
@@ -343,47 +344,41 @@ struct KnownTargetVerifier : public CallOpVerifier {
         includeSymNames(tgtRes.getIncludeSymNames()) {}
 
   LogicalResult verifyInputs() override {
-    if (tgtType.getNumInputs() != callOp->getNumOperands()) {
-      return callOp->emitOpError()
-          .append("incorrect number of operands for callee, expected ", tgtType.getNumInputs())
-          .attachNote(tgt.getLoc())
-          .append("callee defined here");
-    }
-    for (unsigned i = 0, e = tgtType.getNumInputs(); i != e; ++i) {
-      if (!typesUnify(callOp->getOperand(i).getType(), tgtType.getInput(i), includeSymNames)) {
-        return callOp->emitOpError("operand type mismatch: expected type ")
-               << tgtType.getInput(i) << ", but found " << callOp->getOperand(i).getType()
-               << " for operand number " << i;
-      }
-    }
-    return success();
+    return verifyTypesMatch(callOp->getArgOperands().getTypes(), tgtType.getInputs(), "operand");
   }
 
   LogicalResult verifyOutputs() override {
-    if (tgtType.getNumResults() != callOp->getNumResults()) {
-      return callOp->emitOpError()
-          .append("incorrect number of results for callee, expected ", tgtType.getNumResults())
-          .attachNote(tgt.getLoc())
-          .append("callee defined here");
-    }
-    for (unsigned i = 0, e = tgtType.getNumResults(); i != e; ++i) {
-      if (!typesUnify(callOp->getResult(i).getType(), tgtType.getResult(i), includeSymNames)) {
-        return callOp->emitOpError("result type mismatch: expected type ")
-               << tgtType.getResult(i) << ", but found " << callOp->getResult(i).getType()
-               << " for result number " << i;
-      }
-    }
-    return success();
+    return verifyTypesMatch(callOp->getResultTypes(), tgtType.getResults(), "result");
   }
 
   LogicalResult verifyStructTarget() override {
     if (isInStruct(tgt.getOperation())) {
-      return CallOpVerifier::verifyStructTarget(tgt.getSymName());
+      return CallOpVerifier::verifyStructTargetMatch(tgt.getSymName());
     }
     return success();
   }
 
 private:
+  template <typename T>
+  LogicalResult
+  verifyTypesMatch(ValueTypeRange<T> callOpTypes, ArrayRef<Type> tgtTypes, const char *aspect) {
+    if (tgtTypes.size() != callOpTypes.size()) {
+      return callOp->emitOpError()
+          .append("incorrect number of ", aspect, "s for callee, expected ", tgtTypes.size())
+          .attachNote(tgt.getLoc())
+          .append("callee defined here");
+    }
+    for (unsigned i = 0, e = tgtTypes.size(); i != e; ++i) {
+      if (!typesUnify(callOpTypes[i], tgtTypes[i], includeSymNames)) {
+        return callOp->emitOpError().append(
+            aspect, " type mismatch: expected type ", tgtTypes[i], ", but found ", callOpTypes[i],
+            " for ", aspect, " number ", i
+        );
+      }
+    }
+    return success();
+  }
+
   FuncOp tgt;
   FunctionType tgtType;
   std::vector<llvm::StringRef> includeSymNames;
@@ -396,7 +391,7 @@ struct UnknownTargetVerifier : public CallOpVerifier {
   LogicalResult verifyInputs() override { return success(); }
   LogicalResult verifyOutputs() override { return success(); }
   LogicalResult verifyStructTarget() override {
-    return CallOpVerifier::verifyStructTarget(calleeAttr.getLeafReference().getValue());
+    return CallOpVerifier::verifyStructTargetMatch(calleeAttr.getLeafReference().getValue());
   }
 
 private:
@@ -437,13 +432,8 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 FunctionType CallOp::getCalleeType() {
-  return FunctionType::get(getContext(), getOperandTypes(), getResultTypes());
+  return FunctionType::get(getContext(), getArgOperands().getTypes(), getResultTypes());
 }
-
-/// Get the argument operands to the called function.
-CallOp::operand_range CallOp::getArgOperands() { return {arg_operand_begin(), arg_operand_end()}; }
-
-MutableOperandRange CallOp::getArgOperandsMutable() { return getOperandsMutable(); }
 
 /// Return the callee of this operation.
 CallInterfaceCallable CallOp::getCallableForCallee() { return getCalleeAttr(); }

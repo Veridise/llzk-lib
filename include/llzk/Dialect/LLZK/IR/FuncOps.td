@@ -194,7 +194,7 @@ def ReturnOp
 //===----------------------------------------------------------------------===//
 
 def CallOp
-    : LLZK_Op<"call", [MemRefsNormalizable,
+    : LLZK_Op<"call", [MemRefsNormalizable, AttrSizedOperandSegments,
                        DeclareOpInterfaceMethods<CallOpInterface>,
                        DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "call operation";
@@ -206,7 +206,6 @@ def CallOp
     containing the [llzk::LANG_ATTR_NAME] attribute).
 
     Example:
-
     ```llzk
     // Call a global function defined in the root module.
     llzk.call @do_stuff(%0) : (!llzk.struct<@Bob>) -> ()
@@ -216,49 +215,56 @@ def CallOp
     %2 = llzk.call @OtherStruct::@compute(%3, %4) : (index, index) -> !llzk.struct<@OtherStruct>
     llzk.call @OtherStruct::@constrain(%5, %6) : (!llzk.struct<@OtherStruct>, !llzk.felt) -> ()
     ```
+
+    Examples:
+    ```llzk
+    #M = affine_map<(i)[] -> (5*i+1)>
+    %r = llzk.call @A::@compute(%x){(%i)} : (!llzk.felt) -> !llzk.struct<@A<[#M]>>
+    ```
   }];
 
-  let arguments = (ins SymbolRefAttr:$callee, Variadic<AnyLLZKType>:$operands);
+  let arguments = (ins SymbolRefAttr:$callee,
+      Variadic<AnyLLZKType>:$argOperands,
+      DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
+      VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands,
+      DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs Variadic<AnyLLZKType>);
 
-  let builders = [OpBuilder<(ins "::llzk::FuncOp":$callee,
-                                CArg<"::mlir::ValueRange", "{}">:$operands),
-                            [{
-                              $_state.addOperands(operands);
-                              $_state.addAttribute("callee", ::mlir::SymbolRefAttr::get(callee));
-                              $_state.addTypes(callee.getFunctionType().getResults());
-                            }]>,
-                  OpBuilder<(ins "::mlir::SymbolRefAttr":$callee,
+  let builders = [OpBuilder<(ins "::mlir::SymbolRefAttr":$callee,
                                 "::mlir::TypeRange":$results,
-                                CArg<"::mlir::ValueRange", "{}">:$operands),
+                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
                             [{
-                              $_state.addOperands(operands);
+                              $_state.addOperands(argOperands);
                               $_state.addAttribute("callee", callee);
                               $_state.addTypes(results);
                             }]>,
+                  OpBuilder<(ins "::llzk::FuncOp":$callee,
+                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                            [{
+                              build($_builder, $_state, ::mlir::SymbolRefAttr::get(callee),
+                                    callee.getFunctionType().getResults(), argOperands);
+                            }]>,
                   OpBuilder<(ins "::mlir::StringAttr":$callee,
                                 "::mlir::TypeRange":$results,
-                                CArg<"::mlir::ValueRange", "{}">:$operands),
+                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
                             [{
-                              build($_builder, $_state, ::mlir::SymbolRefAttr::get(callee), results, operands);
+                              build($_builder, $_state, ::mlir::SymbolRefAttr::get(callee), results, argOperands);
                             }]>,
                   OpBuilder<(ins "::llvm::StringRef":$callee,
                                 "::mlir::TypeRange":$results,
-                                CArg<"::mlir::ValueRange", "{}">:$operands),
+                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
                             [{
-                              build($_builder, $_state, ::mlir::StringAttr::get($_builder.getContext(), callee),
-                                    results, operands);
+                              build($_builder, $_state, $_builder.getStringAttr(callee), results, argOperands);
                             }]>];
 
   let extraClassDeclaration = [{
     ::mlir::FunctionType getCalleeType();
-
-    operand_iterator arg_operand_begin() { return operand_begin(); }
-    operand_iterator arg_operand_end() { return operand_end(); }
   }];
 
   let assemblyFormat = [{
-    $callee `(` $operands `)` attr-dict `:` functional-type($operands, results)
+    $callee `(` $argOperands `)`
+    ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` )?
+    attr-dict `:` functional-type($argOperands, results)
   }];
 }
 
