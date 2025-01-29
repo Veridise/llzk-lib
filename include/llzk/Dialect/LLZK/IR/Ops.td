@@ -306,7 +306,8 @@ def LLZK_CreateStructOp
 def LLZK_CreateArrayOp
     : LLZK_Op<
           "new_array",
-          [Pure, DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+          [Pure, AttrSizedOperandSegments,
+           DeclareOpInterfaceMethods<SymbolUserOpInterface>,
            DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
            VariadicTypesMatchWith<
                "operand types match result type", "result", "elements",
@@ -318,7 +319,6 @@ def LLZK_CreateArrayOp
     according the shape declared in the type.
 
     Examples:
-
     ```llzk
     %0 = llzk.new_array %a, %b, %c : !llzk.array<3 x !llzk.felt>
 
@@ -349,16 +349,58 @@ def LLZK_CreateArrayOp
     Also note that `std::equal_to` is used in the `VariadicTypesMatchWith`
     trait on this Op so that the verifier function mirrors the aforementioned
     restriction in the parser.
+
+
+    In some cases, the length of an uninitialized array depends on the value
+    of the loop induction variable (i.e. each iteration creates an array with
+    a different size/shape). In that case, an AffineMapAttr can be used to
+    specify the dimension size in the ArrayType and the optional instantiation
+    parameter list of this operation must be used to instatiate all AffineMap
+    used in the array dimensions.
+
+    Examples:
+    ```llzk
+    // Create an uninitialized array with dimension size defined by AffineMap
+    #IdxToLen = affine_map<(i) -> (5*i+1)>
+    %3 = llzk.new_array {(%i)} : !llzk.array<#IdxToLen x index>
+
+    // Create an uninitialized array with multiple dimensions defined by
+    //  AffineMap. The list of instantiation parameters are assigned to
+    //  the AffineMap dimensions left-to-right.
+    #M1 = affine_map<(i)[c] -> (c+i)>
+    #M3 = affine_map<(m,n) -> (5*m+n)>
+    %4 = llzk.new_array{(%i)[%c], (%m,%n)} : !llzk.array<#M1,2,#M3 x i1>
+    ```
   }];
 
-  let arguments = (ins Variadic<ArrayElemType>:$elements);
+  let arguments = (ins Variadic<ArrayElemType>:$elements,
+      VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands,
+      DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
+      DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs LLZK_ArrayType:$result);
+
+  let skipDefaultBuilders = 1;
+  let builders = [OpBuilder<(ins "::mlir::Type":$result,
+                      CArg<"::mlir::ValueRange", "{}">:$elements)>,
+                  OpBuilder<(ins "::mlir::Type":$result,
+                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
+                      "::mlir::DenseI32ArrayAttr":$numDimsPerMap)>,
+                  OpBuilder<
+                      (ins "::mlir::Type":$result,
+                          "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
+                          "::llvm::ArrayRef<int32_t>":$numDimsPerMap),
+                      [{
+                        build($_builder, $_state, result, mapOperands, odsBuilder.getDenseI32ArrayAttr(numDimsPerMap));
+                      }]>];
 
   // This uses the custom parseInferredArrayType function to compute the type
   //  of '$elements' to match the type of '$result', except when '$elements'
   //  is empty, then the type of '$elements' must also be empty (size == 0).
+  // The if-then-else has '$elements' second so that an empty '$elements' list
+  //  can be parsed when neither of these is specified.
   let assemblyFormat = [{
-        $elements `:` type($result)
+        ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` ) : ( $elements )?
+        `:` type($result)
         `` custom<InferredArrayType>(type($elements), ref($elements), ref(type($result)))
         attr-dict
       }];
@@ -375,6 +417,8 @@ def LLZK_CreateArrayOp
   private:
     static ::llvm::SmallVector<::mlir::Type> resultTypeToElementsTypes(::mlir::Type resultType);
   }];
+
+  let hasVerifier = 1;
 }
 
 def LLZK_ReadArrayOp

@@ -57,3 +57,97 @@ llzk.func @multi_array_too_many_values(%a: index, %b: index) -> !llzk.array<2,2 
   return %r: !llzk.array<2,2 x index>
 }
 // -----
+llzk.func @missing_instantiations() {
+  // expected-error@+1 {{'llzk.new_array' op map instantiation count (0) does not match the number of affine map dimensions (1) specified in the result type}}
+  %r = llzk.new_array : !llzk.array<affine_map<(i) -> (i)> x index>
+  return
+}
+// -----
+llzk.func @empty_instantiations() {
+  // expected-error@+1 {{expected '(' in operand list}}
+  %r = llzk.new_array { } : !llzk.array<affine_map<(i) -> (i)> x index>
+  return
+}
+// -----
+!at = !llzk.array<affine_map<(i)[k] -> (5*i+k)>, affine_map<()[c] -> (c)>, affine_map<(j) -> (j+2)> x index>
+llzk.func @too_few_instantiations() -> !at {
+  %a = index.constant 2
+  %b = index.constant 4
+  %c = index.constant 6
+  // expected-error@+1 {{'llzk.new_array' op map instantiation count (2) does not match the number of affine map dimensions (3) specified in the result type}}
+  %r = llzk.new_array { (%a)[%b], ()[%c] } : !at // { operandSegmentSizes = array<i32: 0, 3> }
+  return %r: !at
+}
+// -----
+!at = !llzk.array<affine_map<(i)[k] -> (5*i+k)> x index>
+llzk.func @too_many_instantiations() -> !at {
+  %a = index.constant 2
+  %b = index.constant 4
+  %c = index.constant 6
+  // expected-error@+1 {{'llzk.new_array' op map instantiation count (2) does not match the number of affine map dimensions (1) specified in the result type}}
+  %r = llzk.new_array { (%a)[%b], ()[%c] } : !at // { operandSegmentSizes = array<i32: 0, 3> }
+  return %r: !at
+}
+// -----
+llzk.func @too_few_dimensions() {
+  %c = index.constant 6
+  // expected-error@+1 {{'llzk.new_array' op instantiation of map 0 expected 1 but found 0 dimension values in ()}}
+  %r = llzk.new_array { ()[%c] } : !llzk.array<affine_map<(i)[k] -> (5*i+k)> x index>
+  return
+}
+// -----
+llzk.func @too_many_dimensions() {
+  %a = index.constant 2
+  %b = index.constant 4
+  %c = index.constant 6
+  // expected-error@+1 {{'llzk.new_array' op instantiation of map 0 expected 1 but found 2 dimension values in ()}}
+  %r = llzk.new_array { (%a, %b)[%c] } : !llzk.array<affine_map<(i)[k] -> (5*i+k)> x index>
+  return
+}
+// -----
+llzk.func @too_few_symbols() {
+  %a = index.constant 2
+  // expected-error@+1 {{'llzk.new_array' op instantiation of map 0 expected 1 but found 0 symbol values in []}}
+  %r = llzk.new_array { (%a)[] } : !llzk.array<affine_map<(i)[k] -> (5*i+k)> x index>
+  return
+}
+// -----
+llzk.func @too_many_symbols() {
+  %a = index.constant 2
+  %b = index.constant 4
+  %c = index.constant 6
+  // expected-error@+1 {{'llzk.new_array' op instantiation of map 0 expected 1 but found 2 symbol values in []}}
+  %r = llzk.new_array { (%a)[%b, %c] } : !llzk.array<affine_map<(i)[k] -> (5*i+k)> x index>
+  return
+}
+// -----
+!at = !llzk.array<affine_map<(i)[k] -> (5*i+k)>, affine_map<()[c] -> (c)>, affine_map<(j) -> (j+2)> x !llzk.felt>
+llzk.func @segment_size_attr_is_incorrect() -> !at {
+  %a = index.constant 2
+  %b = index.constant 4
+  %c = index.constant 6
+  %d = index.constant 1
+  // The `operandSegmentSizes` attribute lists the sizes [ elements.size, mapOperands.size, ... ]
+  //  but doesn't have to be specified explicitly. But if given, it must be correct.
+  // expected-error@+1 {{'llzk.new_array' op operand count (4) does not match with the total size (5) specified in attribute 'operandSegmentSizes'}}
+  %r = llzk.new_array { (%a)[%b], ()[%c], (%d) } : !at  { operandSegmentSizes = array<i32: 1, 4> }
+  return %r: !at
+}
+// -----
+!at = !llzk.array<affine_map<(i)->(i)> x index>
+llzk.func @cannot_have_elements_after_affine_map_instantiation() -> !at {
+  %a = index.constant 2
+  %b = index.constant 4
+  // expected-error@+1 {{expected ':'}}
+  %r = llzk.new_array { (%a) } %b : !at
+  return %r: !at
+}
+// -----
+!at = !llzk.array<affine_map<(i)->(i)> x index>
+llzk.func @cannot_have_elements_before_affine_map_instantiation() -> !at {
+  %a = index.constant 2
+  %b = index.constant 4
+  // expected-error@+1 {{expected ':'}}
+  %r = llzk.new_array %b { (%a) }: !at
+  return %r: !at
+}

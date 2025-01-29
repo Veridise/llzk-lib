@@ -22,6 +22,7 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 
+#include <numeric>
 #include <optional>
 
 // Types that must come before the "Ops.h.inc" import
@@ -122,9 +123,10 @@ inline OpType delegate_to_build(mlir::Location location, Args &&...args) {
 }
 
 /// Parses dimension and symbol list for an AffineMap instantiation.
+template <unsigned N>
 mlir::ParseResult parseDimAndSymbolList(
     mlir::OpAsmParser &parser,
-    mlir::SmallVector<mlir::OpAsmParser::UnresolvedOperand, 4> &mapOperands,
+    mlir::SmallVector<mlir::OpAsmParser::UnresolvedOperand, N> &mapOperands,
     mlir::IntegerAttr &numDims
 );
 
@@ -132,6 +134,19 @@ mlir::ParseResult parseDimAndSymbolList(
 void printDimAndSymbolList(
     mlir::OpAsmPrinter &printer, mlir::Operation *op, mlir::OperandRange mapOperands,
     mlir::IntegerAttr numDims
+);
+
+/// Parses comma-separated list of multiple AffineMap instantiations.
+mlir::ParseResult parseMultiDimAndSymbolList(
+    mlir::OpAsmParser &parser,
+    mlir::SmallVector<mlir::SmallVector<mlir::OpAsmParser::UnresolvedOperand>> &multiMapOperands,
+    mlir::DenseI32ArrayAttr &numDimsPerMap
+);
+
+/// Prints comma-separated list of multiple AffineMap instantiations.
+void printMultiDimAndSymbolList(
+    mlir::OpAsmPrinter &printer, mlir::Operation *op, mlir::OperandRangeRange multiMapOperands,
+    mlir::DenseI32ArrayAttr numDimsPerMap
 );
 } // namespace llzk
 
@@ -151,6 +166,11 @@ genCompareErr(StructDefOp &expected, mlir::Operation *origin, const char *aspect
 mlir::LogicalResult checkSelfType(
     mlir::SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, mlir::Type actualType,
     mlir::Operation *origin, const char *aspect
+);
+
+mlir::LogicalResult verifyAffineMapInstantiations(
+    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::OperandRangeRange mapOps,
+    mlir::ArrayRef<int32_t> numDimsPerMap, mlir::ArrayRef<mlir::AffineMapAttr> mapAttrs
 );
 
 } // namespace llzk

@@ -52,6 +52,43 @@ template <typename ConcreteType> LogicalResult InStruct<ConcreteType>::verifyTra
   return verifyInStruct(op);
 }
 
+LogicalResult verifyAffineMapInstantiations(
+    llvm::function_ref<InFlightDiagnostic()> emitError, OperandRangeRange mapOps,
+    ArrayRef<int32_t> numDimsPerMap, ArrayRef<AffineMapAttr> mapAttrs
+) {
+  size_t count = numDimsPerMap.size();
+  assert(count == mapOps.size()); // per construction in parseMultiDimAndSymbolList()
+
+  // Ensure there is one OperandRange for each AffineMapAttr
+  if (mapAttrs.size() != count) {
+    return emitError().append(
+        "map instantiation count (", count,
+        ") does not match the number of affine map dimensions (", mapAttrs.size(),
+        ") specified in the result type"
+    );
+  }
+
+  // Ensure the affine map identifier counts match the instantiation.
+  // Rather than immediately returning on failure, we check all dimensions and aggregate to provide
+  // as many errors are possible in a single verifier run.
+  LogicalResult aggregateResult = success();
+  for (size_t i = 0; i < count; ++i) {
+    AffineMap map = mapAttrs[i].getAffineMap();
+    if (std::cmp_not_equal(map.getNumDims(), numDimsPerMap[i])) {
+      aggregateResult = emitError().append(
+          "instantiation of map ", i, " expected ", map.getNumDims(), " but found ",
+          numDimsPerMap[i], " dimension values in ()"
+      );
+    } else if (std::cmp_not_equal(map.getNumInputs(), mapOps[i].size())) {
+      aggregateResult = emitError().append(
+          "instantiation of map ", i, " expected ", map.getNumSymbols(), " but found ",
+          (mapOps[i].size() - numDimsPerMap[i]), " symbol values in []"
+      );
+    }
+  }
+  return aggregateResult;
+}
+
 //===------------------------------------------------------------------===//
 // IncludeOp (see IncludeHelper.cpp for other functions)
 //===------------------------------------------------------------------===//
@@ -117,29 +154,78 @@ LogicalResult checkSelfType(
   return success();
 }
 
-ParseResult parseDimAndSymbolList(
-    OpAsmParser &parser, SmallVector<OpAsmParser::UnresolvedOperand, 4> &mapOperands,
-    IntegerAttr &numDims
+namespace {
+template <unsigned N>
+ParseResult parseDimAndSymbolListImpl(
+    OpAsmParser &parser, SmallVector<OpAsmParser::UnresolvedOperand, N> &mapOperands,
+    int32_t &numDims
 ) {
   // Parse the required dimension operands.
   if (parser.parseOperandList(mapOperands, OpAsmParser::Delimiter::Paren)) {
     return failure();
   }
   // Store number of dimensions for validation by caller.
-  numDims = parser.getBuilder().getIndexAttr(mapOperands.size());
+  numDims = mapOperands.size();
 
   // Parse the optional symbol operands.
   return parser.parseOperandList(mapOperands, OpAsmParser::Delimiter::OptionalSquare);
 }
 
+void printDimAndSymbolListImpl(
+    OpAsmPrinter &printer, Operation *op, OperandRange mapOperands, size_t numDims
+) {
+  printer << '(' << mapOperands.take_front(numDims) << ')';
+  if (mapOperands.size() > numDims) {
+    printer << '[' << mapOperands.drop_front(numDims) << ']';
+  }
+}
+} // namespace
+
+template <unsigned N>
+ParseResult parseDimAndSymbolList(
+    OpAsmParser &parser, SmallVector<OpAsmParser::UnresolvedOperand, N> &mapOperands,
+    IntegerAttr &numDims
+) {
+  int32_t numDimsRes;
+  ParseResult res = parseDimAndSymbolListImpl(parser, mapOperands, numDimsRes);
+  numDims = parser.getBuilder().getIndexAttr(numDimsRes);
+  return res;
+}
+
 void printDimAndSymbolList(
     OpAsmPrinter &printer, Operation *op, OperandRange mapOperands, IntegerAttr numDims
 ) {
-  size_t dims = numDims.getInt();
-  printer << '(' << mapOperands.take_front(dims) << ')';
-  if (mapOperands.size() > dims) {
-    printer << '[' << mapOperands.drop_front(dims) << ']';
-  }
+  printDimAndSymbolListImpl(printer, op, mapOperands, numDims.getInt());
+}
+
+ParseResult parseMultiDimAndSymbolList(
+    OpAsmParser &parser, SmallVector<SmallVector<OpAsmParser::UnresolvedOperand>> &multiMapOperands,
+    DenseI32ArrayAttr &numDimsPerMap
+) {
+  SmallVector<int32_t> numDimsPerMapRes;
+  auto parseEach = [&]() -> ParseResult {
+    SmallVector<OpAsmParser::UnresolvedOperand> nextMapOps;
+    int32_t nextMapDims;
+    ParseResult res = parseDimAndSymbolListImpl(parser, nextMapOps, nextMapDims);
+    numDimsPerMapRes.push_back(nextMapDims);
+    multiMapOperands.push_back(nextMapOps);
+    return res;
+  };
+  ParseResult res = parser.parseCommaSeparatedList(AsmParser::Delimiter::None, parseEach);
+
+  numDimsPerMap = parser.getBuilder().getDenseI32ArrayAttr(numDimsPerMapRes);
+  return res;
+}
+
+void printMultiDimAndSymbolList(
+    OpAsmPrinter &printer, Operation *op, OperandRangeRange multiMapOperands,
+    DenseI32ArrayAttr numDimsPerMap
+) {
+  size_t count = numDimsPerMap.size();
+  assert(multiMapOperands.size() == count);
+  llvm::interleaveComma(llvm::seq<size_t>(0, count), printer.getStream(), [&](size_t i) {
+    printDimAndSymbolListImpl(printer, op, multiMapOperands[i], numDimsPerMap[i]);
+  });
 }
 
 //===------------------------------------------------------------------===//
@@ -528,6 +614,39 @@ void FeltNonDetOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
 // CreateArrayOp
 //===------------------------------------------------------------------===//
 
+void CreateArrayOp::build(
+    OpBuilder &odsBuilder, OperationState &odsState, Type result, ValueRange elements
+) {
+  odsState.addTypes(result);
+  odsState.addOperands(elements);
+  odsState.getOrAddProperties<Properties>().operandSegmentSizes = {
+      static_cast<int32_t>(elements.size()), 0
+  };
+}
+
+void CreateArrayOp::build(
+    OpBuilder &odsBuilder, OperationState &odsState, Type result, ArrayRef<ValueRange> mapOperands,
+    DenseI32ArrayAttr numDimsPerMap
+) {
+  odsState.addTypes(result);
+
+  int32_t mapOpsSegmentSize = 0;
+  SmallVector<int32_t> rangeSegments;
+  for (ValueRange r : mapOperands) {
+    odsState.addOperands(r);
+    int32_t s = static_cast<int32_t>(r.size());
+    rangeSegments.push_back(s);
+    mapOpsSegmentSize += s;
+  }
+  odsState.getOrAddProperties<Properties>().mapOpGroupSizes =
+      odsBuilder.getDenseI32ArrayAttr(rangeSegments);
+  odsState.getOrAddProperties<Properties>().operandSegmentSizes = {0, mapOpsSegmentSize};
+
+  if (numDimsPerMap) {
+    odsState.getOrAddProperties<Properties>().numDimsPerMap = numDimsPerMap;
+  }
+}
+
 LogicalResult CreateArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(tables, *this, llvm::cast<Type>(getType()));
@@ -560,6 +679,26 @@ void CreateArrayOp::printInferredArrayType(
     AsmPrinter &printer, CreateArrayOp, OperandRange::type_range, OperandRange, Type
 ) {
   // nothing to print, it's derived and therefore not represented in the output
+}
+
+LogicalResult CreateArrayOp::verify() {
+  Type retTy = getResult().getType();
+  assert(llvm::isa<ArrayType>(retTy)); // per ODS spec of CreateArrayOp
+
+  // Collect the array dimensions that are defined by AffineMapAttr
+  SmallVector<AffineMapAttr> mapAttrs;
+  for (Attribute a : llvm::cast<ArrayType>(retTy).getDimensionSizes()) {
+    if (AffineMapAttr m = dyn_cast<AffineMapAttr>(a)) {
+      mapAttrs.push_back(m);
+    }
+  }
+
+  auto emitErrorFunc = [op = this->getOperation()]() -> InFlightDiagnostic {
+    return op->emitOpError();
+  };
+  return verifyAffineMapInstantiations(
+      emitErrorFunc, getMapOperands(), getNumDimsPerMap(), mapAttrs
+  );
 }
 
 //===------------------------------------------------------------------===//
