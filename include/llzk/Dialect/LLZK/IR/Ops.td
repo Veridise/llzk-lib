@@ -306,7 +306,7 @@ def LLZK_CreateStructOp
 def LLZK_CreateArrayOp
     : LLZK_Op<
           "new_array",
-          [Pure, AttrSizedOperandSegments,
+          [Pure, AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
            DeclareOpInterfaceMethods<SymbolUserOpInterface>,
            DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
            VariadicTypesMatchWith<
@@ -402,7 +402,7 @@ def LLZK_CreateArrayOp
         ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` ) : ( $elements )?
         `:` type($result)
         `` custom<InferredArrayType>(type($elements), ref($elements), ref(type($result)))
-        attr-dict
+        custom<AttrDictWithWarnings>(attr-dict, prop-dict)
       }];
 
   let extraClassDeclaration = [{

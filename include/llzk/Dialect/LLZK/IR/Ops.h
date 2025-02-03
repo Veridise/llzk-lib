@@ -42,6 +42,65 @@ constexpr char COMPONENT_NAME_MAIN[] = "Main";
 constexpr char FUNC_NAME_COMPUTE[] = "compute";
 constexpr char FUNC_NAME_CONSTRAIN[] = "constrain";
 
+/// Group together all implementation related to AffineMap type parameters.
+namespace affineMapHelpers {
+
+/// Parses dimension and symbol list for an AffineMap instantiation.
+template <unsigned N>
+mlir::ParseResult parseDimAndSymbolList(
+    mlir::OpAsmParser &parser,
+    mlir::SmallVector<mlir::OpAsmParser::UnresolvedOperand, N> &mapOperands,
+    mlir::IntegerAttr &numDims
+);
+
+/// Prints dimension and symbol list for an AffineMap instantiation.
+void printDimAndSymbolList(
+    mlir::OpAsmPrinter &printer, mlir::Operation *op, mlir::OperandRange mapOperands,
+    mlir::IntegerAttr numDims
+);
+
+/// Parses comma-separated list of multiple AffineMap instantiations.
+mlir::ParseResult parseMultiDimAndSymbolList(
+    mlir::OpAsmParser &parser,
+    mlir::SmallVector<mlir::SmallVector<mlir::OpAsmParser::UnresolvedOperand>> &multiMapOperands,
+    mlir::DenseI32ArrayAttr &numDimsPerMap
+);
+
+/// Prints comma-separated list of multiple AffineMap instantiations.
+void printMultiDimAndSymbolList(
+    mlir::OpAsmPrinter &printer, mlir::Operation *op, mlir::OperandRangeRange multiMapOperands,
+    mlir::DenseI32ArrayAttr numDimsPerMap
+);
+
+/// This custom parse/print AttrDictWithWarnings is necessary to directly check what 'attr-dict' is
+/// parsed from the input. Waiting until the `verify()` function will not work because the generated
+/// `parse()` function automatically computes and initializes the attributes.
+mlir::ParseResult parseAttrDictWithWarnings(
+    mlir::OpAsmParser &parser, mlir::NamedAttrList &extraAttrs, mlir::OperationState &state
+);
+
+template <typename ConcreteOp>
+void printAttrDictWithWarnings(
+    mlir::OpAsmPrinter &printer, ConcreteOp op, mlir::DictionaryAttr extraAttrs,
+    typename ConcreteOp::Properties state
+);
+
+/// Implements the ODS trait with the same name. Produces errors if there is an inconsistency in the
+/// various attributes/values that are used to support affine map instantiation in the op.
+mlir::LogicalResult verifySizesForMultiAffineOps(
+    mlir::Operation *op, int32_t segmentSize, mlir::ArrayRef<int32_t> mapOpGroupSizes,
+    mlir::OperandRangeRange mapOperands, mlir::ArrayRef<int32_t> numDimsPerMap
+);
+
+/// Produces errors if there is an inconsistency between the attributes/values that are used to
+/// support affine map instantiation in the op and the AffineMapAttr list collected from the type.
+mlir::LogicalResult verifyAffineMapInstantiations(
+    mlir::OperandRangeRange mapOps, mlir::ArrayRef<int32_t> numDimsPerMap,
+    mlir::ArrayRef<mlir::AffineMapAttr> mapAttrs, mlir::Operation *origin
+);
+
+} // namespace affineMapHelpers
+
 /// Get the operation name, like "llzk.emit_op" for the given OpType.
 /// This function can be used when the compiler would complain about
 /// incomplete types if `OpType::getOperationName()` were called directly.
@@ -102,6 +161,43 @@ template <char const *FuncName> struct InStructFunctionNamed {
   };
 };
 
+template <int OperandSegmentIndex> struct VerifySizesForMultiAffineOps {
+  template <typename ConcreteType>
+  class Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
+    inline static mlir::LogicalResult verifyHelper(mlir::Operation *op, int32_t segmentSize) {
+      ConcreteType c = llvm::cast<ConcreteType>(op);
+      return affineMapHelpers::verifySizesForMultiAffineOps(
+          op, segmentSize, c.getMapOpGroupSizesAttr(), c.getMapOperands(), c.getNumDimsPerMapAttr()
+      );
+    }
+
+  public:
+    static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
+      if (ConcreteType::template hasTrait<mlir::OpTrait::AttrSizedOperandSegments>()) {
+        // If the AttrSizedOperandSegments trait is present, must have `OperandSegmentIndex`.
+        static_assert(
+            OperandSegmentIndex >= 0,
+            "When the `AttrSizedOperandSegments` trait is present, the index of `$mapOperands` "
+            "within the `operandSegmentSizes` attribute must be specified."
+        );
+        mlir::DenseI32ArrayAttr segmentSizes = op->getAttrOfType<mlir::DenseI32ArrayAttr>(
+            mlir::OpTrait::AttrSizedOperandSegments<ConcreteType>::getOperandSegmentSizeAttr()
+        );
+        assert(
+            OperandSegmentIndex < segmentSizes.size() &&
+            "Parameter of `VerifySizesForMultiAffineOps` exceeds the number of ODS-declared "
+            "operands"
+        );
+        return verifyHelper(op, segmentSizes[OperandSegmentIndex]);
+      } else {
+        // If the trait is not present, the `OperandSegmentIndex` is ignored. Pass `-1` to indicate
+        // that the checks against `operandSegmentSizes` should be skipped.
+        return verifyHelper(op, -1);
+      }
+    }
+  };
+};
+
 /// This class provides a verifier for ops that cannot appear within a "constrain" function.
 template <typename ConcreteType>
 class ComputeOnly : public mlir::OpTrait::TraitBase<ConcreteType, ComputeOnly> {
@@ -122,32 +218,51 @@ inline OpType delegate_to_build(mlir::Location location, Args &&...args) {
   return builder.create<OpType>(location, std::forward<Args>(args)...);
 }
 
-/// Parses dimension and symbol list for an AffineMap instantiation.
 template <unsigned N>
-mlir::ParseResult parseDimAndSymbolList(
+inline mlir::ParseResult parseDimAndSymbolList(
     mlir::OpAsmParser &parser,
     mlir::SmallVector<mlir::OpAsmParser::UnresolvedOperand, N> &mapOperands,
     mlir::IntegerAttr &numDims
-);
+) {
+  return affineMapHelpers::parseDimAndSymbolList(parser, mapOperands, numDims);
+}
 
-/// Prints dimension and symbol list for an AffineMap instantiation.
-void printDimAndSymbolList(
+inline void printDimAndSymbolList(
     mlir::OpAsmPrinter &printer, mlir::Operation *op, mlir::OperandRange mapOperands,
     mlir::IntegerAttr numDims
-);
+) {
+  return affineMapHelpers::printDimAndSymbolList(printer, op, mapOperands, numDims);
+}
 
-/// Parses comma-separated list of multiple AffineMap instantiations.
-mlir::ParseResult parseMultiDimAndSymbolList(
+inline mlir::ParseResult parseMultiDimAndSymbolList(
     mlir::OpAsmParser &parser,
     mlir::SmallVector<mlir::SmallVector<mlir::OpAsmParser::UnresolvedOperand>> &multiMapOperands,
     mlir::DenseI32ArrayAttr &numDimsPerMap
-);
+) {
+  return affineMapHelpers::parseMultiDimAndSymbolList(parser, multiMapOperands, numDimsPerMap);
+}
 
-/// Prints comma-separated list of multiple AffineMap instantiations.
-void printMultiDimAndSymbolList(
+inline void printMultiDimAndSymbolList(
     mlir::OpAsmPrinter &printer, mlir::Operation *op, mlir::OperandRangeRange multiMapOperands,
     mlir::DenseI32ArrayAttr numDimsPerMap
-);
+) {
+  return affineMapHelpers::printMultiDimAndSymbolList(printer, op, multiMapOperands, numDimsPerMap);
+}
+
+inline mlir::ParseResult parseAttrDictWithWarnings(
+    mlir::OpAsmParser &parser, mlir::NamedAttrList &extraAttrs, mlir::OperationState &state
+) {
+  return affineMapHelpers::parseAttrDictWithWarnings(parser, extraAttrs, state);
+}
+
+template <typename ConcreteOp>
+inline void printAttrDictWithWarnings(
+    mlir::OpAsmPrinter &printer, ConcreteOp op, mlir::DictionaryAttr extraAttrs,
+    typename mlir::PropertiesSelector<ConcreteOp>::type state
+) {
+  return affineMapHelpers::printAttrDictWithWarnings(printer, op, extraAttrs, state);
+}
+
 } // namespace llzk
 
 // Include TableGen'd declarations
@@ -166,11 +281,6 @@ genCompareErr(StructDefOp &expected, mlir::Operation *origin, const char *aspect
 mlir::LogicalResult checkSelfType(
     mlir::SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, mlir::Type actualType,
     mlir::Operation *origin, const char *aspect
-);
-
-mlir::LogicalResult verifyAffineMapInstantiations(
-    llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::OperandRangeRange mapOps,
-    mlir::ArrayRef<int32_t> numDimsPerMap, mlir::ArrayRef<mlir::AffineMapAttr> mapAttrs
 );
 
 } // namespace llzk

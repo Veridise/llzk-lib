@@ -202,7 +202,7 @@ verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &tables, StructDefOp
   // Must return type of parent struct
   if (resTypes.size() != 1) {
     return origin.emitOpError().append(
-        "\"@", llzk::FUNC_NAME_COMPUTE, "\" must have exactly one return type"
+        "\"@", FUNC_NAME_COMPUTE, "\" must have exactly one return type"
     );
   }
   if (failed(checkSelfType(tables, parent, resTypes.front(), origin, "return"))) {
@@ -220,14 +220,13 @@ verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &tables, StructDef
   FunctionType funcType = origin.getFunctionType();
   // Must return '()' type, i.e. have no return types
   if (funcType.getResults().size() != 0) {
-    return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
-                                << "\" must have no return type";
+    return origin.emitOpError() << "\"@" << FUNC_NAME_CONSTRAIN << "\" must have no return type";
   }
 
   // Type of the first parameter must match the parent StructDefOp of the current operation.
   llvm::ArrayRef<Type> inputTypes = funcType.getInputs();
   if (inputTypes.size() < 1) {
-    return origin.emitOpError() << "\"@" << llzk::FUNC_NAME_CONSTRAIN
+    return origin.emitOpError() << "\"@" << FUNC_NAME_CONSTRAIN
                                 << "\" must have at least one input type";
   }
   if (failed(checkSelfType(tables, parent, inputTypes.front(), origin, "first input"))) {
@@ -249,9 +248,9 @@ LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (succeeded(parentStructOpt)) {
     // Verify return type restrictions for functions within a StructDefOp
     llvm::StringRef funcName = getSymName();
-    if (llzk::FUNC_NAME_COMPUTE == funcName) {
+    if (FUNC_NAME_COMPUTE == funcName) {
       return verifyFuncTypeCompute(*this, tables, parentStructOpt.value());
-    } else if (llzk::FUNC_NAME_CONSTRAIN == funcName) {
+    } else if (FUNC_NAME_CONSTRAIN == funcName) {
       return verifyFuncTypeConstrain(*this, tables, parentStructOpt.value());
     }
   }
@@ -295,22 +294,36 @@ LogicalResult ReturnOp::verify() {
 //===----------------------------------------------------------------------===//
 
 namespace {
+enum class CalleeKind { Compute, Constrain, Other };
+
+CalleeKind calleeNameToKind(StringRef tgtName) {
+  if (FUNC_NAME_COMPUTE == tgtName) {
+    return CalleeKind::Compute;
+  } else if (FUNC_NAME_CONSTRAIN == tgtName) {
+    return CalleeKind::Constrain;
+  } else {
+    return CalleeKind::Other;
+  }
+}
 
 struct CallOpVerifier {
-  CallOpVerifier(CallOp *c) : callOp(c) {}
+  CallOpVerifier(CallOp *c, StringRef tgtName) : callOp(c), tgtKind(calleeNameToKind(tgtName)) {}
   virtual ~CallOpVerifier() {};
 
   LogicalResult verify() {
     // Rather than immediately returning on failure, we check all verifier steps and aggregate to
     // provide as many errors are possible in a single verifier run.
     LogicalResult aggregateResult = success();
+    if (failed(verifyStructTarget())) {
+      aggregateResult = failure();
+    }
     if (failed(verifyInputs())) {
       aggregateResult = failure();
     }
     if (failed(verifyOutputs())) {
       aggregateResult = failure();
     }
-    if (failed(verifyStructTarget())) {
+    if (failed(verifyAffineMapParams())) {
       aggregateResult = failure();
     }
     return aggregateResult;
@@ -318,30 +331,64 @@ struct CallOpVerifier {
 
 protected:
   CallOp *callOp;
+  CalleeKind tgtKind;
 
+  virtual LogicalResult verifyStructTarget() = 0;
   virtual LogicalResult verifyInputs() = 0;
   virtual LogicalResult verifyOutputs() = 0;
-  virtual LogicalResult verifyStructTarget() = 0;
+  virtual LogicalResult verifyAffineMapParams() = 0;
 
-  /// Ensure compute/constrain functions are only called by a like-named function.
-  LogicalResult verifyStructTargetMatch(StringRef tgtName) {
-    if (tgtName.compare(FUNC_NAME_COMPUTE) == 0) {
+  /// Ensure compute/constrain functions are only called by a like-named struct function.
+  LogicalResult verifyStructTargetMatch() {
+    switch (tgtKind) {
+    case CalleeKind::Compute:
       return verifyInStructFunctionNamed<FUNC_NAME_COMPUTE, 32>(*callOp, [] {
         return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_COMPUTE, "\" "});
       });
-    } else if (tgtName.compare(FUNC_NAME_CONSTRAIN) == 0) {
+    case CalleeKind::Constrain:
       return verifyInStructFunctionNamed<FUNC_NAME_CONSTRAIN, 32>(*callOp, [] {
         return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_CONSTRAIN, "\" "});
       });
+    default:
+      // Precondition: the target function is within a struct so only above names are valid
+      // Note: This error can occur in the unknown case but in the known case, the symbol lookup
+      // would actually fail before this step is reached.
+      return callOp->emitOpError().append(
+          "targeting a struct must call \"@", FUNC_NAME_COMPUTE, "\" or \"@", FUNC_NAME_CONSTRAIN,
+          "\" only"
+      );
     }
+  }
+
+  LogicalResult verifyNoAffineMapInstantiations() {
+    if (!callOp->getMapOpGroupSizesAttr().empty()) {
+      // Tested in call_with_affinemap_fail.llzk
+      return callOp->emitOpError().append(
+          "can only have affine map instantiations when targeting a \"@", FUNC_NAME_COMPUTE,
+          "\" function"
+      );
+    }
+    // ASSERT: the check above is sufficient due to VerifySizesForMultiAffineOps trait.
+    assert(callOp->getNumDimsPerMapAttr().empty());
+    assert(callOp->getMapOperands().empty());
     return success();
   }
 };
 
 struct KnownTargetVerifier : public CallOpVerifier {
   KnownTargetVerifier(CallOp *c, SymbolLookupResult<FuncOp> &&tgtRes)
-      : CallOpVerifier(c), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
+      : CallOpVerifier(c, tgtRes.get().getSymName()), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
         includeSymNames(tgtRes.getIncludeSymNames()) {}
+
+  LogicalResult verifyStructTarget() override {
+    if (isInStruct(tgt.getOperation())) {
+      // When the target is within a struct, check restrictions on the name.
+      return CallOpVerifier::verifyStructTargetMatch();
+    } else {
+      // No target name restrictions when the target is a global function.
+      return success();
+    }
+  }
 
   LogicalResult verifyInputs() override {
     return verifyTypesMatch(callOp->getArgOperands().getTypes(), tgtType.getInputs(), "operand");
@@ -351,11 +398,34 @@ struct KnownTargetVerifier : public CallOpVerifier {
     return verifyTypesMatch(callOp->getResultTypes(), tgtType.getResults(), "result");
   }
 
-  LogicalResult verifyStructTarget() override {
-    if (isInStruct(tgt.getOperation())) {
-      return CallOpVerifier::verifyStructTargetMatch(tgt.getSymName());
+  LogicalResult verifyAffineMapParams() override {
+    if (CalleeKind::Compute == tgtKind && isInStruct(tgt.getOperation())) {
+      // Return type should be a single StructType. If that is not the case here, just bail without
+      // producing an error. The combination of this KnownTargetVerifier resolving the callee to a
+      // specific FuncOp and verifyFuncTypeCompute() ensuring all FUNC_NAME_COMPUTE FuncOps have a
+      // single StructType return value will produce a more relevant error message in that case.
+      Operation::result_type_range callReturnTypes = callOp->getResultTypes();
+      if (callReturnTypes.size() == 1) {
+        if (StructType retTy = llvm::dyn_cast<StructType>(callReturnTypes.front())) {
+          if (ArrayAttr params = retTy.getParams()) {
+            // Collect the struct parameters that are defined via AffineMapAttr
+            SmallVector<AffineMapAttr> mapAttrs;
+            for (Attribute a : params) {
+              if (AffineMapAttr m = dyn_cast<AffineMapAttr>(a)) {
+                mapAttrs.push_back(m);
+              }
+            }
+            return affineMapHelpers::verifyAffineMapInstantiations(
+                callOp->getMapOperands(), callOp->getNumDimsPerMap(), mapAttrs, *callOp
+            );
+          }
+        }
+      }
+      return success();
+    } else {
+      // Global functions and constrain functions cannot have affine map instantiations.
+      return verifyNoAffineMapInstantiations();
     }
-    return success();
   }
 
 private:
@@ -384,14 +454,96 @@ private:
   std::vector<llvm::StringRef> includeSymNames;
 };
 
-struct UnknownTargetVerifier : public CallOpVerifier {
-  UnknownTargetVerifier(CallOp *c, SymbolRefAttr calleeAttr_)
-      : CallOpVerifier(c), calleeAttr(calleeAttr_) {}
+LogicalResult checkSelfTypeUnknownTarget(
+    StringAttr expectedParamName, Type actualType, CallOp *origin, const char *aspect
+) {
+  if (!llvm::isa<TypeVarType>(actualType) ||
+      llvm::cast<TypeVarType>(actualType).getNameRef().getValue() != expectedParamName) {
+    // Tested in function_restrictions_fail.llzk:
+    //    Non-tvar for constrain input via "call_target_constrain_without_self_non_struct"
+    //    Non-tvar for compute output via "call_target_compute_wrong_type_ret"
+    //    Wrong tvar for constrain input via "call_target_constrain_without_self_wrong_tvar_param"
+    //    Wrong tvar for compute output via "call_target_compute_wrong_tvar_param_ret"
+    return origin->emitOpError().append(
+        "target \"@", origin->getCallee().getLeafReference().getValue(), "\" expected ", aspect,
+        " type '!", TypeVarType::name, "<@", expectedParamName.getValue(), ">' but found ",
+        actualType
+    );
+  }
+  return success();
+}
 
-  LogicalResult verifyInputs() override { return success(); }
-  LogicalResult verifyOutputs() override { return success(); }
+/// Precondition: the CallOp callee references a parameter of the CallOp's parent struct. This
+/// creates a restriction that the referenced parameter must be instantiated with a StructType.
+/// Hence, the call must target a function within a struct, not a global function, so the callee
+/// name must be `compute` or `constrain`, nothing else.
+/// Normally, full verification of the `compute` and `constrain` callees is done via
+/// KnownTargetVerifier, which checks that input and output types of the caller match the callee,
+/// plus verifyFuncTypeCompute() when the callee is `compute` or verifyFuncTypeConstrain() when
+/// the callee is `constrain`. Those checks can take place after all parameterized structs are
+/// instantiated (and thus the call target is known). For now, only minimal checks can be done.
+struct UnknownTargetVerifier : public CallOpVerifier {
+  UnknownTargetVerifier(CallOp *c, SymbolRefAttr callee)
+      : CallOpVerifier(c, callee.getLeafReference().getValue()), calleeAttr(callee) {}
+
   LogicalResult verifyStructTarget() override {
-    return CallOpVerifier::verifyStructTargetMatch(calleeAttr.getLeafReference().getValue());
+    // Since the target is known to be within a struct, just check restrictions on the name. It can
+    // be `compute` or `constrain`, nothing else
+    return CallOpVerifier::verifyStructTargetMatch();
+  }
+
+  LogicalResult verifyInputs() override {
+    if (CalleeKind::Compute == tgtKind) {
+      // Without known target, no additional checks can be done.
+    } else if (CalleeKind::Constrain == tgtKind) {
+      // Without known target, this can only check that the first input is VarType using the same
+      // struct parameter as the base of the callee (later replaced with the target struct's type).
+      Operation::operand_type_range inputTypes = callOp->getArgOperands().getTypes();
+      if (inputTypes.size() < 1) {
+        // Tested in function_restrictions_fail.llzk
+        return callOp->emitOpError()
+               << "target \"@" << FUNC_NAME_CONSTRAIN << "\" must have at least one input type";
+      }
+      return checkSelfTypeUnknownTarget(
+          calleeAttr.getRootReference(), inputTypes.front(), callOp, "first input"
+      );
+    }
+    return success();
+  }
+
+  LogicalResult verifyOutputs() override {
+    if (CalleeKind::Compute == tgtKind) {
+      // Without known target, this can only check that the function returns VarType using the same
+      // struct parameter as the base of the callee (later replaced with the target struct's type).
+      Operation::result_type_range resTypes = callOp->getResultTypes();
+      if (resTypes.size() != 1) {
+        // Tested in function_restrictions_fail.llzk
+        return callOp->emitOpError().append(
+            "target \"@", FUNC_NAME_COMPUTE, "\" must have exactly one return type"
+        );
+      }
+      return checkSelfTypeUnknownTarget(
+          calleeAttr.getRootReference(), resTypes.front(), callOp, "return"
+      );
+    } else if (CalleeKind::Constrain == tgtKind) {
+      // Without known target, this can only check that the function has no return
+      if (callOp->getNumResults() != 0) {
+        // Tested in function_restrictions_fail.llzk
+        return callOp->emitOpError()
+               << "target \"@" << FUNC_NAME_CONSTRAIN << "\" must have no return type";
+      }
+    }
+    return success();
+  }
+
+  LogicalResult verifyAffineMapParams() override {
+    if (CalleeKind::Compute == tgtKind) {
+      // Without known target, no additional checks can be done.
+    } else if (CalleeKind::Constrain == tgtKind) {
+      // Without known target, this can only check that there are no affine map instantiations.
+      return verifyNoAffineMapInstantiations();
+    }
+    return success();
   }
 
 private:

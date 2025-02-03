@@ -19,140 +19,13 @@
 #define GET_OP_CLASSES
 #include "llzk/Dialect/LLZK/IR/Ops.cpp.inc"
 
+#include <numeric>
+
 namespace llzk {
 
 using namespace mlir;
 
-bool isInStruct(Operation *op) { return succeeded(getParentOfType<StructDefOp>(op)); }
-
-FailureOr<StructDefOp> verifyInStruct(Operation *op) {
-  FailureOr<StructDefOp> res = getParentOfType<StructDefOp>(op);
-  if (failed(res)) {
-    return op->emitOpError() << "only valid within a '" << getOperationName<StructDefOp>()
-                             << "' ancestor";
-  }
-  return res;
-}
-
-bool isInStructFunctionNamed(Operation *op, char const *funcName) {
-  FailureOr<FuncOp> parentFuncOpt = getParentOfType<FuncOp>(op);
-  if (succeeded(parentFuncOpt)) {
-    FuncOp parentFunc = parentFuncOpt.value();
-    FailureOr<StructDefOp> parentStruct = getParentOfType<StructDefOp>(parentFunc.getOperation());
-    if (succeeded(parentStruct)) {
-      if (parentFunc.getSymName().compare(funcName) == 0) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-template <typename ConcreteType> LogicalResult InStruct<ConcreteType>::verifyTrait(Operation *op) {
-  return verifyInStruct(op);
-}
-
-LogicalResult verifyAffineMapInstantiations(
-    llvm::function_ref<InFlightDiagnostic()> emitError, OperandRangeRange mapOps,
-    ArrayRef<int32_t> numDimsPerMap, ArrayRef<AffineMapAttr> mapAttrs
-) {
-  size_t count = numDimsPerMap.size();
-  assert(count == mapOps.size()); // per construction in parseMultiDimAndSymbolList()
-
-  // Ensure there is one OperandRange for each AffineMapAttr
-  if (mapAttrs.size() != count) {
-    return emitError().append(
-        "map instantiation count (", count,
-        ") does not match the number of affine map dimensions (", mapAttrs.size(),
-        ") specified in the result type"
-    );
-  }
-
-  // Ensure the affine map identifier counts match the instantiation.
-  // Rather than immediately returning on failure, we check all dimensions and aggregate to provide
-  // as many errors are possible in a single verifier run.
-  LogicalResult aggregateResult = success();
-  for (size_t i = 0; i < count; ++i) {
-    AffineMap map = mapAttrs[i].getAffineMap();
-    if (std::cmp_not_equal(map.getNumDims(), numDimsPerMap[i])) {
-      aggregateResult = emitError().append(
-          "instantiation of map ", i, " expected ", map.getNumDims(), " but found ",
-          numDimsPerMap[i], " dimension values in ()"
-      );
-    } else if (std::cmp_not_equal(map.getNumInputs(), mapOps[i].size())) {
-      aggregateResult = emitError().append(
-          "instantiation of map ", i, " expected ", map.getNumSymbols(), " but found ",
-          (mapOps[i].size() - numDimsPerMap[i]), " symbol values in []"
-      );
-    }
-  }
-  return aggregateResult;
-}
-
-//===------------------------------------------------------------------===//
-// IncludeOp (see IncludeHelper.cpp for other functions)
-//===------------------------------------------------------------------===//
-
-IncludeOp IncludeOp::create(Location loc, llvm::StringRef name, llvm::StringRef path) {
-  return delegate_to_build<IncludeOp>(loc, name, path);
-}
-
-IncludeOp IncludeOp::create(Location loc, StringAttr name, StringAttr path) {
-  return delegate_to_build<IncludeOp>(loc, name, path);
-}
-
-InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const char *aspect) {
-  std::string prefix = std::string();
-  if (SymbolOpInterface symbol = llvm::dyn_cast<SymbolOpInterface>(origin)) {
-    prefix += "\"@";
-    prefix += symbol.getName();
-    prefix += "\" ";
-  }
-  return origin->emitOpError().append(
-      prefix, "must use type of its ancestor '", StructDefOp::getOperationName(), "' \"",
-      expected.getHeaderString(), "\" as ", aspect, " type"
-  );
-}
-
-LogicalResult checkSelfType(
-    SymbolTableCollection &tables, StructDefOp &expectedStruct, Type actualType, Operation *origin,
-    const char *aspect
-) {
-  if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {
-    auto actualStructOpt =
-        lookupTopLevelSymbol<StructDefOp>(tables, actualStructType.getNameRef(), origin);
-    if (failed(actualStructOpt)) {
-      return origin->emitError().append(
-          "could not find '", StructDefOp::getOperationName(), "' named \"",
-          actualStructType.getNameRef(), "\""
-      );
-    }
-    StructDefOp actualStruct = actualStructOpt.value().get();
-    if (actualStruct != expectedStruct) {
-      return genCompareErr(expectedStruct, origin, aspect)
-          .attachNote(actualStruct.getLoc())
-          .append("uses this type instead");
-    }
-    // Check for an EXACT match in the parameter list since it must reference the "self" type.
-    if (expectedStruct.getConstParamsAttr() != actualStructType.getParams()) {
-      // To make error messages more consistent and meaningful, if the parameters don't match
-      // because the actual type uses symbols that are not defined, generate an error about the
-      // undefined symbol(s).
-      if (ArrayAttr tyParams = actualStructType.getParams()) {
-        if (failed(verifyParamsOfType(tables, tyParams.getValue(), actualStructType, origin))) {
-          return failure();
-        }
-      }
-      // Otherwise, generate an error stating the parent struct type must be used.
-      return genCompareErr(expectedStruct, origin, aspect)
-          .attachNote(actualStruct.getLoc())
-          .append("should be type of this '", StructDefOp::getOperationName(), "'");
-    }
-  } else {
-    return genCompareErr(expectedStruct, origin, aspect);
-  }
-  return success();
-}
+namespace affineMapHelpers {
 
 namespace {
 template <unsigned N>
@@ -226,6 +99,244 @@ void printMultiDimAndSymbolList(
   llvm::interleaveComma(llvm::seq<size_t>(0, count), printer.getStream(), [&](size_t i) {
     printDimAndSymbolListImpl(printer, op, multiMapOperands[i], numDimsPerMap[i]);
   });
+}
+
+ParseResult
+parseAttrDictWithWarnings(OpAsmParser &parser, NamedAttrList &extraAttrs, OperationState &state) {
+  // Replicate what ODS generates w/o the custom<AttrDictWithWarnings> directive
+  llvm::SMLoc loc = parser.getCurrentLocation();
+  if (parser.parseOptionalAttrDict(extraAttrs)) {
+    return failure();
+  }
+  if (failed(state.name.verifyInherentAttrs(extraAttrs, [&]() {
+    return parser.emitError(loc) << "'" << state.name.getStringRef() << "' op ";
+  }))) {
+    return failure();
+  }
+  // Ignore, with warnings, any attributes that are specified and shouldn't be
+  for (StringAttr skipName : state.name.getAttributeNames()) {
+    if (extraAttrs.erase(skipName)) {
+      auto msg =
+          "Ignoring attribute '" + Twine(skipName) + "' because it must be computed automatically.";
+      mlir::emitWarning(parser.getEncodedSourceLoc(loc), msg).report();
+    }
+  }
+  // There is no failure from this last check, only warnings
+  return success();
+}
+
+template <typename ConcreteOp>
+void printAttrDictWithWarnings(
+    OpAsmPrinter &printer, ConcreteOp op, DictionaryAttr extraAttrs,
+    typename ConcreteOp::Properties state
+) {
+  printer.printOptionalAttrDict(extraAttrs.getValue(), ConcreteOp::getAttributeNames());
+}
+
+namespace {
+inline InFlightDiagnostic msgInstantiationGroupAttrMismatch(
+    Operation *op, size_t mapOpGroupSizesCount, size_t mapOperandsSize
+) {
+  return op->emitOpError().append(
+      "map instantiation group count (", mapOperandsSize,
+      ") does not match with length of 'mapOpGroupSizes' attribute (", mapOpGroupSizesCount, ")"
+  );
+}
+} // namespace
+
+LogicalResult verifySizesForMultiAffineOps(
+    Operation *op, int32_t segmentSize, ArrayRef<int32_t> mapOpGroupSizes,
+    OperandRangeRange mapOperands, ArrayRef<int32_t> numDimsPerMap
+) {
+  // Ensure the `mapOpGroupSizes` and `operandSegmentSizes` attributes agree.
+  // NOTE: the ODS generates verifyValueSizeAttr() which ensures 'mapOpGroupSizes' has no negative
+  // elements and its sum is equal to the operand group size (which is similar to this check).
+  int32_t totalMapOpGroupSizes = std::reduce(mapOpGroupSizes.begin(), mapOpGroupSizes.end());
+  if (totalMapOpGroupSizes != segmentSize) {
+    // TODO-GTEST: use gtest build+verify b/c mapOpGroupSizes and segmentSize are computed.
+    return op->emitOpError().append(
+        "number of operands for affine map instantiation (", totalMapOpGroupSizes,
+        ") does not match with the total size (", segmentSize,
+        ") specified in attribute 'operandSegmentSizes'"
+    );
+  }
+
+  // Ensure the size of `mapOperands` and its two list attributes are the same.
+  // This will be true if the op was constructed via parseMultiDimAndSymbolList()
+  //  but when constructed via the build() API, it can be inconsistent.
+  size_t count = mapOpGroupSizes.size();
+  if (numDimsPerMap.size() != count) {
+    // TODO-GTEST: use gtest build+verify b/c numDimsPerMap and mapOpGroupSizes are computed.
+    return op->emitOpError().append(
+        "length of 'numDimsPerMap' attribute (", numDimsPerMap.size(),
+        ") does not match with length of 'mapOpGroupSizes' attribute (", count, ")"
+    );
+  }
+  if (mapOperands.size() != count) {
+    // TODO-GTEST: use gtest build+verify b/c mapOpGroupSizes is computed when parsing.
+    return msgInstantiationGroupAttrMismatch(op, count, mapOperands.size());
+  }
+
+  // Verify the following:
+  //   1. 'mapOperands' element sizes match 'mapOpGroupSizes' values
+  //   2. each 'numDimsPerMap' is <= corresponding 'mapOpGroupSizes'
+  LogicalResult aggregateResult = success();
+  for (size_t i = 0; i < count; ++i) {
+    auto currMapOpGroupSize = mapOpGroupSizes[i];
+    if (std::cmp_not_equal(mapOperands[i].size(), currMapOpGroupSize)) {
+      // TODO-GTEST: use gtest build+verify b/c mapOpGroupSizes is computed when parsing.
+      aggregateResult = op->emitOpError().append(
+          "map instantiation group ", i, " operand count (", mapOperands[i].size(),
+          ") does not match group size ", i, " in 'mapOpGroupSizes' attribute (",
+          currMapOpGroupSize, ")"
+      );
+    } else if (std::cmp_greater(numDimsPerMap[i], currMapOpGroupSize)) {
+      // TODO-GTEST: use gtest build+verify b/c numDimsPerMap and mapOpGroupSizes are computed.
+      aggregateResult = op->emitOpError().append(
+          "map instantiation group ", i, " dimension count (", numDimsPerMap[i],
+          ") exceeds group size ", i, " in 'mapOpGroupSizes' attribute (", currMapOpGroupSize, ")"
+      );
+    }
+  }
+  return aggregateResult;
+}
+
+LogicalResult verifyAffineMapInstantiations(
+    OperandRangeRange mapOps, ArrayRef<int32_t> numDimsPerMap, ArrayRef<AffineMapAttr> mapAttrs,
+    Operation *origin
+) {
+  size_t count = numDimsPerMap.size();
+  if (mapOps.size() != count) {
+    // TODO-GTEST: use gtest build+verify b/c numDimsPerMap is computed when parsing.
+    return msgInstantiationGroupAttrMismatch(origin, count, mapOps.size());
+  }
+
+  // Ensure there is one OperandRange for each AffineMapAttr
+  if (mapAttrs.size() != count) {
+    // Tested in array_build_fail.llzk and call_with_affinemap_fail.llzk
+    return origin->emitOpError().append(
+        "map instantiation group count (", count,
+        ") does not match the number of affine map instantiations (", mapAttrs.size(),
+        ") required by the type"
+    );
+  }
+
+  // Ensure the affine map identifier counts match the instantiation.
+  // Rather than immediately returning on failure, we check all dimensions and aggregate to provide
+  // as many errors are possible in a single verifier run.
+  LogicalResult aggregateResult = success();
+  for (size_t i = 0; i < count; ++i) {
+    AffineMap map = mapAttrs[i].getAffineMap();
+    if (std::cmp_not_equal(map.getNumDims(), numDimsPerMap[i])) {
+      // Tested in array_build_fail.llzk and call_with_affinemap_fail.llzk
+      aggregateResult = origin->emitOpError().append(
+          "instantiation of map ", i, " expected ", map.getNumDims(), " but found ",
+          numDimsPerMap[i], " dimension values in ()"
+      );
+    } else if (std::cmp_not_equal(map.getNumInputs(), mapOps[i].size())) {
+      // Tested in array_build_fail.llzk and call_with_affinemap_fail.llzk
+      aggregateResult = origin->emitOpError().append(
+          "instantiation of map ", i, " expected ", map.getNumSymbols(), " but found ",
+          (mapOps[i].size() - numDimsPerMap[i]), " symbol values in []"
+      );
+    }
+  }
+  return aggregateResult;
+}
+} // namespace affineMapHelpers
+
+bool isInStruct(Operation *op) { return succeeded(getParentOfType<StructDefOp>(op)); }
+
+FailureOr<StructDefOp> verifyInStruct(Operation *op) {
+  FailureOr<StructDefOp> res = getParentOfType<StructDefOp>(op);
+  if (failed(res)) {
+    return op->emitOpError() << "only valid within a '" << getOperationName<StructDefOp>()
+                             << "' ancestor";
+  }
+  return res;
+}
+
+bool isInStructFunctionNamed(Operation *op, char const *funcName) {
+  FailureOr<FuncOp> parentFuncOpt = getParentOfType<FuncOp>(op);
+  if (succeeded(parentFuncOpt)) {
+    FuncOp parentFunc = parentFuncOpt.value();
+    FailureOr<StructDefOp> parentStruct = getParentOfType<StructDefOp>(parentFunc.getOperation());
+    if (succeeded(parentStruct)) {
+      if (parentFunc.getSymName().compare(funcName) == 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+template <typename ConcreteType> LogicalResult InStruct<ConcreteType>::verifyTrait(Operation *op) {
+  return verifyInStruct(op);
+}
+
+//===------------------------------------------------------------------===//
+// IncludeOp (see IncludeHelper.cpp for other functions)
+//===------------------------------------------------------------------===//
+
+IncludeOp IncludeOp::create(Location loc, llvm::StringRef name, llvm::StringRef path) {
+  return delegate_to_build<IncludeOp>(loc, name, path);
+}
+
+IncludeOp IncludeOp::create(Location loc, StringAttr name, StringAttr path) {
+  return delegate_to_build<IncludeOp>(loc, name, path);
+}
+
+InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const char *aspect) {
+  std::string prefix = std::string();
+  if (SymbolOpInterface symbol = llvm::dyn_cast<SymbolOpInterface>(origin)) {
+    prefix += "\"@";
+    prefix += symbol.getName();
+    prefix += "\" ";
+  }
+  return origin->emitOpError().append(
+      prefix, "must use type of its ancestor '", StructDefOp::getOperationName(), "' \"",
+      expected.getHeaderString(), "\" as ", aspect, " type"
+  );
+}
+
+LogicalResult checkSelfType(
+    SymbolTableCollection &tables, StructDefOp &expectedStruct, Type actualType, Operation *origin,
+    const char *aspect
+) {
+  if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {
+    auto actualStructOpt =
+        lookupTopLevelSymbol<StructDefOp>(tables, actualStructType.getNameRef(), origin);
+    if (failed(actualStructOpt)) {
+      return origin->emitError().append(
+          "could not find '", StructDefOp::getOperationName(), "' named \"",
+          actualStructType.getNameRef(), "\""
+      );
+    }
+    StructDefOp actualStruct = actualStructOpt.value().get();
+    if (actualStruct != expectedStruct) {
+      return genCompareErr(expectedStruct, origin, aspect)
+          .attachNote(actualStruct.getLoc())
+          .append("uses this type instead");
+    }
+    // Check for an EXACT match in the parameter list since it must reference the "self" type.
+    if (expectedStruct.getConstParamsAttr() != actualStructType.getParams()) {
+      // To make error messages more consistent and meaningful, if the parameters don't match
+      // because the actual type uses symbols that are not defined, generate an error about the
+      // undefined symbol(s).
+      if (ArrayAttr tyParams = actualStructType.getParams()) {
+        if (failed(verifyParamsOfType(tables, tyParams.getValue(), actualStructType, origin))) {
+          return failure();
+        }
+      }
+      // Otherwise, generate an error stating the parent struct type must be used.
+      return genCompareErr(expectedStruct, origin, aspect)
+          .attachNote(actualStruct.getLoc())
+          .append("should be type of this '", StructDefOp::getOperationName(), "'");
+    }
+  } else {
+    return genCompareErr(expectedStruct, origin, aspect);
+  }
+  return success();
 }
 
 //===------------------------------------------------------------------===//
@@ -685,19 +796,15 @@ LogicalResult CreateArrayOp::verify() {
   Type retTy = getResult().getType();
   assert(llvm::isa<ArrayType>(retTy)); // per ODS spec of CreateArrayOp
 
-  // Collect the array dimensions that are defined by AffineMapAttr
+  // Collect the array dimensions that are defined via AffineMapAttr
   SmallVector<AffineMapAttr> mapAttrs;
   for (Attribute a : llvm::cast<ArrayType>(retTy).getDimensionSizes()) {
     if (AffineMapAttr m = dyn_cast<AffineMapAttr>(a)) {
       mapAttrs.push_back(m);
     }
   }
-
-  auto emitErrorFunc = [op = this->getOperation()]() -> InFlightDiagnostic {
-    return op->emitOpError();
-  };
-  return verifyAffineMapInstantiations(
-      emitErrorFunc, getMapOperands(), getNumDimsPerMap(), mapAttrs
+  return affineMapHelpers::verifyAffineMapInstantiations(
+      getMapOperands(), getNumDimsPerMap(), mapAttrs, *this
   );
 }
 

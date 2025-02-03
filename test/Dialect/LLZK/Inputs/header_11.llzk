@@ -1,0 +1,31 @@
+// Imported via `call_with_affinemap_fail.llzk`
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @D0 {
+    func @compute() -> !llzk.struct<@D0> {
+      %self = new_struct : !llzk.struct<@D0>
+      return %self: !llzk.struct<@D0>
+    }
+    func @constrain(%self: !llzk.struct<@D0>) {
+      return
+    }
+  }
+  llzk.struct @D1<[@M]> {
+    func @compute() -> !llzk.struct<@D1<[@M]>> {
+      %self = new_struct : !llzk.struct<@D1<[@M]>>
+      return %self: !llzk.struct<@D1<[@M]>>
+    }
+    func @constrain(%self: !llzk.struct<@D1<[@M]>>) {
+      return
+    }
+  }
+  llzk.struct @D2<[@M, @N]> {
+    func @compute() -> !llzk.struct<@D2<[@M, @N]>> {
+      %self = new_struct : !llzk.struct<@D2<[@M, @N]>>
+      return %self: !llzk.struct<@D2<[@M, @N]>>
+    }
+    func @constrain(%self: !llzk.struct<@D2<[@M, @N]>>) {
+      return
+    }
+  }
+}

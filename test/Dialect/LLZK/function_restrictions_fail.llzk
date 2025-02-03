@@ -222,6 +222,21 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
+  llzk.struct @call_target_compute_no_ret<[@S]> {
+    func @compute() -> !llzk.struct<@call_target_compute_no_ret<[@S]>> {
+      %self = new_struct : !llzk.struct<@call_target_compute_no_ret<[@S]>>
+      // expected-error@+1 {{'llzk.call' op target "@compute" must have exactly one return type}}
+      llzk.call @S::@compute() : () -> ()
+      return %self : !llzk.struct<@call_target_compute_no_ret<[@S]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@call_target_compute_no_ret<[@S]>>) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
   llzk.struct @compute_multiple_ret {
     // expected-error@+1 {{'llzk.func' op "@compute" must have exactly one return type}}
     func @compute(%a: i1) -> (!llzk.struct<@compute_multiple_ret>, i1) {
@@ -230,6 +245,21 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     func @constrain(%self: !llzk.struct<@compute_multiple_ret>, %a: i1) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @call_target_compute_multiple_ret<[@S]> {
+    func @compute() -> !llzk.struct<@call_target_compute_multiple_ret<[@S]>> {
+      %self = new_struct : !llzk.struct<@call_target_compute_multiple_ret<[@S]>>
+      // expected-error@+1 {{'llzk.call' op target "@compute" must have exactly one return type}}
+      llzk.call @S::@compute() : () -> (!llzk.tvar<@S>, i1)
+      return %self : !llzk.struct<@call_target_compute_multiple_ret<[@S]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@call_target_compute_multiple_ret<[@S]>>) {
       return
     }
   }
@@ -250,6 +280,21 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
+  llzk.struct @call_target_constrain_with_ret<[@S]> {
+    func @compute(%0: !llzk.tvar<@S>) -> !llzk.struct<@call_target_constrain_with_ret<[@S]>> {
+      %self = new_struct : !llzk.struct<@call_target_constrain_with_ret<[@S]>>
+      return %self : !llzk.struct<@call_target_constrain_with_ret<[@S]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@call_target_constrain_with_ret<[@S]>>, %0: !llzk.tvar<@S>) {
+      // expected-error@+1 {{'llzk.call' op target "@constrain" must have no return type}}
+      llzk.call @S::@constrain(%0) : (!llzk.tvar<@S>) -> (!llzk.tvar<@S>, i1)
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
   llzk.struct @compute_with_wrong_ret {
     // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> index {
@@ -258,6 +303,36 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     func @constrain(%self: !llzk.struct<@compute_with_wrong_ret>) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @call_target_compute_wrong_type_ret<[@S,@T]> {
+    func @compute() -> !llzk.struct<@call_target_compute_wrong_type_ret<[@S,@T]>> {
+      %self = new_struct : !llzk.struct<@call_target_compute_wrong_type_ret<[@S,@T]>>
+      // expected-error@+1 {{'llzk.call' op target "@compute" expected return type '!llzk.tvar<@S>' but found 'i1'}}
+      llzk.call @S::@compute() : () -> i1
+      return %self : !llzk.struct<@call_target_compute_wrong_type_ret<[@S,@T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@call_target_compute_wrong_type_ret<[@S,@T]>>) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @call_target_compute_wrong_tvar_param_ret<[@S,@T]> {
+    func @compute() -> !llzk.struct<@call_target_compute_wrong_tvar_param_ret<[@S,@T]>> {
+      %self = new_struct : !llzk.struct<@call_target_compute_wrong_tvar_param_ret<[@S,@T]>>
+      // expected-error@+1 {{'llzk.call' op target "@compute" expected return type '!llzk.tvar<@S>' but found '!llzk.tvar<@T>'}}
+      llzk.call @S::@compute() : () -> !llzk.tvar<@T>
+      return %self : !llzk.struct<@call_target_compute_wrong_tvar_param_ret<[@S,@T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@call_target_compute_wrong_tvar_param_ret<[@S,@T]>>) {
       return
     }
   }
@@ -358,6 +433,21 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
+  llzk.struct @call_target_constrain_without_args<[@S]> {
+    func @compute() -> !llzk.struct<@call_target_constrain_without_args<[@S]>> {
+      %self = new_struct : !llzk.struct<@call_target_constrain_without_args<[@S]>>
+      return %self : !llzk.struct<@call_target_constrain_without_args<[@S]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@call_target_constrain_without_args<[@S]>>) {
+      // expected-error@+1 {{'llzk.call' op target "@constrain" must have at least one input type}}
+      llzk.call @S::@constrain() : () -> ()
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
   llzk.struct @constrain_without_self_non_struct {
     func @compute(%a: !llzk.felt) -> !llzk.struct<@constrain_without_self_non_struct> {
       %self = new_struct : !llzk.struct<@constrain_without_self_non_struct>
@@ -365,6 +455,22 @@ module attributes {veridise.lang = "llzk"} {
     }
     // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its ancestor 'llzk.struct' "@constrain_without_self_non_struct" as first input type}}
     func @constrain(%self: !llzk.felt) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @call_target_constrain_without_self_non_struct<[@S]> {
+    func @compute() -> !llzk.struct<@call_target_constrain_without_self_non_struct<[@S]>> {
+      %self = new_struct : !llzk.struct<@call_target_constrain_without_self_non_struct<[@S]>>
+      return %self : !llzk.struct<@call_target_constrain_without_self_non_struct<[@S]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@call_target_constrain_without_self_non_struct<[@S]>>) {
+      %0 = constfelt 1
+      // expected-error@+1 {{'llzk.call' op target "@constrain" expected first input type '!llzk.tvar<@S>' but found '!llzk.felt'}}
+      llzk.call @S::@constrain(%0) : (!llzk.felt) -> ()
       return
     }
   }
@@ -387,6 +493,21 @@ module attributes {veridise.lang = "llzk"} {
     }
     // expected-error@+1 {{'llzk.func' op "@constrain" must use type of its ancestor 'llzk.struct' "@constrain_without_self_wrong_struct" as first input type}}
     func @constrain(%self: !llzk.struct<@other_type>) {
+      return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @call_target_constrain_without_self_wrong_tvar_param<[@S,@T]> {
+    func @compute(%0: !llzk.tvar<@T>) -> !llzk.struct<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>> {
+      %self = new_struct : !llzk.struct<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>
+      return %self : !llzk.struct<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>, %0: !llzk.tvar<@T>) {
+      // expected-error@+1 {{'llzk.call' op target "@constrain" expected first input type '!llzk.tvar<@S>' but found '!llzk.tvar<@T>}}
+      llzk.call @S::@constrain(%0) : (!llzk.tvar<@T>) -> ()
       return
     }
   }
@@ -433,3 +554,20 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  // llzk.func @global_fun() -> () { return }
+  llzk.struct @unknown_call_target_invalid_function_name<[@S]> {
+    func @compute() -> !llzk.struct<@unknown_call_target_invalid_function_name<[@S]>> {
+      %self = new_struct : !llzk.struct<@unknown_call_target_invalid_function_name<[@S]>>
+      return %self : !llzk.struct<@unknown_call_target_invalid_function_name<[@S]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@unknown_call_target_invalid_function_name<[@S]>>) {
+      // expected-error@+1 {{'llzk.call' op targeting a struct must call "@compute" or "@constrain" only}}
+      llzk.call @S::@global_fun() : () -> ()
+      return
+    }
+  }
+}
+

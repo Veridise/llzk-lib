@@ -26,6 +26,26 @@ class InStructFunctionNamed<string name>
   string cppNamespace = "::llzk";
 }
 
+// Implements verification for ops with an affine map instantiation list. These
+// ops are expected to contain the following in their `arguments` list:
+//  - VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands
+//  - DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap
+//  - DenseI32ArrayAttr:$mapOpGroupSizes
+// Additionally, if the op also has the `AttrSizedOperandSegments` trait, the
+// `operandSegmentIndex` parameter should specify the index within the
+// `operandSegmentSizes` attribute associated with the `$mapOperands` argument,
+//  otherwise it is ignored.
+// It is also recomended to use `custom<AttrDictWithWarnings>(attr-dict)` in the
+// assembly format (or the associated parse/print functions directly) to parse
+// the attribute dictionary in these ops and present warnings if the
+// aforementioned attributes are manually specified.
+class VerifySizesForMultiAffineOps<int operandSegmentIndex>
+    : ParamNativeOpTrait<"VerifySizesForMultiAffineOps",
+                         ""#operandSegmentIndex>,
+      StructuralOpTrait {
+  string cppNamespace = "::llzk";
+}
+
 // Implementation of TypesMatchWith for Variadic `rhsArg` that returns success
 // if `rhsArg` is empty.
 class VariadicTypesMatchWith<string summary, string lhsArg, string rhsArg,

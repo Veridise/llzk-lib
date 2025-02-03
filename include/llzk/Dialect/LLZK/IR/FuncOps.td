@@ -195,6 +195,7 @@ def ReturnOp
 
 def CallOp
     : LLZK_Op<"call", [MemRefsNormalizable, AttrSizedOperandSegments,
+                       VerifySizesForMultiAffineOps<1>,
                        DeclareOpInterfaceMethods<CallOpInterface>,
                        DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "call operation";
@@ -216,6 +217,11 @@ def CallOp
     llzk.call @OtherStruct::@constrain(%5, %6) : (!llzk.struct<@OtherStruct>, !llzk.felt) -> ()
     ```
 
+    When the return StructType of a `compute()` function uses AffineMapAttr to
+    express struct parameter(s) that depend on a loop variable, the optional
+    instantiation parameter list of this operation must be used to instatiate
+    all AffineMap used as parameters to the StructType.
+
     Examples:
     ```llzk
     #M = affine_map<(i)[] -> (5*i+1)>
@@ -225,8 +231,8 @@ def CallOp
 
   let arguments = (ins SymbolRefAttr:$callee,
       Variadic<AnyLLZKType>:$argOperands,
-      DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
       VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands,
+      DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
       DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs Variadic<AnyLLZKType>);
 
@@ -264,8 +270,16 @@ def CallOp
   let assemblyFormat = [{
     $callee `(` $argOperands `)`
     ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` )?
-    attr-dict `:` functional-type($argOperands, results)
+    `:` functional-type($argOperands, results)
+    custom<AttrDictWithWarnings>(attr-dict, prop-dict)
   }];
+
+  // NOTE: In CreateArrayOp, the `verify()` function is declared in order to
+  // call `verifyAffineMapInstantiations()`. However, in this op that check must
+  // happen within `verifySymbolUses()` instead because the target FuncOp must
+  // be resolved to determine if a target function named "compute"/"constrain"
+  // is defined within a StructDefOp or within a ModuleOp because the
+  // verification differs for those cases.
 }
 
 #endif // LLZK_FUNC_OPS

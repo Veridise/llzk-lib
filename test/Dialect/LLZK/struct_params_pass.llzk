@@ -392,11 +392,14 @@ module attributes {veridise.lang = "llzk"} {
 
     func @compute(%x: !llzk.felt) -> !llzk.struct<@Bar<[@T]>> {
       %self = new_struct : !llzk.struct<@Bar<[@T]>>
+      // This restricts the parameter @T to be a !llzk.struct<?> type.
       %1 = call @T::@compute(%x) : (!llzk.felt) -> !llzk.tvar<@T>
       writef %self[@t] = %1 : !llzk.struct<@Bar<[@T]>>, !llzk.tvar<@T>
       return %self : !llzk.struct<@Bar<[@T]>>
     }
     func @constrain(%self: !llzk.struct<@Bar<[@T]>>, %x: !llzk.felt) {
+      %1 = readf %self[@t] : !llzk.struct<@Bar<[@T]>>, !llzk.tvar<@T>
+      call @T::@constrain(%1, %x) : (!llzk.tvar<@T>, !llzk.felt) -> ()
       return
     }
   }
@@ -458,6 +461,8 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@Bar<[@T]>>
 //CHECK-NEXT:      }
 //CHECK-NEXT:      func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Bar<[@T]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@t] : <@Bar<[@T]>>, !llzk.tvar<@T>
+//CHECK-NEXT:        call @T::@constrain(%[[T0]], %[[A1]]) : (!llzk.tvar<@T>, !llzk.felt) -> ()
 //CHECK-NEXT:        return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }

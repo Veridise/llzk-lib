@@ -232,3 +232,32 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       }
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
+
+// -----
+// Ensure verifyStructTargetMatch() is not too restrictive; it will not prevent a global function call
+module attributes {veridise.lang = "llzk"} {
+  module @S {
+    llzk.func @global_fun() -> () { return }
+  }
+  llzk.struct @verifyStructTargetMatch_is_not_too_restrictive {
+    func @compute() -> !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive> {
+      %self = new_struct : !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive>
+      llzk.call @S::@global_fun() : () -> ()
+      return %self : !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive>
+    }
+
+    func @constrain(%self: !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive>) {
+      return
+    }
+  }
+}
+//CHECK-LABEL: llzk.struct @verifyStructTargetMatch_is_not_too_restrictive {
+//CHECK-NEXT:    func @compute() -> !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive> {
+//CHECK-NEXT:      %[[VAL_0:.*]] = new_struct : <@verifyStructTargetMatch_is_not_too_restrictive>
+//CHECK-NEXT:      call @S::@global_fun() : () -> ()
+//CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive>) {
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
