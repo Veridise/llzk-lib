@@ -42,7 +42,7 @@ TEST_F(AffineMapInstantiationTests, testElementInit_GoodNonEmpty) {
   ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {2}); // !llzk.array<2 x index>
   auto v1 = bldr.create<index::ConstantOp>(loc, 766);
   auto v2 = bldr.create<index::ConstantOp>(loc, 562);
-  CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange({v1, v2}));
+  CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange {v1, v2});
   ASSERT_TRUE(succeeded(op.verifyInvariants()));
 }
 
@@ -53,7 +53,7 @@ TEST_F(AffineMapInstantiationTests, testElementInit_TooFew) {
   auto v2 = bldr.create<index::ConstantOp>(loc, 562);
   EXPECT_DEATH(
       {
-        CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange({v1, v2}));
+        CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange {v1, v2});
         assert(succeeded(op.verifyInvariants()));
       },
       "error: 'llzk.new_array' op failed to verify that operand types match result type"
@@ -67,7 +67,7 @@ TEST_F(AffineMapInstantiationTests, testElementInit_TooMany) {
   auto v2 = bldr.create<index::ConstantOp>(loc, 562);
   EXPECT_DEATH(
       {
-        CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange({v1, v2}));
+        CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange {v1, v2});
         assert(succeeded(op.verifyInvariants()));
       },
       "error: 'llzk.new_array' op failed to verify that operand types match result type"
@@ -95,9 +95,9 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Good) {
 
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
-  mapOperands.push_back(ValueRange({v1}));
+  mapOperands.push_back(ValueRange {v1});
   auto v2 = bldr.create<index::ConstantOp>(loc, 98);
-  mapOperands.push_back(ValueRange({v2}));
+  mapOperands.push_back(ValueRange {v2});
   SmallVector<int32_t> numDimsPerMap = {1, 1};
   CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
   ASSERT_TRUE(succeeded(op.verifyInvariants()));
@@ -110,7 +110,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op1_Dim1_Type2) {
 
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
-  mapOperands.push_back(ValueRange({v1}));
+  mapOperands.push_back(ValueRange {v1});
   SmallVector<int32_t> numDimsPerMap = {1};
   EXPECT_DEATH(
       {
@@ -129,7 +129,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op1_Dim2_Type2) {
 
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
-  mapOperands.push_back(ValueRange({v1}));
+  mapOperands.push_back(ValueRange {v1});
   SmallVector<int32_t> numDimsPerMap = {1, 0};
   EXPECT_DEATH(
       {
@@ -148,9 +148,9 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op2_Dim1_Type2) {
 
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
-  mapOperands.push_back(ValueRange({v1}));
+  mapOperands.push_back(ValueRange {v1});
   auto v2 = bldr.create<index::ConstantOp>(loc, 98);
-  mapOperands.push_back(ValueRange({v2}));
+  mapOperands.push_back(ValueRange {v2});
   SmallVector<int32_t> numDimsPerMap = {1};
   EXPECT_DEATH(
       {
@@ -169,11 +169,11 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op3_Dim3_Type1) {
 
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
-  mapOperands.push_back(ValueRange({v1}));
+  mapOperands.push_back(ValueRange {v1});
   auto v2 = bldr.create<index::ConstantOp>(loc, 98);
-  mapOperands.push_back(ValueRange({v2}));
+  mapOperands.push_back(ValueRange {v2});
   auto v3 = bldr.create<index::ConstantOp>(loc, 4);
-  mapOperands.push_back(ValueRange({v3}));
+  mapOperands.push_back(ValueRange {v3});
   SmallVector<int32_t> numDimsPerMap = {1, 1, 1};
   EXPECT_DEATH(
       {
@@ -192,11 +192,11 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op3_Dim2_Type1) {
 
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
-  mapOperands.push_back(ValueRange({v1}));
+  mapOperands.push_back(ValueRange {v1});
   auto v2 = bldr.create<index::ConstantOp>(loc, 98);
-  mapOperands.push_back(ValueRange({v2}));
+  mapOperands.push_back(ValueRange {v2});
   auto v3 = bldr.create<index::ConstantOp>(loc, 4);
-  mapOperands.push_back(ValueRange({v3}));
+  mapOperands.push_back(ValueRange {v3});
   SmallVector<int32_t> numDimsPerMap = {1, 1};
   EXPECT_DEATH(
       {
@@ -215,9 +215,9 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op2_Dim3_Type1) {
 
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
-  mapOperands.push_back(ValueRange({v1}));
+  mapOperands.push_back(ValueRange {v1});
   auto v2 = bldr.create<index::ConstantOp>(loc, 98);
-  mapOperands.push_back(ValueRange({v2}));
+  mapOperands.push_back(ValueRange {v2});
   SmallVector<int32_t> numDimsPerMap = {1, 1, 1};
   EXPECT_DEATH(
       {
@@ -236,7 +236,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_NumDimsTooHigh) {
 
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
-  mapOperands.push_back(ValueRange({v1}));
+  mapOperands.push_back(ValueRange {v1});
   SmallVector<int32_t> numDimsPerMap = {9};
   EXPECT_DEATH(
       {
@@ -256,7 +256,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_TooManyOpsForMap) {
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
   auto v2 = bldr.create<index::ConstantOp>(loc, 23);
-  mapOperands.push_back(ValueRange({v1, v2}));
+  mapOperands.push_back(ValueRange {v1, v2});
   SmallVector<int32_t> numDimsPerMap = {1};
   EXPECT_DEATH(
       {
@@ -277,7 +277,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_TooFewOpsForMap) {
   ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m}); // !llzk.array<#m x index>
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
-  mapOperands.push_back(ValueRange({v1}));
+  mapOperands.push_back(ValueRange {v1});
   SmallVector<int32_t> numDimsPerMap = {1};
   EXPECT_DEATH(
       {
@@ -297,7 +297,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_WrongTypeForMapOperands) {
   SmallVector<ValueRange> mapOperands;
   FeltConstAttr a = bldr.getAttr<FeltConstAttr>(APInt::getZero(64));
   auto v1 = bldr.create<FeltConstantOp>(loc, a);
-  mapOperands.push_back(ValueRange({v1}));
+  mapOperands.push_back(ValueRange {v1});
   SmallVector<int32_t> numDimsPerMap = {9};
   EXPECT_DEATH(
       {
