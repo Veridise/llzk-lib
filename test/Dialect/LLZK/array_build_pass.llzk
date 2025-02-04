@@ -139,7 +139,6 @@ llzk.func @test_all_forms_of_affine_map_instantiation() -> !at {
   %c = index.constant 6
   %d = index.constant 1
   // The `operandSegmentSizes` attribute lists the sizes [ elements.size, mapOperands.size, ... ]
-  //  but doesn't have to be specified explicitly.
   %r = llzk.new_array { (%a)[%b], ()[%c], (%d) } : !at  // { operandSegmentSizes = array<i32: 0, 4> }
   return %r: !at
 }

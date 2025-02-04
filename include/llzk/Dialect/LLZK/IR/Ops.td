@@ -380,13 +380,13 @@ def LLZK_CreateArrayOp
   let results = (outs LLZK_ArrayType:$result);
 
   let skipDefaultBuilders = 1;
-  let builders = [OpBuilder<(ins "::mlir::Type":$result,
+  let builders = [OpBuilder<(ins "::llzk::ArrayType":$result,
                       CArg<"::mlir::ValueRange", "{}">:$elements)>,
-                  OpBuilder<(ins "::mlir::Type":$result,
+                  OpBuilder<(ins "::llzk::ArrayType":$result,
                       "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                       "::mlir::DenseI32ArrayAttr":$numDimsPerMap)>,
                   OpBuilder<
-                      (ins "::mlir::Type":$result,
+                      (ins "::llzk::ArrayType":$result,
                           "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                           "::llvm::ArrayRef<int32_t>":$numDimsPerMap),
                       [{

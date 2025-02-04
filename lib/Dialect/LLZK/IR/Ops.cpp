@@ -726,17 +726,22 @@ void FeltNonDetOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
 //===------------------------------------------------------------------===//
 
 void CreateArrayOp::build(
-    OpBuilder &odsBuilder, OperationState &odsState, Type result, ValueRange elements
+    OpBuilder &odsBuilder, OperationState &odsState, ArrayType result, ValueRange elements
 ) {
   odsState.addTypes(result);
   odsState.addOperands(elements);
-  odsState.getOrAddProperties<Properties>().operandSegmentSizes = {
-      static_cast<int32_t>(elements.size()), 0
-  };
+  Properties &props = odsState.getOrAddProperties<Properties>();
+  // `operandSegmentSizes` = [ elements.size, mapOperands.size ]
+  props.operandSegmentSizes = {static_cast<int32_t>(elements.size()), 0};
+  // This builds CreateArrayOp from a list of elements. In that case, the dimensions of the array
+  // type cannot be defined via an affine map which means there are no affine map operands so
+  // initialize the related properties as empty arrays.
+  props.mapOpGroupSizes = odsBuilder.getDenseI32ArrayAttr({});
+  props.numDimsPerMap = odsBuilder.getDenseI32ArrayAttr({});
 }
 
 void CreateArrayOp::build(
-    OpBuilder &odsBuilder, OperationState &odsState, Type result, ArrayRef<ValueRange> mapOperands,
+    OpBuilder &odsBuilder, OperationState &odsState, ArrayType result, ArrayRef<ValueRange> mapOperands,
     DenseI32ArrayAttr numDimsPerMap
 ) {
   odsState.addTypes(result);
