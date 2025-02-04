@@ -237,13 +237,8 @@ def CallOp
   let results = (outs Variadic<AnyLLZKType>);
 
   let builders = [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
-                                "::mlir::SymbolRefAttr":$callee,
-                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
-                            [{
-                              $_state.addOperands(argOperands);
-                              $_state.addAttribute("callee", callee);
-                              $_state.addTypes(resultTypes);
-                            }]>,
+                      "::mlir::SymbolRefAttr":$callee,
+                      CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
                   OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
                                 "::mlir::StringAttr":$callee,
                                 CArg<"::mlir::ValueRange", "{}">:$argOperands),

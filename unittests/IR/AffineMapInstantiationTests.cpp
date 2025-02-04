@@ -30,6 +30,10 @@ protected:
   }
 };
 
+//===------------------------------------------------------------------===//
+// CreateArrayOp::build(..., ArrayType, ValueRange)
+//===------------------------------------------------------------------===//
+
 TEST_F(AffineMapInstantiationTests, testElementInit_GoodEmpty) {
   OpBuilder bldr(mod->getRegion());
   ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {2, 2}); // !llzk.array<2,2 x index>
@@ -87,6 +91,10 @@ TEST_F(AffineMapInstantiationTests, testElementInit_WithAffineMapType) {
       "of affine map instantiations \\(1\\) required by the type"
   );
 }
+
+//===------------------------------------------------------------------===//
+// CreateArrayOp::build(..., ArrayType, ArrayRef<ValueRange>, ArrayRef<int32_t>)
+//===------------------------------------------------------------------===//
 
 TEST_F(AffineMapInstantiationTests, testMapOpInit_Good) {
   OpBuilder bldr(mod->getRegion());
@@ -307,3 +315,31 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_WrongTypeForMapOperands) {
       "error: 'llzk.new_array' op operand #0 must be variadic of index, but got '!llzk.felt'"
   );
 }
+
+//===------------------------------------------------------------------===//
+// CallOp::build(..., TypeRange, SymbolRefAttr, ValueRange)
+//===------------------------------------------------------------------===//
+
+TEST_F(AffineMapInstantiationTests, testCallNoAffine_GoodNoArgs) {
+  // llzk.call calleeFunctionName() : () -> index
+  OpBuilder bldr(mod->getRegion());
+  TypeRange resultTypes({bldr.getIndexType()});
+  SymbolRefAttr callee = FlatSymbolRefAttr::get(&ctx, "calleeFunctionName");
+  // ValueRange argOperands({});
+  CallOp op = bldr.create<CallOp>(loc, resultTypes, callee, ValueRange {});
+  ASSERT_TRUE(succeeded(op.verifyInvariants()));
+}
+
+TEST_F(AffineMapInstantiationTests, testCallNoAffine_GoodWithArgs) {
+  // %0 = llzk.constfelt 0
+  // %1 = index.constant 5
+  // llzk.call calleeFunctionName(%0, %1) : (!llzk.felt, index) -> index
+  OpBuilder bldr(mod->getRegion());
+  TypeRange resultTypes({bldr.getIndexType()});
+  SymbolRefAttr callee = FlatSymbolRefAttr::get(&ctx, "calleeFunctionName");
+  auto v1 = bldr.create<FeltConstantOp>(loc, bldr.getAttr<FeltConstAttr>(APInt::getZero(64)));
+  auto v2 = bldr.create<index::ConstantOp>(loc, 5);
+  CallOp op = bldr.create<CallOp>(loc, resultTypes, callee, ValueRange {v1, v2});
+  ASSERT_TRUE(succeeded(op.verifyInvariants()));
+}
+

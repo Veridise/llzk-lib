@@ -293,6 +293,21 @@ LogicalResult ReturnOp::verify() {
 // CallOp
 //===----------------------------------------------------------------------===//
 
+void CallOp::build(
+    OpBuilder &odsBuilder, OperationState &odsState, TypeRange resultTypes, SymbolRefAttr callee,
+    ValueRange argOperands
+) {
+  odsState.addTypes(resultTypes);
+  odsState.addOperands(argOperands);
+  Properties &props = odsState.getOrAddProperties<Properties>();
+  props.callee = callee;
+  // `operandSegmentSizes` = [ argOperands.size, mapOperands.size ]
+  props.operandSegmentSizes = {static_cast<int32_t>(argOperands.size()), 0};
+  // There are no affine map operands so initialize the related properties as empty arrays.
+  props.mapOpGroupSizes = odsBuilder.getDenseI32ArrayAttr({});
+  props.numDimsPerMap = odsBuilder.getDenseI32ArrayAttr({});
+}
+
 namespace {
 enum class CalleeKind { Compute, Constrain, Other };
 
