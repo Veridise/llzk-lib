@@ -113,7 +113,7 @@ ModuleBuilder &ModuleBuilder::insertComputeCall(
   auto calleeFn = computeFnMap.at(callee.getName());
 
   OpBuilder builder(callerFn.getBody());
-  builder.create<llzk::CallOp>(callLoc, calleeFn.getFullyQualifiedName(), ValueRange {});
+  builder.create<llzk::CallOp>(callLoc, ValueRange {}, calleeFn.getFullyQualifiedName());
   updateComputeReachability(caller, callee);
   return *this;
 }
@@ -149,7 +149,7 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
         callerFn.getBody().getArgument(0), // first arg is self
         fieldName
     );
-    builder.create<llzk::CallOp>(callLoc, calleeFn.getFullyQualifiedName(), ValueRange {field});
+    builder.create<llzk::CallOp>(callLoc, ValueRange {field}, calleeFn.getFullyQualifiedName());
   }
   updateConstrainReachability(caller, callee);
   return *this;

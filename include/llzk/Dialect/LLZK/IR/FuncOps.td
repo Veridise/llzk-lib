@@ -236,31 +236,31 @@ def CallOp
       DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs Variadic<AnyLLZKType>);
 
-  let builders = [OpBuilder<(ins "::mlir::SymbolRefAttr":$callee,
-                                "::mlir::TypeRange":$results,
+  let builders = [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                                "::mlir::SymbolRefAttr":$callee,
                                 CArg<"::mlir::ValueRange", "{}">:$argOperands),
                             [{
                               $_state.addOperands(argOperands);
                               $_state.addAttribute("callee", callee);
-                              $_state.addTypes(results);
+                              $_state.addTypes(resultTypes);
+                            }]>,
+                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                                "::mlir::StringAttr":$callee,
+                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                            [{
+                              build($_builder, $_state, resultTypes, ::mlir::SymbolRefAttr::get(callee), argOperands);
+                            }]>,
+                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                                "::llvm::StringRef":$callee,
+                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                            [{
+                              build($_builder, $_state, resultTypes, $_builder.getStringAttr(callee), argOperands);
                             }]>,
                   OpBuilder<(ins "::llzk::FuncOp":$callee,
                                 CArg<"::mlir::ValueRange", "{}">:$argOperands),
                             [{
-                              build($_builder, $_state, ::mlir::SymbolRefAttr::get(callee),
-                                    callee.getFunctionType().getResults(), argOperands);
-                            }]>,
-                  OpBuilder<(ins "::mlir::StringAttr":$callee,
-                                "::mlir::TypeRange":$results,
-                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
-                            [{
-                              build($_builder, $_state, ::mlir::SymbolRefAttr::get(callee), results, argOperands);
-                            }]>,
-                  OpBuilder<(ins "::llvm::StringRef":$callee,
-                                "::mlir::TypeRange":$results,
-                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
-                            [{
-                              build($_builder, $_state, $_builder.getStringAttr(callee), results, argOperands);
+                              build($_builder, $_state, callee.getFunctionType().getResults(),
+                                    ::mlir::SymbolRefAttr::get(callee), argOperands);
                             }]>];
 
   let extraClassDeclaration = [{
