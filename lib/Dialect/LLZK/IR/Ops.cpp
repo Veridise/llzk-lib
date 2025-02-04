@@ -173,7 +173,6 @@ LogicalResult verifySizesForMultiAffineOps(
     );
   }
   if (mapOperands.size() != count) {
-    // TODO-GTEST: use gtest build+verify b/c mapOpGroupSizes is computed when parsing.
     return msgInstantiationGroupAttrMismatch(op, count, mapOperands.size());
   }
 
@@ -207,13 +206,13 @@ LogicalResult verifyAffineMapInstantiations(
 ) {
   size_t count = numDimsPerMap.size();
   if (mapOps.size() != count) {
-    // TODO-GTEST: use gtest build+verify b/c numDimsPerMap is computed when parsing.
     return msgInstantiationGroupAttrMismatch(origin, count, mapOps.size());
   }
 
   // Ensure there is one OperandRange for each AffineMapAttr
   if (mapAttrs.size() != count) {
-    // Tested in array_build_fail.llzk and call_with_affinemap_fail.llzk
+    // Tested in array_build_fail.llzk, call_with_affinemap_fail.llzk, and
+    // AffineMapInstantiationTests.cpp
     return origin->emitOpError().append(
         "map instantiation group count (", count,
         ") does not match the number of affine map instantiations (", mapAttrs.size(),
