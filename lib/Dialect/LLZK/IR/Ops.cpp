@@ -741,8 +741,8 @@ void CreateArrayOp::build(
 }
 
 void CreateArrayOp::build(
-    OpBuilder &odsBuilder, OperationState &odsState, ArrayType result, ArrayRef<ValueRange> mapOperands,
-    DenseI32ArrayAttr numDimsPerMap
+    OpBuilder &odsBuilder, OperationState &odsState, ArrayType result,
+    ArrayRef<ValueRange> mapOperands, DenseI32ArrayAttr numDimsPerMap
 ) {
   odsState.addTypes(result);
 
