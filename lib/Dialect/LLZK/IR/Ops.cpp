@@ -186,14 +186,14 @@ LogicalResult verifySizesForMultiAffineOps(
       // TODO-GTEST: use gtest build+verify b/c mapOpGroupSizes is computed when parsing.
       aggregateResult = op->emitOpError().append(
           "map instantiation group ", i, " operand count (", mapOperands[i].size(),
-          ") does not match group size ", i, " in 'mapOpGroupSizes' attribute (",
+          ") does not match group ", i, " size in 'mapOpGroupSizes' attribute (",
           currMapOpGroupSize, ")"
       );
     } else if (std::cmp_greater(numDimsPerMap[i], currMapOpGroupSize)) {
       // TODO-GTEST: use gtest build+verify b/c numDimsPerMap and mapOpGroupSizes are computed.
       aggregateResult = op->emitOpError().append(
-          "map instantiation group ", i, " dimension count (", numDimsPerMap[i],
-          ") exceeds group size ", i, " in 'mapOpGroupSizes' attribute (", currMapOpGroupSize, ")"
+          "map instantiation group ", i, " dimension count (", numDimsPerMap[i], ") exceeds group ",
+          i, " size in 'mapOpGroupSizes' attribute (", currMapOpGroupSize, ")"
       );
     }
   }
