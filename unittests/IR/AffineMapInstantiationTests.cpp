@@ -9,13 +9,18 @@ using namespace llzk;
 using namespace mlir;
 
 class AffineMapInstantiationTests : public ::testing::Test {
-public:
+protected:
+  static constexpr auto funcNameA = "FuncA";
+  static constexpr auto funcNameB = "FuncB";
+  static constexpr auto structNameA = "StructA";
+  static constexpr auto structNameB = "StructB";
+  static constexpr auto structNameC = "StructC";
+
   MLIRContext ctx;
   Location loc;
   OwningOpRef<ModuleOp> mod;
 
-protected:
-  AffineMapInstantiationTests() : ctx(), loc(UnknownLoc::get(&ctx)), mod() {
+  AffineMapInstantiationTests() : ctx(), loc(getUnknownLoc(&ctx)), mod() {
     ctx.loadDialect<llzk::LLZKDialect>();
   }
 
@@ -28,17 +33,54 @@ protected:
     // Allow existing module to be erased after each test
     mod = OwningOpRef<ModuleOp>();
   }
+
+  ModuleBuilder newEmptyExample() { return ModuleBuilder {mod.get()}; }
+
+  ModuleBuilder newBasicFunctionsExample(size_t numParams) {
+    IndexType idxTy = IndexType::get(&ctx);
+    SmallVector<Type> paramTypes(numParams, idxTy);
+    FunctionType fTy = FunctionType::get(&ctx, TypeRange(paramTypes), TypeRange {idxTy});
+    ModuleBuilder llzkBldr(mod.get());
+    llzkBldr.insertGlobalFunc(funcNameB, fTy).insertGlobalFunc(funcNameA, fTy);
+    return llzkBldr;
+  }
+
+  ModuleBuilder newBasicStructExample() {
+    ModuleBuilder llzkBldr(mod.get());
+    llzkBldr.insertFullStruct(structNameA)
+        .insertFullStruct(structNameB)
+        .insertComputeCall(structNameA, structNameB)
+        .insertConstrainCall(structNameA, structNameB);
+    return llzkBldr;
+  }
 };
 
-template <typename ConcreteType> bool verify(ConcreteType op) {
-  Operation *opPtr = op.getOperation();
-  return
-      // First check calls the ODS-generated function for the Op which ensures that necesary
-      // attributes exist, etc.
-      succeeded(op.verifyInvariants()) &&
-      // Second check verifies all traits on the Op and calls the custom verify(), if defined (via
-      // the verifyInvariants() function in OpDefinition.h).
-      succeeded(opPtr->getName().verifyInvariants(opPtr));
+template <typename ConcreteType> bool verify(Operation *op, bool verifySymbolUses = false) {
+  // First, call the ODS-generated function for the Op to ensure that necessary attributes exist.
+  if (failed(llvm::cast<ConcreteType>(op).verifyInvariants())) {
+    return false;
+  }
+  // Second, verify all traits on the Op and call the custom verify() (if defined) via the
+  // `verifyInvariants()` function in `OpDefinition.h`.
+  if (failed(op->getName().verifyInvariants(op))) {
+    return false;
+  }
+  // Finally, if applicable, call the ODS-generated `verifySymbolUses()` function.
+  if (verifySymbolUses) {
+    if (SymbolUserOpInterface userOp = llvm::dyn_cast<SymbolUserOpInterface>(op)) {
+      SymbolTableCollection tables;
+      if (failed(userOp.verifySymbolUses(tables))) {
+        return false;
+      }
+    }
+  }
+  //
+  return true;
+}
+
+template <typename ConcreteType>
+inline bool verify(ConcreteType op, bool verifySymbolUses = false) {
+  return verify<ConcreteType>(op.getOperation(), verifySymbolUses);
 }
 
 //===------------------------------------------------------------------===//
@@ -332,25 +374,51 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_WrongTypeForMapOperands) {
 //===------------------------------------------------------------------===//
 
 TEST_F(AffineMapInstantiationTests, testCallNoAffine_GoodNoArgs) {
-  // llzk.call calleeFunctionName() : () -> index
-  OpBuilder bldr(mod->getRegion());
-  TypeRange resultTypes({bldr.getIndexType()});
-  SymbolRefAttr callee = FlatSymbolRefAttr::get(&ctx, "calleeFunctionName");
-  // ValueRange argOperands({});
-  CallOp op = bldr.create<CallOp>(loc, resultTypes, callee, ValueRange {});
-  ASSERT_TRUE(verify(op));
+  ModuleBuilder llzkBldr = newBasicFunctionsExample(0);
+
+  auto funcA = llzkBldr.getGlobalFunc(funcNameA);
+  ASSERT_TRUE(mlir::succeeded(funcA));
+  auto funcB = llzkBldr.getGlobalFunc(funcNameB);
+  ASSERT_TRUE(mlir::succeeded(funcB));
+
+  OpBuilder bldr(funcA->getBody());
+  CallOp op = bldr.create<CallOp>(
+      loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {}
+  );
+  // module attributes {veridise.lang = "llzk"} {
+  //   llzk.func @FuncA() -> index {
+  //     %0 = call @FuncB() : () -> index
+  //   }
+  //   llzk.func @FuncB() -> index {
+  //   }
+  // }
+  ASSERT_TRUE(verify(mod.get()));
+  ASSERT_TRUE(verify(op, true));
 }
 
 TEST_F(AffineMapInstantiationTests, testCallNoAffine_GoodWithArgs) {
-  // %0 = llzk.constfelt 0
-  // %1 = index.constant 5
-  // llzk.call calleeFunctionName(%0, %1) : (!llzk.felt, index) -> index
-  OpBuilder bldr(mod->getRegion());
-  TypeRange resultTypes({bldr.getIndexType()});
-  SymbolRefAttr callee = FlatSymbolRefAttr::get(&ctx, "calleeFunctionName");
-  auto v1 = bldr.create<FeltConstantOp>(loc, bldr.getAttr<FeltConstAttr>(APInt::getZero(64)));
-  auto v2 = bldr.create<index::ConstantOp>(loc, 5);
-  CallOp op = bldr.create<CallOp>(loc, resultTypes, callee, ValueRange {v1, v2});
-  ASSERT_TRUE(verify(op));
-}
+  ModuleBuilder llzkBldr = newBasicFunctionsExample(2);
 
+  auto funcA = llzkBldr.getGlobalFunc(funcNameA);
+  ASSERT_TRUE(mlir::succeeded(funcA));
+  auto funcB = llzkBldr.getGlobalFunc(funcNameB);
+  ASSERT_TRUE(mlir::succeeded(funcB));
+
+  OpBuilder bldr(funcA->getBody());
+  auto v1 = bldr.create<index::ConstantOp>(loc, 5);
+  auto v2 = bldr.create<index::ConstantOp>(loc, 2);
+  CallOp op = bldr.create<CallOp>(
+      loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1, v2}
+  );
+  // module attributes {veridise.lang = "llzk"} {
+  //   llzk.func @FuncA(%arg0: index, %arg1: index) -> index {
+  //     %idx5 = index.constant 5
+  //     %idx2 = index.constant 2
+  //     %0 = call @FuncB(%idx5, %idx2) : (index, index) -> index
+  //   }
+  //   llzk.func @FuncB(%arg0: index, %arg1: index) -> index {
+  //   }
+  // }
+  ASSERT_TRUE(verify(mod.get()));
+  ASSERT_TRUE(verify(op, true));
+}
