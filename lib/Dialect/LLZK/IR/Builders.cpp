@@ -8,13 +8,13 @@ namespace llzk {
 using namespace mlir;
 
 OwningOpRef<ModuleOp> createLLZKModule(MLIRContext *context, Location loc) {
-  auto dialect = context->getOrLoadDialect<llzk::LLZKDialect>();
+  auto dialect = context->getOrLoadDialect<LLZKDialect>();
   if (!dialect) {
     llvm::report_fatal_error("Could not load LLZK dialect!");
   }
   auto langAttr = StringAttr::get(context, dialect->getNamespace());
   auto mod = ModuleOp::create(loc);
-  mod->setAttr(llzk::LANG_ATTR_NAME, langAttr);
+  mod->setAttr(LANG_ATTR_NAME, langAttr);
   return mod;
 }
 
@@ -66,7 +66,7 @@ ModuleBuilder &ModuleBuilder::insertEmptyStruct(std::string_view structName, Loc
 
   OpBuilder opBuilder(rootModule.getBody(), rootModule.getBody()->begin());
   auto structNameAtrr = StringAttr::get(context, structName);
-  auto structDef = opBuilder.create<llzk::StructDefOp>(loc, structNameAtrr, nullptr);
+  auto structDef = opBuilder.create<StructDefOp>(loc, structNameAtrr, nullptr);
   // populate the initial region
   auto &region = structDef.getRegion();
   (void)region.emplaceBlock();
@@ -75,13 +75,13 @@ ModuleBuilder &ModuleBuilder::insertEmptyStruct(std::string_view structName, Loc
   return *this;
 }
 
-ModuleBuilder &ModuleBuilder::insertComputeFn(llzk::StructDefOp op, Location loc) {
+ModuleBuilder &ModuleBuilder::insertComputeFn(StructDefOp op, Location loc) {
   ensureNoSuchComputeFn(op.getName());
 
   OpBuilder opBuilder(op.getBody());
 
-  auto fnOp = opBuilder.create<llzk::FuncOp>(
-      loc, StringAttr::get(context, llzk::FUNC_NAME_COMPUTE),
+  auto fnOp = opBuilder.create<FuncOp>(
+      loc, StringAttr::get(context, FUNC_NAME_COMPUTE),
       FunctionType::get(context, {}, {op.getType()})
   );
   fnOp.addEntryBlock();
@@ -89,13 +89,13 @@ ModuleBuilder &ModuleBuilder::insertComputeFn(llzk::StructDefOp op, Location loc
   return *this;
 }
 
-ModuleBuilder &ModuleBuilder::insertConstrainFn(llzk::StructDefOp op, Location loc) {
+ModuleBuilder &ModuleBuilder::insertConstrainFn(StructDefOp op, Location loc) {
   ensureNoSuchConstrainFn(op.getName());
 
   OpBuilder opBuilder(op.getBody());
 
-  auto fnOp = opBuilder.create<llzk::FuncOp>(
-      loc, StringAttr::get(context, llzk::FUNC_NAME_CONSTRAIN),
+  auto fnOp = opBuilder.create<FuncOp>(
+      loc, StringAttr::get(context, FUNC_NAME_CONSTRAIN),
       FunctionType::get(context, {op.getType()}, {})
   );
   fnOp.addEntryBlock();
@@ -103,9 +103,8 @@ ModuleBuilder &ModuleBuilder::insertConstrainFn(llzk::StructDefOp op, Location l
   return *this;
 }
 
-ModuleBuilder &ModuleBuilder::insertComputeCall(
-    llzk::StructDefOp caller, llzk::StructDefOp callee, Location callLoc
-) {
+ModuleBuilder &
+ModuleBuilder::insertComputeCall(StructDefOp caller, StructDefOp callee, Location callLoc) {
   ensureComputeFnExists(caller.getName());
   ensureComputeFnExists(callee.getName());
 
@@ -113,14 +112,13 @@ ModuleBuilder &ModuleBuilder::insertComputeCall(
   auto calleeFn = computeFnMap.at(callee.getName());
 
   OpBuilder builder(callerFn.getBody());
-  builder.create<llzk::CallOp>(callLoc, ValueRange {}, calleeFn.getFullyQualifiedName());
+  builder.create<CallOp>(callLoc, calleeFn.getResultTypes(), calleeFn.getFullyQualifiedName());
   updateComputeReachability(caller, callee);
   return *this;
 }
 
-ModuleBuilder &ModuleBuilder::insertConstrainCall(
-    llzk::StructDefOp caller, llzk::StructDefOp callee, Location callLoc
-) {
+ModuleBuilder &
+ModuleBuilder::insertConstrainCall(StructDefOp caller, StructDefOp callee, Location callLoc) {
   ensureConstrainFnExists(caller.getName());
   ensureConstrainFnExists(callee.getName());
 
@@ -137,19 +135,21 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
   {
     OpBuilder builder(caller.getBody());
     /// TODO: add a specific location for this declaration?
-    builder.create<llzk::FieldDefOp>(UnknownLoc::get(context), fieldName, calleeTy);
+    builder.create<FieldDefOp>(UnknownLoc::get(context), fieldName, calleeTy);
   }
 
   // Insert the constrain function ops
   {
     OpBuilder builder(callerFn.getBody());
 
-    auto field = builder.create<llzk::FieldReadOp>(
+    auto field = builder.create<FieldReadOp>(
         callLoc, calleeTy,
         callerFn.getBody().getArgument(0), // first arg is self
         fieldName
     );
-    builder.create<llzk::CallOp>(callLoc, ValueRange {field}, calleeFn.getFullyQualifiedName());
+    builder.create<CallOp>(
+        callLoc, TypeRange {}, calleeFn.getFullyQualifiedName(), ValueRange {field}
+    );
   }
   updateConstrainReachability(caller, callee);
   return *this;

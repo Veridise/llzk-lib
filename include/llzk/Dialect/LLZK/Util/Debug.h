@@ -100,5 +100,15 @@ inline void dumpSymbolTables(mlir::SymbolTableCollection &tables) {
   llvm::outs() << output;
 }
 
+inline void dumpToFile(mlir::Operation *op, llvm::StringRef filename) {
+  std::error_code err;
+  llvm::raw_fd_stream stream(filename, err);
+  if (!err) {
+    auto options = mlir::OpPrintingFlags().assumeVerified().useLocalScope();
+    op->print(stream, options);
+    stream << "\n";
+  }
+}
+
 } // namespace debug
 } // namespace llzk
