@@ -30,6 +30,17 @@ protected:
   }
 };
 
+template <typename ConcreteType> bool verify(ConcreteType op) {
+  Operation *opPtr = op.getOperation();
+  return
+      // First check calls the ODS-generated function for the Op which ensures that necesary
+      // attributes exist, etc.
+      succeeded(op.verifyInvariants()) &&
+      // Second check verifies all traits on the Op and calls the custom verify(), if defined (via
+      // the verifyInvariants() function in OpDefinition.h).
+      succeeded(opPtr->getName().verifyInvariants(opPtr));
+}
+
 //===------------------------------------------------------------------===//
 // CreateArrayOp::build(..., ArrayType, ValueRange)
 //===------------------------------------------------------------------===//
@@ -38,7 +49,7 @@ TEST_F(AffineMapInstantiationTests, testElementInit_GoodEmpty) {
   OpBuilder bldr(mod->getRegion());
   ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {2, 2}); // !llzk.array<2,2 x index>
   CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy);
-  ASSERT_TRUE(succeeded(op.verifyInvariants()));
+  ASSERT_TRUE(verify(op));
 }
 
 TEST_F(AffineMapInstantiationTests, testElementInit_GoodNonEmpty) {
@@ -47,7 +58,7 @@ TEST_F(AffineMapInstantiationTests, testElementInit_GoodNonEmpty) {
   auto v1 = bldr.create<index::ConstantOp>(loc, 766);
   auto v2 = bldr.create<index::ConstantOp>(loc, 562);
   CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange {v1, v2});
-  ASSERT_TRUE(succeeded(op.verifyInvariants()));
+  ASSERT_TRUE(verify(op));
 }
 
 TEST_F(AffineMapInstantiationTests, testElementInit_TooFew) {
@@ -58,7 +69,7 @@ TEST_F(AffineMapInstantiationTests, testElementInit_TooFew) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange {v1, v2});
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op failed to verify that operand types match result type"
   );
@@ -72,7 +83,7 @@ TEST_F(AffineMapInstantiationTests, testElementInit_TooMany) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange {v1, v2});
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op failed to verify that operand types match result type"
   );
@@ -85,7 +96,7 @@ TEST_F(AffineMapInstantiationTests, testElementInit_WithAffineMapType) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy);
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op map instantiation group count \\(0\\) does not match the number "
       "of affine map instantiations \\(1\\) required by the type"
@@ -108,7 +119,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Good) {
   mapOperands.push_back(ValueRange {v2});
   SmallVector<int32_t> numDimsPerMap = {1, 1};
   CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
-  ASSERT_TRUE(succeeded(op.verifyInvariants()));
+  ASSERT_TRUE(verify(op));
 }
 
 TEST_F(AffineMapInstantiationTests, testMapOpInit_Op1_Dim1_Type2) {
@@ -123,7 +134,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op1_Dim1_Type2) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op map instantiation group count \\(1\\) does not match the number "
       "of affine map instantiations \\(2\\) required by the type"
@@ -142,7 +153,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op1_Dim2_Type2) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op map instantiation group count \\(1\\) does not match with length "
       "of 'mapOpGroupSizes' attribute \\(2\\)"
@@ -163,7 +174,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op2_Dim1_Type2) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op map instantiation group count \\(2\\) does not match with length "
       "of 'mapOpGroupSizes' attribute \\(1\\)"
@@ -186,7 +197,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op3_Dim3_Type1) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op map instantiation group count \\(3\\) does not match the number "
       "of affine map instantiations \\(1\\) required by the type"
@@ -209,7 +220,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op3_Dim2_Type1) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op map instantiation group count \\(3\\) does not match with length "
       "of 'mapOpGroupSizes' attribute \\(2\\)"
@@ -230,7 +241,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op2_Dim3_Type1) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op map instantiation group count \\(2\\) does not match with length "
       "of 'mapOpGroupSizes' attribute \\(3\\)"
@@ -249,7 +260,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_NumDimsTooHigh) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op instantiation of map 0 expected 1 but found 9 dimension values "
       "in \\(\\)"
@@ -269,7 +280,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_TooManyOpsForMap) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op instantiation of map 0 expected 0 but found 1 symbol values in "
       "\\[\\]"
@@ -290,7 +301,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_TooFewOpsForMap) {
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op instantiation of map 0 expected 2 but found 1 dimension values "
       "in \\(\\)"
@@ -306,11 +317,11 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_WrongTypeForMapOperands) {
   FeltConstAttr a = bldr.getAttr<FeltConstAttr>(APInt::getZero(64));
   auto v1 = bldr.create<FeltConstantOp>(loc, a);
   mapOperands.push_back(ValueRange {v1});
-  SmallVector<int32_t> numDimsPerMap = {9};
+  SmallVector<int32_t> numDimsPerMap = {1};
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
-        assert(succeeded(op.verifyInvariants()));
+        assert(verify(op));
       },
       "error: 'llzk.new_array' op operand #0 must be variadic of index, but got '!llzk.felt'"
   );
@@ -327,7 +338,7 @@ TEST_F(AffineMapInstantiationTests, testCallNoAffine_GoodNoArgs) {
   SymbolRefAttr callee = FlatSymbolRefAttr::get(&ctx, "calleeFunctionName");
   // ValueRange argOperands({});
   CallOp op = bldr.create<CallOp>(loc, resultTypes, callee, ValueRange {});
-  ASSERT_TRUE(succeeded(op.verifyInvariants()));
+  ASSERT_TRUE(verify(op));
 }
 
 TEST_F(AffineMapInstantiationTests, testCallNoAffine_GoodWithArgs) {
@@ -340,6 +351,6 @@ TEST_F(AffineMapInstantiationTests, testCallNoAffine_GoodWithArgs) {
   auto v1 = bldr.create<FeltConstantOp>(loc, bldr.getAttr<FeltConstAttr>(APInt::getZero(64)));
   auto v2 = bldr.create<index::ConstantOp>(loc, 5);
   CallOp op = bldr.create<CallOp>(loc, resultTypes, callee, ValueRange {v1, v2});
-  ASSERT_TRUE(succeeded(op.verifyInvariants()));
+  ASSERT_TRUE(verify(op));
 }
 
