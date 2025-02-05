@@ -18,13 +18,14 @@ OwningOpRef<ModuleOp> createLLZKModule(MLIRContext *context, Location loc) {
   return mod;
 }
 
-OwningOpRef<ModuleOp> createLLZKModule(MLIRContext *context) {
-  return createLLZKModule(context, UnknownLoc::get(context));
-}
-
 /* ModuleBuilder */
 
-ModuleBuilder::ModuleBuilder(ModuleOp m) : context(m.getContext()), rootModule(m) {}
+void ModuleBuilder::ensureNoSuchGlobalFunc(std::string_view funcName) {
+  if (globalFuncMap.find(funcName) != globalFuncMap.end()) {
+    auto error_message = "global function " + Twine(funcName) + " already exists!";
+    llvm::report_fatal_error(error_message);
+  }
+}
 
 void ModuleBuilder::ensureNoSuchStruct(std::string_view structName) {
   if (structMap.find(structName) != structMap.end()) {
@@ -152,6 +153,18 @@ ModuleBuilder::insertConstrainCall(StructDefOp caller, StructDefOp callee, Locat
     );
   }
   updateConstrainReachability(caller, callee);
+  return *this;
+}
+
+ModuleBuilder &
+ModuleBuilder::insertGlobalFunc(std::string_view funcName, FunctionType type, Location loc) {
+  ensureNoSuchGlobalFunc(funcName);
+
+  OpBuilder opBuilder(rootModule.getBody(), rootModule.getBody()->begin());
+  auto funcDef = opBuilder.create<FuncOp>(loc, funcName, type);
+  (void)funcDef.addEntryBlock();
+  globalFuncMap[funcName] = funcDef;
+
   return *this;
 }
 

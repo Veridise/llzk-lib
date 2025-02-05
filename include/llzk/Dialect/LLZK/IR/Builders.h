@@ -14,8 +14,15 @@
 
 namespace llzk {
 
+inline mlir::Location getUnknownLoc(mlir::MLIRContext *context) {
+  return mlir::UnknownLoc::get(context);
+}
+
 mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context, mlir::Location loc);
-mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context);
+
+inline mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context) {
+  return createLLZKModule(context, getUnknownLoc(context));
+}
 
 /// @brief Builds out a LLZK-compliant module and provides utilities for populating
 /// that module. This class is designed to be used by front-ends looking to
@@ -23,13 +30,15 @@ mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *context);
 /// TODO: this is a WIP, flesh this class out as needed.
 class ModuleBuilder {
 public:
-  ModuleBuilder(mlir::ModuleOp m);
+  ModuleBuilder(mlir::ModuleOp m) : context(m.getContext()), rootModule(m) {}
 
   /* Builder methods */
 
+  inline mlir::Location getUnknownLoc() { return llzk::getUnknownLoc(context); }
+
   ModuleBuilder &insertEmptyStruct(std::string_view structName, mlir::Location loc);
-  ModuleBuilder &insertEmptyStruct(std::string_view structName) {
-    return insertEmptyStruct(structName, mlir::UnknownLoc::get(context));
+  inline ModuleBuilder &insertEmptyStruct(std::string_view structName) {
+    return insertEmptyStruct(structName, getUnknownLoc());
   }
 
   ModuleBuilder &insertComputeOnlyStruct(
@@ -39,8 +48,9 @@ public:
     insertComputeFn(structName, computeLoc);
     return *this;
   }
+
   ModuleBuilder &insertComputeOnlyStruct(std::string_view structName) {
-    auto unk = mlir::UnknownLoc::get(context);
+    auto unk = getUnknownLoc();
     return insertComputeOnlyStruct(structName, unk, unk);
   }
 
@@ -53,7 +63,7 @@ public:
   }
 
   ModuleBuilder &insertConstrainOnlyStruct(std::string_view structName) {
-    auto unk = mlir::UnknownLoc::get(context);
+    auto unk = getUnknownLoc();
     return insertConstrainOnlyStruct(structName, unk, unk);
   }
 
@@ -69,7 +79,7 @@ public:
 
   /// Inserts a struct with both compute and constrain functions.
   ModuleBuilder &insertFullStruct(std::string_view structName) {
-    auto unk = mlir::UnknownLoc::get(context);
+    auto unk = getUnknownLoc();
     return insertFullStruct(structName, unk, unk, unk);
   }
 
@@ -82,7 +92,7 @@ public:
     return insertComputeFn(*getStruct(structName), loc);
   }
   ModuleBuilder &insertComputeFn(std::string_view structName) {
-    return insertComputeFn(structName, mlir::UnknownLoc::get(context));
+    return insertComputeFn(structName, getUnknownLoc());
   }
 
   /**
@@ -90,10 +100,10 @@ public:
    */
   ModuleBuilder &insertConstrainFn(llzk::StructDefOp op, mlir::Location loc);
   ModuleBuilder &insertConstrainFn(std::string_view structName, mlir::Location loc) {
-    return insertConstrainFn(*getStruct(structName), mlir::UnknownLoc::get(context));
+    return insertConstrainFn(*getStruct(structName), getUnknownLoc());
   }
   ModuleBuilder &insertConstrainFn(std::string_view structName) {
-    return insertConstrainFn(structName, mlir::UnknownLoc::get(context));
+    return insertConstrainFn(structName, getUnknownLoc());
   }
 
   /**
@@ -108,7 +118,7 @@ public:
     return insertComputeCall(*getStruct(caller), *getStruct(callee), callLoc);
   }
   ModuleBuilder &insertComputeCall(std::string_view caller, std::string_view callee) {
-    return insertComputeCall(caller, callee, mlir::UnknownLoc::get(context));
+    return insertComputeCall(caller, callee, getUnknownLoc());
   }
 
   /**
@@ -124,7 +134,13 @@ public:
     return insertConstrainCall(*getStruct(caller), *getStruct(callee), callLoc);
   }
   ModuleBuilder &insertConstrainCall(std::string_view caller, std::string_view callee) {
-    return insertConstrainCall(caller, callee, mlir::UnknownLoc::get(context));
+    return insertConstrainCall(caller, callee, getUnknownLoc());
+  }
+
+  ModuleBuilder &
+  insertGlobalFunc(std::string_view funcName, ::mlir::FunctionType type, mlir::Location loc);
+  inline ModuleBuilder &insertGlobalFunc(std::string_view funcName, ::mlir::FunctionType type) {
+    return insertGlobalFunc(funcName, type, getUnknownLoc());
   }
 
   /* Getter methods */
@@ -145,7 +161,7 @@ public:
     }
     return mlir::failure();
   }
-  mlir::FailureOr<llzk::FuncOp> getComputeFn(llzk::StructDefOp op) const {
+  inline mlir::FailureOr<llzk::FuncOp> getComputeFn(llzk::StructDefOp op) const {
     return getComputeFn(op.getName());
   }
 
@@ -155,8 +171,15 @@ public:
     }
     return mlir::failure();
   }
-  mlir::FailureOr<llzk::FuncOp> getConstrainFn(llzk::StructDefOp op) {
+  inline mlir::FailureOr<llzk::FuncOp> getConstrainFn(llzk::StructDefOp op) {
     return getConstrainFn(op.getName());
+  }
+
+  mlir::FailureOr<llzk::FuncOp> getGlobalFunc(std::string_view funcName) const {
+    if (globalFuncMap.find(funcName) != globalFuncMap.end()) {
+      return globalFuncMap.at(funcName);
+    }
+    return mlir::failure();
   }
 
   /* Helper functions */
@@ -194,9 +217,15 @@ private:
 
   Def2NodeMap computeNodes, constrainNodes;
 
+  std::unordered_map<std::string_view, llzk::FuncOp> globalFuncMap;
   std::unordered_map<std::string_view, llzk::StructDefOp> structMap;
   std::unordered_map<std::string_view, llzk::FuncOp> computeFnMap;
   std::unordered_map<std::string_view, llzk::FuncOp> constrainFnMap;
+
+  /// @brief Ensure that a global function with the given funcName has not been added,
+  /// reporting a fatal error otherwise.
+  /// @param funcName
+  void ensureNoSuchGlobalFunc(std::string_view funcName);
 
   /// @brief Ensure that a struct with the given structName has not been added,
   /// reporting a fatal error otherwise.
