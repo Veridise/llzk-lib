@@ -239,18 +239,6 @@ def CallOp
   let builders = [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
                       "::mlir::SymbolRefAttr":$callee,
                       CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
-                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
-                                "::mlir::StringAttr":$callee,
-                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
-                            [{
-                              build($_builder, $_state, resultTypes, ::mlir::SymbolRefAttr::get(callee), argOperands);
-                            }]>,
-                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
-                                "::llvm::StringRef":$callee,
-                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
-                            [{
-                              build($_builder, $_state, resultTypes, $_builder.getStringAttr(callee), argOperands);
-                            }]>,
                   OpBuilder<(ins "::llzk::FuncOp":$callee,
                                 CArg<"::mlir::ValueRange", "{}">:$argOperands),
                             [{
