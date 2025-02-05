@@ -26,15 +26,47 @@ class InStructFunctionNamed<string name>
   string cppNamespace = "::llzk";
 }
 
-// Implements verification for ops with an affine map instantiation list. These
+// Implements verification for ops with an affine_map instantiation list. These
 // ops are expected to contain the following in their `arguments` list:
 //  - VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands
 //  - DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap
 //  - DenseI32ArrayAttr:$mapOpGroupSizes
 // Additionally, if the op also has the `AttrSizedOperandSegments` trait, the
-// `operandSegmentIndex` parameter should specify the index within the
-// `operandSegmentSizes` attribute associated with the `$mapOperands` argument,
-//  otherwise it is ignored.
+// parameter of this trait specifies the index within the `operandSegmentSizes`
+// attribute associated with the `$mapOperands` argument, otherwise the
+// parameter is ignored. All of these attributes are necessary because MLIR
+// stores all operands for an Op in a single list. These attributes specify how
+// the list of operands is split into logical pieces for the operand components.
+//
+// For example, suppose the `CreateArrayOp` is used to create an array with type
+//    `!llzk.array<affine_map<(d0)->(d0)>,affine_map<(d0)[s0]->(d0+s0)> x i1>`
+//
+// 1) `CreateArrayOp` requires the `AttrSizedOperandSegments` trait because it
+// defines two variadic arguments: `$elements` and `$mapOperands` (in that
+// order). Thus, the `operandSegmentSizes` attribute is automatically defined
+// to specify the number of operands that belong to each variadic argument:
+//    `operandSegmentSizes = array<i32: COUNT($elements), COUNT($mapOperands)>`
+// In the case of `CreateArrayOp`, one of those sizes will always be 0 because
+// its assembly format has `$elements` and `$mapOperands` as alternatives. In
+// this example, `COUNT($elements) = 0` and `COUNT($mapOperands) = 3` (this is
+// the sum of operand count for all affine_map that are used as array dimensions
+// in the result array type).
+//
+// 2) The `$mapOpGroupSizes` attribute groups the `$mapOperands` per affine_map.
+// This implies that their sum equals `COUNT($mapOperands)`. In the example, the
+// first affine_map has 1 parameter and the second has 2 so:
+//     `mapOpGroupSizes = array<i32: 1, 2>`
+//
+// 3) Finally, the `$numDimsPerMap` attribute splits the `$mapOperands` in each
+// group into the dimensional and symbolic inputs for each affine_map.
+// Dimensional inputs appear between the () and symbolic inputs appear between
+// the []. LLZK mainly uses dimensional inputs and not symbolic inputs but both
+// are fully supported. The length of `$numDimsPerMap` must equal the length of
+// `$mapOpGroupSizes` and each element of `$numDimsPerMap` must be less than the
+// corresponding element of `$mapOpGroupSizes`. In the example, the both
+// affine_map in the array type have 1 dimensional input so:
+//     `numDimsPerMap = array<i32: 1, 1>`
+//
 // It is also recomended to use `custom<AttrDictWithWarnings>(attr-dict)` in the
 // assembly format (or the associated parse/print functions directly) to parse
 // the attribute dictionary in these ops and present warnings if the
