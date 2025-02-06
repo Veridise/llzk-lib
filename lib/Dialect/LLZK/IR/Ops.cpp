@@ -59,7 +59,7 @@ ParseResult parseDimAndSymbolList(
     OpAsmParser &parser, SmallVector<OpAsmParser::UnresolvedOperand, N> &mapOperands,
     IntegerAttr &numDims
 ) {
-  int32_t numDimsRes;
+  int32_t numDimsRes = -1;
   ParseResult res = parseDimAndSymbolListImpl(parser, mapOperands, numDimsRes);
   numDims = parser.getBuilder().getIndexAttr(numDimsRes);
   return res;
@@ -78,7 +78,7 @@ ParseResult parseMultiDimAndSymbolList(
   SmallVector<int32_t> numDimsPerMapRes;
   auto parseEach = [&]() -> ParseResult {
     SmallVector<OpAsmParser::UnresolvedOperand> nextMapOps;
-    int32_t nextMapDims;
+    int32_t nextMapDims = -1;
     ParseResult res = parseDimAndSymbolListImpl(parser, nextMapOps, nextMapDims);
     numDimsPerMapRes.push_back(nextMapDims);
     multiMapOperands.push_back(nextMapOps);
