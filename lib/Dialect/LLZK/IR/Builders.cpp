@@ -62,12 +62,21 @@ void ModuleBuilder::ensureConstrainFnExists(std::string_view structName) {
   }
 }
 
-ModuleBuilder &ModuleBuilder::insertEmptyStruct(std::string_view structName, Location loc) {
+ModuleBuilder &
+ModuleBuilder::insertEmptyStruct(std::string_view structName, Location loc, int numStructParams) {
   ensureNoSuchStruct(structName);
 
   OpBuilder opBuilder(rootModule.getBody(), rootModule.getBody()->begin());
   auto structNameAtrr = StringAttr::get(context, structName);
-  auto structDef = opBuilder.create<StructDefOp>(loc, structNameAtrr, nullptr);
+  ArrayAttr structParams = nullptr;
+  if (numStructParams >= 0) {
+    SmallVector<Attribute> paramNames;
+    for (int i = 0; i < numStructParams; ++i) {
+      paramNames.push_back(FlatSymbolRefAttr::get(context, "T" + std::to_string(i)));
+    }
+    structParams = opBuilder.getArrayAttr(paramNames);
+  }
+  auto structDef = opBuilder.create<StructDefOp>(loc, structNameAtrr, structParams);
   // populate the initial region
   auto &region = structDef.getRegion();
   (void)region.emplaceBlock();

@@ -36,9 +36,10 @@ public:
 
   inline mlir::Location getUnknownLoc() { return llzk::getUnknownLoc(context); }
 
-  ModuleBuilder &insertEmptyStruct(std::string_view structName, mlir::Location loc);
-  inline ModuleBuilder &insertEmptyStruct(std::string_view structName) {
-    return insertEmptyStruct(structName, getUnknownLoc());
+  ModuleBuilder &
+  insertEmptyStruct(std::string_view structName, mlir::Location loc, int numStructParams = -1);
+  inline ModuleBuilder &insertEmptyStruct(std::string_view structName, int numStructParams = -1) {
+    return insertEmptyStruct(structName, getUnknownLoc(), numStructParams);
   }
 
   ModuleBuilder &insertComputeOnlyStruct(
@@ -69,18 +70,18 @@ public:
 
   ModuleBuilder &insertFullStruct(
       std::string_view structName, mlir::Location structLoc, mlir::Location computeLoc,
-      mlir::Location constrainLoc
+      mlir::Location constrainLoc, int numStructParams = -1
   ) {
-    insertEmptyStruct(structName, structLoc);
+    insertEmptyStruct(structName, structLoc, numStructParams);
     insertComputeFn(structName, computeLoc);
     insertConstrainFn(structName, constrainLoc);
     return *this;
   }
 
   /// Inserts a struct with both compute and constrain functions.
-  ModuleBuilder &insertFullStruct(std::string_view structName) {
+  ModuleBuilder &insertFullStruct(std::string_view structName, int numStructParams = -1) {
     auto unk = getUnknownLoc();
-    return insertFullStruct(structName, unk, unk, unk);
+    return insertFullStruct(structName, unk, unk, unk, numStructParams);
   }
 
   /**

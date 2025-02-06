@@ -200,6 +200,14 @@ def LLZK_StructDefOp
     static ::llvm::StringRef getDefaultDialect() {
       return "llzk";
     }
+
+    //===------------------------------------------------------------------===//
+    // Utility Methods
+    //===------------------------------------------------------------------===//
+
+    /// Return the full name for this struct from the root module, including
+    /// any surrounding module scopes.
+    ::mlir::SymbolRefAttr getFullyQualifiedName() const;
   }];
 
   let hasRegionVerifier = 1;

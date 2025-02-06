@@ -14,7 +14,6 @@ protected:
   static constexpr auto funcNameB = "FuncB";
   static constexpr auto structNameA = "StructA";
   static constexpr auto structNameB = "StructB";
-  static constexpr auto structNameC = "StructC";
 
   MLIRContext ctx;
   Location loc;
@@ -45,12 +44,10 @@ protected:
     return llzkBldr;
   }
 
-  ModuleBuilder newBasicStructExample() {
+  ModuleBuilder newStructExample(int numStructParams = -1) {
     ModuleBuilder llzkBldr(mod.get());
-    llzkBldr.insertFullStruct(structNameA)
-        .insertFullStruct(structNameB)
-        .insertComputeCall(structNameA, structNameB)
-        .insertConstrainCall(structNameA, structNameB);
+    llzkBldr.insertFullStruct(structNameA, numStructParams)
+        .insertFullStruct(structNameB, numStructParams);
     return llzkBldr;
   }
 };
@@ -159,7 +156,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Good) {
   mapOperands.push_back(ValueRange {v1});
   auto v2 = bldr.create<index::ConstantOp>(loc, 98);
   mapOperands.push_back(ValueRange {v2});
-  SmallVector<int32_t> numDimsPerMap = {1, 1};
+  SmallVector<int32_t> numDimsPerMap {1, 1};
   CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
   ASSERT_TRUE(verify(op));
 }
@@ -172,7 +169,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op1_Dim1_Type2) {
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
   mapOperands.push_back(ValueRange {v1});
-  SmallVector<int32_t> numDimsPerMap = {1};
+  SmallVector<int32_t> numDimsPerMap {1};
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
@@ -191,7 +188,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op1_Dim2_Type2) {
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
   mapOperands.push_back(ValueRange {v1});
-  SmallVector<int32_t> numDimsPerMap = {1, 0};
+  SmallVector<int32_t> numDimsPerMap {1, 0};
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
@@ -212,7 +209,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op2_Dim1_Type2) {
   mapOperands.push_back(ValueRange {v1});
   auto v2 = bldr.create<index::ConstantOp>(loc, 98);
   mapOperands.push_back(ValueRange {v2});
-  SmallVector<int32_t> numDimsPerMap = {1};
+  SmallVector<int32_t> numDimsPerMap {1};
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
@@ -235,7 +232,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op3_Dim3_Type1) {
   mapOperands.push_back(ValueRange {v2});
   auto v3 = bldr.create<index::ConstantOp>(loc, 4);
   mapOperands.push_back(ValueRange {v3});
-  SmallVector<int32_t> numDimsPerMap = {1, 1, 1};
+  SmallVector<int32_t> numDimsPerMap {1, 1, 1};
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
@@ -258,7 +255,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op3_Dim2_Type1) {
   mapOperands.push_back(ValueRange {v2});
   auto v3 = bldr.create<index::ConstantOp>(loc, 4);
   mapOperands.push_back(ValueRange {v3});
-  SmallVector<int32_t> numDimsPerMap = {1, 1};
+  SmallVector<int32_t> numDimsPerMap {1, 1};
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
@@ -279,7 +276,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_Op2_Dim3_Type1) {
   mapOperands.push_back(ValueRange {v1});
   auto v2 = bldr.create<index::ConstantOp>(loc, 98);
   mapOperands.push_back(ValueRange {v2});
-  SmallVector<int32_t> numDimsPerMap = {1, 1, 1};
+  SmallVector<int32_t> numDimsPerMap {1, 1, 1};
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
@@ -298,7 +295,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_NumDimsTooHigh) {
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
   mapOperands.push_back(ValueRange {v1});
-  SmallVector<int32_t> numDimsPerMap = {9};
+  SmallVector<int32_t> numDimsPerMap {9};
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
@@ -318,7 +315,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_TooManyOpsForMap) {
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
   auto v2 = bldr.create<index::ConstantOp>(loc, 23);
   mapOperands.push_back(ValueRange {v1, v2});
-  SmallVector<int32_t> numDimsPerMap = {1};
+  SmallVector<int32_t> numDimsPerMap {1};
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
@@ -339,7 +336,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_TooFewOpsForMap) {
   SmallVector<ValueRange> mapOperands;
   auto v1 = bldr.create<index::ConstantOp>(loc, 10);
   mapOperands.push_back(ValueRange {v1});
-  SmallVector<int32_t> numDimsPerMap = {1};
+  SmallVector<int32_t> numDimsPerMap {1};
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
@@ -359,7 +356,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_WrongTypeForMapOperands) {
   FeltConstAttr a = bldr.getAttr<FeltConstAttr>(APInt::getZero(64));
   auto v1 = bldr.create<FeltConstantOp>(loc, a);
   mapOperands.push_back(ValueRange {v1});
-  SmallVector<int32_t> numDimsPerMap = {1};
+  SmallVector<int32_t> numDimsPerMap {1};
   EXPECT_DEATH(
       {
         CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, numDimsPerMap);
@@ -507,5 +504,414 @@ TEST_F(AffineMapInstantiationTests, testCallNoAffine_InvalidCalleeName) {
         assert(verify(op, true));
       },
       "error: 'llzk.call' op references unknown symbol \"@invalidName\""
+  );
+}
+
+//===------------------------------------------------------------------===//
+// CallOp::build(..., TypeRange, SymbolRefAttr, ValueRange,
+//                    ArrayRef<ValueRange>, ArrayRef<int32_t>)
+//===------------------------------------------------------------------===//
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_Good) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  SmallVector<ValueRange> mapOperands {ValueRange {v1}, ValueRange {v2}};
+  SmallVector<int32_t> numDimsPerMap {1, 1};
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  ASSERT_TRUE(verify(mod.get()));
+  ASSERT_TRUE(verify(op, true));
+}
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_WrongStructNameInResultType) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structA = llzkBldr.getStruct(structNameA);
+  ASSERT_TRUE(mlir::succeeded(structA));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structA->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+  ); // !llzk.struct<@StructA<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  SmallVector<ValueRange> mapOperands {ValueRange {v1}, ValueRange {v2}};
+  SmallVector<int32_t> numDimsPerMap {1, 1};
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op result type mismatch: expected type '!llzk.struct<@StructB<\\[@T0, "
+      "@T1\\]>>', but found '!llzk.struct<@StructA<\\[affine_map<\\(d0\\) -> \\(d0\\)>, "
+      "affine_map<\\(d0\\) -> \\(d0\\)>\\]>>' for result number 0"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_TooFewMapsInResultType) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m})
+  ); // !llzk.struct<@StructB<[#m]>>
+
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  SmallVector<ValueRange> mapOperands {ValueRange {v1}, ValueRange {v2}};
+  SmallVector<int32_t> numDimsPerMap {1, 1};
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.struct' type has 1 parameters but \"StructB\" expects 2"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_TooManyMapsInResultType) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m, m})
+  ); // !llzk.struct<@StructB<[#m,#m,#m]>>
+
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  SmallVector<ValueRange> mapOperands {ValueRange {v1}, ValueRange {v2}};
+  SmallVector<int32_t> numDimsPerMap {1, 1};
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.struct' type has 3 parameters but \"StructB\" expects 2"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCountLessThanDimSizeCount) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  SmallVector<ValueRange> mapOperands {ValueRange {v1}};
+  SmallVector<int32_t> numDimsPerMap {1, 1};
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
+      "length of 'mapOpGroupSizes' attribute \\(1\\)"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCountMoreThanDimSizeCount) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  SmallVector<ValueRange> mapOperands {ValueRange {v1}, ValueRange {v1}, ValueRange {v1}};
+  SmallVector<int32_t> numDimsPerMap {1, 1};
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
+      "length of 'mapOpGroupSizes' attribute \\(3\\)"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCount0) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+
+  SmallVector<ValueRange> mapOperands;
+  SmallVector<int32_t> numDimsPerMap {1, 1};
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
+      "length of 'mapOpGroupSizes' attribute \\(0\\)"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_DimSizeCount0) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  SmallVector<ValueRange> mapOperands {ValueRange {v1}, ValueRange {v1}};
+  SmallVector<int32_t> numDimsPerMap;
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op length of 'numDimsPerMap' attribute \\(0\\) does not match with "
+      "length of 'mapOpGroupSizes' attribute \\(2\\)"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCount0DimSizeCount0) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+
+  SmallVector<ValueRange> mapOperands;
+  SmallVector<int32_t> numDimsPerMap;
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op map instantiation group count \\(0\\) does not match the number of "
+      "affine map instantiations \\(2\\) required by the type"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupSizeLessThanDimSize) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+  ); // !llzk.struct<@StructB<[#m,#m]>>
+
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  SmallVector<ValueRange> mapOperands {ValueRange {v1}, ValueRange {}};
+  SmallVector<int32_t> numDimsPerMap {1, 1};
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op map instantiation group 1 dimension count \\(1\\) exceeds group 1 "
+      "size in 'mapOpGroupSizes' attribute \\(0\\)"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupSizeMoreThanDimSize) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+  ); // !llzk.struct<@StructB<[#m,#m]>>
+
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  SmallVector<ValueRange> mapOperands {ValueRange {v1}, ValueRange {v1, v2}};
+  SmallVector<int32_t> numDimsPerMap {1, 1};
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op instantiation of map 1 expected 0 but found 1 symbol values in \\[\\]"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCountAndDimSizeCountMoreThanType) {
+  ModuleBuilder llzkBldr = newStructExample(2);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  SmallVector<ValueRange> mapOperands {ValueRange {v1}, ValueRange {v2}, ValueRange {v2}};
+  SmallVector<int32_t> numDimsPerMap {1, 1, 1};
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op map instantiation group count \\(3\\) does not match the number of "
+      "affine map instantiations \\(2\\) required by the type"
   );
 }

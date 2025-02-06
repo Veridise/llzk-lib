@@ -165,15 +165,15 @@ LogicalResult verifySizesForMultiAffineOps(
   // This will be true if the op was constructed via parseMultiDimAndSymbolList()
   //  but when constructed via the build() API, it can be inconsistent.
   size_t count = mapOpGroupSizes.size();
+  if (mapOperands.size() != count) {
+    return msgInstantiationGroupAttrMismatch(op, count, mapOperands.size());
+  }
   if (numDimsPerMap.size() != count) {
-    // TODO-GTEST: use gtest build+verify b/c numDimsPerMap and mapOpGroupSizes are computed.
+    // Tested in AffineMapInstantiationTests.cpp
     return op->emitOpError().append(
         "length of 'numDimsPerMap' attribute (", numDimsPerMap.size(),
         ") does not match with length of 'mapOpGroupSizes' attribute (", count, ")"
     );
-  }
-  if (mapOperands.size() != count) {
-    return msgInstantiationGroupAttrMismatch(op, count, mapOperands.size());
   }
 
   // Verify the following:
@@ -190,7 +190,7 @@ LogicalResult verifySizesForMultiAffineOps(
           currMapOpGroupSize, ")"
       );
     } else if (std::cmp_greater(numDimsPerMap[i], currMapOpGroupSize)) {
-      // TODO-GTEST: use gtest build+verify b/c numDimsPerMap and mapOpGroupSizes are computed.
+      // Tested in AffineMapInstantiationTests.cpp
       aggregateResult = op->emitOpError().append(
           "map instantiation group ", i, " dimension count (", numDimsPerMap[i], ") exceeds group ",
           i, " size in 'mapOpGroupSizes' attribute (", currMapOpGroupSize, ")"
@@ -396,6 +396,12 @@ bool StructDefOp::hasParamNamed(StringAttr find) {
     }
   }
   return false;
+}
+
+SymbolRefAttr StructDefOp::getFullyQualifiedName() const {
+  auto res = getPathFromRoot(*const_cast<StructDefOp *>(this));
+  assert(succeeded(res));
+  return res.value();
 }
 
 LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
