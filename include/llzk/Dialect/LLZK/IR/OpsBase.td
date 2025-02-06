@@ -64,7 +64,7 @@ class InStructFunctionNamed<string name>
 // are fully supported. The length of `$numDimsPerMap` must equal the length of
 // `$mapOpGroupSizes` and each element of `$numDimsPerMap` must be less than the
 // corresponding element of `$mapOpGroupSizes`. In the example, the both
-// affine_map in the array type have 1 dimensional input so:
+// affine_map instantiations in the array type have 1 dimensional input so:
 //     `numDimsPerMap = array<i32: 1, 1>`
 //
 // It is also recomended to use `custom<AttrDictWithWarnings>(attr-dict)` in the
