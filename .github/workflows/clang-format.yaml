@@ -12,8 +12,6 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - run: sudo apt-get update && sudo apt-get install -y clang-format-18
-        name: Install clang-format
       - name: Get fetch depth
         run: |
           echo "PR_COMMIT_COUNT=${{ github.event.pull_request.commits }}" >> "${GITHUB_ENV}"
@@ -23,19 +21,21 @@ jobs:
           # Checkout head commit and all commits in the PR, including the merge base
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: ${{ env.PR_FETCH_DEPTH }}
-      - name: Download git-clang-format
+      - name: Setup git-clang-format
         run: |
-          curl --fail --header "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            --url "https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-18.1.0/clang/tools/clang-format/git-clang-format" \
-            -o ./git-clang-format
-          chmod +x ./git-clang-format
+          export CLANG_FORMAT_SCRIPT="/usr/lib/llvm-18/bin/git-clang-format"
+          if [ ! -x "$CLANG_FORMAT_SCRIPT" ]; then
+            echo "Missing executable $CLANG_FORMAT_SCRIPT"
+            exit 1
+          fi
+          echo "CLANG_FORMAT_COMMAND=$CLANG_FORMAT_SCRIPT --binary clang-format-18" >> "${GITHUB_ENV}"
       - name: Run clang-format
         run: |
           export tmp_patch="$(mktemp)"
           export HEAD_COMMIT="$(git rev-parse HEAD)"
           export BASE_COMMIT="$HEAD_COMMIT"~"$PR_COMMIT_COUNT"
           EXIT_CODE=0
-          ./git-clang-format --diff "$BASE_COMMIT" "$HEAD_COMMIT" > "$tmp_patch" || EXIT_CODE=$?
+          $CLANG_FORMAT_COMMAND --diff "$BASE_COMMIT" "$HEAD_COMMIT" > "$tmp_patch" || EXIT_CODE=$?
           echo "git-clang-format exited with status $EXIT_CODE"
           if [[ $EXIT_CODE -eq 0 ]] ; then
             echo "No formatting problems detected"
