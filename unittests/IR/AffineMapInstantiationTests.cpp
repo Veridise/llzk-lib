@@ -422,3 +422,90 @@ TEST_F(AffineMapInstantiationTests, testCallNoAffine_GoodWithArgs) {
   ASSERT_TRUE(verify(mod.get()));
   ASSERT_TRUE(verify(op, true));
 }
+
+TEST_F(AffineMapInstantiationTests, testCallNoAffine_TooFewValues) {
+  ModuleBuilder llzkBldr = newBasicFunctionsExample(2);
+
+  auto funcA = llzkBldr.getGlobalFunc(funcNameA);
+  ASSERT_TRUE(mlir::succeeded(funcA));
+  auto funcB = llzkBldr.getGlobalFunc(funcNameB);
+  ASSERT_TRUE(mlir::succeeded(funcB));
+
+  OpBuilder bldr(funcA->getBody());
+  auto v1 = bldr.create<index::ConstantOp>(loc, 5);
+  CallOp op = bldr.create<CallOp>(
+      loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1}
+  );
+  // module attributes {veridise.lang = "llzk"} {
+  //   llzk.func @FuncA(%arg0: index, %arg1: index) -> index {
+  //     %idx5 = index.constant 5
+  //     %0 = call @FuncB(%idx5) : (index) -> index
+  //   }
+  //   llzk.func @FuncB(%arg0: index, %arg1: index) -> index {
+  //   }
+  // }
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op incorrect number of operands for callee, expected 2"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallNoAffine_WrongRetTy) {
+  ModuleBuilder llzkBldr = newBasicFunctionsExample(1);
+
+  auto funcA = llzkBldr.getGlobalFunc(funcNameA);
+  ASSERT_TRUE(mlir::succeeded(funcA));
+  auto funcB = llzkBldr.getGlobalFunc(funcNameB);
+  ASSERT_TRUE(mlir::succeeded(funcB));
+
+  OpBuilder bldr(funcA->getBody());
+  auto v1 = bldr.create<index::ConstantOp>(loc, 5);
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {bldr.getI1Type()}, funcB->getFullyQualifiedName(), ValueRange {v1}
+  );
+  // module attributes {veridise.lang = "llzk"} {
+  //   llzk.func @FuncA(%arg0: index) -> index {
+  //     %idx5 = index.constant 5
+  //     %0 = call @FuncB(%idx5) : (index) -> i1
+  //   }
+  //   llzk.func @FuncB(%arg0: index) -> index {
+  //   }
+  // }
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op result type mismatch: expected type 'index', but found 'i1' for "
+      "result number 0"
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testCallNoAffine_InvalidCalleeName) {
+  ModuleBuilder llzkBldr = newBasicFunctionsExample(0);
+
+  auto funcA = llzkBldr.getGlobalFunc(funcNameA);
+  ASSERT_TRUE(mlir::succeeded(funcA));
+
+  OpBuilder bldr(funcA->getBody());
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "invalidName"), ValueRange {}
+  );
+  // module attributes {veridise.lang = "llzk"} {
+  //   llzk.func @FuncA() -> index {
+  //     call @invalidName() : () -> ()
+  //   }
+  //   llzk.func @FuncB() -> index {
+  //   }
+  // }
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op references unknown symbol \"@invalidName\""
+  );
+}
