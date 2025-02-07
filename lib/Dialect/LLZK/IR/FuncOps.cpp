@@ -323,7 +323,7 @@ CalleeKind calleeNameToKind(StringRef tgtName) {
 
 struct CallOpVerifier {
   CallOpVerifier(CallOp *c, StringRef tgtName) : callOp(c), tgtKind(calleeNameToKind(tgtName)) {}
-  virtual ~CallOpVerifier() {};
+  virtual ~CallOpVerifier() = default;
 
   LogicalResult verify() {
     // Rather than immediately returning on failure, we check all verifier steps and aggregate to
