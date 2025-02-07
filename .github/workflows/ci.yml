@@ -37,8 +37,14 @@ jobs:
       - name: Specific tests
         if: "${{ always() }}"
         run: |
-          /build/source/build/bin/llzk-opt -I /build/source/test/Dialect/LLZK -split-input-file -llzk-inline-includes -llzk-print-constraint-dependency-graphs /build/source/test/Dialect/LLZK/constraint_dependency_graph_pass.llzk
-          /build/source/build/bin/llzk-opt -I /build/source/test/Dialect/LLZK -llzk-inline-includes /build/source/test/Dialect/LLZK/zir_example_2.llzk
+          nix develop .
+          phases=configurePhase genericBuild
+          cmake --build .
+          cd ..
+          ls build
+          build/bin/llzk-opt -I test/Dialect/LLZK -split-input-file -llzk-inline-includes -llzk-print-constraint-dependency-graphs test/Dialect/LLZK/constraint_dependency_graph_pass.llzk
+          build/bin/llzk-opt -I test/Dialect/LLZK -llzk-inline-includes test/Dialect/LLZK/zir_example_2.llzk
+          exit
       - name: Clear Git credentials
         if: "${{ always() }}"
         run: rm -rf "~/.git-askpass"
