@@ -4,7 +4,7 @@ llzk.func @wrong_arg_type(
       %c: !llzk.felt // expected-note {{prior use here}}
     ) -> !llzk.felt {
   // expected-error@+1 {{use of value '%c' expects different type than prior uses: 'i1' vs '!llzk.felt'}}
-  %0 = assert %c
+  %0 = assert %c : !llzk.felt
   return %c : !llzk.felt
 }
 // -----
@@ -17,7 +17,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = new_struct : !llzk.struct<@Component01<[@T]>>
       // I doubt there's any reason to support type variable used as the assert condition.
       // expected-error@+1 {{use of value '%c' expects different type than prior uses: 'i1' vs '!llzk.tvar<@T>'}}
-      %0 = assert %c
+      %0 = assert %c : !llzk.felt
       return %self : !llzk.struct<@Component01<[@T]>>
     }
 
