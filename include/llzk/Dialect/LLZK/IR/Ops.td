@@ -111,8 +111,10 @@ def LLZK_AssertOp
   }];
 
   let arguments = (ins I1:$condition, OptionalAttr<StrAttr>:$msg);
+  let results = (outs Variadic<AnyType>:$results);
 
-  let assemblyFormat = [{ $condition (`,` $msg^)? attr-dict }];
+  let assemblyFormat =
+      [{ $condition (`,` $msg^)? `:` type($result) attr-dict }];
 }
 
 //===------------------------------------------------------------------===//
