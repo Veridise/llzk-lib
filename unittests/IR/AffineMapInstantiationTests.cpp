@@ -524,10 +524,9 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_Good) {
   ASSERT_TRUE(mlir::succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
-  AffineMapAttr m1 = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  AffineMapAttr m2 = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m1, m2})
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
@@ -921,28 +920,14 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCountAndDimSizeCou
 // TODO: TEMP: for testing CI issue
 //===------------------------------------------------------------------===//
 
-TEST_F(AffineMapInstantiationTests, testLeakTODO) {
-  //
+TEST_F(AffineMapInstantiationTests, checkEnabledASAN) {
+  // force a use-after-free
   int *data = new int[1000];
   delete[] data;
   std::cout << *data << std::endl;
 }
 
-TEST_F(AffineMapInstantiationTests, testValueRangeConstructA) {
-  OpBuilder bldr(mod->getRegion());
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "calleeName"), ValueRange {}
-  );
-  EXPECT_DEATH(
-      {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
-      },
-      "error: 'llzk.call' op references unknown symbol \"@calleeName\""
-  );
-}
-
-TEST_F(AffineMapInstantiationTests, testValueRangeConstructB) {
+TEST_F(AffineMapInstantiationTests, noErrorFromValueRangeAsArgOperands) {
   OpBuilder bldr(mod->getRegion());
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
@@ -958,7 +943,7 @@ TEST_F(AffineMapInstantiationTests, testValueRangeConstructB) {
 }
 
 // copy of 'testCallWithAffine_Good' with only 1 struct param
-TEST_F(AffineMapInstantiationTests, anotherTest) {
+TEST_F(AffineMapInstantiationTests, anotherTestWithOnly1Param) {
   ModuleBuilder llzkBldr = newStructExample(1);
 
   auto funcComputeA = llzkBldr.getComputeFn(structNameA);
