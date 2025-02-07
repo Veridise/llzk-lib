@@ -876,10 +876,10 @@ def LLZK_ApplyMapOp : LLZK_Op<"applymap", [Pure]> {
                                 CArg<"::mlir::ValueRange", "{}">:$mapOperands),
                             [{
                   $_state.addOperands(mapOperands);
-                  $_state.getOrAddProperties<Properties>().map = map;
-                  $_state.getOrAddProperties<Properties>().numDims = $_builder.getIntegerAttr(
-                                                                          $_builder.getIndexType(),
-                                                                          map.getAffineMap().getNumDims());
+                  Properties &props = $_state.getOrAddProperties<Properties>();
+                  props.setMap(map);
+                  props.setNumDims($_builder.getIntegerAttr($_builder.getIndexType(),
+                                                            map.getAffineMap().getNumDims()));
                   $_state.addTypes($_builder.getIndexType());
                 }]>,
                   OpBuilder<(ins "::mlir::AffineMap":$map,
