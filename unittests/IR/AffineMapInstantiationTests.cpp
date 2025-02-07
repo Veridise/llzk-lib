@@ -955,3 +955,32 @@ TEST_F(AffineMapInstantiationTests, testValueRangeConstructB) {
       "error: 'llzk.call' op references unknown symbol \"@calleeName\""
   );
 }
+
+// copy of 'testCallWithAffine_Good' with only 1 struct param
+TEST_F(AffineMapInstantiationTests, anotherTest) {
+  ModuleBuilder llzkBldr = newStructExample(1);
+
+  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  ASSERT_TRUE(mlir::succeeded(funcComputeA));
+  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  ASSERT_TRUE(mlir::succeeded(funcComputeB));
+
+  auto structB = llzkBldr.getStruct(structNameB);
+  ASSERT_TRUE(mlir::succeeded(structB));
+
+  OpBuilder bldr(funcComputeA->getBody());
+  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  StructType affineStructType = StructType::get(
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m})
+  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>]>>
+
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  SmallVector<ValueRange> mapOperands {ValueRange {v1}};
+  SmallVector<int32_t> numDimsPerMap {1};
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      mapOperands, numDimsPerMap
+  );
+  ASSERT_TRUE(verify(mod.get()));
+  ASSERT_TRUE(verify(op, true));
+}
