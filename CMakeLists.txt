@@ -107,13 +107,13 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   add_compile_options(-O0 -g)
 endif()
 
-# if(CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
+if(CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   # NOTE: undefined behavior sanitizer ("undefined") has been removed due to its
   # poor interaction with gtest fixtures and other standard MLIR/LLVM
   # operations.
   add_compile_options(-fsanitize=address,leak)
   add_link_options(-fsanitize=address,leak)
-# endif()
+endif()
 
 if(LLZK_TEMPLATE_BACKTRACE_LIMIT)
   add_compile_options(-ftemplate-backtrace-limit=0)
