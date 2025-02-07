@@ -916,6 +916,10 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCountAndDimSizeCou
   );
 }
 
+//===------------------------------------------------------------------===//
+// TODO: TEMP: for testing CI issue
+//===------------------------------------------------------------------===//
+
 TEST_F(AffineMapInstantiationTests, testLeakTODO) {
   //
   int *data = new int[1000];
