@@ -104,14 +104,16 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
     )
   endif()
 
-  add_compile_options(-O0 -g)
+  add_compile_options(-O0 -g -fno-optimize-sibling-calls -fno-omit-frame-pointer)
 endif()
 
 # if(CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   # NOTE: undefined behavior sanitizer ("undefined") has been removed due to its
   # poor interaction with gtest fixtures and other standard MLIR/LLVM
   # operations.
-  if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+  #
+  # 'memory' is not supported on MacOS or with GCC
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID STREQUAL ".*Clang")
     add_compile_options(-fsanitize=memory -fsanitize-memory-track-origins -D_FORTIFY_SOURCE=0)
     add_link_options(-fsanitize=memory -fsanitize-memory-track-origins -D_FORTIFY_SOURCE=0)
   else()
