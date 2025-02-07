@@ -111,8 +111,8 @@ endif()
   # NOTE: undefined behavior sanitizer ("undefined") has been removed due to its
   # poor interaction with gtest fixtures and other standard MLIR/LLVM
   # operations.
-  add_compile_options(-fsanitize=address,leak)
-  add_link_options(-fsanitize=address,leak)
+  add_compile_options(-fsanitize=address,leak,memory -fsanitize-memory-track-origins -D_FORTIFY_SOURCE=0)
+  add_link_options(-fsanitize=address,leak,memory -fsanitize-memory-track-origins -D_FORTIFY_SOURCE=0)
 # endif()
 
 if(LLZK_TEMPLATE_BACKTRACE_LIMIT)
