@@ -524,9 +524,10 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_Good) {
   ASSERT_TRUE(mlir::succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
-  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  AffineMapAttr m1 = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
+  AffineMapAttr m2 = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m1, m2})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
