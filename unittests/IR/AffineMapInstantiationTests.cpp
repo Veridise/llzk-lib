@@ -915,3 +915,25 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCountAndDimSizeCou
       "affine map instantiations \\(2\\) required by the type"
   );
 }
+
+TEST_F(AffineMapInstantiationTests, testLeakTODO) {
+  //
+  int *data = new int[1000];
+  delete[] data;
+  std::cout << *data << std::endl;
+}
+
+TEST_F(AffineMapInstantiationTests, testValueRangeConstructA) {
+  OpBuilder bldr(mod->getRegion());
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "invalidName"), ValueRange {}
+  );
+}
+
+TEST_F(AffineMapInstantiationTests, testValueRangeConstructB) {
+  OpBuilder bldr(mod->getRegion());
+  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "calleeName"), ValueRange {v1}
+  );
+}
