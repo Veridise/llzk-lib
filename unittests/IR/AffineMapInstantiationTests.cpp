@@ -930,7 +930,14 @@ TEST_F(AffineMapInstantiationTests, testLeakTODO) {
 TEST_F(AffineMapInstantiationTests, testValueRangeConstructA) {
   OpBuilder bldr(mod->getRegion());
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "invalidName"), ValueRange {}
+      loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "calleeName"), ValueRange {}
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op references unknown symbol \"@calleeName\""
   );
 }
 
@@ -939,5 +946,12 @@ TEST_F(AffineMapInstantiationTests, testValueRangeConstructB) {
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "calleeName"), ValueRange {v1}
+  );
+  EXPECT_DEATH(
+      {
+        assert(verify(mod.get()));
+        assert(verify(op, true));
+      },
+      "error: 'llzk.call' op references unknown symbol \"@calleeName\""
   );
 }
