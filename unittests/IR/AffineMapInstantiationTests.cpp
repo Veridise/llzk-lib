@@ -920,6 +920,11 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCountAndDimSizeCou
 // TODO: TEMP: for testing CI issue
 //===------------------------------------------------------------------===//
 
+TEST_F(AffineMapInstantiationTests, checkFailure) {
+  // force a failure
+  assert(false);
+}
+
 TEST_F(AffineMapInstantiationTests, checkEnabledASAN) {
   // force a use-after-free
   int *data = new int[1000];
