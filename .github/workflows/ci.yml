@@ -34,17 +34,6 @@ jobs:
         run: nix --print-build-logs build '.#checks.x86_64-linux.llzkInstallCheck'
         env:
           CI_BOT_PAT: "${{ secrets.CI_BUILD_TOKEN }}"
-      - name: Specific tests
-        if: "${{ always() }}"
-        run: |
-          nix develop .
-          phases=configurePhase genericBuild
-          cmake --build .
-          cd ..
-          ls build
-          build/bin/llzk-opt -I test/Dialect/LLZK -split-input-file -llzk-inline-includes -llzk-print-constraint-dependency-graphs test/Dialect/LLZK/constraint_dependency_graph_pass.llzk
-          build/bin/llzk-opt -I test/Dialect/LLZK -llzk-inline-includes test/Dialect/LLZK/zir_example_2.llzk
-          exit
       - name: Clear Git credentials
         if: "${{ always() }}"
         run: rm -rf "~/.git-askpass"
