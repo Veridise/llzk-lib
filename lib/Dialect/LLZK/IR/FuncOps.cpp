@@ -300,12 +300,12 @@ void CallOp::build(
   odsState.addTypes(resultTypes);
   odsState.addOperands(argOperands);
   Properties &props = odsState.getOrAddProperties<Properties>();
-  props.callee = callee;
+  props.setCallee(callee);
   // `operandSegmentSizes` = [ argOperands.size, mapOperands.size ]
-  props.operandSegmentSizes = {static_cast<int32_t>(argOperands.size()), 0};
+  props.setOperandSegmentSizes({static_cast<int32_t>(argOperands.size()), 0});
   // There are no affine map operands so initialize the related properties as empty arrays.
-  props.mapOpGroupSizes = odsBuilder.getDenseI32ArrayAttr({});
-  props.numDimsPerMap = odsBuilder.getDenseI32ArrayAttr({});
+  props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr({}));
+  props.setNumDimsPerMap(odsBuilder.getDenseI32ArrayAttr({}));
 }
 
 namespace {
@@ -323,7 +323,7 @@ CalleeKind calleeNameToKind(StringRef tgtName) {
 
 struct CallOpVerifier {
   CallOpVerifier(CallOp *c, StringRef tgtName) : callOp(c), tgtKind(calleeNameToKind(tgtName)) {}
-  virtual ~CallOpVerifier() {};
+  virtual ~CallOpVerifier() = default;
 
   LogicalResult verify() {
     // Rather than immediately returning on failure, we check all verifier steps and aggregate to

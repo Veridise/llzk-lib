@@ -737,12 +737,12 @@ void CreateArrayOp::build(
   odsState.addOperands(elements);
   Properties &props = odsState.getOrAddProperties<Properties>();
   // `operandSegmentSizes` = [ elements.size, mapOperands.size ]
-  props.operandSegmentSizes = {static_cast<int32_t>(elements.size()), 0};
+  props.setOperandSegmentSizes({static_cast<int32_t>(elements.size()), 0});
   // This builds CreateArrayOp from a list of elements. In that case, the dimensions of the array
   // type cannot be defined via an affine map which means there are no affine map operands so
   // initialize the related properties as empty arrays.
-  props.mapOpGroupSizes = odsBuilder.getDenseI32ArrayAttr({});
-  props.numDimsPerMap = odsBuilder.getDenseI32ArrayAttr({});
+  props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr({}));
+  props.setNumDimsPerMap(odsBuilder.getDenseI32ArrayAttr({}));
 }
 
 void CreateArrayOp::build(
@@ -759,12 +759,11 @@ void CreateArrayOp::build(
     rangeSegments.push_back(s);
     mapOpsSegmentSize += s;
   }
-  odsState.getOrAddProperties<Properties>().mapOpGroupSizes =
-      odsBuilder.getDenseI32ArrayAttr(rangeSegments);
-  odsState.getOrAddProperties<Properties>().operandSegmentSizes = {0, mapOpsSegmentSize};
-
+  Properties &props = odsState.getOrAddProperties<Properties>();
+  props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr(rangeSegments));
+  props.setOperandSegmentSizes({0, mapOpsSegmentSize});
   if (numDimsPerMap) {
-    odsState.getOrAddProperties<Properties>().numDimsPerMap = numDimsPerMap;
+    props.setNumDimsPerMap(numDimsPerMap);
   }
 }
 
