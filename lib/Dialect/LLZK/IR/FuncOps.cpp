@@ -258,8 +258,8 @@ LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &tables) {
   return verifyTypeResolution(tables, *this, getFunctionType());
 }
 
-SymbolRefAttr FuncOp::getFullyQualifiedName() const {
-  auto res = getPathFromRoot(*const_cast<FuncOp *>(this));
+SymbolRefAttr FuncOp::getFullyQualifiedName() {
+  auto res = getPathFromRoot(*this);
   assert(succeeded(res));
   return res.value();
 }

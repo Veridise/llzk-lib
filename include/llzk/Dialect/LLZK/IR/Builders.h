@@ -24,6 +24,8 @@ inline mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *con
   return createLLZKModule(context, getUnknownLoc(context));
 }
 
+void addLangAttrForLLZKDialect(mlir::ModuleOp mod);
+
 /// @brief Builds out a LLZK-compliant module and provides utilities for populating
 /// that module. This class is designed to be used by front-ends looking to
 /// generate LLZK IR programatically and is also a useful unit testing facility.
@@ -128,14 +130,18 @@ public:
    * 2. Read the callee in the caller's constraint function,
    * 3. Call the callee's constraint function.
    */
-  ModuleBuilder &
-  insertConstrainCall(llzk::StructDefOp caller, llzk::StructDefOp callee, mlir::Location callLoc);
-  ModuleBuilder &
-  insertConstrainCall(std::string_view caller, std::string_view callee, mlir::Location callLoc) {
-    return insertConstrainCall(*getStruct(caller), *getStruct(callee), callLoc);
+  ModuleBuilder &insertConstrainCall(
+      llzk::StructDefOp caller, llzk::StructDefOp callee, mlir::Location callLoc,
+      mlir::Location fieldDefLoc
+  );
+  ModuleBuilder &insertConstrainCall(
+      std::string_view caller, std::string_view callee, mlir::Location callLoc,
+      mlir::Location fieldDefLoc
+  ) {
+    return insertConstrainCall(*getStruct(caller), *getStruct(callee), callLoc, fieldDefLoc);
   }
   ModuleBuilder &insertConstrainCall(std::string_view caller, std::string_view callee) {
-    return insertConstrainCall(caller, callee, getUnknownLoc());
+    return insertConstrainCall(caller, callee, getUnknownLoc(), getUnknownLoc());
   }
 
   ModuleBuilder &

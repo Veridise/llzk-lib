@@ -8,14 +8,18 @@ namespace llzk {
 using namespace mlir;
 
 OwningOpRef<ModuleOp> createLLZKModule(MLIRContext *context, Location loc) {
-  auto dialect = context->getOrLoadDialect<LLZKDialect>();
-  if (!dialect) {
+  auto mod = ModuleOp::create(loc);
+  addLangAttrForLLZKDialect(mod);
+  return mod;
+}
+
+void addLangAttrForLLZKDialect(mlir::ModuleOp mod) {
+  MLIRContext *ctx = mod.getContext();
+  if (auto dialect = ctx->getOrLoadDialect<LLZKDialect>()) {
+    mod->setAttr(LANG_ATTR_NAME, StringAttr::get(ctx, dialect->getNamespace()));
+  } else {
     llvm::report_fatal_error("Could not load LLZK dialect!");
   }
-  auto langAttr = StringAttr::get(context, dialect->getNamespace());
-  auto mod = ModuleOp::create(loc);
-  mod->setAttr(LANG_ATTR_NAME, langAttr);
-  return mod;
 }
 
 /* ModuleBuilder */
@@ -127,8 +131,9 @@ ModuleBuilder::insertComputeCall(StructDefOp caller, StructDefOp callee, Locatio
   return *this;
 }
 
-ModuleBuilder &
-ModuleBuilder::insertConstrainCall(StructDefOp caller, StructDefOp callee, Location callLoc) {
+ModuleBuilder &ModuleBuilder::insertConstrainCall(
+    StructDefOp caller, StructDefOp callee, Location callLoc, Location fieldDefLoc
+) {
   ensureConstrainFnExists(caller.getName());
   ensureConstrainFnExists(callee.getName());
 
@@ -144,8 +149,7 @@ ModuleBuilder::insertConstrainCall(StructDefOp caller, StructDefOp callee, Locat
   // Insert the field declaration op
   {
     OpBuilder builder(caller.getBody());
-    /// TODO: add a specific location for this declaration?
-    builder.create<FieldDefOp>(UnknownLoc::get(context), fieldName, calleeTy);
+    builder.create<FieldDefOp>(fieldDefLoc, fieldName, calleeTy);
   }
 
   // Insert the constrain function ops

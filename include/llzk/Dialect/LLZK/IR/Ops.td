@@ -207,7 +207,7 @@ def LLZK_StructDefOp
 
     /// Return the full name for this struct from the root module, including
     /// any surrounding module scopes.
-    ::mlir::SymbolRefAttr getFullyQualifiedName() const;
+    ::mlir::SymbolRefAttr getFullyQualifiedName();
   }];
 
   let hasRegionVerifier = 1;
@@ -420,7 +420,7 @@ def LLZK_CreateArrayOp
         ::mlir::Type resultType
     );
     static void printInferredArrayType(::mlir::AsmPrinter &printer, CreateArrayOp,
-        ::mlir::OperandRange::type_range, ::mlir::OperandRange, ::mlir::Type
+        ::mlir::TypeRange, ::mlir::OperandRange, ::mlir::Type
     );
   private:
     static ::llvm::SmallVector<::mlir::Type> resultTypeToElementsTypes(::mlir::Type resultType);

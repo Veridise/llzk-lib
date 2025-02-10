@@ -398,8 +398,8 @@ bool StructDefOp::hasParamNamed(StringAttr find) {
   return false;
 }
 
-SymbolRefAttr StructDefOp::getFullyQualifiedName() const {
-  auto res = getPathFromRoot(*const_cast<StructDefOp *>(this));
+SymbolRefAttr StructDefOp::getFullyQualifiedName() {
+  auto res = getPathFromRoot(*this);
   assert(succeeded(res));
   return res.value();
 }
@@ -797,7 +797,7 @@ ParseResult CreateArrayOp::parseInferredArrayType(
 }
 
 void CreateArrayOp::printInferredArrayType(
-    AsmPrinter &printer, CreateArrayOp, OperandRange::type_range, OperandRange, Type
+    AsmPrinter &printer, CreateArrayOp, TypeRange, OperandRange, Type
 ) {
   // nothing to print, it's derived and therefore not represented in the output
 }
