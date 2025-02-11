@@ -1,3 +1,5 @@
+#pragma once
+
 #include "llzk/Dialect/LLZK/IR/Builders.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
