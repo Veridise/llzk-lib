@@ -299,13 +299,10 @@ void CallOp::build(
 ) {
   odsState.addTypes(resultTypes);
   odsState.addOperands(argOperands);
-  Properties &props = odsState.getOrAddProperties<Properties>();
+  Properties &props = affineMapHelpers::buildInstantiationAttrsEmpty<CallOp>(
+      odsBuilder, odsState, static_cast<int32_t>(argOperands.size())
+  );
   props.setCallee(callee);
-  // `operandSegmentSizes` = [ argOperands.size, mapOperands.size ]
-  props.setOperandSegmentSizes({static_cast<int32_t>(argOperands.size()), 0});
-  // There are no affine map operands so initialize the related properties as empty arrays.
-  props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr({}));
-  props.setNumDimsPerMap(odsBuilder.getDenseI32ArrayAttr({}));
 }
 
 void CallOp::build(
@@ -481,6 +478,8 @@ private:
   std::vector<llvm::StringRef> includeSymNames;
 };
 
+/// Version of checkSelfType() that performs the subset of verification checks that can be done when
+/// the exact target of the `CallOp` is unknown.
 LogicalResult checkSelfTypeUnknownTarget(
     StringAttr expectedParamName, Type actualType, CallOp *origin, const char *aspect
 ) {

@@ -99,11 +99,16 @@ mlir::LogicalResult verifyAffineMapInstantiations(
     mlir::ArrayRef<mlir::AffineMapAttr> mapAttrs, mlir::Operation *origin
 );
 
+/// Utility for build() functions that initializes the `operandSegmentSizes`, `mapOpGroupSizes`, and
+/// `numDimsPerMap` attributes for an Op that performs affine map instantiations.
+///
+/// Note: This function supports Ops with 2 ODS-defined operand segments with the second being the
+/// size of the `mapOperands` segment and the first provided by the `firstSegmentSize` parameter.
 template <typename OpType>
 inline typename OpType::Properties &buildInstantiationAttrs(
     mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState,
     mlir::ArrayRef<mlir::ValueRange> mapOperands, mlir::DenseI32ArrayAttr numDimsPerMap,
-    int32_t argOpsSegmentSize = 0
+    int32_t firstSegmentSize = 0
 ) {
   int32_t mapOpsSegmentSize = 0;
   mlir::SmallVector<int32_t> rangeSegments;
@@ -115,10 +120,26 @@ inline typename OpType::Properties &buildInstantiationAttrs(
   }
   typename OpType::Properties &props = odsState.getOrAddProperties<typename OpType::Properties>();
   props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr(rangeSegments));
-  props.setOperandSegmentSizes({argOpsSegmentSize, mapOpsSegmentSize});
+  props.setOperandSegmentSizes({firstSegmentSize, mapOpsSegmentSize});
   if (numDimsPerMap) {
     props.setNumDimsPerMap(numDimsPerMap);
   }
+  return props;
+}
+
+/// Utility for build() functions that initializes the `operandSegmentSizes`, `mapOpGroupSizes`, and
+/// `numDimsPerMap` attributes for an Op that supports affine map instantiations but in the case
+/// where there are none.
+template <typename OpType>
+inline typename OpType::Properties &buildInstantiationAttrsEmpty(
+    mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState, int32_t firstSegmentSize = 0
+) {
+  typename OpType::Properties &props = odsState.getOrAddProperties<typename OpType::Properties>();
+  // `operandSegmentSizes` = [ firstSegmentSize, mapOperands.size ]
+  props.setOperandSegmentSizes({firstSegmentSize, 0});
+  // There are no affine map operands so initialize the related properties as empty arrays.
+  props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr({}));
+  props.setNumDimsPerMap(odsBuilder.getDenseI32ArrayAttr({}));
   return props;
 }
 
@@ -184,6 +205,8 @@ template <char const *FuncName> struct InStructFunctionNamed {
   };
 };
 
+/// Produces errors if there is an inconsistency in the various attributes/values that are used to
+/// support affine map instantiation in the Op marked with this Trait.
 template <int OperandSegmentIndex> struct VerifySizesForMultiAffineOps {
   template <typename ConcreteType>
   class Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {

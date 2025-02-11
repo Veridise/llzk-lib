@@ -298,6 +298,8 @@ InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const
   );
 }
 
+/// Verifies that the given `actualType` matches the `StructDefOp` given (i.e. for the "self" type
+/// parameter and return of the struct functions).
 LogicalResult checkSelfType(
     SymbolTableCollection &tables, StructDefOp &expectedStruct, Type actualType, Operation *origin,
     const char *aspect
@@ -735,14 +737,11 @@ void CreateArrayOp::build(
 ) {
   odsState.addTypes(result);
   odsState.addOperands(elements);
-  Properties &props = odsState.getOrAddProperties<Properties>();
-  // `operandSegmentSizes` = [ elements.size, mapOperands.size ]
-  props.setOperandSegmentSizes({static_cast<int32_t>(elements.size()), 0});
   // This builds CreateArrayOp from a list of elements. In that case, the dimensions of the array
-  // type cannot be defined via an affine map which means there are no affine map operands so
-  // initialize the related properties as empty arrays.
-  props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr({}));
-  props.setNumDimsPerMap(odsBuilder.getDenseI32ArrayAttr({}));
+  // type cannot be defined via an affine map which means there are no affine map operands.
+  affineMapHelpers::buildInstantiationAttrsEmpty<CreateArrayOp>(
+      odsBuilder, odsState, static_cast<int32_t>(elements.size())
+  );
 }
 
 void CreateArrayOp::build(
