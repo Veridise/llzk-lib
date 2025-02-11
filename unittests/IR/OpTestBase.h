@@ -67,7 +67,7 @@ template <typename ConcreteType> bool verify(mlir::Operation *op, bool verifySym
       }
     }
   }
-  //
+
   return true;
 }
 
