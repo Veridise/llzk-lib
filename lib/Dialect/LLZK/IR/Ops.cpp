@@ -153,7 +153,7 @@ LogicalResult verifySizesForMultiAffineOps(
   // elements and its sum is equal to the operand group size (which is similar to this check).
   int32_t totalMapOpGroupSizes = std::reduce(mapOpGroupSizes.begin(), mapOpGroupSizes.end());
   if (totalMapOpGroupSizes != segmentSize) {
-    // TODO-GTEST: use gtest build+verify b/c mapOpGroupSizes and segmentSize are computed.
+    // Since `mapOpGroupSizes` and `segmentSize` are computed this should never happen.
     return op->emitOpError().append(
         "number of operands for affine map instantiation (", totalMapOpGroupSizes,
         ") does not match with the total size (", segmentSize,
@@ -183,7 +183,7 @@ LogicalResult verifySizesForMultiAffineOps(
   for (size_t i = 0; i < count; ++i) {
     auto currMapOpGroupSize = mapOpGroupSizes[i];
     if (std::cmp_not_equal(mapOperands[i].size(), currMapOpGroupSize)) {
-      // TODO-GTEST: use gtest build+verify b/c mapOpGroupSizes is computed when parsing.
+      // Since `mapOpGroupSizes` is computed this should never happen.
       aggregateResult = op->emitOpError().append(
           "map instantiation group ", i, " operand count (", mapOperands[i].size(),
           ") does not match group ", i, " size in 'mapOpGroupSizes' attribute (",
