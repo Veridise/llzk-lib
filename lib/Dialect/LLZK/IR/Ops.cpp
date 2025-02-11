@@ -169,7 +169,7 @@ LogicalResult verifySizesForMultiAffineOps(
     return msgInstantiationGroupAttrMismatch(op, count, mapOperands.size());
   }
   if (numDimsPerMap.size() != count) {
-    // Tested in AffineMapInstantiationTests.cpp
+    // Tested in CallOpTests.cpp
     return op->emitOpError().append(
         "length of 'numDimsPerMap' attribute (", numDimsPerMap.size(),
         ") does not match with length of 'mapOpGroupSizes' attribute (", count, ")"
@@ -190,7 +190,7 @@ LogicalResult verifySizesForMultiAffineOps(
           currMapOpGroupSize, ")"
       );
     } else if (std::cmp_greater(numDimsPerMap[i], currMapOpGroupSize)) {
-      // Tested in AffineMapInstantiationTests.cpp
+      // Tested in CallOpTests.cpp
       aggregateResult = op->emitOpError().append(
           "map instantiation group ", i, " dimension count (", numDimsPerMap[i], ") exceeds group ",
           i, " size in 'mapOpGroupSizes' attribute (", currMapOpGroupSize, ")"
@@ -211,8 +211,8 @@ LogicalResult verifyAffineMapInstantiations(
 
   // Ensure there is one OperandRange for each AffineMapAttr
   if (mapAttrs.size() != count) {
-    // Tested in array_build_fail.llzk, call_with_affinemap_fail.llzk, and
-    // AffineMapInstantiationTests.cpp
+    // Tested in array_build_fail.llzk, call_with_affinemap_fail.llzk, CallOpTests.cpp, and
+    // CreateArrayOpTests.cpp
     return origin->emitOpError().append(
         "map instantiation group count (", count,
         ") does not match the number of affine map instantiations (", mapAttrs.size(),

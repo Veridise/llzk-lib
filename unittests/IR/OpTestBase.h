@@ -1,0 +1,75 @@
+#include "llzk/Dialect/LLZK/IR/Builders.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+
+#include <gtest/gtest.h>
+
+class OpTests : public ::testing::Test {
+protected:
+  static constexpr auto funcNameA = "FuncA";
+  static constexpr auto funcNameB = "FuncB";
+  static constexpr auto structNameA = "StructA";
+  static constexpr auto structNameB = "StructB";
+
+  mlir::MLIRContext ctx;
+  mlir::Location loc;
+  mlir::OwningOpRef<mlir::ModuleOp> mod;
+
+  OpTests() : ctx(), loc(llzk::getUnknownLoc(&ctx)), mod() { ctx.loadDialect<llzk::LLZKDialect>(); }
+
+  void SetUp() override {
+    // Create a new module for each test
+    mod = llzk::createLLZKModule(&ctx, loc);
+  }
+
+  void TearDown() override {
+    // Allow existing module to be erased after each test
+    mod = mlir::OwningOpRef<mlir::ModuleOp>();
+  }
+
+  llzk::ModuleBuilder newEmptyExample() { return llzk::ModuleBuilder {mod.get()}; }
+
+  llzk::ModuleBuilder newBasicFunctionsExample(size_t numParams) {
+    mlir::IndexType idxTy = mlir::IndexType::get(&ctx);
+    llvm::SmallVector<mlir::Type> paramTypes(numParams, idxTy);
+    mlir::FunctionType fTy =
+        mlir::FunctionType::get(&ctx, mlir::TypeRange(paramTypes), mlir::TypeRange {idxTy});
+    llzk::ModuleBuilder llzkBldr(mod.get());
+    llzkBldr.insertGlobalFunc(funcNameB, fTy).insertGlobalFunc(funcNameA, fTy);
+    return llzkBldr;
+  }
+
+  llzk::ModuleBuilder newStructExample(int numStructParams = -1) {
+    llzk::ModuleBuilder llzkBldr(mod.get());
+    llzkBldr.insertFullStruct(structNameA, numStructParams)
+        .insertFullStruct(structNameB, numStructParams);
+    return llzkBldr;
+  }
+};
+
+template <typename ConcreteType> bool verify(mlir::Operation *op, bool verifySymbolUses = false) {
+  // First, call the ODS-generated function for the Op to ensure that necessary attributes exist.
+  if (failed(llvm::cast<ConcreteType>(op).verifyInvariants())) {
+    return false;
+  }
+  // Second, verify all traits on the Op and call the custom verify() (if defined) via the
+  // `verifyInvariants()` function in `OpDefinition.h`.
+  if (failed(op->getName().verifyInvariants(op))) {
+    return false;
+  }
+  // Finally, if applicable, call the ODS-generated `verifySymbolUses()` function.
+  if (verifySymbolUses) {
+    if (mlir::SymbolUserOpInterface userOp = llvm::dyn_cast<mlir::SymbolUserOpInterface>(op)) {
+      mlir::SymbolTableCollection tables;
+      if (failed(userOp.verifySymbolUses(tables))) {
+        return false;
+      }
+    }
+  }
+  //
+  return true;
+}
+
+template <typename ConcreteType>
+inline bool verify(ConcreteType op, bool verifySymbolUses = false) {
+  return verify<ConcreteType>(op.getOperation(), verifySymbolUses);
+}
