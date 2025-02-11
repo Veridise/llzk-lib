@@ -308,6 +308,18 @@ void CallOp::build(
   props.setNumDimsPerMap(odsBuilder.getDenseI32ArrayAttr({}));
 }
 
+void CallOp::build(
+    OpBuilder &odsBuilder, OperationState &odsState, TypeRange resultTypes, SymbolRefAttr callee,
+    ArrayRef<ValueRange> mapOperands, DenseI32ArrayAttr numDimsPerMap, ValueRange argOperands
+) {
+  odsState.addTypes(resultTypes);
+  odsState.addOperands(argOperands);
+  Properties &props = affineMapHelpers::buildInstantiationAttrs<CallOp>(
+      odsBuilder, odsState, mapOperands, numDimsPerMap, argOperands.size()
+  );
+  props.setCallee(callee);
+}
+
 namespace {
 enum class CalleeKind { Compute, Constrain, Other };
 

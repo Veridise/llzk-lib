@@ -750,21 +750,9 @@ void CreateArrayOp::build(
     ArrayRef<ValueRange> mapOperands, DenseI32ArrayAttr numDimsPerMap
 ) {
   odsState.addTypes(result);
-
-  int32_t mapOpsSegmentSize = 0;
-  SmallVector<int32_t> rangeSegments;
-  for (ValueRange r : mapOperands) {
-    odsState.addOperands(r);
-    int32_t s = static_cast<int32_t>(r.size());
-    rangeSegments.push_back(s);
-    mapOpsSegmentSize += s;
-  }
-  Properties &props = odsState.getOrAddProperties<Properties>();
-  props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr(rangeSegments));
-  props.setOperandSegmentSizes({0, mapOpsSegmentSize});
-  if (numDimsPerMap) {
-    props.setNumDimsPerMap(numDimsPerMap);
-  }
+  affineMapHelpers::buildInstantiationAttrs<CreateArrayOp>(
+      odsBuilder, odsState, mapOperands, numDimsPerMap
+  );
 }
 
 LogicalResult CreateArrayOp::verifySymbolUses(SymbolTableCollection &tables) {

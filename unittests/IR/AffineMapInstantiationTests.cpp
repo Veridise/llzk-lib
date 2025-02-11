@@ -320,7 +320,7 @@ TEST_F(AffineMapInstantiationTests, testMapOpInit_WrongTypeForMapOperands) {
 }
 
 //===------------------------------------------------------------------===//
-// CallOp::build(..., TypeRange, SymbolRefAttr, ValueRange)
+// CallOp::build(..., TypeRange, SymbolRefAttr, ValueRange = {})
 //===------------------------------------------------------------------===//
 
 TEST_F(AffineMapInstantiationTests, testCallNoAffine_GoodNoArgs) {
@@ -332,9 +332,7 @@ TEST_F(AffineMapInstantiationTests, testCallNoAffine_GoodNoArgs) {
   ASSERT_TRUE(mlir::succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
-  CallOp op = bldr.create<CallOp>(
-      loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {}
-  );
+  CallOp op = bldr.create<CallOp>(loc, funcB->getResultTypes(), funcB->getFullyQualifiedName());
   // module attributes {veridise.lang = "llzk"} {
   //   llzk.func @FuncA() -> index {
   //     %0 = call @FuncB() : () -> index
@@ -441,9 +439,7 @@ TEST_F(AffineMapInstantiationTests, testCallNoAffine_InvalidCalleeName) {
   ASSERT_TRUE(mlir::succeeded(funcA));
 
   OpBuilder bldr(funcA->getBody());
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "invalidName"), ValueRange {}
-  );
+  CallOp op = bldr.create<CallOp>(loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "invalidName"));
   // module attributes {veridise.lang = "llzk"} {
   //   llzk.func @FuncA() -> index {
   //     call @invalidName() : () -> ()
@@ -461,8 +457,8 @@ TEST_F(AffineMapInstantiationTests, testCallNoAffine_InvalidCalleeName) {
 }
 
 //===------------------------------------------------------------------===//
-// CallOp::build(..., TypeRange, SymbolRefAttr, ValueRange,
-//                    ArrayRef<ValueRange>, ArrayRef<int32_t>)
+// CallOp::build(..., TypeRange, SymbolRefAttr, ArrayRef<ValueRange>,
+//                    ArrayRef<int32_t>, ValueRange = {})
 //===------------------------------------------------------------------===//
 
 TEST_F(AffineMapInstantiationTests, testCallWithAffine_Good) {
@@ -485,7 +481,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_Good) {
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   auto v2 = bldr.create<index::ConstantOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
   );
   ASSERT_TRUE(verify(mod.get()));
@@ -512,7 +508,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_WrongStructNameInResultTy
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   auto v2 = bldr.create<index::ConstantOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -546,7 +542,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_TooFewMapsInResultType) {
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   auto v2 = bldr.create<index::ConstantOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -578,7 +574,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_TooManyMapsInResultType) 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   auto v2 = bldr.create<index::ConstantOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -609,7 +605,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCountLessThanDimSi
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -641,7 +637,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCountMoreThanDimSi
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v1}, ValueRange {v1}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -672,7 +668,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCount0) {
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef<ValueRange> {}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -704,7 +700,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_DimSizeCount0) {
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v1}}, ArrayRef<int32_t> {}
   );
   EXPECT_DEATH(
@@ -735,7 +731,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCount0DimSizeCount
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef<ValueRange> {}, ArrayRef<int32_t> {}
   );
   EXPECT_DEATH(
@@ -767,7 +763,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupSizeLessThanDimSiz
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -800,7 +796,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupSizeMoreThanDimSiz
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   auto v2 = bldr.create<index::ConstantOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v1, v2}}, ArrayRef<int32_t> {1, 1}
   );
   EXPECT_DEATH(
@@ -832,7 +828,7 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCountAndDimSizeCou
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
   auto v2 = bldr.create<index::ConstantOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(), ValueRange {},
+      loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1, 1}
   );
   EXPECT_DEATH(
@@ -844,318 +840,3 @@ TEST_F(AffineMapInstantiationTests, testCallWithAffine_OpGroupCountAndDimSizeCou
       "affine map instantiations \\(2\\) required by the type"
   );
 }
-
-//===------------------------------------------------------------------===//
-// CallOp::build(..., TypeRange, ValueRange, ArrayRef<NamedAttribute>)
-//===------------------------------------------------------------------===//
-
-TEST_F(AffineMapInstantiationTests, testCallGenericBuild_GoodNoArgs) {
-  ModuleBuilder llzkBldr = newBasicFunctionsExample(0);
-
-  auto funcA = llzkBldr.getGlobalFunc(funcNameA);
-  ASSERT_TRUE(mlir::succeeded(funcA));
-  auto funcB = llzkBldr.getGlobalFunc(funcNameB);
-  ASSERT_TRUE(mlir::succeeded(funcB));
-
-  OpBuilder bldr(funcA->getBody());
-  OperationName opNm(CallOp::getOperationName(), &ctx);
-  CallOp op = bldr.create<CallOp>(
-      loc, funcB->getResultTypes(),
-      // no `argOperands` or `mapOperands`
-      ValueRange {},
-      // add the minimum required attributes
-      ArrayRef {
-          NamedAttribute(CallOp::getCalleeAttrName(opNm), funcB->getFullyQualifiedName()),
-          NamedAttribute(
-              CallOp::getMapOpGroupSizesAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {})
-          )
-      }
-  );
-
-  ASSERT_TRUE(verify(mod.get()));
-  ASSERT_TRUE(verify(op, true));
-}
-
-TEST_F(AffineMapInstantiationTests, testCallGenericBuild_Good_OnlyMapArgs) {
-  ModuleBuilder llzkBldr = newStructExample(2);
-
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
-  ASSERT_TRUE(mlir::succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
-  ASSERT_TRUE(mlir::succeeded(funcComputeB));
-
-  auto structB = llzkBldr.getStruct(structNameB);
-  ASSERT_TRUE(mlir::succeeded(structB));
-
-  OpBuilder bldr(funcComputeA->getBody());
-  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
-
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
-  OperationName opNm(CallOp::getOperationName(), &ctx);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType},
-      // no `argOperands` followed by 2 `mapOperands`
-      ValueRange {v1, v2},
-      // add the minimum required attributes
-      ArrayRef {
-          NamedAttribute(CallOp::getCalleeAttrName(opNm), funcComputeB->getFullyQualifiedName()),
-          NamedAttribute(
-              CallOp::getMapOpGroupSizesAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {1, 1})
-          ),
-          NamedAttribute(
-              CallOp::getNumDimsPerMapAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {1, 1})
-          ),
-          NamedAttribute(
-              CallOp::getOperandSegmentSizesAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {0, 2})
-          )
-      }
-  );
-  // module attributes {veridise.lang = "llzk"} {
-  //   llzk.struct @StructB<[@T0, @T1]> {
-  //     func @constrain(%arg0: !llzk.struct<@StructB<[@T0, @T1]>>) {
-  //     }
-  //     func @compute() -> !llzk.struct<@StructB<[@T0, @T1]>> {
-  //     }
-  //   }
-  //   llzk.struct @StructA<[@T0, @T1]> {
-  //     func @constrain(%arg0: !llzk.struct<@StructA<[@T0, @T1]>>) {
-  //     }
-  //     func @compute() -> !llzk.struct<@StructA<[@T0, @T1]>> {
-  //       %idx2 = index.constant 2
-  //       %idx4 = index.constant 4
-  //       %0 = call @StructB::@compute() {(%idx2), (%idx4)} : () ->
-  //            !llzk.struct<@StructB<[affine_map<(d0) -> (d0)>, affine_map<(d0) -> (d0)>]>>
-  //     }
-  //   }
-  // }
-  ASSERT_TRUE(verify(mod.get()));
-  ASSERT_TRUE(verify(op, true));
-}
-
-TEST_F(AffineMapInstantiationTests, testCallGenericBuild_operandSegmentSizesAttr_TooFew) {
-  ModuleBuilder llzkBldr = newStructExample(2);
-
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
-  ASSERT_TRUE(mlir::succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
-  ASSERT_TRUE(mlir::succeeded(funcComputeB));
-
-  auto structB = llzkBldr.getStruct(structNameB);
-  ASSERT_TRUE(mlir::succeeded(structB));
-
-  OpBuilder bldr(funcComputeA->getBody());
-  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
-
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
-  OperationName opNm(CallOp::getOperationName(), &ctx);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType},
-      // no `argOperands` followed by 2 `mapOperands`
-      ValueRange {v1, v2},
-      // add the minimum required attributes
-      ArrayRef {
-          NamedAttribute(CallOp::getCalleeAttrName(opNm), funcComputeB->getFullyQualifiedName()),
-          NamedAttribute(
-              CallOp::getMapOpGroupSizesAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {})
-          ),
-          NamedAttribute(
-              CallOp::getNumDimsPerMapAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {})
-          ),
-          NamedAttribute(
-              CallOp::getOperandSegmentSizesAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {1})
-          )
-      }
-  );
-  // NOTE: the message here is a bit misleading but it comes from MLIR/generated code so there may
-  // not be a good way to improve it. It's generated via `verifyOperandSizeAttr()` with the value 2
-  // from `op->getNumOperands()` and the value 0 is the sum of the `operandSegmentSizes` attribute.
-  // It seems that some code overwrites the `operandSegmentSizes` attribute when it is too short.
-  EXPECT_DEATH(
-      {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
-      },
-      "error: 'llzk.call' op operand count \\(2\\) does not match with the total size \\(0\\) "
-      "specified in attribute 'operandSegmentSizes'"
-  );
-}
-
-TEST_F(AffineMapInstantiationTests, testCallGenericBuild_operandSegmentSizesAttr_TooMany) {
-  ModuleBuilder llzkBldr = newStructExample(2);
-
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
-  ASSERT_TRUE(mlir::succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
-  ASSERT_TRUE(mlir::succeeded(funcComputeB));
-
-  auto structB = llzkBldr.getStruct(structNameB);
-  ASSERT_TRUE(mlir::succeeded(structB));
-
-  OpBuilder bldr(funcComputeA->getBody());
-  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
-
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
-  OperationName opNm(CallOp::getOperationName(), &ctx);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType},
-      // no `argOperands` followed by 2 `mapOperands`
-      ValueRange {v1, v2},
-      // add the minimum required attributes
-      ArrayRef {
-          NamedAttribute(CallOp::getCalleeAttrName(opNm), funcComputeB->getFullyQualifiedName()),
-          NamedAttribute(
-              CallOp::getMapOpGroupSizesAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {})
-          ),
-          NamedAttribute(
-              CallOp::getNumDimsPerMapAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {})
-          ),
-          NamedAttribute(
-              CallOp::getOperandSegmentSizesAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {0, 2, 0})
-          )
-      }
-  );
-  // NOTE: the message here is a bit misleading but it comes from MLIR/generated code so there may
-  // not be a good way to improve it. It's generated via `verifyOperandSizeAttr()` with the value 2
-  // from `op->getNumOperands()` and the value 0 is the sum of the `operandSegmentSizes` attribute.
-  // It seems that some code overwrites the `operandSegmentSizes` attribute when it is too long.
-  EXPECT_DEATH(
-      {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
-      },
-      "error: 'llzk.call' op operand count \\(2\\) does not match with the total size \\(0\\) "
-      "specified in attribute 'operandSegmentSizes'"
-  );
-}
-
-TEST_F(AffineMapInstantiationTests, testCallGenericBuild_operandSegmentSizesAttr_TooHigh1) {
-  ModuleBuilder llzkBldr = newStructExample(2);
-
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
-  ASSERT_TRUE(mlir::succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
-  ASSERT_TRUE(mlir::succeeded(funcComputeB));
-
-  auto structB = llzkBldr.getStruct(structNameB);
-  ASSERT_TRUE(mlir::succeeded(structB));
-
-  OpBuilder bldr(funcComputeA->getBody());
-  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
-
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
-  OperationName opNm(CallOp::getOperationName(), &ctx);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType},
-      // no `argOperands` followed by 2 `mapOperands`
-      ValueRange {v1, v2},
-      // add the minimum required attributes
-      ArrayRef {
-          NamedAttribute(CallOp::getCalleeAttrName(opNm), funcComputeB->getFullyQualifiedName()),
-          NamedAttribute(
-              CallOp::getMapOpGroupSizesAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {})
-          ),
-          NamedAttribute(
-              CallOp::getNumDimsPerMapAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {})
-          ),
-          NamedAttribute(
-              CallOp::getOperandSegmentSizesAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {3, 0})
-          )
-      }
-  );
-  // TODO: this one causes a crash w/o explanation
-  EXPECT_DEATH(
-      {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
-      },
-      "TODO"
-  );
-}
-
-TEST_F(AffineMapInstantiationTests, testCallGenericBuild_operandSegmentSizesAttr_TooHigh2) {
-  ModuleBuilder llzkBldr = newStructExample(2);
-
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
-  ASSERT_TRUE(mlir::succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
-  ASSERT_TRUE(mlir::succeeded(funcComputeB));
-
-  auto structB = llzkBldr.getStruct(structNameB);
-  ASSERT_TRUE(mlir::succeeded(structB));
-
-  OpBuilder bldr(funcComputeA->getBody());
-  AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
-
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
-  OperationName opNm(CallOp::getOperationName(), &ctx);
-  CallOp op = bldr.create<CallOp>(
-      loc, TypeRange {affineStructType},
-      // no `argOperands` followed by 2 `mapOperands`
-      ValueRange {v1, v2},
-      // add the minimum required attributes
-      ArrayRef {
-          NamedAttribute(CallOp::getCalleeAttrName(opNm), funcComputeB->getFullyQualifiedName()),
-          NamedAttribute(
-              CallOp::getMapOpGroupSizesAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {})
-          ),
-          NamedAttribute(
-              CallOp::getNumDimsPerMapAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {})
-          ),
-          NamedAttribute(
-              CallOp::getOperandSegmentSizesAttrName(opNm),
-              bldr.getDenseI32ArrayAttr(ArrayRef<int32_t> {0, 3})
-          )
-      }
-  );
-  // TODO: try another case like this where the mentioned attribute colludes to avoid this error
-  EXPECT_DEATH(
-      {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
-      },
-      "error: 'llzk.call' op mapOperands count \\(3\\) does not match with the total size \\(0\\) "
-      "specified in attribute 'mapOpGroupSizes'"
-  );
-}
-
-// TODO: this one is the full/general builder that could be most dangerous
-//  void CallOp::build(..., TypeRange resultTypes, ValueRange operands,
-//                          ArrayRef<NamedAttribute> attributes) {
-//
-//
-// debug::dumpToFile(mod->getOperation(), "/Users/tim/Desktop/GTest.llzk"); // TODO: TEMP

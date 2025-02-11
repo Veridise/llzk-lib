@@ -99,6 +99,29 @@ mlir::LogicalResult verifyAffineMapInstantiations(
     mlir::ArrayRef<mlir::AffineMapAttr> mapAttrs, mlir::Operation *origin
 );
 
+template <typename OpType>
+inline typename OpType::Properties &buildInstantiationAttrs(
+    mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState,
+    mlir::ArrayRef<mlir::ValueRange> mapOperands, mlir::DenseI32ArrayAttr numDimsPerMap,
+    int32_t argOpsSegmentSize = 0
+) {
+  int32_t mapOpsSegmentSize = 0;
+  mlir::SmallVector<int32_t> rangeSegments;
+  for (mlir::ValueRange r : mapOperands) {
+    odsState.addOperands(r);
+    int32_t s = static_cast<int32_t>(r.size());
+    rangeSegments.push_back(s);
+    mapOpsSegmentSize += s;
+  }
+  typename OpType::Properties &props = odsState.getOrAddProperties<typename OpType::Properties>();
+  props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr(rangeSegments));
+  props.setOperandSegmentSizes({argOpsSegmentSize, mapOpsSegmentSize});
+  if (numDimsPerMap) {
+    props.setNumDimsPerMap(numDimsPerMap);
+  }
+  return props;
+}
+
 } // namespace affineMapHelpers
 
 /// Get the operation name, like "llzk.emit_op" for the given OpType.

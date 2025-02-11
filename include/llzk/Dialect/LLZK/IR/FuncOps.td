@@ -236,15 +236,47 @@ def CallOp
       DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs Variadic<AnyLLZKType>);
 
-  let builders = [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
-                      "::mlir::SymbolRefAttr":$callee,
-                      CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
-                  OpBuilder<(ins "::llzk::FuncOp":$callee,
-                                CArg<"::mlir::ValueRange", "{}">:$argOperands),
-                            [{
-                              build($_builder, $_state, callee.getFunctionType().getResults(),
-                                    ::mlir::SymbolRefAttr::get(callee), argOperands);
-                            }]>];
+  let skipDefaultBuilders = 1;
+  let builders =
+      [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+           "::mlir::SymbolRefAttr":$callee,
+           CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
+       OpBuilder<(ins "::llzk::FuncOp":$callee,
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                 [{
+                    build($_builder, $_state, callee.getFunctionType().getResults(),
+                          ::mlir::SymbolRefAttr::get(callee), argOperands);
+                  }]>,
+       OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+           "::mlir::SymbolRefAttr":$callee,
+           "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
+           "::mlir::DenseI32ArrayAttr":$numDimsPerMap,
+           CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
+       OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                     "::mlir::SymbolRefAttr":$callee,
+                     "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
+                     "::llvm::ArrayRef<int32_t>":$numDimsPerMap,
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                 [{
+                    build($_builder, $_state, resultTypes, callee, mapOperands,
+                          $_builder.getDenseI32ArrayAttr(numDimsPerMap), argOperands);
+                  }]>,
+       OpBuilder<(ins "::llzk::FuncOp":$callee,
+                     "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
+                     "::mlir::DenseI32ArrayAttr":$numDimsPerMap,
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                 [{
+                    build($_builder, $_state, callee.getFunctionType().getResults(),
+                          ::mlir::SymbolRefAttr::get(callee), mapOperands, numDimsPerMap, argOperands);
+                  }]>,
+       OpBuilder<(ins "::llzk::FuncOp":$callee,
+                     "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
+                     "::llvm::ArrayRef<int32_t>":$numDimsPerMap,
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                 [{
+                    build($_builder, $_state, callee, mapOperands,
+                          $_builder.getDenseI32ArrayAttr(numDimsPerMap), argOperands);
+                  }]>];
 
   let extraClassDeclaration = [{
     ::mlir::FunctionType getCalleeType();
