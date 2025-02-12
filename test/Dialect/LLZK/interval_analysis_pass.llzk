@@ -1,0 +1,19 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-inline-includes -llzk-print-interval-analysis %s 2>&1 | FileCheck %s
+// XFAIL: *
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ConstantConstraint {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@ConstantConstraint> {
+      %self = new_struct : !llzk.struct<@ConstantConstraint>
+      return %self : !llzk.struct<@ConstantConstraint>
+    }
+
+    func @constrain(%self: !llzk.struct<@ConstantConstraint>, %const: !llzk.felt) {
+      %a = constfelt 1
+      %b = constfelt 2
+      %c = add %a, %b
+      emit_eq %const, %c : !llzk.felt
+      return
+    }
+  }
+}

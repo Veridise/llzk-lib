@@ -24,4 +24,12 @@ def ConstraintDependencyGraphPrinterPass
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
+def IntervalAnalysisPrinterPass
+    : Pass<"llzk-print-interval-analysis", "::mlir::ModuleOp"> {
+  let summary = "Print interval analysis results for all LLZK structs.";
+  let constructor =
+      "llzk::createIntervalAnalysisPrinterPass(llvm::errs())";
+  let dependentDialects = ["llzk::LLZKDialect"];
+}
+
 #endif // LLZK_ANALYSIS_TD

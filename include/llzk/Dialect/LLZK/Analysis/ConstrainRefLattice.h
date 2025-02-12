@@ -1,5 +1,6 @@
 #pragma once
 
+#include "llzk/Dialect/LLZK/Analysis/AbstractLatticeValue.h"
 #include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
 #include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
 
@@ -10,7 +11,9 @@ using TranslationMap =
     std::unordered_map<ConstrainRef, ConstrainRefLatticeValue, ConstrainRef::Hash>;
 
 /// @brief A value at a given point of the ConstrainRefLattice.
-class ConstrainRefLatticeValue {
+class ConstrainRefLatticeValue
+    : public dataflow::AbstractLatticeValue<ConstrainRefLatticeValue, ConstrainRefSet> {
+  using Base = dataflow::AbstractLatticeValue<ConstrainRefLatticeValue, ConstrainRefSet>;
   /// For scalar values.
   using ScalarTy = ConstrainRefSet;
   /// For arrays of values created by, e.g., the LLZK new_array op. A recursive
@@ -22,76 +25,21 @@ class ConstrainRefLatticeValue {
   /// This simplifies the construction of multidimensional arrays.
   using ArrayTy = std::vector<std::unique_ptr<ConstrainRefLatticeValue>>;
 
-  /// @brief Create a new array with the given `shape`. The values are pre-allocated
-  /// to empty scalar values.
-  static ArrayTy constructArrayTy(const mlir::ArrayRef<int64_t> &shape);
-
 public:
-  explicit ConstrainRefLatticeValue(ScalarTy s) : value(s), arrayShape(std::nullopt) {}
-  explicit ConstrainRefLatticeValue(ConstrainRef r) : ConstrainRefLatticeValue(ScalarTy {r}) {}
-  ConstrainRefLatticeValue() : ConstrainRefLatticeValue(ScalarTy {}) {}
+  explicit ConstrainRefLatticeValue(ScalarTy s) : Base(s) {}
+  explicit ConstrainRefLatticeValue(ConstrainRef r) : Base(ScalarTy {r}) {}
+  ConstrainRefLatticeValue() : Base(ScalarTy {}) {}
 
   // Create an empty array of the given shape.
-  explicit ConstrainRefLatticeValue(mlir::ArrayRef<int64_t> shape)
-      : value(constructArrayTy(shape)), arrayShape(shape) {}
-
-  ConstrainRefLatticeValue(const ConstrainRefLatticeValue &rhs) { *this = rhs; }
-
-  // Enable copying by duplicating unique_ptrs and copying the contained values.
-  ConstrainRefLatticeValue &operator=(const ConstrainRefLatticeValue &rhs);
-
-  bool isScalar() const { return std::holds_alternative<ScalarTy>(value); }
-  bool isSingleValue() const { return isScalar() && getScalarValue().size() == 1; }
-  bool isArray() const { return std::holds_alternative<ArrayTy>(value); }
-
-  const ScalarTy &getScalarValue() const {
-    debug::ensure(isScalar(), "not a scalar value");
-    return std::get<ScalarTy>(value);
-  }
-
-  ScalarTy &getScalarValue() {
-    debug::ensure(isScalar(), "not a scalar value");
-    return std::get<ScalarTy>(value);
-  }
+  explicit ConstrainRefLatticeValue(mlir::ArrayRef<int64_t> shape) : Base(shape) {}
 
   const ConstrainRef &getSingleValue() const {
     debug::ensure(isSingleValue(), "not a single value");
     return *getScalarValue().begin();
   }
 
-  const ArrayTy &getArrayValue() const {
-    debug::ensure(isArray(), "not an array value");
-    return std::get<ArrayTy>(value);
-  }
-
-  size_t getArraySize() const { return getArrayValue().size(); }
-
-  ArrayTy &getArrayValue() {
-    debug::ensure(isArray(), "not an array value");
-    return std::get<ArrayTy>(value);
-  }
-
-  /// @brief Directly index into the flattened array using a single index.
-  const ConstrainRefLatticeValue &getElemFlatIdx(unsigned i) const {
-    debug::ensure(isArray(), "not an array value");
-    auto &arr = getArrayValue();
-    debug::ensure(i < arr.size(), "index out of range");
-    return *arr.at(i);
-  }
-
-  ConstrainRefLatticeValue &getElemFlatIdx(unsigned i) {
-    debug::ensure(isArray(), "not an array value");
-    auto &arr = getArrayValue();
-    debug::ensure(i < arr.size(), "index out of range");
-    return *arr.at(i);
-  }
-
-  /// @brief Sets this value to be equal to `rhs`.
-  /// @return A `mlir::ChangeResult` indicating if an update was performed or not.
-  mlir::ChangeResult setValue(const ConstrainRefLatticeValue &rhs);
-
-  /// @brief Union this value with that of rhs.
-  mlir::ChangeResult update(const ConstrainRefLatticeValue &rhs);
+  // /// @brief Union this value with that of rhs.
+  // mlir::ChangeResult update(const ConstrainRefLatticeValue &rhs);
 
   /// @brief Directly insert the ref into this value. If this is a scalar value,
   /// insert the ref into the value's set. If this is an array value, the array
@@ -117,27 +65,16 @@ public:
   std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
   extract(const std::vector<ConstrainRefIndex> &indices) const;
 
-  /// @brief If this is an array value, combine all elements into a single scalar
-  /// value and return it. If this is already a scalar value, return the scalar value.
-  ScalarTy foldToScalar() const;
-
-  void print(mlir::raw_ostream &os) const;
-
-  bool operator==(const ConstrainRefLatticeValue &rhs) const;
-
-private:
-  std::variant<ScalarTy, ArrayTy> value;
-  std::optional<std::vector<int64_t>> arrayShape;
-
+protected:
   /// @brief Union this value with the given scalar.
-  mlir::ChangeResult updateScalar(const ScalarTy &rhs);
+  virtual mlir::ChangeResult updateScalar(const ScalarTy &rhs) override;
 
   /// @brief Union this value with the given array.
-  mlir::ChangeResult updateArray(const ArrayTy &rhs);
+  // mlir::ChangeResult updateArray(const ArrayTy &rhs) override;
 
   /// @brief Folds the current value into a scalar and folds `rhs` to a scalar and updates
   /// the current value to the union of the two scalars.
-  mlir::ChangeResult foldAndUpdate(const ConstrainRefLatticeValue &rhs);
+  virtual mlir::ChangeResult foldAndUpdate(const ConstrainRefLatticeValue &rhs) override;
 
   /// @brief Translate this value using the translation map, assuming this value
   /// is a scalar.
@@ -145,11 +82,9 @@ private:
 
   /// @brief Perform a recursive transformation over all elements of this value and
   /// return a new value with the modifications.
-  std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
+  virtual std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
   elementwiseTransform(std::function<ConstrainRef(const ConstrainRef &)> transform) const;
 };
-
-mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLatticeValue &v);
 
 /// A lattice for use in dense analysis.
 class ConstrainRefLattice : public dataflow::AbstractDenseLattice {

@@ -16,53 +16,23 @@ namespace llzk {
 
 /* ConstrainRefLatticeValue */
 
-ConstrainRefLatticeValue::ArrayTy
-ConstrainRefLatticeValue::constructArrayTy(const mlir::ArrayRef<int64_t> &shape) {
-  size_t totalElem = 1;
-  for (auto dim : shape) {
-    totalElem *= dim;
-  }
-  ConstrainRefLatticeValue::ArrayTy arr(totalElem);
-  for (auto it = arr.begin(); it != arr.end(); it++) {
-    *it = std::make_unique<ConstrainRefLatticeValue>();
-  }
-  return arr;
-}
+// mlir::ChangeResult ConstrainRefLatticeValue::setValue(const ConstrainRefLatticeValue &rhs) {
+//   if (*this == rhs) {
+//     return mlir::ChangeResult::NoChange;
+//   }
+//   *this = rhs;
+//   return mlir::ChangeResult::Change;
+// }
 
-ConstrainRefLatticeValue &ConstrainRefLatticeValue::operator=(const ConstrainRefLatticeValue &rhs) {
-  arrayShape = rhs.arrayShape;
-  if (rhs.isScalar()) {
-    value = rhs.getScalarValue();
-  } else {
-    // create an empty array of the same size
-    value = constructArrayTy(rhs.arrayShape.value());
-    auto &lhsArr = getArrayValue();
-    auto &rhsArr = rhs.getArrayValue();
-    for (unsigned i = 0; i < lhsArr.size(); i++) {
-      // Recursive copy assignment of lattice values
-      *lhsArr[i] = *rhsArr[i];
-    }
-  }
-  return *this;
-}
-
-mlir::ChangeResult ConstrainRefLatticeValue::setValue(const ConstrainRefLatticeValue &rhs) {
-  if (*this == rhs) {
-    return mlir::ChangeResult::NoChange;
-  }
-  *this = rhs;
-  return mlir::ChangeResult::Change;
-}
-
-mlir::ChangeResult ConstrainRefLatticeValue::update(const ConstrainRefLatticeValue &rhs) {
-  if (isScalar() && rhs.isScalar()) {
-    return updateScalar(rhs.getScalarValue());
-  } else if (isArray() && rhs.isArray() && getArraySize() == rhs.getArraySize()) {
-    return updateArray(rhs.getArrayValue());
-  } else {
-    return foldAndUpdate(rhs);
-  }
-}
+// mlir::ChangeResult ConstrainRefLatticeValue::update(const ConstrainRefLatticeValue &rhs) {
+//   if (isScalar() && rhs.isScalar()) {
+//     return updateScalar(rhs.getScalarValue());
+//   } else if (isArray() && rhs.isArray() && getArraySize() == rhs.getArraySize()) {
+//     return updateArray(rhs.getArrayValue());
+//   } else {
+//     return foldAndUpdate(rhs);
+//   }
+// }
 
 mlir::ChangeResult ConstrainRefLatticeValue::insert(const ConstrainRef &rhs) {
   auto rhsVal = ConstrainRefLatticeValue(rhs);
@@ -99,13 +69,13 @@ ConstrainRefLatticeValue::referenceField(SymbolLookupResult<FieldDefOp> fieldRef
 std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
 ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices) const {
   if (isArray()) {
-    debug::ensure(indices.size() <= arrayShape->size(), "invalid extract array operands");
+    debug::ensure(indices.size() <= getNumArrayDims(), "invalid extract array operands");
 
     // First, compute what chunk(s) to index
     std::vector<size_t> currIdxs {0};
     for (unsigned i = 0; i < indices.size(); i++) {
       auto &idx = indices[i];
-      auto currDim = arrayShape.value()[i];
+      auto currDim = getArrayDim(i);
 
       std::vector<size_t> newIdxs;
       debug::ensure(idx.isIndex() || idx.isIndexRange(), "wrong type of index for array");
@@ -129,8 +99,8 @@ ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices)
     }
     std::vector<int64_t> newArrayDims;
     size_t chunkSz = 1;
-    for (unsigned i = indices.size(); i < arrayShape->size(); i++) {
-      auto dim = arrayShape->at(i);
+    for (unsigned i = indices.size(); i < getNumArrayDims(); i++) {
+      auto dim = getArrayDim(i);
       newArrayDims.push_back(dim);
       chunkSz *= dim;
     }
@@ -155,52 +125,6 @@ ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices)
   }
 }
 
-ConstrainRefLatticeValue::ScalarTy ConstrainRefLatticeValue::foldToScalar() const {
-  if (isScalar()) {
-    return getScalarValue();
-  }
-
-  ConstrainRefLatticeValue::ScalarTy res;
-  for (auto &val : getArrayValue()) {
-    auto rhs = val->foldToScalar();
-    res.insert(rhs.begin(), rhs.end());
-  }
-  return res;
-}
-
-void ConstrainRefLatticeValue::print(mlir::raw_ostream &os) const {
-  if (isScalar()) {
-    os << getScalarValue();
-  } else {
-    os << "[ ";
-    const auto &arr = getArrayValue();
-    for (auto it = arr.begin(); it != arr.end();) {
-      (*it)->print(os);
-      it++;
-      if (it != arr.end()) {
-        os << ", ";
-      } else {
-        os << ' ';
-      }
-    }
-    os << ']';
-  }
-}
-
-bool ConstrainRefLatticeValue::operator==(const ConstrainRefLatticeValue &rhs) const {
-  if (isScalar() && rhs.isScalar()) {
-    return getScalarValue() == rhs.getScalarValue();
-  } else if (isArray() && rhs.isArray() && getArraySize() == rhs.getArraySize()) {
-    for (size_t i = 0; i < getArraySize(); i++) {
-      if (getElemFlatIdx(i) != rhs.getElemFlatIdx(i)) {
-        return false;
-      }
-    }
-    return true;
-  }
-  return false;
-}
-
 mlir::ChangeResult ConstrainRefLatticeValue::updateScalar(const ScalarTy &rhs) {
   mlir::ChangeResult res = mlir::ChangeResult::NoChange;
   auto &lhs = getScalarValue();
@@ -211,14 +135,14 @@ mlir::ChangeResult ConstrainRefLatticeValue::updateScalar(const ScalarTy &rhs) {
   return res;
 }
 
-mlir::ChangeResult ConstrainRefLatticeValue::updateArray(const ArrayTy &rhs) {
-  mlir::ChangeResult res = mlir::ChangeResult::NoChange;
-  auto &lhs = getArrayValue();
-  for (size_t i = 0; i < getArraySize(); i++) {
-    res |= lhs[i]->update(*rhs.at(i));
-  }
-  return res;
-}
+// mlir::ChangeResult ConstrainRefLatticeValue::updateArray(const ArrayTy &rhs) {
+//   mlir::ChangeResult res = mlir::ChangeResult::NoChange;
+//   auto &lhs = getArrayValue();
+//   for (size_t i = 0; i < getArraySize(); i++) {
+//     res |= lhs[i]->update(*rhs.at(i));
+//   }
+//   return res;
+// }
 
 mlir::ChangeResult ConstrainRefLatticeValue::foldAndUpdate(const ConstrainRefLatticeValue &rhs) {
   auto folded = foldToScalar();
@@ -227,7 +151,7 @@ mlir::ChangeResult ConstrainRefLatticeValue::foldAndUpdate(const ConstrainRefLat
   if (isScalar() && getScalarValue() == folded) {
     return mlir::ChangeResult::NoChange;
   }
-  value = folded;
+  getValue() = folded;
   return mlir::ChangeResult::Change;
 }
 
@@ -236,7 +160,7 @@ mlir::ChangeResult ConstrainRefLatticeValue::translateScalar(const TranslationMa
   // copy the current value
   auto currVal = getScalarValue();
   // reset this value
-  value = ScalarTy();
+  getValue() = ScalarTy();
   for (auto &[ref, val] : translation) {
     auto it = currVal.find(ref);
     if (it != currVal.end()) {
@@ -338,11 +262,6 @@ ConstrainRefLatticeValue ConstrainRefLattice::getReturnValue(unsigned i) const {
     return this->getOrDefault(retOp.getOperand(i));
   }
   return ConstrainRefLatticeValue();
-}
-
-mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLattice &v) {
-  v.print(os);
-  return os;
 }
 
 } // namespace llzk
