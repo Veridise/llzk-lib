@@ -1,5 +1,8 @@
 #pragma once
 
+#include "llzk/Dialect/LLZK/Util/Debug.h"
+
+#include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Support/LLVM.h>
 
 #include <concepts>
@@ -10,20 +13,16 @@ namespace llzk::dataflow {
 template <typename Val>
 concept ScalarLatticeValue = requires(Val lhs, Val rhs, mlir::raw_ostream &os) {
   // Require a form of print function
-  { os << lhs } -> std::convertible_to<mlir::raw_ostream &>;
+  { os << lhs } -> std::same_as<mlir::raw_ostream &>;
   // Require comparability
-  { lhs == rhs } -> std::convertible_to<bool>;
+  { lhs == rhs } -> std::same_as<bool>;
+  // Require the ability to combine two scalar values
+  { lhs += rhs } -> std::same_as<Val &>;
   // Require default constructable
   requires std::default_initializable<Val>;
 };
 
-template <typename Type>
-concept ConcreteType = requires { requires !std::is_abstract_v<Type>; };
-
 template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeValue {
-  // static_assert(std::is_base_of<AbstractLatticeValue<Derived, ScalarTy>, Derived>::value,
-  // "Derived must inherit from AbstractLatticeValue");
-
   /// For arrays of values created by, e.g., the LLZK new_array op. A recursive
   /// definition allows arrays to be constructed of other existing values, which is
   /// how the `new_array` operator works.
@@ -145,7 +144,7 @@ public:
     ScalarTy res;
     for (auto &val : getArrayValue()) {
       auto rhs = val->foldToScalar();
-      res.insert(rhs.begin(), rhs.end());
+      res += rhs;
     }
     return res;
   }
@@ -170,31 +169,6 @@ public:
       return foldAndUpdate(rhs);
     }
   }
-
-  /// @brief Union this value with the given scalar.
-  virtual mlir::ChangeResult updateScalar(const ScalarTy &rhs) = 0;
-
-  /// @brief Union this value with the given array.
-  mlir::ChangeResult updateArray(const ArrayTy &rhs) {
-    mlir::ChangeResult res = mlir::ChangeResult::NoChange;
-    auto &lhs = getArrayValue();
-    for (size_t i = 0; i < getArraySize(); i++) {
-      res |= lhs[i]->update(*rhs.at(i));
-    }
-    return res;
-  }
-
-  // mlir::ChangeResult ConstrainRefLatticeValue::foldAndUpdate(const ConstrainRefLatticeValue &rhs)
-  // {
-  //   auto folded = foldToScalar();
-  //   auto rhsScalar = rhs.foldToScalar();
-  //   folded.insert(rhsScalar.begin(), rhsScalar.end());
-  //   if (isScalar() && getScalarValue() == folded) {
-  //     return mlir::ChangeResult::NoChange;
-  //   }
-  //   getValue() = folded;
-  //   return mlir::ChangeResult::Change;
-  // }
 
   bool operator==(const AbstractLatticeValue &rhs) const {
     if (isScalar() && rhs.isScalar()) {
@@ -226,38 +200,39 @@ protected:
 
   void copyArrayShape(const AbstractLatticeValue &rhs) { arrayShape = rhs.arrayShape; }
 
-  // mlir::ChangeResult updateScalar(const ScalarTy &rhs) {
-  //   mlir::ChangeResult res = mlir::ChangeResult::NoChange;
-  //   auto &lhs = getScalarValue();
-  //   for (auto &ref : rhs) {
-  //     auto [_, inserted] = lhs.insert(ref);
-  //     res |= inserted ? mlir::ChangeResult::Change : mlir::ChangeResult::NoChange;
-  //   }
-  //   return res;
-  // }
+  /// @brief Union this value with the given scalar.
+  mlir::ChangeResult updateScalar(const ScalarTy &rhs) {
+    auto lhs = getScalarValue();
+    lhs += rhs;
+    if (getScalarValue() == lhs) {
+      return mlir::ChangeResult::NoChange;
+    }
+    getScalarValue() = lhs;
+    return mlir::ChangeResult::Change;
+  }
 
-  // mlir::ChangeResult updateArray(const ArrayTy &rhs) {
-  //   mlir::ChangeResult res = mlir::ChangeResult::NoChange;
-  //   auto &lhs = getArrayValue();
-  //   for (size_t i = 0; i < getArraySize(); i++) {
-  //     res |= lhs[i]->update(*rhs.at(i));
-  //   }
-  //   return res;
-  // }
+  /// @brief Union this value with the given array.
+  mlir::ChangeResult updateArray(const ArrayTy &rhs) {
+    mlir::ChangeResult res = mlir::ChangeResult::NoChange;
+    auto &lhs = getArrayValue();
+    for (size_t i = 0; i < getArraySize(); i++) {
+      res |= lhs[i]->update(*rhs.at(i));
+    }
+    return res;
+  }
 
   /// @brief Folds the current value into a scalar and folds `rhs` to a scalar and updates
   /// the current value to the union of the two scalars.
-  // mlir::ChangeResult foldAndUpdate(const AbstractLatticeValue &rhs) {
-  //   auto folded = foldToScalar();
-  //   auto rhsScalar = rhs.foldToScalar();
-  //   folded.insert(rhsScalar.begin(), rhsScalar.end());
-  //   if (isScalar() && getScalarValue() == folded) {
-  //     return mlir::ChangeResult::NoChange;
-  //   }
-  //   getValue() = folded;
-  //   return mlir::ChangeResult::Change;
-  // }
-  virtual mlir::ChangeResult foldAndUpdate(const Derived &rhs) = 0;
+  mlir::ChangeResult foldAndUpdate(const Derived &rhs) {
+    auto folded = foldToScalar();
+    auto rhsScalar = rhs.foldToScalar();
+    folded += rhsScalar;
+    if (isScalar() && getScalarValue() == folded) {
+      return mlir::ChangeResult::NoChange;
+    }
+    getValue() = folded;
+    return mlir::ChangeResult::Change;
+  }
 
 private:
   std::variant<ScalarTy, ArrayTy> value;
@@ -272,4 +247,3 @@ operator<<(mlir::raw_ostream &os, const AbstractLatticeValue<Derived, ScalarTy> 
 }
 
 } // namespace llzk::dataflow
-                             

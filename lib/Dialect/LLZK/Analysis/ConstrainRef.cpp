@@ -355,6 +355,13 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRef &rhs) {
   return os;
 }
 
+/* ConstrainRefSet */
+
+ConstrainRefSet &ConstrainRefSet::operator+=(const ConstrainRefSet &rhs) {
+  insert(rhs.begin(), rhs.end());
+  return *this;
+}
+
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefSet &rhs) {
   os << "{ ";
   std::vector<ConstrainRef> sortedRefs(rhs.begin(), rhs.end());

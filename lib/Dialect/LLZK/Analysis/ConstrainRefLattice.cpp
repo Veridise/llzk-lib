@@ -125,36 +125,6 @@ ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices)
   }
 }
 
-mlir::ChangeResult ConstrainRefLatticeValue::updateScalar(const ScalarTy &rhs) {
-  mlir::ChangeResult res = mlir::ChangeResult::NoChange;
-  auto &lhs = getScalarValue();
-  for (auto &ref : rhs) {
-    auto [_, inserted] = lhs.insert(ref);
-    res |= inserted ? mlir::ChangeResult::Change : mlir::ChangeResult::NoChange;
-  }
-  return res;
-}
-
-// mlir::ChangeResult ConstrainRefLatticeValue::updateArray(const ArrayTy &rhs) {
-//   mlir::ChangeResult res = mlir::ChangeResult::NoChange;
-//   auto &lhs = getArrayValue();
-//   for (size_t i = 0; i < getArraySize(); i++) {
-//     res |= lhs[i]->update(*rhs.at(i));
-//   }
-//   return res;
-// }
-
-mlir::ChangeResult ConstrainRefLatticeValue::foldAndUpdate(const ConstrainRefLatticeValue &rhs) {
-  auto folded = foldToScalar();
-  auto rhsScalar = rhs.foldToScalar();
-  folded.insert(rhsScalar.begin(), rhsScalar.end());
-  if (isScalar() && getScalarValue() == folded) {
-    return mlir::ChangeResult::NoChange;
-  }
-  getValue() = folded;
-  return mlir::ChangeResult::Change;
-}
-
 mlir::ChangeResult ConstrainRefLatticeValue::translateScalar(const TranslationMap &translation) {
   auto res = mlir::ChangeResult::NoChange;
   // copy the current value

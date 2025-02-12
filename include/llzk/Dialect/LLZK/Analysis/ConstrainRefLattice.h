@@ -66,16 +66,6 @@ public:
   extract(const std::vector<ConstrainRefIndex> &indices) const;
 
 protected:
-  /// @brief Union this value with the given scalar.
-  virtual mlir::ChangeResult updateScalar(const ScalarTy &rhs) override;
-
-  /// @brief Union this value with the given array.
-  // mlir::ChangeResult updateArray(const ArrayTy &rhs) override;
-
-  /// @brief Folds the current value into a scalar and folds `rhs` to a scalar and updates
-  /// the current value to the union of the two scalars.
-  virtual mlir::ChangeResult foldAndUpdate(const ConstrainRefLatticeValue &rhs) override;
-
   /// @brief Translate this value using the translation map, assuming this value
   /// is a scalar.
   mlir::ChangeResult translateScalar(const TranslationMap &translation);

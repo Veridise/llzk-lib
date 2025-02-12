@@ -250,7 +250,16 @@ private:
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRef &rhs);
 
-using ConstrainRefSet = std::unordered_set<ConstrainRef, ConstrainRef::Hash>;
+/* ConstrainRefSet */
+
+class ConstrainRefSet : public std::unordered_set<ConstrainRef, ConstrainRef::Hash> {
+  using Base = std::unordered_set<ConstrainRef, ConstrainRef::Hash>;
+
+public:
+  using Base::Base;
+
+  ConstrainRefSet &operator+=(const ConstrainRefSet &rhs);
+};
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefSet &rhs);
 
