@@ -368,7 +368,7 @@ msgOneFunction(function_ref<InFlightDiagnostic()> emitError, const Twine &name) 
 StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
   auto pathRes = getPathFromRoot(*this);
   assert(succeeded(pathRes)); // consistent with StructType::get() with invalid args
-  return StructType::get(getContext(), pathRes.value(), constParams.value_or(getConstParamsAttr()));
+  return StructType::get(pathRes.value(), constParams.value_or(getConstParamsAttr()));
 }
 
 std::string StructDefOp::getHeaderString() {

@@ -164,7 +164,7 @@ TEST_F(OpTests, testCallWithAffine_Good) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+      structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
@@ -191,7 +191,7 @@ TEST_F(OpTests, testCallWithAffine_WrongStructNameInResultType) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structA->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+      structA->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructA<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
@@ -225,7 +225,7 @@ TEST_F(OpTests, testCallWithAffine_TooFewMapsInResultType) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m})
+      structB->getFullyQualifiedName(), bldr.getArrayAttr({m})
   ); // !llzk.struct<@StructB<[#m]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
@@ -257,7 +257,7 @@ TEST_F(OpTests, testCallWithAffine_TooManyMapsInResultType) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m, m})
+      structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m, m})
   ); // !llzk.struct<@StructB<[#m,#m,#m]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
@@ -289,7 +289,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountLessThanDimSizeCount) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+      structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
@@ -321,7 +321,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountMoreThanDimSizeCount) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+      structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
@@ -353,7 +353,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+      structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   CallOp op = bldr.create<CallOp>(
@@ -384,7 +384,7 @@ TEST_F(OpTests, testCallWithAffine_DimSizeCount0) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+      structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
@@ -416,7 +416,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0DimSizeCount0) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+      structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   CallOp op = bldr.create<CallOp>(
@@ -447,7 +447,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeLessThanDimSize) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+      structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[#m,#m]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
@@ -479,7 +479,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeMoreThanDimSize) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+      structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[#m,#m]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
@@ -511,7 +511,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountAndDimSizeCountMoreThanType) {
   OpBuilder bldr(funcComputeA->getBody());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
-      &ctx, structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
+      structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<index::ConstantOp>(loc, 2);
