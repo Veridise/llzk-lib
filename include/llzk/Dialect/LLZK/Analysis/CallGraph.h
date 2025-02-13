@@ -121,6 +121,8 @@ public:
   iterator begin() const { return edges.begin(); }
   iterator end() const { return edges.end(); }
 
+  llvm::iterator_range<iterator> edgesOut() const { return llvm::make_range(begin(), end()); }
+
   /// Returns true if this node has any child edges.
   bool hasChildren() const;
 
