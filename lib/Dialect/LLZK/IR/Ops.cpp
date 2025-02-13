@@ -471,13 +471,12 @@ LogicalResult StructDefOp::verifyRegions() {
     for (Operation &op : getBody().front()) {
       if (!llvm::isa<FieldDefOp>(op)) {
         if (FuncOp funcDef = llvm::dyn_cast<FuncOp>(op)) {
-          StringRef funcName = funcDef.getSymName();
-          if (FUNC_NAME_COMPUTE == funcName) {
+          if (funcDef.nameIsCompute()) {
             if (foundCompute) {
               return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
             }
             foundCompute = std::make_optional(funcDef);
-          } else if (FUNC_NAME_CONSTRAIN == funcName) {
+          } else if (funcDef.nameIsConstrain()) {
             if (foundConstrain) {
               return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
             }
@@ -487,7 +486,8 @@ LogicalResult StructDefOp::verifyRegions() {
             // tag the error with correct location and correct op name.
             return op.emitError() << "'" << getOperationName() << "' op " << "must define only \"@"
                                   << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
-                                  << "\" functions;" << " found \"@" << funcName << "\"";
+                                  << "\" functions;" << " found \"@" << funcDef.getSymName()
+                                  << "\"";
           }
         } else {
           return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()

@@ -247,10 +247,9 @@ LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &tables) {
   FailureOr<StructDefOp> parentStructOpt = getParentOfType<StructDefOp>(*this);
   if (succeeded(parentStructOpt)) {
     // Verify return type restrictions for functions within a StructDefOp
-    llvm::StringRef funcName = getSymName();
-    if (FUNC_NAME_COMPUTE == funcName) {
+    if (nameIsCompute()) {
       return verifyFuncTypeCompute(*this, tables, parentStructOpt.value());
-    } else if (FUNC_NAME_CONSTRAIN == funcName) {
+    } else if (nameIsConstrain()) {
       return verifyFuncTypeConstrain(*this, tables, parentStructOpt.value());
     }
   }
@@ -428,21 +427,18 @@ struct KnownTargetVerifier : public CallOpVerifier {
       // producing an error. The combination of this KnownTargetVerifier resolving the callee to a
       // specific FuncOp and verifyFuncTypeCompute() ensuring all FUNC_NAME_COMPUTE FuncOps have a
       // single StructType return value will produce a more relevant error message in that case.
-      Operation::result_type_range callReturnTypes = callOp->getResultTypes();
-      if (callReturnTypes.size() == 1) {
-        if (StructType retTy = llvm::dyn_cast<StructType>(callReturnTypes.front())) {
-          if (ArrayAttr params = retTy.getParams()) {
-            // Collect the struct parameters that are defined via AffineMapAttr
-            SmallVector<AffineMapAttr> mapAttrs;
-            for (Attribute a : params) {
-              if (AffineMapAttr m = dyn_cast<AffineMapAttr>(a)) {
-                mapAttrs.push_back(m);
-              }
+      if (StructType retTy = callOp->getComputeSingleResultType()) {
+        if (ArrayAttr params = retTy.getParams()) {
+          // Collect the struct parameters that are defined via AffineMapAttr
+          SmallVector<AffineMapAttr> mapAttrs;
+          for (Attribute a : params) {
+            if (AffineMapAttr m = dyn_cast<AffineMapAttr>(a)) {
+              mapAttrs.push_back(m);
             }
-            return affineMapHelpers::verifyAffineMapInstantiations(
-                callOp->getMapOperands(), callOp->getNumDimsPerMap(), mapAttrs, *callOp
-            );
           }
+          return affineMapHelpers::verifyAffineMapInstantiations(
+              callOp->getMapOperands(), callOp->getNumDimsPerMap(), mapAttrs, *callOp
+          );
         }
       }
       return success();
@@ -484,7 +480,7 @@ LogicalResult checkSelfTypeUnknownTarget(
     StringAttr expectedParamName, Type actualType, CallOp *origin, const char *aspect
 ) {
   if (!llvm::isa<TypeVarType>(actualType) ||
-      llvm::cast<TypeVarType>(actualType).getNameRef().getValue() != expectedParamName) {
+      llvm::cast<TypeVarType>(actualType).getRefName() != expectedParamName) {
     // Tested in function_restrictions_fail.llzk:
     //    Non-tvar for constrain input via "call_target_constrain_without_self_non_struct"
     //    Non-tvar for compute output via "call_target_compute_wrong_type_ret"
@@ -611,6 +607,15 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 FunctionType CallOp::getCalleeType() {
   return FunctionType::get(getContext(), getArgOperands().getTypes(), getResultTypes());
+}
+
+StructType CallOp::getComputeSingleResultType() {
+  assert(calleeIsCompute());
+  Operation::result_type_range types = getResultTypes();
+  if (types.size() == 1) {
+    return llvm::dyn_cast<StructType>(types.front());
+  }
+  return StructType();
 }
 
 /// Return the callee of this operation.

@@ -149,6 +149,14 @@ def FuncOp
     /// Return the full name for this function from the root module, including
     /// all module and struct scopes.
     ::mlir::SymbolRefAttr getFullyQualifiedName();
+
+    /// Return `true` iff the function name is `FUNC_NAME_COMPUTE` (if needed, a check
+    /// that this FuncOp is located within a StructDefOp must be done separately).
+    inline bool nameIsCompute() { return FUNC_NAME_COMPUTE == getSymName(); }
+
+    /// Return `true` iff the function name is `FUNC_NAME_CONSTRAIN` (if needed, a
+    /// check that this FuncOp is located within a StructDefOp must be done separately).
+    inline bool nameIsConstrain() { return FUNC_NAME_CONSTRAIN == getSymName(); }
   }];
   let hasCustomAssemblyFormat = 1;
 
@@ -280,6 +288,17 @@ def CallOp
 
   let extraClassDeclaration = [{
     ::mlir::FunctionType getCalleeType();
+
+    /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` (this
+    /// does not check if the callee function is located within a StructDefOp).
+    inline bool calleeIsCompute() { return FUNC_NAME_COMPUTE == getCallee().getLeafReference(); }
+
+    /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` (this
+    /// does not check if the callee function is located within a StructDefOp).
+    inline bool calleeIsConstrain() { return FUNC_NAME_CONSTRAIN == getCallee().getLeafReference(); }
+
+    /// Assuming the callee is `FUNC_NAME_COMPUTE`, return the single StructType result.
+    ::llzk::StructType getComputeSingleResultType();
   }];
 
   let assemblyFormat = [{

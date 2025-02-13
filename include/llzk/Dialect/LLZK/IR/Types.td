@@ -200,6 +200,10 @@ def LLZK_TypeVarType : LLZK_Type<"TypeVar", "tvar"> {
   let builders = [TypeBuilderWithInferredContext<
       (ins "::mlir::FlatSymbolRefAttr":$nameRef),
       [{ return $_get(nameRef.getContext(), nameRef); }]>];
+
+  let extraClassDeclaration = [{
+    inline ::mlir::StringRef getRefName() const { return getNameRef().getValue(); }
+  }];
 }
 
 // Type constraint matching only the given Type or TypeVarType.

@@ -38,7 +38,7 @@ public:
     ensure(succeeded(fnOpRes), "could not resolve called function");
 
     auto fnOp = fnOpRes->get();
-    if (fnOp.getName() == FUNC_NAME_CONSTRAIN || fnOp.getName() == FUNC_NAME_COMPUTE) {
+    if (fnOp.nameIsCompute() || fnOp.nameIsConstrain()) {
       // Do nothing special.
       join(after, before);
       return;
@@ -401,7 +401,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     ensure(mlir::succeeded(res), "could not resolve constrain call");
 
     auto fn = res->get();
-    if (fn.getName() != FUNC_NAME_CONSTRAIN) {
+    if (!fn.nameIsConstrain()) {
       return;
     }
     // Nested
