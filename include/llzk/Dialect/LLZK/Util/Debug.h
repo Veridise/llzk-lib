@@ -36,12 +36,6 @@ template <class InputIt> inline std::string toString(const InputIt &collection) 
   return toString(collection.begin(), collection.end());
 }
 
-inline void ensure(bool condition, mlir::Twine errMsg) {
-  if (!condition) {
-    llvm::report_fatal_error(errMsg);
-  }
-}
-
 inline void dumpSymbolTableWalk(mlir::Operation *symbolTableOp) {
   std::string output; // buffer to avoid multi-threaded mess
   llvm::raw_string_ostream oss(output);

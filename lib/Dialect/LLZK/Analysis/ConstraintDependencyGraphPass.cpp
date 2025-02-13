@@ -7,7 +7,6 @@
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <llvm/ADT/SmallVector.h>
-#include <llvm/Support/Debug.h>
 #include <llvm/Support/ErrorHandling.h>
 
 namespace llzk {
@@ -38,7 +37,7 @@ protected:
     for (auto &[s, cdg_ptr] : cs) {
       auto &structDef = const_cast<StructDefOp &>(s);
       auto fullName = getPathFromTopRoot(structDef);
-      debug::ensure(
+      ensure(
           mlir::succeeded(fullName),
           "could not resolve fully qualified name of struct " + mlir::Twine(structDef.getName())
       );

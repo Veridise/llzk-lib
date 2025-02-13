@@ -35,7 +35,7 @@ public:
   ) override {
 
     auto fnOpRes = resolveCallable<FuncOp>(tables, call);
-    debug::ensure(succeeded(fnOpRes), "could not resolve called function");
+    ensure(succeeded(fnOpRes), "could not resolve called function");
 
     auto fnOp = fnOpRes->get();
     if (fnOp.getName() == FUNC_NAME_CONSTRAIN || fnOp.getName() == FUNC_NAME_COMPUTE) {
@@ -49,13 +49,13 @@ public:
     else if (action == dataflow::CallControlFlowAction::EnterCallee) {
       // Add all of the argument values to the lattice.
       auto calledFnRes = resolveCallable<FuncOp>(tables, call);
-      debug::ensure(mlir::succeeded(calledFnRes), "could not resolve function call");
+      ensure(mlir::succeeded(calledFnRes), "could not resolve function call");
       auto calledFn = calledFnRes->get();
 
       auto updated = after->join(before);
       for (auto arg : calledFn->getRegion(0).getArguments()) {
         auto sourceRef = ConstrainRefLattice::getSourceRef(arg);
-        debug::ensure(mlir::succeeded(sourceRef), "failed to get source ref");
+        ensure(mlir::succeeded(sourceRef), "failed to get source ref");
         updated |= after->setValue(arg, sourceRef.value());
       }
       propagateIfChanged(after, updated);
@@ -67,11 +67,11 @@ public:
       // Translate argument values based on the operands given at the call site.
       std::unordered_map<ConstrainRef, ConstrainRefLatticeValue, ConstrainRef::Hash> translation;
       auto funcOpRes = resolveCallable<FuncOp>(tables, call);
-      debug::ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
+      ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
       auto funcOp = funcOpRes->get();
 
       auto callOp = mlir::dyn_cast<CallOp>(call.getOperation());
-      debug::ensure(callOp, "call is not a llzk::CallOp");
+      ensure(callOp, "call is not a llzk::CallOp");
 
       for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
         auto key = ConstrainRef(funcOp.getArgument(i));
@@ -118,7 +118,7 @@ public:
       assert(fieldRead->getNumResults() == 1);
 
       auto fieldOpRes = fieldRead.getFieldDefOp(tables);
-      debug::ensure(mlir::succeeded(fieldOpRes), "could not find field read");
+      ensure(mlir::succeeded(fieldOpRes), "could not find field read");
 
       auto res = fieldRead->getResult(0);
       const auto &ops = operandVals.at(fieldRead->getOpOperand(0).get());
@@ -182,7 +182,7 @@ protected:
       mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
       const ConstrainRefLattice &before, ConstrainRefLattice *after
   ) {
-    debug::ensure(
+    ensure(
         mlir::isa<ReadArrayOp>(op) || mlir::isa<ExtractArrayOp>(op), "wrong type of op provided!"
     );
 
@@ -192,7 +192,7 @@ protected:
 
     auto array = op->getOperand(0);
     auto it = operandVals.find(array);
-    debug::ensure(it != operandVals.end(), "improperly constructed operandVals map");
+    ensure(it != operandVals.end(), "improperly constructed operandVals map");
     auto currVals = it->second;
 
     std::vector<ConstrainRefIndex> indices;
@@ -200,7 +200,7 @@ protected:
     for (size_t i = 1; i < op->getNumOperands(); i++) {
       auto currentOp = op->getOperand(i);
       auto idxIt = operandVals.find(currentOp);
-      debug::ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
+      ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
       auto &idxVals = idxIt->second;
 
       if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstantIndex()) {
@@ -288,7 +288,7 @@ private:
   std::shared_ptr<ConstraintDependencyGraph> cdg;
 
   void ensureCDGCreated() const {
-    debug::ensure(cdg != nullptr, "CDG does not exist; must invoke constructCDG");
+    ensure(cdg != nullptr, "CDG does not exist; must invoke constructCDG");
   }
 
   friend class ConstraintDependencyGraphModuleAnalysis;
@@ -368,7 +368,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
 ) {
   // Fetch the constrain function. This is a required feature for all LLZK structs.
   auto constrainFnOp = structDef.getConstrainFuncOp();
-  debug::ensure(
+  ensure(
       constrainFnOp,
       "malformed struct " + mlir::Twine(structDef.getName()) + " must define a constrain function"
   );
@@ -398,7 +398,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
    */
   constrainFnOp.walk([this, &solver, &am](CallOp fnCall) mutable {
     auto res = resolveCallable<FuncOp>(tables, fnCall);
-    debug::ensure(mlir::succeeded(res), "could not resolve constrain call");
+    ensure(mlir::succeeded(res), "could not resolve constrain call");
 
     auto fn = res->get();
     if (fn.getName() != FUNC_NAME_CONSTRAIN) {
@@ -409,7 +409,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     ConstrainRefRemappings translations;
 
     auto lattice = solver.lookupState<ConstrainRefLattice>(fnCall.getOperation());
-    debug::ensure(lattice, "could not find lattice for call operation");
+    ensure(lattice, "could not find lattice for call operation");
 
     // Map fn parameters to args in the call op
     for (unsigned i = 0; i < fn.getNumArguments(); i++) {
@@ -419,7 +419,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     }
     auto &childAnalysis = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(calledStruct);
     if (!childAnalysis.constructed()) {
-      debug::ensure(
+      ensure(
           mlir::succeeded(childAnalysis.constructCDG(solver, am)),
           "could not construct CDG for child struct"
       );
@@ -452,7 +452,7 @@ void ConstraintDependencyGraph::walkConstrainOp(
 ) {
   std::vector<ConstrainRef> signalUsages, constUsages;
   auto lattice = solver.lookupState<ConstrainRefLattice>(emitOp);
-  debug::ensure(lattice, "failed to get lattice for emit operation");
+  ensure(lattice, "failed to get lattice for emit operation");
 
   for (auto operand : emitOp->getOperands()) {
     auto latticeVal = lattice->getOrDefault(operand);
@@ -492,7 +492,7 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemap
       if (vals.isArray()) {
         // Try to index into the array
         auto suffix = elem.getSuffix(prefix);
-        debug::ensure(
+        ensure(
             mlir::succeeded(suffix), "failure is nonsensical, we already checked for valid prefix"
         );
 
@@ -593,7 +593,7 @@ ConstraintDependencyGraphModuleAnalysis::ConstraintDependencyGraphModuleAnalysis
     // for global functions as well.
     solver.load<ConstrainRefAnalysis>();
     auto res = solver.initializeAndRun(modOp);
-    debug::ensure(res.succeeded(), "solver failed to run on module!");
+    ensure(res.succeeded(), "solver failed to run on module!");
 
     modOp.walk([this, &solver, &am](StructDefOp s) {
       auto &csa = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(s);

@@ -2,6 +2,7 @@
 
 #include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
 #include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
+#include "llzk/Dialect/LLZK/Util/Helpers.h"
 
 namespace llzk {
 
@@ -45,44 +46,44 @@ public:
   bool isArray() const { return std::holds_alternative<ArrayTy>(value); }
 
   const ScalarTy &getScalarValue() const {
-    debug::ensure(isScalar(), "not a scalar value");
+    ensure(isScalar(), "not a scalar value");
     return std::get<ScalarTy>(value);
   }
 
   ScalarTy &getScalarValue() {
-    debug::ensure(isScalar(), "not a scalar value");
+    ensure(isScalar(), "not a scalar value");
     return std::get<ScalarTy>(value);
   }
 
   const ConstrainRef &getSingleValue() const {
-    debug::ensure(isSingleValue(), "not a single value");
+    ensure(isSingleValue(), "not a single value");
     return *getScalarValue().begin();
   }
 
   const ArrayTy &getArrayValue() const {
-    debug::ensure(isArray(), "not an array value");
+    ensure(isArray(), "not an array value");
     return std::get<ArrayTy>(value);
   }
 
   size_t getArraySize() const { return getArrayValue().size(); }
 
   ArrayTy &getArrayValue() {
-    debug::ensure(isArray(), "not an array value");
+    ensure(isArray(), "not an array value");
     return std::get<ArrayTy>(value);
   }
 
   /// @brief Directly index into the flattened array using a single index.
   const ConstrainRefLatticeValue &getElemFlatIdx(unsigned i) const {
-    debug::ensure(isArray(), "not an array value");
+    ensure(isArray(), "not an array value");
     auto &arr = getArrayValue();
-    debug::ensure(i < arr.size(), "index out of range");
+    ensure(i < arr.size(), "index out of range");
     return *arr.at(i);
   }
 
   ConstrainRefLatticeValue &getElemFlatIdx(unsigned i) {
-    debug::ensure(isArray(), "not an array value");
+    ensure(isArray(), "not an array value");
     auto &arr = getArrayValue();
-    debug::ensure(i < arr.size(), "index out of range");
+    ensure(i < arr.size(), "index out of range");
     return *arr.at(i);
   }
 

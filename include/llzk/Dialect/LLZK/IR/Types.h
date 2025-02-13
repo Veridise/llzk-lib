@@ -1,7 +1,6 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
-#include "llzk/Dialect/LLZK/Util/Debug.h"
 #include "llzk/Dialect/LLZK/Util/SymbolLookup.h" // IWYU pragma: keep
 
 #include <mlir/IR/Attributes.h>

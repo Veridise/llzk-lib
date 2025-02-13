@@ -6,7 +6,6 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include <llvm/ADT/SmallVector.h>
-#include <llvm/Support/Debug.h>
 #include <llvm/Support/ErrorHandling.h>
 
 namespace llzk {

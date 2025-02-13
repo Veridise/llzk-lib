@@ -4,6 +4,7 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/Compare.h"
 #include "llzk/Dialect/LLZK/Util/Hash.h"
+#include "llzk/Dialect/LLZK/Util/Helpers.h"
 
 #include <mlir/Analysis/DataFlowFramework.h>
 #include <mlir/Pass/AnalysisManager.h>
@@ -179,7 +180,7 @@ private:
   /// @brief Ensures that the given struct has a CDG.
   /// @param op The struct to ensure has a CDG.
   void ensureCDGCreated(StructDefOp op) const {
-    debug::ensure(hasCDG(op), "CDG does not exist for StructDefOp " + mlir::Twine(op.getName()));
+    ensure(hasCDG(op), "CDG does not exist for StructDefOp " + mlir::Twine(op.getName()));
   }
 };
 

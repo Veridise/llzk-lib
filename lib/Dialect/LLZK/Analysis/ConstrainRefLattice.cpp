@@ -99,7 +99,7 @@ ConstrainRefLatticeValue::referenceField(SymbolLookupResult<FieldDefOp> fieldRef
 std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
 ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices) const {
   if (isArray()) {
-    debug::ensure(indices.size() <= arrayShape->size(), "invalid extract array operands");
+    ensure(indices.size() <= arrayShape->size(), "invalid extract array operands");
 
     // First, compute what chunk(s) to index
     std::vector<size_t> currIdxs {0};
@@ -108,7 +108,7 @@ ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices)
       auto currDim = arrayShape.value()[i];
 
       std::vector<size_t> newIdxs;
-      debug::ensure(idx.isIndex() || idx.isIndexRange(), "wrong type of index for array");
+      ensure(idx.isIndex() || idx.isIndexRange(), "wrong type of index for array");
       if (idx.isIndex()) {
         auto idxVal = idx.getIndex().getZExtValue();
         std::transform(
