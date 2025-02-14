@@ -3,6 +3,7 @@
  */
 #include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/Helpers.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/Analysis/CallGraph.h>
@@ -202,7 +203,7 @@ void CallGraph::print(llvm::raw_ostream &os) const {
     os << "'" << callableRegion->getParentOp()->getName() << "' - Region #"
        << callableRegion->getRegionNumber();
     auto attrs = parentOp->getAttrDictionary();
-    if (!attrs.empty()) {
+    if (!isNullOrEmpty(attrs)) {
       os << " : " << attrs;
     }
   };

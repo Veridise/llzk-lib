@@ -1,5 +1,6 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/LLZK/Util/Helpers.h"
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
@@ -511,8 +512,7 @@ LogicalResult StructDefOp::verifyRegions() {
   ArrayRef<Type> constrainParams = foundConstrain->getFunctionType().getInputs().drop_front();
   if (COMPONENT_NAME_MAIN == this->getSymName()) {
     // Verify that the Struct has no parameters.
-    auto structParams = this->getConstParamsAttr();
-    if (structParams && !structParams.empty()) {
+    if (!isNullOrEmpty(this->getConstParamsAttr())) {
       return this->emitError().append(
           "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
       );

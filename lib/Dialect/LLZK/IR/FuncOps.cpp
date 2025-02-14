@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/Helpers.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/IRMapping.h>
@@ -392,7 +393,7 @@ protected:
   }
 
   LogicalResult verifyNoAffineMapInstantiations() {
-    if (!callOp->getMapOpGroupSizesAttr().empty()) {
+    if (!isNullOrEmpty(callOp->getMapOpGroupSizesAttr())) {
       // Tested in call_with_affinemap_fail.llzk
       return callOp->emitOpError().append(
           "can only have affine map instantiations when targeting a \"@", FUNC_NAME_COMPUTE,
@@ -400,7 +401,7 @@ protected:
       );
     }
     // ASSERT: the check above is sufficient due to VerifySizesForMultiAffineOps trait.
-    assert(callOp->getNumDimsPerMapAttr().empty());
+    assert(isNullOrEmpty(callOp->getNumDimsPerMapAttr()));
     assert(callOp->getMapOperands().empty());
     return success();
   }
