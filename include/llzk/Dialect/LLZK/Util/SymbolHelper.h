@@ -36,12 +36,12 @@ inline mlir::SymbolRefAttr asSymbolRefAttr(std::vector<mlir::FlatSymbolRefAttr> 
 }
 
 /// Return SymbolRefAttr like the one given but with the root/head element removed.
-inline mlir::SymbolRefAttr getTailAsSymbolRefAttr(mlir::SymbolRefAttr &symbol) {
+inline mlir::SymbolRefAttr getTailAsSymbolRefAttr(mlir::SymbolRefAttr symbol) {
   return asSymbolRefAttr(symbol.getNestedReferences());
 }
 
 /// Return SymbolRefAttr like the one given but with the leaf/final element removed.
-inline mlir::SymbolRefAttr getPrefixAsSymbolRefAttr(mlir::SymbolRefAttr &symbol) {
+inline mlir::SymbolRefAttr getPrefixAsSymbolRefAttr(mlir::SymbolRefAttr symbol) {
   return mlir::SymbolRefAttr::get(
       symbol.getRootReference(), symbol.getNestedReferences().drop_back()
   );
