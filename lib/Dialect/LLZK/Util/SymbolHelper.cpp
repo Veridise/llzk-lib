@@ -151,7 +151,7 @@ SymbolRefAttr replaceLeaf(SymbolRefAttr orig, FlatSymbolRefAttr newLeaf) {
   }
 }
 
-SymbolRefAttr appendLeaf(SymbolRefAttr orig, StringRef newLeafSuffix) {
+SymbolRefAttr appendLeafName(SymbolRefAttr orig, StringRef newLeafSuffix) {
   ArrayRef<FlatSymbolRefAttr> origTail = orig.getNestedReferences();
   if (origTail.empty()) {
     // If there is no tail, the root is the leaf so append on the root instead

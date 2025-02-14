@@ -89,7 +89,7 @@ TEST_F(SymbolHelperTests, test_replaceLeaf) {
   ASSERT_EQ(debug::toString(attr), "@root::@r1::@leaf");
 }
 
-TEST_F(SymbolHelperTests, test_appendLeaf) {
-  SymbolRefAttr attr = appendLeaf(newExample(2), "_suffix");
+TEST_F(SymbolHelperTests, test_appendLeafName) {
+  SymbolRefAttr attr = appendLeafName(newExample(2), "_suffix");
   ASSERT_EQ(debug::toString(attr), "@root::@r1::@r2_suffix");
 }

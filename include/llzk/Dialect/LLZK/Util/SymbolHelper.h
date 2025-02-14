@@ -55,7 +55,7 @@ inline mlir::SymbolRefAttr replaceLeaf(mlir::SymbolRefAttr orig, mlir::StringAtt
 
 /// Return SymbolRefAttr like the one given but with the leaf (final) element appended with the
 /// given suffix.
-mlir::SymbolRefAttr appendLeaf(mlir::SymbolRefAttr orig, mlir::StringRef newLeafSuffix);
+mlir::SymbolRefAttr appendLeafName(mlir::SymbolRefAttr orig, mlir::StringRef newLeafSuffix);
 
 mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(StructDefOp &to);
