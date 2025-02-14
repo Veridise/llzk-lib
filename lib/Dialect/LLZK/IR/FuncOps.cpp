@@ -263,6 +263,14 @@ SymbolRefAttr FuncOp::getFullyQualifiedName() {
   return res.value();
 }
 
+bool FuncOp::isStructCompute() {
+  return succeeded(getParentOfType<StructDefOp>(*this)) && nameIsCompute();
+}
+
+bool FuncOp::isStructConstrain() {
+  return succeeded(getParentOfType<StructDefOp>(*this)) && nameIsConstrain();
+}
+
 //===----------------------------------------------------------------------===//
 // ReturnOp
 //===----------------------------------------------------------------------===//
@@ -607,6 +615,38 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 FunctionType CallOp::getCalleeType() {
   return FunctionType::get(getContext(), getArgOperands().getTypes(), getResultTypes());
+}
+
+namespace {
+
+bool calleeIsStructFunctionImpl(
+    const char *funcName, SymbolRefAttr callee, std::function<StructType()> &&getType
+) {
+  if (callee.getLeafReference() == funcName) {
+    if (StructType t = getType()) {
+      // If the name ref within the StructType matches the `callee` prefix (i.e. sans the function
+      // name itself), then the `callee` target must be within a StructDefOp because validation
+      // checks elsewhere ensure that every StructType references a StructDefOp (i.e. the `callee`
+      // function is not simply a global function nested within a ModuleOp)
+      return t.getNameRef() == getPrefixAsSymbolRefAttr(callee);
+    }
+  }
+  return false;
+}
+
+} // namespace
+
+bool CallOp::calleeIsStructCompute() {
+  return calleeIsStructFunctionImpl(FUNC_NAME_COMPUTE, getCallee(), [this]() {
+    return this->getComputeSingleResultType();
+  });
+}
+
+bool CallOp::calleeIsStructConstrain() {
+  return calleeIsStructFunctionImpl(FUNC_NAME_CONSTRAIN, getCallee(), [this]() {
+    auto args = this->getArgOperands();
+    return args.empty() ? nullptr : llvm::dyn_cast<StructType>(args.getTypes().front());
+  });
 }
 
 StructType CallOp::getComputeSingleResultType() {

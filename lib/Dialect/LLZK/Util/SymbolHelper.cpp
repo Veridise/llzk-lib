@@ -127,6 +127,45 @@ llvm::SmallVector<FlatSymbolRefAttr> getPieces(SymbolRefAttr ref) {
   return pieces;
 }
 
+namespace {
+
+SymbolRefAttr replaceLeafImpl(
+    StringAttr origRoot, ArrayRef<FlatSymbolRefAttr> origTail, FlatSymbolRefAttr newLeaf
+) {
+  assert(!origTail.empty());
+  llvm::SmallVector<FlatSymbolRefAttr> newTail;
+  newTail.append(origTail.begin(), origTail.drop_back().end());
+  newTail.push_back(newLeaf);
+  return SymbolRefAttr::get(origRoot, newTail);
+}
+
+} // namespace
+
+SymbolRefAttr replaceLeaf(SymbolRefAttr orig, FlatSymbolRefAttr newLeaf) {
+  ArrayRef<FlatSymbolRefAttr> origTail = orig.getNestedReferences();
+  if (origTail.empty()) {
+    // If there is no tail, the root is the leaf so replace the whole thing
+    return newLeaf;
+  } else {
+    return replaceLeafImpl(orig.getRootReference(), origTail, newLeaf);
+  }
+}
+
+SymbolRefAttr appendLeaf(SymbolRefAttr orig, StringRef newLeafSuffix) {
+  ArrayRef<FlatSymbolRefAttr> origTail = orig.getNestedReferences();
+  if (origTail.empty()) {
+    // If there is no tail, the root is the leaf so append on the root instead
+    return getFlatSymbolRefAttr(
+        orig.getContext(), orig.getRootReference().getValue() + newLeafSuffix
+    );
+  } else {
+    return replaceLeafImpl(
+        orig.getRootReference(), origTail,
+        getFlatSymbolRefAttr(orig.getContext(), origTail.back().getValue() + newLeafSuffix)
+    );
+  }
+}
+
 FailureOr<ModuleOp> getRootModule(Operation *from) {
   std::vector<FlatSymbolRefAttr> path;
   return collectPathToRoot(from, from, path, RootSelector::CLOSEST);
