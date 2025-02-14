@@ -31,6 +31,13 @@ void ModuleBuilder::ensureNoSuchGlobalFunc(std::string_view funcName) {
   }
 }
 
+void ModuleBuilder::ensureGlobalFnExists(std::string_view funcName) {
+  if (globalFuncMap.find(funcName) == globalFuncMap.end()) {
+    auto error_message = "global function " + Twine(funcName) + " does not exist!";
+    llvm::report_fatal_error(error_message);
+  }
+}
+
 void ModuleBuilder::ensureNoSuchStruct(std::string_view structName) {
   if (structMap.find(structName) != structMap.end()) {
     auto error_message = "struct " + Twine(structName) + " already exists!";
@@ -178,6 +185,16 @@ ModuleBuilder::insertGlobalFunc(std::string_view funcName, FunctionType type, Lo
   (void)funcDef.addEntryBlock();
   globalFuncMap[funcName] = funcDef;
 
+  return *this;
+}
+
+ModuleBuilder &
+ModuleBuilder::insertGlobalCall(FuncOp caller, std::string_view callee, Location callLoc) {
+  ensureGlobalFnExists(callee);
+  FuncOp calleeFn = globalFuncMap.at(callee);
+
+  OpBuilder builder(caller.getBody());
+  builder.create<CallOp>(callLoc, calleeFn.getResultTypes(), calleeFn.getFullyQualifiedName());
   return *this;
 }
 

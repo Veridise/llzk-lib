@@ -30,13 +30,17 @@ protected:
 
   llzk::ModuleBuilder newEmptyExample() { return llzk::ModuleBuilder {mod.get()}; }
 
-  llzk::ModuleBuilder newBasicFunctionsExample(size_t numParams) {
+  llzk::ModuleBuilder newBasicFunctionsExample(
+      size_t numParams = 0, std::vector<std::string_view> names = {funcNameB, funcNameA}
+  ) {
     mlir::IndexType idxTy = mlir::IndexType::get(&ctx);
     llvm::SmallVector<mlir::Type> paramTypes(numParams, idxTy);
     mlir::FunctionType fTy =
         mlir::FunctionType::get(&ctx, mlir::TypeRange(paramTypes), mlir::TypeRange {idxTy});
     llzk::ModuleBuilder llzkBldr(mod.get());
-    llzkBldr.insertGlobalFunc(funcNameB, fTy).insertGlobalFunc(funcNameA, fTy);
+    for (std::string_view n : names) {
+      llzkBldr.insertGlobalFunc(n, fTy);
+    }
     return llzkBldr;
   }
 

@@ -15,9 +15,12 @@ namespace llzk {
 namespace debug {
 
 namespace {
-template <class Any> void append(llvm::raw_ostream &ss, Any value) { ss << value; }
+template <typename Any> void append(llvm::raw_ostream &ss, Any value) { ss << value; }
 void append(llvm::raw_ostream &ss, mlir::NamedAttribute a) {
-  ss << a.getName() << "=" << a.getValue();
+  ss << a.getName() << '=' << a.getValue();
+}
+template <typename A, typename B> void append(llvm::raw_ostream &ss, std::pair<A, B> a) {
+  ss << '(' << a.first << ',' << a.second << ')';
 }
 } // namespace
 

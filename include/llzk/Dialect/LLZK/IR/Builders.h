@@ -150,6 +150,12 @@ public:
     return insertGlobalFunc(funcName, type, getUnknownLoc());
   }
 
+  ModuleBuilder &
+  insertGlobalCall(llzk::FuncOp caller, std::string_view callee, mlir::Location callLoc);
+  ModuleBuilder &insertGlobalCall(llzk::FuncOp caller, std::string_view callee) {
+    return insertGlobalCall(caller, callee, getUnknownLoc());
+  }
+
   /* Getter methods */
 
   /// Get the top-level LLZK module.
@@ -233,6 +239,11 @@ private:
   /// reporting a fatal error otherwise.
   /// @param funcName
   void ensureNoSuchGlobalFunc(std::string_view funcName);
+
+  /// @brief Ensure that a global function with the given funcName has been added,
+  /// reporting a fatal error otherwise.
+  /// @param funcName
+  void ensureGlobalFnExists(std::string_view funcName);
 
   /// @brief Ensure that a struct with the given structName has not been added,
   /// reporting a fatal error otherwise.
