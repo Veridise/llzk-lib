@@ -11,8 +11,8 @@ using namespace mlir;
 
 class SymbolHelperTests : public ::testing::Test {
 protected:
-  mlir::MLIRContext ctx;
-  mlir::Location loc;
+  MLIRContext ctx;
+  Location loc;
 
   SymbolHelperTests() : ctx(), loc(llzk::getUnknownLoc(&ctx)) {}
 
@@ -51,4 +51,45 @@ TEST_F(SymbolHelperTests, test_getPieces) {
                    FlatSymbolRefAttr::get(&ctx, "r2"), FlatSymbolRefAttr::get(&ctx, "r3")}
               )
   );
+}
+
+TEST_F(SymbolHelperTests, test_asSymbolRefAttr_StringAttr_SymRefAttr) {
+  SymbolRefAttr attr = asSymbolRefAttr(StringAttr::get(&ctx, "super"), newExample(2));
+  ASSERT_EQ(debug::toString(attr), "@super::@root::@r1::@r2");
+}
+
+TEST_F(SymbolHelperTests, test_asSymbolRefAttr_ArrRef_Flat) {
+  SymbolRefAttr attr = asSymbolRefAttr(ArrayRef(
+      {FlatSymbolRefAttr::get(&ctx, "a"), FlatSymbolRefAttr::get(&ctx, "b"),
+       FlatSymbolRefAttr::get(&ctx, "c"), FlatSymbolRefAttr::get(&ctx, "d")}
+  ));
+  ASSERT_EQ(debug::toString(attr), "@a::@b::@c::@d");
+}
+
+TEST_F(SymbolHelperTests, test_asSymbolRefAttr_vector_Flat) {
+  SymbolRefAttr attr = asSymbolRefAttr(std::vector(
+      {FlatSymbolRefAttr::get(&ctx, "a"), FlatSymbolRefAttr::get(&ctx, "b"),
+       FlatSymbolRefAttr::get(&ctx, "c"), FlatSymbolRefAttr::get(&ctx, "d")}
+  ));
+  ASSERT_EQ(debug::toString(attr), "@a::@b::@c::@d");
+}
+
+TEST_F(SymbolHelperTests, test_getTailAsSymbolRefAttr) {
+  SymbolRefAttr attr = getTailAsSymbolRefAttr(newExample(5));
+  ASSERT_EQ(debug::toString(attr), "@r1::@r2::@r3::@r4::@r5");
+}
+
+TEST_F(SymbolHelperTests, test_getPrefixAsSymbolRefAttr) {
+  SymbolRefAttr attr = getPrefixAsSymbolRefAttr(newExample(5));
+  ASSERT_EQ(debug::toString(attr), "@root::@r1::@r2::@r3::@r4");
+}
+
+TEST_F(SymbolHelperTests, test_replaceLeaf) {
+  SymbolRefAttr attr = replaceLeaf(newExample(2), FlatSymbolRefAttr::get(&ctx, "leaf"));
+  ASSERT_EQ(debug::toString(attr), "@root::@r1::@leaf");
+}
+
+TEST_F(SymbolHelperTests, test_appendLeaf) {
+  SymbolRefAttr attr = appendLeaf(newExample(2), "_suffix");
+  ASSERT_EQ(debug::toString(attr), "@root::@r1::@r2_suffix");
 }
