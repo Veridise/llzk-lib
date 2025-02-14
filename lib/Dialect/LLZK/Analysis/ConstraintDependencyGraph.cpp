@@ -329,7 +329,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
           "could not construct CDG for child struct"
       );
     }
-    auto translatedCDG = childAnalysis.getCDG().translate(translations);
+    auto translatedCDG = childAnalysis.getResult().translate(translations);
 
     // Now, union sets based on the translation
     // We should be able to just merge what is in the translatedCDG to the current CDG
@@ -384,7 +384,8 @@ void ConstraintDependencyGraph::walkConstrainOp(
   }
 }
 
-ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemappings translation) {
+ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemappings translation
+) const {
   ConstraintDependencyGraph res(mod, structDef);
   auto translate = [&translation](const ConstrainRef &elem
                    ) -> mlir::FailureOr<std::vector<ConstrainRef>> {
@@ -438,8 +439,10 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemap
         }
       }
       // Also add the constants from the original CDG
-      auto &origConstSet = constantSets[*mit];
-      translatedConsts.insert(translatedConsts.end(), origConstSet.begin(), origConstSet.end());
+      if (auto it = constantSets.find(*mit); it != constantSets.end()) {
+        auto &origConstSet = it->second;
+        translatedConsts.insert(translatedConsts.end(), origConstSet.begin(), origConstSet.end());
+      }
     }
 
     if (translatedSignals.empty()) {
@@ -494,31 +497,8 @@ mlir::LogicalResult ConstraintDependencyGraphStructAnalysis::runAnalysis(
   if (mlir::failed(res)) {
     return mlir::failure();
   }
-  cdg = std::make_shared<ConstraintDependencyGraph>(*res);
+  setResult(std::move(*res));
   return mlir::success();
-}
-
-/* ConstraintDependencyGraphModuleAnalysis */
-
-/// @brief Computes ConstraintDependencyGraph objects for all structs contained within the
-/// given op, if the op is a module op.
-/// @param op The top-level op. If op is not an LLZK-compliant mlir::ModuleOp, the
-/// analysis will fail.
-/// @param am The analysis manager used to query sub-analyses per StructDefOperation.
-ConstraintDependencyGraphModuleAnalysis::ConstraintDependencyGraphModuleAnalysis(
-    mlir::Operation *op, mlir::AnalysisManager &am
-)
-    : ModuleAnalysis(op, am) {
-  getModule().walk([this, &am](StructDefOp s) {
-    auto &csa = am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(s);
-    if (!csa.constructed()) {
-      auto error_message = "ConstraintDependencyGraphStructAnalysis failed to construct CDG for " +
-                           mlir::Twine(s.getName());
-      s->emitError(error_message);
-      llvm::report_fatal_error(error_message);
-    }
-    dependencies[s] = csa.cdg;
-  });
 }
 
 } // namespace llzk

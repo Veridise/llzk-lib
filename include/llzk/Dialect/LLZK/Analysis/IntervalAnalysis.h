@@ -1,6 +1,7 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/Analysis/AbstractLatticeValue.h"
+#include "llzk/Dialect/LLZK/Analysis/AnalysisWrappers.h"
 #include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/Compare.h"
@@ -61,9 +62,13 @@ public:
   void visitCallControlFlowTransfer(
       mlir::CallOpInterface call, dataflow::CallControlFlowAction action, const Lattice &before,
       Lattice *after
-  ) override {}
+  ) override {
+    llvm::report_fatal_error("IntervalDataFlowAnalysis::visitCallControlFlowTransfer : todo!");
+  }
 
-  void visitOperation(mlir::Operation *op, const Lattice &before, Lattice *after) override {}
+  void visitOperation(mlir::Operation *op, const Lattice &before, Lattice *after) override {
+    llvm::report_fatal_error("IntervalDataFlowAnalysis::visitOperation : todo!");
+  }
 
 private:
   void setToEntryState(Lattice *lattice) override {
@@ -107,60 +112,21 @@ private:
 
 /* StructIntervalAnalysis */
 
-class StructIntervalAnalysis {
+class StructIntervalAnalysis : public StructAnalysis<StructIntervals> {
 public:
-  StructIntervalAnalysis(mlir::Operation *op, mlir::AnalysisManager &am) {}
+  using StructAnalysis::StructAnalysis;
 
   mlir::LogicalResult
-  constructIntervals(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager) {}
+  runAnalysis(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager) override {
 
-  std::shared_ptr<StructIntervals> getIntervalsPtr() const { return intervals; }
-
-private:
-  std::shared_ptr<StructIntervals> intervals;
+    llvm::report_fatal_error("StructIntervalAnalysis::runAnalysis : todo!");
+    return mlir::failure();
+  }
 };
 
 /* ModuleIntervalAnalysis */
 
-class ModuleIntervalAnalysis {
-  /// Using a map, not an unordered map, to control sorting order for iteration.
-  using DependencyMap =
-      std::map<StructDefOp, std::shared_ptr<StructIntervals>, OpLocationLess<StructDefOp>>;
-
-public:
-  ModuleIntervalAnalysis(mlir::Operation *op, mlir::AnalysisManager &am) {
-    if (auto modOp = mlir::dyn_cast<mlir::ModuleOp>(op)) {
-      mlir::DataFlowConfig config;
-      mlir::DataFlowSolver solver(config);
-      dataflow::markAllOpsAsLive(solver, modOp);
-
-      // The analysis is run at the module level so that lattices are computed
-      // for global functions as well.
-      solver.load<IntervalDataFlowAnalysis>();
-      auto res = solver.initializeAndRun(modOp);
-      debug::ensure(res.succeeded(), "solver failed to run on module!");
-
-      llvm::report_fatal_error("todo!");
-
-      modOp.walk([this, &solver, &am](StructDefOp s) {
-        auto &ca = am.getChildAnalysis<StructIntervalAnalysis>(s);
-        if (mlir::failed(ca.constructIntervals(solver, am))) {
-          auto error_message =
-              "StructIntervalAnalysis failed to compute intervals for " + mlir::Twine(s.getName());
-          s->emitError(error_message);
-          llvm::report_fatal_error(error_message);
-        }
-        dependencies[s] = ca.getIntervalsPtr();
-      });
-    } else {
-      auto error_message = "ModuleIntervalAnalysis expects provided op to be an mlir::ModuleOp!";
-      op->emitError(error_message);
-      llvm::report_fatal_error(error_message);
-    }
-  }
-
-private:
-  DependencyMap dependencies;
-};
+using ModuleIntervalAnalysis =
+    ModuleAnalysis<StructIntervals, StructIntervalAnalysis, IntervalDataFlowAnalysis>;
 
 } // namespace llzk
