@@ -129,12 +129,12 @@ llvm::SmallVector<FlatSymbolRefAttr> getPieces(SymbolRefAttr ref) {
 
 namespace {
 
-SymbolRefAttr replaceLeafImpl(
-    StringAttr origRoot, ArrayRef<FlatSymbolRefAttr> origTail, FlatSymbolRefAttr newLeaf
+SymbolRefAttr changeLeafImpl(
+    StringAttr origRoot, ArrayRef<FlatSymbolRefAttr> origTail, FlatSymbolRefAttr newLeaf,
+    size_t drop = 1
 ) {
-  assert(!origTail.empty());
   llvm::SmallVector<FlatSymbolRefAttr> newTail;
-  newTail.append(origTail.begin(), origTail.drop_back().end());
+  newTail.append(origTail.begin(), origTail.drop_back(drop).end());
   newTail.push_back(newLeaf);
   return SymbolRefAttr::get(origRoot, newTail);
 }
@@ -147,11 +147,15 @@ SymbolRefAttr replaceLeaf(SymbolRefAttr orig, FlatSymbolRefAttr newLeaf) {
     // If there is no tail, the root is the leaf so replace the whole thing
     return newLeaf;
   } else {
-    return replaceLeafImpl(orig.getRootReference(), origTail, newLeaf);
+    return changeLeafImpl(orig.getRootReference(), origTail, newLeaf);
   }
 }
 
-SymbolRefAttr appendLeafName(SymbolRefAttr orig, StringRef newLeafSuffix) {
+SymbolRefAttr appendLeaf(SymbolRefAttr orig, FlatSymbolRefAttr newLeaf) {
+  return changeLeafImpl(orig.getRootReference(), orig.getNestedReferences(), newLeaf, 0);
+}
+
+SymbolRefAttr appendLeafName(SymbolRefAttr orig, const mlir::Twine &newLeafSuffix) {
   ArrayRef<FlatSymbolRefAttr> origTail = orig.getNestedReferences();
   if (origTail.empty()) {
     // If there is no tail, the root is the leaf so append on the root instead
@@ -159,7 +163,7 @@ SymbolRefAttr appendLeafName(SymbolRefAttr orig, StringRef newLeafSuffix) {
         orig.getContext(), orig.getRootReference().getValue() + newLeafSuffix
     );
   } else {
-    return replaceLeafImpl(
+    return changeLeafImpl(
         orig.getRootReference(), origTail,
         getFlatSymbolRefAttr(orig.getContext(), origTail.back().getValue() + newLeafSuffix)
     );

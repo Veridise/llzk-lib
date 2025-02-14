@@ -52,10 +52,22 @@ mlir::SymbolRefAttr replaceLeaf(mlir::SymbolRefAttr orig, mlir::FlatSymbolRefAtt
 inline mlir::SymbolRefAttr replaceLeaf(mlir::SymbolRefAttr orig, mlir::StringAttr newLeaf) {
   return replaceLeaf(orig, mlir::FlatSymbolRefAttr::get(newLeaf));
 }
+inline mlir::SymbolRefAttr replaceLeaf(mlir::SymbolRefAttr orig, const mlir::Twine &newLeaf) {
+  return replaceLeaf(orig, mlir::StringAttr::get(orig.getContext(), newLeaf));
+}
+
+/// Return SymbolRefAttr like the one given but with a new leaf (final) element added.
+mlir::SymbolRefAttr appendLeaf(mlir::SymbolRefAttr orig, mlir::FlatSymbolRefAttr newLeaf);
+inline mlir::SymbolRefAttr appendLeaf(mlir::SymbolRefAttr orig, mlir::StringAttr newLeaf) {
+  return appendLeaf(orig, mlir::FlatSymbolRefAttr::get(newLeaf));
+}
+inline mlir::SymbolRefAttr appendLeaf(mlir::SymbolRefAttr orig, const mlir::Twine &newLeaf) {
+  return appendLeaf(orig, mlir::StringAttr::get(orig.getContext(), newLeaf));
+}
 
 /// Return SymbolRefAttr like the one given but with the leaf (final) element appended with the
 /// given suffix.
-mlir::SymbolRefAttr appendLeafName(mlir::SymbolRefAttr orig, mlir::StringRef newLeafSuffix);
+mlir::SymbolRefAttr appendLeafName(mlir::SymbolRefAttr orig, const mlir::Twine &newLeafSuffix);
 
 mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(StructDefOp &to);

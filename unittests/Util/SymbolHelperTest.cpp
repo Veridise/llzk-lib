@@ -85,8 +85,13 @@ TEST_F(SymbolHelperTests, test_getPrefixAsSymbolRefAttr) {
 }
 
 TEST_F(SymbolHelperTests, test_replaceLeaf) {
-  SymbolRefAttr attr = replaceLeaf(newExample(2), FlatSymbolRefAttr::get(&ctx, "leaf"));
+  SymbolRefAttr attr = replaceLeaf(newExample(2), "leaf");
   ASSERT_EQ(debug::toString(attr), "@root::@r1::@leaf");
+}
+
+TEST_F(SymbolHelperTests, test_appendLeaf) {
+  SymbolRefAttr attr = appendLeaf(newExample(2), "leaf");
+  ASSERT_EQ(debug::toString(attr), "@root::@r1::@r2::@leaf");
 }
 
 TEST_F(SymbolHelperTests, test_appendLeafName) {
