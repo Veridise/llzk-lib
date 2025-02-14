@@ -14,285 +14,189 @@
 
 namespace llzk {
 
-/*
-Private Utilities:
+/* ConstrainRefAnalysis */
 
-These classes are defined here and not in the header as they are not designed
-for use outside of this specific ConstraintDependencyGraph analysis.
-*/
+void ConstrainRefAnalysis::visitCallControlFlowTransfer(
+    mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
+    const ConstrainRefLattice &before, ConstrainRefLattice *after
+) {
+  auto fnOpRes = resolveCallable<FuncOp>(tables, call);
+  debug::ensure(succeeded(fnOpRes), "could not resolve called function");
 
-/// @brief The dataflow analysis that computes the set of references that
-/// LLZK operations use and produce. The analysis is simple: any operation will
-/// simply output a union of its input references, regardless of what type of
-/// operation it performs, as the analysis is operator-insensitive.
-class ConstrainRefAnalysis : public dataflow::DenseForwardDataFlowAnalysis<ConstrainRefLattice> {
-public:
-  using dataflow::DenseForwardDataFlowAnalysis<ConstrainRefLattice>::DenseForwardDataFlowAnalysis;
-
-  void visitCallControlFlowTransfer(
-      mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
-      const ConstrainRefLattice &before, ConstrainRefLattice *after
-  ) override {
-
-    auto fnOpRes = resolveCallable<FuncOp>(tables, call);
-    debug::ensure(succeeded(fnOpRes), "could not resolve called function");
-
-    auto fnOp = fnOpRes->get();
-    if (fnOp.getName() == FUNC_NAME_CONSTRAIN || fnOp.getName() == FUNC_NAME_COMPUTE) {
-      // Do nothing special.
-      join(after, before);
-      return;
-    }
-    /// `action == CallControlFlowAction::Enter` indicates that:
-    ///   - `before` is the state before the call operation;
-    ///   - `after` is the state at the beginning of the callee entry block;
-    else if (action == dataflow::CallControlFlowAction::EnterCallee) {
-      // Add all of the argument values to the lattice.
-      auto calledFnRes = resolveCallable<FuncOp>(tables, call);
-      debug::ensure(mlir::succeeded(calledFnRes), "could not resolve function call");
-      auto calledFn = calledFnRes->get();
-
-      auto updated = after->join(before);
-      for (auto arg : calledFn->getRegion(0).getArguments()) {
-        auto sourceRef = ConstrainRefLattice::getSourceRef(arg);
-        debug::ensure(mlir::succeeded(sourceRef), "failed to get source ref");
-        updated |= after->setValue(arg, sourceRef.value());
-      }
-      propagateIfChanged(after, updated);
-    }
-    /// `action == CallControlFlowAction::Exit` indicates that:
-    ///   - `before` is the state at the end of a callee exit block;
-    ///   - `after` is the state after the call operation.
-    else if (action == dataflow::CallControlFlowAction::ExitCallee) {
-      // Translate argument values based on the operands given at the call site.
-      std::unordered_map<ConstrainRef, ConstrainRefLatticeValue, ConstrainRef::Hash> translation;
-      auto funcOpRes = resolveCallable<FuncOp>(tables, call);
-      debug::ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
-      auto funcOp = funcOpRes->get();
-
-      auto callOp = mlir::dyn_cast<CallOp>(call.getOperation());
-      debug::ensure(callOp, "call is not a llzk::CallOp");
-
-      for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
-        auto key = ConstrainRef(funcOp.getArgument(i));
-        auto val = before.getOrDefault(callOp.getOperand(i));
-        translation[key] = val;
-      }
-
-      mlir::ChangeResult updated = after->join(before);
-      for (unsigned i = 0; i < callOp.getNumResults(); i++) {
-        auto retVal = before.getReturnValue(i);
-        auto [translatedVal, _] = retVal.translate(translation);
-        updated |= after->setValue(callOp->getResult(i), translatedVal);
-      }
-      propagateIfChanged(after, updated);
-    }
-    // Note that `setToEntryState` may be a "partial fixpoint" for some
-    // lattices, e.g., lattices that are lists of maps of other lattices will
-    // only set fixpoint for "known" lattices.
-    else if (action == mlir::dataflow::CallControlFlowAction::ExternalCallee) {
-      setToEntryState(after);
-    }
-  }
-
-  /// @brief Propagate constrain reference lattice values from operands to results.
-  /// @param op
-  /// @param before
-  /// @param after
-  void visitOperation(
-      mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
-  ) override {
-    // Collect the references that are made by the operands to `op`.
-    ConstrainRefLattice::ValueMap operandVals;
-    for (auto &operand : op->getOpOperands()) {
-      operandVals[operand.get()] = before.getOrDefault(operand.get());
-    }
-
-    // Propagate existing state.
+  auto fnOp = fnOpRes->get();
+  if (fnOp.getName() == FUNC_NAME_CONSTRAIN || fnOp.getName() == FUNC_NAME_COMPUTE) {
+    // Do nothing special.
     join(after, before);
+    return;
+  }
+  /// `action == CallControlFlowAction::Enter` indicates that:
+  ///   - `before` is the state before the call operation;
+  ///   - `after` is the state at the beginning of the callee entry block;
+  else if (action == dataflow::CallControlFlowAction::EnterCallee) {
+    // Add all of the argument values to the lattice.
+    auto calledFnRes = resolveCallable<FuncOp>(tables, call);
+    debug::ensure(mlir::succeeded(calledFnRes), "could not resolve function call");
+    auto calledFn = calledFnRes->get();
 
-    // We will now join the the operand refs based on the type of operand.
-    if (auto fieldRead = mlir::dyn_cast<FieldReadOp>(op)) {
-      // In the readf case, the operand is indexed into by the read's fielddefop.
-      assert(operandVals.size() == 1);
-      assert(fieldRead->getNumResults() == 1);
+    auto updated = after->join(before);
+    for (auto arg : calledFn->getRegion(0).getArguments()) {
+      auto sourceRef = ConstrainRefLattice::getSourceRef(arg);
+      debug::ensure(mlir::succeeded(sourceRef), "failed to get source ref");
+      updated |= after->setValue(arg, sourceRef.value());
+    }
+    propagateIfChanged(after, updated);
+  }
+  /// `action == CallControlFlowAction::Exit` indicates that:
+  ///   - `before` is the state at the end of a callee exit block;
+  ///   - `after` is the state after the call operation.
+  else if (action == dataflow::CallControlFlowAction::ExitCallee) {
+    // Translate argument values based on the operands given at the call site.
+    std::unordered_map<ConstrainRef, ConstrainRefLatticeValue, ConstrainRef::Hash> translation;
+    auto funcOpRes = resolveCallable<FuncOp>(tables, call);
+    debug::ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
+    auto funcOp = funcOpRes->get();
 
-      auto fieldOpRes = fieldRead.getFieldDefOp(tables);
-      debug::ensure(mlir::succeeded(fieldOpRes), "could not find field read");
+    auto callOp = mlir::dyn_cast<CallOp>(call.getOperation());
+    debug::ensure(callOp, "call is not a llzk::CallOp");
 
-      auto res = fieldRead->getResult(0);
-      const auto &ops = operandVals.at(fieldRead->getOpOperand(0).get());
-      auto [fieldVals, _] = ops.referenceField(fieldOpRes.value());
+    for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
+      auto key = ConstrainRef(funcOp.getArgument(i));
+      auto val = before.getOrDefault(callOp.getOperand(i));
+      translation[key] = val;
+    }
 
-      propagateIfChanged(after, after->setValue(res, fieldVals));
-    } else if (mlir::isa<ReadArrayOp>(op)) {
-      arraySubdivisionOpUpdate(op, operandVals, before, after);
-    } else if (auto createArray = mlir::dyn_cast<CreateArrayOp>(op)) {
-      // Create an array using the operand values, if they exist.
-      // Currently, the new array must either be fully initialized or uninitialized.
+    mlir::ChangeResult updated = after->join(before);
+    for (unsigned i = 0; i < callOp.getNumResults(); i++) {
+      auto retVal = before.getReturnValue(i);
+      auto [translatedVal, _] = retVal.translate(translation);
+      updated |= after->setValue(callOp->getResult(i), translatedVal);
+    }
+    propagateIfChanged(after, updated);
+  }
+  // Note that `setToEntryState` may be a "partial fixpoint" for some
+  // lattices, e.g., lattices that are lists of maps of other lattices will
+  // only set fixpoint for "known" lattices.
+  else if (action == mlir::dataflow::CallControlFlowAction::ExternalCallee) {
+    setToEntryState(after);
+  }
+}
 
-      auto newArrayVal = ConstrainRefLatticeValue(createArray.getType().getShape());
-      // If the array is initialized, iterate through all operands and initialize the array value.
-      for (unsigned i = 0; i < createArray.getNumOperands(); i++) {
-        auto currentOp = createArray.getOperand(i);
-        auto &opVals = operandVals[currentOp];
-        (void)newArrayVal.getElemFlatIdx(i).setValue(opVals);
-      }
+void ConstrainRefAnalysis::visitOperation(
+    mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
+) {
+  // Collect the references that are made by the operands to `op`.
+  ConstrainRefLattice::ValueMap operandVals;
+  for (auto &operand : op->getOpOperands()) {
+    operandVals[operand.get()] = before.getOrDefault(operand.get());
+  }
 
-      assert(createArray->getNumResults() == 1);
-      auto res = createArray->getResult(0);
+  // Propagate existing state.
+  join(after, before);
 
-      propagateIfChanged(after, after->setValue(res, newArrayVal));
-    } else if (auto extractArray = mlir::dyn_cast<ExtractArrayOp>(op)) {
-      arraySubdivisionOpUpdate(op, operandVals, before, after);
+  // We will now join the the operand refs based on the type of operand.
+  if (auto fieldRead = mlir::dyn_cast<FieldReadOp>(op)) {
+    // In the readf case, the operand is indexed into by the read's fielddefop.
+    assert(operandVals.size() == 1);
+    assert(fieldRead->getNumResults() == 1);
+
+    auto fieldOpRes = fieldRead.getFieldDefOp(tables);
+    debug::ensure(mlir::succeeded(fieldOpRes), "could not find field read");
+
+    auto res = fieldRead->getResult(0);
+    const auto &ops = operandVals.at(fieldRead->getOpOperand(0).get());
+    auto [fieldVals, _] = ops.referenceField(fieldOpRes.value());
+
+    propagateIfChanged(after, after->setValue(res, fieldVals));
+  } else if (mlir::isa<ReadArrayOp>(op)) {
+    arraySubdivisionOpUpdate(op, operandVals, before, after);
+  } else if (auto createArray = mlir::dyn_cast<CreateArrayOp>(op)) {
+    // Create an array using the operand values, if they exist.
+    // Currently, the new array must either be fully initialized or uninitialized.
+
+    auto newArrayVal = ConstrainRefLatticeValue(createArray.getType().getShape());
+    // If the array is initialized, iterate through all operands and initialize the array value.
+    for (unsigned i = 0; i < createArray.getNumOperands(); i++) {
+      auto currentOp = createArray.getOperand(i);
+      auto &opVals = operandVals[currentOp];
+      (void)newArrayVal.getElemFlatIdx(i).setValue(opVals);
+    }
+
+    assert(createArray->getNumResults() == 1);
+    auto res = createArray->getResult(0);
+
+    propagateIfChanged(after, after->setValue(res, newArrayVal));
+  } else if (auto extractArray = mlir::dyn_cast<ExtractArrayOp>(op)) {
+    arraySubdivisionOpUpdate(op, operandVals, before, after);
+  } else {
+    // Standard union of operands into the results value.
+    // TODO: Could perform constant computation/propagation here for, e.g., arithmetic
+    // over constants, but such analysis may be better suited for a dedicated pass.
+    propagateIfChanged(after, fallbackOpUpdate(op, operandVals, before, after));
+  }
+}
+
+// Perform a standard union of operands into the results value.
+mlir::ChangeResult ConstrainRefAnalysis::fallbackOpUpdate(
+    mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
+    const ConstrainRefLattice &before, ConstrainRefLattice *after
+) {
+  auto updated = mlir::ChangeResult::NoChange;
+  for (auto res : op->getResults()) {
+    auto cur = before.getOrDefault(res);
+
+    for (auto &[_, opVal] : operandVals) {
+      (void)cur.update(opVal);
+    }
+    updated |= after->setValue(res, cur);
+  }
+  return updated;
+}
+
+// Perform the update for either a readarr op or an extractarr op, which
+// operate very similarly: index into the first operand using a variable number
+// of provided indices.
+void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
+    mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
+    const ConstrainRefLattice &before, ConstrainRefLattice *after
+) {
+  debug::ensure(
+      mlir::isa<ReadArrayOp>(op) || mlir::isa<ExtractArrayOp>(op), "wrong type of op provided!"
+  );
+
+  // We index the first operand by all remaining indices.
+  assert(op->getNumResults() == 1);
+  auto res = op->getResult(0);
+
+  auto array = op->getOperand(0);
+  auto it = operandVals.find(array);
+  debug::ensure(it != operandVals.end(), "improperly constructed operandVals map");
+  auto currVals = it->second;
+
+  std::vector<ConstrainRefIndex> indices;
+
+  for (size_t i = 1; i < op->getNumOperands(); i++) {
+    auto currentOp = op->getOperand(i);
+    auto idxIt = operandVals.find(currentOp);
+    debug::ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
+    auto &idxVals = idxIt->second;
+
+    if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstantIndex()) {
+      ConstrainRefIndex idx(idxVals.getSingleValue().getConstantIndexValue());
+      indices.push_back(idx);
     } else {
-      // Standard union of operands into the results value.
-      // TODO: Could perform constant computation/propagation here for, e.g., arithmetic
-      // over constants, but such analysis may be better suited for a dedicated pass.
-      propagateIfChanged(after, fallbackOpUpdate(op, operandVals, before, after));
+      // Otherwise, assume any range is valid.
+      auto arrayType = mlir::dyn_cast<ArrayType>(array.getType());
+      auto lower = mlir::APInt::getZero(64);
+      mlir::APInt upper(64, arrayType.getDimSize(i - 1));
+      auto idxRange = ConstrainRefIndex(lower, upper);
+      indices.push_back(idxRange);
     }
   }
 
-protected:
-  void setToEntryState(ConstrainRefLattice *lattice) override {
-    // the entry state is empty, so do nothing.
-  }
+  auto [newVals, _] = currVals.extract(indices);
 
-  // Perform a standard union of operands into the results value.
-  mlir::ChangeResult fallbackOpUpdate(
-      mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
-      const ConstrainRefLattice &before, ConstrainRefLattice *after
-  ) {
-    auto updated = mlir::ChangeResult::NoChange;
-    for (auto res : op->getResults()) {
-      auto cur = before.getOrDefault(res);
-
-      for (auto &[_, opVal] : operandVals) {
-        (void)cur.update(opVal);
-      }
-      updated |= after->setValue(res, cur);
-    }
-    return updated;
-  }
-
-  // Perform the update for either a readarr op or an extractarr op, which
-  // operate very similarly: index into the first operand using a variable number
-  // of provided indices.
-  void arraySubdivisionOpUpdate(
-      mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
-      const ConstrainRefLattice &before, ConstrainRefLattice *after
-  ) {
-    debug::ensure(
-        mlir::isa<ReadArrayOp>(op) || mlir::isa<ExtractArrayOp>(op), "wrong type of op provided!"
-    );
-
-    // We index the first operand by all remaining indices.
-    assert(op->getNumResults() == 1);
-    auto res = op->getResult(0);
-
-    auto array = op->getOperand(0);
-    auto it = operandVals.find(array);
-    debug::ensure(it != operandVals.end(), "improperly constructed operandVals map");
-    auto currVals = it->second;
-
-    std::vector<ConstrainRefIndex> indices;
-
-    for (size_t i = 1; i < op->getNumOperands(); i++) {
-      auto currentOp = op->getOperand(i);
-      auto idxIt = operandVals.find(currentOp);
-      debug::ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
-      auto &idxVals = idxIt->second;
-
-      if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstantIndex()) {
-        ConstrainRefIndex idx(idxVals.getSingleValue().getConstantIndexValue());
-        indices.push_back(idx);
-      } else {
-        // Otherwise, assume any range is valid.
-        auto arrayType = mlir::dyn_cast<ArrayType>(array.getType());
-        auto lower = mlir::APInt::getZero(64);
-        mlir::APInt upper(64, arrayType.getDimSize(i - 1));
-        auto idxRange = ConstrainRefIndex(lower, upper);
-        indices.push_back(idxRange);
-      }
-    }
-
-    auto [newVals, _] = currVals.extract(indices);
-
-    propagateIfChanged(after, after->setValue(res, newVals));
-  }
-
-private:
-  mlir::SymbolTableCollection tables;
-};
-
-/*
-ConstraintDependencyGraphAnalysis
-
-Needs to be declared before implementing the ConstraintDependencyGraph functions, as
-they reference the ConstraintDependencyGraphAnalysis.
-*/
-
-/// @brief An analysis wrapper around the ConstraintDependencyGraph for a given struct.
-/// This analysis is a StructDefOp-level analysis that should not be directly
-/// interacted with---rather, it is a utility used by the ConstraintDependencyGraphModuleAnalysis
-/// that helps use MLIR's AnalysisManager to cache dependencies for sub-components.
-class ConstraintDependencyGraphAnalysis {
-public:
-  ConstraintDependencyGraphAnalysis(mlir::Operation *op) {
-    structDefOp = mlir::dyn_cast<StructDefOp>(op);
-    if (!structDefOp) {
-      auto error_message =
-          "ConstraintDependencyGraphAnalysis expects provided op to be a StructDefOp!";
-      op->emitError(error_message);
-      llvm::report_fatal_error(error_message);
-    }
-    auto maybeModOp = getRootModule(op);
-    if (mlir::failed(maybeModOp)) {
-      auto error_message =
-          "ConstraintDependencyGraphAnalysis could not find root module from StructDefOp!";
-      op->emitError(error_message);
-      llvm::report_fatal_error(error_message);
-    }
-    modOp = *maybeModOp;
-  }
-
-  /// @brief Construct a CDG, using the module's analysis manager to query
-  /// ConstraintDependencyGraph objects for nested components.
-  mlir::LogicalResult
-  constructCDG(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager) {
-    auto res =
-        ConstraintDependencyGraph::compute(modOp, structDefOp, solver, moduleAnalysisManager);
-    if (mlir::failed(res)) {
-      return mlir::failure();
-    }
-    cdg = std::make_shared<ConstraintDependencyGraph>(*res);
-    return mlir::success();
-  }
-
-  /// @brief Return true iff the CDG has been constructed
-  bool constructed() const { return cdg != nullptr; }
-
-  ConstraintDependencyGraph &getCDG() {
-    ensureCDGCreated();
-    return *cdg;
-  }
-
-  const ConstraintDependencyGraph &getCDG() const {
-    ensureCDGCreated();
-    return *cdg;
-  }
-
-private:
-  mlir::ModuleOp modOp;
-  StructDefOp structDefOp;
-  std::shared_ptr<ConstraintDependencyGraph> cdg;
-
-  void ensureCDGCreated() const {
-    debug::ensure(cdg != nullptr, "CDG does not exist; must invoke constructCDG");
-  }
-
-  friend class ConstraintDependencyGraphModuleAnalysis;
-};
+  propagateIfChanged(after, after->setValue(res, newVals));
+}
 
 /* ConstraintDependencyGraph */
 
@@ -417,10 +321,11 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
       auto val = lattice->getOrDefault(fnCall.getOperand(i));
       translations.push_back({prefix, val});
     }
-    auto &childAnalysis = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(calledStruct);
+    auto &childAnalysis =
+        am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);
     if (!childAnalysis.constructed()) {
       debug::ensure(
-          mlir::succeeded(childAnalysis.constructCDG(solver, am)),
+          mlir::succeeded(childAnalysis.runAnalysis(solver, am)),
           "could not construct CDG for child struct"
       );
     }
@@ -579,38 +484,41 @@ ConstrainRefSet ConstraintDependencyGraph::getConstrainingValues(const Constrain
   return res;
 }
 
+/* ConstraintDependencyGraphStructAnalysis */
+
+mlir::LogicalResult ConstraintDependencyGraphStructAnalysis::runAnalysis(
+    mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager
+) {
+  auto res =
+      ConstraintDependencyGraph::compute(getModule(), getStruct(), solver, moduleAnalysisManager);
+  if (mlir::failed(res)) {
+    return mlir::failure();
+  }
+  cdg = std::make_shared<ConstraintDependencyGraph>(*res);
+  return mlir::success();
+}
+
 /* ConstraintDependencyGraphModuleAnalysis */
 
+/// @brief Computes ConstraintDependencyGraph objects for all structs contained within the
+/// given op, if the op is a module op.
+/// @param op The top-level op. If op is not an LLZK-compliant mlir::ModuleOp, the
+/// analysis will fail.
+/// @param am The analysis manager used to query sub-analyses per StructDefOperation.
 ConstraintDependencyGraphModuleAnalysis::ConstraintDependencyGraphModuleAnalysis(
     mlir::Operation *op, mlir::AnalysisManager &am
-) {
-  if (auto modOp = mlir::dyn_cast<mlir::ModuleOp>(op)) {
-    mlir::DataFlowConfig config;
-    mlir::DataFlowSolver solver(config);
-    dataflow::markAllOpsAsLive(solver, modOp);
-
-    // The analysis is run at the module level so that lattices are computed
-    // for global functions as well.
-    solver.load<ConstrainRefAnalysis>();
-    auto res = solver.initializeAndRun(modOp);
-    debug::ensure(res.succeeded(), "solver failed to run on module!");
-
-    modOp.walk([this, &solver, &am](StructDefOp s) {
-      auto &csa = am.getChildAnalysis<ConstraintDependencyGraphAnalysis>(s);
-      if (mlir::failed(csa.constructCDG(solver, am))) {
-        auto error_message = "ConstraintDependencyGraphAnalysis failed to compute CDG for " +
-                             mlir::Twine(s.getName());
-        s->emitError(error_message);
-        llvm::report_fatal_error(error_message);
-      }
-      dependencies[s] = csa.cdg;
-    });
-  } else {
-    auto error_message =
-        "ConstraintDependencyGraphModuleAnalysis expects provided op to be an mlir::ModuleOp!";
-    op->emitError(error_message);
-    llvm::report_fatal_error(error_message);
-  }
+)
+    : ModuleAnalysis(op, am) {
+  getModule().walk([this, &am](StructDefOp s) {
+    auto &csa = am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(s);
+    if (!csa.constructed()) {
+      auto error_message = "ConstraintDependencyGraphStructAnalysis failed to construct CDG for " +
+                           mlir::Twine(s.getName());
+      s->emitError(error_message);
+      llvm::report_fatal_error(error_message);
+    }
+    dependencies[s] = csa.cdg;
+  });
 }
 
 } // namespace llzk

@@ -1,6 +1,8 @@
 #pragma once
 
+#include "llzk/Dialect/LLZK/Analysis/AnalysisWrappers.h"
 #include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
+#include "llzk/Dialect/LLZK/Analysis/ConstrainRefLattice.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/Compare.h"
 #include "llzk/Dialect/LLZK/Util/Hash.h"
@@ -21,9 +23,51 @@ class DataFlowSolver;
 
 namespace llzk {
 
-class ConstrainRefLatticeValue;
-
 using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRefLatticeValue>>;
+
+/// @brief The dataflow analysis that computes the set of references that
+/// LLZK operations use and produce. The analysis is simple: any operation will
+/// simply output a union of its input references, regardless of what type of
+/// operation it performs, as the analysis is operator-insensitive.
+class ConstrainRefAnalysis : public dataflow::DenseForwardDataFlowAnalysis<ConstrainRefLattice> {
+public:
+  using dataflow::DenseForwardDataFlowAnalysis<ConstrainRefLattice>::DenseForwardDataFlowAnalysis;
+
+  void visitCallControlFlowTransfer(
+      mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
+      const ConstrainRefLattice &before, ConstrainRefLattice *after
+  ) override;
+
+  /// @brief Propagate constrain reference lattice values from operands to results.
+  /// @param op
+  /// @param before
+  /// @param after
+  void visitOperation(
+      mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
+  ) override;
+
+protected:
+  void setToEntryState(ConstrainRefLattice *lattice) override {
+    // the entry state is empty, so do nothing.
+  }
+
+  // Perform a standard union of operands into the results value.
+  mlir::ChangeResult fallbackOpUpdate(
+      mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
+      const ConstrainRefLattice &before, ConstrainRefLattice *after
+  );
+
+  // Perform the update for either a readarr op or an extractarr op, which
+  // operate very similarly: index into the first operand using a variable number
+  // of provided indices.
+  void arraySubdivisionOpUpdate(
+      mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
+      const ConstrainRefLattice &before, ConstrainRefLattice *after
+  );
+
+private:
+  mlir::SymbolTableCollection tables;
+};
 
 /// @brief A dependency graph of constraints enforced by an LLZK struct.
 ///
@@ -143,9 +187,46 @@ private:
   void walkConstrainOp(mlir::DataFlowSolver &solver, mlir::Operation *emitOp);
 };
 
+/// @brief An analysis wrapper around the ConstraintDependencyGraph for a given struct.
+/// This analysis is a StructDefOp-level analysis that should not be directly
+/// interacted with---rather, it is a utility used by the ConstraintDependencyGraphModuleAnalysis
+/// that helps use MLIR's AnalysisManager to cache dependencies for sub-components.
+class ConstraintDependencyGraphStructAnalysis : public StructAnalysis {
+public:
+  using StructAnalysis::StructAnalysis;
+
+  /// @brief Construct a CDG, using the module's analysis manager to query
+  /// ConstraintDependencyGraph objects for nested components.
+  mlir::LogicalResult
+  runAnalysis(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager) override;
+
+  /// @brief Return true iff the CDG has been constructed
+  bool constructed() const { return cdg != nullptr; }
+
+  ConstraintDependencyGraph &getCDG() {
+    ensureCDGCreated();
+    return *cdg;
+  }
+
+  const ConstraintDependencyGraph &getCDG() const {
+    ensureCDGCreated();
+    return *cdg;
+  }
+
+private:
+  std::shared_ptr<ConstraintDependencyGraph> cdg;
+
+  void ensureCDGCreated() const {
+    debug::ensure(cdg != nullptr, "CDG does not exist; must invoke constructCDG");
+  }
+
+  friend class ConstraintDependencyGraphModuleAnalysis;
+};
+
 /// @brief A module-level analysis for constructing ConstraintDependencyGraph objects for
 /// all structs in the given LLZK module.
-class ConstraintDependencyGraphModuleAnalysis {
+class ConstraintDependencyGraphModuleAnalysis
+    : public ModuleAnalysis<ConstraintDependencyGraphStructAnalysis, ConstrainRefAnalysis> {
   /// Using a map, not an unordered map, to control sorting order for iteration.
   using DependencyMap = std::map<
       StructDefOp, std::shared_ptr<ConstraintDependencyGraph>, OpLocationLess<StructDefOp>>;
