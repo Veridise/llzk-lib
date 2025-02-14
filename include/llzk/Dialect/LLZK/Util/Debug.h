@@ -14,6 +14,13 @@
 namespace llzk {
 namespace debug {
 
+namespace {
+template <class Any> void append(llvm::raw_ostream &ss, Any value) { ss << value; }
+void append(llvm::raw_ostream &ss, mlir::NamedAttribute a) {
+  ss << a.getName() << "=" << a.getValue();
+}
+} // namespace
+
 /// Generate a comma-separated string representation by traversing elements from `begin` to `end`
 /// where the element type implements `operator<<`.
 template <class InputIt> std::string toString(InputIt begin, InputIt end) {
@@ -21,7 +28,7 @@ template <class InputIt> std::string toString(InputIt begin, InputIt end) {
   llvm::raw_string_ostream oss(output);
   oss << "[";
   for (auto it = begin; it != end; ++it) {
-    oss << *it;
+    append(oss, *it);
     if (std::next(it) != end) {
       oss << ", ";
     }
