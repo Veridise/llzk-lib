@@ -159,7 +159,7 @@ private:
 };
 
 /// This is a port of mlir::CallGraph that has been adapted to use the custom
-/// symbol lookup helpers (see SymbolHelpers.h). Unfortunately the mlir::CallGraph
+/// symbol lookup helpers (see SymbolHelper.h). Unfortunately the mlir::CallGraph
 /// is not readily extensible, so we will define our own with a similar interface.
 class CallGraph {
   using NodeMapT = llvm::MapVector<mlir::Region *, std::unique_ptr<CallGraphNode>>;

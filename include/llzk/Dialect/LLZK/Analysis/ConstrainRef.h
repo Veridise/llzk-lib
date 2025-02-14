@@ -1,7 +1,7 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/LLZK/Util/ErrorHelpers.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/Hash.h"
 
 #include <mlir/Analysis/DataFlowFramework.h>
