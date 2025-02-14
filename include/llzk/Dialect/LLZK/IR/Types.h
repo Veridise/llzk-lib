@@ -107,6 +107,10 @@ singletonTypeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rh
   return lhs.size() == 1 && rhs.size() == 1 && typesUnify(lhs.front(), rhs.front());
 }
 
+template <typename ConcreteType> inline ConcreteType getIfSingleton(mlir::TypeRange types) {
+  return (types.size() == 1) ? llvm::dyn_cast<ConcreteType>(types.front()) : nullptr;
+}
+
 mlir::LogicalResult computeDimsFromShape(
     mlir::MLIRContext *ctx, llvm::ArrayRef<int64_t> shape,
     llvm::SmallVector<mlir::Attribute> &dimensionSizes

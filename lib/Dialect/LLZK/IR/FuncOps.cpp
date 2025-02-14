@@ -611,11 +611,7 @@ FunctionType CallOp::getCalleeType() {
 
 StructType CallOp::getComputeSingleResultType() {
   assert(calleeIsCompute() && "violated implementation pre-condition");
-  Operation::result_type_range types = getResultTypes();
-  if (types.size() == 1) {
-    return llvm::dyn_cast<StructType>(types.front());
-  }
-  return nullptr;
+  return getIfSingleton<StructType>(getResultTypes());
 }
 
 /// Return the callee of this operation.
