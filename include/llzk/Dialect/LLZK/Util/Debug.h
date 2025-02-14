@@ -26,7 +26,7 @@ template <typename A, typename B> void append(llvm::raw_ostream &ss, std::pair<A
 
 /// Generate a comma-separated string representation by traversing elements from `begin` to `end`
 /// where the element type implements `operator<<`.
-template <class InputIt> std::string toString(InputIt begin, InputIt end) {
+template <typename InputIt> std::string toString(InputIt begin, InputIt end) {
   std::string output;
   llvm::raw_string_ostream oss(output);
   oss << "[";
@@ -42,8 +42,19 @@ template <class InputIt> std::string toString(InputIt begin, InputIt end) {
 
 /// Generate a comma-separated string representation by traversing elements from
 /// `collection.begin()` to `collection.end()` where the element type implements `operator<<`.
-template <class InputIt> inline std::string toString(const InputIt &collection) {
+template <
+    typename InputIt,
+    typename = std::void_t<
+        decltype(std::declval<InputIt>().begin()), decltype(std::declval<InputIt>().end())>>
+inline std::string toString(const InputIt &collection) {
   return toString(collection.begin(), collection.end());
+}
+
+template <typename T> inline std::string toString(const T &value) {
+  std::string output;
+  llvm::raw_string_ostream oss(output);
+  append(oss, value);
+  return output;
 }
 
 inline void dumpSymbolTableWalk(mlir::Operation *symbolTableOp) {
