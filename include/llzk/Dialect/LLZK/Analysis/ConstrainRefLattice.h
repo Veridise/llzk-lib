@@ -2,7 +2,7 @@
 
 #include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
 #include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
-#include "llzk/Dialect/LLZK/Util/Helpers.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelpers.h"
 
 namespace llzk {
 

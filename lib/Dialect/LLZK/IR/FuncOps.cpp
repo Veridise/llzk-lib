@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/LLZK/Util/Helpers.h"
+#include "llzk/Dialect/LLZK/Util/AttributeHelpers.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/IRMapping.h>

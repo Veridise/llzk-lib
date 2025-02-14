@@ -9,7 +9,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
-#include "llzk/Dialect/LLZK/Util/Helpers.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelpers.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>

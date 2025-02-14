@@ -3,7 +3,7 @@
  */
 #include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/LLZK/Util/Helpers.h"
+#include "llzk/Dialect/LLZK/Util/AttributeHelpers.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/Analysis/CallGraph.h>

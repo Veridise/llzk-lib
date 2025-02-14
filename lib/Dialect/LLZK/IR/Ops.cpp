@@ -1,6 +1,6 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
-#include "llzk/Dialect/LLZK/Util/Helpers.h"
+#include "llzk/Dialect/LLZK/Util/AttributeHelpers.h"
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
