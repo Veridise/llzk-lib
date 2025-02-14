@@ -11,21 +11,25 @@
 
 namespace llzk {
 
-llvm::SmallVector<mlir::StringRef> getNames(const mlir::SymbolRefAttr &ref);
-llvm::SmallVector<mlir::FlatSymbolRefAttr> getPieces(const mlir::SymbolRefAttr &ref);
+llvm::SmallVector<mlir::StringRef> getNames(mlir::SymbolRefAttr ref);
+llvm::SmallVector<mlir::FlatSymbolRefAttr> getPieces(mlir::SymbolRefAttr ref);
 
+/// Build a SymbolRefAttr that prepends `tail` with `root`, i.e. `root::tail`.
 inline mlir::SymbolRefAttr asSymbolRefAttr(mlir::StringAttr root, mlir::SymbolRefAttr tail) {
   return mlir::SymbolRefAttr::get(root, getPieces(tail));
 }
 
+/// Build a SymbolRefAttr from the list of pieces.
 inline mlir::SymbolRefAttr asSymbolRefAttr(llvm::ArrayRef<mlir::FlatSymbolRefAttr> path) {
   return mlir::SymbolRefAttr::get(path.front().getAttr(), path.drop_front());
 }
 
+/// Build a SymbolRefAttr from the list of pieces.
 inline mlir::SymbolRefAttr asSymbolRefAttr(std::vector<mlir::FlatSymbolRefAttr> path) {
   return asSymbolRefAttr(llvm::ArrayRef<mlir::FlatSymbolRefAttr>(path));
 }
 
+/// Return SymbolRefAttr like the one given but with the root/head element removed.
 inline mlir::SymbolRefAttr getTailAsSymbolRefAttr(mlir::SymbolRefAttr &symbol) {
   return asSymbolRefAttr(symbol.getNestedReferences());
 }

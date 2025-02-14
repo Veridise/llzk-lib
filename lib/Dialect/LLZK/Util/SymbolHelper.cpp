@@ -109,7 +109,7 @@ FailureOr<SymbolRefAttr> getPathFromRoot(FuncOp &to, RootSelector whichRoot) {
 }
 } // namespace
 
-llvm::SmallVector<StringRef> getNames(const SymbolRefAttr &ref) {
+llvm::SmallVector<StringRef> getNames(SymbolRefAttr ref) {
   llvm::SmallVector<StringRef> names;
   names.push_back(ref.getRootReference().getValue());
   for (const FlatSymbolRefAttr &r : ref.getNestedReferences()) {
@@ -118,7 +118,7 @@ llvm::SmallVector<StringRef> getNames(const SymbolRefAttr &ref) {
   return names;
 }
 
-llvm::SmallVector<FlatSymbolRefAttr> getPieces(const SymbolRefAttr &ref) {
+llvm::SmallVector<FlatSymbolRefAttr> getPieces(SymbolRefAttr ref) {
   llvm::SmallVector<FlatSymbolRefAttr> pieces;
   pieces.push_back(FlatSymbolRefAttr::get(ref.getRootReference()));
   for (const FlatSymbolRefAttr &r : ref.getNestedReferences()) {
