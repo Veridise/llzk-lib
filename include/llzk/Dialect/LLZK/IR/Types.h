@@ -111,6 +111,11 @@ template <typename ConcreteType> inline ConcreteType getIfSingleton(mlir::TypeRa
   return (types.size() == 1) ? llvm::dyn_cast<ConcreteType>(types.front()) : nullptr;
 }
 
+template <typename ConcreteType>
+inline ConcreteType getAtIndex(mlir::TypeRange types, size_t index) {
+  return (types.size() > index) ? llvm::dyn_cast<ConcreteType>(types[index]) : nullptr;
+}
+
 mlir::LogicalResult computeDimsFromShape(
     mlir::MLIRContext *ctx, llvm::ArrayRef<int64_t> shape,
     llvm::SmallVector<mlir::Attribute> &dimensionSizes

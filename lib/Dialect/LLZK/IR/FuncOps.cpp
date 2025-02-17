@@ -645,8 +645,7 @@ bool CallOp::calleeIsStructCompute() {
 
 bool CallOp::calleeIsStructConstrain() {
   return calleeIsStructFunctionImpl(FUNC_NAME_CONSTRAIN, getCallee(), [this]() {
-    auto args = this->getArgOperands();
-    return args.empty() ? nullptr : llvm::dyn_cast<StructType>(args.getTypes().front());
+    return getAtIndex<StructType>(this->getArgOperands().getTypes(), 0);
   });
 }
 
