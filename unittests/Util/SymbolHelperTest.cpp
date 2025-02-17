@@ -32,7 +32,7 @@ TEST_F(SymbolHelperTests, test_getFlatSymbolRefAttr) {
 
 TEST_F(SymbolHelperTests, test_getNames) {
   SymbolRefAttr attr = newExample(3);
-  ASSERT_EQ(debug::toString(attr), "@root::@r1::@r2::@r3");
+  ASSERT_EQ(debug::toStringOne(attr), "@root::@r1::@r2::@r3");
 
   llvm::SmallVector<StringRef> names = getNames(attr);
   ASSERT_EQ(names.size(), 4);
@@ -41,7 +41,7 @@ TEST_F(SymbolHelperTests, test_getNames) {
 
 TEST_F(SymbolHelperTests, test_getPieces) {
   SymbolRefAttr attr = newExample(3);
-  ASSERT_EQ(debug::toString(attr), "@root::@r1::@r2::@r3");
+  ASSERT_EQ(debug::toStringOne(attr), "@root::@r1::@r2::@r3");
 
   llvm::SmallVector<FlatSymbolRefAttr> pieces = getPieces(attr);
   ASSERT_EQ(pieces.size(), 4);
@@ -55,7 +55,7 @@ TEST_F(SymbolHelperTests, test_getPieces) {
 
 TEST_F(SymbolHelperTests, test_asSymbolRefAttr_StringAttr_SymRefAttr) {
   SymbolRefAttr attr = asSymbolRefAttr(StringAttr::get(&ctx, "super"), newExample(2));
-  ASSERT_EQ(debug::toString(attr), "@super::@root::@r1::@r2");
+  ASSERT_EQ(debug::toStringOne(attr), "@super::@root::@r1::@r2");
 }
 
 TEST_F(SymbolHelperTests, test_asSymbolRefAttr_ArrRef_Flat) {
@@ -63,7 +63,7 @@ TEST_F(SymbolHelperTests, test_asSymbolRefAttr_ArrRef_Flat) {
       {FlatSymbolRefAttr::get(&ctx, "a"), FlatSymbolRefAttr::get(&ctx, "b"),
        FlatSymbolRefAttr::get(&ctx, "c"), FlatSymbolRefAttr::get(&ctx, "d")}
   ));
-  ASSERT_EQ(debug::toString(attr), "@a::@b::@c::@d");
+  ASSERT_EQ(debug::toStringOne(attr), "@a::@b::@c::@d");
 }
 
 TEST_F(SymbolHelperTests, test_asSymbolRefAttr_vector_Flat) {
@@ -71,30 +71,30 @@ TEST_F(SymbolHelperTests, test_asSymbolRefAttr_vector_Flat) {
       {FlatSymbolRefAttr::get(&ctx, "a"), FlatSymbolRefAttr::get(&ctx, "b"),
        FlatSymbolRefAttr::get(&ctx, "c"), FlatSymbolRefAttr::get(&ctx, "d")}
   ));
-  ASSERT_EQ(debug::toString(attr), "@a::@b::@c::@d");
+  ASSERT_EQ(debug::toStringOne(attr), "@a::@b::@c::@d");
 }
 
 TEST_F(SymbolHelperTests, test_getTailAsSymbolRefAttr) {
   SymbolRefAttr attr = getTailAsSymbolRefAttr(newExample(5));
-  ASSERT_EQ(debug::toString(attr), "@r1::@r2::@r3::@r4::@r5");
+  ASSERT_EQ(debug::toStringOne(attr), "@r1::@r2::@r3::@r4::@r5");
 }
 
 TEST_F(SymbolHelperTests, test_getPrefixAsSymbolRefAttr) {
   SymbolRefAttr attr = getPrefixAsSymbolRefAttr(newExample(5));
-  ASSERT_EQ(debug::toString(attr), "@root::@r1::@r2::@r3::@r4");
+  ASSERT_EQ(debug::toStringOne(attr), "@root::@r1::@r2::@r3::@r4");
 }
 
 TEST_F(SymbolHelperTests, test_replaceLeaf) {
   SymbolRefAttr attr = replaceLeaf(newExample(2), "leaf");
-  ASSERT_EQ(debug::toString(attr), "@root::@r1::@leaf");
+  ASSERT_EQ(debug::toStringOne(attr), "@root::@r1::@leaf");
 }
 
 TEST_F(SymbolHelperTests, test_appendLeaf) {
   SymbolRefAttr attr = appendLeaf(newExample(2), "leaf");
-  ASSERT_EQ(debug::toString(attr), "@root::@r1::@r2::@leaf");
+  ASSERT_EQ(debug::toStringOne(attr), "@root::@r1::@r2::@leaf");
 }
 
 TEST_F(SymbolHelperTests, test_appendLeafName) {
   SymbolRefAttr attr = appendLeafName(newExample(2), "_suffix");
-  ASSERT_EQ(debug::toString(attr), "@root::@r1::@r2_suffix");
+  ASSERT_EQ(debug::toStringOne(attr), "@root::@r1::@r2_suffix");
 }
