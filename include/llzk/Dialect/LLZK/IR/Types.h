@@ -28,6 +28,32 @@
 
 namespace llzk {
 
+class ShortTypeStringifier {
+  std::string ret;
+  llvm::raw_string_ostream ss;
+
+public:
+  ShortTypeStringifier() : ret(), ss(ret) {}
+  std::string str() const { return ret; }
+  ShortTypeStringifier &append(mlir::Type);
+  ShortTypeStringifier &append(mlir::ArrayRef<mlir::Attribute>);
+
+private:
+  void appendAnyAttr(mlir::Attribute);
+  void appendSymRef(mlir::SymbolRefAttr);
+  void appendSymName(mlir::StringRef);
+};
+
+/// Return a brief string representation of the given LLZK type.
+inline std::string shortString(mlir::Type type) {
+  return ShortTypeStringifier().append(type).str();
+}
+
+/// Return a brief string representation of the attribute list from a parameterized type.
+inline std::string shortString(mlir::ArrayRef<mlir::Attribute> attrs) {
+  return ShortTypeStringifier().append(attrs).str();
+}
+
 // This function asserts that the given Attribute kind is legal within the LLZK types that can
 // contain Attribute parameters (i.e. ArrayType, StructType, and TypeVarType). This should be used
 // in any function that examines the attribute parameters within parameterized LLZK types to ensure

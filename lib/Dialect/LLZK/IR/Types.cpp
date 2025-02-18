@@ -1,6 +1,7 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
+#include "llzk/Dialect/LLZK/Util/StreamHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
@@ -18,6 +19,90 @@ using namespace mlir;
 //===------------------------------------------------------------------===//
 // Helpers
 //===------------------------------------------------------------------===//
+
+void ShortTypeStringifier::appendSymName(StringRef str) {
+  if (str.empty()) {
+    ss << "@INVALID";
+  } else {
+    ss << "@" << str;
+  }
+}
+
+void ShortTypeStringifier::appendSymRef(SymbolRefAttr sa) {
+  appendSymName(sa.getRootReference().getValue());
+  for (FlatSymbolRefAttr nestedRef : sa.getNestedReferences()) {
+    ss << "::";
+    appendSymName(nestedRef.getValue());
+  }
+}
+
+void ShortTypeStringifier::appendAnyAttr(Attribute a) {
+  // Adapted from AsmPrinter::Impl::printAttributeImpl()
+  if (llvm::isa<IntegerAttr>(a)) {
+    IntegerAttr ia = llvm::cast<IntegerAttr>(a);
+    Type ty = ia.getType();
+    bool isUnsigned = ty.isUnsignedInteger() || ty.isSignlessInteger(1);
+    ia.getValue().print(ss, !isUnsigned);
+  } else if (llvm::isa<SymbolRefAttr>(a)) {
+    appendSymRef(llvm::cast<SymbolRefAttr>(a));
+  } else if (llvm::isa<TypeAttr>(a)) {
+    append(llvm::cast<TypeAttr>(a).getValue());
+  } else if (llvm::isa<AffineMapAttr>(a)) {
+    ss << "!m<";
+    // Filter to remove spaces
+    filtered_raw_ostream fs(ss, [](char c) { return c == ' '; });
+    llvm::cast<AffineMapAttr>(a).getValue().print(fs);
+    fs.flush();
+    ss << ">";
+  } else if (llvm::isa<ArrayAttr>(a)) {
+    append(llvm::cast<ArrayAttr>(a).getValue());
+  } else {
+    // All valid/legal cases must be covered above
+    assertValidAttrForParamOfType(a);
+  }
+}
+
+ShortTypeStringifier &ShortTypeStringifier::append(mlir::ArrayRef<mlir::Attribute> attrs) {
+  llvm::interleave(attrs, ss, [this](Attribute a) { appendAnyAttr(a); }, ",");
+  return *this;
+}
+
+ShortTypeStringifier &ShortTypeStringifier::append(Type type) {
+  // Cases must be consistent with isValidTypeImpl() below.
+  if (type.isSignlessInteger(1)) {
+    ss << "b";
+  } else if (llvm::isa<IndexType>(type)) {
+    ss << "i";
+  } else if (llvm::isa<FeltType>(type)) {
+    ss << "f";
+  } else if (llvm::isa<StringType>(type)) {
+    ss << "s";
+  } else if (llvm::isa<TypeVarType>(type)) {
+    ss << "!v<";
+    appendSymName(llvm::cast<TypeVarType>(type).getRefName());
+    ss << ">";
+  } else if (llvm::isa<ArrayType>(type)) {
+    ArrayType at = llvm::cast<ArrayType>(type);
+    ss << "!a<";
+    append(at.getElementType());
+    ss << ":";
+    append(at.getDimensionSizes());
+    ss << ">";
+    // return ret;
+  } else if (llvm::isa<StructType>(type)) {
+    StructType st = llvm::cast<StructType>(type);
+    ss << "!s<";
+    appendSymRef(st.getNameRef());
+    ss << ":";
+    if (ArrayAttr params = st.getParams()) {
+      append(params.getValue());
+    }
+    ss << ">";
+  } else {
+    ss << "!INVALID";
+  }
+  return *this;
+}
 
 namespace {
 
