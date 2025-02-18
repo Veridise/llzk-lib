@@ -5,6 +5,7 @@
 namespace llzk {
 
 std::unique_ptr<mlir::Pass> createInlineIncludesPass();
+std::unique_ptr<mlir::Pass> createInstantiateStructsPass();
 
 #define GEN_PASS_REGISTRATION
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h.inc"

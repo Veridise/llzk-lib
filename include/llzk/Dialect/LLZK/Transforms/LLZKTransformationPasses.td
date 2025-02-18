@@ -9,4 +9,13 @@ def InlineIncludesPass : Pass<"llzk-inline-includes", "::mlir::ModuleOp"> {
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
+def InstantiateStructsPass
+    : Pass<"llzk-instantiate-structs", "::mlir::ModuleOp"> {
+  let summary = "Replace parameterized structs with flattened (i.e. no "
+                "parameter) versions of those structs based on requested "
+                "return type at calls to `compute()` functions.";
+  let constructor = "llzk::createInstantiateStructsPass()";
+  let dependentDialects = ["llzk::LLZKDialect"];
+}
+
 #endif // LLZK_TRANSFORMATION_PASSES_TD

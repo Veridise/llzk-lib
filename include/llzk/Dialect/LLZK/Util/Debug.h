@@ -15,17 +15,26 @@ namespace llzk {
 namespace debug {
 
 namespace {
+
 void append(llvm::raw_ostream &ss, const mlir::NamedAttribute &a) {
   ss << a.getName() << '=' << a.getValue();
 }
+
+void append(llvm::raw_ostream &ss, const mlir::SymbolTable::SymbolUse &a) {
+  ss << a.getUser()->getName();
+}
+
 template <typename A, typename B>
 void append(llvm::raw_ostream &ss, const llvm::detail::DenseMapPair<A, B> &a) {
   ss << '(' << a.first << ',' << a.second << ')';
 }
+
 template <typename A, typename B> void append(llvm::raw_ostream &ss, const std::pair<A, B> &a) {
   ss << '(' << a.first << ',' << a.second << ')';
 }
+
 template <typename Any> void append(llvm::raw_ostream &ss, const Any &value) { ss << value; }
+
 } // namespace
 
 /// Generate a comma-separated string representation by traversing elements from `begin` to `end`

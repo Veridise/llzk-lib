@@ -427,7 +427,7 @@ LogicalResult StructType::verify(EmitErrorFn emitError, SymbolRefAttr nameRef, A
 }
 
 FailureOr<SymbolLookupResult<StructDefOp>>
-StructType::getDefinition(SymbolTableCollection &symbolTable, Operation *op) {
+StructType::getDefinition(SymbolTableCollection &symbolTable, Operation *op) const {
   // First ensure this StructType passes verification
   ArrayAttr typeParams = this->getParams();
   if (failed(StructType::verify([op] { return op->emitError(); }, getNameRef(), typeParams))) {
