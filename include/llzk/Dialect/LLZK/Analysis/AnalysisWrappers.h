@@ -2,6 +2,7 @@
 
 #include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
 #include "llzk/Dialect/LLZK/Util/Compare.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
@@ -72,7 +73,7 @@ public:
       // for global functions as well.
       ((solver.load<DataFlowSolverAnalyses>()), ...);
       auto res = solver.initializeAndRun(modOp);
-      debug::ensure(res.succeeded(), "solver failed to run on module!");
+      ensure(res.succeeded(), "solver failed to run on module!");
 
       modOp.walk([this, &solver, &am](StructDefOp s) mutable {
         auto &childAnalysis = am.getChildAnalysis<StructAnalysisType>(s);
@@ -116,9 +117,7 @@ private:
   /// @brief Ensures that the given struct has a CDG.
   /// @param op The struct to ensure has a CDG.
   void ensureResultCreated(StructDefOp op) const {
-    debug::ensure(
-        hasResult(op), "Result does not exist for StructDefOp " + mlir::Twine(op.getName())
-    );
+    ensure(hasResult(op), "Result does not exist for StructDefOp " + mlir::Twine(op.getName()));
   }
 };
 

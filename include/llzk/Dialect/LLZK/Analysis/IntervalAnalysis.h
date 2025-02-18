@@ -97,7 +97,8 @@ class IntervalDataFlowAnalysis
 
 public:
   explicit IntervalDataFlowAnalysis(mlir::DataFlowSolver &solver)
-      : Base::DenseForwardDataFlowAnalysis(solver), smtSolver(llvm::CreateZ3Solver()) {}
+      : Base::DenseForwardDataFlowAnalysis(solver), dataflowSolver(solver),
+        smtSolver(llvm::CreateZ3Solver()) {}
 
   void visitCallControlFlowTransfer(
       mlir::CallOpInterface call, dataflow::CallControlFlowAction action, const Lattice &before,
@@ -109,9 +110,8 @@ public:
   void visitOperation(mlir::Operation *op, const Lattice &before, Lattice *after) override {
     IntervalAnalysisLattice::ValueMap operandVals;
 
-    auto constrainRefLattice = auto lattice =
-        solver.lookupState<ConstrainRefLattice>(fnCall.getOperation());
-    debug::ensure(constrainRefLattice, "failed to get lattice");
+    auto constrainRefLattice = dataflowSolver.lookupState<ConstrainRefLattice>(op);
+    ensure(constrainRefLattice, "failed to get lattice");
 
     for (auto &operand : op->getOpOperands()) {
       // We only care about felt type values.
@@ -139,6 +139,7 @@ private:
     // the entry state is empty, so do nothing.
   }
 
+  mlir::DataFlowSolver &dataflowSolver;
   llvm::SMTSolverRef smtSolver;
 };
 

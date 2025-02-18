@@ -21,7 +21,7 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
     const ConstrainRefLattice &before, ConstrainRefLattice *after
 ) {
   auto fnOpRes = resolveCallable<FuncOp>(tables, call);
-  debug::ensure(succeeded(fnOpRes), "could not resolve called function");
+  ensure(succeeded(fnOpRes), "could not resolve called function");
 
   auto fnOp = fnOpRes->get();
   if (fnOp.getName() == FUNC_NAME_CONSTRAIN || fnOp.getName() == FUNC_NAME_COMPUTE) {
@@ -35,13 +35,13 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
   else if (action == dataflow::CallControlFlowAction::EnterCallee) {
     // Add all of the argument values to the lattice.
     auto calledFnRes = resolveCallable<FuncOp>(tables, call);
-    debug::ensure(mlir::succeeded(calledFnRes), "could not resolve function call");
+    ensure(mlir::succeeded(calledFnRes), "could not resolve function call");
     auto calledFn = calledFnRes->get();
 
     auto updated = after->join(before);
     for (auto arg : calledFn->getRegion(0).getArguments()) {
       auto sourceRef = ConstrainRefLattice::getSourceRef(arg);
-      debug::ensure(mlir::succeeded(sourceRef), "failed to get source ref");
+      ensure(mlir::succeeded(sourceRef), "failed to get source ref");
       updated |= after->setValue(arg, sourceRef.value());
     }
     propagateIfChanged(after, updated);
@@ -53,11 +53,11 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
     // Translate argument values based on the operands given at the call site.
     std::unordered_map<ConstrainRef, ConstrainRefLatticeValue, ConstrainRef::Hash> translation;
     auto funcOpRes = resolveCallable<FuncOp>(tables, call);
-    debug::ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
+    ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
     auto funcOp = funcOpRes->get();
 
     auto callOp = mlir::dyn_cast<CallOp>(call.getOperation());
-    debug::ensure(callOp, "call is not a llzk::CallOp");
+    ensure(callOp, "call is not a llzk::CallOp");
 
     for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
       auto key = ConstrainRef(funcOp.getArgument(i));
@@ -100,7 +100,7 @@ void ConstrainRefAnalysis::visitOperation(
     assert(fieldRead->getNumResults() == 1);
 
     auto fieldOpRes = fieldRead.getFieldDefOp(tables);
-    debug::ensure(mlir::succeeded(fieldOpRes), "could not find field read");
+    ensure(mlir::succeeded(fieldOpRes), "could not find field read");
 
     auto res = fieldRead->getResult(0);
     const auto &ops = operandVals.at(fieldRead->getOpOperand(0).get());
@@ -159,9 +159,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
     mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
     const ConstrainRefLattice &before, ConstrainRefLattice *after
 ) {
-  debug::ensure(
-      mlir::isa<ReadArrayOp>(op) || mlir::isa<ExtractArrayOp>(op), "wrong type of op provided!"
-  );
+  ensure(mlir::isa<ReadArrayOp>(op) || mlir::isa<ExtractArrayOp>(op), "wrong type of op provided!");
 
   // We index the first operand by all remaining indices.
   assert(op->getNumResults() == 1);
@@ -169,7 +167,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
 
   auto array = op->getOperand(0);
   auto it = operandVals.find(array);
-  debug::ensure(it != operandVals.end(), "improperly constructed operandVals map");
+  ensure(it != operandVals.end(), "improperly constructed operandVals map");
   auto currVals = it->second;
 
   std::vector<ConstrainRefIndex> indices;
@@ -177,7 +175,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
   for (size_t i = 1; i < op->getNumOperands(); i++) {
     auto currentOp = op->getOperand(i);
     auto idxIt = operandVals.find(currentOp);
-    debug::ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
+    ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
     auto &idxVals = idxIt->second;
 
     if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstantIndex()) {
@@ -324,7 +322,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     auto &childAnalysis =
         am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);
     if (!childAnalysis.constructed()) {
-      debug::ensure(
+      ensure(
           mlir::succeeded(childAnalysis.runAnalysis(solver, am)),
           "could not construct CDG for child struct"
       );

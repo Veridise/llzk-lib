@@ -1,6 +1,7 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/Util/Debug.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Support/LLVM.h>
@@ -77,37 +78,37 @@ public:
   bool isArray() const { return std::holds_alternative<ArrayTy>(value); }
 
   const ScalarTy &getScalarValue() const {
-    debug::ensure(isScalar(), "not a scalar value");
+    ensure(isScalar(), "not a scalar value");
     return std::get<ScalarTy>(value);
   }
 
   ScalarTy &getScalarValue() {
-    debug::ensure(isScalar(), "not a scalar value");
+    ensure(isScalar(), "not a scalar value");
     return std::get<ScalarTy>(value);
   }
 
   const ArrayTy &getArrayValue() const {
-    debug::ensure(isArray(), "not an array value");
+    ensure(isArray(), "not an array value");
     return std::get<ArrayTy>(value);
   }
 
   ArrayTy &getArrayValue() {
-    debug::ensure(isArray(), "not an array value");
+    ensure(isArray(), "not an array value");
     return std::get<ArrayTy>(value);
   }
 
   /// @brief Directly index into the flattened array using a single index.
   const Derived &getElemFlatIdx(unsigned i) const {
-    debug::ensure(isArray(), "not an array value");
+    ensure(isArray(), "not an array value");
     auto &arr = getArrayValue();
-    debug::ensure(i < arr.size(), "index out of range");
+    ensure(i < arr.size(), "index out of range");
     return *arr.at(i);
   }
 
   Derived &getElemFlatIdx(unsigned i) {
-    debug::ensure(isArray(), "not an array value");
+    ensure(isArray(), "not an array value");
     auto &arr = getArrayValue();
-    debug::ensure(i < arr.size(), "index out of range");
+    ensure(i < arr.size(), "index out of range");
     return *arr.at(i);
   }
 
@@ -188,13 +189,13 @@ protected:
   std::variant<ScalarTy, ArrayTy> &getValue() { return value; }
 
   const std::vector<int64_t> &getArrayShape() const {
-    debug::ensure(arrayShape != std::nullopt, "not an array value");
+    ensure(arrayShape != std::nullopt, "not an array value");
     return arrayShape.value();
   }
 
   int64_t getArrayDim(unsigned i) const {
     const auto &arrShape = getArrayShape();
-    debug::ensure(i < arrShape.size(), "dimension index out of bounds");
+    ensure(i < arrShape.size(), "dimension index out of bounds");
     return arrShape.at(i);
   }
 
