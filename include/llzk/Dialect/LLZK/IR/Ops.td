@@ -650,7 +650,7 @@ def LLZK_EmitContainmentOp
   let summary = "emit a containment constraint";
   let description = [{}];
 
-  let arguments = (ins LLZK_ArrayType:$lhs, AnyLLZKType:$rhs);
+  let arguments = (ins LLZK_ArrayType:$lhs, ArrayElemType:$rhs);
 }
 
 //===------------------------------------------------------------------===//
