@@ -30,7 +30,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS
     CACHE INTERNAL "")
 
 # Dependency setup
-
+set(LLVM_ENABLE_Z3_SOLVER ON)
 find_package(LLVM 18.1 REQUIRED CONFIG)
 find_package(MLIR REQUIRED CONFIG)
 

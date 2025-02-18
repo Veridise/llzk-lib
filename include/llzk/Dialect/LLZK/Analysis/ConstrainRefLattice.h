@@ -3,6 +3,7 @@
 #include "llzk/Dialect/LLZK/Analysis/AbstractLatticeValue.h"
 #include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
 #include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 
 namespace llzk {
 
@@ -34,7 +35,7 @@ public:
   explicit ConstrainRefLatticeValue(mlir::ArrayRef<int64_t> shape) : Base(shape) {}
 
   const ConstrainRef &getSingleValue() const {
-    debug::ensure(isSingleValue(), "not a single value");
+    ensure(isSingleValue(), "not a single value");
     return *getScalarValue().begin();
   }
 

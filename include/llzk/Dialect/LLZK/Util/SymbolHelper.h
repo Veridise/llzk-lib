@@ -11,24 +11,63 @@
 
 namespace llzk {
 
-llvm::SmallVector<mlir::StringRef> getNames(const mlir::SymbolRefAttr &ref);
-llvm::SmallVector<mlir::FlatSymbolRefAttr> getPieces(const mlir::SymbolRefAttr &ref);
+llvm::SmallVector<mlir::StringRef> getNames(mlir::SymbolRefAttr ref);
+llvm::SmallVector<mlir::FlatSymbolRefAttr> getPieces(mlir::SymbolRefAttr ref);
 
+/// Construct a FlatSymbolRefAttr with the given content.
+inline mlir::FlatSymbolRefAttr
+getFlatSymbolRefAttr(mlir::MLIRContext *context, const mlir::Twine &twine) {
+  return mlir::FlatSymbolRefAttr::get(mlir::StringAttr::get(context, twine));
+}
+
+/// Build a SymbolRefAttr that prepends `tail` with `root`, i.e. `root::tail`.
 inline mlir::SymbolRefAttr asSymbolRefAttr(mlir::StringAttr root, mlir::SymbolRefAttr tail) {
   return mlir::SymbolRefAttr::get(root, getPieces(tail));
 }
 
+/// Build a SymbolRefAttr from the list of pieces.
 inline mlir::SymbolRefAttr asSymbolRefAttr(llvm::ArrayRef<mlir::FlatSymbolRefAttr> path) {
   return mlir::SymbolRefAttr::get(path.front().getAttr(), path.drop_front());
 }
 
+/// Build a SymbolRefAttr from the list of pieces.
 inline mlir::SymbolRefAttr asSymbolRefAttr(std::vector<mlir::FlatSymbolRefAttr> path) {
   return asSymbolRefAttr(llvm::ArrayRef<mlir::FlatSymbolRefAttr>(path));
 }
 
-inline mlir::SymbolRefAttr getTailAsSymbolRefAttr(mlir::SymbolRefAttr &symbol) {
+/// Return SymbolRefAttr like the one given but with the root/head element removed.
+inline mlir::SymbolRefAttr getTailAsSymbolRefAttr(mlir::SymbolRefAttr symbol) {
   return asSymbolRefAttr(symbol.getNestedReferences());
 }
+
+/// Return SymbolRefAttr like the one given but with the leaf/final element removed.
+inline mlir::SymbolRefAttr getPrefixAsSymbolRefAttr(mlir::SymbolRefAttr symbol) {
+  return mlir::SymbolRefAttr::get(
+      symbol.getRootReference(), symbol.getNestedReferences().drop_back()
+  );
+}
+
+/// Return SymbolRefAttr like the one given but with the leaf (final) element replaced.
+mlir::SymbolRefAttr replaceLeaf(mlir::SymbolRefAttr orig, mlir::FlatSymbolRefAttr newLeaf);
+inline mlir::SymbolRefAttr replaceLeaf(mlir::SymbolRefAttr orig, mlir::StringAttr newLeaf) {
+  return replaceLeaf(orig, mlir::FlatSymbolRefAttr::get(newLeaf));
+}
+inline mlir::SymbolRefAttr replaceLeaf(mlir::SymbolRefAttr orig, const mlir::Twine &newLeaf) {
+  return replaceLeaf(orig, mlir::StringAttr::get(orig.getContext(), newLeaf));
+}
+
+/// Return SymbolRefAttr like the one given but with a new leaf (final) element added.
+mlir::SymbolRefAttr appendLeaf(mlir::SymbolRefAttr orig, mlir::FlatSymbolRefAttr newLeaf);
+inline mlir::SymbolRefAttr appendLeaf(mlir::SymbolRefAttr orig, mlir::StringAttr newLeaf) {
+  return appendLeaf(orig, mlir::FlatSymbolRefAttr::get(newLeaf));
+}
+inline mlir::SymbolRefAttr appendLeaf(mlir::SymbolRefAttr orig, const mlir::Twine &newLeaf) {
+  return appendLeaf(orig, mlir::StringAttr::get(orig.getContext(), newLeaf));
+}
+
+/// Return SymbolRefAttr like the one given but with the leaf (final) element appended with the
+/// given suffix.
+mlir::SymbolRefAttr appendLeafName(mlir::SymbolRefAttr orig, const mlir::Twine &newLeafSuffix);
 
 mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(StructDefOp &to);

@@ -3,6 +3,7 @@
  */
 #include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/Analysis/CallGraph.h>
@@ -12,7 +13,6 @@
 
 #include <llvm/ADT/DepthFirstIterator.h>
 #include <llvm/ADT/SmallVector.h>
-#include <llvm/Support/Debug.h>
 #include <llvm/Support/ErrorHandling.h>
 
 namespace llzk {
@@ -203,7 +203,7 @@ void CallGraph::print(llvm::raw_ostream &os) const {
     os << "'" << callableRegion->getParentOp()->getName() << "' - Region #"
        << callableRegion->getRegionNumber();
     auto attrs = parentOp->getAttrDictionary();
-    if (!attrs.empty()) {
+    if (!isNullOrEmpty(attrs)) {
       os << " : " << attrs;
     }
   };

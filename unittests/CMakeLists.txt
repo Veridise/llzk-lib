@@ -8,7 +8,7 @@ endfunction()
 
 add_subdirectory(Analysis)
 add_subdirectory(IR)
-add_subdirectory(helloworld) # example
+add_subdirectory(Util)
 
 add_custom_target(
   check-unit

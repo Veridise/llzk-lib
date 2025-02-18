@@ -109,7 +109,7 @@ FailureOr<SymbolRefAttr> getPathFromRoot(FuncOp &to, RootSelector whichRoot) {
 }
 } // namespace
 
-llvm::SmallVector<StringRef> getNames(const SymbolRefAttr &ref) {
+llvm::SmallVector<StringRef> getNames(SymbolRefAttr ref) {
   llvm::SmallVector<StringRef> names;
   names.push_back(ref.getRootReference().getValue());
   for (const FlatSymbolRefAttr &r : ref.getNestedReferences()) {
@@ -118,13 +118,56 @@ llvm::SmallVector<StringRef> getNames(const SymbolRefAttr &ref) {
   return names;
 }
 
-llvm::SmallVector<FlatSymbolRefAttr> getPieces(const SymbolRefAttr &ref) {
+llvm::SmallVector<FlatSymbolRefAttr> getPieces(SymbolRefAttr ref) {
   llvm::SmallVector<FlatSymbolRefAttr> pieces;
   pieces.push_back(FlatSymbolRefAttr::get(ref.getRootReference()));
   for (const FlatSymbolRefAttr &r : ref.getNestedReferences()) {
     pieces.push_back(r);
   }
   return pieces;
+}
+
+namespace {
+
+SymbolRefAttr changeLeafImpl(
+    StringAttr origRoot, ArrayRef<FlatSymbolRefAttr> origTail, FlatSymbolRefAttr newLeaf,
+    size_t drop = 1
+) {
+  llvm::SmallVector<FlatSymbolRefAttr> newTail;
+  newTail.append(origTail.begin(), origTail.drop_back(drop).end());
+  newTail.push_back(newLeaf);
+  return SymbolRefAttr::get(origRoot, newTail);
+}
+
+} // namespace
+
+SymbolRefAttr replaceLeaf(SymbolRefAttr orig, FlatSymbolRefAttr newLeaf) {
+  ArrayRef<FlatSymbolRefAttr> origTail = orig.getNestedReferences();
+  if (origTail.empty()) {
+    // If there is no tail, the root is the leaf so replace the whole thing
+    return newLeaf;
+  } else {
+    return changeLeafImpl(orig.getRootReference(), origTail, newLeaf);
+  }
+}
+
+SymbolRefAttr appendLeaf(SymbolRefAttr orig, FlatSymbolRefAttr newLeaf) {
+  return changeLeafImpl(orig.getRootReference(), orig.getNestedReferences(), newLeaf, 0);
+}
+
+SymbolRefAttr appendLeafName(SymbolRefAttr orig, const mlir::Twine &newLeafSuffix) {
+  ArrayRef<FlatSymbolRefAttr> origTail = orig.getNestedReferences();
+  if (origTail.empty()) {
+    // If there is no tail, the root is the leaf so append on the root instead
+    return getFlatSymbolRefAttr(
+        orig.getContext(), orig.getRootReference().getValue() + newLeafSuffix
+    );
+  } else {
+    return changeLeafImpl(
+        orig.getRootReference(), origTail,
+        getFlatSymbolRefAttr(orig.getContext(), origTail.back().getValue() + newLeafSuffix)
+    );
+  }
 }
 
 FailureOr<ModuleOp> getRootModule(Operation *from) {

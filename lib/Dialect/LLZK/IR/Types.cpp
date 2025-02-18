@@ -59,7 +59,7 @@ bool isValidArrayElemType(Type type) { return isValidArrayElemTypeImpl<true, tru
 bool isValidArrayType(Type type) { return isValidArrayTypeImpl<true, true>(type); }
 
 bool isSignalType(Type type) {
-  if (auto structParamTy = mlir::dyn_cast<StructType>(type)) {
+  if (auto structParamTy = llvm::dyn_cast<StructType>(type)) {
     // Only check the leaf part of the reference (i.e. just the struct name itself) to allow cases
     // where the `COMPONENT_NAME_SIGNAL` struct may be placed within some nesting of modules, as
     // happens when it's imported via an IncludeOp.
@@ -69,7 +69,7 @@ bool isSignalType(Type type) {
 }
 
 namespace {
-bool paramAttrUnify(const Attribute &lhsAttr, const Attribute &rhsAttr) {
+bool paramAttrUnify(Attribute lhsAttr, Attribute rhsAttr) {
   assertValidAttrForParamOfType(lhsAttr);
   assertValidAttrForParamOfType(rhsAttr);
   // IntegerAttr and AffineMapAttr only unify via equality and the others may. Additionally,
@@ -188,7 +188,7 @@ public:
 
   // This always returns failure()
   static inline LogicalResult reportInvalid(
-      llvm::function_ref<InFlightDiagnostic()> emitError, const Attribute &found, const char *aspect
+      llvm::function_ref<InFlightDiagnostic()> emitError, Attribute found, const char *aspect
   ) {
     return reportInvalid(emitError, found.getAbstractAttribute().getName(), aspect);
   }

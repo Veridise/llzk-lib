@@ -1,7 +1,6 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
-#include "llzk/Dialect/LLZK/Util/Debug.h"
 #include "llzk/Dialect/LLZK/Util/SymbolLookup.h" // IWYU pragma: keep
 
 #include <mlir/IR/Attributes.h>
@@ -106,6 +105,15 @@ template <typename Iter1, typename Iter2>
 inline bool
 singletonTypeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}) {
   return lhs.size() == 1 && rhs.size() == 1 && typesUnify(lhs.front(), rhs.front());
+}
+
+template <typename ConcreteType> inline ConcreteType getIfSingleton(mlir::TypeRange types) {
+  return (types.size() == 1) ? llvm::dyn_cast<ConcreteType>(types.front()) : nullptr;
+}
+
+template <typename ConcreteType>
+inline ConcreteType getAtIndex(mlir::TypeRange types, size_t index) {
+  return (types.size() > index) ? llvm::dyn_cast<ConcreteType>(types[index]) : nullptr;
 }
 
 mlir::LogicalResult computeDimsFromShape(

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/Hash.h"
 
 #include <mlir/Analysis/DataFlowFramework.h>
@@ -29,19 +30,19 @@ public:
 
   bool isField() const { return std::holds_alternative<SymbolLookupResult<FieldDefOp>>(index); }
   FieldDefOp getField() const {
-    debug::ensure(isField(), "ConstrainRefIndex: field requested but not contained");
+    ensure(isField(), "ConstrainRefIndex: field requested but not contained");
     return std::get<SymbolLookupResult<FieldDefOp>>(index).get();
   }
 
   bool isIndex() const { return std::holds_alternative<mlir::APInt>(index); }
   mlir::APInt getIndex() const {
-    debug::ensure(isIndex(), "ConstrainRefIndex: index requested but not contained");
+    ensure(isIndex(), "ConstrainRefIndex: index requested but not contained");
     return std::get<mlir::APInt>(index);
   }
 
   bool isIndexRange() const { return std::holds_alternative<IndexRange>(index); }
   IndexRange getIndexRange() const {
-    debug::ensure(isIndexRange(), "ConstrainRefIndex: index range requested but not contained");
+    ensure(isIndexRange(), "ConstrainRefIndex: index range requested but not contained");
     return std::get<IndexRange>(index);
   }
 
@@ -154,21 +155,21 @@ public:
 
   bool isBlockArgument() const { return blockArg != nullptr; }
   mlir::BlockArgument getBlockArgument() const {
-    debug::ensure(isBlockArgument(), "is not a block argument");
+    ensure(isBlockArgument(), "is not a block argument");
     return blockArg;
   }
   unsigned getInputNum() const { return blockArg.getArgNumber(); }
 
   mlir::APInt getConstantFeltValue() const {
-    debug::ensure(isConstantFelt(), __FUNCTION__ + mlir::Twine(" requires a constant felt!"));
+    ensure(isConstantFelt(), __FUNCTION__ + mlir::Twine(" requires a constant felt!"));
     return std::get<FeltConstantOp>(*constantVal).getValueAttr().getValue();
   }
   mlir::APInt getConstantIndexValue() const {
-    debug::ensure(isConstantIndex(), __FUNCTION__ + mlir::Twine(" requires a constant index!"));
+    ensure(isConstantIndex(), __FUNCTION__ + mlir::Twine(" requires a constant index!"));
     return std::get<mlir::index::ConstantOp>(*constantVal).getValue();
   }
   mlir::APInt getConstantInt() const {
-    debug::ensure(
+    ensure(
         isConstantFelt() || isConstantIndex(),
         __FUNCTION__ + mlir::Twine(" requires a constant int type!")
     );

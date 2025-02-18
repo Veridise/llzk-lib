@@ -50,9 +50,17 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
 
   let genVerifyDecl = 1;
 
-  let builders = [TypeBuilder<(ins "::mlir::SymbolRefAttr":$structName), [{
-      return $_get($_ctxt, structName, ::mlir::ArrayAttr());
-    }]>];
+  let skipDefaultBuilders = 1;
+  let builders = [TypeBuilderWithInferredContext<
+                      (ins "::mlir::SymbolRefAttr":$structName), [{
+                    return $_get(structName.getContext(), structName, ::mlir::ArrayAttr());
+                  }]>,
+                  TypeBuilderWithInferredContext<
+                      (ins "::mlir::SymbolRefAttr":$structName,
+                          "::mlir::ArrayAttr":$params),
+                      [{
+                    return $_get(structName.getContext(), structName, params);
+                  }]>];
 
   let extraClassDeclaration = [{
     /// Gets the `struct` op that defines this struct. Provided `op` is
@@ -188,6 +196,14 @@ def LLZK_TypeVarType : LLZK_Type<"TypeVar", "tvar"> {
                          "reference to the struct parameter">:$nameRef);
 
   let assemblyFormat = [{ `<` $nameRef `>` }];
+
+  let builders = [TypeBuilderWithInferredContext<
+      (ins "::mlir::FlatSymbolRefAttr":$nameRef),
+      [{ return $_get(nameRef.getContext(), nameRef); }]>];
+
+  let extraClassDeclaration = [{
+    inline ::mlir::StringRef getRefName() const { return getNameRef().getValue(); }
+  }];
 }
 
 // Type constraint matching only the given Type or TypeVarType.

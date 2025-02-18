@@ -15,11 +15,28 @@
     {
       # First, we define the packages used in this repository/flake
       overlays.default = final: prev: {
-        mlirWithPython = final.mlir.override {
+        libllvmWithZ3 = final.veridise_llvmPackages.libllvm.overrideAttrs(attrs: {
+          cmakeFlags = attrs.cmakeFlags ++ [
+            # "-DZ3_DIR=${final.z3}/lib/cmake/z3"
+            "-DLLVM_ENABLE_Z3_SOLVER=ON"
+          ];
+          buildInputs = attrs.buildInputs ++ [final.z3];
+        });
+
+        mlirWithZ3 = (final.mlir.override { libllvm = final.libllvmWithZ3; }).overrideAttrs(attrs: {
+          cmakeFlags = attrs.cmakeFlags ++ [
+            "-DLLVM_ENABLE_Z3_SOLVER=ON"
+          ];
+        });
+
+        mlirWithPython = final.mlirWithZ3.override {
           enablePythonBindings = true;
         };
 
-        llzk = final.callPackage ./nix/llzk.nix { clang = final.clang_18; };
+        llzk = final.callPackage ./nix/llzk.nix {
+          clang = final.clang_18;
+          mlir = final.mlirWithZ3;
+        };
 
         llzkWithPython = final.llzk.override {
           mlir = final.mlirWithPython;
@@ -98,6 +115,10 @@
         # extra tools we need.
         devShellBase = { pkgs, llzkEnv ? final.llzk, ... }: {
           shell = llzkEnv.overrideAttrs (old: {
+            cmakeFlags = old.cmakeFlags ++ [
+              "-DLLVM_ENABLE_Z3_SOLVER=ON"
+            ];
+
             nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
               doxygen
 

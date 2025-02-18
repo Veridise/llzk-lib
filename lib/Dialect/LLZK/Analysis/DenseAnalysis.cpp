@@ -9,6 +9,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
@@ -183,7 +184,7 @@ void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
       }
       /// LLZK: Get callsites of the callable as the predecessors.
       auto moduleOpRes = getTopRootModule(callable.getOperation());
-      debug::ensure(mlir::succeeded(moduleOpRes), "could not get root module from callable");
+      ensure(mlir::succeeded(moduleOpRes), "could not get root module from callable");
 
       SmallVector<Operation *> callsites;
       moduleOpRes->walk([this, &callable, &callsites](CallOp call) mutable {

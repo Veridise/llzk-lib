@@ -1,6 +1,5 @@
 #include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
 #include "llzk/Dialect/LLZK/Util/Compare.h"
-#include "llzk/Dialect/LLZK/Util/Debug.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolLookup.h"
 
@@ -55,7 +54,7 @@ bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
 SymbolLookupResult<StructDefOp>
 getStructDef(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, StructType ty) {
   auto sDef = ty.getDefinition(tables, mod);
-  debug::ensure(
+  ensure(
       mlir::succeeded(sDef),
       "could not find '" + StructDefOp::getOperationName() + "' op from struct type"
   );
@@ -119,9 +118,7 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
         tables, mlir::SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()),
         std::move(structDefCopy), mod.getOperation()
     );
-    debug::ensure(
-        mlir::succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp"
-    );
+    ensure(mlir::succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp");
     subFields.emplace_back(fieldLookup.value());
     // Make a reference to the current field, regardless of if it is a composite
     // type or not.
@@ -166,13 +163,13 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDef) {
   std::vector<ConstrainRef> res;
   auto constrainFnOp = structDef.getConstrainFuncOp();
-  debug::ensure(
+  ensure(
       constrainFnOp,
       "malformed struct " + mlir::Twine(structDef.getName()) + " must define a constrain function"
   );
 
   auto modOp = getRootModule(structDef);
-  debug::ensure(
+  ensure(
       mlir::succeeded(modOp),
       "could not lookup module from struct " + mlir::Twine(structDef.getName())
   );
@@ -264,10 +261,10 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
   } else if (isTemplateConstant()) {
     auto constRead = std::get<ConstReadOp>(*constantVal);
     auto structDefOp = constRead->getParentOfType<StructDefOp>();
-    debug::ensure(structDefOp, "struct template should have a struct parent");
+    ensure(structDefOp, "struct template should have a struct parent");
     os << '@' << structDefOp.getName() << "<[@" << constRead.getConstName() << "]>";
   } else {
-    debug::ensure(isBlockArgument(), "unhandled print case");
+    ensure(isBlockArgument(), "unhandled print case");
     os << "%arg" << getInputNum();
     for (auto f : fieldRefs) {
       os << "[" << f << "]";
@@ -315,7 +312,7 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   }
 
   // both are not constants
-  debug::ensure(isBlockArgument() && rhs.isBlockArgument(), "unhandled operator< case");
+  ensure(isBlockArgument() && rhs.isBlockArgument(), "unhandled operator< case");
   if (getInputNum() < rhs.getInputNum()) {
     return true;
   } else if (getInputNum() > rhs.getInputNum()) {
@@ -340,7 +337,7 @@ size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
   } else if (val.isTemplateConstant()) {
     return OpHash<ConstReadOp> {}(std::get<ConstReadOp>(*val.constantVal));
   } else {
-    debug::ensure(val.isBlockArgument(), "unhandled operator() case");
+    ensure(val.isBlockArgument(), "unhandled operator() case");
 
     size_t hash = std::hash<unsigned> {}(val.getInputNum());
     for (auto f : val.fieldRefs) {

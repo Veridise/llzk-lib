@@ -14,14 +14,24 @@
 namespace llzk {
 namespace debug {
 
+namespace {
+template <typename Any> void append(llvm::raw_ostream &ss, Any value) { ss << value; }
+void append(llvm::raw_ostream &ss, mlir::NamedAttribute a) {
+  ss << a.getName() << '=' << a.getValue();
+}
+template <typename A, typename B> void append(llvm::raw_ostream &ss, std::pair<A, B> a) {
+  ss << '(' << a.first << ',' << a.second << ')';
+}
+} // namespace
+
 /// Generate a comma-separated string representation by traversing elements from `begin` to `end`
 /// where the element type implements `operator<<`.
-template <class InputIt> std::string toString(InputIt begin, InputIt end) {
+template <typename InputIt> std::string toStringList(InputIt begin, InputIt end) {
   std::string output;
   llvm::raw_string_ostream oss(output);
   oss << "[";
   for (auto it = begin; it != end; ++it) {
-    oss << *it;
+    append(oss, *it);
     if (std::next(it) != end) {
       oss << ", ";
     }
@@ -32,14 +42,15 @@ template <class InputIt> std::string toString(InputIt begin, InputIt end) {
 
 /// Generate a comma-separated string representation by traversing elements from
 /// `collection.begin()` to `collection.end()` where the element type implements `operator<<`.
-template <class InputIt> inline std::string toString(const InputIt &collection) {
-  return toString(collection.begin(), collection.end());
+template <typename InputIt> inline std::string toStringList(const InputIt &collection) {
+  return toStringList(collection.begin(), collection.end());
 }
 
-inline void ensure(bool condition, mlir::Twine errMsg) {
-  if (!condition) {
-    llvm::report_fatal_error(errMsg);
-  }
+template <typename T> inline std::string toStringOne(const T &value) {
+  std::string output;
+  llvm::raw_string_ostream oss(output);
+  append(oss, value);
+  return output;
 }
 
 inline void dumpSymbolTableWalk(mlir::Operation *symbolTableOp) {

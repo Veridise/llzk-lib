@@ -1,5 +1,6 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
@@ -368,7 +369,7 @@ msgOneFunction(function_ref<InFlightDiagnostic()> emitError, const Twine &name) 
 StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
   auto pathRes = getPathFromRoot(*this);
   assert(succeeded(pathRes)); // consistent with StructType::get() with invalid args
-  return StructType::get(getContext(), pathRes.value(), constParams.value_or(getConstParamsAttr()));
+  return StructType::get(pathRes.value(), constParams.value_or(getConstParamsAttr()));
 }
 
 std::string StructDefOp::getHeaderString() {
@@ -471,13 +472,12 @@ LogicalResult StructDefOp::verifyRegions() {
     for (Operation &op : getBody().front()) {
       if (!llvm::isa<FieldDefOp>(op)) {
         if (FuncOp funcDef = llvm::dyn_cast<FuncOp>(op)) {
-          StringRef funcName = funcDef.getSymName();
-          if (FUNC_NAME_COMPUTE == funcName) {
+          if (funcDef.nameIsCompute()) {
             if (foundCompute) {
               return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
             }
             foundCompute = std::make_optional(funcDef);
-          } else if (FUNC_NAME_CONSTRAIN == funcName) {
+          } else if (funcDef.nameIsConstrain()) {
             if (foundConstrain) {
               return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
             }
@@ -487,7 +487,8 @@ LogicalResult StructDefOp::verifyRegions() {
             // tag the error with correct location and correct op name.
             return op.emitError() << "'" << getOperationName() << "' op " << "must define only \"@"
                                   << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
-                                  << "\" functions;" << " found \"@" << funcName << "\"";
+                                  << "\" functions;" << " found \"@" << funcDef.getSymName()
+                                  << "\"";
           }
         } else {
           return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
@@ -511,8 +512,7 @@ LogicalResult StructDefOp::verifyRegions() {
   ArrayRef<Type> constrainParams = foundConstrain->getFunctionType().getInputs().drop_front();
   if (COMPONENT_NAME_MAIN == this->getSymName()) {
     // Verify that the Struct has no parameters.
-    auto structParams = this->getConstParamsAttr();
-    if (structParams && !structParams.empty()) {
+    if (!isNullOrEmpty(this->getConstParamsAttr())) {
       return this->emitError().append(
           "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
       );

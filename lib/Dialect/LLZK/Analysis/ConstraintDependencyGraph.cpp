@@ -272,7 +272,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
 ) {
   // Fetch the constrain function. This is a required feature for all LLZK structs.
   auto constrainFnOp = structDef.getConstrainFuncOp();
-  debug::ensure(
+  ensure(
       constrainFnOp,
       "malformed struct " + mlir::Twine(structDef.getName()) + " must define a constrain function"
   );
@@ -302,10 +302,10 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
    */
   constrainFnOp.walk([this, &solver, &am](CallOp fnCall) mutable {
     auto res = resolveCallable<FuncOp>(tables, fnCall);
-    debug::ensure(mlir::succeeded(res), "could not resolve constrain call");
+    ensure(mlir::succeeded(res), "could not resolve constrain call");
 
     auto fn = res->get();
-    if (fn.getName() != FUNC_NAME_CONSTRAIN) {
+    if (!fn.nameIsConstrain()) {
       return;
     }
     // Nested
@@ -313,7 +313,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     ConstrainRefRemappings translations;
 
     auto lattice = solver.lookupState<ConstrainRefLattice>(fnCall.getOperation());
-    debug::ensure(lattice, "could not find lattice for call operation");
+    ensure(lattice, "could not find lattice for call operation");
 
     // Map fn parameters to args in the call op
     for (unsigned i = 0; i < fn.getNumArguments(); i++) {
@@ -357,7 +357,7 @@ void ConstraintDependencyGraph::walkConstrainOp(
 ) {
   std::vector<ConstrainRef> signalUsages, constUsages;
   auto lattice = solver.lookupState<ConstrainRefLattice>(emitOp);
-  debug::ensure(lattice, "failed to get lattice for emit operation");
+  ensure(lattice, "failed to get lattice for emit operation");
 
   for (auto operand : emitOp->getOperands()) {
     auto latticeVal = lattice->getOrDefault(operand);
@@ -398,7 +398,7 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemap
       if (vals.isArray()) {
         // Try to index into the array
         auto suffix = elem.getSuffix(prefix);
-        debug::ensure(
+        ensure(
             mlir::succeeded(suffix), "failure is nonsensical, we already checked for valid prefix"
         );
 
