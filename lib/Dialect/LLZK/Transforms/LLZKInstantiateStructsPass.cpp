@@ -362,14 +362,31 @@ public:
       return op->emitOpError("missing instantiation");
     }
     Attribute resAttr = res->second;
-    if (FeltConstAttr fcAttr = llvm::dyn_cast<FeltConstAttr>(resAttr)) {
-      rewriter.replaceOpWithNewOp<FeltConstantOp>(op, fcAttr);
-      return success();
-    } else if (IntegerAttr iAttr = llvm::dyn_cast<IntegerAttr>(resAttr)) {
+    if (IntegerAttr iAttr = llvm::dyn_cast<IntegerAttr>(resAttr)) {
+      APInt attrValue = iAttr.getValue();
       Type resultType = op.getType();
-      rewriter.replaceOpWithNewOp<index::ConstantOp>(
-          op, IntegerAttr::get(resultType, iAttr.getValue())
-      );
+      if (llvm::isa<FeltType>(resultType)) {
+        rewriter.replaceOpWithNewOp<FeltConstantOp>(
+            op, FeltConstAttr::get(rewriter.getContext(), attrValue)
+        );
+      } else if (llvm::isa<IndexType>(resultType)) {
+        rewriter.replaceOpWithNewOp<index::ConstantOp>(op, IntegerAttr::get(resultType, attrValue));
+      } else if (resultType.isSignlessInteger(1)) {
+        // Treat 0 as false and any other value as true (but give a warning if it's not 1)
+        if (attrValue.isZero()) {
+          rewriter.replaceOpWithNewOp<index::BoolConstantOp>(op, false);
+        } else {
+          if (!attrValue.isOne()) {
+            op.emitWarning("Interpretting non-zero value as true.").report();
+          }
+          rewriter.replaceOpWithNewOp<index::BoolConstantOp>(op, true);
+        }
+      } else {
+        return op->emitOpError().append("unexpected result type ", resultType);
+      }
+      return success();
+    } else if (FeltConstAttr fcAttr = llvm::dyn_cast<FeltConstAttr>(resAttr)) {
+      rewriter.replaceOpWithNewOp<FeltConstantOp>(op, fcAttr);
       return success();
     }
     return op->emitOpError().append(
@@ -484,7 +501,7 @@ LogicalResult run(ModuleOp modOp, const DenseMap<StructType, StructType> &struct
       if (!uses.has_value() || uses->empty()) {
         return false;
       } else {
-        op.emitWarning("Parameterized struct still has uses!");
+        op.emitWarning("Parameterized struct still has uses!").report();
       }
     }
     return true;
