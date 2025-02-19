@@ -63,7 +63,7 @@ void ShortTypeStringifier::appendAnyAttr(Attribute a) {
 }
 
 ShortTypeStringifier &ShortTypeStringifier::append(mlir::ArrayRef<mlir::Attribute> attrs) {
-  llvm::interleave(attrs, ss, [this](Attribute a) { appendAnyAttr(a); }, ",");
+  llvm::interleave(attrs, ss, [this](Attribute a) { appendAnyAttr(a); }, "_");
   return *this;
 }
 

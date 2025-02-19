@@ -69,13 +69,13 @@ TEST_F(TypeTests, testGetWithAttributeWrongAttrKindError) {
   );
 }
 
-TEST_F(TypeTests, testBriefString) {
+TEST_F(TypeTests, testShortString) {
   OpBuilder bldr(&ctx);
   EXPECT_EQ("b", shortString(bldr.getIntegerType(1)));
   EXPECT_EQ("i", shortString(bldr.getIndexType()));
   EXPECT_EQ("!v<@A>", shortString(TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "A"))));
   EXPECT_EQ(
-      "!a<b:4,235,123>",
+      "!a<b:4_235_123>",
       shortString(ArrayType::get(bldr.getIntegerType(1), ArrayRef<int64_t> {4, 235, 123}))
   );
   EXPECT_EQ("!s<@S1:>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1"))));
@@ -100,7 +100,7 @@ TEST_F(TypeTests, testBriefString) {
         }
     );
     EXPECT_EQ(
-        "!s<@Top:43,@ParamName,!a<f:3,5,1,5,7>,!s<@S1:43>,!m<(d0)->(d0)>>",
+        "!s<@Top:43_@ParamName_!a<f:3_5_1_5_7>_!s<@S1:43>_!m<(d0)->(d0)>>",
         shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "Top"), params))
     );
   }
