@@ -5,6 +5,7 @@
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/Dialect/Index/IR/IndexDialect.h>
+#include <mlir/Dialect/Index/IR/IndexOps.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>
@@ -74,15 +75,24 @@ public:
   }
 };
 
+template <typename I, typename NextOpType, typename... OtherOpTypes>
+inline void applyToMoreTypes(I inserter) {
+  std::apply(inserter, std::tuple<NextOpType, OtherOpTypes...> {});
+}
+template <typename I> inline void applyToMoreTypes(I inserter) {}
+
 /// Return a new `RewritePatternSet` that includes a `GeneralTypeReplacePattern` for all of
-/// `OpClassesWithStructTypes.WithGeneralBuilder`.
+/// `OpClassesWithStructTypes.WithGeneralBuilder` and `AdditionalOpTypes`.
 /// Note: `GeneralTypeReplacePattern` uses the default benefit (1) so additional patterns with a
 /// higher priority can be added for any of the Ops already included and that will take precedence.
-RewritePatternSet newGeneralRewritePatternSet(MLIRContext *ctx, TypeConverter &tyConv) {
+template <typename... AdditionalOpTypes>
+RewritePatternSet newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx) {
   RewritePatternSet patterns(ctx);
-  std::apply([&](auto... opClasses) {
+  auto inserter = [&](auto... opClasses) {
     patterns.add<GeneralTypeReplacePattern<decltype(opClasses)>...>(tyConv, ctx);
-  }, OpClassesWithStructTypes.WithGeneralBuilder);
+  };
+  std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
+  applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
   // Add builtin FunctionType converter
   populateFunctionOpInterfaceTypeConversionPattern(FuncOp::getOperationName(), patterns, tyConv);
   return patterns;
@@ -97,8 +107,10 @@ ConversionTarget newBaseTarget(MLIRContext *ctx) {
 }
 
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
-/// based on the given `TypeConverter` for Ops listed in `OpClassesWithStructTypes`.
-ConversionTarget newConverterDefinedTarget(MLIRContext *ctx, TypeConverter &tyConv) {
+/// based on the given `TypeConverter` for Ops listed in both fields of `OpClassesWithStructTypes`
+/// and in `AdditionalOpTypes`.
+template <typename... AdditionalOpTypes>
+ConversionTarget newConverterDefinedTarget(TypeConverter &tyConv, MLIRContext *ctx) {
   ConversionTarget target = newBaseTarget(ctx);
   auto inserter = [&](auto... opClasses) {
     target.addDynamicallyLegalOp<decltype(opClasses)...>([&tyConv](Operation *op) {
@@ -126,6 +138,7 @@ ConversionTarget newConverterDefinedTarget(MLIRContext *ctx, TypeConverter &tyCo
   };
   std::apply(inserter, OpClassesWithStructTypes.NoGeneralBuilder);
   std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
+  applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
   return target;
 }
 
@@ -206,10 +219,10 @@ public:
 LogicalResult run(ModuleOp modOp, DenseMap<StructType, StructType> &structInstantiations) {
   MLIRContext *ctx = modOp.getContext();
   ParameterizedStructUseTypeConverter tyConv(structInstantiations);
-  RewritePatternSet patterns = newGeneralRewritePatternSet(ctx, tyConv);
+  RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx);
   patterns.add<CallComputePattern>(tyConv, ctx);
 
-  ConversionTarget target = newConverterDefinedTarget(ctx, tyConv);
+  ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
   if (failed(applyPartialConversion(modOp, target, std::move(patterns)))) {
     return modOp.emitError("failed to convert all `compute()` calls");
   }
@@ -223,22 +236,15 @@ namespace Step2 {
 class MappedTypeConverter : public TypeConverter {
   StructType origTy;
   StructType newTy;
-  /// Instantiated values for the parameter names in `origTy`
-  DenseMap<Attribute, Attribute> paramValues;
+  const DenseMap<Attribute, Attribute> &instantiationMap;
 
 public:
-  MappedTypeConverter(StructType originalType, StructType newType, ArrayAttr paramInstantiations)
-      : TypeConverter(), origTy(originalType), newTy(newType) {
-    {
-      ArrayAttr paramNames = origTy.getParams();
-      // pre-conditions
-      assert(!isNullOrEmpty(paramNames));
-      assert(!isNullOrEmpty(paramInstantiations));
-      assert(paramNames.size() == paramInstantiations.size());
-      for (size_t i = 0, e = paramNames.size(); i < e; ++i) {
-        paramValues[paramNames[i]] = paramInstantiations[i];
-      }
-    }
+  MappedTypeConverter(
+      StructType originalType, StructType newType,
+      /// Instantiated values for the parameter names in `origTy`
+      const DenseMap<Attribute, Attribute> &nameToValueMap
+  )
+      : TypeConverter(), origTy(originalType), newTy(newType), instantiationMap(nameToValueMap) {
 
     addConversion([](Type inputTy) { return inputTy; });
 
@@ -251,8 +257,8 @@ public:
       if (ArrayAttr inputTyParams = inputTy.getParams()) {
         SmallVector<Attribute> updated;
         for (Attribute a : inputTyParams) {
-          auto res = this->paramValues.find(a);
-          updated.push_back((res != this->paramValues.end()) ? res->second : a);
+          auto res = this->instantiationMap.find(a);
+          updated.push_back((res != this->instantiationMap.end()) ? res->second : a);
         }
         return StructType::get(inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated));
       }
@@ -266,10 +272,10 @@ public:
       if (!dimSizes.empty()) {
         SmallVector<Attribute> updated;
         for (Attribute a : dimSizes) {
-          auto res = this->paramValues.find(a);
-          updated.push_back((res != this->paramValues.end()) ? res->second : a);
+          auto res = this->instantiationMap.find(a);
+          updated.push_back((res != this->instantiationMap.end()) ? res->second : a);
         }
-        return ArrayType::get(inputTy.getElementType(), updated);
+        return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
       }
       // Otherwise, return the type unchanged
       return inputTy;
@@ -277,8 +283,8 @@ public:
 
     addConversion([this](TypeVarType inputTy) -> Type {
       // Check for replacement of parameter symbol name with a concrete type
-      auto res = this->paramValues.find(inputTy.getNameRef());
-      if (res != this->paramValues.end()) {
+      auto res = this->instantiationMap.find(inputTy.getNameRef());
+      if (res != this->instantiationMap.end()) {
         if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(res->second)) {
           return tyAttr.getValue();
         }
@@ -337,6 +343,55 @@ public:
   }
 };
 
+class ConstReadOpPattern : public OpConversionPattern<ConstReadOp> {
+  const DenseMap<Attribute, Attribute> &instantiationMap;
+
+public:
+  ConstReadOpPattern(
+      TypeConverter &converter, MLIRContext *ctx,
+      const DenseMap<Attribute, Attribute> &nameToValueMap
+  )
+      // use higher priority than GeneralTypeReplacePattern
+      : OpConversionPattern<ConstReadOp>(converter, ctx, 2), instantiationMap(nameToValueMap) {}
+
+  LogicalResult matchAndRewrite(
+      ConstReadOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
+  ) const override {
+    auto res = this->instantiationMap.find(op.getConstNameAttr());
+    if (res == this->instantiationMap.end()) {
+      return op->emitOpError("missing instantiation");
+    }
+    Attribute resAttr = res->second;
+    if (FeltConstAttr fcAttr = llvm::dyn_cast<FeltConstAttr>(resAttr)) {
+      rewriter.replaceOpWithNewOp<FeltConstantOp>(op, fcAttr);
+      return success();
+    } else if (IntegerAttr iAttr = llvm::dyn_cast<IntegerAttr>(resAttr)) {
+      Type resultType = op.getType();
+      rewriter.replaceOpWithNewOp<index::ConstantOp>(
+          op, IntegerAttr::get(resultType, iAttr.getValue())
+      );
+      return success();
+    }
+    return op->emitOpError().append(
+        "expected value with type ", op.getType(), " but found ", resAttr
+    );
+  }
+};
+
+DenseMap<Attribute, Attribute>
+buildNameToValueMap(ArrayAttr paramNames, ArrayAttr paramInstantiations) {
+  // pre-conditions
+  assert(!isNullOrEmpty(paramNames));
+  assert(!isNullOrEmpty(paramInstantiations));
+  assert(paramNames.size() == paramInstantiations.size());
+  // Map parameter names to instantiated values
+  DenseMap<Attribute, Attribute> ret;
+  for (size_t i = 0, e = paramNames.size(); i < e; ++i) {
+    ret[paramNames[i]] = paramInstantiations[i];
+  }
+  return ret;
+}
+
 LogicalResult run(ModuleOp modOp, const DenseMap<StructType, StructType> &structInstantiations) {
   SymbolTableCollection symTables;
   MLIRContext *ctx = modOp.getContext();
@@ -364,12 +419,15 @@ LogicalResult run(ModuleOp modOp, const DenseMap<StructType, StructType> &struct
       // Within the new struct, replace all references to the original struct's type (i.e. the
       // locally-parameterized version) with the new flattened (i.e. no parameters) struct's type,
       // and replace all uses of the struct parameters with the concrete values.
-      MappedTypeConverter tyConv(origStructTy, newRemoteTy, origRemoteTy.getParams());
-      RewritePatternSet patterns = newGeneralRewritePatternSet(ctx, tyConv);
-      patterns.add<CallOpPattern>(tyConv, ctx);
-      patterns.add<CreateArrayOpPattern>(tyConv, ctx);
+      DenseMap<Attribute, Attribute> nameToValueMap =
+          buildNameToValueMap(origStructTy.getParams(), origRemoteTy.getParams());
+      MappedTypeConverter tyConv(origStructTy, newRemoteTy, nameToValueMap);
+      RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx);
+      patterns.add<CallOpPattern, CreateArrayOpPattern>(tyConv, ctx);
+      patterns.add<ConstReadOpPattern>(tyConv, ctx, nameToValueMap);
 
-      ConversionTarget target = newConverterDefinedTarget(ctx, tyConv);
+      ConversionTarget target = newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx);
+      target.addIllegalOp<ConstReadOp>(); // TODO: not sure if fully illegal is what I need or not
       if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
         return modOp.emitError("failed to generate all required flattened structs");
       }
