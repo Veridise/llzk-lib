@@ -5,7 +5,7 @@ module attributes {veridise.lang = "llzk"} {
     func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>
       %res = scf.while (%arg1 = %a) : (!llzk.felt) -> !llzk.felt {
-        %condition = arith.constant 1 : i1
+        %condition = index.bool.constant true
         scf.condition(%condition) %arg1 : !llzk.felt
       } do {
         ^bb0(%arg2: !llzk.felt):
@@ -24,7 +24,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@ComponentA>
 //CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = scf.while (%[[A1:[0-9a-zA-Z_.]+]] = %[[A0]]) : (!llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:         %[[T1:[0-9a-zA-Z_.]+]] = arith.constant true
+//CHECK-NEXT:         %[[T1:[0-9a-zA-Z_.]+]] = index.bool.constant true
 //CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !llzk.felt
 //CHECK-NEXT:       } do {
 //CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_.]+]]: !llzk.felt):
@@ -44,7 +44,7 @@ module attributes {veridise.lang = "llzk"} {
     func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>
       %res = scf.while (%arg1 = %a) : (!llzk.felt) -> !llzk.felt {
-        %condition = arith.constant 1 : i1
+        %condition = index.bool.constant true
         scf.condition(%condition) %arg1 : !llzk.felt
       } do {
         ^bb0(%arg2: !llzk.felt):
@@ -63,7 +63,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@ComponentA>
 //CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = scf.while (%[[A1:[0-9a-zA-Z_\.]+]] = %[[A0]]) : (!llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:         %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant true
+//CHECK-NEXT:         %[[T1:[0-9a-zA-Z_\.]+]] = index.bool.constant true
 //CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !llzk.felt
 //CHECK-NEXT:       } do {
 //CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt):
