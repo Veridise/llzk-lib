@@ -247,7 +247,7 @@ mlir::ChangeResult ConstrainRefLatticeValue::translateScalar(const TranslationMa
 
 std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
 ConstrainRefLatticeValue::elementwiseTransform(
-    std::function<ConstrainRef(const ConstrainRef &)> transform
+    llvm::function_ref<ConstrainRef(const ConstrainRef &)> transform
 ) const {
   auto newVal = *this;
   auto res = mlir::ChangeResult::NoChange;

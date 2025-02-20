@@ -1,6 +1,7 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolLookup.h" // IWYU pragma: keep
 
 #include <mlir/IR/Attributes.h>
@@ -50,8 +51,7 @@ bool isValidArrayElemType(mlir::Type type);
 /// Checks if the type is a LLZK Array and it also contains a valid LLZK type.
 bool isValidArrayType(mlir::Type type);
 
-inline mlir::LogicalResult
-checkValidType(llvm::function_ref<mlir::InFlightDiagnostic()> emitError, mlir::Type type) {
+inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type) {
   if (!isValidType(type)) {
     return emitError() << "expected a valid LLZK type but found " << type;
   } else {
@@ -122,8 +122,8 @@ mlir::LogicalResult computeDimsFromShape(
 );
 
 mlir::LogicalResult computeShapeFromDims(
-    llvm::function_ref<::mlir::InFlightDiagnostic()> emitError, mlir::MLIRContext *ctx,
-    llvm::ArrayRef<mlir::Attribute> dimensionSizes, llvm::SmallVector<int64_t> &shape
+    EmitErrorFn emitError, mlir::MLIRContext *ctx, llvm::ArrayRef<mlir::Attribute> dimensionSizes,
+    llvm::SmallVector<int64_t> &shape
 );
 
 mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);

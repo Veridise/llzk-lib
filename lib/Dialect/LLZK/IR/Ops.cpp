@@ -359,8 +359,7 @@ void AssertOp::getEffects(
 //===------------------------------------------------------------------===//
 namespace {
 
-inline LogicalResult
-msgOneFunction(function_ref<InFlightDiagnostic()> emitError, const Twine &name) {
+inline LogicalResult msgOneFunction(EmitErrorFn emitError, const Twine &name) {
   return emitError() << "must define exactly one '" << name << "' function";
 }
 

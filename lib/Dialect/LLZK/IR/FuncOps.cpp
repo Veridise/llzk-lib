@@ -621,7 +621,7 @@ FunctionType CallOp::getCalleeType() {
 namespace {
 
 bool calleeIsStructFunctionImpl(
-    const char *funcName, SymbolRefAttr callee, std::function<StructType()> &&getType
+    const char *funcName, SymbolRefAttr callee, llvm::function_ref<StructType()> getType
 ) {
   if (callee.getLeafReference() == funcName) {
     if (StructType t = getType()) {

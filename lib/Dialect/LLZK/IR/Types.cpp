@@ -1,5 +1,6 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
@@ -175,10 +176,8 @@ public:
   }
 
   // This always returns failure()
-  static inline LogicalResult reportInvalid(
-      llvm::function_ref<InFlightDiagnostic()> emitError, llvm::StringRef foundName,
-      const char *aspect
-  ) {
+  static inline LogicalResult
+  reportInvalid(EmitErrorFn emitError, llvm::StringRef foundName, const char *aspect) {
     // The implicit conversion from InFlightDiagnostic to LogicalResult in the return causes the
     // diagnostic to be printed.
     auto diag = emitError() << aspect << " must be one of ";
@@ -187,9 +186,8 @@ public:
   }
 
   // This always returns failure()
-  static inline LogicalResult reportInvalid(
-      llvm::function_ref<InFlightDiagnostic()> emitError, Attribute found, const char *aspect
-  ) {
+  static inline LogicalResult
+  reportInvalid(EmitErrorFn emitError, Attribute found, const char *aspect) {
     return reportInvalid(emitError, found.getAbstractAttribute().getName(), aspect);
   }
 
@@ -235,9 +233,7 @@ using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMa
 
 } // namespace
 
-LogicalResult StructType::verify(
-    llvm::function_ref<InFlightDiagnostic()> emitError, SymbolRefAttr nameRef, ArrayAttr params
-) {
+LogicalResult StructType::verify(EmitErrorFn emitError, SymbolRefAttr nameRef, ArrayAttr params) {
   if (params) {
     for (Attribute p : params) {
       if (!StructParamTypes::matches(p)) {
@@ -290,9 +286,8 @@ namespace {
 //  - AffineMap (for array created within a loop where size depends on loop variable)
 using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
 
-LogicalResult verifyArrayDimensionSizes(
-    llvm::function_ref<InFlightDiagnostic()> emitError, llvm::ArrayRef<Attribute> dimensionSizes
-) {
+LogicalResult
+verifyArrayDimensionSizes(EmitErrorFn emitError, llvm::ArrayRef<Attribute> dimensionSizes) {
   // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
   if (dimensionSizes.empty()) {
     return emitError().append("array must have at least one dimension");
@@ -325,8 +320,8 @@ LogicalResult computeDimsFromShape(
 }
 
 LogicalResult computeShapeFromDims(
-    llvm::function_ref<InFlightDiagnostic()> emitError, MLIRContext *ctx,
-    llvm::ArrayRef<Attribute> dimensionSizes, llvm::SmallVector<int64_t> &shape
+    EmitErrorFn emitError, MLIRContext *ctx, llvm::ArrayRef<Attribute> dimensionSizes,
+    llvm::SmallVector<int64_t> &shape
 ) {
   assert(shape.empty()); // fully computed by this function
   // Ensure all Attributes are valid Attribute classes for ArrayType.
@@ -385,8 +380,8 @@ void printDerivedShape(AsmPrinter &, llvm::ArrayRef<int64_t>, llvm::ArrayRef<Att
 }
 
 LogicalResult ArrayType::verify(
-    llvm::function_ref<InFlightDiagnostic()> emitError, Type elementType,
-    llvm::ArrayRef<Attribute> dimensionSizes, llvm::ArrayRef<int64_t> shape
+    EmitErrorFn emitError, Type elementType, llvm::ArrayRef<Attribute> dimensionSizes,
+    llvm::ArrayRef<int64_t> shape
 ) {
   if (failed(verifyArrayDimensionSizes(emitError, dimensionSizes))) {
     return failure();
