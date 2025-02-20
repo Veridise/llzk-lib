@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-instantiate-structs %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -I %S -split-input-file -llzk-instantiate-structs -verify-diagnostics %s | FileCheck %s
 
 /// Test calling a global function named "compute"; should have no change
 module attributes {veridise.lang = "llzk"} {
@@ -558,6 +558,7 @@ module attributes {veridise.lang = "llzk"} {
       return %self : !llzk.struct<@TestReadConstAsBool2<[@A]>>
     }
     func @constrain(%self: !llzk.struct<@TestReadConstAsBool2<[@A]>>, %0: i1) {
+      // expected-warning@+1 {{Interpretting non-zero value as true.}}
       %1 = read_const @A : i1
       emit_eq %0, %1 : i1
       return
