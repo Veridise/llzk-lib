@@ -20,44 +20,51 @@ using namespace mlir;
 //===------------------------------------------------------------------===//
 
 namespace {
-template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeImpl(Type type);
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowTVar>
+bool isValidTypeImpl(Type type);
 
-template <bool AllowStruct, bool AllowString> bool isValidArrayElemTypeImpl(Type type) {
+template <bool AllowStruct, bool AllowString, bool AllowTVar>
+bool isValidArrayElemTypeImpl(Type type) {
   // ArrayType element can be any valid type sans ArrayType itself.
   //  Pass through the flags indicating which types are allowed.
   // [TH]: Maybe the array type should not be excluded beyond the immediate element type itself.
   //  i.e. should `!llzk.array<2 x !llzk.struct<@A<[!llzk.array<2 x i1>]>>>` be allowed?
-  return isValidTypeImpl<AllowStruct, AllowString, false>(type);
+  return isValidTypeImpl<AllowStruct, AllowString, false, AllowTVar>(type);
 }
 
-template <bool AllowStruct, bool AllowString> bool isValidArrayTypeImpl(Type type) {
+template <bool AllowStruct, bool AllowString, bool AllowTVar> bool isValidArrayTypeImpl(Type type) {
   //  Pass through the flags indicating which types are allowed.
-  return llvm::isa<ArrayType>(type) && isValidArrayElemTypeImpl<AllowStruct, AllowString>(
-                                           llvm::cast<ArrayType>(type).getElementType()
-                                       );
+  return llvm::isa<ArrayType>(type) &&
+         isValidArrayElemTypeImpl<AllowStruct, AllowString, AllowTVar>(
+             llvm::cast<ArrayType>(type).getElementType()
+         );
 }
 
-template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeImpl(Type type) {
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowTVar>
+bool isValidTypeImpl(Type type) {
   // This is the main check for allowed types.
   //  Allow StructType and ArrayType only if the respective flags are true.
   //  Pass through the flags indicating which types are allowed.
-  return type.isSignlessInteger(1) || llvm::isa<IndexType, FeltType, TypeVarType>(type) ||
-         (AllowStruct && llvm::isa<StructType>(type)) ||
+  return type.isSignlessInteger(1) || llvm::isa<IndexType, FeltType>(type) ||
          (AllowString && llvm::isa<StringType>(type)) ||
-         (AllowArray && isValidArrayTypeImpl<AllowStruct, AllowString>(type));
+         (AllowTVar && llvm::isa<TypeVarType>(type)) ||
+         (AllowStruct && llvm::isa<StructType>(type)) ||
+         (AllowArray && isValidArrayTypeImpl<AllowStruct, AllowString, AllowTVar>(type));
 }
 } // namespace
 
-bool isValidType(Type type) { return isValidTypeImpl<true, true, true>(type); }
+bool isValidType(Type type) { return isValidTypeImpl<true, true, true, true>(type); }
 
-bool isValidEmitEqType(Type type) { return isValidTypeImpl<false, false, true>(type); }
+bool isValidEmitEqType(Type type) { return isValidTypeImpl<false, false, true, true>(type); }
 
 // Allowed types must align with StructParamTypes (defined below)
-bool isValidConstReadType(Type type) { return isValidTypeImpl<false, false, false>(type); }
+bool isValidConstReadType(Type type) { return isValidTypeImpl<false, false, false, true>(type); }
 
-bool isValidArrayElemType(Type type) { return isValidArrayElemTypeImpl<true, true>(type); }
+bool isValidArrayElemType(Type type) { return isValidArrayElemTypeImpl<true, true, true>(type); }
 
-bool isValidArrayType(Type type) { return isValidArrayTypeImpl<true, true>(type); }
+bool isValidArrayType(Type type) { return isValidArrayTypeImpl<true, true, true>(type); }
+
+bool isConcreteType(Type type) { return isValidTypeImpl<true, true, true, false>(type); }
 
 bool isSignalType(Type type) {
   if (auto structParamTy = llvm::dyn_cast<StructType>(type)) {
