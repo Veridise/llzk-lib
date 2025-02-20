@@ -20,6 +20,111 @@ using namespace mlir;
 //===------------------------------------------------------------------===//
 
 namespace {
+
+template <typename... Types> class TypeList {
+
+  /// Helper class that handles appending the 'Types' names to some kind of stream
+  template <typename StreamType> struct Appender {
+
+    // single
+    template <typename Ty> static inline void append(StreamType &stream) {
+      stream << "'" << Ty::name << "'";
+    }
+
+    // multiple
+    template <typename First, typename Second, typename... Rest>
+    static void append(StreamType &stream) {
+      append<First>(stream);
+      stream << ", ";
+      append<Second, Rest...>(stream);
+    }
+
+    // full list with wrapping brackets
+    static inline void append(StreamType &stream) {
+      stream << "[";
+      append<Types...>(stream);
+      stream << "]";
+    }
+  };
+
+public:
+  // Checks if the provided value is an instance of any of `Types`
+  template <typename T> static inline bool matches(const T &value) {
+    return llvm::isa<Types...>(value);
+  }
+
+  // This always returns failure()
+  static inline LogicalResult
+  reportInvalid(EmitErrorFn emitError, llvm::StringRef foundName, const char *aspect) {
+    // The implicit conversion from InFlightDiagnostic to LogicalResult in the return causes the
+    // diagnostic to be printed.
+    auto diag = emitError() << aspect << " must be one of ";
+    Appender<InFlightDiagnostic>::append(diag);
+    return diag << " but found '" << foundName << "'";
+  }
+
+  // This always returns failure()
+  static inline LogicalResult
+  reportInvalid(EmitErrorFn emitError, Attribute found, const char *aspect) {
+    return reportInvalid(emitError, found.getAbstractAttribute().getName(), aspect);
+  }
+
+  // Returns a comma-separated list formatted string of the names of `Types`
+  static std::string getNames() {
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    Appender<llvm::raw_string_ostream>::append(oss);
+    return output;
+  }
+};
+
+/// Helpers to compute the union of multiple TypeList without repetition.
+/// Use as: TypeListUnion<TypeList<...>, TypeList<...>, ...>
+template <class... Ts> struct make_unique {
+  using type = TypeList<Ts...>;
+};
+
+template <class... Ts> struct make_unique<TypeList<>, Ts...> : make_unique<Ts...> {};
+
+template <class U, class... Us, class... Ts>
+struct make_unique<TypeList<U, Us...>, Ts...>
+    : std::conditional_t<
+          (std::is_same_v<U, Us> || ...) || (std::is_same_v<U, Ts> || ...),
+          make_unique<TypeList<Us...>, Ts...>, make_unique<TypeList<Us...>, Ts..., U>> {};
+
+template <class... Ts> using TypeListUnion = typename make_unique<Ts...>::type;
+
+// Parameters in the StructType must be one of the following:
+//  - Integer constants
+//  - SymbolRef (global constants defined in another module require non-flat ref)
+//  - Type
+//  - AffineMap (for array of non-homogeneous structs)
+using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
+
+// Dimensions in the ArrayType must be one of the following:
+//  - Integer constants
+//  - SymbolRef (global constants defined in another module require non-flat ref)
+//  - AffineMap (for array created within a loop where size depends on loop variable)
+using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
+
+LogicalResult
+verifyArrayDimensionSizes(EmitErrorFn emitError, llvm::ArrayRef<Attribute> dimensionSizes) {
+  // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
+  if (dimensionSizes.empty()) {
+    return emitError().append("array must have at least one dimension");
+  }
+  // Rather than immediately returning on failure, we check all dimensions and aggregate to provide
+  // as many errors are possible in a single verifier run.
+  LogicalResult aggregateResult = success();
+  for (Attribute a : dimensionSizes) {
+    if (!ArrayDimensionTypes::matches(a)) {
+      aggregateResult = ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
+      assert(failed(aggregateResult)); // reportInvalid() always returns failure()
+    }
+  }
+  return aggregateResult;
+}
+
 template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowTVar>
 bool isValidTypeImpl(Type type);
 
@@ -51,6 +156,7 @@ bool isValidTypeImpl(Type type) {
          (AllowStruct && llvm::isa<StructType>(type)) ||
          (AllowArray && isValidArrayTypeImpl<AllowStruct, AllowString, AllowTVar>(type));
 }
+
 } // namespace
 
 bool isValidType(Type type) { return isValidTypeImpl<true, true, true, true>(type); }
@@ -148,97 +254,9 @@ bool typesUnify(Type lhs, Type rhs, ArrayRef<llvm::StringRef> rhsRevPrefix) {
   return false;
 }
 
-namespace {
-
-template <typename... Types> class TypeList {
-
-  /// Helper class that handles appending the 'Types' names to some kind of stream
-  template <typename StreamType> struct Appender {
-
-    // single
-    template <typename Ty> static inline void append(StreamType &stream) {
-      stream << "'" << Ty::name << "'";
-    }
-
-    // multiple
-    template <typename First, typename Second, typename... Rest>
-    static void append(StreamType &stream) {
-      append<First>(stream);
-      stream << ", ";
-      append<Second, Rest...>(stream);
-    }
-
-    // full list with wrapping brackets
-    static inline void append(StreamType &stream) {
-      stream << "[";
-      append<Types...>(stream);
-      stream << "]";
-    }
-  };
-
-public:
-  // Checks if the provided value is an instance of any of `Types`
-  template <typename T> static inline bool matches(const T &value) {
-    return llvm::isa<Types...>(value);
-  }
-
-  // This always returns failure()
-  static inline LogicalResult
-  reportInvalid(EmitErrorFn emitError, llvm::StringRef foundName, const char *aspect) {
-    // The implicit conversion from InFlightDiagnostic to LogicalResult in the return causes the
-    // diagnostic to be printed.
-    auto diag = emitError() << aspect << " must be one of ";
-    Appender<InFlightDiagnostic>::append(diag);
-    return diag << " but found '" << foundName << "'";
-  }
-
-  // This always returns failure()
-  static inline LogicalResult
-  reportInvalid(EmitErrorFn emitError, Attribute found, const char *aspect) {
-    return reportInvalid(emitError, found.getAbstractAttribute().getName(), aspect);
-  }
-
-  // Returns a comma-separated list formatted string of the names of `Types`
-  static std::string getNames() {
-    std::string output;
-    llvm::raw_string_ostream oss(output);
-    Appender<llvm::raw_string_ostream>::append(oss);
-    return output;
-  }
-};
-
-/// Helpers to compute the union of multiple TypeList without repetition.
-/// Use as: TypeListUnion<TypeList<...>, TypeList<...>, ...>
-template <class... Ts> struct make_unique {
-  using type = TypeList<Ts...>;
-};
-
-template <class... Ts> struct make_unique<TypeList<>, Ts...> : make_unique<Ts...> {};
-
-template <class U, class... Us, class... Ts>
-struct make_unique<TypeList<U, Us...>, Ts...>
-    : std::conditional_t<
-          (std::is_same_v<U, Us> || ...) || (std::is_same_v<U, Ts> || ...),
-          make_unique<TypeList<Us...>, Ts...>, make_unique<TypeList<Us...>, Ts..., U>> {};
-
-template <class... Ts> using TypeListUnion = typename make_unique<Ts...>::type;
-
-} // namespace
-
 //===------------------------------------------------------------------===//
 // StructType
 //===------------------------------------------------------------------===//
-
-namespace {
-
-// Parameters in the StructType must be one of the following:
-//  - Integer constants
-//  - SymbolRef (global constants defined in another module require non-flat ref)
-//  - Type
-//  - AffineMap (for array of non-homogeneous structs)
-using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
-
-} // namespace
 
 LogicalResult StructType::verify(EmitErrorFn emitError, SymbolRefAttr nameRef, ArrayAttr params) {
   if (params) {
@@ -289,34 +307,6 @@ LogicalResult StructType::verifySymbolRef(SymbolTableCollection &symbolTable, Op
 //===------------------------------------------------------------------===//
 // ArrayType
 //===------------------------------------------------------------------===//
-
-namespace {
-
-// Dimensions in the ArrayType must be one of the following:
-//  - Integer constants
-//  - SymbolRef (global constants defined in another module require non-flat ref)
-//  - AffineMap (for array created within a loop where size depends on loop variable)
-using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
-
-LogicalResult
-verifyArrayDimensionSizes(EmitErrorFn emitError, llvm::ArrayRef<Attribute> dimensionSizes) {
-  // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
-  if (dimensionSizes.empty()) {
-    return emitError().append("array must have at least one dimension");
-  }
-  // Rather than immediately returning on failure, we check all dimensions and aggregate to provide
-  // as many errors are possible in a single verifier run.
-  LogicalResult aggregateResult = success();
-  for (Attribute a : dimensionSizes) {
-    if (!ArrayDimensionTypes::matches(a)) {
-      aggregateResult = ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
-      assert(failed(aggregateResult)); // reportInvalid() always returns failure()
-    }
-  }
-  return aggregateResult;
-}
-
-} // namespace
 
 LogicalResult computeDimsFromShape(
     MLIRContext *ctx, llvm::ArrayRef<int64_t> shape, llvm::SmallVector<Attribute> &dimensionSizes
