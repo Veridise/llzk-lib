@@ -515,3 +515,29 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @BadParamTypeA<[@C]> {
+    func @compute() -> !llzk.struct<@BadParamTypeA<[@C]>> {
+      %self = new_struct : !llzk.struct<@BadParamTypeA<[@C]>>
+      return %self : !llzk.struct<@BadParamTypeA<[@C]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@BadParamTypeA<[@C]>>) {
+      return
+    }
+  }
+  llzk.struct @BadParamTypeB {
+    // expected-error@+1 {{expected a valid LLZK type but found 'f32'}}
+    field @f3 : !llzk.struct<@BadParamTypeA<[f32]>>
+
+    func @compute() -> !llzk.struct<@BadParamTypeB> {
+      %self = new_struct : !llzk.struct<@BadParamTypeB>
+      return %self : !llzk.struct<@BadParamTypeB>
+    }
+
+    func @constrain(%self: !llzk.struct<@BadParamTypeB>) {
+      return
+    }
+  }
+}

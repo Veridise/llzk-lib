@@ -243,6 +243,11 @@ LogicalResult StructType::verify(
       if (!StructParamTypes::matches(p)) {
         return StructParamTypes::reportInvalid(emitError, p, "Struct parameter");
       }
+      if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(p)) {
+        if (!isValidType(tyAttr.getValue())) {
+          return emitError() << "expected a valid LLZK type but found " << tyAttr.getValue();
+        }
+      }
     }
   }
   return success();
