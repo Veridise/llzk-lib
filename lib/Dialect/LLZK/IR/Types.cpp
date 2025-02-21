@@ -98,7 +98,7 @@ bool isValidTypeImpl(Type type);
 
 // Dimensions in the ArrayType must be one of the following:
 //  - Integer constants
-//  - SymbolRef (global constants defined in another module require non-flat ref)
+//  - SymbolRef (flat ref for struct params, non-flat for global constants from another module)
 //  - AffineMap (for array created within a loop where size depends on loop variable)
 using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
 
@@ -173,7 +173,7 @@ bool isValidArrayTypeImpl(Type type) {
 
 // Parameters in the StructType must be one of the following:
 //  - Integer constants
-//  - SymbolRef (global constants defined in another module require non-flat ref)
+//  - SymbolRef (flat ref for struct params, non-flat for global constants from another module)
 //  - Type
 //  - AffineMap (for array of non-homogeneous structs)
 using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
