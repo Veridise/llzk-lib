@@ -13,6 +13,7 @@
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DepthFirstIterator.h>
+#include <llvm/Support/Debug.h>
 
 /// Include the generated base pass class definitions.
 namespace llzk {
@@ -22,6 +23,8 @@ namespace llzk {
 
 using namespace llzk;
 using namespace mlir;
+
+#define DEBUG_TYPE "llzk-instantiate-structs"
 
 namespace {
 
@@ -144,6 +147,13 @@ ConversionTarget newConverterDefinedTarget(TypeConverter &tyConv, MLIRContext *c
 
 namespace Step1 {
 
+bool isConcreteAttr(Attribute a) {
+  if (TypeAttr tyAttr = dyn_cast<TypeAttr>(a)) {
+    return isConcreteType(tyAttr.getValue());
+  }
+  return llvm::isa<IntegerAttr>(a);
+}
+
 class ParameterizedStructUseTypeConverter : public TypeConverter {
   DenseMap<StructType, StructType> &instantiations;
 
@@ -163,13 +173,10 @@ public:
       if (ArrayAttr params = inputTy.getParams()) {
         // If all prameters are concrete values (Integer or Type), then replace with a no-parameter
         // StructType referencing the de-parameterized struct.
-        //
-        // TODO: maybe should restrict TypeAttr further to ensure it's a concrete type only, i.e.
-        // should not have tvar and probably shouldn't have parameterized array or struct type.
-        //
-        if (llvm::all_of(params, [](Attribute a) { return llvm::isa<IntegerAttr, TypeAttr>(a); })) {
+        if (llvm::all_of(params, isConcreteAttr)) {
           StructType result =
               StructType::get(appendLeafName(inputTy.getNameRef(), "_" + shortString(params)));
+          LLVM_DEBUG(llvm::dbgs() << "instantiating " << inputTy << " as " << result << "\n");
           this->instantiations[inputTy] = result;
           return result;
         }

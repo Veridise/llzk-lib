@@ -432,6 +432,64 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component06A<[@C]> {
+    field @f1 : !llzk.tvar<@C>
+
+    func @compute() -> !llzk.struct<@Component06A<[@C]>> {
+      %self = new_struct : !llzk.struct<@Component06A<[@C]>>
+      return %self : !llzk.struct<@Component06A<[@C]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component06A<[@C]>>) {
+      return
+    }
+  }
+
+  llzk.struct @Component06B<[@T]> {
+    field @f2 : !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+
+    func @compute() -> !llzk.struct<@Component06B<[@T]>> {
+      %self = new_struct : !llzk.struct<@Component06B<[@T]>>
+      %x = call @Component06A::@compute() : () -> (!llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>)
+      writef %self[@f2] = %x : !llzk.struct<@Component06B<[@T]>>, !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+      return %self : !llzk.struct<@Component06B<[@T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component06B<[@T]>>) {
+      %b = readf %self[@f2] : !llzk.struct<@Component06B<[@T]>>, !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+      call @Component06A::@constrain(%b) : (!llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @Component06A<[@C]> {
+// CHECK-NEXT:    field @f1 : !llzk.tvar<@C>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component06A<[@C]>> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component06A<[@C]>>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Component06A<[@C]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component06A<[@C]>>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Component06B<[@T]> {
+// CHECK-NEXT:    field @f2 : !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component06B<[@T]>> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component06B<[@T]>>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = call @Component06A::@compute() : () -> !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:      writef %[[VAL_0]][@f2] = %[[VAL_1]] : <@Component06B<[@T]>>, !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Component06B<[@T]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component06B<[@T]>>) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = readf %[[VAL_2]][@f2] : <@Component06B<[@T]>>, !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:      call @Component06A::@constrain(%[[VAL_3]]) : (!llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestReadConstAsBool0<[@A]> {
     func @compute(%0: i1) -> !llzk.struct<@TestReadConstAsBool0<[@A]>> {
       %self = new_struct : !llzk.struct<@TestReadConstAsBool0<[@A]>>
