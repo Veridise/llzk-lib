@@ -541,3 +541,29 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @DeepInvalidArrayTypeA<[@C]> {
+    func @compute() -> !llzk.struct<@DeepInvalidArrayTypeA<[@C]>> {
+      %self = new_struct : !llzk.struct<@DeepInvalidArrayTypeA<[@C]>>
+      return %self : !llzk.struct<@DeepInvalidArrayTypeA<[@C]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@DeepInvalidArrayTypeA<[@C]>>) {
+      return
+    }
+  }
+
+  llzk.func private @in_return_deep() ->
+    !llzk.array<2 x
+      !llzk.struct<@DeepInvalidArrayTypeA<[
+        !llzk.array<2 x
+          !llzk.struct<@DeepInvalidArrayTypeA<[
+            !llzk.struct<@DeepInvalidArrayTypeA<[
+              !llzk.array<2 x !llzk.array<4 x i1>> // expected-error {{'llzk.array' element type cannot be 'llzk.array'}}
+            ]>> // expected-error {{failed to parse LLZK_StructType parameter 'params' which is to be a `::mlir::ArrayAttr`}}
+          ]>> // expected-error {{failed to parse LLZK_StructType parameter 'params' which is to be a `::mlir::ArrayAttr`}}
+        > // expected-error {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
+      ]>> // expected-error {{failed to parse LLZK_StructType parameter 'params' which is to be a `::mlir::ArrayAttr`}}
+    > // expected-error {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
+}
