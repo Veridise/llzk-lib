@@ -926,10 +926,11 @@ LogicalResult InsertArrayOp::verify() {
   if (!typeParamsUnify(dimsFromBaseReduced, dimsFromRValue)) {
     std::string message;
     llvm::raw_string_ostream ss(message);
+    auto appendOne = [&ss](Attribute a) { appendWithoutType(ss, a); };
     ss << "cannot unify array dimensions [";
-    llvm::interleaveComma(dimsFromBaseReduced, ss, [&ss](Attribute a) { a.print(ss, true); });
+    llvm::interleaveComma(dimsFromBaseReduced, ss, appendOne);
     ss << "] with [";
-    llvm::interleaveComma(dimsFromRValue, ss, [&ss](Attribute a) { a.print(ss, true); });
+    llvm::interleaveComma(dimsFromRValue, ss, appendOne);
     ss << "]";
     return emitOpError().append(message);
   }

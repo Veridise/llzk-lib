@@ -28,6 +28,9 @@
 
 namespace llzk {
 
+/// Note: If any symbol refs in an input Type/Attribute use any of the special characters that this
+/// class generates, they are not escaped. That means these string representations are not safe to
+/// reverse back into a Type.
 class ShortTypeStringifier {
   std::string ret;
   llvm::raw_string_ostream ss;

@@ -1,5 +1,6 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/StreamHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
@@ -22,7 +23,7 @@ using namespace mlir;
 
 void ShortTypeStringifier::appendSymName(StringRef str) {
   if (str.empty()) {
-    ss << "@INVALID";
+    ss << "@?";
   } else {
     ss << "@" << str;
   }
@@ -518,7 +519,7 @@ ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
 
 void printAttrVec(AsmPrinter &printer, ArrayRef<Attribute> value) {
   llvm::raw_ostream &stream = printer.getStream();
-  llvm::interleave(value, stream, [&stream](Attribute a) { a.print(stream, true); }, ",");
+  llvm::interleave(value, stream, [&stream](Attribute a) { appendWithoutType(stream, a); }, ",");
 }
 
 ParseResult parseDerivedShape(

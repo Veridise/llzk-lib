@@ -104,4 +104,27 @@ TEST_F(TypeTests, testShortString) {
         shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "Top"), params))
     );
   }
+
+  // No protection/escaping of special characters in the original name
+  EXPECT_EQ("!s<@S1:!a<>:>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1:!a<>"))));
+
+  // Empty string produces "@?"
+  EXPECT_EQ("@?", shortString(FlatSymbolRefAttr::get(&ctx, "")));
+  EXPECT_EQ("@?", shortString(FlatSymbolRefAttr::get(&ctx, StringRef())));
+
+  {
+    constexpr char withNull[] = {'a', 'b', '\0', 'c', 'd'};
+    EXPECT_EQ(
+        "5_@head_@ab_@Good_2",
+        // clang-format off
+        shortString(ArrayAttr::get( &ctx, ArrayRef<Attribute> {
+          bldr.getIntegerAttr(bldr.getIndexType(), 5),
+          FlatSymbolRefAttr::get(&ctx, "head\0_tail"),
+          FlatSymbolRefAttr::get(&ctx, withNull),
+          FlatSymbolRefAttr::get(&ctx, "Good"),
+          bldr.getIntegerAttr(bldr.getIndexType(), 2)
+        }))
+        // clang-format on
+    );
+  }
 }

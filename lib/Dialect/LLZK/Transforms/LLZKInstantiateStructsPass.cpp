@@ -7,6 +7,7 @@
 #include <mlir/Dialect/Index/IR/IndexDialect.h>
 #include <mlir/Dialect/Index/IR/IndexOps.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/SCF/Transforms/Patterns.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -47,8 +48,7 @@ static struct {
 // because that function is required by the `replaceOpWithNewOp()` call.
 template <typename OpTy> class GeneralTypeReplacePattern : public OpConversionPattern<OpTy> {
 public:
-  GeneralTypeReplacePattern(TypeConverter &converter, MLIRContext *ctx)
-      : OpConversionPattern<OpTy>(converter, ctx) {}
+  using OpConversionPattern<OpTy>::OpConversionPattern;
 
   LogicalResult matchAndRewrite(OpTy op, OpTy::Adaptor adaptor, ConversionPatternRewriter &rewriter)
       const override {
@@ -89,7 +89,8 @@ template <typename I> inline void applyToMoreTypes(I inserter) {}
 /// Note: `GeneralTypeReplacePattern` uses the default benefit (1) so additional patterns with a
 /// higher priority can be added for any of the Ops already included and that will take precedence.
 template <typename... AdditionalOpTypes>
-RewritePatternSet newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx) {
+RewritePatternSet
+newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionTarget &target) {
   RewritePatternSet patterns(ctx);
   auto inserter = [&](auto... opClasses) {
     patterns.add<GeneralTypeReplacePattern<decltype(opClasses)>...>(tyConv, ctx);
@@ -98,6 +99,7 @@ RewritePatternSet newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext
   applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
   // Add builtin FunctionType converter
   populateFunctionOpInterfaceTypeConversionPattern(FuncOp::getOperationName(), patterns, tyConv);
+  scf::populateSCFStructuralTypeConversionsAndLegality(tyConv, patterns, target);
   return patterns;
 }
 
@@ -187,10 +189,15 @@ public:
 };
 
 class CallComputePattern : public OpConversionPattern<CallOp> {
+  DenseMap<StructType, DenseSet<Location>> &newTyComputeLocs;
+
 public:
-  CallComputePattern(TypeConverter &converter, MLIRContext *ctx)
-      // use higher priority than GeneralTypeReplacePattern
-      : OpConversionPattern<CallOp>(converter, ctx, 2) {}
+  CallComputePattern(
+      TypeConverter &converter, MLIRContext *ctx,
+      DenseMap<StructType, DenseSet<Location>> &newTyComputeLocations
+  )
+      // future proof: use higher priority than GeneralTypeReplacePattern
+      : OpConversionPattern<CallOp>(converter, ctx, 2), newTyComputeLocs(newTyComputeLocations) {}
 
   LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
       const override {
@@ -208,6 +215,7 @@ public:
       if (StructType newStTy = getIfSingleton<StructType>(newResultTypes)) {
         assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated"); // I think
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
+        newTyComputeLocs[newStTy].insert(op.getLoc());
       }
     } else if (op.calleeIsStructConstrain()) {
       if (StructType newStTy = getAtIndex<StructType>(adapter.getArgOperands().getTypes(), 0)) {
@@ -223,13 +231,16 @@ public:
   }
 };
 
-LogicalResult run(ModuleOp modOp, DenseMap<StructType, StructType> &structInstantiations) {
+LogicalResult
+run(ModuleOp modOp, DenseMap<StructType, StructType> &structInstantiations,
+    DenseMap<StructType, DenseSet<Location>> &newTyComputeLocations) {
+
   MLIRContext *ctx = modOp.getContext();
   ParameterizedStructUseTypeConverter tyConv(structInstantiations);
-  RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx);
-  patterns.add<CallComputePattern>(tyConv, ctx);
-
   ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
+  RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
+  patterns.add<CallComputePattern>(tyConv, ctx, newTyComputeLocations);
+
   if (failed(applyPartialConversion(modOp, target, std::move(patterns)))) {
     return modOp.emitError("failed to convert all `compute()` calls");
   }
@@ -304,7 +315,7 @@ public:
 class CallOpPattern : public OpConversionPattern<CallOp> {
 public:
   CallOpPattern(TypeConverter &converter, MLIRContext *ctx)
-      // use higher priority than GeneralTypeReplacePattern
+      // future proof: use higher priority than GeneralTypeReplacePattern
       : OpConversionPattern<CallOp>(converter, ctx, 2) {}
 
   LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
@@ -325,41 +336,47 @@ public:
 class CreateArrayOpPattern : public OpConversionPattern<CreateArrayOp> {
 public:
   CreateArrayOpPattern(TypeConverter &converter, MLIRContext *ctx)
-      // use higher priority than GeneralTypeReplacePattern
+      // future proof: use higher priority than GeneralTypeReplacePattern
       : OpConversionPattern<CreateArrayOp>(converter, ctx, 2) {}
 
-  LogicalResult matchAndRewrite(
-      CreateArrayOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
-  ) const override {
+  LogicalResult match(CreateArrayOp op) const override {
     if (Type newType = getTypeConverter()->convertType(op.getType())) {
-      assert(llvm::isa<ArrayType>(newType) && "impl out of sync with converter");
-      DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();
-      if (isNullOrEmpty(numDimsPerMap)) {
-        rewriter.replaceOpWithNewOp<CreateArrayOp>(
-            op, llvm::cast<ArrayType>(newType), adapter.getElements()
-        );
-      } else {
-        rewriter.replaceOpWithNewOp<CreateArrayOp>(
-            op, llvm::cast<ArrayType>(newType), adapter.getMapOperands(), numDimsPerMap
-        );
-      }
       return success();
     } else {
       return op->emitError("Could not convert Op result type.");
+    }
+  }
+
+  void
+  rewrite(CreateArrayOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter) const override {
+    Type newType = getTypeConverter()->convertType(op.getType());
+    assert(llvm::isa<ArrayType>(newType) && "impl out of sync with converter");
+    DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();
+    if (isNullOrEmpty(numDimsPerMap)) {
+      rewriter.replaceOpWithNewOp<CreateArrayOp>(
+          op, llvm::cast<ArrayType>(newType), adapter.getElements()
+      );
+    } else {
+      rewriter.replaceOpWithNewOp<CreateArrayOp>(
+          op, llvm::cast<ArrayType>(newType), adapter.getMapOperands(), numDimsPerMap
+      );
     }
   }
 };
 
 class ConstReadOpPattern : public OpConversionPattern<ConstReadOp> {
   const DenseMap<Attribute, Attribute> &instantiationMap;
+  const DenseSet<Location> &locations;
 
 public:
   ConstReadOpPattern(
       TypeConverter &converter, MLIRContext *ctx,
-      const DenseMap<Attribute, Attribute> &nameToValueMap
+      const DenseMap<Attribute, Attribute> &nameToValueMap,
+      const DenseSet<Location> &instantiationLocations
   )
-      // use higher priority than GeneralTypeReplacePattern
-      : OpConversionPattern<ConstReadOp>(converter, ctx, 2), instantiationMap(nameToValueMap) {}
+      // future proof: use higher priority than GeneralTypeReplacePattern
+      : OpConversionPattern<ConstReadOp>(converter, ctx, 2), instantiationMap(nameToValueMap),
+        locations(instantiationLocations) {}
 
   LogicalResult matchAndRewrite(
       ConstReadOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
@@ -371,25 +388,34 @@ public:
     Attribute resAttr = res->second;
     if (IntegerAttr iAttr = llvm::dyn_cast<IntegerAttr>(resAttr)) {
       APInt attrValue = iAttr.getValue();
-      Type resultType = op.getType();
-      if (llvm::isa<FeltType>(resultType)) {
+      Type origResTy = op.getType();
+      if (llvm::isa<FeltType>(origResTy)) {
         rewriter.replaceOpWithNewOp<FeltConstantOp>(
             op, FeltConstAttr::get(rewriter.getContext(), attrValue)
         );
-      } else if (llvm::isa<IndexType>(resultType)) {
-        rewriter.replaceOpWithNewOp<index::ConstantOp>(op, IntegerAttr::get(resultType, attrValue));
-      } else if (resultType.isSignlessInteger(1)) {
+      } else if (llvm::isa<IndexType>(origResTy)) {
+        rewriter.replaceOpWithNewOp<index::ConstantOp>(op, IntegerAttr::get(origResTy, attrValue));
+      } else if (origResTy.isSignlessInteger(1)) {
         // Treat 0 as false and any other value as true (but give a warning if it's not 1)
         if (attrValue.isZero()) {
           rewriter.replaceOpWithNewOp<index::BoolConstantOp>(op, false);
         } else {
           if (!attrValue.isOne()) {
-            op.emitWarning("Interpretting non-zero value as true.").report();
+            InFlightDiagnostic warning = op.emitWarning().append(
+                "Interpretting non-zero value ", stringWithoutType(iAttr), " as true"
+            );
+            for (Location loc : locations) {
+              warning.attachNote(loc).append(
+                  "when instantiating ", StructDefOp::getOperationName(), " parameter \"",
+                  res->first, "\" for this call"
+              );
+            }
+            warning.report();
           }
           rewriter.replaceOpWithNewOp<index::BoolConstantOp>(op, true);
         }
       } else {
-        return op->emitOpError().append("unexpected result type ", resultType);
+        return op->emitOpError().append("unexpected result type ", origResTy);
       }
       return success();
     } else if (FeltConstAttr fcAttr = llvm::dyn_cast<FeltConstAttr>(resAttr)) {
@@ -416,7 +442,10 @@ buildNameToValueMap(ArrayAttr paramNames, ArrayAttr paramInstantiations) {
   return ret;
 }
 
-LogicalResult run(ModuleOp modOp, const DenseMap<StructType, StructType> &structInstantiations) {
+LogicalResult
+run(ModuleOp modOp, const DenseMap<StructType, StructType> &structInstantiations,
+    DenseMap<StructType, DenseSet<Location>> &newTyComputeLocations) {
+
   SymbolTableCollection symTables;
   MLIRContext *ctx = modOp.getContext();
   for (auto &[origRemoteTy, newRemoteTy] : structInstantiations) {
@@ -446,12 +475,14 @@ LogicalResult run(ModuleOp modOp, const DenseMap<StructType, StructType> &struct
       DenseMap<Attribute, Attribute> nameToValueMap =
           buildNameToValueMap(origStructTy.getParams(), origRemoteTy.getParams());
       MappedTypeConverter tyConv(origStructTy, newRemoteTy, nameToValueMap);
-      RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx);
-      patterns.add<CallOpPattern, CreateArrayOpPattern>(tyConv, ctx);
-      patterns.add<ConstReadOpPattern>(tyConv, ctx, nameToValueMap);
-
       ConversionTarget target = newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx);
-      target.addIllegalOp<ConstReadOp>(); // TODO: not sure if fully illegal is what I need or not
+      target.addIllegalOp<ConstReadOp>();
+      RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
+      patterns.add<CallOpPattern, CreateArrayOpPattern>(tyConv, ctx);
+      patterns.add<ConstReadOpPattern>(
+          tyConv, ctx, nameToValueMap, newTyComputeLocations[newRemoteTy]
+      );
+
       if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
         return modOp.emitError("failed to generate all required flattened structs");
       }
@@ -528,20 +559,22 @@ class InstantiateStructsPass
     ModuleOp modOp = getOperation();
 
     unsigned prevMapSize;
+    // Maps original remote (i.e. use site) type to new remote type
     DenseMap<StructType, StructType> structInstantiations;
+    // Maps new remote type to location of the compute() calls that cause instantiation
+    DenseMap<StructType, DenseSet<Location>> newTyComputeLocations;
     do {
       prevMapSize = structInstantiations.size();
 
       // Find calls to "compute()" that return a parameterized struct and replace it to call a
-      // flattened version of the struct that with parameters replaced with the required constant
-      // values.
-      if (failed(Step1::run(modOp, structInstantiations))) {
+      // flattened version of the struct that has parameters replaced with the constant values.
+      if (failed(Step1::run(modOp, structInstantiations, newTyComputeLocations))) {
         signalPassFailure();
         return;
       }
 
       // Create the necessary instantiated/flattened struct(s) in their parent module(s).
-      if (failed(Step2::run(modOp, structInstantiations))) {
+      if (failed(Step2::run(modOp, structInstantiations, newTyComputeLocations))) {
         signalPassFailure();
         return;
       }

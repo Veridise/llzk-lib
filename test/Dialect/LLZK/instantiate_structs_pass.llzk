@@ -431,6 +431,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
+/// Ensure a StructType using a param somewhere in the type is not converted.
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component06A<[@C]> {
     field @f1 : !llzk.tvar<@C>
@@ -616,7 +617,7 @@ module attributes {veridise.lang = "llzk"} {
       return %self : !llzk.struct<@TestReadConstAsBool2<[@A]>>
     }
     func @constrain(%self: !llzk.struct<@TestReadConstAsBool2<[@A]>>, %0: i1) {
-      // expected-warning@+1 {{Interpretting non-zero value as true.}}
+      // expected-warning@+1 {{Interpretting non-zero value 2 as true}}
       %1 = read_const @A : i1
       emit_eq %0, %1 : i1
       return
@@ -628,6 +629,7 @@ module attributes {veridise.lang = "llzk"} {
     func @compute() -> !llzk.struct<@Main> {
       %self = new_struct : !llzk.struct<@Main>
       %0 = index.bool.constant true
+      // expected-note@+1 {{when instantiating llzk.struct parameter "@A" for this call}}
       %1 = call @TestReadConstAsBool2::@compute(%0) : (i1) -> !llzk.struct<@TestReadConstAsBool2<[2]>>
       writef %self[@sub] = %1 : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsBool2<[2]>>
       return %self : !llzk.struct<@Main>
