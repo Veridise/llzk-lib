@@ -93,7 +93,7 @@ struct make_unique<TypeList<U, Us...>, Ts...>
 
 template <class... Ts> using TypeListUnion = typename make_unique<Ts...>::type;
 
-template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowTVar>
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
 bool isValidTypeImpl(Type type);
 
 // Dimensions in the ArrayType must be one of the following:
@@ -102,6 +102,7 @@ bool isValidTypeImpl(Type type);
 //  - AffineMap (for array created within a loop where size depends on loop variable)
 using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
 
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
 bool areValidArrayDimSizes(
     ArrayRef<Attribute> dimensionSizes, std::optional<EmitErrorFn> emitError = std::nullopt
 ) {
@@ -119,30 +120,35 @@ bool areValidArrayDimSizes(
     if (!ArrayDimensionTypes::matches(a)) {
       ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
       success = false;
+    } else if (!AllowVar && !llvm::isa<IntegerAttr>(a)) {
+      ArrayDimensionTypes::reportInvalid(emitError, a, "Concrete array dimension");
+      success = false;
     }
   }
   return success;
 }
 
-template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowTVar>
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
 bool isValidArrayElemTypeImpl(Type type) {
   // ArrayType element can be any valid type sans ArrayType itself.
   //  Pass through the flags indicating which types are allowed.
   return !llvm::isa<ArrayType>(type) &&
-         isValidTypeImpl<AllowStruct, AllowString, AllowArray, AllowTVar>(type);
+         isValidTypeImpl<AllowStruct, AllowString, AllowArray, AllowVar>(type);
 }
 
-template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowTVar>
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
 bool isValidArrayTypeImpl(
     Type elementType, ArrayRef<Attribute> dimensionSizes,
     std::optional<EmitErrorFn> emitError = std::nullopt
 ) {
-  if (!areValidArrayDimSizes(dimensionSizes, emitError)) {
+  if (!areValidArrayDimSizes<AllowStruct, AllowString, AllowArray, AllowVar>(
+          dimensionSizes, emitError
+      )) {
     return false;
   }
 
   // Ensure array element type is valid
-  if (!isValidArrayElemTypeImpl<AllowStruct, AllowString, AllowArray, AllowTVar>(elementType)) {
+  if (!isValidArrayElemTypeImpl<AllowStruct, AllowString, AllowArray, AllowVar>(elementType)) {
     if (emitError.has_value()) {
       // Print proper message if `elementType` is not a valid LLZK type or
       //  if it's simply not the right kind of type for an array element.
@@ -160,11 +166,11 @@ bool isValidArrayTypeImpl(
   return true;
 }
 
-template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowTVar>
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
 bool isValidArrayTypeImpl(Type type) {
   //  Pass through the flags indicating which types are allowed as array element type.
   if (ArrayType arrTy = llvm::dyn_cast<ArrayType>(type)) {
-    return isValidArrayTypeImpl<AllowStruct, AllowString, AllowArray, AllowTVar>(
+    return isValidArrayTypeImpl<AllowStruct, AllowString, AllowArray, AllowVar>(
         arrTy.getElementType(), arrTy.getDimensionSizes()
     );
   }
@@ -179,7 +185,7 @@ bool isValidArrayTypeImpl(Type type) {
 using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
 
 // The Allow* flags here refer to Types nested within a TypeAttr parameter.
-template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowTVar>
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
 bool areValidStructTypeParams(
     ArrayAttr params, std::optional<EmitErrorFn> emitError = std::nullopt
 ) {
@@ -190,7 +196,7 @@ bool areValidStructTypeParams(
         StructParamTypes::reportInvalid(emitError, p, "Struct parameter");
         success = false;
       } else if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(p)) {
-        if (!isValidTypeImpl<AllowStruct, AllowString, AllowArray, AllowTVar>(tyAttr.getValue())) {
+        if (!isValidTypeImpl<AllowStruct, AllowString, AllowArray, AllowVar>(tyAttr.getValue())) {
           if (emitError.has_value()) {
             (*emitError)()
                 .append("expected a valid LLZK type but found ", tyAttr.getValue())
@@ -198,32 +204,34 @@ bool areValidStructTypeParams(
           }
           success = false;
         }
+      } else if (!AllowVar && !llvm::isa<IntegerAttr>(p)) {
+        ArrayDimensionTypes::reportInvalid(emitError, p, "Concrete struct parameter");
+        success = false;
       }
     }
   }
   return success;
 }
 
-template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowTVar>
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
 bool isValidStructTypeImpl(Type type) {
   //  Pass through the flags indicating which types are allowed if there is a TypeAttr.
   if (StructType sType = llvm::dyn_cast<StructType>(type)) {
-    return areValidStructTypeParams<AllowStruct, AllowString, AllowArray, AllowTVar>(
-        sType.getParams()
-    );
+    return areValidStructTypeParams<AllowStruct, AllowString, AllowArray, AllowVar>(sType.getParams(
+    ));
   }
   return false;
 }
 
-template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowTVar>
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
 bool isValidTypeImpl(Type type) {
   // This is the main check for allowed types.
   //  Pass through the flags indicating which types are allowed.
   return type.isSignlessInteger(1) || llvm::isa<IndexType, FeltType>(type) ||
          (AllowString && llvm::isa<StringType>(type)) ||
-         (AllowTVar && llvm::isa<TypeVarType>(type)) ||
-         (AllowStruct && isValidStructTypeImpl<true, AllowString, AllowArray, AllowTVar>(type)) ||
-         (AllowArray && isValidArrayTypeImpl<AllowStruct, AllowString, true, AllowTVar>(type));
+         (AllowVar && llvm::isa<TypeVarType>(type)) ||
+         (AllowStruct && isValidStructTypeImpl<true, AllowString, AllowArray, AllowVar>(type)) ||
+         (AllowArray && isValidArrayTypeImpl<AllowStruct, AllowString, true, AllowVar>(type));
 }
 
 } // namespace
@@ -392,7 +400,7 @@ LogicalResult computeShapeFromDims(
   //  https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180
   auto errFunc = emitError ? llvm::unique_function<InFlightDiagnostic()>(emitError)
                            : mlir::detail::getDefaultDiagnosticEmitFn(ctx);
-  if (!areValidArrayDimSizes(dimensionSizes, errFunc)) {
+  if (!areValidArrayDimSizes<true, true, true, true>(dimensionSizes, errFunc)) {
     assert(emitError);
     return failure();
   }
