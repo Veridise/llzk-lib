@@ -33,6 +33,14 @@ template <typename A, typename B> void append(llvm::raw_ostream &ss, const std::
   ss << '(' << a.first << ',' << a.second << ')';
 }
 
+template <typename T> inline void append(llvm::raw_ostream &ss, const std::optional<T> &a) {
+  if (a.has_value()) {
+    append(ss, a.value());
+  } else {
+    ss << "NONE";
+  }
+}
+
 template <typename Any> void append(llvm::raw_ostream &ss, const Any &value) { ss << value; }
 
 } // namespace
@@ -57,6 +65,15 @@ template <typename InputIt> std::string toStringList(InputIt begin, InputIt end)
 /// `collection.begin()` to `collection.end()` where the element type implements `operator<<`.
 template <typename InputIt> inline std::string toStringList(const InputIt &collection) {
   return toStringList(collection.begin(), collection.end());
+}
+
+template <typename InputIt>
+inline std::string toStringList(const std::optional<InputIt> &optionalCollection) {
+  if (optionalCollection.has_value()) {
+    return toStringList(optionalCollection.value());
+  } else {
+    return "NONE";
+  }
 }
 
 template <typename T> inline std::string toStringOne(const T &value) {

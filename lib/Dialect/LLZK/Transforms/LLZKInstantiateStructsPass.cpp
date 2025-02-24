@@ -530,24 +530,35 @@ LogicalResult run(ModuleOp modOp, const DenseMap<StructType, StructType> &struct
   // deep lookup to ensure no references and avoid infinite loop back on self.
   //
   MLIRContext *ctx = modOp.getContext();
-  RewritePatternSet patterns(ctx);
-  patterns.add<EraseOpPattern<StructDefOp>>(ctx);
-  ConversionTarget target = newBaseTarget(ctx);
-  target.addDynamicallyLegalOp<StructDefOp>([&](StructDefOp op) {
+  auto isLegalStruct = [&](bool emitWarning, StructDefOp op) {
     if (instantiatedNames.contains(op.getType().getNameRef())) {
-      std::optional<SymbolTable::UseRange> uses = op.getSymbolUses(*topRoot);
-      if (!uses.has_value() || uses->empty()) {
+      if (!hasUsesWithin(op, *topRoot)) {
+        // Parameterized struct with no uses is illegal, i.e. should be removed.
         return false;
-      } else {
+      }
+      if (emitWarning) {
         op.emitWarning("Parameterized struct still has uses!").report();
+        return false;
       }
     }
     return true;
-  });
+  };
 
+  // Peform the conversion, i.e. remove StructDefOp that were instantiated and are unused.
+  RewritePatternSet patterns(ctx);
+  patterns.add<EraseOpPattern<StructDefOp>>(ctx);
+  ConversionTarget target = newBaseTarget(ctx);
+  target.addDynamicallyLegalOp<StructDefOp>(std::bind_front(isLegalStruct, false));
   if (failed(applyFullConversion(modOp, target, std::move(patterns)))) {
     return modOp.emitError("failed to remove parameterized structs that were instantiated");
   }
+
+  // Warn about any structs that were instantiated but still have uses elsewhere.
+  modOp->walk([&](StructDefOp op) {
+    isLegalStruct(true, op);
+    return WalkResult::skip(); // StructDefOp cannot be nested
+  });
+
   return success();
 }
 

@@ -155,7 +155,7 @@ SymbolRefAttr appendLeaf(SymbolRefAttr orig, FlatSymbolRefAttr newLeaf) {
   return changeLeafImpl(orig.getRootReference(), orig.getNestedReferences(), newLeaf, 0);
 }
 
-SymbolRefAttr appendLeafName(SymbolRefAttr orig, const mlir::Twine &newLeafSuffix) {
+SymbolRefAttr appendLeafName(SymbolRefAttr orig, const Twine &newLeafSuffix) {
   ArrayRef<FlatSymbolRefAttr> origTail = orig.getNestedReferences();
   if (origTail.empty()) {
     // If there is no tail, the root is the leaf so append on the root instead
@@ -194,6 +194,17 @@ FailureOr<SymbolRefAttr> getPathFromTopRoot(StructDefOp &to) {
 
 FailureOr<SymbolRefAttr> getPathFromTopRoot(FuncOp &to) {
   return getPathFromRoot(to, RootSelector::FURTHEST);
+}
+
+/// Equivalent to `!SymbolUserMap(...)::useEmpty()` but without fully computing the uses.
+bool hasUsesWithin(Operation *symbol, Operation *from) {
+  bool result = false;
+  SymbolTable::walkSymbolTables(from, false, [symbol, &result](Operation *symbolTableOp, bool) {
+    assert(symbolTableOp->hasTrait<OpTrait::SymbolTable>());
+    result |= (symbol != symbolTableOp) &&
+              !SymbolTable::symbolKnownUseEmpty(symbol, &symbolTableOp->getRegion(0));
+  });
+  return result;
 }
 
 LogicalResult verifyParamOfType(

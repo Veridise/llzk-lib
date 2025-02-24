@@ -25,6 +25,9 @@ def FuncOp
                        AffineScope, AutomaticAllocationScope,
                        FunctionOpInterface, IsolatedFromAbove,
                        OpAsmOpInterface]> {
+  // NOTE: Cannot have SymbolTable trait because that would cause global
+  // functions without a body to produce "Operations with a 'SymbolTable' must
+  // have exactly one block"
   let summary = "An operation with a name containing a single `SSACFG` region";
   let description = [{
     Operations within the function cannot implicitly capture values defined
