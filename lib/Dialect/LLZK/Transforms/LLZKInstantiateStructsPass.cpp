@@ -538,7 +538,6 @@ LogicalResult run(ModuleOp modOp, const DenseMap<StructType, StructType> &struct
       }
       if (emitWarning) {
         op.emitWarning("Parameterized struct still has uses!").report();
-        return false;
       }
     }
     return true;
