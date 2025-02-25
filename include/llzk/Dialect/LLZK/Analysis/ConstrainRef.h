@@ -5,7 +5,6 @@
 #include "llzk/Dialect/LLZK/Util/Hash.h"
 
 #include <mlir/Analysis/DataFlowFramework.h>
-#include <mlir/Dialect/Index/IR/IndexOps.h>
 #include <mlir/Pass/AnalysisManager.h>
 
 #include <llvm/ADT/EquivalenceClasses.h>
@@ -14,6 +13,8 @@
 #include <vector>
 
 namespace llzk {
+
+inline mlir::APInt toAPInt(int64_t i) { return mlir::APInt(64, i); }
 
 /// @brief Defines an index into an LLZK object. For structs, this is a field
 /// definition, and for arrays, this is an element index.
@@ -24,7 +25,7 @@ class ConstrainRefIndex {
 public:
   explicit ConstrainRefIndex(SymbolLookupResult<FieldDefOp> f) : index(f) {}
   explicit ConstrainRefIndex(mlir::APInt i) : index(i) {}
-  explicit ConstrainRefIndex(int64_t i) : index(mlir::APInt(64, i)) {}
+  explicit ConstrainRefIndex(int64_t i) : index(toAPInt(i)) {}
   ConstrainRefIndex(mlir::APInt low, mlir::APInt high) : index(IndexRange {low, high}) {}
   explicit ConstrainRefIndex(IndexRange r) : index(r) {}
 
@@ -128,7 +129,7 @@ public:
   ConstrainRef(mlir::BlockArgument b, std::vector<ConstrainRefIndex> f)
       : blockArg(b), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
   explicit ConstrainRef(FeltConstantOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
-  explicit ConstrainRef(mlir::index::ConstantOp c)
+  explicit ConstrainRef(mlir::arith::ConstantIndexOp c)
       : blockArg(nullptr), fieldRefs(), constantVal(c) {}
   explicit ConstrainRef(ConstReadOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
 
@@ -138,7 +139,8 @@ public:
     return constantVal.has_value() && std::holds_alternative<FeltConstantOp>(*constantVal);
   }
   bool isConstantIndex() const {
-    return constantVal.has_value() && std::holds_alternative<mlir::index::ConstantOp>(*constantVal);
+    return constantVal.has_value() &&
+           std::holds_alternative<mlir::arith::ConstantIndexOp>(*constantVal);
   }
   bool isTemplateConstant() const {
     return constantVal.has_value() && std::holds_alternative<ConstReadOp>(*constantVal);
@@ -166,7 +168,7 @@ public:
   }
   mlir::APInt getConstantIndexValue() const {
     ensure(isConstantIndex(), __FUNCTION__ + mlir::Twine(" requires a constant index!"));
-    return std::get<mlir::index::ConstantOp>(*constantVal).getValue();
+    return toAPInt(std::get<mlir::arith::ConstantIndexOp>(*constantVal).value());
   }
   mlir::APInt getConstantInt() const {
     ensure(
@@ -245,7 +247,7 @@ private:
 
   std::vector<ConstrainRefIndex> fieldRefs;
   // using mutable to reduce constant casts for certain get* functions.
-  mutable std::optional<std::variant<FeltConstantOp, mlir::index::ConstantOp, ConstReadOp>>
+  mutable std::optional<std::variant<FeltConstantOp, mlir::arith::ConstantIndexOp, ConstReadOp>>
       constantVal;
 };
 

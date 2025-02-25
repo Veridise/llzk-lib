@@ -120,7 +120,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.func @split(%x: index) -> (index, index) { // expected-note {{callee defined here}}
-    %0 = index.constant 1
+    %0 = arith.constant 1 : index
     return %x, %0 : index, index
   }
   llzk.func @user(%x: index) -> index {
@@ -132,7 +132,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.func @split(%x: index) -> (index, index) {
-    %0 = index.constant 1
+    %0 = arith.constant 1 : index
     return %x, %0 : index, index
   }
   llzk.func @user(%x: index) -> (i1, i1) {

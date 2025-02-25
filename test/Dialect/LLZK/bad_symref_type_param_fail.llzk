@@ -441,7 +441,7 @@ module attributes {veridise.lang = "llzk"} {
       return %self : !llzk.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>
     }
     func @constrain(%self: !llzk.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>, %arr: !llzk.array<5 x !llzk.tvar<@T>>) {
-      %k = index.constant 0
+      %k = arith.constant 0 : index
       // expected-error@+2 {{'llzk.readarr' op references unknown symbol "@Unknown"}}
       // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
       %v = llzk.readarr %arr[%k] : !llzk.array<5 x !llzk.tvar<@T>>, !llzk.struct<@Unknown>
@@ -482,7 +482,7 @@ module attributes {veridise.lang = "llzk"} {
       %v: !llzk.struct<@T> // expected-note {{prior use here}}
     ) -> !llzk.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
       %self = new_struct : !llzk.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>
-      %k = index.constant 0
+      %k = arith.constant 0 : index
       // See NOTE on line 4.
       // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!llzk.struct<@Unknown>' vs '!llzk.struct<@T>'}}
       llzk.writearr %arr[%k] = %v : !llzk.array<5 x !llzk.tvar<@T>>, !llzk.struct<@Unknown>
@@ -492,7 +492,7 @@ module attributes {veridise.lang = "llzk"} {
         %arr: !llzk.array<5 x !llzk.tvar<@T>>,
         %v: !llzk.struct<@T>
     ) {
-      %k = index.constant 0
+      %k = arith.constant 0 : index
       return
     }
   }

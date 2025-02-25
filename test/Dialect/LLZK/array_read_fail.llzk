@@ -1,9 +1,9 @@
 // RUN: llzk-opt %s -split-input-file -verify-diagnostics
 
 llzk.func @arr_constant_index() -> index {
-  %a = index.constant 45 // expected-note {{prior use here}}
-  %b = index.constant 214
-  %c = index.constant 2
+  %a = arith.constant 45 : index // expected-note {{prior use here}}
+  %b = arith.constant 214 : index
+  %c = arith.constant 2 : index
   %r = llzk.new_array %a, %b, %c : !llzk.array<3 x index>
   // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!llzk.array<3 x index>' vs 'index'}}
   %i = llzk.readarr %a[%c] : !llzk.array<3 x index>, index
@@ -12,9 +12,9 @@ llzk.func @arr_constant_index() -> index {
 // -----
 
 llzk.func @arr_mix_index(%a: index, %b: index) -> index {
-  %c = index.constant 324
-  %d = index.constant 999 
-  %i = index.constant 0
+  %c = arith.constant 324 : index
+  %d = arith.constant 999 : index 
+  %i = arith.constant 0 : index
   %r = llzk.new_array %a, %b, %c, %d: !llzk.array<4 x index> // expected-note {{prior use here}}
   // expected-error@+1 {{use of value '%r' expects different type than prior uses: 'index' vs '!llzk.array<4 x index>'}}
   %v = llzk.readarr %r[%r] : !llzk.array<4 x index>, index
@@ -23,9 +23,9 @@ llzk.func @arr_mix_index(%a: index, %b: index) -> index {
 // -----
 
 llzk.func @arr_mix_index(%a: index, %b: index) -> index {
-  %c = index.constant 324
-  %d = index.constant 999 
-  %i = index.constant 0
+  %c = arith.constant 324 : index
+  %d = arith.constant 999 : index 
+  %i = arith.constant 0 : index
   %f = llzk.constfelt 6744573456376 // expected-note {{prior use here}}
   %r = llzk.new_array %a, %b, %c, %d: !llzk.array<4 x index> 
   // expected-error@+1 {{use of value '%f' expects different type than prior uses: 'index' vs '!llzk.felt'}}
@@ -35,7 +35,7 @@ llzk.func @arr_mix_index(%a: index, %b: index) -> index {
 // -----
 
 llzk.func @arr_wrong_array_elem_type(%a: !llzk.felt) -> !llzk.array<1 x !llzk.felt> {
-  %i = index.constant 0
+  %i = arith.constant 0 : index
   %r = llzk.new_array %a: !llzk.array<1 x !llzk.felt>
   // expected-error@+1 {{'llzk.readarr' op failed to verify that result type matches with arr_ref element type}}
   %v = llzk.readarr %r[%i] : !llzk.array<1 x !llzk.felt>, index

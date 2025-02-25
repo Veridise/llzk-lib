@@ -18,7 +18,7 @@ llzk.func @identity(%x: !llzk.felt) -> !llzk.felt {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.func @split(%x: index) -> (index, index) {
-    %0 = index.constant 1
+    %0 = arith.constant 1 : index
     return %x, %0 : index, index
   }
   llzk.func @user(%x: index) -> (index, index) {
@@ -27,12 +27,12 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL:  llzk.func @split(%arg0: index) -> (index, index) {
-//CHECK-NEXT:     %idx1 = index.constant 1
-//CHECK-NEXT:     return %arg0, %idx1 : index, index
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+//CHECK-NEXT:     return %arg0, %[[T1]] : index, index
 //CHECK-NEXT:   }
 //CHECK-LABEL:  llzk.func @user(%arg0: index) -> (index, index) {
-//CHECK-NEXT:     %0:2 = call @split(%arg0) : (index) -> (index, index)
-//CHECK-NEXT:     return %0#0, %0#1 : index, index
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]]:2 = call @split(%arg0) : (index) -> (index, index)
+//CHECK-NEXT:     return %[[T1]]#0, %[[T1]]#1 : index, index
 //CHECK-NEXT:   }
 // -----
 

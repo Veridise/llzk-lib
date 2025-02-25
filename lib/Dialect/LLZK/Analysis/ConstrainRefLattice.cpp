@@ -5,7 +5,6 @@
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
-#include <mlir/Dialect/Index/IR/IndexOps.h>
 #include <mlir/IR/Value.h>
 
 #include <numeric>
@@ -283,7 +282,7 @@ mlir::FailureOr<ConstrainRef> ConstrainRefLattice::getSourceRef(mlir::Value val)
   } else if (auto defOp = val.getDefiningOp()) {
     if (auto constFelt = mlir::dyn_cast<FeltConstantOp>(defOp)) {
       return ConstrainRef(constFelt);
-    } else if (auto constIdx = mlir::dyn_cast<mlir::index::ConstantOp>(defOp)) {
+    } else if (auto constIdx = mlir::dyn_cast<mlir::arith::ConstantIndexOp>(defOp)) {
       return ConstrainRef(constIdx);
     } else if (auto readConst = mlir::dyn_cast<ConstReadOp>(defOp)) {
       return ConstrainRef(readConst);

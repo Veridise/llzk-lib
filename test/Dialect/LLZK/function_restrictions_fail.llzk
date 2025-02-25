@@ -16,9 +16,9 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @emiteq_in_compute_in_loop {
     func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@emiteq_in_compute_in_loop> {
-      %lb = index.constant 0
-      %up = index.constant 4
-      %step = index.constant 1
+      %lb = arith.constant 0 : index
+      %up = arith.constant 4 : index
+      %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         // expected-error@+1 {{'llzk.emit_eq' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
         llzk.emit_eq %a, %b : !llzk.felt
@@ -66,9 +66,9 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @emitin_in_compute_in_loop {
     func @compute(%a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_compute_in_loop> {
-      %lb = index.constant 0
-      %up = index.constant 4
-      %step = index.constant 1
+      %lb = arith.constant 0 : index
+      %up = arith.constant 4 : index
+      %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         // expected-error@+1 {{'llzk.emit_in' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
         llzk.emit_in %b, %a : !llzk.array<5 x !llzk.felt>
@@ -298,7 +298,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @compute_with_wrong_ret {
     // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> index {
-      %b = index.constant 2
+      %b = arith.constant 2 : index
       return %b : index
     }
 
@@ -411,7 +411,7 @@ module { // expected-note {{unnamed 'builtin.module' here}}
   llzk.struct @compute_with_wrong_ret {
     // expected-error@+1 {{'llzk.func' op "@compute" must use type of its ancestor 'llzk.struct' "@compute_with_wrong_ret" as return type}}
     func @compute() -> index {
-      %b = index.constant 2
+      %b = arith.constant 2 : index
       return %b : index
     }
 

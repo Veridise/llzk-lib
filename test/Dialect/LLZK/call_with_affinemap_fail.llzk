@@ -129,7 +129,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     func @constrain(%self: !llzk.struct<@CallUnknownConstrainWithMapInit<[@S]>>, %0: !llzk.tvar<@S>) {
-      %i = index.constant 28
+      %i = arith.constant 28 : index
       // expected-error@+1 {{'llzk.call' op can only have affine map instantiations when targeting a "@compute" function}}
       llzk.call @S::@constrain(%0){ (%i) } : (!llzk.tvar<@S>) -> ()
       return
@@ -147,7 +147,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     func @constrain(%self: !llzk.struct<@CallKnownConstrainWithMapInit>, %0: !llzk.struct<@Lib::@D0>) {
-      %i = index.constant 28
+      %i = arith.constant 28 : index
       // expected-error@+1 {{'llzk.call' op can only have affine map instantiations when targeting a "@compute" function}}
       llzk.call @Lib::@D0::@constrain(%0){ (%i) } : (!llzk.struct<@Lib::@D0>) -> ()
       return
@@ -163,7 +163,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @CallKnownGlobalWithMapInit {
     func @compute() -> !llzk.struct<@CallKnownGlobalWithMapInit> {
       %self = new_struct : !llzk.struct<@CallKnownGlobalWithMapInit>
-      %i = index.constant 28
+      %i = arith.constant 28 : index
       // expected-error@+1 {{'llzk.call' op can only have affine map instantiations when targeting a "@compute" function}}
       %0 = llzk.call @global_id(%i){ (%i) } : (index) -> (index)
       return %self : !llzk.struct<@CallKnownGlobalWithMapInit>

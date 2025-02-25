@@ -1,8 +1,6 @@
 #include "llzk/Dialect/LLZK/IR/Builders.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
-#include <mlir/Dialect/Index/IR/IndexOps.h>
-
 #include "OpTestBase.h"
 
 using namespace llzk;
@@ -42,15 +40,15 @@ TEST_F(OpTests, testCallNoAffine_GoodWithArgs) {
   ASSERT_TRUE(succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
-  auto v1 = bldr.create<index::ConstantOp>(loc, 5);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 2);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 5);
+  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
       loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1, v2}
   );
   // module attributes {veridise.lang = "llzk"} {
   //   llzk.func @FuncA(%arg0: index, %arg1: index) -> index {
-  //     %idx5 = index.constant 5
-  //     %idx2 = index.constant 2
+  //     %idx5 = arith.constant 5 : index
+  //     %idx2 = arith.constant 2 : index
   //     %0 = call @FuncB(%idx5, %idx2) : (index, index) -> index
   //   }
   //   llzk.func @FuncB(%arg0: index, %arg1: index) -> index {
@@ -69,13 +67,13 @@ TEST_F(OpTests, testCallNoAffine_TooFewValues) {
   ASSERT_TRUE(succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
-  auto v1 = bldr.create<index::ConstantOp>(loc, 5);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 5);
   CallOp op = bldr.create<CallOp>(
       loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1}
   );
   // module attributes {veridise.lang = "llzk"} {
   //   llzk.func @FuncA(%arg0: index, %arg1: index) -> index {
-  //     %idx5 = index.constant 5
+  //     %idx5 = arith.constant 5 : index
   //     %0 = call @FuncB(%idx5) : (index) -> index
   //   }
   //   llzk.func @FuncB(%arg0: index, %arg1: index) -> index {
@@ -99,13 +97,13 @@ TEST_F(OpTests, testCallNoAffine_WrongRetTy) {
   ASSERT_TRUE(succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
-  auto v1 = bldr.create<index::ConstantOp>(loc, 5);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 5);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {bldr.getI1Type()}, funcB->getFullyQualifiedName(), ValueRange {v1}
   );
   // module attributes {veridise.lang = "llzk"} {
   //   llzk.func @FuncA(%arg0: index) -> index {
-  //     %idx5 = index.constant 5
+  //     %idx5 = arith.constant 5 : index
   //     %0 = call @FuncB(%idx5) : (index) -> i1
   //   }
   //   llzk.func @FuncB(%arg0: index) -> index {
@@ -167,8 +165,8 @@ TEST_F(OpTests, testCallWithAffine_Good) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
+  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
@@ -194,8 +192,8 @@ TEST_F(OpTests, testCallWithAffine_WrongStructNameInResultType) {
       structA->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructA<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
+  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
@@ -228,8 +226,8 @@ TEST_F(OpTests, testCallWithAffine_TooFewMapsInResultType) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m})
   ); // !llzk.struct<@StructB<[#m]>>
 
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
+  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
@@ -260,8 +258,8 @@ TEST_F(OpTests, testCallWithAffine_TooManyMapsInResultType) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m, m})
   ); // !llzk.struct<@StructB<[#m,#m,#m]>>
 
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
+  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1}
@@ -292,7 +290,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountLessThanDimSizeCount) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}}, ArrayRef<int32_t> {1, 1}
@@ -324,7 +322,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountMoreThanDimSizeCount) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v1}, ValueRange {v1}}, ArrayRef<int32_t> {1, 1}
@@ -387,7 +385,7 @@ TEST_F(OpTests, testCallWithAffine_DimSizeCount0) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v1}}, ArrayRef<int32_t> {}
@@ -450,7 +448,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeLessThanDimSize) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[#m,#m]>>
 
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {}}, ArrayRef<int32_t> {1, 1}
@@ -482,8 +480,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeMoreThanDimSize) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[#m,#m]>>
 
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
+  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v1, v2}}, ArrayRef<int32_t> {1, 1}
@@ -514,8 +512,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountAndDimSizeCountMoreThanType) {
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
   ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
-  auto v1 = bldr.create<index::ConstantOp>(loc, 2);
-  auto v2 = bldr.create<index::ConstantOp>(loc, 4);
+  auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
+  auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
       ArrayRef {ValueRange {v1}, ValueRange {v2}, ValueRange {v2}}, ArrayRef<int32_t> {1, 1, 1}

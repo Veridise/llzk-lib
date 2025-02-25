@@ -5,7 +5,6 @@
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
-#include <mlir/Dialect/Index/IR/IndexOps.h>
 #include <mlir/IR/Value.h>
 
 #include <numeric>

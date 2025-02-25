@@ -186,7 +186,7 @@ mlir::Type ConstrainRef::getType() const {
   if (isConstantFelt()) {
     return std::get<FeltConstantOp>(*constantVal).getType();
   } else if (isConstantIndex()) {
-    return std::get<mlir::index::ConstantOp>(*constantVal).getType();
+    return std::get<mlir::arith::ConstantIndexOp>(*constantVal).getType();
   } else if (isTemplateConstant()) {
     return std::get<ConstReadOp>(*constantVal).getType();
   } else {
@@ -333,7 +333,7 @@ size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
   if (val.isConstantFelt()) {
     return OpHash<FeltConstantOp> {}(std::get<FeltConstantOp>(*val.constantVal));
   } else if (val.isConstantIndex()) {
-    return OpHash<mlir::index::ConstantOp> {}(std::get<mlir::index::ConstantOp>(*val.constantVal));
+    return OpHash<mlir::arith::ConstantIndexOp> {}(std::get<mlir::arith::ConstantIndexOp>(*val.constantVal));
   } else if (val.isTemplateConstant()) {
     return OpHash<ConstReadOp> {}(std::get<ConstReadOp>(*val.constantVal));
   } else {
