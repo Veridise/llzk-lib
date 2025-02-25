@@ -12,7 +12,7 @@
 
 namespace llzk {
 
-template <typename Result> class StructAnalysis {
+template <typename Result, typename Context> class StructAnalysis {
 public:
   StructAnalysis(mlir::Operation *op) {
     structDefOp = mlir::dyn_cast<StructDefOp>(op);
@@ -30,8 +30,9 @@ public:
     modOp = *maybeModOp;
   }
 
-  virtual mlir::LogicalResult
-  runAnalysis(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager) = 0;
+  virtual mlir::LogicalResult runAnalysis(
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager, Context &ctx
+  ) = 0;
 
   bool constructed() const { return res != nullptr; }
 
@@ -50,13 +51,13 @@ private:
   std::unique_ptr<Result> res;
 };
 
-template <typename Analysis, typename Result>
-concept StructAnalysisType =
-    requires { requires std::is_base_of<StructAnalysis<Result>, Analysis>::value; };
+struct NoContext {};
 
-template <
-    typename Result, StructAnalysisType<Result> StructAnalysisType,
-    typename... DataFlowSolverAnalyses>
+template <typename Analysis, typename Result, typename Context>
+concept StructAnalysisType =
+    requires { requires std::is_base_of<StructAnalysis<Result, Context>, Analysis>::value; };
+
+template <typename Result, typename Context, StructAnalysisType<Result, Context> StructAnalysisType>
 class ModuleAnalysis {
   /// Using a map, not an unordered map, to control sorting order for iteration.
   using ResultMap =
@@ -64,31 +65,7 @@ class ModuleAnalysis {
 
 public:
   ModuleAnalysis(mlir::Operation *op, mlir::AnalysisManager &am) {
-    if (modOp = mlir::dyn_cast<mlir::ModuleOp>(op)) {
-      mlir::DataFlowConfig config;
-      mlir::DataFlowSolver solver(config);
-      dataflow::markAllOpsAsLive(solver, modOp);
-
-      // The analysis is run at the module level so that lattices are computed
-      // for global functions as well.
-      ((solver.load<DataFlowSolverAnalyses>()), ...);
-      auto res = solver.initializeAndRun(modOp);
-      ensure(res.succeeded(), "solver failed to run on module!");
-
-      modOp.walk([this, &solver, &am](StructDefOp s) mutable {
-        auto &childAnalysis = am.getChildAnalysis<StructAnalysisType>(s);
-        if (mlir::failed(childAnalysis.runAnalysis(solver, am))) {
-          auto error_message = "StructAnalysis failed to run for " + mlir::Twine(s.getName());
-          s->emitError(error_message);
-          llvm::report_fatal_error(error_message);
-        }
-        // auto p = std::make_pair(s, std::reference_wrapper(childAnalysis.getResult()));
-        // results.insert(std::move(p));
-        results.insert(
-            std::make_pair(StructDefOp(s), std::reference_wrapper(childAnalysis.getResult()))
-        );
-      });
-    } else {
+    if (modOp = mlir::dyn_cast<mlir::ModuleOp>(op); !modOp) {
       auto error_message = "ModuleAnalysis expects provided op to be an mlir::ModuleOp!";
       op->emitError(error_message);
       llvm::report_fatal_error(error_message);
@@ -109,6 +86,36 @@ public:
   ResultMap::iterator end() { return results.end(); }
   ResultMap::const_iterator cbegin() const { return results.cbegin(); }
   ResultMap::const_iterator cend() const { return results.cend(); }
+
+protected:
+  virtual void initializeSolver(mlir::DataFlowSolver &solver) = 0;
+
+  virtual Context getContext() = 0;
+
+  void constructChildAnalyses(mlir::AnalysisManager &am) {
+    mlir::DataFlowConfig config;
+    mlir::DataFlowSolver solver(config);
+    dataflow::markAllOpsAsLive(solver, modOp);
+
+    // The analysis is run at the module level so that lattices are computed
+    // for global functions as well.
+    initializeSolver(solver);
+    auto res = solver.initializeAndRun(modOp);
+    ensure(res.succeeded(), "solver failed to run on module!");
+
+    auto ctx = getContext();
+    modOp.walk([this, &solver, &am, &ctx](StructDefOp s) mutable {
+      auto &childAnalysis = am.getChildAnalysis<StructAnalysisType>(s);
+      if (mlir::failed(childAnalysis.runAnalysis(solver, am, ctx))) {
+        auto error_message = "StructAnalysis failed to run for " + mlir::Twine(s.getName());
+        s->emitError(error_message);
+        llvm::report_fatal_error(error_message);
+      }
+      results.insert(
+          std::make_pair(StructDefOp(s), std::reference_wrapper(childAnalysis.getResult()))
+      );
+    });
+  }
 
 private:
   mlir::ModuleOp modOp;

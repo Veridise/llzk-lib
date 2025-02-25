@@ -192,19 +192,41 @@ private:
 /// This analysis is a StructDefOp-level analysis that should not be directly
 /// interacted with---rather, it is a utility used by the ConstraintDependencyGraphModuleAnalysis
 /// that helps use MLIR's AnalysisManager to cache dependencies for sub-components.
-class ConstraintDependencyGraphStructAnalysis : public StructAnalysis<ConstraintDependencyGraph> {
+class ConstraintDependencyGraphStructAnalysis
+    : public StructAnalysis<ConstraintDependencyGraph, NoContext> {
 public:
   using StructAnalysis::StructAnalysis;
+
+  mlir::LogicalResult runAnalysis(
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager, NoContext &_
+  ) override {
+    return runAnalysis(solver, moduleAnalysisManager);
+  }
 
   /// @brief Construct a CDG, using the module's analysis manager to query
   /// ConstraintDependencyGraph objects for nested components.
   mlir::LogicalResult
-  runAnalysis(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager) override;
+  runAnalysis(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager);
 };
 
 /// @brief A module-level analysis for constructing ConstraintDependencyGraph objects for
 /// all structs in the given LLZK module.
-using ConstraintDependencyGraphModuleAnalysis = ModuleAnalysis<
-    ConstraintDependencyGraph, ConstraintDependencyGraphStructAnalysis, ConstrainRefAnalysis>;
+class ConstraintDependencyGraphModuleAnalysis
+    : public ModuleAnalysis<
+          ConstraintDependencyGraph, NoContext, ConstraintDependencyGraphStructAnalysis> {
+
+public:
+  ConstraintDependencyGraphModuleAnalysis(mlir::Operation *op, mlir::AnalysisManager &am)
+      : ModuleAnalysis(op, am) {
+    constructChildAnalyses(am);
+  }
+
+protected:
+  void initializeSolver(mlir::DataFlowSolver &solver) override {
+    (void)solver.load<ConstrainRefAnalysis>();
+  }
+
+  NoContext getContext() override { return {}; }
+};
 
 } // namespace llzk

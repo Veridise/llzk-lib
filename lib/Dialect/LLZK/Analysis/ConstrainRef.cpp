@@ -354,7 +354,7 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRef &rhs) {
 
 /* ConstrainRefSet */
 
-ConstrainRefSet &ConstrainRefSet::operator+=(const ConstrainRefSet &rhs) {
+ConstrainRefSet &ConstrainRefSet::join(const ConstrainRefSet &rhs) {
   insert(rhs.begin(), rhs.end());
   return *this;
 }

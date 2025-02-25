@@ -259,9 +259,31 @@ class ConstrainRefSet : public std::unordered_set<ConstrainRef, ConstrainRef::Ha
 public:
   using Base::Base;
 
-  ConstrainRefSet &operator+=(const ConstrainRefSet &rhs);
+  ConstrainRefSet &join(const ConstrainRefSet &rhs);
 };
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefSet &rhs);
 
 } // namespace llzk
+
+namespace llvm {
+
+template <> struct DenseMapInfo<llzk::ConstrainRef> {
+  static llzk::ConstrainRef getEmptyKey() {
+    return llzk::ConstrainRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(1)));
+  }
+  static inline llzk::ConstrainRef getTombstoneKey() {
+    return llzk::ConstrainRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(2)));
+  }
+  static unsigned getHashValue(const llzk::ConstrainRef &ref) {
+    if (ref == getEmptyKey() || ref == getTombstoneKey()) {
+      return llvm::hash_value(ref.getBlockArgument().getAsOpaquePointer());
+    }
+    return llzk::ConstrainRef::Hash {}(ref);
+  }
+  static bool isEqual(const llzk::ConstrainRef &lhs, const llzk::ConstrainRef &rhs) {
+    return lhs == rhs;
+  }
+};
+
+} // namespace llvm

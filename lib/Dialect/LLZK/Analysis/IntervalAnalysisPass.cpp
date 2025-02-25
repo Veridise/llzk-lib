@@ -30,9 +30,17 @@ protected:
       llvm::report_fatal_error(msg);
     }
 
-    getAnalysis<ModuleIntervalAnalysis>();
+    auto &mia = getAnalysis<ModuleIntervalAnalysis>();
 
-    os << "ha!\n";
+    for (auto &[s, si] : mia) {
+      auto &structDef = const_cast<StructDefOp &>(s);
+      auto fullName = getPathFromTopRoot(structDef);
+      ensure(
+          mlir::succeeded(fullName),
+          "could not resolve fully qualified name of struct " + mlir::Twine(structDef.getName())
+      );
+      os << fullName.value() << ' ' << si.get();
+    }
   }
 };
 

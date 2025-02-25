@@ -18,7 +18,7 @@ concept ScalarLatticeValue = requires(Val lhs, Val rhs, mlir::raw_ostream &os) {
   // Require comparability
   { lhs == rhs } -> std::same_as<bool>;
   // Require the ability to combine two scalar values
-  { lhs += rhs } -> std::same_as<Val &>;
+  { lhs.join(rhs) } -> std::same_as<Val &>;
   // Require default constructable
   requires std::default_initializable<Val>;
 };
@@ -145,7 +145,7 @@ public:
     ScalarTy res;
     for (auto &val : getArrayValue()) {
       auto rhs = val->foldToScalar();
-      res += rhs;
+      res.join(rhs);
     }
     return res;
   }
@@ -204,7 +204,7 @@ protected:
   /// @brief Union this value with the given scalar.
   mlir::ChangeResult updateScalar(const ScalarTy &rhs) {
     auto lhs = getScalarValue();
-    lhs += rhs;
+    lhs.join(rhs);
     if (getScalarValue() == lhs) {
       return mlir::ChangeResult::NoChange;
     }
@@ -227,7 +227,7 @@ protected:
   mlir::ChangeResult foldAndUpdate(const Derived &rhs) {
     auto folded = foldToScalar();
     auto rhsScalar = rhs.foldToScalar();
-    folded += rhsScalar;
+    folded.join(rhsScalar);
     if (isScalar() && getScalarValue() == folded) {
       return mlir::ChangeResult::NoChange;
     }
