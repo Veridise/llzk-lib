@@ -1,6 +1,7 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/Hash.h"
 
@@ -13,8 +14,6 @@
 #include <vector>
 
 namespace llzk {
-
-inline mlir::APInt toAPInt(int64_t i) { return mlir::APInt(64, i); }
 
 /// @brief Defines an index into an LLZK object. For structs, this is a field
 /// definition, and for arrays, this is an element index.

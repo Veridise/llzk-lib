@@ -4,10 +4,10 @@
 #include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
-#include <mlir/Dialect/Index/IR/IndexDialect.h>
-#include <mlir/Dialect/Index/IR/IndexOps.h>
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Dialect/SCF/Transforms/Patterns.h>
+#include <mlir/Dialect/SCF/Utils/Utils.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -58,8 +58,16 @@ public:
     if (failed(converter->convertTypes(op->getResultTypes(), newResultTypes))) {
       return op->emitError("Could not convert Op result types.");
     }
-    // Convert any TypeAttr in the attribute list
-    assert(adaptor.getAttributes().empty()); // always empty, get from the op instead
+    // ASSERT: 'adaptor.getAttributes()' is empty or subset of 'op->getAttrDictionary()' so the
+    // former can be ignored without losing anything.
+    assert(
+        adaptor.getAttributes().empty() ||
+        llvm::all_of(
+            adaptor.getAttributes(),
+            [d = op->getAttrDictionary()](NamedAttribute a) { return d.contains(a.getName()); }
+        )
+    );
+    // Convert any TypeAttr in the attribute list.
     SmallVector<NamedAttribute> newAttrs(op->getAttrDictionary().getValue());
     for (NamedAttribute &n : newAttrs) {
       if (TypeAttr t = llvm::dyn_cast<TypeAttr>(n.getValue())) {
@@ -106,7 +114,7 @@ newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionT
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects.
 ConversionTarget newBaseTarget(MLIRContext *ctx) {
   ConversionTarget target(*ctx);
-  target.addLegalDialect<LLZKDialect, index::IndexDialect, scf::SCFDialect>();
+  target.addLegalDialect<LLZKDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   return target;
 }
@@ -394,11 +402,11 @@ public:
             op, FeltConstAttr::get(rewriter.getContext(), attrValue)
         );
       } else if (llvm::isa<IndexType>(origResTy)) {
-        rewriter.replaceOpWithNewOp<index::ConstantOp>(op, IntegerAttr::get(origResTy, attrValue));
+        rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, fromAPInt(attrValue));
       } else if (origResTy.isSignlessInteger(1)) {
         // Treat 0 as false and any other value as true (but give a warning if it's not 1)
         if (attrValue.isZero()) {
-          rewriter.replaceOpWithNewOp<index::BoolConstantOp>(op, false);
+          rewriter.replaceOpWithNewOp<arith::ConstantIntOp>(op, false, origResTy);
         } else {
           if (!attrValue.isOne()) {
             InFlightDiagnostic warning = op.emitWarning().append(
@@ -412,7 +420,7 @@ public:
             }
             warning.report();
           }
-          rewriter.replaceOpWithNewOp<index::BoolConstantOp>(op, true);
+          rewriter.replaceOpWithNewOp<arith::ConstantIntOp>(op, true, origResTy);
         }
       } else {
         return op->emitOpError().append("unexpected result type ", origResTy);
