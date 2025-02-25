@@ -78,9 +78,9 @@ TEST_F(TypeTests, testShortString) {
       "!a<b:4_235_123>",
       shortString(ArrayType::get(bldr.getIntegerType(1), ArrayRef<int64_t> {4, 235, 123}))
   );
-  EXPECT_EQ("!s<@S1:>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1"))));
+  EXPECT_EQ("!s<@S1_>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1"))));
   EXPECT_EQ(
-      "!s<@S1:43>",
+      "!s<@S1_43>",
       shortString(StructType::get(
           FlatSymbolRefAttr::get(&ctx, "S1"),
           ArrayAttr::get(&ctx, ArrayRef<Attribute> {bldr.getIntegerAttr(bldr.getIndexType(), 43)})
@@ -100,13 +100,13 @@ TEST_F(TypeTests, testShortString) {
         }
     );
     EXPECT_EQ(
-        "!s<@Top:43_@ParamName_!a<f:3_5_1_5_7>_!s<@S1:43>_!m<(d0)->(d0)>>",
+        "!s<@Top_43_@ParamName_!a<f:3_5_1_5_7>_!s<@S1_43>_!m<(d0)->(d0)>>",
         shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "Top"), params))
     );
   }
 
   // No protection/escaping of special characters in the original name
-  EXPECT_EQ("!s<@S1:!a<>:>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1:!a<>"))));
+  EXPECT_EQ("!s<@S1_!a<>_>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1_!a<>"))));
 
   // Empty string produces "@?"
   EXPECT_EQ("@?", shortString(FlatSymbolRefAttr::get(&ctx, "")));

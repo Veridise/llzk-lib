@@ -209,7 +209,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 * 5 + 1)>
+// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 * 5 + 1)>
 //
 // CHECK-LABEL: llzk.struct @Signal {
 // CHECK-NEXT:    field @reg : !llzk.felt {llzk.pub}
@@ -266,37 +266,37 @@ module attributes {veridise.lang = "llzk"} {
 //
 // CHECK-LABEL: llzk.struct @ComputeValue<[@P]> {
 // CHECK-NEXT:    field @ret : !llzk.array<@P x !llzk.struct<@Signal>> {llzk.pub}
-// CHECK-NEXT:    field @ws : !llzk.array<@P x !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>>
-// CHECK-NEXT:    field @arrs : !llzk.array<@P x !llzk.struct<@VarArray<[#[[$ATTR_0]], !llzk.struct<@Signal>]>>>
+// CHECK-NEXT:    field @ws : !llzk.array<@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>
+// CHECK-NEXT:    field @arrs : !llzk.array<@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>
 // CHECK-NEXT:    func @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !llzk.array<@P x !llzk.struct<@Signal>>) -> !llzk.struct<@ComputeValue<[@P]>> {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComputeValue<[@P]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = read_const @P : index
 // CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = new_array  : <@P x !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>>
-// CHECK-NEXT:      %[[V_6:[0-9a-zA-Z_\.]+]] = new_array  : <@P x !llzk.struct<@VarArray<[#[[$ATTR_0]], !llzk.struct<@Signal>]>>>
+// CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = new_array  : <@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>
+// CHECK-NEXT:      %[[V_6:[0-9a-zA-Z_\.]+]] = new_array  : <@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>
 // CHECK-NEXT:      scf.for %[[V_7:[0-9a-zA-Z_\.]+]] = %[[V_2]] to %[[V_3]] step %[[V_4]] {
 // CHECK-NEXT:        %[[V_8:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V_0]]{{\[}}%[[V_7]]] : <@P x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
-// CHECK-NEXT:        %[[V_9:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V_7]])} : <affine_map<(d0) -> (d0 * 5 + 1)> x !llzk.struct<@Signal>>
+// CHECK-NEXT:        %[[V_9:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V_7]])} : <#[[$M0]] x !llzk.struct<@Signal>>
 // CHECK-NEXT:        %[[V_10:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_8]][@reg] : <@Signal>, !llzk.felt
-// CHECK-NEXT:        %[[V_11:[0-9a-zA-Z_\.]+]] = llzk.applymap (%[[V_7]]) #[[$ATTR_0]]
+// CHECK-NEXT:        %[[V_11:[0-9a-zA-Z_\.]+]] = llzk.applymap (%[[V_7]]) #[[$M0]]
 // CHECK-NEXT:        scf.for %[[V_12:[0-9a-zA-Z_\.]+]] = %[[V_2]] to %[[V_11]] step %[[V_4]] {
 // CHECK-NEXT:          %[[V_13:[0-9a-zA-Z_\.]+]] = llzk.tofelt %[[V_12]] : index
 // CHECK-NEXT:          %[[V_14:[0-9a-zA-Z_\.]+]] = llzk.mul %[[V_10]], %[[V_13]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:          %[[V_15:[0-9a-zA-Z_\.]+]] = llzk.call @Signal::@compute(%[[V_14]]) : (!llzk.felt) -> !llzk.struct<@Signal>
-// CHECK-NEXT:          llzk.writearr %[[V_9]]{{\[}}%[[V_12]]] = %[[V_15]] : <affine_map<(d0) -> (d0 * 5 + 1)> x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
+// CHECK-NEXT:          llzk.writearr %[[V_9]]{{\[}}%[[V_12]]] = %[[V_15]] : <#[[$M0]] x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        %[[V_16:[0-9a-zA-Z_\.]+]] = llzk.call @GetSum::@compute(%[[V_9]]) {(%[[V_7]])} : (!llzk.array<affine_map<(d0) -> (d0 * 5 + 1)> x !llzk.struct<@Signal>>) -> !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:        llzk.writearr %[[V_5]]{{\[}}%[[V_7]]] = %[[V_16]] : <@P x !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>>, !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:        %[[V_17:[0-9a-zA-Z_\.]+]] = llzk.call @VarArray::@compute(%[[V_9]]) {(%[[V_7]])} : (!llzk.array<affine_map<(d0) -> (d0 * 5 + 1)> x !llzk.struct<@Signal>>) -> !llzk.struct<@VarArray<[#[[$ATTR_0]], !llzk.struct<@Signal>]>>
-// CHECK-NEXT:        llzk.writearr %[[V_6]]{{\[}}%[[V_7]]] = %[[V_17]] : <@P x !llzk.struct<@VarArray<[#[[$ATTR_0]], !llzk.struct<@Signal>]>>>, !llzk.struct<@VarArray<[#[[$ATTR_0]], !llzk.struct<@Signal>]>>
+// CHECK-NEXT:        %[[V_16:[0-9a-zA-Z_\.]+]] = llzk.call @GetSum::@compute(%[[V_9]]) {(%[[V_7]])} : (!llzk.array<#[[$M0]] x !llzk.struct<@Signal>>) -> !llzk.struct<@GetSum<[#[[$M0]]]>>
+// CHECK-NEXT:        llzk.writearr %[[V_5]]{{\[}}%[[V_7]]] = %[[V_16]] : <@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>, !llzk.struct<@GetSum<[#[[$M0]]]>>
+// CHECK-NEXT:        %[[V_17:[0-9a-zA-Z_\.]+]] = llzk.call @VarArray::@compute(%[[V_9]]) {(%[[V_7]])} : (!llzk.array<#[[$M0]] x !llzk.struct<@Signal>>) -> !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>
+// CHECK-NEXT:        llzk.writearr %[[V_6]]{{\[}}%[[V_7]]] = %[[V_17]] : <@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>, !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      writef %[[V_1]][@ws] = %[[V_5]] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>>
-// CHECK-NEXT:      writef %[[V_1]][@arrs] = %[[V_6]] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.struct<@VarArray<[#[[$ATTR_0]], !llzk.struct<@Signal>]>>>
+// CHECK-NEXT:      writef %[[V_1]][@ws] = %[[V_5]] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>
+// CHECK-NEXT:      writef %[[V_1]][@arrs] = %[[V_6]] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>
 // CHECK-NEXT:      %[[V_18:[0-9a-zA-Z_\.]+]] = new_array  : <@P x !llzk.struct<@Signal>>
 // CHECK-NEXT:      scf.for %[[V_19:[0-9a-zA-Z_\.]+]] = %[[V_2]] to %[[V_3]] step %[[V_4]] {
-// CHECK-NEXT:        %[[V_20:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V_5]]{{\[}}%[[V_19]]] : <@P x !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>>, !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:        %[[V_21:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_20]][@out] : <@GetSum<[#[[$ATTR_0]]]>>, !llzk.struct<@Signal>
+// CHECK-NEXT:        %[[V_20:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V_5]]{{\[}}%[[V_19]]] : <@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>, !llzk.struct<@GetSum<[#[[$M0]]]>>
+// CHECK-NEXT:        %[[V_21:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_20]][@out] : <@GetSum<[#[[$M0]]]>>, !llzk.struct<@Signal>
 // CHECK-NEXT:        llzk.writearr %[[V_18]]{{\[}}%[[V_19]]] = %[[V_21]] : <@P x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      writef %[[V_1]][@ret] = %[[V_18]] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.struct<@Signal>>
@@ -306,21 +306,21 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V_24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V_25:[0-9a-zA-Z_\.]+]] = read_const @P : index
 // CHECK-NEXT:      %[[V_26:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V_27:[0-9a-zA-Z_\.]+]] = readf %[[V_22]][@ws] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>>
-// CHECK-NEXT:      %[[V_28:[0-9a-zA-Z_\.]+]] = readf %[[V_22]][@arrs] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.struct<@VarArray<[#[[$ATTR_0]], !llzk.struct<@Signal>]>>>
+// CHECK-NEXT:      %[[V_27:[0-9a-zA-Z_\.]+]] = readf %[[V_22]][@ws] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>
+// CHECK-NEXT:      %[[V_28:[0-9a-zA-Z_\.]+]] = readf %[[V_22]][@arrs] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>
 // CHECK-NEXT:      scf.for %[[V_29:[0-9a-zA-Z_\.]+]] = %[[V_24]] to %[[V_25]] step %[[V_26]] {
-// CHECK-NEXT:        %[[V_30:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V_27]]{{\[}}%[[V_29]]] : <@P x !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>>, !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:        %[[V_30:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V_27]]{{\[}}%[[V_29]]] : <@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>, !llzk.struct<@GetSum<[#[[$M0]]]>>
 // CHECK-NEXT:        %[[V_31:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V_23]]{{\[}}%[[V_29]]] : <@P x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
-// CHECK-NEXT:        %[[V_32:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V_28]]{{\[}}%[[V_29]]] : <@P x !llzk.struct<@VarArray<[#[[$ATTR_0]], !llzk.struct<@Signal>]>>>, !llzk.struct<@VarArray<[#[[$ATTR_0]], !llzk.struct<@Signal>]>>
-// CHECK-NEXT:        %[[V_33:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_32]][@val] : <@VarArray<[#[[$ATTR_0]], !llzk.struct<@Signal>]>>, !llzk.array<affine_map<(d0) -> (d0 * 5 + 1)> x !llzk.struct<@Signal>>
-// CHECK-NEXT:        llzk.call @GetSum::@constrain(%[[V_30]], %[[V_33]]) : (!llzk.struct<@GetSum<[#[[$ATTR_0]]]>>, !llzk.array<affine_map<(d0) -> (d0 * 5 + 1)> x !llzk.struct<@Signal>>) -> ()
+// CHECK-NEXT:        %[[V_32:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V_28]]{{\[}}%[[V_29]]] : <@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>, !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>
+// CHECK-NEXT:        %[[V_33:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_32]][@val] : <@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>, !llzk.array<#[[$M0]] x !llzk.struct<@Signal>>
+// CHECK-NEXT:        llzk.call @GetSum::@constrain(%[[V_30]], %[[V_33]]) : (!llzk.struct<@GetSum<[#[[$M0]]]>>, !llzk.array<#[[$M0]] x !llzk.struct<@Signal>>) -> ()
 // CHECK-NEXT:      }
 // CHECK-NEXT:      %[[V_34:[0-9a-zA-Z_\.]+]] = readf %[[V_22]][@ret] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.struct<@Signal>>
 // CHECK-NEXT:      scf.for %[[V_35:[0-9a-zA-Z_\.]+]] = %[[V_24]] to %[[V_25]] step %[[V_26]] {
 // CHECK-NEXT:        %[[V_36:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V_34]]{{\[}}%[[V_35]]] : <@P x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
 // CHECK-NEXT:        %[[V_37:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_36]][@reg] : <@Signal>, !llzk.felt
-// CHECK-NEXT:        %[[V_38:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V_27]]{{\[}}%[[V_35]]] : <@P x !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>>, !llzk.struct<@GetSum<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:        %[[V_39:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_38]][@out] : <@GetSum<[#[[$ATTR_0]]]>>, !llzk.struct<@Signal>
+// CHECK-NEXT:        %[[V_38:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V_27]]{{\[}}%[[V_35]]] : <@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>, !llzk.struct<@GetSum<[#[[$M0]]]>>
+// CHECK-NEXT:        %[[V_39:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_38]][@out] : <@GetSum<[#[[$M0]]]>>, !llzk.struct<@Signal>
 // CHECK-NEXT:        %[[V_40:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_39]][@reg] : <@Signal>, !llzk.felt
 // CHECK-NEXT:        llzk.emit_eq %[[V_37]], %[[V_40]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      }

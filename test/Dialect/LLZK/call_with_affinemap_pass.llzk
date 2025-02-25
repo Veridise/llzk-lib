@@ -56,8 +56,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
 // CHECK: #[[$M1:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 * 5 + 1)>
+// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
 //
 // CHECK-LABEL: llzk.struct @VarArray<[@N, @T]> {
 // CHECK-NEXT:    field @val : !llzk.array<@N x !llzk.tvar<@T>>
@@ -88,9 +88,9 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    func @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@ComponentB> {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = new_array{(%[[V_2]])} : <affine_map<(d0) -> (d0 * 5 + 1)> x !llzk.struct<@ToFelt<[#[[$M0]]]>>>
+// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = new_array{(%[[V_2]])} : <#[[$M1]] x !llzk.struct<@ToFelt<[#[[$M0]]]>>>
 // CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = call @VarArray::@compute(%[[V_3]]) {(%[[V_2]])} 
-// CHECK-SAME:        : (!llzk.array<affine_map<(d0) -> (d0 * 5 + 1)> x !llzk.struct<@ToFelt<[#[[$M0]]]>>>) -> !llzk.struct<@VarArray<[#[[$M1]], !llzk.struct<@ToFelt<[#[[$M0]]]>>]>>
+// CHECK-SAME:        : (!llzk.array<#[[$M1]] x !llzk.struct<@ToFelt<[#[[$M0]]]>>>) -> !llzk.struct<@VarArray<[#[[$M1]], !llzk.struct<@ToFelt<[#[[$M0]]]>>]>>
 // CHECK-NEXT:      return %[[V_1]] : !llzk.struct<@ComponentB>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func @constrain(%[[V_5:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB>, %[[V_6:[0-9a-zA-Z_\.]+]]: index) {

@@ -142,11 +142,16 @@ llzk.func @test_all_forms_of_affine_map_instantiation() -> !at {
   %r = llzk.new_array { (%a)[%b], ()[%c], (%d) } : !at  // { operandSegmentSizes = array<i32: 0, 4> }
   return %r: !at
 }
-// CHECK-LABEL: llzk.func @test_all_forms_of_affine_map_instantiation() -> !llzk.array<affine_map<(d0)[s0] -> (d0 * 5 + s0)>,affine_map<()[s0] -> (s0)>,affine_map<(d0) -> (d0 + 2)> x !llzk.felt> {
-// CHECK-NEXT:    %[[V_0:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:    %[[V_1:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-// CHECK-NEXT:    %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 6 : index
-// CHECK-NEXT:    %[[V_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:    %[[V_4:[0-9a-zA-Z_\.]+]] = new_array{(%[[V_0]]){{\[}}%[[V_1]]], (){{\[}}%[[V_2]]], (%[[V_3]])} : <affine_map<(d0)[s0] -> (d0 * 5 + s0)>,affine_map<()[s0] -> (s0)>,affine_map<(d0) -> (d0 + 2)> x !llzk.felt>
-// CHECK-NEXT:    return %[[V_4]] : !llzk.array<affine_map<(d0)[s0] -> (d0 * 5 + s0)>,affine_map<()[s0] -> (s0)>,affine_map<(d0) -> (d0 + 2)> x !llzk.felt>
+// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0)[s0] -> (d0 * 5 + s0)>
+// CHECK: #[[$M1:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$M2:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 2)>
+//
+// CHECK-LABEL: llzk.func @test_all_forms_of_affine_map_instantiation() ->
+// CHECK-SAME:             !llzk.array<#[[$M0]],#[[$M1]],#[[$M2]] x !llzk.felt> {
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 6 : index
+// CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:    %[[V4:[0-9a-zA-Z_\.]+]] = new_array{(%[[V0]]){{\[}}%[[V1]]], (){{\[}}%[[V2]]], (%[[V3]])} : <#[[$M0]],#[[$M1]],#[[$M2]] x !llzk.felt>
+// CHECK-NEXT:    return %[[V4]] : !llzk.array<#[[$M0]],#[[$M1]],#[[$M2]] x !llzk.felt>
 // CHECK-NEXT:  }

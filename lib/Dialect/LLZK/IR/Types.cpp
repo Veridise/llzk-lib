@@ -94,7 +94,7 @@ ShortTypeStringifier &ShortTypeStringifier::append(Type type) {
     StructType st = llvm::cast<StructType>(type);
     ss << "!s<";
     appendSymRef(st.getNameRef());
-    ss << ":";
+    ss << "_";
     if (ArrayAttr params = st.getParams()) {
       append(params.getValue());
     }
@@ -518,8 +518,19 @@ ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
 }
 
 void printAttrVec(AsmPrinter &printer, ArrayRef<Attribute> value) {
-  llvm::raw_ostream &stream = printer.getStream();
-  llvm::interleave(value, stream, [&stream](Attribute a) { appendWithoutType(stream, a); }, ",");
+  // Adapted from AsmPrinter::printStrippedAttrOrType(), but without printing type.
+  llvm::interleave(value, printer.getStream(), [&printer](Attribute a) {
+    if (succeeded(printer.printAlias(a))) {
+      return;
+    }
+    raw_ostream &os = printer.getStream();
+    uint64_t posPrior = os.tell();
+    appendWithoutType(os, a);
+    // Fallback to printing with prefix if the above failed to write anything to the output stream.
+    if (posPrior == os.tell()) {
+      printer << a;
+    }
+  }, ",");
 }
 
 ParseResult parseDerivedShape(
