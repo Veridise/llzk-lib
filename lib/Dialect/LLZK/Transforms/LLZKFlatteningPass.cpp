@@ -28,7 +28,7 @@ namespace llzk {
 using namespace llzk;
 using namespace mlir;
 
-#define DEBUG_TYPE "llzk-instantiate-structs"
+#define DEBUG_TYPE "llzk-flatten"
 
 namespace {
 
@@ -715,6 +715,6 @@ class InstantiateStructsPass
 
 } // namespace
 
-std::unique_ptr<Pass> llzk::createInstantiateStructsPass() {
+std::unique_ptr<Pass> llzk::createFlatteningPass() {
   return std::make_unique<InstantiateStructsPass>();
 };

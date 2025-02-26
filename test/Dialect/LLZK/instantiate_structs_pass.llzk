@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-instantiate-structs -verify-diagnostics %s | FileCheck %s
+// RUN: llzk-opt -I %S -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck %s
 
 /// Test calling a global function named "compute"; should have no change
 module attributes {veridise.lang = "llzk"} {
