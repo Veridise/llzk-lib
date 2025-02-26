@@ -4,6 +4,8 @@
 #include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
+#include <mlir/Dialect/Affine/IR/AffineOps.h>
+#include <mlir/Dialect/Affine/LoopUtils.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Dialect/SCF/Transforms/Patterns.h>
@@ -11,6 +13,7 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>
 #include <mlir/Transforms/DialectConversion.h>
+#include <mlir/Transforms/GreedyPatternRewriteDriver.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DepthFirstIterator.h>
@@ -106,7 +109,7 @@ newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionT
   std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
   applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
   // Add builtin FunctionType converter
-  populateFunctionOpInterfaceTypeConversionPattern(FuncOp::getOperationName(), patterns, tyConv);
+  populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns, tyConv);
   scf::populateSCFStructuralTypeConversionsAndLegality(tyConv, patterns, target);
   return patterns;
 }
@@ -154,6 +157,99 @@ ConversionTarget newConverterDefinedTarget(TypeConverter &tyConv, MLIRContext *c
   applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
   return target;
 }
+
+namespace StepUnroll {
+
+// These exist in a newer version of LLVM and can be removed if the dependency is upgraded.
+namespace NewerLLVM {
+namespace MathExtras {
+
+template <typename T, typename U>
+using enableif_int = std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>;
+template <typename T, typename U, typename = enableif_int<T, U>>
+using common_sint = std::common_type_t<std::make_signed_t<T>, std::make_signed_t<U>>;
+
+// Check whether divideCeilSigned or divideFloorSigned would overflow. This
+// happens only when Numerator = INT_MIN and Denominator = -1.
+template <typename U, typename V>
+constexpr bool divideSignedWouldOverflow(U Numerator, V Denominator) {
+  return Numerator == std::numeric_limits<U>::min() && Denominator == -1;
+}
+
+/// Returns the integer ceil(Numerator / Denominator). Signed version.
+/// Overflow is explicitly forbidden with an assert.
+template <typename U, typename V, typename T = common_sint<U, V>>
+constexpr T divideCeilSigned(U Numerator, V Denominator) {
+  assert(Denominator && "Division by zero");
+  assert(!divideSignedWouldOverflow(Numerator, Denominator) && "Divide would overflow");
+  if (!Numerator) {
+    return 0;
+  }
+  // C's integer division rounds towards 0.
+  T Bias = Denominator >= 0 ? 1 : -1;
+  bool SameSign = (Numerator >= 0) == (Denominator >= 0);
+  return SameSign ? (Numerator - Bias) / Denominator + 1 : Numerator / Denominator;
+}
+
+} // namespace MathExtras
+} // namespace NewerLLVM
+
+// OpTy can be any LoopLikeOpInterface
+// TODO: not guaranteed to work with WhileOp, can try with our custom attributes though.
+template <typename OpTy> class LoopUnrollPattern : public OpRewritePattern<OpTy> {
+public:
+  using OpRewritePattern<OpTy>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(OpTy loopOp, PatternRewriter &rewriter) const override {
+    if (auto maybeConstant = getConstantTripCount(loopOp)) {
+      uint64_t tripCount = *maybeConstant;
+      if (tripCount == 0) {
+        rewriter.eraseOp(loopOp);
+        return success();
+      } else if (tripCount == 1) {
+        return loopOp.promoteIfSingleIteration(rewriter);
+      }
+      return loopUnrollByFactor(loopOp, tripCount);
+    }
+    return failure();
+  }
+
+private:
+  /// Returns the trip count of the loop-like op if its low bound, high bound and step are
+  /// constants, `nullopt` otherwise. Trip count is computed as ceilDiv(highBound - lowBound, step).
+  static std::optional<int64_t> getConstantTripCount(LoopLikeOpInterface loopOp) {
+    std::optional<OpFoldResult> lbVal = loopOp.getSingleLowerBound();
+    std::optional<OpFoldResult> ubVal = loopOp.getSingleUpperBound();
+    std::optional<OpFoldResult> stepVal = loopOp.getSingleStep();
+    if (!lbVal.has_value() || !ubVal.has_value() || !stepVal.has_value()) {
+      return std::nullopt;
+    }
+
+    std::optional<int64_t> lbConst = getConstantIntValue(lbVal.value());
+    std::optional<int64_t> ubConst = getConstantIntValue(ubVal.value());
+    std::optional<int64_t> stepConst = getConstantIntValue(stepVal.value());
+    if (!lbConst.has_value() || !ubConst.has_value() || !stepConst.has_value()) {
+      return std::nullopt;
+    }
+
+    int64_t lb = lbConst.value();
+    int64_t ub = ubConst.value();
+    int64_t step = stepConst.value();
+    assert(lb >= 0 && ub >= 0 && step > 0 && "expected positive loop bounds and step");
+    return NewerLLVM::MathExtras::divideCeilSigned(ub - lb, step);
+  }
+};
+
+LogicalResult run(ModuleOp modOp, bool &modified) {
+  MLIRContext *ctx = modOp->getContext();
+  RewritePatternSet patterns(ctx);
+  patterns.add<LoopUnrollPattern<scf::ForOp>>(ctx);
+  patterns.add<LoopUnrollPattern<affine::AffineForOp>>(ctx);
+  return applyPatternsAndFoldGreedily(
+      modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &modified
+  );
+}
+} // namespace StepUnroll
 
 namespace Step1 {
 
@@ -576,13 +672,21 @@ class InstantiateStructsPass
   void runOnOperation() override {
     ModuleOp modOp = getOperation();
 
-    unsigned prevMapSize;
+    bool modified;
     // Maps original remote (i.e. use site) type to new remote type
     DenseMap<StructType, StructType> structInstantiations;
     // Maps new remote type to location of the compute() calls that cause instantiation
     DenseMap<StructType, DenseSet<Location>> newTyComputeLocations;
     do {
-      prevMapSize = structInstantiations.size();
+      modified = false;
+
+      // Unroll loops with known iterations
+      if (failed(StepUnroll::run(modOp, modified))) {
+        signalPassFailure();
+        return;
+      }
+
+      unsigned prevMapSize = structInstantiations.size();
 
       // Find calls to "compute()" that return a parameterized struct and replace it to call a
       // flattened version of the struct that has parameters replaced with the constant values.
@@ -597,8 +701,9 @@ class InstantiateStructsPass
         return;
       }
 
-      // Repeat as long as a new type was requested
-    } while (structInstantiations.size() > prevMapSize);
+      // Check if a new StructType was required bys an instantiation
+      modified |= structInstantiations.size() > prevMapSize;
+    } while (modified);
 
     // Remove the parameterized StructDefOp that were instantiated.
     if (failed(Step3::run(modOp, structInstantiations))) {
