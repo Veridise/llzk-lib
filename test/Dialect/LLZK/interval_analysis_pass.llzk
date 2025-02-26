@@ -17,3 +17,92 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @CmpConstraint {
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@CmpConstraint> {
+      %self = new_struct : !llzk.struct<@CmpConstraint>
+      return %self : !llzk.struct<@CmpConstraint>
+    }
+
+    func @constrain(%self: !llzk.struct<@CmpConstraint>, %a: !llzk.felt, %b: !llzk.felt) {
+      %x = constfelt 1
+      %y = constfelt 2
+      %cmpA = cmp gt(%a, %x)
+      assert %cmpA
+      %cmpB = cmp le(%b, %y)
+      assert %cmpB
+      return
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @FieldRangeConstraint {
+
+    llzk.field @foo : !llzk.felt
+    llzk.field @bar : !llzk.felt
+
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@FieldRangeConstraint> {
+      %self = new_struct : !llzk.struct<@FieldRangeConstraint>
+      return %self : !llzk.struct<@FieldRangeConstraint>
+    }
+
+    func @constrain(%self: !llzk.struct<@FieldRangeConstraint>, %a: !llzk.felt, %b: !llzk.felt) {
+      %x = constfelt 1
+      %y = constfelt 2
+      %cmpA = cmp gt(%a, %x)
+      assert %cmpA
+      %cmpB = cmp le(%b, %y)
+      assert %cmpB
+      %foo = readf %self[@foo] : !llzk.struct<@FieldRangeConstraint>, !llzk.felt
+      emit_eq %foo, %x : !llzk.felt
+      %bar = readf %self[@bar] : !llzk.struct<@FieldRangeConstraint>, !llzk.felt
+      emit_eq %bar, %b : !llzk.felt
+      return
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ArithConstraint {
+
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ArithConstraint> {
+      %self = new_struct : !llzk.struct<@ArithConstraint>
+      return %self : !llzk.struct<@ArithConstraint>
+    }
+
+    func @constrain(%self: !llzk.struct<@ArithConstraint>, %a: !llzk.felt, %b: !llzk.felt) {
+      %5 = constfelt 5
+      %7 = constfelt 7
+      %11 = constfelt 11
+      %cmp1 = cmp ge(%a, %5)
+      assert %cmp1
+      %cmp2 = cmp le(%a, %7)
+      assert %cmp2
+      %cmp3 = cmp gt(%b, %7)
+      assert %cmp3
+      %cmp4 = cmp le(%b, %11)
+      assert %cmp4
+
+      %mul = mul %a, %5
+      %sub = sub %mul, %5
+      %1 = div %11, %11
+      %mod = mod %sub, %b
+      %neg = neg %mod
+      %final = add %mul, %neg
+
+      %0 = constfelt 0
+      %notzero = cmp ne(%final, %0)
+      assert %notzero
+
+      return
+    }
+  }
+}

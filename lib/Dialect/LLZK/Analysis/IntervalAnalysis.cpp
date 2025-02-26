@@ -2,21 +2,13 @@
 
 namespace llzk {
 
-namespace {
-
-llvm::APInt max(const llvm::APInt &lhs, const llvm::APInt &rhs) { return lhs.ult(rhs) ? rhs : lhs; }
-
-llvm::APInt min(const llvm::APInt &lhs, const llvm::APInt &rhs) { return lhs.ult(rhs) ? lhs : rhs; }
-
-} // namespace
-
 /* UnreducedInterval */
 
 Interval UnreducedInterval::reduce(const Field &field) const {
-  if (a.ugt(b)) {
+  if (a > b) {
     return Interval::Empty();
   }
-  if (width().uge(field.prime())) {
+  if (width() >= field.prime()) {
     return Interval::Entire();
   }
 
@@ -46,20 +38,76 @@ Interval UnreducedInterval::reduce(const Field &field) const {
 
 UnreducedInterval UnreducedInterval::intersect(const UnreducedInterval &rhs) const {
   auto &lhs = *this;
-  return UnreducedInterval(max(lhs.a, rhs.a), min(lhs.b, rhs.b));
+  return UnreducedInterval(std::max(lhs.a, rhs.a), std::min(lhs.b, rhs.b));
 }
 
 UnreducedInterval UnreducedInterval::doUnion(const UnreducedInterval &rhs) const {
   auto &lhs = *this;
-  return UnreducedInterval(min(lhs.a, rhs.a), max(lhs.b, rhs.b));
+  return UnreducedInterval(std::min(lhs.a, rhs.a), std::max(lhs.b, rhs.b));
 }
 
+UnreducedInterval UnreducedInterval::lt(const UnreducedInterval &rhs) const {
+  auto newI = le(rhs);
+  auto one = llvm::APInt(newI.a.getBitWidth(), 1);
+  return UnreducedInterval(newI.a, newI.b - llvm::APSInt(one));
+}
+
+UnreducedInterval UnreducedInterval::le(const UnreducedInterval &rhs) const {
+  auto &lhs = *this;
+  return UnreducedInterval(lhs.a, std::min(lhs.b, rhs.b));
+}
+
+UnreducedInterval UnreducedInterval::gt(const UnreducedInterval &rhs) const {
+  auto newI = ge(rhs);
+  auto one = llvm::APInt(newI.a.getBitWidth(), 1);
+  return UnreducedInterval(newI.a + llvm::APSInt(one), newI.b);
+}
+
+UnreducedInterval UnreducedInterval::ge(const UnreducedInterval &rhs) const {
+  auto &lhs = *this;
+  return UnreducedInterval(std::max(lhs.a, rhs.a), lhs.b);
+}
+
+UnreducedInterval UnreducedInterval::operator-() const { return UnreducedInterval(-b, -a); }
+
 UnreducedInterval operator+(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
-  auto m =
-      std::max({lhs.a.getBitWidth(), lhs.b.getBitWidth(), rhs.a.getBitWidth(), rhs.b.getBitWidth()}
-      );
-  llvm::errs() << lhs << " + " << rhs << "\n";
-  return UnreducedInterval(lhs.a.zext(m) + rhs.a.zext(m), lhs.b.zext(m) + rhs.b.zext(m));
+  return UnreducedInterval(lhs.a + rhs.a, lhs.b + rhs.b);
+}
+
+UnreducedInterval operator-(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
+  return lhs + (-rhs);
+}
+
+UnreducedInterval operator*(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
+  auto v1 = lhs.a * rhs.a;
+  auto v2 = lhs.a * rhs.b;
+  auto v3 = lhs.b * rhs.a;
+  auto v4 = lhs.b * rhs.b;
+
+  auto minVal = std::min({v1, v2, v3, v4});
+  auto maxVal = std::max({v1, v2, v3, v4});
+
+  return UnreducedInterval(minVal, maxVal);
+}
+
+bool UnreducedInterval::overlaps(const UnreducedInterval &rhs) const {
+  auto &lhs = *this;
+  return lhs.b >= rhs.a || lhs.a <= rhs.b;
+}
+
+bool UnreducedInterval::operator<(const UnreducedInterval &rhs) const {
+  auto &lhs = *this;
+  return lhs.a < rhs.a;
+}
+
+bool UnreducedInterval::operator>(const UnreducedInterval &rhs) const {
+  auto &lhs = *this;
+  return lhs.a > rhs.a;
+}
+
+bool UnreducedInterval::operator==(const UnreducedInterval &rhs) const {
+  auto &lhs = *this;
+  return lhs.a == rhs.a && lhs.b == rhs.b;
 }
 
 /* Interval */
@@ -85,13 +133,13 @@ Interval Interval::join(const Interval &rhs) const {
   if (areOneOf<
           {Type::TypeA, Type::TypeA}, {Type::TypeB, Type::TypeB}, {Type::TypeC, Type::TypeC},
           {Type::TypeA, Type::TypeC}, {Type::TypeB, Type::TypeC}>(lhs, rhs)) {
-    return Interval(rhs.ty, min(lhs.a, rhs.a), max(lhs.b, rhs.b));
+    return Interval(rhs.ty, std::min(lhs.a, rhs.a), std::max(lhs.b, rhs.b));
   }
   if (areOneOf<{Type::TypeA, Type::TypeB}>(lhs, rhs)) {
     auto lhsUnred = lhs.firstUnreduced();
     auto opt1 = rhs.firstUnreduced().doUnion(lhsUnred);
     auto opt2 = rhs.secondUnreduced().doUnion(lhsUnred);
-    if (opt1.width().ule(opt2.width())) {
+    if (opt1.width() <= opt2.width()) {
       return opt1.reduce(field.get());
     }
     return opt2.reduce(field.get());
@@ -137,9 +185,9 @@ Interval Interval::intersect(const Interval &rhs) const {
   if (areOneOf<
           {Type::TypeA, Type::TypeA}, {Type::TypeB, Type::TypeB}, {Type::TypeC, Type::TypeC},
           {Type::TypeA, Type::TypeC}, {Type::TypeB, Type::TypeC}>(lhs, rhs)) {
-    auto maxA = max(lhs.a, rhs.a);
-    auto minB = min(lhs.b, rhs.b);
-    if (maxA.ule(minB)) {
+    auto maxA = std::max(lhs.a, rhs.a);
+    auto minB = std::min(lhs.b, rhs.b);
+    if (maxA <= minB) {
       return Interval(lhs.ty, a, b);
     } else {
       return Interval::Empty();
@@ -174,13 +222,47 @@ Interval Interval::intersect(const Interval &rhs) const {
       )) {
     return rhs.intersect(lhs);
   }
-  llvm::report_fatal_error("TODO!");
   return Interval::Empty();
 }
 
+Interval Interval::operator-() const { return (-firstUnreduced()).reduce(field.get()); }
+
 Interval operator+(const Interval &lhs, const Interval &rhs) {
   ensure(lhs.field.get() == rhs.field.get(), "cannot add intervals in different fields");
-  return (lhs.toUnreduced() + rhs.toUnreduced()).reduce(lhs.field.get());
+  return (lhs.firstUnreduced() + rhs.firstUnreduced()).reduce(lhs.field.get());
+}
+
+Interval operator-(const Interval &lhs, const Interval &rhs) { return lhs + (-rhs); }
+
+Interval operator*(const Interval &lhs, const Interval &rhs) {
+  ensure(lhs.field.get() == rhs.field.get(), "cannot multiply intervals in different fields");
+  auto zeroInterval = Interval::Degenerate(lhs.field.get().zero());
+  if (lhs == zeroInterval || rhs == zeroInterval) {
+    return zeroInterval;
+  }
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return Interval::Empty();
+  }
+  if (lhs.isEntire() || rhs.isEntire()) {
+    return Interval::Entire();
+  }
+
+  if (Interval::areOneOf<{Interval::Type::TypeB, Interval::Type::TypeB}>(lhs, rhs)) {
+    return (lhs.secondUnreduced() * rhs.secondUnreduced()).reduce(lhs.field.get());
+  }
+  return (lhs.firstUnreduced() * rhs.firstUnreduced()).reduce(lhs.field.get());
+}
+
+Interval operator/(const Interval &lhs, const Interval &rhs) {
+  if (rhs.width() > rhs.field.get().one()) {
+    return Interval::Entire();
+  }
+  if (rhs.a.isZero()) {
+    return lhs;
+  }
+  llvm::errs() << lhs.a.isSigned() << " " << lhs.b.isSigned() << " " << rhs.a.isSigned() << "\n";
+  llvm::errs() << lhs << " " << rhs << '\n';
+  return UnreducedInterval(lhs.a / rhs.a, lhs.b / rhs.a).reduce(rhs.field.get());
 }
 
 /* StructIntervals */
@@ -191,7 +273,6 @@ mlir::LogicalResult StructIntervals::computeIntervals(
   ReturnOp computeEnd, constrainEnd;
   structDef.getComputeFuncOp().walk([&computeEnd](ReturnOp r) mutable { computeEnd = r; });
   structDef.getConstrainFuncOp().walk([&constrainEnd](ReturnOp r) mutable { constrainEnd = r; });
-  llvm::errs() << computeEnd << ", " << constrainEnd << "\n";
 
   auto computeLattice = solver.lookupState<IntervalAnalysisLattice>(computeEnd);
   auto constrainLattice = solver.lookupState<IntervalAnalysisLattice>(constrainEnd);
@@ -200,9 +281,6 @@ mlir::LogicalResult StructIntervals::computeIntervals(
 
   computeSolverConstraints = computeLattice->getConstraints();
   constrainSolverConstraints = constrainLattice->getConstraints();
-
-  llvm::errs() << "compute lattice: " << *computeLattice << "\n";
-  llvm::errs() << "constrain lattice: " << *constrainLattice << "\n";
 
   for (const auto &ref : ConstrainRef::getAllConstrainRefs(structDef)) {
     if (!ref.isScalar()) {
@@ -235,9 +313,9 @@ void StructIntervals::print(mlir::raw_ostream &os) const {
 
   os << "\n    compute { ";
   for (auto &[ref, interval] : computeFieldRanges) {
-    os << "\n        " << ref << " in " << interval << "\n";
+    os << "\n        " << ref << " in " << interval;
   }
-  os << "\n        Solver Constraints { ";
+  os << "\n\n        Solver Constraints { ";
   if (computeSolverConstraints.empty()) {
     os << "}\n";
   } else {
@@ -251,14 +329,15 @@ void StructIntervals::print(mlir::raw_ostream &os) const {
 
   os << "\n    constrain { ";
   for (auto &[ref, interval] : constrainFieldRanges) {
-    os << "\n        " << ref << " in " << interval << "\n";
+    os << "\n        " << ref << " in " << interval;
   }
-  os << "\n        Solver Constraints { ";
+  os << "\n\n        Solver Constraints { ";
   if (constrainSolverConstraints.empty()) {
     os << "}\n";
   } else {
     for (const auto &e : constrainSolverConstraints) {
-      os << "\n            " << e;
+      os << "\n            ";
+      e.getExpr()->print(os);
     }
     os << "\n        }\n";
   }
