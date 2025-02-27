@@ -3,99 +3,99 @@
 /// Selection of index dialect that is reasonable to use in LLZK.
 
 llzk.func @f_constant() -> index {
-  %0 = index.constant 42
+  %0 = arith.constant 42 : index
   return %0: index
 }
 //CHECK-LABEL:  llzk.func @f_constant() -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.constant 42
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
 //CHECK-NEXT:     return %[[T1]] : index
 //CHECK-NEXT:   }
 // -----
 
 llzk.func @f_add(%a: index, %b: index) -> index {
-  %c = index.add %a, %b
+  %c = arith.addi %a, %b : index
   return %c: index
 }
 //CHECK-LABEL:  llzk.func @f_add
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.add %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.addi %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     return %[[T1]] : index
 //CHECK-NEXT:   }
 // -----
 
 llzk.func @f_sub(%a: index, %b: index) -> index {
-  %c = index.sub %a, %b
+  %c = arith.subi %a, %b : index
   return %c: index
 }
 //CHECK-LABEL:  llzk.func @f_sub
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.sub %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.subi %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     return %[[T1]] : index
 //CHECK-NEXT:   }
 // -----
 
 llzk.func @f_mul(%a: index, %b: index) -> index {
-  %c = index.mul %a, %b
+  %c = arith.muli %a, %b : index
   return %c: index
 }
 //CHECK-LABEL:  llzk.func @f_mul
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.mul %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.muli %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     return %[[T1]] : index
 //CHECK-NEXT:   }
 // -----
 
 llzk.func @f_div(%a: index, %b: index) -> index {
-  %c = index.divu %a, %b
+  %c = arith.divui %a, %b : index
   return %c: index
 }
 //CHECK-LABEL:  llzk.func @f_div
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> index {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.divu %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.divui %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     return %[[T1]] : index
 //CHECK-NEXT:   }
 // -----
 
 llzk.func @f_eq(%a: index, %b: index) -> i1 {
-  %c = index.cmp eq(%a, %b)
+  %c = arith.cmpi eq, %a, %b : index
   return %c: i1
 }
 //CHECK-LABEL:  llzk.func @f_eq
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.cmp eq(%[[A0]], %[[A1]])
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
 llzk.func @f_ne(%a: index, %b: index) -> i1 {
-  %c = index.cmp ne(%a, %b)
+  %c = arith.cmpi ne, %a, %b : index
   return %c: i1
 }
 //CHECK-LABEL:  llzk.func @f_ne
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.cmp ne(%[[A0]], %[[A1]])
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.cmpi ne, %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
 llzk.func @f_slt(%a: index, %b: index) -> i1 {
-  %c = index.cmp slt(%a, %b)
+  %c = arith.cmpi slt, %a, %b : index
   return %c: i1
 }
 //CHECK-LABEL:  llzk.func @f_slt
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.cmp slt(%[[A0]], %[[A1]])
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
 llzk.func @f_sle(%a: index, %b: index) -> i1 {
-  %c = index.cmp sle(%a, %b)
+  %c = arith.cmpi sle, %a, %b : index
   return %c: i1
 }
 //CHECK-LABEL:  llzk.func @f_sle
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = index.cmp sle(%[[A0]], %[[A1]])
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.cmpi sle, %[[A0]], %[[A1]] : index
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----

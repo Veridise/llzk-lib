@@ -23,14 +23,14 @@ module attributes {veridise.lang = "llzk"} {
 
     func @compute(%arr: !llzk.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@Head<[@T, @N]>> {
       %self = new_struct : !llzk.struct<@Head<[@T, @N]>>
-      %1 = index.constant 0
+      %1 = arith.constant 0 : index
       %2 = readarr %arr[%1] : !llzk.array<@N x !llzk.tvar<@T>>, !llzk.tvar<@T>
       writef %self[@"$super"] = %2 : !llzk.struct<@Head<[@T, @N]>>, !llzk.tvar<@T>
       return %self : !llzk.struct<@Head<[@T, @N]>>
     }
 
     func @constrain(%self: !llzk.struct<@Head<[@T, @N]>>, %arr: !llzk.array<@N x !llzk.tvar<@T>>) {
-      %1 = index.constant 0
+      %1 = arith.constant 0 : index
       %2 = readarr %arr[%1] : !llzk.array<@N x !llzk.tvar<@T>>, !llzk.tvar<@T>
       %3 = readf %self[@"$super"] : !llzk.struct<@Head<[@T, @N]>>, !llzk.tvar<@T>
       emit_eq %2, %3 : !llzk.tvar<@T>
@@ -137,13 +137,13 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    field @"$super" : !llzk.tvar<@T>
 //CHECK-NEXT:    func @compute(%arg0: !llzk.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@Head<[@T, @N]>> {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Head<[@T, @N]>>
-//CHECK-NEXT:      %[[C1:[0-9a-zA-Z_\.]+]] = index.constant 0
+//CHECK-NEXT:      %[[C1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readarr %arg0[%[[C1]]] : <@N x !llzk.tvar<@T>>, !llzk.tvar<@T>
 //CHECK-NEXT:      writef %[[SELF]][@"$super"] = %[[T0]] : <@Head<[@T, @N]>>, !llzk.tvar<@T>
 //CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@Head<[@T, @N]>>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    func @constrain(%arg0: !llzk.struct<@Head<[@T, @N]>>, %arg1: !llzk.array<@N x !llzk.tvar<@T>>) {
-//CHECK-NEXT:      %[[C2:[0-9a-zA-Z_\.]+]] = index.constant 0
+//CHECK-NEXT:      %[[C2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readarr %arg1[%[[C2]]] : <@N x !llzk.tvar<@T>>, !llzk.tvar<@T>
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = readf %arg0[@"$super"] : <@Head<[@T, @N]>>, !llzk.tvar<@T>
 //CHECK-NEXT:      emit_eq %[[T0]], %[[T1]] : !llzk.tvar<@T>, !llzk.tvar<@T>

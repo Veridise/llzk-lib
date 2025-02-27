@@ -439,7 +439,7 @@ def LLZK_ReadArrayOp
 
     Example of 1-dimensional array:
     ```llzk
-    %i = index.constant 0
+    %i = arith.constant 0 : index
     %0 = llzk.new_array %a, %b, %c : !llzk.array<3 x !llzk.felt>
     // %1 is now equal to %a
     %1 = llzk.readarr %0[%i] : !llzk.array<3 x !llzk.felt>, !llzk.felt
@@ -447,9 +447,9 @@ def LLZK_ReadArrayOp
 
     Example of 3-dimensional array:
     ```llzk
-    %i = index.constant 0
-    %j = index.constant 1
-    %k = index.constant 4
+    %i = arith.constant 0 : index
+    %j = arith.constant 1 : index
+    %k = arith.constant 4 : index
     %0 = llzk.new_array ... : !llzk.array<3,10,15 x !llzk.felt>
     // %1 is now equal to %a
     %1 = llzk.readarr %0[%i, %j, %k] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.felt
@@ -473,7 +473,7 @@ def LLZK_WriteArrayOp
 
     Example of 1-dimensional array:
     ```llzk
-    %i = index.constant 0
+    %i = arith.constant 0 : index
     %0 = llzk.constfelt 42
     %1 = llzk.new_array %a, %b, %c : !llzk.array<3 x !llzk.felt>
     // The array now is [%0, %b, %c]
@@ -482,8 +482,8 @@ def LLZK_WriteArrayOp
 
     Example of 2-dimensional array:
     ```llzk
-    %i = index.constant 0
-    %j = index.constant 0
+    %i = arith.constant 0 : index
+    %j = arith.constant 0 : index
     %0 = llzk.constfelt 42
     %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2,2 x !llzk.felt>
     // The array now is [[%0, %b], [%c, %d]]
@@ -510,7 +510,7 @@ def LLZK_ExtractArrayOp
 
     Extracting a 1-D array from 3-D array by selecting the index of 2 dimensions:
     ```llzk
-    %i = index.constant 1
+    %i = arith.constant 1 : index
     %0 = llzk.new_array ... : !llzk.array<3,10,15 x !llzk.felt>
     %1 = llzk.extractarr %0[%i,%i] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.array<15 x !llzk.felt>
     ```
@@ -547,11 +547,11 @@ def LLZK_InsertArrayOp
     ```llzk
     %c = llzk.new_array : !llzk.array<2,3 x index>
     // Array %c is uninitialized [[?, ?, ?], [?, ?, ?]]
-    %0 = index.constant 0
+    %0 = arith.constant 0 : index
     %a = llzk.new_array %r, %s, %t : !llzk.array<3 x index>
     llzk.insertarr %c[%0] = %a : !llzk.array<2,3 x index>, !llzk.array<3 x index>
     // Array %c is now [[%r, %s, %t], [?, ?, ?]]
-    %1 = index.constant 1
+    %1 = arith.constant 1 : index
     %b = llzk.new_array %x, %y, %z : !llzk.array<3 x index>
     llzk.insertarr %c[%1] = %b : !llzk.array<2,3 x index>, !llzk.array<3 x index>
     // Array %c is now [[%r, %s, %t], [%x, %y, %z]]
@@ -578,9 +578,9 @@ def LLZK_ArrayLengthOp
     Example:
     ```llzk
     %a = llzk.new_array : !llzk.array<2,3 x !llzk.felt>
-    %0 = index.constant 0
+    %0 = arith.constant 0 : index
     %x = llzk.array_len %a, %0 : !llzk.array<2,3 x !llzk.felt> // result is 2
-    %1 = index.constant 1
+    %1 = arith.constant 1 : index
     %y = llzk.array_len %a, %1 : !llzk.array<2,3 x !llzk.felt> // result is 3
     ```
   }];

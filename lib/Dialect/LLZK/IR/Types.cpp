@@ -1,5 +1,6 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
@@ -19,44 +20,236 @@ using namespace mlir;
 //===------------------------------------------------------------------===//
 
 namespace {
-template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeImpl(Type type);
 
-template <bool AllowStruct, bool AllowString> bool isValidArrayElemTypeImpl(Type type) {
+template <typename... Types> class TypeList {
+
+  /// Helper class that handles appending the 'Types' names to some kind of stream
+  template <typename StreamType> struct Appender {
+
+    // single
+    template <typename Ty> static inline void append(StreamType &stream) {
+      stream << "'" << Ty::name << "'";
+    }
+
+    // multiple
+    template <typename First, typename Second, typename... Rest>
+    static void append(StreamType &stream) {
+      append<First>(stream);
+      stream << ", ";
+      append<Second, Rest...>(stream);
+    }
+
+    // full list with wrapping brackets
+    static inline void append(StreamType &stream) {
+      stream << "[";
+      append<Types...>(stream);
+      stream << "]";
+    }
+  };
+
+public:
+  // Checks if the provided value is an instance of any of `Types`
+  template <typename T> static inline bool matches(const T &value) {
+    return llvm::isa<Types...>(value);
+  }
+
+  static void reportInvalid(EmitErrorFn emitError, StringRef foundName, const char *aspect) {
+    // The implicit conversion from InFlightDiagnostic to LogicalResult in the return causes the
+    // diagnostic to be printed.
+    InFlightDiagnostic diag = emitError().append(aspect, " must be one of ");
+    Appender<InFlightDiagnostic>::append(diag);
+    diag.append(" but found '", foundName, "'").report();
+  }
+
+  static inline void
+  reportInvalid(std::optional<EmitErrorFn> emitError, Attribute found, const char *aspect) {
+    if (emitError.has_value()) {
+      reportInvalid(*emitError, found.getAbstractAttribute().getName(), aspect);
+    }
+  }
+
+  // Returns a comma-separated list formatted string of the names of `Types`
+  static std::string getNames() {
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    Appender<llvm::raw_string_ostream>::append(oss);
+    return output;
+  }
+};
+
+/// Helpers to compute the union of multiple TypeList without repetition.
+/// Use as: TypeListUnion<TypeList<...>, TypeList<...>, ...>
+template <class... Ts> struct make_unique {
+  using type = TypeList<Ts...>;
+};
+
+template <class... Ts> struct make_unique<TypeList<>, Ts...> : make_unique<Ts...> {};
+
+template <class U, class... Us, class... Ts>
+struct make_unique<TypeList<U, Us...>, Ts...>
+    : std::conditional_t<
+          (std::is_same_v<U, Us> || ...) || (std::is_same_v<U, Ts> || ...),
+          make_unique<TypeList<Us...>, Ts...>, make_unique<TypeList<Us...>, Ts..., U>> {};
+
+template <class... Ts> using TypeListUnion = typename make_unique<Ts...>::type;
+
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
+bool isValidTypeImpl(Type type);
+
+// Dimensions in the ArrayType must be one of the following:
+//  - Integer constants
+//  - SymbolRef (flat ref for struct params, non-flat for global constants from another module)
+//  - AffineMap (for array created within a loop where size depends on loop variable)
+using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
+
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
+bool areValidArrayDimSizes(
+    ArrayRef<Attribute> dimensionSizes, std::optional<EmitErrorFn> emitError = std::nullopt
+) {
+  // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
+  if (dimensionSizes.empty()) {
+    if (emitError.has_value()) {
+      (*emitError)().append("array must have at least one dimension").report();
+    }
+    return false;
+  }
+  // Rather than immediately returning on failure, we check all dimensions and aggregate to provide
+  // as many errors are possible in a single verifier run.
+  bool success = true;
+  for (Attribute a : dimensionSizes) {
+    if (!ArrayDimensionTypes::matches(a)) {
+      ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
+      success = false;
+    } else if (!AllowVar && !llvm::isa<IntegerAttr>(a)) {
+      ArrayDimensionTypes::reportInvalid(emitError, a, "Concrete array dimension");
+      success = false;
+    }
+  }
+  return success;
+}
+
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
+bool isValidArrayElemTypeImpl(Type type) {
   // ArrayType element can be any valid type sans ArrayType itself.
   //  Pass through the flags indicating which types are allowed.
-  // [TH]: Maybe the array type should not be excluded beyond the immediate element type itself.
-  //  i.e. should `!llzk.array<2 x !llzk.struct<@A<[!llzk.array<2 x i1>]>>>` be allowed?
-  return isValidTypeImpl<AllowStruct, AllowString, false>(type);
+  return !llvm::isa<ArrayType>(type) &&
+         isValidTypeImpl<AllowStruct, AllowString, AllowArray, AllowVar>(type);
 }
 
-template <bool AllowStruct, bool AllowString> bool isValidArrayTypeImpl(Type type) {
-  //  Pass through the flags indicating which types are allowed.
-  return llvm::isa<ArrayType>(type) && isValidArrayElemTypeImpl<AllowStruct, AllowString>(
-                                           llvm::cast<ArrayType>(type).getElementType()
-                                       );
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
+bool isValidArrayTypeImpl(
+    Type elementType, ArrayRef<Attribute> dimensionSizes,
+    std::optional<EmitErrorFn> emitError = std::nullopt
+) {
+  if (!areValidArrayDimSizes<AllowStruct, AllowString, AllowArray, AllowVar>(
+          dimensionSizes, emitError
+      )) {
+    return false;
+  }
+
+  // Ensure array element type is valid
+  if (!isValidArrayElemTypeImpl<AllowStruct, AllowString, AllowArray, AllowVar>(elementType)) {
+    if (emitError.has_value()) {
+      // Print proper message if `elementType` is not a valid LLZK type or
+      //  if it's simply not the right kind of type for an array element.
+      if (succeeded(checkValidType(*emitError, elementType))) {
+        (*emitError)()
+            .append(
+                "'", ArrayType::name, "' element type cannot be '",
+                elementType.getAbstractType().getName(), "'"
+            )
+            .report();
+      }
+    }
+    return false;
+  }
+  return true;
 }
 
-template <bool AllowStruct, bool AllowString, bool AllowArray> bool isValidTypeImpl(Type type) {
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
+bool isValidArrayTypeImpl(Type type) {
+  //  Pass through the flags indicating which types are allowed as array element type.
+  if (ArrayType arrTy = llvm::dyn_cast<ArrayType>(type)) {
+    return isValidArrayTypeImpl<AllowStruct, AllowString, AllowArray, AllowVar>(
+        arrTy.getElementType(), arrTy.getDimensionSizes()
+    );
+  }
+  return false;
+}
+
+// Parameters in the StructType must be one of the following:
+//  - Integer constants
+//  - SymbolRef (flat ref for struct params, non-flat for global constants from another module)
+//  - Type
+//  - AffineMap (for array of non-homogeneous structs)
+using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
+
+// The Allow* flags here refer to Types nested within a TypeAttr parameter.
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
+bool areValidStructTypeParams(
+    ArrayAttr params, std::optional<EmitErrorFn> emitError = std::nullopt
+) {
+  bool success = true;
+  if (params) {
+    for (Attribute p : params) {
+      if (!StructParamTypes::matches(p)) {
+        StructParamTypes::reportInvalid(emitError, p, "Struct parameter");
+        success = false;
+      } else if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(p)) {
+        if (!isValidTypeImpl<AllowStruct, AllowString, AllowArray, AllowVar>(tyAttr.getValue())) {
+          if (emitError.has_value()) {
+            (*emitError)()
+                .append("expected a valid LLZK type but found ", tyAttr.getValue())
+                .report();
+          }
+          success = false;
+        }
+      } else if (!AllowVar && !llvm::isa<IntegerAttr>(p)) {
+        ArrayDimensionTypes::reportInvalid(emitError, p, "Concrete struct parameter");
+        success = false;
+      }
+    }
+  }
+  return success;
+}
+
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
+bool isValidStructTypeImpl(Type type) {
+  //  Pass through the flags indicating which types are allowed if there is a TypeAttr.
+  if (StructType sType = llvm::dyn_cast<StructType>(type)) {
+    return areValidStructTypeParams<AllowStruct, AllowString, AllowArray, AllowVar>(sType.getParams(
+    ));
+  }
+  return false;
+}
+
+template <bool AllowStruct, bool AllowString, bool AllowArray, bool AllowVar>
+bool isValidTypeImpl(Type type) {
   // This is the main check for allowed types.
-  //  Allow StructType and ArrayType only if the respective flags are true.
   //  Pass through the flags indicating which types are allowed.
-  return type.isSignlessInteger(1) || llvm::isa<IndexType, FeltType, TypeVarType>(type) ||
-         (AllowStruct && llvm::isa<StructType>(type)) ||
+  return type.isSignlessInteger(1) || llvm::isa<IndexType, FeltType>(type) ||
          (AllowString && llvm::isa<StringType>(type)) ||
-         (AllowArray && isValidArrayTypeImpl<AllowStruct, AllowString>(type));
+         (AllowVar && llvm::isa<TypeVarType>(type)) ||
+         (AllowStruct && isValidStructTypeImpl<true, AllowString, AllowArray, AllowVar>(type)) ||
+         (AllowArray && isValidArrayTypeImpl<AllowStruct, AllowString, true, AllowVar>(type));
 }
+
 } // namespace
 
-bool isValidType(Type type) { return isValidTypeImpl<true, true, true>(type); }
+bool isValidType(Type type) { return isValidTypeImpl<true, true, true, true>(type); }
 
-bool isValidEmitEqType(Type type) { return isValidTypeImpl<false, false, true>(type); }
+bool isValidEmitEqType(Type type) { return isValidTypeImpl<false, false, true, true>(type); }
 
 // Allowed types must align with StructParamTypes (defined below)
-bool isValidConstReadType(Type type) { return isValidTypeImpl<false, false, false>(type); }
+bool isValidConstReadType(Type type) { return isValidTypeImpl<false, false, false, true>(type); }
 
-bool isValidArrayElemType(Type type) { return isValidArrayElemTypeImpl<true, true>(type); }
+bool isValidArrayElemType(Type type) {
+  return isValidArrayElemTypeImpl<true, true, true, true>(type);
+}
 
-bool isValidArrayType(Type type) { return isValidArrayTypeImpl<true, true>(type); }
+bool isValidArrayType(Type type) { return isValidArrayTypeImpl<true, true, true, true>(type); }
+
+bool isConcreteType(Type type) { return isValidTypeImpl<true, true, true, false>(type); }
 
 bool isSignalType(Type type) {
   if (auto structParamTy = llvm::dyn_cast<StructType>(type)) {
@@ -103,7 +296,7 @@ bool typeParamsUnify(const ArrayAttr &lhsParams, const ArrayAttr &rhsParams) {
   return !lhsParams && !rhsParams;
 }
 
-bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, ArrayRef<llvm::StringRef> rhsRevPrefix) {
+bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, ArrayRef<StringRef> rhsRevPrefix) {
   // Check if the element types of the two arrays can unify
   if (!typesUnify(lhs.getElementType(), rhs.getElementType(), rhsRevPrefix)) {
     return false;
@@ -112,9 +305,9 @@ bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, ArrayRef<llvm::StringRef> rhs
   return typeParamsUnify(lhs.getDimensionSizes(), rhs.getDimensionSizes());
 }
 
-bool structTypesUnify(StructType lhs, StructType rhs, ArrayRef<llvm::StringRef> rhsRevPrefix) {
+bool structTypesUnify(StructType lhs, StructType rhs, ArrayRef<StringRef> rhsRevPrefix) {
   // Check if it references the same StructDefOp, considering the additional RHS path prefix.
-  llvm::SmallVector<StringRef> rhsNames = getNames(rhs.getNameRef());
+  SmallVector<StringRef> rhsNames = getNames(rhs.getNameRef());
   rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
   if (rhsNames != getNames(lhs.getNameRef())) {
     return false;
@@ -123,7 +316,7 @@ bool structTypesUnify(StructType lhs, StructType rhs, ArrayRef<llvm::StringRef> 
   return typeParamsUnify(lhs.getParams(), rhs.getParams());
 }
 
-bool typesUnify(Type lhs, Type rhs, ArrayRef<llvm::StringRef> rhsRevPrefix) {
+bool typesUnify(Type lhs, Type rhs, ArrayRef<StringRef> rhsRevPrefix) {
   if (lhs == rhs) {
     return true;
   }
@@ -140,112 +333,12 @@ bool typesUnify(Type lhs, Type rhs, ArrayRef<llvm::StringRef> rhsRevPrefix) {
   return false;
 }
 
-namespace {
-
-template <typename... Types> class TypeList {
-
-  /// Helper class that handles appending the 'Types' names to some kind of stream
-  template <typename StreamType> struct Appender {
-
-    // single
-    template <typename Ty> static inline void append(StreamType &stream) {
-      stream << "'" << Ty::name << "'";
-    }
-
-    // multiple
-    template <typename First, typename Second, typename... Rest>
-    static void append(StreamType &stream) {
-      append<First>(stream);
-      stream << ", ";
-      append<Second, Rest...>(stream);
-    }
-
-    // full list with wrapping brackets
-    static inline void append(StreamType &stream) {
-      stream << "[";
-      append<Types...>(stream);
-      stream << "]";
-    }
-  };
-
-public:
-  // Checks if the provided value is an instance of any of `Types`
-  template <typename T> static inline bool matches(const T &value) {
-    return llvm::isa<Types...>(value);
-  }
-
-  // This always returns failure()
-  static inline LogicalResult reportInvalid(
-      llvm::function_ref<InFlightDiagnostic()> emitError, llvm::StringRef foundName,
-      const char *aspect
-  ) {
-    // The implicit conversion from InFlightDiagnostic to LogicalResult in the return causes the
-    // diagnostic to be printed.
-    auto diag = emitError() << aspect << " must be one of ";
-    Appender<InFlightDiagnostic>::append(diag);
-    return diag << " but found '" << foundName << "'";
-  }
-
-  // This always returns failure()
-  static inline LogicalResult reportInvalid(
-      llvm::function_ref<InFlightDiagnostic()> emitError, Attribute found, const char *aspect
-  ) {
-    return reportInvalid(emitError, found.getAbstractAttribute().getName(), aspect);
-  }
-
-  // Returns a comma-separated list formatted string of the names of `Types`
-  static std::string getNames() {
-    std::string output;
-    llvm::raw_string_ostream oss(output);
-    Appender<llvm::raw_string_ostream>::append(oss);
-    return output;
-  }
-};
-
-/// Helpers to compute the union of multiple TypeList without repetition.
-/// Use as: TypeListUnion<TypeList<...>, TypeList<...>, ...>
-template <class... Ts> struct make_unique {
-  using type = TypeList<Ts...>;
-};
-
-template <class... Ts> struct make_unique<TypeList<>, Ts...> : make_unique<Ts...> {};
-
-template <class U, class... Us, class... Ts>
-struct make_unique<TypeList<U, Us...>, Ts...>
-    : std::conditional_t<
-          (std::is_same_v<U, Us> || ...) || (std::is_same_v<U, Ts> || ...),
-          make_unique<TypeList<Us...>, Ts...>, make_unique<TypeList<Us...>, Ts..., U>> {};
-
-template <class... Ts> using TypeListUnion = typename make_unique<Ts...>::type;
-
-} // namespace
-
 //===------------------------------------------------------------------===//
 // StructType
 //===------------------------------------------------------------------===//
 
-namespace {
-
-// Parameters in the StructType must be one of the following:
-//  - Integer constants
-//  - SymbolRef (global constants defined in another module require non-flat ref)
-//  - Type
-//  - AffineMap (for array of non-homogeneous structs)
-using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
-
-} // namespace
-
-LogicalResult StructType::verify(
-    llvm::function_ref<InFlightDiagnostic()> emitError, SymbolRefAttr nameRef, ArrayAttr params
-) {
-  if (params) {
-    for (Attribute p : params) {
-      if (!StructParamTypes::matches(p)) {
-        return StructParamTypes::reportInvalid(emitError, p, "Struct parameter");
-      }
-    }
-  }
-  return success();
+LogicalResult StructType::verify(EmitErrorFn emitError, SymbolRefAttr nameRef, ArrayAttr params) {
+  return success(areValidStructTypeParams<true, true, true, true>(params, emitError));
 }
 
 FailureOr<SymbolLookupResult<StructDefOp>>
@@ -282,37 +375,8 @@ LogicalResult StructType::verifySymbolRef(SymbolTableCollection &symbolTable, Op
 // ArrayType
 //===------------------------------------------------------------------===//
 
-namespace {
-
-// Dimensions in the ArrayType must be one of the following:
-//  - Integer constants
-//  - SymbolRef (global constants defined in another module require non-flat ref)
-//  - AffineMap (for array created within a loop where size depends on loop variable)
-using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
-
-LogicalResult verifyArrayDimensionSizes(
-    llvm::function_ref<InFlightDiagnostic()> emitError, llvm::ArrayRef<Attribute> dimensionSizes
-) {
-  // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
-  if (dimensionSizes.empty()) {
-    return emitError().append("array must have at least one dimension");
-  }
-  // Rather than immediately returning on failure, we check all dimensions and aggregate to provide
-  // as many errors are possible in a single verifier run.
-  LogicalResult aggregateResult = success();
-  for (Attribute a : dimensionSizes) {
-    if (!ArrayDimensionTypes::matches(a)) {
-      aggregateResult = ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
-      assert(failed(aggregateResult)); // reportInvalid() always returns failure()
-    }
-  }
-  return aggregateResult;
-}
-
-} // namespace
-
 LogicalResult computeDimsFromShape(
-    MLIRContext *ctx, llvm::ArrayRef<int64_t> shape, llvm::SmallVector<Attribute> &dimensionSizes
+    MLIRContext *ctx, ArrayRef<int64_t> shape, SmallVector<Attribute> &dimensionSizes
 ) {
   assert(dimensionSizes.empty()); // fully computed by this function
   Builder builder(ctx);
@@ -325,17 +389,18 @@ LogicalResult computeDimsFromShape(
 }
 
 LogicalResult computeShapeFromDims(
-    llvm::function_ref<InFlightDiagnostic()> emitError, MLIRContext *ctx,
-    llvm::ArrayRef<Attribute> dimensionSizes, llvm::SmallVector<int64_t> &shape
+    EmitErrorFn emitError, MLIRContext *ctx, ArrayRef<Attribute> dimensionSizes,
+    SmallVector<int64_t> &shape
 ) {
   assert(shape.empty()); // fully computed by this function
+
   // Ensure all Attributes are valid Attribute classes for ArrayType.
   // In the case where `emitError==null`, we mirror how the verification failure is handled by
   // `*Type::get()` via `StorageUserBase` (i.e. use DefaultDiagnosticEmitFn and assert). See:
   //  https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180
   auto errFunc = emitError ? llvm::unique_function<InFlightDiagnostic()>(emitError)
                            : mlir::detail::getDefaultDiagnosticEmitFn(ctx);
-  if (failed(verifyArrayDimensionSizes(errFunc, dimensionSizes))) {
+  if (!areValidArrayDimSizes<true, true, true, true>(dimensionSizes, errFunc)) {
     assert(emitError);
     return failure();
   }
@@ -357,8 +422,8 @@ LogicalResult computeShapeFromDims(
   return success();
 }
 
-ParseResult parseAttrVec(AsmParser &parser, llvm::SmallVector<Attribute> &value) {
-  auto parseResult = FieldParser<llvm::SmallVector<Attribute>>::parse(parser);
+ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
+  auto parseResult = FieldParser<SmallVector<Attribute>>::parse(parser);
   if (failed(parseResult)) {
     return parser.emitError(parser.getCurrentLocation(), "cannot parse array dimensions");
   }
@@ -366,49 +431,33 @@ ParseResult parseAttrVec(AsmParser &parser, llvm::SmallVector<Attribute> &value)
   return success();
 }
 
-void printAttrVec(AsmPrinter &printer, llvm::ArrayRef<Attribute> value) {
+void printAttrVec(AsmPrinter &printer, ArrayRef<Attribute> value) {
   llvm::raw_ostream &stream = printer.getStream();
   llvm::interleave(value, stream, [&stream](Attribute a) { a.print(stream, true); }, ",");
 }
 
 ParseResult parseDerivedShape(
-    AsmParser &parser, llvm::SmallVector<int64_t> &shape,
-    llvm::SmallVector<Attribute> dimensionSizes
+    AsmParser &parser, SmallVector<int64_t> &shape, SmallVector<Attribute> dimensionSizes
 ) {
   // This is not actually parsing. It's computing the derived
   //  `shape` from the `dimensionSizes` attributes.
   auto emitError = [&parser] { return parser.emitError(parser.getCurrentLocation()); };
   return computeShapeFromDims(emitError, parser.getContext(), dimensionSizes, shape);
 }
-void printDerivedShape(AsmPrinter &, llvm::ArrayRef<int64_t>, llvm::ArrayRef<Attribute>) {
+void printDerivedShape(AsmPrinter &, ArrayRef<int64_t>, ArrayRef<Attribute>) {
   // nothing to print, it's derived and therefore not represented in the output
 }
 
 LogicalResult ArrayType::verify(
-    llvm::function_ref<InFlightDiagnostic()> emitError, Type elementType,
-    llvm::ArrayRef<Attribute> dimensionSizes, llvm::ArrayRef<int64_t> shape
+    EmitErrorFn emitError, Type elementType, ArrayRef<Attribute> dimensionSizes,
+    ArrayRef<int64_t> shape
 ) {
-  if (failed(verifyArrayDimensionSizes(emitError, dimensionSizes))) {
-    return failure();
-  }
-
-  // Ensure array element type is valid
-  if (!isValidArrayElemType(elementType)) {
-    // Print proper message if `elementType` is not a valid LLZK type or
-    //  if it's simply not the right kind of type for an array element.
-    if (failed(checkValidType(emitError, elementType))) {
-      return failure();
-    }
-    return emitError().append(
-        "'", ArrayType::name, "' element type cannot be '", elementType.getAbstractType().getName(),
-        "'"
-    );
-  }
-  return success();
+  return success(
+      isValidArrayTypeImpl<true, true, true, true>(elementType, dimensionSizes, emitError)
+  );
 }
 
-ArrayType
-ArrayType::cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, Type elementType) const {
+ArrayType ArrayType::cloneWith(std::optional<ArrayRef<int64_t>> shape, Type elementType) const {
   return ArrayType::get(elementType, shape.has_value() ? shape.value() : getShape());
 }
 

@@ -1,4 +1,5 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
@@ -26,8 +27,7 @@ struct OpenFile {
   std::unique_ptr<llvm::MemoryBuffer> buffer;
 };
 
-inline FailureOr<OpenFile>
-openFile(std::function<InFlightDiagnostic()> &&emitError, const StringRef filename) {
+inline FailureOr<OpenFile> openFile(EmitErrorFn emitError, const StringRef filename) {
   OpenFile r;
 
   auto buffer = GlobalSourceMgr::get().openIncludeFile(filename, r.resolvedPath);
@@ -74,8 +74,7 @@ LogicalResult parseFile(const StringRef filename, Operation *origin, Block *cont
   }
 }
 
-inline LogicalResult
-validateLoadedModuleOp(std::function<InFlightDiagnostic()> &&emitError, ModuleOp importedMod) {
+inline LogicalResult validateLoadedModuleOp(EmitErrorFn emitError, ModuleOp importedMod) {
   if (!importedMod->hasAttr(LANG_ATTR_NAME)) {
     return emitError()
         .append(

@@ -197,7 +197,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ArrayCheck {
     func @constrain(%self: !llzk.struct<@ArrayCheck>, %in: !llzk.array<5 x !llzk.felt>) {
       %fval = llzk.constfelt 7
-      %idx = index.constant 3
+      %idx = arith.constant 3 : index
       %elem = llzk.readarr %in[%idx] : !llzk.array<5 x !llzk.felt>, !llzk.felt
       llzk.emit_eq %elem, %fval : !llzk.felt
       return
@@ -219,9 +219,9 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ArrayForCheck {
     func @constrain(%self: !llzk.struct<@ArrayForCheck>, %in: !llzk.array<5 x !llzk.felt>) {
-      %lb = index.constant 0
-      %up = index.constant 5
-      %step = index.constant 1
+      %lb = arith.constant 0 : index
+      %up = arith.constant 5 : index
+      %step = arith.constant 1 : index
       %fval = llzk.constfelt 7
       scf.for %iv = %lb to %up step %step {
         %elem = llzk.readarr %in[%iv] : !llzk.array<5 x !llzk.felt>, !llzk.felt
@@ -278,8 +278,8 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@ArrayConstrain<[@A, @B]>>, %arr: !llzk.array<3 x !llzk.felt>) {
       %const0 = read_const @A : !llzk.felt
       %const2 = read_const @B : !llzk.felt
-      %0 = index.constant 0
-      %2 = index.constant 2
+      %0 = arith.constant 0 : index
+      %2 = arith.constant 2 : index
       %elem0 = readarr %arr[%0] : !llzk.array<3 x !llzk.felt>, !llzk.felt
       %elem2 = readarr %arr[%2] : !llzk.array<3 x !llzk.felt>, !llzk.felt
       emit_eq %elem0, %const0 : !llzk.felt
@@ -300,12 +300,12 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@MatrixConstrain>, %mat: !llzk.array<2,3 x !llzk.felt>) {
       // split into two arrays and constrain each
       %check0 = readf %self[@check0] : !llzk.struct<@MatrixConstrain>, !llzk.struct<@ArrayConstrain<[7, 11]>>
-      %0 = index.constant 0
+      %0 = arith.constant 0 : index
       %arr0 = extractarr %mat[%0] : !llzk.array<2,3 x !llzk.felt>
       call @ArrayConstrain::@constrain(%check0, %arr0) : (!llzk.struct<@ArrayConstrain<[7, 11]>>, !llzk.array<3 x !llzk.felt>) -> ()
 
       %check1 = readf %self[@check1] : !llzk.struct<@MatrixConstrain>, !llzk.struct<@ArrayConstrain<[13, 17]>>
-      %1 = index.constant 1
+      %1 = arith.constant 1 : index
       %arr1 = extractarr %mat[%1] : !llzk.array<2,3 x !llzk.felt>
       call @ArrayConstrain::@constrain(%check1, %arr1) : (!llzk.struct<@ArrayConstrain<[13, 17]>>, !llzk.array<3 x !llzk.felt>) -> ()
       return
@@ -338,7 +338,7 @@ module attributes {veridise.lang = "llzk"} {
 
     func @constrain(%self: !llzk.struct<@ArrayConstrain>, %arr: !llzk.array<3 x !llzk.felt>) {
       %const = constfelt 7
-      %1 = index.constant 1
+      %1 = arith.constant 1 : index
       %elem = readarr %arr[%1] : !llzk.array<3 x !llzk.felt>, !llzk.felt
       emit_eq %elem, %const : !llzk.felt
       return
@@ -371,7 +371,7 @@ module attributes {veridise.lang = "llzk"} {
       %mat = new_array %a, %b, %c, %d, %e, %f : !llzk.array<2,3 x !llzk.felt>
 
       %check = readf %self[@check] : !llzk.struct<@MatrixConstrain>, !llzk.struct<@ArrayConstrain>
-      %0 = index.constant 0
+      %0 = arith.constant 0 : index
       %arr = extractarr %mat[%0] : !llzk.array<2,3 x !llzk.felt>
       call @ArrayConstrain::@constrain(%check, %arr) : (!llzk.struct<@ArrayConstrain>, !llzk.array<3 x !llzk.felt>) -> ()
 
@@ -398,7 +398,7 @@ module attributes {veridise.lang = "llzk"} {
 
     func @constrain(%self: !llzk.struct<@UnknownArrayConstrain<[@N]>>, %arr: !llzk.array<@N x !llzk.felt>) {
       %const = constfelt 7
-      %1 = index.constant 1
+      %1 = arith.constant 1 : index
       %elem = readarr %arr[%1] : !llzk.array<@N x !llzk.felt>, !llzk.felt
       emit_eq %elem, %const : !llzk.felt
       return
@@ -421,7 +421,7 @@ module attributes {veridise.lang = "llzk"} {
 
     func @constrain(%self: !llzk.struct<@UnknownArrayConstrain<[@N]>>, %arr: !llzk.array<@N x !llzk.felt>) {
       %const = constfelt 7
-      %1 = index.constant 1
+      %1 = arith.constant 1 : index
       %elem = readarr %arr[%1] : !llzk.array<@N x !llzk.felt>, !llzk.felt
       emit_eq %elem, %const : !llzk.felt
       return
@@ -438,7 +438,7 @@ module attributes {veridise.lang = "llzk"} {
 
     func @constrain(%self: !llzk.struct<@UnknownMatrixConstrain<[@M, @N]>>, %mat: !llzk.array<@M,@N x !llzk.felt>) {
       %check = readf %self[@check] : !llzk.struct<@UnknownMatrixConstrain<[@M, @N]>>, !llzk.struct<@UnknownArrayConstrain<[@N]>>
-      %0 = index.constant 0
+      %0 = arith.constant 0 : index
       %arr = extractarr %mat[%0] : !llzk.array<@M,@N x !llzk.felt>
       call @UnknownArrayConstrain::@constrain(%check, %arr) : (!llzk.struct<@UnknownArrayConstrain<[@N]>>, !llzk.array<@N x !llzk.felt>) -> ()
       return

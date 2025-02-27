@@ -165,7 +165,7 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
       /// computeShapeFromDims() checks for `nullptr` and generates a default if necessary.
       /// This approach, although a bit hacky, allows a legitimate error function to be used
       /// whenever available, only reverting to a default as needed by the `get()` function.
-      const ::llvm::function_ref<::mlir::InFlightDiagnostic()> emitError = nullptr;
+      const ::llzk::EmitErrorFn emitError = nullptr;
     }
   }];
 }

@@ -5,8 +5,6 @@
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
-#include <mlir/Dialect/Arith/IR/Arith.h>
-#include <mlir/Dialect/Index/IR/IndexOps.h>
 #include <mlir/IR/Value.h>
 
 #include <numeric>
@@ -142,7 +140,7 @@ mlir::ChangeResult ConstrainRefLatticeValue::translateScalar(const TranslationMa
 
 std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
 ConstrainRefLatticeValue::elementwiseTransform(
-    std::function<ConstrainRef(const ConstrainRef &)> transform
+    llvm::function_ref<ConstrainRef(const ConstrainRef &)> transform
 ) const {
   auto newVal = *this;
   auto res = mlir::ChangeResult::NoChange;
@@ -178,7 +176,7 @@ mlir::FailureOr<ConstrainRef> ConstrainRefLattice::getSourceRef(mlir::Value val)
   } else if (auto defOp = val.getDefiningOp()) {
     if (auto constFelt = mlir::dyn_cast<FeltConstantOp>(defOp)) {
       return ConstrainRef(constFelt);
-    } else if (auto constIdx = mlir::dyn_cast<mlir::index::ConstantOp>(defOp)) {
+    } else if (auto constIdx = mlir::dyn_cast<mlir::arith::ConstantIndexOp>(defOp)) {
       return ConstrainRef(constIdx);
     } else if (auto readConst = mlir::dyn_cast<ConstReadOp>(defOp)) {
       return ConstrainRef(readConst);

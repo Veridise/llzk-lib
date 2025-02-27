@@ -8,9 +8,9 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     func @constrain(%self: !llzk.struct<@emiteq_in_loop>, %a: !llzk.felt, %b: !llzk.felt) {
-      %lb = index.constant 0
-      %up = index.constant 4
-      %step = index.constant 1
+      %lb = arith.constant 0 : index
+      %up = arith.constant 4 : index
+      %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         llzk.emit_eq %a, %b : !llzk.felt
       }
@@ -24,9 +24,9 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@emiteq_in_loop>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @constrain(%[[A0]]: !llzk.struct<@emiteq_in_loop>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
-//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = index.constant 0
-//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = index.constant 4
-//CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = index.constant 1
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+//CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_\.]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
 //CHECK-NEXT:         llzk.emit_eq %[[A1]], %[[A2]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:       }
@@ -82,9 +82,9 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     func @constrain(%self: !llzk.struct<@emitin_in_loop>, %a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) {
-      %lb = index.constant 0
-      %up = index.constant 4
-      %step = index.constant 1
+      %lb = arith.constant 0 : index
+      %up = arith.constant 4 : index
+      %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         llzk.emit_in %b, %a : !llzk.array<5 x !llzk.felt>
       }
@@ -100,9 +100,9 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     }
 //CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@emitin_in_loop>,
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.array<5 x !llzk.felt>) {
-//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = index.constant 0
-//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = index.constant 4
-//CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = index.constant 1
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+//CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_\.]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
 //CHECK-NEXT:         llzk.emit_in %[[A2]], %[[A1]] : <5 x !llzk.felt>, !llzk.felt
 //CHECK-NEXT:       }

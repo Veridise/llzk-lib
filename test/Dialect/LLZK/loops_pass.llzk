@@ -5,7 +5,7 @@ module attributes {veridise.lang = "llzk"} {
     func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>
       %res = scf.while (%arg1 = %a) : (!llzk.felt) -> !llzk.felt {
-        %condition = arith.constant 1 : i1
+        %condition = arith.constant true
         scf.condition(%condition) %arg1 : !llzk.felt
       } do {
         ^bb0(%arg2: !llzk.felt):
@@ -44,7 +44,7 @@ module attributes {veridise.lang = "llzk"} {
     func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>
       %res = scf.while (%arg1 = %a) : (!llzk.felt) -> !llzk.felt {
-        %condition = arith.constant 1 : i1
+        %condition = arith.constant true
         scf.condition(%condition) %arg1 : !llzk.felt
       } do {
         ^bb0(%arg2: !llzk.felt):
@@ -82,9 +82,9 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
     func @compute(%a: !llzk.felt, %d: !llzk.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>
-      %lb = index.constant 0
-      %up = index.constant 4
-      %step = index.constant 1
+      %lb = arith.constant 0 : index
+      %up = arith.constant 4 : index
+      %step = arith.constant 1 : index
       %res = scf.for %iv = %lb to %up step %step
           iter_args(%sum = %d) -> !llzk.felt {
         %1 = llzk.add %a, %sum
@@ -102,9 +102,9 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt,
 //CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@ComponentA>
-//CHECK-NEXT:       %[[LB:[0-9a-zA-Z_\.]+]] = index.constant 0
-//CHECK-NEXT:       %[[UB:[0-9a-zA-Z_\.]+]] = index.constant 4
-//CHECK-NEXT:       %[[ST:[0-9a-zA-Z_\.]+]] = index.constant 1
+//CHECK-NEXT:       %[[LB:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+//CHECK-NEXT:       %[[UB:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+//CHECK-NEXT:       %[[ST:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[LB]] to %[[UB]] step %[[ST]]
 //CHECK-SAME:         iter_args(%[[T1:[0-9a-zA-Z_\.]+]] = %[[A1]]) -> (!llzk.felt) {
 //CHECK-NEXT:         %[[T2:[0-9a-zA-Z_\.]+]] = llzk.add %[[A0]], %[[T1]]

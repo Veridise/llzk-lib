@@ -13,8 +13,7 @@ def LLZKDialect : Dialect {
 
   let cppNamespace = "llzk";
 
-  let dependentDialects = ["::mlir::index::IndexDialect",
-                           "::mlir::scf::SCFDialect"];
+  let dependentDialects = ["::mlir::scf::SCFDialect"];
 
   let useDefaultTypePrinterParser = true;
   let useDefaultAttributePrinterParser = true;

@@ -74,7 +74,8 @@ protected:
   /// @brief Perform a recursive transformation over all elements of this value and
   /// return a new value with the modifications.
   virtual std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
-  elementwiseTransform(std::function<ConstrainRef(const ConstrainRef &)> transform) const;
+  elementwiseTransform(llvm::function_ref<ConstrainRef(const ConstrainRef &)> transform) const;
+
 };
 
 /// A lattice for use in dense analysis.
