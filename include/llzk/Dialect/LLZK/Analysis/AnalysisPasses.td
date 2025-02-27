@@ -32,6 +32,8 @@ def IntervalAnalysisPrinterPass
   let options = [
     Option<"fieldName", "field", "std::string", /* default */ "\"bn128\"",
       "The field to use for interval analysis. Supported fields: bn128/bn254">,
+    Option<"printSolverConstraints", "print-solver-constraints", "bool", /* default */ "false",
+      "Whether to output SMT solver constraints along with intervals.">,
   ];
   let dependentDialects = ["llzk::LLZKDialect"];
 }

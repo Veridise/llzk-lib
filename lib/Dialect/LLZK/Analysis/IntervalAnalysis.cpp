@@ -2,11 +2,40 @@
 
 namespace llzk {
 
+/* Field */
+
+const Field &Field::getField(std::string_view fieldName) {
+  if (fieldName == "bn128" || fieldName == "bn254") {
+    return BN128();
+  }
+  llvm::report_fatal_error(mlir::Twine(fieldName) + " field is unsupported");
+}
+
+const Field &Field::BN128() {
+  static constexpr auto bn128_str =
+      "21888242871839275222246405745257275088696311157297823662689037894645226208583";
+  static auto bn128_prime = llvm::APSInt(bn128_str);
+  static auto bn128_bitwidth = bn128_prime.getBitWidth();
+  static auto one = llvm::APSInt(llvm::APInt(bn128_bitwidth, 1));
+  static auto two = llvm::APSInt(llvm::APInt(bn128_bitwidth, 2));
+  static auto bn128_half = (bn128_prime + one) / two;
+
+  static Field singleton(bn128_prime, bn128_half);
+  return singleton;
+}
+
+llvm::APSInt Field::reduce(llvm::APSInt i) const {
+  auto maxBits = std::max(i.getBitWidth(), bitWidth());
+  auto m = (i.zext(maxBits).urem(prime().zext(maxBits))).trunc(bitWidth());
+  if (m.isNegative()) {
+    return prime() + llvm::APSInt(m);
+  }
+  return llvm::APSInt(m);
+}
+
 /* UnreducedInterval */
 
 Interval UnreducedInterval::reduce(const Field &field) const {
-  llvm::errs() << "reduce: " << a.getBitWidth() << ", " << b.getBitWidth() << "\n";
-
   if (a > b) {
     return Interval::Empty(field);
   }
@@ -112,6 +141,28 @@ bool UnreducedInterval::operator==(const UnreducedInterval &rhs) const {
 
 /* Interval */
 
+UnreducedInterval Interval::toUnreduced() const {
+  if (isEmpty()) {
+    return UnreducedInterval(field.get().zero(), field.get().zero());
+  }
+  if (isEntire()) {
+    return UnreducedInterval(field.get().zero(), field.get().maxVal());
+  }
+  return UnreducedInterval(a, b);
+}
+
+UnreducedInterval Interval::firstUnreduced() const {
+  if (isOneOf<Type::TypeF>()) {
+    return UnreducedInterval(field.get().prime() - a, b);
+  }
+  return toUnreduced();
+}
+
+UnreducedInterval Interval::secondUnreduced() const {
+  ensure(isOneOf<Type::TypeA, Type::TypeB, Type::TypeC>(), "unsupported range type");
+  return UnreducedInterval(a - field.get().prime(), b - field.get().prime());
+}
+
 Interval Interval::join(const Interval &rhs) const {
   auto &lhs = *this;
 
@@ -160,7 +211,7 @@ Interval Interval::join(const Interval &rhs) const {
       )) {
     return rhs.join(lhs);
   }
-  llvm::report_fatal_error("unhandled case");
+  llvm::report_fatal_error("unhandled join case");
   return Interval::Entire(field.get());
 }
 
@@ -188,7 +239,7 @@ Interval Interval::intersect(const Interval &rhs) const {
     auto maxA = std::max(lhs.a, rhs.a);
     auto minB = std::min(lhs.b, rhs.b);
     if (maxA <= minB) {
-      return Interval(lhs.ty, field.get(), a, b);
+      return Interval(lhs.ty, field.get(), maxA, minB);
     } else {
       return Interval::Empty(field.get());
     }
@@ -270,34 +321,509 @@ Interval operator%(const Interval &lhs, const Interval &rhs) {
   return UnreducedInterval(field.zero(), rhs.b).reduce(field);
 }
 
+/* ExpressionValue */
+
+bool ExpressionValue::operator==(const ExpressionValue &rhs) const {
+  if (expr == nullptr && rhs.expr == nullptr) {
+    return i == rhs.i;
+  }
+  if (expr == nullptr || rhs.expr == nullptr) {
+    return false;
+  }
+  return i == rhs.i && *expr == *rhs.expr;
+}
+
+ExpressionValue
+intersection(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  Interval res = lhs.i.intersect(rhs.i);
+  auto exprEq = solver->mkEqual(lhs.expr, rhs.expr);
+  return ExpressionValue(exprEq, res);
+}
+
+ExpressionValue
+add(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = lhs.i + rhs.i;
+  res.expr = solver->mkBVAdd(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
+sub(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = lhs.i - rhs.i;
+  res.expr = solver->mkBVSub(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
+mul(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = lhs.i * rhs.i;
+  res.expr = solver->mkBVMul(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
+div(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = lhs.i / rhs.i;
+  res.expr = solver->mkBVUDiv(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
+mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = lhs.i % rhs.i;
+  res.expr = solver->mkBVURem(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
+cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = Interval::Boolean(lhs.getField());
+  switch (op.getPredicate()) {
+  case FeltCmpPredicate::EQ:
+    res.expr = solver->mkEqual(lhs.expr, rhs.expr);
+    res.i = lhs.i.intersect(rhs.i);
+    break;
+  case FeltCmpPredicate::NE:
+    res.expr = solver->mkNot(solver->mkEqual(lhs.expr, rhs.expr));
+    break;
+  case FeltCmpPredicate::LT:
+    res.expr = solver->mkBVUlt(lhs.expr, rhs.expr);
+    break;
+  case FeltCmpPredicate::LE:
+    res.expr = solver->mkBVUle(lhs.expr, rhs.expr);
+    break;
+  case FeltCmpPredicate::GT:
+    res.expr = solver->mkBVUgt(lhs.expr, rhs.expr);
+    break;
+  case FeltCmpPredicate::GE:
+    res.expr = solver->mkBVUge(lhs.expr, rhs.expr);
+    break;
+  }
+  return res;
+}
+
+ExpressionValue fallbackBinaryOp(
+    llvm::SMTSolverRef solver, mlir::Operation *op, const ExpressionValue &lhs,
+    const ExpressionValue &rhs
+) {
+  ExpressionValue res;
+  res.i = Interval::Entire(lhs.getField());
+  if (mlir::isa<AndFeltOp>(op)) {
+    res.expr = solver->mkBVAnd(lhs.expr, rhs.expr);
+  } else if (mlir::isa<OrFeltOp>(op)) {
+    res.expr = solver->mkBVOr(lhs.expr, rhs.expr);
+  } else if (mlir::isa<XorFeltOp>(op)) {
+    res.expr = solver->mkBVXor(lhs.expr, lhs.expr);
+  } else if (mlir::isa<ShlFeltOp>(op)) {
+    res.expr = solver->mkBVShl(lhs.expr, rhs.expr);
+  } else if (mlir::isa<ShrFeltOp>(op)) {
+    res.expr = solver->mkBVLshr(lhs.expr, rhs.expr);
+  } else {
+    llvm::report_fatal_error(
+        "no fallback provided for " + mlir::Twine(op->getName().getStringRef())
+    );
+  }
+  return res;
+}
+
+ExpressionValue neg(llvm::SMTSolverRef solver, const ExpressionValue &val) {
+  ExpressionValue res;
+  res.i = -val.i;
+  res.expr = solver->mkBVNeg(val.expr);
+  return res;
+}
+
+ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val) {
+  ExpressionValue res;
+  const auto &f = val.getField();
+  if (val.i.isDegenerate()) {
+    if (val.i == Interval::Degenerate(f, f.zero())) {
+      res.i = Interval::Degenerate(f, f.one());
+    } else {
+      res.i = Interval::Degenerate(f, f.zero());
+    }
+  }
+  res.i = Interval::Boolean(f);
+  res.expr = solver->mkBVNot(val.expr);
+  return res;
+}
+
+void ExpressionValue::print(mlir::raw_ostream &os) const {
+  if (expr) {
+    expr->print(os);
+  } else {
+    os << "<null expression>";
+  }
+
+  os << " ( interval: " << i << " )";
+}
+
+/* IntervalAnalysisLattice */
+
+mlir::ChangeResult IntervalAnalysisLattice::join(const AbstractDenseLattice &other) {
+  const auto *rhs = dynamic_cast<const IntervalAnalysisLattice *>(&other);
+  if (!rhs) {
+    llvm::report_fatal_error("invalid join lattice type");
+  }
+  mlir::ChangeResult res = mlir::ChangeResult::NoChange;
+  for (auto &[k, v] : rhs->valMap) {
+    auto it = valMap.find(k);
+    if (it == valMap.end() || it->second != v) {
+      valMap[k] = v;
+      res |= mlir::ChangeResult::Change;
+    }
+  }
+  for (auto &v : rhs->constraints) {
+    if (!constraints.contains(v)) {
+      constraints.insert(v);
+      res |= mlir::ChangeResult::Change;
+    }
+  }
+  for (auto &[e, i] : rhs->intervals) {
+    auto it = intervals.find(e);
+    if (it == intervals.end() || it->second != i) {
+      intervals[e] = i;
+      res |= mlir::ChangeResult::Change;
+    }
+  }
+  return res;
+}
+
+void IntervalAnalysisLattice::print(mlir::raw_ostream &os) const {
+  os << "IntervalAnalysisLattice { ";
+  for (auto &[ref, val] : valMap) {
+    os << "\n    (valMap) " << ref << " := " << val;
+  }
+  for (auto &[expr, interval] : intervals) {
+    os << "\n    (intervals) ";
+    expr->print(os);
+    os << " in " << interval;
+  }
+  if (!valMap.empty()) {
+    os << '\n';
+  }
+  os << '}';
+}
+
+mlir::FailureOr<IntervalAnalysisLattice::LatticeValue>
+IntervalAnalysisLattice::getValue(mlir::Value v) const {
+  auto it = valMap.find(v);
+  if (it == valMap.end()) {
+    return mlir::failure();
+  }
+  return it->second;
+}
+
+mlir::ChangeResult IntervalAnalysisLattice::setValue(mlir::Value v, ExpressionValue e) {
+  LatticeValue val(e);
+  if (valMap[v] == val) {
+    return mlir::ChangeResult::NoChange;
+  }
+  valMap[v] = val;
+  intervals[e.getExpr()] = e.getInterval();
+  return mlir::ChangeResult::Change;
+}
+
+mlir::ChangeResult IntervalAnalysisLattice::addSolverConstraint(ExpressionValue e) {
+  if (!constraints.contains(e)) {
+    constraints.insert(e);
+    return mlir::ChangeResult::Change;
+  }
+  return mlir::ChangeResult::NoChange;
+}
+
+mlir::FailureOr<Interval> IntervalAnalysisLattice::findInterval(llvm::SMTExprRef expr) const {
+  auto it = intervals.find(expr);
+  if (it != intervals.end()) {
+    return it->second;
+  }
+  return mlir::failure();
+}
+
+/* IntervalDataFlowAnalysis */
+
+void IntervalDataFlowAnalysis::visitOperation(
+    mlir::Operation *op, const Lattice &before, Lattice *after
+) {
+  mlir::ChangeResult changed = after->join(before);
+
+  llvm::SmallVector<LatticeValue> operandVals;
+
+  auto constrainRefLattice = dataflowSolver.lookupState<ConstrainRefLattice>(op);
+  ensure(constrainRefLattice, "failed to get lattice");
+
+  for (auto &operand : op->getOpOperands()) {
+    auto val = operand.get();
+    // First, lookup the operand value in the before state.
+    auto priorState = before.getValue(val);
+    if (mlir::succeeded(priorState)) {
+      operandVals.push_back(*priorState);
+      continue;
+    }
+    // Else, look up the stored value by constrain ref.
+    // We only care about scalar type values, which is currently limited to:
+    // felt, index, etc.
+    if (!mlir::isa<FeltType>(val.getType())) {
+      operandVals.push_back(LatticeValue());
+      continue;
+    }
+
+    auto refSet = constrainRefLattice->getOrDefault(val);
+    if (!refSet.isSingleValue()) {
+      std::string valStr;
+      llvm::raw_string_ostream ss(valStr);
+      val.print(ss);
+
+      op->emitWarning(
+          "operand " + mlir::Twine(valStr) + " is not a single value, overapproximating"
+      );
+      operandVals.push_back(LatticeValue());
+    } else {
+      auto ref = refSet.getSingleValue();
+      auto exprVal = ExpressionValue(field.get(), getOrCreateSymbol(ref));
+      changed |= after->setValue(val, exprVal);
+      operandVals.emplace_back(exprVal);
+    }
+  }
+
+  // Now, the way we update is dependent on the type of the operation.
+  if (!isConsideredOp(op)) {
+    op->emitWarning("unconsidered operation type, analysis may be incomplete");
+  }
+
+  if (isConstOp(op)) {
+    auto constVal = getConst(op);
+    auto expr = createConstBitvectorExpr(constVal);
+    auto latticeVal = ExpressionValue(field.get(), expr, constVal);
+    changed |= after->setValue(op->getResult(0), latticeVal);
+  } else if (isArithmeticOp(op)) {
+    ensure(operandVals.size() <= 2, "arithmetic op with the wrong number of operands");
+    ExpressionValue result;
+    if (operandVals.size() == 2) {
+      result = performBinaryArithmetic(op, operandVals[0], operandVals[1]);
+    } else {
+      result = performUnaryArithmetic(op, operandVals[0]);
+    }
+
+    changed |= after->setValue(op->getResult(0), result);
+  } else if (mlir::isa<EmitEqualityOp>(op)) {
+    ensure(operandVals.size() == 2, "constraint op with the wrong number of operands");
+    auto lhsVal = op->getOperand(0);
+    auto rhsVal = op->getOperand(1);
+    auto lhsExpr = operandVals[0].getScalarValue();
+    auto rhsExpr = operandVals[1].getScalarValue();
+
+    auto constraint = intersection(smtSolver, lhsExpr, rhsExpr);
+    // Update the LHS and RHS to the same value, but restricted intervals
+    // based on the constraints
+    changed |= after->setValue(lhsVal, lhsExpr.withInterval(constraint.getInterval()));
+    changed |= after->setValue(rhsVal, rhsExpr.withInterval(constraint.getInterval()));
+    changed |= after->addSolverConstraint(constraint);
+
+  } else if (isAssertOp(op)) {
+    ensure(operandVals.size() == 1, "assert op with the wrong number of operands");
+    // First, just add the solver constraint that the expression must be true.
+    auto assertExpr = operandVals[0].getScalarValue();
+    changed |= after->addSolverConstraint(assertExpr);
+    // Then, we want to do a lookback at the boolean expression that composes
+    // the assert expression and restrict the range on those values to be
+    // ranges that make the constraint hold.
+
+    // TODO: this currently only works for simple comparison cases and not
+    // conjunctions/disjunctions of comparisons.
+    if (auto cmpOp = mlir::dyn_cast<CmpOp>(op->getOperand(0).getDefiningOp())) {
+      auto lhs = cmpOp->getOperand(0);
+      auto rhs = cmpOp->getOperand(1);
+      auto lhsLatticeVal = before.getValue(lhs);
+      auto rhsLatticeVal = before.getValue(rhs);
+      ensure(
+          mlir::succeeded(lhsLatticeVal) && mlir::succeeded(rhsLatticeVal),
+          "no values for assert predecessors"
+      );
+      auto lhsExpr = lhsLatticeVal->getScalarValue();
+      auto rhsExpr = rhsLatticeVal->getScalarValue();
+
+      Interval newLhsInterval, newRhsInterval;
+      switch (cmpOp.getPredicate()) {
+      case FeltCmpPredicate::EQ: {
+        newLhsInterval = newRhsInterval = lhsExpr.getInterval().intersect(rhsExpr.getInterval());
+        break;
+      }
+      case FeltCmpPredicate::NE: {
+        newLhsInterval = newRhsInterval = lhsExpr.getInterval().join(rhsExpr.getInterval());
+        break;
+      }
+      case FeltCmpPredicate::LT: {
+        newLhsInterval = lhsExpr.getInterval()
+                             .toUnreduced()
+                             .lt(rhsExpr.getInterval().toUnreduced())
+                             .reduce(field.get());
+        newRhsInterval = rhsExpr.getInterval()
+                             .toUnreduced()
+                             .ge(lhsExpr.getInterval().toUnreduced())
+                             .reduce(field.get());
+        break;
+      }
+      case FeltCmpPredicate::LE: {
+        newLhsInterval = lhsExpr.getInterval()
+                             .toUnreduced()
+                             .le(rhsExpr.getInterval().toUnreduced())
+                             .reduce(field.get());
+        newRhsInterval = rhsExpr.getInterval()
+                             .toUnreduced()
+                             .gt(lhsExpr.getInterval().toUnreduced())
+                             .reduce(field.get());
+        break;
+      }
+      case FeltCmpPredicate::GT: {
+        newLhsInterval = lhsExpr.getInterval()
+                             .toUnreduced()
+                             .gt(rhsExpr.getInterval().toUnreduced())
+                             .reduce(field.get());
+        newRhsInterval = rhsExpr.getInterval()
+                             .toUnreduced()
+                             .le(lhsExpr.getInterval().toUnreduced())
+                             .reduce(field.get());
+        break;
+      }
+      case FeltCmpPredicate::GE: {
+        newLhsInterval = lhsExpr.getInterval()
+                             .toUnreduced()
+                             .ge(rhsExpr.getInterval().toUnreduced())
+                             .reduce(field.get());
+        newRhsInterval = rhsExpr.getInterval()
+                             .toUnreduced()
+                             .lt(lhsExpr.getInterval().toUnreduced())
+                             .reduce(field.get());
+        break;
+      }
+      }
+
+      changed |= after->setValue(lhs, lhsExpr.withInterval(newLhsInterval));
+      changed |= after->setValue(rhs, rhsExpr.withInterval(newRhsInterval));
+    }
+  } else if (!isReadOp(op)          /* We do not need to explicitly handle read ops
+                      since they are resolved at the operand value step where constrain refs are
+                      queries */
+             && !isReturnOp(op)     /* We do not currently handle return ops as the analysis
+                 is currently limited to constrain functions, which return no value. */
+             && !isDefinitionOp(op) /* The analysis ignores field, struct, function definitions. */
+             &&
+             !mlir::isa<CreateStructOp>(op) /* We do not need to analyze the creation of structs. */
+  ) {
+    op->emitWarning("unhandled operation, analysis may be incomplete");
+  }
+
+  propagateIfChanged(after, changed);
+}
+
+llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(const ConstrainRef &r) {
+  auto it = refSymbols.find(r);
+  if (it != refSymbols.end()) {
+    return it->second;
+  }
+  auto sym = createFeltSymbol(r);
+  refSymbols[r] = sym;
+  return sym;
+}
+
+llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const ConstrainRef &r) const {
+  std::string symbolName;
+  llvm::raw_string_ostream ss(symbolName);
+  r.print(ss);
+
+  return createFeltSymbol(symbolName.c_str());
+}
+
+llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(mlir::Value val) const {
+  std::string symbolName;
+  llvm::raw_string_ostream ss(symbolName);
+  val.print(ss);
+
+  return createFeltSymbol(symbolName.c_str());
+}
+
+llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const char *name) const {
+  return smtSolver->mkSymbol(name, smtSolver->getBitvectorSort(field.get().bitWidth()));
+}
+
+llvm::APSInt IntervalDataFlowAnalysis::getConst(mlir::Operation *op) const {
+  ensure(isConstOp(op), "op is not a const op");
+  auto fieldConst =
+      mlir::dyn_cast<FeltConstantOp>(op).getValueAttr().getValue().zext(field.get().bitWidth());
+  return llvm::APSInt(fieldConst);
+}
+
+ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
+    mlir::Operation *op, const LatticeValue &a, const LatticeValue &b
+) {
+  ensure(isArithmeticOp(op), "is not arithmetic op");
+
+  auto lhs = a.getScalarValue(), rhs = b.getScalarValue();
+
+  if (mlir::isa<AddFeltOp>(op)) {
+    return add(smtSolver, lhs, rhs);
+  } else if (mlir::isa<SubFeltOp>(op)) {
+    return sub(smtSolver, lhs, rhs);
+  } else if (mlir::isa<MulFeltOp>(op)) {
+    return mul(smtSolver, lhs, rhs);
+  } else if (mlir::isa<DivFeltOp>(op)) {
+    return div(smtSolver, lhs, rhs);
+  } else if (mlir::isa<ModFeltOp>(op)) {
+    return mod(smtSolver, lhs, rhs);
+  } else if (auto cmpOp = mlir::dyn_cast<CmpOp>(op)) {
+    return cmp(smtSolver, cmpOp, lhs, rhs);
+  } else {
+    op->emitWarning(
+        "unsupported binary arithmetic operation, defaulting to over-approximated intervals"
+    );
+    return fallbackBinaryOp(smtSolver, op, lhs, rhs);
+  }
+}
+
+ExpressionValue
+IntervalDataFlowAnalysis::performUnaryArithmetic(mlir::Operation *op, const LatticeValue &a) {
+  ensure(isArithmeticOp(op), "is not arithmetic op");
+
+  auto val = a.getScalarValue();
+
+  if (mlir::isa<NegFeltOp>(op)) {
+    return neg(smtSolver, val);
+  } else if (mlir::isa<NotFeltOp>(op)) {
+    return notOp(smtSolver, val);
+  } else {
+    llvm::report_fatal_error(
+        "unsupported unary arithmetic operation " + mlir::Twine(op->getName().getStringRef())
+    );
+    return ExpressionValue();
+  }
+}
+
 /* StructIntervals */
 
 mlir::LogicalResult StructIntervals::computeIntervals(
     mlir::DataFlowSolver &solver, mlir::AnalysisManager &am, IntervalAnalysisContext &ctx
 ) {
-  ReturnOp computeEnd, constrainEnd;
-  structDef.getComputeFuncOp().walk([&computeEnd](ReturnOp r) mutable { computeEnd = r; });
+  // Get the lattice at the end of the constrain function.
+  ReturnOp constrainEnd;
   structDef.getConstrainFuncOp().walk([&constrainEnd](ReturnOp r) mutable { constrainEnd = r; });
 
-  auto computeLattice = solver.lookupState<IntervalAnalysisLattice>(computeEnd);
   auto constrainLattice = solver.lookupState<IntervalAnalysisLattice>(constrainEnd);
 
-  smtSolver = ctx.smtSolver;
-
-  computeSolverConstraints = computeLattice->getConstraints();
   constrainSolverConstraints = constrainLattice->getConstraints();
 
   for (const auto &ref : ConstrainRef::getAllConstrainRefs(structDef)) {
+    // Don't compute ranges for structs, that doesn't make any sense.
     if (!ref.isScalar()) {
       continue;
     }
     auto symbol = ctx.getSymbol(ref);
-    auto computeInterval = computeLattice->findInterval(symbol);
-    if (mlir::succeeded(computeInterval)) {
-      computeFieldRanges[ref] = *computeInterval;
-    } else {
-      computeFieldRanges[ref] = Interval::Entire(ctx.field);
-    }
     auto constrainInterval = constrainLattice->findInterval(symbol);
     if (mlir::succeeded(constrainInterval)) {
       constrainFieldRanges[ref] = *constrainInterval;
@@ -309,47 +835,31 @@ mlir::LogicalResult StructIntervals::computeIntervals(
   return mlir::success();
 }
 
-void StructIntervals::print(mlir::raw_ostream &os) const {
+void StructIntervals::print(mlir::raw_ostream &os, bool withConstraints) const {
   os << "StructIntervals { ";
-  if (computeFieldRanges.empty() && constrainFieldRanges.empty()) {
+  if (constrainFieldRanges.empty()) {
     os << "}\n";
     return;
   }
 
-  os << "\n    compute { ";
-  for (auto &[ref, interval] : computeFieldRanges) {
-    os << "\n        " << ref << " in " << interval;
-  }
-  os << "\n\n        Solver Constraints { ";
-  if (computeSolverConstraints.empty()) {
-    os << "}\n";
-  } else {
-    for (const auto &e : computeSolverConstraints) {
-      os << "\n            " << e;
-    }
-    os << "\n        }\n";
-  }
-
-  os << "    }\n";
-
-  os << "\n    constrain { ";
   for (auto &[ref, interval] : constrainFieldRanges) {
-    os << "\n        " << ref << " in " << interval;
+    os << "\n    " << ref << " in " << interval;
   }
-  os << "\n\n        Solver Constraints { ";
-  if (constrainSolverConstraints.empty()) {
-    os << "}\n";
-  } else {
-    for (const auto &e : constrainSolverConstraints) {
-      os << "\n            ";
-      e.getExpr()->print(os);
+
+  if (withConstraints) {
+    os << "\n\n    Solver Constraints { ";
+    if (constrainSolverConstraints.empty()) {
+      os << "}\n";
+    } else {
+      for (const auto &e : constrainSolverConstraints) {
+        os << "\n        ";
+        e.getExpr()->print(os);
+      }
+      os << "\n    }";
     }
-    os << "\n        }\n";
   }
 
-  os << "    }\n";
-
-  os << "}\n";
+  os << "\n}\n";
 }
 
 } // namespace llzk

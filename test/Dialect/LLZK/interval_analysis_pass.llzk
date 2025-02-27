@@ -1,5 +1,4 @@
 // RUN: llzk-opt -I %S -split-input-file -llzk-inline-includes -llzk-print-interval-analysis %s 2>&1 | FileCheck %s
-// XFAIL: *
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ConstantConstraint {
@@ -17,6 +16,10 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+
+// CHECK-LABEL: @ConstantConstraint StructIntervals {
+// CHECK-NEXT:     %arg1 in Degenerate(3)
+// CHECK-NEXT: }
 
 // -----
 
@@ -38,6 +41,11 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+
+// CHECK-LABEL: @CmpConstraint StructIntervals {
+// CHECK-NEXT:     %arg1 in TypeC:[ 2, 14828463434349501588600065238342573214075126148185506315513679787312170007181 ]
+// CHECK-NEXT:     %arg2 in TypeA:[ 0, 2 ]
+// CHECK-NEXT: }
 
 // -----
 
@@ -67,6 +75,13 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+
+// CHECK-LABEL: @FieldRangeConstraint StructIntervals {
+// CHECK-NEXT:     %arg0[@foo] in Degenerate(1)
+// CHECK-NEXT:     %arg0[@bar] in TypeA:[ 0, 2 ]
+// CHECK-NEXT:     %arg1 in TypeC:[ 2, 14828463434349501588600065238342573214075126148185506315513679787312170007181 ]
+// CHECK-NEXT:     %arg2 in TypeA:[ 0, 2 ]
+// CHECK-NEXT: }
 
 // -----
 
@@ -106,3 +121,53 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+
+// CHECK-LABEL: @ArithConstraint StructIntervals {
+// CHECK-NEXT:     %arg1 in TypeA:[ 5, 7 ]
+// CHECK-NEXT:     %arg2 in TypeA:[ 8, 11 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ArrayConstraint {
+
+    llzk.field @arr : !llzk.array<3 x !llzk.felt>
+
+    func @compute() -> !llzk.struct<@ArrayConstraint> {
+      %self = new_struct : !llzk.struct<@ArrayConstraint>
+      return %self : !llzk.struct<@ArrayConstraint>
+    }
+
+    func @constrain(%self: !llzk.struct<@ArrayConstraint>) {
+      %5 = constfelt 5
+      %7 = constfelt 7
+      %11 = constfelt 11
+      %arr = readf %self[@arr] : !llzk.struct<@ArrayConstraint>, !llzk.array<3 x !llzk.felt>
+      %i0 = index.constant 0
+      %i1 = index.constant 1
+      %i2 = index.constant 2
+      %a = readarr %arr[%i0] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %b = readarr %arr[%i1] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %c = readarr %arr[%i2] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %cmp1 = cmp ge(%a, %5)
+      assert %cmp1
+      %cmp2 = cmp le(%a, %7)
+      assert %cmp2
+      %cmp3 = cmp ge(%b, %7)
+      assert %cmp3
+      %cmp4 = cmp le(%b, %11)
+      assert %cmp4
+
+      emit_eq %c, %a : !llzk.felt
+
+      return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayConstraint StructIntervals {
+// CHECK-NEXT:     %arg0[@arr][0] in TypeA:[ 5, 7 ]
+// CHECK-NEXT:     %arg0[@arr][1] in TypeA:[ 7, 11 ]
+// CHECK-NEXT:     %arg0[@arr][2] in TypeA:[ 5, 7 ]
+// CHECK-NEXT: }

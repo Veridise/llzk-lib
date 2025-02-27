@@ -216,10 +216,7 @@ class ConstraintDependencyGraphModuleAnalysis
           ConstraintDependencyGraph, NoContext, ConstraintDependencyGraphStructAnalysis> {
 
 public:
-  ConstraintDependencyGraphModuleAnalysis(mlir::Operation *op, mlir::AnalysisManager &am)
-      : ModuleAnalysis(op, am) {
-    constructChildAnalyses(am);
-  }
+  using ModuleAnalysis::ModuleAnalysis;
 
 protected:
   void initializeSolver(mlir::DataFlowSolver &solver) override {
