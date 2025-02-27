@@ -75,7 +75,6 @@ protected:
   /// return a new value with the modifications.
   virtual std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
   elementwiseTransform(llvm::function_ref<ConstrainRef(const ConstrainRef &)> transform) const;
-
 };
 
 /// A lattice for use in dense analysis.
