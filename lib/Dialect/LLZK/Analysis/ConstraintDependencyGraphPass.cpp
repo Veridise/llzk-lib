@@ -34,6 +34,8 @@ protected:
     }
 
     auto &cs = getAnalysis<ConstraintDependencyGraphModuleAnalysis>();
+    auto am = getAnalysisManager();
+    cs.runAnalysis(am);
     for (auto &[s, cdg] : cs) {
       auto &structDef = const_cast<StructDefOp &>(s);
       auto fullName = getPathFromTopRoot(structDef);

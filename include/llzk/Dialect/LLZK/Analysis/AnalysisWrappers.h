@@ -64,13 +64,15 @@ class ModuleAnalysis {
       std::map<StructDefOp, std::reference_wrapper<const Result>, OpLocationLess<StructDefOp>>;
 
 public:
-  ModuleAnalysis(mlir::Operation *op, mlir::AnalysisManager &am) {
+  ModuleAnalysis(mlir::Operation *op, mlir::AnalysisManager &_) {
     if (modOp = mlir::dyn_cast<mlir::ModuleOp>(op); !modOp) {
       auto error_message = "ModuleAnalysis expects provided op to be an mlir::ModuleOp!";
       op->emitError(error_message);
       llvm::report_fatal_error(error_message);
     }
   }
+
+  virtual void runAnalysis(mlir::AnalysisManager &am) { constructChildAnalyses(am); }
 
   bool hasResult(StructDefOp op) const { return results.find(op) != results.end(); }
   Result &getResult(StructDefOp op) {
@@ -121,8 +123,8 @@ private:
   mlir::ModuleOp modOp;
   ResultMap results;
 
-  /// @brief Ensures that the given struct has a CDG.
-  /// @param op The struct to ensure has a CDG.
+  /// @brief Ensures that the given struct has a result.
+  /// @param op The struct to ensure has a result.
   void ensureResultCreated(StructDefOp op) const {
     ensure(hasResult(op), "Result does not exist for StructDefOp " + mlir::Twine(op.getName()));
   }

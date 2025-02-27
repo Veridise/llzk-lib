@@ -9,6 +9,7 @@
 
 namespace llzk {
 
+#define GEN_PASS_DECL_INTERVALANALYSISPRINTERPASS
 #define GEN_PASS_DEF_INTERVALANALYSISPRINTERPASS
 #include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h.inc"
 
@@ -31,6 +32,9 @@ protected:
     }
 
     auto &mia = getAnalysis<ModuleIntervalAnalysis>();
+    mia.setField(Field::getField(fieldName));
+    auto am = getAnalysisManager();
+    mia.runAnalysis(am);
 
     for (auto &[s, si] : mia) {
       auto &structDef = const_cast<StructDefOp &>(s);
