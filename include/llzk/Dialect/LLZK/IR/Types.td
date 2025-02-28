@@ -60,6 +60,14 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
                           "::mlir::ArrayAttr":$params),
                       [{
                     return $_get(structName.getContext(), structName, params);
+                  }]>,
+                  TypeBuilderWithInferredContext<
+                      (ins "::mlir::SymbolRefAttr":$structName,
+                          "::llvm::ArrayRef<::mlir::Attribute>":$paramsRef),
+                      [{
+                    ::mlir::MLIRContext *ctx = structName.getContext();
+                    auto params = ::mlir::ArrayAttr::get(ctx, paramsRef);
+                    return $_get(ctx, structName, params);
                   }]>];
 
   let extraClassDeclaration = [{
@@ -145,15 +153,22 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
     /// Required by the ShapedTypeInterface interface.
     inline bool hasRank() const { return true; }
 
+    /// Returns the number of elements in the array.
+    /// Aborts if the array has a dynamic dimension.
+    /// Required by the ShapedTypeInterface interface.
+    int64_t getNumElements() const;
+
     /// Clone this type with the given shape and element type. If the
     /// provided shape is `std::nullopt`, the current shape of the type is used.
     /// Required by the ShapedTypeInterface interface.
     ArrayType cloneWith(std::optional<::llvm::ArrayRef<int64_t>> shape, ::mlir::Type elementType) const;
 
-    /// Returns the number of elements in the array.
-    /// Aborts if the array has a dynamic dimension.
-    /// Required by the ShapedTypeInterface interface.
-    int64_t getNumElements() const;
+    /// Clone this type with the given dimensions and element type. If the provided
+    /// dimensions are `std::nullopt`, the current dimensions of the type are used.
+    /// Note: This is preferred over cloneWith(..int64_t..) because this Attribute
+    /// version can carry more information than the `int64_t` which must default to
+    /// `kDynamic` when the Attribute is anything other than an integer constant.
+    ArrayType cloneWith(::mlir::Type elementType, std::optional<::llvm::ArrayRef<::mlir::Attribute>> dimensions = std::nullopt) const;
   }];
 
   let extraClassDefinition = [{

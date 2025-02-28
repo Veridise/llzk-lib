@@ -1,0 +1,367 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-flatten -debug-only=llzk-flatten -verify-diagnostics %s | FileCheck %s
+
+// Tests:
+//  - CreateArrayOp using only constant values and no loops
+//  - Instantiated array Value used in FieldWriteOp requires manual update of FieldDefOp type
+!Ty = !llzk.array<affine_map<(i)->(i)>, affine_map<(i,j)->(i+j)>, affine_map<(i)[j]->(i+j)> x index>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component01 {
+    field @out: !Ty
+
+    func @compute() -> !llzk.struct<@Component01> {
+      %1 = arith.constant 1 : index
+      %2 = arith.constant 2 : index
+      %3 = arith.constant 3 : index
+      %4 = arith.constant 4 : index
+      %5 = arith.constant 5 : index
+      %arr = llzk.new_array{(%1),(%2,%3),(%4)[%5]} : !Ty
+
+      %self = new_struct : !llzk.struct<@Component01>
+      llzk.writef %self[@out] = %arr : !llzk.struct<@Component01>, !Ty
+      return %self : !llzk.struct<@Component01>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component01>) {
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @Component01 {
+// CHECK-NEXT:    field @out : !llzk.array<1,5,9 x index>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component01> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_array  : <1,5,9 x index>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component01>
+// CHECK-NEXT:      writef %[[V1]][@out] = %[[V0]] : <@Component01>, !llzk.array<1,5,9 x index>
+// CHECK-NEXT:      return %[[V1]] : !llzk.struct<@Component01>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Tests:
+//  - CreateArrayOp using non-constant value
+//  - Instantiated array Value used in WriteArrayOp (updated automatically because
+//    the type just comes from the SSA Value used in the Op)
+#M1 = affine_map<(i)->(i)>
+#M2 = affine_map<(i,j)->(i+j)>
+#M3 = affine_map<(i)[j]->(i+j)>
+!Ty = !llzk.array<#M1,#M2,#M3 x index>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component02 {
+    field @out: !Ty
+
+    func @compute(%x: index) -> !llzk.struct<@Component02> {
+      %1 = arith.constant 1 : index
+      %2 = arith.constant 2 : index
+      %3 = arith.constant 3 : index
+      %4 = arith.constant 4 : index
+      %5 = arith.constant 5 : index
+      %arr = llzk.new_array{(%1),(%2,%x),(%4)[%5]} : !Ty // !llzk.array<1,(x+2),9 x index>
+
+      %0 = arith.constant 0 : index
+      llzk.writearr %arr[%0,%0,%0] = %5 : !Ty, index
+      llzk.writearr %arr[%0,%0,%1] = %4 : !Ty, index
+
+      %self = new_struct : !llzk.struct<@Component02>
+      llzk.writef %self[@out] = %arr : !llzk.struct<@Component02>, !Ty
+      return %self : !llzk.struct<@Component02>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component02>, %x: index) {
+      return
+    }
+  }
+}
+// CHECK: #[[$M0:.+]] = affine_map<(d0, d1) -> (d0 + d1)>
+// CHECK-LABEL: llzk.struct @Component02 {
+// CHECK-NEXT:    field @out : !llzk.array<1,#[[$M0]],9 x index>
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@Component02> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = new_array{(%[[V3]], %[[V0]])} : <1,#[[$M0]],9 x index>
+// CHECK-NEXT:      writearr %[[V6]]{{\[}}%[[V1]], %[[V1]], %[[V1]]] = %[[V5]] : <1,#[[$M0]],9 x index>, index
+// CHECK-NEXT:      writearr %[[V6]]{{\[}}%[[V1]], %[[V1]], %[[V2]]] = %[[V4]] : <1,#[[$M0]],9 x index>, index
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = new_struct : <@Component02>
+// CHECK-NEXT:      writef %[[V7]][@out] = %[[V6]] : <@Component02>, !llzk.array<1,#[[$M0]],9 x index>
+// CHECK-NEXT:      return %[[V7]] : !llzk.struct<@Component02>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component02>, %[[V9:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Tests:
+//  - CreateArrayOp using loop induction variable within a loop that can't unroll
+//  - Instantiated array Value used in ExtractArrayOp requires manual update of ExtractArrayOp result type
+#M1 = affine_map<(i)[j]->(i+j)>
+#M2 = affine_map<(i)->(i+2)>
+#M3 = affine_map<()[i,j]->(i+j)>
+!Ty = !llzk.array<#M1,#M2,#M3 x index>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component03 {
+    field @a: !llzk.array<#M3 x index>
+    field @b: !llzk.array<#M3 x index>
+
+    func @compute(%x: index) -> !llzk.struct<@Component03> {
+      %self = new_struct : !llzk.struct<@Component03>
+      %0 = arith.constant 0 : index
+      %1 = arith.constant 1 : index
+      %2 = arith.constant 2 : index
+      %3 = arith.constant 3 : index
+      scf.for %i = %0 to %x step %1 {
+        %arr = llzk.new_array{(%i)[%1],(%i),()[%2,%3]} : !Ty // !llzk.array<(i+1),(i+2),5 x index>
+        %a = llzk.extractarr %arr[%0, %0] : !Ty
+        llzk.writef %self[@a] = %a : !llzk.struct<@Component03>, !llzk.array<#M3 x index>
+        %b = llzk.extractarr %arr[%0, %1] : !Ty
+        llzk.writef %self[@b] = %b : !llzk.struct<@Component03>, !llzk.array<#M3 x index>
+      }
+      return %self : !llzk.struct<@Component03>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component03>, %x: index) {
+      return
+    }
+  }
+}
+// CHECK: #[[$M1:[0-9a-zA-Z_\.]+]] = affine_map<(d0)[s0] -> (d0 + s0)>
+// CHECK: #[[$M2:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 2)>
+// CHECK-LABEL: llzk.struct @Component03 {
+// CHECK-NEXT:    field @a : !llzk.array<5 x index>
+// CHECK-NEXT:    field @b : !llzk.array<5 x index>
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@Component03> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = new_struct : <@Component03>
+// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]]){{\[}}%[[V1]]], (%[[V4]])} : <#[[$M1]],#[[$M2]],5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = llzk.extractarr %[[V5]]{{\[}}%[[V2]], %[[V2]]] : <#[[$M1]],#[[$M2]],5 x index>
+// CHECK-NEXT:        llzk.writef %[[V3]][@a] = %[[V6]] : <@Component03>, !llzk.array<5 x index>
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = llzk.extractarr %[[V5]]{{\[}}%[[V2]], %[[V1]]] : <#[[$M1]],#[[$M2]],5 x index>
+// CHECK-NEXT:        llzk.writef %[[V3]][@b] = %[[V7]] : <@Component03>, !llzk.array<5 x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      return %[[V3]] : !llzk.struct<@Component03>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component03>, %[[V9:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Tests:
+//  - CreateArrayOp using loop induction variable within unknown-known loop nesting
+//  - Instantiated array Value used in ReadArrayOp requires manual update of ReadArrayOp array type
+#M1 = affine_map<(i)[j]->(i+j)>
+#M2 = affine_map<(i)->(i+2)>
+#M3 = affine_map<()[i,j]->(i+j)>
+!Ty = !llzk.array<#M1,#M2,#M3 x index>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component04 {
+    field @f: index
+
+    func @compute(%x: index) -> !llzk.struct<@Component04> {
+      %self = new_struct : !llzk.struct<@Component04>
+      %0 = arith.constant 0 : index
+      %1 = arith.constant 1 : index
+      %2 = arith.constant 2 : index
+      %3 = arith.constant 3 : index
+      scf.for %i = %0 to %x step %1 {
+        %sum = scf.for %j = %0 to %2 step %1
+          iter_args(%cur_sum = %0) -> index {
+          %arr = llzk.new_array{(%i)[%1],(%j),()[%2,%3]} : !Ty // !llzk.array<(i+1),(j+2),5 x index>
+          %a = llzk.readarr %arr[%0, %0, %0] : !Ty, index
+          %b = llzk.readarr %arr[%0, %1, %0] : !Ty, index
+          %c = arith.addi %a, %b : index
+          scf.yield %c : index
+        }
+        llzk.writef %self[@f] = %sum : !llzk.struct<@Component04>, index
+      }
+      return %self : !llzk.struct<@Component04>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component04>, %x: index) {
+      return
+    }
+  }
+}
+// CHECK: #[[$M3:[0-9a-zA-Z_\.]+]] = affine_map<(d0)[s0] -> (d0 + s0)>
+// CHECK-LABEL: llzk.struct @Component04 {
+// CHECK-NEXT:    field @f : index
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@Component04> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = new_struct : <@Component04>
+// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]]){{\[}}%[[V1]]]} : <#[[$M3]],2,5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V5]]{{\[}}%[[V2]], %[[V2]], %[[V2]]] : <#[[$M3]],2,5 x index>, index
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V5]]{{\[}}%[[V2]], %[[V1]], %[[V2]]] : <#[[$M3]],2,5 x index>, index
+// CHECK-NEXT:        %[[V8:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]]){{\[}}%[[V1]]]} : <#[[$M3]],3,5 x index>
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V8]]{{\[}}%[[V2]], %[[V2]], %[[V2]]] : <#[[$M3]],3,5 x index>, index
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V8]]{{\[}}%[[V2]], %[[V1]], %[[V2]]] : <#[[$M3]],3,5 x index>, index
+// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = arith.addi %[[V9]], %[[V10]] : index
+// CHECK-NEXT:        llzk.writef %[[V3]][@f] = %[[V11]] : <@Component04>, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      return %[[V3]] : !llzk.struct<@Component04>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component04>, %[[V13:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Tests:
+//  - CreateArrayOp using loop induction variable within known-unknown loop nesting
+//  - Instantiated array Value used in InsertArrayOp and ArrayLengthOp (both are updated
+//    automatically because the type just comes from the SSA Value used in the Op)
+#M1 = affine_map<(i)[j]->(i+j)>
+#M2 = affine_map<(i)->(i+2)>
+#M3 = affine_map<()[i,j]->(i+j)>
+!Ty1 = !llzk.array<#M1,#M2,#M3 x index>
+!Ty2 = !llzk.array<#M2,#M3 x index>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component05 {
+    field @f: index
+
+    func @compute(%x: index) -> !llzk.struct<@Component05> {
+      %self = new_struct : !llzk.struct<@Component05>
+      %0 = arith.constant 0 : index
+      %1 = arith.constant 1 : index
+      %2 = arith.constant 2 : index
+      %3 = arith.constant 3 : index
+      scf.for %i = %0 to %2 step %1 {
+        scf.for %j = %0 to %x step %1 {
+          %arr = llzk.new_array{(%i)[%1],(%j),()[%2,%3]} : !Ty1 // !llzk.array<(i+1),(j+2),5 x index>
+          %inner = llzk.new_array{(%j),()[%2,%3]} : !Ty2 // !llzk.array<(j+2),5 x index>
+          llzk.insertarr %arr[%0] = %inner : !Ty1, !Ty2
+          %len = llzk.array_len %arr, %1 : !Ty1 // len(dimension 1) == (j+2)
+          llzk.writef %self[@f] = %len : !llzk.struct<@Component05>, index
+        }
+      }
+      return %self : !llzk.struct<@Component05>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component05>, %x: index) {
+      return
+    }
+  }
+}
+// CHECK: #[[$M4:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 2)>
+// CHECK-LABEL: llzk.struct @Component05 {
+// CHECK-NEXT:    field @f : index
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@Component05> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = new_struct : <@Component05>
+// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]])} : <1,#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]])} : <#[[$M4]],5 x index>
+// CHECK-NEXT:        llzk.insertarr %[[V5]]{{\[}}%[[V2]]] = %[[V6]] : <1,#[[$M4]],5 x index>, <#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = llzk.array_len %[[V5]], %[[V1]] : <1,#[[$M4]],5 x index>
+// CHECK-NEXT:        llzk.writef %[[V3]][@f] = %[[V7]] : <@Component05>, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      scf.for %[[V8:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V8]])} : <2,#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V8]])} : <#[[$M4]],5 x index>
+// CHECK-NEXT:        llzk.insertarr %[[V9]]{{\[}}%[[V2]]] = %[[V10]] : <2,#[[$M4]],5 x index>, <#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = llzk.array_len %[[V9]], %[[V1]] : <2,#[[$M4]],5 x index>
+// CHECK-NEXT:        llzk.writef %[[V3]][@f] = %[[V11]] : <@Component05>, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      return %[[V3]] : !llzk.struct<@Component05>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component05>, %[[V13:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Test: Return instantiated affine array from function, requires update to caller.
+#M1 = affine_map<(i)[k] -> (5*i+k)>
+#M2 = affine_map<()[c] -> (c)>
+#M3 = affine_map<(j) -> (j+2)>
+!Ty = !llzk.array<#M1, #M2, #M3 x !llzk.felt>
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @test06() -> !Ty {
+    %a = arith.constant 2 : index
+    %b = arith.constant 4 : index
+    %c = arith.constant 6 : index
+    %d = arith.constant 1 : index
+    %r = llzk.new_array { (%a)[%b], ()[%c], (%d) } : !Ty
+    return %r: !Ty
+  }
+
+  llzk.struct @Main {
+    field @a: !Ty
+  
+    func @compute() -> !llzk.struct<@Main> {
+      %self = llzk.new_struct : !llzk.struct<@Main>
+      %temp = llzk.call @test06() : () -> !Ty
+      llzk.writef %self[@a] = %temp : !llzk.struct<@Main>, !Ty
+      return %self: !llzk.struct<@Main>
+    }
+  
+    func @constrain(%self: !llzk.struct<@Main>) {
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.func @test06() -> !llzk.array<14,6,3 x !llzk.felt> {
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = new_array  : <14,6,3 x !llzk.felt>
+// CHECK-NEXT:    return %[[V0]] : !llzk.array<14,6,3 x !llzk.felt>
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Main {
+// CHECK-NEXT:    field @a : !llzk.array<14,6,3 x !llzk.felt>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = call @test06() : () -> !llzk.array<14,6,3 x !llzk.felt>
+// CHECK-NEXT:      writef %[[V0]][@a] = %[[V1]] : <@Main>, !llzk.array<14,6,3 x !llzk.felt>
+// CHECK-NEXT:      return %[[V0]] : !llzk.struct<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Test: affine_map folding unsuccessful due to division by 0
+!Ty = !llzk.array<affine_map<(i)->(i mod 0)> x index>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component10 {
+    field @out: !Ty
+
+    func @compute() -> !llzk.struct<@Component10> {
+      %self = new_struct : !llzk.struct<@Component10>
+  
+      %1 = arith.constant 1 : index
+      // expected-remark@+1 {{Cannot fold affine_map for array dimension 0 due to divide by 0 or modulus with negative divisor}}
+      %arr = llzk.new_array {(%1)} : !Ty
+
+      llzk.writef %self[@out] = %arr : !llzk.struct<@Component10>, !Ty
+      return %self : !llzk.struct<@Component10>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component10>) {
+      return
+    }
+  }
+}
+// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 mod 0)>
+// CHECK-LABEL: llzk.struct @Component10 {
+// CHECK-NEXT:    field @out : !llzk.array<#[[$M0]] x index>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component10> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component10>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = new_array{(%[[V0]])} : <#[[$M0]] x index>
+// CHECK-NEXT:      writef %[[V1]][@out] = %[[V2]] : <@Component10>, !llzk.array<#[[$M0]] x index>
+// CHECK-NEXT:      return %[[V1]] : !llzk.struct<@Component10>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component10>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+

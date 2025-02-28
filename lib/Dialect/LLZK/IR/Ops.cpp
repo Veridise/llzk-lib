@@ -602,6 +602,32 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
 //===------------------------------------------------------------------===//
 // FieldDefOp
 //===------------------------------------------------------------------===//
+
+void FieldDefOp::build(
+    OpBuilder &odsBuilder, OperationState &odsState, StringAttr sym_name, TypeAttr type
+) {
+  Properties &props = odsState.getOrAddProperties<Properties>();
+  props.setSymName(sym_name);
+  props.setType(type);
+}
+
+void FieldDefOp::build(
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef sym_name, Type type
+) {
+  build(odsBuilder, odsState, odsBuilder.getStringAttr(sym_name), TypeAttr::get(type));
+}
+
+void FieldDefOp::build(
+    OpBuilder &, OperationState &odsState, TypeRange resultTypes, ValueRange operands,
+    ArrayRef<NamedAttribute> attributes
+) {
+  assert(operands.size() == 0u && "mismatched number of parameters");
+  odsState.addOperands(operands);
+  odsState.addAttributes(attributes);
+  assert(resultTypes.size() == 0u && "mismatched number of return types");
+  odsState.addTypes(resultTypes);
+}
+
 bool FieldDefOp::hasPublicAttr() { return getOperation()->hasAttr(PublicAttr::name); }
 
 LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {

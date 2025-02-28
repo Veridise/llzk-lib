@@ -6,6 +6,7 @@
 #include <mlir/IR/SymbolTable.h>
 
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <string>
@@ -15,6 +16,20 @@ namespace llzk {
 namespace debug {
 
 namespace {
+
+template <typename InputIt> void appendList(llvm::raw_ostream &ss, InputIt begin, InputIt end);
+
+// Define this concept instead of `std::ranges::range` because certain classes (like OperandRange)
+// do not work with `std::ranges::range`.
+template <typename T>
+concept Iterable = requires(T t) {
+  std::begin(t);
+  std::end(t);
+};
+
+template <Iterable InputIt> inline void append(llvm::raw_ostream &ss, const InputIt &collection) {
+  appendList(ss, std::begin(collection), std::end(collection));
+}
 
 void append(llvm::raw_ostream &ss, const mlir::NamedAttribute &a) {
   ss << a.getName() << '=' << a.getValue();
@@ -43,6 +58,17 @@ template <typename T> inline void append(llvm::raw_ostream &ss, const std::optio
 
 template <typename Any> void append(llvm::raw_ostream &ss, const Any &value) { ss << value; }
 
+template <typename InputIt> void appendList(llvm::raw_ostream &ss, InputIt begin, InputIt end) {
+  ss << "[";
+  for (auto it = begin; it != end; ++it) {
+    append(ss, *it);
+    if (std::next(it) != end) {
+      ss << ", ";
+    }
+  }
+  ss << "]";
+}
+
 } // namespace
 
 /// Generate a comma-separated string representation by traversing elements from `begin` to `end`
@@ -50,14 +76,7 @@ template <typename Any> void append(llvm::raw_ostream &ss, const Any &value) { s
 template <typename InputIt> std::string toStringList(InputIt begin, InputIt end) {
   std::string output;
   llvm::raw_string_ostream oss(output);
-  oss << "[";
-  for (auto it = begin; it != end; ++it) {
-    append(oss, *it);
-    if (std::next(it) != end) {
-      oss << ", ";
-    }
-  }
-  oss << "]";
+  appendList(oss, begin, end);
   return output;
 }
 

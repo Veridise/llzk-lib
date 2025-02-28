@@ -554,11 +554,18 @@ LogicalResult ArrayType::verify(
   );
 }
 
+int64_t ArrayType::getNumElements() const { return ShapedType::getNumElements(getShape()); }
+
 ArrayType ArrayType::cloneWith(std::optional<ArrayRef<int64_t>> shape, Type elementType) const {
   return ArrayType::get(elementType, shape.has_value() ? shape.value() : getShape());
 }
 
-int64_t ArrayType::getNumElements() const { return ShapedType::getNumElements(getShape()); }
+ArrayType
+ArrayType::cloneWith(Type elementType, std::optional<ArrayRef<Attribute>> dimensions) const {
+  return ArrayType::get(
+      elementType, dimensions.has_value() ? dimensions.value() : getDimensionSizes()
+  );
+}
 
 //===------------------------------------------------------------------===//
 // Additional Helpers

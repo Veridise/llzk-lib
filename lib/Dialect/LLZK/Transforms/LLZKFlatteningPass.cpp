@@ -10,7 +10,9 @@
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Dialect/SCF/Transforms/Patterns.h>
 #include <mlir/Dialect/SCF/Utils/Utils.h>
+#include <mlir/Dialect/Utils/StaticValueUtils.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/Interfaces/InferTypeOpInterface.h>
 #include <mlir/Pass/Pass.h>
 #include <mlir/Transforms/DialectConversion.h>
 #include <mlir/Transforms/GreedyPatternRewriteDriver.h>
@@ -158,41 +160,7 @@ ConversionTarget newConverterDefinedTarget(TypeConverter &tyConv, MLIRContext *c
   return target;
 }
 
-namespace StepUnroll {
-
-// These exist in a newer version of LLVM and can be removed if the dependency is upgraded.
-namespace NewerLLVM {
-namespace MathExtras {
-
-template <typename T, typename U>
-using enableif_int = std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>;
-template <typename T, typename U, typename = enableif_int<T, U>>
-using common_sint = std::common_type_t<std::make_signed_t<T>, std::make_signed_t<U>>;
-
-// Check whether divideCeilSigned or divideFloorSigned would overflow. This
-// happens only when Numerator = INT_MIN and Denominator = -1.
-template <typename U, typename V>
-constexpr bool divideSignedWouldOverflow(U Numerator, V Denominator) {
-  return Numerator == std::numeric_limits<U>::min() && Denominator == -1;
-}
-
-/// Returns the integer ceil(Numerator / Denominator). Signed version.
-/// Overflow is explicitly forbidden with an assert.
-template <typename U, typename V, typename T = common_sint<U, V>>
-constexpr T divideCeilSigned(U Numerator, V Denominator) {
-  assert(Denominator && "Division by zero");
-  assert(!divideSignedWouldOverflow(Numerator, Denominator) && "Divide would overflow");
-  if (!Numerator) {
-    return 0;
-  }
-  // C's integer division rounds towards 0.
-  T Bias = Denominator >= 0 ? 1 : -1;
-  bool SameSign = (Numerator >= 0) == (Denominator >= 0);
-  return SameSign ? (Numerator - Bias) / Denominator + 1 : Numerator / Denominator;
-}
-
-} // namespace MathExtras
-} // namespace NewerLLVM
+namespace Step1_Unroll {
 
 // OpTy can be any LoopLikeOpInterface
 // TODO: not guaranteed to work with WhileOp, can try with our custom attributes though.
@@ -224,19 +192,7 @@ private:
     if (!lbVal.has_value() || !ubVal.has_value() || !stepVal.has_value()) {
       return std::nullopt;
     }
-
-    std::optional<int64_t> lbConst = getConstantIntValue(lbVal.value());
-    std::optional<int64_t> ubConst = getConstantIntValue(ubVal.value());
-    std::optional<int64_t> stepConst = getConstantIntValue(stepVal.value());
-    if (!lbConst.has_value() || !ubConst.has_value() || !stepConst.has_value()) {
-      return std::nullopt;
-    }
-
-    int64_t lb = lbConst.value();
-    int64_t ub = ubConst.value();
-    int64_t step = stepConst.value();
-    assert(lb >= 0 && ub >= 0 && step > 0 && "expected positive loop bounds and step");
-    return NewerLLVM::MathExtras::divideCeilSigned(ub - lb, step);
+    return constantTripCount(lbVal.value(), ubVal.value(), stepVal.value());
   }
 };
 
@@ -249,9 +205,390 @@ LogicalResult run(ModuleOp modOp, bool &modified) {
       modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &modified
   );
 }
-} // namespace StepUnroll
+} // namespace Step1_Unroll
 
-namespace Step1 {
+namespace Step2_InstantiateAffineMaps {
+
+SmallVector<std::unique_ptr<Region>> moveRegions(Operation *op) {
+  SmallVector<std::unique_ptr<Region>> newRegions;
+  for (Region &region : op->getRegions()) {
+    auto newRegion = std::make_unique<Region>();
+    newRegion->takeBody(region);
+    newRegions.push_back(std::move(newRegion));
+  }
+  return newRegions;
+}
+
+struct AffineMapFolder {
+  struct Input {
+    OperandRangeRange mapOpGroups;
+    DenseI32ArrayAttr dimsPerGroup;
+    ArrayRef<Attribute> typeParams;
+  };
+
+  struct Output {
+    SmallVector<SmallVector<Value>> mapOpGroups;
+    SmallVector<int32_t> dimsPerGroup;
+    SmallVector<Attribute> typeParams;
+  };
+
+  static inline SmallVector<ValueRange> getConvertedMapOpGroups(Output out) {
+    return llvm::map_to_vector(out.mapOpGroups, [](const SmallVector<Value> &grp) {
+      return ValueRange(grp);
+    });
+  }
+
+  static LogicalResult
+  fold(PatternRewriter &rewriter, Input in, Output &out, Operation *op, const char *aspect) {
+    if (in.mapOpGroups.empty()) {
+      // No affine map operands so nothing to do
+      return failure();
+    }
+
+    assert(in.mapOpGroups.size() <= in.typeParams.size());
+    assert(std::cmp_equal(in.mapOpGroups.size(), in.dimsPerGroup.size()));
+
+    size_t idx = 0; // index in `mapOpGroups`, i.e. the number of AffineMapAttr encountered
+    for (Attribute sizeAttr : in.typeParams) {
+      if (AffineMapAttr m = dyn_cast<AffineMapAttr>(sizeAttr)) {
+        ValueRange currMapOps = in.mapOpGroups[idx++];
+        if (auto constOps = getConstantIntValues(getAsOpFoldResult(currMapOps))) {
+          SmallVector<Attribute> result;
+          bool hasPoison = false; // indicates divide by 0 or mod by <1
+          auto constAttrs = llvm::map_to_vector(*constOps, [&rewriter](int64_t v) -> Attribute {
+            return rewriter.getIndexAttr(v);
+          });
+          LogicalResult foldResult = m.getAffineMap().constantFold(constAttrs, result, &hasPoison);
+          if (hasPoison) {
+            LLVM_DEBUG(op->emitRemark().append(
+                "Cannot fold affine_map for ", aspect, " ", out.typeParams.size(),
+                " due to divide by 0 or modulus with negative divisor"
+            ));
+            return failure();
+          }
+          if (failed(foldResult)) {
+            LLVM_DEBUG(op->emitRemark().append(
+                "Folding affine_map for ", aspect, " ", out.typeParams.size(), " failed"
+            ));
+            return failure();
+          }
+          if (result.size() != 1) {
+            LLVM_DEBUG(op->emitRemark().append(
+                "Folding affine_map for ", aspect, " ", out.typeParams.size(), " produced ",
+                result.size(), " results but expected 1"
+            ));
+            return failure();
+          }
+          assert(!llvm::isa<AffineMapAttr>(result[0]) && "not converted");
+          out.typeParams.push_back(result[0]);
+          continue;
+        }
+        // If affine but not foldable, preserve the map ops
+        out.mapOpGroups.emplace_back(currMapOps);
+        out.dimsPerGroup.push_back(in.dimsPerGroup[idx - 1]); // idx was already incremented
+      }
+      // If not affine and foldable, preserve the original
+      out.typeParams.push_back(sizeAttr);
+    }
+    assert(idx == in.mapOpGroups.size() && "all affine_map not processed");
+    assert(in.typeParams.size() == out.typeParams.size() && "produced wrong number of dimensions");
+
+    return success();
+  }
+};
+
+/// Instantiate parameterized ArrayType resulting from CreateArrayOp.
+struct InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp> {
+  using OpRewritePattern<CreateArrayOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
+    ArrayType oldResultType = op.getType();
+
+    AffineMapFolder::Output out;
+    AffineMapFolder::Input in = {
+        op.getMapOperands(),
+        op.getNumDimsPerMapAttr(),
+        oldResultType.getDimensionSizes(),
+    };
+    if (failed(AffineMapFolder::fold(rewriter, in, out, op, "array dimension"))) {
+      return failure();
+    }
+
+    ArrayType newResultType = ArrayType::get(oldResultType.getElementType(), out.typeParams);
+    if (newResultType == oldResultType) {
+      // nothing changed
+      return failure();
+    }
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateAtCreateArrayOp] instantiated " << oldResultType << " as "
+                     << newResultType << " at " << op << "\n"
+    );
+    rewriter.replaceOpWithNewOp<CreateArrayOp>(
+        op, newResultType, AffineMapFolder::getConvertedMapOpGroups(out), out.dimsPerGroup
+    );
+    return success();
+  }
+};
+
+/// Update the array element type by looking at the values stored into it from uses.
+struct UpdateArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
+  using OpRewritePattern<CreateArrayOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
+    Value createResult = op.getResult();
+    ArrayType createResultType = dyn_cast<ArrayType>(createResult.getType());
+    assert(createResultType && "CreateArrayOp must produce ArrayType");
+    Type oldResultElemType = createResultType.getElementType();
+
+    // Look for WriteArrayOp where the array reference is the result of the CreateArrayOp and the
+    // element type is different.
+    Type newResultElemType = nullptr;
+    for (Operation *user : createResult.getUsers()) {
+      if (WriteArrayOp writeOp = dyn_cast<WriteArrayOp>(user)) {
+        if (writeOp.getArrRef() == createResult) {
+          Type writeRValueType = writeOp.getRvalue().getType();
+          if (writeRValueType != oldResultElemType) {
+            if (newResultElemType && newResultElemType != writeRValueType) {
+              LLVM_DEBUG(
+                  llvm::dbgs()
+                  << "[UpdateArrayElemFromWrite] multiple possible element types for CreateArrayOp "
+                  << newResultElemType << " vs " << writeRValueType << "\n"
+              );
+              return failure();
+            }
+            newResultElemType = writeRValueType;
+          }
+        }
+      }
+    }
+    if (!newResultElemType) {
+      // no replacement type found
+      return failure();
+    }
+
+    ArrayType newType = createResultType.cloneWith(newResultElemType);
+    rewriter.modifyOpInPlace(op, [&createResult, &newType]() { createResult.setType(newType); });
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateArrayElemFromWrite] updated result type of " << op << "\n");
+    return success();
+  }
+};
+
+/// Update the type of FieldDefOp instances by checking the updated types from FieldWriteOp.
+struct UpdateFieldTypeFromWrite final : public OpRewritePattern<FieldDefOp> {
+  using OpRewritePattern<FieldDefOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(FieldDefOp op, PatternRewriter &rewriter) const override {
+    // Find all uses of the field symbol name within its parent struct.
+    FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(op);
+    assert(succeeded(parentRes) && "FieldDefOp parent is always StructDefOp"); // per ODS def
+
+    SymbolTableCollection tables;
+    SymbolUserMap symbolUsers(tables, parentRes.value());
+    ArrayRef<Operation *> fieldUsers = symbolUsers.getUsers(op);
+
+    // If the symbol is used by a FieldWriteOp with a different result type then change
+    // the type of the FieldDefOp to match the FieldWriteOp result type.
+    Type fieldDefType = op.getType();
+    Type newType = nullptr;
+    for (Operation *user : fieldUsers) {
+      if (FieldWriteOp writeOp = llvm::dyn_cast<FieldWriteOp>(user)) {
+        Type writeToType = writeOp.getVal().getType();
+        if (newType) {
+          // If a new type has already been discovered from another FieldWriteOp, check if they
+          // match and fail the conversion if they do not. There should only be one write for each
+          // field of a struct but do not rely on that assumption for correctness here.f
+          if (writeToType != newType) {
+            LLVM_DEBUG(op.emitRemark()
+                           .append("Cannot update type of FieldDefOp because there are "
+                                   "multiple FieldWriteOp with different value types")
+                           .attachNote(writeOp.getLoc())
+                           .append("one write is located here"));
+            return failure();
+          }
+        } else if (writeToType != fieldDefType) {
+          // If a new type has not been discovered yet and the current FieldWriteOp has a different
+          // type from the FieldDefOp, then store the new type to update the FieldDefOp in the end.
+          newType = writeToType;
+          LLVM_DEBUG(
+              llvm::dbgs() << "[UpdateFieldTypeFromWrite] found new type in " << writeOp << "\n"
+          );
+        }
+      }
+    }
+    if (!newType) {
+      // nothing changed
+      return failure();
+    }
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldTypeFromWrite] replaced " << op);
+    FieldDefOp newOp = rewriter.replaceOpWithNewOp<FieldDefOp>(op, op.getSymName(), newType);
+    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << "\n");
+    return success();
+  }
+};
+
+/// Updates the result type in Ops with the InferTypeOpAdaptor trait including ReadArrayOp,
+/// ExtractArrayOp, etc.
+struct UpdateInferredResultTypes final : public OpTraitRewritePattern<OpTrait::InferTypeOpAdaptor> {
+  using OpTraitRewritePattern::OpTraitRewritePattern;
+  LogicalResult matchAndRewrite(Operation *op, PatternRewriter &rewriter) const override {
+    SmallVector<Type, 1> inferredResultTypes;
+    InferTypeOpInterface retTypeFn = cast<InferTypeOpInterface>(op);
+    LogicalResult result = retTypeFn.inferReturnTypes(
+        op->getContext(), op->getLoc(), op->getOperands(), op->getRawDictionaryAttrs(),
+        op->getPropertiesStorage(), op->getRegions(), inferredResultTypes
+    );
+    if (failed(result)) {
+      return failure();
+    }
+    if (op->getResultTypes() == inferredResultTypes) {
+      // nothing changed
+      return failure();
+    }
+
+    // Move nested region bodies and replace the original op with the updated types list.
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateInferredResultTypes] replaced " << op);
+    SmallVector<std::unique_ptr<Region>> newRegions = moveRegions(op);
+    Operation *newOp = rewriter.create(
+        op->getLoc(), op->getName().getIdentifier(), op->getOperands(), inferredResultTypes,
+        op->getAttrs(), op->getSuccessors(), newRegions
+    );
+    rewriter.replaceOp(op, newOp);
+    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << "\n");
+    return success();
+  }
+};
+
+/// Update FuncOp return type by checking the updated types from ReturnOp.
+struct UpdateFuncTypeFromReturn final : public OpRewritePattern<FuncOp> {
+  using OpRewritePattern<FuncOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(FuncOp op, PatternRewriter &rewriter) const override {
+    // Collect unique return type lists
+    std::optional<OperandRange::type_range> tyFromReturnOp;
+    op.walk([&tyFromReturnOp](Operation *p) {
+      if (ReturnOp retOp = dyn_cast<ReturnOp>(p)) {
+        auto currReturnType = retOp.getOperands().getTypes();
+        // If a type was found from another ReturnOp, make sure it matches the current or give up.
+        if (tyFromReturnOp && currReturnType != *tyFromReturnOp) {
+          tyFromReturnOp = std::nullopt;
+          return WalkResult::interrupt();
+        }
+        // Otherwise, keep track of the current one and continue.
+        tyFromReturnOp = currReturnType;
+      }
+      return WalkResult::advance();
+    });
+
+    if (!tyFromReturnOp) {
+      return failure();
+    }
+    FunctionType oldFuncTy = op.getFunctionType();
+    if (oldFuncTy.getResults() == *tyFromReturnOp) {
+      // nothing changed
+      return failure();
+    }
+    rewriter.modifyOpInPlace(op, [&]() {
+      op.setFunctionType(rewriter.getFunctionType(oldFuncTy.getInputs(), *tyFromReturnOp));
+    });
+    LLVM_DEBUG(
+        llvm::dbgs() << "[UpdateFuncTypeFromReturn] changed " << op.getSymName() << " from "
+                     << oldFuncTy << " to " << op.getFunctionType() << "\n"
+    );
+    return success();
+  }
+};
+
+/// Update CallOp result type based on the updated return type from the target FuncOp.
+/// This only applies to global (i.e. non-struct) functions because the functions within structs
+/// only return StructType or nothing and propagating those can result in bringing un-instantiated
+/// types from a templated struct into the current call which will give errors.
+struct UpdateGlobalCallOpTypes final : public OpRewritePattern<CallOp> {
+  using OpRewritePattern<CallOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
+    SymbolTableCollection tables;
+    auto lookupRes = lookupTopLevelSymbol<FuncOp>(tables, op.getCalleeAttr(), op);
+    if (failed(lookupRes)) {
+      return failure();
+    }
+    FuncOp targetFunc = lookupRes->get();
+    if (succeeded(getParentOfType<StructDefOp>(targetFunc))) {
+      // this pattern only applies when the callee is NOT in a struct
+      return failure();
+    }
+    if (op.getResultTypes() == targetFunc.getFunctionType().getResults()) {
+      // nothing changed
+      return failure();
+    }
+
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateGlobalCallOpTypes] replaced " << op);
+    CallOp newOp = rewriter.replaceOpWithNewOp<CallOp>(op, targetFunc, op.getArgOperands());
+    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << "\n");
+    return success();
+  }
+};
+
+/// Instantiate parameterized StructType resulting from CallOp targeting "compute()" functions.
+struct InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
+  using OpRewritePattern<CallOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
+    if (!op.calleeIsStructCompute()) {
+      // this pattern only applies when the callee is "compute()" within a struct
+      return failure();
+    }
+    StructType oldComputeRetTy = op.getComputeSingleResultType();
+    ArrayAttr params = oldComputeRetTy.getParams();
+    if (!params || params.empty()) {
+      // nothing to do if the StructType is not parameterized
+      return failure();
+    }
+
+    AffineMapFolder::Output out;
+    AffineMapFolder::Input in = {
+        op.getMapOperands(),
+        op.getNumDimsPerMapAttr(),
+        params.getValue(),
+    };
+    if (failed(AffineMapFolder::fold(rewriter, in, out, op, "struct parameter"))) {
+      return failure();
+    }
+
+    StructType newComputeRetTy = StructType::get(oldComputeRetTy.getNameRef(), out.typeParams);
+    if (newComputeRetTy == oldComputeRetTy) {
+      // nothing changed
+      return failure();
+    }
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateAtCallOpCompute] instantiated " << oldComputeRetTy << " as "
+                     << newComputeRetTy << " at " << op << "\n"
+    );
+    rewriter.replaceOpWithNewOp<CallOp>(
+        op, TypeRange {newComputeRetTy}, op.getCallee(),
+        AffineMapFolder::getConvertedMapOpGroups(out), out.dimsPerGroup, op.getArgOperands()
+    );
+    return success();
+  }
+};
+
+LogicalResult run(ModuleOp modOp, bool &modified) {
+  MLIRContext *ctx = modOp->getContext();
+  RewritePatternSet patterns(ctx);
+  patterns.add<InstantiateAtCreateArrayOp>(ctx);
+  patterns.add<UpdateFieldTypeFromWrite>(ctx);
+  patterns.add<UpdateInferredResultTypes>(ctx);
+  patterns.add<UpdateFuncTypeFromReturn>(ctx);
+  patterns.add<UpdateGlobalCallOpTypes>(ctx);
+  patterns.add<InstantiateAtCallOpCompute>(ctx);
+  patterns.add<UpdateArrayElemFromWrite>(ctx);
+  return applyPatternsAndFoldGreedily(
+      modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &modified
+  );
+}
+
+} // namespace Step2_InstantiateAffineMaps
+
+namespace Step3_FindComputeTypes {
 
 bool isConcreteAttr(Attribute a) {
   if (TypeAttr tyAttr = dyn_cast<TypeAttr>(a)) {
@@ -277,12 +614,15 @@ public:
       }
       // Otherwise, try to perform a conversion
       if (ArrayAttr params = inputTy.getParams()) {
-        // If all prameters are concrete values (Integer or Type), then replace with a no-parameter
-        // StructType referencing the de-parameterized struct.
+        // If all prameters are concrete values (Integer or Type), then replace with a
+        // no-parameter StructType referencing the de-parameterized struct.
         if (llvm::all_of(params, isConcreteAttr)) {
           StructType result =
               StructType::get(appendLeafName(inputTy.getNameRef(), "_" + shortString(params)));
-          LLVM_DEBUG(llvm::dbgs() << "instantiating " << inputTy << " as " << result << "\n");
+          LLVM_DEBUG(
+              llvm::dbgs() << "[ParameterizedStructUseTypeConverter] instantiating " << inputTy
+                           << " as " << result << "\n"
+          );
           this->instantiations[inputTy] = result;
           return result;
         }
@@ -351,9 +691,9 @@ run(ModuleOp modOp, DenseMap<StructType, StructType> &structInstantiations,
   return success();
 }
 
-} // namespace Step1
+} // namespace Step3_FindComputeTypes
 
-namespace Step2 {
+namespace Step4_CreateStructs {
 
 class MappedTypeConverter : public TypeConverter {
   StructType origTy;
@@ -599,9 +939,9 @@ run(ModuleOp modOp, const DenseMap<StructType, StructType> &structInstantiations
   return success();
 }
 
-} // namespace Step2
+} // namespace Step4_CreateStructs
 
-namespace Step3 {
+namespace Step5_Cleanup {
 
 template <typename OpTy> class EraseOpPattern : public OpConversionPattern<OpTy> {
 public:
@@ -665,7 +1005,7 @@ LogicalResult run(ModuleOp modOp, const DenseMap<StructType, StructType> &struct
   return success();
 }
 
-} // namespace Step3
+} // namespace Step5_Cleanup
 
 class InstantiateStructsPass
     : public llzk::impl::InstantiateStructsPassBase<InstantiateStructsPass> {
@@ -681,7 +1021,13 @@ class InstantiateStructsPass
       modified = false;
 
       // Unroll loops with known iterations
-      if (failed(StepUnroll::run(modOp, modified))) {
+      if (failed(Step1_Unroll::run(modOp, modified))) {
+        signalPassFailure();
+        return;
+      }
+
+      // Instantiate affine_map parameters of StructType and ArrayType
+      if (failed(Step2_InstantiateAffineMaps::run(modOp, modified))) {
         signalPassFailure();
         return;
       }
@@ -690,23 +1036,29 @@ class InstantiateStructsPass
 
       // Find calls to "compute()" that return a parameterized struct and replace it to call a
       // flattened version of the struct that has parameters replaced with the constant values.
-      if (failed(Step1::run(modOp, structInstantiations, newTyComputeLocations))) {
+      if (failed(Step3_FindComputeTypes::run(modOp, structInstantiations, newTyComputeLocations))) {
         signalPassFailure();
         return;
       }
 
       // Create the necessary instantiated/flattened struct(s) in their parent module(s).
-      if (failed(Step2::run(modOp, structInstantiations, newTyComputeLocations))) {
+      if (failed(Step4_CreateStructs::run(modOp, structInstantiations, newTyComputeLocations))) {
         signalPassFailure();
         return;
       }
 
-      // Check if a new StructType was required bys an instantiation
+      // Check if a new StructType was required by an instantiation
       modified |= structInstantiations.size() > prevMapSize;
+
+      LLVM_DEBUG(if (modified) {
+        llvm::dbgs() << "=====================================================================\n";
+        modOp.print(llvm::dbgs());
+        llvm::dbgs() << "=====================================================================\n";
+      });
     } while (modified);
 
     // Remove the parameterized StructDefOp that were instantiated.
-    if (failed(Step3::run(modOp, structInstantiations))) {
+    if (failed(Step5_Cleanup::run(modOp, structInstantiations))) {
       signalPassFailure();
       return;
     }

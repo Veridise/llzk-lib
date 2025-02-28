@@ -39,7 +39,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = new_struct : !llzk.struct<@ComponentB>
       // In real code, this should be loop induction variable
       %n = arith.constant 2 : index
-      // The array length is a funciton of 'i' and it contains non-homogeneous structs
+      // The array length is a function of 'i' and it contains non-homogeneous structs
       //    !ToFelt = !llzk.struct<@ToFelt<[#id]>>
       %arr = llzk.new_array{(%n)} : !llzk.array<#IdxToLen x !ToFelt>
       // Real code would probably have a loop here j= 0..n that assigns values to the array

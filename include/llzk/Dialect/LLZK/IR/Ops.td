@@ -249,6 +249,15 @@ def LLZK_FieldDefOp
 
   let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<AnyLLZKType>:$type);
 
+  let skipDefaultBuilders = 1;
+  let builders = [OpBuilder<(ins "::mlir::StringAttr":$sym_name,
+                      "::mlir::TypeAttr":$type)>,
+                  OpBuilder<(ins "::llvm::StringRef":$sym_name,
+                      "::mlir::Type":$type)>,
+                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                      "::mlir::ValueRange":$operands,
+                      "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes)>];
+
   let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 
   let extraClassDeclaration = [{
