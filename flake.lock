@@ -84,11 +84,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1725938746,
-        "narHash": "sha256-f/xQDonHk7KOT4XOWbhI70GMC8g2WvyLFhEJ+v4FR/U=",
+        "lastModified": 1740764545,
+        "narHash": "sha256-YmR5BmELc84zntED0CDHRxD97QCeGHTsqfp2/jkUiOc=",
         "ref": "main",
-        "rev": "7c4040997ac1c2ce972c78ef2cad0dd8c03bcc44",
-        "revCount": 19,
+        "rev": "93684ccb116f03280fcb9606a74b28cef357805e",
+        "revCount": 24,
         "type": "git",
         "url": "ssh://git@github.com/Veridise/veridise-nix-pkgs.git"
       },
