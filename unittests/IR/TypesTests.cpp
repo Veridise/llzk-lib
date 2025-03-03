@@ -1,4 +1,5 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Types.h"
 
 #include <gtest/gtest.h>
 
@@ -13,7 +14,7 @@ protected:
   TypeTests() : ctx() { ctx.loadDialect<llzk::LLZKDialect>(); }
 };
 
-TEST_F(TypeTests, testCloneSuccessNewType) {
+TEST_F(TypeTests, testArrayTypeCloneSuccessNewType) {
   IntegerType tyBool = IntegerType::get(&ctx, 1);
   IndexType tyIndex = IndexType::get(&ctx);
   ArrayType a = ArrayType::get(tyIndex, {2, 2});
@@ -22,7 +23,7 @@ TEST_F(TypeTests, testCloneSuccessNewType) {
   ASSERT_EQ(b.getShape(), ArrayRef(std::vector<int64_t>({2, 2})));
 }
 
-TEST_F(TypeTests, testCloneSuccessNewShape) {
+TEST_F(TypeTests, testArrayTypeCloneSuccessNewShape) {
   IndexType tyIndex = IndexType::get(&ctx);
   ArrayType a = ArrayType::get(tyIndex, {2, 2});
   std::vector<int64_t> newShapeVec({2, 3, 2});
@@ -32,7 +33,7 @@ TEST_F(TypeTests, testCloneSuccessNewShape) {
   ASSERT_EQ(b.getShape(), newShape);
 }
 
-TEST_F(TypeTests, testCloneWithEmptyShapeError) {
+TEST_F(TypeTests, testArrayTypeCloneWithEmptyShapeError) {
   EXPECT_DEATH(
       {
         IndexType tyIndex = IndexType::get(&ctx);
@@ -45,7 +46,7 @@ TEST_F(TypeTests, testCloneWithEmptyShapeError) {
   );
 }
 
-TEST_F(TypeTests, testGetWithAttributeEmptyShapeError) {
+TEST_F(TypeTests, testArrayTypeGetWithAttributeEmptyShapeError) {
   EXPECT_DEATH(
       {
         IndexType tyIndex = IndexType::get(&ctx);
@@ -57,7 +58,7 @@ TEST_F(TypeTests, testGetWithAttributeEmptyShapeError) {
   );
 }
 
-TEST_F(TypeTests, testGetWithAttributeWrongAttrKindError) {
+TEST_F(TypeTests, testArrayTypeGetWithAttributeWrongAttrKindError) {
   EXPECT_DEATH(
       {
         IndexType tyIndex = IndexType::get(&ctx);
@@ -67,6 +68,20 @@ TEST_F(TypeTests, testGetWithAttributeWrongAttrKindError) {
       },
       "error: Array dimension must be one of .* but found 'builtin.unit'"
   );
+}
+
+TEST_F(TypeTests, testStructTypeIsConcreteNoParams) {
+  Type t = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"));
+  ASSERT_TRUE(isConcreteType(t, true));
+  ASSERT_TRUE(isConcreteType(t, false));
+}
+
+TEST_F(TypeTests, testStructTypeIsConcreteWithParams) {
+  Attribute a1 = IntegerAttr::get(IndexType::get(&ctx), 128);
+  Attribute a2 = IntegerAttr::get(IndexType::get(&ctx), 15);
+  Type t = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {a1, a2});
+  ASSERT_TRUE(isConcreteType(t, true));
+  ASSERT_FALSE(isConcreteType(t, false));
 }
 
 TEST_F(TypeTests, testShortString) {

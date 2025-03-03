@@ -81,7 +81,7 @@ bool isValidArrayElemType(mlir::Type type);
 bool isValidArrayType(mlir::Type type);
 
 /// Return `false` iff the type contains any `TypeVarType`
-bool isConcreteType(mlir::Type type);
+bool isConcreteType(mlir::Type type, bool allowStructParams = true);
 
 inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type) {
   if (!isValidType(type)) {
