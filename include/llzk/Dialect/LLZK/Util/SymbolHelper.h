@@ -112,7 +112,7 @@ inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterf
   return resolveCallable<T>(symbolTable, call);
 }
 
-/// Equivalent to `!SymbolUserMap(...)::useEmpty()` but without fully computing the uses.
+/// Equivalent to `SymbolTable::getSymbolUses(...).has_value()` but without fully computing uses.
 bool hasUsesWithin(mlir::Operation *symbol, mlir::Operation *from);
 
 /// Ensure that the given symbol (that is used as a parameter of the given type) can be resolved.

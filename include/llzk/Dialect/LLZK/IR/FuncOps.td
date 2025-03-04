@@ -166,6 +166,9 @@ def FuncOp
 
     /// Return `true` iff the function is with a StructDefOp and named `FUNC_NAME_CONSTRAIN`.
     bool isStructConstrain();
+
+    /// Assuming the name is `FUNC_NAME_COMPUTE`, return the single StructType result.
+    ::llzk::StructType getComputeSingleResultType();
   }];
   let hasCustomAssemblyFormat = 1;
 

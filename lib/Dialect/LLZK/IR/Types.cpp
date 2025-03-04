@@ -371,50 +371,83 @@ bool isSignalType(Type type) {
 }
 
 namespace {
-bool paramAttrUnify(Attribute lhsAttr, Attribute rhsAttr) {
+
+void updateMap(UnificationMap *unifications, Side side, SymbolRefAttr symRef, Attribute attr) {
+  if (unifications) {
+    auto key = std::make_pair(symRef, side);
+    auto it = unifications->find(key);
+    if (it != unifications->end()) {
+      it->second = nullptr;
+    } else {
+      unifications->try_emplace(key, attr);
+    }
+  }
+}
+
+bool paramAttrUnify(UnificationMap *unifications, Attribute lhsAttr, Attribute rhsAttr) {
   assertValidAttrForParamOfType(lhsAttr);
   assertValidAttrForParamOfType(rhsAttr);
   // IntegerAttr and AffineMapAttr only unify via equality and the others may. Additionally,
   //  if either attribute is a symbol ref, we assume they unify because a later pass with a
   //  more involved value analysis is required to check if they are actually the same value.
-  if (lhsAttr == rhsAttr || lhsAttr.isa<SymbolRefAttr>() || rhsAttr.isa<SymbolRefAttr>()) {
+  if (lhsAttr == rhsAttr) {
+    return true;
+  }
+  if (SymbolRefAttr lhsSymRef = lhsAttr.dyn_cast<SymbolRefAttr>()) {
+    updateMap(unifications, Side::LHS, lhsSymRef, rhsAttr);
+    return true;
+  }
+  if (SymbolRefAttr rhsSymRef = rhsAttr.dyn_cast<SymbolRefAttr>()) {
+    updateMap(unifications, Side::RHS, rhsSymRef, lhsAttr);
     return true;
   }
   // If both are type refs, check for unification of the types.
   if (TypeAttr lhsTy = lhsAttr.dyn_cast<TypeAttr>()) {
     if (TypeAttr rhsTy = rhsAttr.dyn_cast<TypeAttr>()) {
-      return typesUnify(lhsTy.getValue(), rhsTy.getValue());
+      return typesUnify(lhsTy.getValue(), rhsTy.getValue(), {}, unifications);
     }
   }
   return false;
 }
 } // namespace
 
-bool typeParamsUnify(const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams) {
+bool typeParamsUnify(
+    const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams,
+    UnificationMap *unifications
+) {
   return (lhsParams.size() == rhsParams.size()) &&
-         std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), paramAttrUnify);
+         std::equal(
+             lhsParams.begin(), lhsParams.end(), rhsParams.begin(),
+             std::bind_front(paramAttrUnify, unifications)
+         );
 }
 
 /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
 /// are equivalent or could be equivalent after full instantiation of struct parameters.
-bool typeParamsUnify(const ArrayAttr &lhsParams, const ArrayAttr &rhsParams) {
+bool typeParamsUnify(
+    const ArrayAttr &lhsParams, const ArrayAttr &rhsParams, UnificationMap *unifications
+) {
   if (lhsParams && rhsParams) {
-    return typeParamsUnify(lhsParams.getValue(), rhsParams.getValue());
+    return typeParamsUnify(lhsParams.getValue(), rhsParams.getValue(), unifications);
   }
   // When one or the other is null, they're only equivalent if both are null
   return !lhsParams && !rhsParams;
 }
 
-bool arrayTypesUnify(ArrayType lhs, ArrayType rhs, ArrayRef<StringRef> rhsRevPrefix) {
+bool arrayTypesUnify(
+    ArrayType lhs, ArrayType rhs, ArrayRef<StringRef> rhsRevPrefix, UnificationMap *unifications
+) {
   // Check if the element types of the two arrays can unify
-  if (!typesUnify(lhs.getElementType(), rhs.getElementType(), rhsRevPrefix)) {
+  if (!typesUnify(lhs.getElementType(), rhs.getElementType(), rhsRevPrefix, unifications)) {
     return false;
   }
   // Check if the dimension size attributes unify between the LHS and RHS
-  return typeParamsUnify(lhs.getDimensionSizes(), rhs.getDimensionSizes());
+  return typeParamsUnify(lhs.getDimensionSizes(), rhs.getDimensionSizes(), unifications);
 }
 
-bool structTypesUnify(StructType lhs, StructType rhs, ArrayRef<StringRef> rhsRevPrefix) {
+bool structTypesUnify(
+    StructType lhs, StructType rhs, ArrayRef<StringRef> rhsRevPrefix, UnificationMap *unifications
+) {
   // Check if it references the same StructDefOp, considering the additional RHS path prefix.
   SmallVector<StringRef> rhsNames = getNames(rhs.getNameRef());
   rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
@@ -422,22 +455,33 @@ bool structTypesUnify(StructType lhs, StructType rhs, ArrayRef<StringRef> rhsRev
     return false;
   }
   // Check if the parameters unify between the LHS and RHS
-  return typeParamsUnify(lhs.getParams(), rhs.getParams());
+  return typeParamsUnify(lhs.getParams(), rhs.getParams(), unifications);
 }
 
-bool typesUnify(Type lhs, Type rhs, ArrayRef<StringRef> rhsRevPrefix) {
+bool typesUnify(
+    Type lhs, Type rhs, ArrayRef<StringRef> rhsRevPrefix, UnificationMap *unifications
+) {
   if (lhs == rhs) {
     return true;
   }
-  if (llvm::isa<TypeVarType>(lhs) || llvm::isa<TypeVarType>(rhs)) {
-    // A type variable can be any type, thus it unifies with anything.
+  // A type variable can be any type, thus it unifies with anything.
+  if (TypeVarType lhsTvar = llvm::dyn_cast<TypeVarType>(lhs)) {
+    updateMap(unifications, Side::LHS, lhsTvar.getNameRef(), TypeAttr::get(rhs));
+    return true;
+  }
+  if (TypeVarType rhsTvar = llvm::dyn_cast<TypeVarType>(rhs)) {
+    updateMap(unifications, Side::RHS, rhsTvar.getNameRef(), TypeAttr::get(lhs));
     return true;
   }
   if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
-    return structTypesUnify(llvm::cast<StructType>(lhs), llvm::cast<StructType>(rhs), rhsRevPrefix);
+    return structTypesUnify(
+        llvm::cast<StructType>(lhs), llvm::cast<StructType>(rhs), rhsRevPrefix, unifications
+    );
   }
   if (llvm::isa<ArrayType>(lhs) && llvm::isa<ArrayType>(rhs)) {
-    return arrayTypesUnify(llvm::cast<ArrayType>(lhs), llvm::cast<ArrayType>(rhs), rhsRevPrefix);
+    return arrayTypesUnify(
+        llvm::cast<ArrayType>(lhs), llvm::cast<ArrayType>(rhs), rhsRevPrefix, unifications
+    );
   }
   return false;
 }

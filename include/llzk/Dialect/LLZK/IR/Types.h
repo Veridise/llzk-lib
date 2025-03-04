@@ -12,6 +12,7 @@
 #include <mlir/IR/Types.h>
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/TypeSwitch.h>
@@ -94,49 +95,103 @@ inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type
 /// Return `true` iff the given type is a StructType referencing the `COMPONENT_NAME_SIGNAL` struct.
 bool isSignalType(mlir::Type type);
 
+enum class Side { EMPTY = 0, LHS, RHS, TOMB };
+static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Side &val) {
+  switch (val) {
+  case Side::EMPTY:
+    os << "EMPTY";
+    break;
+  case Side::TOMB:
+    os << "TOMB";
+    break;
+  case Side::LHS:
+    os << "LHS";
+    break;
+  case Side::RHS:
+    os << "RHS";
+    break;
+  }
+  return os;
+}
+} // namespace llzk
+
+namespace llvm {
+using T = llzk::Side;
+template <> struct DenseMapInfo<T> {
+  static inline T getEmptyKey() { return T::EMPTY; }
+  static inline T getTombstoneKey() { return T::TOMB; }
+  static unsigned getHashValue(const T &val) {
+    using UT = std::underlying_type_t<T>;
+    return llvm::DenseMapInfo<UT>::getHashValue(static_cast<UT>(val));
+  }
+  static bool isEqual(const T &lhs, const T &rhs) { return lhs == rhs; }
+};
+} // namespace llvm
+
+namespace llzk {
+
+/// Optional result from type unifications. Maps `SymbolRefAttr` appearing in one type to the
+/// associated `Attribute` from the other type at the same nested position. The `Side` enum in the
+/// key indicates which input expression the `SymbolRefAttr` is from. Additionally, if a conflict is
+/// found (i.e. multiple occurances of a specific SymbolRefAttr on the same side map to different
+/// Attributes from the other side). The mapped value will be `nullptr`.
+using UnificationMap = mlir::DenseMap<std::pair<mlir::SymbolRefAttr, Side>, mlir::Attribute>;
+
 /// Return `true` iff the two ArrayRef instances containing StructType or ArrayType parameters
 /// are equivalent or could be equivalent after full instantiation of struct parameters.
 bool typeParamsUnify(
     const mlir::ArrayRef<mlir::Attribute> &lhsParams,
-    const mlir::ArrayRef<mlir::Attribute> &rhsParams
+    const mlir::ArrayRef<mlir::Attribute> &rhsParams, UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
 /// are equivalent or could be equivalent after full instantiation of struct parameters.
-bool typeParamsUnify(const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams);
+bool typeParamsUnify(
+    const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams,
+    UnificationMap *unifications = nullptr
+);
 
 /// Return `true` iff the two ArrayType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
 bool arrayTypesUnify(
-    ArrayType lhs, ArrayType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}
+    ArrayType lhs, ArrayType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {},
+    UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two StructType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
 bool structTypesUnify(
-    StructType lhs, StructType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}
+    StructType lhs, StructType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {},
+    UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters (if applicable within the given types).
-bool typesUnify(mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {});
+bool typesUnify(
+    mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {},
+    UnificationMap *unifications = nullptr
+);
 
 /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
 /// full instantiation of struct parameters (if applicable within the given types).
 template <typename Iter1, typename Iter2>
-inline bool
-typeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}) {
+inline bool typeListsUnify(
+    Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {},
+    UnificationMap *unifications = nullptr
+) {
   return (lhs.size() == rhs.size()) &&
-         std::equal(
-             lhs.begin(), lhs.end(), rhs.begin(),
-             [&rhsRevPrefix](mlir::Type a, mlir::Type b) { return typesUnify(a, b, rhsRevPrefix); }
-         );
+         std::equal(lhs.begin(), lhs.end(), rhs.begin(), [&](mlir::Type a, mlir::Type b) {
+    return typesUnify(a, b, rhsRevPrefix, unifications);
+  });
 }
 
 template <typename Iter1, typename Iter2>
-inline bool
-singletonTypeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}) {
-  return lhs.size() == 1 && rhs.size() == 1 && typesUnify(lhs.front(), rhs.front());
+inline bool singletonTypeListsUnify(
+    Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {},
+    UnificationMap *unifications = nullptr
+) {
+  return lhs.size() == 1 && rhs.size() == 1 &&
+         typesUnify(lhs.front(), rhs.front(), rhsRevPrefix, unifications);
 }
 
 template <typename ConcreteType> inline ConcreteType getIfSingleton(mlir::TypeRange types) {

@@ -17,8 +17,6 @@ namespace debug {
 
 namespace {
 
-template <typename InputIt> void appendList(llvm::raw_ostream &ss, InputIt begin, InputIt end);
-
 // Define this concept instead of `std::ranges::range` because certain classes (like OperandRange)
 // do not work with `std::ranges::range`.
 template <typename T>
@@ -27,46 +25,65 @@ concept Iterable = requires(T t) {
   std::end(t);
 };
 
-template <Iterable InputIt> inline void append(llvm::raw_ostream &ss, const InputIt &collection) {
-  appendList(ss, std::begin(collection), std::end(collection));
+struct Appender {
+  llvm::raw_string_ostream stream;
+  Appender(std::string &out) : stream(out) {}
+
+  void append(const mlir::NamedAttribute &a);
+  void append(const mlir::SymbolTable::SymbolUse &a);
+  template <typename T> void append(const std::optional<T> &a);
+  template <typename Any> void append(const Any &value);
+  template <typename A, typename B> void append(const std::pair<A, B> &a);
+  template <typename A, typename B> void append(const llvm::detail::DenseMapPair<A, B> &a);
+  template <Iterable InputIt> void append(const InputIt &collection);
+  template <typename InputIt> void appendList(InputIt begin, InputIt end);
+};
+
+void Appender::append(const mlir::NamedAttribute &a) {
+  stream << a.getName() << '=' << a.getValue();
 }
 
-void append(llvm::raw_ostream &ss, const mlir::NamedAttribute &a) {
-  ss << a.getName() << '=' << a.getValue();
-}
+void Appender::append(const mlir::SymbolTable::SymbolUse &a) { stream << a.getUser()->getName(); }
 
-void append(llvm::raw_ostream &ss, const mlir::SymbolTable::SymbolUse &a) {
-  ss << a.getUser()->getName();
-}
-
-template <typename A, typename B>
-void append(llvm::raw_ostream &ss, const llvm::detail::DenseMapPair<A, B> &a) {
-  ss << '(' << a.first << ',' << a.second << ')';
-}
-
-template <typename A, typename B> void append(llvm::raw_ostream &ss, const std::pair<A, B> &a) {
-  ss << '(' << a.first << ',' << a.second << ')';
-}
-
-template <typename T> inline void append(llvm::raw_ostream &ss, const std::optional<T> &a) {
+template <typename T> inline void Appender::append(const std::optional<T> &a) {
   if (a.has_value()) {
-    append(ss, a.value());
+    append(a.value());
   } else {
-    ss << "NONE";
+    stream << "NONE";
   }
 }
 
-template <typename Any> void append(llvm::raw_ostream &ss, const Any &value) { ss << value; }
+template <typename Any> void Appender::append(const Any &value) { stream << value; }
 
-template <typename InputIt> void appendList(llvm::raw_ostream &ss, InputIt begin, InputIt end) {
-  ss << "[";
+template <typename A, typename B> void Appender::append(const std::pair<A, B> &a) {
+  stream << '(';
+  append(a.first);
+  stream << ',';
+  append(a.second);
+  stream << ')';
+}
+
+template <typename A, typename B> void Appender::append(const llvm::detail::DenseMapPair<A, B> &a) {
+  stream << '(';
+  append(a.first);
+  stream << ',';
+  append(a.second);
+  stream << ')';
+}
+
+template <Iterable InputIt> inline void Appender::append(const InputIt &collection) {
+  appendList(std::begin(collection), std::end(collection));
+}
+
+template <typename InputIt> void Appender::appendList(InputIt begin, InputIt end) {
+  stream << "[";
   for (auto it = begin; it != end; ++it) {
-    append(ss, *it);
+    append(*it);
     if (std::next(it) != end) {
-      ss << ", ";
+      stream << ", ";
     }
   }
-  ss << "]";
+  stream << "]";
 }
 
 } // namespace
@@ -75,8 +92,7 @@ template <typename InputIt> void appendList(llvm::raw_ostream &ss, InputIt begin
 /// where the element type implements `operator<<`.
 template <typename InputIt> std::string toStringList(InputIt begin, InputIt end) {
   std::string output;
-  llvm::raw_string_ostream oss(output);
-  appendList(oss, begin, end);
+  Appender(output).appendList(begin, end);
   return output;
 }
 
@@ -97,8 +113,7 @@ inline std::string toStringList(const std::optional<InputIt> &optionalCollection
 
 template <typename T> inline std::string toStringOne(const T &value) {
   std::string output;
-  llvm::raw_string_ostream oss(output);
-  append(oss, value);
+  Appender(output).append(value);
   return output;
 }
 

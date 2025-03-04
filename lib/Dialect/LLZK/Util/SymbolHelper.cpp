@@ -5,6 +5,8 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Operation.h>
 
+#include <llvm/Support/Debug.h>
+
 #define DEBUG_TYPE "llzk-symbol-helpers"
 
 namespace llzk {
@@ -196,13 +198,25 @@ FailureOr<SymbolRefAttr> getPathFromTopRoot(FuncOp &to) {
   return getPathFromRoot(to, RootSelector::FURTHEST);
 }
 
-/// Equivalent to `!SymbolUserMap(...)::useEmpty()` but without fully computing the uses.
 bool hasUsesWithin(Operation *symbol, Operation *from) {
+  assert(symbol && "pre-condition");
+  assert(from && "pre-condition");
   bool result = false;
   SymbolTable::walkSymbolTables(from, false, [symbol, &result](Operation *symbolTableOp, bool) {
     assert(symbolTableOp->hasTrait<OpTrait::SymbolTable>());
-    result |= (symbol != symbolTableOp) &&
-              !SymbolTable::symbolKnownUseEmpty(symbol, &symbolTableOp->getRegion(0));
+    bool hasUse = (symbol != symbolTableOp) &&
+                  !SymbolTable::symbolKnownUseEmpty(symbol, &symbolTableOp->getRegion(0));
+    result |= hasUse;
+    LLVM_DEBUG({
+      if (hasUse) {
+        auto uses = SymbolTable::getSymbolUses(symbol, &symbolTableOp->getRegion(0));
+        assert(uses.has_value()); // must be consisitent with symbolKnownUseEmpty()
+        llvm::dbgs() << "Found users of " << *symbol << "\n";
+        for (SymbolTable::SymbolUse user : uses.value()) {
+          llvm::dbgs() << " * " << *user.getUser() << "\n";
+        }
+      }
+    });
   });
   return result;
 }
