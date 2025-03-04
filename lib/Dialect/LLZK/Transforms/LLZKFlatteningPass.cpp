@@ -455,14 +455,14 @@ struct UpdateInferredResultTypes final : public OpTraitRewritePattern<OpTrait::I
     }
 
     // Move nested region bodies and replace the original op with the updated types list.
-    LLVM_DEBUG(llvm::dbgs() << "[UpdateInferredResultTypes] replaced " << op);
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateInferredResultTypes] replaced " << *op);
     SmallVector<std::unique_ptr<Region>> newRegions = moveRegions(op);
     Operation *newOp = rewriter.create(
         op->getLoc(), op->getName().getIdentifier(), op->getOperands(), inferredResultTypes,
         op->getAttrs(), op->getSuccessors(), newRegions
     );
     rewriter.replaceOp(op, newOp);
-    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << "\n");
+    LLVM_DEBUG(llvm::dbgs() << " with " << *newOp << "\n");
     return success();
   }
 };

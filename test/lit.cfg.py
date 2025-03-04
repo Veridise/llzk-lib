@@ -23,7 +23,7 @@ from lit.llvm.subst import FindTool
 
 # name: The name of this test suite.
 config.name = 'LLZK'
-
+config.numProcesses = 1
 config.test_format = lit.formats.ShTest(not llvm_config.use_lit_shell)
 
 # suffixes: A list of file extensions to treat as test files.
