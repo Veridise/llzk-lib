@@ -8,6 +8,7 @@
 
 #include <concepts>
 #include <type_traits>
+#include <variant>
 
 namespace llzk::dataflow {
 

@@ -33,7 +33,7 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ clang cmake ninja ];
   buildInputs = [
-    mlir
+    mlir z3.lib
   ] ++ lib.optionals mlir.hasPythonBindings [
     mlir.python
     mlir.pythonDeps
@@ -42,6 +42,11 @@ stdenv.mkDerivation {
   cmakeFlags = [
     "-DLLZK_BUILD_DEVTOOLS=ON"
   ];
+
+  # Needed for mlir-tblgen to run properly.
+  preBuild = ''
+    export LD_LIBRARY_PATH=${z3.lib}/lib:$LD_LIBRARY_PATH
+  '';
 
   # This is done specifically so that the configure phase can find /usr/bin/sw_vers,
   # which is MacOS specific.
