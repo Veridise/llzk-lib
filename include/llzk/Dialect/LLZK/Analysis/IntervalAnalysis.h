@@ -140,11 +140,8 @@ public:
   /* Comparisons */
 
   bool overlaps(const UnreducedInterval &rhs) const;
-  bool operator<(const UnreducedInterval &rhs) const;
-  bool operator>(const UnreducedInterval &rhs) const;
-  bool operator==(const UnreducedInterval &rhs) const;
-  bool operator<=(const UnreducedInterval &rhs) const { return *this < rhs || *this == rhs; }
-  bool operator>=(const UnreducedInterval &rhs) const { return *this > rhs || *this == rhs; }
+  friend std::strong_ordering
+  operator<=>(const UnreducedInterval &lhs, const UnreducedInterval &rhs);
 
   /* Utility */
   llvm::APSInt getLHS() const { return a; }
@@ -152,8 +149,10 @@ public:
 
   llvm::APSInt width() const { return llvm::APSInt((b - a).abs()); }
 
+  void print(llvm::raw_ostream &os) const { os << "Unreduced:[ " << a << ", " << b << " ]"; }
+
   friend llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const UnreducedInterval &ui) {
-    os << "Unreduced:[ " << ui.a << ", " << ui.b << " ]";
+    ui.print(os);
     return os;
   }
 
@@ -241,18 +240,17 @@ public:
 
   static std::string_view TypeName(Type t) { return TypeNames.at(static_cast<size_t>(t)); }
 
-  static Interval Empty(const Field &f) {
-    static Interval empty(Type::Empty, f);
-    return empty;
-  }
+  /* Static constructors for convenience */
 
-  static Interval Entire(const Field &f) { return Interval(Type::Entire, f); }
+  static Interval Empty(const Field &f) { return Interval(Type::Empty, f); }
 
   static Interval Degenerate(const Field &f, llvm::APSInt val) {
     return Interval(Type::Degenerate, f, val, val);
   }
 
   static Interval Boolean(const Field &f) { return Interval::TypeA(f, f.zero(), f.one()); }
+
+  static Interval Entire(const Field &f) { return Interval(Type::Entire, f); }
 
   static Interval TypeA(const Field &f, llvm::APSInt a, llvm::APSInt b) {
     return Interval(Type::TypeA, f, a, b);
@@ -275,22 +273,15 @@ public:
   Interval() : Interval(Type::Entire, Field::BN128()) {}
 
   /// @brief Convert to an UnreducedInterval.
-  /// @return
   UnreducedInterval toUnreduced() const;
 
   /// @brief Get the first side of the interval for TypeF intervals, otherwise
   /// just get the full interval as an UnreducedInterval (with toUnreduced).
-  /// @return
   UnreducedInterval firstUnreduced() const;
 
   /// @brief Get the second side of the interval for TypeA, TypeB, and TypeC intervals.
   /// Using this function is an error for all other interval types.
-  /// @return
   UnreducedInterval secondUnreduced() const;
-
-  bool operator==(const Interval &rhs) const { return ty == rhs.ty && a == rhs.a && b == rhs.b; }
-
-  template <Type... Types> bool isOneOf() const { return ((ty == Types) || ...); }
 
   template <std::pair<Type, Type>... Pairs>
   static bool areOneOf(const Interval &a, const Interval &b) {
@@ -302,27 +293,11 @@ public:
     return *this;
   }
 
-  void print(mlir::raw_ostream &os) const {
-    os << TypeName(ty);
-    if (isOneOf<Type::Degenerate>()) {
-      os << '(' << a << ')';
-    } else if (!isOneOf<Type::Entire, Type::Empty>()) {
-      os << ":[ " << a << ", " << b << " ]";
-    }
-  }
-
   /// Union
   Interval join(const Interval &rhs) const;
 
   /// Intersect
   Interval intersect(const Interval &rhs) const;
-
-  struct Hash {
-    unsigned operator()(const Interval &i) const {
-      return std::hash<const Field *> {}(&i.field.get()) ^ std::hash<Type> {}(i.ty) ^
-             llvm::hash_value(i.a) ^ llvm::hash_value(i.b);
-    }
-  };
 
   /* arithmetic ops */
 
@@ -333,24 +308,40 @@ public:
   friend Interval operator/(const Interval &lhs, const Interval &rhs);
   friend Interval operator%(const Interval &lhs, const Interval &rhs);
 
-  /* Utility */
+  /* Checks and Comparisons */
 
   bool isEmpty() const { return ty == Type::Empty; }
-  bool isEntire() const { return ty == Type::Entire; }
   bool isDegenerate() const { return ty == Type::Degenerate; }
+  bool isEntire() const { return ty == Type::Entire; }
   bool isTypeA() const { return ty == Type::TypeA; }
   bool isTypeB() const { return ty == Type::TypeB; }
   bool isTypeC() const { return ty == Type::TypeC; }
   bool isTypeF() const { return ty == Type::TypeF; }
 
-  friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Interval &i) {
-    i.print(os);
-    return os;
-  }
+  template <Type... Types> bool isOneOf() const { return ((ty == Types) || ...); }
+
+  bool operator==(const Interval &rhs) const { return ty == rhs.ty && a == rhs.a && b == rhs.b; }
+
+  /* Getters */
 
   const Field &getField() const { return field.get(); }
 
   llvm::APSInt width() const { return llvm::APSInt((b - a).abs().zext(field.get().bitWidth())); }
+
+  /* Utility */
+  struct Hash {
+    unsigned operator()(const Interval &i) const {
+      return std::hash<const Field *> {}(&i.field.get()) ^ std::hash<Type> {}(i.ty) ^
+             llvm::hash_value(i.a) ^ llvm::hash_value(i.b);
+    }
+  };
+
+  void print(mlir::raw_ostream &os) const;
+
+  friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Interval &i) {
+    i.print(os);
+    return os;
+  }
 
 private:
   Interval(Type t, const Field &f) : field(f), ty(t), a(f.zero()), b(f.zero()) {}

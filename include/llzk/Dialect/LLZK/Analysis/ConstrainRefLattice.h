@@ -39,9 +39,6 @@ public:
     return *getScalarValue().begin();
   }
 
-  // /// @brief Union this value with that of rhs.
-  // mlir::ChangeResult update(const ConstrainRefLatticeValue &rhs);
-
   /// @brief Directly insert the ref into this value. If this is a scalar value,
   /// insert the ref into the value's set. If this is an array value, the array
   /// is folded into a single scalar, then the ref is inserted.
@@ -126,10 +123,10 @@ public:
 
   ConstrainRefLatticeValue getReturnValue(unsigned i) const;
 
+  friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLattice &v);
+
 private:
   ValueMap valMap;
 };
-
-mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLattice &v);
 
 } // namespace llzk

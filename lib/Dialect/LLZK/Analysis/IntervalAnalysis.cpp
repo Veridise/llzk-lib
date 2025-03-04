@@ -124,19 +124,14 @@ bool UnreducedInterval::overlaps(const UnreducedInterval &rhs) const {
   return lhs.b >= rhs.a || lhs.a <= rhs.b;
 }
 
-bool UnreducedInterval::operator<(const UnreducedInterval &rhs) const {
-  auto &lhs = *this;
-  return lhs.a < rhs.a;
-}
-
-bool UnreducedInterval::operator>(const UnreducedInterval &rhs) const {
-  auto &lhs = *this;
-  return lhs.a > rhs.a;
-}
-
-bool UnreducedInterval::operator==(const UnreducedInterval &rhs) const {
-  auto &lhs = *this;
-  return lhs.a == rhs.a && lhs.b == rhs.b;
+std::strong_ordering operator<=>(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
+  if (lhs.a < rhs.a || (lhs.a == rhs.a && lhs.b < rhs.b)) {
+    return std::strong_ordering::less;
+  }
+  if (lhs.a > rhs.a || (lhs.a == rhs.a && lhs.b > rhs.b)) {
+    return std::strong_ordering::greater;
+  }
+  return std::strong_ordering::equal;
 }
 
 /* Interval */
@@ -319,6 +314,15 @@ Interval operator/(const Interval &lhs, const Interval &rhs) {
 Interval operator%(const Interval &lhs, const Interval &rhs) {
   const auto &field = rhs.getField();
   return UnreducedInterval(field.zero(), rhs.b).reduce(field);
+}
+
+void Interval::print(mlir::raw_ostream &os) const {
+  os << TypeName(ty);
+  if (isOneOf<Type::Degenerate>()) {
+    os << '(' << a << ')';
+  } else if (!isOneOf<Type::Entire, Type::Empty>()) {
+    os << ":[ " << a << ", " << b << " ]";
+  }
 }
 
 /* ExpressionValue */

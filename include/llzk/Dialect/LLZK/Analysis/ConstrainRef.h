@@ -1,5 +1,6 @@
 #pragma once
 
+#include "llzk/Dialect/LLZK/Analysis/AbstractLatticeValue.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/Hash.h"
@@ -262,9 +263,14 @@ public:
   using Base::Base;
 
   ConstrainRefSet &join(const ConstrainRefSet &rhs);
+
+  friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefSet &rhs);
 };
 
-mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefSet &rhs);
+static_assert(
+    dataflow::ScalarLatticeValue<ConstrainRefSet>,
+    "ConstrainRefSet must satisfy the ScalarLatticeValue requirements"
+);
 
 } // namespace llzk
 

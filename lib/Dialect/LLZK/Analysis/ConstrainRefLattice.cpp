@@ -14,24 +14,6 @@ namespace llzk {
 
 /* ConstrainRefLatticeValue */
 
-// mlir::ChangeResult ConstrainRefLatticeValue::setValue(const ConstrainRefLatticeValue &rhs) {
-//   if (*this == rhs) {
-//     return mlir::ChangeResult::NoChange;
-//   }
-//   *this = rhs;
-//   return mlir::ChangeResult::Change;
-// }
-
-// mlir::ChangeResult ConstrainRefLatticeValue::update(const ConstrainRefLatticeValue &rhs) {
-//   if (isScalar() && rhs.isScalar()) {
-//     return updateScalar(rhs.getScalarValue());
-//   } else if (isArray() && rhs.isArray() && getArraySize() == rhs.getArraySize()) {
-//     return updateArray(rhs.getArrayValue());
-//   } else {
-//     return foldAndUpdate(rhs);
-//   }
-// }
-
 mlir::ChangeResult ConstrainRefLatticeValue::insert(const ConstrainRef &rhs) {
   auto rhsVal = ConstrainRefLatticeValue(rhs);
   if (isScalar()) {

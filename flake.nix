@@ -140,7 +140,10 @@
           inherit (pkgs) llzk llzkWithPython;
 
           # For debug purposes, expose the MLIR/LLVM packages.
-          inherit (pkgs) libllvm llvm mlir mlirWithPython;
+          inherit (pkgs) mlir mlirWithPython;
+          # Otherwise, libllvm and llvm are from nixpkgs,
+          # as they are not directly exported by veridise-nixpkgs
+          inherit (pkgs.veridise_llvmPackages) libllvm llvm;
 
           default = pkgs.llzk;
           debugClang = pkgs.llzkDebugClang;
@@ -161,7 +164,7 @@
           debugGCC = _: (pkgs.devShellBase pkgs pkgs.llzkDebugGCC).shell;
 
           llvm = pkgs.mkShell {
-            buildInputs = [ pkgs.libllvm.dev ];
+            buildInputs = [ pkgs.veridise_llvmPackages.libllvm.dev ];
           };
         };
       }
