@@ -488,12 +488,12 @@ ConstrainRefSet ConstraintDependencyGraph::getConstrainingValues(const Constrain
 mlir::LogicalResult ConstraintDependencyGraphStructAnalysis::runAnalysis(
     mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager
 ) {
-  auto res =
+  auto result =
       ConstraintDependencyGraph::compute(getModule(), getStruct(), solver, moduleAnalysisManager);
-  if (mlir::failed(res)) {
+  if (mlir::failed(result)) {
     return mlir::failure();
   }
-  setResult(std::move(*res));
+  setResult(std::move(*result));
   return mlir::success();
 }
 

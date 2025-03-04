@@ -63,14 +63,14 @@ ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices)
         auto idxVal = idx.getIndex().getZExtValue();
         std::transform(
             currIdxs.begin(), currIdxs.end(), std::back_inserter(newIdxs),
-            [&currDim, &idxVal](size_t i) { return i * currDim + idxVal; }
+            [&currDim, &idxVal](size_t j) { return j * currDim + idxVal; }
         );
       } else {
         auto [low, high] = idx.getIndexRange();
         for (auto idxVal = low.getZExtValue(); idxVal < high.getZExtValue(); idxVal++) {
           std::transform(
               currIdxs.begin(), currIdxs.end(), std::back_inserter(newIdxs),
-              [&currDim, &idxVal](size_t i) { return i * currDim + idxVal; }
+              [&currDim, &idxVal](size_t j) { return j * currDim + idxVal; }
           );
         }
       }
