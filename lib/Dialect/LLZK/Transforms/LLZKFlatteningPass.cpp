@@ -227,6 +227,19 @@ SmallVector<std::unique_ptr<Region>> moveRegions(Operation *op) {
   return newRegions;
 }
 
+// Adapted from `mlir::getConstantIntValues()` but that one failed in CI.
+std::optional<SmallVector<int64_t>> getConstantIntValues(ArrayRef<OpFoldResult> ofrs) {
+  SmallVector<int64_t> res;
+  for (OpFoldResult ofr : ofrs) {
+    std::optional<int64_t> cv = getConstantIntValue(ofr);
+    if (!cv.has_value()) {
+      return std::nullopt;
+    }
+    res.push_back(cv.value());
+  }
+  return res;
+}
+
 struct AffineMapFolder {
   struct Input {
     OperandRangeRange mapOpGroups;
@@ -260,7 +273,13 @@ struct AffineMapFolder {
     for (Attribute sizeAttr : in.paramsOfStructTy) {
       if (AffineMapAttr m = dyn_cast<AffineMapAttr>(sizeAttr)) {
         ValueRange currMapOps = in.mapOpGroups[idx++];
-        if (auto constOps = getConstantIntValues(getAsOpFoldResult(currMapOps))) {
+        LLVM_DEBUG(llvm::dbgs() << "currMapOps: " << debug::toStringList(currMapOps) << "\n");
+        SmallVector<OpFoldResult> currMapOpsCast = getAsOpFoldResult(currMapOps);
+        LLVM_DEBUG(
+            llvm::dbgs() << "  currMapOps as fold results: " << debug::toStringList(currMapOpsCast)
+                         << "\n"
+        );
+        if (auto constOps = Step2_InstantiateAffineMaps::getConstantIntValues(currMapOpsCast)) {
           SmallVector<Attribute> result;
           bool hasPoison = false; // indicates divide by 0 or mod by <1
           auto constAttrs = llvm::map_to_vector(*constOps, [&rewriter](int64_t v) -> Attribute {
