@@ -21,7 +21,10 @@ const Field &Field::getField(const char *fieldName) {
 
 void Field::initKnownFields(llvm::DenseMap<llvm::StringRef, Field> &knownFields) {
   // bn128/254, default for circom
-  knownFields.try_emplace("bn128", Field("21888242871839275222246405745257275088696311157297823662689037894645226208583"));
+  knownFields.try_emplace(
+      "bn128",
+      Field("21888242871839275222246405745257275088696311157297823662689037894645226208583")
+  );
   knownFields.try_emplace("bn254", knownFields.at("bn128"));
   // 15 * 2^27 + 1, default for zirgen
   knownFields.try_emplace("babybear", Field("2013265921"));
@@ -318,7 +321,7 @@ Interval operator/(const Interval &lhs, const Interval &rhs) {
     return Interval::Entire(field);
   }
   if (rhs.a.isZero()) {
-    return lhs;
+    llvm::report_fatal_error("LLZK error in " + mlir::Twine(__PRETTY_FUNCTION__) + ": division by zero");
   }
   return UnreducedInterval(lhs.a / rhs.a, lhs.b / rhs.a).reduce(field);
 }
