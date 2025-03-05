@@ -669,57 +669,53 @@ void IntervalDataFlowAnalysis::visitOperation(
       auto rhsExpr = rhsLatticeVal->getScalarValue();
 
       Interval newLhsInterval, newRhsInterval;
+      const auto &lhsInterval = lhsExpr.getInterval();
+      const auto &rhsInterval = rhsExpr.getInterval();
+
       switch (cmpOp.getPredicate()) {
       case FeltCmpPredicate::EQ: {
-        newLhsInterval = newRhsInterval = lhsExpr.getInterval().intersect(rhsExpr.getInterval());
+        newLhsInterval = newRhsInterval = lhsInterval.intersect(rhsInterval);
         break;
       }
       case FeltCmpPredicate::NE: {
-        newLhsInterval = newRhsInterval = lhsExpr.getInterval().join(rhsExpr.getInterval());
+        if (lhsInterval.isDegenerate() && rhsInterval.isDegenerate() &&
+            lhsInterval == rhsInterval) {
+          // In this case, we know lhs and rhs cannot satisfy this assertion, so they have
+          // an empty value range.
+          newLhsInterval = newRhsInterval = Interval::Empty(field.get());
+        } else {
+          // Leave unchanged
+          newLhsInterval = lhsInterval;
+          newRhsInterval = rhsInterval;
+        }
         break;
       }
       case FeltCmpPredicate::LT: {
-        newLhsInterval = lhsExpr.getInterval()
-                             .toUnreduced()
-                             .lt(rhsExpr.getInterval().toUnreduced())
-                             .reduce(field.get());
-        newRhsInterval = rhsExpr.getInterval()
-                             .toUnreduced()
-                             .ge(lhsExpr.getInterval().toUnreduced())
-                             .reduce(field.get());
+        newLhsInterval =
+            lhsInterval.toUnreduced().lt(rhsInterval.toUnreduced()).reduce(field.get());
+        newRhsInterval =
+            rhsInterval.toUnreduced().ge(lhsInterval.toUnreduced()).reduce(field.get());
         break;
       }
       case FeltCmpPredicate::LE: {
-        newLhsInterval = lhsExpr.getInterval()
-                             .toUnreduced()
-                             .le(rhsExpr.getInterval().toUnreduced())
-                             .reduce(field.get());
-        newRhsInterval = rhsExpr.getInterval()
-                             .toUnreduced()
-                             .gt(lhsExpr.getInterval().toUnreduced())
-                             .reduce(field.get());
+        newLhsInterval =
+            lhsInterval.toUnreduced().le(rhsInterval.toUnreduced()).reduce(field.get());
+        newRhsInterval =
+            rhsInterval.toUnreduced().gt(lhsInterval.toUnreduced()).reduce(field.get());
         break;
       }
       case FeltCmpPredicate::GT: {
-        newLhsInterval = lhsExpr.getInterval()
-                             .toUnreduced()
-                             .gt(rhsExpr.getInterval().toUnreduced())
-                             .reduce(field.get());
-        newRhsInterval = rhsExpr.getInterval()
-                             .toUnreduced()
-                             .le(lhsExpr.getInterval().toUnreduced())
-                             .reduce(field.get());
+        newLhsInterval =
+            lhsInterval.toUnreduced().gt(rhsInterval.toUnreduced()).reduce(field.get());
+        newRhsInterval =
+            rhsInterval.toUnreduced().le(lhsInterval.toUnreduced()).reduce(field.get());
         break;
       }
       case FeltCmpPredicate::GE: {
-        newLhsInterval = lhsExpr.getInterval()
-                             .toUnreduced()
-                             .ge(rhsExpr.getInterval().toUnreduced())
-                             .reduce(field.get());
-        newRhsInterval = rhsExpr.getInterval()
-                             .toUnreduced()
-                             .lt(lhsExpr.getInterval().toUnreduced())
-                             .reduce(field.get());
+        newLhsInterval =
+            lhsInterval.toUnreduced().ge(rhsInterval.toUnreduced()).reduce(field.get());
+        newRhsInterval =
+            rhsInterval.toUnreduced().lt(lhsInterval.toUnreduced()).reduce(field.get());
         break;
       }
       }
