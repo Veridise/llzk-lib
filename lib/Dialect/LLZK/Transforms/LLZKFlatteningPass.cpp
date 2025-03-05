@@ -273,11 +273,14 @@ struct AffineMapFolder {
     for (Attribute sizeAttr : in.paramsOfStructTy) {
       if (AffineMapAttr m = dyn_cast<AffineMapAttr>(sizeAttr)) {
         ValueRange currMapOps = in.mapOpGroups[idx++];
-        LLVM_DEBUG(llvm::dbgs() << "currMapOps: " << debug::toStringList(currMapOps) << "\n");
+        LLVM_DEBUG(
+            llvm::dbgs() << "[AffineMapFolder] currMapOps: " << debug::toStringList(currMapOps)
+                         << "\n"
+        );
         SmallVector<OpFoldResult> currMapOpsCast = getAsOpFoldResult(currMapOps);
         LLVM_DEBUG(
-            llvm::dbgs() << "  currMapOps as fold results: " << debug::toStringList(currMapOpsCast)
-                         << "\n"
+            llvm::dbgs() << "[AffineMapFolder] currMapOps as fold results: "
+                         << debug::toStringList(currMapOpsCast) << "\n"
         );
         if (auto constOps = Step4_InstantiateAffineMaps::getConstantIntValues(currMapOpsCast)) {
           SmallVector<Attribute> result;
@@ -607,7 +610,9 @@ struct InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
         return failure();
       }
       LLVM_DEBUG({
-        llvm::dbgs() << "[InstantiateAtCallOpCompute]   propagated symrefs in result type params\n";
+        llvm::dbgs() << "[InstantiateAtCallOpCompute]   propagated instantiations via symrefs in "
+                        "result type params: "
+                     << debug::toStringList(out.paramsOfStructTy) << "\n";
       });
     }
 
@@ -629,6 +634,8 @@ struct InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
   }
 
 private:
+  /// Use the type of the target function to propagate instantation knowledge from the function
+  /// argument types to the function return type in the CallOp.
   inline LogicalResult instantiateViaTargetType(
       const AffineMapFolder::Input &in, AffineMapFolder::Output &out,
       OperandRange::type_range callArgTypes, FuncOp targetFunc
@@ -638,54 +645,56 @@ private:
     assert(!isNullOrEmpty(targetResTyParams)); // same cardinality as `in.paramsOfStructTy`
     assert(in.paramsOfStructTy.size() == targetResTyParams.size()); // verifier ensures this
 
-    // Initialize the updated return StructType parameter list where each index uses the CallOp
-    // StructType parameter if concrete, otherwise using the target struct type parameter.
-    bool hasTargetStructParams = false;
-    SmallVector<Attribute> newReturnStructParams = llvm::map_to_vector(
-        llvm::zip_equal(in.paramsOfStructTy, targetResTyParams.getValue()),
-        [&hasTargetStructParams](std::tuple<Attribute, Attribute> p) {
-      Attribute fromCall = std::get<0>(p);
-      if (isConcreteAttr<>(fromCall)) {
-        return fromCall;
-      } else {
-        hasTargetStructParams = true;
-        return std::get<1>(p);
-      }
-    }
-    );
-    if (!hasTargetStructParams) {
-      // Nothing will change if no target parameters are used
+    if (llvm::all_of(in.paramsOfStructTy, [](Attribute a) { return isConcreteAttr<>(a); })) {
+      // Nothing can change if everything is already concrete
       return failure();
     }
 
     LLVM_DEBUG({
-      llvm::dbgs() << "in.paramsOfStructTy = " << debug::toStringList(in.paramsOfStructTy) << "\n";
-      llvm::dbgs() << "targetResTyParams = " << debug::toStringList(targetResTyParams) << "\n";
-      llvm::dbgs() << "newReturnStructParams (init) = "
-                   << debug::toStringList(newReturnStructParams) << "\n";
+      llvm::dbgs() << "[instantiateViaTargetType] in.paramsOfStructTy = "
+                   << debug::toStringList(in.paramsOfStructTy) << "\n";
+      llvm::dbgs() << "[instantiateViaTargetType] targetResTyParams = "
+                   << debug::toStringList(targetResTyParams) << "\n";
+      llvm::dbgs() << "[instantiateViaTargetType] target.argtypes = "
+                   << debug::toStringList(targetFunc.getArgumentTypes()) << "\n";
+      llvm::dbgs() << "[instantiateViaTargetType] callArgTypes = "
+                   << debug::toStringList(callArgTypes) << "\n";
     });
 
     UnificationMap unifications;
     bool unifies = typeListsUnify(targetFunc.getArgumentTypes(), callArgTypes, {}, &unifications);
     assert(unifies && "should have been checked by verifiers");
 
-    LLVM_DEBUG(llvm::dbgs() << "unifications = " << debug::toStringList(unifications) << "\n");
+    LLVM_DEBUG({
+      llvm::dbgs() << "[instantiateViaTargetType] unifications = "
+                   << debug::toStringList(unifications) << "\n";
+    });
 
-    // Check for LHS SymRef that have RHS concrete Attributes without any struct parameters (because
-    // a call with concrete struct parameters will be replaced elsewhere and doing it here would
-    // interfere and result in a type mismatch) and perform those replacements in the `targetFunc`
-    // return type to produce the new result type for the CallOp.
-    for (Attribute &a : newReturnStructParams) {
-      if (SymbolRefAttr symRef = llvm::dyn_cast<SymbolRefAttr>(a)) {
-        auto it = unifications.find(std::make_pair(symRef, Side::LHS));
+    // Check for LHS SymRef (i.e. from the target function) that have RHS concrete Attributes (i.e.
+    // from the call argument types) without any struct parameters (because the type with concrete
+    // struct parameters will be used to instantiate the target struct rather than the fully
+    // flattened struct type resulting in type mismatch of the callee to target) and perform those
+    // replacements in the `targetFunc` return type to produce the new result type for the CallOp.
+    SmallVector<Attribute> newReturnStructParams = llvm::map_to_vector(
+        llvm::zip_equal(targetResTyParams.getValue(), in.paramsOfStructTy),
+        [&unifications](std::tuple<Attribute, Attribute> p) {
+      Attribute fromCall = std::get<1>(p);
+      // Preserve attributes that are already concrete at the call site. Otherwise attempt to lookup
+      // non-parameterized concrete unification for the target struct parameter symbol.
+      if (!isConcreteAttr<>(fromCall)) {
+        Attribute fromTgt = std::get<0>(p);
+        assert(llvm::isa<SymbolRefAttr>(fromTgt));
+        auto it = unifications.find(std::make_pair(llvm::cast<SymbolRefAttr>(fromTgt), Side::LHS));
         if (it != unifications.end()) {
           Attribute unifiedAttr = it->second;
           if (unifiedAttr && isConcreteAttr<false>(unifiedAttr)) {
-            a = unifiedAttr;
+            return unifiedAttr;
           }
         }
       }
+      return fromCall;
     }
+    );
 
     out.paramsOfStructTy = newReturnStructParams;
     assert(out.paramsOfStructTy.size() == in.paramsOfStructTy.size() && "post-condition");

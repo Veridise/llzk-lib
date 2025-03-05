@@ -74,9 +74,6 @@ module attributes {veridise.lang = "llzk"} {
       %self = llzk.new_struct : !llzk.struct<@Main>
       %x = llzk.call @TestLoopWithAffineArrayStruct::@compute() 
             : () -> !llzk.struct<@TestLoopWithAffineArrayStruct<[2]>>
-            // TODO: using parameter 2 compiles successfully but still has a few uses of affine_map
-            // TODO: using parameter 3 or larger causes a verification failure after the pass runs
-            //  because a non-homogeneous array field actually requires splitting into multiple.
       return %self: !llzk.struct<@Main>
     }
   
