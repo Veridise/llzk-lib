@@ -31,7 +31,7 @@ def IntervalAnalysisPrinterPass
       "llzk::createIntervalAnalysisPrinterPass(llvm::errs())";
   let options = [
     Option<"fieldName", "field", "std::string", /* default */ "\"bn128\"",
-      "The field to use for interval analysis. Supported fields: bn128/bn254">,
+      "The field to use for interval analysis. Supported fields: bn128/bn254, babybear, goldilocks, mersenne31">,
     Option<"printSolverConstraints", "print-solver-constraints", "bool", /* default */ "false",
       "Whether to output SMT solver constraints along with intervals.">,
   ];

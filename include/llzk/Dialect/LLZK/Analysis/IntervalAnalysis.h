@@ -14,6 +14,7 @@
 #include <llvm/Support/SMTAPI.h>
 
 #include <array>
+#include <mutex>
 
 #include "llvm/ADT/MapVector.h"
 
@@ -28,11 +29,12 @@ public:
   /// @brief Get a Field from a given field name string.
   /// @param fieldName The name of the field.
   /// @return
-  static const Field &getField(std::string_view fieldName);
+  static const Field &getField(const char *fieldName);
 
-  /// @brief Return the statically constructed BN128 Field object.
-  /// @return
-  static const Field &BN128();
+  Field() = delete;
+  Field(const Field &) = default;
+  Field(Field &&) = default;
+  Field &operator=(const Field &) = default;
 
   /// @brief For the prime field p, returns p.
   /// @return
@@ -42,22 +44,26 @@ public:
   /// @return
   llvm::APSInt half() const { return halfPrime; }
 
+  /// @brief Returns i as a field element
+  inline llvm::APSInt felt(unsigned i) const { return reduce(i); }
+
   /// @brief Returns 0 at the bitwidth of the field.
   /// @return
-  llvm::APSInt zero() const { return llvm::APSInt(llvm::APInt::getZero(bitWidth())); }
+  inline llvm::APSInt zero() const { return felt(0); }
 
   /// @brief Returns 1 at the bitwidth of the field.
   /// @return
-  llvm::APSInt one() const { return llvm::APSInt(llvm::APInt(bitWidth(), 1)); }
+  inline llvm::APSInt one() const { return felt(1); }
 
   /// @brief Returns p - 1, which is the max value possible in a prime field described by p.
   /// @return
-  llvm::APSInt maxVal() const { return prime() - one(); }
+  inline llvm::APSInt maxVal() const { return prime() - one(); }
 
   /// @brief Returns i mod p and reduces the result into the appropriate bitwidth.
   /// @param i
   /// @return
   llvm::APSInt reduce(llvm::APSInt i) const;
+  llvm::APSInt reduce(unsigned i) const;
 
   unsigned bitWidth() const { return primeMod.getBitWidth(); }
 
@@ -66,10 +72,12 @@ public:
   }
 
 private:
+  Field(std::string_view primeStr);
   Field(llvm::APSInt p, llvm::APSInt h) : primeMod(p), halfPrime(h) {}
-  Field() = delete;
 
   llvm::APSInt primeMod, halfPrime;
+
+  static void initKnownFields(llvm::DenseMap<llvm::StringRef, Field> &knownFields);
 };
 
 /* UnreducedInterval */
@@ -270,7 +278,7 @@ public:
 
   /// To satisfy the dataflow::ScalarLatticeValue requirements, this class must
   /// be default initializable. The default interval is the full range of values.
-  Interval() : Interval(Type::Entire, Field::BN128()) {}
+  Interval() : Interval(Type::Entire, Field::getField("bn128")) {}
 
   /// @brief Convert to an UnreducedInterval.
   UnreducedInterval toUnreduced() const;
@@ -779,10 +787,10 @@ template <> struct DenseMapInfo<llzk::ExpressionValue> {
   }
 
   static llzk::ExpressionValue getEmptyKey() {
-    return llzk::ExpressionValue(llzk::Field::BN128(), getEmptyExpr());
+    return llzk::ExpressionValue(llzk::Field::getField("bn128"), getEmptyExpr());
   }
   static inline llzk::ExpressionValue getTombstoneKey() {
-    return llzk::ExpressionValue(llzk::Field::BN128(), getTombstoneExpr());
+    return llzk::ExpressionValue(llzk::Field::getField("bn128"), getTombstoneExpr());
   }
   static unsigned getHashValue(const llzk::ExpressionValue &e) {
     return llzk::ExpressionValue::Hash {}(e);

@@ -32,7 +32,7 @@ protected:
     }
 
     auto &mia = getAnalysis<ModuleIntervalAnalysis>();
-    mia.setField(Field::getField(fieldName));
+    mia.setField(Field::getField(fieldName.c_str()));
     auto am = getAnalysisManager();
     mia.runAnalysis(am);
 

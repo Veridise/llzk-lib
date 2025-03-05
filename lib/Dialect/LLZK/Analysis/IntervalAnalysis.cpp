@@ -4,24 +4,31 @@ namespace llzk {
 
 /* Field */
 
-const Field &Field::getField(std::string_view fieldName) {
-  if (fieldName == "bn128" || fieldName == "bn254") {
-    return BN128();
-  }
-  llvm::report_fatal_error(mlir::Twine(fieldName) + " field is unsupported");
+Field::Field(std::string_view primeStr) : primeMod(llvm::APSInt(primeStr)) {
+  halfPrime = (primeMod + felt(1)) / felt(2);
 }
 
-const Field &Field::BN128() {
-  static constexpr auto bn128_str =
-      "21888242871839275222246405745257275088696311157297823662689037894645226208583";
-  static auto bn128_prime = llvm::APSInt(bn128_str);
-  static auto bn128_bitwidth = bn128_prime.getBitWidth();
-  static auto one = llvm::APSInt(llvm::APInt(bn128_bitwidth, 1));
-  static auto two = llvm::APSInt(llvm::APInt(bn128_bitwidth, 2));
-  static auto bn128_half = (bn128_prime + one) / two;
+const Field &Field::getField(const char *fieldName) {
+  static llvm::DenseMap<llvm::StringRef, Field> knownFields;
+  static std::once_flag fieldsInit;
+  std::call_once(fieldsInit, initKnownFields, knownFields);
 
-  static Field singleton(bn128_prime, bn128_half);
-  return singleton;
+  if (auto it = knownFields.find(fieldName); it != knownFields.end()) {
+    return it->second;
+  }
+  llvm::report_fatal_error("field \"" + mlir::Twine(fieldName) + "\" is unsupported");
+}
+
+void Field::initKnownFields(llvm::DenseMap<llvm::StringRef, Field> &knownFields) {
+  // bn128/254, default for circom
+  knownFields.try_emplace("bn128", Field("21888242871839275222246405745257275088696311157297823662689037894645226208583"));
+  knownFields.try_emplace("bn254", knownFields.at("bn128"));
+  // 15 * 2^27 + 1, default for zirgen
+  knownFields.try_emplace("babybear", Field("2013265921"));
+  // 2^64 - 2^32 + 1, used for plonky2
+  knownFields.try_emplace("goldilocks", Field("18446744069414584321"));
+  // 2^31 - 1, used for Plonky3
+  knownFields.try_emplace("mersenne31", Field("2147483647"));
 }
 
 llvm::APSInt Field::reduce(llvm::APSInt i) const {
@@ -31,6 +38,11 @@ llvm::APSInt Field::reduce(llvm::APSInt i) const {
     return prime() + llvm::APSInt(m);
   }
   return llvm::APSInt(m);
+}
+
+llvm::APSInt Field::reduce(unsigned i) const {
+  auto ap = llvm::APSInt(llvm::APInt(bitWidth(), i));
+  return reduce(ap);
 }
 
 /* UnreducedInterval */
