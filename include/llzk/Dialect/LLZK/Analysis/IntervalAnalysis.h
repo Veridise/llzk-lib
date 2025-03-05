@@ -23,7 +23,7 @@ namespace llzk {
 /* Field */
 
 /// @brief Information about the prime finite field used for the interval analysis.
-/// @note Currently only supports BN128/BN254.
+/// @note Seem implementation of initKnownFields for supported primes.
 class Field {
 public:
   /// @brief Get a Field from a given field name string.
