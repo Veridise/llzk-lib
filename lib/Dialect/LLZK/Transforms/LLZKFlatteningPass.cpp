@@ -168,7 +168,7 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
   return llvm::isa<IntegerAttr>(a);
 }
 
-namespace Step1_Unroll {
+namespace Step3_Unroll {
 
 // OpTy can be any LoopLikeOpInterface
 // TODO: not guaranteed to work with WhileOp, can try with our custom attributes though.
@@ -213,9 +213,9 @@ LogicalResult run(ModuleOp modOp, bool &modified) {
       modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &modified
   );
 }
-} // namespace Step1_Unroll
+} // namespace Step3_Unroll
 
-namespace Step2_InstantiateAffineMaps {
+namespace Step4_InstantiateAffineMaps {
 
 SmallVector<std::unique_ptr<Region>> moveRegions(Operation *op) {
   SmallVector<std::unique_ptr<Region>> newRegions;
@@ -279,7 +279,7 @@ struct AffineMapFolder {
             llvm::dbgs() << "  currMapOps as fold results: " << debug::toStringList(currMapOpsCast)
                          << "\n"
         );
-        if (auto constOps = Step2_InstantiateAffineMaps::getConstantIntValues(currMapOpsCast)) {
+        if (auto constOps = Step4_InstantiateAffineMaps::getConstantIntValues(currMapOpsCast)) {
           SmallVector<Attribute> result;
           bool hasPoison = false; // indicates divide by 0 or mod by <1
           auto constAttrs = llvm::map_to_vector(*constOps, [&rewriter](int64_t v) -> Attribute {
@@ -710,9 +710,9 @@ LogicalResult run(ModuleOp modOp, bool &modified) {
   );
 }
 
-} // namespace Step2_InstantiateAffineMaps
+} // namespace Step4_InstantiateAffineMaps
 
-namespace Step3_FindComputeTypes {
+namespace Step1_FindComputeTypes {
 
 class ParameterizedStructUseTypeConverter : public TypeConverter {
   DenseMap<StructType, StructType> &instantiations;
@@ -755,10 +755,10 @@ class CallComputePattern : public OpConversionPattern<CallOp> {
 public:
   CallComputePattern(
       TypeConverter &converter, MLIRContext *ctx,
-      DenseMap<StructType, DenseSet<Location>> &newTyComputeLocations
+      DenseMap<StructType, DenseSet<Location>> &newTyComputeLocs
   )
       // future proof: use higher priority than GeneralTypeReplacePattern
-      : OpConversionPattern<CallOp>(converter, ctx, 2), newTyComputeLocs(newTyComputeLocations) {}
+      : OpConversionPattern<CallOp>(converter, ctx, 2), newTyComputeLocs(newTyComputeLocs) {}
 
   LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
       const override {
@@ -794,13 +794,13 @@ public:
 
 LogicalResult
 run(ModuleOp modOp, DenseMap<StructType, StructType> &structInstantiations,
-    DenseMap<StructType, DenseSet<Location>> &newTyComputeLocations) {
+    DenseMap<StructType, DenseSet<Location>> &newTyComputeLocs) {
 
   MLIRContext *ctx = modOp.getContext();
   ParameterizedStructUseTypeConverter tyConv(structInstantiations);
   ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
-  patterns.add<CallComputePattern>(tyConv, ctx, newTyComputeLocations);
+  patterns.add<CallComputePattern>(tyConv, ctx, newTyComputeLocs);
 
   if (failed(applyPartialConversion(modOp, target, std::move(patterns)))) {
     return modOp.emitError("failed to convert all `compute()` calls");
@@ -808,9 +808,9 @@ run(ModuleOp modOp, DenseMap<StructType, StructType> &structInstantiations,
   return success();
 }
 
-} // namespace Step3_FindComputeTypes
+} // namespace Step1_FindComputeTypes
 
-namespace Step4_CreateStructs {
+namespace Step2_CreateStructs {
 
 class MappedTypeConverter : public TypeConverter {
   StructType origTy;
@@ -1005,7 +1005,7 @@ buildNameToValueMap(ArrayAttr paramNames, ArrayAttr paramInstantiations) {
 
 LogicalResult
 run(ModuleOp modOp, const DenseMap<StructType, StructType> &structInstantiations,
-    DenseMap<StructType, DenseSet<Location>> &newTyComputeLocations) {
+    DenseMap<StructType, DenseSet<Location>> &newTyComputeLocs) {
 
   SymbolTableCollection symTables;
   MLIRContext *ctx = modOp.getContext();
@@ -1040,9 +1040,7 @@ run(ModuleOp modOp, const DenseMap<StructType, StructType> &structInstantiations
       target.addIllegalOp<ConstReadOp>();
       RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
       patterns.add<CallOpPattern, CreateArrayOpPattern>(tyConv, ctx);
-      patterns.add<ConstReadOpPattern>(
-          tyConv, ctx, nameToValueMap, newTyComputeLocations[newRemoteTy]
-      );
+      patterns.add<ConstReadOpPattern>(tyConv, ctx, nameToValueMap, newTyComputeLocs[newRemoteTy]);
 
       if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
         return modOp.emitError("failed to generate all required flattened structs");
@@ -1056,7 +1054,7 @@ run(ModuleOp modOp, const DenseMap<StructType, StructType> &structInstantiations
   return success();
 }
 
-} // namespace Step4_CreateStructs
+} // namespace Step2_CreateStructs
 
 namespace Step5_Cleanup {
 
@@ -1137,44 +1135,52 @@ class InstantiateStructsPass
     // Maps original remote (i.e. use site) type to new remote type
     DenseMap<StructType, StructType> structInstantiations;
     // Maps new remote type to location of the compute() calls that cause instantiation
-    DenseMap<StructType, DenseSet<Location>> newTyComputeLocations;
+    DenseMap<StructType, DenseSet<Location>> newTyComputeLocs;
     do {
-      modified = false;
+      {
+        unsigned prevMapSize = structInstantiations.size();
+
+        // Find calls to "compute()" that return a parameterized struct and replace it to call a
+        // flattened version of the struct that has parameters replaced with the constant values.
+        if (failed(Step1_FindComputeTypes::run(modOp, structInstantiations, newTyComputeLocs))) {
+          signalPassFailure();
+          return;
+        }
+
+        // Create the necessary instantiated/flattened struct(s) in their parent module(s).
+        if (failed(Step2_CreateStructs::run(modOp, structInstantiations, newTyComputeLocs))) {
+          signalPassFailure();
+          return;
+        }
+
+        // Check if a new StructType was required by an instantiation
+        modified = structInstantiations.size() > prevMapSize;
+      }
 
       // Unroll loops with known iterations
-      if (failed(Step1_Unroll::run(modOp, modified))) {
-        signalPassFailure();
-        return;
+      {
+        bool thisStepModified = false;
+        if (failed(Step3_Unroll::run(modOp, thisStepModified))) {
+          signalPassFailure();
+          return;
+        }
+        modified |= thisStepModified;
       }
 
       // Instantiate affine_map parameters of StructType and ArrayType
-      if (failed(Step2_InstantiateAffineMaps::run(modOp, modified))) {
-        signalPassFailure();
-        return;
+      {
+        bool thisStepModified = false;
+        if (failed(Step4_InstantiateAffineMaps::run(modOp, thisStepModified))) {
+          signalPassFailure();
+          return;
+        }
+        modified |= thisStepModified;
       }
-
-      unsigned prevMapSize = structInstantiations.size();
-
-      // Find calls to "compute()" that return a parameterized struct and replace it to call a
-      // flattened version of the struct that has parameters replaced with the constant values.
-      if (failed(Step3_FindComputeTypes::run(modOp, structInstantiations, newTyComputeLocations))) {
-        signalPassFailure();
-        return;
-      }
-
-      // Create the necessary instantiated/flattened struct(s) in their parent module(s).
-      if (failed(Step4_CreateStructs::run(modOp, structInstantiations, newTyComputeLocations))) {
-        signalPassFailure();
-        return;
-      }
-
-      // Check if a new StructType was required by an instantiation
-      modified |= structInstantiations.size() > prevMapSize;
 
       LLVM_DEBUG(if (modified) {
         llvm::dbgs() << "=====================================================================\n";
         llvm::dbgs() << " Dumping module between iterations of " << DEBUG_TYPE << " \n";
-        modOp.print(llvm::dbgs());
+        modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
         llvm::dbgs() << "=====================================================================\n";
       });
     } while (modified);
