@@ -321,7 +321,9 @@ Interval operator/(const Interval &lhs, const Interval &rhs) {
     return Interval::Entire(field);
   }
   if (rhs.a.isZero()) {
-    llvm::report_fatal_error("LLZK error in " + mlir::Twine(__PRETTY_FUNCTION__) + ": division by zero");
+    llvm::report_fatal_error(
+        "LLZK error in " + mlir::Twine(__PRETTY_FUNCTION__) + ": division by zero"
+    );
   }
   return UnreducedInterval(lhs.a / rhs.a, lhs.b / rhs.a).reduce(field);
 }
