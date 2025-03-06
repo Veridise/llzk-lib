@@ -203,6 +203,18 @@ inline ConcreteType getAtIndex(mlir::TypeRange types, size_t index) {
   return (types.size() > index) ? llvm::dyn_cast<ConcreteType>(types[index]) : nullptr;
 }
 
+/// Convert any IntegerAttr with a type other than IndexType to use IndexType.
+llvm::SmallVector<mlir::Attribute> forceIntAttrType(llvm::ArrayRef<mlir::Attribute> attrList);
+
+/// Verify that all IntegerAttr have type IndexType.
+mlir::LogicalResult verifyIntAttrType(std::optional<EmitErrorFn> emitError, mlir::Attribute in);
+
+mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
+void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);
+
+mlir::ParseResult parseStructParams(mlir::AsmParser &parser, mlir::ArrayAttr &value);
+void printStructParams(mlir::AsmPrinter &printer, mlir::ArrayAttr value);
+
 mlir::LogicalResult computeDimsFromShape(
     mlir::MLIRContext *ctx, llvm::ArrayRef<int64_t> shape,
     llvm::SmallVector<mlir::Attribute> &dimensionSizes
@@ -212,9 +224,6 @@ mlir::LogicalResult computeShapeFromDims(
     EmitErrorFn emitError, mlir::MLIRContext *ctx, llvm::ArrayRef<mlir::Attribute> dimensionSizes,
     llvm::SmallVector<int64_t> &shape
 );
-
-mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
-void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);
 
 mlir::ParseResult parseDerivedShape(
     mlir::AsmParser &parser, llvm::SmallVector<int64_t> &shape,

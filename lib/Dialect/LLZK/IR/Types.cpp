@@ -63,7 +63,7 @@ void ShortTypeStringifier::appendAnyAttr(Attribute a) {
   }
 }
 
-ShortTypeStringifier &ShortTypeStringifier::append(mlir::ArrayRef<mlir::Attribute> attrs) {
+ShortTypeStringifier &ShortTypeStringifier::append(ArrayRef<Attribute> attrs) {
   llvm::interleave(attrs, ss, [this](Attribute a) { appendAnyAttr(a); }, "_");
   return *this;
 }
@@ -140,8 +140,6 @@ public:
   }
 
   static void reportInvalid(EmitErrorFn emitError, StringRef foundName, const char *aspect) {
-    // The implicit conversion from InFlightDiagnostic to LogicalResult in the return causes the
-    // diagnostic to be printed.
     InFlightDiagnostic diag = emitError().append(aspect, " must be one of ");
     Appender<InFlightDiagnostic>::append(diag);
     diag.append(" but found '", foundName, "'").report();
@@ -193,21 +191,26 @@ using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
 using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
 
 class AllowedTypes {
-  bool _noStruct, _noString, _noArray, _noVar;
+  bool _noFelt, _noString, _noStruct, _noArray, _noVar;
   bool _noStructParams;
 
 public:
   AllowedTypes()
-      : _noStruct(false), _noString(false), _noArray(false), _noVar(false), _noStructParams(false) {
-  }
+      : _noFelt(false), _noString(false), _noStruct(false), _noArray(false), _noVar(false),
+        _noStructParams(false) {}
 
-  AllowedTypes &noStruct() {
-    _noStruct = true;
+  AllowedTypes &noFelt() {
+    _noFelt = true;
     return *this;
   }
 
   AllowedTypes &noString() {
     _noString = true;
+    return *this;
+  }
+
+  AllowedTypes &noStruct() {
+    _noStruct = true;
     return *this;
   }
 
@@ -225,6 +228,8 @@ public:
     _noStructParams = noStructParams;
     return *this;
   }
+
+  AllowedTypes &onlyInt() { return noFelt().noString().noStruct().noArray().noVar(); }
 
   // This is the main check for allowed types.
   bool isValidTypeImpl(Type type);
@@ -247,7 +252,9 @@ public:
         ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
         success = false;
       } else if (_noVar && !llvm::isa<IntegerAttr>(a)) {
-        ArrayDimensionTypes::reportInvalid(emitError, a, "Concrete array dimension");
+        TypeList<IntegerAttr>::reportInvalid(emitError, a, "Concrete array dimension");
+        success = false;
+      } else if (failed(verifyIntAttrType(emitError, a))) {
         success = false;
       }
     }
@@ -316,7 +323,9 @@ public:
             success = false;
           }
         } else if (_noVar && !llvm::isa<IntegerAttr>(p)) {
-          ArrayDimensionTypes::reportInvalid(emitError, p, "Concrete struct parameter");
+          TypeList<IntegerAttr>::reportInvalid(emitError, p, "Concrete struct parameter");
+          success = false;
+        } else if (failed(verifyIntAttrType(emitError, p))) {
           success = false;
         }
       }
@@ -334,9 +343,10 @@ public:
 };
 
 bool AllowedTypes::isValidTypeImpl(Type type) {
-  return type.isSignlessInteger(1) || llvm::isa<IndexType, FeltType>(type) ||
-         (!_noString && llvm::isa<StringType>(type)) || (!_noVar && llvm::isa<TypeVarType>(type)) ||
-         (!_noStruct && isValidStructTypeImpl(type)) || (!_noArray && isValidArrayTypeImpl(type));
+  return type.isSignlessInteger(1) || llvm::isa<IndexType>(type) ||
+         (!_noFelt && llvm::isa<FeltType>(type)) || (!_noString && llvm::isa<StringType>(type)) ||
+         (!_noVar && llvm::isa<TypeVarType>(type)) || (!_noStruct && isValidStructTypeImpl(type)) ||
+         (!_noArray && isValidArrayTypeImpl(type));
 }
 
 } // namespace
@@ -486,6 +496,81 @@ bool typesUnify(
   return false;
 }
 
+SmallVector<Attribute> forceIntAttrType(ArrayRef<Attribute> attrList) {
+  return map_to_vector(attrList, [](Attribute a) -> Attribute {
+    if (IntegerAttr intAttr = dyn_cast<IntegerAttr>(a)) {
+      Type attrTy = intAttr.getType();
+      if (!AllowedTypes().onlyInt().isValidTypeImpl(attrTy)) {
+        return IntegerAttr::get(IndexType::get(intAttr.getContext()), intAttr.getValue());
+      }
+    }
+    return a;
+  });
+}
+
+LogicalResult verifyIntAttrType(std::optional<EmitErrorFn> emitError, Attribute in) {
+  if (IntegerAttr intAttr = llvm::dyn_cast<IntegerAttr>(in)) {
+    Type attrTy = intAttr.getType();
+    if (!AllowedTypes().onlyInt().isValidTypeImpl(attrTy)) {
+      if (emitError.has_value()) {
+        (*emitError)()
+            .append("IntegerAttr must have type 'index' or 'i1' but found '", attrTy, "'")
+            .report();
+      }
+      return failure();
+    }
+  }
+  return success();
+}
+
+ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
+  auto parseResult = FieldParser<SmallVector<Attribute>>::parse(parser);
+  if (failed(parseResult)) {
+    return parser.emitError(parser.getCurrentLocation(), "failed to parse array dimensions");
+  }
+  value = forceIntAttrType(*parseResult);
+  return success();
+}
+
+namespace {
+
+// Adapted from AsmPrinter::printStrippedAttrOrType(), but without printing type.
+void printAttrs(AsmPrinter &printer, ArrayRef<Attribute> attrs, const StringRef &separator) {
+  llvm::interleave(attrs, printer.getStream(), [&printer](Attribute a) {
+    if (succeeded(printer.printAlias(a))) {
+      return;
+    }
+    raw_ostream &os = printer.getStream();
+    uint64_t posPrior = os.tell();
+    printer.printAttributeWithoutType(a);
+    // Fallback to printing with prefix if the above failed to write anything to the output stream.
+    if (posPrior == os.tell()) {
+      printer << a;
+    }
+  }, separator);
+}
+
+} // namespace
+
+void printAttrVec(AsmPrinter &printer, ArrayRef<Attribute> value) {
+  printAttrs(printer, value, ",");
+}
+
+ParseResult parseStructParams(AsmParser &parser, ArrayAttr &value) {
+  auto parseResult = FieldParser<ArrayAttr>::parse(parser);
+  if (failed(parseResult)) {
+    return parser.emitError(parser.getCurrentLocation(), "failed to parse struct parameters");
+  }
+  SmallVector<Attribute> own = forceIntAttrType(parseResult->getValue());
+  value = parser.getBuilder().getArrayAttr(own);
+  return success();
+}
+void printStructParams(AsmPrinter &printer, ArrayAttr value) {
+  printer << '[';
+  printAttrs(printer, value.getValue(), ", ");
+  printer << ']';
+}
+
 //===------------------------------------------------------------------===//
 // StructType
 //===------------------------------------------------------------------===//
@@ -531,12 +616,10 @@ LogicalResult StructType::verifySymbolRef(SymbolTableCollection &symbolTable, Op
 LogicalResult computeDimsFromShape(
     MLIRContext *ctx, ArrayRef<int64_t> shape, SmallVector<Attribute> &dimensionSizes
 ) {
-  assert(dimensionSizes.empty()); // fully computed by this function
   Builder builder(ctx);
-  auto attrs = llvm::map_range(shape, [&builder](int64_t v) -> Attribute {
-    return builder.getI64IntegerAttr(v);
+  dimensionSizes = llvm::map_to_vector(shape, [&builder](int64_t v) -> Attribute {
+    return builder.getIndexAttr(v);
   });
-  dimensionSizes.insert(dimensionSizes.begin(), attrs.begin(), attrs.end());
   assert(dimensionSizes.size() == shape.size()); // fully computed by this function
   return success();
 }
@@ -573,31 +656,6 @@ LogicalResult computeShapeFromDims(
   }
   assert(shape.size() == dimensionSizes.size()); // fully computed by this function
   return success();
-}
-
-ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
-  auto parseResult = FieldParser<SmallVector<Attribute>>::parse(parser);
-  if (failed(parseResult)) {
-    return parser.emitError(parser.getCurrentLocation(), "cannot parse array dimensions");
-  }
-  value.insert(value.begin(), parseResult->begin(), parseResult->end());
-  return success();
-}
-
-void printAttrVec(AsmPrinter &printer, ArrayRef<Attribute> value) {
-  // Adapted from AsmPrinter::printStrippedAttrOrType(), but without printing type.
-  llvm::interleave(value, printer.getStream(), [&printer](Attribute a) {
-    if (succeeded(printer.printAlias(a))) {
-      return;
-    }
-    raw_ostream &os = printer.getStream();
-    uint64_t posPrior = os.tell();
-    appendWithoutType(os, a);
-    // Fallback to printing with prefix if the above failed to write anything to the output stream.
-    if (posPrior == os.tell()) {
-      printer << a;
-    }
-  }, ",");
 }
 
 ParseResult parseDerivedShape(

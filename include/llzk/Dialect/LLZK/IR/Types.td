@@ -46,7 +46,8 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
            "Fully-qualified name of the struct definition.">:$nameRef,
           OptionalParameter<"::mlir::ArrayAttr", "Struct parameters">:$params);
 
-  let assemblyFormat = [{ `<` $nameRef ( `<` $params^ `>` )? `>` }];
+  let assemblyFormat =
+      [{ `<` $nameRef ( `<` custom<StructParams>($params)^ `>` )? `>` }];
 
   let genVerifyDecl = 1;
 
@@ -59,15 +60,19 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
                       (ins "::mlir::SymbolRefAttr":$structName,
                           "::mlir::ArrayAttr":$params),
                       [{
-                    return $_get(structName.getContext(), structName, params);
+                    ::mlir::MLIRContext *ctx = structName.getContext();
+                    if (params) {
+                      params = ::mlir::ArrayAttr::get(ctx, forceIntAttrType(params.getValue()));
+                    }
+                    return $_get(ctx, structName, params);
                   }]>,
                   TypeBuilderWithInferredContext<
                       (ins "::mlir::SymbolRefAttr":$structName,
                           "::llvm::ArrayRef<::mlir::Attribute>":$paramsRef),
                       [{
                     ::mlir::MLIRContext *ctx = structName.getContext();
-                    auto params = ::mlir::ArrayAttr::get(ctx, paramsRef);
-                    return $_get(ctx, structName, params);
+                    ::llvm::SmallVector<::mlir::Attribute> p = forceIntAttrType(paramsRef);
+                    return $_get(ctx, structName, ::mlir::ArrayAttr::get(ctx, p));
                   }]>];
 
   let extraClassDeclaration = [{
@@ -125,17 +130,17 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
   let genVerifyDecl = 1;
 
   let skipDefaultBuilders = 1;
-
   let builders =
       [TypeBuilderWithInferredContext<
            (ins "::mlir::Type":$elementType,
                "::llvm::ArrayRef<::mlir::Attribute>":$dimensionSizes),
            [{
+      ::llvm::SmallVector<::mlir::Attribute> dimSizes = forceIntAttrType(dimensionSizes);
       ::mlir::MLIRContext *ctx = elementType.getContext();
       ::llvm::SmallVector<int64_t> shape;
-      ::mlir::LogicalResult res = computeShapeFromDims(emitError, ctx, dimensionSizes, shape);
+      ::mlir::LogicalResult res = computeShapeFromDims(emitError, ctx, dimSizes, shape);
       if(::mlir::failed(res)) { return ArrayType(); }
-      return $_get(ctx, elementType, dimensionSizes, shape);
+      return $_get(ctx, elementType, dimSizes, shape);
     }]>,
        TypeBuilderWithInferredContext<(ins "::mlir::Type":$elementType,
                                           "::llvm::ArrayRef<int64_t>":$shape),

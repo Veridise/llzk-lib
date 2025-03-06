@@ -87,7 +87,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@ComponentB> {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = new_array  : <11 x !llzk.struct<@ToFelt<[#[[$M0]]]>>>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = call @VarArray::@compute(%[[V2]]) : (!llzk.array<11 x !llzk.struct<@ToFelt<[#[[$M0]]]>>>) -> !llzk.struct<@VarArray<[11 : index, !llzk.struct<@ToFelt<[#[[$M0]]]>>]>>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = call @VarArray::@compute(%[[V2]]) : (!llzk.array<11 x !llzk.struct<@ToFelt<[#[[$M0]]]>>>) -> !llzk.struct<@VarArray<[11, !llzk.struct<@ToFelt<[#[[$M0]]]>>]>>
 // CHECK-NEXT:      return %[[V1]] : !llzk.struct<@ComponentB>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB>, %[[V5:[0-9a-zA-Z_\.]+]]: index) {
