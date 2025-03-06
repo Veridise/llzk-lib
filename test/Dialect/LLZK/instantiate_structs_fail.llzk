@@ -1,0 +1,27 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-flatten -verify-diagnostics %s
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Unpack<[@N, @P, @Aff]> {
+    func @compute(%arg0: !llzk.array<@Aff x !llzk.felt>) -> !llzk.struct<@Unpack<[@N, @P, @Aff]>> {
+      %self = new_struct : !llzk.struct<@Unpack<[@N, @P, @Aff]>>
+      return %self : !llzk.struct<@Unpack<[@N, @P, @Aff]>>
+    }
+    func @constrain(%arg0: !llzk.struct<@Unpack<[@N, @P, @Aff]>>, %arg1: !llzk.array<@Aff x !llzk.felt>) { return }
+  }
+  llzk.struct @User1 {
+    func @compute() -> !llzk.struct<@User1> {
+      %0 = llzk.constfelt 42
+      %1 = llzk.constfelt 99
+
+      %arr = new_array %0, %1 : !llzk.array<2 x !llzk.felt>
+      %a = arith.constant 8 : index
+      %b = arith.constant 2 : index
+      // expected-error@+1 {{'llzk.call' op operand type mismatch: expected type '!llzk.array<4 x !llzk.felt>', but found '!llzk.array<2 x !llzk.felt>' for operand number 0}}
+      %s = llzk.call @Unpack::@compute(%arr) {()[%a, %b]}
+        : (!llzk.array<2 x !llzk.felt>) -> !llzk.struct<@Unpack<[8, 2, affine_map<()[s0, s1] -> (s0 floordiv s1)>]>>
+      %self = new_struct : !llzk.struct<@User1>
+      return %self : !llzk.struct<@User1>
+    }
+    func @constrain(%arg0: !llzk.struct<@User1>) { return }
+  }
+}
