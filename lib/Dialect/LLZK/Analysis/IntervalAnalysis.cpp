@@ -178,13 +178,13 @@ Interval Interval::join(const Interval &rhs) const {
 
   // Trivial cases
   if (lhs.isEntire() || rhs.isEntire()) {
-    return Interval::Empty(field.get());
+    return Interval::Entire(field.get());
   }
   if (lhs.isEmpty()) {
     return rhs;
   }
   if (rhs.isEmpty()) {
-    return rhs;
+    return lhs;
   }
   if (lhs.isDegenerate() || rhs.isDegenerate()) {
     return lhs.toUnreduced().doUnion(rhs.toUnreduced()).reduce(field.get());
