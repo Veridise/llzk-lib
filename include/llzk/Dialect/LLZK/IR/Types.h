@@ -154,21 +154,21 @@ bool typeParamsUnify(
 /// Return `true` iff the two ArrayType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
 bool arrayTypesUnify(
-    ArrayType lhs, ArrayType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {},
+    ArrayType lhs, ArrayType rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
     UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two StructType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
 bool structTypesUnify(
-    StructType lhs, StructType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {},
+    StructType lhs, StructType rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
     UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters (if applicable within the given types).
 bool typesUnify(
-    mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {},
+    mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
     UnificationMap *unifications = nullptr
 );
 
@@ -176,22 +176,22 @@ bool typesUnify(
 /// full instantiation of struct parameters (if applicable within the given types).
 template <typename Iter1, typename Iter2>
 inline bool typeListsUnify(
-    Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {},
+    Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
     UnificationMap *unifications = nullptr
 ) {
   return (lhs.size() == rhs.size()) &&
          std::equal(lhs.begin(), lhs.end(), rhs.begin(), [&](mlir::Type a, mlir::Type b) {
-    return typesUnify(a, b, rhsRevPrefix, unifications);
+    return typesUnify(a, b, rhsReversePrefix, unifications);
   });
 }
 
 template <typename Iter1, typename Iter2>
 inline bool singletonTypeListsUnify(
-    Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {},
+    Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
     UnificationMap *unifications = nullptr
 ) {
   return lhs.size() == 1 && rhs.size() == 1 &&
-         typesUnify(lhs.front(), rhs.front(), rhsRevPrefix, unifications);
+         typesUnify(lhs.front(), rhs.front(), rhsReversePrefix, unifications);
 }
 
 template <typename TypeClass> inline TypeClass getIfSingleton(mlir::TypeRange types) {
