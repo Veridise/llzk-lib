@@ -52,9 +52,9 @@ protected:
   }
 };
 
-template <typename ConcreteType> bool verify(mlir::Operation *op, bool verifySymbolUses = false) {
+template <typename TypeClass> bool verify(mlir::Operation *op, bool verifySymbolUses = false) {
   // First, call the ODS-generated function for the Op to ensure that necessary attributes exist.
-  if (failed(llvm::cast<ConcreteType>(op).verifyInvariants())) {
+  if (failed(llvm::cast<TypeClass>(op).verifyInvariants())) {
     return false;
   }
   // Second, verify all traits on the Op and call the custom verify() (if defined) via the
@@ -75,7 +75,6 @@ template <typename ConcreteType> bool verify(mlir::Operation *op, bool verifySym
   return true;
 }
 
-template <typename ConcreteType>
-inline bool verify(ConcreteType op, bool verifySymbolUses = false) {
-  return verify<ConcreteType>(op.getOperation(), verifySymbolUses);
+template <typename TypeClass> inline bool verify(TypeClass op, bool verifySymbolUses = false) {
+  return verify<TypeClass>(op.getOperation(), verifySymbolUses);
 }

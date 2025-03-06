@@ -270,7 +270,7 @@ bool isInStructFunctionNamed(Operation *op, char const *funcName) {
   return false;
 }
 
-template <typename ConcreteType> LogicalResult InStruct<ConcreteType>::verifyTrait(Operation *op) {
+template <typename TypeClass> LogicalResult InStruct<TypeClass>::verifyTrait(Operation *op) {
   return verifyInStruct(op);
 }
 

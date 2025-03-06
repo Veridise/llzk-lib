@@ -194,13 +194,12 @@ inline bool singletonTypeListsUnify(
          typesUnify(lhs.front(), rhs.front(), rhsRevPrefix, unifications);
 }
 
-template <typename ConcreteType> inline ConcreteType getIfSingleton(mlir::TypeRange types) {
-  return (types.size() == 1) ? llvm::dyn_cast<ConcreteType>(types.front()) : nullptr;
+template <typename TypeClass> inline TypeClass getIfSingleton(mlir::TypeRange types) {
+  return (types.size() == 1) ? llvm::dyn_cast<TypeClass>(types.front()) : nullptr;
 }
 
-template <typename ConcreteType>
-inline ConcreteType getAtIndex(mlir::TypeRange types, size_t index) {
-  return (types.size() > index) ? llvm::dyn_cast<ConcreteType>(types[index]) : nullptr;
+template <typename TypeClass> inline TypeClass getAtIndex(mlir::TypeRange types, size_t index) {
+  return (types.size() > index) ? llvm::dyn_cast<TypeClass>(types[index]) : nullptr;
 }
 
 /// Convert any IntegerAttr with a type other than IndexType to use IndexType.
