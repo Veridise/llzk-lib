@@ -1,0 +1,118 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.struct @Subcomponent {
+    func @compute() -> !llzk.struct<@Subcomponent> {
+      %self = new_struct : !llzk.struct<@Subcomponent>
+      return %self : !llzk.struct<@Subcomponent>
+    }
+    func @constrain(%self: !llzk.struct<@Subcomponent>) { return }
+  }
+
+  llzk.struct @Component {
+    field @sub1 : !llzk.struct<@Subcomponent>
+    field @sub2 : !llzk.struct<@Subcomponent>
+
+    func @compute() -> !llzk.struct<@Component> {
+      %self = new_struct : !llzk.struct<@Component>
+      %sub1 = readf %self[@sub1] : !llzk.struct<@Component>, !llzk.struct<@Subcomponent>
+      %sub2 = readf %self[@sub2] : !llzk.struct<@Component>, !llzk.struct<@Subcomponent>
+      %sub3 = readf %self[@sub2] : !llzk.struct<@Component>, !llzk.struct<@Subcomponent>
+      return %self : !llzk.struct<@Component>
+    }
+    func @constrain(%self: !llzk.struct<@Component>) { return }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component {
+    field @f : !llzk.felt
+
+    func @compute(%arg : !llzk.felt) -> !llzk.struct<@Component> {
+      %self = new_struct : !llzk.struct<@Component>
+      writef %self[@f] = %arg: !llzk.struct<@Component>, !llzk.felt
+      writef %self[@f] = %arg: !llzk.struct<@Component>, !llzk.felt
+      return %self : !llzk.struct<@Component>
+    }
+    func @constrain(%self: !llzk.struct<@Component>, %arg : !llzk.felt) { return }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component {
+    field @arr : !llzk.array<3 x !llzk.felt>
+
+    func @compute(%arg : !llzk.felt) -> !llzk.struct<@Component> {
+      %self = new_struct : !llzk.struct<@Component>
+      %arr = readf %self[@arr] : !llzk.struct<@Component>, !llzk.array<3 x !llzk.felt>
+      %idx = arith.constant 1 : index
+      writearr %arr[%idx] = %arg : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %newarr = new_array %arg, %arg, %arg : !llzk.array<3 x !llzk.felt> // ends up being unused after removing the below ops, can also be removed
+      %elem = readarr %newarr[%idx] : !llzk.array<3 x !llzk.felt>, !llzk.felt // this is just %arg, redundant
+      writearr %arr[%idx] = %elem : !llzk.array<3 x !llzk.felt>, !llzk.felt // redundant write, this idx is already %arg
+      return %self : !llzk.struct<@Component>
+    }
+    func @constrain(%self: !llzk.struct<@Component>, %arg : !llzk.felt) { return }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component {
+    field @matrix : !llzk.array<7,3 x !llzk.felt>
+
+    func @compute(%inputArr : !llzk.array<3 x !llzk.felt>) -> !llzk.struct<@Component> {
+      %self = new_struct : !llzk.struct<@Component>
+      %mat = readf %self[@matrix] : !llzk.struct<@Component>, !llzk.array<7,3 x !llzk.felt>
+      %idx1 = arith.constant 1 : index
+      %idx4 = arith.constant 4 : index
+      insertarr %mat[%idx1] = %inputArr : !llzk.array<7,3 x !llzk.felt>, !llzk.array<3 x !llzk.felt>
+      %arr1 = extractarr %mat[%idx1] : !llzk.array<7,3 x !llzk.felt> // redundant, replace with %inputArr
+      insertarr %mat[%idx4] = %arr1 : !llzk.array<7,3 x !llzk.felt>, !llzk.array<3 x !llzk.felt> // replace %arr1 with %inputArr
+      insertarr %mat[%idx1] = %arr1 : !llzk.array<7,3 x !llzk.felt>, !llzk.array<3 x !llzk.felt> // redundant
+      return %self : !llzk.struct<@Component>
+    }
+    func @constrain(%self: !llzk.struct<@Component>, %inputArr : !llzk.array<3 x !llzk.felt>) {
+      %mat = readf %self[@matrix] : !llzk.struct<@Component>, !llzk.array<7,3 x !llzk.felt>
+      %i = arith.constant 2 : index
+      %j = arith.constant 3 : index
+      %k = arith.constant 3 : index // redundant constant
+      %arr_i = extractarr %mat[%i] : !llzk.array<7,3 x !llzk.felt>
+      %arr_j = extractarr %mat[%j] : !llzk.array<7,3 x !llzk.felt>
+      %arr_k = extractarr %mat[%k] : !llzk.array<7,3 x !llzk.felt> // redundant extract
+      emit_eq %arr_i, %arr_j : !llzk.array<3 x !llzk.felt>
+      emit_eq %arr_j, %arr_k : !llzk.array<3 x !llzk.felt> // this constraint is redundant, but will not be removed in this pass
+      emit_eq %arr_k, %arr_i : !llzk.array<3 x !llzk.felt> // same with above
+      return
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component {
+    field @arr : !llzk.array<3 x !llzk.felt>
+
+    func @compute(%arg : !llzk.felt, %inputIdx : index) -> !llzk.struct<@Component> {
+      %self = new_struct : !llzk.struct<@Component>
+      %arr = readf %self[@arr] : !llzk.struct<@Component>, !llzk.array<3 x !llzk.felt>
+      %idx = arith.constant 1 : index
+      %idx2 = arith.constant 2 : index
+      writearr %arr[%idx] = %arg : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      writearr %arr[%inputIdx] = %arg : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %elem1 = readarr %arr[%idx] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %elem2 = readarr %arr[%inputIdx] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      writearr %arr[%idx] = %elem2 : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      writearr %arr[%idx2] = %elem1 : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      return %self : !llzk.struct<@Component>
+    }
+    func @constrain(%self: !llzk.struct<@Component>, %arg : !llzk.felt, %inputIdx : index) { return }
+  }
+}
