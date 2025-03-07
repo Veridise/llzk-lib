@@ -382,12 +382,24 @@ bool isSignalType(Type type) {
 
 namespace {
 
+/// Optional result from type unifications. Maps `AffineMapAttr` appearing in one type to the
+/// associated `IntegerAttr` from the other type at the same nested position. The `Side` enum in the
+/// key indicates which input expression the `AffineMapAttr` is from. Additionally, if a conflict is
+/// found (i.e. multiple occurances of a specific `AffineMapAttr` on the same side map to different
+/// `IntegerAttr` from the other side). The mapped value will be `nullptr`.
+using AffineInstantiations = DenseMap<std::pair<AffineMapAttr, Side>, IntegerAttr>;
+
 struct UnifierImpl {
   ArrayRef<StringRef> rhsRevPrefix;
   UnificationMap *unifications;
+  AffineInstantiations *affineToIntTracker;
+  // This optional function can be used to provide an exception to the standard unification
+  // rules and return a true/success result when it otherwise may not.
+  llvm::function_ref<bool(Type oldTy, Type newTy)> overrideSuccess;
 
   UnifierImpl(UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {})
-      : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap) {}
+      : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
+        overrideSuccess(nullptr) {}
 
   bool typeParamsUnify(const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams) {
     return (lhsParams.size() == rhsParams.size()) &&
@@ -395,6 +407,16 @@ struct UnifierImpl {
                lhsParams.begin(), lhsParams.end(), rhsParams.begin(),
                std::bind_front(&UnifierImpl::paramAttrUnify, this)
            );
+  }
+
+  UnifierImpl &allowAffineToInt(AffineInstantiations *tracker) {
+    this->affineToIntTracker = tracker;
+    return *this;
+  }
+
+  UnifierImpl &withOverrides(llvm::function_ref<bool(Type oldTy, Type newTy)> overrides) {
+    this->overrideSuccess = overrides;
+    return *this;
   }
 
   /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
@@ -431,13 +453,16 @@ struct UnifierImpl {
     if (lhs == rhs) {
       return true;
     }
+    if (overrideSuccess && overrideSuccess(lhs, rhs)) {
+      return true;
+    }
     // A type variable can be any type, thus it unifies with anything.
     if (TypeVarType lhsTvar = llvm::dyn_cast<TypeVarType>(lhs)) {
-      updateMap(Side::LHS, lhsTvar.getNameRef(), TypeAttr::get(rhs));
+      track(Side::LHS, lhsTvar.getNameRef(), TypeAttr::get(rhs));
       return true;
     }
     if (TypeVarType rhsTvar = llvm::dyn_cast<TypeVarType>(rhs)) {
-      updateMap(Side::RHS, rhsTvar.getNameRef(), TypeAttr::get(lhs));
+      track(Side::RHS, rhsTvar.getNameRef(), TypeAttr::get(lhs));
       return true;
     }
     if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
@@ -450,7 +475,7 @@ struct UnifierImpl {
   }
 
 private:
-  void updateMap(Side side, SymbolRefAttr symRef, Attribute attr) {
+  void track(Side side, SymbolRefAttr symRef, Attribute attr) {
     if (unifications) {
       auto key = std::make_pair(symRef, side);
       auto it = unifications->find(key);
@@ -459,6 +484,17 @@ private:
       } else {
         unifications->try_emplace(key, attr);
       }
+    }
+  }
+
+  void track(Side side, AffineMapAttr affineAttr, IntegerAttr intAttr) {
+    assert(affineToIntTracker && "implementation error: should be checked before calling");
+    auto key = std::make_pair(affineAttr, side);
+    auto it = affineToIntTracker->find(key);
+    if (it != affineToIntTracker->end()) {
+      it->second = nullptr;
+    } else {
+      affineToIntTracker->try_emplace(key, intAttr);
     }
   }
 
@@ -471,12 +507,26 @@ private:
     if (lhsAttr == rhsAttr) {
       return true;
     }
+    if (affineToIntTracker) {
+      if (AffineMapAttr lhsAffine = lhsAttr.dyn_cast<AffineMapAttr>()) {
+        if (IntegerAttr rhsInt = rhsAttr.dyn_cast<IntegerAttr>()) {
+          track(Side::LHS, lhsAffine, rhsInt);
+          return true;
+        }
+      }
+      if (AffineMapAttr rhsAffine = rhsAttr.dyn_cast<AffineMapAttr>()) {
+        if (IntegerAttr lhsInt = lhsAttr.dyn_cast<IntegerAttr>()) {
+          track(Side::RHS, rhsAffine, lhsInt);
+          return true;
+        }
+      }
+    }
     if (SymbolRefAttr lhsSymRef = lhsAttr.dyn_cast<SymbolRefAttr>()) {
-      updateMap(Side::LHS, lhsSymRef, rhsAttr);
+      track(Side::LHS, lhsSymRef, rhsAttr);
       return true;
     }
     if (SymbolRefAttr rhsSymRef = rhsAttr.dyn_cast<SymbolRefAttr>()) {
-      updateMap(Side::RHS, rhsSymRef, lhsAttr);
+      track(Side::RHS, rhsSymRef, lhsAttr);
       return true;
     }
     // If both are type refs, check for unification of the types.
@@ -523,6 +573,28 @@ bool typesUnify(
     Type lhs, Type rhs, ArrayRef<StringRef> rhsReversePrefix, UnificationMap *unifications
 ) {
   return UnifierImpl(unifications, rhsReversePrefix).typesUnify(lhs, rhs);
+}
+
+bool isMoreConcreteUnification(
+    Type oldTy, Type newTy, llvm::function_ref<bool(Type oldTy, Type newTy)> knownOldToNew
+) {
+  UnificationMap unifications;
+  AffineInstantiations affineInstantiations;
+  // Run type unification with the addition that affine map can become integer in the new type.
+  if (!UnifierImpl(&unifications)
+           .allowAffineToInt(&affineInstantiations)
+           .withOverrides(knownOldToNew)
+           .typesUnify(oldTy, newTy)) {
+    return false;
+  }
+
+  // If either map contains RHS-keyed mappings then the old type is "more concrete" than the new.
+  // In the UnificationMap, a RHS key would indicate that the new type contains a SymbolRef (i.e.
+  // the "least concrete" attribute kind) where the old type contained any other attribute. In the
+  // AffineInstantiations map, a RHS key would indicate that the new type contains an AffineMapAttr
+  // where the old type contains an IntegerAttr.
+  auto entryIsRHS = [](const auto &entry) { return entry.first.second == Side::RHS; };
+  return !llvm::any_of(unifications, entryIsRHS) && !llvm::any_of(affineInstantiations, entryIsRHS);
 }
 
 SmallVector<Attribute> forceIntAttrType(ArrayRef<Attribute> attrList) {

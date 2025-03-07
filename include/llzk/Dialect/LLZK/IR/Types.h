@@ -133,7 +133,7 @@ namespace llzk {
 /// Optional result from type unifications. Maps `SymbolRefAttr` appearing in one type to the
 /// associated `Attribute` from the other type at the same nested position. The `Side` enum in the
 /// key indicates which input expression the `SymbolRefAttr` is from. Additionally, if a conflict is
-/// found (i.e. multiple occurances of a specific SymbolRefAttr on the same side map to different
+/// found (i.e. multiple occurances of a specific `SymbolRefAttr` on the same side map to different
 /// Attributes from the other side). The mapped value will be `nullptr`.
 using UnificationMap = mlir::DenseMap<std::pair<mlir::SymbolRefAttr, Side>, mlir::Attribute>;
 
@@ -193,6 +193,17 @@ inline bool singletonTypeListsUnify(
   return lhs.size() == 1 && rhs.size() == 1 &&
          typesUnify(lhs.front(), rhs.front(), rhsReversePrefix, unifications);
 }
+
+/// Return `true` iff the types unify and `newTy` is "more concrete" than `oldTy`.
+///
+/// The types `i1`, `index`, `llzk.felt`, and `llzk.string` are concrete whereas `llzk.tvar` is not
+/// (because it may be substituted with any type during struct instantiation). When considering the
+/// attributes with `llzk.array` and `llzk.struct` types, we define IntegerAttr and TypeAttr as
+/// concrete, AffineMapAttr as less concrete than those, and SymbolRefAttr as least concrete.
+bool isMoreConcreteUnification(
+    mlir::Type oldTy, mlir::Type newTy,
+    llvm::function_ref<bool(mlir::Type oldTy, mlir::Type newTy)> knownOldToNew = nullptr
+);
 
 template <typename TypeClass> inline TypeClass getIfSingleton(mlir::TypeRange types) {
   return (types.size() == 1) ? llvm::dyn_cast<TypeClass>(types.front()) : nullptr;

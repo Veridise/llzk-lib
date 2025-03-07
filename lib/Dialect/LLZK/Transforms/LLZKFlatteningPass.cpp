@@ -168,22 +168,129 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
   return llvm::isa<IntegerAttr>(a);
 }
 
+class ConversionTracker {
+  /// Tracks if some step performed a modification of the code such that another pass should be run.
+  bool modified;
+  /// Maps original remote (i.e. use site) type to new remote type.
+  /// Note: The keys are always parameterized StructType and the values are no-parameter StructType.
+  DenseMap<StructType, StructType> structInstantiations;
+  /// Contains the reverse of mappings in `structInstantiations` for use in legal conversion check.
+  DenseMap<StructType, StructType> reverseInstantiations;
+  /// Maps new remote type (i.e. the values in 'structInstantiations') to location of the compute()
+  /// calls that cause instantiation
+  DenseMap<StructType, DenseSet<Location>> newTyComputeLocs;
+
+public:
+  bool isModified() const { return modified; }
+  void resetModifiedFlag() { modified = false; }
+  void appendModifiedFlag(bool currStepModified) {
+    if (currStepModified) {
+      modified = true;
+    }
+  }
+
+  void recordInstantiation(StructType oldType, StructType newType) {
+    // Assert invariant required by `structInstantiations`
+    assert(!isNullOrEmpty(oldType.getParams()));
+    assert(isNullOrEmpty(newType.getParams()));
+    structInstantiations[oldType] = newType;
+    reverseInstantiations[newType] = oldType;
+    modified = true;
+  }
+
+  /// Return the instantiated type of the given StructType, if any.
+  std::optional<StructType> getInstantiation(StructType oldType) const {
+    auto cachedResult = structInstantiations.find(oldType);
+    if (cachedResult != structInstantiations.end()) {
+      return cachedResult->second;
+    }
+    return std::nullopt;
+  }
+
+  const DenseMap<StructType, StructType> &getAllInstantiations() const {
+    return structInstantiations;
+  }
+
+  /// Collect the fully-qualified names of all structs that were instantiated.
+  DenseSet<SymbolRefAttr> getInstantiatedStructNames() const {
+    DenseSet<SymbolRefAttr> instantiatedNames;
+    for (const auto &[origRemoteTy, _] : structInstantiations) {
+      instantiatedNames.insert(origRemoteTy.getNameRef());
+    }
+    return instantiatedNames;
+  }
+
+  /// Record the location of a "compute" function that produces the given instantiated `StructType`.
+  void recordLocation(StructType newType, Location instantiationLocation) {
+    newTyComputeLocs[newType].insert(instantiationLocation);
+  }
+
+  /// Get the locations of all "compute" functions that produce the given instantiated `StructType`.
+  const DenseSet<Location> *getLocations(StructType newType) const {
+    auto res = newTyComputeLocs.find(newType);
+    return (res == newTyComputeLocs.end()) ? nullptr : &res->getSecond();
+  }
+
+  /// Check if the type conversion  is legal, i.e. the new type unifies with and is more concrete
+  /// than the old type with additional allowance for the results of struct flattening conversions.
+  bool isLegalConversion(Type oldType, Type newType, const char *patName) const {
+    std::function<bool(Type, Type)> checkInstantiations = [&](Type oTy, Type nTy) {
+      // Check if `oTy` is a struct with a known instantiation to `nTy`
+      if (StructType oldStructType = llvm::dyn_cast<StructType>(oTy)) {
+        // Note: The values in `structInstantiations` must be no-parameter struct types
+        // so there is no need for recursive check, simple equality is sufficient.
+        if (this->structInstantiations.lookup(oldStructType) == nTy) {
+          return true;
+        }
+      }
+      // Check if `nTy` is the result of a struct instantiation and if the pre-image of
+      // that instantiation (i.e. the parameterized version of the instantiated struct)
+      // is a more concrete unification of `oTy`.
+      if (StructType newStructType = llvm::dyn_cast<StructType>(nTy)) {
+        auto preImage = this->reverseInstantiations.lookup(newStructType);
+        if (isMoreConcreteUnification(oTy, preImage, checkInstantiations)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    if (isMoreConcreteUnification(oldType, newType, checkInstantiations)) {
+      return true;
+    }
+    LLVM_DEBUG(llvm::dbgs() << "[" << patName << "] Cannot replace old type " << oldType
+                            << " with new type " << newType
+                            << " because it does not define a compatible and more concrete type.\n";
+    );
+    return false;
+  }
+
+  template <typename T, typename U>
+  inline bool areLegalConversions(T oldTypes, U newTypes, const char *patName) const {
+    return llvm::all_of(
+        llvm::zip_equal(oldTypes, newTypes),
+        [this, &patName](std::tuple<Type, Type> oldThenNew) {
+      return this->isLegalConversion(std::get<0>(oldThenNew), std::get<1>(oldThenNew), patName);
+    }
+    );
+  }
+};
+
 namespace Step1_FindComputeTypes {
 
 class ParameterizedStructUseTypeConverter : public TypeConverter {
-  DenseMap<StructType, StructType> &instantiations;
+  ConversionTracker &_tracker;
 
 public:
-  ParameterizedStructUseTypeConverter(DenseMap<StructType, StructType> &structInstantiations)
-      : TypeConverter(), instantiations(structInstantiations) {
+  ParameterizedStructUseTypeConverter(ConversionTracker &tracker)
+      : TypeConverter(), _tracker(tracker) {
 
     addConversion([](Type inputTy) { return inputTy; });
 
     addConversion([this](StructType inputTy) -> StructType {
       // First check for a cached entry
-      auto cachedResult = this->instantiations.find(inputTy);
-      if (cachedResult != this->instantiations.end()) {
-        return cachedResult->second;
+      if (auto opt = _tracker.getInstantiation(inputTy)) {
+        return opt.value();
       }
       // Otherwise, try to perform a conversion
       if (ArrayAttr params = inputTy.getParams()) {
@@ -196,7 +303,7 @@ public:
               llvm::dbgs() << "[ParameterizedStructUseTypeConverter] instantiating " << inputTy
                            << " as " << result << "\n"
           );
-          this->instantiations[inputTy] = result;
+          _tracker.recordInstantiation(inputTy, result);
           return result;
         }
       }
@@ -206,15 +313,12 @@ public:
 };
 
 class CallComputePattern : public OpConversionPattern<CallOp> {
-  DenseMap<StructType, DenseSet<Location>> &newTyComputeLocs;
+  ConversionTracker &_tracker;
 
 public:
-  CallComputePattern(
-      TypeConverter &converter, MLIRContext *ctx,
-      DenseMap<StructType, DenseSet<Location>> &newTyComputeLocs
-  )
+  CallComputePattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &tracker)
       // future proof: use higher priority than GeneralTypeReplacePattern
-      : OpConversionPattern<CallOp>(converter, ctx, 2), newTyComputeLocs(newTyComputeLocs) {}
+      : OpConversionPattern<CallOp>(converter, ctx, 2), _tracker(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
       const override {
@@ -232,7 +336,7 @@ public:
       if (StructType newStTy = getIfSingleton<StructType>(newResultTypes)) {
         assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated"); // I think
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
-        newTyComputeLocs[newStTy].insert(op.getLoc());
+        _tracker.recordLocation(newStTy, op.getLoc());
       }
     } else if (op.calleeIsStructConstrain()) {
       if (StructType newStTy = getAtIndex<StructType>(adapter.getArgOperands().getTypes(), 0)) {
@@ -248,15 +352,12 @@ public:
   }
 };
 
-LogicalResult
-run(ModuleOp modOp, DenseMap<StructType, StructType> &structInstantiations,
-    DenseMap<StructType, DenseSet<Location>> &newTyComputeLocs) {
-
+LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
-  ParameterizedStructUseTypeConverter tyConv(structInstantiations);
+  ParameterizedStructUseTypeConverter tyConv(tracker);
   ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
-  patterns.add<CallComputePattern>(tyConv, ctx, newTyComputeLocs);
+  patterns.add<CallComputePattern>(tyConv, ctx, tracker);
 
   if (failed(applyPartialConversion(modOp, target, std::move(patterns)))) {
     return modOp.emitError("failed to convert all `compute()` calls");
@@ -271,15 +372,16 @@ namespace Step2_CreateStructs {
 class MappedTypeConverter : public TypeConverter {
   StructType origTy;
   StructType newTy;
-  const DenseMap<Attribute, Attribute> &instantiationMap;
+  const DenseMap<Attribute, Attribute> &paramNameToValue;
 
 public:
   MappedTypeConverter(
       StructType originalType, StructType newType,
-      /// Instantiated values for the parameter names in `origTy`
-      const DenseMap<Attribute, Attribute> &nameToValueMap
+      /// Instantiated values for the parameter names in `originalType`
+      const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
   )
-      : TypeConverter(), origTy(originalType), newTy(newType), instantiationMap(nameToValueMap) {
+      : TypeConverter(), origTy(originalType), newTy(newType),
+        paramNameToValue(paramNameToInstantiatedValue) {
 
     addConversion([](Type inputTy) { return inputTy; });
 
@@ -292,8 +394,8 @@ public:
       if (ArrayAttr inputTyParams = inputTy.getParams()) {
         SmallVector<Attribute> updated;
         for (Attribute a : inputTyParams) {
-          auto res = this->instantiationMap.find(a);
-          updated.push_back((res != this->instantiationMap.end()) ? res->second : a);
+          auto res = this->paramNameToValue.find(a);
+          updated.push_back((res != this->paramNameToValue.end()) ? res->second : a);
         }
         return StructType::get(inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated));
       }
@@ -307,8 +409,8 @@ public:
       if (!dimSizes.empty()) {
         SmallVector<Attribute> updated;
         for (Attribute a : dimSizes) {
-          auto res = this->instantiationMap.find(a);
-          updated.push_back((res != this->instantiationMap.end()) ? res->second : a);
+          auto res = this->paramNameToValue.find(a);
+          updated.push_back((res != this->paramNameToValue.end()) ? res->second : a);
         }
         return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
       }
@@ -318,8 +420,8 @@ public:
 
     addConversion([this](TypeVarType inputTy) -> Type {
       // Check for replacement of parameter symbol name with a concrete type
-      auto res = this->instantiationMap.find(inputTy.getNameRef());
-      if (res != this->instantiationMap.end()) {
+      auto res = this->paramNameToValue.find(inputTy.getNameRef());
+      if (res != this->paramNameToValue.end()) {
         if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(res->second)) {
           return tyAttr.getValue();
         }
@@ -382,24 +484,24 @@ public:
 };
 
 class ConstReadOpPattern : public OpConversionPattern<ConstReadOp> {
-  const DenseMap<Attribute, Attribute> &instantiationMap;
-  const DenseSet<Location> &locations;
+  const DenseMap<Attribute, Attribute> &paramNameToValue;
+  const DenseSet<Location> *locations;
 
 public:
   ConstReadOpPattern(
       TypeConverter &converter, MLIRContext *ctx,
-      const DenseMap<Attribute, Attribute> &nameToValueMap,
-      const DenseSet<Location> &instantiationLocations
+      const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue,
+      const DenseSet<Location> *instantiationLocations
   )
       // future proof: use higher priority than GeneralTypeReplacePattern
-      : OpConversionPattern<ConstReadOp>(converter, ctx, 2), instantiationMap(nameToValueMap),
-        locations(instantiationLocations) {}
+      : OpConversionPattern<ConstReadOp>(converter, ctx, 2),
+        paramNameToValue(paramNameToInstantiatedValue), locations(instantiationLocations) {}
 
   LogicalResult matchAndRewrite(
       ConstReadOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
   ) const override {
-    auto res = this->instantiationMap.find(op.getConstNameAttr());
-    if (res == this->instantiationMap.end()) {
+    auto res = this->paramNameToValue.find(op.getConstNameAttr());
+    if (res == this->paramNameToValue.end()) {
       return op->emitOpError("missing instantiation");
     }
     Attribute resAttr = res->second;
@@ -421,11 +523,13 @@ public:
             InFlightDiagnostic warning = op.emitWarning().append(
                 "Interpretting non-zero value ", stringWithoutType(iAttr), " as true"
             );
-            for (Location loc : locations) {
-              warning.attachNote(loc).append(
-                  "when instantiating ", StructDefOp::getOperationName(), " parameter \"",
-                  res->first, "\" for this call"
-              );
+            if (locations) {
+              for (Location loc : *locations) {
+                warning.attachNote(loc).append(
+                    "when instantiating ", StructDefOp::getOperationName(), " parameter \"",
+                    res->first, "\" for this call"
+                );
+              }
             }
             warning.report();
           }
@@ -459,13 +563,10 @@ buildNameToValueMap(ArrayAttr paramNames, ArrayAttr paramInstantiations) {
   return ret;
 }
 
-LogicalResult
-run(ModuleOp modOp, const DenseMap<StructType, StructType> &structInstantiations,
-    DenseMap<StructType, DenseSet<Location>> &newTyComputeLocs) {
-
+LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   SymbolTableCollection symTables;
   MLIRContext *ctx = modOp.getContext();
-  for (auto &[origRemoteTy, newRemoteTy] : structInstantiations) {
+  for (auto &[origRemoteTy, newRemoteTy] : tracker.getAllInstantiations()) {
     // Find the StructDefOp for the original StructType
     FailureOr<SymbolLookupResult<StructDefOp>> lookupRes =
         origRemoteTy.getDefinition(symTables, modOp);
@@ -496,7 +597,9 @@ run(ModuleOp modOp, const DenseMap<StructType, StructType> &structInstantiations
       target.addIllegalOp<ConstReadOp>();
       RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
       patterns.add<CallOpPattern, CreateArrayOpPattern>(tyConv, ctx);
-      patterns.add<ConstReadOpPattern>(tyConv, ctx, nameToValueMap, newTyComputeLocs[newRemoteTy]);
+      patterns.add<ConstReadOpPattern>(
+          tyConv, ctx, nameToValueMap, tracker.getLocations(newRemoteTy)
+      );
 
       if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
         return modOp.emitError("failed to generate all required flattened structs");
@@ -548,14 +651,18 @@ private:
   }
 };
 
-LogicalResult run(ModuleOp modOp, bool &modified) {
+LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp->getContext();
   RewritePatternSet patterns(ctx);
   patterns.add<LoopUnrollPattern<scf::ForOp>>(ctx);
   patterns.add<LoopUnrollPattern<affine::AffineForOp>>(ctx);
-  return applyPatternsAndFoldGreedily(
-      modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &modified
+
+  bool currStepModified;
+  auto result = applyPatternsAndFoldGreedily(
+      modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &currStepModified
   );
+  tracker.appendModifiedFlag(currStepModified);
+  return result;
 }
 } // namespace Step3_Unroll
 
@@ -675,8 +782,12 @@ struct AffineMapFolder {
 };
 
 /// Instantiate parameterized ArrayType resulting from CreateArrayOp.
-struct InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp> {
-  using OpRewritePattern<CreateArrayOp>::OpRewritePattern;
+class InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp> {
+  ConversionTracker &_tracker;
+
+public:
+  InstantiateAtCreateArrayOp(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx), _tracker(tracker) {}
 
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     ArrayType oldResultType = op.getType();
@@ -696,9 +807,11 @@ struct InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp>
       // nothing changed
       return failure();
     }
+    // ASSERT: folding only preserves the original Attribute or converts affine to integer
+    assert(_tracker.isLegalConversion(oldResultType, newResultType, "InstantiateAtCreateArrayOp"));
     LLVM_DEBUG(
-        llvm::dbgs() << "[InstantiateAtCreateArrayOp] instantiated " << oldResultType << " as "
-                     << newResultType << " at " << op << "\n"
+        llvm::dbgs() << "[InstantiateAtCreateArrayOp] instantiating " << oldResultType << " as "
+                     << newResultType << " in \"" << op << "\"\n"
     );
     rewriter.replaceOpWithNewOp<CreateArrayOp>(
         op, newResultType, AffineMapFolder::getConvertedMapOpGroups(out), out.dimsPerGroup
@@ -708,8 +821,12 @@ struct InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp>
 };
 
 /// Update the array element type by looking at the values stored into it from uses.
-struct UpdateArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
-  using OpRewritePattern<CreateArrayOp>::OpRewritePattern;
+class UpdateArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
+  ConversionTracker &_tracker;
+
+public:
+  UpdateArrayElemFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx), _tracker(tracker) {}
 
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     Value createResult = op.getResult();
@@ -742,7 +859,11 @@ struct UpdateArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
       // no replacement type found
       return failure();
     }
-
+    if (!_tracker.isLegalConversion(
+            oldResultElemType, newResultElemType, "UpdateArrayElemFromWrite"
+        )) {
+      return failure();
+    }
     ArrayType newType = createResultType.cloneWith(newResultElemType);
     rewriter.modifyOpInPlace(op, [&createResult, &newType]() { createResult.setType(newType); });
     LLVM_DEBUG(llvm::dbgs() << "[UpdateArrayElemFromWrite] updated result type of " << op << "\n");
@@ -751,8 +872,12 @@ struct UpdateArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
 };
 
 /// Update the type of FieldDefOp instances by checking the updated types from FieldWriteOp.
-struct UpdateFieldTypeFromWrite final : public OpRewritePattern<FieldDefOp> {
-  using OpRewritePattern<FieldDefOp>::OpRewritePattern;
+class UpdateFieldTypeFromWrite final : public OpRewritePattern<FieldDefOp> {
+  ConversionTracker &_tracker;
+
+public:
+  UpdateFieldTypeFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx), _tracker(tracker) {}
 
   LogicalResult matchAndRewrite(FieldDefOp op, PatternRewriter &rewriter) const override {
     // Find all uses of the field symbol name within its parent struct.
@@ -794,6 +919,9 @@ struct UpdateFieldTypeFromWrite final : public OpRewritePattern<FieldDefOp> {
       // nothing changed
       return failure();
     }
+    if (!_tracker.isLegalConversion(op.getType(), newType, "UpdateFieldTypeFromWrite")) {
+      return failure();
+    }
     LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldTypeFromWrite] replaced " << op);
     FieldDefOp newOp = rewriter.replaceOpWithNewOp<FieldDefOp>(op, op.getSymName(), newType);
     LLVM_DEBUG(llvm::dbgs() << " with " << newOp << "\n");
@@ -803,8 +931,13 @@ struct UpdateFieldTypeFromWrite final : public OpRewritePattern<FieldDefOp> {
 
 /// Updates the result type in Ops with the InferTypeOpAdaptor trait including ReadArrayOp,
 /// ExtractArrayOp, etc.
-struct UpdateInferredResultTypes final : public OpTraitRewritePattern<OpTrait::InferTypeOpAdaptor> {
-  using OpTraitRewritePattern::OpTraitRewritePattern;
+class UpdateInferredResultTypes final : public OpTraitRewritePattern<OpTrait::InferTypeOpAdaptor> {
+  ConversionTracker &_tracker;
+
+public:
+  UpdateInferredResultTypes(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpTraitRewritePattern(ctx), _tracker(tracker) {}
+
   LogicalResult matchAndRewrite(Operation *op, PatternRewriter &rewriter) const override {
     SmallVector<Type, 1> inferredResultTypes;
     InferTypeOpInterface retTypeFn = cast<InferTypeOpInterface>(op);
@@ -817,6 +950,11 @@ struct UpdateInferredResultTypes final : public OpTraitRewritePattern<OpTrait::I
     }
     if (op->getResultTypes() == inferredResultTypes) {
       // nothing changed
+      return failure();
+    }
+    if (!_tracker.areLegalConversions(
+            op->getResultTypes(), inferredResultTypes, "UpdateInferredResultTypes"
+        )) {
       return failure();
     }
 
@@ -834,8 +972,12 @@ struct UpdateInferredResultTypes final : public OpTraitRewritePattern<OpTrait::I
 };
 
 /// Update FuncOp return type by checking the updated types from ReturnOp.
-struct UpdateFuncTypeFromReturn final : public OpRewritePattern<FuncOp> {
-  using OpRewritePattern<FuncOp>::OpRewritePattern;
+class UpdateFuncTypeFromReturn final : public OpRewritePattern<FuncOp> {
+  ConversionTracker &_tracker;
+
+public:
+  UpdateFuncTypeFromReturn(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx), _tracker(tracker) {}
 
   LogicalResult matchAndRewrite(FuncOp op, PatternRewriter &rewriter) const override {
     // Collect unique return type lists
@@ -862,6 +1004,12 @@ struct UpdateFuncTypeFromReturn final : public OpRewritePattern<FuncOp> {
       // nothing changed
       return failure();
     }
+    if (!_tracker.areLegalConversions(
+            oldFuncTy.getResults(), *tyFromReturnOp, "UpdateFuncTypeFromReturn"
+        )) {
+      return failure();
+    }
+
     rewriter.modifyOpInPlace(op, [&]() {
       op.setFunctionType(rewriter.getFunctionType(oldFuncTy.getInputs(), *tyFromReturnOp));
     });
@@ -877,8 +1025,12 @@ struct UpdateFuncTypeFromReturn final : public OpRewritePattern<FuncOp> {
 /// This only applies to global (i.e. non-struct) functions because the functions within structs
 /// only return StructType or nothing and propagating those can result in bringing un-instantiated
 /// types from a templated struct into the current call which will give errors.
-struct UpdateGlobalCallOpTypes final : public OpRewritePattern<CallOp> {
-  using OpRewritePattern<CallOp>::OpRewritePattern;
+class UpdateGlobalCallOpTypes final : public OpRewritePattern<CallOp> {
+  ConversionTracker &_tracker;
+
+public:
+  UpdateGlobalCallOpTypes(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx), _tracker(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     SymbolTableCollection tables;
@@ -895,6 +1047,12 @@ struct UpdateGlobalCallOpTypes final : public OpRewritePattern<CallOp> {
       // nothing changed
       return failure();
     }
+    if (!_tracker.areLegalConversions(
+            op.getResultTypes(), targetFunc.getFunctionType().getResults(),
+            "UpdateGlobalCallOpTypes"
+        )) {
+      return failure();
+    }
 
     LLVM_DEBUG(llvm::dbgs() << "[UpdateGlobalCallOpTypes] replaced " << op);
     CallOp newOp = rewriter.replaceOpWithNewOp<CallOp>(op, targetFunc, op.getArgOperands());
@@ -904,8 +1062,12 @@ struct UpdateGlobalCallOpTypes final : public OpRewritePattern<CallOp> {
 };
 
 /// Instantiate parameterized StructType resulting from CallOp targeting "compute()" functions.
-struct InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
-  using OpRewritePattern<CallOp>::OpRewritePattern;
+class InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
+  ConversionTracker &_tracker;
+
+public:
+  InstantiateAtCallOpCompute(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx), _tracker(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     if (!op.calleeIsStructCompute()) {
@@ -966,9 +1128,14 @@ struct InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
       // nothing changed
       return failure();
     }
+    // ASSERT: instantiateViaTargetType() only preserves the original Attribute or converts to a
+    // concrete attribute via the unification process.
+    assert(
+        _tracker.isLegalConversion(oldComputeRetTy, newComputeRetTy, "InstantiateAtCallOpCompute")
+    );
     LLVM_DEBUG(
-        llvm::dbgs() << "[InstantiateAtCallOpCompute] instantiated " << oldComputeRetTy << " as "
-                     << newComputeRetTy << " at " << op << "\n"
+        llvm::dbgs() << "[InstantiateAtCallOpCompute] instantiating " << oldComputeRetTy << " as "
+                     << newComputeRetTy << " in \"" << op << "\"\n"
     );
     rewriter.replaceOpWithNewOp<CallOp>(
         op, TypeRange {newComputeRetTy}, op.getCallee(),
@@ -1048,19 +1215,27 @@ private:
   }
 };
 
-LogicalResult run(ModuleOp modOp, bool &modified) {
+LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp->getContext();
   RewritePatternSet patterns(ctx);
-  patterns.add<InstantiateAtCreateArrayOp>(ctx);
-  patterns.add<UpdateFieldTypeFromWrite>(ctx);
-  patterns.add<UpdateInferredResultTypes>(ctx);
-  patterns.add<UpdateFuncTypeFromReturn>(ctx);
-  patterns.add<UpdateGlobalCallOpTypes>(ctx);
-  patterns.add<InstantiateAtCallOpCompute>(ctx);
-  patterns.add<UpdateArrayElemFromWrite>(ctx);
-  return applyPatternsAndFoldGreedily(
-      modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &modified
+  patterns.add<
+      // clang-format off
+      InstantiateAtCreateArrayOp,
+      UpdateFieldTypeFromWrite,
+      UpdateInferredResultTypes,
+      UpdateFuncTypeFromReturn,
+      UpdateGlobalCallOpTypes,
+      InstantiateAtCallOpCompute,
+      UpdateArrayElemFromWrite
+      // clang-format on
+      >(ctx, tracker);
+
+  bool currStepModified;
+  auto result = applyPatternsAndFoldGreedily(
+      modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &currStepModified
   );
+  tracker.appendModifiedFlag(currStepModified);
+  return result;
 }
 
 } // namespace Step4_InstantiateAffineMaps
@@ -1078,19 +1253,13 @@ public:
   }
 };
 
-LogicalResult run(ModuleOp modOp, const DenseMap<StructType, StructType> &structInstantiations) {
+LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
   FailureOr<ModuleOp> topRoot = getTopRootModule(modOp);
   if (failed(topRoot)) {
     return failure();
   }
 
-  // Collect the fully-qualified names of all structs that were instantiated.
-  DenseSet<SymbolRefAttr> instantiatedNames;
-  for (const auto &[origRemoteTy, _] : structInstantiations) {
-    instantiatedNames.insert(origRemoteTy.getNameRef());
-  }
-
-  // Use a conversion to erase those structs if they have no other references.
+  // Use a conversion to erase instantiated structs if they have no other references.
   //
   // TODO: There's a chance the "no other references" criteria will leave some behind when running
   // only a single pass of this because they may reference each other. Maybe I can check if the
@@ -1101,7 +1270,7 @@ LogicalResult run(ModuleOp modOp, const DenseMap<StructType, StructType> &struct
   // after removing another one that uses it will not be removed. See
   // test/Dialect/LLZK/instantiate_structs_affine_pass.llzk
   //
-  MLIRContext *ctx = modOp.getContext();
+  DenseSet<SymbolRefAttr> instantiatedNames = tracker.getInstantiatedStructNames();
   auto isLegalStruct = [&](bool emitWarning, StructDefOp op) {
     if (instantiatedNames.contains(op.getType().getNameRef())) {
       if (!hasUsesWithin(op, *topRoot)) {
@@ -1116,6 +1285,7 @@ LogicalResult run(ModuleOp modOp, const DenseMap<StructType, StructType> &struct
   };
 
   // Peform the conversion, i.e. remove StructDefOp that were instantiated and are unused.
+  MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
   patterns.add<EraseOpPattern<StructDefOp>>(ctx);
   ConversionTarget target = newBaseTarget(ctx);
@@ -1139,63 +1309,45 @@ class InstantiateStructsPass
     : public llzk::impl::InstantiateStructsPassBase<InstantiateStructsPass> {
   void runOnOperation() override {
     ModuleOp modOp = getOperation();
-
-    bool modified;
-    // Maps original remote (i.e. use site) type to new remote type
-    DenseMap<StructType, StructType> structInstantiations;
-    // Maps new remote type to location of the compute() calls that cause instantiation
-    DenseMap<StructType, DenseSet<Location>> newTyComputeLocs;
+    ConversionTracker tracker;
     do {
-      {
-        unsigned prevMapSize = structInstantiations.size();
+      tracker.resetModifiedFlag();
 
-        // Find calls to "compute()" that return a parameterized struct and replace it to call a
-        // flattened version of the struct that has parameters replaced with the constant values.
-        if (failed(Step1_FindComputeTypes::run(modOp, structInstantiations, newTyComputeLocs))) {
-          signalPassFailure();
-          return;
-        }
+      // Find calls to "compute()" that return a parameterized struct and replace it to call a
+      // flattened version of the struct that has parameters replaced with the constant values.
+      if (failed(Step1_FindComputeTypes::run(modOp, tracker))) {
+        signalPassFailure();
+        return;
+      }
 
-        // Create the necessary instantiated/flattened struct(s) in their parent module(s).
-        if (failed(Step2_CreateStructs::run(modOp, structInstantiations, newTyComputeLocs))) {
-          signalPassFailure();
-          return;
-        }
-
-        // Check if a new StructType was required by an instantiation
-        modified = structInstantiations.size() > prevMapSize;
+      // Create the necessary instantiated/flattened struct(s) in their parent module(s).
+      if (failed(Step2_CreateStructs::run(modOp, tracker))) {
+        signalPassFailure();
+        return;
       }
 
       // Unroll loops with known iterations
-      {
-        bool thisStepModified = false;
-        if (failed(Step3_Unroll::run(modOp, thisStepModified))) {
-          signalPassFailure();
-          return;
-        }
-        modified |= thisStepModified;
+      if (failed(Step3_Unroll::run(modOp, tracker))) {
+        signalPassFailure();
+        return;
       }
 
       // Instantiate affine_map parameters of StructType and ArrayType
-      {
-        bool thisStepModified = false;
-        if (failed(Step4_InstantiateAffineMaps::run(modOp, thisStepModified))) {
-          signalPassFailure();
-          return;
-        }
-        modified |= thisStepModified;
+      if (failed(Step4_InstantiateAffineMaps::run(modOp, tracker))) {
+        signalPassFailure();
+        return;
       }
 
-      LLVM_DEBUG(if (modified) {
+      LLVM_DEBUG(if (tracker.isModified()) {
         llvm::dbgs() << "=====================================================================\n";
         llvm::dbgs() << " Dumping module between iterations of " << DEBUG_TYPE << " \n";
         modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
         llvm::dbgs() << "=====================================================================\n";
       });
-    } while (modified);
+    } while (tracker.isModified());
 
     // Remove the parameterized StructDefOp that were instantiated.
-    if (failed(Step5_Cleanup::run(modOp, structInstantiations))) {
+    if (failed(Step5_Cleanup::run(modOp, tracker))) {
       signalPassFailure();
       return;
     }
