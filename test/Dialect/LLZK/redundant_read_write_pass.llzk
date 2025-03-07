@@ -107,6 +107,7 @@ module attributes {veridise.lang = "llzk"} {
       %idx2 = arith.constant 2 : index
       writearr %arr[%idx] = %arg : !llzk.array<3 x !llzk.felt>, !llzk.felt
       writearr %arr[%inputIdx] = %arg : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      // this read is necessary in the case that %inputIdx == %idx
       %elem1 = readarr %arr[%idx] : !llzk.array<3 x !llzk.felt>, !llzk.felt
       %elem2 = readarr %arr[%inputIdx] : !llzk.array<3 x !llzk.felt>, !llzk.felt
       writearr %arr[%idx] = %elem2 : !llzk.array<3 x !llzk.felt>, !llzk.felt
@@ -116,3 +117,24 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@Component>, %arg : !llzk.felt, %inputIdx : index) { return }
   }
 }
+
+// CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+// CHECK-NEXT:   llzk.struct @Component {
+// CHECK-NEXT:     field @arr : !llzk.array<3 x !llzk.felt>
+// CHECK-NEXT:     func @compute(%arg0: !llzk.felt, %arg1: index) -> !llzk.struct<@Component> {
+// CHECK-NEXT:       %self = new_struct : <@Component>
+// CHECK-NEXT:       %0 = readf %self[@arr] : <@Component>, !llzk.array<3 x !llzk.felt>
+// CHECK-NEXT:       %c1 = arith.constant 1 : index
+// CHECK-NEXT:       %c2 = arith.constant 2 : index
+// CHECK-NEXT:       writearr %0[%c1] = %arg0 : <3 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:       writearr %0[%arg1] = %arg0 : <3 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:       %1 = readarr %0[%c1] : <3 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:       writearr %0[%c1] = %arg0 : <3 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:       writearr %0[%c2] = %1 : <3 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:       return %self : !llzk.struct<@Component>
+// CHECK-NEXT:     }
+// CHECK-NEXT:     func @constrain(%arg0: !llzk.struct<@Component>, %arg1: !llzk.felt, %arg2: index) {
+// CHECK-NEXT:       return
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
+// CHECK-NEXT: }

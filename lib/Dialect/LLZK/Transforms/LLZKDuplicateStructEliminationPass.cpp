@@ -3,8 +3,9 @@
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>
-#include <llvm/ADT/SmallVector.h>
+
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/SmallVector.h>
 
 /// Include the generated base pass class definitions.
 namespace llzk {
@@ -17,7 +18,8 @@ using namespace llzk;
 
 namespace {
 
-class DuplicateStructEliminationPass : public llzk::impl::DuplicateStructEliminationPassBase<DuplicateStructEliminationPass> {
+class DuplicateStructEliminationPass
+    : public llzk::impl::DuplicateStructEliminationPassBase<DuplicateStructEliminationPass> {
   void runOnOperation() override {
     mlir::ModuleOp mod = getOperation();
 
@@ -28,9 +30,7 @@ class DuplicateStructEliminationPass : public llzk::impl::DuplicateStructElimina
       // Find all compute calls and categorize them by component type
 
       SmallVector<CallOp, 1> calls;
-      computeFn.walk([&](CallOp call) {
-        calls.push_back(call);
-      });
+      computeFn.walk([&](CallOp call) { calls.push_back(call); });
 
       // replace
       // Based on the previous passes, we can assume

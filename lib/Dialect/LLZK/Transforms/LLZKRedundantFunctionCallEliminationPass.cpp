@@ -3,8 +3,9 @@
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>
-#include <llvm/ADT/SmallVector.h>
+
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/SmallVector.h>
 
 /// Include the generated base pass class definitions.
 namespace llzk {
@@ -17,10 +18,10 @@ using namespace llzk;
 
 namespace {
 
-class RedundantFunctionCallEliminationPass : public llzk::impl::RedundantFunctionCallEliminationPassBase<RedundantFunctionCallEliminationPass> {
-  void runOnOperation() override {
-    llvm::errs() << "RedundantFunctionCallEliminationPass\n";
-  }
+class RedundantFunctionCallEliminationPass
+    : public llzk::impl::RedundantFunctionCallEliminationPassBase<
+          RedundantFunctionCallEliminationPass> {
+  void runOnOperation() override { llvm::errs() << "RedundantFunctionCallEliminationPass\n"; }
 };
 
 } // namespace
