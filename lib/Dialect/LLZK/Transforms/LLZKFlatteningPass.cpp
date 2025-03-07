@@ -92,6 +92,35 @@ public:
   }
 };
 
+class CreateArrayOpTypeReplacePattern : public OpConversionPattern<CreateArrayOp> {
+public:
+  using OpConversionPattern<CreateArrayOp>::OpConversionPattern;
+
+  LogicalResult match(CreateArrayOp op) const override {
+    if (Type newType = getTypeConverter()->convertType(op.getType())) {
+      return success();
+    } else {
+      return op->emitError("Could not convert Op result type.");
+    }
+  }
+
+  void
+  rewrite(CreateArrayOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter) const override {
+    Type newType = getTypeConverter()->convertType(op.getType());
+    assert(llvm::isa<ArrayType>(newType) && "CreateArrayOp must produce ArrayType result");
+    DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();
+    if (isNullOrEmpty(numDimsPerMap)) {
+      rewriter.replaceOpWithNewOp<CreateArrayOp>(
+          op, llvm::cast<ArrayType>(newType), adapter.getElements()
+      );
+    } else {
+      rewriter.replaceOpWithNewOp<CreateArrayOp>(
+          op, llvm::cast<ArrayType>(newType), adapter.getMapOperands(), numDimsPerMap
+      );
+    }
+  }
+};
+
 template <typename I, typename NextOpType, typename... OtherOpTypes>
 inline void applyToMoreTypes(I inserter) {
   std::apply(inserter, std::tuple<NextOpType, OtherOpTypes...> {});
@@ -111,6 +140,8 @@ newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionT
   };
   std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
   applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
+  // Special case for CreateArrayOp since GeneralTypeReplacePattern does not work
+  patterns.add<CreateArrayOpTypeReplacePattern>(tyConv, ctx);
   // Add builtin FunctionType converter
   populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns, tyConv);
   scf::populateSCFStructuralTypeConversionsAndLegality(tyConv, patterns, target);
@@ -452,37 +483,6 @@ public:
   }
 };
 
-class CreateArrayOpPattern : public OpConversionPattern<CreateArrayOp> {
-public:
-  CreateArrayOpPattern(TypeConverter &converter, MLIRContext *ctx)
-      // future proof: use higher priority than GeneralTypeReplacePattern
-      : OpConversionPattern<CreateArrayOp>(converter, ctx, 2) {}
-
-  LogicalResult match(CreateArrayOp op) const override {
-    if (Type newType = getTypeConverter()->convertType(op.getType())) {
-      return success();
-    } else {
-      return op->emitError("Could not convert Op result type.");
-    }
-  }
-
-  void
-  rewrite(CreateArrayOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter) const override {
-    Type newType = getTypeConverter()->convertType(op.getType());
-    assert(llvm::isa<ArrayType>(newType) && "impl out of sync with converter");
-    DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();
-    if (isNullOrEmpty(numDimsPerMap)) {
-      rewriter.replaceOpWithNewOp<CreateArrayOp>(
-          op, llvm::cast<ArrayType>(newType), adapter.getElements()
-      );
-    } else {
-      rewriter.replaceOpWithNewOp<CreateArrayOp>(
-          op, llvm::cast<ArrayType>(newType), adapter.getMapOperands(), numDimsPerMap
-      );
-    }
-  }
-};
-
 class ConstReadOpPattern : public OpConversionPattern<ConstReadOp> {
   const DenseMap<Attribute, Attribute> &paramNameToValue;
   const DenseSet<Location> *locations;
@@ -596,7 +596,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       ConversionTarget target = newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx);
       target.addIllegalOp<ConstReadOp>();
       RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
-      patterns.add<CallOpPattern, CreateArrayOpPattern>(tyConv, ctx);
+      patterns.add<CallOpPattern>(tyConv, ctx);
       patterns.add<ConstReadOpPattern>(
           tyConv, ctx, nameToValueMap, tracker.getLocations(newRemoteTy)
       );
