@@ -135,6 +135,7 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
            (ins "::mlir::Type":$elementType,
                "::llvm::ArrayRef<::mlir::Attribute>":$dimensionSizes),
            [{
+      assert(elementType && "element type cannot be null");
       ::llvm::SmallVector<::mlir::Attribute> dimSizes = forceIntAttrType(dimensionSizes);
       ::mlir::MLIRContext *ctx = elementType.getContext();
       ::llvm::SmallVector<int64_t> shape;
@@ -145,6 +146,7 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
        TypeBuilderWithInferredContext<(ins "::mlir::Type":$elementType,
                                           "::llvm::ArrayRef<int64_t>":$shape),
                                       [{
+      assert(elementType && "element type cannot be null");
       ::mlir::MLIRContext *ctx = elementType.getContext();
       ::llvm::SmallVector<::mlir::Attribute> dimensionSizes;
       ::mlir::LogicalResult res = computeDimsFromShape(ctx, shape, dimensionSizes);

@@ -44,8 +44,8 @@ static struct {
       ExtractArrayOp, ReadArrayOp, WriteArrayOp, EmitContainmentOp>
       WithGeneralBuilder {};
   /// Subset that do NOT define the general builder function. These cannot use
-  /// `GeneralTypeReplacePattern` and must have a `OpConversionPattern` defined if they need to be
-  /// converted.
+  /// `GeneralTypeReplacePattern` and must have a `OpConversionPattern` defined if
+  /// they need to be converted.
   const std::tuple<CallOp, CreateArrayOp> NoGeneralBuilder {};
 } OpClassesWithStructTypes;
 
