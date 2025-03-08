@@ -224,9 +224,22 @@ public:
     // Assert invariant required by `structInstantiations`
     assert(!isNullOrEmpty(oldType.getParams()));
     assert(isNullOrEmpty(newType.getParams()));
-    structInstantiations[oldType] = newType;
-    reverseInstantiations[newType] = oldType;
-    modified = true;
+
+    auto forwardResult = structInstantiations.try_emplace(oldType, newType);
+    if (forwardResult.second) {
+      // Insertion was successful
+      // ASSERT: The reverse map does not contain this mapping either
+      assert(!reverseInstantiations.contains(newType));
+      reverseInstantiations[newType] = oldType;
+      // Set the modified flag
+      modified = true;
+    } else {
+      // ASSERT: If a mapping already existed for `oldType` it must be `newType`
+      assert(forwardResult.first->getSecond() == newType);
+      // ASSERT: The reverse mapping is already present as well
+      assert(reverseInstantiations.lookup(newType) == oldType);
+    }
+    assert(structInstantiations.size() == reverseInstantiations.size());
   }
 
   /// Return the instantiated type of the given StructType, if any.
@@ -278,9 +291,10 @@ public:
       // that instantiation (i.e. the parameterized version of the instantiated struct)
       // is a more concrete unification of `oTy`.
       if (StructType newStructType = llvm::dyn_cast<StructType>(nTy)) {
-        auto preImage = this->reverseInstantiations.lookup(newStructType);
-        if (isMoreConcreteUnification(oTy, preImage, checkInstantiations)) {
-          return true;
+        if (auto preImage = this->reverseInstantiations.lookup(newStructType)) {
+          if (isMoreConcreteUnification(oTy, preImage, checkInstantiations)) {
+            return true;
+          }
         }
       }
       return false;
@@ -657,7 +671,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   patterns.add<LoopUnrollPattern<scf::ForOp>>(ctx);
   patterns.add<LoopUnrollPattern<affine::AffineForOp>>(ctx);
 
-  bool currStepModified;
+  bool currStepModified = false;
   auto result = applyPatternsAndFoldGreedily(
       modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &currStepModified
   );
@@ -1230,7 +1244,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       // clang-format on
       >(ctx, tracker);
 
-  bool currStepModified;
+  bool currStepModified = false;
   auto result = applyPatternsAndFoldGreedily(
       modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &currStepModified
   );
@@ -1307,10 +1321,21 @@ LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
 
 class InstantiateStructsPass
     : public llzk::impl::InstantiateStructsPassBase<InstantiateStructsPass> {
+
+  static constexpr unsigned LIMIT = 1000;
+
   void runOnOperation() override {
     ModuleOp modOp = getOperation();
+
     ConversionTracker tracker;
+    unsigned loopCount = 0;
     do {
+      ++loopCount;
+      if (loopCount > LIMIT) {
+        llvm::errs() << "InstantiateStructsPass passed the limit of " << LIMIT << " iterations!\n";
+        signalPassFailure();
+        return;
+      }
       tracker.resetModifiedFlag();
 
       // Find calls to "compute()" that return a parameterized struct and replace it to call a
