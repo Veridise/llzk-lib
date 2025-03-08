@@ -1274,11 +1274,18 @@ LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
   // TODO: There's a chance the "no other references" criteria will leave some behind when running
   // only a single pass of this because they may reference each other. Maybe I can check if the
   // references are only located within another struct in the list, but would have to do a deep
-  // deep lookup to ensure no references and avoid infinite loop back on self.
+  // deep lookup to ensure no references and avoid infinite loop back on self. The CallGraphAnalysis
+  // is not sufficient because it looks only at calls but there could be (although unlikely) a
+  // FieldDefOp referencing a struct type despite having no calls to that struct's functions.
+  //
   // TODO: There's another scenario that leaves some behind. Once a StructDefOp is visited and
   // considered legal, that decision cannot be reversed. Hence, StructDefOp that become illegal only
   // after removing another one that uses it will not be removed. See
   // test/Dialect/LLZK/instantiate_structs_affine_pass.llzk
+  // One idea is to use one of the `SymbolTable::getSymbolUses` functions starting from a struct
+  // listed in `instantiatedNames` to determine if it is reachable from some other struct that is
+  // NOT listed there and remove it if not. For efficiency, this reachability information can be
+  // pre-computed and or cached.
   //
   DenseSet<SymbolRefAttr> instantiatedNames = tracker.getInstantiatedStructNames();
   auto isLegalStruct = [&](bool emitWarning, StructDefOp op) {
