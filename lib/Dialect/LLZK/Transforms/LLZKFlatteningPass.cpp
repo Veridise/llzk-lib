@@ -403,11 +403,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
   patterns.add<CallComputePattern>(tyConv, ctx, tracker);
-
-  if (failed(applyPartialConversion(modOp, target, std::move(patterns)))) {
-    return modOp.emitError("failed to convert all `compute()` calls");
-  }
-  return success();
+  return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
 } // namespace Step1_FindComputeTypes
@@ -585,7 +581,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
     FailureOr<SymbolLookupResult<StructDefOp>> lookupRes =
         origRemoteTy.getDefinition(symTables, modOp);
     if (failed(lookupRes)) {
-      return failure(); // getDefinition() already emits a sufficient error message
+      return failure();
     }
     StructDefOp origStruct = lookupRes->get();
 
@@ -616,7 +612,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       );
 
       if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
-        return modOp.emitError("failed to generate all required flattened structs");
+        return failure();
       }
 
       // Insert 'newStruct' into the parent ModuleOp of the original StructDefOp.
@@ -1305,7 +1301,7 @@ LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
   ConversionTarget target = newBaseTarget(ctx);
   target.addDynamicallyLegalOp<StructDefOp>(std::bind_front(isLegalStruct, false));
   if (failed(applyFullConversion(modOp, target, std::move(patterns)))) {
-    return modOp.emitError("failed to remove parameterized structs that were instantiated");
+    return failure();
   }
 
   // Warn about any structs that were instantiated but still have uses elsewhere.
@@ -1332,35 +1328,39 @@ class InstantiateStructsPass
     do {
       ++loopCount;
       if (loopCount > LIMIT) {
-        llvm::errs() << "InstantiateStructsPass passed the limit of " << LIMIT << " iterations!\n";
+        llvm::errs() << DEBUG_TYPE << " exceeded the limit of " << LIMIT << " iterations!\n";
         signalPassFailure();
-        return;
+        break;
       }
       tracker.resetModifiedFlag();
 
       // Find calls to "compute()" that return a parameterized struct and replace it to call a
       // flattened version of the struct that has parameters replaced with the constant values.
       if (failed(Step1_FindComputeTypes::run(modOp, tracker))) {
+        llvm::errs() << DEBUG_TYPE << " failed while replacing concrete-parameter struct types\n";
         signalPassFailure();
-        return;
+        break;
       }
 
       // Create the necessary instantiated/flattened struct(s) in their parent module(s).
       if (failed(Step2_CreateStructs::run(modOp, tracker))) {
+        llvm::errs() << DEBUG_TYPE << " failed while generating required flattened structs\n";
         signalPassFailure();
-        return;
+        break;
       }
 
-      // Unroll loops with known iterations
+      // Unroll loops with known iterations.
       if (failed(Step3_Unroll::run(modOp, tracker))) {
+        llvm::errs() << DEBUG_TYPE << " failed while unrolling loops\n";
         signalPassFailure();
-        return;
+        break;
       }
 
-      // Instantiate affine_map parameters of StructType and ArrayType
+      // Instantiate affine_map parameters of StructType and ArrayType.
       if (failed(Step4_InstantiateAffineMaps::run(modOp, tracker))) {
+        llvm::errs() << DEBUG_TYPE << " failed while instantiating `affine_map` parameters\n";
         signalPassFailure();
-        return;
+        break;
       }
 
       LLVM_DEBUG(if (tracker.isModified()) {
@@ -1373,9 +1373,19 @@ class InstantiateStructsPass
 
     // Remove the parameterized StructDefOp that were instantiated.
     if (failed(Step5_Cleanup::run(modOp, tracker))) {
+      llvm::errs() << DEBUG_TYPE
+                   << " failed while removing parameterized structs that were replaced with "
+                      "instantiated versions\n";
       signalPassFailure();
-      return;
     }
+
+    // Dump the current IR if the pass failed
+    LLVM_DEBUG(if (this->getPassState().irAndPassFailed.getInt()) {
+      llvm::dbgs() << "=====================================================================\n";
+      llvm::dbgs() << " Dumping module after failure of pass " << DEBUG_TYPE << " \n";
+      modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
+      llvm::dbgs() << "=====================================================================\n";
+    });
   }
 };
 
