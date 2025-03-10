@@ -129,7 +129,8 @@ class RedundantOperationEliminationPass
     DenseSet<OperationComparator> uniqueOps;
     fn.walk([&](Operation *op) {
       // Case 1: The operation itself is unnecessary
-      if (isa<EmitEqualityOp>(op) && op->getOperand(0) == op->getOperand(1)) {
+      if (auto emiteq = dyn_cast<EmitEqualityOp>(op);
+          emiteq && emiteq.getLhs() == emiteq.getRhs()) {
         redundantOps.push_back(op);
         return WalkResult::advance();
       }

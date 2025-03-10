@@ -24,8 +24,8 @@ module attributes {veridise.lang = "llzk"} {
       %arr_j = extractarr %mat[%j] : !llzk.array<7,3 x !llzk.felt>
       %arr_k = extractarr %mat[%k] : !llzk.array<7,3 x !llzk.felt> // redundant extract
       emit_eq %arr_i, %arr_j : !llzk.array<3 x !llzk.felt>
-      emit_eq %arr_j, %arr_k : !llzk.array<3 x !llzk.felt> // this constraint is redundant, but will not be removed in this pass
-      emit_eq %arr_k, %arr_i : !llzk.array<3 x !llzk.felt> // same with above
+      emit_eq %arr_j, %arr_k : !llzk.array<3 x !llzk.felt> // this constraint is unnecessary, ends comparing %mat[3] == %mat[3]
+      emit_eq %arr_k, %arr_i : !llzk.array<3 x !llzk.felt> // this is the same as the first emit_eq op, just with LHS and RHS flipped
       return
     }
   }
