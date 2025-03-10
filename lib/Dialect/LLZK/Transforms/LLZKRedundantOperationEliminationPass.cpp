@@ -7,8 +7,6 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/SmallVector.h>
 
-#include <unordered_set>
-
 /// Include the generated base pass class definitions.
 namespace llzk {
 #define GEN_PASS_DEF_REDUNDANTOPERATIONELIMINATIONPASS
@@ -51,7 +49,7 @@ public:
 
   const SmallVector<Value> &getOperands() const { return operands; }
 
-  bool isCommutative() const { return isa<EmitEqualityOp, AddFeltOp>(op); }
+  bool isCommutative() const { return op->hasTrait<OpTrait::IsCommutative>(); }
 
   friend bool operator==(const OperationComparator &lhs, const OperationComparator &rhs) {
     if (lhs.op->getName() != rhs.op->getName()) {
@@ -62,8 +60,12 @@ public:
     if (dialectName != "llzk" && dialectName != "arith") {
       return false;
     }
-    // Need the same attributes, this ensures constant operations are compared
-    // correctly, as the constant is an attribute and not an operand
+
+    // This may be overly restrictive in some cases, but without knowing what
+    // potential future attributes we may have, it's safer to assume that
+    // unequal attributes => unequal operations.
+    // This covers constant operations too, as the constant is an attribute,
+    // not an operand.
     if (lhs.op->getAttrs() != rhs.op->getAttrs()) {
       return false;
     }

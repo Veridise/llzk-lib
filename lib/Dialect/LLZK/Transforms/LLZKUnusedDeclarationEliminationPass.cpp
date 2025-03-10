@@ -26,7 +26,7 @@ class UnusedDeclarationEliminationPass
     auto modOp = getOperation();
     modOp.walk([&](StructDefOp s) {
       // Skip the main circuit, as this determines our external interface (inputs/outputs)
-      if (structDef.getName() == COMPONENT_NAME_MAIN) {
+      if (s.getName() == COMPONENT_NAME_MAIN) {
         return;
       }
       removeUnusedFields(s);
