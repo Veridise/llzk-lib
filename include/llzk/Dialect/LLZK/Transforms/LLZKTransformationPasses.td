@@ -36,4 +36,16 @@ def RedundantFunctionCallEliminationPass : Pass<"llzk-duplicate-func-call-elimin
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
+def RedundantOperationEliminationPass : Pass<"llzk-duplicate-op-elimination", "::mlir::ModuleOp"> {
+  let summary = "Remove redundant operations";
+  let description = [{
+    Pass should be used in conjunction with the read and write elimination.
+  }];
+  let constructor = "llzk::createRedundantOperationEliminationPass()";
+  let dependentDialects = ["llzk::LLZKDialect"];
+}
+
+// TODO: add an unnecessary field removal pass
+// TODO: add a pipeline for these things
+
 #endif // LLZK_TRANSFORMATION_PASSES_TD
