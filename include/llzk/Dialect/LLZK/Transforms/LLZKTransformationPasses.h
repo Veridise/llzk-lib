@@ -10,8 +10,6 @@ std::unique_ptr<mlir::Pass> createInlineIncludesPass();
 
 std::unique_ptr<mlir::Pass> createRedundantReadAndWriteEliminationPass();
 
-std::unique_ptr<mlir::Pass> createRedundantFunctionCallEliminationPass();
-
 std::unique_ptr<mlir::Pass> createRedundantOperationEliminationPass();
 
 #define GEN_PASS_REGISTRATION
