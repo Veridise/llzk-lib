@@ -54,14 +54,17 @@ public:
   bool isCommutative() const { return isa<EmitEqualityOp, AddFeltOp>(op); }
 
   friend bool operator==(const OperationComparator &lhs, const OperationComparator &rhs) {
-    llvm::errs() << "hello\n";
     if (lhs.op->getName() != rhs.op->getName()) {
-      llvm::errs() << lhs.op->getName() << " != " << rhs.op->getName() << "\n";
       return false;
     }
-    // uninterested in operating over non llzk ops
-    if (lhs.op->getDialect()->getNamespace() != "llzk") {
-      llvm::errs() << lhs.op->getDialect()->getNamespace() << " != llzk\n";
+    // uninterested in operating over non llzk/arith ops
+    auto dialectName = lhs.op->getDialect()->getNamespace();
+    if (dialectName != "llzk" && dialectName != "arith") {
+      return false;
+    }
+    // Need the same attributes, this ensures constant operations are compared
+    // correctly, as the constant is an attribute and not an operand
+    if (lhs.op->getAttrs() != rhs.op->getAttrs()) {
       return false;
     }
     // For commutative operations, just check if the operands contain the same set in any order
@@ -70,11 +73,9 @@ public:
           lhs.operands.size() == 2 && rhs.operands.size() == 2,
           "No known commutative ops have more than two arguments"
       );
-      llvm::errs() << "Is " << *lhs.op << " == " << *rhs.op << "\n";
       return (lhs.operands[0] == rhs.operands[0] && lhs.operands[1] == rhs.operands[1]) ||
              (lhs.operands[0] == rhs.operands[1] && lhs.operands[1] == rhs.operands[0]);
     }
-    llvm::errs() << "default\n";
 
     // The default case requires an exact match per argument
     return lhs.operands == rhs.operands;
@@ -125,25 +126,24 @@ class RedundantOperationEliminationPass
     SmallVector<Operation *> redundantOps;
     DenseSet<OperationComparator> uniqueOps;
     fn.walk([&](Operation *op) {
-      llvm::errs() << "OP " << *op << "\n";
       // Case 1: The operation itself is unnecessary
       if (isa<EmitEqualityOp>(op) && op->getOperand(0) == op->getOperand(1)) {
         redundantOps.push_back(op);
-        continue;
+        return WalkResult::advance();
       }
 
       // Case 2: An equivalent operation has already been performed.
       OperationComparator comp(op, map);
       if (auto it = uniqueOps.find(comp); it != uniqueOps.end()) {
-        llvm::errs() << "    found redundant\n";
         redundantOps.push_back(op);
         for (unsigned opNum = 0; opNum < op->getNumResults(); opNum++) {
           map[op->getResult(opNum)] = it->getOp()->getResult(opNum);
         }
       } else {
-        llvm::errs() << "    adding unique\n";
         uniqueOps.insert(comp);
       }
+
+      return WalkResult::advance();
     });
 
     for (auto *op : redundantOps) {
