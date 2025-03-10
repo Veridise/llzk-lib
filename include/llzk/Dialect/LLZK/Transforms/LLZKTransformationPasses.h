@@ -10,6 +10,8 @@ std::unique_ptr<mlir::Pass> createRedundantReadAndWriteEliminationPass();
 
 std::unique_ptr<mlir::Pass> createRedundantOperationEliminationPass();
 
+std::unique_ptr<mlir::Pass> createUnusedDeclarationEliminationPass();
+
 #define GEN_PASS_REGISTRATION
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h.inc"
 

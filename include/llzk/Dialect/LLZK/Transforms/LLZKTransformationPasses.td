@@ -10,8 +10,9 @@ def InlineIncludesPass : Pass<"llzk-inline-includes", "::mlir::ModuleOp"> {
 }
 
 def RedundantReadAndWriteEliminationPass : Pass<"llzk-duplicate-read-write-elimination", "::mlir::ModuleOp"> {
-  let summary = "Remove redundant field reads and writes";
+  let summary = "Remove redundant reads and writes";
   let description = [{
+    Remove read and write operations to struct fields and arrays that are redundant or unnecessary.
   }];
   let constructor = "llzk::createRedundantReadAndWriteEliminationPass()";
   let dependentDialects = ["llzk::LLZKDialect"];
@@ -20,9 +21,26 @@ def RedundantReadAndWriteEliminationPass : Pass<"llzk-duplicate-read-write-elimi
 def RedundantOperationEliminationPass : Pass<"llzk-duplicate-op-elimination", "::mlir::ModuleOp"> {
   let summary = "Remove redundant operations";
   let description = [{
-    Pass should be used in conjunction with the read and write elimination.
+    Remove llzk and arith dialect operations that produce the same results
+    as previously executed operations.
+    Pass should be used in conjunction with the read and write elimination for
+    maximum effect.
   }];
   let constructor = "llzk::createRedundantOperationEliminationPass()";
+  let dependentDialects = ["llzk::LLZKDialect"];
+}
+
+def UnusedDeclarationEliminationPass : Pass<"llzk-unused-declaration-elimination", "::mlir::ModuleOp"> {
+  let summary = "Remove unused field and struct declarations";
+  let description = [{
+    Remove field and struct declarations that are unused within the current compilation
+    unit. Note that this pass may cause linking issues with external modules that
+    depend on any unused field and struct declarations from this compilation unit.
+
+    Pass should be used in conjunction with llzk-duplicate-read-write-elimination
+    and llzk-duplicate-op-elimination for maximum effect.
+  }];
+  let constructor = "llzk::createUnusedDeclarationEliminationPass()";
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
