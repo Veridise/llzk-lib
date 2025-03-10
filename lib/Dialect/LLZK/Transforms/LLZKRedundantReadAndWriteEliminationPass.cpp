@@ -43,8 +43,8 @@ public:
     }
   }
   explicit ReferenceID(FlatSymbolRefAttr s) : identifier(s) {}
-  explicit ReferenceID(llvm::APInt i) : identifier(i) {}
-  explicit ReferenceID(unsigned i) : identifier(llvm::APInt(64, i)) {}
+  explicit ReferenceID(APInt i) : identifier(i) {}
+  explicit ReferenceID(unsigned i) : identifier(APInt(64, i)) {}
 
   bool isValue() const { return std::holds_alternative<Value>(identifier); }
   bool isSymbol() const { return std::holds_alternative<FlatSymbolRefAttr>(identifier); }
@@ -89,13 +89,18 @@ public:
   }
 
 private:
-  std::variant<Value, FlatSymbolRefAttr, APInt> identifier;
+  /// @brief Three cases:
+  /// FlatSymbolRefAttr: identifier refers to a named field in a struct
+  /// APInt: identifier refers to a constant index in an array
+  /// Value: identifier refers to a dynamic index in an array
+  std::variant<FlatSymbolRefAttr, APInt, Value> identifier;
 };
 
 } // namespace
 
 namespace llvm {
 
+/// @brief Allows ReferenceID to be a DenseMap key.
 template <> struct DenseMapInfo<ReferenceID> {
   static ReferenceID getEmptyKey() {
     return ReferenceID(Value(reinterpret_cast<mlir::detail::ValueImpl *>(1)));
@@ -118,7 +123,22 @@ template <> struct DenseMapInfo<ReferenceID> {
 
 namespace {
 
-/// @brief
+/// @brief A node in a tree of references that represent known values. A node consists of:
+/// - An identifier (e.g., %self)
+/// - A stored value (i.e., the allocation site or the value last written to the identifier)
+/// - A map of children (e.g., fields of a struct or elements of an array).
+/// An example:
+/// %self -> @arr -> 1 represents %self[@arr][1].
+///
+/// Values not in this tree are unknown, and therefore not subject to read/write
+/// elimination until they become known and can be eliminated when redundant operations
+/// are performed.
+///
+/// A node may have "constant identifiers" as children (field refs, constant indices)
+/// or a single non-constant child index (just an mlir::Value), as the dynamic
+/// index may or may not alias any constant identifiers. If a dynamic index is
+/// added, the user should clear the prior known children to prevent accidental aliasing.
+///
 /// Does not allow mixing of constant and non-constant child indices, as we
 /// do not know if they alias.
 class ReferenceNode {
@@ -134,6 +154,19 @@ public:
       : identifier(id), storedValue(initialVal), lastWrite(nullptr), parent(parentNode),
         children() {}
 
+  /// @brief Clone the current node, creating a new shared_ptr from it, optionally
+  /// recursively cloning the children (default is false).
+  std::shared_ptr<ReferenceNode> clone(bool withChildren = false) const {
+    ReferenceNode copy(parent, identifier, storedValue);
+    copy.updateLastWrite(lastWrite);
+    if (withChildren) {
+      for (const auto &[id, child] : children) {
+        copy.children[id] = child->clone(withChildren);
+      }
+    }
+    return std::make_shared<ReferenceNode>(std::move(copy));
+  }
+
   template <typename IdType>
   std::shared_ptr<ReferenceNode>
   createChild(IdType id, Value storedVal, std::shared_ptr<ReferenceNode> valTree = nullptr) {
@@ -143,6 +176,8 @@ public:
     return child;
   }
 
+  /// @brief Find the child with the given ID. Returns nullptr if no such child exists.
+  /// @tparam IdType A type convertible into a ReferenceID.
   template <typename IdType> std::shared_ptr<ReferenceNode> getChild(IdType id) const {
     auto it = children.find(ReferenceID(id));
     if (it != children.end()) {
@@ -151,6 +186,9 @@ public:
     return nullptr;
   }
 
+  /// @brief Find the child with the given ID, or create one with the storedVal if no such child
+  /// exists.
+  /// @tparam IdType A type convertible into a ReferenceID.
   template <typename IdType>
   std::shared_ptr<ReferenceNode> getOrCreateChild(IdType id, Value storedVal = nullptr) {
     auto it = children.find(ReferenceID(id));
@@ -160,6 +198,8 @@ public:
     return createChild(id, storedVal);
   }
 
+  /// @brief Set the last write that updates this node and return the older write
+  /// that is being replaced by `writeOp` (or nullptr if there was no prior write).
   Operation *updateLastWrite(Operation *writeOp) {
     auto old = lastWrite;
     lastWrite = writeOp;
@@ -197,6 +237,32 @@ public:
     return os;
   }
 
+  /// @brief Returns true if the nodes are equal, excluding their children.
+  friend bool
+  topLevelEq(const std::shared_ptr<ReferenceNode> &lhs, const std::shared_ptr<ReferenceNode> &rhs) {
+    return lhs->identifier == rhs->identifier && lhs->storedValue == rhs->storedValue &&
+           lhs->lastWrite == rhs->lastWrite && lhs->parent == rhs->parent;
+  }
+
+  friend std::shared_ptr<ReferenceNode> greatestCommonSubtree(
+      const std::shared_ptr<ReferenceNode> &lhs, const std::shared_ptr<ReferenceNode> &rhs
+  ) {
+    if (!topLevelEq(lhs, rhs)) {
+      return nullptr;
+    }
+    auto res = lhs->clone(); // childless clone
+    // Find common children and recurse
+    for (auto &[id, lhsChild] : lhs->children) {
+      if (auto it = rhs->children.find(id); it != rhs->children.end()) {
+        auto &rhsChild = it->second;
+        if (auto gcs = greatestCommonSubtree(lhsChild, rhsChild)) {
+          res->children[id] = gcs;
+        }
+      }
+    }
+    return res;
+  }
+
 private:
   ReferenceID identifier;
   mlir::Value storedValue;
@@ -207,72 +273,39 @@ private:
 
 using ValueMap = DenseMap<mlir::Value, std::shared_ptr<ReferenceNode>>;
 
+ValueMap intersect(const ValueMap &lhs, const ValueMap &rhs) {
+  ValueMap res;
+  for (auto &[id, lhsValTree] : lhs) {
+    if (auto it = rhs.find(id); it != rhs.end()) {
+      auto &rhsValTree = it->second;
+      res[id] = greatestCommonSubtree(lhsValTree, rhsValTree);
+    }
+  }
+  return res;
+}
+
 class RedundantReadAndWriteEliminationPass
     : public llzk::impl::RedundantReadAndWriteEliminationPassBase<
           RedundantReadAndWriteEliminationPass> {
+  /// @brief Run the pass over the LLZK module. Currently the pass is intraprocedural,
+  /// so this defers the optimization to `runOnFunc` for each function in the module.
+  /// @note Due to MLIR limitations, you need to write passes as passes over ModuleOps,
+  /// as setting them up as llzk::FuncOp passes doesn't properly search FuncOps and
+  /// ultimately the pass does not run.
   void runOnOperation() override {
     getOperation().walk([&](FuncOp fn) { runOnFunc(fn); });
   }
 
+  /// @brief Remove redundant reads and writes from the given function operation.
+  /// @param fn
   void runOnFunc(FuncOp fn) {
+    // Nothing to do for body-less functions.
     if (fn.getCallableRegion() == nullptr) {
       return;
     }
 
     LLVM_DEBUG(llvm::dbgs() << "Running on " << fn.getName() << "\n");
 
-    ValueMap state;
-    // Initialize the state to the function arguments.
-    for (auto arg : fn.getArguments()) {
-      state[arg] = ReferenceNode::create(arg, arg);
-    }
-
-    DenseMap<Block *, ValueMap> endStates;
-    endStates[nullptr] = state;
-    auto getBlockState = [&endStates](Block *blockPtr) {
-      auto it = endStates.find(blockPtr);
-      ensure(it != endStates.end(), "unknown end state means we have an unsupported backedge");
-      return it->second;
-    };
-    std::deque<Block *> frontier;
-    frontier.push_back(&fn.getCallableRegion()->front());
-    DenseSet<Block *> visited;
-
-    while (!frontier.empty()) {
-      auto currentBlock = frontier.front();
-      frontier.pop_front();
-      visited.insert(currentBlock);
-
-      // get predecessors
-      ValueMap currentState;
-      auto it = currentBlock->pred_begin();
-      auto itEnd = currentBlock->pred_end();
-      if (it == itEnd) {
-        currentState = endStates[nullptr];
-      } else {
-        currentState = getBlockState(*it);
-        for (it++; it != itEnd; it++) {
-          llvm::report_fatal_error("todo! intersect state maps!");
-        }
-      }
-
-      // Run this block
-      runOnBlock(*currentBlock, currentState);
-
-      // Update the end states
-      ensure(endStates.find(currentBlock) == endStates.end(), "backedge");
-      endStates[currentBlock] = currentState;
-
-      // add successors to frontier
-      for (auto *succ : currentBlock->getSuccessors()) {
-        if (visited.find(succ) == visited.end()) {
-          frontier.push_back(succ);
-        }
-      }
-    }
-  }
-
-  void runOnBlock(Block &b, ValueMap &state) {
     // Maps redundant value -> necessary value.
     DenseMap<Value, Value> replacementMap;
     // All values created by a new_* operation or from a read*/extract* operation.
@@ -281,21 +314,28 @@ class RedundantReadAndWriteEliminationPass
     // write a value that is already written.
     SmallVector<Operation *> redundantWrites;
 
-    for (Operation &op : b) {
-      runOperation(&op, state, replacementMap, readVals, redundantWrites);
+    ValueMap initState;
+    // Initialize the state to the function arguments.
+    for (auto arg : fn.getArguments()) {
+      initState[arg] = ReferenceNode::create(arg, arg);
     }
-    // Replace all redundant values.
+    // Functions only have a single region
+    (void
+    )runOnRegion(*fn.getCallableRegion(), initState, replacementMap, readVals, redundantWrites);
+
+    // Now that we have accumulated all necessary state, we perform the optimizations:
+    // - Replace all redundant values.
     for (auto &[orig, replace] : replacementMap) {
       LLVM_DEBUG(llvm::dbgs() << "replacing " << orig << " with " << orig << '\n');
       orig.replaceAllUsesWith(replace);
       // We save the deletion to the readVals loop to prevent double-free.
     }
-    // Remove redundant writes now that it is safe to do so.
+    // -Remove redundant writes now that it is safe to do so.
     for (auto *writeOp : redundantWrites) {
       LLVM_DEBUG(llvm::dbgs() << "erase write: " << *writeOp << '\n');
       writeOp->erase();
     }
-    // Now we do a pass over read values to see if any are now unused.
+    // - Now we do a pass over read values to see if any are now unused.
     // We do this in reverse order to free up early reads if their users would
     // be removed.
     for (auto it = readVals.rbegin(); it != readVals.rend(); it++) {
@@ -307,6 +347,111 @@ class RedundantReadAndWriteEliminationPass
     }
   }
 
+  ValueMap runOnRegion(
+      Region &r, const ValueMap &initState, DenseMap<Value, Value> &replacementMap,
+      SmallVector<Value> &readVals, SmallVector<Operation *> &redundantWrites
+  ) {
+    // maps block -> state at the end of the block
+    DenseMap<Block *, ValueMap> endStates;
+    // The first block has no predecessors, so nullptr contains the init state
+    endStates[nullptr] = initState;
+    auto getBlockState = [&endStates](Block *blockPtr) {
+      auto it = endStates.find(blockPtr);
+      ensure(it != endStates.end(), "unknown end state means we have an unsupported backedge");
+      return it->second;
+    };
+    std::deque<Block *> frontier;
+    frontier.push_back(&r.front());
+    DenseSet<Block *> visited;
+
+    SmallVector<ValueMap> terminalStates;
+
+    while (!frontier.empty()) {
+      auto currentBlock = frontier.front();
+      frontier.pop_front();
+      visited.insert(currentBlock);
+
+      // get predecessors
+      ValueMap currentState;
+      auto it = currentBlock->pred_begin();
+      auto itEnd = currentBlock->pred_end();
+      if (it == itEnd) {
+        // get the state for the entry block.
+        currentState = endStates[nullptr];
+      } else {
+        currentState = getBlockState(*it);
+        // If we have multiple predecessors, we take a pessimistic view and
+        // set the state as only the intersection of all predecessor states
+        // (e.g., only the common state from an if branch).
+        for (it++; it != itEnd; it++) {
+          llvm::report_fatal_error("todo! intersect state maps!");
+        }
+      }
+
+      // Run this block, updating currentState
+      runOnBlock(*currentBlock, currentState, replacementMap, readVals, redundantWrites);
+
+      // Update the end states.
+      // Since we only support the scf dialect, we should never have any
+      // backedges, so we should never already have state for this block.
+      ensure(endStates.find(currentBlock) == endStates.end(), "backedge");
+      endStates[currentBlock] = currentState;
+
+      // add successors to frontier
+      if (currentBlock->hasNoSuccessors()) {
+        terminalStates.push_back(currentState);
+      } else {
+        for (auto *succ : currentBlock->getSuccessors()) {
+          if (visited.find(succ) == visited.end()) {
+            frontier.push_back(succ);
+          }
+        }
+      }
+    }
+
+    // The final state is the intersection of all possible terminal states.
+    ensure(!terminalStates.empty(), "computed no states");
+    ValueMap finalState = terminalStates.front();
+    for (auto it = terminalStates.begin() + 1; it != terminalStates.end(); it++) {
+      finalState = intersect(finalState, *it);
+    }
+    return finalState;
+  }
+
+  void runOnBlock(
+      Block &b, ValueMap &state, DenseMap<Value, Value> &replacementMap,
+      SmallVector<Value> &readVals, SmallVector<Operation *> &redundantWrites
+  ) {
+
+    for (Operation &op : b) {
+      runOperation(&op, state, replacementMap, readVals, redundantWrites);
+      // Some operations have regions (e.g., scf.if). These regions must be
+      // traversed and the resulting state(s) are intersected for the final
+      // state of this operation.
+      if (!op.getRegions().empty()) {
+        SmallVector<ValueMap> regionStates;
+        for (auto &region : op.getRegions()) {
+          regionStates.push_back(
+              runOnRegion(region, state, replacementMap, readVals, redundantWrites)
+          );
+        }
+
+        ValueMap finalState = regionStates.front();
+        for (auto it = regionStates.begin() + 1; it != regionStates.end(); it++) {
+          finalState = intersect(finalState, *it);
+        }
+        state = std::move(finalState);
+      }
+    }
+  }
+
+  /// @brief Perform the read/write operation contained in `op`, or do nothing
+  /// if `op` is not a type of read/write operation.
+  /// @param op An operation found in a LLZK function
+  /// @param state Mutable state that is updated by executing `op`
+  /// @param replacementMap A mutable map of original -> replacement values
+  /// @param readVals A mutable list of all read values
+  /// @param redundantWrites A mutable list of all writes that are considered redundant
   void runOperation(
       Operation *op, ValueMap &state, DenseMap<Value, Value> &replacementMap,
       SmallVector<Value> &readVals, SmallVector<Operation *> &redundantWrites
