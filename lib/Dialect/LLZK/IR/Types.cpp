@@ -25,7 +25,7 @@ void ShortTypeStringifier::appendSymName(StringRef str) {
   if (str.empty()) {
     ss << "@?";
   } else {
-    ss << "@" << str;
+    ss << '@' << str;
   }
 }
 
