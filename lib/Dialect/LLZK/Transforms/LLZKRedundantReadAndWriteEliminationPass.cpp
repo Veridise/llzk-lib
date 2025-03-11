@@ -144,10 +144,8 @@ namespace {
 /// do not know if they alias.
 class ReferenceNode {
 public:
-  template <typename IdType>
-  static std::shared_ptr<ReferenceNode>
-  create(IdType id, Value v, ReferenceNode *parent = nullptr) {
-    ReferenceNode n(parent, id, v);
+  template <typename IdType> static std::shared_ptr<ReferenceNode> create(IdType id, Value v) {
+    ReferenceNode n(id, v);
     // Need the move constructor version since constructor is private
     return std::make_shared<ReferenceNode>(std::move(n));
   }
@@ -155,7 +153,7 @@ public:
   /// @brief Clone the current node, creating a new shared_ptr from it, optionally
   /// recursively cloning the children (default is true).
   std::shared_ptr<ReferenceNode> clone(bool withChildren = true) const {
-    ReferenceNode copy(parent, identifier, storedValue);
+    ReferenceNode copy(identifier, storedValue);
     copy.updateLastWrite(lastWrite);
     if (withChildren) {
       for (const auto &[id, child] : children) {
@@ -168,7 +166,7 @@ public:
   template <typename IdType>
   std::shared_ptr<ReferenceNode>
   createChild(IdType id, Value storedVal, std::shared_ptr<ReferenceNode> valTree = nullptr) {
-    auto child = create(id, storedVal, this);
+    std::shared_ptr<ReferenceNode> child = create(id, storedVal);
     child->setCurrentValue(storedVal, valTree);
     children[child->identifier] = child;
     return child;
@@ -199,7 +197,7 @@ public:
   /// @brief Set the last write that updates this node and return the older write
   /// that is being replaced by `writeOp` (or nullptr if there was no prior write).
   Operation *updateLastWrite(Operation *writeOp) {
-    auto old = lastWrite;
+    Operation *old = lastWrite;
     lastWrite = writeOp;
     return old;
   }
@@ -218,8 +216,6 @@ public:
   bool isLeaf() const { return children.empty(); }
 
   Value getStoredValue() const { return storedValue; }
-
-  ReferenceNode *getParent() { return parent; }
 
   bool hasStoredValue() const { return storedValue != nullptr; }
 
@@ -254,7 +250,7 @@ public:
   friend bool
   topLevelEq(const std::shared_ptr<ReferenceNode> &lhs, const std::shared_ptr<ReferenceNode> &rhs) {
     return lhs->identifier == rhs->identifier && lhs->storedValue == rhs->storedValue &&
-           lhs->lastWrite == rhs->lastWrite && lhs->parent == rhs->parent;
+           lhs->lastWrite == rhs->lastWrite;
   }
 
   friend std::shared_ptr<ReferenceNode> greatestCommonSubtree(
@@ -280,13 +276,11 @@ private:
   ReferenceID identifier;
   mlir::Value storedValue;
   Operation *lastWrite;
-  ReferenceNode *parent;
   DenseMap<ReferenceID, std::shared_ptr<ReferenceNode>> children;
 
   template <typename IdType>
-  ReferenceNode(ReferenceNode *parentNode, IdType id, Value initialVal)
-      : identifier(id), storedValue(initialVal), lastWrite(nullptr), parent(parentNode),
-        children() {}
+  ReferenceNode(IdType id, Value initialVal)
+      : identifier(id), storedValue(initialVal), lastWrite(nullptr), children() {}
 };
 
 using ValueMap = DenseMap<mlir::Value, std::shared_ptr<ReferenceNode>>;
@@ -379,7 +373,7 @@ class RedundantReadAndWriteEliminationPass
     // We do this in reverse order to free up early reads if their users would
     // be removed.
     for (auto it = readVals.rbegin(); it != readVals.rend(); it++) {
-      auto readVal = *it;
+      Value readVal = *it;
       if (readVal.use_empty()) {
         LLVM_DEBUG(llvm::dbgs() << "erase read: " << readVal << '\n');
         readVal.getDefiningOp()->erase();
@@ -407,7 +401,7 @@ class RedundantReadAndWriteEliminationPass
     SmallVector<std::reference_wrapper<const ValueMap>> terminalStates;
 
     while (!frontier.empty()) {
-      auto currentBlock = frontier.front();
+      Block *currentBlock = frontier.front();
       frontier.pop_front();
       visited.insert(currentBlock);
 
@@ -443,7 +437,7 @@ class RedundantReadAndWriteEliminationPass
       if (currentBlock->hasNoSuccessors()) {
         terminalStates.push_back(endStates[currentBlock]);
       } else {
-        for (auto *succ : currentBlock->getSuccessors()) {
+        for (Block *succ : currentBlock->getSuccessors()) {
           if (visited.find(succ) == visited.end()) {
             frontier.push_back(succ);
           }
@@ -471,7 +465,7 @@ class RedundantReadAndWriteEliminationPass
       // state of this operation.
       if (!op.getRegions().empty()) {
         SmallVector<ValueMap> regionStates;
-        for (auto &region : op.getRegions()) {
+        for (Region &region : op.getRegions()) {
           auto regionState =
               runOnRegion(region, ::clone(state), replacementMap, readVals, redundantWrites);
           regionStates.push_back(regionState);
@@ -519,27 +513,26 @@ class RedundantReadAndWriteEliminationPass
     // Read a value from an array. This works on both readarr operations (which
     // return a scalar value) and extractarr operations (which return a subarry).
     auto doArrayReadLike = [&]<typename OpTy>(OpTy readarr) {
-      auto arrVal = state.at(translate(readarr.getArrRef()));
+      std::shared_ptr<ReferenceNode> currValTree = state.at(translate(readarr.getArrRef()));
 
-      auto currVal = arrVal;
-      for (auto idx : readarr.getIndices()) {
-        auto idxVal = translate(idx);
-        currVal = currVal->getOrCreateChild(idxVal);
+      for (Value origIdx : readarr.getIndices()) {
+        Value idxVal = translate(origIdx);
+        currValTree = currValTree->getOrCreateChild(idxVal);
       }
 
-      auto resVal = readarr.getResult();
-      if (!currVal->hasStoredValue()) {
-        currVal->setCurrentValue(resVal);
-      } else if (currVal->getStoredValue() != resVal) {
+      Value resVal = readarr.getResult();
+      if (!currValTree->hasStoredValue()) {
+        currValTree->setCurrentValue(resVal);
+      } else if (currValTree->getStoredValue() != resVal) {
         LLVM_DEBUG(
             llvm::dbgs() << readarr.getOperationName() << ": replace " << resVal << " with "
-                         << currVal->getStoredValue() << '\n'
+                         << currValTree->getStoredValue() << '\n'
         );
-        replacementMap[resVal] = currVal->getStoredValue();
+        replacementMap[resVal] = currValTree->getStoredValue();
       } else {
-        state[resVal] = currVal;
+        state[resVal] = currValTree;
         LLVM_DEBUG(
-            llvm::dbgs() << readarr.getOperationName() << ": " << resVal << " => " << *currVal
+            llvm::dbgs() << readarr.getOperationName() << ": " << resVal << " => " << *currValTree
                          << '\n'
         );
       }
@@ -554,37 +547,36 @@ class RedundantReadAndWriteEliminationPass
     // the variable index aliases one of the other elements and may or may not
     // override that value.
     auto doArrayWriteLike = [&]<typename OpTy>(OpTy writearr) {
-      auto arrayVal = state.at(translate(writearr.getArrRef()));
-      auto newVal = translate(writearr.getRvalue());
-      auto valTree = tryGetValTree(newVal);
+      std::shared_ptr<ReferenceNode> currValTree = state.at(translate(writearr.getArrRef()));
+      Value newVal = translate(writearr.getRvalue());
+      std::shared_ptr<ReferenceNode> valTree = tryGetValTree(newVal);
 
-      auto currentArrVal = arrayVal;
-      for (auto idx : writearr.getIndices()) {
-        auto idxVal = translate(idx);
+      for (Value origIdx : writearr.getIndices()) {
+        Value idxVal = translate(origIdx);
         // This write will invalidate all children, since it may reference
         // any number of them.
         if (ReferenceID(idxVal).isValue()) {
           LLVM_DEBUG(llvm::dbgs() << writearr.getOperationName() << ": invalidate alias\n");
-          currentArrVal->invalidateChildren();
+          currValTree->invalidateChildren();
         }
-        currentArrVal = currentArrVal->getOrCreateChild(idxVal);
+        currValTree = currValTree->getOrCreateChild(idxVal);
       }
 
-      if (currentArrVal->getStoredValue() == newVal) {
+      if (currValTree->getStoredValue() == newVal) {
         LLVM_DEBUG(
             llvm::dbgs() << writearr.getOperationName() << ": subsequent " << writearr
                          << " is redundant\n"
         );
         redundantWrites.push_back(writearr);
       } else {
-        if (auto *lastWrite = currentArrVal->updateLastWrite(writearr)) {
+        if (Operation *lastWrite = currValTree->updateLastWrite(writearr)) {
           LLVM_DEBUG(
               llvm::dbgs() << writearr.getOperationName() << "writearr: replacing " << lastWrite
                            << " with prior write " << *lastWrite << '\n'
           );
           redundantWrites.push_back(lastWrite);
         }
-        currentArrVal->setCurrentValue(newVal, valTree);
+        currValTree->setCurrentValue(newVal, valTree);
       }
     };
 
@@ -598,8 +590,8 @@ class RedundantReadAndWriteEliminationPass
       readVals.push_back(newStruct);
     } else if (auto readf = dyn_cast<FieldReadOp>(op)) {
       auto structVal = state.at(translate(readf.getComponent()));
-      auto symbol = readf.getFieldNameAttr();
-      auto resVal = translate(readf.getVal());
+      FlatSymbolRefAttr symbol = readf.getFieldNameAttr();
+      Value resVal = translate(readf.getVal());
       // Check if such a child already exists.
       if (auto child = structVal->getChild(symbol)) {
         LLVM_DEBUG(
@@ -617,8 +609,8 @@ class RedundantReadAndWriteEliminationPass
       readVals.push_back(readf.getVal());
     } else if (auto writef = dyn_cast<FieldWriteOp>(op)) {
       auto structVal = state.at(translate(writef.getComponent()));
-      auto writeVal = translate(writef.getVal());
-      auto symbol = writef.getFieldNameAttr();
+      Value writeVal = translate(writef.getVal());
+      FlatSymbolRefAttr symbol = writef.getFieldNameAttr();
       auto valTree = tryGetValTree(writeVal);
 
       auto child = structVal->getOrCreateChild(symbol);
@@ -652,7 +644,7 @@ class RedundantReadAndWriteEliminationPass
       // constant indices.
       unsigned idx = 0;
       for (auto elem : newArray.getElements()) {
-        auto elemVal = translate(elem);
+        Value elemVal = translate(elem);
         auto valTree = tryGetValTree(elemVal);
         auto elemChild = arrayVal->createChild(idx, elemVal, valTree);
         LLVM_DEBUG(
