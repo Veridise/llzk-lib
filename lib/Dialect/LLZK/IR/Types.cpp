@@ -94,8 +94,8 @@ ShortTypeStringifier &ShortTypeStringifier::append(Type type) {
     StructType st = llvm::cast<StructType>(type);
     ss << "!s<";
     appendSymRef(st.getNameRef());
-    ss << "_";
     if (ArrayAttr params = st.getParams()) {
+      ss << "_";
       append(params.getValue());
     }
     ss << ">";

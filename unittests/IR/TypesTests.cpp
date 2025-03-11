@@ -71,7 +71,9 @@ TEST_F(TypeTests, testArrayTypeGetWithAttributeWrongAttrKindError) {
 }
 
 TEST_F(TypeTests, testStructTypeIsConcreteNoParams) {
-  Type t = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"));
+  StructType t = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"));
+  // When the StructType has no parameters, isConcreteType() passes regardless of
+  // `allowStructParams` flag.
   ASSERT_TRUE(isConcreteType(t, true));
   ASSERT_TRUE(isConcreteType(t, false));
 }
@@ -79,7 +81,9 @@ TEST_F(TypeTests, testStructTypeIsConcreteNoParams) {
 TEST_F(TypeTests, testStructTypeIsConcreteWithParams) {
   Attribute a1 = IntegerAttr::get(IndexType::get(&ctx), 128);
   Attribute a2 = IntegerAttr::get(IndexType::get(&ctx), 15);
-  Type t = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {a1, a2});
+  StructType t = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {a1, a2});
+  // When the StructType has parameters, isConcreteType() passes when `allowStructParams` flag is
+  // `true` but fails when it is `false`.
   ASSERT_TRUE(isConcreteType(t, true));
   ASSERT_FALSE(isConcreteType(t, false));
 }
@@ -93,7 +97,7 @@ TEST_F(TypeTests, testShortString) {
       "!a<b:4_235_123>",
       shortString(ArrayType::get(bldr.getIntegerType(1), ArrayRef<int64_t> {4, 235, 123}))
   );
-  EXPECT_EQ("!s<@S1_>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1"))));
+  EXPECT_EQ("!s<@S1>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1"))));
   EXPECT_EQ(
       "!s<@S1_43>",
       shortString(StructType::get(
@@ -121,7 +125,7 @@ TEST_F(TypeTests, testShortString) {
   }
 
   // No protection/escaping of special characters in the original name
-  EXPECT_EQ("!s<@S1_!a<>_>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1_!a<>"))));
+  EXPECT_EQ("!s<@S1_!a<>>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1_!a<>"))));
 
   // Empty string produces "@?"
   EXPECT_EQ("@?", shortString(FlatSymbolRefAttr::get(&ctx, "")));
