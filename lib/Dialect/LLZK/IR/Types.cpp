@@ -385,7 +385,7 @@ namespace {
 /// associated `IntegerAttr` from the other type at the same nested position. The `Side` enum in the
 /// key indicates which input expression the `AffineMapAttr` is from. Additionally, if a conflict is
 /// found (i.e. multiple occurances of a specific `AffineMapAttr` on the same side map to different
-/// `IntegerAttr` from the other side). The mapped value will be `nullptr`.
+/// `IntegerAttr` from the other side), the mapped value will be `nullptr`.
 using AffineInstantiations = DenseMap<std::pair<AffineMapAttr, Side>, IntegerAttr>;
 
 struct UnifierImpl {
