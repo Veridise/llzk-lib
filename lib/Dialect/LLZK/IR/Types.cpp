@@ -79,7 +79,7 @@ ShortTypeStringifier &ShortTypeStringifier::append(Type type) {
   } else if (llvm::isa<StringType>(type)) {
     ss << "s";
   } else if (llvm::isa<TypeVarType>(type)) {
-    ss << "!v<";
+    ss << "!t<";
     appendSymName(llvm::cast<TypeVarType>(type).getRefName());
     ss << ">";
   } else if (llvm::isa<ArrayType>(type)) {
@@ -89,7 +89,6 @@ ShortTypeStringifier &ShortTypeStringifier::append(Type type) {
     ss << ":";
     append(at.getDimensionSizes());
     ss << ">";
-    // return ret;
   } else if (llvm::isa<StructType>(type)) {
     StructType st = llvm::cast<StructType>(type);
     ss << "!s<";
@@ -191,41 +190,41 @@ using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
 using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
 
 class AllowedTypes {
-  bool _noFelt, _noString, _noStruct, _noArray, _noVar;
-  bool _noStructParams;
+  bool no_felt, no_string, no_struct, no_array, no_var;
+  bool no_struct_params;
 
 public:
   AllowedTypes()
-      : _noFelt(false), _noString(false), _noStruct(false), _noArray(false), _noVar(false),
-        _noStructParams(false) {}
+      : no_felt(false), no_string(false), no_struct(false), no_array(false), no_var(false),
+        no_struct_params(false) {}
 
   AllowedTypes &noFelt() {
-    _noFelt = true;
+    no_felt = true;
     return *this;
   }
 
   AllowedTypes &noString() {
-    _noString = true;
+    no_string = true;
     return *this;
   }
 
   AllowedTypes &noStruct() {
-    _noStruct = true;
+    no_struct = true;
     return *this;
   }
 
   AllowedTypes &noArray() {
-    _noArray = true;
+    no_array = true;
     return *this;
   }
 
   AllowedTypes &noVar() {
-    _noVar = true;
+    no_var = true;
     return *this;
   }
 
   AllowedTypes &noStructParams(bool noStructParams = true) {
-    _noStructParams = noStructParams;
+    no_struct_params = noStructParams;
     return *this;
   }
 
@@ -251,7 +250,7 @@ public:
       if (!ArrayDimensionTypes::matches(a)) {
         ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
         success = false;
-      } else if (_noVar && !llvm::isa<IntegerAttr>(a)) {
+      } else if (no_var && !llvm::isa<IntegerAttr>(a)) {
         TypeList<IntegerAttr>::reportInvalid(emitError, a, "Concrete array dimension");
         success = false;
       } else if (failed(verifyIntAttrType(emitError, a))) {
@@ -301,12 +300,12 @@ public:
   }
 
   // Note: The `_no*` flags here refer to Types nested within a TypeAttr parameter (if any) except
-  // for the `_noStructParams` flag which requires that `params` is null or empty.
+  // for the `no_struct_params` flag which requires that `params` is null or empty.
   bool
   areValidStructTypeParams(ArrayAttr params, std::optional<EmitErrorFn> emitError = std::nullopt) {
     bool success = true;
     if (!isNullOrEmpty(params)) {
-      if (_noStructParams) {
+      if (no_struct_params) {
         return false;
       }
       for (Attribute p : params) {
@@ -322,7 +321,7 @@ public:
             }
             success = false;
           }
-        } else if (_noVar && !llvm::isa<IntegerAttr>(p)) {
+        } else if (no_var && !llvm::isa<IntegerAttr>(p)) {
           TypeList<IntegerAttr>::reportInvalid(emitError, p, "Concrete struct parameter");
           success = false;
         } else if (failed(verifyIntAttrType(emitError, p))) {
@@ -344,9 +343,9 @@ public:
 
 bool AllowedTypes::isValidTypeImpl(Type type) {
   return type.isSignlessInteger(1) || llvm::isa<IndexType>(type) ||
-         (!_noFelt && llvm::isa<FeltType>(type)) || (!_noString && llvm::isa<StringType>(type)) ||
-         (!_noVar && llvm::isa<TypeVarType>(type)) || (!_noStruct && isValidStructTypeImpl(type)) ||
-         (!_noArray && isValidArrayTypeImpl(type));
+         (!no_felt && llvm::isa<FeltType>(type)) || (!no_string && llvm::isa<StringType>(type)) ||
+         (!no_var && llvm::isa<TypeVarType>(type)) || (!no_struct && isValidStructTypeImpl(type)) ||
+         (!no_array && isValidArrayTypeImpl(type));
 }
 
 } // namespace

@@ -324,17 +324,17 @@ public:
 namespace Step1_FindComputeTypes {
 
 class ParameterizedStructUseTypeConverter : public TypeConverter {
-  ConversionTracker &_tracker;
+  ConversionTracker &tracker_;
 
 public:
   ParameterizedStructUseTypeConverter(ConversionTracker &tracker)
-      : TypeConverter(), _tracker(tracker) {
+      : TypeConverter(), tracker_(tracker) {
 
     addConversion([](Type inputTy) { return inputTy; });
 
     addConversion([this](StructType inputTy) -> StructType {
       // First check for a cached entry
-      if (auto opt = _tracker.getInstantiation(inputTy)) {
+      if (auto opt = tracker_.getInstantiation(inputTy)) {
         return opt.value();
       }
       // Otherwise, try to perform a conversion
@@ -348,7 +348,7 @@ public:
               llvm::dbgs() << "[ParameterizedStructUseTypeConverter] instantiating " << inputTy
                            << " as " << result << "\n"
           );
-          _tracker.recordInstantiation(inputTy, result);
+          tracker_.recordInstantiation(inputTy, result);
           return result;
         }
       }
@@ -358,12 +358,12 @@ public:
 };
 
 class CallComputePattern : public OpConversionPattern<CallOp> {
-  ConversionTracker &_tracker;
+  ConversionTracker &tracker_;
 
 public:
   CallComputePattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &tracker)
       // future proof: use higher priority than GeneralTypeReplacePattern
-      : OpConversionPattern<CallOp>(converter, ctx, 2), _tracker(tracker) {}
+      : OpConversionPattern<CallOp>(converter, ctx, 2), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
       const override {
@@ -381,7 +381,7 @@ public:
       if (StructType newStTy = getIfSingleton<StructType>(newResultTypes)) {
         assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated"); // I think
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
-        _tracker.recordLocation(newStTy, op.getLoc());
+        tracker_.recordLocation(newStTy, op.getLoc());
       }
     } else if (op.calleeIsStructConstrain()) {
       if (StructType newStTy = getAtIndex<StructType>(adapter.getArgOperands().getTypes(), 0)) {
@@ -793,11 +793,11 @@ struct AffineMapFolder {
 
 /// Instantiate parameterized ArrayType resulting from CreateArrayOp.
 class InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp> {
-  ConversionTracker &_tracker;
+  ConversionTracker &tracker_;
 
 public:
   InstantiateAtCreateArrayOp(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), _tracker(tracker) {}
+      : OpRewritePattern(ctx), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     ArrayType oldResultType = op.getType();
@@ -818,7 +818,7 @@ public:
       return failure();
     }
     // ASSERT: folding only preserves the original Attribute or converts affine to integer
-    assert(_tracker.isLegalConversion(oldResultType, newResultType, "InstantiateAtCreateArrayOp"));
+    assert(tracker_.isLegalConversion(oldResultType, newResultType, "InstantiateAtCreateArrayOp"));
     LLVM_DEBUG(
         llvm::dbgs() << "[InstantiateAtCreateArrayOp] instantiating " << oldResultType << " as "
                      << newResultType << " in \"" << op << "\"\n"
@@ -832,11 +832,11 @@ public:
 
 /// Update the array element type by looking at the values stored into it from uses.
 class UpdateArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
-  ConversionTracker &_tracker;
+  ConversionTracker &tracker_;
 
 public:
   UpdateArrayElemFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), _tracker(tracker) {}
+      : OpRewritePattern(ctx), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     Value createResult = op.getResult();
@@ -869,7 +869,7 @@ public:
       // no replacement type found
       return failure();
     }
-    if (!_tracker.isLegalConversion(
+    if (!tracker_.isLegalConversion(
             oldResultElemType, newResultElemType, "UpdateArrayElemFromWrite"
         )) {
       return failure();
@@ -883,11 +883,11 @@ public:
 
 /// Update the type of FieldDefOp instances by checking the updated types from FieldWriteOp.
 class UpdateFieldTypeFromWrite final : public OpRewritePattern<FieldDefOp> {
-  ConversionTracker &_tracker;
+  ConversionTracker &tracker_;
 
 public:
   UpdateFieldTypeFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), _tracker(tracker) {}
+      : OpRewritePattern(ctx), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(FieldDefOp op, PatternRewriter &rewriter) const override {
     // Find all uses of the field symbol name within its parent struct.
@@ -929,7 +929,7 @@ public:
       // nothing changed
       return failure();
     }
-    if (!_tracker.isLegalConversion(op.getType(), newType, "UpdateFieldTypeFromWrite")) {
+    if (!tracker_.isLegalConversion(op.getType(), newType, "UpdateFieldTypeFromWrite")) {
       return failure();
     }
     LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldTypeFromWrite] replaced " << op);
@@ -942,11 +942,11 @@ public:
 /// Updates the result type in Ops with the InferTypeOpAdaptor trait including ReadArrayOp,
 /// ExtractArrayOp, etc.
 class UpdateInferredResultTypes final : public OpTraitRewritePattern<OpTrait::InferTypeOpAdaptor> {
-  ConversionTracker &_tracker;
+  ConversionTracker &tracker_;
 
 public:
   UpdateInferredResultTypes(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpTraitRewritePattern(ctx), _tracker(tracker) {}
+      : OpTraitRewritePattern(ctx), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(Operation *op, PatternRewriter &rewriter) const override {
     SmallVector<Type, 1> inferredResultTypes;
@@ -962,7 +962,7 @@ public:
       // nothing changed
       return failure();
     }
-    if (!_tracker.areLegalConversions(
+    if (!tracker_.areLegalConversions(
             op->getResultTypes(), inferredResultTypes, "UpdateInferredResultTypes"
         )) {
       return failure();
@@ -983,11 +983,11 @@ public:
 
 /// Update FuncOp return type by checking the updated types from ReturnOp.
 class UpdateFuncTypeFromReturn final : public OpRewritePattern<FuncOp> {
-  ConversionTracker &_tracker;
+  ConversionTracker &tracker_;
 
 public:
   UpdateFuncTypeFromReturn(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), _tracker(tracker) {}
+      : OpRewritePattern(ctx), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(FuncOp op, PatternRewriter &rewriter) const override {
     // Collect unique return type lists
@@ -1014,7 +1014,7 @@ public:
       // nothing changed
       return failure();
     }
-    if (!_tracker.areLegalConversions(
+    if (!tracker_.areLegalConversions(
             oldFuncTy.getResults(), *tyFromReturnOp, "UpdateFuncTypeFromReturn"
         )) {
       return failure();
@@ -1036,11 +1036,11 @@ public:
 /// only return StructType or nothing and propagating those can result in bringing un-instantiated
 /// types from a templated struct into the current call which will give errors.
 class UpdateGlobalCallOpTypes final : public OpRewritePattern<CallOp> {
-  ConversionTracker &_tracker;
+  ConversionTracker &tracker_;
 
 public:
   UpdateGlobalCallOpTypes(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), _tracker(tracker) {}
+      : OpRewritePattern(ctx), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     SymbolTableCollection tables;
@@ -1057,7 +1057,7 @@ public:
       // nothing changed
       return failure();
     }
-    if (!_tracker.areLegalConversions(
+    if (!tracker_.areLegalConversions(
             op.getResultTypes(), targetFunc.getFunctionType().getResults(),
             "UpdateGlobalCallOpTypes"
         )) {
@@ -1073,11 +1073,11 @@ public:
 
 /// Instantiate parameterized StructType resulting from CallOp targeting "compute()" functions.
 class InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
-  ConversionTracker &_tracker;
+  ConversionTracker &tracker_;
 
 public:
   InstantiateAtCallOpCompute(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), _tracker(tracker) {}
+      : OpRewritePattern(ctx), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     if (!op.calleeIsStructCompute()) {
@@ -1141,7 +1141,7 @@ public:
     // ASSERT: instantiateViaTargetType() only preserves the original Attribute or converts to a
     // concrete attribute via the unification process.
     assert(
-        _tracker.isLegalConversion(oldComputeRetTy, newComputeRetTy, "InstantiateAtCallOpCompute")
+        tracker_.isLegalConversion(oldComputeRetTy, newComputeRetTy, "InstantiateAtCallOpCompute")
     );
     LLVM_DEBUG(
         llvm::dbgs() << "[InstantiateAtCallOpCompute] instantiating " << oldComputeRetTy << " as "

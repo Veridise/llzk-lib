@@ -92,7 +92,7 @@ TEST_F(TypeTests, testShortString) {
   OpBuilder bldr(&ctx);
   EXPECT_EQ("b", shortString(bldr.getIntegerType(1)));
   EXPECT_EQ("i", shortString(bldr.getIndexType()));
-  EXPECT_EQ("!v<@A>", shortString(TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "A"))));
+  EXPECT_EQ("!t<@A>", shortString(TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "A"))));
   EXPECT_EQ(
       "!a<b:4_235_123>",
       shortString(ArrayType::get(bldr.getIntegerType(1), ArrayRef<int64_t> {4, 235, 123}))
