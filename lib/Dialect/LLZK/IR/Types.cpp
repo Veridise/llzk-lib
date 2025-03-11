@@ -409,7 +409,7 @@ struct UnifierImpl {
            );
   }
 
-  UnifierImpl &allowAffineToInt(AffineInstantiations *tracker) {
+  UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
     this->affineToIntTracker = tracker;
     return *this;
   }
@@ -476,51 +476,52 @@ struct UnifierImpl {
 
 private:
   void track(Side side, SymbolRefAttr symRef, Attribute attr) {
-    if (unifications) {
+    if (UnificationMap *tracker = unifications) {
       auto key = std::make_pair(symRef, side);
-      auto it = unifications->find(key);
-      if (it != unifications->end()) {
+      auto it = tracker->find(key);
+      if (it != tracker->end()) {
         it->second = nullptr;
       } else {
-        unifications->try_emplace(key, attr);
+        tracker->try_emplace(key, attr);
       }
     }
   }
 
   void track(Side side, AffineMapAttr affineAttr, IntegerAttr intAttr) {
-    assert(affineToIntTracker && "implementation error: should be checked before calling");
-    auto key = std::make_pair(affineAttr, side);
-    auto it = affineToIntTracker->find(key);
-    if (it != affineToIntTracker->end()) {
-      it->second = nullptr;
-    } else {
-      affineToIntTracker->try_emplace(key, intAttr);
+    if (AffineInstantiations *tracker = affineToIntTracker) {
+      auto key = std::make_pair(affineAttr, side);
+      auto it = tracker->find(key);
+      if (it != tracker->end()) {
+        it->second = nullptr;
+      } else {
+        tracker->try_emplace(key, intAttr);
+      }
     }
   }
 
   bool paramAttrUnify(Attribute lhsAttr, Attribute rhsAttr) {
     assertValidAttrForParamOfType(lhsAttr);
     assertValidAttrForParamOfType(rhsAttr);
-    // IntegerAttr and AffineMapAttr only unify via equality and the others may. Additionally,
-    //  if either attribute is a symbol ref, we assume they unify because a later pass with a
-    //  more involved value analysis is required to check if they are actually the same value.
+    // Straightforward equality check.
     if (lhsAttr == rhsAttr) {
       return true;
     }
-    if (affineToIntTracker) {
-      if (AffineMapAttr lhsAffine = lhsAttr.dyn_cast<AffineMapAttr>()) {
-        if (IntegerAttr rhsInt = rhsAttr.dyn_cast<IntegerAttr>()) {
-          track(Side::LHS, lhsAffine, rhsInt);
-          return true;
-        }
-      }
-      if (AffineMapAttr rhsAffine = rhsAttr.dyn_cast<AffineMapAttr>()) {
-        if (IntegerAttr lhsInt = lhsAttr.dyn_cast<IntegerAttr>()) {
-          track(Side::RHS, rhsAffine, lhsInt);
-          return true;
-        }
+    // AffineMapAttr can unify with IntegerAttr because struct parameter instantiation will result
+    // in conversion of AffineMapAttr to IntegerAttr.
+    if (AffineMapAttr lhsAffine = lhsAttr.dyn_cast<AffineMapAttr>()) {
+      if (IntegerAttr rhsInt = rhsAttr.dyn_cast<IntegerAttr>()) {
+        track(Side::LHS, lhsAffine, rhsInt);
+        return true;
       }
     }
+    if (AffineMapAttr rhsAffine = rhsAttr.dyn_cast<AffineMapAttr>()) {
+      if (IntegerAttr lhsInt = lhsAttr.dyn_cast<IntegerAttr>()) {
+        track(Side::RHS, rhsAffine, lhsInt);
+        return true;
+      }
+    }
+    // If either side is a SymbolRefAttr, assume they unify because either flattening or a pass with
+    // a more involved value analysis is required to check if they are actually the same value.
     if (SymbolRefAttr lhsSymRef = lhsAttr.dyn_cast<SymbolRefAttr>()) {
       track(Side::LHS, lhsSymRef, rhsAttr);
       return true;
@@ -535,6 +536,7 @@ private:
         return typesUnify(lhsTy.getValue(), rhsTy.getValue());
       }
     }
+    // Otherwise, they do not unify.
     return false;
   }
 };
@@ -582,7 +584,7 @@ bool isMoreConcreteUnification(
   AffineInstantiations affineInstantiations;
   // Run type unification with the addition that affine map can become integer in the new type.
   if (!UnifierImpl(&unifications)
-           .allowAffineToInt(&affineInstantiations)
+           .trackAffineToInt(&affineInstantiations)
            .withOverrides(knownOldToNew)
            .typesUnify(oldTy, newTy)) {
     return false;
