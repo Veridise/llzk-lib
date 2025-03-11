@@ -297,7 +297,7 @@ ValueMap intersect(const ValueMap &lhs, const ValueMap &rhs) {
 
 /// @brief Deep copy the ValueMap for when exclusive branches/regions need state
 /// tracking, so that the orig state is not polluted through pointer updates.
-ValueMap clone(const ValueMap &orig) {
+ValueMap cloneValueMap(const ValueMap &orig) {
   ValueMap res;
   for (auto &[id, tree] : orig) {
     res[id] = tree->clone();
@@ -391,7 +391,7 @@ class RedundantReadAndWriteEliminationPass
     auto getBlockState = [&endStates](Block *blockPtr) {
       auto it = endStates.find(blockPtr);
       ensure(it != endStates.end(), "unknown end state means we have an unsupported backedge");
-      return ::clone(it->second);
+      return cloneValueMap(it->second);
     };
     std::deque<Block *> frontier;
     frontier.push_back(&r.front());
@@ -466,7 +466,7 @@ class RedundantReadAndWriteEliminationPass
         SmallVector<ValueMap> regionStates;
         for (Region &region : op.getRegions()) {
           auto regionState =
-              runOnRegion(region, ::clone(state), replacementMap, readVals, redundantWrites);
+              runOnRegion(region, cloneValueMap(state), replacementMap, readVals, redundantWrites);
           regionStates.push_back(regionState);
         }
 
