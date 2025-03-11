@@ -7,7 +7,6 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/SmallVector.h>
-#include <llvm/IR/ValueMap.h>
 #include <llvm/Support/Debug.h>
 
 #include <deque>
@@ -306,7 +305,7 @@ ValueMap clone(const ValueMap &orig) {
   return res;
 }
 
-raw_ostream &operator<<(raw_ostream &os, const ValueMap &map) {
+inline raw_ostream &operator<<(raw_ostream &os, const ValueMap &map) {
   os << "ValueMap {\n";
   for (auto &[v, t] : map) {
     os << "    val:" << v << " => tree:";

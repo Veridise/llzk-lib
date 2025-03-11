@@ -156,7 +156,7 @@ class RedundantOperationEliminationPass
 
     for (auto *op : redundantOps) {
       for (auto result : op->getResults()) {
-        result.replaceAllUsesWith(map.at(result));
+        result.replaceAllUsesWith(map[result]);
       }
       op->erase();
     }
