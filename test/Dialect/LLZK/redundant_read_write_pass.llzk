@@ -300,3 +300,53 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     }
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component {
+    field @matrix : !llzk.array<7,3 x !llzk.felt>
+
+    func @compute(%inputArr : !llzk.array<3 x !llzk.felt>, %cond : i1) -> !llzk.struct<@Component> {
+      %self = new_struct : !llzk.struct<@Component>
+      %mat = readf %self[@matrix] : !llzk.struct<@Component>, !llzk.array<7,3 x !llzk.felt>
+      %idx1 = arith.constant 1 : index
+      %idx4 = arith.constant 4 : index
+
+      scf.if %cond {
+        llzk.insertarr %mat[%idx1] = %inputArr : !llzk.array<7,3 x !llzk.felt>, !llzk.array<3 x !llzk.felt>
+      } else {
+        %arr1 = llzk.extractarr %mat[%idx1] : !llzk.array<7,3 x !llzk.felt> // This load is necessary, as the value is unknown in this branch
+        llzk.insertarr %mat[%idx4] = %arr1 : !llzk.array<7,3 x !llzk.felt>, !llzk.array<3 x !llzk.felt>
+        llzk.insertarr %mat[%idx1] = %arr1 : !llzk.array<7,3 x !llzk.felt>, !llzk.array<3 x !llzk.felt> // this store is still unnecessary
+      }
+
+      return %self : !llzk.struct<@Component>
+    }
+    func @constrain(%self: !llzk.struct<@Component>, %inputArr : !llzk.array<3 x !llzk.felt>, %cond : i1) {
+      return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+// CHECK-NEXT:   llzk.struct @Component {
+// CHECK-NEXT:     field @matrix : !llzk.array<7,3 x !llzk.felt>
+// CHECK-NEXT:     func @compute(%arg0: !llzk.array<3 x !llzk.felt>, %arg1: i1) -> !llzk.struct<@Component> {
+// CHECK-NEXT:       %self = new_struct : <@Component>
+// CHECK-NEXT:       %0 = readf %self[@matrix] : <@Component>, !llzk.array<7,3 x !llzk.felt>
+// CHECK-NEXT:       %c1 = arith.constant 1 : index
+// CHECK-NEXT:       %c4 = arith.constant 4 : index
+// CHECK-NEXT:       scf.if %arg1 {
+// CHECK-NEXT:         llzk.insertarr %0[%c1] = %arg0 : <7,3 x !llzk.felt>, <3 x !llzk.felt>
+// CHECK-NEXT:       } else {
+// CHECK-NEXT:         %1 = llzk.extractarr %0[%c1] : <7,3 x !llzk.felt>
+// CHECK-NEXT:         llzk.insertarr %0[%c4] = %1 : <7,3 x !llzk.felt>, <3 x !llzk.felt>
+// CHECK-NEXT:       }
+// CHECK-NEXT:       return %self : !llzk.struct<@Component>
+// CHECK-NEXT:     }
+// CHECK-NEXT:     func @constrain(%arg0: !llzk.struct<@Component>, %arg1: !llzk.array<3 x !llzk.felt>, %arg2: i1) {
+// CHECK-NEXT:       return
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
+// CHECK-NEXT: }

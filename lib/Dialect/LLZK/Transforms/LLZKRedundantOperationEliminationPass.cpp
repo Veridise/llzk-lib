@@ -2,6 +2,7 @@
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/Dominance.h>
 #include <mlir/Pass/Pass.h>
 
 #include <llvm/ADT/DenseMap.h>
@@ -127,17 +128,20 @@ class RedundantOperationEliminationPass
     TranslationMap map;
     SmallVector<Operation *> redundantOps;
     DenseSet<OperationComparator> uniqueOps;
+    DominanceInfo domInfo(fn);
     fn.walk([&](Operation *op) {
-      // Case 1: The operation itself is unnecessary
+      // Case 1: The operation itself is unnecessary.
       if (auto emiteq = dyn_cast<EmitEqualityOp>(op);
           emiteq && emiteq.getLhs() == emiteq.getRhs()) {
         redundantOps.push_back(op);
         return WalkResult::advance();
       }
 
-      // Case 2: An equivalent operation has already been performed.
+      // Case 2: An equivalent operation A has already been performed before
+      // the current operation B and A dominates B.
       OperationComparator comp(op, map);
-      if (auto it = uniqueOps.find(comp); it != uniqueOps.end()) {
+      if (auto it = uniqueOps.find(comp);
+          it != uniqueOps.end() && domInfo.dominates(it->getOp(), op)) {
         redundantOps.push_back(op);
         for (unsigned opNum = 0; opNum < op->getNumResults(); opNum++) {
           map[op->getResult(opNum)] = it->getOp()->getResult(opNum);
