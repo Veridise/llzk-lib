@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
   llzk::registerAllDialects(registry);
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
+  llzk::registerTransformationPassPipelines();
   llzk::registerValidationPasses();
 
   // Register and parse command line options.
