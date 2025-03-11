@@ -53,6 +53,11 @@ public:
   bool isCommutative() const { return op->hasTrait<OpTrait::IsCommutative>(); }
 
   friend bool operator==(const OperationComparator &lhs, const OperationComparator &rhs) {
+    if (lhs.op == EMPTY_OP_KEY || rhs.op == EMPTY_OP_KEY || lhs.op == TOMBSTONE_OP_KEY ||
+        rhs.op == TOMBSTONE_OP_KEY) {
+      return lhs.op == rhs.op;
+    }
+
     if (lhs.op->getName() != rhs.op->getName()) {
       return false;
     }
@@ -106,10 +111,6 @@ template <> struct DenseMapInfo<OperationComparator> {
     return hash_value(oc.getOp()->getName());
   }
   static bool isEqual(const OperationComparator &lhs, const OperationComparator &rhs) {
-    if (lhs.getOp() == EMPTY_OP_KEY || rhs.getOp() == EMPTY_OP_KEY ||
-        lhs.getOp() == TOMBSTONE_OP_KEY || rhs.getOp() == TOMBSTONE_OP_KEY) {
-      return lhs.getOp() == rhs.getOp();
-    }
     return lhs == rhs;
   }
 };
