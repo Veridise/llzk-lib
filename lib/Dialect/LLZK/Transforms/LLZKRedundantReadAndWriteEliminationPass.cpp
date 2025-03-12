@@ -305,17 +305,6 @@ ValueMap cloneValueMap(const ValueMap &orig) {
   return res;
 }
 
-inline raw_ostream &operator<<(raw_ostream &os, const ValueMap &map) {
-  os << "ValueMap {\n";
-  for (auto &[v, t] : map) {
-    os << "    val:" << v << " => tree:";
-    t->print(os, 4);
-    os << '\n';
-  }
-  os << "}\n";
-  return os;
-}
-
 class RedundantReadAndWriteEliminationPass
     : public llzk::impl::RedundantReadAndWriteEliminationPassBase<
           RedundantReadAndWriteEliminationPass> {

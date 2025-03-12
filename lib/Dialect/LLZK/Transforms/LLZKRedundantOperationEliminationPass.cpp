@@ -1,12 +1,17 @@
+#include "llzk/Dialect/LLZK/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Dominance.h>
 #include <mlir/Pass/Pass.h>
 
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallVector.h>
+
+#include <deque>
 
 /// Include the generated base pass class definitions.
 namespace llzk {
@@ -16,6 +21,8 @@ namespace llzk {
 
 using namespace mlir;
 using namespace llzk;
+
+#define DEBUG_TYPE "llzk-duplicate-op-elimination"
 
 namespace {
 
@@ -121,20 +128,71 @@ namespace {
 
 class RedundantOperationEliminationPass
     : public llzk::impl::RedundantOperationEliminationPassBase<RedundantOperationEliminationPass> {
+
   void runOnOperation() override {
-    getOperation().walk([&](FuncOp fn) { runOnFunc(fn); });
+    SymbolTableCollection symbolTables;
+    // Traverse functions from the bottom of the call graph up.
+    // This way, we may create empty constrain functions to which we can eliminate
+    // calls.
+    auto &cga = getAnalysis<CallGraphAnalysis>();
+    const llzk::CallGraph *callGraph = &cga.getCallGraph();
+    for (auto it = llvm::po_begin(callGraph); it != llvm::po_end(callGraph); ++it) {
+      const llzk::CallGraphNode *node = *it;
+      if (!node->isExternal()) {
+        runOnFunc(symbolTables, node->getCalledFunction());
+      }
+    }
   }
 
-  void runOnFunc(FuncOp fn) {
+  bool isPurposelessConstrainFunc(SymbolTableCollection &symbolTables, FuncOp fn) {
+    if (!fn.isStructConstrain()) {
+      return false;
+    }
+
+    bool res = true;
+    fn.walk([&](Operation *op) {
+      if (isa<EmitEqualityOp, EmitContainmentOp, AssertOp>(op)) {
+        res = false;
+        return WalkResult::interrupt();
+      } else if (auto callOp = dyn_cast<CallOp>(op);
+                 callOp && !callsPurposelessConstrainFunc(symbolTables, callOp)) {
+        res = false;
+        return WalkResult::interrupt();
+      }
+      return WalkResult::advance();
+    });
+    return res;
+  }
+
+  bool callsPurposelessConstrainFunc(SymbolTableCollection &symbolTables, CallOp call) {
+    auto callLookup = resolveCallable<FuncOp>(symbolTables, call);
+    return succeeded(callLookup) && isPurposelessConstrainFunc(symbolTables, callLookup->get());
+  }
+
+  void runOnFunc(SymbolTableCollection &symbolTables, FuncOp fn) {
     TranslationMap map;
     SmallVector<Operation *> redundantOps;
     DenseSet<OperationComparator> uniqueOps;
     DominanceInfo domInfo(fn);
-    fn.walk([&](Operation *op) {
-      // Case 1: The operation itself is unnecessary.
+
+    auto unnecessaryOpCheck = [&](Operation *op) -> bool {
       if (auto emiteq = dyn_cast<EmitEqualityOp>(op);
           emiteq && emiteq.getLhs() == emiteq.getRhs()) {
         redundantOps.push_back(op);
+        return true;
+      }
+
+      if (auto callOp = dyn_cast<CallOp>(op);
+          callOp && callsPurposelessConstrainFunc(symbolTables, callOp)) {
+        redundantOps.push_back(op);
+        return true;
+      }
+      return false;
+    };
+
+    fn.walk([&](Operation *op) {
+      // Case 1: The operation itself is unnecessary.
+      if (unnecessaryOpCheck(op)) {
         return WalkResult::advance();
       }
 
@@ -154,11 +212,48 @@ class RedundantOperationEliminationPass
       return WalkResult::advance();
     });
 
+    // Track the operands of removed ops.
+    std::deque<Value> operands;
+
     for (auto *op : redundantOps) {
+      LLVM_DEBUG(llvm::dbgs() << "Removing op: " << *op << '\n');
       for (auto result : op->getResults()) {
-        result.replaceAllUsesWith(map[result]);
+        if (!result.getUsers().empty()) {
+          auto it = map.find(result);
+          ensure(
+              it != map.end(), "failed to find a replacement value for redundant operation result"
+          );
+          LLVM_DEBUG(llvm::dbgs() << "Replacing " << it->first << " with " << it->second << '\n');
+          result.replaceAllUsesWith(it->second);
+        }
+      }
+      for (Value operand : op->getOperands()) {
+        operands.push_back(operand);
       }
       op->erase();
+    }
+
+    // Check if any of the operands are unused. If so, remove them, and check
+    // their operands until all operands have been checked.
+
+    // Make sure operands aren't freed multiple times
+    DenseSet<Value> checkedOperands;
+    while (!operands.empty()) {
+      Value operand = operands.front();
+      operands.pop_front();
+      checkedOperands.insert(operand);
+
+      // We only want to remove operands that are defined by an operation and
+      // are not block arguments.
+      if (auto *op = operand.getDefiningOp(); op && operand.getUsers().empty()) {
+        for (auto parentOperand : op->getOperands()) {
+          if (checkedOperands.find(parentOperand) == checkedOperands.end()) {
+            operands.push_back(parentOperand);
+          }
+        }
+        LLVM_DEBUG(llvm::dbgs() << "Removing unused operand: " << operand << '\n');
+        op->erase();
+      }
     }
   }
 };
