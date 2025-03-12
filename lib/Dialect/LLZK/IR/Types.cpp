@@ -299,7 +299,7 @@ public:
     return false;
   }
 
-  // Note: The `_no*` flags here refer to Types nested within a TypeAttr parameter (if any) except
+  // Note: The `no*` flags here refer to Types nested within a TypeAttr parameter (if any) except
   // for the `no_struct_params` flag which requires that `params` is null or empty.
   bool
   areValidStructTypeParams(ArrayAttr params, std::optional<EmitErrorFn> emitError = std::nullopt) {
