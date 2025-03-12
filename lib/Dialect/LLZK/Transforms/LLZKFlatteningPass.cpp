@@ -1297,7 +1297,7 @@ LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
     return true;
   };
 
-  // Peform the conversion, i.e. remove StructDefOp that were instantiated and are unused.
+  // Perform the conversion, i.e. remove StructDefOp that were instantiated and are unused.
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
   patterns.add<EraseOpPattern<StructDefOp>>(ctx);
