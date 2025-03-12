@@ -50,12 +50,12 @@ private:
 };
 
 /// Return a brief string representation of the given LLZK type.
-inline std::string shortString(mlir::Type type) {
+static inline std::string shortString(mlir::Type type) {
   return ShortTypeStringifier().append(type).str();
 }
 
 /// Return a brief string representation of the attribute list from a parameterized type.
-inline std::string shortString(mlir::ArrayRef<mlir::Attribute> attrs) {
+static inline std::string shortString(mlir::ArrayRef<mlir::Attribute> attrs) {
   return ShortTypeStringifier().append(attrs).str();
 }
 
@@ -117,8 +117,8 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Side &v
 } // namespace llzk
 
 namespace llvm {
-using T = llzk::Side;
-template <> struct DenseMapInfo<T> {
+template <> struct DenseMapInfo<llzk::Side> {
+  using T = llzk::Side;
   static inline T getEmptyKey() { return T::EMPTY; }
   static inline T getTombstoneKey() { return T::TOMB; }
   static unsigned getHashValue(const T &val) {
@@ -218,7 +218,7 @@ template <typename TypeClass> inline TypeClass getAtIndex(mlir::TypeRange types,
 llvm::SmallVector<mlir::Attribute> forceIntAttrType(llvm::ArrayRef<mlir::Attribute> attrList);
 
 /// Verify that all IntegerAttr have type IndexType.
-mlir::LogicalResult verifyIntAttrType(std::optional<EmitErrorFn> emitError, mlir::Attribute in);
+mlir::LogicalResult verifyIntAttrType(EmitErrorFn emitError, mlir::Attribute in);
 
 mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
 void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);

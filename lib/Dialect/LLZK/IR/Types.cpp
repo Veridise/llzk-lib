@@ -23,7 +23,7 @@ using namespace mlir;
 
 void ShortTypeStringifier::appendSymName(StringRef str) {
   if (str.empty()) {
-    ss << "@?";
+    ss << '?';
   } else {
     ss << '@' << str;
   }
@@ -54,7 +54,7 @@ void ShortTypeStringifier::appendAnyAttr(Attribute a) {
     filtered_raw_ostream fs(ss, [](char c) { return c == ' '; });
     llvm::cast<AffineMapAttr>(a).getValue().print(fs);
     fs.flush();
-    ss << ">";
+    ss << '>';
   } else if (llvm::isa<ArrayAttr>(a)) {
     append(llvm::cast<ArrayAttr>(a).getValue());
   } else {
@@ -71,33 +71,33 @@ ShortTypeStringifier &ShortTypeStringifier::append(ArrayRef<Attribute> attrs) {
 ShortTypeStringifier &ShortTypeStringifier::append(Type type) {
   // Cases must be consistent with isValidTypeImpl() below.
   if (type.isSignlessInteger(1)) {
-    ss << "b";
+    ss << 'b';
   } else if (llvm::isa<IndexType>(type)) {
-    ss << "i";
+    ss << 'i';
   } else if (llvm::isa<FeltType>(type)) {
-    ss << "f";
+    ss << 'f';
   } else if (llvm::isa<StringType>(type)) {
-    ss << "s";
+    ss << 's';
   } else if (llvm::isa<TypeVarType>(type)) {
     ss << "!t<";
     appendSymName(llvm::cast<TypeVarType>(type).getRefName());
-    ss << ">";
+    ss << '>';
   } else if (llvm::isa<ArrayType>(type)) {
     ArrayType at = llvm::cast<ArrayType>(type);
     ss << "!a<";
     append(at.getElementType());
-    ss << ":";
+    ss << ':';
     append(at.getDimensionSizes());
-    ss << ">";
+    ss << '>';
   } else if (llvm::isa<StructType>(type)) {
     StructType st = llvm::cast<StructType>(type);
     ss << "!s<";
     appendSymRef(st.getNameRef());
     if (ArrayAttr params = st.getParams()) {
-      ss << "_";
+      ss << '_';
       append(params.getValue());
     }
-    ss << ">";
+    ss << '>';
   } else {
     ss << "!INVALID";
   }
@@ -113,7 +113,7 @@ template <typename... Types> class TypeList {
 
     // single
     template <typename Ty> static inline void append(StreamType &stream) {
-      stream << "'" << Ty::name << "'";
+      stream << '\'' << Ty::name << '\'';
     }
 
     // multiple
@@ -126,9 +126,9 @@ template <typename... Types> class TypeList {
 
     // full list with wrapping brackets
     static inline void append(StreamType &stream) {
-      stream << "[";
+      stream << '[';
       append<Types...>(stream);
-      stream << "]";
+      stream << ']';
     }
   };
 
@@ -144,10 +144,9 @@ public:
     diag.append(" but found '", foundName, "'").report();
   }
 
-  static inline void
-  reportInvalid(std::optional<EmitErrorFn> emitError, Attribute found, const char *aspect) {
-    if (emitError.has_value()) {
-      reportInvalid(*emitError, found.getAbstractAttribute().getName(), aspect);
+  static inline void reportInvalid(EmitErrorFn emitError, Attribute found, const char *aspect) {
+    if (emitError) {
+      reportInvalid(emitError, found.getAbstractAttribute().getName(), aspect);
     }
   }
 
@@ -194,52 +193,50 @@ class AllowedTypes {
   bool no_struct_params;
 
 public:
-  AllowedTypes()
+  constexpr AllowedTypes()
       : no_felt(false), no_string(false), no_struct(false), no_array(false), no_var(false),
         no_struct_params(false) {}
 
-  AllowedTypes &noFelt() {
+  constexpr AllowedTypes &noFelt() {
     no_felt = true;
     return *this;
   }
 
-  AllowedTypes &noString() {
+  constexpr AllowedTypes &noString() {
     no_string = true;
     return *this;
   }
 
-  AllowedTypes &noStruct() {
+  constexpr AllowedTypes &noStruct() {
     no_struct = true;
     return *this;
   }
 
-  AllowedTypes &noArray() {
+  constexpr AllowedTypes &noArray() {
     no_array = true;
     return *this;
   }
 
-  AllowedTypes &noVar() {
+  constexpr AllowedTypes &noVar() {
     no_var = true;
     return *this;
   }
 
-  AllowedTypes &noStructParams(bool noStructParams = true) {
+  constexpr AllowedTypes &noStructParams(bool noStructParams = true) {
     no_struct_params = noStructParams;
     return *this;
   }
 
-  AllowedTypes &onlyInt() { return noFelt().noString().noStruct().noArray().noVar(); }
+  constexpr AllowedTypes &onlyInt() { return noFelt().noString().noStruct().noArray().noVar(); }
 
   // This is the main check for allowed types.
   bool isValidTypeImpl(Type type);
 
-  bool areValidArrayDimSizes(
-      ArrayRef<Attribute> dimensionSizes, std::optional<EmitErrorFn> emitError = std::nullopt
-  ) {
+  bool areValidArrayDimSizes(ArrayRef<Attribute> dimensionSizes, EmitErrorFn emitError = nullptr) {
     // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
     if (dimensionSizes.empty()) {
-      if (emitError.has_value()) {
-        (*emitError)().append("array must have at least one dimension").report();
+      if (emitError) {
+        emitError().append("array must have at least one dimension").report();
       }
       return false;
     }
@@ -266,8 +263,7 @@ public:
   }
 
   bool isValidArrayTypeImpl(
-      Type elementType, ArrayRef<Attribute> dimensionSizes,
-      std::optional<EmitErrorFn> emitError = std::nullopt
+      Type elementType, ArrayRef<Attribute> dimensionSizes, EmitErrorFn emitError = nullptr
   ) {
     if (!areValidArrayDimSizes(dimensionSizes, emitError)) {
       return false;
@@ -275,11 +271,11 @@ public:
 
     // Ensure array element type is valid
     if (!isValidArrayElemTypeImpl(elementType)) {
-      if (emitError.has_value()) {
+      if (emitError) {
         // Print proper message if `elementType` is not a valid LLZK type or
         //  if it's simply not the right kind of type for an array element.
-        if (succeeded(checkValidType(*emitError, elementType))) {
-          (*emitError)()
+        if (succeeded(checkValidType(emitError, elementType))) {
+          emitError()
               .append(
                   "'", ArrayType::name, "' element type cannot be '",
                   elementType.getAbstractType().getName(), "'"
@@ -301,8 +297,7 @@ public:
 
   // Note: The `no*` flags here refer to Types nested within a TypeAttr parameter (if any) except
   // for the `no_struct_params` flag which requires that `params` is null or empty.
-  bool
-  areValidStructTypeParams(ArrayAttr params, std::optional<EmitErrorFn> emitError = std::nullopt) {
+  bool areValidStructTypeParams(ArrayAttr params, EmitErrorFn emitError = nullptr) {
     bool success = true;
     if (!isNullOrEmpty(params)) {
       if (no_struct_params) {
@@ -314,8 +309,8 @@ public:
           success = false;
         } else if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(p)) {
           if (!isValidTypeImpl(tyAttr.getValue())) {
-            if (emitError.has_value()) {
-              (*emitError)()
+            if (emitError) {
+              emitError()
                   .append("expected a valid LLZK type but found ", tyAttr.getValue())
                   .report();
             }
@@ -610,12 +605,12 @@ SmallVector<Attribute> forceIntAttrType(ArrayRef<Attribute> attrList) {
   });
 }
 
-LogicalResult verifyIntAttrType(std::optional<EmitErrorFn> emitError, Attribute in) {
+LogicalResult verifyIntAttrType(EmitErrorFn emitError, Attribute in) {
   if (IntegerAttr intAttr = llvm::dyn_cast<IntegerAttr>(in)) {
     Type attrTy = intAttr.getType();
     if (!AllowedTypes().onlyInt().isValidTypeImpl(attrTy)) {
-      if (emitError.has_value()) {
-        (*emitError)()
+      if (emitError) {
+        emitError()
             .append("IntegerAttr must have type 'index' or 'i1' but found '", attrTy, "'")
             .report();
       }
@@ -778,8 +773,6 @@ LogicalResult ArrayType::verify(
 ) {
   return success(AllowedTypes().isValidArrayTypeImpl(elementType, dimensionSizes, emitError));
 }
-
-int64_t ArrayType::getNumElements() const { return ShapedType::getNumElements(getShape()); }
 
 ArrayType ArrayType::cloneWith(std::optional<ArrayRef<int64_t>> shape, Type elementType) const {
   return ArrayType::get(elementType, shape.has_value() ? shape.value() : getShape());

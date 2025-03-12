@@ -24,7 +24,7 @@
 
 /// Include the generated base pass class definitions.
 namespace llzk {
-#define GEN_PASS_DEF_INSTANTIATESTRUCTSPASS
+#define GEN_PASS_DEF_FLATTENINGPASS
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
 
@@ -870,20 +870,22 @@ public:
     Type newResultElemType = nullptr;
     for (Operation *user : createResult.getUsers()) {
       if (WriteArrayOp writeOp = dyn_cast<WriteArrayOp>(user)) {
-        if (writeOp.getArrRef() == createResult) {
-          Type writeRValueType = writeOp.getRvalue().getType();
-          if (writeRValueType != oldResultElemType) {
-            if (newResultElemType && newResultElemType != writeRValueType) {
-              LLVM_DEBUG(
-                  llvm::dbgs()
-                  << "[UpdateArrayElemFromWrite] multiple possible element types for CreateArrayOp "
-                  << newResultElemType << " vs " << writeRValueType << "\n"
-              );
-              return failure();
-            }
-            newResultElemType = writeRValueType;
-          }
+        if (writeOp.getArrRef() != createResult) {
+          continue;
         }
+        Type writeRValueType = writeOp.getRvalue().getType();
+        if (writeRValueType == oldResultElemType) {
+          continue;
+        }
+        if (newResultElemType && newResultElemType != writeRValueType) {
+          LLVM_DEBUG(
+              llvm::dbgs()
+              << "[UpdateArrayElemFromWrite] multiple possible element types for CreateArrayOp "
+              << newResultElemType << " vs " << writeRValueType << "\n"
+          );
+          return failure();
+        }
+        newResultElemType = writeRValueType;
       }
     }
     if (!newResultElemType) {
@@ -1011,38 +1013,27 @@ public:
       : OpRewritePattern(ctx), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(FuncOp op, PatternRewriter &rewriter) const override {
-    // Collect unique return type lists
-    std::optional<OperandRange::type_range> tyFromReturnOp;
-    op.walk([&tyFromReturnOp](Operation *p) {
-      if (ReturnOp retOp = dyn_cast<ReturnOp>(p)) {
-        auto currReturnType = retOp.getOperands().getTypes();
-        // If a type was found from another ReturnOp, make sure it matches the current or give up.
-        if (tyFromReturnOp && currReturnType != *tyFromReturnOp) {
-          tyFromReturnOp = std::nullopt;
-          return WalkResult::interrupt();
-        }
-        // Otherwise, keep track of the current one and continue.
-        tyFromReturnOp = currReturnType;
-      }
-      return WalkResult::advance();
-    });
-
-    if (!tyFromReturnOp) {
+    Region &body = op.getFunctionBody();
+    if (body.empty()) {
       return failure();
     }
+    ReturnOp retOp = llvm::dyn_cast<ReturnOp>(body.back().getTerminator());
+    assert(retOp && "final op in body region must be return");
+    OperandRange::type_range tyFromReturnOp = retOp.getOperands().getTypes();
+
     FunctionType oldFuncTy = op.getFunctionType();
-    if (oldFuncTy.getResults() == *tyFromReturnOp) {
+    if (oldFuncTy.getResults() == tyFromReturnOp) {
       // nothing changed
       return failure();
     }
     if (!tracker_.areLegalConversions(
-            oldFuncTy.getResults(), *tyFromReturnOp, "UpdateFuncTypeFromReturn"
+            oldFuncTy.getResults(), tyFromReturnOp, "UpdateFuncTypeFromReturn"
         )) {
       return failure();
     }
 
     rewriter.modifyOpInPlace(op, [&]() {
-      op.setFunctionType(rewriter.getFunctionType(oldFuncTy.getInputs(), *tyFromReturnOp));
+      op.setFunctionType(rewriter.getFunctionType(oldFuncTy.getInputs(), tyFromReturnOp));
     });
     LLVM_DEBUG(
         llvm::dbgs() << "[UpdateFuncTypeFromReturn] changed " << op.getSymName() << " from "
@@ -1351,8 +1342,7 @@ LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
 
 } // namespace Step5_Cleanup
 
-class InstantiateStructsPass
-    : public llzk::impl::InstantiateStructsPassBase<InstantiateStructsPass> {
+class FlatteningPass : public llzk::impl::FlatteningPassBase<FlatteningPass> {
 
   static constexpr unsigned LIMIT = 1000;
 
@@ -1427,6 +1417,4 @@ class InstantiateStructsPass
 
 } // namespace
 
-std::unique_ptr<Pass> llzk::createFlatteningPass() {
-  return std::make_unique<InstantiateStructsPass>();
-};
+std::unique_ptr<Pass> llzk::createFlatteningPass() { return std::make_unique<FlatteningPass>(); };

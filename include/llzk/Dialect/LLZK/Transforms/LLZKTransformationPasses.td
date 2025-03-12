@@ -9,7 +9,7 @@ def InlineIncludesPass : Pass<"llzk-inline-includes", "::mlir::ModuleOp"> {
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
-def InstantiateStructsPass : Pass<"llzk-flatten", "::mlir::ModuleOp"> {
+def FlatteningPass : Pass<"llzk-flatten", "::mlir::ModuleOp"> {
   let summary =
       "Replace parameterized structs with flattened (i.e. no parameter) "
       "versions of those structs based on requested return type at calls to "

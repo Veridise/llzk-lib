@@ -20,7 +20,7 @@ class filtered_raw_ostream : public llvm::raw_ostream {
   uint64_t current_pos() const override { return underlyingStream.tell(); }
 
 public:
-  explicit filtered_raw_ostream(llvm::raw_ostream &os, std::function<bool(char)> filter)
+  filtered_raw_ostream(llvm::raw_ostream &os, std::function<bool(char)> filter)
       : underlyingStream(os), filterFunc(std::move(filter)) {}
 
   ~filtered_raw_ostream() override { flush(); }

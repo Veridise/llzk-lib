@@ -76,14 +76,9 @@ template <Iterable InputIt> inline void Appender::append(const InputIt &collecti
 }
 
 template <typename InputIt> void Appender::appendList(InputIt begin, InputIt end) {
-  stream << "[";
-  for (auto it = begin; it != end; ++it) {
-    append(*it);
-    if (std::next(it) != end) {
-      stream << ", ";
-    }
-  }
-  stream << "]";
+  stream << '[';
+  llvm::interleave(begin, end, [this](const auto &n) { append(n); }, [this] { stream << ", "; });
+  stream << ']';
 }
 
 } // namespace
@@ -123,7 +118,7 @@ inline void dumpSymbolTableWalk(mlir::Operation *symbolTableOp) {
   oss << "Dumping symbol walk (self = [" << symbolTableOp << "]): \n";
   auto walkFn = [&](mlir::Operation *op, bool allUsesVisible) {
     oss << "  found op [" << op << "] " << op->getName() << " named "
-        << op->getAttrOfType<mlir::StringAttr>(mlir::SymbolTable::getSymbolAttrName()) << "\n";
+        << op->getAttrOfType<mlir::StringAttr>(mlir::SymbolTable::getSymbolAttrName()) << '\n';
   };
   mlir::SymbolTable::walkSymbolTables(symbolTableOp, /*allSymUsesVisible=*/true, walkFn);
   llvm::outs() << output;
@@ -140,10 +135,10 @@ dumpSymbolTable(llvm::raw_ostream &stream, mlir::SymbolTable &symTab, unsigned i
       reinterpret_cast<llvm::DenseMap<mlir::Attribute, mlir::Operation *> *>(rawSymbolTablePtr + 8);
   for (llvm::detail::DenseMapPair<mlir::Attribute, mlir::Operation *> &p : *privateFieldPtr) {
     for (unsigned i = 0; i < indent; ++i) {
-      stream << "  ";
+      stream << '  ';
     }
     mlir::Operation *op = p.second;
-    stream << "  " << p.first << " -> [" << op << "] " << op->getName() << "\n";
+    stream << '  ' << p.first << " -> [" << op << "] " << op->getName() << '\n';
   }
 }
 
@@ -163,7 +158,7 @@ inline void dumpSymbolTables(llvm::raw_ostream &stream, mlir::SymbolTableCollect
       );
   for (llvm::detail::DenseMapPair<mlir::Operation *, std::unique_ptr<mlir::SymbolTable>> &p :
        *privateFieldPtr) {
-    stream << "  [" << p.first << "] " << p.first->getName() << " -> " << "\n";
+    stream << "  [" << p.first << "] " << p.first->getName() << " -> " << '\n';
     dumpSymbolTable(stream, *p.second.get(), 2);
   }
 }
@@ -181,7 +176,7 @@ inline void dumpToFile(mlir::Operation *op, llvm::StringRef filename) {
   if (!err) {
     auto options = mlir::OpPrintingFlags().assumeVerified().useLocalScope();
     op->print(stream, options);
-    stream << "\n";
+    stream << '\n';
   }
 }
 

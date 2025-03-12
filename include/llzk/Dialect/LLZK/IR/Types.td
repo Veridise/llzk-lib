@@ -148,10 +148,10 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
                                       [{
       assert(elementType && "element type cannot be null");
       ::mlir::MLIRContext *ctx = elementType.getContext();
-      ::llvm::SmallVector<::mlir::Attribute> dimensionSizes;
-      ::mlir::LogicalResult res = computeDimsFromShape(ctx, shape, dimensionSizes);
+      ::llvm::SmallVector<::mlir::Attribute> dimSizes;
+      ::mlir::LogicalResult res = computeDimsFromShape(ctx, shape, dimSizes);
       if(::mlir::failed(res)) { return ArrayType(); }
-      return $_get(ctx, elementType, dimensionSizes, shape);
+      return $_get(ctx, elementType, dimSizes, shape);
     }]>];
 
   let extraClassDeclaration = [{
@@ -159,11 +159,6 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
     /// LLZK arrays are always ranked, i.e. the number of dimensions is known.
     /// Required by the ShapedTypeInterface interface.
     inline bool hasRank() const { return true; }
-
-    /// Returns the number of elements in the array.
-    /// Aborts if the array has a dynamic dimension.
-    /// Required by the ShapedTypeInterface interface.
-    int64_t getNumElements() const;
 
     /// Clone this type with the given shape and element type. If the
     /// provided shape is `std::nullopt`, the current shape of the type is used.

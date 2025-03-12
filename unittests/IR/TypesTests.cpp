@@ -127,9 +127,9 @@ TEST_F(TypeTests, testShortString) {
   // No protection/escaping of special characters in the original name
   EXPECT_EQ("!s<@S1_!a<>>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1_!a<>"))));
 
-  // Empty string produces "@?"
-  EXPECT_EQ("@?", shortString(FlatSymbolRefAttr::get(&ctx, "")));
-  EXPECT_EQ("@?", shortString(FlatSymbolRefAttr::get(&ctx, StringRef())));
+  // Empty string produces "?"
+  EXPECT_EQ("?", shortString(FlatSymbolRefAttr::get(&ctx, "")));
+  EXPECT_EQ("?", shortString(FlatSymbolRefAttr::get(&ctx, StringRef())));
 
   {
     constexpr char withNull[] = {'a', 'b', '\0', 'c', 'd'};
