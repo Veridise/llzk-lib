@@ -1,0 +1,39 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-flatten -verify-diagnostics %s
+
+#id = affine_map<(i)->(i)>
+!ToFelt = !llzk.struct<@ToFelt<[#id]>>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ToFelt<[@A]> {
+    func @compute() -> !llzk.struct<@ToFelt<[@A]>> {
+      %self = new_struct : !llzk.struct<@ToFelt<[@A]>>
+      return %self: !llzk.struct<@ToFelt<[@A]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@ToFelt<[@A]>>) { return }
+  }
+
+  llzk.struct @ComponentA<[@T]> {
+    func @compute(%inp: !llzk.struct<@ToFelt<[@T]>>) -> !llzk.struct<@ComponentA<[@T]>> {
+      %self = new_struct : !llzk.struct<@ComponentA<[@T]>>
+      return %self : !llzk.struct<@ComponentA<[@T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA<[@T]>>, %inp: !llzk.struct<@ToFelt<[@T]>>) { return }
+  }
+
+  llzk.struct @ComponentB {
+    func @compute() -> !llzk.struct<@ComponentB> {
+      // In real code, this should be loop induction variable
+      %n = arith.constant 2 : index
+      %in = llzk.call @ToFelt::@compute(){(%n)} : () -> !ToFelt
+      // ERROR: The input argument here produces a `@ComponentA<[@T]>` not `@ComponentA<[!ToFelt]>` which is an error.
+      // expected-error@+1 {{result type mismatch: due to struct instantiation, expected type '!llzk.struct<@ComponentA<[2]>>', but found '!llzk.struct<@ComponentA<[!llzk.struct<@ToFelt<[affine_map<(d0) -> (d0)>]>>]>>'}}
+      %out = llzk.call @ComponentA::@compute(%in) : (!ToFelt) -> !llzk.struct<@ComponentA<[!ToFelt]>>
+
+      %self = new_struct : !llzk.struct<@ComponentB>
+      return %self : !llzk.struct<@ComponentB>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentB>) { return }
+  }
+}

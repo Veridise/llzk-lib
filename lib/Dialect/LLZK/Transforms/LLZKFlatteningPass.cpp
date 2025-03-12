@@ -35,6 +35,153 @@ using namespace mlir;
 
 namespace {
 
+class ConversionTracker {
+  /// Tracks if some step performed a modification of the code such that another pass should be run.
+  bool modified;
+  /// Maps original remote (i.e. use site) type to new remote type.
+  /// Note: The keys are always parameterized StructType and the values are no-parameter StructType.
+  DenseMap<StructType, StructType> structInstantiations;
+  /// Contains the reverse of mappings in `structInstantiations` for use in legal conversion check.
+  DenseMap<StructType, StructType> reverseInstantiations;
+  /// Maps new remote type (i.e. the values in 'structInstantiations') to location of the compute()
+  /// calls that cause instantiation
+  DenseMap<StructType, DenseSet<Location>> newTyComputeLocs;
+
+public:
+  bool isModified() const { return modified; }
+  void resetModifiedFlag() { modified = false; }
+  void updateModifiedFlag(bool currStepModified) { modified |= currStepModified; }
+
+  void recordInstantiation(StructType oldType, StructType newType) {
+    // Assert invariant required by `structInstantiations`
+    assert(!isNullOrEmpty(oldType.getParams()));
+    assert(isNullOrEmpty(newType.getParams()));
+
+    auto forwardResult = structInstantiations.try_emplace(oldType, newType);
+    if (forwardResult.second) {
+      // Insertion was successful
+      // ASSERT: The reverse map does not contain this mapping either
+      assert(!reverseInstantiations.contains(newType));
+      reverseInstantiations[newType] = oldType;
+      // Set the modified flag
+      modified = true;
+    } else {
+      // ASSERT: If a mapping already existed for `oldType` it must be `newType`
+      assert(forwardResult.first->getSecond() == newType);
+      // ASSERT: The reverse mapping is already present as well
+      assert(reverseInstantiations.lookup(newType) == oldType);
+    }
+    assert(structInstantiations.size() == reverseInstantiations.size());
+  }
+
+  /// Return the instantiated type of the given StructType, if any.
+  std::optional<StructType> getInstantiation(StructType oldType) const {
+    auto cachedResult = structInstantiations.find(oldType);
+    if (cachedResult != structInstantiations.end()) {
+      return cachedResult->second;
+    }
+    return std::nullopt;
+  }
+
+  const DenseMap<StructType, StructType> &getAllInstantiations() const {
+    return structInstantiations;
+  }
+
+  /// Collect the fully-qualified names of all structs that were instantiated.
+  DenseSet<SymbolRefAttr> getInstantiatedStructNames() const {
+    DenseSet<SymbolRefAttr> instantiatedNames;
+    for (const auto &[origRemoteTy, _] : structInstantiations) {
+      instantiatedNames.insert(origRemoteTy.getNameRef());
+    }
+    return instantiatedNames;
+  }
+
+  /// Record the location of a "compute" function that produces the given instantiated `StructType`.
+  void recordLocation(StructType newType, Location instantiationLocation) {
+    newTyComputeLocs[newType].insert(instantiationLocation);
+  }
+
+  /// Get the locations of all "compute" functions that produce the given instantiated `StructType`.
+  const DenseSet<Location> *getLocations(StructType newType) const {
+    auto res = newTyComputeLocs.find(newType);
+    return (res == newTyComputeLocs.end()) ? nullptr : &res->getSecond();
+  }
+
+  /// Check if the type conversion is legal, i.e. the new type unifies with and is more concrete
+  /// than the old type with additional allowance for the results of struct flattening conversions.
+  bool isLegalConversion(Type oldType, Type newType, const char *patName) const {
+    std::function<bool(Type, Type)> checkInstantiations = [&](Type oTy, Type nTy) {
+      // Check if `oTy` is a struct with a known instantiation to `nTy`
+      if (StructType oldStructType = llvm::dyn_cast<StructType>(oTy)) {
+        // Note: The values in `structInstantiations` must be no-parameter struct types
+        // so there is no need for recursive check, simple equality is sufficient.
+        if (this->structInstantiations.lookup(oldStructType) == nTy) {
+          return true;
+        }
+      }
+      // Check if `nTy` is the result of a struct instantiation and if the pre-image of
+      // that instantiation (i.e. the parameterized version of the instantiated struct)
+      // is a more concrete unification of `oTy`.
+      if (StructType newStructType = llvm::dyn_cast<StructType>(nTy)) {
+        if (auto preImage = this->reverseInstantiations.lookup(newStructType)) {
+          if (isMoreConcreteUnification(oTy, preImage, checkInstantiations)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    if (isMoreConcreteUnification(oldType, newType, checkInstantiations)) {
+      return true;
+    }
+    LLVM_DEBUG(llvm::dbgs() << "[" << patName << "] Cannot replace old type " << oldType
+                            << " with new type " << newType
+                            << " because it does not define a compatible and more concrete type.\n";
+    );
+    return false;
+  }
+
+  template <typename T, typename U>
+  inline bool areLegalConversions(T oldTypes, U newTypes, const char *patName) const {
+    return llvm::all_of(
+        llvm::zip_equal(oldTypes, newTypes),
+        [this, &patName](std::tuple<Type, Type> oldThenNew) {
+      return this->isLegalConversion(std::get<0>(oldThenNew), std::get<1>(oldThenNew), patName);
+    }
+    );
+  }
+};
+
+/// Patterns can use this listener and call notifyMatchFailure(..) for failures where the entire
+/// pass must fail, i.e. where instantiation would introduce an illegal type conversion.
+struct MatchFailureListener : public RewriterBase::Listener {
+  bool hadFailure = false;
+
+  virtual ~MatchFailureListener() {}
+
+  virtual LogicalResult
+  notifyMatchFailure(Location loc, function_ref<void(Diagnostic &)> reasonCallback) override {
+    hadFailure = true;
+
+    InFlightDiagnostic diag = mlir::emitError(loc);
+    reasonCallback(*diag.getUnderlyingDiagnostic());
+    return diag; // implicitly calls `diag.report()`
+  }
+};
+
+static LogicalResult
+applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternSet &&patterns) {
+  bool currStepModified = false;
+  MatchFailureListener failureListener;
+  LogicalResult result = applyPatternsAndFoldGreedily(
+      modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig {.listener = &failureListener},
+      &currStepModified
+  );
+  tracker.updateModifiedFlag(currStepModified);
+  return failure(result.failed() || failureListener.hadFailure);
+}
+
 /// Lists all Op classes that may contain a StructType in their results or attributes.
 static struct {
   /// Subset that define the general builder function:
@@ -199,124 +346,6 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
   return llvm::isa<IntegerAttr>(a);
 }
 
-class ConversionTracker {
-  /// Tracks if some step performed a modification of the code such that another pass should be run.
-  bool modified;
-  /// Maps original remote (i.e. use site) type to new remote type.
-  /// Note: The keys are always parameterized StructType and the values are no-parameter StructType.
-  DenseMap<StructType, StructType> structInstantiations;
-  /// Contains the reverse of mappings in `structInstantiations` for use in legal conversion check.
-  DenseMap<StructType, StructType> reverseInstantiations;
-  /// Maps new remote type (i.e. the values in 'structInstantiations') to location of the compute()
-  /// calls that cause instantiation
-  DenseMap<StructType, DenseSet<Location>> newTyComputeLocs;
-
-public:
-  bool isModified() const { return modified; }
-  void resetModifiedFlag() { modified = false; }
-  void updateModifiedFlag(bool currStepModified) { modified |= currStepModified; }
-
-  void recordInstantiation(StructType oldType, StructType newType) {
-    // Assert invariant required by `structInstantiations`
-    assert(!isNullOrEmpty(oldType.getParams()));
-    assert(isNullOrEmpty(newType.getParams()));
-
-    auto forwardResult = structInstantiations.try_emplace(oldType, newType);
-    if (forwardResult.second) {
-      // Insertion was successful
-      // ASSERT: The reverse map does not contain this mapping either
-      assert(!reverseInstantiations.contains(newType));
-      reverseInstantiations[newType] = oldType;
-      // Set the modified flag
-      modified = true;
-    } else {
-      // ASSERT: If a mapping already existed for `oldType` it must be `newType`
-      assert(forwardResult.first->getSecond() == newType);
-      // ASSERT: The reverse mapping is already present as well
-      assert(reverseInstantiations.lookup(newType) == oldType);
-    }
-    assert(structInstantiations.size() == reverseInstantiations.size());
-  }
-
-  /// Return the instantiated type of the given StructType, if any.
-  std::optional<StructType> getInstantiation(StructType oldType) const {
-    auto cachedResult = structInstantiations.find(oldType);
-    if (cachedResult != structInstantiations.end()) {
-      return cachedResult->second;
-    }
-    return std::nullopt;
-  }
-
-  const DenseMap<StructType, StructType> &getAllInstantiations() const {
-    return structInstantiations;
-  }
-
-  /// Collect the fully-qualified names of all structs that were instantiated.
-  DenseSet<SymbolRefAttr> getInstantiatedStructNames() const {
-    DenseSet<SymbolRefAttr> instantiatedNames;
-    for (const auto &[origRemoteTy, _] : structInstantiations) {
-      instantiatedNames.insert(origRemoteTy.getNameRef());
-    }
-    return instantiatedNames;
-  }
-
-  /// Record the location of a "compute" function that produces the given instantiated `StructType`.
-  void recordLocation(StructType newType, Location instantiationLocation) {
-    newTyComputeLocs[newType].insert(instantiationLocation);
-  }
-
-  /// Get the locations of all "compute" functions that produce the given instantiated `StructType`.
-  const DenseSet<Location> *getLocations(StructType newType) const {
-    auto res = newTyComputeLocs.find(newType);
-    return (res == newTyComputeLocs.end()) ? nullptr : &res->getSecond();
-  }
-
-  /// Check if the type conversion is legal, i.e. the new type unifies with and is more concrete
-  /// than the old type with additional allowance for the results of struct flattening conversions.
-  bool isLegalConversion(Type oldType, Type newType, const char *patName) const {
-    std::function<bool(Type, Type)> checkInstantiations = [&](Type oTy, Type nTy) {
-      // Check if `oTy` is a struct with a known instantiation to `nTy`
-      if (StructType oldStructType = llvm::dyn_cast<StructType>(oTy)) {
-        // Note: The values in `structInstantiations` must be no-parameter struct types
-        // so there is no need for recursive check, simple equality is sufficient.
-        if (this->structInstantiations.lookup(oldStructType) == nTy) {
-          return true;
-        }
-      }
-      // Check if `nTy` is the result of a struct instantiation and if the pre-image of
-      // that instantiation (i.e. the parameterized version of the instantiated struct)
-      // is a more concrete unification of `oTy`.
-      if (StructType newStructType = llvm::dyn_cast<StructType>(nTy)) {
-        if (auto preImage = this->reverseInstantiations.lookup(newStructType)) {
-          if (isMoreConcreteUnification(oTy, preImage, checkInstantiations)) {
-            return true;
-          }
-        }
-      }
-      return false;
-    };
-
-    if (isMoreConcreteUnification(oldType, newType, checkInstantiations)) {
-      return true;
-    }
-    LLVM_DEBUG(llvm::dbgs() << "[" << patName << "] Cannot replace old type " << oldType
-                            << " with new type " << newType
-                            << " because it does not define a compatible and more concrete type.\n";
-    );
-    return false;
-  }
-
-  template <typename T, typename U>
-  inline bool areLegalConversions(T oldTypes, U newTypes, const char *patName) const {
-    return llvm::all_of(
-        llvm::zip_equal(oldTypes, newTypes),
-        [this, &patName](std::tuple<Type, Type> oldThenNew) {
-      return this->isLegalConversion(std::get<0>(oldThenNew), std::get<1>(oldThenNew), patName);
-    }
-    );
-  }
-};
-
 namespace Step1_FindComputeTypes {
 
 class ParameterizedStructUseTypeConverter : public TypeConverter {
@@ -353,11 +382,11 @@ public:
   }
 };
 
-class CallComputePattern : public OpConversionPattern<CallOp> {
+class CallStructFuncPattern : public OpConversionPattern<CallOp> {
   ConversionTracker &tracker_;
 
 public:
-  CallComputePattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &tracker)
+  CallStructFuncPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &tracker)
       // future proof: use higher priority than GeneralTypeReplacePattern
       : OpConversionPattern<CallOp>(converter, ctx, 2), tracker_(tracker) {}
 
@@ -375,13 +404,13 @@ public:
     SymbolRefAttr calleeAttr = op.getCalleeAttr();
     if (op.calleeIsStructCompute()) {
       if (StructType newStTy = getIfSingleton<StructType>(newResultTypes)) {
-        assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated"); // I think
+        assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated");
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
         tracker_.recordLocation(newStTy, op.getLoc());
       }
     } else if (op.calleeIsStructConstrain()) {
       if (StructType newStTy = getAtIndex<StructType>(adapter.getArgOperands().getTypes(), 0)) {
-        assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated"); // I think
+        assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated");
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
       }
     }
@@ -398,7 +427,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   ParameterizedStructUseTypeConverter tyConv(tracker);
   ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
-  patterns.add<CallComputePattern>(tyConv, ctx, tracker);
+  patterns.add<CallStructFuncPattern>(tyConv, ctx, tracker);
   return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
@@ -663,12 +692,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   patterns.add<LoopUnrollPattern<scf::ForOp>>(ctx);
   patterns.add<LoopUnrollPattern<affine::AffineForOp>>(ctx);
 
-  bool currStepModified = false;
-  auto result = applyPatternsAndFoldGreedily(
-      modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &currStepModified
-  );
-  tracker.updateModifiedFlag(currStepModified);
-  return result;
+  return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
 } // namespace Step3_Unroll
 
@@ -1080,12 +1104,12 @@ public:
       // this pattern only applies when the callee is "compute()" within a struct
       return failure();
     }
-    StructType oldComputeRetTy = op.getComputeSingleResultType();
+    StructType oldRetTy = op.getComputeSingleResultType();
     LLVM_DEBUG({
       llvm::dbgs() << "[InstantiateAtCallOpCompute] target: " << op.getCallee() << "\n";
-      llvm::dbgs() << "[InstantiateAtCallOpCompute]   oldComputeRetTy: " << oldComputeRetTy << "\n";
+      llvm::dbgs() << "[InstantiateAtCallOpCompute]   oldRetTy: " << oldRetTy << "\n";
     });
-    ArrayAttr params = oldComputeRetTy.getParams();
+    ArrayAttr params = oldRetTy.getParams();
     if (isNullOrEmpty(params)) {
       // nothing to do if the StructType is not parameterized
       return failure();
@@ -1128,24 +1152,30 @@ public:
       });
     }
 
-    StructType newComputeRetTy =
-        StructType::get(oldComputeRetTy.getNameRef(), out.paramsOfStructTy);
-    if (newComputeRetTy == oldComputeRetTy) {
+    StructType newRetTy = StructType::get(oldRetTy.getNameRef(), out.paramsOfStructTy);
+    if (newRetTy == oldRetTy) {
       // nothing changed
       return failure();
     }
-    // ASSERT: instantiateViaTargetType() only preserves the original Attribute or converts to a
-    // concrete attribute via the unification process.
-    assert(
-        tracker_.isLegalConversion(oldComputeRetTy, newComputeRetTy, "InstantiateAtCallOpCompute")
-    );
+    // The `newRetTy` is computed via instantiateViaTargetType() which can only preserve the
+    // original Attribute or convert to a concrete attribute via the unification process. Thus, if
+    // the conversion here is illegal it means there is a type conflict within the LLZK code that
+    // prevents instantiation of the struct with the requested type.
+    if (!tracker_.isLegalConversion(oldRetTy, newRetTy, "InstantiateAtCallOpCompute")) {
+      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+        diag.append(
+            "result type mismatch: due to struct instantiation, expected type ", newRetTy,
+            ", but found ", oldRetTy
+        );
+      });
+    }
     LLVM_DEBUG(
-        llvm::dbgs() << "[InstantiateAtCallOpCompute] instantiating " << oldComputeRetTy << " as "
-                     << newComputeRetTy << " in \"" << op << "\"\n"
+        llvm::dbgs() << "[InstantiateAtCallOpCompute] instantiating " << oldRetTy << " as "
+                     << newRetTy << " in \"" << op << "\"\n"
     );
     rewriter.replaceOpWithNewOp<CallOp>(
-        op, TypeRange {newComputeRetTy}, op.getCallee(),
-        AffineMapFolder::getConvertedMapOpGroups(out), out.dimsPerGroup, op.getArgOperands()
+        op, TypeRange {newRetTy}, op.getCallee(), AffineMapFolder::getConvertedMapOpGroups(out),
+        out.dimsPerGroup, op.getArgOperands()
     );
     return success();
   }
@@ -1168,14 +1198,14 @@ private:
     }
 
     LLVM_DEBUG({
-      llvm::dbgs() << "[instantiateViaTargetType] in.paramsOfStructTy = "
-                   << debug::toStringList(in.paramsOfStructTy) << "\n";
-      llvm::dbgs() << "[instantiateViaTargetType] targetResTyParams = "
-                   << debug::toStringList(targetResTyParams) << "\n";
-      llvm::dbgs() << "[instantiateViaTargetType] target.argtypes = "
-                   << debug::toStringList(targetFunc.getArgumentTypes()) << "\n";
-      llvm::dbgs() << "[instantiateViaTargetType] callArgTypes = "
+      llvm::dbgs() << "[instantiateViaTargetType] call arg types: "
                    << debug::toStringList(callArgTypes) << "\n";
+      llvm::dbgs() << "[instantiateViaTargetType] target func arg types: "
+                   << debug::toStringList(targetFunc.getArgumentTypes()) << "\n";
+      llvm::dbgs() << "[instantiateViaTargetType] struct params @ call: "
+                   << debug::toStringList(in.paramsOfStructTy) << "\n";
+      llvm::dbgs() << "[instantiateViaTargetType] target struct params: "
+                   << debug::toStringList(targetResTyParams) << "\n";
     });
 
     UnificationMap unifications;
@@ -1183,7 +1213,7 @@ private:
     assert(unifies && "should have been checked by verifiers");
 
     LLVM_DEBUG({
-      llvm::dbgs() << "[instantiateViaTargetType] unifications = "
+      llvm::dbgs() << "[instantiateViaTargetType] unifications of arg types: "
                    << debug::toStringList(unifications) << "\n";
     });
 
@@ -1200,10 +1230,17 @@ private:
       // non-parameterized concrete unification for the target struct parameter symbol.
       if (!isConcreteAttr<>(fromCall)) {
         Attribute fromTgt = std::get<0>(p);
+        LLVM_DEBUG({
+          llvm::dbgs() << "[instantiateViaTargetType]   fromCall = " << fromCall << "\n";
+          llvm::dbgs() << "[instantiateViaTargetType]   fromTgt = " << fromTgt << "\n";
+        });
         assert(llvm::isa<SymbolRefAttr>(fromTgt));
         auto it = unifications.find(std::make_pair(llvm::cast<SymbolRefAttr>(fromTgt), Side::LHS));
         if (it != unifications.end()) {
           Attribute unifiedAttr = it->second;
+          LLVM_DEBUG({
+            llvm::dbgs() << "[instantiateViaTargetType]   unifiedAttr = " << unifiedAttr << "\n";
+          });
           if (unifiedAttr && isConcreteAttr<false>(unifiedAttr)) {
             return unifiedAttr;
           }
@@ -1236,12 +1273,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       // clang-format on
       >(ctx, tracker);
 
-  bool currStepModified = false;
-  auto result = applyPatternsAndFoldGreedily(
-      modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &currStepModified
-  );
-  tracker.updateModifiedFlag(currStepModified);
-  return result;
+  return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
 
 } // namespace Step4_InstantiateAffineMaps
