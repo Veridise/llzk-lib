@@ -3,6 +3,10 @@
 #id = affine_map<(i)->(i)>
 #IdxToLen = affine_map<(i)->(5*i+1)>
 !ToFelt = !llzk.struct<@ToFelt<[#id]>>
+// In this test, `#IdxToLen` is instantiated via a `new_array` op but there are no instantiations of
+// the `!llzk.struct<@ToFelt<[#id]>>` StructType (i.e. no calls to `@ToFelt::@compute()`) so no
+// flattened versions of `@ToFelt` or `@VarArray` are created (the latter has an instantiation but
+// only the first parameter is concrete due to the aforementioned and we do not do partial flattening).
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   llzk.struct @VarArray<[@N, @T]> {

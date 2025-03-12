@@ -31,7 +31,8 @@ namespace llzk {
 
 /// Note: If any symbol refs in an input Type/Attribute use any of the special characters that this
 /// class generates, they are not escaped. That means these string representations are not safe to
-/// reverse back into a Type.
+/// reverse back into a Type. It's only intended to produce a unique name for instantiated structs
+/// that may give some hint when debugging regarding the original struct name and the params used.
 class ShortTypeStringifier {
   std::string ret;
   llvm::raw_string_ostream ss;

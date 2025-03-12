@@ -364,7 +364,7 @@ public:
       }
       // Otherwise, try to perform a conversion
       if (ArrayAttr params = inputTy.getParams()) {
-        // If all prameters are concrete values (Integer or Type), then replace with a
+        // If all parameters are concrete values (Integer or Type), then replace with a
         // no-parameter StructType referencing the de-parameterized struct.
         if (llvm::all_of(params, isConcreteAttr<>)) {
           StructType result =
@@ -708,7 +708,8 @@ SmallVector<std::unique_ptr<Region>> moveRegions(Operation *op) {
   return newRegions;
 }
 
-// Adapted from `mlir::getConstantIntValues()` but that one failed in CI.
+// Adapted from `mlir::getConstantIntValues()` but that one failed in CI for an unknown reason. This
+// version uses a basic loop instead of llvm::map_to_vector().
 std::optional<SmallVector<int64_t>> getConstantIntValues(ArrayRef<OpFoldResult> ofrs) {
   SmallVector<int64_t> res;
   for (OpFoldResult ofr : ofrs) {

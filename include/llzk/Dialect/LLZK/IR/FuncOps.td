@@ -256,6 +256,8 @@ def CallOp
       DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs Variadic<AnyLLZKType>);
 
+  // Define builders manually so inference of operand layout attributes is not
+  // circumvented.
   let skipDefaultBuilders = 1;
   let builders =
       [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
