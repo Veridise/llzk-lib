@@ -469,27 +469,26 @@ struct UnifierImpl {
   }
 
 private:
+  template <typename Tracker, typename Key, typename Val>
+  inline void track(Tracker &tracker, Side side, Key keyHead, Val val) {
+    auto key = std::make_pair(keyHead, side);
+    auto it = tracker.find(key);
+    if (it != tracker.end()) {
+      it->second = nullptr;
+    } else {
+      tracker.try_emplace(key, val);
+    }
+  }
+
   void track(Side side, SymbolRefAttr symRef, Attribute attr) {
-    if (UnificationMap *tracker = unifications) {
-      auto key = std::make_pair(symRef, side);
-      auto it = tracker->find(key);
-      if (it != tracker->end()) {
-        it->second = nullptr;
-      } else {
-        tracker->try_emplace(key, attr);
-      }
+    if (unifications) {
+      track(*unifications, side, symRef, attr);
     }
   }
 
   void track(Side side, AffineMapAttr affineAttr, IntegerAttr intAttr) {
-    if (AffineInstantiations *tracker = affineToIntTracker) {
-      auto key = std::make_pair(affineAttr, side);
-      auto it = tracker->find(key);
-      if (it != tracker->end()) {
-        it->second = nullptr;
-      } else {
-        tracker->try_emplace(key, intAttr);
-      }
+    if (affineToIntTracker) {
+      track(*affineToIntTracker, side, affineAttr, intAttr);
     }
   }
 
