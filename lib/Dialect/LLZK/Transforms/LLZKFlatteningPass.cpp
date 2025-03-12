@@ -214,11 +214,7 @@ class ConversionTracker {
 public:
   bool isModified() const { return modified; }
   void resetModifiedFlag() { modified = false; }
-  void appendModifiedFlag(bool currStepModified) {
-    if (currStepModified) {
-      modified = true;
-    }
-  }
+  void updateModifiedFlag(bool currStepModified) { modified |= currStepModified; }
 
   void recordInstantiation(StructType oldType, StructType newType) {
     // Assert invariant required by `structInstantiations`
@@ -671,7 +667,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   auto result = applyPatternsAndFoldGreedily(
       modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &currStepModified
   );
-  tracker.appendModifiedFlag(currStepModified);
+  tracker.updateModifiedFlag(currStepModified);
   return result;
 }
 } // namespace Step3_Unroll
@@ -1244,7 +1240,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   auto result = applyPatternsAndFoldGreedily(
       modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig(), &currStepModified
   );
-  tracker.appendModifiedFlag(currStepModified);
+  tracker.updateModifiedFlag(currStepModified);
   return result;
 }
 
