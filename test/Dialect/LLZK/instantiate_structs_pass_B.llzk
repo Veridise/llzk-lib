@@ -1,0 +1,181 @@
+// COM: Must use a separate FileCheck for each instantiated version of the structs because
+// COM:   there is no guarantee on the order they will be produced. The final FileCheck
+// COM:   runs on the last component that uses the default "CHECK" prefix.
+//
+// RUN: llzk-opt -llzk-flatten %s > %t \
+// RUN:   && FileCheck %s --check-prefix CHECK1 < %t \
+// RUN:   && FileCheck %s --check-prefix CHECK2 < %t \
+// RUN:   && FileCheck %s --check-prefix CHECK3 < %t \
+// RUN:   && FileCheck %s < %t
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component08A<[@A, @B]> {
+    func @compute() -> !llzk.struct<@Component08A<[@A, @B]>> {
+      %self = new_struct : !llzk.struct<@Component08A<[@A, @B]>>
+      return %self : !llzk.struct<@Component08A<[@A, @B]>>
+    }
+    func @constrain(%self: !llzk.struct<@Component08A<[@A, @B]>>) { return }
+  }
+
+  llzk.struct @Component08B<[@C]> {
+    field @f2 : !llzk.struct<@Component08A<[5, @C]>>
+
+    func @compute() -> !llzk.struct<@Component08B<[@C]>> {
+      %self = new_struct : !llzk.struct<@Component08B<[@C]>>
+      %x = call @Component08A::@compute() : () -> (!llzk.struct<@Component08A<[5, @C]>>)
+      writef %self[@f2] = %x : !llzk.struct<@Component08B<[@C]>>, !llzk.struct<@Component08A<[5, @C]>>
+      return %self : !llzk.struct<@Component08B<[@C]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component08B<[@C]>>) {
+      %b = readf %self[@f2] : !llzk.struct<@Component08B<[@C]>>, !llzk.struct<@Component08A<[5, @C]>>
+      call @Component08A::@constrain(%b) : (!llzk.struct<@Component08A<[5, @C]>>) -> ()
+      return
+    }
+  }
+
+  llzk.struct @Component08C {
+    field @f3 : !llzk.struct<@Component08B<[7]>>
+    field @f4 : !llzk.struct<@Component08B<[!llzk.felt]>>
+    field @f5 : !llzk.struct<@Component08B<[7]>>
+    field @f6 : !llzk.struct<@Component08B<[5]>>
+
+    func @compute() -> !llzk.struct<@Component08C> {
+      %self = new_struct : !llzk.struct<@Component08C>
+
+      %1 = call @Component08B::@compute() : () -> (!llzk.struct<@Component08B<[7]>>)
+      writef %self[@f3] = %1 : !llzk.struct<@Component08C>, !llzk.struct<@Component08B<[7]>>
+
+      %2 = call @Component08B::@compute() : () -> (!llzk.struct<@Component08B<[!llzk.felt]>>)
+      writef %self[@f4] = %2 : !llzk.struct<@Component08C>, !llzk.struct<@Component08B<[!llzk.felt]>>
+
+      %3 = call @Component08B::@compute() : () -> (!llzk.struct<@Component08B<[7]>>)
+      writef %self[@f5] = %3 : !llzk.struct<@Component08C>, !llzk.struct<@Component08B<[7]>>
+
+      %4 = call @Component08B::@compute() : () -> (!llzk.struct<@Component08B<[5]>>)
+      writef %self[@f6] = %4 : !llzk.struct<@Component08C>, !llzk.struct<@Component08B<[5]>>
+
+      return %self : !llzk.struct<@Component08C>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component08C>) {
+      %1 = readf %self[@f3] : !llzk.struct<@Component08C>, !llzk.struct<@Component08B<[7]>>
+      call @Component08B::@constrain(%1) : (!llzk.struct<@Component08B<[7]>>) -> ()
+
+      %2 = readf %self[@f4] : !llzk.struct<@Component08C>, !llzk.struct<@Component08B<[!llzk.felt]>>
+      call @Component08B::@constrain(%2) : (!llzk.struct<@Component08B<[!llzk.felt]>>) -> ()
+
+      %3 = readf %self[@f5] : !llzk.struct<@Component08C>, !llzk.struct<@Component08B<[7]>>
+      call @Component08B::@constrain(%3) : (!llzk.struct<@Component08B<[7]>>) -> ()
+
+      %4 = readf %self[@f6] : !llzk.struct<@Component08C>, !llzk.struct<@Component08B<[5]>>
+      call @Component08B::@constrain(%4) : (!llzk.struct<@Component08B<[5]>>) -> ()
+
+      return
+    }
+  }
+}
+// CHECK1-LABEL: llzk.struct @Component08A_5_5 {
+// CHECK1-NEXT:    func @compute() -> !llzk.struct<@Component08A_5_5> {
+// CHECK1-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component08A_5_5>
+// CHECK1-NEXT:      return %[[V0]] : !llzk.struct<@Component08A_5_5>
+// CHECK1-NEXT:    }
+// CHECK1-NEXT:    func @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component08A_5_5>) {
+// CHECK1-NEXT:      return
+// CHECK1-NEXT:    }
+// CHECK1-NEXT:  }
+//
+// CHECK2-LABEL: llzk.struct @Component08A_5_7 {
+// CHECK2-NEXT:    func @compute() -> !llzk.struct<@Component08A_5_7> {
+// CHECK2-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component08A_5_7>
+// CHECK2-NEXT:      return %[[V0]] : !llzk.struct<@Component08A_5_7>
+// CHECK2-NEXT:    }
+// CHECK2-NEXT:    func @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component08A_5_7>) {
+// CHECK2-NEXT:      return
+// CHECK2-NEXT:    }
+// CHECK2-NEXT:  }
+//
+// CHECK3-LABEL: llzk.struct @Component08A_5_f {
+// CHECK3-NEXT:    func @compute() -> !llzk.struct<@Component08A_5_f> {
+// CHECK3-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component08A_5_f>
+// CHECK3-NEXT:      return %[[V0]] : !llzk.struct<@Component08A_5_f>
+// CHECK3-NEXT:    }
+// CHECK3-NEXT:    func @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component08A_5_f>) {
+// CHECK3-NEXT:      return
+// CHECK3-NEXT:    }
+// CHECK3-NEXT:  }
+//
+// CHECK1-LABEL: llzk.struct @Component08B_5 {
+// CHECK1-NEXT:    field @f2 : !llzk.struct<@Component08A_5_5>
+// CHECK1-NEXT:    func @compute() -> !llzk.struct<@Component08B_5> {
+// CHECK1-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component08B_5>
+// CHECK1-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = call @Component08A_5_5::@compute() : () -> !llzk.struct<@Component08A_5_5>
+// CHECK1-NEXT:      writef %[[V0]][@f2] = %[[V1]] : <@Component08B_5>, !llzk.struct<@Component08A_5_5>
+// CHECK1-NEXT:      return %[[V0]] : !llzk.struct<@Component08B_5>
+// CHECK1-NEXT:    }
+// CHECK1-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component08B_5>) {
+// CHECK1-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = readf %[[V2]][@f2] : <@Component08B_5>, !llzk.struct<@Component08A_5_5>
+// CHECK1-NEXT:      call @Component08A_5_5::@constrain(%[[V3]]) : (!llzk.struct<@Component08A_5_5>) -> ()
+// CHECK1-NEXT:      return
+// CHECK1-NEXT:    }
+// CHECK1-NEXT:  }
+//
+// CHECK2-LABEL: llzk.struct @Component08B_7 {
+// CHECK2-NEXT:    field @f2 : !llzk.struct<@Component08A_5_7>
+// CHECK2-NEXT:    func @compute() -> !llzk.struct<@Component08B_7> {
+// CHECK2-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component08B_7>
+// CHECK2-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = call @Component08A_5_7::@compute() : () -> !llzk.struct<@Component08A_5_7>
+// CHECK2-NEXT:      writef %[[V0]][@f2] = %[[V1]] : <@Component08B_7>, !llzk.struct<@Component08A_5_7>
+// CHECK2-NEXT:      return %[[V0]] : !llzk.struct<@Component08B_7>
+// CHECK2-NEXT:    }
+// CHECK2-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component08B_7>) {
+// CHECK2-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = readf %[[V2]][@f2] : <@Component08B_7>, !llzk.struct<@Component08A_5_7>
+// CHECK2-NEXT:      call @Component08A_5_7::@constrain(%[[V3]]) : (!llzk.struct<@Component08A_5_7>) -> ()
+// CHECK2-NEXT:      return
+// CHECK2-NEXT:    }
+// CHECK2-NEXT:  }
+//
+// CHECK3-LABEL: llzk.struct @Component08B_f {
+// CHECK3-NEXT:    field @f2 : !llzk.struct<@Component08A_5_f>
+// CHECK3-NEXT:    func @compute() -> !llzk.struct<@Component08B_f> {
+// CHECK3-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component08B_f>
+// CHECK3-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = call @Component08A_5_f::@compute() : () -> !llzk.struct<@Component08A_5_f>
+// CHECK3-NEXT:      writef %[[V0]][@f2] = %[[V1]] : <@Component08B_f>, !llzk.struct<@Component08A_5_f>
+// CHECK3-NEXT:      return %[[V0]] : !llzk.struct<@Component08B_f>
+// CHECK3-NEXT:    }
+// CHECK3-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component08B_f>) {
+// CHECK3-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = readf %[[V2]][@f2] : <@Component08B_f>, !llzk.struct<@Component08A_5_f>
+// CHECK3-NEXT:      call @Component08A_5_f::@constrain(%[[V3]]) : (!llzk.struct<@Component08A_5_f>) -> ()
+// CHECK3-NEXT:      return
+// CHECK3-NEXT:    }
+// CHECK3-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Component08C {
+// CHECK-NEXT:    field @f3 : !llzk.struct<@Component08B_7>
+// CHECK-NEXT:    field @f4 : !llzk.struct<@Component08B_f>
+// CHECK-NEXT:    field @f5 : !llzk.struct<@Component08B_7>
+// CHECK-NEXT:    field @f6 : !llzk.struct<@Component08B_5>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component08C> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component08C>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = call @Component08B_7::@compute() : () -> !llzk.struct<@Component08B_7>
+// CHECK-NEXT:      writef %[[V0]][@f3] = %[[V1]] : <@Component08C>, !llzk.struct<@Component08B_7>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = call @Component08B_f::@compute() : () -> !llzk.struct<@Component08B_f>
+// CHECK-NEXT:      writef %[[V0]][@f4] = %[[V2]] : <@Component08C>, !llzk.struct<@Component08B_f>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = call @Component08B_7::@compute() : () -> !llzk.struct<@Component08B_7>
+// CHECK-NEXT:      writef %[[V0]][@f5] = %[[V3]] : <@Component08C>, !llzk.struct<@Component08B_7>
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = call @Component08B_5::@compute() : () -> !llzk.struct<@Component08B_5>
+// CHECK-NEXT:      writef %[[V0]][@f6] = %[[V4]] : <@Component08C>, !llzk.struct<@Component08B_5>
+// CHECK-NEXT:      return %[[V0]] : !llzk.struct<@Component08C>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V5:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component08C>) {
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = readf %[[V5]][@f3] : <@Component08C>, !llzk.struct<@Component08B_7>
+// CHECK-NEXT:      call @Component08B_7::@constrain(%[[V6]]) : (!llzk.struct<@Component08B_7>) -> ()
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = readf %[[V5]][@f4] : <@Component08C>, !llzk.struct<@Component08B_f>
+// CHECK-NEXT:      call @Component08B_f::@constrain(%[[V7]]) : (!llzk.struct<@Component08B_f>) -> ()
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = readf %[[V5]][@f5] : <@Component08C>, !llzk.struct<@Component08B_7>
+// CHECK-NEXT:      call @Component08B_7::@constrain(%[[V8]]) : (!llzk.struct<@Component08B_7>) -> ()
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = readf %[[V5]][@f6] : <@Component08C>, !llzk.struct<@Component08B_5>
+// CHECK-NEXT:      call @Component08B_5::@constrain(%[[V9]]) : (!llzk.struct<@Component08B_5>) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
