@@ -271,7 +271,7 @@ public:
     return (res == newTyComputeLocs.end()) ? nullptr : &res->getSecond();
   }
 
-  /// Check if the type conversion  is legal, i.e. the new type unifies with and is more concrete
+  /// Check if the type conversion is legal, i.e. the new type unifies with and is more concrete
   /// than the old type with additional allowance for the results of struct flattening conversions.
   bool isLegalConversion(Type oldType, Type newType, const char *patName) const {
     std::function<bool(Type, Type)> checkInstantiations = [&](Type oTy, Type nTy) {
