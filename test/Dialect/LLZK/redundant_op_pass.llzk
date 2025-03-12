@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elimination -llzk-duplicate-op-elimination %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -I %S -split-input-file -llzk-inline-includes -llzk-duplicate-read-write-elimination -llzk-duplicate-op-elimination %s 2>&1 | FileCheck %s
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component {
