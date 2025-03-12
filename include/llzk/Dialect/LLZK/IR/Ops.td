@@ -925,4 +925,14 @@ def LLZK_ApplyMapOp : LLZK_Op<"applymap", [Pure]> {
   }];
 }
 
+def LLZK_LitStringOp : LLZK_Op<"new_string", [Pure]> {
+  let summary = "literal string ";
+  let arguments = (ins StrAttr:$value);
+  let results = (outs LLZK_String:$result);
+
+  let assemblyFormat = [{
+    $value attr-dict
+  }];
+}
+
 #endif // LLZK_OPS
