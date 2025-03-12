@@ -332,7 +332,7 @@ public:
     return success;
   }
 
-  // Note: The `_no*` flags here refer to Types nested within a TypeAttr parameter.
+  // Note: The `no*` flags here refer to Types nested within a TypeAttr parameter.
   bool isValidStructTypeImpl(Type type) {
     if (StructType sType = llvm::dyn_cast<StructType>(type)) {
       return areValidStructTypeParams(sType.getParams());
