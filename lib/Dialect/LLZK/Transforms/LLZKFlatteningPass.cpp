@@ -371,7 +371,7 @@ public:
               StructType::get(appendLeafName(inputTy.getNameRef(), "_" + shortString(params)));
           LLVM_DEBUG(
               llvm::dbgs() << "[ParameterizedStructUseTypeConverter] instantiating " << inputTy
-                           << " as " << result << "\n"
+                           << " as " << result << '\n'
           );
           tracker_.recordInstantiation(inputTy, result);
           return result;
@@ -539,48 +539,49 @@ public:
     if (res == this->paramNameToValue.end()) {
       return op->emitOpError("missing instantiation");
     }
-    Attribute resAttr = res->second;
-    if (IntegerAttr iAttr = llvm::dyn_cast<IntegerAttr>(resAttr)) {
-      APInt attrValue = iAttr.getValue();
+    return llvm::TypeSwitch<Attribute, LogicalResult>(res->second)
+        .Case<IntegerAttr>([&](IntegerAttr a) {
+      APInt attrValue = a.getValue();
       Type origResTy = op.getType();
       if (llvm::isa<FeltType>(origResTy)) {
         rewriter.replaceOpWithNewOp<FeltConstantOp>(
             op, FeltConstAttr::get(rewriter.getContext(), attrValue)
         );
+        return success();
       } else if (llvm::isa<IndexType>(origResTy)) {
         rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, fromAPInt(attrValue));
+        return success();
       } else if (origResTy.isSignlessInteger(1)) {
         // Treat 0 as false and any other value as true (but give a warning if it's not 1)
         if (attrValue.isZero()) {
           rewriter.replaceOpWithNewOp<arith::ConstantIntOp>(op, false, origResTy);
-        } else {
-          if (!attrValue.isOne()) {
-            InFlightDiagnostic warning = op.emitWarning().append(
-                "Interpretting non-zero value ", stringWithoutType(iAttr), " as true"
-            );
-            if (locations) {
-              for (Location loc : *locations) {
-                warning.attachNote(loc).append(
-                    "when instantiating ", StructDefOp::getOperationName(), " parameter \"",
-                    res->first, "\" for this call"
-                );
-              }
-            }
-            warning.report();
-          }
-          rewriter.replaceOpWithNewOp<arith::ConstantIntOp>(op, true, origResTy);
+          return success();
         }
-      } else {
-        return op->emitOpError().append("unexpected result type ", origResTy);
+        if (!attrValue.isOne()) {
+          InFlightDiagnostic warning = op.emitWarning().append(
+              "Interpretting non-zero value ", stringWithoutType(a), " as true"
+          );
+          if (locations) {
+            for (Location loc : *locations) {
+              warning.attachNote(loc).append(
+                  "when instantiating ", StructDefOp::getOperationName(), " parameter \"",
+                  res->first, "\" for this call"
+              );
+            }
+          }
+          warning.report();
+        }
+        rewriter.replaceOpWithNewOp<arith::ConstantIntOp>(op, true, origResTy);
+        return success();
       }
+      return LogicalResult(op->emitOpError().append("unexpected result type ", origResTy));
+    })
+        .Case<FeltConstAttr>([&](FeltConstAttr a) {
+      rewriter.replaceOpWithNewOp<FeltConstantOp>(op, a);
       return success();
-    } else if (FeltConstAttr fcAttr = llvm::dyn_cast<FeltConstAttr>(resAttr)) {
-      rewriter.replaceOpWithNewOp<FeltConstantOp>(op, fcAttr);
-      return success();
-    }
-    return op->emitOpError().append(
-        "expected value with type ", op.getType(), " but found ", resAttr
-    );
+    }).Default([&](Attribute a) {
+      return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
+    });
   }
 };
 
@@ -757,12 +758,12 @@ struct AffineMapFolder {
         ValueRange currMapOps = in.mapOpGroups[idx++];
         LLVM_DEBUG(
             llvm::dbgs() << "[AffineMapFolder] currMapOps: " << debug::toStringList(currMapOps)
-                         << "\n"
+                         << '\n'
         );
         SmallVector<OpFoldResult> currMapOpsCast = getAsOpFoldResult(currMapOps);
         LLVM_DEBUG(
             llvm::dbgs() << "[AffineMapFolder] currMapOps as fold results: "
-                         << debug::toStringList(currMapOpsCast) << "\n"
+                         << debug::toStringList(currMapOpsCast) << '\n'
         );
         if (auto constOps = Step4_InstantiateAffineMaps::getConstantIntValues(currMapOpsCast)) {
           SmallVector<Attribute> result;
@@ -881,7 +882,7 @@ public:
           LLVM_DEBUG(
               llvm::dbgs()
               << "[UpdateArrayElemFromWrite] multiple possible element types for CreateArrayOp "
-              << newResultElemType << " vs " << writeRValueType << "\n"
+              << newResultElemType << " vs " << writeRValueType << '\n'
           );
           return failure();
         }
@@ -899,7 +900,7 @@ public:
     }
     ArrayType newType = createResultType.cloneWith(newResultElemType);
     rewriter.modifyOpInPlace(op, [&createResult, &newType]() { createResult.setType(newType); });
-    LLVM_DEBUG(llvm::dbgs() << "[UpdateArrayElemFromWrite] updated result type of " << op << "\n");
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateArrayElemFromWrite] updated result type of " << op << '\n');
     return success();
   }
 };
@@ -942,7 +943,7 @@ public:
             // different type from the FieldDefOp, then store the new type to use in the end.
             newType = writeToType;
             LLVM_DEBUG(
-                llvm::dbgs() << "[UpdateFieldTypeFromWrite] found new type in " << writeOp << "\n"
+                llvm::dbgs() << "[UpdateFieldTypeFromWrite] found new type in " << writeOp << '\n'
             );
           }
         }
@@ -957,7 +958,7 @@ public:
     }
     LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldTypeFromWrite] replaced " << op);
     FieldDefOp newOp = rewriter.replaceOpWithNewOp<FieldDefOp>(op, op.getSymName(), newType);
-    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << "\n");
+    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
     return success();
   }
 };
@@ -999,7 +1000,7 @@ public:
         op->getAttrs(), op->getSuccessors(), newRegions
     );
     rewriter.replaceOp(op, newOp);
-    LLVM_DEBUG(llvm::dbgs() << " with " << *newOp << "\n");
+    LLVM_DEBUG(llvm::dbgs() << " with " << *newOp << '\n');
     return success();
   }
 };
@@ -1037,7 +1038,7 @@ public:
     });
     LLVM_DEBUG(
         llvm::dbgs() << "[UpdateFuncTypeFromReturn] changed " << op.getSymName() << " from "
-                     << oldFuncTy << " to " << op.getFunctionType() << "\n"
+                     << oldFuncTy << " to " << op.getFunctionType() << '\n'
     );
     return success();
   }
@@ -1078,7 +1079,7 @@ public:
 
     LLVM_DEBUG(llvm::dbgs() << "[UpdateGlobalCallOpTypes] replaced " << op);
     CallOp newOp = rewriter.replaceOpWithNewOp<CallOp>(op, targetFunc, op.getArgOperands());
-    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << "\n");
+    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
     return success();
   }
 };
@@ -1098,8 +1099,8 @@ public:
     }
     StructType oldRetTy = op.getComputeSingleResultType();
     LLVM_DEBUG({
-      llvm::dbgs() << "[InstantiateAtCallOpCompute] target: " << op.getCallee() << "\n";
-      llvm::dbgs() << "[InstantiateAtCallOpCompute]   oldRetTy: " << oldRetTy << "\n";
+      llvm::dbgs() << "[InstantiateAtCallOpCompute] target: " << op.getCallee() << '\n';
+      llvm::dbgs() << "[InstantiateAtCallOpCompute]   oldRetTy: " << oldRetTy << '\n';
     });
     ArrayAttr params = oldRetTy.getParams();
     if (isNullOrEmpty(params)) {
@@ -1140,7 +1141,7 @@ public:
       LLVM_DEBUG({
         llvm::dbgs() << "[InstantiateAtCallOpCompute]   propagated instantiations via symrefs in "
                         "result type params: "
-                     << debug::toStringList(out.paramsOfStructTy) << "\n";
+                     << debug::toStringList(out.paramsOfStructTy) << '\n';
       });
     }
 
@@ -1190,14 +1191,14 @@ private:
     }
 
     LLVM_DEBUG({
-      llvm::dbgs() << "[instantiateViaTargetType] call arg types: "
-                   << debug::toStringList(callArgTypes) << "\n";
-      llvm::dbgs() << "[instantiateViaTargetType] target func arg types: "
-                   << debug::toStringList(targetFunc.getArgumentTypes()) << "\n";
-      llvm::dbgs() << "[instantiateViaTargetType] struct params @ call: "
-                   << debug::toStringList(in.paramsOfStructTy) << "\n";
-      llvm::dbgs() << "[instantiateViaTargetType] target struct params: "
-                   << debug::toStringList(targetResTyParams) << "\n";
+      llvm::dbgs() << '[' << __FUNCTION__ << ']'
+                   << " call arg types: " << debug::toStringList(callArgTypes) << '\n';
+      llvm::dbgs() << '[' << __FUNCTION__ << ']' << " target func arg types: "
+                   << debug::toStringList(targetFunc.getArgumentTypes()) << '\n';
+      llvm::dbgs() << '[' << __FUNCTION__ << ']'
+                   << " struct params @ call: " << debug::toStringList(in.paramsOfStructTy) << '\n';
+      llvm::dbgs() << '[' << __FUNCTION__ << ']'
+                   << " target struct params: " << debug::toStringList(targetResTyParams) << '\n';
     });
 
     UnificationMap unifications;
@@ -1205,8 +1206,8 @@ private:
     assert(unifies && "should have been checked by verifiers");
 
     LLVM_DEBUG({
-      llvm::dbgs() << "[instantiateViaTargetType] unifications of arg types: "
-                   << debug::toStringList(unifications) << "\n";
+      llvm::dbgs() << '[' << __FUNCTION__ << ']'
+                   << " unifications of arg types: " << debug::toStringList(unifications) << '\n';
     });
 
     // Check for LHS SymRef (i.e. from the target function) that have RHS concrete Attributes (i.e.
@@ -1223,15 +1224,15 @@ private:
       if (!isConcreteAttr<>(fromCall)) {
         Attribute fromTgt = std::get<0>(p);
         LLVM_DEBUG({
-          llvm::dbgs() << "[instantiateViaTargetType]   fromCall = " << fromCall << "\n";
-          llvm::dbgs() << "[instantiateViaTargetType]   fromTgt = " << fromTgt << "\n";
+          llvm::dbgs() << '[' << __FUNCTION__ << "]   fromCall = " << fromCall << '\n';
+          llvm::dbgs() << '[' << __FUNCTION__ << "]   fromTgt = " << fromTgt << '\n';
         });
         assert(llvm::isa<SymbolRefAttr>(fromTgt));
         auto it = unifications.find(std::make_pair(llvm::cast<SymbolRefAttr>(fromTgt), Side::LHS));
         if (it != unifications.end()) {
           Attribute unifiedAttr = it->second;
           LLVM_DEBUG({
-            llvm::dbgs() << "[instantiateViaTargetType]   unifiedAttr = " << unifiedAttr << "\n";
+            llvm::dbgs() << '[' << __FUNCTION__ << "]   unifiedAttr = " << unifiedAttr << '\n';
           });
           if (unifiedAttr && isConcreteAttr<false>(unifiedAttr)) {
             return unifiedAttr;
