@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
 module attributes {veridise.lang = "llzk"} {
   // A struct that stores if the input is 0 or not

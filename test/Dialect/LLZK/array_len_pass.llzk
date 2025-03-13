@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
 llzk.func @array_len_test() -> index {
   %a = llzk.new_array : !llzk.array<2,3 x !llzk.felt>

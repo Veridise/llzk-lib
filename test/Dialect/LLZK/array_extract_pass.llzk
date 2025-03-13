@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
 llzk.func @constant_index() -> !llzk.array<2 x index> {
   %a = arith.constant 45 : index
