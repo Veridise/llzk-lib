@@ -41,6 +41,8 @@ def UnusedDeclarationEliminationPass : Pass<"llzk-unused-declaration-elimination
     and llzk-duplicate-op-elimination for maximum effect.
   }];
   let constructor = "llzk::createUnusedDeclarationEliminationPass()";
+  let dependentDialects = ["llzk::LLZKDialect"];
+}
 
 def FlatteningPass : Pass<"llzk-flatten", "::mlir::ModuleOp"> {
   let summary =
