@@ -6,6 +6,7 @@
 #include <mlir/IR/SymbolTable.h>
 
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <string>
@@ -15,28 +16,78 @@ namespace llzk {
 namespace debug {
 
 namespace {
-template <typename Any> void append(llvm::raw_ostream &ss, Any value) { ss << value; }
-void append(llvm::raw_ostream &ss, mlir::NamedAttribute a) {
-  ss << a.getName() << '=' << a.getValue();
+
+// Define this concept instead of `std::ranges::range` because certain classes (like OperandRange)
+// do not work with `std::ranges::range`.
+template <typename T>
+concept Iterable = requires(T t) {
+  std::begin(t);
+  std::end(t);
+};
+
+struct Appender {
+  llvm::raw_string_ostream stream;
+  Appender(std::string &out) : stream(out) {}
+
+  void append(const mlir::NamedAttribute &a);
+  void append(const mlir::SymbolTable::SymbolUse &a);
+  template <typename T> void append(const std::optional<T> &a);
+  template <typename Any> void append(const Any &value);
+  template <typename A, typename B> void append(const std::pair<A, B> &a);
+  template <typename A, typename B> void append(const llvm::detail::DenseMapPair<A, B> &a);
+  template <Iterable InputIt> void append(const InputIt &collection);
+  template <typename InputIt> void appendList(InputIt begin, InputIt end);
+};
+
+void Appender::append(const mlir::NamedAttribute &a) {
+  stream << a.getName() << '=' << a.getValue();
 }
-template <typename A, typename B> void append(llvm::raw_ostream &ss, std::pair<A, B> a) {
-  ss << '(' << a.first << ',' << a.second << ')';
+
+void Appender::append(const mlir::SymbolTable::SymbolUse &a) { stream << a.getUser()->getName(); }
+
+template <typename T> inline void Appender::append(const std::optional<T> &a) {
+  if (a.has_value()) {
+    append(a.value());
+  } else {
+    stream << "NONE";
+  }
 }
+
+template <typename Any> void Appender::append(const Any &value) { stream << value; }
+
+template <typename A, typename B> void Appender::append(const std::pair<A, B> &a) {
+  stream << '(';
+  append(a.first);
+  stream << ',';
+  append(a.second);
+  stream << ')';
+}
+
+template <typename A, typename B> void Appender::append(const llvm::detail::DenseMapPair<A, B> &a) {
+  stream << '(';
+  append(a.first);
+  stream << ',';
+  append(a.second);
+  stream << ')';
+}
+
+template <Iterable InputIt> inline void Appender::append(const InputIt &collection) {
+  appendList(std::begin(collection), std::end(collection));
+}
+
+template <typename InputIt> void Appender::appendList(InputIt begin, InputIt end) {
+  stream << '[';
+  llvm::interleave(begin, end, [this](const auto &n) { append(n); }, [this] { stream << ", "; });
+  stream << ']';
+}
+
 } // namespace
 
 /// Generate a comma-separated string representation by traversing elements from `begin` to `end`
 /// where the element type implements `operator<<`.
 template <typename InputIt> std::string toStringList(InputIt begin, InputIt end) {
   std::string output;
-  llvm::raw_string_ostream oss(output);
-  oss << "[";
-  for (auto it = begin; it != end; ++it) {
-    append(oss, *it);
-    if (std::next(it) != end) {
-      oss << ", ";
-    }
-  }
-  oss << "]";
+  Appender(output).appendList(begin, end);
   return output;
 }
 
@@ -46,10 +97,18 @@ template <typename InputIt> inline std::string toStringList(const InputIt &colle
   return toStringList(collection.begin(), collection.end());
 }
 
+template <typename InputIt>
+inline std::string toStringList(const std::optional<InputIt> &optionalCollection) {
+  if (optionalCollection.has_value()) {
+    return toStringList(optionalCollection.value());
+  } else {
+    return "NONE";
+  }
+}
+
 template <typename T> inline std::string toStringOne(const T &value) {
   std::string output;
-  llvm::raw_string_ostream oss(output);
-  append(oss, value);
+  Appender(output).append(value);
   return output;
 }
 
@@ -59,7 +118,7 @@ inline void dumpSymbolTableWalk(mlir::Operation *symbolTableOp) {
   oss << "Dumping symbol walk (self = [" << symbolTableOp << "]): \n";
   auto walkFn = [&](mlir::Operation *op, bool allUsesVisible) {
     oss << "  found op [" << op << "] " << op->getName() << " named "
-        << op->getAttrOfType<mlir::StringAttr>(mlir::SymbolTable::getSymbolAttrName()) << "\n";
+        << op->getAttrOfType<mlir::StringAttr>(mlir::SymbolTable::getSymbolAttrName()) << '\n';
   };
   mlir::SymbolTable::walkSymbolTables(symbolTableOp, /*allSymUsesVisible=*/true, walkFn);
   llvm::outs() << output;
@@ -76,10 +135,10 @@ dumpSymbolTable(llvm::raw_ostream &stream, mlir::SymbolTable &symTab, unsigned i
       reinterpret_cast<llvm::DenseMap<mlir::Attribute, mlir::Operation *> *>(rawSymbolTablePtr + 8);
   for (llvm::detail::DenseMapPair<mlir::Attribute, mlir::Operation *> &p : *privateFieldPtr) {
     for (unsigned i = 0; i < indent; ++i) {
-      stream << "  ";
+      stream << '  ';
     }
     mlir::Operation *op = p.second;
-    stream << "  " << p.first << " -> [" << op << "] " << op->getName() << "\n";
+    stream << '  ' << p.first << " -> [" << op << "] " << op->getName() << '\n';
   }
 }
 
@@ -99,7 +158,7 @@ inline void dumpSymbolTables(llvm::raw_ostream &stream, mlir::SymbolTableCollect
       );
   for (llvm::detail::DenseMapPair<mlir::Operation *, std::unique_ptr<mlir::SymbolTable>> &p :
        *privateFieldPtr) {
-    stream << "  [" << p.first << "] " << p.first->getName() << " -> " << "\n";
+    stream << "  [" << p.first << "] " << p.first->getName() << " -> " << '\n';
     dumpSymbolTable(stream, *p.second.get(), 2);
   }
 }
@@ -117,7 +176,7 @@ inline void dumpToFile(mlir::Operation *op, llvm::StringRef filename) {
   if (!err) {
     auto options = mlir::OpPrintingFlags().assumeVerified().useLocalScope();
     op->print(stream, options);
-    stream << "\n";
+    stream << '\n';
   }
 }
 

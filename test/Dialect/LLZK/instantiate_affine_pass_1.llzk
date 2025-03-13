@@ -1,0 +1,139 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck %s
+
+#IdxToLen = affine_map<(i)->(2*i)>
+#Values = affine_map<(i,j)->(5*j+i)>
+!ToFelt = !llzk.struct<@ToFelt<[#Values]>>
+!HeterArr = !llzk.struct<@VarArray<[#IdxToLen, !ToFelt]>>
+module attributes {veridise.lang = "llzk"} {
+  // pre-defined
+  llzk.struct @VarArray<[@N, @T]> {
+    field @val: !llzk.array<@N x !llzk.tvar<@T>>
+
+    func @compute(%inp: !llzk.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
+      %self = new_struct : !llzk.struct<@VarArray<[@N, @T]>>
+      writef %self[@val] = %inp : !llzk.struct<@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.tvar<@T>>
+      return %self : !llzk.struct<@VarArray<[@N, @T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@VarArray<[@N, @T]>>, %inp: !llzk.array<@N x !llzk.tvar<@T>>) {
+      return
+    }
+  }
+
+  llzk.struct @ToFelt<[@A]> {
+    field @out: !llzk.felt {llzk.pub}
+
+    func @compute() -> !llzk.struct<@ToFelt<[@A]>> {
+      %self = new_struct : !llzk.struct<@ToFelt<[@A]>>
+      %constA = read_const @A : !llzk.felt
+      writef %self[@out] = %constA : !llzk.struct<@ToFelt<[@A]>>, !llzk.felt
+      return %self: !llzk.struct<@ToFelt<[@A]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@ToFelt<[@A]>>) {
+      return
+    }
+  }
+
+  llzk.struct @TestLoopWithAffineArrayStruct<[@N]> {
+    field @arrs: !llzk.array<@N x !HeterArr>
+
+    func @compute() -> !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>> {
+      %arrs_temp = new_array : !llzk.array<@N x !HeterArr>
+
+      %0 = arith.constant 0 : index
+      %1 = arith.constant 1 : index
+      %n = read_const @N : index
+      %step = arith.constant 1 : index
+      scf.for %i = %1 to %n step %step { // range: [1,N)
+        // The array length is a function of 'i' and it contains non-homogeneous structs
+        //    !ToFelt = !llzk.struct<@ToFelt<[#Values]>>
+        %arr = llzk.new_array{(%i)} : !llzk.array<#IdxToLen x !ToFelt>
+        scf.for %j = %0 to %i step %step { // range: [0,i)
+          %v = llzk.call @ToFelt::@compute(){(%i, %j)} : () -> !ToFelt
+          llzk.writearr %arr[%j] = %v : !llzk.array<#IdxToLen x !ToFelt>, !ToFelt
+        }
+        // Create a VarArray with length as a function of 'i' and non-homogeneous element type
+        %va = llzk.call @VarArray::@compute(%arr){(%i)} : (!llzk.array<#IdxToLen x !ToFelt>) -> !HeterArr
+        llzk.writearr %arrs_temp[%i] = %va : !llzk.array<@N x !HeterArr>, !HeterArr
+      }
+      //
+      %self = new_struct : !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>>
+      writef %self[@arrs] = %arrs_temp 
+            : !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>>, !llzk.array<@N x !HeterArr>
+      return %self : !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>>) {
+      return
+    }
+  }
+
+  llzk.struct @Main {
+    func @compute() -> !llzk.struct<@Main> {
+      %self = llzk.new_struct : !llzk.struct<@Main>
+      %x = llzk.call @TestLoopWithAffineArrayStruct::@compute() 
+            : () -> !llzk.struct<@TestLoopWithAffineArrayStruct<[2]>>
+      return %self: !llzk.struct<@Main>
+    }
+  
+    func @constrain(%self: !llzk.struct<@Main>) {
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @"VarArray_2_!s<@ToFelt_1>" {
+// CHECK-NEXT:    field @val : !llzk.array<2 x !llzk.struct<@ToFelt_1>>
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.array<2 x !llzk.struct<@ToFelt_1>>) -> !llzk.struct<@"VarArray_2_!s<@ToFelt_1>"> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:      writef %[[V1]][@val] = %[[V0]] : <@"VarArray_2_!s<@ToFelt_1>">, !llzk.array<2 x !llzk.struct<@ToFelt_1>>
+// CHECK-NEXT:      return %[[V1]] : !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">, %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.array<2 x !llzk.struct<@ToFelt_1>>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: llzk.struct @ToFelt_1 {
+// CHECK-NEXT:    field @out : !llzk.felt {llzk.pub}
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@ToFelt_1> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  1
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ToFelt_1>
+// CHECK-NEXT:      writef %[[V1]][@out] = %[[V0]] : <@ToFelt_1>, !llzk.felt
+// CHECK-NEXT:      return %[[V1]] : !llzk.struct<@ToFelt_1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_1>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: llzk.struct @TestLoopWithAffineArrayStruct_2 {
+// CHECK-NEXT:    field @arrs : !llzk.array<2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@TestLoopWithAffineArrayStruct_2> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = new_array  : <2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = new_array  : <2 x !llzk.struct<@ToFelt_1>>
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = call @ToFelt_1::@compute() : () -> !llzk.struct<@ToFelt_1>
+// CHECK-NEXT:      writearr %[[V3]]{{\[}}%[[V1]]] = %[[V4]] : <2 x !llzk.struct<@ToFelt_1>>, !llzk.struct<@ToFelt_1>
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = call @"VarArray_2_!s<@ToFelt_1>"::@compute(%[[V3]]) : (!llzk.array<2 x !llzk.struct<@ToFelt_1>>) -> !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:      writearr %[[V2]]{{\[}}%[[V0]]] = %[[V5]] : <2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>, !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = new_struct : <@TestLoopWithAffineArrayStruct_2>
+// CHECK-NEXT:      writef %[[V6]][@arrs] = %[[V2]] : <@TestLoopWithAffineArrayStruct_2>, !llzk.array<2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>
+// CHECK-NEXT:      return %[[V6]] : !llzk.struct<@TestLoopWithAffineArrayStruct_2>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestLoopWithAffineArrayStruct_2>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: llzk.struct @Main {
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = call @TestLoopWithAffineArrayStruct_2::@compute() : () -> !llzk.struct<@TestLoopWithAffineArrayStruct_2>
+// CHECK-NEXT:      return %[[V0]] : !llzk.struct<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

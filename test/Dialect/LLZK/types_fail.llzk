@@ -45,22 +45,22 @@ llzk.func private @h(%x: !llzk.array<!llzk.felt>)
 // -----
 
 // expected-error@+2 {{expected attribute value}}
-// expected-error@+1 {{cannot parse array dimensions}}
+// expected-error@+1 {{failed to parse array dimensions}}
 llzk.func private @i(%x: !llzk.array<,, x !llzk.felt>) 
 // -----
 
 // expected-error@+2 {{expected attribute value}}
-// expected-error@+1 {{cannot parse array dimensions}}
+// expected-error@+1 {{failed to parse array dimensions}}
 llzk.func private @j(%x: !llzk.array< x !llzk.felt>) 
 // -----
 
 // expected-error@+2 {{expected attribute value}}
-// expected-error@+1 {{cannot parse array dimensions}}
+// expected-error@+1 {{failed to parse array dimensions}}
 llzk.func private @k(%x: !llzk.array<1,private, x !llzk.felt>) 
 // -----
 
 // expected-error@+2 {{expected attribute value}}
-// expected-error@+1 {{cannot parse array dimensions}}
+// expected-error@+1 {{failed to parse array dimensions}}
 llzk.func private @l(%x: !llzk.array<1,3, x !llzk.felt>) 
 // -----
 

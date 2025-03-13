@@ -5,6 +5,8 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Operation.h>
 
+#include <llvm/Support/Debug.h>
+
 #define DEBUG_TYPE "llzk-symbol-helpers"
 
 namespace llzk {
@@ -155,7 +157,7 @@ SymbolRefAttr appendLeaf(SymbolRefAttr orig, FlatSymbolRefAttr newLeaf) {
   return changeLeafImpl(orig.getRootReference(), orig.getNestedReferences(), newLeaf, 0);
 }
 
-SymbolRefAttr appendLeafName(SymbolRefAttr orig, const mlir::Twine &newLeafSuffix) {
+SymbolRefAttr appendLeafName(SymbolRefAttr orig, const Twine &newLeafSuffix) {
   ArrayRef<FlatSymbolRefAttr> origTail = orig.getNestedReferences();
   if (origTail.empty()) {
     // If there is no tail, the root is the leaf so append on the root instead
@@ -194,6 +196,29 @@ FailureOr<SymbolRefAttr> getPathFromTopRoot(StructDefOp &to) {
 
 FailureOr<SymbolRefAttr> getPathFromTopRoot(FuncOp &to) {
   return getPathFromRoot(to, RootSelector::FURTHEST);
+}
+
+bool hasUsesWithin(Operation *symbol, Operation *from) {
+  assert(symbol && "pre-condition");
+  assert(from && "pre-condition");
+  bool result = false;
+  SymbolTable::walkSymbolTables(from, false, [symbol, &result](Operation *symbolTableOp, bool) {
+    assert(symbolTableOp->hasTrait<OpTrait::SymbolTable>());
+    bool hasUse = (symbol != symbolTableOp) &&
+                  !SymbolTable::symbolKnownUseEmpty(symbol, &symbolTableOp->getRegion(0));
+    result |= hasUse;
+    LLVM_DEBUG({
+      if (hasUse) {
+        auto uses = SymbolTable::getSymbolUses(symbol, &symbolTableOp->getRegion(0));
+        assert(uses.has_value()); // must be consisitent with symbolKnownUseEmpty()
+        llvm::dbgs() << "Found users of " << *symbol << "\n";
+        for (SymbolTable::SymbolUse user : uses.value()) {
+          llvm::dbgs() << " * " << *user.getUser() << "\n";
+        }
+      }
+    });
+  });
+  return result;
 }
 
 LogicalResult verifyParamOfType(

@@ -46,7 +46,8 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
            "Fully-qualified name of the struct definition.">:$nameRef,
           OptionalParameter<"::mlir::ArrayAttr", "Struct parameters">:$params);
 
-  let assemblyFormat = [{ `<` $nameRef ( `<` $params^ `>` )? `>` }];
+  let assemblyFormat =
+      [{ `<` $nameRef ( `<` custom<StructParams>($params)^ `>` )? `>` }];
 
   let genVerifyDecl = 1;
 
@@ -59,7 +60,19 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
                       (ins "::mlir::SymbolRefAttr":$structName,
                           "::mlir::ArrayAttr":$params),
                       [{
-                    return $_get(structName.getContext(), structName, params);
+                    ::mlir::MLIRContext *ctx = structName.getContext();
+                    if (params) {
+                      params = ::mlir::ArrayAttr::get(ctx, forceIntAttrType(params.getValue()));
+                    }
+                    return $_get(ctx, structName, params);
+                  }]>,
+                  TypeBuilderWithInferredContext<
+                      (ins "::mlir::SymbolRefAttr":$structName,
+                          "::llvm::ArrayRef<::mlir::Attribute>":$paramsRef),
+                      [{
+                    ::mlir::MLIRContext *ctx = structName.getContext();
+                    ::llvm::SmallVector<::mlir::Attribute> p = forceIntAttrType(paramsRef);
+                    return $_get(ctx, structName, ::mlir::ArrayAttr::get(ctx, p));
                   }]>];
 
   let extraClassDeclaration = [{
@@ -67,7 +80,7 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
     /// used as a starting point for the lookup. Should not be assumed to
     /// be non-`null` as we don't verify all types during verification.
     ::mlir::FailureOr<SymbolLookupResult<StructDefOp>> getDefinition
-        (::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
+        (::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op) const;
 
     // Verifies that this type references a valid struct, relative to the given `op`.
     ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
@@ -117,26 +130,28 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
   let genVerifyDecl = 1;
 
   let skipDefaultBuilders = 1;
-
   let builders =
       [TypeBuilderWithInferredContext<
            (ins "::mlir::Type":$elementType,
                "::llvm::ArrayRef<::mlir::Attribute>":$dimensionSizes),
            [{
+      assert(elementType && "element type cannot be null");
+      ::llvm::SmallVector<::mlir::Attribute> dimSizes = forceIntAttrType(dimensionSizes);
       ::mlir::MLIRContext *ctx = elementType.getContext();
       ::llvm::SmallVector<int64_t> shape;
-      ::mlir::LogicalResult res = computeShapeFromDims(emitError, ctx, dimensionSizes, shape);
+      ::mlir::LogicalResult res = computeShapeFromDims(emitError, ctx, dimSizes, shape);
       if(::mlir::failed(res)) { return ArrayType(); }
-      return $_get(ctx, elementType, dimensionSizes, shape);
+      return $_get(ctx, elementType, dimSizes, shape);
     }]>,
        TypeBuilderWithInferredContext<(ins "::mlir::Type":$elementType,
                                           "::llvm::ArrayRef<int64_t>":$shape),
                                       [{
+      assert(elementType && "element type cannot be null");
       ::mlir::MLIRContext *ctx = elementType.getContext();
-      ::llvm::SmallVector<::mlir::Attribute> dimensionSizes;
-      ::mlir::LogicalResult res = computeDimsFromShape(ctx, shape, dimensionSizes);
+      ::llvm::SmallVector<::mlir::Attribute> dimSizes;
+      ::mlir::LogicalResult res = computeDimsFromShape(ctx, shape, dimSizes);
       if(::mlir::failed(res)) { return ArrayType(); }
-      return $_get(ctx, elementType, dimensionSizes, shape);
+      return $_get(ctx, elementType, dimSizes, shape);
     }]>];
 
   let extraClassDeclaration = [{
@@ -150,10 +165,12 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
     /// Required by the ShapedTypeInterface interface.
     ArrayType cloneWith(std::optional<::llvm::ArrayRef<int64_t>> shape, ::mlir::Type elementType) const;
 
-    /// Returns the number of elements in the array.
-    /// Aborts if the array has a dynamic dimension.
-    /// Required by the ShapedTypeInterface interface.
-    int64_t getNumElements() const;
+    /// Clone this type with the given dimensions and element type. If the provided
+    /// dimensions are `std::nullopt`, the current dimensions of the type are used.
+    /// Note: This is preferred over cloneWith(..int64_t..) because this Attribute
+    /// version can carry more information than the `int64_t` which must default to
+    /// `kDynamic` when the Attribute is anything other than an integer constant.
+    ArrayType cloneWith(::mlir::Type elementType, std::optional<::llvm::ArrayRef<::mlir::Attribute>> dimensions = std::nullopt) const;
   }];
 
   let extraClassDefinition = [{

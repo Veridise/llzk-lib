@@ -1,0 +1,116 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-flatten %s | FileCheck %s
+
+#mapDiv = affine_map<()[s0, s1] -> (s0 floordiv s1)>
+#mapAdd = affine_map<()[s0, s1] -> (s0 + s1)>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Foo<[@Aff]> {
+    field @bar: !llzk.struct<@Bar<[@Aff]>>
+    func @compute(%arg: !llzk.struct<@Bar<[@Aff]>>) -> !llzk.struct<@Foo<[@Aff]>> {
+      %self = new_struct : !llzk.struct<@Foo<[@Aff]>>
+      writef %self[@bar] = %arg : !llzk.struct<@Foo<[@Aff]>>, !llzk.struct<@Bar<[@Aff]>>
+      return %self : !llzk.struct<@Foo<[@Aff]>>
+    }
+    func @constrain(%self: !llzk.struct<@Foo<[@Aff]>>, %arg: !llzk.struct<@Bar<[@Aff]>>) {
+      return
+    }
+  }
+  llzk.struct @Bar<[@Aff]> {
+    func @compute() -> !llzk.struct<@Bar<[@Aff]>> {
+      %self = new_struct : !llzk.struct<@Bar<[@Aff]>>
+      return %self : !llzk.struct<@Bar<[@Aff]>>
+    }
+    func @constrain(%arg0: !llzk.struct<@Bar<[@Aff]>>) {
+      return
+    }
+  }
+  llzk.struct @Unpack<[@N, @P, @Aff]> {
+    field @f: !llzk.struct<@Bar<[#mapAdd]>>
+    field @g: !llzk.array<@Aff x !llzk.felt>
+    func @compute(%arg0: !llzk.array<@Aff x !llzk.felt>) -> !llzk.struct<@Unpack<[@N, @P, @Aff]>> {
+      %self = new_struct : !llzk.struct<@Unpack<[@N, @P, @Aff]>>
+      writef %self[@g] = %arg0 : !llzk.struct<@Unpack<[@N, @P, @Aff]>>, !llzk.array<@Aff x !llzk.felt>
+
+      %n = read_const @N : index
+      %p = read_const @P : index
+      %0 = call @Bar::@compute() {()[%n,%p]} : () -> !llzk.struct<@Bar<[#mapAdd]>>
+      writef %self[@f] = %0 : !llzk.struct<@Unpack<[@N, @P, @Aff]>>, !llzk.struct<@Bar<[#mapAdd]>>
+
+      %1 = call @Foo::@compute(%0) {()[%n,%p]} : (!llzk.struct<@Bar<[#mapAdd]>>) -> !llzk.struct<@Foo<[#mapAdd]>>
+
+      return %self : !llzk.struct<@Unpack<[@N, @P, @Aff]>>
+    }
+    func @constrain(%arg0: !llzk.struct<@Unpack<[@N, @P, @Aff]>>, %arg1: !llzk.array<@Aff x !llzk.felt>) {
+      return
+    }
+  }
+  llzk.struct @User1 {
+    func @compute() -> !llzk.struct<@User1> {
+      %0 = llzk.constfelt 42
+      %1 = llzk.constfelt 99
+      %2 = llzk.constfelt 42
+      %3 = llzk.constfelt 99
+
+      %arr = new_array %0, %1, %2, %3 : !llzk.array<4 x !llzk.felt>
+      %a = arith.constant 8 : index
+      %b = arith.constant 2 : index
+      %s = llzk.call @Unpack::@compute(%arr) {()[%a, %b]}
+        : (!llzk.array<4 x !llzk.felt>) -> !llzk.struct<@Unpack<[8, 2, #mapDiv]>>
+      %self = new_struct : !llzk.struct<@User1>
+      return %self : !llzk.struct<@User1>
+    }
+    func @constrain(%arg0: !llzk.struct<@User1>) {
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @Foo_10 {
+// CHECK-NEXT:    field @bar : !llzk.struct<@Bar_10>
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Bar_10>) -> !llzk.struct<@Foo_10> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Foo_10>
+// CHECK-NEXT:      writef %[[V1]][@bar] = %[[V0]] : <@Foo_10>, !llzk.struct<@Bar_10>
+// CHECK-NEXT:      return %[[V1]] : !llzk.struct<@Foo_10>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Foo_10>, %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Bar_10>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Bar_10 {
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Bar_10> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Bar_10>
+// CHECK-NEXT:      return %[[V0]] : !llzk.struct<@Bar_10>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Bar_10>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Unpack_8_2_4 {
+// CHECK-NEXT:    field @f : !llzk.struct<@Bar_10>
+// CHECK-NEXT:    field @g : !llzk.array<4 x !llzk.felt>
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.array<4 x !llzk.felt>) -> !llzk.struct<@Unpack_8_2_4> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Unpack_8_2_4>
+// CHECK-NEXT:      writef %[[V1]][@g] = %[[V0]] : <@Unpack_8_2_4>, !llzk.array<4 x !llzk.felt>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = call @Bar_10::@compute() : () -> !llzk.struct<@Bar_10>
+// CHECK-NEXT:      writef %[[V1]][@f] = %[[V2]] : <@Unpack_8_2_4>, !llzk.struct<@Bar_10>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = call @Foo_10::@compute(%[[V2]]) : (!llzk.struct<@Bar_10>) -> !llzk.struct<@Foo_10>
+// CHECK-NEXT:      return %[[V1]] : !llzk.struct<@Unpack_8_2_4>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Unpack_8_2_4>, %[[V5:[0-9a-zA-Z_\.]+]]: !llzk.array<4 x !llzk.felt>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @User1 {
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@User1> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  42
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = constfelt  99
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = new_array %[[V0]], %[[V1]], %[[V0]], %[[V1]] : <4 x !llzk.felt>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = call @Unpack_8_2_4::@compute(%[[V2]]) : (!llzk.array<4 x !llzk.felt>) -> !llzk.struct<@Unpack_8_2_4>
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = new_struct : <@User1>
+// CHECK-NEXT:      return %[[V4]] : !llzk.struct<@User1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V5:[0-9a-zA-Z_\.]+]]: !llzk.struct<@User1>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

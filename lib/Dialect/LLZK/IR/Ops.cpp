@@ -270,7 +270,7 @@ bool isInStructFunctionNamed(Operation *op, char const *funcName) {
   return false;
 }
 
-template <typename ConcreteType> LogicalResult InStruct<ConcreteType>::verifyTrait(Operation *op) {
+template <typename TypeClass> LogicalResult InStruct<TypeClass>::verifyTrait(Operation *op) {
   return verifyInStruct(op);
 }
 
@@ -602,6 +602,32 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
 //===------------------------------------------------------------------===//
 // FieldDefOp
 //===------------------------------------------------------------------===//
+
+void FieldDefOp::build(
+    OpBuilder &odsBuilder, OperationState &odsState, StringAttr sym_name, TypeAttr type
+) {
+  Properties &props = odsState.getOrAddProperties<Properties>();
+  props.setSymName(sym_name);
+  props.setType(type);
+}
+
+void FieldDefOp::build(
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef sym_name, Type type
+) {
+  build(odsBuilder, odsState, odsBuilder.getStringAttr(sym_name), TypeAttr::get(type));
+}
+
+void FieldDefOp::build(
+    OpBuilder &, OperationState &odsState, TypeRange resultTypes, ValueRange operands,
+    ArrayRef<NamedAttribute> attributes
+) {
+  assert(operands.size() == 0u && "mismatched number of parameters");
+  odsState.addOperands(operands);
+  odsState.addAttributes(attributes);
+  assert(resultTypes.size() == 0u && "mismatched number of return types");
+  odsState.addTypes(resultTypes);
+}
+
 bool FieldDefOp::hasPublicAttr() { return getOperation()->hasAttr(PublicAttr::name); }
 
 LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
@@ -926,10 +952,11 @@ LogicalResult InsertArrayOp::verify() {
   if (!typeParamsUnify(dimsFromBaseReduced, dimsFromRValue)) {
     std::string message;
     llvm::raw_string_ostream ss(message);
+    auto appendOne = [&ss](Attribute a) { appendWithoutType(ss, a); };
     ss << "cannot unify array dimensions [";
-    llvm::interleaveComma(dimsFromBaseReduced, ss, [&ss](Attribute a) { a.print(ss, true); });
+    llvm::interleaveComma(dimsFromBaseReduced, ss, appendOne);
     ss << "] with [";
-    llvm::interleaveComma(dimsFromRValue, ss, [&ss](Attribute a) { a.print(ss, true); });
+    llvm::interleaveComma(dimsFromRValue, ss, appendOne);
     ss << "]";
     return emitOpError().append(message);
   }

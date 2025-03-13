@@ -561,9 +561,9 @@ module attributes {veridise.lang = "llzk"} {
           !llzk.struct<@DeepInvalidArrayTypeA<[
             !llzk.struct<@DeepInvalidArrayTypeA<[
               !llzk.array<2 x !llzk.array<4 x i1>> // expected-error {{'llzk.array' element type cannot be 'llzk.array'}}
-            ]>> // expected-error {{failed to parse LLZK_StructType parameter 'params' which is to be a `::mlir::ArrayAttr`}}
-          ]>> // expected-error {{failed to parse LLZK_StructType parameter 'params' which is to be a `::mlir::ArrayAttr`}}
+            ]>> // expected-error {{failed to parse struct parameters}}
+          ]>> // expected-error {{failed to parse struct parameters}}
         > // expected-error {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
-      ]>> // expected-error {{failed to parse LLZK_StructType parameter 'params' which is to be a `::mlir::ArrayAttr`}}
+      ]>> // expected-error {{failed to parse struct parameters}}
     > // expected-error {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
 }

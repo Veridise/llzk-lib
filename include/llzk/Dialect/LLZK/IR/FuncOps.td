@@ -25,6 +25,9 @@ def FuncOp
                        AffineScope, AutomaticAllocationScope,
                        FunctionOpInterface, IsolatedFromAbove,
                        OpAsmOpInterface]> {
+  // NOTE: Cannot have SymbolTable trait because that would cause global
+  // functions without a body to produce "Operations with a 'SymbolTable' must
+  // have exactly one block"
   let summary = "An operation with a name containing a single `SSACFG` region";
   let description = [{
     Operations within the function cannot implicitly capture values defined
@@ -163,6 +166,9 @@ def FuncOp
 
     /// Return `true` iff the function is with a StructDefOp and named `FUNC_NAME_CONSTRAIN`.
     bool isStructConstrain();
+
+    /// Assuming the name is `FUNC_NAME_COMPUTE`, return the single StructType result.
+    ::llzk::StructType getComputeSingleResultType();
   }];
   let hasCustomAssemblyFormat = 1;
 
@@ -250,6 +256,8 @@ def CallOp
       DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs Variadic<AnyLLZKType>);
 
+  // Define builders manually so inference of operand layout attributes is not
+  // circumvented.
   let skipDefaultBuilders = 1;
   let builders =
       [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,

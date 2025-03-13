@@ -112,6 +112,9 @@ inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterf
   return resolveCallable<T>(symbolTable, call);
 }
 
+/// Equivalent to `SymbolTable::getSymbolUses(...).has_value()` but without fully computing uses.
+bool hasUsesWithin(mlir::Operation *symbol, mlir::Operation *from);
+
 /// Ensure that the given symbol (that is used as a parameter of the given type) can be resolved.
 mlir::LogicalResult verifyParamOfType(
     mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr param, mlir::Type structOrArrayType,

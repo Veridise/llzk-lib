@@ -12,6 +12,7 @@
 #include <mlir/IR/Types.h>
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/TypeSwitch.h>
@@ -27,6 +28,36 @@
 #include "llzk/Dialect/LLZK/IR/Types.h.inc"
 
 namespace llzk {
+
+/// Note: If any symbol refs in an input Type/Attribute use any of the special characters that this
+/// class generates, they are not escaped. That means these string representations are not safe to
+/// reverse back into a Type. It's only intended to produce a unique name for instantiated structs
+/// that may give some hint when debugging regarding the original struct name and the params used.
+class ShortTypeStringifier {
+  std::string ret;
+  llvm::raw_string_ostream ss;
+
+public:
+  ShortTypeStringifier() : ret(), ss(ret) {}
+  std::string str() const { return ret; }
+  ShortTypeStringifier &append(mlir::Type);
+  ShortTypeStringifier &append(mlir::ArrayRef<mlir::Attribute>);
+
+private:
+  void appendAnyAttr(mlir::Attribute);
+  void appendSymRef(mlir::SymbolRefAttr);
+  void appendSymName(mlir::StringRef);
+};
+
+/// Return a brief string representation of the given LLZK type.
+static inline std::string shortString(mlir::Type type) {
+  return ShortTypeStringifier().append(type).str();
+}
+
+/// Return a brief string representation of the attribute list from a parameterized type.
+static inline std::string shortString(mlir::ArrayRef<mlir::Attribute> attrs) {
+  return ShortTypeStringifier().append(attrs).str();
+}
 
 // This function asserts that the given Attribute kind is legal within the LLZK types that can
 // contain Attribute parameters (i.e. ArrayType, StructType, and TypeVarType). This should be used
@@ -52,7 +83,7 @@ bool isValidArrayElemType(mlir::Type type);
 bool isValidArrayType(mlir::Type type);
 
 /// Return `false` iff the type contains any `TypeVarType`
-bool isConcreteType(mlir::Type type);
+bool isConcreteType(mlir::Type type, bool allowStructParams = true);
 
 inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type) {
   if (!isValidType(type)) {
@@ -65,59 +96,135 @@ inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type
 /// Return `true` iff the given type is a StructType referencing the `COMPONENT_NAME_SIGNAL` struct.
 bool isSignalType(mlir::Type type);
 
+enum class Side { EMPTY = 0, LHS, RHS, TOMB };
+static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Side &val) {
+  switch (val) {
+  case Side::EMPTY:
+    os << "EMPTY";
+    break;
+  case Side::TOMB:
+    os << "TOMB";
+    break;
+  case Side::LHS:
+    os << "LHS";
+    break;
+  case Side::RHS:
+    os << "RHS";
+    break;
+  }
+  return os;
+}
+} // namespace llzk
+
+namespace llvm {
+template <> struct DenseMapInfo<llzk::Side> {
+  using T = llzk::Side;
+  static inline T getEmptyKey() { return T::EMPTY; }
+  static inline T getTombstoneKey() { return T::TOMB; }
+  static unsigned getHashValue(const T &val) {
+    using UT = std::underlying_type_t<T>;
+    return llvm::DenseMapInfo<UT>::getHashValue(static_cast<UT>(val));
+  }
+  static bool isEqual(const T &lhs, const T &rhs) { return lhs == rhs; }
+};
+} // namespace llvm
+
+namespace llzk {
+
+/// Optional result from type unifications. Maps `SymbolRefAttr` appearing in one type to the
+/// associated `Attribute` from the other type at the same nested position. The `Side` enum in the
+/// key indicates which input expression the `SymbolRefAttr` is from. Additionally, if a conflict is
+/// found (i.e. multiple occurances of a specific `SymbolRefAttr` on the same side map to different
+/// Attributes from the other side). The mapped value will be `nullptr`.
+using UnificationMap = mlir::DenseMap<std::pair<mlir::SymbolRefAttr, Side>, mlir::Attribute>;
+
 /// Return `true` iff the two ArrayRef instances containing StructType or ArrayType parameters
 /// are equivalent or could be equivalent after full instantiation of struct parameters.
 bool typeParamsUnify(
     const mlir::ArrayRef<mlir::Attribute> &lhsParams,
-    const mlir::ArrayRef<mlir::Attribute> &rhsParams
+    const mlir::ArrayRef<mlir::Attribute> &rhsParams, UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
 /// are equivalent or could be equivalent after full instantiation of struct parameters.
-bool typeParamsUnify(const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams);
+bool typeParamsUnify(
+    const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams,
+    UnificationMap *unifications = nullptr
+);
 
 /// Return `true` iff the two ArrayType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
 bool arrayTypesUnify(
-    ArrayType lhs, ArrayType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}
+    ArrayType lhs, ArrayType rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
+    UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two StructType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
 bool structTypesUnify(
-    StructType lhs, StructType rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}
+    StructType lhs, StructType rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
+    UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters (if applicable within the given types).
-bool typesUnify(mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {});
+bool typesUnify(
+    mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
+    UnificationMap *unifications = nullptr
+);
 
 /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
 /// full instantiation of struct parameters (if applicable within the given types).
 template <typename Iter1, typename Iter2>
-inline bool
-typeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}) {
+inline bool typeListsUnify(
+    Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
+    UnificationMap *unifications = nullptr
+) {
   return (lhs.size() == rhs.size()) &&
-         std::equal(
-             lhs.begin(), lhs.end(), rhs.begin(),
-             [&rhsRevPrefix](mlir::Type a, mlir::Type b) { return typesUnify(a, b, rhsRevPrefix); }
-         );
+         std::equal(lhs.begin(), lhs.end(), rhs.begin(), [&](mlir::Type a, mlir::Type b) {
+    return typesUnify(a, b, rhsReversePrefix, unifications);
+  });
 }
 
 template <typename Iter1, typename Iter2>
-inline bool
-singletonTypeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsRevPrefix = {}) {
-  return lhs.size() == 1 && rhs.size() == 1 && typesUnify(lhs.front(), rhs.front());
+inline bool singletonTypeListsUnify(
+    Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
+    UnificationMap *unifications = nullptr
+) {
+  return lhs.size() == 1 && rhs.size() == 1 &&
+         typesUnify(lhs.front(), rhs.front(), rhsReversePrefix, unifications);
 }
 
-template <typename ConcreteType> inline ConcreteType getIfSingleton(mlir::TypeRange types) {
-  return (types.size() == 1) ? llvm::dyn_cast<ConcreteType>(types.front()) : nullptr;
+/// Return `true` iff the types unify and `newTy` is "more concrete" than `oldTy`.
+///
+/// The types `i1`, `index`, `llzk.felt`, and `llzk.string` are concrete whereas `llzk.tvar` is not
+/// (because it may be substituted with any type during struct instantiation). When considering the
+/// attributes with `llzk.array` and `llzk.struct` types, we define IntegerAttr and TypeAttr as
+/// concrete, AffineMapAttr as less concrete than those, and SymbolRefAttr as least concrete.
+bool isMoreConcreteUnification(
+    mlir::Type oldTy, mlir::Type newTy,
+    llvm::function_ref<bool(mlir::Type oldTy, mlir::Type newTy)> knownOldToNew = nullptr
+);
+
+template <typename TypeClass> inline TypeClass getIfSingleton(mlir::TypeRange types) {
+  return (types.size() == 1) ? llvm::dyn_cast<TypeClass>(types.front()) : nullptr;
 }
 
-template <typename ConcreteType>
-inline ConcreteType getAtIndex(mlir::TypeRange types, size_t index) {
-  return (types.size() > index) ? llvm::dyn_cast<ConcreteType>(types[index]) : nullptr;
+template <typename TypeClass> inline TypeClass getAtIndex(mlir::TypeRange types, size_t index) {
+  return (types.size() > index) ? llvm::dyn_cast<TypeClass>(types[index]) : nullptr;
 }
+
+/// Convert any IntegerAttr with a type other than IndexType to use IndexType.
+llvm::SmallVector<mlir::Attribute> forceIntAttrType(llvm::ArrayRef<mlir::Attribute> attrList);
+
+/// Verify that all IntegerAttr have type IndexType.
+mlir::LogicalResult verifyIntAttrType(EmitErrorFn emitError, mlir::Attribute in);
+
+mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
+void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);
+
+mlir::ParseResult parseStructParams(mlir::AsmParser &parser, mlir::ArrayAttr &value);
+void printStructParams(mlir::AsmPrinter &printer, mlir::ArrayAttr value);
 
 mlir::LogicalResult computeDimsFromShape(
     mlir::MLIRContext *ctx, llvm::ArrayRef<int64_t> shape,
@@ -128,9 +235,6 @@ mlir::LogicalResult computeShapeFromDims(
     EmitErrorFn emitError, mlir::MLIRContext *ctx, llvm::ArrayRef<mlir::Attribute> dimensionSizes,
     llvm::SmallVector<int64_t> &shape
 );
-
-mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
-void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);
 
 mlir::ParseResult parseDerivedShape(
     mlir::AsmParser &parser, llvm::SmallVector<int64_t> &shape,

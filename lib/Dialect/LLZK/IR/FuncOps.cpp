@@ -272,6 +272,11 @@ bool FuncOp::isStructConstrain() {
   return succeeded(getParentOfType<StructDefOp>(*this)) && nameIsConstrain();
 }
 
+StructType FuncOp::getComputeSingleResultType() {
+  assert(isStructCompute() && "violated implementation pre-condition");
+  return getIfSingleton<StructType>(getResultTypes());
+}
+
 //===----------------------------------------------------------------------===//
 // ReturnOp
 //===----------------------------------------------------------------------===//

@@ -1,0 +1,72 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck %s
+
+#id = affine_map<(i)->(i)>
+!ToFelt = !llzk.struct<@ToFelt<[#id]>>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ToFelt<[@A]> {
+    // field @out: !llzk.felt {llzk.pub}
+
+    func @compute() -> !llzk.struct<@ToFelt<[@A]>> {
+      %self = new_struct : !llzk.struct<@ToFelt<[@A]>>
+      // %constA = read_const @A : !llzk.felt
+      // writef %self[@out] = %constA : !llzk.struct<@ToFelt<[@A]>>, !llzk.felt
+      return %self: !llzk.struct<@ToFelt<[@A]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@ToFelt<[@A]>>) { return }
+  }
+
+  llzk.struct @ComponentA<[@T]> {
+    func @compute(%inp: !llzk.struct<@ToFelt<[@T]>>) -> !llzk.struct<@ComponentA<[@T]>> {
+      %self = new_struct : !llzk.struct<@ComponentA<[@T]>>
+      return %self : !llzk.struct<@ComponentA<[@T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA<[@T]>>, %inp: !llzk.struct<@ToFelt<[@T]>>) { return }
+  }
+
+  llzk.struct @ComponentB {
+    func @compute() -> !llzk.struct<@ComponentB> {
+      // In real code, this should be loop induction variable
+      %n = arith.constant 2 : index
+      %in = llzk.call @ToFelt::@compute(){(%n)} : () -> !ToFelt
+      %out = llzk.call @ComponentA::@compute(%in) : (!ToFelt) -> !llzk.struct<@ComponentA<[2]>>
+
+      %self = new_struct : !llzk.struct<@ComponentB>
+      return %self : !llzk.struct<@ComponentB>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentB>) { return }
+  }
+}
+// CHECK-LABEL: llzk.struct @ToFelt_2 {
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@ToFelt_2> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@ToFelt_2>
+// CHECK-NEXT:      return %[[V0]] : !llzk.struct<@ToFelt_2>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_2>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @ComponentA_2 {
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_2>) -> !llzk.struct<@ComponentA_2> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA_2>
+// CHECK-NEXT:      return %[[V1]] : !llzk.struct<@ComponentA_2>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA_2>, %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_2>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @ComponentB {
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@ComponentB> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = call @ToFelt_2::@compute() : () -> !llzk.struct<@ToFelt_2>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = call @ComponentA_2::@compute(%[[V0]]) : (!llzk.struct<@ToFelt_2>) -> !llzk.struct<@ComponentA_2>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB>
+// CHECK-NEXT:      return %[[V2]] : !llzk.struct<@ComponentB>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

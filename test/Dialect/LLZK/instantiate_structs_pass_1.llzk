@@ -1,0 +1,967 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck %s
+
+/// Test calling a global function named "compute"; should have no change
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @compute(%x: i1) -> i1 {
+    return %x : i1
+  }
+  llzk.func @global_caller(%a: i1, %b: i1) -> i1 {
+    %1 = llzk.call @compute(%a) : (i1) -> i1
+    return %1 : i1
+  }
+  llzk.struct @StructCaller {
+    func @compute(%a: i1) -> !llzk.struct<@StructCaller> {
+      %self = new_struct : !llzk.struct<@StructCaller>
+      %1 = llzk.call @compute(%a) : (i1) -> i1
+      return %self : !llzk.struct<@StructCaller>
+    }
+    func @constrain(%self: !llzk.struct<@StructCaller>, %a: i1) {
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.func @compute(
+// CHECK-SAME:                     %[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
+// CHECK-NEXT:    return %[[VAL_0]] : i1
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.func @global_caller(
+// CHECK-SAME:                           %[[VAL_0:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:                           %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
+// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = call @compute(%[[VAL_0]]) : (i1) -> i1
+// CHECK-NEXT:    return %[[VAL_2]] : i1
+// CHECK-NEXT:  }
+// -----
+
+/// Test calling a struct "compute" without params; should have no change
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @StructA {
+    func @compute() -> !llzk.struct<@StructA> {
+      %self = new_struct : !llzk.struct<@StructA>
+      return %self : !llzk.struct<@StructA>
+    }
+    func @constrain(%self: !llzk.struct<@StructA>) {
+      return
+    }
+  }
+  llzk.struct @StructCaller {
+    func @compute() -> !llzk.struct<@StructCaller> {
+      %self = new_struct : !llzk.struct<@StructCaller>
+      %1 = llzk.call @StructA::@compute() : () -> !llzk.struct<@StructA>
+      return %self : !llzk.struct<@StructCaller>
+    }
+    func @constrain(%self: !llzk.struct<@StructCaller>) {
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @StructCaller {
+// CHECK-NEXT:    func @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !llzk.struct<@StructCaller> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = new_struct : <@StructCaller>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = call @compute(%[[VAL_0]]) : (i1) -> i1
+// CHECK-NEXT:      return %[[VAL_1]] : !llzk.struct<@StructCaller>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@StructCaller>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @StructA {
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@StructA> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@StructA>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@StructA>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@StructA>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @StructCaller {
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@StructCaller> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@StructCaller>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = call @StructA::@compute() : () -> !llzk.struct<@StructA>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@StructCaller>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@StructCaller>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component01A<[@A, @B]> {
+    func @compute() -> !llzk.struct<@Component01A<[@A, @B]>> {
+      %self = new_struct : !llzk.struct<@Component01A<[@A, @B]>>
+      return %self : !llzk.struct<@Component01A<[@A, @B]>>
+    }
+    func @constrain(%self: !llzk.struct<@Component01A<[@A, @B]>>) { return }
+  }
+
+  llzk.struct @Component01B<[@C]> {
+    field @f2 : !llzk.struct<@Component01A<[5, @C]>>
+
+    func @compute() -> !llzk.struct<@Component01B<[@C]>> {
+      %self = new_struct : !llzk.struct<@Component01B<[@C]>>
+      %x = call @Component01A::@compute() : () -> (!llzk.struct<@Component01A<[5, @C]>>)
+      writef %self[@f2] = %x : !llzk.struct<@Component01B<[@C]>>, !llzk.struct<@Component01A<[5, @C]>>
+      return %self : !llzk.struct<@Component01B<[@C]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component01B<[@C]>>) {
+      %b = readf %self[@f2] : !llzk.struct<@Component01B<[@C]>>, !llzk.struct<@Component01A<[5, @C]>>
+      call @Component01A::@constrain(%b) : (!llzk.struct<@Component01A<[5, @C]>>) -> ()
+      return
+    }
+  }
+
+  llzk.struct @Component01C {
+    field @f3 : !llzk.struct<@Component01B<[43]>>
+
+    func @compute() -> !llzk.struct<@Component01C> {
+      %self = new_struct : !llzk.struct<@Component01C>
+      %x = call @Component01B::@compute() : () -> (!llzk.struct<@Component01B<[43]>>)
+      writef %self[@f3] = %x : !llzk.struct<@Component01C>, !llzk.struct<@Component01B<[43]>>
+      return %self : !llzk.struct<@Component01C>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component01C>) {
+      %b = readf %self[@f3] : !llzk.struct<@Component01C>, !llzk.struct<@Component01B<[43]>>
+      call @Component01B::@constrain(%b) : (!llzk.struct<@Component01B<[43]>>) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @Component01A_5_43 {
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component01A_5_43> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component01A_5_43>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Component01A_5_43>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01A_5_43>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Component01B_43 {
+// CHECK-NEXT:    field @f2 : !llzk.struct<@Component01A_5_43>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component01B_43> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component01B_43>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = call @Component01A_5_43::@compute() : () -> !llzk.struct<@Component01A_5_43>
+// CHECK-NEXT:      writef %[[VAL_0]][@f2] = %[[VAL_1]] : <@Component01B_43>, !llzk.struct<@Component01A_5_43>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Component01B_43>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01B_43>) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = readf %[[VAL_2]][@f2] : <@Component01B_43>, !llzk.struct<@Component01A_5_43>
+// CHECK-NEXT:      call @Component01A_5_43::@constrain(%[[VAL_3]]) : (!llzk.struct<@Component01A_5_43>) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Component01C {
+// CHECK-NEXT:    field @f3 : !llzk.struct<@Component01B_43>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component01C> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component01C>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = call @Component01B_43::@compute() : () -> !llzk.struct<@Component01B_43>
+// CHECK-NEXT:      writef %[[VAL_0]][@f3] = %[[VAL_1]] : <@Component01C>, !llzk.struct<@Component01B_43>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Component01C>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01C>) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = readf %[[VAL_2]][@f3] : <@Component01C>, !llzk.struct<@Component01B_43>
+// CHECK-NEXT:      call @Component01B_43::@constrain(%[[VAL_3]]) : (!llzk.struct<@Component01B_43>) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// No change because there is no compute call that instantiates all of the parameters
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component02<[@A]> {
+    func @compute(%0: !llzk.felt) -> !llzk.struct<@Component02<[@A]>> {
+      %self = new_struct : !llzk.struct<@Component02<[@A]>>
+      return %self : !llzk.struct<@Component02<[@A]>>
+    }
+    func @constrain(%self: !llzk.struct<@Component02<[@A]>>, %0: !llzk.felt) {
+      %1 = read_const @A : !llzk.felt
+      emit_eq %0, %1 : !llzk.felt
+      return
+    }
+  }
+}
+//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:    llzk.struct @Component02<[@A]> {
+//CHECK-NEXT:      func @compute(%arg0: !llzk.felt) -> !llzk.struct<@Component02<[@A]>> {
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Component02<[@A]>>
+//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@Component02<[@A]>>
+//CHECK-NEXT:      }
+//CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@Component02<[@A]>>, %arg1: !llzk.felt) {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = read_const @A : !llzk.felt
+//CHECK-NEXT:        emit_eq %arg1, %[[T0]] : !llzk.felt, !llzk.felt
+//CHECK-NEXT:        return
+//CHECK-NEXT:      }
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  module @a {
+    llzk.struct @Component03A<[@Z]> {
+      func @compute() -> !llzk.struct<@a::@Component03A<[@Z]>> {
+        %self = new_struct : !llzk.struct<@a::@Component03A<[@Z]>>
+        return %self : !llzk.struct<@a::@Component03A<[@Z]>>
+      }
+      func @constrain(%self: !llzk.struct<@a::@Component03A<[@Z]>>)  { return }
+    }
+  }
+
+  module @b {
+    llzk.struct @Component03B {
+      func @compute() -> !llzk.struct<@b::@Component03B> {
+        %self = new_struct : !llzk.struct<@b::@Component03B>
+        return %self : !llzk.struct<@b::@Component03B>
+      }
+      func @constrain(%self: !llzk.struct<@b::@Component03B>)  { return }
+    }
+  }
+
+  llzk.func @fun1(%0: !llzk.struct<@b::@Component03B>) -> !llzk.struct<@b::@Component03B> {
+    return %0 : !llzk.struct<@b::@Component03B>
+  }
+
+  llzk.func @fun2(%0: !llzk.struct<@a::@Component03A<[4]>>) -> !llzk.struct<@a::@Component03A<[4]>> {
+    return %0 : !llzk.struct<@a::@Component03A<[4]>>
+  }
+}
+// CHECK-LABEL: module @a {
+// CHECK-NEXT:    llzk.struct @Component03A_4 {
+// CHECK-NEXT:      func @compute() -> !llzk.struct<@a::@Component03A_4> {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@a::@Component03A_4>
+// CHECK-NEXT:        return %[[VAL_0]] : !llzk.struct<@a::@Component03A_4>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      func @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@a::@Component03A_4>) {
+// CHECK-NEXT:        return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: module @b {
+// CHECK-NEXT:    llzk.struct @Component03B {
+// CHECK-NEXT:      func @compute() -> !llzk.struct<@b::@Component03B> {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@b::@Component03B>
+// CHECK-NEXT:        return %[[VAL_0]] : !llzk.struct<@b::@Component03B>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      func @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@b::@Component03B>) {
+// CHECK-NEXT:        return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.func @fun1(
+// CHECK-SAME:                  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@b::@Component03B>) -> !llzk.struct<@b::@Component03B> {
+// CHECK-NEXT:    return %[[VAL_0]] : !llzk.struct<@b::@Component03B>
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.func @fun2(
+// CHECK-SAME:                  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@a::@Component03A_4>) -> !llzk.struct<@a::@Component03A_4> {
+// CHECK-NEXT:    return %[[VAL_0]] : !llzk.struct<@a::@Component03A_4>
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component04A<[@A]> {
+    field @f : !llzk.array<@A,@A x index>
+
+    func @compute(%0: !llzk.array<@A,@A x index>) -> !llzk.struct<@Component04A<[@A]>> {
+      %self = new_struct : !llzk.struct<@Component04A<[@A]>>
+      writef %self[@f] = %0 : !llzk.struct<@Component04A<[@A]>>, !llzk.array<@A,@A x index>
+      return %self : !llzk.struct<@Component04A<[@A]>>
+    }
+    func @constrain(%self: !llzk.struct<@Component04A<[@A]>>, %0: !llzk.array<@A,@A x index>) {
+      %b = readf %self[@f] : !llzk.struct<@Component04A<[@A]>>, !llzk.array<@A,@A x index>
+      return
+    }
+  }
+
+  llzk.func @producer() -> !llzk.array<2,2 x index> {
+    %1 = arith.constant 11 : index
+    %2 = arith.constant 22 : index
+    %3 = arith.constant 33 : index
+    %4 = arith.constant 44 : index
+    %r = llzk.new_array %1, %2, %3, %4 : !llzk.array<2,2 x index>
+    return %r: !llzk.array<2,2 x index>
+  }
+
+  llzk.struct @Component04B {
+    field @g : !llzk.struct<@Component04A<[2]>>
+
+    func @compute() -> !llzk.struct<@Component04B> {
+      %self = new_struct : !llzk.struct<@Component04B>
+      %0 = call @producer() : () -> !llzk.array<2,2 x index>
+      %1 = call @Component04A::@compute(%0) : (!llzk.array<2,2 x index>) -> !llzk.struct<@Component04A<[2]>>
+      writef %self[@g] = %1 : !llzk.struct<@Component04B>, !llzk.struct<@Component04A<[2]>>
+      return %self : !llzk.struct<@Component04B>
+    }
+    func @constrain(%self: !llzk.struct<@Component04B>) {
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @Component04A_2 {
+// CHECK-NEXT:    field @f : !llzk.array<2,2 x index>
+// CHECK-NEXT:    func @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !llzk.array<2,2 x index>) -> !llzk.struct<@Component04A_2> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component04A_2>
+// CHECK-NEXT:      writef %[[VAL_1]][@f] = %[[VAL_0]] : <@Component04A_2>, !llzk.array<2,2 x index>
+// CHECK-NEXT:      return %[[VAL_1]] : !llzk.struct<@Component04A_2>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component04A_2>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.array<2,2 x index>) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = readf %[[VAL_2]][@f] : <@Component04A_2>, !llzk.array<2,2 x index>
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.func @producer() -> !llzk.array<2,2 x index> {
+// CHECK-NEXT:    %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 11 : index
+// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 22 : index
+// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 33 : index
+// CHECK-NEXT:    %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 44 : index
+// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.]+]] = new_array %[[VAL_0]], %[[VAL_1]], %[[VAL_2]], %[[VAL_3]] : <2,2 x index>
+// CHECK-NEXT:    return %[[VAL_4]] : !llzk.array<2,2 x index>
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Component04B {
+// CHECK-NEXT:    field @g : !llzk.struct<@Component04A_2>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component04B> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component04B>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = call @producer() : () -> !llzk.array<2,2 x index>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = call @Component04A_2::@compute(%[[VAL_1]]) : (!llzk.array<2,2 x index>) -> !llzk.struct<@Component04A_2>
+// CHECK-NEXT:      writef %[[VAL_0]][@g] = %[[VAL_2]] : <@Component04B>, !llzk.struct<@Component04A_2>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Component04B>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component04B>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component05<[@S, @T]> {
+    field @f : !llzk.array<@S x !llzk.tvar<@T>>
+
+    func @compute() -> !llzk.struct<@Component05<[@S, @T]>> {
+      %self = new_struct : !llzk.struct<@Component05<[@S, @T]>>
+      %arr = new_array : !llzk.array<@S x !llzk.tvar<@T>>
+      %lb = arith.constant 0 : index
+      %up = llzk.read_const @S : index
+      %step = arith.constant 1 : index
+      scf.for %iv = %lb to %up step %step {
+        // Although a type variable is used, this struct can only be instantiated
+        //  with `@T = index` since an `index` value is assigned to the tvar array.
+        llzk.writearr %arr[%iv] = %iv : !llzk.array<@S x !llzk.tvar<@T>>, index
+      }
+      writef %self[@f] = %arr : !llzk.struct<@Component05<[@S, @T]>>, !llzk.array<@S x !llzk.tvar<@T>>
+      return %self : !llzk.struct<@Component05<[@S, @T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component05<[@S, @T]>>) {
+      %arr = readf %self[@f] : !llzk.struct<@Component05<[@S, @T]>>, !llzk.array<@S x !llzk.tvar<@T>>
+      %lb = arith.constant 0 : index
+      %up = llzk.read_const @S : index
+      %step = arith.constant 1 : index
+      scf.for %iv = %lb to %up step %step {
+        %temp = llzk.readarr %arr[%iv] : !llzk.array<@S x !llzk.tvar<@T>>, !llzk.tvar<@T>
+        llzk.emit_eq %temp, %iv : !llzk.tvar<@T>, index // requires that @T==index
+      }
+      return
+    }
+  }
+  llzk.struct @Main {
+    field @sub : !llzk.struct<@Component05<[5, index]>>
+
+    func @compute() -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      %1 = call @Component05::@compute() : () -> !llzk.struct<@Component05<[5, index]>>
+      writef %self[@sub] = %1 : !llzk.struct<@Main>, !llzk.struct<@Component05<[5, index]>>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%self: !llzk.struct<@Main>) {
+      %1 = readf %self[@sub] : !llzk.struct<@Main>, !llzk.struct<@Component05<[5, index]>>
+      call @Component05::@constrain(%1) : (!llzk.struct<@Component05<[5, index]>>) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @Component05_5_i {
+// CHECK-NEXT:    field @f : !llzk.array<5 x index>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component05_5_i> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = new_struct : <@Component05_5_i>
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = new_array  : <5 x index>
+// CHECK-NEXT:      writearr %[[V6]]{{\[}}%[[V4]]] = %[[V4]] : <5 x index>, index
+// CHECK-NEXT:      writearr %[[V6]]{{\[}}%[[V3]]] = %[[V3]] : <5 x index>, index
+// CHECK-NEXT:      writearr %[[V6]]{{\[}}%[[V2]]] = %[[V2]] : <5 x index>, index
+// CHECK-NEXT:      writearr %[[V6]]{{\[}}%[[V1]]] = %[[V1]] : <5 x index>, index
+// CHECK-NEXT:      writearr %[[V6]]{{\[}}%[[V0]]] = %[[V0]] : <5 x index>, index
+// CHECK-NEXT:      writef %[[V5]][@f] = %[[V6]] : <@Component05_5_i>, !llzk.array<5 x index>
+// CHECK-NEXT:      return %[[V5]] : !llzk.struct<@Component05_5_i>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component05_5_i>) {
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@f] : <@Component05_5_i>, !llzk.array<5 x index>
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = readarr %[[V13]]{{\[}}%[[V12]]] : <5 x index>, index
+// CHECK-NEXT:      emit_eq %[[V14]], %[[V12]] : index, index
+// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = readarr %[[V13]]{{\[}}%[[V11]]] : <5 x index>, index
+// CHECK-NEXT:      emit_eq %[[V15]], %[[V11]] : index, index
+// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = readarr %[[V13]]{{\[}}%[[V10]]] : <5 x index>, index
+// CHECK-NEXT:      emit_eq %[[V16]], %[[V10]] : index, index
+// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = readarr %[[V13]]{{\[}}%[[V9]]] : <5 x index>, index
+// CHECK-NEXT:      emit_eq %[[V17]], %[[V9]] : index, index
+// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = readarr %[[V13]]{{\[}}%[[V8]]] : <5 x index>, index
+// CHECK-NEXT:      emit_eq %[[V18]], %[[V8]] : index, index
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Main {
+// CHECK-NEXT:    field @sub : !llzk.struct<@Component05_5_i>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = call @Component05_5_i::@compute() : () -> !llzk.struct<@Component05_5_i>
+// CHECK-NEXT:      writef %[[VAL_0]][@sub] = %[[VAL_1]] : <@Main>, !llzk.struct<@Component05_5_i>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = readf %[[VAL_2]][@sub] : <@Main>, !llzk.struct<@Component05_5_i>
+// CHECK-NEXT:      call @Component05_5_i::@constrain(%[[VAL_3]]) : (!llzk.struct<@Component05_5_i>) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+/// Ensure a StructType using a param somewhere in the type is not converted.
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component06A<[@C]> {
+    field @f1 : !llzk.tvar<@C>
+
+    func @compute() -> !llzk.struct<@Component06A<[@C]>> {
+      %self = new_struct : !llzk.struct<@Component06A<[@C]>>
+      return %self : !llzk.struct<@Component06A<[@C]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component06A<[@C]>>) {
+      return
+    }
+  }
+
+  llzk.struct @Component06B<[@T]> {
+    field @f2 : !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+
+    func @compute() -> !llzk.struct<@Component06B<[@T]>> {
+      %self = new_struct : !llzk.struct<@Component06B<[@T]>>
+      %x = call @Component06A::@compute() : () -> (!llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>)
+      writef %self[@f2] = %x : !llzk.struct<@Component06B<[@T]>>, !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+      return %self : !llzk.struct<@Component06B<[@T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component06B<[@T]>>) {
+      %b = readf %self[@f2] : !llzk.struct<@Component06B<[@T]>>, !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+      call @Component06A::@constrain(%b) : (!llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @Component06A<[@C]> {
+// CHECK-NEXT:    field @f1 : !llzk.tvar<@C>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component06A<[@C]>> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component06A<[@C]>>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Component06A<[@C]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component06A<[@C]>>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Component06B<[@T]> {
+// CHECK-NEXT:    field @f2 : !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component06B<[@T]>> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component06B<[@T]>>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = call @Component06A::@compute() : () -> !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:      writef %[[VAL_0]][@f2] = %[[VAL_1]] : <@Component06B<[@T]>>, !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Component06B<[@T]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component06B<[@T]>>) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = readf %[[VAL_2]][@f2] : <@Component06B<[@T]>>, !llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:      call @Component06A::@constrain(%[[VAL_3]]) : (!llzk.struct<@Component06A<[!llzk.array<@T x i1>]>>) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+/// Test "Parameterized struct still has uses!" warning
+module attributes {veridise.lang = "llzk"} {
+  // expected-warning@+1 {{Parameterized struct still has uses!}}
+  llzk.struct @Component07A<[@C]> {
+    field @f1 : !llzk.tvar<@C>
+
+    func @compute() -> !llzk.struct<@Component07A<[@C]>> {
+      %self = new_struct : !llzk.struct<@Component07A<[@C]>>
+      return %self : !llzk.struct<@Component07A<[@C]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component07A<[@C]>>) {
+      return
+    }
+  }
+
+  llzk.struct @Component07B<[@T]> {
+    field @f2 : !llzk.struct<@Component07A<[!llzk.array<@T x i1>]>>
+
+    func @compute() -> !llzk.struct<@Component07B<[@T]>> {
+      %self = new_struct : !llzk.struct<@Component07B<[@T]>>
+      %x = call @Component07A::@compute() : () -> (!llzk.struct<@Component07A<[!llzk.array<@T x i1>]>>)
+      writef %self[@f2] = %x : !llzk.struct<@Component07B<[@T]>>, !llzk.struct<@Component07A<[!llzk.array<@T x i1>]>>
+      return %self : !llzk.struct<@Component07B<[@T]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component07B<[@T]>>) {
+      %b = readf %self[@f2] : !llzk.struct<@Component07B<[@T]>>, !llzk.struct<@Component07A<[!llzk.array<@T x i1>]>>
+      call @Component07A::@constrain(%b) : (!llzk.struct<@Component07A<[!llzk.array<@T x i1>]>>) -> ()
+      return
+    }
+  }
+
+  llzk.struct @Component07C {
+    field @f2 : !llzk.struct<@Component07A<[!llzk.array<2 x i1>]>>
+
+    func @compute() -> !llzk.struct<@Component07C> {
+      %self = new_struct : !llzk.struct<@Component07C>
+      %x = call @Component07A::@compute() : () -> (!llzk.struct<@Component07A<[!llzk.array<2 x i1>]>>)
+      writef %self[@f2] = %x : !llzk.struct<@Component07C>, !llzk.struct<@Component07A<[!llzk.array<2 x i1>]>>
+      return %self : !llzk.struct<@Component07C>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component07C>) {
+      %b = readf %self[@f2] : !llzk.struct<@Component07C>, !llzk.struct<@Component07A<[!llzk.array<2 x i1>]>>
+      call @Component07A::@constrain(%b) : (!llzk.struct<@Component07A<[!llzk.array<2 x i1>]>>) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @"Component07A_!a<b:2>" {
+// CHECK-NEXT:    field @f1 : !llzk.array<2 x i1>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@"Component07A_!a<b:2>"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@"Component07A_!a<b:2>">
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@"Component07A_!a<b:2>">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@"Component07A_!a<b:2>">) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Component07A<[@C]> {
+// CHECK-NEXT:    field @f1 : !llzk.tvar<@C>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component07A<[@C]>> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component07A<[@C]>>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Component07A<[@C]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component07A<[@C]>>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Component07B<[@T]> {
+// CHECK-NEXT:    field @f2 : !llzk.struct<@Component07A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component07B<[@T]>> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component07B<[@T]>>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = call @Component07A::@compute() : () -> !llzk.struct<@Component07A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:      writef %[[VAL_0]][@f2] = %[[VAL_1]] : <@Component07B<[@T]>>, !llzk.struct<@Component07A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Component07B<[@T]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component07B<[@T]>>) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = readf %[[VAL_2]][@f2] : <@Component07B<[@T]>>, !llzk.struct<@Component07A<[!llzk.array<@T x i1>]>>
+// CHECK-NEXT:      call @Component07A::@constrain(%[[VAL_3]]) : (!llzk.struct<@Component07A<[!llzk.array<@T x i1>]>>) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Component07C {
+// CHECK-NEXT:    field @f2 : !llzk.struct<@"Component07A_!a<b:2>">
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component07C> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component07C>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = call @"Component07A_!a<b:2>"::@compute() : () -> !llzk.struct<@"Component07A_!a<b:2>">
+// CHECK-NEXT:      writef %[[VAL_0]][@f2] = %[[VAL_1]] : <@Component07C>, !llzk.struct<@"Component07A_!a<b:2>">
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Component07C>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component07C>) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = readf %[[VAL_2]][@f2] : <@Component07C>, !llzk.struct<@"Component07A_!a<b:2>">
+// CHECK-NEXT:      call @"Component07A_!a<b:2>"::@constrain(%[[VAL_3]]) : (!llzk.struct<@"Component07A_!a<b:2>">) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @TestReadConstAsBool0<[@A]> {
+    func @compute(%0: i1) -> !llzk.struct<@TestReadConstAsBool0<[@A]>> {
+      %self = new_struct : !llzk.struct<@TestReadConstAsBool0<[@A]>>
+      return %self : !llzk.struct<@TestReadConstAsBool0<[@A]>>
+    }
+    func @constrain(%self: !llzk.struct<@TestReadConstAsBool0<[@A]>>, %0: i1) {
+      %1 = read_const @A : i1
+      emit_eq %0, %1 : i1
+      return
+    }
+  }
+  llzk.struct @Main {
+    field @sub : !llzk.struct<@TestReadConstAsBool0<[0]>>
+
+    func @compute() -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      %0 = arith.constant false
+      %1 = call @TestReadConstAsBool0::@compute(%0) : (i1) -> !llzk.struct<@TestReadConstAsBool0<[0]>>
+      writef %self[@sub] = %1 : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsBool0<[0]>>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%self: !llzk.struct<@Main>) {
+      %0 = arith.constant false
+      %1 = readf %self[@sub] : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsBool0<[0]>>
+      call @TestReadConstAsBool0::@constrain(%1, %0) : (!llzk.struct<@TestReadConstAsBool0<[0]>>, i1) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @TestReadConstAsBool0_0 {
+// CHECK-NEXT:    func @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !llzk.struct<@TestReadConstAsBool0_0> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = new_struct : <@TestReadConstAsBool0_0>
+// CHECK-NEXT:      return %[[VAL_1]] : !llzk.struct<@TestReadConstAsBool0_0>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestReadConstAsBool0_0>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      emit_eq %[[VAL_3]], %[[VAL_4]] : i1, i1
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Main {
+// CHECK-NEXT:    field @sub : !llzk.struct<@TestReadConstAsBool0_0>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = call @TestReadConstAsBool0_0::@compute(%[[VAL_1]]) : (i1) -> !llzk.struct<@TestReadConstAsBool0_0>
+// CHECK-NEXT:      writef %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !llzk.struct<@TestReadConstAsBool0_0>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = readf %[[VAL_3]][@sub] : <@Main>, !llzk.struct<@TestReadConstAsBool0_0>
+// CHECK-NEXT:      call @TestReadConstAsBool0_0::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!llzk.struct<@TestReadConstAsBool0_0>, i1) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @TestReadConstAsBool1<[@A]> {
+    func @compute(%0: i1) -> !llzk.struct<@TestReadConstAsBool1<[@A]>> {
+      %self = new_struct : !llzk.struct<@TestReadConstAsBool1<[@A]>>
+      return %self : !llzk.struct<@TestReadConstAsBool1<[@A]>>
+    }
+    func @constrain(%self: !llzk.struct<@TestReadConstAsBool1<[@A]>>, %0: i1) {
+      %1 = read_const @A : i1
+      emit_eq %0, %1 : i1
+      return
+    }
+  }
+  llzk.struct @Main {
+    field @sub : !llzk.struct<@TestReadConstAsBool1<[1]>>
+
+    func @compute() -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      %0 = arith.constant true
+      %1 = call @TestReadConstAsBool1::@compute(%0) : (i1) -> !llzk.struct<@TestReadConstAsBool1<[1]>>
+      writef %self[@sub] = %1 : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsBool1<[1]>>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%self: !llzk.struct<@Main>) {
+      %0 = arith.constant true
+      %1 = readf %self[@sub] : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsBool1<[1]>>
+      call @TestReadConstAsBool1::@constrain(%1, %0) : (!llzk.struct<@TestReadConstAsBool1<[1]>>, i1) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @TestReadConstAsBool1_1 {
+// CHECK-NEXT:    func @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !llzk.struct<@TestReadConstAsBool1_1> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = new_struct : <@TestReadConstAsBool1_1>
+// CHECK-NEXT:      return %[[VAL_1]] : !llzk.struct<@TestReadConstAsBool1_1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestReadConstAsBool1_1>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      emit_eq %[[VAL_3]], %[[VAL_4]] : i1, i1
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Main {
+// CHECK-NEXT:    field @sub : !llzk.struct<@TestReadConstAsBool1_1>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = call @TestReadConstAsBool1_1::@compute(%[[VAL_1]]) : (i1) -> !llzk.struct<@TestReadConstAsBool1_1>
+// CHECK-NEXT:      writef %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !llzk.struct<@TestReadConstAsBool1_1>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = readf %[[VAL_3]][@sub] : <@Main>, !llzk.struct<@TestReadConstAsBool1_1>
+// CHECK-NEXT:      call @TestReadConstAsBool1_1::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!llzk.struct<@TestReadConstAsBool1_1>, i1) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @TestReadConstAsBool2<[@A]> {
+    func @compute(%0: i1) -> !llzk.struct<@TestReadConstAsBool2<[@A]>> {
+      %self = new_struct : !llzk.struct<@TestReadConstAsBool2<[@A]>>
+      return %self : !llzk.struct<@TestReadConstAsBool2<[@A]>>
+    }
+    func @constrain(%self: !llzk.struct<@TestReadConstAsBool2<[@A]>>, %0: i1) {
+      // expected-warning@+1 {{Interpretting non-zero value 2 as true}}
+      %1 = read_const @A : i1
+      emit_eq %0, %1 : i1
+      return
+    }
+  }
+  llzk.struct @Main {
+    field @sub : !llzk.struct<@TestReadConstAsBool2<[2]>>
+
+    func @compute() -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      %0 = arith.constant true
+      // expected-note@+1 {{when instantiating llzk.struct parameter "@A" for this call}}
+      %1 = call @TestReadConstAsBool2::@compute(%0) : (i1) -> !llzk.struct<@TestReadConstAsBool2<[2]>>
+      writef %self[@sub] = %1 : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsBool2<[2]>>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%self: !llzk.struct<@Main>) {
+      %0 = arith.constant true
+      %1 = readf %self[@sub] : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsBool2<[2]>>
+      call @TestReadConstAsBool2::@constrain(%1, %0) : (!llzk.struct<@TestReadConstAsBool2<[2]>>, i1) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @TestReadConstAsBool2_2 {
+// CHECK-NEXT:    func @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !llzk.struct<@TestReadConstAsBool2_2> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = new_struct : <@TestReadConstAsBool2_2>
+// CHECK-NEXT:      return %[[VAL_1]] : !llzk.struct<@TestReadConstAsBool2_2>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestReadConstAsBool2_2>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      emit_eq %[[VAL_3]], %[[VAL_4]] : i1, i1
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Main {
+// CHECK-NEXT:    field @sub : !llzk.struct<@TestReadConstAsBool2_2>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = call @TestReadConstAsBool2_2::@compute(%[[VAL_1]]) : (i1) -> !llzk.struct<@TestReadConstAsBool2_2>
+// CHECK-NEXT:      writef %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !llzk.struct<@TestReadConstAsBool2_2>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = readf %[[VAL_3]][@sub] : <@Main>, !llzk.struct<@TestReadConstAsBool2_2>
+// CHECK-NEXT:      call @TestReadConstAsBool2_2::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!llzk.struct<@TestReadConstAsBool2_2>, i1) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @TestReadConstAsBoolTrue<[@A]> {
+    func @compute(%0: i1) -> !llzk.struct<@TestReadConstAsBoolTrue<[@A]>> {
+      %self = new_struct : !llzk.struct<@TestReadConstAsBoolTrue<[@A]>>
+      return %self : !llzk.struct<@TestReadConstAsBoolTrue<[@A]>>
+    }
+    func @constrain(%self: !llzk.struct<@TestReadConstAsBoolTrue<[@A]>>, %0: i1) {
+      %1 = read_const @A : i1
+      emit_eq %0, %1 : i1
+      return
+    }
+  }
+  llzk.struct @Main {
+    field @sub : !llzk.struct<@TestReadConstAsBoolTrue<[true]>>
+
+    func @compute() -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      %0 = arith.constant true
+      %1 = call @TestReadConstAsBoolTrue::@compute(%0) : (i1) -> !llzk.struct<@TestReadConstAsBoolTrue<[true]>>
+      writef %self[@sub] = %1 : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsBoolTrue<[true]>>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%self: !llzk.struct<@Main>) {
+      %0 = arith.constant true
+      %1 = readf %self[@sub] : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsBoolTrue<[true]>>
+      call @TestReadConstAsBoolTrue::@constrain(%1, %0) : (!llzk.struct<@TestReadConstAsBoolTrue<[true]>>, i1) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @TestReadConstAsBoolTrue_1 {
+// CHECK-NEXT:    func @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !llzk.struct<@TestReadConstAsBoolTrue_1> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = new_struct : <@TestReadConstAsBoolTrue_1>
+// CHECK-NEXT:      return %[[VAL_1]] : !llzk.struct<@TestReadConstAsBoolTrue_1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestReadConstAsBoolTrue_1>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      emit_eq %[[VAL_3]], %[[VAL_4]] : i1, i1
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Main {
+// CHECK-NEXT:    field @sub : !llzk.struct<@TestReadConstAsBoolTrue_1>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = call @TestReadConstAsBoolTrue_1::@compute(%[[VAL_1]]) : (i1) -> !llzk.struct<@TestReadConstAsBoolTrue_1>
+// CHECK-NEXT:      writef %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !llzk.struct<@TestReadConstAsBoolTrue_1>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = readf %[[VAL_3]][@sub] : <@Main>, !llzk.struct<@TestReadConstAsBoolTrue_1>
+// CHECK-NEXT:      call @TestReadConstAsBoolTrue_1::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!llzk.struct<@TestReadConstAsBoolTrue_1>, i1) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @TestReadConstAsBoolFalse<[@A]> {
+    func @compute(%0: i1) -> !llzk.struct<@TestReadConstAsBoolFalse<[@A]>> {
+      %self = new_struct : !llzk.struct<@TestReadConstAsBoolFalse<[@A]>>
+      return %self : !llzk.struct<@TestReadConstAsBoolFalse<[@A]>>
+    }
+    func @constrain(%self: !llzk.struct<@TestReadConstAsBoolFalse<[@A]>>, %0: i1) {
+      %1 = read_const @A : i1
+      emit_eq %0, %1 : i1
+      return
+    }
+  }
+  llzk.struct @Main {
+    field @sub : !llzk.struct<@TestReadConstAsBoolFalse<[false]>>
+
+    func @compute() -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      %0 = arith.constant false
+      %1 = call @TestReadConstAsBoolFalse::@compute(%0) : (i1) -> !llzk.struct<@TestReadConstAsBoolFalse<[false]>>
+      writef %self[@sub] = %1 : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsBoolFalse<[false]>>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%self: !llzk.struct<@Main>) {
+      %0 = arith.constant false
+      %1 = readf %self[@sub] : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsBoolFalse<[false]>>
+      call @TestReadConstAsBoolFalse::@constrain(%1, %0) : (!llzk.struct<@TestReadConstAsBoolFalse<[false]>>, i1) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @TestReadConstAsBoolFalse_0 {
+// CHECK-NEXT:    func @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !llzk.struct<@TestReadConstAsBoolFalse_0> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = new_struct : <@TestReadConstAsBoolFalse_0>
+// CHECK-NEXT:      return %[[VAL_1]] : !llzk.struct<@TestReadConstAsBoolFalse_0>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestReadConstAsBoolFalse_0>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      emit_eq %[[VAL_3]], %[[VAL_4]] : i1, i1
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Main {
+// CHECK-NEXT:    field @sub : !llzk.struct<@TestReadConstAsBoolFalse_0>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = call @TestReadConstAsBoolFalse_0::@compute(%[[VAL_1]]) : (i1) -> !llzk.struct<@TestReadConstAsBoolFalse_0>
+// CHECK-NEXT:      writef %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !llzk.struct<@TestReadConstAsBoolFalse_0>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = readf %[[VAL_3]][@sub] : <@Main>, !llzk.struct<@TestReadConstAsBoolFalse_0>
+// CHECK-NEXT:      call @TestReadConstAsBoolFalse_0::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!llzk.struct<@TestReadConstAsBoolFalse_0>, i1) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @TestReadConstAsFelt<[@A]> {
+    func @compute(%0: !llzk.felt) -> !llzk.struct<@TestReadConstAsFelt<[@A]>> {
+      %self = new_struct : !llzk.struct<@TestReadConstAsFelt<[@A]>>
+      return %self : !llzk.struct<@TestReadConstAsFelt<[@A]>>
+    }
+    func @constrain(%self: !llzk.struct<@TestReadConstAsFelt<[@A]>>, %0: !llzk.felt) {
+      %1 = read_const @A : !llzk.felt
+      emit_eq %0, %1 : !llzk.felt
+      return
+    }
+  }
+  llzk.struct @Main {
+    field @sub : !llzk.struct<@TestReadConstAsFelt<[45]>>
+
+    func @compute() -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      %0 = constfelt 45
+      %1 = call @TestReadConstAsFelt::@compute(%0) : (!llzk.felt) -> !llzk.struct<@TestReadConstAsFelt<[45]>>
+      writef %self[@sub] = %1 : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsFelt<[45]>>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%self: !llzk.struct<@Main>) {
+      %0 = constfelt 45
+      %1 = readf %self[@sub] : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsFelt<[45]>>
+      call @TestReadConstAsFelt::@constrain(%1, %0) : (!llzk.struct<@TestReadConstAsFelt<[45]>>, !llzk.felt) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @TestReadConstAsFelt_45 {
+// CHECK-NEXT:    func @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@TestReadConstAsFelt_45> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = new_struct : <@TestReadConstAsFelt_45>
+// CHECK-NEXT:      return %[[VAL_1]] : !llzk.struct<@TestReadConstAsFelt_45>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestReadConstAsFelt_45>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = constfelt  45
+// CHECK-NEXT:      emit_eq %[[VAL_3]], %[[VAL_4]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Main {
+// CHECK-NEXT:    field @sub : !llzk.struct<@TestReadConstAsFelt_45>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = constfelt  45
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = call @TestReadConstAsFelt_45::@compute(%[[VAL_1]]) : (!llzk.felt) -> !llzk.struct<@TestReadConstAsFelt_45>
+// CHECK-NEXT:      writef %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !llzk.struct<@TestReadConstAsFelt_45>
+// CHECK-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = constfelt  45
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = readf %[[VAL_3]][@sub] : <@Main>, !llzk.struct<@TestReadConstAsFelt_45>
+// CHECK-NEXT:      call @TestReadConstAsFelt_45::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!llzk.struct<@TestReadConstAsFelt_45>, !llzk.felt) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -170,8 +170,8 @@ mlir::FailureOr<StructDefOp> verifyInStruct(mlir::Operation *op);
 
 /// This class provides a verifier for ops that are expected to have
 /// an ancestor llzk::StructDefOp.
-template <typename ConcreteType>
-class InStruct : public mlir::OpTrait::TraitBase<ConcreteType, InStruct> {
+template <typename TypeClass>
+class InStruct : public mlir::OpTrait::TraitBase<TypeClass, InStruct> {
 public:
   static mlir::LogicalResult verifyTrait(mlir::Operation *op);
 };
@@ -196,8 +196,7 @@ mlir::LogicalResult verifyInStructFunctionNamed(
 /// This class provides a verifier for ops that are expecting to have
 /// an ancestor llzk::FuncOp with the given name.
 template <char const *FuncName> struct InStructFunctionNamed {
-  template <typename ConcreteType>
-  class Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
+  template <typename TypeClass> class Impl : public mlir::OpTrait::TraitBase<TypeClass, Impl> {
   public:
     static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
       return verifyInStructFunctionNamed<FuncName, 0>(op, [] { return llvm::SmallString<0>(); });
@@ -208,10 +207,9 @@ template <char const *FuncName> struct InStructFunctionNamed {
 /// Produces errors if there is an inconsistency in the various attributes/values that are used to
 /// support affine map instantiation in the Op marked with this Trait.
 template <int OperandSegmentIndex> struct VerifySizesForMultiAffineOps {
-  template <typename ConcreteType>
-  class Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
+  template <typename TypeClass> class Impl : public mlir::OpTrait::TraitBase<TypeClass, Impl> {
     inline static mlir::LogicalResult verifyHelper(mlir::Operation *op, int32_t segmentSize) {
-      ConcreteType c = llvm::cast<ConcreteType>(op);
+      TypeClass c = llvm::cast<TypeClass>(op);
       return affineMapHelpers::verifySizesForMultiAffineOps(
           op, segmentSize, c.getMapOpGroupSizesAttr(), c.getMapOperands(), c.getNumDimsPerMapAttr()
       );
@@ -219,7 +217,7 @@ template <int OperandSegmentIndex> struct VerifySizesForMultiAffineOps {
 
   public:
     static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
-      if (ConcreteType::template hasTrait<mlir::OpTrait::AttrSizedOperandSegments>()) {
+      if (TypeClass::template hasTrait<mlir::OpTrait::AttrSizedOperandSegments>()) {
         // If the AttrSizedOperandSegments trait is present, must have `OperandSegmentIndex`.
         static_assert(
             OperandSegmentIndex >= 0,
@@ -227,7 +225,7 @@ template <int OperandSegmentIndex> struct VerifySizesForMultiAffineOps {
             "within the `operandSegmentSizes` attribute must be specified."
         );
         mlir::DenseI32ArrayAttr segmentSizes = op->getAttrOfType<mlir::DenseI32ArrayAttr>(
-            mlir::OpTrait::AttrSizedOperandSegments<ConcreteType>::getOperandSegmentSizeAttr()
+            mlir::OpTrait::AttrSizedOperandSegments<TypeClass>::getOperandSegmentSizeAttr()
         );
         assert(
             OperandSegmentIndex < segmentSizes.size() &&
@@ -245,8 +243,8 @@ template <int OperandSegmentIndex> struct VerifySizesForMultiAffineOps {
 };
 
 /// This class provides a verifier for ops that cannot appear within a "constrain" function.
-template <typename ConcreteType>
-class ComputeOnly : public mlir::OpTrait::TraitBase<ConcreteType, ComputeOnly> {
+template <typename TypeClass>
+class ComputeOnly : public mlir::OpTrait::TraitBase<TypeClass, ComputeOnly> {
 public:
   static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
     return !isInStructFunctionNamed(op, FUNC_NAME_CONSTRAIN)

@@ -249,6 +249,17 @@ def LLZK_FieldDefOp
 
   let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<AnyLLZKType>:$type);
 
+  // Define builders manually to avoid the default ones that have extra
+  // TypeRange parameters that must always be empty.
+  let skipDefaultBuilders = 1;
+  let builders = [OpBuilder<(ins "::mlir::StringAttr":$sym_name,
+                      "::mlir::TypeAttr":$type)>,
+                  OpBuilder<(ins "::llvm::StringRef":$sym_name,
+                      "::mlir::Type":$type)>,
+                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                      "::mlir::ValueRange":$operands,
+                      "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes)>];
+
   let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 
   let extraClassDeclaration = [{
@@ -387,6 +398,8 @@ def LLZK_CreateArrayOp
       DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs LLZK_ArrayType:$result);
 
+  // Define builders manually so inference of operand layout attributes is not
+  // circumvented.
   let skipDefaultBuilders = 1;
   let builders = [OpBuilder<(ins "::llzk::ArrayType":$result,
                       CArg<"::mlir::ValueRange", "{}">:$elements)>,
@@ -650,7 +663,7 @@ def LLZK_EmitContainmentOp
   let summary = "emit a containment constraint";
   let description = [{}];
 
-  let arguments = (ins LLZK_ArrayType:$lhs, AnyLLZKType:$rhs);
+  let arguments = (ins LLZK_ArrayType:$lhs, ArrayElemType:$rhs);
 }
 
 //===------------------------------------------------------------------===//
@@ -871,6 +884,8 @@ def LLZK_ApplyMapOp : LLZK_Op<"applymap", [Pure]> {
       IndexAttr:$numDims);
   let results = (outs Index);
 
+  // Define builders manually so inference of `numDims` attribute is not
+  // circumvented.
   let skipDefaultBuilders = 1;
   let builders = [OpBuilder<(ins "::mlir::AffineMapAttr":$map,
                                 CArg<"::mlir::ValueRange", "{}">:$mapOperands),
