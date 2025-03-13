@@ -1026,4 +1026,10 @@ LogicalResult ApplyMapOp::verify() {
   return success();
 }
 
+//===------------------------------------------------------------------===//
+// LitStringOp
+//===------------------------------------------------------------------===//
+
+LitStringOp::fold(LitStringOpGenericAdaptor<llvm::ArrayRef<Attribute>>) { return getValueAttr(); }
+
 } // namespace llzk
