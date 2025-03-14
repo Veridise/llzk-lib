@@ -12,13 +12,13 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@ToFelt<[@A]>>) { return }
   }
 
-  llzk.struct @ComponentA<[@T]> {
-    func @compute(%inp: !llzk.struct<@ToFelt<[@T]>>) -> !llzk.struct<@ComponentA<[@T]>> {
-      %self = new_struct : !llzk.struct<@ComponentA<[@T]>>
-      return %self : !llzk.struct<@ComponentA<[@T]>>
+  llzk.struct @Component01<[@T]> {
+    func @compute(%inp: !llzk.struct<@ToFelt<[@T]>>) -> !llzk.struct<@Component01<[@T]>> {
+      %self = new_struct : !llzk.struct<@Component01<[@T]>>
+      return %self : !llzk.struct<@Component01<[@T]>>
     }
 
-    func @constrain(%self: !llzk.struct<@ComponentA<[@T]>>, %inp: !llzk.struct<@ToFelt<[@T]>>) { return }
+    func @constrain(%self: !llzk.struct<@Component01<[@T]>>, %inp: !llzk.struct<@ToFelt<[@T]>>) { return }
   }
 
   llzk.struct @ComponentB {
@@ -26,14 +26,47 @@ module attributes {veridise.lang = "llzk"} {
       // In real code, this should be loop induction variable
       %n = arith.constant 2 : index
       %in = llzk.call @ToFelt::@compute(){(%n)} : () -> !ToFelt
-      // ERROR: The input argument here produces a `@ComponentA<[@T]>` not `@ComponentA<[!ToFelt]>` which is an error.
-      // expected-error@+1 {{result type mismatch: due to struct instantiation, expected type '!llzk.struct<@ComponentA<[2]>>', but found '!llzk.struct<@ComponentA<[!llzk.struct<@ToFelt<[affine_map<(d0) -> (d0)>]>>]>>'}}
-      %out = llzk.call @ComponentA::@compute(%in) : (!ToFelt) -> !llzk.struct<@ComponentA<[!ToFelt]>>
+      // ERROR: The input argument here produces a `@Component01<[@T]>` not `@Component01<[!ToFelt]>` which is an error.
+      // expected-error@+1 {{result type mismatch: due to struct instantiation, expected type '!llzk.struct<@Component01<[2]>>', but found '!llzk.struct<@Component01<[!llzk.struct<@ToFelt<[affine_map<(d0) -> (d0)>]>>]>>'}}
+      %out = llzk.call @Component01::@compute(%in) : (!ToFelt) -> !llzk.struct<@Component01<[!ToFelt]>>
 
       %self = new_struct : !llzk.struct<@ComponentB>
       return %self : !llzk.struct<@ComponentB>
     }
 
     func @constrain(%self: !llzk.struct<@ComponentB>) { return }
+  }
+}
+// -----
+#id = affine_map<(i)->(i)>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component02<[@A,@B]> {
+    // expected-error@+1 {{Cannot update type of 'llzk.field' because there are multiple 'llzk.writef' with different value types}}
+    field @f : !llzk.array<@A x !llzk.felt> {llzk.pub}
+
+    func @compute() -> !llzk.struct<@Component02<[@A,@B]>> {
+      %self = new_struct : !llzk.struct<@Component02<[@A,@B]>>
+      %0 = new_array : !llzk.array<@A x !llzk.felt>
+      // expected-note@+2 {{type written here is '!llzk.array<@A x !llzk.felt>'}}
+      // expected-note@+1 {{type written here is '!llzk.array<2 x !llzk.felt>'}}
+      writef %self[@f] = %0 : !llzk.struct<@Component02<[@A,@B]>>, !llzk.array<@A x !llzk.felt>
+      %n = arith.constant 5 : index
+      %1 = new_array : !llzk.array<@B x !llzk.felt>
+      // expected-note@+2 {{type written here is '!llzk.array<@B x !llzk.felt>'}}
+      // expected-note@+1 {{type written here is '!llzk.array<3 x !llzk.felt>'}}
+      writef %self[@f] = %1 : !llzk.struct<@Component02<[@A,@B]>>, !llzk.array<@B x !llzk.felt>
+      return %self: !llzk.struct<@Component02<[@A,@B]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component02<[@A,@B]>>) { return }
+  }
+
+  llzk.struct @Main {
+    func @compute() -> !llzk.struct<@Main> {
+      llzk.call @Component02::@compute() : () -> !llzk.struct<@Component02<[2,3]>>
+      %self = new_struct : !llzk.struct<@Main>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%arg0: !llzk.struct<@Main>) { return }
   }
 }

@@ -922,34 +922,37 @@ public:
     // the type of the FieldDefOp to match the FieldWriteOp result type.
     Type newType = nullptr;
     if (auto fieldUsers = SymbolTable::getSymbolUses(op, parentRes.value())) {
-      Type fieldDefType = op.getType();
+      std::optional<Location> newTypeLoc = std::nullopt;
       for (SymbolTable::SymbolUse symUse : fieldUsers.value()) {
         if (FieldWriteOp writeOp = llvm::dyn_cast<FieldWriteOp>(symUse.getUser())) {
           Type writeToType = writeOp.getVal().getType();
-          if (newType) {
-            // If a new type has already been discovered from another FieldWriteOp, check if they
-            // match and fail the conversion if they do not. There should only be one write for each
-            // field of a struct but do not rely on that assumption for correctness here.f
-            if (writeToType != newType) {
-              LLVM_DEBUG(op.emitRemark()
-                             .append("Cannot update type of FieldDefOp because there are "
-                                     "multiple FieldWriteOp with different value types")
-                             .attachNote(writeOp.getLoc())
-                             .append("one write is located here"));
-              return failure();
-            }
-          } else if (writeToType != fieldDefType) {
-            // If a new type has not been discovered yet and the current FieldWriteOp has a
-            // different type from the FieldDefOp, then store the new type to use in the end.
+          if (!newType) {
+            // If a new type has not yet been discovered, store the new type.
             newType = writeToType;
+            newTypeLoc = writeOp.getLoc();
             LLVM_DEBUG(
                 llvm::dbgs() << "[UpdateFieldTypeFromWrite] found new type in " << writeOp << '\n'
             );
+          } else if (writeToType != newType) {
+            // If a new type has already been discovered from another FieldWriteOp and the current
+            // FieldWriteOp writes a different type, fail the conversion. There should only be one
+            // write for each field of a struct but do not rely on that assumption.
+            return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+              diag.append(
+                  "Cannot update type of '", FieldDefOp::getOperationName(),
+                  "' because there are multiple '", FieldWriteOp::getOperationName(),
+                  "' with different value types"
+              );
+              if (newTypeLoc) {
+                diag.attachNote(*newTypeLoc).append("type written here is ", newType);
+              }
+              diag.attachNote(writeOp.getLoc()).append("type written here is ", writeToType);
+            });
           }
         }
       }
     }
-    if (!newType) {
+    if (!newType || newType == op.getType()) {
       // nothing changed
       return failure();
     }
