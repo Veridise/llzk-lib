@@ -43,9 +43,9 @@ class ConversionTracker {
   DenseMap<StructType, StructType> structInstantiations;
   /// Contains the reverse of mappings in `structInstantiations` for use in legal conversion check.
   DenseMap<StructType, StructType> reverseInstantiations;
-  /// Maps new remote type (i.e. the values in 'structInstantiations') to location of the compute()
-  /// calls that cause instantiation
-  DenseMap<StructType, DenseSet<Location>> newTyComputeLocs;
+  /// Maps new remote type (i.e. the values in 'structInstantiations') to a list of Diagnostic that
+  /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
+  DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
 
 public:
   bool isModified() const { return modified; }
@@ -83,10 +83,6 @@ public:
     return std::nullopt;
   }
 
-  const DenseMap<StructType, StructType> &getAllInstantiations() const {
-    return structInstantiations;
-  }
-
   /// Collect the fully-qualified names of all structs that were instantiated.
   DenseSet<SymbolRefAttr> getInstantiatedStructNames() const {
     DenseSet<SymbolRefAttr> instantiatedNames;
@@ -96,15 +92,32 @@ public:
     return instantiatedNames;
   }
 
-  /// Record the location of a "compute" function that produces the given instantiated `StructType`.
-  void recordLocation(StructType newType, Location instantiationLocation) {
-    newTyComputeLocs[newType].insert(instantiationLocation);
+  void reportDelayedDiagnostics(StructType newType, CallOp caller) {
+    auto res = delayedDiagnostics.find(newType);
+    if (res == delayedDiagnostics.end()) {
+      return;
+    }
+
+    DiagnosticEngine &engine = caller.getContext()->getDiagEngine();
+    for (Diagnostic &diag : res->second) {
+      // Update any notes referencing an UnknownLoc to use the CallOp location.
+      for (Diagnostic &note : diag.getNotes()) {
+        assert(note.getNotes().empty() && "notes cannot have notes attached");
+        if (llvm::isa<UnknownLoc>(note.getLocation())) {
+          note = std::move(Diagnostic(caller.getLoc(), note.getSeverity()).append(note.str()));
+        }
+      }
+      // Report. Based on InFlightDiagnostic::report().
+      engine.emit(std::move(diag));
+    }
+    // Emiting a Diagnostic consumes it (per DiagnosticEngine::emit) so remove them from the map.
+    // Unfortunately, this means if the key StructType is the result of instantiation at multiple
+    // `compute()` calls it will only be reported at one of those locations, not all.
+    delayedDiagnostics.erase(newType);
   }
 
-  /// Get the locations of all "compute" functions that produce the given instantiated `StructType`.
-  const DenseSet<Location> *getLocations(StructType newType) const {
-    auto res = newTyComputeLocs.find(newType);
-    return (res == newTyComputeLocs.end()) ? nullptr : &res->getSecond();
+  SmallVector<Diagnostic> &delayedDiagnosticSet(StructType newType) {
+    return delayedDiagnostics[newType];
   }
 
   /// Check if the type conversion is legal, i.e. the new type unifies with and is more concrete
@@ -164,7 +177,7 @@ struct MatchFailureListener : public RewriterBase::Listener {
   notifyMatchFailure(Location loc, function_ref<void(Diagnostic &)> reasonCallback) override {
     hadFailure = true;
 
-    InFlightDiagnostic diag = mlir::emitError(loc);
+    InFlightDiagnostic diag = emitError(loc);
     reasonCallback(*diag.getUnderlyingDiagnostic());
     return diag; // implicitly calls `diag.report()`
   }
@@ -356,14 +369,247 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
   return llvm::isa<IntegerAttr>(a);
 }
 
-namespace Step1_FindComputeTypes {
+namespace Step1_InstantiateStructs {
+
+class StructCloner {
+  ConversionTracker &tracker_;
+  ModuleOp rootMod;
+  SymbolTableCollection symTables;
+
+  class MappedTypeConverter : public TypeConverter {
+    StructType origTy;
+    StructType newTy;
+    const DenseMap<Attribute, Attribute> &paramNameToValue;
+
+  public:
+    MappedTypeConverter(
+        StructType originalType, StructType newType,
+        /// Instantiated values for the parameter names in `originalType`
+        const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
+    )
+        : TypeConverter(), origTy(originalType), newTy(newType),
+          paramNameToValue(paramNameToInstantiatedValue) {
+
+      addConversion([](Type inputTy) { return inputTy; });
+
+      addConversion([this](StructType inputTy) {
+        // Check for replacement of the full type
+        if (inputTy == this->origTy) {
+          return this->newTy;
+        }
+        // Check for replacement of parameter symbol names with concrete values
+        if (ArrayAttr inputTyParams = inputTy.getParams()) {
+          SmallVector<Attribute> updated;
+          for (Attribute a : inputTyParams) {
+            auto res = this->paramNameToValue.find(a);
+            updated.push_back((res != this->paramNameToValue.end()) ? res->second : a);
+          }
+          return StructType::get(
+              inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated)
+          );
+        }
+        // Otherwise, return the type unchanged
+        return inputTy;
+      });
+
+      addConversion([this](ArrayType inputTy) {
+        // Check for replacement of parameter symbol names with concrete values
+        ArrayRef<Attribute> dimSizes = inputTy.getDimensionSizes();
+        if (!dimSizes.empty()) {
+          SmallVector<Attribute> updated;
+          for (Attribute a : dimSizes) {
+            auto res = this->paramNameToValue.find(a);
+            updated.push_back((res != this->paramNameToValue.end()) ? res->second : a);
+          }
+          return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
+        }
+        // Otherwise, return the type unchanged
+        return inputTy;
+      });
+
+      addConversion([this](TypeVarType inputTy) -> Type {
+        // Check for replacement of parameter symbol name with a concrete type
+        auto res = this->paramNameToValue.find(inputTy.getNameRef());
+        if (res != this->paramNameToValue.end()) {
+          if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(res->second)) {
+            return tyAttr.getValue();
+          }
+        }
+        return inputTy;
+      });
+    }
+  };
+
+  class ClonedStructCallOpPattern : public OpConversionPattern<CallOp> {
+  public:
+    ClonedStructCallOpPattern(TypeConverter &converter, MLIRContext *ctx)
+        // future proof: use higher priority than GeneralTypeReplacePattern
+        : OpConversionPattern<CallOp>(converter, ctx, 2) {}
+
+    LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
+        const override {
+      // Convert the result types of the CallOp
+      SmallVector<Type> newResultTypes;
+      if (failed(getTypeConverter()->convertTypes(op.getResultTypes(), newResultTypes))) {
+        return op->emitError("Could not convert Op result types.");
+      }
+      replaceOpWithNewOp<CallOp>(
+          rewriter, op, newResultTypes, op.getCalleeAttr(), adapter.getMapOperands(),
+          op.getNumDimsPerMapAttr(), adapter.getArgOperands()
+      );
+      return success();
+    }
+  };
+
+  class ClonedStructConstReadOpPattern : public OpConversionPattern<ConstReadOp> {
+    const DenseMap<Attribute, Attribute> &paramNameToValue;
+    SmallVector<Diagnostic> &diagnostics;
+
+  public:
+    ClonedStructConstReadOpPattern(
+        TypeConverter &converter, MLIRContext *ctx,
+        const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue,
+        SmallVector<Diagnostic> &instantiationDiagnostics
+    )
+        // future proof: use higher priority than GeneralTypeReplacePattern
+        : OpConversionPattern<ConstReadOp>(converter, ctx, 2),
+          paramNameToValue(paramNameToInstantiatedValue), diagnostics(instantiationDiagnostics) {}
+
+    LogicalResult matchAndRewrite(
+        ConstReadOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
+    ) const override {
+      auto res = this->paramNameToValue.find(op.getConstNameAttr());
+      if (res == this->paramNameToValue.end()) {
+        return op->emitOpError("missing instantiation");
+      }
+      return llvm::TypeSwitch<Attribute, LogicalResult>(res->second)
+          .Case<IntegerAttr>([&](IntegerAttr a) {
+        APInt attrValue = a.getValue();
+        Type origResTy = op.getType();
+        if (llvm::isa<FeltType>(origResTy)) {
+          replaceOpWithNewOp<FeltConstantOp>(
+              rewriter, op, FeltConstAttr::get(getContext(), attrValue)
+          );
+          return success();
+        } else if (llvm::isa<IndexType>(origResTy)) {
+          replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
+          return success();
+        } else if (origResTy.isSignlessInteger(1)) {
+          // Treat 0 as false and any other value as true (but give a warning if it's not 1)
+          if (attrValue.isZero()) {
+            replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, origResTy);
+            return success();
+          }
+          if (!attrValue.isOne()) {
+            Location opLoc = op.getLoc();
+            Diagnostic diag(opLoc, DiagnosticSeverity::Warning);
+            diag << "Interpretting non-zero value " << stringWithoutType(a) << " as true";
+            if (getContext()->shouldPrintOpOnDiagnostic()) {
+              diag.attachNote(opLoc) << "see current operation: " << *op;
+            }
+            diag.attachNote(UnknownLoc::get(getContext()))
+                << "when instantiating " << StructDefOp::getOperationName() << " parameter \""
+                << res->first << "\" for this call";
+            diagnostics.push_back(std::move(diag));
+          }
+          replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, origResTy);
+          return success();
+        }
+        return LogicalResult(op->emitOpError().append("unexpected result type ", origResTy));
+      })
+          .Case<FeltConstAttr>([&](FeltConstAttr a) {
+        replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
+        return success();
+      }).Default([&](Attribute a) {
+        return op->emitOpError().append(
+            "expected value with type ", op.getType(), " but found ", a
+        );
+      });
+    }
+  };
+
+  static inline DenseMap<Attribute, Attribute>
+  buildNameToValueMap(ArrayAttr paramNames, ArrayRef<Attribute> paramInstantiations) {
+    // pre-conditions
+    assert(!isNullOrEmpty(paramNames));
+    assert(paramNames.size() == paramInstantiations.size());
+    // Map parameter names to instantiated values
+    DenseMap<Attribute, Attribute> ret;
+    for (size_t i = 0, e = paramNames.size(); i < e; ++i) {
+      ret[paramNames[i]] = paramInstantiations[i];
+    }
+    return ret;
+  }
+
+  FailureOr<StructType> genClone(StructType typeAtCaller, ArrayRef<Attribute> origParams) {
+    // Find the StructDefOp for the original StructType
+    FailureOr<SymbolLookupResult<StructDefOp>> r = typeAtCaller.getDefinition(symTables, rootMod);
+    if (failed(r)) {
+      return failure(); // getDefinition() already emits a sufficient error message
+    }
+    StructDefOp origStruct = r->get();
+
+    // Clone the original struct, apply the new name, and remove the parameters.
+    StructDefOp newStruct = origStruct.clone();
+    newStruct.setSymName(
+        typeAtCaller.getNameRef().getLeafReference().str() + "_" + shortString(origParams)
+    );
+    newStruct.setConstParamsAttr(ArrayAttr {});
+
+    // Insert 'newStruct' into the parent ModuleOp of the original StructDefOp. Use the
+    // `SymbolTable::insert()` function directly so that the name will be made unique.
+    ModuleOp parentModule = llvm::cast<ModuleOp>(origStruct.getParentOp());
+    symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(origStruct));
+    // Retrieve the new type AFTER inserting since the name may be appended to make it unique.
+    StructType newRemoteType = newStruct.getType();
+
+    // Within the new struct, replace all references to the original struct's type (i.e. the
+    // locally-parameterized version) with the new flattened (i.e. no parameters) struct's type,
+    // and replace all uses of the struct parameters with the concrete values.
+    MLIRContext *ctx = rootMod.getContext();
+    StructType typeAtDef = origStruct.getType();
+    DenseMap<Attribute, Attribute> nameToValueMap =
+        buildNameToValueMap(typeAtDef.getParams(), origParams);
+    MappedTypeConverter tyConv(typeAtDef, newRemoteType, nameToValueMap);
+    ConversionTarget target = newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx);
+    target.addIllegalOp<ConstReadOp>();
+    RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
+    patterns.add<ClonedStructCallOpPattern>(tyConv, ctx);
+    patterns.add<ClonedStructConstReadOpPattern>(
+        tyConv, ctx, nameToValueMap, tracker_.delayedDiagnosticSet(newRemoteType)
+    );
+    if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
+      return failure();
+    }
+    return newRemoteType;
+  }
+
+public:
+  StructCloner(ConversionTracker &tracker, ModuleOp root)
+      : tracker_(tracker), rootMod(root), symTables() {}
+
+  FailureOr<StructType> createInstantiatedClone(StructType orig) {
+    if (ArrayAttr params = orig.getParams()) {
+      // If all parameters are concrete values (Integer or Type), then replace with a
+      // no-parameter StructType referencing the de-parameterized struct.
+      if (llvm::all_of(params, isConcreteAttr<>)) {
+        FailureOr<StructType> res = genClone(orig, params.getValue());
+        if (succeeded(res)) {
+          return res.value();
+        }
+      }
+    }
+    return failure();
+  }
+};
 
 class ParameterizedStructUseTypeConverter : public TypeConverter {
   ConversionTracker &tracker_;
+  StructCloner cloner;
 
 public:
-  ParameterizedStructUseTypeConverter(ConversionTracker &tracker)
-      : TypeConverter(), tracker_(tracker) {
+  ParameterizedStructUseTypeConverter(ConversionTracker &tracker, ModuleOp root)
+      : TypeConverter(), tracker_(tracker), cloner(tracker, root) {
 
     addConversion([](Type inputTy) { return inputTy; });
 
@@ -372,22 +618,19 @@ public:
       if (auto opt = tracker_.getInstantiation(inputTy)) {
         return opt.value();
       }
-      // Otherwise, try to perform a conversion
-      if (ArrayAttr params = inputTy.getParams()) {
-        // If all parameters are concrete values (Integer or Type), then replace with a
-        // no-parameter StructType referencing the de-parameterized struct.
-        if (llvm::all_of(params, isConcreteAttr<>)) {
-          StructType result =
-              StructType::get(appendLeafName(inputTy.getNameRef(), "_" + shortString(params)));
-          LLVM_DEBUG(
-              llvm::dbgs() << "[ParameterizedStructUseTypeConverter] instantiating " << inputTy
-                           << " as " << result << '\n'
-          );
-          tracker_.recordInstantiation(inputTy, result);
-          return result;
-        }
+
+      // Otherwise, try to create a clone of the struct with instantiated params
+      FailureOr<StructType> cloneRes = cloner.createInstantiatedClone(inputTy);
+      if (failed(cloneRes)) {
+        return inputTy;
       }
-      return inputTy;
+      StructType newTy = cloneRes.value();
+      LLVM_DEBUG(
+          llvm::dbgs() << "[ParameterizedStructUseTypeConverter] instantiating " << inputTy
+                       << " as " << newTy << '\n'
+      );
+      tracker_.recordInstantiation(inputTy, newTy);
+      return newTy;
     });
   }
 };
@@ -416,7 +659,7 @@ public:
       if (StructType newStTy = getIfSingleton<StructType>(newResultTypes)) {
         assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated");
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
-        tracker_.recordLocation(newStTy, op.getLoc());
+        tracker_.reportDelayedDiagnostics(newStTy, op);
       }
     } else if (op.calleeIsStructConstrain()) {
       if (StructType newStTy = getAtIndex<StructType>(adapter.getArgOperands().getTypes(), 0)) {
@@ -434,234 +677,16 @@ public:
 
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
-  ParameterizedStructUseTypeConverter tyConv(tracker);
+  ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
   ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
   patterns.add<CallStructFuncPattern>(tyConv, ctx, tracker);
   return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
-} // namespace Step1_FindComputeTypes
+} // namespace Step1_InstantiateStructs
 
-namespace Step2_CreateStructs {
-
-class MappedTypeConverter : public TypeConverter {
-  StructType origTy;
-  StructType newTy;
-  const DenseMap<Attribute, Attribute> &paramNameToValue;
-
-public:
-  MappedTypeConverter(
-      StructType originalType, StructType newType,
-      /// Instantiated values for the parameter names in `originalType`
-      const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
-  )
-      : TypeConverter(), origTy(originalType), newTy(newType),
-        paramNameToValue(paramNameToInstantiatedValue) {
-
-    addConversion([](Type inputTy) { return inputTy; });
-
-    addConversion([this](StructType inputTy) {
-      // Check for replacement of the full type
-      if (inputTy == this->origTy) {
-        return this->newTy;
-      }
-      // Check for replacement of parameter symbol names with concrete values
-      if (ArrayAttr inputTyParams = inputTy.getParams()) {
-        SmallVector<Attribute> updated;
-        for (Attribute a : inputTyParams) {
-          auto res = this->paramNameToValue.find(a);
-          updated.push_back((res != this->paramNameToValue.end()) ? res->second : a);
-        }
-        return StructType::get(inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated));
-      }
-      // Otherwise, return the type unchanged
-      return inputTy;
-    });
-
-    addConversion([this](ArrayType inputTy) {
-      // Check for replacement of parameter symbol names with concrete values
-      ArrayRef<Attribute> dimSizes = inputTy.getDimensionSizes();
-      if (!dimSizes.empty()) {
-        SmallVector<Attribute> updated;
-        for (Attribute a : dimSizes) {
-          auto res = this->paramNameToValue.find(a);
-          updated.push_back((res != this->paramNameToValue.end()) ? res->second : a);
-        }
-        return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
-      }
-      // Otherwise, return the type unchanged
-      return inputTy;
-    });
-
-    addConversion([this](TypeVarType inputTy) -> Type {
-      // Check for replacement of parameter symbol name with a concrete type
-      auto res = this->paramNameToValue.find(inputTy.getNameRef());
-      if (res != this->paramNameToValue.end()) {
-        if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(res->second)) {
-          return tyAttr.getValue();
-        }
-      }
-      return inputTy;
-    });
-  }
-};
-
-class CallOpPattern : public OpConversionPattern<CallOp> {
-public:
-  CallOpPattern(TypeConverter &converter, MLIRContext *ctx)
-      // future proof: use higher priority than GeneralTypeReplacePattern
-      : OpConversionPattern<CallOp>(converter, ctx, 2) {}
-
-  LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
-      const override {
-    // Convert the result types of the CallOp
-    SmallVector<Type> newResultTypes;
-    if (failed(getTypeConverter()->convertTypes(op.getResultTypes(), newResultTypes))) {
-      return op->emitError("Could not convert Op result types.");
-    }
-    replaceOpWithNewOp<CallOp>(
-        rewriter, op, newResultTypes, op.getCalleeAttr(), adapter.getMapOperands(),
-        op.getNumDimsPerMapAttr(), adapter.getArgOperands()
-    );
-    return success();
-  }
-};
-
-class ConstReadOpPattern : public OpConversionPattern<ConstReadOp> {
-  const DenseMap<Attribute, Attribute> &paramNameToValue;
-  const DenseSet<Location> *locations;
-
-public:
-  ConstReadOpPattern(
-      TypeConverter &converter, MLIRContext *ctx,
-      const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue,
-      const DenseSet<Location> *instantiationLocations
-  )
-      // future proof: use higher priority than GeneralTypeReplacePattern
-      : OpConversionPattern<ConstReadOp>(converter, ctx, 2),
-        paramNameToValue(paramNameToInstantiatedValue), locations(instantiationLocations) {}
-
-  LogicalResult matchAndRewrite(
-      ConstReadOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
-  ) const override {
-    auto res = this->paramNameToValue.find(op.getConstNameAttr());
-    if (res == this->paramNameToValue.end()) {
-      return op->emitOpError("missing instantiation");
-    }
-    return llvm::TypeSwitch<Attribute, LogicalResult>(res->second)
-        .Case<IntegerAttr>([&](IntegerAttr a) {
-      APInt attrValue = a.getValue();
-      Type origResTy = op.getType();
-      if (llvm::isa<FeltType>(origResTy)) {
-        replaceOpWithNewOp<FeltConstantOp>(
-            rewriter, op, FeltConstAttr::get(rewriter.getContext(), attrValue)
-        );
-        return success();
-      } else if (llvm::isa<IndexType>(origResTy)) {
-        replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
-        return success();
-      } else if (origResTy.isSignlessInteger(1)) {
-        // Treat 0 as false and any other value as true (but give a warning if it's not 1)
-        if (attrValue.isZero()) {
-          replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, origResTy);
-          return success();
-        }
-        if (!attrValue.isOne()) {
-          InFlightDiagnostic warning = op.emitWarning().append(
-              "Interpretting non-zero value ", stringWithoutType(a), " as true"
-          );
-          if (locations) {
-            for (Location loc : *locations) {
-              warning.attachNote(loc).append(
-                  "when instantiating ", StructDefOp::getOperationName(), " parameter \"",
-                  res->first, "\" for this call"
-              );
-            }
-          }
-          warning.report();
-        }
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, origResTy);
-        return success();
-      }
-      return LogicalResult(op->emitOpError().append("unexpected result type ", origResTy));
-    })
-        .Case<FeltConstAttr>([&](FeltConstAttr a) {
-      replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
-      return success();
-    }).Default([&](Attribute a) {
-      return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
-    });
-  }
-};
-
-DenseMap<Attribute, Attribute>
-buildNameToValueMap(ArrayAttr paramNames, ArrayAttr paramInstantiations) {
-  // pre-conditions
-  assert(!isNullOrEmpty(paramNames));
-  assert(!isNullOrEmpty(paramInstantiations));
-  assert(paramNames.size() == paramInstantiations.size());
-  // Map parameter names to instantiated values
-  DenseMap<Attribute, Attribute> ret;
-  for (size_t i = 0, e = paramNames.size(); i < e; ++i) {
-    ret[paramNames[i]] = paramInstantiations[i];
-  }
-  return ret;
-}
-
-LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
-  SymbolTableCollection symTables;
-  MLIRContext *ctx = modOp.getContext();
-  for (auto &[origRemoteTy, newRemoteTy] : tracker.getAllInstantiations()) {
-    // Find the StructDefOp for the original StructType
-    FailureOr<SymbolLookupResult<StructDefOp>> lookupRes =
-        origRemoteTy.getDefinition(symTables, modOp);
-    if (failed(lookupRes)) {
-      return failure();
-    }
-    StructDefOp origStruct = lookupRes->get();
-
-    // Only add new StructDefOp if it does not already exist
-    // Note: parent is ModuleOp per ODS for StructDefOp.
-    ModuleOp parentModule = llvm::cast<ModuleOp>(origStruct.getParentOp());
-    StringAttr newStructName = newRemoteTy.getNameRef().getLeafReference();
-    if (parentModule.lookupSymbol(newStructName) == nullptr) {
-      StructType origStructTy = origStruct.getType();
-
-      // Clone the original struct, apply the new name, and remove the parameters.
-      StructDefOp newStruct = origStruct.clone();
-      newStruct.setSymNameAttr(newStructName);
-      newStruct.setConstParamsAttr(ArrayAttr {});
-
-      // Within the new struct, replace all references to the original struct's type (i.e. the
-      // locally-parameterized version) with the new flattened (i.e. no parameters) struct's type,
-      // and replace all uses of the struct parameters with the concrete values.
-      DenseMap<Attribute, Attribute> nameToValueMap =
-          buildNameToValueMap(origStructTy.getParams(), origRemoteTy.getParams());
-      MappedTypeConverter tyConv(origStructTy, newRemoteTy, nameToValueMap);
-      ConversionTarget target = newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx);
-      target.addIllegalOp<ConstReadOp>();
-      RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
-      patterns.add<CallOpPattern>(tyConv, ctx);
-      patterns.add<ConstReadOpPattern>(
-          tyConv, ctx, nameToValueMap, tracker.getLocations(newRemoteTy)
-      );
-
-      if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
-        return failure();
-      }
-
-      // Insert 'newStruct' into the parent ModuleOp of the original StructDefOp.
-      parentModule.insert(origStruct, newStruct);
-    }
-  }
-
-  return success();
-}
-
-} // namespace Step2_CreateStructs
-
-namespace Step3_Unroll {
+namespace Step2_Unroll {
 
 // OpTy can be any LoopLikeOpInterface
 // TODO: not guaranteed to work with WhileOp, can try with our custom attributes though.
@@ -698,16 +723,16 @@ private:
 };
 
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
-  MLIRContext *ctx = modOp->getContext();
+  MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
   patterns.add<LoopUnrollPattern<scf::ForOp>>(ctx);
   patterns.add<LoopUnrollPattern<affine::AffineForOp>>(ctx);
 
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
-} // namespace Step3_Unroll
+} // namespace Step2_Unroll
 
-namespace Step4_InstantiateAffineMaps {
+namespace Step3_InstantiateAffineMaps {
 
 SmallVector<std::unique_ptr<Region>> moveRegions(Operation *op) {
   SmallVector<std::unique_ptr<Region>> newRegions;
@@ -775,7 +800,7 @@ struct AffineMapFolder {
             llvm::dbgs() << "[AffineMapFolder] currMapOps as fold results: "
                          << debug::toStringList(currMapOpsCast) << '\n'
         );
-        if (auto constOps = Step4_InstantiateAffineMaps::getConstantIntValues(currMapOpsCast)) {
+        if (auto constOps = Step3_InstantiateAffineMaps::getConstantIntValues(currMapOpsCast)) {
           SmallVector<Attribute> result;
           bool hasPoison = false; // indicates divide by 0 or mod by <1
           auto constAttrs = llvm::map_to_vector(*constOps, [&rewriter](int64_t v) -> Attribute {
@@ -1267,7 +1292,7 @@ private:
 };
 
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
-  MLIRContext *ctx = modOp->getContext();
+  MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
   patterns.add<
       // clang-format off
@@ -1284,9 +1309,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
 
-} // namespace Step4_InstantiateAffineMaps
+} // namespace Step3_InstantiateAffineMaps
 
-namespace Step5_Cleanup {
+namespace Step4_Cleanup {
 
 template <typename OpTy> class EraseOpPattern : public OpConversionPattern<OpTy> {
 public:
@@ -1356,7 +1381,7 @@ LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
   return success();
 }
 
-} // namespace Step5_Cleanup
+} // namespace Step4_Cleanup
 
 class FlatteningPass : public llzk::impl::FlatteningPassBase<FlatteningPass> {
 
@@ -1378,28 +1403,22 @@ class FlatteningPass : public llzk::impl::FlatteningPassBase<FlatteningPass> {
 
       // Find calls to "compute()" that return a parameterized struct and replace it to call a
       // flattened version of the struct that has parameters replaced with the constant values.
-      if (failed(Step1_FindComputeTypes::run(modOp, tracker))) {
+      // Create the necessary instantiated/flattened struct in the same location as the original.
+      if (failed(Step1_InstantiateStructs::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while replacing concrete-parameter struct types\n";
         signalPassFailure();
         break;
       }
 
-      // Create the necessary instantiated/flattened struct(s) in their parent module(s).
-      if (failed(Step2_CreateStructs::run(modOp, tracker))) {
-        llvm::errs() << DEBUG_TYPE << " failed while generating required flattened structs\n";
-        signalPassFailure();
-        break;
-      }
-
       // Unroll loops with known iterations.
-      if (failed(Step3_Unroll::run(modOp, tracker))) {
+      if (failed(Step2_Unroll::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while unrolling loops\n";
         signalPassFailure();
         break;
       }
 
       // Instantiate affine_map parameters of StructType and ArrayType.
-      if (failed(Step4_InstantiateAffineMaps::run(modOp, tracker))) {
+      if (failed(Step3_InstantiateAffineMaps::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating `affine_map` parameters\n";
         signalPassFailure();
         break;
@@ -1414,7 +1433,7 @@ class FlatteningPass : public llzk::impl::FlatteningPassBase<FlatteningPass> {
     } while (tracker.isModified());
 
     // Remove the parameterized StructDefOp that were instantiated.
-    if (failed(Step5_Cleanup::run(modOp, tracker))) {
+    if (failed(Step4_Cleanup::run(modOp, tracker))) {
       llvm::errs() << DEBUG_TYPE
                    << " failed while removing parameterized structs that were replaced with "
                       "instantiated versions\n";

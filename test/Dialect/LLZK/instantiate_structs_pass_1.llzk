@@ -965,3 +965,79 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+/// Test naming collisions.
+module attributes {veridise.lang = "llzk"} {
+  // The name of this component would conflict with the default-generated name when
+  // instantiating @Component09B<[43]> and since this has a different number of arguments
+  // in its functions, there would be an "incorrect number of operands for callee" error.
+  // The correct behavior is to produce a new unique name that does not conflict.
+  llzk.struct @Component09B_43 {
+    func @compute(%a: index) -> !llzk.struct<@Component09B_43> {
+      %self = new_struct : <@Component09B_43>
+      return %self : !llzk.struct<@Component09B_43>
+    }
+    func @constrain(%arg0: !llzk.struct<@Component09B_43>, %a: index) { return }
+  }
+
+  llzk.struct @Component09B<[@C]> {
+    func @compute() -> !llzk.struct<@Component09B<[@C]>> {
+      %self = new_struct : !llzk.struct<@Component09B<[@C]>>
+      return %self : !llzk.struct<@Component09B<[@C]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component09B<[@C]>>) { return }
+  }
+
+  llzk.struct @Component09C {
+    field @f3 : !llzk.struct<@Component09B<[43]>>
+
+    func @compute() -> !llzk.struct<@Component09C> {
+      %self = new_struct : !llzk.struct<@Component09C>
+      %x = call @Component09B::@compute() : () -> (!llzk.struct<@Component09B<[43]>>)
+      writef %self[@f3] = %x : !llzk.struct<@Component09C>, !llzk.struct<@Component09B<[43]>>
+      return %self : !llzk.struct<@Component09C>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component09C>) {
+      %b = readf %self[@f3] : !llzk.struct<@Component09C>, !llzk.struct<@Component09B<[43]>>
+      call @Component09B::@constrain(%b) : (!llzk.struct<@Component09B<[43]>>) -> ()
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @Component09B_43 {
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@Component09B_43> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component09B_43>
+// CHECK-NEXT:      return %[[V1]] : !llzk.struct<@Component09B_43>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component09B_43>, %[[V3:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Component09B_43_0 {
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component09B_43_0> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component09B_43_0>
+// CHECK-NEXT:      return %[[V0]] : !llzk.struct<@Component09B_43_0>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component09B_43_0>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @Component09C {
+// CHECK-NEXT:    field @f3 : !llzk.struct<@Component09B_43_0>
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@Component09C> {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component09C>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = call @Component09B_43_0::@compute() : () -> !llzk.struct<@Component09B_43_0>
+// CHECK-NEXT:      writef %[[V0]][@f3] = %[[V1]] : <@Component09C>, !llzk.struct<@Component09B_43_0>
+// CHECK-NEXT:      return %[[V0]] : !llzk.struct<@Component09C>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component09C>) {
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = readf %[[V2]][@f3] : <@Component09C>, !llzk.struct<@Component09B_43_0>
+// CHECK-NEXT:      call @Component09B_43_0::@constrain(%[[V3]]) : (!llzk.struct<@Component09B_43_0>) -> ()
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
