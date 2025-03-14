@@ -252,18 +252,22 @@ def LLZK_FieldDefOp
   // Define builders manually to avoid the default ones that have extra
   // TypeRange parameters that must always be empty.
   let skipDefaultBuilders = 1;
-  let builders = [OpBuilder<(ins "::mlir::StringAttr":$sym_name,
-                      "::mlir::TypeAttr":$type)>,
-                  OpBuilder<(ins "::llvm::StringRef":$sym_name,
-                      "::mlir::Type":$type)>,
-                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
-                      "::mlir::ValueRange":$operands,
-                      "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes)>];
+  let builders =
+      [OpBuilder<(ins "::mlir::StringAttr":$sym_name,
+           "::mlir::TypeAttr":$type)>,
+       OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::Type":$type)>,
+       OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+           "::mlir::ValueRange":$operands,
+           "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes)>,
+       // Simpler version since 'resultTypes' and 'operands' must be empty
+       OpBuilder<(ins "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes),
+                 [{ build($_builder, $_state, {}, {}, attributes); }]>];
 
   let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 
   let extraClassDeclaration = [{
     bool hasPublicAttr();
+    void setPublicAttr(bool newValue = true);
   }];
 }
 

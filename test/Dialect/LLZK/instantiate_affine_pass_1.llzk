@@ -36,7 +36,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @TestLoopWithAffineArrayStruct<[@N]> {
-    field @arrs: !llzk.array<@N x !HeterArr>
+    // The `pub` here is intended to test that attributes are copied by
+    //  UpdateFieldTypeFromWrite when creating a new FieldDefOp.
+    field @arrs: !llzk.array<@N x !HeterArr> {llzk.pub}
 
     func @compute() -> !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>> {
       %arrs_temp = new_array : !llzk.array<@N x !HeterArr>
@@ -108,7 +110,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: llzk.struct @TestLoopWithAffineArrayStruct_2 {
-// CHECK-NEXT:    field @arrs : !llzk.array<2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>
+// CHECK-NEXT:    field @arrs : !llzk.array<2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">> {llzk.pub}
 // CHECK-NEXT:    func @compute() -> !llzk.struct<@TestLoopWithAffineArrayStruct_2> {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index

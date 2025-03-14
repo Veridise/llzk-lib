@@ -182,6 +182,16 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
   return failure(result.failed() || failureListener.hadFailure);
 }
 
+/// Wrapper for PatternRewriter.replaceOpWithNewOp() that automatically copies discardable
+/// attributes (i.e. attributes other than those specifically defined as part of the Op in ODS).
+template <typename OpTy, typename Rewriter, typename... Args>
+inline OpTy replaceOpWithNewOp(Rewriter &rewriter, Operation *op, Args &&...args) {
+  DictionaryAttr attrs = op->getDiscardableAttrDictionary();
+  OpTy newOp = rewriter.template replaceOpWithNewOp<OpTy>(op, std::forward<Args>(args)...);
+  newOp->setDiscardableAttrs(attrs);
+  return newOp;
+}
+
 /// Lists all Op classes that may contain a StructType in their results or attributes.
 static struct {
   /// Subset that define the general builder function:
@@ -232,8 +242,8 @@ public:
       }
     }
     // Build a new Op in place of the current one
-    rewriter.replaceOpWithNewOp<OpTy>(
-        op, TypeRange(newResultTypes), adaptor.getOperands(), ArrayRef(newAttrs)
+    replaceOpWithNewOp<OpTy>(
+        rewriter, op, TypeRange(newResultTypes), adaptor.getOperands(), ArrayRef(newAttrs)
     );
     return success();
   }
@@ -257,12 +267,12 @@ public:
     assert(llvm::isa<ArrayType>(newType) && "CreateArrayOp must produce ArrayType result");
     DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();
     if (isNullOrEmpty(numDimsPerMap)) {
-      rewriter.replaceOpWithNewOp<CreateArrayOp>(
-          op, llvm::cast<ArrayType>(newType), adapter.getElements()
+      replaceOpWithNewOp<CreateArrayOp>(
+          rewriter, op, llvm::cast<ArrayType>(newType), adapter.getElements()
       );
     } else {
-      rewriter.replaceOpWithNewOp<CreateArrayOp>(
-          op, llvm::cast<ArrayType>(newType), adapter.getMapOperands(), numDimsPerMap
+      replaceOpWithNewOp<CreateArrayOp>(
+          rewriter, op, llvm::cast<ArrayType>(newType), adapter.getMapOperands(), numDimsPerMap
       );
     }
   }
@@ -414,9 +424,9 @@ public:
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
       }
     }
-    rewriter.replaceOpWithNewOp<CallOp>(
-        op, newResultTypes, calleeAttr, adapter.getMapOperands(), op.getNumDimsPerMapAttr(),
-        adapter.getArgOperands()
+    replaceOpWithNewOp<CallOp>(
+        rewriter, op, newResultTypes, calleeAttr, adapter.getMapOperands(),
+        op.getNumDimsPerMapAttr(), adapter.getArgOperands()
     );
     return success();
   }
@@ -510,9 +520,9 @@ public:
     if (failed(getTypeConverter()->convertTypes(op.getResultTypes(), newResultTypes))) {
       return op->emitError("Could not convert Op result types.");
     }
-    rewriter.replaceOpWithNewOp<CallOp>(
-        op, newResultTypes, op.getCalleeAttr(), adapter.getMapOperands(), op.getNumDimsPerMapAttr(),
-        adapter.getArgOperands()
+    replaceOpWithNewOp<CallOp>(
+        rewriter, op, newResultTypes, op.getCalleeAttr(), adapter.getMapOperands(),
+        op.getNumDimsPerMapAttr(), adapter.getArgOperands()
     );
     return success();
   }
@@ -544,17 +554,17 @@ public:
       APInt attrValue = a.getValue();
       Type origResTy = op.getType();
       if (llvm::isa<FeltType>(origResTy)) {
-        rewriter.replaceOpWithNewOp<FeltConstantOp>(
-            op, FeltConstAttr::get(rewriter.getContext(), attrValue)
+        replaceOpWithNewOp<FeltConstantOp>(
+            rewriter, op, FeltConstAttr::get(rewriter.getContext(), attrValue)
         );
         return success();
       } else if (llvm::isa<IndexType>(origResTy)) {
-        rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, fromAPInt(attrValue));
+        replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
         return success();
       } else if (origResTy.isSignlessInteger(1)) {
         // Treat 0 as false and any other value as true (but give a warning if it's not 1)
         if (attrValue.isZero()) {
-          rewriter.replaceOpWithNewOp<arith::ConstantIntOp>(op, false, origResTy);
+          replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, origResTy);
           return success();
         }
         if (!attrValue.isOne()) {
@@ -571,13 +581,13 @@ public:
           }
           warning.report();
         }
-        rewriter.replaceOpWithNewOp<arith::ConstantIntOp>(op, true, origResTy);
+        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, origResTy);
         return success();
       }
       return LogicalResult(op->emitOpError().append("unexpected result type ", origResTy));
     })
         .Case<FeltConstAttr>([&](FeltConstAttr a) {
-      rewriter.replaceOpWithNewOp<FeltConstantOp>(op, a);
+      replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
       return success();
     }).Default([&](Attribute a) {
       return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
@@ -845,8 +855,8 @@ public:
         llvm::dbgs() << "[InstantiateAtCreateArrayOp] instantiating " << oldResultType << " as "
                      << newResultType << " in \"" << op << "\"\n"
     );
-    rewriter.replaceOpWithNewOp<CreateArrayOp>(
-        op, newResultType, AffineMapFolder::getConvertedMapOpGroups(out), out.dimsPerGroup
+    replaceOpWithNewOp<CreateArrayOp>(
+        rewriter, op, newResultType, AffineMapFolder::getConvertedMapOpGroups(out), out.dimsPerGroup
     );
     return success();
   }
@@ -960,7 +970,9 @@ public:
       return failure();
     }
     LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldTypeFromWrite] replaced " << op);
-    FieldDefOp newOp = rewriter.replaceOpWithNewOp<FieldDefOp>(op, op.getSymName(), newType);
+    DictionaryAttr attrs = op->getDiscardableAttrDictionary();
+    FieldDefOp newOp = replaceOpWithNewOp<FieldDefOp>(rewriter, op, op.getSymName(), newType);
+    newOp->setDiscardableAttrs(attrs);
     LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
     return success();
   }
@@ -1081,7 +1093,7 @@ public:
     }
 
     LLVM_DEBUG(llvm::dbgs() << "[UpdateGlobalCallOpTypes] replaced " << op);
-    CallOp newOp = rewriter.replaceOpWithNewOp<CallOp>(op, targetFunc, op.getArgOperands());
+    CallOp newOp = replaceOpWithNewOp<CallOp>(rewriter, op, targetFunc, op.getArgOperands());
     LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
     return success();
   }
@@ -1169,9 +1181,9 @@ public:
         llvm::dbgs() << "[InstantiateAtCallOpCompute] instantiating " << oldRetTy << " as "
                      << newRetTy << " in \"" << op << "\"\n"
     );
-    rewriter.replaceOpWithNewOp<CallOp>(
-        op, TypeRange {newRetTy}, op.getCallee(), AffineMapFolder::getConvertedMapOpGroups(out),
-        out.dimsPerGroup, op.getArgOperands()
+    replaceOpWithNewOp<CallOp>(
+        rewriter, op, TypeRange {newRetTy}, op.getCallee(),
+        AffineMapFolder::getConvertedMapOpGroups(out), out.dimsPerGroup, op.getArgOperands()
     );
     return success();
   }

@@ -629,6 +629,13 @@ void FieldDefOp::build(
 }
 
 bool FieldDefOp::hasPublicAttr() { return getOperation()->hasAttr(PublicAttr::name); }
+void FieldDefOp::setPublicAttr(bool newValue) {
+  if (newValue) {
+    getOperation()->setAttr(PublicAttr::name, PublicAttr::get(getContext()));
+  } else {
+    getOperation()->removeAttr(PublicAttr::name);
+  }
+}
 
 LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   Type fieldType = this->getType();
