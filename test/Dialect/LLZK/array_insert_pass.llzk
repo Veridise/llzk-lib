@@ -228,15 +228,34 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-llzk.func @dimensions_unify_affine_with_int(%z: !llzk.array<affine_map<(i)[] -> (i)> x !llzk.felt>) {
+#map = affine_map<(i)[] -> (i)>
+llzk.func @dimensions_unify_affine_with_int_A(%z: !llzk.array<#map x !llzk.felt>) {
   %r = llzk.new_array : !llzk.array<44,2 x !llzk.felt>
   %0 = arith.constant 0 : index
   // expected-error@+1 {{'llzk.insertarr' op cannot unify array dimensions [2] with [affine_map<(d0) -> (d0)>]}}
-  llzk.insertarr %r[%0] = %z : !llzk.array<44,2 x !llzk.felt>, !llzk.array<affine_map<(i)->(i)> x !llzk.felt>
+  llzk.insertarr %r[%0] = %z : !llzk.array<44,2 x !llzk.felt>, !llzk.array<#map x !llzk.felt>
   return
 }
 // CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
-// CHECK-LABEL: llzk.func @dimensions_unify_affine_with_int(
+// CHECK-LABEL: llzk.func @dimensions_unify_affine_with_int_A(
+// CHECK-SAME:              %[[V0:[0-9a-zA-Z_\.]+]]: !llzk.array<#[[$M0]] x !llzk.felt>) {
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = new_array  : <44,2 x !llzk.felt>
+// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    insertarr %[[V1]]{{\[}}%[[V2]]] = %[[V0]] : <44,2 x !llzk.felt>, <#[[$M0]] x !llzk.felt>
+// CHECK-NEXT:    return
+// CHECK-NEXT:  }
+// -----
+
+#map = affine_map<()[j] -> (j)>
+llzk.func @dimensions_unify_affine_with_int_B(%z: !llzk.array<#map x !llzk.felt>) {
+  %r = llzk.new_array : !llzk.array<44,2 x !llzk.felt>
+  %0 = arith.constant 0 : index
+  // expected-error@+1 {{'llzk.insertarr' op cannot unify array dimensions [2] with [affine_map<()[s0] -> (s0)>]}}
+  llzk.insertarr %r[%0] = %z : !llzk.array<44,2 x !llzk.felt>, !llzk.array<#map x !llzk.felt>
+  return
+}
+// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: llzk.func @dimensions_unify_affine_with_int_B(
 // CHECK-SAME:              %[[V0:[0-9a-zA-Z_\.]+]]: !llzk.array<#[[$M0]] x !llzk.felt>) {
 // CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = new_array  : <44,2 x !llzk.felt>
 // CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
