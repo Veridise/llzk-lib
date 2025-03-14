@@ -194,14 +194,14 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @Main {
     field @sub: !llzk.struct<@ComputeValue<[3]>>
   
-    func @compute(%input: !llzk.array<3 x !Signal>) -> !llzk.struct<@Main> {
+    func @compute(%input: !llzk.array<3 x !Signal> {llzk.pub}) -> !llzk.struct<@Main> {
       %self = llzk.new_struct : !llzk.struct<@Main>
       %sub = llzk.call @ComputeValue::@compute(%input) : (!llzk.array<3 x !Signal>) -> !llzk.struct<@ComputeValue<[3]>>
       llzk.writef %self[@sub] = %sub : !llzk.struct<@Main>, !llzk.struct<@ComputeValue<[3]>>
       return %self: !llzk.struct<@Main>
     }
   
-    func @constrain(%self: !llzk.struct<@Main>, %input: !llzk.array<3 x !Signal>) {
+    func @constrain(%self: !llzk.struct<@Main>, %input: !llzk.array<3 x !Signal> {llzk.pub}) {
       %sub = llzk.readf %self[@sub] : !llzk.struct<@Main>, !llzk.struct<@ComputeValue<[3]>>
       llzk.call @ComputeValue::@constrain(%sub, %input) : (!llzk.struct<@ComputeValue<[3]>>, !llzk.array<3 x !Signal>) -> ()
       return
@@ -330,13 +330,13 @@ module attributes {veridise.lang = "llzk"} {
 //
 // CHECK-LABEL: llzk.struct @Main {
 // CHECK-NEXT:    field @sub : !llzk.struct<@ComputeValue<[3]>>
-// CHECK-NEXT:    func @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !llzk.array<3 x !llzk.struct<@Signal>>) -> !llzk.struct<@Main> {
+// CHECK-NEXT:    func @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !llzk.array<3 x !llzk.struct<@Signal>> {llzk.pub}) -> !llzk.struct<@Main> {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = call @ComputeValue::@compute(%[[V_0]]) : (!llzk.array<3 x !llzk.struct<@Signal>>) -> !llzk.struct<@ComputeValue<[3]>>
 // CHECK-NEXT:      writef %[[V_1]][@sub] = %[[V_2]] : <@Main>, !llzk.struct<@ComputeValue<[3]>>
 // CHECK-NEXT:      return %[[V_1]] : !llzk.struct<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    func @constrain(%[[V_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>, %[[V_4:[0-9a-zA-Z_\.]+]]: !llzk.array<3 x !llzk.struct<@Signal>>) {
+// CHECK-NEXT:    func @constrain(%[[V_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>, %[[V_4:[0-9a-zA-Z_\.]+]]: !llzk.array<3 x !llzk.struct<@Signal>> {llzk.pub}) {
 // CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = readf %[[V_3]][@sub] : <@Main>, !llzk.struct<@ComputeValue<[3]>>
 // CHECK-NEXT:      call @ComputeValue::@constrain(%[[V_5]], %[[V_4]]) : (!llzk.struct<@ComputeValue<[3]>>, !llzk.array<3 x !llzk.struct<@Signal>>) -> ()
 // CHECK-NEXT:      return
