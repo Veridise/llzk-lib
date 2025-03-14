@@ -9,6 +9,8 @@
 
 /// Include the generated base pass class definitions.
 namespace llzk {
+// the *DECL* macro is required when a pass has options to declare the option struct
+#define GEN_PASS_DECL_UNUSEDDECLARATIONELIMINATIONPASS
 #define GEN_PASS_DEF_UNUSEDDECLARATIONELIMINATIONPASS
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -36,23 +38,20 @@ void removeUnusedFields(StructDefOp structDef) {
     }
 
     // Check if all users are writes, and if so, this is still "unused".
-    SmallVector<Operation *> toRemove;
     for (auto user : field->getUsers()) {
-      auto writef = dyn_cast<FieldWriteOp>(user);
-      if (!writef) {
+      if (!isa<FieldWriteOp>(user)) {
         return WalkResult::advance();
       }
-      toRemove.push_back(writef);
     }
     LLVM_DEBUG(llvm::dbgs() << "Removing write-only field " << field << '\n');
-    field->erase();
-
     // Erase all users and the field op, since this private field is only
     // ever written to.
     for (auto user : field->getUsers()) {
       LLVM_DEBUG(llvm::dbgs() << "    > removing field user " << user << '\n');
       user->erase();
     }
+
+    field->erase();
 
     return WalkResult::advance();
   });
@@ -64,8 +63,10 @@ class UnusedDeclarationEliminationPass
     // First, remove unused fields. This may allow more structs to be removed,
     // if their final remaining uses are as types for unused fields.
     walkStructs(removeUnusedFields);
-    // Last, remove unused structs.
-    walkStructs([this](StructDefOp s) { this->removeIfUnused(s); });
+    // Last, remove unused structs if configured
+    if (removeStructs) {
+      walkStructs([this](StructDefOp s) { this->removeIfUnused(s); });
+    }
   }
 
   /// @brief Apply the given function for all non-Main structs contained within the current module.
