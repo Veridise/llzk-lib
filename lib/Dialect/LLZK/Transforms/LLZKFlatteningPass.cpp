@@ -541,7 +541,7 @@ class StructCloner {
     return ret;
   }
 
-  FailureOr<StructType> genClone(StructType typeAtCaller, ArrayRef<Attribute> origParams) {
+  FailureOr<StructType> genClone(StructType typeAtCaller, ArrayRef<Attribute> typeAtCallerParams) {
     // Find the StructDefOp for the original StructType
     FailureOr<SymbolLookupResult<StructDefOp>> r = typeAtCaller.getDefinition(symTables, rootMod);
     if (failed(r)) {
@@ -552,7 +552,7 @@ class StructCloner {
     // Clone the original struct, apply the new name, and remove the parameters.
     StructDefOp newStruct = origStruct.clone();
     newStruct.setSymName(
-        typeAtCaller.getNameRef().getLeafReference().str() + "_" + shortString(origParams)
+        typeAtCaller.getNameRef().getLeafReference().str() + "_" + shortString(typeAtCallerParams)
     );
     newStruct.setConstParamsAttr(ArrayAttr {});
 
@@ -569,7 +569,7 @@ class StructCloner {
     MLIRContext *ctx = rootMod.getContext();
     StructType typeAtDef = origStruct.getType();
     DenseMap<Attribute, Attribute> nameToValueMap =
-        buildNameToValueMap(typeAtDef.getParams(), origParams);
+        buildNameToValueMap(typeAtDef.getParams(), typeAtCallerParams);
     MappedTypeConverter tyConv(typeAtDef, newRemoteType, nameToValueMap);
     ConversionTarget target = newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx);
     target.addIllegalOp<ConstReadOp>();
@@ -961,13 +961,11 @@ public:
       for (SymbolTable::SymbolUse symUse : fieldUsers.value()) {
         if (FieldWriteOp writeOp = llvm::dyn_cast<FieldWriteOp>(symUse.getUser())) {
           Type writeToType = writeOp.getVal().getType();
+          LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldTypeFromWrite] checking " << writeOp << '\n');
           if (!newType) {
             // If a new type has not yet been discovered, store the new type.
             newType = writeToType;
             newTypeLoc = writeOp.getLoc();
-            LLVM_DEBUG(
-                llvm::dbgs() << "[UpdateFieldTypeFromWrite] found new type in " << writeOp << '\n'
-            );
           } else if (writeToType != newType) {
             // If a new type has already been discovered from another FieldWriteOp and the current
             // FieldWriteOp writes a different type, fail the conversion. There should only be one
