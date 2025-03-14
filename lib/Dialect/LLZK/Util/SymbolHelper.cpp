@@ -210,7 +210,7 @@ bool hasUsesWithin(Operation *symbol, Operation *from) {
     LLVM_DEBUG({
       if (hasUse) {
         auto uses = SymbolTable::getSymbolUses(symbol, &symbolTableOp->getRegion(0));
-        assert(uses.has_value()); // must be consisitent with symbolKnownUseEmpty()
+        assert(uses.has_value()); // must be consistent with symbolKnownUseEmpty()
         llvm::dbgs() << "Found users of " << *symbol << "\n";
         for (SymbolTable::SymbolUse user : uses.value()) {
           llvm::dbgs() << " * " << *user.getUser() << "\n";

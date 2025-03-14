@@ -92,7 +92,6 @@ class UnusedDeclarationEliminationPass
         if (!isMainComponent(structDef) || !field.hasPublicAttr()) {
           SymbolRefAttr fieldSym =
               appendLeaf(structSym, FlatSymbolRefAttr::get(field.getSymNameAttr()));
-          llvm::errs() << "adding field " << fieldSym << "\n";
           fields[fieldSym] = field;
         }
       });
