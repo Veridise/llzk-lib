@@ -1,5 +1,7 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
+#include "llzk/Dialect/LLZK/Util/SymbolLookup.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>
@@ -26,142 +28,172 @@ inline bool isMainComponent(StructDefOp structDef) {
   return structDef.getName() == COMPONENT_NAME_MAIN;
 }
 
-/// @brief Removes unused fields
-/// A field is unused if it is never read from (only written to).
-/// @param structDef
-void removeUnusedFields(StructDefOp structDef) {
-  structDef.walk([&](FieldDefOp field) {
-    if (field->getUsers().empty()) {
-      LLVM_DEBUG(llvm::dbgs() << "Removing unused field " << field << '\n');
-      field->erase();
-      return WalkResult::skip();
-    }
-
-    // Check if all users are writes, and if so, this is still "unused".
-    for (auto user : field->getUsers()) {
-      if (!isa<FieldWriteOp>(user)) {
-        return WalkResult::advance();
-      }
-    }
-    LLVM_DEBUG(llvm::dbgs() << "Removing write-only field " << field << '\n');
-    // Erase all users and the field op, since this private field is only
-    // ever written to.
-    for (auto user : field->getUsers()) {
-      LLVM_DEBUG(llvm::dbgs() << "    > removing field user " << user << '\n');
-      user->erase();
-    }
-
-    field->erase();
-
-    return WalkResult::advance();
-  });
+/// @brief Get the fully-qualified field symbol.
+/// @tparam FieldUserOp Either a FieldReadOp or a FieldWriteOp
+template <typename FieldUserOp> SymbolRefAttr getFullFieldSymbol(FieldUserOp op) {
+  FlatSymbolRefAttr fieldSym = op.getFieldNameAttr();
+  auto structType = dyn_cast<StructType>(op.getComponent().getType());
+  ensure(structType != nullptr, "given op type must operate on a struct type");
+  SymbolRefAttr structSym = structType.getNameRef(); // this is fully qualified
+  return appendLeaf(structSym, fieldSym);
 }
 
 class UnusedDeclarationEliminationPass
     : public llzk::impl::UnusedDeclarationEliminationPassBase<UnusedDeclarationEliminationPass> {
+
+  /// @brief Shared context between the operations in this pass (field removal, struct removal)
+  /// that doesn't need to be persisted after the pass completes.
+  struct PassContext {
+    DenseMap<SymbolRefAttr, StructDefOp> symbolToStruct;
+    DenseMap<StructDefOp, SymbolRefAttr> structToSymbol;
+
+    const SymbolRefAttr &getSymbol(StructDefOp s) { return structToSymbol.at(s); }
+    StructDefOp getStruct(const SymbolRefAttr &sym) { return symbolToStruct.at(sym); }
+
+    static PassContext populate(ModuleOp modOp) {
+      PassContext ctx;
+
+      modOp.walk<WalkOrder::PreOrder>([&ctx](StructDefOp structDef) {
+        auto structSymbolRes = getPathFromTopRoot(structDef);
+        ensure(succeeded(structSymbolRes), "failed to lookup struct symbol");
+        SymbolRefAttr structSym = *structSymbolRes;
+        ctx.symbolToStruct[structSym] = structDef;
+        ctx.structToSymbol[structDef] = structSym;
+      });
+      return ctx;
+    }
+  };
+
   void runOnOperation() override {
+    PassContext ctx = PassContext::populate(getOperation());
     // First, remove unused fields. This may allow more structs to be removed,
     // if their final remaining uses are as types for unused fields.
-    walkStructs(removeUnusedFields);
+    removeUnusedFields(ctx);
+
     // Last, remove unused structs if configured
     if (removeStructs) {
-      walkStructs([this](StructDefOp s) { this->removeIfUnused(s); });
+      removeUnusedStructs(ctx);
     }
   }
 
-  /// @brief Apply the given function for all non-Main structs contained within the current module.
-  void walkStructs(function_ref<void(StructDefOp)> structTransformFn) {
-    getOperation().walk([&](StructDefOp structDef) {
-      if (!isMainComponent(structDef)) {
-        structTransformFn(structDef);
-      }
-      // A walk optimization: since structs cannot be nested, skip instead of
-      // advance to prevent unnecessary inner operation walks.
-      return WalkResult::skip();
+  /// @brief Removes unused fields.
+  /// A field is unused if it is never read from (only written to).
+  /// @param structDef
+  void removeUnusedFields(PassContext &ctx) {
+    ModuleOp modOp = getOperation();
+
+    // Map fully-qualified field symbols -> field ops
+    DenseMap<SymbolRefAttr, FieldDefOp> fields;
+    for (auto &[structDef, structSym] : ctx.structToSymbol) {
+      structDef.walk([&](FieldDefOp field) {
+        // We don't consider public fields in the main component for removal,
+        // as these are output values and removing them would result in modifying
+        // the overall circuit interface.
+        if (!isMainComponent(structDef) || !field.hasPublicAttr()) {
+          SymbolRefAttr fieldSym =
+              appendLeaf(structSym, FlatSymbolRefAttr::get(field.getSymNameAttr()));
+          llvm::errs() << "adding field " << fieldSym << "\n";
+          fields[fieldSym] = field;
+        }
+      });
+    }
+
+    // Remove all fields that are read.
+    modOp.walk([&](FieldReadOp readf) {
+      SymbolRefAttr readFieldSym = getFullFieldSymbol(readf);
+      fields.erase(readFieldSym);
     });
-  }
 
-  /// @brief Removes unused structs. A struct is unused if compute and constrain
-  /// are never called, and if the struct is not used in any declarations.
-  void removeIfUnused(StructDefOp structDef) {
-    if (structDef.getComputeFuncOp()->getUsers().empty() &&
-        structDef.getConstrainFuncOp()->getUsers().empty() && structTypeUnused(structDef)) {
-      LLVM_DEBUG(
-          llvm::dbgs() << "Removing unused struct " << structDef.getFullyQualifiedName() << '\n'
-      );
-      structDef->erase();
+    // Remove all writes that reference the remaining fields, as these writes
+    // are now known to only update write-only fields.
+    modOp.walk([&](FieldWriteOp writef) {
+      SymbolRefAttr writtenField = getFullFieldSymbol(writef);
+      if (fields.contains(writtenField)) {
+        // We need not check the users of a writef, since it produces no results.
+        LLVM_DEBUG(
+            llvm::dbgs() << "Removing write " << writef << " to write-only field " << writtenField
+                         << '\n'
+        );
+        writef.erase();
+      }
+    });
+
+    // Finally, erase the remaining fields.
+    for (auto &[_, fieldDef] : fields) {
+      LLVM_DEBUG(llvm::dbgs() << "Removing field " << fieldDef << '\n');
+      fieldDef->erase();
     }
   }
 
-  /// @brief Determines whether or not a struct type is used in the current module.
-  /// Since struct types may be used in field declarations and as type variables,
-  /// we cannot just look for field defs with the given struct type. Rather,
-  /// we examine the types over all operations.
-  bool structTypeUnused(StructDefOp structDef) {
-    bool res = true;
-    StructType targetTy = structDef.getType();
+  /// @brief Remove unused structs by looking for any uses of the struct's fully-qualified
+  /// symbol. This catches any uses, such as field declarations of the struct's type
+  /// or calls to any of the struct's methods.
+  /// @param ctx
+  void removeUnusedStructs(PassContext &ctx) {
+    DenseMap<SymbolRefAttr, StructDefOp> unusedStructs = ctx.symbolToStruct;
 
-    // Pre-order traversal to avoid traversing the target struct.
-    getOperation().walk<WalkOrder::PreOrder>([&](Operation *op) {
-      if (auto s = dyn_cast<StructDefOp>(op); s && s == structDef) {
-        // Skip anything within the structDef itself
-        return WalkResult::skip();
+    getOperation().walk([&](Operation *op) {
+      // All structs are used, so stop looking
+      if (unusedStructs.empty()) {
+        return WalkResult::interrupt();
       }
+
+      auto structParent = op->getParentOfType<StructDefOp>();
+      if (structParent == nullptr) {
+        return WalkResult::advance();
+      }
+
+      auto tryRemoveFromUnused = [&](Type ty) {
+        if (auto structTy = dyn_cast<StructType>(ty)) {
+          // This name ref is required to be fully qualified
+          SymbolRefAttr sym = structTy.getNameRef();
+          StructDefOp refStruct = ctx.getStruct(sym);
+          if (refStruct != structParent) {
+            // Only remove if this isn't a self reference
+            unusedStructs.erase(sym);
+          }
+        }
+      };
+
+      // LLZK requires fully-qualified references to struct symbols. So, we
+      // simply need to look for the struct symbol within this op's symbol uses.
 
       // Check operands
       for (Value operand : op->getOperands()) {
-        if (typeContainsTarget(operand.getType(), targetTy)) {
-          res = false;
-          return WalkResult::interrupt();
-        }
+        tryRemoveFromUnused(operand.getType());
       }
 
       // Check results
       for (Value result : op->getResults()) {
-        if (typeContainsTarget(result.getType(), targetTy)) {
-          res = false;
-          return WalkResult::interrupt();
-        }
+        tryRemoveFromUnused(result.getType());
       }
 
       // Check block arguments
       for (Region &region : op->getRegions()) {
         for (Block &block : region) {
           for (BlockArgument arg : block.getArguments()) {
-            if (typeContainsTarget(arg.getType(), targetTy)) {
-              res = false;
-              return WalkResult::interrupt();
-            }
+            tryRemoveFromUnused(arg.getType());
           }
         }
       }
 
       // Check attributes
       for (const auto &namedAttr : op->getAttrs()) {
-        auto typeAttr = dyn_cast<TypeAttr>(namedAttr.getValue());
-        if (typeAttr && typeContainsTarget(typeAttr.getValue(), targetTy)) {
-          res = false;
-          return WalkResult::interrupt();
+        if (auto typeAttr = dyn_cast<TypeAttr>(namedAttr.getValue())) {
+          tryRemoveFromUnused(typeAttr.getValue());
         }
       }
 
       return WalkResult::advance();
     });
 
-    return res;
-  }
-
-  /// @brief Determine if `ty` contains `targetTy` as one of its subtypes.
-  bool typeContainsTarget(Type ty, Type targetTy) {
-    bool found = false;
-    ty.walk([&found, &targetTy](Type t) {
-      if (t == targetTy) {
-        found = true;
-        return WalkResult::interrupt();
+    // All remaining structs are unused and should be removed.
+    for (auto &[_, structDef] : unusedStructs) {
+      if (!isMainComponent(structDef)) {
+        LLVM_DEBUG(llvm::dbgs() << "Removing unused struct " << structDef.getName() << '\n');
+        structDef->erase();
       }
-      return WalkResult::advance();
-    });
-    return found;
+    }
   }
 };
 

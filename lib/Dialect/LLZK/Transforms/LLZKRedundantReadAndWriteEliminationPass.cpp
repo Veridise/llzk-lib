@@ -511,7 +511,9 @@ class RedundantReadAndWriteEliminationPass
       Value resVal = readarr.getResult();
       if (!currValTree->hasStoredValue()) {
         currValTree->setCurrentValue(resVal);
-      } else if (currValTree->getStoredValue() != resVal) {
+      }
+
+      if (currValTree->getStoredValue() != resVal) {
         LLVM_DEBUG(
             llvm::dbgs() << readarr.getOperationName() << ": replace " << resVal << " with "
                          << currValTree->getStoredValue() << '\n'
