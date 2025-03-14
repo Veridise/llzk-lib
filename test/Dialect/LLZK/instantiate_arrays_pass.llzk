@@ -279,6 +279,68 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
+#M1 = affine_map<(i)[j]->(i+j)>
+#M2 = affine_map<(i)->(i+2)>
+#M3 = affine_map<()[i,j]->(i+j)>
+!Ty1 = !llzk.array<#M1,#M2,#M3 x index>
+!Ty2 = !llzk.array<#M2,#M3 x index>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Component05B {
+    field @f: index
+
+    func @compute(%x: index) -> !llzk.struct<@Component05B> {
+      %self = new_struct : !llzk.struct<@Component05B>
+      %0 = arith.constant 0 : index
+      %1 = arith.constant 1 : index
+      %2 = arith.constant 2 : index
+      %3 = arith.constant 3 : index
+      scf.for %i = %0 to %2 step %1 {
+        scf.for %j = %0 to %x step %1 {
+          %arr = llzk.new_array{(%i)[%1],(%j),()[%2,%3]} : !Ty1 // !llzk.array<(i+1),(j+2),5 x index>
+          %inner = llzk.new_array{(%j),()[%i,%j]} : !Ty2 // !llzk.array<(j+2),??? x index>
+          llzk.insertarr %arr[%0] = %inner : !Ty1, !Ty2
+          %len = llzk.array_len %arr, %1 : !Ty1 // len(dimension 1) == (j+2)
+          llzk.writef %self[@f] = %len : !llzk.struct<@Component05B>, index
+        }
+      }
+      return %self : !llzk.struct<@Component05B>
+    }
+
+    func @constrain(%self: !llzk.struct<@Component05B>, %x: index) {
+      return
+    }
+  }
+}
+// CHECK: #[[$M5:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 2)>
+// CHECK: #[[$M6:[0-9a-zA-Z_\.]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
+// CHECK-LABEL: llzk.struct @Component05B {
+// CHECK-NEXT:    field @f : index
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@Component05B> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = new_struct : <@Component05B>
+// CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]])} : <1,#[[$M5]],5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]]), (){{\[}}%[[V2]], %[[V4]]]} : <#[[$M5]],#[[$M6]] x index>
+// CHECK-NEXT:        llzk.insertarr %[[V5]]{{\[}}%[[V2]]] = %[[V6]] : <1,#[[$M5]],5 x index>, <#[[$M5]],#[[$M6]] x index>
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = llzk.array_len %[[V5]], %[[V1]] : <1,#[[$M5]],5 x index>
+// CHECK-NEXT:        llzk.writef %[[V3]][@f] = %[[V7]] : <@Component05B>, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      scf.for %[[V8:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V8]])} : <2,#[[$M5]],5 x index>
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V8]]), (){{\[}}%[[V1]], %[[V8]]]} : <#[[$M5]],#[[$M6]] x index>
+// CHECK-NEXT:        llzk.insertarr %[[V9]]{{\[}}%[[V2]]] = %[[V10]] : <2,#[[$M5]],5 x index>, <#[[$M5]],#[[$M6]] x index>
+// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = llzk.array_len %[[V9]], %[[V1]] : <2,#[[$M5]],5 x index>
+// CHECK-NEXT:        llzk.writef %[[V3]][@f] = %[[V11]] : <@Component05B>, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      return %[[V3]] : !llzk.struct<@Component05B>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component05B>, %[[V13:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 // Test: Return instantiated affine array from function, requires update to caller.
 #M1 = affine_map<(i)[k] -> (5*i+k)>
 #M2 = affine_map<()[c] -> (c)>
