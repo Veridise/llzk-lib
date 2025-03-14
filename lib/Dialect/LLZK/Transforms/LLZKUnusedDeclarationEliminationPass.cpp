@@ -16,7 +16,7 @@ namespace llzk {
 using namespace mlir;
 using namespace llzk;
 
-#define DEBUG_TYPE "llzk-unused-declaration-elimination"
+#define DEBUG_TYPE "llzk-unused-declaration-elim"
 
 namespace {
 

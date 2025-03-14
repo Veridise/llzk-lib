@@ -22,7 +22,7 @@ namespace llzk {
 using namespace mlir;
 using namespace llzk;
 
-#define DEBUG_TYPE "llzk-duplicate-op-elimination"
+#define DEBUG_TYPE "llzk-duplicate-op-elim"
 
 namespace {
 
