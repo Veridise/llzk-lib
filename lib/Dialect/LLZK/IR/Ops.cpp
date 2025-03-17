@@ -627,8 +627,6 @@ void FieldDefOp::build(
   assert(resultTypes.size() == 0u && "mismatched number of return types");
   odsState.addTypes(resultTypes);
 }
-
-bool FieldDefOp::hasPublicAttr() { return getOperation()->hasAttr(PublicAttr::name); }
 void FieldDefOp::setPublicAttr(bool newValue) {
   if (newValue) {
     getOperation()->setAttr(PublicAttr::name, PublicAttr::get(getContext()));

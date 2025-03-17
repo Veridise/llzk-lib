@@ -266,7 +266,7 @@ def LLZK_FieldDefOp
   let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 
   let extraClassDeclaration = [{
-    bool hasPublicAttr();
+    inline bool hasPublicAttr() { return getOperation()->hasAttr(llzk::PublicAttr::name); }
     void setPublicAttr(bool newValue = true);
   }];
 }
