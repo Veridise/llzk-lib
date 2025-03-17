@@ -1262,15 +1262,15 @@ private:
       if (!isConcreteAttr<>(fromCall)) {
         Attribute fromTgt = std::get<0>(p);
         LLVM_DEBUG({
-          llvm::dbgs() << '[' << __FUNCTION__ << "]   fromCall = " << fromCall << '\n';
-          llvm::dbgs() << '[' << __FUNCTION__ << "]   fromTgt = " << fromTgt << '\n';
+          llvm::dbgs() << "[instantiateViaTargetType]   fromCall = " << fromCall << '\n';
+          llvm::dbgs() << "[instantiateViaTargetType]   fromTgt = " << fromTgt << '\n';
         });
         assert(llvm::isa<SymbolRefAttr>(fromTgt));
         auto it = unifications.find(std::make_pair(llvm::cast<SymbolRefAttr>(fromTgt), Side::LHS));
         if (it != unifications.end()) {
           Attribute unifiedAttr = it->second;
           LLVM_DEBUG({
-            llvm::dbgs() << '[' << __FUNCTION__ << "]   unifiedAttr = " << unifiedAttr << '\n';
+            llvm::dbgs() << "[instantiateViaTargetType]   unifiedAttr = " << unifiedAttr << '\n';
           });
           if (unifiedAttr && isConcreteAttr<false>(unifiedAttr)) {
             return unifiedAttr;
