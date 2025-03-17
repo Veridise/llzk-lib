@@ -524,3 +524,61 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+
+// STRICT-LABEL: module attributes {veridise.lang = "llzk"} {
+// STRICT-NEXT:   module @nested {
+// STRICT-NEXT:   }
+// STRICT-NEXT:   module @user {
+// STRICT-NEXT:   }
+// STRICT-NEXT:   llzk.struct @Main {
+// STRICT-NEXT:     func @compute() -> !llzk.struct<@Main> {
+// STRICT-NEXT:       %self = new_struct : <@Main>
+// STRICT-NEXT:       return %self : !llzk.struct<@Main>
+// STRICT-NEXT:     }
+// STRICT-NEXT:     func @constrain(%arg0: !llzk.struct<@Main>) {
+// STRICT-NEXT:       return
+// STRICT-NEXT:     }
+// STRICT-NEXT:   }
+// STRICT-NEXT: }
+
+// RELAX-LABEL: module attributes {veridise.lang = "llzk"} {
+// RELAX-NEXT:   module @nested {
+// RELAX-NEXT:     llzk.struct @Wrapper {
+// RELAX-NEXT:       field @val : !llzk.felt {llzk.pub}
+// RELAX-NEXT:       func @compute(%arg0: !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
+// RELAX-NEXT:         %self = new_struct : <@nested::@Wrapper>
+// RELAX-NEXT:         writef %self[@val] = %arg0 : <@nested::@Wrapper>, !llzk.felt
+// RELAX-NEXT:         return %self : !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:       }
+// RELAX-NEXT:       func @constrain(%arg0: !llzk.struct<@nested::@Wrapper>, %arg1: !llzk.felt) {
+// RELAX-NEXT:         return
+// RELAX-NEXT:       }
+// RELAX-NEXT:     }
+// RELAX-NEXT:   }
+// RELAX-NEXT:   module @user {
+// RELAX-NEXT:     llzk.struct @Unwrapper {
+// RELAX-NEXT:       field @val : !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:       func @compute(%arg0: !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
+// RELAX-NEXT:         %self = new_struct : <@user::@Unwrapper>
+// RELAX-NEXT:         %0 = call @nested::@Wrapper::@compute(%arg0) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:         writef %self[@val] = %0 : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:         return %self : !llzk.struct<@user::@Unwrapper>
+// RELAX-NEXT:       }
+// RELAX-NEXT:       func @constrain(%arg0: !llzk.struct<@user::@Unwrapper>, %arg1: !llzk.felt) {
+// RELAX-NEXT:         %0 = readf %arg0[@val] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:         %1 = readf %0[@val] : <@nested::@Wrapper>, !llzk.felt
+// RELAX-NEXT:         emit_eq %1, %arg1 : !llzk.felt, !llzk.felt
+// RELAX-NEXT:         return
+// RELAX-NEXT:       }
+// RELAX-NEXT:     }
+// RELAX-NEXT:   }
+// RELAX-NEXT:   llzk.struct @Main {
+// RELAX-NEXT:     func @compute() -> !llzk.struct<@Main> {
+// RELAX-NEXT:       %self = new_struct : <@Main>
+// RELAX-NEXT:       return %self : !llzk.struct<@Main>
+// RELAX-NEXT:     }
+// RELAX-NEXT:     func @constrain(%arg0: !llzk.struct<@Main>) {
+// RELAX-NEXT:       return
+// RELAX-NEXT:     }
+// RELAX-NEXT:   }
+// RELAX-NEXT: }
