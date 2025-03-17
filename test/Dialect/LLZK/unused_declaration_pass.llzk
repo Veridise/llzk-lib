@@ -365,3 +365,162 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:     }
 // RELAX-NEXT:   }
 // RELAX-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+
+  module @nested {
+    // @val is read-only in this module, but not read-only in all modules,
+    // so this test will examine if our symbol lookup works across modules
+    llzk.struct @Wrapper {
+      field @val : !llzk.felt {llzk.pub}
+      func @compute(%inp : !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
+        %self = new_struct : !llzk.struct<@nested::@Wrapper>
+        writef %self[@val] = %inp : !llzk.struct<@nested::@Wrapper>, !llzk.felt
+        return %self : !llzk.struct<@nested::@Wrapper>
+      }
+      func @constrain(%self : !llzk.struct<@nested::@Wrapper>, %inp : !llzk.felt) {
+        return
+      }
+    }
+  }
+
+  module @user {
+    llzk.struct @Unwrapper {
+      field @comp : !llzk.struct<@nested::@Wrapper>
+      func @compute(%inp : !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
+        %self = new_struct : !llzk.struct<@user::@Unwrapper>
+        %wrapped = call @nested::@Wrapper::@compute(%inp) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
+        writef %self[@comp] = %wrapped : !llzk.struct<@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+        return %self : !llzk.struct<@user::@Unwrapper>
+      }
+      func @constrain(%self : !llzk.struct<@user::@Unwrapper>, %inp : !llzk.felt) {
+        %wrapper = readf %self[@comp] : !llzk.struct<@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+        %wrapped = readf %wrapper[@val] : !llzk.struct<@nested::@Wrapper>, !llzk.felt
+        emit_eq %wrapped, %inp : !llzk.felt
+        return
+      }
+    }
+  }
+
+  llzk.struct @Main {
+    // Since this is private, this is eliminated in remove-structs.
+    field @unwrapper : !llzk.struct<@user::@Unwrapper>
+    func @compute() -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%self : !llzk.struct<@Main>) {
+      return
+    }
+  }
+}
+
+// STRICT-LABEL: module attributes {veridise.lang = "llzk"} {
+// STRICT-NEXT:   module @nested {
+// STRICT-NEXT:   }
+// STRICT-NEXT:   module @user {
+// STRICT-NEXT:   }
+// STRICT-NEXT:   llzk.struct @Main {
+// STRICT-NEXT:     func @compute() -> !llzk.struct<@Main> {
+// STRICT-NEXT:       %self = new_struct : <@Main>
+// STRICT-NEXT:       return %self : !llzk.struct<@Main>
+// STRICT-NEXT:     }
+// STRICT-NEXT:     func @constrain(%arg0: !llzk.struct<@Main>) {
+// STRICT-NEXT:       return
+// STRICT-NEXT:     }
+// STRICT-NEXT:   }
+// STRICT-NEXT: }
+
+// RELAX-LABEL: module attributes {veridise.lang = "llzk"} {
+// RELAX-NEXT:   module @nested {
+// RELAX-NEXT:     llzk.struct @Wrapper {
+// RELAX-NEXT:       field @val : !llzk.felt {llzk.pub}
+// RELAX-NEXT:       func @compute(%arg0: !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
+// RELAX-NEXT:         %self = new_struct : <@nested::@Wrapper>
+// RELAX-NEXT:         writef %self[@val] = %arg0 : <@nested::@Wrapper>, !llzk.felt
+// RELAX-NEXT:         return %self : !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:       }
+// RELAX-NEXT:       func @constrain(%arg0: !llzk.struct<@nested::@Wrapper>, %arg1: !llzk.felt) {
+// RELAX-NEXT:         return
+// RELAX-NEXT:       }
+// RELAX-NEXT:     }
+// RELAX-NEXT:   }
+// RELAX-NEXT:   module @user {
+// RELAX-NEXT:     llzk.struct @Unwrapper {
+// RELAX-NEXT:       field @comp : !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:       func @compute(%arg0: !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
+// RELAX-NEXT:         %self = new_struct : <@user::@Unwrapper>
+// RELAX-NEXT:         %0 = call @nested::@Wrapper::@compute(%arg0) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:         writef %self[@comp] = %0 : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:         return %self : !llzk.struct<@user::@Unwrapper>
+// RELAX-NEXT:       }
+// RELAX-NEXT:       func @constrain(%arg0: !llzk.struct<@user::@Unwrapper>, %arg1: !llzk.felt) {
+// RELAX-NEXT:         %0 = readf %arg0[@comp] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:         %1 = readf %0[@val] : <@nested::@Wrapper>, !llzk.felt
+// RELAX-NEXT:         emit_eq %1, %arg1 : !llzk.felt, !llzk.felt
+// RELAX-NEXT:         return
+// RELAX-NEXT:       }
+// RELAX-NEXT:     }
+// RELAX-NEXT:   }
+// RELAX-NEXT:   llzk.struct @Main {
+// RELAX-NEXT:     func @compute() -> !llzk.struct<@Main> {
+// RELAX-NEXT:       %self = new_struct : <@Main>
+// RELAX-NEXT:       return %self : !llzk.struct<@Main>
+// RELAX-NEXT:     }
+// RELAX-NEXT:     func @constrain(%arg0: !llzk.struct<@Main>) {
+// RELAX-NEXT:       return
+// RELAX-NEXT:     }
+// RELAX-NEXT:   }
+// RELAX-NEXT: }
+
+// -----
+
+// Overloading symbol names
+module attributes {veridise.lang = "llzk"} {
+  module @nested {
+    // @val is read-only in this module, but not read-only in all modules,
+    // so this test will examine if our symbol lookup works across modules
+    llzk.struct @Wrapper {
+      field @val : !llzk.felt {llzk.pub}
+      func @compute(%inp : !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
+        %self = new_struct : !llzk.struct<@nested::@Wrapper>
+        writef %self[@val] = %inp : !llzk.struct<@nested::@Wrapper>, !llzk.felt
+        return %self : !llzk.struct<@nested::@Wrapper>
+      }
+      func @constrain(%self : !llzk.struct<@nested::@Wrapper>, %inp : !llzk.felt) {
+        return
+      }
+    }
+  }
+
+  module @user {
+    llzk.struct @Unwrapper {
+      field @val : !llzk.struct<@nested::@Wrapper>
+      func @compute(%inp : !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
+        %self = new_struct : !llzk.struct<@user::@Unwrapper>
+        %wrapped = call @nested::@Wrapper::@compute(%inp) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
+        writef %self[@val] = %wrapped : !llzk.struct<@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+        return %self : !llzk.struct<@user::@Unwrapper>
+      }
+      func @constrain(%self : !llzk.struct<@user::@Unwrapper>, %inp : !llzk.felt) {
+        %wrapper = readf %self[@val] : !llzk.struct<@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+        %wrapped = readf %wrapper[@val] : !llzk.struct<@nested::@Wrapper>, !llzk.felt
+        emit_eq %wrapped, %inp : !llzk.felt
+        return
+      }
+    }
+  }
+
+  llzk.struct @Main {
+    field @val : !llzk.struct<@user::@Unwrapper>
+    func @compute() -> !llzk.struct<@Main> {
+      %self = new_struct : !llzk.struct<@Main>
+      return %self : !llzk.struct<@Main>
+    }
+    func @constrain(%self : !llzk.struct<@Main>) {
+      return
+    }
+  }
+}

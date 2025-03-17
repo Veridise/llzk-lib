@@ -129,27 +129,29 @@ class UnusedDeclarationEliminationPass
   /// or calls to any of the struct's methods.
   /// @param ctx
   void removeUnusedStructs(PassContext &ctx) {
-    DenseMap<SymbolRefAttr, StructDefOp> unusedStructs = ctx.symbolToStruct;
+    DenseMap<StructDefOp, DenseSet<StructDefOp>> uses;
+    DenseMap<StructDefOp, DenseSet<StructDefOp>> usedBy;
+
+    // initialize both maps with empty sets so we can identify unused structs
+    for (auto &[structDef, _] : ctx.structToSymbol) {
+      uses[structDef] = {};
+      usedBy[structDef] = {};
+    }
 
     getOperation().walk([&](Operation *op) {
-      // All structs are used, so stop looking
-      if (unusedStructs.empty()) {
-        return WalkResult::interrupt();
-      }
-
       auto structParent = op->getParentOfType<StructDefOp>();
       if (structParent == nullptr) {
         return WalkResult::advance();
       }
 
-      auto tryRemoveFromUnused = [&](Type ty) {
+      auto tryAddUse = [&](Type ty) {
         if (auto structTy = dyn_cast<StructType>(ty)) {
           // This name ref is required to be fully qualified
           SymbolRefAttr sym = structTy.getNameRef();
           StructDefOp refStruct = ctx.getStruct(sym);
           if (refStruct != structParent) {
-            // Only remove if this isn't a self reference
-            unusedStructs.erase(sym);
+            uses[structParent].insert(refStruct);
+            usedBy[refStruct].insert(structParent);
           }
         }
       };
@@ -159,19 +161,19 @@ class UnusedDeclarationEliminationPass
 
       // Check operands
       for (Value operand : op->getOperands()) {
-        tryRemoveFromUnused(operand.getType());
+        tryAddUse(operand.getType());
       }
 
       // Check results
       for (Value result : op->getResults()) {
-        tryRemoveFromUnused(result.getType());
+        tryAddUse(result.getType());
       }
 
       // Check block arguments
       for (Region &region : op->getRegions()) {
         for (Block &block : region) {
           for (BlockArgument arg : block.getArguments()) {
-            tryRemoveFromUnused(arg.getType());
+            tryAddUse(arg.getType());
           }
         }
       }
@@ -179,18 +181,44 @@ class UnusedDeclarationEliminationPass
       // Check attributes
       for (const auto &namedAttr : op->getAttrs()) {
         if (auto typeAttr = dyn_cast<TypeAttr>(namedAttr.getValue())) {
-          tryRemoveFromUnused(typeAttr.getValue());
+          tryAddUse(typeAttr.getValue());
         }
       }
 
       return WalkResult::advance();
     });
 
-    // All remaining structs are unused and should be removed.
-    for (auto &[_, structDef] : unusedStructs) {
-      if (!isMainComponent(structDef)) {
-        LLVM_DEBUG(llvm::dbgs() << "Removing unused struct " << structDef.getName() << '\n');
-        structDef->erase();
+    SmallVector<StructDefOp> unusedStructs;
+
+    auto updateUnusedStructs = [&]() {
+      for (auto &[structDef, users] : usedBy) {
+        if (users.empty() && !isMainComponent(structDef)) {
+          unusedStructs.push_back(structDef);
+        }
+      }
+    };
+
+    updateUnusedStructs();
+
+    while (!unusedStructs.empty()) {
+      StructDefOp unusedStruct = unusedStructs.back();
+      unusedStructs.pop_back();
+
+      // See what structs are being used by this unused struct
+      for (auto usedStruct : uses[unusedStruct]) {
+        // The usedStruct is no longer used by the unusedStruct
+        usedBy[usedStruct].erase(unusedStruct);
+      }
+
+      // Remove the unused struct from both maps and the IR
+      usedBy.erase(unusedStruct);
+      uses.erase(unusedStruct);
+      unusedStruct->erase();
+
+      // Check to see if we've created any more unused structs after we process
+      // all existing known unused structs (to avoid double processing).
+      if (unusedStructs.empty()) {
+        updateUnusedStructs();
       }
     }
   }
