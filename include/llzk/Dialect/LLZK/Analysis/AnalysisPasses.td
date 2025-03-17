@@ -27,13 +27,14 @@ def ConstraintDependencyGraphPrinterPass
 def IntervalAnalysisPrinterPass
     : Pass<"llzk-print-interval-analysis", "::mlir::ModuleOp"> {
   let summary = "Print interval analysis results for all LLZK structs.";
-  let constructor =
-      "llzk::createIntervalAnalysisPrinterPass(llvm::errs())";
-  let options = [
-    Option<"fieldName", "field", "std::string", /* default */ "\"bn128\"",
-      "The field to use for interval analysis. Supported fields: bn128/bn254, babybear, goldilocks, mersenne31">,
-    Option<"printSolverConstraints", "print-solver-constraints", "bool", /* default */ "false",
-      "Whether to output SMT solver constraints along with intervals.">,
+  let constructor = "llzk::createIntervalAnalysisPrinterPass(llvm::errs())";
+  let options =
+      [Option<"fieldName", "field", "std::string", /* default */ "\"bn128\"",
+              "The field to use for interval analysis. Supported fields: "
+              "bn128/bn254, babybear, goldilocks, mersenne31">,
+       Option<"printSolverConstraints", "print-solver-constraints", "bool",
+              /* default */ "false",
+              "Whether to output SMT solver constraints along with intervals.">,
   ];
   let dependentDialects = ["llzk::LLZKDialect"];
 }
