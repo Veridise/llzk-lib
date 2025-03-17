@@ -86,7 +86,7 @@ class UnusedDeclarationEliminationPass
     DenseMap<SymbolRefAttr, FieldDefOp> fields;
     for (auto &[structDef, structSym] : ctx.structToSymbol) {
       structDef.walk([&](FieldDefOp field) {
-        // We don't consider public fields in the main component for removal,
+        // We don't consider public fields in the Main component for removal,
         // as these are output values and removing them would result in modifying
         // the overall circuit interface.
         if (!isMainComponent(structDef) || !field.hasPublicAttr()) {
