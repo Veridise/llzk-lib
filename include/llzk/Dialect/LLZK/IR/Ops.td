@@ -431,12 +431,12 @@ def LLZK_CreateArrayOp
       }];
 
   let extraClassDeclaration = [{
-    static ::mlir::ParseResult parseInferredArrayType(::mlir::AsmParser &parser,
+    static ::mlir::ParseResult parseInferredArrayType(::mlir::OpAsmParser &parser,
         ::llvm::SmallVector<::mlir::Type,1> &elementsTypes,
         ::mlir::ArrayRef<::mlir::OpAsmParser::UnresolvedOperand> elements,
         ::mlir::Type resultType
     );
-    static void printInferredArrayType(::mlir::AsmPrinter &printer, CreateArrayOp,
+    static void printInferredArrayType(::mlir::OpAsmPrinter &printer, CreateArrayOp,
         ::mlir::TypeRange, ::mlir::OperandRange, ::mlir::Type
     );
   private:
@@ -626,7 +626,7 @@ class LLZK_EmitOp<string mnemonic, list<Trait> traits = []>
   let extraClassDeclaration = [{
     static ::mlir::Type inferRHS(::mlir::Type lhsType);
 
-    static ::mlir::ParseResult parseInferredOrParsedType(::mlir::AsmParser &parser,
+    static ::mlir::ParseResult parseInferredOrParsedType(::mlir::OpAsmParser &parser,
         ::mlir::Type &rhsType, ::mlir::Type lhsType
     ) {
       if (mlir::succeeded(parser.parseOptionalComma())) {
@@ -643,7 +643,7 @@ class LLZK_EmitOp<string mnemonic, list<Trait> traits = []>
       return mlir::success();
     }
 
-    static void printInferredOrParsedType(::mlir::AsmPrinter &printer,
+    static void printInferredOrParsedType(::mlir::OpAsmPrinter &printer,
         ::mlir::Operation *op, ::mlir::Type rhsType, ::mlir::Type lhsType
     ) {
       printer << ", ";

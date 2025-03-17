@@ -155,7 +155,7 @@ class LLZK_NaryOpBase<string mnemonic, string defaultTypeBuilder,
                       list<Trait> traits = []> : LLZK_Op<mnemonic, traits> {
   let extraClassDeclaration = [{
     static ::mlir::ParseResult parseInferredOrParsedType(
-        ::mlir::AsmParser &parser, ::mlir::Type &opType, bool isFirst
+        ::mlir::OpAsmParser &parser, ::mlir::Type &opType, bool isFirst
     ) {
       if (mlir::succeeded(isFirst ? parser.parseOptionalColon() : parser.parseOptionalComma())) {
         // If there is a comma, parse the `opType`
@@ -172,7 +172,7 @@ class LLZK_NaryOpBase<string mnemonic, string defaultTypeBuilder,
       return mlir::success();
     }
 
-    static void printInferredOrParsedType(::mlir::AsmPrinter &printer,
+    static void printInferredOrParsedType(::mlir::OpAsmPrinter &printer,
         ::mlir::Operation *op, ::mlir::Type opType, bool isFirst
     ) {
       printer << (isFirst ? " : " : ", ");

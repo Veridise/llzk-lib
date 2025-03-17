@@ -802,7 +802,7 @@ llvm::SmallVector<Type> CreateArrayOp::resultTypeToElementsTypes(Type resultType
 }
 
 ParseResult CreateArrayOp::parseInferredArrayType(
-    AsmParser &parser, llvm::SmallVector<Type, 1> &elementsTypes,
+    OpAsmParser &parser, llvm::SmallVector<Type, 1> &elementsTypes,
     ArrayRef<OpAsmParser::UnresolvedOperand> elements, Type resultType
 ) {
   assert(elementsTypes.size() == 0); // it was not yet initialized
@@ -815,7 +815,7 @@ ParseResult CreateArrayOp::parseInferredArrayType(
 }
 
 void CreateArrayOp::printInferredArrayType(
-    AsmPrinter &printer, CreateArrayOp, TypeRange, OperandRange, Type
+    OpAsmPrinter &printer, CreateArrayOp, TypeRange, OperandRange, Type
 ) {
   // nothing to print, it's derived and therefore not represented in the output
 }
