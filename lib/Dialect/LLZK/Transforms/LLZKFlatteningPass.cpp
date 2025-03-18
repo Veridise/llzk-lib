@@ -43,7 +43,7 @@ class ConversionTracker {
   DenseMap<StructType, StructType> structInstantiations;
   /// Contains the reverse of mappings in `structInstantiations` for use in legal conversion check.
   DenseMap<StructType, StructType> reverseInstantiations;
-  /// Maps new remote type (i.e. the values in 'structInstantiations') to a list of Diagnostic that
+  /// Maps new remote type (i.e. the values in 'structInstantiations') to a list of Diagnostic
   /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
 
