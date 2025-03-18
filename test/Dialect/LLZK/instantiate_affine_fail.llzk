@@ -38,7 +38,6 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-#id = affine_map<(i)->(i)>
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component02<[@A,@B]> {
     // expected-error@+1 {{Cannot update type of 'llzk.field' because there are multiple 'llzk.writef' with different value types}}
