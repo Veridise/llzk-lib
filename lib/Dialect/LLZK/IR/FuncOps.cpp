@@ -174,9 +174,7 @@ bool FuncOp::hasArgPublicAttr(unsigned index) {
 }
 
 LogicalResult FuncOp::verify() {
-  auto emitErrorFunc = [op = this->getOperation()]() -> InFlightDiagnostic {
-    return op->emitOpError();
-  };
+  OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
   // Ensure that only valid LLZK types are used for arguments and return
   FunctionType type = getFunctionType();
   llvm::ArrayRef<Type> inTypes = type.getInputs();

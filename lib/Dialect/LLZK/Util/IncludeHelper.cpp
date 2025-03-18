@@ -40,7 +40,7 @@ inline FailureOr<OpenFile> openFile(EmitErrorFn emitError, const StringRef filen
 
 FailureOr<OwningOpRef<ModuleOp>> parseFile(const StringRef filename, Operation *origin) {
   // Load raw contents of the file
-  auto of = openFile([&]() { return origin->emitOpError(); }, filename);
+  auto of = openFile(getEmitOpErrFn(origin), filename);
   if (failed(of)) {
     return failure();
   }
@@ -58,7 +58,7 @@ FailureOr<OwningOpRef<ModuleOp>> parseFile(const StringRef filename, Operation *
 
 LogicalResult parseFile(const StringRef filename, Operation *origin, Block *container) {
   // Load raw contents of the file
-  auto of = openFile([&]() { return origin->emitOpError(); }, filename);
+  auto of = openFile(getEmitOpErrFn(origin), filename);
   if (failed(of)) {
     return failure();
   }
@@ -183,7 +183,7 @@ private:
 FailureOr<ModuleOp> IncludeOp::inlineAndErase() {
   InlineOperationsGuard guard(this->getContext(), *this);
 
-  auto loadResult = parseFile(this->getPath(), this->getOperation(), guard.getDest());
+  auto loadResult = parseFile(this->getPath(), *this, guard.getDest());
   if (failed(loadResult)) {
     return failure();
   }
@@ -195,8 +195,7 @@ FailureOr<ModuleOp> IncludeOp::inlineAndErase() {
   }
 
   // Check properties of the included file to ensure symbol resolution will still work.
-  auto validationResult =
-      validateLoadedModuleOp([&]() { return this->emitOpError(); }, *importedMod);
+  auto validationResult = validateLoadedModuleOp(getEmitOpErrFn(this), *importedMod);
   if (failed(validationResult)) {
     return failure();
   }

@@ -467,7 +467,7 @@ LogicalResult StructDefOp::verifyRegions() {
     // Verify the following:
     // 1. The only ops within the body are field and function definitions
     // 2. The only functions defined in the struct are `compute()` and `constrain()`
-    auto emitError = [this] { return this->emitOpError(); };
+    OwningEmitErrorFn emitError = getEmitOpErrFn(this);
     for (Operation &op : getBody().front()) {
       if (!llvm::isa<FieldDefOp>(op)) {
         if (FuncOp funcDef = llvm::dyn_cast<FuncOp>(op)) {

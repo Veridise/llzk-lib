@@ -8,6 +8,18 @@ namespace llzk {
 
 using EmitErrorFn = llvm::function_ref<mlir::InFlightDiagnostic()>;
 
+// This type is required by the functions below to take ownership of the lambda so it is not
+// destroyed upon return from the function. It can be implicitly converted to EmitErrorFn.
+using OwningEmitErrorFn = std::function<mlir::InFlightDiagnostic()>;
+
+inline OwningEmitErrorFn getEmitOpErrFn(mlir::Operation *op) {
+  return [op]() { return op->emitOpError(); };
+}
+
+template <typename TypeClass> inline OwningEmitErrorFn getEmitOpErrFn(TypeClass *opImpl) {
+  return getEmitOpErrFn(opImpl->getOperation());
+}
+
 inline void ensure(bool condition, llvm::Twine errMsg) {
   if (!condition) {
     llvm::report_fatal_error(errMsg);
