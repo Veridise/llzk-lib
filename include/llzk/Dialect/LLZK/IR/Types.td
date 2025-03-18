@@ -15,7 +15,7 @@ def AnyLLZKType : Type<CPred<"::llzk::isValidType($_self)">,
                        "a valid LLZK type", "::mlir::Type">;
 
 def EmitEqType : Type<CPred<"::llzk::isValidEmitEqType($_self)">,
-                      "free from struct and string type">;
+                      "any LLZK type except struct and string">;
 
 def ConstReadType : Type<CPred<"::llzk::isValidConstReadType($_self)">,
                          "integral, felt, or typevar type">;
