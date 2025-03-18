@@ -7,7 +7,7 @@ llzk.func @f_constant() -> !llzk.felt {
   return %c: !llzk.felt
 }
 //CHECK-LABEL:  llzk.func @f_constant() -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = constfelt  42
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = constfelt 42
 //CHECK-NEXT:     return %[[T1]] : !llzk.felt
 //CHECK-NEXT:   }
 // -----

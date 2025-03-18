@@ -262,10 +262,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@AssertBit>
 //CHECK-NEXT:      }
 //CHECK-NEXT:      func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@AssertBit>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
-//CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = constfelt  1
+//CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = constfelt 1
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = sub %[[C1]], %[[A1]]
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = mul %[[T00]], %[[A1]]
-//CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = constfelt  0
+//CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = constfelt 0
 //CHECK-NEXT:        emit_eq %[[T01]], %[[C0]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        return
 //CHECK-NEXT:      }
@@ -298,7 +298,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ArgU16>
 //CHECK-NEXT:        writef %[[SELF]][@count] = %[[A0]] : <@ArgU16>, !llzk.felt
 //CHECK-NEXT:        writef %[[SELF]][@val] = %[[A1]] : <@ArgU16>, !llzk.felt
-//CHECK-NEXT:        %[[C16:[0-9a-zA-Z_\.]+]] = constfelt  16
+//CHECK-NEXT:        %[[C16:[0-9a-zA-Z_\.]+]] = constfelt 16
 //CHECK-NEXT:        call @LookupDelta(%[[C16]], %[[A1]], %[[A0]]) : (!llzk.felt, !llzk.felt, !llzk.felt) -> ()
 //CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@ArgU16>
 //CHECK-NEXT:      }
@@ -312,7 +312,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      field @synthetic_return : !llzk.felt {llzk.pub}
 //CHECK-NEXT:      func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@NondetU16Reg> {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@NondetU16Reg>
-//CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = constfelt  1
+//CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = constfelt 1
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = call @ArgU16::@compute(%[[C1]], %[[A0]]) : (!llzk.felt, !llzk.felt) -> !llzk.struct<@ArgU16>
 //CHECK-NEXT:        writef %[[SELF]][@arg] = %[[T00]] : <@NondetU16Reg>, !llzk.struct<@ArgU16>
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = readf %[[T00]][@val] : <@ArgU16>, !llzk.felt
@@ -320,7 +320,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@NondetU16Reg>
 //CHECK-NEXT:      }
 //CHECK-NEXT:      func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@NondetU16Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
-//CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = constfelt  1
+//CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = constfelt 1
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@arg] : <@NondetU16Reg>, !llzk.struct<@ArgU16>
 //CHECK-NEXT:        call @ArgU16::@constrain(%[[T00]], %[[C1]], %[[A1]]) : (!llzk.struct<@ArgU16>, !llzk.felt, !llzk.felt) -> ()
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = readf %[[T00]][@count] : <@ArgU16>, !llzk.felt
@@ -363,14 +363,14 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@AddrDecomposeBits> {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@AddrDecomposeBits>
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@low] : <@std::@risc0::@ValU32>, !llzk.felt
-//CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = constfelt  1
+//CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = constfelt 1
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = bit_and %[[T00]], %[[C1]]
 //CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = call @NondetBitReg::@compute(%[[T01]]) : (!llzk.felt) -> !llzk.struct<@NondetBitReg>
 //CHECK-NEXT:        writef %[[SELF]][@low0] = %[[T02]] : <@AddrDecomposeBits>, !llzk.struct<@NondetBitReg>
 //CHECK-NEXT:        %[[T03:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@low] : <@std::@risc0::@ValU32>, !llzk.felt
-//CHECK-NEXT:        %[[C2:[0-9a-zA-Z_\.]+]] = constfelt  2
+//CHECK-NEXT:        %[[C2:[0-9a-zA-Z_\.]+]] = constfelt 2
 //CHECK-NEXT:        %[[T04:[0-9a-zA-Z_\.]+]] = bit_and %[[T03]], %[[C2]]
-//CHECK-NEXT:        %[[C2_0:[0-9a-zA-Z_\.]+]] = constfelt  2
+//CHECK-NEXT:        %[[C2_0:[0-9a-zA-Z_\.]+]] = constfelt 2
 //CHECK-NEXT:        %[[T05:[0-9a-zA-Z_\.]+]] = div %[[T04]], %[[C2_0]]
 //CHECK-NEXT:        %[[T06:[0-9a-zA-Z_\.]+]] = call @NondetBitReg::@compute(%[[T05]]) : (!llzk.felt) -> !llzk.struct<@NondetBitReg>
 //CHECK-NEXT:        writef %[[SELF]][@low1] = %[[T06]] : <@AddrDecomposeBits>, !llzk.struct<@NondetBitReg>
@@ -379,11 +379,11 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T09:[0-9a-zA-Z_\.]+]] = readf %[[T02]][@synthetic_return] : <@NondetBitReg>, !llzk.felt
 //CHECK-NEXT:        %[[T10:[0-9a-zA-Z_\.]+]] = add %[[T08]], %[[T09]]
 //CHECK-NEXT:        writef %[[SELF]][@low2] = %[[T10]] : <@AddrDecomposeBits>, !llzk.felt
-//CHECK-NEXT:        %[[C65535:[0-9a-zA-Z_\.]+]] = constfelt  65535
+//CHECK-NEXT:        %[[C65535:[0-9a-zA-Z_\.]+]] = constfelt 65535
 //CHECK-NEXT:        %[[T11:[0-9a-zA-Z_\.]+]] = mul %[[A1]], %[[C65535]]
-//CHECK-NEXT:        %[[C1_1:[0-9a-zA-Z_\.]+]] = constfelt  1
+//CHECK-NEXT:        %[[C1_1:[0-9a-zA-Z_\.]+]] = constfelt 1
 //CHECK-NEXT:        %[[T12:[0-9a-zA-Z_\.]+]] = sub %[[C1_1]], %[[A1]]
-//CHECK-NEXT:        %[[C49151:[0-9a-zA-Z_\.]+]] = constfelt  49151
+//CHECK-NEXT:        %[[C49151:[0-9a-zA-Z_\.]+]] = constfelt 49151
 //CHECK-NEXT:        %[[T13:[0-9a-zA-Z_\.]+]] = mul %[[T12]], %[[C49151]]
 //CHECK-NEXT:        %[[T14:[0-9a-zA-Z_\.]+]] = add %[[T13]], %[[T11]]
 //CHECK-NEXT:        %[[T15:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@high] : <@std::@risc0::@ValU32>, !llzk.felt
@@ -392,11 +392,11 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        writef %[[SELF]][@upperDiff] = %[[T17]] : <@AddrDecomposeBits>, !llzk.struct<@U16Reg>
 //CHECK-NEXT:        %[[T18:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@low] : <@std::@risc0::@ValU32>, !llzk.felt
 //CHECK-NEXT:        %[[T19:[0-9a-zA-Z_\.]+]] = sub %[[T18]], %[[T10]]
-//CHECK-NEXT:        %[[C4:[0-9a-zA-Z_\.]+]] = constfelt  4
+//CHECK-NEXT:        %[[C4:[0-9a-zA-Z_\.]+]] = constfelt 4
 //CHECK-NEXT:        %[[T20:[0-9a-zA-Z_\.]+]] = div %[[T19]], %[[C4]]
 //CHECK-NEXT:        %[[T21:[0-9a-zA-Z_\.]+]] = call @NondetU16Reg::@compute(%[[T20]]) : (!llzk.felt) -> !llzk.struct<@NondetU16Reg>
 //CHECK-NEXT:        writef %[[SELF]][@med14] = %[[T21]] : <@AddrDecomposeBits>, !llzk.struct<@NondetU16Reg>
-//CHECK-NEXT:        %[[C16384:[0-9a-zA-Z_\.]+]] = constfelt  16384
+//CHECK-NEXT:        %[[C16384:[0-9a-zA-Z_\.]+]] = constfelt 16384
 //CHECK-NEXT:        %[[T22:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@high] : <@std::@risc0::@ValU32>, !llzk.felt
 //CHECK-NEXT:        %[[T23:[0-9a-zA-Z_\.]+]] = mul %[[C16384]], %[[T22]]
 //CHECK-NEXT:        %[[T24:[0-9a-zA-Z_\.]+]] = readf %[[T21]][@synthetic_return] : <@NondetU16Reg>, !llzk.felt
@@ -415,16 +415,16 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        call @NondetBitReg::@constrain(%[[T01]], %[[TN1]]) : (!llzk.struct<@NondetBitReg>, !llzk.felt) -> ()
 //CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@low2] : <@AddrDecomposeBits>, !llzk.felt
 //CHECK-NEXT:        %[[T03:[0-9a-zA-Z_\.]+]] = readf %[[T01]][@synthetic_return] : <@NondetBitReg>, !llzk.felt
-//CHECK-NEXT:        %[[C2:[0-9a-zA-Z_\.]+]] = constfelt  2
+//CHECK-NEXT:        %[[C2:[0-9a-zA-Z_\.]+]] = constfelt 2
 //CHECK-NEXT:        %[[T04:[0-9a-zA-Z_\.]+]] = mul %[[T03]], %[[C2]]
 //CHECK-NEXT:        %[[T05:[0-9a-zA-Z_\.]+]] = readf %[[T00]][@synthetic_return] : <@NondetBitReg>, !llzk.felt
 //CHECK-NEXT:        %[[T06:[0-9a-zA-Z_\.]+]] = add %[[T04]], %[[T05]]
 //CHECK-NEXT:        emit_eq %[[T02]], %[[T06]] : !llzk.felt, !llzk.felt
-//CHECK-NEXT:        %[[C65535:[0-9a-zA-Z_\.]+]] = constfelt  65535
+//CHECK-NEXT:        %[[C65535:[0-9a-zA-Z_\.]+]] = constfelt 65535
 //CHECK-NEXT:        %[[T07:[0-9a-zA-Z_\.]+]] = mul %[[A2]], %[[C65535]]
-//CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = constfelt  1
+//CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = constfelt 1
 //CHECK-NEXT:        %[[T08:[0-9a-zA-Z_\.]+]] = sub %[[C1]], %[[A2]]
-//CHECK-NEXT:        %[[C49151:[0-9a-zA-Z_\.]+]] = constfelt  49151
+//CHECK-NEXT:        %[[C49151:[0-9a-zA-Z_\.]+]] = constfelt 49151
 //CHECK-NEXT:        %[[T09:[0-9a-zA-Z_\.]+]] = mul %[[T08]], %[[C49151]]
 //CHECK-NEXT:        %[[T10:[0-9a-zA-Z_\.]+]] = add %[[T09]], %[[T07]]
 //CHECK-NEXT:        %[[T11:[0-9a-zA-Z_\.]+]] = readf %[[A1]][@high] : <@std::@risc0::@ValU32>, !llzk.felt
@@ -434,7 +434,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T14:[0-9a-zA-Z_\.]+]] = readf %[[A1]][@low] : <@std::@risc0::@ValU32>, !llzk.felt
 //CHECK-NEXT:        %[[T15:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@low2] : <@AddrDecomposeBits>, !llzk.felt
 //CHECK-NEXT:        %[[T16:[0-9a-zA-Z_\.]+]] = sub %[[T14]], %[[T15]]
-//CHECK-NEXT:        %[[C4:[0-9a-zA-Z_\.]+]] = constfelt  4
+//CHECK-NEXT:        %[[C4:[0-9a-zA-Z_\.]+]] = constfelt 4
 //CHECK-NEXT:        %[[T17:[0-9a-zA-Z_\.]+]] = div %[[T16]], %[[C4]]
 //CHECK-NEXT:        %[[T18:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@med14] : <@AddrDecomposeBits>, !llzk.struct<@NondetU16Reg>
 //CHECK-NEXT:        call @NondetU16Reg::@constrain(%[[T18]], %[[T17]]) : (!llzk.struct<@NondetU16Reg>, !llzk.felt) -> ()
@@ -445,7 +445,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T23:[0-9a-zA-Z_\.]+]] = readf %[[A1]][@low] : <@std::@risc0::@ValU32>, !llzk.felt
 //CHECK-NEXT:        emit_eq %[[T22]], %[[T23]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        %[[T24:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@addr] : <@AddrDecomposeBits>, !llzk.felt
-//CHECK-NEXT:        %[[C16384:[0-9a-zA-Z_\.]+]] = constfelt  16384
+//CHECK-NEXT:        %[[C16384:[0-9a-zA-Z_\.]+]] = constfelt 16384
 //CHECK-NEXT:        %[[T25:[0-9a-zA-Z_\.]+]] = readf %[[A1]][@high] : <@std::@risc0::@ValU32>, !llzk.felt
 //CHECK-NEXT:        %[[T26:[0-9a-zA-Z_\.]+]] = mul %[[C16384]], %[[T25]]
 //CHECK-NEXT:        %[[T27:[0-9a-zA-Z_\.]+]] = readf %[[T18]][@synthetic_return] : <@NondetU16Reg>, !llzk.felt

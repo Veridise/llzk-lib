@@ -470,13 +470,13 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      field @b : !llzk.struct<@Bar<[!llzk.struct<@risc0::@Reg>]>>
 //CHECK-NEXT:      func @compute() -> !llzk.struct<@Top> {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Top>
-//CHECK-NEXT:        %[[C2:[0-9a-zA-Z_\.]+]] = constfelt  2
+//CHECK-NEXT:        %[[C2:[0-9a-zA-Z_\.]+]] = constfelt 2
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = call @Bar::@compute(%[[C2]]) : (!llzk.felt) -> !llzk.struct<@Bar<[!llzk.struct<@risc0::@Reg>]>>
 //CHECK-NEXT:        writef %[[SELF]][@b] = %[[T0]] : <@Top>, !llzk.struct<@Bar<[!llzk.struct<@risc0::@Reg>]>>
 //CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@Top>
 //CHECK-NEXT:      }
 //CHECK-NEXT:      func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Top>) {
-//CHECK-NEXT:        %[[C2:[0-9a-zA-Z_\.]+]] = constfelt  2
+//CHECK-NEXT:        %[[C2:[0-9a-zA-Z_\.]+]] = constfelt 2
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@b] : <@Top>, !llzk.struct<@Bar<[!llzk.struct<@risc0::@Reg>]>>
 //CHECK-NEXT:        call @Bar::@constrain(%[[T0]], %[[C2]]) : (!llzk.struct<@Bar<[!llzk.struct<@risc0::@Reg>]>>, !llzk.felt) -> ()
 //CHECK-NEXT:        return

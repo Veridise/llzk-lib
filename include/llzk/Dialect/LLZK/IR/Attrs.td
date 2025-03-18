@@ -39,7 +39,7 @@ def LLZK_FeltConstAttr
 
   let parameters = (ins APIntParameter<"The felt constant value">:$value);
 
-  let assemblyFormat = [{ $value }];
+  let assemblyFormat = [{ `` $value }];
 
   let extraClassDeclaration = [{
     ::mlir::Type getType() const;

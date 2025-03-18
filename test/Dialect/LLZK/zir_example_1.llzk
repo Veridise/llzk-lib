@@ -87,7 +87,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        call @C1::@constrain(%[[T0]], %[[T1]], %[[T2]]) : (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> ()
 //CHECK-NEXT:        %[[T3:[0-9a-zA-Z_\.]+]] = readf %[[T0]][@z] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
 //CHECK-NEXT:        %[[T4:[0-9a-zA-Z_\.]+]] = readf %[[T3]][@reg] : <@std::@risc0::@Reg>, !llzk.felt
-//CHECK-NEXT:        %felt_const_0 = constfelt  0
+//CHECK-NEXT:        %felt_const_0 = constfelt 0
 //CHECK-NEXT:        emit_eq %[[T4]], %felt_const_0 : !llzk.felt, !llzk.felt
 //CHECK-NEXT:        return
 //CHECK-NEXT:      }

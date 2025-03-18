@@ -228,7 +228,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    field @sum : !llzk.felt
 // CHECK-NEXT:    func @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !llzk.array<@A x !llzk.struct<@Signal>>) -> !llzk.struct<@GetSum<[@A]>> {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@GetSum<[@A]>>
-// CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = constfelt  0
+// CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = constfelt 0
 // CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = read_const @A : index
 // CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index

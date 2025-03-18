@@ -83,8 +83,8 @@ llzk.func @arr_constant_felt() -> !llzk.array<2 x !llzk.felt> {
   return %r: !llzk.array<2 x !llzk.felt>
 }
 //CHECK-LABEL:  llzk.func @arr_constant_felt() -> !llzk.array<2 x !llzk.felt> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = constfelt  6744573456376
-//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = constfelt  381928390103509
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = constfelt 6744573456376
+//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = constfelt 381928390103509
 //CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = new_array %[[T1]], %[[T2]] : <2 x !llzk.felt>
 //CHECK-NEXT:     return %[[T3]] : !llzk.array<2 x !llzk.felt>
 //CHECK-NEXT:   }

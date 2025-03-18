@@ -27,7 +27,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = constfelt  7
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = constfelt 7
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V5]]] : <5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V8]], %[[V7]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V6]]] : <5 x !llzk.felt>, !llzk.felt
@@ -76,7 +76,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = constfelt  7
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = constfelt 7
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V5]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V8]], %[[V7]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V5]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
@@ -166,7 +166,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = constfelt  7
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = constfelt 7
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V6]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V8]], %[[V7]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V4]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
