@@ -214,8 +214,14 @@ template <typename TypeClass> inline TypeClass getAtIndex(mlir::TypeRange types,
   return (types.size() > index) ? llvm::dyn_cast<TypeClass>(types[index]) : nullptr;
 }
 
+/// Convert an IntegerAttr with a type other than IndexType to use IndexType.
+mlir::IntegerAttr forceIntType(mlir::IntegerAttr attr);
+
 /// Convert any IntegerAttr with a type other than IndexType to use IndexType.
-llvm::SmallVector<mlir::Attribute> forceIntAttrType(llvm::ArrayRef<mlir::Attribute> attrList);
+mlir::Attribute forceIntAttrType(mlir::Attribute attr);
+
+/// Convert any IntegerAttr with a type other than IndexType to use IndexType.
+llvm::SmallVector<mlir::Attribute> forceIntAttrTypes(llvm::ArrayRef<mlir::Attribute> attrList);
 
 /// Verify that all IntegerAttr have type IndexType.
 mlir::LogicalResult verifyIntAttrType(EmitErrorFn emitError, mlir::Attribute in);

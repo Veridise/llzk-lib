@@ -592,16 +592,22 @@ bool isMoreConcreteUnification(
   return !llvm::any_of(unifications, entryIsRHS) && !llvm::any_of(affineInstantiations, entryIsRHS);
 }
 
-SmallVector<Attribute> forceIntAttrType(ArrayRef<Attribute> attrList) {
-  return map_to_vector(attrList, [](Attribute a) -> Attribute {
-    if (IntegerAttr intAttr = dyn_cast<IntegerAttr>(a)) {
-      Type attrTy = intAttr.getType();
-      if (!AllowedTypes().onlyInt().isValidTypeImpl(attrTy)) {
-        return IntegerAttr::get(IndexType::get(intAttr.getContext()), intAttr.getValue());
-      }
-    }
-    return a;
-  });
+IntegerAttr forceIntType(IntegerAttr attr) {
+  if (AllowedTypes().onlyInt().isValidTypeImpl(attr.getType())) {
+    return attr;
+  }
+  return IntegerAttr::get(IndexType::get(attr.getContext()), attr.getValue());
+}
+
+Attribute forceIntAttrType(Attribute attr) {
+  if (IntegerAttr intAttr = dyn_cast<IntegerAttr>(attr)) {
+    return forceIntType(intAttr);
+  }
+  return attr;
+}
+
+SmallVector<Attribute> forceIntAttrTypes(ArrayRef<Attribute> attrList) {
+  return llvm::map_to_vector(attrList, forceIntAttrType);
 }
 
 LogicalResult verifyIntAttrType(EmitErrorFn emitError, Attribute in) {
@@ -624,7 +630,7 @@ ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
   if (failed(parseResult)) {
     return parser.emitError(parser.getCurrentLocation(), "failed to parse array dimensions");
   }
-  value = forceIntAttrType(*parseResult);
+  value = forceIntAttrTypes(*parseResult);
   return success();
 }
 
@@ -657,7 +663,7 @@ ParseResult parseStructParams(AsmParser &parser, ArrayAttr &value) {
   if (failed(parseResult)) {
     return parser.emitError(parser.getCurrentLocation(), "failed to parse struct parameters");
   }
-  SmallVector<Attribute> own = forceIntAttrType(parseResult->getValue());
+  SmallVector<Attribute> own = forceIntAttrTypes(parseResult->getValue());
   value = parser.getBuilder().getArrayAttr(own);
   return success();
 }

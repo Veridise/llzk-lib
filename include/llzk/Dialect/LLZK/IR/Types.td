@@ -62,7 +62,7 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
                       [{
                     ::mlir::MLIRContext *ctx = structName.getContext();
                     if (params) {
-                      params = ::mlir::ArrayAttr::get(ctx, forceIntAttrType(params.getValue()));
+                      params = ::mlir::ArrayAttr::get(ctx, forceIntAttrTypes(params.getValue()));
                     }
                     return $_get(ctx, structName, params);
                   }]>,
@@ -71,7 +71,7 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
                           "::llvm::ArrayRef<::mlir::Attribute>":$paramsRef),
                       [{
                     ::mlir::MLIRContext *ctx = structName.getContext();
-                    ::llvm::SmallVector<::mlir::Attribute> p = forceIntAttrType(paramsRef);
+                    ::llvm::SmallVector<::mlir::Attribute> p = forceIntAttrTypes(paramsRef);
                     return $_get(ctx, structName, ::mlir::ArrayAttr::get(ctx, p));
                   }]>];
 
@@ -136,7 +136,7 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
                "::llvm::ArrayRef<::mlir::Attribute>":$dimensionSizes),
            [{
       assert(elementType && "element type cannot be null");
-      ::llvm::SmallVector<::mlir::Attribute> dimSizes = forceIntAttrType(dimensionSizes);
+      ::llvm::SmallVector<::mlir::Attribute> dimSizes = forceIntAttrTypes(dimensionSizes);
       ::mlir::MLIRContext *ctx = elementType.getContext();
       ::llvm::SmallVector<int64_t> shape;
       ::mlir::LogicalResult res = computeShapeFromDims(emitError, ctx, dimSizes, shape);
