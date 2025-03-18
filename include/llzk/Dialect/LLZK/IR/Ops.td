@@ -116,6 +116,54 @@ def LLZK_AssertOp
 }
 
 //===------------------------------------------------------------------===//
+// Global storage
+//===------------------------------------------------------------------===//
+
+def ZKIR_GlobalDefOp
+    : LLZK_Op<"global", [HasParent<"mlir::ModuleOp">,
+                         DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                         Symbol]> {
+  let summary = "global value";
+  let description = [{
+    Examples:
+
+    ```llzk
+    // Global constant (denoted by "const" modifier) string.
+    llzk.global const @s : !llzk.string = "Hello World!"
+
+    // Global variable (i.e. no "const" modifier) with initial value.
+    llzk.global @b : i1 = false
+
+    // Uninitialized global variable.
+    llzk.global @a : !llzk.array<2,2 x i1>
+    ```
+  }];
+
+  let arguments = (ins SymbolNameAttr:$sym_name, UnitAttr:$constant,
+      TypeAttrOf<GlobalDefType>:$type, OptionalAttr<AnyAttr>:$initial_value);
+
+  let assemblyFormat = [{
+    (`const` $constant^)?
+    $sym_name `:` $type
+    `` custom<GlobalInitialValue>($initial_value, ref($type))
+    attr-dict
+  }];
+
+  let hasVerifier = 1;
+
+  let extraClassDeclaration = [{
+    static ::mlir::ParseResult parseGlobalInitialValue(::mlir::OpAsmParser &parser,
+        ::mlir::Attribute &initialValue, ::mlir::TypeAttr typeAttr
+    );
+    static void printGlobalInitialValue(::mlir::OpAsmPrinter &printer, GlobalDefOp op,
+        ::mlir::Attribute initialValue, ::mlir::TypeAttr typeAttr
+    );
+
+    inline bool isConstant() { return getConstant(); }
+  }];
+}
+
+//===------------------------------------------------------------------===//
 // Struct Operations
 //===------------------------------------------------------------------===//
 
