@@ -34,7 +34,7 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
   let methods = [
       // Requires implementors to have a '$val' argument.
       InterfaceMethod<
-          [{Gets the SSA Value that holds the read/write data for the GlobalRefOp.}],
+          [{Gets the SSA Value that holds the read/write data for the FieldRefOp.}],
           "::mlir::Value", "getVal", (ins)>,
       // Requires implementors to have a '$component' argument.
       InterfaceMethod<
