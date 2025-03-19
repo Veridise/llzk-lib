@@ -176,9 +176,7 @@ class UnusedDeclarationEliminationPass
 
       // Check attributes
       for (const auto &namedAttr : op->getAttrs()) {
-        if (auto typeAttr = dyn_cast<TypeAttr>(namedAttr.getValue())) {
-          tryAddUse(typeAttr.getValue());
-        }
+        namedAttr.getValue().walk([&](TypeAttr typeAttr) { tryAddUse(typeAttr.getValue()); });
       }
 
       return WalkResult::advance();
