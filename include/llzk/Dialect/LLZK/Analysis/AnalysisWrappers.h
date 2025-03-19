@@ -134,11 +134,11 @@ public:
   /// @brief Asserts that `op` has a result and returns it.
   Result &getResult(StructDefOp op) {
     ensureResultCreated(op);
-    return *results.at(op);
+    return results.at(op).get();
   }
   const Result &getResult(StructDefOp op) const {
     ensureResultCreated(op);
-    return *results.at(op);
+    return results.at(op).get();
   }
 
   ResultMap::iterator begin() { return results.begin(); }
