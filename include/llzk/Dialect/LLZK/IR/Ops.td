@@ -163,6 +163,34 @@ def ZKIR_GlobalDefOp
   }];
 }
 
+def LLZK_GlobalReadOp : LLZK_GlobalRefOp<"readg"> {
+  let summary = "read value of a global";
+  let description = [{
+    This operation reads the value of a named global.
+  }];
+
+  let arguments = (ins SymbolRefAttr:$name_ref);
+  let results = (outs GlobalDefType:$val);
+
+  let assemblyFormat = [{
+    $name_ref `:` type($val) attr-dict
+  }];
+}
+
+def LLZK_GlobalWriteOp : LLZK_GlobalRefOp<"writeg"> {
+  let summary = "write value to a global";
+  let description = [{
+    This operation writes a value to a named global.
+    Not allowed for globals declared with the "const" modifier.
+  }];
+
+  let arguments = (ins SymbolRefAttr:$name_ref, GlobalDefType:$val);
+
+  let assemblyFormat = [{
+    $name_ref `=` $val `:` type($val) attr-dict
+  }];
+}
+
 //===------------------------------------------------------------------===//
 // Struct Operations
 //===------------------------------------------------------------------===//

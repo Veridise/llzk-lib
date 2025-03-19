@@ -504,6 +504,66 @@ LogicalResult GlobalDefOp::verify() {
 }
 
 //===------------------------------------------------------------------===//
+// GlobalReadOp / GlobalWriteOp
+//===------------------------------------------------------------------===//
+
+namespace {
+
+inline FailureOr<SymbolLookupResult<GlobalDefOp>>
+getGlobalDefOpImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) {
+  return lookupTopLevelSymbol<GlobalDefOp>(tables, refOp.getNameRef(), refOp.getOperation());
+}
+
+FailureOr<SymbolLookupResult<GlobalDefOp>>
+verifySymbolUsesImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) {
+  // Ensure this op references a valid GlobalDefOp name
+  auto tgt = getGlobalDefOpImpl(refOp, tables);
+  if (failed(tgt)) {
+    return failure();
+  }
+  // Ensure the SSA Value type matches the GlobalDefOp type
+  Type globalType = tgt->get().getType();
+  if (!typesUnify(refOp.getVal().getType(), globalType, tgt->getIncludeSymNames())) {
+    return refOp->emitOpError() << "has wrong type; expected " << globalType << ", got "
+                                << refOp.getVal().getType();
+  }
+  return tgt;
+}
+
+} // namespace
+
+FailureOr<SymbolLookupResult<GlobalDefOp>>
+GlobalReadOp::getGlobalDefOp(SymbolTableCollection &tables) {
+  return getGlobalDefOpImpl(*this, tables);
+}
+
+LogicalResult GlobalReadOp::verifySymbolUses(SymbolTableCollection &tables) {
+  if (failed(verifySymbolUsesImpl(*this, tables))) {
+    return failure();
+  }
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, *this, getType());
+}
+
+FailureOr<SymbolLookupResult<GlobalDefOp>>
+GlobalWriteOp::getGlobalDefOp(SymbolTableCollection &tables) {
+  return getGlobalDefOpImpl(*this, tables);
+}
+
+LogicalResult GlobalWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
+  auto tgt = verifySymbolUsesImpl(*this, tables);
+  if (failed(tgt)) {
+    return failure();
+  }
+  if (tgt->get().isConstant()) {
+    return emitOpError().append(
+        "cannot target '", GlobalDefOp::getOperationName(), "' marked as 'const'"
+    );
+  }
+  return success();
+}
+
+//===------------------------------------------------------------------===//
 // StructDefOp
 //===------------------------------------------------------------------===//
 namespace {

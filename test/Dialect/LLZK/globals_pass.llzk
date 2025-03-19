@@ -49,3 +49,35 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-DAG: llzk.global @a2s : !llzk.array<2 x !llzk.string> = ["hello", "world"]
 // CHECK-DAG: llzk.global @a4b : !llzk.array<2,2 x i1> = [0, 1, 1, 0]
 // CHECK-DAG: llzk.global @a4f : !llzk.array<2,1,1,2 x !llzk.felt> = [6, 12134, 45523, 15623]
+// -----
+
+// TEST: GlobalReadOp
+module attributes {veridise.lang = "llzk"} {
+  llzk.global const @g : !llzk.string = "Hello"
+  llzk.func @test() -> !llzk.string {
+    %t = llzk.readg @g : !llzk.string
+    return %t : !llzk.string
+  }
+}
+// CHECK-LABEL: llzk.global const @g : !llzk.string = "Hello"
+// CHECK-LABEL: llzk.func @test() -> !llzk.string {
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = readg @g : !llzk.string
+// CHECK-NEXT:    return %[[V0]] : !llzk.string
+// CHECK-NEXT:  }
+// -----
+
+// TEST: GlobalWriteOp
+module attributes {veridise.lang = "llzk"} {
+  llzk.global @g : !llzk.felt = 125
+  llzk.func @test() {
+    %c = constfelt 99999
+    llzk.writeg @g = %c : !llzk.felt
+    return
+  }
+}
+// CHECK-LABEL: llzk.global @g : !llzk.felt = 125
+// CHECK-LABEL: llzk.func @test() {
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = constfelt 99999
+// CHECK-NEXT:    writeg @g = %[[V1]] : !llzk.felt
+// CHECK-NEXT:    return
+// CHECK-NEXT:  }

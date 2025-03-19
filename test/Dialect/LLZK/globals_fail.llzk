@@ -126,3 +126,73 @@ module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'llzk.global' op marked as 'const' must be assigned a value}}
   llzk.global const @g : !llzk.string
 }
+// -----
+
+// TEST: GlobalReadOp with unknown symbol name
+module attributes {veridise.lang = "llzk"} {
+  llzk.global @g : !llzk.string = "Hello"
+  llzk.func @test() -> !llzk.string {
+    // expected-error@+1 {{'llzk.readg' op references unknown symbol "@unknown"}}
+    %t = llzk.readg @unknown : !llzk.string
+    return %t : !llzk.string
+  }
+}
+// -----
+
+// TEST: GlobalReadOp with type that does not match the GlobalDefOp
+module attributes {veridise.lang = "llzk"} {
+  llzk.global @g : !llzk.felt = 6546
+  llzk.func @test() -> !llzk.string {
+    // expected-error@+1 {{'llzk.readg' op has wrong type; expected '!llzk.felt', got '!llzk.string'}}
+    %t = llzk.readg @g : !llzk.string
+    return %t : !llzk.string
+  }
+}
+// -----
+
+// TEST: GlobalWriteOp with unknown symbol name
+module attributes {veridise.lang = "llzk"} {
+  llzk.global @g : !llzk.felt = 125
+  llzk.func @test() {
+    %c = constfelt 99999
+    // expected-error@+1 {{'llzk.writeg' op references unknown symbol "@unknown"}}
+    llzk.writeg @unknown = %c : !llzk.felt
+    return
+  }
+}
+// -----
+
+// TEST: GlobalWriteOp with type that does not match the GlobalDefOp
+module attributes {veridise.lang = "llzk"} {
+  llzk.global @g : index = 125
+  llzk.func @test() {
+    %c = constfelt 99999
+    // expected-error@+1 {{'llzk.writeg' op has wrong type; expected 'index', got '!llzk.felt'}}
+    llzk.writeg @g = %c : !llzk.felt
+    return
+  }
+}
+// -----
+
+// TEST: GlobalWriteOp with type that does not Value
+module attributes {veridise.lang = "llzk"} {
+  llzk.global @g : !llzk.felt = 125
+  llzk.func @test() {
+    %c = arith.constant true // expected-note {{prior use here}}
+    // expected-error@+1 {{use of value '%c' expects different type than prior uses: '!llzk.felt' vs 'i1'}}
+    llzk.writeg @g = %c : !llzk.felt
+    return
+  }
+}
+// -----
+
+// TEST: GlobalWriteOp targeting a "const" GlobalDefOp
+module attributes {veridise.lang = "llzk"} {
+  llzk.global const @t : i1 = true
+  llzk.func @test() {
+    %c = arith.constant false
+    // expected-error@+1 {{'llzk.writeg' op cannot target 'llzk.global' marked as 'const'}}
+    llzk.writeg @t = %c : i1
+    return
+  }
+}

@@ -3,6 +3,22 @@
 
 include "llzk/Dialect/LLZK/IR/Types.td"
 
+def GlobalRefOpInterface : OpInterface<"GlobalRefOpInterface"> {
+  let description = [{
+    Common interface for operations that read or write from a global.
+  }];
+  let cppNamespace = "::llzk";
+
+  let methods = [
+      // Requires implementors to have a '$val' argument.
+      InterfaceMethod<
+          [{Gets the SSA Value that holds the read/write data for the GlobalRefOp.}],
+          "::mlir::Value", "getVal", (ins)>,
+      // Requires implementors to have a '$name_ref' argument.
+      InterfaceMethod<[{Gets the global name attribute from the GlobalRefOp.}],
+                      "::mlir::SymbolRefAttr", "getNameRef", (ins)>];
+}
+
 def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
   let description = [{
     Common interface for operations that read or write from a field.

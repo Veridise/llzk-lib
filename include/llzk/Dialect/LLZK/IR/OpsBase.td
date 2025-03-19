@@ -141,6 +141,16 @@ class ArrayTypeElemsUnifyWithResultCustomInfer<string arrayArg>
 class LLZK_Op<string mnemonic, list<Trait> traits = []>
     : Op<LLZKDialect, mnemonic, traits>;
 
+class LLZK_GlobalRefOp<string mnemonic, list<Trait> traits = []>
+    : LLZK_Op<mnemonic,
+              traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                      DeclareOpInterfaceMethods<GlobalRefOpInterface>]> {
+  let extraClassDeclaration = [{
+    /// Gets the `global` definition referenced in this op.
+    ::mlir::FailureOr<SymbolLookupResult<GlobalDefOp>> getGlobalDefOp(::mlir::SymbolTableCollection &tables);
+  }];
+}
+
 class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
     : LLZK_Op<mnemonic,
               traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
