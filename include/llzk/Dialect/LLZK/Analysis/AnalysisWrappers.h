@@ -131,11 +131,8 @@ public:
 
   /// @brief Checks if `op` has a result contained in the current result map.
   bool hasResult(StructDefOp op) const { return results.find(op) != results.end(); }
+
   /// @brief Asserts that `op` has a result and returns it.
-  Result &getResult(StructDefOp op) {
-    ensureResultCreated(op);
-    return results.at(op).get();
-  }
   const Result &getResult(StructDefOp op) const {
     ensureResultCreated(op);
     return results.at(op).get();
