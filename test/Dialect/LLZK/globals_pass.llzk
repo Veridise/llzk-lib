@@ -81,3 +81,54 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    writeg @g = %[[V1]] : !llzk.felt
 // CHECK-NEXT:    return
 // CHECK-NEXT:  }
+
+// TEST: Using a global value as a type parameter
+module attributes {veridise.lang = "llzk"} {
+  llzk.global const @N : index = 3
+
+  llzk.func @b(%x: !llzk.array<@N x !llzk.felt>) {
+    return
+  }
+
+  llzk.struct @Component01A<[@Z]> {
+    func @compute() -> !llzk.struct<@Component01A<[@Z]>> {
+      %self = new_struct : !llzk.struct<@Component01A<[@Z]>>
+      return %self : !llzk.struct<@Component01A<[@Z]>>
+    }
+    func @constrain(%self: !llzk.struct<@Component01A<[@Z]>>)  { return }
+  }
+  llzk.struct @Component01B {
+    llzk.field @f : !llzk.struct<@Component01A<[@N]>>
+
+    func @compute() -> !llzk.struct<@Component01B> {
+      %self = new_struct : !llzk.struct<@Component01B>
+      return %self : !llzk.struct<@Component01B>
+    }
+    func @constrain(%self: !llzk.struct<@Component01B>)  { return }
+  }
+}
+// CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+// CHECK-NEXT:    llzk.global const @N : index = 3
+// CHECK-NEXT:    llzk.func @b(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.array<@N x !llzk.felt>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    llzk.struct @Component01A<[@Z]> {
+// CHECK-NEXT:      func @compute() -> !llzk.struct<@Component01A<[@Z]>> {
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component01A<[@Z]>>
+// CHECK-NEXT:        return %[[V1]] : !llzk.struct<@Component01A<[@Z]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      func @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01A<[@Z]>>) {
+// CHECK-NEXT:        return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    llzk.struct @Component01B {
+// CHECK-NEXT:      field @f : !llzk.struct<@Component01A<[@N]>>
+// CHECK-NEXT:      func @compute() -> !llzk.struct<@Component01B> {
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = new_struct : <@Component01B>
+// CHECK-NEXT:        return %[[V3]] : !llzk.struct<@Component01B>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      func @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01B>) {
+// CHECK-NEXT:        return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

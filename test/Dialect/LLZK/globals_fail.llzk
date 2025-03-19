@@ -196,3 +196,16 @@ module attributes {veridise.lang = "llzk"} {
     return
   }
 }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.global const @N : index = 3 // expected-note {{symbol already defined here}}
+  // expected-error@+1 {{'llzk.struct' op parameter name "@N" conflicts with an existing symbol}}
+  llzk.struct @Component01A<[@N]> {
+    func @compute() -> !llzk.struct<@Component01A<[@N]>> {
+      %self = new_struct : !llzk.struct<@Component01A<[@N]>>
+      return %self : !llzk.struct<@Component01A<[@N]>>
+    }
+    func @constrain(%self: !llzk.struct<@Component01A<[@N]>>)  { return }
+  }
+}
