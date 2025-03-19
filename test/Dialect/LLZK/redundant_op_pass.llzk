@@ -72,7 +72,7 @@ module attributes {veridise.lang = "llzk"} {
       } else {
         %arr1 = llzk.extractarr %mat[%idx1] : !llzk.array<7,3 x !llzk.felt> // unnecessary load
         llzk.insertarr %mat[%idx4] = %arr1 : !llzk.array<7,3 x !llzk.felt>, !llzk.array<3 x !llzk.felt>
-        llzk.insertarr %mat[%idx1] = %arr1 : !llzk.array<7,3 x !llzk.felt>, !llzk.array<3 x !llzk.felt> // this sto
+        llzk.insertarr %mat[%idx1] = %arr1 : !llzk.array<7,3 x !llzk.felt>, !llzk.array<3 x !llzk.felt> // redundant store, as %arr1 = %mat[%idx1] by definition
       }
 
       return %self : !llzk.struct<@Component>
