@@ -119,7 +119,7 @@ def LLZK_AssertOp
 // Global storage
 //===------------------------------------------------------------------===//
 
-def ZKIR_GlobalDefOp
+def LLZK_GlobalDefOp
     : LLZK_Op<"global", [HasParent<"mlir::ModuleOp">,
                          DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                          Symbol]> {
