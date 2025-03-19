@@ -507,17 +507,17 @@ LogicalResult GlobalDefOp::verify() {
 // GlobalReadOp / GlobalWriteOp
 //===------------------------------------------------------------------===//
 
-namespace {
-
-inline FailureOr<SymbolLookupResult<GlobalDefOp>>
-getGlobalDefOpImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) {
-  return lookupTopLevelSymbol<GlobalDefOp>(tables, refOp.getNameRef(), refOp.getOperation());
+FailureOr<SymbolLookupResult<GlobalDefOp>>
+GlobalRefOpInterface::getGlobalDefOp(SymbolTableCollection &tables) {
+  return lookupTopLevelSymbol<GlobalDefOp>(tables, getNameRef(), getOperation());
 }
+
+namespace {
 
 FailureOr<SymbolLookupResult<GlobalDefOp>>
 verifySymbolUsesImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) {
   // Ensure this op references a valid GlobalDefOp name
-  auto tgt = getGlobalDefOpImpl(refOp, tables);
+  auto tgt = refOp.getGlobalDefOp(tables);
   if (failed(tgt)) {
     return failure();
   }
@@ -532,22 +532,12 @@ verifySymbolUsesImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) 
 
 } // namespace
 
-FailureOr<SymbolLookupResult<GlobalDefOp>>
-GlobalReadOp::getGlobalDefOp(SymbolTableCollection &tables) {
-  return getGlobalDefOpImpl(*this, tables);
-}
-
 LogicalResult GlobalReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (failed(verifySymbolUsesImpl(*this, tables))) {
     return failure();
   }
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(tables, *this, getType());
-}
-
-FailureOr<SymbolLookupResult<GlobalDefOp>>
-GlobalWriteOp::getGlobalDefOp(SymbolTableCollection &tables) {
-  return getGlobalDefOpImpl(*this, tables);
 }
 
 LogicalResult GlobalWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
@@ -871,8 +861,9 @@ LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 // FieldRefOp implementations
 //===------------------------------------------------------------------===//
 namespace {
+
 FailureOr<SymbolLookupResult<FieldDefOp>>
-getFieldDefOp(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructType tyStruct) {
+getFieldDefOpImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructType tyStruct) {
   Operation *op = refOp.getOperation();
   auto structDefRes = tyStruct.getDefinition(tables, op);
   if (failed(structDefRes)) {
@@ -890,46 +881,37 @@ getFieldDefOp(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructTy
   return std::move(res.value());
 }
 
-inline FailureOr<SymbolLookupResult<FieldDefOp>>
-getFieldDefOp(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
-  return getFieldDefOp(refOp, tables, refOp.getStructType());
-}
-
-LogicalResult
-verifySymbolUses(FieldRefOpInterface refOp, SymbolTableCollection &tables, Value compareTo) {
+LogicalResult verifySymbolUsesImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
   // Ensure the base component/struct type reference can be resolved.
   StructType tyStruct = refOp.getStructType();
   if (failed(tyStruct.verifySymbolRef(tables, refOp.getOperation()))) {
     return failure();
   }
   // Ensure the field name can be resolved in that struct.
-  auto field = getFieldDefOp(refOp, tables, tyStruct);
+  auto field = getFieldDefOpImpl(refOp, tables, tyStruct);
   if (failed(field)) {
     return field; // getFieldDefOp() already emits a sufficient error message
   }
   // Ensure the type of the referenced field declaration matches the type used in this op.
+  Type actualType = refOp.getVal().getType();
   Type fieldType = field->get().getType();
-  if (!typesUnify(compareTo.getType(), fieldType, field->getIncludeSymNames())) {
+  if (!typesUnify(actualType, fieldType, field->getIncludeSymNames())) {
     return refOp->emitOpError() << "has wrong type; expected " << fieldType << ", got "
-                                << compareTo.getType();
+                                << actualType;
   }
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, refOp.getOperation(), compareTo.getType());
+  return verifyTypeResolution(tables, refOp.getOperation(), actualType);
 }
+
 } // namespace
 
-FailureOr<SymbolLookupResult<FieldDefOp>> FieldReadOp::getFieldDefOp(SymbolTableCollection &tables
-) {
-  return llzk::getFieldDefOp(*this, tables);
+FailureOr<SymbolLookupResult<FieldDefOp>>
+FieldRefOpInterface::getFieldDefOp(SymbolTableCollection &tables) {
+  return getFieldDefOpImpl(*this, tables, getStructType());
 }
 
 LogicalResult FieldReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  return llzk::verifySymbolUses(*this, tables, getResult());
-}
-
-FailureOr<SymbolLookupResult<FieldDefOp>> FieldWriteOp::getFieldDefOp(SymbolTableCollection &tables
-) {
-  return llzk::getFieldDefOp(*this, tables);
+  return verifySymbolUsesImpl(*this, tables);
 }
 
 LogicalResult FieldWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
@@ -942,7 +924,7 @@ LogicalResult FieldWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
     return failure(); // checkSelfType() already emits a sufficient error message
   }
   // Perform the standard field ref checks.
-  return llzk::verifySymbolUses(*this, tables, getVal());
+  return verifySymbolUsesImpl(*this, tables);
 }
 
 //===------------------------------------------------------------------===//

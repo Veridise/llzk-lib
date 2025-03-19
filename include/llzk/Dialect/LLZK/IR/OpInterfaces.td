@@ -16,7 +16,13 @@ def GlobalRefOpInterface : OpInterface<"GlobalRefOpInterface"> {
           "::mlir::Value", "getVal", (ins)>,
       // Requires implementors to have a '$name_ref' argument.
       InterfaceMethod<[{Gets the global name attribute from the GlobalRefOp.}],
-                      "::mlir::SymbolRefAttr", "getNameRef", (ins)>];
+                      "::mlir::SymbolRefAttr", "getNameRef", (ins)>,
+  ];
+
+  let extraClassDeclaration = [{
+    /// Gets the definition for the `global` referenced in this op.
+    ::mlir::FailureOr<SymbolLookupResult<GlobalDefOp>> getGlobalDefOp(::mlir::SymbolTableCollection &tables);
+  }];
 }
 
 def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
@@ -26,6 +32,10 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
   let cppNamespace = "::llzk";
 
   let methods = [
+      // Requires implementors to have a '$val' argument.
+      InterfaceMethod<
+          [{Gets the SSA Value that holds the read/write data for the GlobalRefOp.}],
+          "::mlir::Value", "getVal", (ins)>,
       // Requires implementors to have a '$component' argument.
       InterfaceMethod<
           [{Gets the SSA value with the target component from the FieldRefOp.}],
@@ -40,7 +50,13 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
         mlir::Type t = $_op.getComponent().getType();
         assert(t.isa<StructType>());
         return t.template cast<StructType>();
-      }]>];
+      }]>,
+  ];
+
+  let extraClassDeclaration = [{
+    /// Gets the definition for the `field` referenced in this op.
+    ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &tables);
+  }];
 }
 
 #endif // LLZK_OP_INTERFACES

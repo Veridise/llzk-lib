@@ -146,8 +146,10 @@ class LLZK_GlobalRefOp<string mnemonic, list<Trait> traits = []>
               traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                       DeclareOpInterfaceMethods<GlobalRefOpInterface>]> {
   let extraClassDeclaration = [{
-    /// Gets the `global` definition referenced in this op.
-    ::mlir::FailureOr<SymbolLookupResult<GlobalDefOp>> getGlobalDefOp(::mlir::SymbolTableCollection &tables);
+    /// Gets the definition for the `global` referenced in this op.
+    inline ::mlir::FailureOr<SymbolLookupResult<GlobalDefOp>> getGlobalDefOp(::mlir::SymbolTableCollection &tables) {
+      return ::llvm::cast<GlobalRefOpInterface>(getOperation()).getGlobalDefOp(tables);
+    }
   }];
 }
 
@@ -156,8 +158,10 @@ class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
               traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                       DeclareOpInterfaceMethods<FieldRefOpInterface>]> {
   let extraClassDeclaration = [{
-    /// Gets the `field` definition for the field referenced in this op.
-    ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &symbolTable);
+    /// Gets the definition for the `field` referenced in this op.
+    inline ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &tables) {
+      return ::llvm::cast<FieldRefOpInterface>(getOperation()).getFieldDefOp(tables);
+    }
   }];
 }
 
