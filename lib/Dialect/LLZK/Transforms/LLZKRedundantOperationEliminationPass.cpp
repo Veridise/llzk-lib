@@ -3,6 +3,7 @@
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Dominance.h>
 #include <mlir/Pass/Pass.h>
@@ -70,7 +71,8 @@ public:
     }
     // uninterested in operating over non llzk/arith ops
     auto dialectName = lhs.op->getDialect()->getNamespace();
-    if (dialectName != "llzk" && dialectName != "arith") {
+    if (dialectName != LLZKDialect::getDialectNamespace() &&
+        dialectName != arith::ArithDialect::getDialectNamespace()) {
       return false;
     }
 

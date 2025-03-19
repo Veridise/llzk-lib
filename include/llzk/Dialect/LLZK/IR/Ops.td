@@ -130,7 +130,7 @@ def LLZK_StructDefOp
       of fields that hold inputs, outputs, intermediate values, and subcomponents
       of the defined component. It also contains a `compute()` function that holds
       the witness generation code for the component and a `constrain()` function
-      that holds that constraint generation code for the component. 
+      that holds that constraint generation code for the component.
 
       Example:
 
@@ -208,6 +208,9 @@ def LLZK_StructDefOp
     /// Return the full name for this struct from the root module, including
     /// any surrounding module scopes.
     ::mlir::SymbolRefAttr getFullyQualifiedName();
+
+    /// Return `true` iff this StructDefOp is named "Main".
+    bool isMainComponent();
   }];
 
   let hasRegionVerifier = 1;
@@ -844,7 +847,7 @@ def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
 
     Example:
     ```llzk
-    %0 = llzk.toindex %a 
+    %0 = llzk.toindex %a
     %1 = llzk.readarr %b[%0]
     ```
   }];
@@ -873,7 +876,7 @@ def LLZK_ApplyMapOp : LLZK_Op<"applymap", [Pure]> {
     ...
     %1 = llzk.applymap(%s, %t) #map10
     ```
-  
+
     Inline example:
     ```llzk
     %2 = llzk.applymap(%42)[%n] affine_map<(i)[s0] -> (i+s0)>

@@ -43,7 +43,7 @@ def UnusedDeclarationEliminationPass : Pass<"llzk-unused-declaration-elim", "::m
   let constructor = "llzk::createUnusedDeclarationEliminationPass()";
   let options = [
     Option<"removeStructs", "remove-structs", "bool", /* default */ "false",
-      "Whether to use unused struct definitions as well. "
+      "Whether to remove unused struct definitions as well. "
       "Requires module to declare a Main component, otherwise all components will appear unused.">,
   ];
   let dependentDialects = ["llzk::LLZKDialect"];

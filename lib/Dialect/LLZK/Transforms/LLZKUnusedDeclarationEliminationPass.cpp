@@ -24,10 +24,6 @@ using namespace llzk;
 
 namespace {
 
-inline bool isMainComponent(StructDefOp structDef) {
-  return structDef.getName() == COMPONENT_NAME_MAIN;
-}
-
 /// @brief Get the fully-qualified field symbol.
 /// @tparam FieldUserOp Either a FieldReadOp or a FieldWriteOp
 template <typename FieldUserOp> SymbolRefAttr getFullFieldSymbol(FieldUserOp op) {
@@ -47,8 +43,8 @@ class UnusedDeclarationEliminationPass
     DenseMap<SymbolRefAttr, StructDefOp> symbolToStruct;
     DenseMap<StructDefOp, SymbolRefAttr> structToSymbol;
 
-    const SymbolRefAttr &getSymbol(StructDefOp s) { return structToSymbol.at(s); }
-    StructDefOp getStruct(const SymbolRefAttr &sym) { return symbolToStruct.at(sym); }
+    const SymbolRefAttr &getSymbol(StructDefOp s) const { return structToSymbol.at(s); }
+    StructDefOp getStruct(const SymbolRefAttr &sym) const { return symbolToStruct.at(sym); }
 
     static PassContext populate(ModuleOp modOp) {
       PassContext ctx;
@@ -89,7 +85,7 @@ class UnusedDeclarationEliminationPass
         // We don't consider public fields in the Main component for removal,
         // as these are output values and removing them would result in modifying
         // the overall circuit interface.
-        if (!isMainComponent(structDef) || !field.hasPublicAttr()) {
+        if (!structDef.isMainComponent() || !field.hasPublicAttr()) {
           SymbolRefAttr fieldSym =
               appendLeaf(structSym, FlatSymbolRefAttr::get(field.getSymNameAttr()));
           fields[fieldSym] = field;
@@ -192,7 +188,7 @@ class UnusedDeclarationEliminationPass
 
     auto updateUnusedStructs = [&]() {
       for (auto &[structDef, users] : usedBy) {
-        if (users.empty() && !isMainComponent(structDef)) {
+        if (users.empty() && !structDef.isMainComponent()) {
           unusedStructs.push_back(structDef);
         }
       }

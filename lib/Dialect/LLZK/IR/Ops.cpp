@@ -579,6 +579,8 @@ FuncOp StructDefOp::getConstrainFuncOp() {
   return llvm::dyn_cast_if_present<FuncOp>(lookupSymbol(FUNC_NAME_CONSTRAIN));
 }
 
+bool StructDefOp::isMainComponent() { return COMPONENT_NAME_MAIN == this->getSymName(); }
+
 //===------------------------------------------------------------------===//
 // ConstReadOp
 //===------------------------------------------------------------------===//
