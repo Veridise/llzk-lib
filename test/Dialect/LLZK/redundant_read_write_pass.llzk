@@ -26,8 +26,6 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// COM: CHECKS generated with llvm-project/mlir/utils/generate-test-checks.py
-
 // CHECK-LABEL:   llzk.struct @Subcomponent {
 // CHECK:           func @compute() -> !llzk.struct<@Subcomponent> {
 // CHECK:             %[[VAL_0:.*]] = new_struct : <@Subcomponent>
@@ -78,7 +76,6 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             return
 // CHECK:           }
 // CHECK:         }
-
 
 // -----
 
