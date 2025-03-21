@@ -1,0 +1,28 @@
+// RUN: llzk-opt -split-input-file -emit-bytecode %s | llzk-opt - 2>&1 | FileCheck --enable-var-scope %s
+// COM: This chained `llzk-opt` construction converts text -> bytecode -> text
+// COM: https://veridise.atlassian.net/browse/LLZK-205
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA {
+    func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentA> {
+      %self = new_struct : !llzk.struct<@ComponentA>
+      %1 = constfelt     1 // extra spaces are intentional, testing the printer/parser
+      return %self : !llzk.struct<@ComponentA>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA>, %a: !llzk.felt) {
+      return
+    }
+  }
+}
+
+// CHECK-LABEL:   llzk.struct @ComponentA {
+// CHECK:           func @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
+// CHECK:             %[[VAL_1:.*]] = new_struct : <@ComponentA>
+// CHECK:             %[[VAL_2:.*]] = constfelt 1
+// CHECK:             return %[[VAL_1]] : !llzk.struct<@ComponentA>
+// CHECK:           }
+// CHECK:           func @constrain(%[[VAL_3:.*]]: !llzk.struct<@ComponentA>, %[[VAL_4:.*]]: !llzk.felt) {
+// CHECK:             return
+// CHECK:           }
+// CHECK:         }
