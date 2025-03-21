@@ -426,7 +426,7 @@ LogicalResult ensureAttrTypeMatch(
   if (!isValidGlobalType(type)) {
     // Same error message ODS-generated code would produce
     return errFn().append("attribute 'type' failed to satisfy constraint: type attribute of "
-                          "any LLZK type except struct and non-constant types");
+                          "any LLZK type except non-constant types");
   }
   if (type.isSignlessInteger(1)) {
     if (IntegerAttr ia = llvm::dyn_cast<IntegerAttr>(valAttr)) {

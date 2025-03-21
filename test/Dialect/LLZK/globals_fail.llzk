@@ -2,28 +2,47 @@
 
 // TESTS: invalid type for a global
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except struct and non-constant types}}
-  llzk.global const @g : !llzk.struct<@Hello>
+  // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
+  llzk.global @g : !llzk.tvar<@X>
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except struct and non-constant types}}
-  llzk.global const @g : !llzk.tvar<@X>
+  // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
+  llzk.global @g : i64
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except struct and non-constant types}}
-  llzk.global const @g : i64
+  // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
+  llzk.global @g : !llzk.array<@b x i1>
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except struct and non-constant types}}
-  llzk.global const @g : !llzk.array<@b x i1>
+  // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
+  llzk.global @g : !llzk.array<affine_map<(i)->(i)> x i1>
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except struct and non-constant types}}
-  llzk.global const @g : !llzk.array<affine_map<(i)->(i)> x i1>
+  // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
+  llzk.global @g : !llzk.struct<@Component01<[affine_map<(i)->(i)>]>>
+  llzk.struct @Component01<[@N]> {
+    func @compute() -> !llzk.struct<@Component01<[@N]>> {
+      %self = new_struct : !llzk.struct<@Component01<[@N]>>
+      return %self : !llzk.struct<@Component01<[@N]>>
+    }
+    func @constrain(%self: !llzk.struct<@Component01<[@N]>>)  { return }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
+  llzk.global @g : !llzk.struct<@Component01<[@any_symbol_here_is_illegal]>>
+  llzk.struct @Component01<[@N]> {
+    func @compute() -> !llzk.struct<@Component01<[@N]>> {
+      %self = new_struct : !llzk.struct<@Component01<[@N]>>
+      return %self : !llzk.struct<@Component01<[@N]>>
+    }
+    func @constrain(%self: !llzk.struct<@Component01<[@N]>>)  { return }
+  }
 }
 // -----
 
@@ -201,11 +220,11 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.global const @N : index = 3 // expected-note {{symbol already defined here}}
   // expected-error@+1 {{'llzk.struct' op parameter name "@N" conflicts with an existing symbol}}
-  llzk.struct @Component01A<[@N]> {
-    func @compute() -> !llzk.struct<@Component01A<[@N]>> {
-      %self = new_struct : !llzk.struct<@Component01A<[@N]>>
-      return %self : !llzk.struct<@Component01A<[@N]>>
+  llzk.struct @Component02<[@N]> {
+    func @compute() -> !llzk.struct<@Component02<[@N]>> {
+      %self = new_struct : !llzk.struct<@Component02<[@N]>>
+      return %self : !llzk.struct<@Component02<[@N]>>
     }
-    func @constrain(%self: !llzk.struct<@Component01A<[@N]>>)  { return }
+    func @constrain(%self: !llzk.struct<@Component02<[@N]>>)  { return }
   }
 }

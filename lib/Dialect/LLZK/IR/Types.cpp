@@ -347,9 +347,7 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
 
 bool isValidType(Type type) { return AllowedTypes().isValidTypeImpl(type); }
 
-bool isValidGlobalType(Type type) {
-  return AllowedTypes().noStruct().noVar().isValidTypeImpl(type);
-}
+bool isValidGlobalType(Type type) { return AllowedTypes().noVar().isValidTypeImpl(type); }
 
 bool isValidEmitEqType(Type type) {
   return AllowedTypes().noString().noStruct().isValidTypeImpl(type);
