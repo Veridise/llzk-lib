@@ -34,7 +34,8 @@ def LLZK_FeltConstantOp
 
   let arguments = (ins LLZK_FeltConstAttr:$value);
   let results = (outs LLZK_FeltType:$result);
-  let assemblyFormat = [{ $value attr-dict }];
+  // "``" removes an extra space between the operation name and the value.
+  let assemblyFormat = [{ `` $value attr-dict }];
   let hasFolder = 1;
 }
 
@@ -130,7 +131,7 @@ def LLZK_StructDefOp
       of fields that hold inputs, outputs, intermediate values, and subcomponents
       of the defined component. It also contains a `compute()` function that holds
       the witness generation code for the component and a `constrain()` function
-      that holds that constraint generation code for the component. 
+      that holds that constraint generation code for the component.
 
       Example:
 
@@ -848,7 +849,7 @@ def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
 
     Example:
     ```llzk
-    %0 = llzk.toindex %a 
+    %0 = llzk.toindex %a
     %1 = llzk.readarr %b[%0]
     ```
   }];
@@ -877,7 +878,7 @@ def LLZK_ApplyMapOp : LLZK_Op<"applymap", [Pure]> {
     ...
     %1 = llzk.applymap(%s, %t) #map10
     ```
-  
+
     Inline example:
     ```llzk
     %2 = llzk.applymap(%42)[%n] affine_map<(i)[s0] -> (i+s0)>
