@@ -16,13 +16,13 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK-LABEL:   llzk.struct @ComponentA {
-// CHECK:           func @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
-// CHECK:             %[[VAL_1:.*]] = new_struct : <@ComponentA>
-// CHECK:             %[[VAL_2:.*]] = constfelt 1
-// CHECK:             return %[[VAL_1]] : !llzk.struct<@ComponentA>
-// CHECK:           }
-// CHECK:           func @constrain(%[[VAL_3:.*]]: !llzk.struct<@ComponentA>, %[[VAL_4:.*]]: !llzk.felt) {
-// CHECK:             return
-// CHECK:           }
-// CHECK:         }
+// CHECK-LABEL: llzk.struct @ComponentA {
+// CHECK-NEXT:     func @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
+// CHECK-NEXT:       %[[VAL_1:.*]] = new_struct : <@ComponentA>
+// CHECK-NEXT:       %[[VAL_2:.*]] = constfelt 1
+// CHECK-NEXT:       return %[[VAL_1]] : !llzk.struct<@ComponentA>
+// CHECK-NEXT:     }
+// CHECK-NEXT:     func @constrain(%[[VAL_3:.*]]: !llzk.struct<@ComponentA>, %[[VAL_4:.*]]: !llzk.felt) {
+// CHECK-NEXT:       return
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
