@@ -6,7 +6,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
     func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>
-      %1 = constfelt     1 // extra spaces are intentional, testing the printer/parser
+      %1 = constfelt     1 // extra spaces are intentional
       return %self : !llzk.struct<@ComponentA>
     }
 

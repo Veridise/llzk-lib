@@ -39,10 +39,6 @@ def LLZK_FeltConstAttr
 
   let parameters = (ins APIntParameter<"The felt constant value">:$value);
 
-  // While [{ `` $value }]; removes an extra space from the assembly format, it will
-  // break the handling of the bytecode (as it turns, e.g., #llzk.constfelt 1
-  // into #llzk.constfelt1, so MLIR looks for an attribute called "constfelt1"
-  // unsuccessfully). We instead remove the extra space in FeltConstantOp.
   let assemblyFormat = [{ $value }];
 
   let extraClassDeclaration = [{

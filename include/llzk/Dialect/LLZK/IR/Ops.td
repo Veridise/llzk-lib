@@ -34,8 +34,7 @@ def LLZK_FeltConstantOp
 
   let arguments = (ins LLZK_FeltConstAttr:$value);
   let results = (outs LLZK_FeltType:$result);
-  // "``" removes an extra space between the operation name and the value.
-  let assemblyFormat = [{ `` $value attr-dict }];
+  let assemblyFormat = [{ $value attr-dict }];
   let hasFolder = 1;
 }
 
