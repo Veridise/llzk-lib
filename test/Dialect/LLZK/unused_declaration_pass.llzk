@@ -18,15 +18,15 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-LABEL: module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT: }
 
-// RELAX-LABEL:   llzk.struct @Component {
-// RELAX:           func @compute(%[[VAL_0:.*]]: !llzk.array<3 x !llzk.felt>) -> !llzk.struct<@Component> {
-// RELAX:             %[[VAL_1:.*]] = new_struct : <@Component>
-// RELAX:             return %[[VAL_1]] : !llzk.struct<@Component>
-// RELAX:           }
-// RELAX:           func @constrain(%[[VAL_2:.*]]: !llzk.struct<@Component>, %[[VAL_3:.*]]: !llzk.array<3 x !llzk.felt>) {
-// RELAX:             return
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: llzk.struct @Component {
+// RELAX-NEXT:    func @compute(%[[VAL_0:.*]]: !llzk.array<3 x !llzk.felt>) -> !llzk.struct<@Component> {
+// RELAX-NEXT:      %[[VAL_1:.*]] = new_struct : <@Component>
+// RELAX-NEXT:      return %[[VAL_1]] : !llzk.struct<@Component>
+// RELAX-NEXT:    }
+// RELAX-NEXT:    func @constrain(%[[VAL_2:.*]]: !llzk.struct<@Component>, %[[VAL_3:.*]]: !llzk.array<3 x !llzk.felt>) {
+// RELAX-NEXT:      return
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
 // -----
 
@@ -81,67 +81,67 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// STRICT-LABEL:   llzk.struct @C {
-// STRICT:           func @compute() -> !llzk.struct<@C> {
-// STRICT:             %[[VAL_0:.*]] = new_struct : <@C>
-// STRICT:             return %[[VAL_0]] : !llzk.struct<@C>
-// STRICT:           }
-// STRICT:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@C>) {
-// STRICT:             return
-// STRICT:           }
-// STRICT:         }
+// STRICT-LABEL: llzk.struct @C {
+// STRICT-NEXT:    func @compute() -> !llzk.struct<@C> {
+// STRICT-NEXT:      %[[VAL_0:.*]] = new_struct : <@C>
+// STRICT-NEXT:      return %[[VAL_0]] : !llzk.struct<@C>
+// STRICT-NEXT:    }
+// STRICT-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@C>) {
+// STRICT-NEXT:      return
+// STRICT-NEXT:    }
+// STRICT-NEXT:  }
 
-// STRICT-LABEL:   llzk.struct @Main {
-// STRICT:           field @c : !llzk.struct<@C> {llzk.pub}
-// STRICT:           func @compute() -> !llzk.struct<@Main> {
-// STRICT:             %[[VAL_0:.*]] = new_struct : <@Main>
-// STRICT:             return %[[VAL_0]] : !llzk.struct<@Main>
-// STRICT:           }
-// STRICT:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
-// STRICT:             return
-// STRICT:           }
-// STRICT:         }
+// STRICT-LABEL: llzk.struct @Main {
+// STRICT-NEXT:    field @c : !llzk.struct<@C> {llzk.pub}
+// STRICT-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// STRICT-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
+// STRICT-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// STRICT-NEXT:    }
+// STRICT-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
+// STRICT-NEXT:      return
+// STRICT-NEXT:    }
+// STRICT-NEXT:  }
 
-// RELAX-LABEL:   llzk.struct @A {
-// RELAX:           func @compute() -> !llzk.struct<@A> {
-// RELAX:             %[[VAL_0:.*]] = new_struct : <@A>
-// RELAX:             return %[[VAL_0]] : !llzk.struct<@A>
-// RELAX:           }
-// RELAX:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@A>) {
-// RELAX:             return
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: llzk.struct @A {
+// RELAX-NEXT:    func @compute() -> !llzk.struct<@A> {
+// RELAX-NEXT:      %[[VAL_0:.*]] = new_struct : <@A>
+// RELAX-NEXT:      return %[[VAL_0]] : !llzk.struct<@A>
+// RELAX-NEXT:    }
+// RELAX-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@A>) {
+// RELAX-NEXT:      return
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
-// RELAX-LABEL:   llzk.struct @B {
-// RELAX:           func @compute() -> !llzk.struct<@B> {
-// RELAX:             %[[VAL_0:.*]] = new_struct : <@B>
-// RELAX:             return %[[VAL_0]] : !llzk.struct<@B>
-// RELAX:           }
-// RELAX:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@B>) {
-// RELAX:             return
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: llzk.struct @B {
+// RELAX-NEXT:    func @compute() -> !llzk.struct<@B> {
+// RELAX-NEXT:      %[[VAL_0:.*]] = new_struct : <@B>
+// RELAX-NEXT:      return %[[VAL_0]] : !llzk.struct<@B>
+// RELAX-NEXT:    }
+// RELAX-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@B>) {
+// RELAX-NEXT:      return
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
-// RELAX-LABEL:   llzk.struct @C {
-// RELAX:           func @compute() -> !llzk.struct<@C> {
-// RELAX:             %[[VAL_0:.*]] = new_struct : <@C>
-// RELAX:             return %[[VAL_0]] : !llzk.struct<@C>
-// RELAX:           }
-// RELAX:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@C>) {
-// RELAX:             return
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: llzk.struct @C {
+// RELAX-NEXT:    func @compute() -> !llzk.struct<@C> {
+// RELAX-NEXT:      %[[VAL_0:.*]] = new_struct : <@C>
+// RELAX-NEXT:      return %[[VAL_0]] : !llzk.struct<@C>
+// RELAX-NEXT:    }
+// RELAX-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@C>) {
+// RELAX-NEXT:      return
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
-// RELAX-LABEL:   llzk.struct @Main {
-// RELAX:           field @c : !llzk.struct<@C> {llzk.pub}
-// RELAX:           func @compute() -> !llzk.struct<@Main> {
-// RELAX:             %[[VAL_0:.*]] = new_struct : <@Main>
-// RELAX:             return %[[VAL_0]] : !llzk.struct<@Main>
-// RELAX:           }
-// RELAX:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
-// RELAX:             return
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: llzk.struct @Main {
+// RELAX-NEXT:    field @c : !llzk.struct<@C> {llzk.pub}
+// RELAX-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// RELAX-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
+// RELAX-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// RELAX-NEXT:    }
+// RELAX-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
+// RELAX-NEXT:      return
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
 // -----
 
@@ -174,47 +174,47 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// STRICT-LABEL:   llzk.struct @VarArray<[@N, @T]> {
-// STRICT:           func @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
-// STRICT:             %[[VAL_1:.*]] = new_struct : <@VarArray<[@N, @T]>>
-// STRICT:             return %[[VAL_1]] : !llzk.struct<@VarArray<[@N, @T]>>
-// STRICT:           }
-// STRICT:           func @constrain(%[[VAL_2:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) {
-// STRICT:             return
-// STRICT:           }
-// STRICT:         }
+// STRICT-LABEL: llzk.struct @VarArray<[@N, @T]> {
+// STRICT-NEXT:    func @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
+// STRICT-NEXT:      %[[VAL_1:.*]] = new_struct : <@VarArray<[@N, @T]>>
+// STRICT-NEXT:      return %[[VAL_1]] : !llzk.struct<@VarArray<[@N, @T]>>
+// STRICT-NEXT:    }
+// STRICT-NEXT:    func @constrain(%[[VAL_2:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) {
+// STRICT-NEXT:      return
+// STRICT-NEXT:    }
+// STRICT-NEXT:  }
 
-// STRICT-LABEL:   llzk.struct @Main {
-// STRICT:           field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
-// STRICT:           func @compute() -> !llzk.struct<@Main> {
-// STRICT:             %[[VAL_0:.*]] = new_struct : <@Main>
-// STRICT:             return %[[VAL_0]] : !llzk.struct<@Main>
-// STRICT:           }
-// STRICT:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
-// STRICT:             return
-// STRICT:           }
-// STRICT:         }
+// STRICT-LABEL: llzk.struct @Main {
+// STRICT-NEXT:    field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
+// STRICT-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// STRICT-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
+// STRICT-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// STRICT-NEXT:    }
+// STRICT-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
+// STRICT-NEXT:      return
+// STRICT-NEXT:    }
+// STRICT-NEXT:  }
 
-// RELAX-LABEL:   llzk.struct @VarArray<[@N, @T]> {
-// RELAX:           func @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
-// RELAX:             %[[VAL_1:.*]] = new_struct : <@VarArray<[@N, @T]>>
-// RELAX:             return %[[VAL_1]] : !llzk.struct<@VarArray<[@N, @T]>>
-// RELAX:           }
-// RELAX:           func @constrain(%[[VAL_2:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) {
-// RELAX:             return
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: llzk.struct @VarArray<[@N, @T]> {
+// RELAX-NEXT:    func @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
+// RELAX-NEXT:      %[[VAL_1:.*]] = new_struct : <@VarArray<[@N, @T]>>
+// RELAX-NEXT:      return %[[VAL_1]] : !llzk.struct<@VarArray<[@N, @T]>>
+// RELAX-NEXT:    }
+// RELAX-NEXT:    func @constrain(%[[VAL_2:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) {
+// RELAX-NEXT:      return
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
-// RELAX-LABEL:   llzk.struct @Main {
-// RELAX:           field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
-// RELAX:           func @compute() -> !llzk.struct<@Main> {
-// RELAX:             %[[VAL_0:.*]] = new_struct : <@Main>
-// RELAX:             return %[[VAL_0]] : !llzk.struct<@Main>
-// RELAX:           }
-// RELAX:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
-// RELAX:             return
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: llzk.struct @Main {
+// RELAX-NEXT:    field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
+// RELAX-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// RELAX-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
+// RELAX-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// RELAX-NEXT:    }
+// RELAX-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
+// RELAX-NEXT:      return
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
 // -----
 
@@ -273,93 +273,93 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// STRICT-LABEL:   module @std {
-// STRICT:           llzk.struct @Wrapper<[@T]> {
-// STRICT:             field @val : !llzk.tvar<@T>
-// STRICT:             func @compute(%[[VAL_0:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@std::@Wrapper<[@T]>> {
-// STRICT:               %[[VAL_1:.*]] = new_struct : <@std::@Wrapper<[@T]>>
-// STRICT:               writef %[[VAL_1]][@val] = %[[VAL_0]] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-// STRICT:               return %[[VAL_1]] : !llzk.struct<@std::@Wrapper<[@T]>>
-// STRICT:             }
-// STRICT:             func @constrain(%[[VAL_2:.*]]: !llzk.struct<@std::@Wrapper<[@T]>>, %[[VAL_3:.*]]: !llzk.tvar<@T>) {
-// STRICT:               %[[VAL_4:.*]] = readf %[[VAL_2]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-// STRICT:               emit_eq %[[VAL_4]], %[[VAL_3]] : !llzk.tvar<@T>, !llzk.tvar<@T>
-// STRICT:               return
-// STRICT:             }
-// STRICT:           }
-// STRICT:         }
+// STRICT-LABEL: module @std {
+// STRICT-NEXT:    llzk.struct @Wrapper<[@T]> {
+// STRICT-NEXT:      field @val : !llzk.tvar<@T>
+// STRICT-NEXT:      func @compute(%[[VAL_0:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@std::@Wrapper<[@T]>> {
+// STRICT-NEXT:        %[[VAL_1:.*]] = new_struct : <@std::@Wrapper<[@T]>>
+// STRICT-NEXT:        writef %[[VAL_1]][@val] = %[[VAL_0]] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
+// STRICT-NEXT:        return %[[VAL_1]] : !llzk.struct<@std::@Wrapper<[@T]>>
+// STRICT-NEXT:      }
+// STRICT-NEXT:      func @constrain(%[[VAL_2:.*]]: !llzk.struct<@std::@Wrapper<[@T]>>, %[[VAL_3:.*]]: !llzk.tvar<@T>) {
+// STRICT-NEXT:        %[[VAL_4:.*]] = readf %[[VAL_2]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
+// STRICT-NEXT:        emit_eq %[[VAL_4]], %[[VAL_3]] : !llzk.tvar<@T>, !llzk.tvar<@T>
+// STRICT-NEXT:        return
+// STRICT-NEXT:      }
+// STRICT-NEXT:    }
+// STRICT-NEXT:  }
 
-// STRICT-LABEL:   llzk.struct @VarArray<[@N, @T]> {
-// STRICT:           field @valUsed : !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
-// STRICT:           func @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@VarArray<[@N, @T]>> {
-// STRICT:             %[[VAL_2:.*]] = new_struct : <@VarArray<[@N, @T]>>
-// STRICT:             writef %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
-// STRICT:             return %[[VAL_2]] : !llzk.struct<@VarArray<[@N, @T]>>
-// STRICT:           }
-// STRICT:           func @constrain(%[[VAL_3:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !llzk.tvar<@T>) {
-// STRICT:             %[[VAL_6:.*]] = readf %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
-// STRICT:             %[[VAL_7:.*]] = arith.constant 0 : index
-// STRICT:             %[[VAL_8:.*]] = readarr %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
-// STRICT:             %[[VAL_9:.*]] = readf %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-// STRICT:             emit_eq %[[VAL_5]], %[[VAL_9]] : !llzk.tvar<@T>, !llzk.tvar<@T>
-// STRICT:             return
-// STRICT:           }
-// STRICT:         }
+// STRICT-LABEL: llzk.struct @VarArray<[@N, @T]> {
+// STRICT-NEXT:    field @valUsed : !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// STRICT-NEXT:    func @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@VarArray<[@N, @T]>> {
+// STRICT-NEXT:      %[[VAL_2:.*]] = new_struct : <@VarArray<[@N, @T]>>
+// STRICT-NEXT:      writef %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// STRICT-NEXT:      return %[[VAL_2]] : !llzk.struct<@VarArray<[@N, @T]>>
+// STRICT-NEXT:    }
+// STRICT-NEXT:    func @constrain(%[[VAL_3:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !llzk.tvar<@T>) {
+// STRICT-NEXT:      %[[VAL_6:.*]] = readf %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// STRICT-NEXT:      %[[VAL_7:.*]] = arith.constant 0 : index
+// STRICT-NEXT:      %[[VAL_8:.*]] = readarr %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
+// STRICT-NEXT:      %[[VAL_9:.*]] = readf %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
+// STRICT-NEXT:      emit_eq %[[VAL_5]], %[[VAL_9]] : !llzk.tvar<@T>, !llzk.tvar<@T>
+// STRICT-NEXT:      return
+// STRICT-NEXT:    }
+// STRICT-NEXT:  }
 
-// STRICT-LABEL:   llzk.struct @Main {
-// STRICT:           field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
-// STRICT:           func @compute() -> !llzk.struct<@Main> {
-// STRICT:             %[[VAL_0:.*]] = new_struct : <@Main>
-// STRICT:             return %[[VAL_0]] : !llzk.struct<@Main>
-// STRICT:           }
-// STRICT:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
-// STRICT:             return
-// STRICT:           }
-// STRICT:         }
+// STRICT-LABEL: llzk.struct @Main {
+// STRICT-NEXT:    field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
+// STRICT-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// STRICT-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
+// STRICT-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// STRICT-NEXT:    }
+// STRICT-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
+// STRICT-NEXT:      return
+// STRICT-NEXT:    }
+// STRICT-NEXT:  }
 
-// RELAX-LABEL:   module @std {
-// RELAX:           llzk.struct @Wrapper<[@T]> {
-// RELAX:             field @val : !llzk.tvar<@T>
-// RELAX:             func @compute(%[[VAL_0:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@std::@Wrapper<[@T]>> {
-// RELAX:               %[[VAL_1:.*]] = new_struct : <@std::@Wrapper<[@T]>>
-// RELAX:               writef %[[VAL_1]][@val] = %[[VAL_0]] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-// RELAX:               return %[[VAL_1]] : !llzk.struct<@std::@Wrapper<[@T]>>
-// RELAX:             }
-// RELAX:             func @constrain(%[[VAL_2:.*]]: !llzk.struct<@std::@Wrapper<[@T]>>, %[[VAL_3:.*]]: !llzk.tvar<@T>) {
-// RELAX:               %[[VAL_4:.*]] = readf %[[VAL_2]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-// RELAX:               emit_eq %[[VAL_4]], %[[VAL_3]] : !llzk.tvar<@T>, !llzk.tvar<@T>
-// RELAX:               return
-// RELAX:             }
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: module @std {
+// RELAX-NEXT:    llzk.struct @Wrapper<[@T]> {
+// RELAX-NEXT:      field @val : !llzk.tvar<@T>
+// RELAX-NEXT:      func @compute(%[[VAL_0:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@std::@Wrapper<[@T]>> {
+// RELAX-NEXT:        %[[VAL_1:.*]] = new_struct : <@std::@Wrapper<[@T]>>
+// RELAX-NEXT:        writef %[[VAL_1]][@val] = %[[VAL_0]] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
+// RELAX-NEXT:        return %[[VAL_1]] : !llzk.struct<@std::@Wrapper<[@T]>>
+// RELAX-NEXT:      }
+// RELAX-NEXT:      func @constrain(%[[VAL_2:.*]]: !llzk.struct<@std::@Wrapper<[@T]>>, %[[VAL_3:.*]]: !llzk.tvar<@T>) {
+// RELAX-NEXT:        %[[VAL_4:.*]] = readf %[[VAL_2]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
+// RELAX-NEXT:        emit_eq %[[VAL_4]], %[[VAL_3]] : !llzk.tvar<@T>, !llzk.tvar<@T>
+// RELAX-NEXT:        return
+// RELAX-NEXT:      }
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
-// RELAX-LABEL:   llzk.struct @VarArray<[@N, @T]> {
-// RELAX:           field @valUsed : !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
-// RELAX:           func @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@VarArray<[@N, @T]>> {
-// RELAX:             %[[VAL_2:.*]] = new_struct : <@VarArray<[@N, @T]>>
-// RELAX:             writef %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
-// RELAX:             return %[[VAL_2]] : !llzk.struct<@VarArray<[@N, @T]>>
-// RELAX:           }
-// RELAX:           func @constrain(%[[VAL_3:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !llzk.tvar<@T>) {
-// RELAX:             %[[VAL_6:.*]] = readf %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
-// RELAX:             %[[VAL_7:.*]] = arith.constant 0 : index
-// RELAX:             %[[VAL_8:.*]] = readarr %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
-// RELAX:             %[[VAL_9:.*]] = readf %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-// RELAX:             emit_eq %[[VAL_5]], %[[VAL_9]] : !llzk.tvar<@T>, !llzk.tvar<@T>
-// RELAX:             return
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: llzk.struct @VarArray<[@N, @T]> {
+// RELAX-NEXT:    field @valUsed : !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// RELAX-NEXT:    func @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@VarArray<[@N, @T]>> {
+// RELAX-NEXT:      %[[VAL_2:.*]] = new_struct : <@VarArray<[@N, @T]>>
+// RELAX-NEXT:      writef %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// RELAX-NEXT:      return %[[VAL_2]] : !llzk.struct<@VarArray<[@N, @T]>>
+// RELAX-NEXT:    }
+// RELAX-NEXT:    func @constrain(%[[VAL_3:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !llzk.tvar<@T>) {
+// RELAX-NEXT:      %[[VAL_6:.*]] = readf %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// RELAX-NEXT:      %[[VAL_7:.*]] = arith.constant 0 : index
+// RELAX-NEXT:      %[[VAL_8:.*]] = readarr %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
+// RELAX-NEXT:      %[[VAL_9:.*]] = readf %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
+// RELAX-NEXT:      emit_eq %[[VAL_5]], %[[VAL_9]] : !llzk.tvar<@T>, !llzk.tvar<@T>
+// RELAX-NEXT:      return
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
-// RELAX-LABEL:   llzk.struct @Main {
-// RELAX:           field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
-// RELAX:           func @compute() -> !llzk.struct<@Main> {
-// RELAX:             %[[VAL_0:.*]] = new_struct : <@Main>
-// RELAX:             return %[[VAL_0]] : !llzk.struct<@Main>
-// RELAX:           }
-// RELAX:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
-// RELAX:             return
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: llzk.struct @Main {
+// RELAX-NEXT:    field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
+// RELAX-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// RELAX-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
+// RELAX-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// RELAX-NEXT:    }
+// RELAX-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
+// RELAX-NEXT:      return
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
 // -----
 
@@ -412,63 +412,63 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// STRICT-LABEL:   module @nested {
-// STRICT:         }
+// STRICT-LABEL: module @nested {
+// STRICT-NEXT:  }
 
-// STRICT-LABEL:   module @user {
-// STRICT:         }
+// STRICT-LABEL: module @user {
+// STRICT-NEXT:  }
 
-// STRICT-LABEL:   llzk.struct @Main {
-// STRICT:           func @compute() -> !llzk.struct<@Main> {
-// STRICT:             %[[VAL_0:.*]] = new_struct : <@Main>
-// STRICT:             return %[[VAL_0]] : !llzk.struct<@Main>
-// STRICT:           }
-// STRICT:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
-// STRICT:             return
-// STRICT:           }
-// STRICT:         }
+// STRICT-LABEL: llzk.struct @Main {
+// STRICT-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// STRICT-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
+// STRICT-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// STRICT-NEXT:    }
+// STRICT-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
+// STRICT-NEXT:      return
+// STRICT-NEXT:    }
+// STRICT-NEXT:  }
 
-// RELAX-LABEL:   module @nested {
-// RELAX:           llzk.struct @Wrapper {
-// RELAX:             field @val : !llzk.felt {llzk.pub}
-// RELAX:             func @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
-// RELAX:               %[[VAL_1:.*]] = new_struct : <@nested::@Wrapper>
-// RELAX:               writef %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !llzk.felt
-// RELAX:               return %[[VAL_1]] : !llzk.struct<@nested::@Wrapper>
-// RELAX:             }
-// RELAX:             func @constrain(%[[VAL_2:.*]]: !llzk.struct<@nested::@Wrapper>, %[[VAL_3:.*]]: !llzk.felt) {
-// RELAX:               return
-// RELAX:             }
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: module @nested {
+// RELAX-NEXT:    llzk.struct @Wrapper {
+// RELAX-NEXT:      field @val : !llzk.felt {llzk.pub}
+// RELAX-NEXT:      func @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
+// RELAX-NEXT:        %[[VAL_1:.*]] = new_struct : <@nested::@Wrapper>
+// RELAX-NEXT:        writef %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !llzk.felt
+// RELAX-NEXT:        return %[[VAL_1]] : !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:      }
+// RELAX-NEXT:      func @constrain(%[[VAL_2:.*]]: !llzk.struct<@nested::@Wrapper>, %[[VAL_3:.*]]: !llzk.felt) {
+// RELAX-NEXT:        return
+// RELAX-NEXT:      }
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
-// RELAX-LABEL:   module @user {
-// RELAX:           llzk.struct @Unwrapper {
-// RELAX:             field @comp : !llzk.struct<@nested::@Wrapper>
-// RELAX:             func @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
-// RELAX:               %[[VAL_1:.*]] = new_struct : <@user::@Unwrapper>
-// RELAX:               %[[VAL_2:.*]] = call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
-// RELAX:               writef %[[VAL_1]][@comp] = %[[VAL_2]] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
-// RELAX:               return %[[VAL_1]] : !llzk.struct<@user::@Unwrapper>
-// RELAX:             }
-// RELAX:             func @constrain(%[[VAL_3:.*]]: !llzk.struct<@user::@Unwrapper>, %[[VAL_4:.*]]: !llzk.felt) {
-// RELAX:               %[[VAL_5:.*]] = readf %[[VAL_3]][@comp] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
-// RELAX:               %[[VAL_6:.*]] = readf %[[VAL_5]][@val] : <@nested::@Wrapper>, !llzk.felt
-// RELAX:               emit_eq %[[VAL_6]], %[[VAL_4]] : !llzk.felt, !llzk.felt
-// RELAX:               return
-// RELAX:             }
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: module @user {
+// RELAX-NEXT:    llzk.struct @Unwrapper {
+// RELAX-NEXT:      field @comp : !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:      func @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
+// RELAX-NEXT:        %[[VAL_1:.*]] = new_struct : <@user::@Unwrapper>
+// RELAX-NEXT:        %[[VAL_2:.*]] = call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:        writef %[[VAL_1]][@comp] = %[[VAL_2]] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:        return %[[VAL_1]] : !llzk.struct<@user::@Unwrapper>
+// RELAX-NEXT:      }
+// RELAX-NEXT:      func @constrain(%[[VAL_3:.*]]: !llzk.struct<@user::@Unwrapper>, %[[VAL_4:.*]]: !llzk.felt) {
+// RELAX-NEXT:        %[[VAL_5:.*]] = readf %[[VAL_3]][@comp] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:        %[[VAL_6:.*]] = readf %[[VAL_5]][@val] : <@nested::@Wrapper>, !llzk.felt
+// RELAX-NEXT:        emit_eq %[[VAL_6]], %[[VAL_4]] : !llzk.felt, !llzk.felt
+// RELAX-NEXT:        return
+// RELAX-NEXT:      }
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
-// RELAX-LABEL:   llzk.struct @Main {
-// RELAX:           func @compute() -> !llzk.struct<@Main> {
-// RELAX:             %[[VAL_0:.*]] = new_struct : <@Main>
-// RELAX:             return %[[VAL_0]] : !llzk.struct<@Main>
-// RELAX:           }
-// RELAX:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
-// RELAX:             return
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: llzk.struct @Main {
+// RELAX-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// RELAX-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
+// RELAX-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// RELAX-NEXT:    }
+// RELAX-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
+// RELAX-NEXT:      return
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
 // -----
 
@@ -520,60 +520,60 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// STRICT-LABEL:   module @nested {
-// STRICT:         }
+// STRICT-LABEL: module @nested {
+// STRICT-NEXT:  }
 
-// STRICT-LABEL:   module @user {
-// STRICT:         }
+// STRICT-LABEL: module @user {
+// STRICT-NEXT:  }
 
-// STRICT-LABEL:   llzk.struct @Main {
-// STRICT:           func @compute() -> !llzk.struct<@Main> {
-// STRICT:             %[[VAL_0:.*]] = new_struct : <@Main>
-// STRICT:             return %[[VAL_0]] : !llzk.struct<@Main>
-// STRICT:           }
-// STRICT:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
-// STRICT:             return
-// STRICT:           }
-// STRICT:         }
+// STRICT-LABEL: llzk.struct @Main {
+// STRICT-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// STRICT-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
+// STRICT-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// STRICT-NEXT:    }
+// STRICT-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
+// STRICT-NEXT:      return
+// STRICT-NEXT:    }
+// STRICT-NEXT:  }
 
-// RELAX-LABEL:   module @nested {
-// RELAX:           llzk.struct @Wrapper {
-// RELAX:             field @val : !llzk.felt {llzk.pub}
-// RELAX:             func @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
-// RELAX:               %[[VAL_1:.*]] = new_struct : <@nested::@Wrapper>
-// RELAX:               writef %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !llzk.felt
-// RELAX:               return %[[VAL_1]] : !llzk.struct<@nested::@Wrapper>
-// RELAX:             }
-// RELAX:             func @constrain(%[[VAL_2:.*]]: !llzk.struct<@nested::@Wrapper>, %[[VAL_3:.*]]: !llzk.felt) {
-// RELAX:               return
-// RELAX:             }
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: module @nested {
+// RELAX-NEXT:    llzk.struct @Wrapper {
+// RELAX-NEXT:      field @val : !llzk.felt {llzk.pub}
+// RELAX-NEXT:      func @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
+// RELAX-NEXT:        %[[VAL_1:.*]] = new_struct : <@nested::@Wrapper>
+// RELAX-NEXT:        writef %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !llzk.felt
+// RELAX-NEXT:        return %[[VAL_1]] : !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:      }
+// RELAX-NEXT:      func @constrain(%[[VAL_2:.*]]: !llzk.struct<@nested::@Wrapper>, %[[VAL_3:.*]]: !llzk.felt) {
+// RELAX-NEXT:        return
+// RELAX-NEXT:      }
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
-// RELAX-LABEL:   module @user {
-// RELAX:           llzk.struct @Unwrapper {
-// RELAX:             field @val : !llzk.struct<@nested::@Wrapper>
-// RELAX:             func @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
-// RELAX:               %[[VAL_1:.*]] = new_struct : <@user::@Unwrapper>
-// RELAX:               %[[VAL_2:.*]] = call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
-// RELAX:               writef %[[VAL_1]][@val] = %[[VAL_2]] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
-// RELAX:               return %[[VAL_1]] : !llzk.struct<@user::@Unwrapper>
-// RELAX:             }
-// RELAX:             func @constrain(%[[VAL_3:.*]]: !llzk.struct<@user::@Unwrapper>, %[[VAL_4:.*]]: !llzk.felt) {
-// RELAX:               %[[VAL_5:.*]] = readf %[[VAL_3]][@val] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
-// RELAX:               %[[VAL_6:.*]] = readf %[[VAL_5]][@val] : <@nested::@Wrapper>, !llzk.felt
-// RELAX:               emit_eq %[[VAL_6]], %[[VAL_4]] : !llzk.felt, !llzk.felt
-// RELAX:               return
-// RELAX:             }
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: module @user {
+// RELAX-NEXT:    llzk.struct @Unwrapper {
+// RELAX-NEXT:      field @val : !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:      func @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
+// RELAX-NEXT:        %[[VAL_1:.*]] = new_struct : <@user::@Unwrapper>
+// RELAX-NEXT:        %[[VAL_2:.*]] = call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:        writef %[[VAL_1]][@val] = %[[VAL_2]] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:        return %[[VAL_1]] : !llzk.struct<@user::@Unwrapper>
+// RELAX-NEXT:      }
+// RELAX-NEXT:      func @constrain(%[[VAL_3:.*]]: !llzk.struct<@user::@Unwrapper>, %[[VAL_4:.*]]: !llzk.felt) {
+// RELAX-NEXT:        %[[VAL_5:.*]] = readf %[[VAL_3]][@val] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:        %[[VAL_6:.*]] = readf %[[VAL_5]][@val] : <@nested::@Wrapper>, !llzk.felt
+// RELAX-NEXT:        emit_eq %[[VAL_6]], %[[VAL_4]] : !llzk.felt, !llzk.felt
+// RELAX-NEXT:        return
+// RELAX-NEXT:      }
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
 
-// RELAX-LABEL:   llzk.struct @Main {
-// RELAX:           func @compute() -> !llzk.struct<@Main> {
-// RELAX:             %[[VAL_0:.*]] = new_struct : <@Main>
-// RELAX:             return %[[VAL_0]] : !llzk.struct<@Main>
-// RELAX:           }
-// RELAX:           func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
-// RELAX:             return
-// RELAX:           }
-// RELAX:         }
+// RELAX-LABEL: llzk.struct @Main {
+// RELAX-NEXT:    func @compute() -> !llzk.struct<@Main> {
+// RELAX-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
+// RELAX-NEXT:      return %[[VAL_0]] : !llzk.struct<@Main>
+// RELAX-NEXT:    }
+// RELAX-NEXT:    func @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
+// RELAX-NEXT:      return
+// RELAX-NEXT:    }
+// RELAX-NEXT:  }
