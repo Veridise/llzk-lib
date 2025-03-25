@@ -217,8 +217,8 @@ def LLZK_StructDefOp
 }
 
 def LLZK_ConstReadOp
-    : LLZK_Op<
-          "read_const", [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+    : LLZK_Op<"read_const", [DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                             Pure]> {
   let summary = "read value of a struct parameter";
   let description = [{
     This operation reads the value from the named constant parameter of
