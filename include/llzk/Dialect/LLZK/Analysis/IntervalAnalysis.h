@@ -696,6 +696,14 @@ public:
 
   void print(mlir::raw_ostream &os, bool withConstraints = false) const;
 
+  const llvm::MapVector<ConstrainRef, Interval> &getIntervals() const {
+    return constrainFieldRanges;
+  }
+
+  const llvm::SetVector<ExpressionValue> getSolverConstraints() const {
+    return constrainSolverConstraints;
+  }
+
   friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const StructIntervals &si) {
     si.print(os);
     return os;
