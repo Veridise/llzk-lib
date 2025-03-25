@@ -7,8 +7,12 @@
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/IR/Value.h>
 
+#include <llvm/Support/Debug.h>
+
 #include <numeric>
 #include <unordered_set>
+
+#define DEBUG_TYPE "llzk-constrain-ref-lattice"
 
 namespace llzk {
 
@@ -212,6 +216,11 @@ ConstrainRefLatticeValue ConstrainRefLattice::getReturnValue(unsigned i) const {
     return this->getOrDefault(retOp.getOperand(i));
   }
   return ConstrainRefLatticeValue();
+}
+
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const ConstrainRefLattice &lattice) {
+  lattice.print(os);
+  return os;
 }
 
 } // namespace llzk

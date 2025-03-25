@@ -6,9 +6,13 @@
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Support/LLVM.h>
 
+#include <llvm/Support/Debug.h>
+
 #include <concepts>
 #include <type_traits>
 #include <variant>
+
+#define DEBUG_TYPE "llzk-abstract-lattice-value"
 
 namespace llzk::dataflow {
 
@@ -249,3 +253,5 @@ operator<<(mlir::raw_ostream &os, const AbstractLatticeValue<Derived, ScalarTy> 
 }
 
 } // namespace llzk::dataflow
+
+#undef DEBUG_TYPE

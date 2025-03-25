@@ -123,6 +123,8 @@ public:
 
   ConstrainRefLatticeValue getReturnValue(unsigned i) const;
 
+  size_t size() const { return valMap.size(); }
+
   friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLattice &v);
 
 private:

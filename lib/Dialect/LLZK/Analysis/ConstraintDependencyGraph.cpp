@@ -7,8 +7,12 @@
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/IR/Value.h>
 
+#include <llvm/Support/Debug.h>
+
 #include <numeric>
 #include <unordered_set>
+
+#define DEBUG_TYPE "llzk-cdg"
 
 namespace llzk {
 
@@ -18,36 +22,51 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
     mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
     const ConstrainRefLattice &before, ConstrainRefLattice *after
 ) {
+  LLVM_DEBUG(
+      llvm::dbgs() << "ConstrainRefAnalysis::visitCallControlFlowTransfer: " << call << '\n'
+  );
   auto fnOpRes = resolveCallable<FuncOp>(tables, call);
   ensure(succeeded(fnOpRes), "could not resolve called function");
 
-  auto fnOp = fnOpRes->get();
-  if (fnOp.getName() == FUNC_NAME_CONSTRAIN || fnOp.getName() == FUNC_NAME_COMPUTE) {
-    // Do nothing special.
-    join(after, before);
-    return;
-  }
+  LLVM_DEBUG({
+    llvm::dbgs().indent(4) << "parent op is ";
+    if (auto s = call->getParentOfType<StructDefOp>()) {
+      llvm::dbgs() << s.getName();
+    } else if (auto p = call->getParentOfType<FuncOp>()) {
+      llvm::dbgs() << p.getName();
+    } else {
+      llvm::dbgs() << "<UNKNOWN PARENT TYPE>";
+    }
+    llvm::dbgs() << '\n';
+  });
+
   /// `action == CallControlFlowAction::Enter` indicates that:
   ///   - `before` is the state before the call operation;
   ///   - `after` is the state at the beginning of the callee entry block;
-  else if (action == dataflow::CallControlFlowAction::EnterCallee) {
-    // Add all of the argument values to the lattice.
-    auto calledFnRes = resolveCallable<FuncOp>(tables, call);
-    ensure(mlir::succeeded(calledFnRes), "could not resolve function call");
-    auto calledFn = calledFnRes->get();
+  if (action == dataflow::CallControlFlowAction::EnterCallee) {
+    // We skip updating the incoming lattice for function calls,
+    // as ConstrainRefs are relative to the containing function/struct, so we don't need to pollute
+    // the callee with the callers values.
+    // This also avoids a non-convergence scenario, as calling a
+    // function from other contexts can cause the lattice values to oscillate and constantly
+    // change (thus looping infinitely).
 
-    auto updated = after->join(before);
-    for (auto arg : calledFn->getRegion(0).getArguments()) {
-      auto sourceRef = ConstrainRefLattice::getSourceRef(arg);
-      ensure(mlir::succeeded(sourceRef), "failed to get source ref");
-      updated |= after->setValue(arg, sourceRef.value());
-    }
-    propagateIfChanged(after, updated);
+    setToEntryState(after);
   }
   /// `action == CallControlFlowAction::Exit` indicates that:
   ///   - `before` is the state at the end of a callee exit block;
   ///   - `after` is the state after the call operation.
   else if (action == dataflow::CallControlFlowAction::ExitCallee) {
+    // Get the argument values of the lattice by getting the state as it would
+    // have been for the callsite.
+    dataflow::AbstractDenseLattice *beforeCall = nullptr;
+    if (auto *prev = call->getPrevNode()) {
+      beforeCall = getLattice(prev);
+    } else {
+      beforeCall = getLattice(call->getBlock());
+    }
+    ensure(beforeCall, "could not get prior lattice");
+
     // Translate argument values based on the operands given at the call site.
     std::unordered_map<ConstrainRef, ConstrainRefLatticeValue, ConstrainRef::Hash> translation;
     auto funcOpRes = resolveCallable<FuncOp>(tables, call);
@@ -63,7 +82,9 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
       translation[key] = val;
     }
 
-    mlir::ChangeResult updated = after->join(before);
+    // The lattice at the return is the lattice before the call + translated
+    // return values.
+    mlir::ChangeResult updated = after->join(*beforeCall);
     for (unsigned i = 0; i < callOp.getNumResults(); i++) {
       auto retVal = before.getReturnValue(i);
       auto [translatedVal, _] = retVal.translate(translation);
@@ -71,17 +92,24 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
     }
     propagateIfChanged(after, updated);
   }
-  // Note that `setToEntryState` may be a "partial fixpoint" for some
-  // lattices, e.g., lattices that are lists of maps of other lattices will
-  // only set fixpoint for "known" lattices.
+  /// `action == CallControlFlowAction::External` indicates that:
+  ///   - `before` is the state before the call operation.
+  ///   - `after` is the state after the call operation, since there is no callee
+  ///      body to enter into.
   else if (action == mlir::dataflow::CallControlFlowAction::ExternalCallee) {
-    setToEntryState(after);
+    // For external calls, we propagate what information we already have from
+    // before the call to after the call, since the external call won't invalidate
+    // any of that information. It also, conservatively, makes no assumptions about
+    // external calls and their computation, so CDG edges will not be computed over
+    // input arguments to external functions.
+    join(after, before);
   }
 }
 
 void ConstrainRefAnalysis::visitOperation(
     mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
 ) {
+  // LLVM_DEBUG(llvm::dbgs() << "ConstrainRefAnalysis::visitOperation: " << *op << '\n');
   // Collect the references that are made by the operands to `op`.
   ConstrainRefLattice::ValueMap operandVals;
   for (auto &operand : op->getOpOperands()) {
@@ -301,7 +329,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     ensure(mlir::succeeded(res), "could not resolve constrain call");
 
     auto fn = res->get();
-    if (!fn.nameIsConstrain()) {
+    if (!fn.isStructConstrain()) {
       return;
     }
     // Nested

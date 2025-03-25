@@ -561,3 +561,141 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     { %arg0[@a][@$super][@$super], @A<[@N]> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@VoidComponent ConstraintDependencyGraph { }
+
+// -----
+
+// This check ensures that calling the same function from multiple different
+// contexts will converge correctly.
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "Inputs/bits.llzk" as @bits
+}
+
+// CHECK-LABEL: @bits::@Component ConstraintDependencyGraph { }
+// CHECK-NEXT: @bits::@NondetReg ConstraintDependencyGraph { }
+// CHECK-NEXT: @bits::@NondetExtReg ConstraintDependencyGraph { }
+// CHECK-NEXT: @bits::@EqzExt ConstraintDependencyGraph { }
+// CHECK-NEXT: @bits::@Reg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg][@$super], %arg1 }
+// CHECK-NEXT: }
+// COM: ExtReg is unconstrained due to a front-end bug
+// CHECK-NEXT: @bits::@ExtReg ConstraintDependencyGraph { }
+// CHECK-NEXT: @bits::@Div ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reciprocal], %arg2 },
+// CHECK-NEXT:     { %arg0[@reciprocal], <constfelt: 1> },
+// CHECK-NEXT:     { %arg2, <constfelt: 1> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @bits::@Log ConstraintDependencyGraph { }
+// CHECK-NEXT: @bits::@Abort ConstraintDependencyGraph { }
+// CHECK-NEXT: @bits::@Assert ConstraintDependencyGraph { }
+// CHECK-NEXT: @bits::@AssertBit ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <constfelt: 0>, <constfelt: 1> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @bits::@NondetBitReg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg][@$super], <constfelt: 0>, <constfelt: 1> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @bits::@BitReg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg][@$super][@$super], %arg1 },
+// CHECK-NEXT:     { %arg0[@reg][@reg][@$super], <constfelt: 0>, <constfelt: 1> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @bits::@AssertTwit ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <constfelt: 0>, <constfelt: 1>, <constfelt: 2>, <constfelt: 3> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @bits::@BitAnd ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@$temp][@reg][@$super], %arg1, %arg2 }
+// CHECK-NEXT: }
+// CHECK-NEXT: @bits::@BitOr ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@$temp][@reg][@$super], %arg1, %arg2 },
+// CHECK-NEXT:     { %arg0[@$temp][@reg][@$super], <constfelt: 1> },
+// CHECK-NEXT:     { %arg1, <constfelt: 1> },
+// CHECK-NEXT:     { %arg2, <constfelt: 1> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @bits::@NondetTwitReg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg][@$super], <constfelt: 0>, <constfelt: 1>, <constfelt: 2>, <constfelt: 3> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @bits::@NondetFakeTwitReg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg1][@reg][@$super], <constfelt: 0>, <constfelt: 1> },
+// CHECK-NEXT:     { %arg0[@$temp_1][@reciprocal], <constfelt: 1>, <constfelt: 2> },
+// CHECK-NEXT:     { %arg0[@$temp_0][@$temp][@reg][@$super], %arg0[@$temp][@$temp][@reg][@$super], %arg1 },
+// CHECK-NEXT:     { %arg0[@$temp_0][@$temp][@reg][@$super], <constfelt: 2> },
+// CHECK-NEXT:     { %arg0[@reg0][@reg][@$super], <constfelt: 0>, <constfelt: 1> },
+// CHECK-NEXT:     { %arg0[@$temp][@$temp][@reg][@$super], <constfelt: 1> },
+// CHECK-NEXT:     { %arg1, <constfelt: 1>, <constfelt: 2> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @bits::@TwitReg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg][@$super][@$super], %arg1 },
+// CHECK-NEXT:     { %arg0[@reg][@reg][@$super], <constfelt: 0>, <constfelt: 1>, <constfelt: 2>, <constfelt: 3> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @bits::@FakeTwitReg ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@reg][@$super], %arg0[@reg][@$temp_0][@$temp][@reg][@$super], %arg0[@reg][@$temp][@$temp][@reg][@$super], %arg1 },
+// CHECK-NEXT:     { %arg0[@reg][@reg1][@reg][@$super], <constfelt: 0>, <constfelt: 1> },
+// CHECK-NEXT:     { %arg0[@reg][@$temp_1][@reciprocal], <constfelt: 1>, <constfelt: 2> },
+// CHECK-NEXT:     { %arg0[@reg][@$temp_0][@$temp][@reg][@$super], <constfelt: 1>, <constfelt: 2> },
+// CHECK-NEXT:     { %arg0[@reg][@reg0][@reg][@$super], <constfelt: 0>, <constfelt: 1> },
+// CHECK-NEXT:     { %arg0[@reg][@$temp][@$temp][@reg][@$super], <constfelt: 1>, <constfelt: 2> },
+// CHECK-NEXT:     { %arg1, <constfelt: 1>, <constfelt: 2> }
+// CHECK-NEXT: }
+
+// -----
+
+// Testing external calls
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.func private @extern_add(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt attributes {extern}
+
+  llzk.struct @ExternAdder {
+    field @sum : !llzk.felt {llzk.pub}
+
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ExternAdder> {
+      %self = new_struct : !llzk.struct<@ExternAdder>
+      return %self : !llzk.struct<@ExternAdder>
+    }
+
+    func @constrain(%self: !llzk.struct<@ExternAdder>, %a: !llzk.felt, %b: !llzk.felt) {
+      %sum = readf %self[@sum] : !llzk.struct<@ExternAdder>, !llzk.felt
+      %c = call @extern_add(%a, %b) : (!llzk.felt, !llzk.felt) -> (!llzk.felt)
+      // We make no assumptions about what %c could be, so this constraint is
+      // effectively `%sum === {}`, so the CDG will be empty.
+      emit_eq %sum, %c : !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK-LABEL: @ExternAdder ConstraintDependencyGraph { }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+
+  llzk.func @global_add(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
+    %c = add %a, %b
+    return %c : !llzk.felt
+  }
+
+  llzk.func private @irrelevant() attributes {extern}
+
+  llzk.struct @Adder2 {
+    field @sum : !llzk.felt {llzk.pub}
+
+    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@Adder2> {
+      %self = new_struct : !llzk.struct<@Adder2>
+      %sum = call @global_add(%a, %b) : (!llzk.felt, !llzk.felt) -> (!llzk.felt)
+      writef %self[@sum] = %sum : !llzk.struct<@Adder2>, !llzk.felt
+      return %self : !llzk.struct<@Adder2>
+    }
+
+    func @constrain(%self: !llzk.struct<@Adder2>, %a: !llzk.felt, %b: !llzk.felt) {
+      %sum = readf %self[@sum] : !llzk.struct<@Adder2>, !llzk.felt
+      %c = call @global_add(%a, %b) : (!llzk.felt, !llzk.felt) -> (!llzk.felt)
+      %d = add %c, %c
+      call @irrelevant() : () -> () // testing to see that this doesn't erase the prior values
+      emit_eq %sum, %d : !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK-LABEL: @Adder2 ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
+// CHECK-NEXT: }
