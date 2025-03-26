@@ -177,7 +177,9 @@ def LLZK_GlobalReadOp : LLZK_GlobalRefOp<"readg"> {
   }];
 }
 
-def LLZK_GlobalWriteOp : LLZK_GlobalRefOp<"writeg", [ComputeOnly]> {
+def LLZK_GlobalWriteOp
+    : LLZK_GlobalRefOp<
+          "writeg", [InStructFunctionNamed<"::llzk::FUNC_NAME_COMPUTE">]> {
   let summary = "write value to a global";
   let description = [{
     This operation writes a value to a named global.
