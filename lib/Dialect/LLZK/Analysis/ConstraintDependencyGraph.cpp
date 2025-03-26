@@ -109,7 +109,7 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
 void ConstrainRefAnalysis::visitOperation(
     mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
 ) {
-  // LLVM_DEBUG(llvm::dbgs() << "ConstrainRefAnalysis::visitOperation: " << *op << '\n');
+  LLVM_DEBUG(llvm::dbgs() << "ConstrainRefAnalysis::visitOperation: " << *op << '\n');
   // Collect the references that are made by the operands to `op`.
   ConstrainRefLattice::ValueMap operandVals;
   for (auto &operand : op->getOpOperands()) {

@@ -699,3 +699,4 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: @Adder2 ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
 // CHECK-NEXT: }
+
