@@ -1,7 +1,10 @@
 #include "llzk/Dialect/LLZK/Analysis/ConstrainRef.h"
 #include "llzk/Dialect/LLZK/Util/Compare.h"
+#include "llzk/Dialect/LLZK/Util/Debug.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolLookup.h"
+
+using namespace mlir;
 
 namespace llzk {
 
@@ -143,19 +146,18 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
 ) {
   auto ty = arg.getType();
   std::vector<ConstrainRef> res;
-  if (auto structTy = mlir::dyn_cast<llzk::StructType>(ty)) {
+  if (auto structTy = mlir::dyn_cast<StructType>(ty)) {
     // recurse over fields
     res = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), arg);
-  } else if (auto arrayType = mlir::dyn_cast<llzk::ArrayType>(ty)) {
+  } else if (auto arrayType = mlir::dyn_cast<ArrayType>(ty)) {
     res = getAllConstrainRefs(tables, mod, arrayType, arg);
-  } else if (mlir::isa<llzk::FeltType>(ty) || mlir::isa<mlir::IndexType>(ty)) {
+  } else if (mlir::isa<FeltType, IndexType, StringType>(ty)) {
     // Scalar type
     res.emplace_back(arg);
   } else {
-    std::string msg = "unsupported type: ";
-    llvm::raw_string_ostream ss(msg);
-    ss << ty;
-    llvm::report_fatal_error(ss.str().c_str());
+    std::string err;
+    debug::Appender(err) << "unsupported type: " << ty;
+    llvm::report_fatal_error(mlir::Twine(err));
   }
   return res;
 }

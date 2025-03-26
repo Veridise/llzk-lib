@@ -37,6 +37,7 @@ struct Appender {
   template <typename A, typename B> void append(const llvm::detail::DenseMapPair<A, B> &a);
   template <Iterable InputIt> void append(const InputIt &collection);
   template <typename InputIt> void appendList(InputIt begin, InputIt end);
+  template <typename Any> Appender &operator<<(const Any &v);
 };
 
 void Appender::append(const mlir::NamedAttribute &a) {
@@ -79,6 +80,11 @@ template <typename InputIt> void Appender::appendList(InputIt begin, InputIt end
   stream << '[';
   llvm::interleave(begin, end, [this](const auto &n) { append(n); }, [this] { stream << ", "; });
   stream << ']';
+}
+
+template <typename Any> Appender &Appender::operator<<(const Any &v) {
+  append(v);
+  return *this;
 }
 
 } // namespace

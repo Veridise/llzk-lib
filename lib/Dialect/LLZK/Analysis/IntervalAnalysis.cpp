@@ -1,4 +1,9 @@
 #include "llzk/Dialect/LLZK/Analysis/IntervalAnalysis.h"
+#include "llzk/Dialect/LLZK/Util/Debug.h"
+
+#include <llvm/ADT/TypeSwitch.h>
+
+using namespace mlir;
 
 namespace llzk {
 
@@ -435,21 +440,20 @@ ExpressionValue fallbackBinaryOp(
 ) {
   ExpressionValue res;
   res.i = Interval::Entire(lhs.getField());
-  if (mlir::isa<AndFeltOp>(op)) {
-    res.expr = solver->mkBVAnd(lhs.expr, rhs.expr);
-  } else if (mlir::isa<OrFeltOp>(op)) {
-    res.expr = solver->mkBVOr(lhs.expr, rhs.expr);
-  } else if (mlir::isa<XorFeltOp>(op)) {
-    res.expr = solver->mkBVXor(lhs.expr, lhs.expr);
-  } else if (mlir::isa<ShlFeltOp>(op)) {
-    res.expr = solver->mkBVShl(lhs.expr, rhs.expr);
-  } else if (mlir::isa<ShrFeltOp>(op)) {
-    res.expr = solver->mkBVLshr(lhs.expr, rhs.expr);
-  } else {
+  res.expr = TypeSwitch<Operation *, llvm::SMTExprRef>(op)
+                 .Case<AndFeltOp>([&](AndFeltOp _) { return solver->mkBVAnd(lhs.expr, rhs.expr); })
+                 .Case<OrFeltOp>([&](OrFeltOp _) { return solver->mkBVOr(lhs.expr, rhs.expr); })
+                 .Case<XorFeltOp>([&](XorFeltOp _) { return solver->mkBVXor(lhs.expr, rhs.expr); })
+                 .Case<ShlFeltOp>([&](ShlFeltOp _) { return solver->mkBVShl(lhs.expr, rhs.expr); })
+                 .Case<ShrFeltOp>([&](ShrFeltOp _) {
+    return solver->mkBVLshr(lhs.expr, rhs.expr);
+  }).Default([&](Operation *unsupported) {
     llvm::report_fatal_error(
-        "no fallback provided for " + mlir::Twine(op->getName().getStringRef())
+        "no fallback provided for " + mlir::Twine(unsupported->getName().getStringRef())
     );
-  }
+    return nullptr;
+  });
+
   return res;
 }
 
@@ -472,6 +476,38 @@ ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val) {
   }
   res.i = Interval::Boolean(f);
   res.expr = solver->mkBVNot(val.expr);
+  return res;
+}
+
+ExpressionValue
+fallbackUnaryOp(llvm::SMTSolverRef solver, mlir::Operation *op, const ExpressionValue &val) {
+  const Field &field = val.getField();
+  ExpressionValue res;
+  res.i = Interval::Entire(field);
+  res.expr = TypeSwitch<Operation *, llvm::SMTExprRef>(op)
+                 .Case<InvFeltOp>([&](InvFeltOp _) {
+    // The definition of an inverse X^-1 is Y s.t. XY % prime = 1.
+    // To create this expression, we create a new symbol for Y and add the
+    // XY % prime = 1 constraint to the solver.
+    std::string symName;
+    llvm::raw_string_ostream ss(symName);
+    ss << *op;
+
+    llvm::SMTExprRef invSym = field.createSymbol(solver, symName.c_str());
+    llvm::SMTExprRef one = solver->mkBitvector(field.one(), field.bitWidth());
+    llvm::SMTExprRef prime = solver->mkBitvector(field.prime(), field.bitWidth());
+    llvm::SMTExprRef mult = solver->mkBVMul(val.getExpr(), invSym);
+    llvm::SMTExprRef mod = solver->mkBVURem(mult, prime);
+    llvm::SMTExprRef constraint = solver->mkEqual(mod, one);
+    solver->addConstraint(constraint);
+    return invSym;
+  }).Default([&](Operation *unsupported) {
+    llvm::report_fatal_error(
+        "no fallback provided for " + mlir::Twine(op->getName().getStringRef())
+    );
+    return nullptr;
+  });
+
   return res;
 }
 
@@ -569,6 +605,53 @@ mlir::FailureOr<Interval> IntervalAnalysisLattice::findInterval(llvm::SMTExprRef
 
 /* IntervalDataFlowAnalysis */
 
+/// @brief The interval analysis is intraprocedural only for now, so this control
+/// flow transfer function passes no data to the callee and sets the post-call
+/// state to that of the pre-call state (i.e., calls are ignored).
+void IntervalDataFlowAnalysis::visitCallControlFlowTransfer(
+    mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
+    const IntervalAnalysisLattice &before, IntervalAnalysisLattice *after
+) {
+  /// `action == CallControlFlowAction::Enter` indicates that:
+  ///   - `before` is the state before the call operation;
+  ///   - `after` is the state at the beginning of the callee entry block;
+  if (action == dataflow::CallControlFlowAction::EnterCallee) {
+    // We skip updating the incoming lattice for function calls,
+    // as values are relative to the containing function/struct, so we don't need to pollute
+    // the callee with the callers values.
+    setToEntryState(after);
+  }
+  /// `action == CallControlFlowAction::Exit` indicates that:
+  ///   - `before` is the state at the end of a callee exit block;
+  ///   - `after` is the state after the call operation.
+  else if (action == dataflow::CallControlFlowAction::ExitCallee) {
+    // Get the argument values of the lattice by getting the state as it would
+    // have been for the callsite.
+    dataflow::AbstractDenseLattice *beforeCall = nullptr;
+    if (auto *prev = call->getPrevNode()) {
+      beforeCall = getLattice(prev);
+    } else {
+      beforeCall = getLattice(call->getBlock());
+    }
+    ensure(beforeCall, "could not get prior lattice");
+
+    // The lattice at the return is the lattice before the call
+    propagateIfChanged(after, after->join(*beforeCall));
+  }
+  /// `action == CallControlFlowAction::External` indicates that:
+  ///   - `before` is the state before the call operation.
+  ///   - `after` is the state after the call operation, since there is no callee
+  ///      body to enter into.
+  else if (action == mlir::dataflow::CallControlFlowAction::ExternalCallee) {
+    // For external calls, we propagate what information we already have from
+    // before the call to after the call, since the external call won't invalidate
+    // any of that information. It also, conservatively, makes no assumptions about
+    // external calls and their computation, so CDG edges will not be computed over
+    // input arguments to external functions.
+    join(after, before);
+  }
+}
+
 void IntervalDataFlowAnalysis::visitOperation(
     mlir::Operation *op, const Lattice &before, Lattice *after
 ) {
@@ -588,22 +671,31 @@ void IntervalDataFlowAnalysis::visitOperation(
       continue;
     }
     // Else, look up the stored value by constrain ref.
-    // We only care about scalar type values, which is currently limited to:
-    // felt, index, etc.
-    if (!mlir::isa<FeltType>(val.getType())) {
+    // We only care about scalar type values, so we ignore composite types, which
+    // are currently limited to structs and arrays.
+    if (mlir::isa<StructType, ArrayType>(val.getType())) {
       operandVals.push_back(LatticeValue());
       continue;
     }
 
-    auto refSet = constrainRefLattice->getOrDefault(val);
-    if (!refSet.isSingleValue()) {
-      std::string valStr;
-      llvm::raw_string_ostream ss(valStr);
-      val.print(ss);
+    ConstrainRefLatticeValue refSet = constrainRefLattice->getOrDefault(val);
+    ensure(refSet.isScalar(), "should have ruled out array values already");
 
-      op->emitWarning(
-          "operand " + mlir::Twine(valStr) + " is not a single value, overapproximating"
-      );
+    if (refSet.getScalarValue().empty()) {
+      // If we can't compute the reference, then there must be some unsupported
+      // op the reference analysis cannot handle. We emit a warning and return
+      // early, since there's no meaningful computation we can do for this op.
+      std::string warning;
+      debug::Appender(warning
+      ) << "state of "
+        << val << " is empty; defining operation is unsupported by constrain ref analysis";
+      op->emitWarning(warning);
+      return;
+    } else if (!refSet.isSingleValue()) {
+      std::string warning;
+      debug::Appender(warning) << "operand " << val << " is not a single value " << refSet
+                               << ", overapproximating";
+      op->emitWarning(warning);
       operandVals.push_back(LatticeValue());
     } else {
       auto ref = refSet.getSingleValue();
@@ -767,13 +859,25 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(mlir::Value val) con
 }
 
 llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const char *name) const {
-  return smtSolver->mkSymbol(name, smtSolver->getBitvectorSort(field.get().bitWidth()));
+  return field.get().createSymbol(smtSolver, name);
 }
 
 llvm::APSInt IntervalDataFlowAnalysis::getConst(mlir::Operation *op) const {
   ensure(isConstOp(op), "op is not a const op");
-  auto fieldConst =
-      mlir::dyn_cast<FeltConstantOp>(op).getValueAttr().getValue().zext(field.get().bitWidth());
+
+  llvm::APInt fieldConst =
+      TypeSwitch<Operation *, llvm::APInt>(op)
+          .Case<FeltConstantOp>([&](FeltConstantOp feltConst) {
+    return feltConst.getValueAttr().getValue().zext(field.get().bitWidth());
+  })
+          .Case<mlir::arith::ConstantIndexOp>([&](mlir::arith::ConstantIndexOp indexConst) {
+    return llvm::APInt(field.get().bitWidth(), indexConst.value());
+  }).Default([&](Operation *illegalOp) {
+    std::string err;
+    debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
+    llvm::report_fatal_error(Twine(err));
+    return llvm::APInt();
+  });
   return llvm::APSInt(fieldConst);
 }
 
@@ -783,25 +887,26 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
   ensure(isArithmeticOp(op), "is not arithmetic op");
 
   auto lhs = a.getScalarValue(), rhs = b.getScalarValue();
+  ensure(lhs.getExpr(), "cannot perform arithmetic over null lhs smt expr");
+  ensure(rhs.getExpr(), "cannot perform arithmetic over null rhs smt expr");
 
-  if (mlir::isa<AddFeltOp>(op)) {
-    return add(smtSolver, lhs, rhs);
-  } else if (mlir::isa<SubFeltOp>(op)) {
-    return sub(smtSolver, lhs, rhs);
-  } else if (mlir::isa<MulFeltOp>(op)) {
-    return mul(smtSolver, lhs, rhs);
-  } else if (mlir::isa<DivFeltOp>(op)) {
-    return div(smtSolver, lhs, rhs);
-  } else if (mlir::isa<ModFeltOp>(op)) {
-    return mod(smtSolver, lhs, rhs);
-  } else if (auto cmpOp = mlir::dyn_cast<CmpOp>(op)) {
+  auto res = TypeSwitch<Operation *, ExpressionValue>(op)
+                 .Case<AddFeltOp>([&](AddFeltOp _) { return add(smtSolver, lhs, rhs); })
+                 .Case<SubFeltOp>([&](SubFeltOp _) { return sub(smtSolver, lhs, rhs); })
+                 .Case<MulFeltOp>([&](MulFeltOp _) { return mul(smtSolver, lhs, rhs); })
+                 .Case<DivFeltOp>([&](DivFeltOp _) { return div(smtSolver, lhs, rhs); })
+                 .Case<ModFeltOp>([&](ModFeltOp _) { return mod(smtSolver, lhs, rhs); })
+                 .Case<CmpOp>([&](CmpOp cmpOp) {
     return cmp(smtSolver, cmpOp, lhs, rhs);
-  } else {
-    op->emitWarning(
+  }).Default([&](Operation *unsupported) {
+    unsupported->emitWarning(
         "unsupported binary arithmetic operation, defaulting to over-approximated intervals"
     );
-    return fallbackBinaryOp(smtSolver, op, lhs, rhs);
-  }
+    return fallbackBinaryOp(smtSolver, unsupported, lhs, rhs);
+  });
+
+  ensure(res.getExpr(), "arithmetic produced null smt expr");
+  return res;
 }
 
 ExpressionValue
@@ -809,17 +914,21 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(mlir::Operation *op, const Latt
   ensure(isArithmeticOp(op), "is not arithmetic op");
 
   auto val = a.getScalarValue();
+  ensure(val.getExpr(), "cannot perform arithmetic over null smt expr");
 
-  if (mlir::isa<NegFeltOp>(op)) {
-    return neg(smtSolver, val);
-  } else if (mlir::isa<NotFeltOp>(op)) {
+  auto res = TypeSwitch<Operation *, ExpressionValue>(op)
+                 .Case<NegFeltOp>([&](NegFeltOp _) { return neg(smtSolver, val); })
+                 .Case<NotFeltOp>([&](NotFeltOp _) {
     return notOp(smtSolver, val);
-  } else {
-    llvm::report_fatal_error(
-        "unsupported unary arithmetic operation " + mlir::Twine(op->getName().getStringRef())
+  }).Default([&](Operation *unsupported) {
+    unsupported->emitWarning(
+        "unsupported unary arithmetic operation, defaulting to over-approximated interval"
     );
-    return ExpressionValue();
-  }
+    return fallbackUnaryOp(smtSolver, unsupported, val);
+  });
+
+  ensure(res.getExpr(), "arithmetic produced null smt expr");
+  return res;
 }
 
 /* StructIntervals */

@@ -28,7 +28,6 @@ class Field {
 public:
   /// @brief Get a Field from a given field name string.
   /// @param fieldName The name of the field.
-  /// @return
   static const Field &getField(const char *fieldName);
 
   Field() = delete;
@@ -37,35 +36,33 @@ public:
   Field &operator=(const Field &) = default;
 
   /// @brief For the prime field p, returns p.
-  /// @return
   llvm::APSInt prime() const { return primeMod; }
 
   /// @brief Returns p / 2.
-  /// @return
   llvm::APSInt half() const { return halfPrime; }
 
   /// @brief Returns i as a field element
   inline llvm::APSInt felt(unsigned i) const { return reduce(i); }
 
   /// @brief Returns 0 at the bitwidth of the field.
-  /// @return
   inline llvm::APSInt zero() const { return felt(0); }
 
   /// @brief Returns 1 at the bitwidth of the field.
-  /// @return
   inline llvm::APSInt one() const { return felt(1); }
 
   /// @brief Returns p - 1, which is the max value possible in a prime field described by p.
-  /// @return
   inline llvm::APSInt maxVal() const { return prime() - one(); }
 
   /// @brief Returns i mod p and reduces the result into the appropriate bitwidth.
-  /// @param i
-  /// @return
   llvm::APSInt reduce(llvm::APSInt i) const;
   llvm::APSInt reduce(unsigned i) const;
 
-  unsigned bitWidth() const { return primeMod.getBitWidth(); }
+  inline unsigned bitWidth() const { return primeMod.getBitWidth(); }
+
+  /// @brief Create a SMT solver symbol with the current field's bitwidth.
+  llvm::SMTExprRef createSymbol(llvm::SMTSolverRef solver, const char *name) const {
+    return solver->mkSymbol(name, solver->getBitvectorSort(bitWidth()));
+  }
 
   friend bool operator==(const Field &lhs, const Field &rhs) {
     return lhs.primeMod == rhs.primeMod;
@@ -455,6 +452,9 @@ public:
 
   friend ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val);
 
+  friend ExpressionValue
+  fallbackUnaryOp(llvm::SMTSolverRef solver, mlir::Operation *op, const ExpressionValue &val);
+
   /* Utility */
 
   void print(mlir::raw_ostream &os) const;
@@ -552,9 +552,7 @@ public:
   void visitCallControlFlowTransfer(
       mlir::CallOpInterface call, dataflow::CallControlFlowAction action, const Lattice &before,
       Lattice *after
-  ) override {
-    propagateIfChanged(after, after->join(before));
-  }
+  ) override;
 
   void visitOperation(mlir::Operation *op, const Lattice &before, Lattice *after) override;
 
@@ -580,7 +578,9 @@ private:
 
   llvm::SMTExprRef createFeltSymbol(const char *name) const;
 
-  bool isConstOp(mlir::Operation *op) const { return mlir::isa<FeltConstantOp>(op); }
+  bool isConstOp(mlir::Operation *op) const {
+    return mlir::isa<FeltConstantOp, mlir::arith::ConstantIndexOp>(op);
+  }
 
   llvm::APSInt getConst(mlir::Operation *op) const;
 
@@ -804,7 +804,8 @@ template <> struct DenseMapInfo<llzk::ExpressionValue> {
     return llzk::ExpressionValue::Hash {}(e);
   }
   static bool isEqual(const llzk::ExpressionValue &lhs, const llzk::ExpressionValue &rhs) {
-    if (lhs.getExpr() == getEmptyExpr() || lhs.getExpr() == getTombstoneExpr()) {
+    if (lhs.getExpr() == getEmptyExpr() || lhs.getExpr() == getTombstoneExpr() ||
+        rhs.getExpr() == getEmptyExpr() || rhs.getExpr() == getTombstoneExpr()) {
       return lhs.getExpr() == rhs.getExpr();
     }
     return lhs == rhs;
