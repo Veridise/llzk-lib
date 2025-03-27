@@ -291,6 +291,54 @@ Interval Interval::intersect(const Interval &rhs) const {
   return Interval::Empty(field.get());
 }
 
+Interval Interval::difference(const Interval &other) const {
+  Interval intersection = intersect(other);
+  if (intersection.isEmpty()) {
+    // There's nothing to remove, so just return this
+    return *this;
+  }
+
+  // Trivial cases with a non-empty intersection
+  if (isDegenerate() || other.isEntire()) {
+    return Interval::Empty(field.get());
+  }
+
+  // Non-trivial cases
+  // - Internal+internal or external+external cases
+  if ((is<Type::TypeA, Type::TypeB, Type::TypeC>() &&
+       intersection.is<Type::TypeA, Type::TypeB, Type::TypeC>()) ||
+      areOneOf<{Type::TypeF, Type::TypeF}>(*this, intersection)) {
+    // The intersection needs to be at the end of the interval, otherwise we would
+    // split the interval in two, and we aren't set up to support multiple intervals
+    // per value.
+    if (a != intersection.a || b != intersection.b) {
+      return *this;
+    }
+    // Otherwise, remove the intersection and reduce
+    if (a == intersection.a) {
+      return UnreducedInterval(intersection.b, b).reduce(field.get());
+    }
+    // else b == intersection.b
+    return UnreducedInterval(a, intersection.a).reduce(field.get());
+  }
+  // - Mixed internal/external cases. We flip the comparison
+  if (isTypeF()) {
+    if (a != intersection.b || b != intersection.a) {
+      return *this;
+    }
+    // Otherwise, remove the intersection and reduce
+    if (a == intersection.b) {
+      return UnreducedInterval(intersection.a, b).reduce(field.get());
+    }
+    // else b == intersection.a
+    return UnreducedInterval(a, intersection.b).reduce(field.get());
+  }
+
+  // In cases we don't know how to handle, we over-approximate and return
+  // the original interval.
+  return *this;
+}
+
 Interval Interval::operator-() const { return (-firstUnreduced()).reduce(field.get()); }
 
 Interval operator+(const Interval &lhs, const Interval &rhs) {
@@ -928,6 +976,147 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(mlir::Operation *op, const Latt
   });
 
   ensure(res.getExpr(), "arithmetic produced null smt expr");
+  return res;
+}
+
+ChangeResult
+IntervalDataFlowAnalysis::applyInterval(Lattice *after, Value val, Interval newInterval) {
+  auto latValRes = after->getValue(val);
+  if (failed(latValRes)) {
+    // visitOperation didn't add val to the lattice, so there's nothing to do
+    return ChangeResult::NoChange;
+  }
+  ChangeResult res = after->setValue(val, latValRes->getScalarValue().withInterval(newInterval));
+  // Now we descend into val's operands, if it has any.
+  Operation *definingOp = val.getDefiningOp();
+  if (!definingOp) {
+    return res;
+  }
+
+  const Field &f = field.get();
+
+  // This is a rules-based operation. If we have a rule for a given operation,
+  // then we can make some kind of update, otherwise we leave the intervals
+  // as is.
+  // - First we'll define all the rules so the type switch can be less messy
+
+  // cmp.<pred> restricts each side of the comparison if the result is known.
+  auto cmpCase = [&](CmpOp cmpOp) {
+    // Cmp output range is [0, 1], so in order to do something, we must have newInterval
+    // either "true" (1) or "false" (0)
+    Interval maxInterval = Interval::Boolean(f);
+    ensure(
+        newInterval.intersect(maxInterval).isNotEmpty(),
+        "new interval for CmpOp outside of allowed boolean range or is empty"
+    );
+    if (!newInterval.isDegenerate()) {
+      // The comparison result is unknown, so we can't update the operand ranges
+      return ChangeResult::NoChange;
+    }
+
+    bool cmpTrue = newInterval.rhs() == f.one();
+
+    Value lhs = cmpOp->getOperand(0), rhs = cmpOp->getOperand(1);
+    auto lhsLatValRes = after->getValue(lhs), rhsLatValRes = after->getValue(rhs);
+    if (failed(lhsLatValRes) || failed(rhsLatValRes)) {
+      return ChangeResult::NoChange;
+    }
+    ExpressionValue lhsExpr = lhsLatValRes->getScalarValue(),
+                    rhsExpr = rhsLatValRes->getScalarValue();
+
+    Interval newLhsInterval, newRhsInterval;
+    const Interval &lhsInterval = lhsExpr.getInterval();
+    const Interval &rhsInterval = rhsExpr.getInterval();
+
+    FeltCmpPredicate pred = cmpOp.getPredicate();
+    // predicate cases
+    auto eqCase = [&]() {
+      return (pred == FeltCmpPredicate::EQ && cmpTrue) ||
+             (pred == FeltCmpPredicate::NE && !cmpTrue);
+    };
+    auto neCase = [&]() {
+      return (pred == FeltCmpPredicate::NE && cmpTrue) ||
+             (pred == FeltCmpPredicate::EQ && !cmpTrue);
+    };
+    auto ltCase = [&]() {
+      return (pred == FeltCmpPredicate::LT && cmpTrue) ||
+             (pred == FeltCmpPredicate::GE && !cmpTrue);
+    };
+    auto leCase = [&]() {
+      return (pred == FeltCmpPredicate::LE && cmpTrue) ||
+             (pred == FeltCmpPredicate::GT && !cmpTrue);
+    };
+    auto gtCase = [&]() {
+      return (pred == FeltCmpPredicate::GT && cmpTrue) ||
+             (pred == FeltCmpPredicate::LE && !cmpTrue);
+    };
+    auto geCase = [&]() {
+      return (pred == FeltCmpPredicate::GE && cmpTrue) ||
+             (pred == FeltCmpPredicate::LT && !cmpTrue);
+    };
+
+    // new intervals based on case
+    if (eqCase()) {
+      newLhsInterval = newRhsInterval = lhsInterval.intersect(rhsInterval);
+    } else if (neCase()) {
+      if (lhsInterval.isDegenerate() && rhsInterval.isDegenerate() && lhsInterval == rhsInterval) {
+        // In this case, we know lhs and rhs cannot satisfy this assertion, so they have
+        // an empty value range.
+        newLhsInterval = newRhsInterval = Interval::Empty(f);
+      } else {
+        // Leave unchanged
+        newLhsInterval = lhsInterval;
+        newRhsInterval = rhsInterval;
+      }
+    } else if (ltCase()) {
+      newLhsInterval = lhsInterval.toUnreduced().lt(rhsInterval.toUnreduced()).reduce(f);
+      newRhsInterval = rhsInterval.toUnreduced().ge(lhsInterval.toUnreduced()).reduce(f);
+    } else if (leCase()) {
+      newLhsInterval = lhsInterval.toUnreduced().le(rhsInterval.toUnreduced()).reduce(f);
+      newRhsInterval = rhsInterval.toUnreduced().gt(lhsInterval.toUnreduced()).reduce(f);
+    } else if (gtCase()) {
+      newLhsInterval = lhsInterval.toUnreduced().gt(rhsInterval.toUnreduced()).reduce(f);
+      newRhsInterval = rhsInterval.toUnreduced().le(lhsInterval.toUnreduced()).reduce(f);
+    } else if (geCase()) {
+      newLhsInterval = lhsInterval.toUnreduced().ge(rhsInterval.toUnreduced()).reduce(f);
+      newRhsInterval = rhsInterval.toUnreduced().lt(lhsInterval.toUnreduced()).reduce(f);
+    } else {
+      cmpOp->emitWarning("unhandled cmp predicate");
+      return ChangeResult::NoChange;
+    }
+
+    // Now we recurse to each operand
+    return applyInterval(after, lhs, newLhsInterval) | applyInterval(after, rhs, newRhsInterval);
+  };
+
+  // If the result of a multiplication is non-zero, then both operands must be
+  // non-zero.
+  auto mulCase = [&](MulFeltOp mulOp) {
+    auto zeroInt = Interval::Degenerate(f, f.zero());
+    if (newInterval.intersect(zeroInt).isNotEmpty()) {
+      // The multiplication may be zero, so we can't reduce the operands to be non-zero
+      return ChangeResult::NoChange;
+    }
+
+    Value lhs = mulOp->getOperand(0), rhs = mulOp->getOperand(1);
+    auto lhsLatValRes = after->getValue(lhs), rhsLatValRes = after->getValue(rhs);
+    if (failed(lhsLatValRes) || failed(rhsLatValRes)) {
+      return ChangeResult::NoChange;
+    }
+    ExpressionValue lhsExpr = lhsLatValRes->getScalarValue(),
+                    rhsExpr = rhsLatValRes->getScalarValue();
+    Interval newLhsInterval = lhsExpr.getInterval().difference(zeroInt);
+    Interval newRhsInterval = rhsExpr.getInterval().difference(zeroInt);
+    return applyInterval(after, lhs, newLhsInterval) | applyInterval(after, rhs, newRhsInterval);
+  };
+
+  // - Apply the rules given the op.
+  res |= TypeSwitch<Operation *, ChangeResult>(definingOp)
+             .Case<CmpOp>([&](CmpOp op) { return cmpCase(op); })
+             .Case<MulFeltOp>([&](MulFeltOp op) {
+    return mulCase(op);
+  }).Default([&](Operation *_) { return ChangeResult::NoChange; });
+
   return res;
 }
 

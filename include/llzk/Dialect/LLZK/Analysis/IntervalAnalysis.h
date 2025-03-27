@@ -300,6 +300,10 @@ public:
   /// Intersect
   Interval intersect(const Interval &rhs) const;
 
+  /// @brief Computes `this` - (`this` & `other`). Note that this is an interval
+  /// difference, not a subtraction operation like the `operator-` below.
+  Interval difference(const Interval &other) const;
+
   /* arithmetic ops */
 
   Interval operator-() const;
@@ -329,6 +333,9 @@ public:
   const Field &getField() const { return field.get(); }
 
   llvm::APSInt width() const { return llvm::APSInt((b - a).abs().zext(field.get().bitWidth())); }
+
+  llvm::APSInt lhs() const { return a; }
+  llvm::APSInt rhs() const { return b; }
 
   /* Utility */
   struct Hash {
@@ -599,6 +606,14 @@ private:
   performBinaryArithmetic(mlir::Operation *op, const LatticeValue &a, const LatticeValue &b);
 
   ExpressionValue performUnaryArithmetic(mlir::Operation *op, const LatticeValue &a);
+
+  /// @brief Recursively applies the new interval to the val's lattice value and to that values
+  /// operands, if possible. For example, if we know that X*Y is non-zero, then we know X and Y are
+  /// non-zero, and can update X and Y's intervals accordingly.
+  /// @param after The current lattice state. Assumes that this has already been joined with the
+  /// `before` lattice in `visitOperation`, so lookups and updates can be performed on the `after`
+  /// lattice alone.
+  mlir::ChangeResult applyInterval(Lattice *after, mlir::Value val, Interval newInterval);
 
   bool isBoolOp(mlir::Operation *op) const {
     return mlir::isa<AndBoolOp, OrBoolOp, XorBoolOp, NotBoolOp>(op);
