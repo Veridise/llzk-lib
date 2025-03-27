@@ -145,6 +145,7 @@ public:
   /* Comparisons */
 
   bool overlaps(const UnreducedInterval &rhs) const;
+
   friend std::strong_ordering
   operator<=>(const UnreducedInterval &lhs, const UnreducedInterval &rhs);
 
@@ -180,13 +181,13 @@ private:
 ///
 /// Internal range can be further split into 3 categories:
 /// (A) a, b < p/2.                                             E.g., [10, 12]
-/// (B) a, b > p/2.       OR: a, b \in {-p/2, 0}.               E.g., [p-4, p-2]         === [-4,
-/// -2] (C) a < p/2, b > p/2.                                       E.g., [p/2 - 5, p/2 + 5]
+/// (B) a, b > p/2.       OR: a, b \in {-p/2, 0}.               E.g., [p-4, p-2] === [-4, -2]
+/// (C) a < p/2, b > p/2.                                       E.g., [p/2 - 5, p/2 + 5]
 ///
 /// External range can be further split into 3 categories:
-/// (D) a, b < p/2.       OR: a \in {-p, -p/2}, b \in {0, p/2}. E.g., [12, 10]           === [-p+12,
-/// 10] (E) a, b > p/2.       OR: a \in {-p/2, 0} , b \in {p/2, p}. E.g., [p-2, p-4]         ===
-/// [-2, p-4] (F) a > p/2, b < p/2. OR: a \in {-p/2, 0} , b \in {0, p/2}. E.g., [p/2 + 5, p/2 - 5]
+/// (D) a, b < p/2.       OR: a \in {-p, -p/2}, b \in {0, p/2}. E.g., [12, 10] === [-p+12, 10]
+/// (E) a, b > p/2.       OR: a \in {-p/2, 0} , b \in {p/2, p}. E.g., [p-2, p-4] === [-2, p-4]
+/// (F) a > p/2, b < p/2. OR: a \in {-p/2, 0} , b \in {0, p/2}. E.g., [p/2 + 5, p/2 - 5]
 /// === [-p/2 + 5, p/2 - 5]
 ///
 /// <------------------------------------------------------------->
@@ -291,11 +292,6 @@ public:
   template <std::pair<Type, Type>... Pairs>
   static bool areOneOf(const Interval &a, const Interval &b) {
     return ((a.ty == std::get<0>(Pairs) && b.ty == std::get<1>(Pairs)) || ...);
-  }
-
-  Interval &join(const Interval &rhs) {
-    llvm::report_fatal_error("todo");
-    return *this;
   }
 
   /// Union
