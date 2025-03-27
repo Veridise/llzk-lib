@@ -167,14 +167,14 @@ UnreducedInterval Interval::toUnreduced() const {
 }
 
 UnreducedInterval Interval::firstUnreduced() const {
-  if (isOneOf<Type::TypeF>()) {
+  if (is<Type::TypeF>()) {
     return UnreducedInterval(field.get().prime() - a, b);
   }
   return toUnreduced();
 }
 
 UnreducedInterval Interval::secondUnreduced() const {
-  ensure(isOneOf<Type::TypeA, Type::TypeB, Type::TypeC>(), "unsupported range type");
+  ensure(is<Type::TypeA, Type::TypeB, Type::TypeC>(), "unsupported range type");
   return UnreducedInterval(a - field.get().prime(), b - field.get().prime());
 }
 
@@ -340,9 +340,9 @@ Interval operator%(const Interval &lhs, const Interval &rhs) {
 
 void Interval::print(mlir::raw_ostream &os) const {
   os << TypeName(ty);
-  if (isOneOf<Type::Degenerate>()) {
+  if (is<Type::Degenerate>()) {
     os << '(' << a << ')';
-  } else if (!isOneOf<Type::Entire, Type::Empty>()) {
+  } else if (!is<Type::Entire, Type::Empty>()) {
     os << ":[ " << a << ", " << b << " ]";
   }
 }
@@ -945,7 +945,7 @@ mlir::LogicalResult StructIntervals::computeIntervals(
   constrainSolverConstraints = constrainLattice->getConstraints();
 
   for (const auto &ref : ConstrainRef::getAllConstrainRefs(structDef)) {
-    // Don't compute ranges for structs, that doesn't make any sense.
+    // We only want to compute intervals for field elements and not composite types
     if (!ref.isScalar()) {
       continue;
     }

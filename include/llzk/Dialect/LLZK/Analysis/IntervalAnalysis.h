@@ -311,15 +311,16 @@ public:
 
   /* Checks and Comparisons */
 
-  bool isEmpty() const { return ty == Type::Empty; }
-  bool isDegenerate() const { return ty == Type::Degenerate; }
-  bool isEntire() const { return ty == Type::Entire; }
-  bool isTypeA() const { return ty == Type::TypeA; }
-  bool isTypeB() const { return ty == Type::TypeB; }
-  bool isTypeC() const { return ty == Type::TypeC; }
-  bool isTypeF() const { return ty == Type::TypeF; }
+  inline bool isEmpty() const { return ty == Type::Empty; }
+  inline bool isNotEmpty() const { return !isEmpty(); }
+  inline bool isDegenerate() const { return ty == Type::Degenerate; }
+  inline bool isEntire() const { return ty == Type::Entire; }
+  inline bool isTypeA() const { return ty == Type::TypeA; }
+  inline bool isTypeB() const { return ty == Type::TypeB; }
+  inline bool isTypeC() const { return ty == Type::TypeC; }
+  inline bool isTypeF() const { return ty == Type::TypeF; }
 
-  template <Type... Types> bool isOneOf() const { return ((ty == Types) || ...); }
+  template <Type... Types> bool is() const { return ((ty == Types) || ...); }
 
   bool operator==(const Interval &rhs) const { return ty == rhs.ty && a == rhs.a && b == rhs.b; }
 
