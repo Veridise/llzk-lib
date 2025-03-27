@@ -298,9 +298,23 @@ Interval Interval::difference(const Interval &other) const {
     return *this;
   }
 
+  const Field &f = field.get();
+
   // Trivial cases with a non-empty intersection
   if (isDegenerate() || other.isEntire()) {
-    return Interval::Empty(field.get());
+    return Interval::Empty(f);
+  }
+  if (isEntire()) {
+    // Since we don't support punching arbitrary holes in ranges, we only reduce
+    // entire ranges if other is [0, b] or [a, prime - 1]
+    if (other.a == f.zero()) {
+      return UnreducedInterval(other.b + f.one(), f.maxVal()).reduce(f);
+    }
+    if (other.b == f.maxVal()) {
+      return UnreducedInterval(f.zero(), other.a - f.one()).reduce(f);
+    }
+
+    return *this;
   }
 
   // Non-trivial cases
@@ -316,10 +330,10 @@ Interval Interval::difference(const Interval &other) const {
     }
     // Otherwise, remove the intersection and reduce
     if (a == intersection.a) {
-      return UnreducedInterval(intersection.b, b).reduce(field.get());
+      return UnreducedInterval(intersection.b + f.one(), b).reduce(f);
     }
     // else b == intersection.b
-    return UnreducedInterval(a, intersection.a).reduce(field.get());
+    return UnreducedInterval(a, intersection.a - f.one()).reduce(f);
   }
   // - Mixed internal/external cases. We flip the comparison
   if (isTypeF()) {
@@ -328,10 +342,10 @@ Interval Interval::difference(const Interval &other) const {
     }
     // Otherwise, remove the intersection and reduce
     if (a == intersection.b) {
-      return UnreducedInterval(intersection.a, b).reduce(field.get());
+      return UnreducedInterval(intersection.a + f.one(), b).reduce(f);
     }
     // else b == intersection.a
-    return UnreducedInterval(a, intersection.b).reduce(field.get());
+    return UnreducedInterval(a, intersection.b - f.one()).reduce(f);
   }
 
   // In cases we don't know how to handle, we over-approximate and return
@@ -783,88 +797,19 @@ void IntervalDataFlowAnalysis::visitOperation(
     auto constraint = intersection(smtSolver, lhsExpr, rhsExpr);
     // Update the LHS and RHS to the same value, but restricted intervals
     // based on the constraints
-    changed |= after->setValue(lhsVal, lhsExpr.withInterval(constraint.getInterval()));
-    changed |= after->setValue(rhsVal, rhsExpr.withInterval(constraint.getInterval()));
+    changed |= applyInterval(after, lhsVal, constraint.getInterval());
+    changed |= applyInterval(after, rhsVal, constraint.getInterval());
     changed |= after->addSolverConstraint(constraint);
-
   } else if (isAssertOp(op)) {
     ensure(operandVals.size() == 1, "assert op with the wrong number of operands");
-    // First, just add the solver constraint that the expression must be true.
+    // assert enforces that the operand is true. So we apply an interval of [1, 1]
+    // to the operand.
+    changed |= applyInterval(
+        after, op->getOperand(0), Interval::Degenerate(field.get(), field.get().one())
+    );
+    // Also add the solver constraint that the expression must be true.
     auto assertExpr = operandVals[0].getScalarValue();
     changed |= after->addSolverConstraint(assertExpr);
-    // Then, we want to do a lookback at the boolean expression that composes
-    // the assert expression and restrict the range on those values to be
-    // ranges that make the constraint hold.
-
-    // TODO: this currently only works for simple comparison cases and not
-    // conjunctions/disjunctions of comparisons.
-    if (auto cmpOp = mlir::dyn_cast<CmpOp>(op->getOperand(0).getDefiningOp())) {
-      auto lhs = cmpOp->getOperand(0);
-      auto rhs = cmpOp->getOperand(1);
-      auto lhsLatticeVal = before.getValue(lhs);
-      auto rhsLatticeVal = before.getValue(rhs);
-      ensure(
-          mlir::succeeded(lhsLatticeVal) && mlir::succeeded(rhsLatticeVal),
-          "no values for assert predecessors"
-      );
-      auto lhsExpr = lhsLatticeVal->getScalarValue();
-      auto rhsExpr = rhsLatticeVal->getScalarValue();
-
-      Interval newLhsInterval, newRhsInterval;
-      const auto &lhsInterval = lhsExpr.getInterval();
-      const auto &rhsInterval = rhsExpr.getInterval();
-
-      switch (cmpOp.getPredicate()) {
-      case FeltCmpPredicate::EQ: {
-        newLhsInterval = newRhsInterval = lhsInterval.intersect(rhsInterval);
-        break;
-      }
-      case FeltCmpPredicate::NE: {
-        if (lhsInterval.isDegenerate() && rhsInterval.isDegenerate() &&
-            lhsInterval == rhsInterval) {
-          // In this case, we know lhs and rhs cannot satisfy this assertion, so they have
-          // an empty value range.
-          newLhsInterval = newRhsInterval = Interval::Empty(field.get());
-        } else {
-          // Leave unchanged
-          newLhsInterval = lhsInterval;
-          newRhsInterval = rhsInterval;
-        }
-        break;
-      }
-      case FeltCmpPredicate::LT: {
-        newLhsInterval =
-            lhsInterval.toUnreduced().lt(rhsInterval.toUnreduced()).reduce(field.get());
-        newRhsInterval =
-            rhsInterval.toUnreduced().ge(lhsInterval.toUnreduced()).reduce(field.get());
-        break;
-      }
-      case FeltCmpPredicate::LE: {
-        newLhsInterval =
-            lhsInterval.toUnreduced().le(rhsInterval.toUnreduced()).reduce(field.get());
-        newRhsInterval =
-            rhsInterval.toUnreduced().gt(lhsInterval.toUnreduced()).reduce(field.get());
-        break;
-      }
-      case FeltCmpPredicate::GT: {
-        newLhsInterval =
-            lhsInterval.toUnreduced().gt(rhsInterval.toUnreduced()).reduce(field.get());
-        newRhsInterval =
-            rhsInterval.toUnreduced().le(lhsInterval.toUnreduced()).reduce(field.get());
-        break;
-      }
-      case FeltCmpPredicate::GE: {
-        newLhsInterval =
-            lhsInterval.toUnreduced().ge(rhsInterval.toUnreduced()).reduce(field.get());
-        newRhsInterval =
-            rhsInterval.toUnreduced().lt(lhsInterval.toUnreduced()).reduce(field.get());
-        break;
-      }
-      }
-
-      changed |= after->setValue(lhs, lhsExpr.withInterval(newLhsInterval));
-      changed |= after->setValue(rhs, rhsExpr.withInterval(newRhsInterval));
-    }
   } else if (!isReadOp(op)          /* We do not need to explicitly handle read ops
                       since they are resolved at the operand value step where constrain refs are
                       queries */

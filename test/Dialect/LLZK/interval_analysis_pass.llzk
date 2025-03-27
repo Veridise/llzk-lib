@@ -171,3 +171,38 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     %arg0[@arr][1] in TypeA:[ 7, 11 ]
 // CHECK-NEXT:     %arg0[@arr][2] in TypeA:[ 5, 7 ]
 // CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Div<[]> {
+    field @"$super" : !llzk.felt
+    field @reciprocal : !llzk.felt
+    func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@Div<[]>> {
+      %self = new_struct : <@Div<[]>>
+      %0 = inv %arg1 : !llzk.felt
+      writef %self[@reciprocal] = %0 : <@Div<[]>>, !llzk.felt
+      %1 = readf %self[@reciprocal] : <@Div<[]>>, !llzk.felt
+      %2 = mul %1, %arg1 : !llzk.felt, !llzk.felt
+      %felt_const_1 = constfelt  1
+      %3 = mul %1, %arg0 : !llzk.felt, !llzk.felt
+      writef %self[@"$super"] = %3 : <@Div<[]>>, !llzk.felt
+      return %self : !llzk.struct<@Div<[]>>
+    }
+    func @constrain(%arg0: !llzk.struct<@Div<[]>>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+      %0 = readf %arg0[@reciprocal] : <@Div<[]>>, !llzk.felt
+      %1 = mul %0, %arg2 : !llzk.felt, !llzk.felt
+      %felt_const_1 = constfelt  1
+      // Since reciprocal * arg2 === 1, reciprocal nor arg2 can be 0
+      emit_eq %1, %felt_const_1 : !llzk.felt, !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK-LABEL: @Div StructIntervals {
+// CHECK-NEXT:     %arg0[@$super] in Entire
+// CHECK-NEXT:     %arg0[@reciprocal] in TypeC:[ 1, 14828463434349501588600065238342573214075126148185506315513679787312170007181 ]
+// CHECK-NEXT:     %arg1 in Entire
+// CHECK-NEXT:     %arg2 in TypeC:[ 1, 14828463434349501588600065238342573214075126148185506315513679787312170007181 ]
+// CHECK-NEXT: }
