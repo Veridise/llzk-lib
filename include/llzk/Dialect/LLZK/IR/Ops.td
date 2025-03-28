@@ -942,8 +942,8 @@ def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
 def LLZK_UnifiableCastOp : LLZK_Op<"unifiable_cast", [Pure]> {
   let summary = "cast between two unifiable types";
   let description = [{
-    This operation converts a value into a value of a different type so long the 
-    input and output values are unifiable.
+    This operation reinterprets a value as a different type with the restriction
+    that the input and output types of the cast are unifiable.
 
     Most ops that accept LLZK types accept unifiable types as input and thus there 
     is no need for casting between types. This op is meant to be used in situations where
