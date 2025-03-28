@@ -32,14 +32,14 @@ module attributes { veridise.lang = "llzk" } {
   }
 }
 //       CHECK: #map = affine_map<()[s0, s1] -> (s0 + s1)>
-//  CHECK-NEXT: module attributes {veridise.lang = "llzk"} {
+//       CHECK: module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL:   llzk.struct @A<[@X, @Y, @N]> {
 // CHECK-LABEL:     func @compute
 //  CHECK-SAME:                  (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.array<@N x !llzk.felt>) -> !llzk.struct<@A<[@X, @Y, @N]>> {
 //  CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@A<[@X, @Y, @N]>>
 //  CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@A<[@X, @Y, @N]>>
 //  CHECK-NEXT:     }
-// CHECK-NEXT:     func @constrain
+// CHECK-LABEL:     func @constrain
 //  CHECK-SAME:                   (%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@A<[@X, @Y, @N]>>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.array<@N x !llzk.felt>) {
 //  CHECK-NEXT:       return
 //  CHECK-NEXT:     }
@@ -67,44 +67,139 @@ module attributes { veridise.lang = "llzk" } {
 //  CHECK-NEXT: }
 
 // -----
-// Skeleton for creating tests
+
+#map1 = affine_map<()[s0, s1] -> (s0 + s1)>
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @A<[]> {
-    func @compute(%0: <input-type>) -> !llzk.struct<@A<[]>> {
-      %self = new_struct : <@A<[]>>
-      %1 = unifiable_cast %0 : (<input-type>) -> <output-type>
-      return %self : !llzk.struct<@A<[]>>
+  llzk.struct @T1<[]> {
+    func @compute() -> !llzk.struct<@T1<[]>> {
+      %self = new_struct : <@T1<[]>>
+      return %self : !llzk.struct<@T1<[]>>
     }
-    func @constrain(%self: !llzk.struct<@A<[]>>, %0: <input-type>) {
+    func @constrain(%self : !llzk.struct<@T1<[]>>) {
+      return
+    }
+  }
+  llzk.struct @T2<[@N]> {
+    func @compute() -> !llzk.struct<@T2<[@N]>> {
+      %self = new_struct : <@T2<[@N]>>
+      return %self : !llzk.struct<@T2<[@N]>>
+    }
+    func @constrain(%self : !llzk.struct<@T2<[@N]>>) {
+      return
+    }
+  }
+  llzk.struct @T3<[@A, @B, @C, @D, @E]> {
+    func @compute() -> !llzk.struct<@T3<[@A, @B, @C, @D, @E]>> {
+      %self = new_struct : <@T3<[@A, @B, @C, @D, @E]>>
+      return %self : !llzk.struct<@T3<[@A, @B, @C, @D, @E]>>
+    }
+    func @constrain(%self : !llzk.struct<@T3<[@A, @B, @C, @D, @E]>>) {
+      return
+    }
+  }
+  llzk.struct @Tester<[@S0, @S1]> {
+    func @compute(%0: index, %1: i1, %2: !llzk.felt, %3: !llzk.struct<@T1<[]>>, 
+                  %4: !llzk.struct<@T2<[1]>>, %5: !llzk.struct<@T2<[@S0]>>, 
+                  %6: !llzk.struct<@T2<[#map1]>>, %7: !llzk.struct<@T2<[!llzk.felt]>>,
+                  %8: !llzk.array<2,2 x !llzk.felt>, %9: !llzk.array<2,@S0 x !llzk.felt>,
+                  %10: !llzk.array<2,#map1 x !llzk.felt>, %11: !llzk.string, %12: !llzk.tvar<@S1>,
+                  %18: !llzk.struct<@T3<[1, #map1, @S0, 1, !llzk.struct<@T2<[1]>>]>>,
+                  %20: !llzk.array<1, #map1, @S0, 1 x !llzk.struct<@T2<[1]>>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+      %self = new_struct : <@Tester<[@S0, @S1]>>
+      // Tests for equality
+      %r0 = unifiable_cast %0 : (index) -> index
+      %r1 = unifiable_cast %1 : (i1) -> i1
+      %r2 = unifiable_cast %2 : (!llzk.felt) -> !llzk.felt
+      %r3 = unifiable_cast %3 : (!llzk.struct<@T1<[]>>) -> !llzk.struct<@T1<[]>>
+      %r4 = unifiable_cast %4 : (!llzk.struct<@T2<[1]>>) -> !llzk.struct<@T2<[1]>>
+      %r5 = unifiable_cast %5 : (!llzk.struct<@T2<[@S0]>>) -> !llzk.struct<@T2<[@S0]>>
+      %r6 = unifiable_cast %6 : (!llzk.struct<@T2<[#map1]>>) -> !llzk.struct<@T2<[#map1]>>
+      %r7 = unifiable_cast %7 : (!llzk.struct<@T2<[!llzk.felt]>>) -> !llzk.struct<@T2<[!llzk.felt]>>
+      %r8 = unifiable_cast %8 : (!llzk.array<2,2 x !llzk.felt>) -> !llzk.array<2,2 x !llzk.felt>
+      %r9 = unifiable_cast %9 : (!llzk.array<2,@S0 x !llzk.felt>) -> !llzk.array<2,@S0 x !llzk.felt>
+      %r10 = unifiable_cast %10 : (!llzk.array<2,#map1 x !llzk.felt>) -> !llzk.array<2,#map1 x !llzk.felt>
+      %r11 = unifiable_cast %11 : (!llzk.string) -> !llzk.string
+      // Test that a type variable unifies with any type
+      %r12 = unifiable_cast %12 : (!llzk.tvar<@S1>) -> index 
+      %13 = unifiable_cast %2 : (!llzk.felt) -> !llzk.tvar<@S1>
+      // Test that if structs have the same name they unify if their params unify
+      %19 = unifiable_cast %18 : (!llzk.struct<@T3<[1, #map1, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@T3<[#map1, 1, 1, @S0, !llzk.struct<@T2<[#map1]>>]>>
+      %21 = unifiable_cast %20 : (!llzk.array<1, #map1, @S0, 1 x !llzk.struct<@T2<[1]>>>) -> !llzk.array<#map1, 1, 1, @S0 x !llzk.struct<@T2<[#map1]>>>
+      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+    }
+    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %0: index, %1: i1, %2: !llzk.felt, %3: !llzk.struct<@T1<[]>>, 
+                  %4: !llzk.struct<@T2<[1]>>, %5: !llzk.struct<@T2<[@S0]>>, 
+                  %6: !llzk.struct<@T2<[#map1]>>, %7: !llzk.struct<@T2<[!llzk.felt]>>,
+                  %8: !llzk.array<2,2 x !llzk.felt>, %9: !llzk.array<2,@S0 x !llzk.felt>,
+                  %10: !llzk.array<2,#map1 x !llzk.felt>, %11: !llzk.string, %12: !llzk.tvar<@S1>,
+                  %18: !llzk.struct<@T3<[1, #map1, @S0, 1, !llzk.struct<@T2<[1]>>]>>,
+                  %20: !llzk.array<1, #map1, @S0, 1 x !llzk.struct<@T2<[1]>>>) {
       return
     }
   }
 }
 
 //       CHECK: module attributes {veridise.lang = "llzk"} {
-// CHECK-LABEL:  llzk.struct @A<[]> {
-// CHECK-LABEL:    func @compute
-//  CHECK-SAME:                 (%0: <input-type>) -> !llzk.struct<@A<[]>> {
-//  CHECK-NEXT:      %self = new_struct : <@A<[]>>
-//  CHECK-NEXT:      %1 = unifiable_cast %0 : (<input-type>) -> <output-type>
-//  CHECK-NEXT:      return %self : !llzk.struct<@A<[]>>
+// CHECK-LABEL:  llzk.struct @Tester<[@S0, @S1]> {
+// CHECK-LABEL:    func @compute(
+//  CHECK-SAME:                  %[[A0:[0-9a-zA-Z_\.]+]]: index,
+//  CHECK-SAME:                  %[[A1:[0-9a-zA-Z_\.]+]]: i1,
+//  CHECK-SAME:                  %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+//  CHECK-SAME:                  %[[A3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T1<[]>>,
+//  CHECK-SAME:                  %[[A4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T2<[1]>>,
+//  CHECK-SAME:                  %[[A5:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T2<[@S0]>>,
+//  CHECK-SAME:                  %[[A6:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T2<[#map]>>,
+//  CHECK-SAME:                  %[[A7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T2<[!llzk.felt]>>,
+//  CHECK-SAME:                  %[[A8:[0-9a-zA-Z_\.]+]]: !llzk.array<2,2 x !llzk.felt>,
+//  CHECK-SAME:                  %[[A9:[0-9a-zA-Z_\.]+]]: !llzk.array<2,@S0 x !llzk.felt>,
+//  CHECK-SAME:                  %[[A10:[0-9a-zA-Z_\.]+]]: !llzk.array<2,#map x !llzk.felt>,
+//  CHECK-SAME:                  %[[A11:[0-9a-zA-Z_\.]+]]: !llzk.string,
+//  CHECK-SAME:                  %[[A12:[0-9a-zA-Z_\.]+]]: !llzk.tvar<@S1>,
+//  CHECK-SAME:                  %[[A13:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T3<[1, #map, @S0, 1, !llzk.struct<@T2<[1]>>]>>,
+//  CHECK-SAME:                  %[[A14:[0-9a-zA-Z_\.]+]]: !llzk.array<1,#map,@S0,1 x !llzk.struct<@T2<[1]>>>
+//  CHECK-SAME:    ) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+//  CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Tester<[@S0, @S1]>>
+//  CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A0]] : (index) -> index
+//  CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A1]] : (i1) -> i1
+//  CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A2]] : (!llzk.felt) -> !llzk.felt
+//  CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A3]] : (!llzk.struct<@T1<[]>>) -> !llzk.struct<@T1<[]>>
+//  CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A4]] : (!llzk.struct<@T2<[1]>>) -> !llzk.struct<@T2<[1]>>
+//  CHECK-NEXT:      %[[T5:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A5]] : (!llzk.struct<@T2<[@S0]>>) -> !llzk.struct<@T2<[@S0]>>
+//  CHECK-NEXT:      %[[T6:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A6]] : (!llzk.struct<@T2<[#map]>>) -> !llzk.struct<@T2<[#map]>>
+//  CHECK-NEXT:      %[[T7:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A7]] : (!llzk.struct<@T2<[!llzk.felt]>>) -> !llzk.struct<@T2<[!llzk.felt]>>
+//  CHECK-NEXT:      %[[T8:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A8]] : (!llzk.array<2,2 x !llzk.felt>) -> !llzk.array<2,2 x !llzk.felt>
+//  CHECK-NEXT:      %[[T9:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A9]] : (!llzk.array<2,@S0 x !llzk.felt>) -> !llzk.array<2,@S0 x !llzk.felt>
+//  CHECK-NEXT:      %[[T10:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A10]] : (!llzk.array<2,#map x !llzk.felt>) -> !llzk.array<2,#map x !llzk.felt>
+//  CHECK-NEXT:      %[[T11:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A11]] : (!llzk.string) -> !llzk.string
+//  CHECK-NEXT:      %[[T12:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A12]] : (!llzk.tvar<@S1>) -> index
+//  CHECK-NEXT:      %[[T13:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A2]] : (!llzk.felt) -> !llzk.tvar<@S1>
+//  CHECK-NEXT:      %[[T14:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A13]] : (!llzk.struct<@T3<[1, #map, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@T3<[#map, 1, 1, @S0, !llzk.struct<@T2<[#map]>>]>>
+//  CHECK-NEXT:      %[[T15:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A14]] : (!llzk.array<1,#map,@S0,1 x !llzk.struct<@T2<[1]>>>) -> !llzk.array<#map,1,1,@S0 x !llzk.struct<@T2<[#map]>>>
+//  CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@Tester<[@S0, @S1]>>
 //  CHECK-NEXT:    }
-// CHECK-LABEL:    func @constrain
-//  CHECK-SAME:                   (%self: !llzk.struct<@A<[]>>, %0: <input-type>) {
+// CHECK-LABEL:    func @constrain(
+//  CHECK-SAME:                    %[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Tester<[@S0, @S1]>>, 
+//  CHECK-SAME:                    %[[A0:[0-9a-zA-Z_\.]+]]: index,
+//  CHECK-SAME:                    %[[A1:[0-9a-zA-Z_\.]+]]: i1,
+//  CHECK-SAME:                    %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+//  CHECK-SAME:                    %[[A3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T1<[]>>,
+//  CHECK-SAME:                    %[[A4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T2<[1]>>,
+//  CHECK-SAME:                    %[[A5:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T2<[@S0]>>,
+//  CHECK-SAME:                    %[[A6:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T2<[#map]>>,
+//  CHECK-SAME:                    %[[A7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T2<[!llzk.felt]>>,
+//  CHECK-SAME:                    %[[A8:[0-9a-zA-Z_\.]+]]: !llzk.array<2,2 x !llzk.felt>,
+//  CHECK-SAME:                    %[[A9:[0-9a-zA-Z_\.]+]]: !llzk.array<2,@S0 x !llzk.felt>,
+//  CHECK-SAME:                    %[[A10:[0-9a-zA-Z_\.]+]]: !llzk.array<2,#map x !llzk.felt>,
+//  CHECK-SAME:                    %[[A11:[0-9a-zA-Z_\.]+]]: !llzk.string,
+//  CHECK-SAME:                    %[[A12:[0-9a-zA-Z_\.]+]]: !llzk.tvar<@S1>,
+//  CHECK-SAME:                    %[[A13:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T3<[1, #map, @S0, 1, !llzk.struct<@T2<[1]>>]>>,
+//  CHECK-SAME:                    %[[A14:[0-9a-zA-Z_\.]+]]: !llzk.array<1,#map,@S0,1 x !llzk.struct<@T2<[1]>>>
+//  CHECK-SAME:    ) {
 //  CHECK-NEXT:      return
 //  CHECK-NEXT:    }
 //  CHECK-NEXT:  }
 //  CHECK-NEXT: }
 
-// -----
 
-// TODO:
-//  - Same type for input and output
-//  - Type var type in either left or right
-//  - Both structs
-//   - They unify if they are the same struct (by name) and they params unify 
-//  - Both arrays
-//   - They unify if the inner type unifies and if the params unify 
-//   - Params unify if they are (affine attr ~ integer attr || integer attr ~ affine attr || either side is a symbol || they are both type attrs and their inner types unify)
 
 // - Negative test cases for all the above
