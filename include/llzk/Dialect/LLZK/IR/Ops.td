@@ -939,6 +939,34 @@ def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
   let assemblyFormat = [{ $value attr-dict }];
 }
 
+def LLZK_UnifiableCastOp : LLZK_Op<"unifiable_cast", [Pure]> {
+  let summary = "cast between two unifiable types";
+  let description = [{
+    This operation converts a value into a value of a different type so long the 
+    input and output values are unifiable.
+
+    Most ops that accept LLZK types accept unifiable types as input and thus there 
+    is no need for casting between types. This op is meant to be used in situations where
+    is not possible to modify the given or the target type and they are different but unifiable.
+    For example, inside a conversion pattern the driver may introduce `unrealized_conversion_cast`
+    operations if the types are not equal. This will happen regardless of wether the two types unify.
+    This cast can be introduced instead of the default cast operation to satisfy MLIR's assumtions 
+    on type equality.
+
+    Example:
+    ```llzk
+    %0 = some_other_op : !llzk.array<@N x !llzk.felt>
+    %1 = unifiable_cast %0 : (!llzk.array<@N x @llzk.felt>) -> !llzk.array<affine_map<()[s0, s1] -> (s0 + s1)> x !llzk.felt>
+    ```
+  }];
+
+  let arguments = (ins AnyLLZKType:$input);
+  let results = (outs AnyLLZKType:$result);
+  let assemblyFormat = "$input `:` functional-type($input, results) attr-dict";
+
+  let hasVerifier = 1;
+}
+
 //===------------------------------------------------------------------===//
 // Other operators
 //===------------------------------------------------------------------===//

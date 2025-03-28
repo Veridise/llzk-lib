@@ -425,8 +425,10 @@ LogicalResult ensureAttrTypeMatch(
 ) {
   if (!isValidGlobalType(type)) {
     // Same error message ODS-generated code would produce
-    return errFn().append("attribute 'type' failed to satisfy constraint: type attribute of "
-                          "any LLZK type except non-constant types");
+    return errFn().append(
+        "attribute 'type' failed to satisfy constraint: type attribute of "
+        "any LLZK type except non-constant types"
+    );
   }
   if (type.isSignlessInteger(1)) {
     if (IntegerAttr ia = llvm::dyn_cast<IntegerAttr>(valAttr)) {
@@ -1256,5 +1258,18 @@ LogicalResult ApplyMapOp::verify() {
 //===------------------------------------------------------------------===//
 
 OpFoldResult LitStringOp::fold(LitStringOp::FoldAdaptor) { return getValueAttr(); }
+
+//===------------------------------------------------------------------===//
+// UnifiableCastOp
+//===------------------------------------------------------------------===//
+
+LogicalResult UnifiableCastOp::verify() {
+  if (!typesUnify(getInput().getType(), getResult().getType())) {
+    return emitOpError() << "input type " << getInput().getType() << " and output type "
+                         << getResult().getType() << " are not unifiable";
+  }
+
+  return success();
+}
 
 } // namespace llzk
