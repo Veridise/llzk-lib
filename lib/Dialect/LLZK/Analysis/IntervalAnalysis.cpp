@@ -1,4 +1,5 @@
 #include "llzk/Dialect/LLZK/Analysis/IntervalAnalysis.h"
+#include "llzk/Dialect/LLZK/Util/APIntHelper.h"
 #include "llzk/Dialect/LLZK/Util/Debug.h"
 
 #include <llvm/ADT/TypeSwitch.h>
@@ -40,12 +41,12 @@ void Field::initKnownFields(llvm::DenseMap<llvm::StringRef, Field> &knownFields)
 }
 
 llvm::APSInt Field::reduce(llvm::APSInt i) const {
-  auto maxBits = std::max(i.getBitWidth(), bitWidth());
-  auto m = (i.zext(maxBits).urem(prime().zext(maxBits))).trunc(bitWidth());
+  unsigned maxBits = std::max(i.getBitWidth(), bitWidth());
+  llvm::APSInt m = (i.extend(maxBits) % prime().extend(maxBits)).trunc(bitWidth());
   if (m.isNegative()) {
-    return prime() + llvm::APSInt(m);
+    return prime() + m;
   }
-  return llvm::APSInt(m);
+  return m;
 }
 
 llvm::APSInt Field::reduce(unsigned i) const {
@@ -56,15 +57,15 @@ llvm::APSInt Field::reduce(unsigned i) const {
 /* UnreducedInterval */
 
 Interval UnreducedInterval::reduce(const Field &field) const {
-  if (a > b) {
+  if (safeGt(a, b)) {
     return Interval::Empty(field);
   }
-  if (width().trunc(field.bitWidth()) >= field.prime()) {
+  if (safeGe(width(), field.prime())) {
     return Interval::Entire(field);
   }
-
   auto lhs = field.reduce(a), rhs = field.reduce(b);
-
+  // lhs and rhs are now guaranteed to have the same bitwidth, so we can use
+  // built-in functions.
   if ((rhs - lhs).isZero()) {
     return Interval::Degenerate(field, lhs);
   }
@@ -89,38 +90,39 @@ Interval UnreducedInterval::reduce(const Field &field) const {
 
 UnreducedInterval UnreducedInterval::intersect(const UnreducedInterval &rhs) const {
   auto &lhs = *this;
-  return UnreducedInterval(std::max(lhs.a, rhs.a), std::min(lhs.b, rhs.b));
+  return UnreducedInterval(safeMax(lhs.a, rhs.a), safeMin(lhs.b, rhs.b));
 }
 
 UnreducedInterval UnreducedInterval::doUnion(const UnreducedInterval &rhs) const {
   auto &lhs = *this;
-  return UnreducedInterval(std::min(lhs.a, rhs.a), std::max(lhs.b, rhs.b));
+  return UnreducedInterval(safeMin(lhs.a, rhs.a), safeMax(lhs.b, rhs.b));
 }
 
 UnreducedInterval UnreducedInterval::lt(const UnreducedInterval &rhs) const {
   auto one = llvm::APSInt(llvm::APInt(a.getBitWidth(), 1));
-  auto bound = rhs.b - one;
-  return UnreducedInterval(std::min(a, bound), std::min(b, bound));
+  auto bound = expandingSub(rhs.b, one);
+  return UnreducedInterval(safeMin(a, bound), safeMin(b, bound));
 }
 
 UnreducedInterval UnreducedInterval::le(const UnreducedInterval &rhs) const {
-  return UnreducedInterval(std::min(a, rhs.b), std::min(b, rhs.b));
+  return UnreducedInterval(safeMin(a, rhs.b), safeMin(b, rhs.b));
 }
 
 UnreducedInterval UnreducedInterval::gt(const UnreducedInterval &rhs) const {
   auto one = llvm::APSInt(llvm::APInt(a.getBitWidth(), 1));
-  auto bound = rhs.a + one;
-  return UnreducedInterval(std::max(a, bound), std::max(b, bound));
+  auto bound = expandingAdd(rhs.a, one);
+  return UnreducedInterval(safeMax(a, bound), safeMax(b, bound));
 }
 
 UnreducedInterval UnreducedInterval::ge(const UnreducedInterval &rhs) const {
-  return UnreducedInterval(std::max(a, rhs.a), std::max(b, rhs.a));
+  return UnreducedInterval(safeMax(a, rhs.a), safeMax(b, rhs.a));
 }
 
 UnreducedInterval UnreducedInterval::operator-() const { return UnreducedInterval(-b, -a); }
 
 UnreducedInterval operator+(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
-  return UnreducedInterval(lhs.a + rhs.a, lhs.b + rhs.b);
+  llvm::APSInt low = expandingAdd(lhs.a, rhs.a), high = expandingAdd(lhs.b, rhs.b);
+  return UnreducedInterval(low, high);
 }
 
 UnreducedInterval operator-(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
@@ -128,20 +130,21 @@ UnreducedInterval operator-(const UnreducedInterval &lhs, const UnreducedInterva
 }
 
 UnreducedInterval operator*(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
-  auto v1 = lhs.a * rhs.a;
-  auto v2 = lhs.a * rhs.b;
-  auto v3 = lhs.b * rhs.a;
-  auto v4 = lhs.b * rhs.b;
+  auto v1 = expandingMul(lhs.a, rhs.a);
+  auto v2 = expandingMul(lhs.a, rhs.b);
+  auto v3 = expandingMul(lhs.b, rhs.a);
+  auto v4 = expandingMul(lhs.b, rhs.b);
 
-  auto minVal = std::min({v1, v2, v3, v4});
-  auto maxVal = std::max({v1, v2, v3, v4});
+  auto minVal = safeMin({v1, v2, v3, v4});
+  auto maxVal = safeMax({v1, v2, v3, v4});
 
   return UnreducedInterval(minVal, maxVal);
 }
 
 bool UnreducedInterval::overlaps(const UnreducedInterval &rhs) const {
   auto &lhs = *this;
-  return lhs.b >= rhs.a || lhs.a <= rhs.b;
+  std::strong_ordering leftCmp = safeCmp(lhs.b, rhs.a), rightCmp = safeCmp(lhs.a, rhs.b);
+  return std::is_gteq(leftCmp) or std::is_lteq(rightCmp);
 }
 
 std::strong_ordering operator<=>(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
@@ -382,17 +385,15 @@ Interval operator*(const Interval &lhs, const Interval &rhs) {
   return (lhs.firstUnreduced() * rhs.firstUnreduced()).reduce(field);
 }
 
-Interval operator/(const Interval &lhs, const Interval &rhs) {
+FailureOr<Interval> operator/(const Interval &lhs, const Interval &rhs) {
   const auto &field = rhs.getField();
   if (rhs.width() > field.one()) {
     return Interval::Entire(field);
   }
   if (rhs.a.isZero()) {
-    llvm::report_fatal_error(
-        "LLZK error in " + mlir::Twine(__PRETTY_FUNCTION__) + ": division by zero"
-    );
+    return failure();
   }
-  return UnreducedInterval(lhs.a / rhs.a, lhs.b / rhs.a).reduce(field);
+  return success(UnreducedInterval(lhs.a / rhs.a, lhs.b / rhs.a).reduce(field));
 }
 
 Interval operator%(const Interval &lhs, const Interval &rhs) {
@@ -453,9 +454,19 @@ mul(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue
 }
 
 ExpressionValue
-div(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+div(llvm::SMTSolverRef solver, DivFeltOp op, const ExpressionValue &lhs,
+    const ExpressionValue &rhs) {
   ExpressionValue res;
-  res.i = lhs.i / rhs.i;
+  auto divRes = lhs.i / rhs.i;
+  if (failed(divRes)) {
+    op->emitWarning(
+        "divisor is not restricted to non-zero values, leading to potential divide-by-zero error."
+        " Range of division result will be treated as unbounded."
+    );
+    res.i = Interval::Entire(lhs.getField());
+  } else {
+    res.i = *divRes;
+  }
   res.expr = solver->mkBVUDiv(lhs.expr, rhs.expr);
   return res;
 }
@@ -887,7 +898,7 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
                  .Case<AddFeltOp>([&](AddFeltOp _) { return add(smtSolver, lhs, rhs); })
                  .Case<SubFeltOp>([&](SubFeltOp _) { return sub(smtSolver, lhs, rhs); })
                  .Case<MulFeltOp>([&](MulFeltOp _) { return mul(smtSolver, lhs, rhs); })
-                 .Case<DivFeltOp>([&](DivFeltOp _) { return div(smtSolver, lhs, rhs); })
+                 .Case<DivFeltOp>([&](DivFeltOp op) { return div(smtSolver, op, lhs, rhs); })
                  .Case<ModFeltOp>([&](ModFeltOp _) { return mod(smtSolver, lhs, rhs); })
                  .Case<CmpOp>([&](CmpOp cmpOp) {
     return cmp(smtSolver, cmpOp, lhs, rhs);

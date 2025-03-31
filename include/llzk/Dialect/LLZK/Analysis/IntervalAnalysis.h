@@ -5,6 +5,7 @@
 #include "llzk/Dialect/LLZK/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/Util/APIntHelper.h"
 #include "llzk/Dialect/LLZK/Util/Compare.h"
 
 #include <mlir/IR/BuiltinOps.h>
@@ -153,7 +154,8 @@ public:
   llvm::APSInt getLHS() const { return a; }
   llvm::APSInt getRHS() const { return b; }
 
-  llvm::APSInt width() const { return llvm::APSInt((b - a).abs()); }
+  /// Since the range is inclusive, we add one to the difference to get the true width.
+  llvm::APSInt width() const { return llvm::APSInt(expandingSub(b, a).abs())++; }
 
   void print(llvm::raw_ostream &os) const { os << "Unreduced:[ " << a << ", " << b << " ]"; }
 
@@ -310,8 +312,9 @@ public:
   friend Interval operator+(const Interval &lhs, const Interval &rhs);
   friend Interval operator-(const Interval &lhs, const Interval &rhs);
   friend Interval operator*(const Interval &lhs, const Interval &rhs);
-  friend Interval operator/(const Interval &lhs, const Interval &rhs);
   friend Interval operator%(const Interval &lhs, const Interval &rhs);
+  /// @brief Returns failure if a division-by-zero is encountered.
+  friend mlir::FailureOr<Interval> operator/(const Interval &lhs, const Interval &rhs);
 
   /* Checks and Comparisons */
 
@@ -355,7 +358,7 @@ public:
 private:
   Interval(Type t, const Field &f) : field(f), ty(t), a(f.zero()), b(f.zero()) {}
   Interval(Type t, const Field &f, llvm::APSInt lhs, llvm::APSInt rhs)
-      : field(f), ty(t), a(lhs.zext(f.bitWidth())), b(rhs.zext(f.bitWidth())) {}
+      : field(f), ty(t), a(lhs.extend(f.bitWidth())), b(rhs.extend(f.bitWidth())) {}
 
   std::reference_wrapper<const Field> field;
   Type ty;
@@ -431,7 +434,8 @@ public:
   mul(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  div(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  div(llvm::SMTSolverRef solver, DivFeltOp op, const ExpressionValue &lhs,
+      const ExpressionValue &rhs);
 
   friend ExpressionValue
   mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
@@ -648,7 +652,7 @@ private:
   bool isExtractArrayOp(mlir::Operation *op) const { return mlir::isa<ExtractArrayOp>(op); }
 
   bool isDefinitionOp(mlir::Operation *op) const {
-    return mlir::isa<StructDefOp, FuncOp, FieldDefOp>(op);
+    return mlir::isa<StructDefOp, FuncOp, FieldDefOp, mlir::ModuleOp>(op);
   }
 
   bool isCallOp(mlir::Operation *op) const { return mlir::isa<CallOp>(op); }
