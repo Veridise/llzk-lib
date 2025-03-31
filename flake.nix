@@ -117,6 +117,9 @@
 
               # TODO: only enable if python bindings enabled
               export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
+
+              # Needed for using mlir-tblgen inside the dev shell 
+              export LD_LIBRARY_PATH=${pkgs.z3.lib}/lib:$LD_LIBRARY_PATH
             '';
           });
         };

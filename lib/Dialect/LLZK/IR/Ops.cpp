@@ -1257,4 +1257,17 @@ LogicalResult ApplyMapOp::verify() {
 
 OpFoldResult LitStringOp::fold(LitStringOp::FoldAdaptor) { return getValueAttr(); }
 
+//===------------------------------------------------------------------===//
+// UnifiableCastOp
+//===------------------------------------------------------------------===//
+
+LogicalResult UnifiableCastOp::verify() {
+  if (!typesUnify(getInput().getType(), getResult().getType())) {
+    return emitOpError() << "input type " << getInput().getType() << " and output type "
+                         << getResult().getType() << " are not unifiable";
+  }
+
+  return success();
+}
+
 } // namespace llzk
