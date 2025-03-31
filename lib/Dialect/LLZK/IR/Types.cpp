@@ -189,13 +189,13 @@ using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
 using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
 
 class AllowedTypes {
-  bool no_felt, no_string, no_struct, no_array, no_var;
+  bool no_felt, no_string, no_struct, no_array, no_var, no_int;
   bool no_struct_params;
 
 public:
   constexpr AllowedTypes()
       : no_felt(false), no_string(false), no_struct(false), no_array(false), no_var(false),
-        no_struct_params(false) {}
+        no_int(false), no_struct_params(false) {}
 
   constexpr AllowedTypes &noFelt() {
     no_felt = true;
@@ -222,12 +222,20 @@ public:
     return *this;
   }
 
+  constexpr AllowedTypes &noInt() {
+    no_int = true;
+    return *this;
+  }
+
   constexpr AllowedTypes &noStructParams(bool noStructParams = true) {
     no_struct_params = noStructParams;
     return *this;
   }
 
-  constexpr AllowedTypes &onlyInt() { return noFelt().noString().noStruct().noArray().noVar(); }
+  constexpr AllowedTypes &onlyInt() {
+    no_int = false;
+    return noFelt().noString().noStruct().noArray().noVar();
+  }
 
   // This is the main check for allowed types.
   bool isValidTypeImpl(Type type);
@@ -299,31 +307,31 @@ public:
   // for the `no_struct_params` flag which requires that `params` is null or empty.
   bool areValidStructTypeParams(ArrayAttr params, EmitErrorFn emitError = nullptr) {
     bool success = true;
-    if (!isNullOrEmpty(params)) {
-      if (no_struct_params) {
-        return false;
-      }
-      for (Attribute p : params) {
-        if (!StructParamTypes::matches(p)) {
-          StructParamTypes::reportInvalid(emitError, p, "Struct parameter");
-          success = false;
-        } else if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(p)) {
-          if (!isValidTypeImpl(tyAttr.getValue())) {
-            if (emitError) {
-              emitError()
-                  .append("expected a valid LLZK type but found ", tyAttr.getValue())
-                  .report();
-            }
-            success = false;
+    if (isNullOrEmpty(params)) {
+      return true;
+    }
+    if (no_struct_params) {
+      return false;
+    }
+    for (Attribute p : params) {
+      if (!StructParamTypes::matches(p)) {
+        StructParamTypes::reportInvalid(emitError, p, "Struct parameter");
+        success = false;
+      } else if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(p)) {
+        if (!isValidTypeImpl(tyAttr.getValue())) {
+          if (emitError) {
+            emitError().append("expected a valid LLZK type but found ", tyAttr.getValue()).report();
           }
-        } else if (no_var && !llvm::isa<IntegerAttr>(p)) {
-          TypeList<IntegerAttr>::reportInvalid(emitError, p, "Concrete struct parameter");
-          success = false;
-        } else if (failed(verifyIntAttrType(emitError, p))) {
           success = false;
         }
+      } else if (no_var && !llvm::isa<IntegerAttr>(p)) {
+        TypeList<IntegerAttr>::reportInvalid(emitError, p, "Concrete struct parameter");
+        success = false;
+      } else if (failed(verifyIntAttrType(emitError, p))) {
+        success = false;
       }
     }
+
     return success;
   }
 
@@ -337,7 +345,11 @@ public:
 };
 
 bool AllowedTypes::isValidTypeImpl(Type type) {
-  return type.isSignlessInteger(1) || llvm::isa<IndexType>(type) ||
+  assert(
+      no_int || no_felt || no_string || no_var || no_struct ||
+      no_array && "All types have been deactivated"
+  );
+  return (!no_int && type.isSignlessInteger(1)) || (!no_int && llvm::isa<IndexType>(type)) ||
          (!no_felt && llvm::isa<FeltType>(type)) || (!no_string && llvm::isa<StringType>(type)) ||
          (!no_var && llvm::isa<TypeVarType>(type)) || (!no_struct && isValidStructTypeImpl(type)) ||
          (!no_array && isValidArrayTypeImpl(type));
@@ -346,6 +358,10 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
 } // namespace
 
 bool isValidType(Type type) { return AllowedTypes().isValidTypeImpl(type); }
+
+bool isValidColumnType(Type type) {
+  return AllowedTypes().noString().noInt().isValidTypeImpl(type);
+}
 
 bool isValidGlobalType(Type type) { return AllowedTypes().noVar().isValidTypeImpl(type); }
 

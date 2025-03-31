@@ -805,28 +805,35 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
 //===------------------------------------------------------------------===//
 
 void FieldDefOp::build(
-    OpBuilder &odsBuilder, OperationState &odsState, StringAttr sym_name, TypeAttr type
+    OpBuilder &odsBuilder, OperationState &odsState, StringAttr sym_name, TypeAttr type,
+    bool isColumn
 ) {
   Properties &props = odsState.getOrAddProperties<Properties>();
   props.setSymName(sym_name);
   props.setType(type);
+  if (isColumn) {
+    props.column = odsBuilder.getUnitAttr();
+  }
 }
 
 void FieldDefOp::build(
-    OpBuilder &odsBuilder, OperationState &odsState, StringRef sym_name, Type type
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef sym_name, Type type, bool isColumn
 ) {
-  build(odsBuilder, odsState, odsBuilder.getStringAttr(sym_name), TypeAttr::get(type));
+  build(odsBuilder, odsState, odsBuilder.getStringAttr(sym_name), TypeAttr::get(type), isColumn);
 }
 
 void FieldDefOp::build(
-    OpBuilder &, OperationState &odsState, TypeRange resultTypes, ValueRange operands,
-    ArrayRef<NamedAttribute> attributes
+    OpBuilder &odsBuilder, OperationState &odsState, TypeRange resultTypes, ValueRange operands,
+    ArrayRef<NamedAttribute> attributes, bool isColumn
 ) {
   assert(operands.size() == 0u && "mismatched number of parameters");
   odsState.addOperands(operands);
   odsState.addAttributes(attributes);
   assert(resultTypes.size() == 0u && "mismatched number of return types");
   odsState.addTypes(resultTypes);
+  if (isColumn) {
+    odsState.getOrAddProperties<Properties>().column = odsBuilder.getUnitAttr();
+  }
 }
 void FieldDefOp::setPublicAttr(bool newValue) {
   if (newValue) {
@@ -859,6 +866,20 @@ LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   }
 }
 
+LogicalResult FieldDefOp::verify() {
+  if (!getColumn()) {
+    return success();
+  }
+
+  // If the field is marked as a column only a small subset of types are allowed.
+  if (!isValidColumnType(getType())) {
+    return emitOpError() << "column marked fields can only contain felts, arrays of felts, or "
+                            "structs but field has type '"
+                         << getType() << "'";
+  }
+  return success();
+}
+
 //===------------------------------------------------------------------===//
 // FieldRefOp implementations
 //===------------------------------------------------------------------===//
@@ -883,7 +904,9 @@ getFieldDefOpImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables, Stru
   return std::move(res.value());
 }
 
-LogicalResult verifySymbolUsesImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
+LogicalResult verifySymbolUsesImpl(
+    FieldRefOpInterface refOp, SymbolTableCollection &tables, Operation **fieldDefOp = nullptr
+) {
   // Ensure the base component/struct type reference can be resolved.
   StructType tyStruct = refOp.getStructType();
   if (failed(tyStruct.verifySymbolRef(tables, refOp.getOperation()))) {
@@ -893,6 +916,9 @@ LogicalResult verifySymbolUsesImpl(FieldRefOpInterface refOp, SymbolTableCollect
   auto field = getFieldDefOpImpl(refOp, tables, tyStruct);
   if (failed(field)) {
     return field; // getFieldDefOp() already emits a sufficient error message
+  }
+  if (fieldDefOp) {
+    *fieldDefOp = field->get();
   }
   // Ensure the type of the referenced field declaration matches the type used in this op.
   Type actualType = refOp.getVal().getType();
@@ -913,7 +939,13 @@ FieldRefOpInterface::getFieldDefOp(SymbolTableCollection &tables) {
 }
 
 LogicalResult FieldReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  return verifySymbolUsesImpl(*this, tables);
+  Operation *fieldDefOp = nullptr;
+  if (failed(verifySymbolUsesImpl(*this, tables, &fieldDefOp))) {
+    return failure();
+  }
+  assert(fieldDefOp);
+
+  return success(mlir::cast<FieldDefOp>(fieldDefOp).getColumn());
 }
 
 LogicalResult FieldWriteOp::verifySymbolUses(SymbolTableCollection &tables) {

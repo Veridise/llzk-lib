@@ -166,7 +166,7 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
     auto field = builder.create<FieldReadOp>(
         callLoc, calleeTy,
         callerFn.getBody().getArgument(0), // first arg is self
-        fieldName
+        fieldName, /*tableOffset=*/nullptr
     );
     builder.create<CallOp>(
         callLoc, TypeRange {}, calleeFn.getFullyQualifiedName(), ValueRange {field}

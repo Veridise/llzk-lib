@@ -328,21 +328,21 @@ def LLZK_FieldDefOp
     ```
   }];
 
-  let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<AnyLLZKType>:$type);
+  let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<AnyLLZKType>:$type, UnitAttr:$column);
 
   // Define builders manually to avoid the default ones that have extra
   // TypeRange parameters that must always be empty.
   let skipDefaultBuilders = 1;
   let builders =
       [OpBuilder<(ins "::mlir::StringAttr":$sym_name,
-           "::mlir::TypeAttr":$type)>,
-       OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::Type":$type)>,
+           "::mlir::TypeAttr":$type, CArg<"bool", "false">:$isColumn)>,
+       OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::Type":$type, CArg<"bool", "false">:$isColumn)>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::ValueRange":$operands,
-           "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes)>,
+           "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes, CArg<"bool", "false">:$isColumn)>,
        // Simpler version since 'resultTypes' and 'operands' must be empty
-       OpBuilder<(ins "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes),
-                 [{ build($_builder, $_state, {}, {}, attributes); }]>];
+       OpBuilder<(ins "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes, CArg<"bool", "false">:$isColumn),
+                 [{ build($_builder, $_state, {}, {}, attributes, isColumn); }]>];
 
   let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 
@@ -350,6 +350,8 @@ def LLZK_FieldDefOp
     inline bool hasPublicAttr() { return getOperation()->hasAttr(llzk::PublicAttr::name); }
     void setPublicAttr(bool newValue = true);
   }];
+
+  let hasVerifier = 1;
 }
 
 def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf"> {
@@ -365,7 +367,7 @@ def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf"> {
 
   let arguments = (ins LLZK_StructType:$component,
       FlatSymbolRefAttr:$field_name,
-      OptionalAttr<IntegerAttr>:$tableOffset);
+      OptionalAttr<IndexAttr>:$tableOffset);
   let results = (outs AnyLLZKType:$val);
 
   let assemblyFormat = [{
