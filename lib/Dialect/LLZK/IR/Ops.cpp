@@ -355,6 +355,205 @@ void AssertOp::getEffects(
 }
 
 //===------------------------------------------------------------------===//
+// GlobalDefOp
+//===------------------------------------------------------------------===//
+
+ParseResult GlobalDefOp::parseGlobalInitialValue(
+    OpAsmParser &parser, Attribute &initialValue, TypeAttr typeAttr
+) {
+  if (parser.parseOptionalEqual()) {
+    // When there's no equal sign, there's no initial value to parse.
+    return success();
+  }
+  Type specifiedType = typeAttr.getValue();
+
+  // Special case for parsing LLZK FeltType to match format of FeltConstantOp.
+  // Not actually necessary but the default format is verbose. ex: "#llzk<constfelt 35>"
+  if (isa<FeltType>(specifiedType)) {
+    FeltConstAttr feltConstAttr;
+    if (parser.parseCustomAttributeWithFallback<FeltConstAttr>(feltConstAttr)) {
+      return failure();
+    }
+    initialValue = feltConstAttr;
+    return success();
+  }
+  // Fallback to default parser for all other types.
+  if (failed(parser.parseAttribute(initialValue, specifiedType))) {
+    return failure();
+  }
+  return success();
+}
+
+void GlobalDefOp::printGlobalInitialValue(
+    OpAsmPrinter &p, GlobalDefOp op, Attribute initialValue, TypeAttr typeAttr
+) {
+  if (initialValue) {
+    p << " = ";
+    // Special case for LLZK FeltType to match format of FeltConstantOp.
+    // Not actually necessary but the default format is verbose. ex: "#llzk<constfelt 35>"
+    if (FeltConstAttr feltConstAttr = llvm::dyn_cast<FeltConstAttr>(initialValue)) {
+      p.printStrippedAttrOrType<FeltConstAttr>(feltConstAttr);
+    } else {
+      p.printAttributeWithoutType(initialValue);
+    }
+  }
+}
+
+LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, *this, getType());
+}
+
+namespace {
+
+inline InFlightDiagnostic reportMismatch(
+    EmitErrorFn errFn, Type rootType, const Twine &aspect, const Twine &expected, const Twine &found
+) {
+  return errFn().append(
+      "with type ", rootType, " expected ", expected, " ", aspect, " but found ", found
+  );
+}
+
+inline InFlightDiagnostic reportMismatch(
+    EmitErrorFn errFn, Type rootType, const Twine &aspect, const Twine &expected, Attribute found
+) {
+  return reportMismatch(errFn, rootType, aspect, expected, found.getAbstractAttribute().getName());
+}
+
+LogicalResult ensureAttrTypeMatch(
+    Type type, Attribute valAttr, const OwningEmitErrorFn &errFn, Type rootType, const Twine &aspect
+) {
+  if (!isValidGlobalType(type)) {
+    // Same error message ODS-generated code would produce
+    return errFn().append("attribute 'type' failed to satisfy constraint: type attribute of "
+                          "any LLZK type except non-constant types");
+  }
+  if (type.isSignlessInteger(1)) {
+    if (IntegerAttr ia = llvm::dyn_cast<IntegerAttr>(valAttr)) {
+      APInt val = ia.getValue();
+      if (!val.isZero() && !val.isOne()) {
+        return errFn().append("integer constant out of range for attribute");
+      }
+    } else if (!llvm::isa<BoolAttr>(valAttr)) {
+      return reportMismatch(errFn, rootType, aspect, "builtin.bool or builtin.integer", valAttr);
+    }
+  } else if (llvm::isa<IndexType>(type)) {
+    // The explicit check for BoolAttr is needed because the LLVM isa/cast functions treat
+    // BoolAttr as a subtype of IntegerAttr but this scenario should not allow BoolAttr.
+    bool isBool = llvm::isa<BoolAttr>(valAttr);
+    if (isBool || !llvm::isa<IntegerAttr>(valAttr)) {
+      return reportMismatch(
+          errFn, rootType, aspect, "builtin.index",
+          isBool ? "builtin.bool" : valAttr.getAbstractAttribute().getName()
+      );
+    }
+  } else if (llvm::isa<FeltType>(type)) {
+    if (!llvm::isa<FeltConstAttr, IntegerAttr>(valAttr)) {
+      return reportMismatch(errFn, rootType, aspect, "llzk.felt", valAttr);
+    }
+  } else if (llvm::isa<StringType>(type)) {
+    if (!llvm::isa<StringAttr>(valAttr)) {
+      return reportMismatch(errFn, rootType, aspect, "builtin.string", valAttr);
+    }
+  } else if (ArrayType arrTy = llvm::dyn_cast<ArrayType>(type)) {
+    if (ArrayAttr arrVal = llvm::dyn_cast<ArrayAttr>(valAttr)) {
+      // Ensure the number of elements is correct for the ArrayType
+      assert(arrTy.hasStaticShape() && "implied by earlier isValidGlobalType() check");
+      int64_t expectedCount = arrTy.getNumElements();
+      size_t actualCount = arrVal.size();
+      if (std::cmp_not_equal(actualCount, expectedCount)) {
+        return reportMismatch(
+            errFn, rootType, Twine(aspect) + " to contain " + Twine(expectedCount) + " elements",
+            "builtin.array", Twine(actualCount)
+        );
+      }
+      // Ensure the type of each element is correct for the ArrayType.
+      // Rather than immediately returning on failure, check all elements and aggregate to provide
+      // as many errors are possible in a single verifier run.
+      bool hasFailure = false;
+      Type expectedElemTy = arrTy.getElementType();
+      for (Attribute e : arrVal.getValue()) {
+        hasFailure |=
+            failed(ensureAttrTypeMatch(expectedElemTy, e, errFn, rootType, "array element"));
+      }
+      if (hasFailure) {
+        return failure();
+      }
+    } else {
+      return reportMismatch(errFn, rootType, aspect, "builtin.array", valAttr);
+    }
+  } else {
+    return errFn().append("expected a valid LLZK type but found ", type);
+  }
+  return success();
+}
+
+} // namespace
+
+LogicalResult GlobalDefOp::verify() {
+  if (Attribute initValAttr = getInitialValueAttr()) {
+    Type ty = getType();
+    OwningEmitErrorFn errFn = getEmitOpErrFn(this);
+    return ensureAttrTypeMatch(ty, initValAttr, errFn, ty, "attribute value");
+  }
+  // If there is no initial value, it cannot have "const".
+  if (isConstant()) {
+    return emitOpError("marked as 'const' must be assigned a value");
+  }
+  return success();
+}
+
+//===------------------------------------------------------------------===//
+// GlobalReadOp / GlobalWriteOp
+//===------------------------------------------------------------------===//
+
+FailureOr<SymbolLookupResult<GlobalDefOp>>
+GlobalRefOpInterface::getGlobalDefOp(SymbolTableCollection &tables) {
+  return lookupTopLevelSymbol<GlobalDefOp>(tables, getNameRef(), getOperation());
+}
+
+namespace {
+
+FailureOr<SymbolLookupResult<GlobalDefOp>>
+verifySymbolUsesImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) {
+  // Ensure this op references a valid GlobalDefOp name
+  auto tgt = refOp.getGlobalDefOp(tables);
+  if (failed(tgt)) {
+    return failure();
+  }
+  // Ensure the SSA Value type matches the GlobalDefOp type
+  Type globalType = tgt->get().getType();
+  if (!typesUnify(refOp.getVal().getType(), globalType, tgt->getIncludeSymNames())) {
+    return refOp->emitOpError() << "has wrong type; expected " << globalType << ", got "
+                                << refOp.getVal().getType();
+  }
+  return tgt;
+}
+
+} // namespace
+
+LogicalResult GlobalReadOp::verifySymbolUses(SymbolTableCollection &tables) {
+  if (failed(verifySymbolUsesImpl(*this, tables))) {
+    return failure();
+  }
+  // Ensure any SymbolRef used in the type are valid
+  return verifyTypeResolution(tables, *this, getType());
+}
+
+LogicalResult GlobalWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
+  auto tgt = verifySymbolUsesImpl(*this, tables);
+  if (failed(tgt)) {
+    return failure();
+  }
+  if (tgt->get().isConstant()) {
+    return emitOpError().append(
+        "cannot target '", GlobalDefOp::getOperationName(), "' marked as 'const'"
+    );
+  }
+  return success();
+}
+
+//===------------------------------------------------------------------===//
 // StructDefOp
 //===------------------------------------------------------------------===//
 namespace {
@@ -664,8 +863,9 @@ LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 // FieldRefOp implementations
 //===------------------------------------------------------------------===//
 namespace {
+
 FailureOr<SymbolLookupResult<FieldDefOp>>
-getFieldDefOp(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructType tyStruct) {
+getFieldDefOpImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructType tyStruct) {
   Operation *op = refOp.getOperation();
   auto structDefRes = tyStruct.getDefinition(tables, op);
   if (failed(structDefRes)) {
@@ -683,46 +883,37 @@ getFieldDefOp(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructTy
   return std::move(res.value());
 }
 
-inline FailureOr<SymbolLookupResult<FieldDefOp>>
-getFieldDefOp(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
-  return getFieldDefOp(refOp, tables, refOp.getStructType());
-}
-
-LogicalResult
-verifySymbolUses(FieldRefOpInterface refOp, SymbolTableCollection &tables, Value compareTo) {
+LogicalResult verifySymbolUsesImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
   // Ensure the base component/struct type reference can be resolved.
   StructType tyStruct = refOp.getStructType();
   if (failed(tyStruct.verifySymbolRef(tables, refOp.getOperation()))) {
     return failure();
   }
   // Ensure the field name can be resolved in that struct.
-  auto field = getFieldDefOp(refOp, tables, tyStruct);
+  auto field = getFieldDefOpImpl(refOp, tables, tyStruct);
   if (failed(field)) {
     return field; // getFieldDefOp() already emits a sufficient error message
   }
   // Ensure the type of the referenced field declaration matches the type used in this op.
+  Type actualType = refOp.getVal().getType();
   Type fieldType = field->get().getType();
-  if (!typesUnify(compareTo.getType(), fieldType, field->getIncludeSymNames())) {
+  if (!typesUnify(actualType, fieldType, field->getIncludeSymNames())) {
     return refOp->emitOpError() << "has wrong type; expected " << fieldType << ", got "
-                                << compareTo.getType();
+                                << actualType;
   }
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, refOp.getOperation(), compareTo.getType());
+  return verifyTypeResolution(tables, refOp.getOperation(), actualType);
 }
+
 } // namespace
 
-FailureOr<SymbolLookupResult<FieldDefOp>> FieldReadOp::getFieldDefOp(SymbolTableCollection &tables
-) {
-  return llzk::getFieldDefOp(*this, tables);
+FailureOr<SymbolLookupResult<FieldDefOp>>
+FieldRefOpInterface::getFieldDefOp(SymbolTableCollection &tables) {
+  return getFieldDefOpImpl(*this, tables, getStructType());
 }
 
 LogicalResult FieldReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  return llzk::verifySymbolUses(*this, tables, getResult());
-}
-
-FailureOr<SymbolLookupResult<FieldDefOp>> FieldWriteOp::getFieldDefOp(SymbolTableCollection &tables
-) {
-  return llzk::getFieldDefOp(*this, tables);
+  return verifySymbolUsesImpl(*this, tables);
 }
 
 LogicalResult FieldWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
@@ -735,7 +926,7 @@ LogicalResult FieldWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
     return failure(); // checkSelfType() already emits a sufficient error message
   }
   // Perform the standard field ref checks.
-  return llzk::verifySymbolUses(*this, tables, getVal());
+  return verifySymbolUsesImpl(*this, tables);
 }
 
 //===------------------------------------------------------------------===//
@@ -1065,5 +1256,18 @@ LogicalResult ApplyMapOp::verify() {
 //===------------------------------------------------------------------===//
 
 OpFoldResult LitStringOp::fold(LitStringOp::FoldAdaptor) { return getValueAttr(); }
+
+//===------------------------------------------------------------------===//
+// UnifiableCastOp
+//===------------------------------------------------------------------===//
+
+LogicalResult UnifiableCastOp::verify() {
+  if (!typesUnify(getInput().getType(), getResult().getType())) {
+    return emitOpError() << "input type " << getInput().getType() << " and output type "
+                         << getResult().getType() << " are not unifiable";
+  }
+
+  return success();
+}
 
 } // namespace llzk

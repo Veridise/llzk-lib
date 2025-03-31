@@ -13,6 +13,12 @@ include "mlir/IR/SymbolInterfaces.td"
 // Custom traits that can be applied to Ops
 //===----------------------------------------------------------------------===//
 
+/// Verifies that an Op marked with this Trait cannot be used within a
+/// "constrain()" function. However, this does not restrict it from being used
+/// within a free function since those can be called by a "compute()" function.
+/// If an Op must only be used within the immediate body of a "compute()"
+/// function, then `InStructFunctionNamed<"::llzk::FUNC_NAME_COMPUTE">` should
+/// be used instead.
 def ComputeOnly : NativeOpTrait<"ComputeOnly">, StructuralOpTrait {
   string cppNamespace = "::llzk";
 }
@@ -141,13 +147,27 @@ class ArrayTypeElemsUnifyWithResultCustomInfer<string arrayArg>
 class LLZK_Op<string mnemonic, list<Trait> traits = []>
     : Op<LLZKDialect, mnemonic, traits>;
 
+class LLZK_GlobalRefOp<string mnemonic, list<Trait> traits = []>
+    : LLZK_Op<mnemonic,
+              traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                      DeclareOpInterfaceMethods<GlobalRefOpInterface>]> {
+  let extraClassDeclaration = [{
+    /// Gets the definition for the `global` referenced in this op.
+    inline ::mlir::FailureOr<SymbolLookupResult<GlobalDefOp>> getGlobalDefOp(::mlir::SymbolTableCollection &tables) {
+      return ::llvm::cast<GlobalRefOpInterface>(getOperation()).getGlobalDefOp(tables);
+    }
+  }];
+}
+
 class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
     : LLZK_Op<mnemonic,
               traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                       DeclareOpInterfaceMethods<FieldRefOpInterface>]> {
   let extraClassDeclaration = [{
-    /// Gets the `field` definition for the field referenced in this op.
-    ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &symbolTable);
+    /// Gets the definition for the `field` referenced in this op.
+    inline ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &tables) {
+      return ::llvm::cast<FieldRefOpInterface>(getOperation()).getFieldDefOp(tables);
+    }
   }];
 }
 

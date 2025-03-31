@@ -241,10 +241,12 @@ LogicalResult verifyParamOfType(
     return failure(); // lookupTopLevelSymbol() already emits a sufficient error message
   }
   Operation *foundOp = lookupRes->get();
-  // TODO: Currently there is no type of Symbol Operation that is valid here. However, when
-  //  the GlobalConstDef Operation is added, it will be valid to use in this context.
-  return origin->emitError() << "ref \"" << param << "\" in type " << parameterizedType
-                             << " refers to a '" << foundOp->getName() << "' which is not allowed";
+  if (!llvm::isa<GlobalDefOp>(foundOp)) {
+    return origin->emitError() << "ref \"" << param << "\" in type " << parameterizedType
+                               << " refers to a '" << foundOp->getName()
+                               << "' which is not allowed";
+  }
+  return success();
 }
 
 LogicalResult verifyParamsOfType(

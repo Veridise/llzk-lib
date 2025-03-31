@@ -14,6 +14,9 @@ class LLZK_Type<string name, string typeMnemonic, list<Trait> traits = []>
 def AnyLLZKType : Type<CPred<"::llzk::isValidType($_self)">,
                        "a valid LLZK type", "::mlir::Type">;
 
+def GlobalDefType : Type<CPred<"::llzk::isValidGlobalType($_self)">,
+                         "any LLZK type except non-constant types">;
+
 def EmitEqType : Type<CPred<"::llzk::isValidEmitEqType($_self)">,
                       "any LLZK type except struct and string">;
 

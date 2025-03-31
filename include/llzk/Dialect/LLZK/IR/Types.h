@@ -70,6 +70,9 @@ void assertValidAttrForParamOfType(mlir::Attribute attr);
 /// valid types: {I1, Index, String, FeltType, StructType, ArrayType, TypeVarType}
 bool isValidType(mlir::Type type);
 
+/// valid types: isValidType() - {TypeVarType} - {types with variable parameters}
+bool isValidGlobalType(mlir::Type type);
+
 /// valid types: isValidType() - {String, StructType} (excluded via any type parameter nesting)
 bool isValidEmitEqType(mlir::Type type);
 
