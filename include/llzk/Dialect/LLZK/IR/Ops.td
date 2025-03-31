@@ -356,14 +356,20 @@ def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf"> {
   let summary = "read value of a struct field";
   let description = [{
     This operation reads the value of a named field in a struct/component.
+
+    The value can be read from the signals table, in which case it can be 
+    offset by a constant value. A negative value represents reading a value
+    backwards and a positive value represents reading a value forward. 
+    Only fields marked as columns can be read in this manner.
   }];
 
   let arguments = (ins LLZK_StructType:$component,
-      FlatSymbolRefAttr:$field_name);
+      FlatSymbolRefAttr:$field_name,
+      OptionalAttr<IntegerAttr>:$tableOffset);
   let results = (outs AnyLLZKType:$val);
 
   let assemblyFormat = [{
-    $component `[` $field_name `]` `:` type($component) `,` type($val) attr-dict
+    $component `[` $field_name `]` (`offset` `by` $tableOffset^ )? `:` type($component) `,` type($val) attr-dict
   }];
 }
 
