@@ -128,8 +128,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA2<[@N]> {
     func @compute(%p: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2<[@N]>> {
       %self = new_struct : !llzk.struct<@ComponentA2<[@N]>>
-      %n = read_const @N : index
-      %r = readf %p[@f1] {()[%n]}: !llzk.struct<@ComponentA1>, !llzk.felt {tableOffset = affine_map<()[s0] -> (s0 + 1)>}
+      %r = readf %p[@f1] : !llzk.struct<@ComponentA1>, !llzk.felt {tableOffset = @N}
       return %self : !llzk.struct<@ComponentA2<[@N]>>
     }
 
@@ -162,9 +161,8 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 //CHECK-LABEL: llzk.struct @ComponentA2_1 {
 //CHECK-NEXT:    func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2_1> {
-//CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA2_1>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@f1] {()[%[[C0]]]} : <@ComponentA1>, !llzk.felt {tableOffset = #map}
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@f1] : <@ComponentA1>, !llzk.felt {tableOffset = 1 : index}
 //CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@ComponentA2_1>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA2_1>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) {
