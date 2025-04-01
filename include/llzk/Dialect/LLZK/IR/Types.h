@@ -8,6 +8,7 @@
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/Diagnostics.h>
 #include <mlir/IR/OpImplementation.h>
+#include <mlir/IR/Operation.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/IR/Types.h>
 
@@ -70,8 +71,11 @@ void assertValidAttrForParamOfType(mlir::Attribute attr);
 /// valid types: {I1, Index, String, FeltType, StructType, ArrayType, TypeVarType}
 bool isValidType(mlir::Type type);
 
-/// valid types: {FeltType, StructType, ArrayType}
-bool isValidColumnType(mlir::Type type);
+/// valid types: {FeltType, StructType (with columns), ArrayType (that contains a valid column
+/// type)}
+bool isValidColumnType(
+    mlir::Type type, mlir::SymbolTableCollection &symbolTable, mlir::Operation *op
+);
 
 /// valid types: isValidType() - {TypeVarType} - {types with variable parameters}
 bool isValidGlobalType(mlir::Type type);

@@ -255,6 +255,13 @@ def LLZK_StructDefOp
     /// Get all FieldDefOp in this structure.
     ::std::vector<FieldDefOp> getFieldDefs();
 
+    /// Returns wether the struct defines fields marked as columns.
+    mlir::LogicalResult hasColumns() {
+      return mlir::success(llvm::any_of(getFieldDefs(), [](FieldDefOp fdOp) {
+        return fdOp.getColumn();
+      }));
+    }
+
     /// Gets the FuncOp that defines the compute function in this structure, if present.
     FuncOp getComputeFuncOp();
 
@@ -350,8 +357,6 @@ def LLZK_FieldDefOp
     inline bool hasPublicAttr() { return getOperation()->hasAttr(llzk::PublicAttr::name); }
     void setPublicAttr(bool newValue = true);
   }];
-
-  let hasVerifier = 1;
 }
 
 def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf"> {

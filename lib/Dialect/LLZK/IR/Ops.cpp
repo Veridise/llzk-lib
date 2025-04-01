@@ -7,6 +7,7 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Diagnostics.h>
 #include <mlir/IR/OwningOpRef.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/StringSet.h>
@@ -843,39 +844,43 @@ void FieldDefOp::setPublicAttr(bool newValue) {
   }
 }
 
-LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
-  Type fieldType = this->getType();
+static LogicalResult
+verifyFieldDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation *origin) {
   if (StructType fieldStructType = llvm::dyn_cast<StructType>(fieldType)) {
     // Special case for StructType verifies that the field type can resolve and that it is NOT the
     // parent struct (i.e. struct fields cannot create circular references).
-    auto fieldTypeRes = verifyStructTypeResolution(tables, fieldStructType, *this);
+    auto fieldTypeRes = verifyStructTypeResolution(tables, fieldStructType, origin);
     if (failed(fieldTypeRes)) {
       return failure(); // above already emits a sufficient error message
     }
-    FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(*this);
+    FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(origin);
     assert(succeeded(parentRes) && "FieldDefOp parent is always StructDefOp"); // per ODS def
     if (fieldTypeRes.value() == parentRes.value()) {
-      return this->emitOpError()
+      return origin->emitOpError()
           .append("type is circular")
           .attachNote(parentRes.value().getLoc())
           .append("references parent component defined here");
     }
     return success();
   } else {
-    return verifyTypeResolution(tables, *this, fieldType);
+    return verifyTypeResolution(tables, origin, fieldType);
   }
 }
 
-LogicalResult FieldDefOp::verify() {
+LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
+  Type fieldType = this->getType();
+  if (failed(verifyFieldDefTypeImpl(fieldType, tables, *this))) {
+    return failure();
+  }
+
   if (!getColumn()) {
     return success();
   }
-
   // If the field is marked as a column only a small subset of types are allowed.
-  if (!isValidColumnType(getType())) {
-    return emitOpError() << "column marked fields can only contain felts, arrays of felts, or "
-                            "structs but field has type '"
-                         << getType() << "'";
+  if (!isValidColumnType(getType(), tables, *this)) {
+    return emitError() << "column marked fields can only contain felts, arrays of column types, or "
+                          "structs with columns, but field has type "
+                       << getType();
   }
   return success();
 }
@@ -945,7 +950,14 @@ LogicalResult FieldReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   }
   assert(fieldDefOp);
 
-  return success(mlir::cast<FieldDefOp>(fieldDefOp).getColumn());
+  // If the field is not a column and an offset was specified then fail to validate
+  if (!mlir::cast<FieldDefOp>(fieldDefOp).getColumn() && getTableOffset().has_value()) {
+    return emitOpError("cannot read with table offset from a field that is not a column")
+        .attachNote(fieldDefOp->getLoc())
+        .append("field defined here");
+  }
+
+  return success();
 }
 
 LogicalResult FieldWriteOp::verifySymbolUses(SymbolTableCollection &tables) {

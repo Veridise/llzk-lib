@@ -87,6 +87,10 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
 
     // Verifies that this type references a valid struct, relative to the given `op`.
     ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
+
+    /// Returns wether the struct this type refers to has fields marked as columns.
+    /// A lookup is necessary first and will forward the failure state if it fails.
+    mlir::LogicalResult hasColumns(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) const;
   }];
 }
 

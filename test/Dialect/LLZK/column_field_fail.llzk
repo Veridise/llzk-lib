@@ -1,0 +1,141 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA1 {
+    // expected-note@+1 {{field defined here}}
+    llzk.field @f1 : !llzk.felt 
+
+    func @constrain(%self: !llzk.struct<@ComponentA1>) { return }
+    func @compute() -> !llzk.struct<@ComponentA1> {
+      %self = new_struct : !llzk.struct<@ComponentA1>
+      return %self : !llzk.struct<@ComponentA1>
+    }
+  }
+
+  llzk.struct @ComponentA2 {
+    func @compute(%p: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      // expected-error@+1 {{'llzk.readf' op cannot read with table offset from a field that is not a column}}
+      %r = readf %p[@f1] offset by -1 : !llzk.struct<@ComponentA1>, !llzk.felt
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>, %p: !llzk.struct<@ComponentA1>) {
+      return
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA2 {
+    // expected-error@+1 {{column marked fields can only contain felts, arrays of column types, or structs with columns, but field has type '!llzk.string'}}
+    llzk.field @f1 : !llzk.string {column}
+    func @compute() -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>) {
+      return
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA2 {
+    // expected-error@+1 {{column marked fields can only contain felts, arrays of column types, or structs with columns, but field has type 'index'}}
+    llzk.field @f1 : index {column}
+    func @compute() -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>) {
+      return
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA2 {
+    // expected-error@+1 {{column marked fields can only contain felts, arrays of column types, or structs with columns, but field has type 'i1'}}
+    llzk.field @f1 : i1 {column}
+    func @compute() -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>) {
+      return
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA2 {
+    // expected-error@+1 {{column marked fields can only contain felts, arrays of column types, or structs with columns, but field has type '!llzk.array<2 x !llzk.string>'}}
+    llzk.field @f1 : !llzk.array<2 x !llzk.string> {column}
+    func @compute() -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>) {
+      return
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA2 {
+    // expected-error@+1 {{column marked fields can only contain felts, arrays of column types, or structs with columns, but field has type '!llzk.array<2 x index>'}}
+    llzk.field @f1 : !llzk.array<2 x index> {column}
+    func @compute() -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>) {
+      return
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA1 {
+    // Even if the struct's field is of felt type, it is not marked as a column.
+    llzk.field @f1 : !llzk.felt 
+
+    func @constrain(%self: !llzk.struct<@ComponentA1>) { return }
+    func @compute() -> !llzk.struct<@ComponentA1> {
+      %self = new_struct : !llzk.struct<@ComponentA1>
+      return %self : !llzk.struct<@ComponentA1>
+    }
+  }
+
+  llzk.struct @ComponentA2 {
+    // expected-error@+1 {{column marked fields can only contain felts, arrays of column types, or structs with columns, but field has type '!llzk.struct<@ComponentA1>'}}
+    llzk.field @c1 : !llzk.struct<@ComponentA1> {column}
+    func @compute() -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>) {
+      return
+    }
+  }
+}
+

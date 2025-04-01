@@ -8,10 +8,13 @@
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinTypeInterfaces.h>
 #include <mlir/IR/DialectImplementation.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+
+#include <functional>
 
 namespace llzk {
 
@@ -189,8 +192,8 @@ using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
 using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
 
 class AllowedTypes {
-  bool no_felt, no_string, no_struct, no_array, no_var, no_int;
-  bool no_struct_params;
+  bool no_felt : 1, no_string : 1, no_struct : 1, no_array : 1, no_var : 1, no_int : 1;
+  bool no_struct_params : 1;
 
 public:
   constexpr AllowedTypes()
@@ -342,12 +345,26 @@ public:
     }
     return false;
   }
+
+  bool isValidColumnTypeImpl(Type type, SymbolTableCollection &symbolTable, Operation *op) {
+    return llvm::TypeSwitch<Type, bool>(type)
+        .Case([&](StructType S) {
+      // A struct type is valid if it has columns inside as well as the normal validation for struct
+      // type params.
+      return succeeded(S.hasColumns(symbolTable, op)) && areValidStructTypeParams(S.getParams());
+    })
+        .Case([&](ArrayType arr) {
+      // An array is valid if the inner type is a valid column type and the dimensions are valid.
+      return isValidColumnTypeImpl(arr.getElementType(), symbolTable, op) &&
+             areValidArrayDimSizes(arr.getDimensionSizes());
+    }).Default([this](Type t) { return isValidTypeImpl(t); });
+  }
 };
 
 bool AllowedTypes::isValidTypeImpl(Type type) {
   assert(
-      no_int || no_felt || no_string || no_var || no_struct ||
-      no_array && "All types have been deactivated"
+      !(no_int && no_felt && no_string && no_var && no_struct && no_array) &&
+      "All types have been deactivated"
   );
   return (!no_int && type.isSignlessInteger(1)) || (!no_int && llvm::isa<IndexType>(type)) ||
          (!no_felt && llvm::isa<FeltType>(type)) || (!no_string && llvm::isa<StringType>(type)) ||
@@ -359,8 +376,8 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
 
 bool isValidType(Type type) { return AllowedTypes().isValidTypeImpl(type); }
 
-bool isValidColumnType(Type type) {
-  return AllowedTypes().noString().noInt().isValidTypeImpl(type);
+bool isValidColumnType(Type type, SymbolTableCollection &symbolTable, Operation *op) {
+  return AllowedTypes().noString().noInt().isValidColumnTypeImpl(type, symbolTable, op);
 }
 
 bool isValidGlobalType(Type type) { return AllowedTypes().noVar().isValidTypeImpl(type); }
@@ -727,6 +744,14 @@ StructType::getDefinition(SymbolTableCollection &symbolTable, Operation *op) con
 
 LogicalResult StructType::verifySymbolRef(SymbolTableCollection &symbolTable, Operation *op) {
   return getDefinition(symbolTable, op);
+}
+
+LogicalResult StructType::hasColumns(SymbolTableCollection &symbolTable, Operation *op) const {
+  auto lookup = getDefinition(symbolTable, op);
+  if (mlir::failed(lookup)) {
+    return lookup;
+  }
+  return (*lookup).get().hasColumns();
 }
 
 //===------------------------------------------------------------------===//
