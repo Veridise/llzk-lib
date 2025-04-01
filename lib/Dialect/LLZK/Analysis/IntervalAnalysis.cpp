@@ -142,9 +142,7 @@ UnreducedInterval operator*(const UnreducedInterval &lhs, const UnreducedInterva
 }
 
 bool UnreducedInterval::overlaps(const UnreducedInterval &rhs) const {
-  auto &lhs = *this;
-  std::strong_ordering leftCmp = safeCmp(lhs.b, rhs.a), rightCmp = safeCmp(lhs.a, rhs.b);
-  return std::is_gteq(leftCmp) or std::is_lteq(rightCmp);
+  return isNotEmpty() && rhs.isNotEmpty() && safeGe(b, rhs.a) && safeLe(a, rhs.b);
 }
 
 std::strong_ordering operator<=>(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
@@ -156,6 +154,21 @@ std::strong_ordering operator<=>(const UnreducedInterval &lhs, const UnreducedIn
   }
   return std::strong_ordering::equal;
 }
+
+llvm::APSInt UnreducedInterval::width() const {
+  llvm::APSInt w;
+  if (safeGt(a, b)) {
+    // This would be reduced to an empty Interval, so the width is just zero.
+    w = llvm::APSInt(llvm::APInt::getZero(a.getBitWidth()));
+  } else {
+    /// Since the range is inclusive, we add one to the difference to get the true width.
+    w = expandingSub(b, a)++;
+  }
+  ensure(safeGe(w, llvm::APSInt::getUnsigned(0)), "cannot have negative width");
+  return w;
+}
+
+bool UnreducedInterval::isEmpty() const { return safeEq(width(), llvm::APSInt::getUnsigned(0)); }
 
 /* Interval */
 
@@ -183,6 +196,7 @@ UnreducedInterval Interval::secondUnreduced() const {
 
 Interval Interval::join(const Interval &rhs) const {
   auto &lhs = *this;
+  const Field &f = lhs.getField();
 
   // Trivial cases
   if (lhs.isEntire() || rhs.isEntire()) {
@@ -195,32 +209,32 @@ Interval Interval::join(const Interval &rhs) const {
     return lhs;
   }
   if (lhs.isDegenerate() || rhs.isDegenerate()) {
-    return lhs.toUnreduced().doUnion(rhs.toUnreduced()).reduce(field.get());
+    return lhs.toUnreduced().doUnion(rhs.toUnreduced()).reduce(f);
   }
 
   // More complex cases
   if (areOneOf<
           {Type::TypeA, Type::TypeA}, {Type::TypeB, Type::TypeB}, {Type::TypeC, Type::TypeC},
           {Type::TypeA, Type::TypeC}, {Type::TypeB, Type::TypeC}>(lhs, rhs)) {
-    return Interval(rhs.ty, field.get(), std::min(lhs.a, rhs.a), std::max(lhs.b, rhs.b));
+    return Interval(rhs.ty, f, std::min(lhs.a, rhs.a), std::max(lhs.b, rhs.b));
   }
   if (areOneOf<{Type::TypeA, Type::TypeB}>(lhs, rhs)) {
     auto lhsUnred = lhs.firstUnreduced();
     auto opt1 = rhs.firstUnreduced().doUnion(lhsUnred);
     auto opt2 = rhs.secondUnreduced().doUnion(lhsUnred);
     if (opt1.width() <= opt2.width()) {
-      return opt1.reduce(field.get());
+      return opt1.reduce(f);
     }
-    return opt2.reduce(field.get());
+    return opt2.reduce(f);
   }
   if (areOneOf<{Type::TypeF, Type::TypeF}, {Type::TypeA, Type::TypeF}>(lhs, rhs)) {
-    return lhs.firstUnreduced().doUnion(rhs.firstUnreduced()).reduce(field.get());
+    return lhs.firstUnreduced().doUnion(rhs.firstUnreduced()).reduce(f);
   }
   if (areOneOf<{Type::TypeB, Type::TypeF}>(lhs, rhs)) {
-    return lhs.secondUnreduced().doUnion(rhs.firstUnreduced()).reduce(field.get());
+    return lhs.secondUnreduced().doUnion(rhs.firstUnreduced()).reduce(f);
   }
   if (areOneOf<{Type::TypeC, Type::TypeF}>(lhs, rhs)) {
-    return Interval::Entire(field.get());
+    return Interval::Entire(f);
   }
   if (areOneOf<
           {Type::TypeB, Type::TypeA}, {Type::TypeC, Type::TypeA}, {Type::TypeC, Type::TypeB},

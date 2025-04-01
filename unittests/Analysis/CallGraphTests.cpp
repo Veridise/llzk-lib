@@ -6,7 +6,6 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 using namespace llzk;

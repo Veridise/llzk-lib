@@ -100,6 +100,8 @@ public:
   }
 
   UnreducedInterval(llvm::APSInt x, llvm::APSInt y) : a(x), b(y) {}
+  UnreducedInterval(llvm::APInt x, llvm::APInt y) : a(x), b(y) {}
+  UnreducedInterval(uint64_t x, uint64_t y) : a(llvm::APInt(64, x)), b(llvm::APInt(64, y)) {}
 
   /* Operations */
 
@@ -154,8 +156,14 @@ public:
   llvm::APSInt getLHS() const { return a; }
   llvm::APSInt getRHS() const { return b; }
 
-  /// Since the range is inclusive, we add one to the difference to get the true width.
-  llvm::APSInt width() const { return llvm::APSInt(expandingSub(b, a).abs())++; }
+  /// @brief Compute the width of this interval within a given field `f`.
+  /// If `a` > `b`, returns 0. Otherwise, returns `b` - `a` + 1.
+  llvm::APSInt width() const;
+
+  /// @brief Returns true iff width() is zero.
+  bool isEmpty() const;
+
+  bool isNotEmpty() const { return !isEmpty(); }
 
   void print(llvm::raw_ostream &os) const { os << "Unreduced:[ " << a << ", " << b << " ]"; }
 
