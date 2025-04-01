@@ -128,6 +128,27 @@ inline typename OpType::Properties &buildInstantiationAttrs(
 }
 
 /// Utility for build() functions that initializes the `operandSegmentSizes`, `mapOpGroupSizes`, and
+/// `numDimsPerMap` attributes for an Op that performs affine map instantiations in the case were
+/// the op does not have two variadic sets of operands.
+template <typename OpType>
+inline void buildInstantiationAttrsNoSegments(
+    mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState,
+    mlir::ArrayRef<mlir::ValueRange> mapOperands, mlir::DenseI32ArrayAttr numDimsPerMap
+) {
+  mlir::SmallVector<int32_t> rangeSegments;
+  for (mlir::ValueRange r : mapOperands) {
+    odsState.addOperands(r);
+    int32_t s = static_cast<int32_t>(r.size());
+    rangeSegments.push_back(s);
+  }
+  typename OpType::Properties &props = odsState.getOrAddProperties<typename OpType::Properties>();
+  props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr(rangeSegments));
+  if (numDimsPerMap) {
+    props.setNumDimsPerMap(numDimsPerMap);
+  }
+}
+
+/// Utility for build() functions that initializes the `operandSegmentSizes`, `mapOpGroupSizes`, and
 /// `numDimsPerMap` attributes for an Op that supports affine map instantiations but in the case
 /// where there are none.
 template <typename OpType>
@@ -137,6 +158,20 @@ inline typename OpType::Properties &buildInstantiationAttrsEmpty(
   typename OpType::Properties &props = odsState.getOrAddProperties<typename OpType::Properties>();
   // `operandSegmentSizes` = [ firstSegmentSize, mapOperands.size ]
   props.setOperandSegmentSizes({firstSegmentSize, 0});
+  // There are no affine map operands so initialize the related properties as empty arrays.
+  props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr({}));
+  props.setNumDimsPerMap(odsBuilder.getDenseI32ArrayAttr({}));
+  return props;
+}
+
+/// Utility for build() functions that initializes the `operandSegmentSizes`, `mapOpGroupSizes`, and
+/// `numDimsPerMap` attributes for an Op that supports affine map instantiations but in the case
+/// where there are none.
+template <typename OpType>
+inline typename OpType::Properties &buildInstantiationAttrsEmptyNoSegments(
+    mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState
+) {
+  typename OpType::Properties &props = odsState.getOrAddProperties<typename OpType::Properties>();
   // There are no affine map operands so initialize the related properties as empty arrays.
   props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr({}));
   props.setNumDimsPerMap(odsBuilder.getDenseI32ArrayAttr({}));

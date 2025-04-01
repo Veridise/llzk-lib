@@ -16,7 +16,7 @@ module attributes {veridise.lang = "llzk"} {
     func @compute(%p: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
       %self = new_struct : !llzk.struct<@ComponentA2>
       // expected-error@+1 {{'llzk.readf' op cannot read with table offset from a field that is not a column}}
-      %r = readf %p[@f1] offset by -1 : !llzk.struct<@ComponentA1>, !llzk.felt
+      %r = readf %p[@f1] : !llzk.struct<@ComponentA1>, !llzk.felt {tableOffset = -1 : index}
       return %self : !llzk.struct<@ComponentA2>
     }
 

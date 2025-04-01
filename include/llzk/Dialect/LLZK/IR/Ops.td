@@ -359,7 +359,7 @@ def LLZK_FieldDefOp
   }];
 }
 
-def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf"> {
+def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf", [VerifySizesForMultiAffineOps<1>]> {
   let summary = "read value of a struct field";
   let description = [{
     This operation reads the value of a named field in a struct/component.
@@ -372,12 +372,55 @@ def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf"> {
 
   let arguments = (ins LLZK_StructType:$component,
       FlatSymbolRefAttr:$field_name,
-      OptionalAttr<IndexAttr>:$tableOffset);
+      OptionalAttr<AnyAttrOf<[FlatSymbolRefAttr, IndexAttr, AffineMapAttr]>>:$tableOffset,
+      VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands,
+      DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
+      DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs AnyLLZKType:$val);
 
+  // Define builders manually so inference of operand layout attributes is not
+  // circumvented.
+  let skipDefaultBuilders = 1;
+  let builders =
+      [OpBuilder<(ins "mlir::Type":$resultType,
+           "mlir::Value":$component,
+           "mlir::StringAttr":$field)>,
+       OpBuilder<(ins "mlir::Type":$resultType,
+           "mlir::Value":$component,
+           "mlir::StringAttr":$field,
+           "mlir::Attribute":$dist,
+           "mlir::ValueRange":$mapOperands,
+           "int32_t":$numDims)>,
+       OpBuilder<(ins "mlir::Type":$resultType,
+           "mlir::Value":$component,
+           "mlir::StringAttr":$field,
+           "mlir::FlatSymbolRefAttr":$dist), [{
+              build($_builder, $_state, resultType, component, field, dist, mlir::ValueRange(), 0);
+           }]>,
+       OpBuilder<(ins "mlir::Type":$resultType,
+           "mlir::Value":$component,
+           "mlir::StringAttr":$field,
+           "mlir::IntegerAttr":$dist), [{
+              build($_builder, $_state, resultType, component, field, dist, mlir::ValueRange(), 0);
+           }]>,
+       OpBuilder<(ins "mlir::TypeRange":$resultTypes, 
+           "mlir::ValueRange":$operands, 
+           "mlir::ArrayRef<mlir::NamedAttribute>":$attrs)>
+  ];
+
+
+  // let assemblyFormat = [{
+  //   $component `[` $field_name `]` `:` type($component) `,` type($val) attr-dict
+  // }];
+
   let assemblyFormat = [{
-    $component `[` $field_name `]` (`offset` `by` $tableOffset^ )? `:` type($component) `,` type($val) attr-dict
+    $component `[` $field_name `]`
+    ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` )?
+    `:` type($component) `,` type($val)
+    attr-dict
   }];
+
+  let hasVerifier = 1;
 }
 
 def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef", [ComputeOnly]> {

@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA2 {
     func @compute(%p: !llzk.struct<@ComponentA1<[index]>>) -> !llzk.struct<@ComponentA2> {
       %self = new_struct : !llzk.struct<@ComponentA2>
-      %r = readf %p[@f1] offset by -1 : !llzk.struct<@ComponentA1<[index]>>, index
+      %r = readf %p[@f1] : !llzk.struct<@ComponentA1<[index]>>, index {tableOffset = -1 : index}
       return %self : !llzk.struct<@ComponentA2>
     }
 
