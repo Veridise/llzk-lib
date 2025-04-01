@@ -14,8 +14,6 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 
-#include <functional>
-
 namespace llzk {
 
 using namespace mlir;
@@ -751,7 +749,7 @@ LogicalResult StructType::hasColumns(SymbolTableCollection &symbolTable, Operati
   if (mlir::failed(lookup)) {
     return lookup;
   }
-  return (*lookup).get().hasColumns();
+  return lookup->get().hasColumns();
 }
 
 //===------------------------------------------------------------------===//
