@@ -2,16 +2,19 @@
   inputs = {
     flake-utils.url = "github:numtide/flake-utils/v1.0.0";
 
-    veridise-pkgs = {
-      url = "git+ssh://git@github.com/Veridise/veridise-nix-pkgs.git?ref=main";
-      inputs.nixpkgs.follows = "nixpkgs";
+    llzk-pkgs = {
+      url = "github:Veridise/llzk-nix-pkgs?ref=iangneal/tweaks";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
     };
   };
 
   # Custom colored bash prompt
   nixConfig.bash-prompt = ''\[\e[0;32m\][LLZK]\[\e[m\] \[\e[38;5;244m\]\w\[\e[m\] % '';
 
-  outputs = { self, nixpkgs, flake-utils, veridise-pkgs }:
+  outputs = { self, nixpkgs, flake-utils, llzk-pkgs }:
     {
       # First, we define the packages used in this repository/flake
       overlays.default = final: prev: {
@@ -118,7 +121,7 @@
               # TODO: only enable if python bindings enabled
               export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
 
-              # Needed for using mlir-tblgen inside the dev shell 
+              # Needed for using mlir-tblgen inside the dev shell
               export LD_LIBRARY_PATH=${pkgs.z3.lib}/lib:$LD_LIBRARY_PATH
             '';
           });
@@ -132,7 +135,7 @@
 
           overlays = [
             self.overlays.default
-            veridise-pkgs.overlays.default
+            llzk-pkgs.overlays.default
           ];
         };
       in
@@ -144,9 +147,8 @@
 
           # For debug purposes, expose the MLIR/LLVM packages.
           inherit (pkgs) mlir mlirWithPython;
-          # Otherwise, libllvm and llvm are from nixpkgs,
-          # as they are not directly exported by veridise-nixpkgs
-          inherit (pkgs.veridise_llvmPackages) libllvm llvm;
+          # Prevent use of libllvm and llvm from nixpkgs.
+          inherit (pkgs) libllvm llvm;
 
           default = pkgs.llzk;
           debugClang = pkgs.llzkDebugClang;
@@ -167,7 +169,7 @@
           debugGCC = _: (pkgs.devShellBase pkgs pkgs.llzkDebugGCC).shell;
 
           llvm = pkgs.mkShell {
-            buildInputs = [ pkgs.veridise_llvmPackages.libllvm.dev ];
+            buildInputs = [ pkgs.llzk_llvmPackages.libllvm.dev ];
           };
         };
       }
