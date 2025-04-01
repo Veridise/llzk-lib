@@ -3,7 +3,7 @@
     flake-utils.url = "github:numtide/flake-utils/v1.0.0";
 
     llzk-pkgs = {
-      url = "github:Veridise/llzk-nix-pkgs?ref=iangneal/tweaks";
+      url = "github:Veridise/llzk-nix-pkgs?ref=main";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-utils.follows = "flake-utils";

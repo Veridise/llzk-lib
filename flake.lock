@@ -26,16 +26,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1743530434,
-        "narHash": "sha256-xugjy5SEaiZIUeEYKtgacj3Ns+tnn0yrheeXS+9D+Ws=",
+        "lastModified": 1743550662,
+        "narHash": "sha256-8bGHrgk3RdlAour8ch8LqsQG7vnA2LpoufljrMt6U4o=",
         "owner": "Veridise",
         "repo": "llzk-nix-pkgs",
-        "rev": "9fbef12a2d5712be06f16d7a08a98e7c7e2dbfe6",
+        "rev": "11410bbc0ff373f0a05aca4433afc374e35baf30",
         "type": "github"
       },
       "original": {
         "owner": "Veridise",
-        "ref": "iangneal/tweaks",
+        "ref": "main",
         "repo": "llzk-nix-pkgs",
         "type": "github"
       }
