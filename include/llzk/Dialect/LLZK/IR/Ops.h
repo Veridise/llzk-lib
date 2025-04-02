@@ -127,7 +127,7 @@ inline typename OpType::Properties &buildInstantiationAttrs(
   return props;
 }
 
-/// Utility for build() functions that initializes the `operandSegmentSizes`, `mapOpGroupSizes`, and
+/// Utility for build() functions that initializes the `mapOpGroupSizes`, and
 /// `numDimsPerMap` attributes for an Op that performs affine map instantiations in the case were
 /// the op does not have two variadic sets of operands.
 template <typename OpType>
@@ -164,7 +164,7 @@ inline typename OpType::Properties &buildInstantiationAttrsEmpty(
   return props;
 }
 
-/// Utility for build() functions that initializes the `operandSegmentSizes`, `mapOpGroupSizes`, and
+/// Utility for build() functions that initializes the `mapOpGroupSizes`, and
 /// `numDimsPerMap` attributes for an Op that supports affine map instantiations but in the case
 /// where there are none.
 template <typename OpType>

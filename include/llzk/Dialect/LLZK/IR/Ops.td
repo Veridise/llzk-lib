@@ -409,10 +409,6 @@ def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf", [VerifySizesForMultiAffineOps<1>
   ];
 
 
-  // let assemblyFormat = [{
-  //   $component `[` $field_name `]` `:` type($component) `,` type($val) attr-dict
-  // }];
-
   let assemblyFormat = [{
     $component `[` $field_name `]`
     ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` )?
