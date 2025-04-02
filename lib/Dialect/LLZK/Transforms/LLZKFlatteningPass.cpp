@@ -27,6 +27,7 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DepthFirstIterator.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
@@ -180,9 +181,9 @@ public:
 struct MatchFailureListener : public RewriterBase::Listener {
   bool hadFailure = false;
 
-  virtual ~MatchFailureListener() {}
+  ~MatchFailureListener() override {}
 
-  virtual LogicalResult
+  LogicalResult
   notifyMatchFailure(Location loc, function_ref<void(Diagnostic &)> reasonCallback) override {
     hadFailure = true;
 
@@ -238,6 +239,7 @@ public:
   LogicalResult matchAndRewrite(OpTy op, OpTy::Adaptor adaptor, ConversionPatternRewriter &rewriter)
       const override {
     const TypeConverter *converter = OpConversionPattern<OpTy>::getTypeConverter();
+    assert(converter);
     // Convert result types
     SmallVector<Type> newResultTypes;
     if (failed(converter->convertTypes(op->getResultTypes(), newResultTypes))) {
@@ -335,34 +337,52 @@ ConversionTarget newBaseTarget(MLIRContext *ctx) {
   return target;
 }
 
+static bool defaultLegalityCheck(const TypeConverter &tyConv, Operation *op) {
+  // Check operand types and result types
+  if (!tyConv.isLegal(op)) {
+    return false;
+  }
+  // Check type attributes
+  for (NamedAttribute n : op->getAttrDictionary().getValue()) {
+    if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(n.getValue())) {
+      Type t = tyAttr.getValue();
+      if (FunctionType funcTy = llvm::dyn_cast<FunctionType>(t)) {
+        if (!tyConv.isSignatureLegal(funcTy)) {
+          return false;
+        }
+      } else {
+        if (!tyConv.isLegal(t)) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+// Default to true if the check is not for that particular operation type.
+template <typename Check> bool runCheck(Operation *op, Check check) {
+  if (auto specificOp =
+          mlir::dyn_cast_if_present<typename llvm::function_traits<Check>::template arg_t<0>>(op)) {
+    return check(specificOp);
+  }
+  return true;
+}
+
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
 /// based on the given `TypeConverter` for Ops listed in both fields of `OpClassesWithStructTypes`
 /// and in `AdditionalOpTypes`.
-template <typename... AdditionalOpTypes>
-ConversionTarget newConverterDefinedTarget(TypeConverter &tyConv, MLIRContext *ctx) {
+/// Additional legality checks can be included for certain ops that will run along with the default
+/// check. For an op to be considered legal all checks (default plus additional checks if any) must
+/// return true.
+///
+template <typename... AdditionalOpTypes, typename... AdditionalChecks>
+ConversionTarget
+newConverterDefinedTarget(TypeConverter &tyConv, MLIRContext *ctx, AdditionalChecks &&...checks) {
   ConversionTarget target = newBaseTarget(ctx);
   auto inserter = [&](auto... opClasses) {
-    target.addDynamicallyLegalOp<decltype(opClasses)...>([&tyConv](Operation *op) {
-      // Check operand types and result types
-      if (!tyConv.isLegal(op)) {
-        return false;
-      }
-      // Check type attributes
-      for (NamedAttribute n : op->getAttrDictionary().getValue()) {
-        if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(n.getValue())) {
-          Type t = tyAttr.getValue();
-          if (FunctionType funcTy = llvm::dyn_cast<FunctionType>(t)) {
-            if (!tyConv.isSignatureLegal(funcTy)) {
-              return false;
-            }
-          } else {
-            if (!tyConv.isLegal(t)) {
-              return false;
-            }
-          }
-        }
-      }
-      return true;
+    target.addDynamicallyLegalOp<decltype(opClasses)...>([&tyConv, &checks...](Operation *op) {
+      return defaultLegalityCheck(tyConv, op) && (runCheck<AdditionalChecks>(op, checks) && ...);
     });
   };
   std::apply(inserter, OpClassesWithStructTypes.NoGeneralBuilder);
@@ -594,7 +614,7 @@ class StructCloner {
         const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
     )
         // future proof: use higher priority than GeneralTypeReplacePattern
-        : OpConversionPattern<FieldReadOp>(converter, ctx, 2),
+        : OpConversionPattern<FieldReadOp>(converter, ctx, 3),
           SymbolUserHelper<ClonedStructFieldReadOpPattern, FieldReadOp>(paramNameToInstantiatedValue
           ) {}
 
@@ -631,6 +651,10 @@ class StructCloner {
     LogicalResult matchAndRewrite(
         FieldReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
     ) const override {
+      if (!mlir::isa_and_present<FlatSymbolRefAttr>(op.getTableOffset().value_or(nullptr))) {
+        return failure();
+      }
+
       return transformParam<LogicalResult, IntegerAttr, FeltConstAttr>(op, adaptor, rewriter);
     }
   };
@@ -678,12 +702,12 @@ class StructCloner {
     DenseMap<Attribute, Attribute> nameToValueMap =
         buildNameToValueMap(typeAtDef.getParams(), typeAtCallerParams);
     MappedTypeConverter tyConv(typeAtDef, newRemoteType, nameToValueMap);
-    ConversionTarget target = newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx);
+    ConversionTarget target =
+        newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx, [](FieldReadOp op) {
+      return !mlir::isa_and_present<FlatSymbolRefAttr>(op.getTableOffset().value_or(nullptr));
+    });
 
     target.addIllegalOp<ConstReadOp>();
-    target.addDynamicallyLegalOp<FieldReadOp>([](FieldReadOp rOp) {
-      return !mlir::isa_and_present<FlatSymbolRefAttr>(rOp.getTableOffset().value_or(nullptr));
-    });
 
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
     patterns.add<ClonedStructCallOpPattern>(tyConv, ctx);
