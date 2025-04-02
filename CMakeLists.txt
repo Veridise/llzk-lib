@@ -184,7 +184,7 @@ if(Doxygen_FOUND)
   set(DOXYGEN_INCLUDE_PATH "${CMAKE_CURRENT_BINARY_DIR}/include/")
   set(DOXYGEN_EXCLUDE_PATTERNS ${CMAKE_CURRENT_BINARY_DIR}/include/*/*.md)
   set(DOXYGEN_USE_MDFILE_AS_MAINPAGE
-      ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/index.md)
+      ${CMAKE_CURRENT_SOURCE_DIR}/doc/index.md)
   set(DOXYGEN_FILE_PATTERNS
       *.cpp
       *.cpp.inc
@@ -207,7 +207,7 @@ if(Doxygen_FOUND)
     "${CMAKE_CURRENT_BINARY_DIR}/include/"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     "${LLZK_MLIR_DOC_OUTPUT_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/")
+    "${CMAKE_CURRENT_SOURCE_DIR}/doc/")
   add_dependencies(doxygen LLZKDialectHeaders mlir-doc)
   add_dependencies(doc doxygen)
 endif()

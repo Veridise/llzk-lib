@@ -1,13 +1,15 @@
 {
   inputs = {
-    flake-utils.url = "github:numtide/flake-utils/v1.0.0";
+    llzk-pkgs.url = "github:Veridise/llzk-nix-pkgs?ref=main";
 
-    llzk-pkgs = {
-      url = "github:Veridise/llzk-nix-pkgs?ref=iangneal/tweaks";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
-      };
+    nixpkgs = {
+      url = "github:NixOS/nixpkgs";
+      follows = "llzk-pkgs/nixpkgs";
+    };
+
+    flake-utils = {
+      url = "github:numtide/flake-utils/v1.0.0";
+      follows = "llzk-pkgs/flake-utils";
     };
   };
 
@@ -147,8 +149,9 @@
 
           # For debug purposes, expose the MLIR/LLVM packages.
           inherit (pkgs) mlir mlirWithPython;
-          # Prevent use of libllvm and llvm from nixpkgs.
-          inherit (pkgs) libllvm llvm;
+          # Prevent use of libllvm and llvm from nixpkgs, which will have different
+          # versions than the mlir from llzk-pkgs.
+          inherit (pkgs.llzk_llvmPackages) libllvm llvm;
 
           default = pkgs.llzk;
           debugClang = pkgs.llzkDebugClang;
