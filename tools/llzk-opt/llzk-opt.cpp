@@ -13,6 +13,8 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Signals.h>
 
+#include "tools/config.h"
+
 static llvm::cl::list<std::string> IncludeDirs(
     "I", llvm::cl::desc("Directory of include files"), llvm::cl::value_desc("directory"),
     llvm::cl::Prefix
@@ -20,6 +22,11 @@ static llvm::cl::list<std::string> IncludeDirs(
 
 int main(int argc, char **argv) {
   llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());
+  llvm::setBugReportMsg(
+      "PLEASE submit a bug report to " BUG_REPORT_URL
+      " and include the crash backtrace, relevant LLZK files,"
+      " and associated run script(s).\n"
+  );
 
   // MLIR initialization
   mlir::DialectRegistry registry;

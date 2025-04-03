@@ -13,3 +13,5 @@ Advanced Documentation:
 How to Contribute:
 - First, read our \ref code-of-conduct "Code of Conduct".
 - Then, read our \ref contribution-guide "Contribution Guide".
+
+\subpage license "View the LLZK License."

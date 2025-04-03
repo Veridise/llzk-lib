@@ -197,7 +197,8 @@ if(Doxygen_FOUND)
       *.h
       *.td
       *.md
-      *.py)
+      *.py
+      *.txt)
   set(DOXYGEN_EXTENSION_MAPPING inc=C++)
   set(DOXYGEN_MACRO_EXPANSION YES)
   set(DOXYGEN_EXPAND_ONLY_PREDEF YES)
@@ -212,7 +213,8 @@ if(Doxygen_FOUND)
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/"
     "${CMAKE_CURRENT_BINARY_DIR}/include/"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/"
-    "${LLZK_MLIR_DOC_OUTPUT_DIR}")
+    "${LLZK_MLIR_DOC_OUTPUT_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
   add_dependencies(doxygen LLZKDialectHeaders mlir-doc)
   add_dependencies(doc doxygen)
 endif()
