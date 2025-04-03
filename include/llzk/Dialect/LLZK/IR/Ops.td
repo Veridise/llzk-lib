@@ -382,30 +382,30 @@ def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf", [VerifySizesForMultiAffineOps<1>
   // circumvented.
   let skipDefaultBuilders = 1;
   let builders =
-      [OpBuilder<(ins "mlir::Type":$resultType,
-           "mlir::Value":$component,
-           "mlir::StringAttr":$field)>,
-       OpBuilder<(ins "mlir::Type":$resultType,
-           "mlir::Value":$component,
-           "mlir::StringAttr":$field,
-           "mlir::Attribute":$dist,
-           "mlir::ValueRange":$mapOperands,
+      [OpBuilder<(ins "::mlir::Type":$resultType,
+           "::mlir::Value":$component,
+           "::mlir::StringAttr":$field)>,
+       OpBuilder<(ins "::mlir::Type":$resultType,
+           "::mlir::Value":$component,
+           "::mlir::StringAttr":$field,
+           "::mlir::Attribute":$dist,
+           "::mlir::ValueRange":$mapOperands,
            "int32_t":$numDims)>,
-       OpBuilder<(ins "mlir::Type":$resultType,
-           "mlir::Value":$component,
-           "mlir::StringAttr":$field,
-           "mlir::FlatSymbolRefAttr":$dist), [{
-              build($_builder, $_state, resultType, component, field, dist, mlir::ValueRange(), 0);
+       OpBuilder<(ins "::mlir::Type":$resultType,
+           "::mlir::Value":$component,
+           "::mlir::StringAttr":$field,
+           "::mlir::FlatSymbolRefAttr":$dist), [{
+              build($_builder, $_state, resultType, component, field, dist, ::mlir::ValueRange(), 0);
            }]>,
-       OpBuilder<(ins "mlir::Type":$resultType,
-           "mlir::Value":$component,
-           "mlir::StringAttr":$field,
-           "mlir::IntegerAttr":$dist), [{
-              build($_builder, $_state, resultType, component, field, dist, mlir::ValueRange(), 0);
+       OpBuilder<(ins "::mlir::Type":$resultType,
+           "::mlir::Value":$component,
+           "::mlir::StringAttr":$field,
+           "::mlir::IntegerAttr":$dist), [{
+              build($_builder, $_state, resultType, component, field, dist, ::mlir::ValueRange(), 0);
            }]>,
-       OpBuilder<(ins "mlir::TypeRange":$resultTypes, 
-           "mlir::ValueRange":$operands, 
-           "mlir::ArrayRef<mlir::NamedAttribute>":$attrs)>
+       OpBuilder<(ins "::mlir::TypeRange":$resultTypes, 
+           "::mlir::ValueRange":$operands, 
+           "::mlir::ArrayRef<::mlir::NamedAttribute>":$attrs)>
   ];
 
 
