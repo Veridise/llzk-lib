@@ -400,6 +400,10 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
 
 namespace Step1_InstantiateStructs {
 
+static inline bool tableOffsetIsntSymbol(FieldReadOp op) {
+  return !mlir::isa_and_present<FlatSymbolRefAttr>(op.getTableOffset().value_or(nullptr));
+}
+
 class StructCloner {
   ConversionTracker &tracker_;
   ModuleOp rootMod;
@@ -490,44 +494,57 @@ class StructCloner {
     }
   };
 
-  template <typename Impl, typename Op> class SymbolUserHelper {
+  template <typename Impl, typename Op, typename... HandledAttrs>
+  class SymbolUserHelper : public OpConversionPattern<Op> {
   private:
     const DenseMap<Attribute, Attribute> &paramNameToValue;
-    SymbolUserHelper(const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue)
-        : paramNameToValue(paramNameToInstantiatedValue) {}
+
+    SymbolUserHelper(
+        TypeConverter &converter, MLIRContext *ctx, unsigned Benefit,
+        const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
+    )
+        : OpConversionPattern<Op>(converter, ctx, Benefit),
+          paramNameToValue(paramNameToInstantiatedValue) {}
 
   public:
-    using Adaptor = typename mlir::OpConversionPattern<Op>::OpAdaptor;
+    using OpAdaptor = typename mlir::OpConversionPattern<Op>::OpAdaptor;
 
-    template <typename Result, typename... AttrTypes>
-    Result transformParam(Op op, Adaptor adaptor, ConversionPatternRewriter &rewriter) const {
-      auto res = this->paramNameToValue.find(static_cast<const Impl *>(this)->getNameAttr(op));
+    virtual Attribute getNameAttr(Op) const = 0;
+
+    virtual LogicalResult handleDefaultRewrite(
+        Attribute, Op op, OpAdaptor, ConversionPatternRewriter &, Attribute a
+    ) const {
+      return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
+    }
+
+    LogicalResult
+    matchAndRewrite(Op op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+      auto res = this->paramNameToValue.find(getNameAttr(op));
       if (res == this->paramNameToValue.end()) {
         return op->emitOpError("missing instantiation");
       }
-      llvm::TypeSwitch<Attribute, Result> TS(res->second);
-      llvm::TypeSwitch<Attribute, Result> *ptr = &TS;
+      llvm::TypeSwitch<Attribute, LogicalResult> TS(res->second);
+      llvm::TypeSwitch<Attribute, LogicalResult> *ptr = &TS;
 
-      ((ptr = &(ptr->template Case<AttrTypes>([&](AttrTypes a) {
-        return static_cast<const Impl *>(this)->handleTransform(
-            res->first, op, adaptor, rewriter, a
-        );
+      ((ptr = &(ptr->template Case<HandledAttrs>([&](HandledAttrs a) {
+        return static_cast<const Impl *>(this)->handleRewrite(res->first, op, adaptor, rewriter, a);
       }))),
        ...);
 
       return TS.Default([&](Attribute a) {
-        return static_cast<const Impl *>(this)->handleDefaultTransform(
-            res->first, op, adaptor, rewriter, a
-        );
+        return handleDefaultRewrite(res->first, op, adaptor, rewriter, a);
       });
     }
     friend Impl;
   };
 
   class ClonedStructConstReadOpPattern
-      : public OpConversionPattern<ConstReadOp>,
-        public SymbolUserHelper<ClonedStructConstReadOpPattern, ConstReadOp> {
+      : public SymbolUserHelper<
+            ClonedStructConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr> {
     SmallVector<Diagnostic> &diagnostics;
+
+    using super =
+        SymbolUserHelper<ClonedStructConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr>;
 
   public:
     ClonedStructConstReadOpPattern(
@@ -536,20 +553,12 @@ class StructCloner {
         SmallVector<Diagnostic> &instantiationDiagnostics
     )
         // future proof: use higher priority than GeneralTypeReplacePattern
-        : OpConversionPattern<ConstReadOp>(converter, ctx, 2),
-          SymbolUserHelper<ClonedStructConstReadOpPattern, ConstReadOp>(paramNameToInstantiatedValue
-          ),
+        : super(converter, ctx, /*Benefit=*/2, paramNameToInstantiatedValue),
           diagnostics(instantiationDiagnostics) {}
 
-    Attribute getNameAttr(ConstReadOp op) const { return op.getConstNameAttr(); }
+    Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
 
-    LogicalResult handleDefaultTransform(
-        Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &, Attribute a
-    ) const {
-      return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
-    }
-
-    LogicalResult handleTransform(
+    LogicalResult handleRewrite(
         Attribute sym, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
     ) const {
       APInt attrValue = a.getValue();
@@ -590,23 +599,19 @@ class StructCloner {
       return LogicalResult(op->emitOpError().append("unexpected result type ", origResTy));
     }
 
-    LogicalResult handleTransform(
+    LogicalResult handleRewrite(
         Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
     ) const {
       replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
       return success();
     }
-
-    LogicalResult matchAndRewrite(
-        ConstReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-    ) const override {
-      return transformParam<LogicalResult, IntegerAttr, FeltConstAttr>(op, adaptor, rewriter);
-    }
   };
 
   class ClonedStructFieldReadOpPattern
-      : public OpConversionPattern<FieldReadOp>,
-        public SymbolUserHelper<ClonedStructFieldReadOpPattern, FieldReadOp> {
+      : public SymbolUserHelper<
+            ClonedStructFieldReadOpPattern, FieldReadOp, IntegerAttr, FeltConstAttr> {
+    using super =
+        SymbolUserHelper<ClonedStructFieldReadOpPattern, FieldReadOp, IntegerAttr, FeltConstAttr>;
 
   public:
     ClonedStructFieldReadOpPattern(
@@ -614,48 +619,31 @@ class StructCloner {
         const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
     )
         // future proof: use higher priority than GeneralTypeReplacePattern
-        : OpConversionPattern<FieldReadOp>(converter, ctx, 3),
-          SymbolUserHelper<ClonedStructFieldReadOpPattern, FieldReadOp>(paramNameToInstantiatedValue
-          ) {}
+        : super(converter, ctx, /*Benefit=*/3, paramNameToInstantiatedValue) {}
 
-    Attribute getNameAttr(FieldReadOp op) const { return op.getTableOffset().value_or(nullptr); }
-
-    LogicalResult handleDefaultTransform(
-        Attribute, FieldReadOp op, OpAdaptor, ConversionPatternRewriter &, Attribute a
-    ) const {
-      return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
+    Attribute getNameAttr(FieldReadOp op) const override {
+      return op.getTableOffset().value_or(nullptr);
     }
 
-    LogicalResult handleTransform(
-        Attribute sym, FieldReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
+    template <typename Attr>
+    LogicalResult handleRewrite(
+        Attribute, FieldReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, Attr a
     ) const {
-      replaceOffset(op, rewriter, a.getValue());
-      return success();
-    }
-
-    LogicalResult handleTransform(
-        Attribute sym, FieldReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter,
-        FeltConstAttr a
-    ) const {
-      replaceOffset(op, rewriter, a.getValue());
-      return success();
-    }
-
-    void
-    replaceOffset(FieldReadOp op, ConversionPatternRewriter &rewriter, llvm::APInt value) const {
       rewriter.modifyOpInPlace(op, [&]() {
-        op.setTableOffsetAttr(rewriter.getIndexAttr(fromAPInt(value)));
+        op.setTableOffsetAttr(rewriter.getIndexAttr(fromAPInt(a.getValue())));
       });
+
+      return success();
     }
 
     LogicalResult matchAndRewrite(
         FieldReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
     ) const override {
-      if (!mlir::isa_and_present<FlatSymbolRefAttr>(op.getTableOffset().value_or(nullptr))) {
+      if (tableOffsetIsntSymbol(op)) {
         return failure();
       }
 
-      return transformParam<LogicalResult, IntegerAttr, FeltConstAttr>(op, adaptor, rewriter);
+      return super::matchAndRewrite(op, adaptor, rewriter);
     }
   };
 
@@ -703,9 +691,7 @@ class StructCloner {
         buildNameToValueMap(typeAtDef.getParams(), typeAtCallerParams);
     MappedTypeConverter tyConv(typeAtDef, newRemoteType, nameToValueMap);
     ConversionTarget target =
-        newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx, [](FieldReadOp op) {
-      return !mlir::isa_and_present<FlatSymbolRefAttr>(op.getTableOffset().value_or(nullptr));
-    });
+        newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx, tableOffsetIsntSymbol);
 
     target.addIllegalOp<ConstReadOp>();
 
