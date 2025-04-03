@@ -6,7 +6,7 @@
 
 Thank you for investing your time in contributing to the LLZK project!
 
-Before gettig involved, read our \subpage code-of-conduct "Code of Conduct" to keep our community approachable and respectable.
+Before getting involved, read our \subpage code-of-conduct "Code of Conduct" to keep our community approachable and respectable.
 
 In this guide you will get an overview of the contribution workflow from opening an issue, creating a PR, reviewing, and merging the PR.
 
