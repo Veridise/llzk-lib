@@ -45,7 +45,7 @@ function(add_header_library _name _include_dirs _export_name)
 endfunction()
 
 set(LLZK_EXPORT_TARGETS "LLZKTargets")
-# LLVM & MLIR do not propagate their include dirs correctly We define them as
+# LLVM & MLIR do not propagate their include dirs correctly. We define them as
 # INTERFACE libraries and link against them
 add_header_library(LLVMHeaders ${LLVM_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})
 add_header_library(MLIRHeaders ${MLIR_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})

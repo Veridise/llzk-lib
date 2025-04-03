@@ -27,6 +27,10 @@ Within the developer shell, run the following command to generate the CMake conf
 ```bash
 phases=configurePhase genericBuild
 ```
+or (since v23.11)
+```bash
+runPhase configurePhase
+```
 
 By default, the developer shell is set up to build in debug mode. If you want to
 generate a release build, append `-DCMAKE_BUILD_TYPE=Release` to `cmakeFlags`:
@@ -69,7 +73,7 @@ build the rest of the dependencies and LLZK:
 mkdir third-party
 pushd third-party
 
-# This is where llvm will be installed
+# This is where llvm will be installed.
 export INSTALL_ROOT="$PWD/llvm-install-root"
 mkdir "$INSTALL_ROOT"
 
@@ -90,22 +94,26 @@ cmake ../llvm -GNinja -DCMAKE_BUILD_TYPE=Release \
   -DLLVM_ENABLE_RTTI=on \
   -DLLVM_ENABLE_EH=on \
   -DLLVM_ENABLE_ASSERTIONS=on \
-  -DLLVM_ENABLE_Z2_SOLVER=on
+  -DLLVM_ENABLE_Z3_SOLVER=on
 # Note that using llvm dylib will cause llzk to be linked to the built LLVM
 # dylib; if you'd like llzk to be used independent of the build folder, you
 # should leave off the dylib settings.
 
 cmake --build .
 cmake --build . --target install
-popd
+popd # back to llvm-project
+popd # back to third-party
+popd # back to top level.
 
-popd # third-party
-# Should be back at top level.
+# Use an alias to avoid "prefixed in the source directory" CMake error.
+ln -sv $PWD/third-party/llvm-install-root ~/llvm-install-root-llzklib-vscode
+export INSTALL_ROOT=~/llvm-install-root-llzklib-vscode
 
 # Generate LLZK build configuration.
 # You can set BUILD_TESTING=off if you don't want to enable tests.
 mkdir build && cd build
 cmake .. -GNinja \
+  -DLLVM_ROOT="$INSTALL_ROOT" \
   -DLLVM_DIR="$INSTALL_ROOT"/lib/cmake/llvm \
   -DMLIR_DIR="$INSTALL_ROOT"/lib/cmake/mlir \
   -DLLVM_EXTERNAL_LIT="$INSTALL_ROOT"/bin/lit \
