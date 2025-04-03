@@ -884,9 +884,9 @@ LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   }
   // If the field is marked as a column only a small subset of types are allowed.
   if (!isValidColumnType(getType(), tables, *this)) {
-    return emitError() << "column marked fields can only contain felts, arrays of column types, or "
-                          "structs with columns, but field has type "
-                       << getType();
+    return emitOpError() << "marked as column can only contain felts, arrays of column types, or "
+                            "structs with columns, but field has type "
+                         << getType();
   }
   return success();
 }
