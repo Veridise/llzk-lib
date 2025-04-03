@@ -1,6 +1,5 @@
-# Setup {#A_setup}
+# Setup {#setup}
 
-<!-- Note that the TOC only appears when built by doxygen -->
 \tableofcontents
 
 There are two options for setting up the environment:
@@ -42,13 +41,16 @@ Notes:
 * Nix 2.13 is assumed. Compatibility with other versions has not been checked
   yet, but they should work.
 
-# Manual build setup
+# Manual Build Setup
 
 LLZK requires the following to be installed:
 
 * CMake 3.18 or newer
 * Ninja
-* Doxygen (optional, for generating API documentation during development)
+* Z3
+
+To optionally generate API documentation, you need:
+* Doxygen (tested on 1.10 and newer)
 
 To run tests, you also need:
 * Python 3
@@ -74,7 +76,8 @@ mkdir "$INSTALL_ROOT"
 # Build LLVM (note that this will take a while, around 10 minutes on a Mac M1)
 git clone https://github.com/llvm/llvm-project.git -b llvmorg-18.1.8 --depth 1
 pushd llvm-project
-mkdir build && cd build
+mkdir build
+pushd build
 cmake ../llvm -GNinja -DCMAKE_BUILD_TYPE=Release \
   -DLLVM_ENABLE_PROJECTS=mlir \
   -DLLVM_INCLUDE_BENCHMARKS=off \
@@ -86,7 +89,8 @@ cmake ../llvm -GNinja -DCMAKE_BUILD_TYPE=Release \
   -DLLVM_LINK_LLVM_DYLIB=on \
   -DLLVM_ENABLE_RTTI=on \
   -DLLVM_ENABLE_EH=on \
-  -DLLVM_ENABLE_ASSERTIONS=on
+  -DLLVM_ENABLE_ASSERTIONS=on \
+  -DLLVM_ENABLE_Z2_SOLVER=on
 # Note that using llvm dylib will cause llzk to be linked to the built LLVM
 # dylib; if you'd like llzk to be used independent of the build folder, you
 # should leave off the dylib settings.

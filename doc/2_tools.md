@@ -30,16 +30,3 @@ available in `mlir-opt` are not available in `llzk-opt`.
 LSP server that can be used in an IDE to provide language information for LLZK.
 Refer to the [MLIR LSP documentation](https://mlir.llvm.org/docs/Tools/MLIRLSP/) for
 a more detailed explanation of the MLIR LSP tools and how to set them up in your IDE.
-
-# (Experimental) Python bindings
-
-LLZK has experimental support for MLIR's Python bindings.
-
-Prerequisites:
-* The Python packages required for MLIR's Python bindings must be installed, as
-  indicated in the `mlir/python/requirements.txt` file in the LLVM monorepo's
-  source tree.
-* You must build and link LLZK against a version of MLIR built with
-  `MLIR_ENABLE_BINDINGS_PYTHON` set to `ON`. In the Nix setup, this can be
-  accessed using the `llzkWithPython` output.
-* LLZK must be configured with `-DLLZK_ENABLE_BINDINGS_PYTHON=ON`.

@@ -4,7 +4,7 @@ This site contains both user documentation and internal developer documentation
 for the LLZK library and related tooling.
 
 User Documentation:
-- \ref A_setup "Setup and Development Tips"
+- \ref setup "Setup and Development Tips"
 - \ref tools "Tool Guides"
 
 Advanced Documentation:
