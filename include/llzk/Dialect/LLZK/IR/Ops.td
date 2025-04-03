@@ -390,18 +390,18 @@ def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf", [VerifySizesForMultiAffineOps<1>
            "::mlir::StringAttr":$field,
            "::mlir::Attribute":$dist,
            "::mlir::ValueRange":$mapOperands,
-           "int32_t":$numDims)>,
+           "std::optional<int32_t>":$numDims)>,
        OpBuilder<(ins "::mlir::Type":$resultType,
            "::mlir::Value":$component,
            "::mlir::StringAttr":$field,
            "::mlir::SymbolRefAttr":$dist), [{
-              build($_builder, $_state, resultType, component, field, dist, ::mlir::ValueRange(), 0);
+              build($_builder, $_state, resultType, component, field, dist, ::mlir::ValueRange(), std::nullopt);
            }]>,
        OpBuilder<(ins "::mlir::Type":$resultType,
            "::mlir::Value":$component,
            "::mlir::StringAttr":$field,
            "::mlir::IntegerAttr":$dist), [{
-              build($_builder, $_state, resultType, component, field, dist, ::mlir::ValueRange(), 0);
+              build($_builder, $_state, resultType, component, field, dist, ::mlir::ValueRange(), std::nullopt);
            }]>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes, 
            "::mlir::ValueRange":$operands, 

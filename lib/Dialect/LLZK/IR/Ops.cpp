@@ -1003,15 +1003,21 @@ void FieldReadOp::build(
 
 void FieldReadOp::build(
     OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr field,
-    Attribute dist, ValueRange mapOperands, int32_t numDims
+    Attribute dist, ValueRange mapOperands, std::optional<int32_t> numDims
 ) {
+  assert(numDims.has_value() != mapOperands.empty());
   state.addOperands(component);
   state.addTypes(resultType);
-  affineMapHelpers::buildInstantiationAttrsNoSegments<FieldReadOp>(
-      builder, state, ArrayRef({mapOperands}), builder.getDenseI32ArrayAttr({numDims})
-  );
+  if (numDims.has_value()) {
+    affineMapHelpers::buildInstantiationAttrsNoSegments<FieldReadOp>(
+        builder, state, ArrayRef({mapOperands}), builder.getDenseI32ArrayAttr({*numDims})
+    );
+  } else {
+    affineMapHelpers::buildInstantiationAttrsEmptyNoSegments<FieldReadOp>(builder, state);
+  }
   Properties &props = state.getOrAddProperties<Properties>();
   props.setFieldName(FlatSymbolRefAttr::get(field));
+  props.setTableOffset(dist);
 }
 
 void FieldReadOp::build(
