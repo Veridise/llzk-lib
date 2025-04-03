@@ -182,7 +182,11 @@ if(Doxygen_FOUND)
   message(STATUS "Doxygen found, enabling documentation...")
   set(DOXYGEN_EXTRACT_ALL YES)
   set(DOXYGEN_INCLUDE_PATH "${CMAKE_CURRENT_BINARY_DIR}/include/")
-  set(DOXYGEN_EXCLUDE_PATTERNS ${CMAKE_CURRENT_BINARY_DIR}/include/*/*.md)
+  set(DOXYGEN_EXCLUDE_PATTERNS
+    "${CMAKE_CURRENT_BINARY_DIR}/include/*/*.md"
+    # We ignore the passes because we aggregate the documentation in doc/tools.md under `llzk-opt`
+    "${LLZK_MLIR_DOC_OUTPUT_DIR}/passes/*.md"
+  )
   set(DOXYGEN_USE_MDFILE_AS_MAINPAGE
       ${CMAKE_CURRENT_SOURCE_DIR}/doc/index.md)
   set(DOXYGEN_FILE_PATTERNS
@@ -200,14 +204,15 @@ if(Doxygen_FOUND)
   set(DOXYGEN_PREDEFINED GET_OP_CLASSES GET_TYPEDEF_CLASSES GET_ATTR_CLASSES)
   set(DOXYGEN_SOURCE_BROWSER YES)
   set(DOXYGEN_JAVADOC_AUTOBRIEF YES)
+  # The order that docs are added affects the sorting in the navigation bar.
   doxygen_add_docs(
     doxygen
+    "${CMAKE_CURRENT_SOURCE_DIR}/doc/"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/"
     "${CMAKE_CURRENT_BINARY_DIR}/include/"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/"
-    "${LLZK_MLIR_DOC_OUTPUT_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/doc/")
+    "${LLZK_MLIR_DOC_OUTPUT_DIR}")
   add_dependencies(doxygen LLZKDialectHeaders mlir-doc)
   add_dependencies(doc doxygen)
 endif()

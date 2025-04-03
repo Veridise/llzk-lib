@@ -1,5 +1,5 @@
 
-# Contributor Covenant Code of Conduct
+# Contributor Covenant Code of Conduct {#code-of-conduct}
 
 ## Our Pledge
 

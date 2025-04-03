@@ -1,13 +1,15 @@
-# LLZK-lib {#mainpage}
+# Overview {#mainpage}
 
 This site contains both user documentation and internal developer documentation
 for the LLZK library and related tooling.
 
-Quick Documentation:
-- [Setup and Development Tips](setup.md)
-- [Tool Guides](tools.md)
-- [Python Bindings](python-bindings.md)
+User Documentation:
+- \ref A_setup "Setup and Development Tips"
+- \ref tools "Tool Guides"
+
+Advanced Documentation:
+- \ref build/doc/mlir/Dialect.md "LLZK Dialect Language Reference"
 
 How to Contribute:
-- [Code of Conduct](code_of_conduct.md)
-- [Contribution Guide](contributing.md)
+- First, read our \ref code-of-conduct "Code of Conduct".
+- Then, read our \ref contribution-guide "Contribution Guide".

@@ -1,4 +1,4 @@
-# Setup
+# Setup {#A_setup}
 
 <!-- Note that the TOC only appears when built by doxygen -->
 \tableofcontents

@@ -1,4 +1,4 @@
-# Contribution Guide
+# Contribution Guide {#contribution-guide}
 
 \note This contribution guide is adapted from the example guide provided [by GitHub](https://github.com/github/docs/blob/278ce65fe7e7cb7e8432e9f032f94c7fe46c379e/.github/CONTRIBUTING.md). We will continue to refine the information here as needed.
 
@@ -6,7 +6,7 @@
 
 Thank you for investing your time in contributing to the LLZK project!
 
-Before gettig involved, read our [Code of Conduct](doc/code_of_conduct.md) to keep our community approachable and respectable.
+Before gettig involved, read our \subpage code-of-conduct "Code of Conduct" to keep our community approachable and respectable.
 
 In this guide you will get an overview of the contribution workflow from opening an issue, creating a PR, reviewing, and merging the PR.
 
