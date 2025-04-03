@@ -116,8 +116,8 @@ you can run the following commands:
 
 * Compile: `cmake --build .`
 * Run all tests: `cmake --build . --target check`
-* Run unit tests: `cmake --build . --target check-unit`
-* Run lit tests: `cmake --build . --target check-lit`
+  * To run only unit tests: `cmake --build . --target check-unit`
+  * To run only lit tests: `cmake --build . --target check-lit`
 * Generate API docs (in `doc/html`): `cmake --build . --target doc`
 * Run install target (requires `CMAKE_INSTALL_PREFIX` to be set):
   `cmake --build . --target install`
