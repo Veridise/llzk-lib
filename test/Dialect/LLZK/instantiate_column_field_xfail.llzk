@@ -1,0 +1,143 @@
+// RUN: llzk-opt -split-input-file %s -llzk-flatten 2>&1 | FileCheck --enable-var-scope %s
+// XFAIL: *
+// COM: Should fail until LLZK-203 is completed.
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.global @i : index = -1
+  llzk.struct @ComponentA1 {
+    llzk.field @f1 : !llzk.felt {column}
+
+    func @constrain(%self: !llzk.struct<@ComponentA1>) { return }
+    func @compute() -> !llzk.struct<@ComponentA1> {
+      %self = new_struct : !llzk.struct<@ComponentA1>
+      return %self : !llzk.struct<@ComponentA1>
+    }
+  }
+
+  llzk.struct @ComponentA2 {
+    func @compute(%p: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      %r = readf %p[@f1] : !llzk.struct<@ComponentA1>, !llzk.felt {tableOffset = @i}
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>, %p: !llzk.struct<@ComponentA1>) {
+      return
+    }
+  }
+
+  llzk.struct @ComponentA3 {
+    func @compute(%p: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA3> {
+      %self = new_struct : !llzk.struct<@ComponentA3>
+      %c = call @ComponentA2::@compute(%p) : (!llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2>
+      return %self : !llzk.struct<@ComponentA3>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA3>, %p: !llzk.struct<@ComponentA1>) {
+      return
+    }
+  }
+}
+//CHECK-LABEL: llzk.struct @ComponentA1 {
+//CHECK-NEXT:    field @f1 : !llzk.felt {column}
+//CHECK-NEXT:    func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) {
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:    func @compute() -> !llzk.struct<@ComponentA1> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA1>
+//CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@ComponentA1>
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+//CHECK-LABEL: llzk.struct @ComponentA2 {
+//CHECK-NEXT:    func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA2>
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@f1] : <@ComponentA1>, !llzk.felt {tableOffset = -1 : index}
+//CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@ComponentA2>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA2>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) {
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+//CHECK-LABEL: llzk.struct @ComponentA3 {
+//CHECK-NEXT:    func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA3> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA3>
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = call @"ComponentA2_-1"::@compute(%[[A0]]) : (!llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2>
+//CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@ComponentA3>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA3>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) {
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  module @mod {
+    llzk.global @i : index = -1
+  }
+  llzk.struct @ComponentA1 {
+    llzk.field @f1 : !llzk.felt {column}
+
+    func @constrain(%self: !llzk.struct<@ComponentA1>) { return }
+    func @compute() -> !llzk.struct<@ComponentA1> {
+      %self = new_struct : !llzk.struct<@ComponentA1>
+      return %self : !llzk.struct<@ComponentA1>
+    }
+  }
+
+  llzk.struct @ComponentA2 {
+    func @compute(%p: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      %r = readf %p[@f1] : !llzk.struct<@ComponentA1>, !llzk.felt {tableOffset = @mod::@i}
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>, %p: !llzk.struct<@ComponentA1>) {
+      return
+    }
+  }
+
+  llzk.struct @ComponentA3 {
+    func @compute(%p: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA3> {
+      %self = new_struct : !llzk.struct<@ComponentA3>
+      %c = call @ComponentA2::@compute(%p) : (!llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2>
+      return %self : !llzk.struct<@ComponentA3>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA3>, %p: !llzk.struct<@ComponentA1>) {
+      return
+    }
+  }
+}
+//CHECK-LABEL: llzk.struct @ComponentA1 {
+//CHECK-NEXT:    field @f1 : !llzk.felt {column}
+//CHECK-NEXT:    func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) {
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:    func @compute() -> !llzk.struct<@ComponentA1> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA1>
+//CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@ComponentA1>
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+//CHECK-LABEL: llzk.struct @ComponentA2 {
+//CHECK-NEXT:    func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA2>
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@f1] : <@ComponentA1>, !llzk.felt {tableOffset = -1 : index}
+//CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@ComponentA2>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA2>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) {
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+//CHECK-LABEL: llzk.struct @ComponentA3 {
+//CHECK-NEXT:    func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA3> {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA3>
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = call @"ComponentA2_-1"::@compute(%[[A0]]) : (!llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2>
+//CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@ComponentA3>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA3>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) {
+//CHECK-NEXT:      return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+
+

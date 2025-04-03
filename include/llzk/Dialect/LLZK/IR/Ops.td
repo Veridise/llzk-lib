@@ -372,7 +372,7 @@ def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf", [VerifySizesForMultiAffineOps<1>
 
   let arguments = (ins LLZK_StructType:$component,
       FlatSymbolRefAttr:$field_name,
-      OptionalAttr<AnyAttrOf<[FlatSymbolRefAttr, IndexAttr, AffineMapAttr]>>:$tableOffset,
+      OptionalAttr<AnyAttrOf<[SymbolRefAttr, IndexAttr, AffineMapAttr]>>:$tableOffset,
       VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands,
       DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
       DenseI32ArrayAttr:$mapOpGroupSizes);
@@ -394,7 +394,7 @@ def LLZK_FieldReadOp : LLZK_FieldRefOp<"readf", [VerifySizesForMultiAffineOps<1>
        OpBuilder<(ins "::mlir::Type":$resultType,
            "::mlir::Value":$component,
            "::mlir::StringAttr":$field,
-           "::mlir::FlatSymbolRefAttr":$dist), [{
+           "::mlir::SymbolRefAttr":$dist), [{
               build($_builder, $_state, resultType, component, field, dist, ::mlir::ValueRange(), 0);
            }]>,
        OpBuilder<(ins "::mlir::Type":$resultType,

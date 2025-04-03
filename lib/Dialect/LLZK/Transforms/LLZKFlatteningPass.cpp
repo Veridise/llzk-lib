@@ -401,7 +401,7 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
 namespace Step1_InstantiateStructs {
 
 static inline bool tableOffsetIsntSymbol(FieldReadOp op) {
-  return !mlir::isa_and_present<FlatSymbolRefAttr>(op.getTableOffset().value_or(nullptr));
+  return !mlir::isa_and_present<SymbolRefAttr>(op.getTableOffset().value_or(nullptr));
 }
 
 class StructCloner {
