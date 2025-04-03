@@ -14,6 +14,8 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 
+#include <cassert>
+
 namespace llzk {
 
 using namespace mlir;
@@ -190,14 +192,35 @@ using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
 using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
 
 class AllowedTypes {
-  bool no_felt : 1, no_string : 1, no_struct : 1, no_array : 1, no_var : 1, no_int : 1;
-  bool no_struct_params : 1;
+  struct ColumnCheckData {
+    SymbolTableCollection *symbolTable = nullptr;
+    Operation *op = nullptr;
+  };
+
+  bool no_felt : 1 = false;
+  bool no_string : 1 = false;
+  bool no_struct : 1 = false;
+  bool no_array : 1 = false;
+  bool no_var : 1 = false;
+  bool no_int : 1 = false;
+  bool no_struct_params : 1 = false;
+  bool must_be_column : 1 = false;
+
+  ColumnCheckData columnCheck;
+
+  /// Validates that, if columns are a requirement, the struct type has columns.
+  /// If columns are not a requirement returns true early since the pointers required
+  /// for lookup may be null.
+  bool validColumns(StructType s) {
+    if (!must_be_column) {
+      return true;
+    }
+    assert(columnCheck.symbolTable);
+    assert(columnCheck.op);
+    return succeeded(s.hasColumns(*columnCheck.symbolTable, columnCheck.op));
+  }
 
 public:
-  constexpr AllowedTypes()
-      : no_felt(false), no_string(false), no_struct(false), no_array(false), no_var(false),
-        no_int(false), no_struct_params(false) {}
-
   constexpr AllowedTypes &noFelt() {
     no_felt = true;
     return *this;
@@ -236,6 +259,13 @@ public:
   constexpr AllowedTypes &onlyInt() {
     no_int = false;
     return noFelt().noString().noStruct().noArray().noVar();
+  }
+
+  constexpr AllowedTypes &mustBeColumn(SymbolTableCollection &symbolTable, Operation *op) {
+    must_be_column = true;
+    columnCheck.symbolTable = &symbolTable;
+    columnCheck.op = op;
+    return *this;
   }
 
   // This is the main check for allowed types.
@@ -339,23 +369,9 @@ public:
   // Note: The `no*` flags here refer to Types nested within a TypeAttr parameter.
   bool isValidStructTypeImpl(Type type) {
     if (StructType sType = llvm::dyn_cast<StructType>(type)) {
-      return areValidStructTypeParams(sType.getParams());
+      return validColumns(sType) && areValidStructTypeParams(sType.getParams());
     }
     return false;
-  }
-
-  bool isValidColumnTypeImpl(Type type, SymbolTableCollection &symbolTable, Operation *op) {
-    return llvm::TypeSwitch<Type, bool>(type)
-        .Case([&](StructType S) {
-      // A struct type is valid if it has columns inside as well as the normal validation for struct
-      // type params.
-      return succeeded(S.hasColumns(symbolTable, op)) && areValidStructTypeParams(S.getParams());
-    })
-        .Case([&](ArrayType arr) {
-      // An array is valid if the inner type is a valid column type and the dimensions are valid.
-      return isValidColumnTypeImpl(arr.getElementType(), symbolTable, op) &&
-             areValidArrayDimSizes(arr.getDimensionSizes());
-    }).Default([this](Type t) { return isValidTypeImpl(t); });
   }
 };
 
@@ -375,7 +391,7 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
 bool isValidType(Type type) { return AllowedTypes().isValidTypeImpl(type); }
 
 bool isValidColumnType(Type type, SymbolTableCollection &symbolTable, Operation *op) {
-  return AllowedTypes().noString().noInt().isValidColumnTypeImpl(type, symbolTable, op);
+  return AllowedTypes().noString().noInt().mustBeColumn(symbolTable, op).isValidTypeImpl(type);
 }
 
 bool isValidGlobalType(Type type) { return AllowedTypes().noVar().isValidTypeImpl(type); }
