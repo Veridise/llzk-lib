@@ -307,13 +307,13 @@ public:
   // Note: The `no*` flags here refer to Types nested within a TypeAttr parameter (if any) except
   // for the `no_struct_params` flag which requires that `params` is null or empty.
   bool areValidStructTypeParams(ArrayAttr params, EmitErrorFn emitError = nullptr) {
-    bool success = true;
     if (isNullOrEmpty(params)) {
       return true;
     }
     if (no_struct_params) {
       return false;
     }
+    bool success = true;
     for (Attribute p : params) {
       if (!StructParamTypes::matches(p)) {
         StructParamTypes::reportInvalid(emitError, p, "Struct parameter");
