@@ -10,7 +10,7 @@ There are two options for setting up the environment:
 Tip: Following the manual setup steps through cloning the LLVM project in the
 `third-party` directory may enable code exploration in your IDE.
 
-# Nix setup
+# Nix Setup
 
 This repository is already configured with a Nix flakes environment.
 
