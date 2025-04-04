@@ -202,6 +202,7 @@ if(Doxygen_FOUND)
     "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-darkmode-toggle.js"
     "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-paragraph-link.js")
   set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/doc/header.html")
+  set(DOXYGEN_HTML_FOOTER "${CMAKE_CURRENT_SOURCE_DIR}/doc/footer.html")
   set(DOXYGEN_GENERATE_TREEVIEW YES)
   set(DOXYGEN_DISABLE_INDEX NO)
   set(DOXYGEN_FULL_SIDEBAR NO)
