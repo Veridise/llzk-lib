@@ -103,11 +103,11 @@ cmake --build .
 cmake --build . --target install
 popd # back to llvm-project
 popd # back to third-party
-popd # back to top level.
+popd # back to top level
 
 # Use an alias to avoid "prefixed in the source directory" CMake error.
-ln -sv $PWD/third-party/llvm-install-root ~/llvm-install-root-llzklib-vscode
-export INSTALL_ROOT=~/llvm-install-root-llzklib-vscode
+ln -sv $PWD/third-party/llvm-install-root ~/llvm-install-root-llzklib
+export INSTALL_ROOT=~/llvm-install-root-llzklib
 
 # Generate LLZK build configuration.
 # You can set BUILD_TESTING=off if you don't want to enable tests.

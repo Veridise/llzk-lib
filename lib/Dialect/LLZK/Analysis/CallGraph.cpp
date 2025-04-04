@@ -1,6 +1,17 @@
-/**
- * The contents of this file are adapted from llvm/lib/Analysis/CallGraph.cpp
- */
+//===-- CallGraph.cpp - LLZK-specific call graph implementation -*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+// The contents of this file are adapted from llvm/lib/Analysis/CallGraph.cpp
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
 #include "llzk/Dialect/LLZK/Analysis/CallGraph.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/Util/AttributeHelper.h"

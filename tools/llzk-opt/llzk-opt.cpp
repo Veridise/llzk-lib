@@ -1,3 +1,16 @@
+//===-- llzk-opt.cpp - LLZK opt tool ----------------------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+//
+// This file configures the mlir-opt tool for use on LLZK files.
+//
+//===----------------------------------------------------------------------===//
+
 #include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h"
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h"
