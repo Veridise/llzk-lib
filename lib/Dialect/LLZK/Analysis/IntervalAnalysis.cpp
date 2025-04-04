@@ -98,23 +98,23 @@ UnreducedInterval UnreducedInterval::doUnion(const UnreducedInterval &rhs) const
   return UnreducedInterval(safeMin(lhs.a, rhs.a), safeMax(lhs.b, rhs.b));
 }
 
-UnreducedInterval UnreducedInterval::lt(const UnreducedInterval &rhs) const {
+UnreducedInterval UnreducedInterval::computeLTPart(const UnreducedInterval &rhs) const {
   auto one = llvm::APSInt(llvm::APInt(a.getBitWidth(), 1));
   auto bound = expandingSub(rhs.b, one);
   return UnreducedInterval(safeMin(a, bound), safeMin(b, bound));
 }
 
-UnreducedInterval UnreducedInterval::le(const UnreducedInterval &rhs) const {
+UnreducedInterval UnreducedInterval::computeLEPart(const UnreducedInterval &rhs) const {
   return UnreducedInterval(safeMin(a, rhs.b), safeMin(b, rhs.b));
 }
 
-UnreducedInterval UnreducedInterval::gt(const UnreducedInterval &rhs) const {
+UnreducedInterval UnreducedInterval::computeGTPart(const UnreducedInterval &rhs) const {
   auto one = llvm::APSInt(llvm::APInt(a.getBitWidth(), 1));
   auto bound = expandingAdd(rhs.a, one);
   return UnreducedInterval(safeMax(a, bound), safeMax(b, bound));
 }
 
-UnreducedInterval UnreducedInterval::ge(const UnreducedInterval &rhs) const {
+UnreducedInterval UnreducedInterval::computeGEPart(const UnreducedInterval &rhs) const {
   return UnreducedInterval(safeMax(a, rhs.a), safeMax(b, rhs.a));
 }
 
@@ -146,10 +146,10 @@ bool UnreducedInterval::overlaps(const UnreducedInterval &rhs) const {
 }
 
 std::strong_ordering operator<=>(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
-  if (lhs.a < rhs.a || (lhs.a == rhs.a && lhs.b < rhs.b)) {
+  if (safeLt(lhs.a, rhs.a) || (safeEq(lhs.a, rhs.a) && safeLt(lhs.b, rhs.b))) {
     return std::strong_ordering::less;
   }
-  if (lhs.a > rhs.a || (lhs.a == rhs.a && lhs.b > rhs.b)) {
+  if (safeGt(lhs.a, rhs.a) || (safeEq(lhs.a, rhs.a) && safeGt(lhs.b, rhs.b))) {
     return std::strong_ordering::greater;
   }
   return std::strong_ordering::equal;
@@ -1039,17 +1039,17 @@ IntervalDataFlowAnalysis::applyInterval(Lattice *after, Value val, Interval newI
         newRhsInterval = rhsInterval;
       }
     } else if (ltCase()) {
-      newLhsInterval = lhsInterval.toUnreduced().lt(rhsInterval.toUnreduced()).reduce(f);
-      newRhsInterval = rhsInterval.toUnreduced().ge(lhsInterval.toUnreduced()).reduce(f);
+      newLhsInterval = lhsInterval.toUnreduced().computeLTPart(rhsInterval.toUnreduced()).reduce(f);
+      newRhsInterval = rhsInterval.toUnreduced().computeGEPart(lhsInterval.toUnreduced()).reduce(f);
     } else if (leCase()) {
-      newLhsInterval = lhsInterval.toUnreduced().le(rhsInterval.toUnreduced()).reduce(f);
-      newRhsInterval = rhsInterval.toUnreduced().gt(lhsInterval.toUnreduced()).reduce(f);
+      newLhsInterval = lhsInterval.toUnreduced().computeLEPart(rhsInterval.toUnreduced()).reduce(f);
+      newRhsInterval = rhsInterval.toUnreduced().computeGTPart(lhsInterval.toUnreduced()).reduce(f);
     } else if (gtCase()) {
-      newLhsInterval = lhsInterval.toUnreduced().gt(rhsInterval.toUnreduced()).reduce(f);
-      newRhsInterval = rhsInterval.toUnreduced().le(lhsInterval.toUnreduced()).reduce(f);
+      newLhsInterval = lhsInterval.toUnreduced().computeGTPart(rhsInterval.toUnreduced()).reduce(f);
+      newRhsInterval = rhsInterval.toUnreduced().computeLEPart(lhsInterval.toUnreduced()).reduce(f);
     } else if (geCase()) {
-      newLhsInterval = lhsInterval.toUnreduced().ge(rhsInterval.toUnreduced()).reduce(f);
-      newRhsInterval = rhsInterval.toUnreduced().lt(lhsInterval.toUnreduced()).reduce(f);
+      newLhsInterval = lhsInterval.toUnreduced().computeGEPart(rhsInterval.toUnreduced()).reduce(f);
+      newRhsInterval = rhsInterval.toUnreduced().computeLTPart(lhsInterval.toUnreduced()).reduce(f);
     } else {
       cmpOp->emitWarning("unhandled cmp predicate");
       return ChangeResult::NoChange;

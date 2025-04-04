@@ -101,6 +101,7 @@ public:
 
   UnreducedInterval(llvm::APSInt x, llvm::APSInt y) : a(x), b(y) {}
   UnreducedInterval(llvm::APInt x, llvm::APInt y) : a(x), b(y) {}
+  /// @brief This constructor is primarily for convenience for unit tests.
   UnreducedInterval(uint64_t x, uint64_t y) : a(llvm::APInt(64, x)), b(llvm::APInt(64, y)) {}
 
   /* Operations */
@@ -120,25 +121,45 @@ public:
   /// @return
   UnreducedInterval doUnion(const UnreducedInterval &rhs) const;
 
-  /// @brief Return the part of the interval that is less than rhs's upper bound.
-  /// @param rhs
-  /// @return
-  UnreducedInterval lt(const UnreducedInterval &rhs) const;
+  /// @brief Return the part of the interval that is guaranteed to be less than
+  /// the rhs's max value.
+  ///
+  /// For example, given *this = [0, 7] and rhs = [3, 5], this function would
+  /// return [0, 4], since rhs has a max value of 5. If this interval's lower
+  /// bound is greater than or equal to the rhs's upper bound, the returned
+  /// interval will be "empty" (an interval where a > b). For example,
+  /// if *this = [7, 10] and rhs = [0, 7], then no part of *this is less than rhs.
+  UnreducedInterval computeLTPart(const UnreducedInterval &rhs) const;
 
-  /// @brief Return the part of the interval that is less than or equal to the rhs's upper bound.
-  /// @param rhs
-  /// @return
-  UnreducedInterval le(const UnreducedInterval &rhs) const;
+  /// @brief Return the part of the interval that is less than or equal to the
+  /// rhs's upper bound.
+  ///
+  /// For example, given *this = [0, 7] and rhs = [3, 5], this function would
+  /// return [0, 5], since rhs has a max value of 5. If this interval's lower
+  /// bound is greater than to the rhs's upper bound, the returned
+  /// interval will be "empty" (an interval where a > b). For example, if
+  /// *this = [8, 10] and rhs = [0, 7], then no part of *this is less than or equal to rhs.
+  UnreducedInterval computeLEPart(const UnreducedInterval &rhs) const;
 
-  /// @brief Return the part of the interval that is greater than the rhs's lower bound.
-  /// @param rhs
-  /// @return
-  UnreducedInterval gt(const UnreducedInterval &rhs) const;
+  /// @brief Return the part of the interval that is greater than the rhs's
+  /// lower bound.
+  ///
+  /// For example, given *this = [0, 7] and rhs = [3, 5], this function would
+  /// return [4, 7], since rhs has a minimum value of 3. If this interval's
+  /// upper bound is less than or equal to the rhs's lower bound, the returned
+  /// interval will be "empty" (an interval where a > b). For example,
+  /// if *this = [0, 7] and rhs = [7, 10], then no part of *this is greater than rhs.
+  UnreducedInterval computeGTPart(const UnreducedInterval &rhs) const;
 
-  /// @brief Return the part of the interval that is greater than or equal to the rhs's lower bound.
-  /// @param rhs
-  /// @return
-  UnreducedInterval ge(const UnreducedInterval &rhs) const;
+  /// @brief Return the part of the interval that is greater than or equal to
+  /// the rhs's lower bound.
+  ///
+  /// For example, given *this = [0, 7] and rhs = [3, 5], this function would
+  /// return [3, 7], since rhs has a minimum value of 3. If this interval's
+  /// upper bound is less than the rhs's lower bound, the returned
+  /// interval will be "empty" (an interval where a > b). For example, if
+  /// *this = [0, 6] and rhs = [7, 10], then no part of *this is greater than or equal to rhs.
+  UnreducedInterval computeGEPart(const UnreducedInterval &rhs) const;
 
   UnreducedInterval operator-() const;
   friend UnreducedInterval operator+(const UnreducedInterval &lhs, const UnreducedInterval &rhs);
