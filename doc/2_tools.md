@@ -10,6 +10,11 @@ overview of the operation of `*-opt` tooling, but note that many options and pas
 available in `mlir-opt` are not available in `llzk-opt`.
 `llzk-opt -h` will show a list of all available flags and options.
 
+##### LLZK-Specific Options
+```
+-I <directory> : Directory of include files
+```
+
 ## LLZK Pass Documentation
 
 ### Analysis Passes
