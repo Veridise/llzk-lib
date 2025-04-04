@@ -6,9 +6,11 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
-//
-// This file configures the mlir-opt tool for use on LLZK files.
-//
+///
+/// \file
+/// This file implements a version of the mlir-opt tool configured for use on
+/// LLZK files.
+///
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/InitDialects.h"

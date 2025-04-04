@@ -1,6 +1,3 @@
-/**
- * The contents of this file are adapted from llvm/lib/Analysis/CallGraph.cpp
- */
 //===-- CallGraphPasses.cpp -------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
