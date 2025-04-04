@@ -140,7 +140,8 @@ def LLZK_GlobalDefOp
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name, UnitAttr:$constant,
-      TypeAttrOf<GlobalDefType>:$type, OptionalAttr<AnyAttr>:$initial_value);
+      TypeAttrOf<GlobalDefType>:$type,
+      DefaultValuedAttr<AnyAttr, "nullptr">:$initial_value);
 
   let assemblyFormat = [{
     (`const` $constant^)?
