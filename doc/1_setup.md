@@ -143,3 +143,10 @@ you can run the following commands:
 The build configuration will automatically export `compile_commands.json`, so
 LSP servers such as `clangd` should be able to pick up helpful IDE information
 like include paths, etc.
+
+<div class="section_buttons">
+
+| Previous          |                              Next |
+|:------------------|----------------------------------:|
+| \ref mainpage | \ref tools |
+</div>

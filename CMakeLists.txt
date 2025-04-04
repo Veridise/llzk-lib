@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.23)
 
 project(
   LLZK
+  # Keeping this description short since it's also used by doxygen
   DESCRIPTION
-    "Veridise's intermediate representation for zero knowledge languages"
+    "Veridise's ZK Language IR"
   VERSION 0.1.0
   HOMEPAGE_URL https://github.com/Veridise/llzk-lib)
 
@@ -180,6 +181,37 @@ add_custom_target(doc)
 find_package(Doxygen OPTIONAL_COMPONENTS dot)
 if(Doxygen_FOUND)
   message(STATUS "Doxygen found, enabling documentation...")
+
+  # Fetch style document
+  include(FetchContent)
+  set(DoxygenAwesomeCSS_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/deps/doxygen-awesome-css")
+  FetchContent_Declare(
+    DoxygenAwesomeCSS
+    GIT_REPOSITORY https://github.com/jothepro/doxygen-awesome-css.git
+    GIT_TAG v2.3.4
+    SOURCE_DIR "${DoxygenAwesomeCSS_SOURCE_DIR}"
+  )
+  FetchContent_MakeAvailable(DoxygenAwesomeCSS)
+
+  # - doxygen awesome settings
+  set(DOXYGEN_HTML_EXTRA_STYLESHEET
+    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome.css"
+    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-sidebar-only.css"
+    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-sidebar-only-darkmode-toggle.css")
+  set(DOXYGEN_HTML_EXTRA_FILES
+    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-darkmode-toggle.js"
+    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-paragraph-link.js")
+  set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/doc/header.html")
+  set(DOXYGEN_GENERATE_TREEVIEW YES)
+  set(DOXYGEN_DISABLE_INDEX NO)
+  set(DOXYGEN_FULL_SIDEBAR NO)
+  set(DOXYGEN_HTML_COLORSTYLE "LIGHT")
+  set(DOXYGEN_DOT_IMAGE_FORMAT "svg")
+  set(DOXYGEN_DOT_TRANSPARENT YES)
+  set(DOXYGEN_TREEVIEW_WIDTH 700)
+  # set(DOXYGEN_INTERACTIVE_SVG YES) # This is an option, but it's kinda clunky
+
+  # Remaining doxygen setup
   set(DOXYGEN_EXTRACT_ALL YES)
   set(DOXYGEN_INCLUDE_PATH "${CMAKE_CURRENT_BINARY_DIR}/include/")
   set(DOXYGEN_EXCLUDE_PATTERNS

@@ -30,3 +30,9 @@ available in `mlir-opt` are not available in `llzk-opt`.
 LSP server that can be used in an IDE to provide language information for LLZK.
 Refer to the [MLIR LSP documentation](https://mlir.llvm.org/docs/Tools/MLIRLSP/) for
 a more detailed explanation of the MLIR LSP tools and how to set them up in your IDE.
+
+<div class="section_buttons">
+| Previous          |                              Next |
+|:------------------|----------------------------------:|
+| \ref setup | \ref contribution-guide |
+</div>

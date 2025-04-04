@@ -61,3 +61,9 @@ You can make any other changes in your fork, then commit them to your branch.
 Congratulations! The LLZK team thanks you.
 
 Once your PR is merged, your contributions will be publicly available in the [LLZK-lib repository](https://github.com/Veridise/llzk-lib).
+
+<div class="section_buttons">
+| Previous          |                              Next |
+|:------------------|----------------------------------:|
+| \ref tools | [Dialect Documentation](build/doc/mlir/Dialect.md) |
+</div>
