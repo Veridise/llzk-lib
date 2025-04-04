@@ -9,7 +9,8 @@ def InlineIncludesPass : Pass<"llzk-inline-includes", "::mlir::ModuleOp"> {
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
-def RedundantReadAndWriteEliminationPass : Pass<"llzk-duplicate-read-write-elim", "::mlir::ModuleOp"> {
+def RedundantReadAndWriteEliminationPass
+    : Pass<"llzk-duplicate-read-write-elim", "::mlir::ModuleOp"> {
   let summary = "Remove redundant reads and writes";
   let description = [{
     Remove read and write operations to struct fields and arrays that are redundant or unnecessary.
@@ -18,7 +19,8 @@ def RedundantReadAndWriteEliminationPass : Pass<"llzk-duplicate-read-write-elim"
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
-def RedundantOperationEliminationPass : Pass<"llzk-duplicate-op-elim", "::mlir::ModuleOp"> {
+def RedundantOperationEliminationPass
+    : Pass<"llzk-duplicate-op-elim", "::mlir::ModuleOp"> {
   let summary = "Remove redundant operations";
   let description = [{
     Remove llzk and arith dialect operations that produce the same results
@@ -30,7 +32,8 @@ def RedundantOperationEliminationPass : Pass<"llzk-duplicate-op-elim", "::mlir::
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
-def UnusedDeclarationEliminationPass : Pass<"llzk-unused-declaration-elim", "::mlir::ModuleOp"> {
+def UnusedDeclarationEliminationPass
+    : Pass<"llzk-unused-declaration-elim", "::mlir::ModuleOp"> {
   let summary = "Remove unused field and struct declarations";
   let description = [{
     Remove field and struct declarations that are unused within the current compilation
@@ -41,10 +44,11 @@ def UnusedDeclarationEliminationPass : Pass<"llzk-unused-declaration-elim", "::m
     and llzk-duplicate-op-elim for maximum effect.
   }];
   let constructor = "llzk::createUnusedDeclarationEliminationPass()";
-  let options = [
-    Option<"removeStructs", "remove-structs", "bool", /* default */ "false",
-      "Whether to remove unused struct definitions as well. "
-      "Requires module to declare a Main component, otherwise all components will appear unused.">,
+  let options = [Option<"removeStructs", "remove-structs", "bool",
+                        /* default */ "false",
+                        "Whether to remove unused struct definitions as well. "
+                        "Requires module to declare a Main component, "
+                        "otherwise all components will appear unused.">,
   ];
   let dependentDialects = ["llzk::LLZKDialect"];
 }
