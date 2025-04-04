@@ -1,3 +1,12 @@
+//===-- Types.td -------------------------------------------*- tablegen -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
 #ifndef LLZK_TYPES
 #define LLZK_TYPES
 
@@ -201,7 +210,7 @@ def LLZK_TypeVarType : LLZK_Type<"TypeVar", "tvar"> {
     For example, we can define a struct that holds a size-2 array where the
     type of the elements in the array is specified by a parameter of the
     struct and instantiated with a specific type at the uses of the struct.
-   
+
 
     ```llzk
     llzk.struct @A<[@Ty]> {

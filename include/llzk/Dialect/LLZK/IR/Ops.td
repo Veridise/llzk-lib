@@ -1,3 +1,12 @@
+//===-- Ops.td ---------------------------------------------*- tablegen -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
 #ifndef LLZK_OPS
 #define LLZK_OPS
 
@@ -945,12 +954,12 @@ def LLZK_UnifiableCastOp : LLZK_Op<"unifiable_cast", [Pure]> {
     This operation reinterprets a value as a different type with the restriction
     that the input and output types of the cast are unifiable.
 
-    Most ops that accept LLZK types accept unifiable types as input and thus there 
+    Most ops that accept LLZK types accept unifiable types as input and thus there
     is no need for casting between types. This op is meant to be used in situations where
     is not possible to modify the given or the target type and they are different but unifiable.
     For example, inside a conversion pattern the driver may introduce `unrealized_conversion_cast`
     operations if the types are not equal. This will happen regardless of wether the two types unify.
-    This cast can be introduced instead of the default cast operation to satisfy MLIR's assumtions 
+    This cast can be introduced instead of the default cast operation to satisfy MLIR's assumtions
     on type equality.
 
     Example:

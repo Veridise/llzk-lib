@@ -1,3 +1,12 @@
+//===-- OpsBase.td -----------------------------------------*- tablegen -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
 #ifndef LLZK_OPS_BASE
 #define LLZK_OPS_BASE
 
@@ -186,7 +195,7 @@ class LLZK_NaryOpBase<string mnemonic, string defaultTypeBuilder,
         opType = type;
       } else {
         // Otherwise, build the default type
-        opType = 
+        opType =
         }]#!subst("$_builder", "parser.getBuilder()", defaultTypeBuilder)#[{;
       }
       return mlir::success();
@@ -213,8 +222,8 @@ class LLZK_BinaryOpBase<string mnemonic, Type resultType,
 
   let assemblyFormat = [{
       $lhs `,` $rhs
-      `` custom<InferredOrParsedType>(type($lhs), "true") 
-      `` custom<InferredOrParsedType>(type($rhs), "false") 
+      `` custom<InferredOrParsedType>(type($lhs), "true")
+      `` custom<InferredOrParsedType>(type($rhs), "false")
       attr-dict
   }];
 }
@@ -230,7 +239,7 @@ class LLZK_UnaryOpBase<string mnemonic, Type resultType,
 
   let assemblyFormat = [{
       $operand
-      `` custom<InferredOrParsedType>(type($operand), "true") 
+      `` custom<InferredOrParsedType>(type($operand), "true")
       attr-dict
   }];
 }

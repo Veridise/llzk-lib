@@ -1,9 +1,30 @@
-/// LLZK: This file has been ported from the MLIR dense analysis
-/// (DenseAnalysis.h) so that it may be tailored to work for LLZK modules,
+//===-- DenseAnalysis.h - Dense data-flow analysis --------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+// Adapted from mlir/include/mlir/Analysis/DataFlow/DenseAnalysis.h.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// This file implements (LLZK-tailored) dense data-flow analysis using the
+//// data-flow analysis framework. The analysis is forward and conditional and
+/// uses the results of dead code analysis to prune dead code during the
+/// analysis.
+///
+/// This file has been ported from the MLIR dense analysis so that it may be
+/// tailored to work for LLZK modules,
 /// as LLZK modules have different symbol lookup mechanisms that are currently
 /// incompatible with the builtin MLIR dataflow analyses.
 /// This file is mostly left as original in MLIR, with notes added where
 /// changes have been made.
+//===----------------------------------------------------------------------===//
 
 #pragma once
 

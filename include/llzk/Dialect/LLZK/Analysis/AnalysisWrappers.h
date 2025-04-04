@@ -1,14 +1,25 @@
-/**
- * Convenience classes for a frequent pattern of dataflow analysis used in LLZK,
- * where an analysis is run across all `StructDefOp`s contained within a module,
- * where each of those analyses may need to reference the analysis results from
- * other `StructDefOp`s. This pattern reoccurs due to the instantiation of subcomponents
- * within components, which often requires the instantiating component to look up
- * the results of an analysis on the subcomponent. This kind of lookup is not
- * supported through mlir's AnalysisManager, as it only allows lookups on nested operations,
- * not sibling operations. This pattern allows subcomponents to instead use the ModuleOp's
- * analysis manager, allowing components to query analyses for any component in the module.
- */
+//===-- AnalysisWrappers.h --------------------------------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// Convenience classes for a frequent pattern of dataflow analysis used in LLZK,
+/// where an analysis is run across all `StructDefOp`s contained within a module,
+/// where each of those analyses may need to reference the analysis results from
+/// other `StructDefOp`s. This pattern reoccurs due to the instantiation of subcomponents
+/// within components, which often requires the instantiating component to look up
+/// the results of an analysis on the subcomponent. This kind of lookup is not
+/// supported through mlir's AnalysisManager, as it only allows lookups on nested operations,
+/// not sibling operations. This pattern allows subcomponents to instead use the ModuleOp's
+/// analysis manager, allowing components to query analyses for any component in the module.
+///
+//===----------------------------------------------------------------------===//
+
 #pragma once
 
 #include "llzk/Dialect/LLZK/Analysis/DenseAnalysis.h"
