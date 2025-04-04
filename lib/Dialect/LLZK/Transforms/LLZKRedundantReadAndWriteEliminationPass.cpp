@@ -26,7 +26,7 @@
 #include <deque>
 #include <memory>
 
-/// Include the generated base pass class definitions.
+// Include the generated base pass class definitions.
 namespace llzk {
 #define GEN_PASS_DEF_REDUNDANTREADANDWRITEELIMINATIONPASS
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h.inc"

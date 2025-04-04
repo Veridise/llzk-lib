@@ -14,7 +14,7 @@
 ///
 /// \file
 /// This file implements (LLZK-tailored) dense data-flow analysis using the
-//// data-flow analysis framework. The analysis is forward and conditional and
+/// data-flow analysis framework. The analysis is forward and conditional and
 /// uses the results of dead code analysis to prune dead code during the
 /// analysis.
 ///

@@ -19,7 +19,7 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>
 
-/// Include the generated base pass class definitions.
+// Include the generated base pass class definitions.
 namespace llzk {
 #define GEN_PASS_DEF_FIELDWRITEVALIDATORPASS
 #include "llzk/Dialect/LLZK/Validators/LLZKValidationPasses.h.inc"

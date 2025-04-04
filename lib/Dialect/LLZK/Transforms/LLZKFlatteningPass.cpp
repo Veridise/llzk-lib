@@ -36,7 +36,7 @@
 #include <llvm/ADT/DepthFirstIterator.h>
 #include <llvm/Support/Debug.h>
 
-/// Include the generated base pass class definitions.
+// Include the generated base pass class definitions.
 namespace llzk {
 #define GEN_PASS_DEF_FLATTENINGPASS
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h.inc"

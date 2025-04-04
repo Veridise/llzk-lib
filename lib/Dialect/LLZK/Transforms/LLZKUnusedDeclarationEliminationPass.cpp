@@ -23,7 +23,7 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 
-/// Include the generated base pass class definitions.
+// Include the generated base pass class definitions.
 namespace llzk {
 // the *DECL* macro is required when a pass has options to declare the option struct
 #define GEN_PASS_DECL_UNUSEDDECLARATIONELIMINATIONPASS
