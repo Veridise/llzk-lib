@@ -74,7 +74,6 @@ TEST_F(IntervalTests, Partitions) {
   AssertUnreducedIntervalEq(UnreducedInterval(3, 10), s1.computeGEPart(s2));
 
   // Some non-overlaping intervals, should all be empty
-  llvm::errs() << b.computeLTPart(a) << "\n";
   ASSERT_TRUE(b.computeLTPart(a).reduce(f).isEmpty());
   ASSERT_TRUE(a.computeGTPart(b).reduce(f).isEmpty());
   ASSERT_TRUE(c.computeLEPart(a).reduce(f).isEmpty());

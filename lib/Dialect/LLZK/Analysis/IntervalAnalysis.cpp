@@ -104,7 +104,6 @@ UnreducedInterval UnreducedInterval::computeLTPart(const UnreducedInterval &rhs)
   }
   auto one = llvm::APSInt(llvm::APInt(a.getBitWidth(), 1));
   auto bound = expandingSub(rhs.b, one);
-  llvm::errs() << "BOUND " << bound << '\n';
   return UnreducedInterval(a, safeMin(b, bound));
 }
 
