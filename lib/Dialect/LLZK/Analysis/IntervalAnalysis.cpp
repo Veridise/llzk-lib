@@ -208,6 +208,9 @@ UnreducedInterval Interval::secondUnreduced() const {
 
 Interval Interval::join(const Interval &rhs) const {
   auto &lhs = *this;
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
   const Field &f = lhs.getField();
 
   // Trivial cases
@@ -261,6 +264,9 @@ Interval Interval::join(const Interval &rhs) const {
 
 Interval Interval::intersect(const Interval &rhs) const {
   auto &lhs = *this;
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
 
   // Trivial cases
   if (lhs.isEmpty() || rhs.isEmpty()) {
@@ -321,6 +327,7 @@ Interval Interval::intersect(const Interval &rhs) const {
 }
 
 Interval Interval::difference(const Interval &other) const {
+  // intersect checks that we're in the same field
   Interval intersection = intersect(other);
   if (intersection.isEmpty()) {
     // There's nothing to remove, so just return this
@@ -412,6 +419,7 @@ Interval operator*(const Interval &lhs, const Interval &rhs) {
 }
 
 FailureOr<Interval> operator/(const Interval &lhs, const Interval &rhs) {
+  ensure(lhs.getField() == rhs.getField(), "cannot divide intervals in different fields");
   const auto &field = rhs.getField();
   if (rhs.width() > field.one()) {
     return Interval::Entire(field);
@@ -423,6 +431,9 @@ FailureOr<Interval> operator/(const Interval &lhs, const Interval &rhs) {
 }
 
 Interval operator%(const Interval &lhs, const Interval &rhs) {
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
   const auto &field = rhs.getField();
   return UnreducedInterval(field.zero(), rhs.b).reduce(field);
 }
