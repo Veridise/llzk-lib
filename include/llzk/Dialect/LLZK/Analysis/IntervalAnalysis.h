@@ -173,6 +173,10 @@ public:
   friend std::strong_ordering
   operator<=>(const UnreducedInterval &lhs, const UnreducedInterval &rhs);
 
+  friend bool operator==(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
+    return std::is_eq(lhs <=> rhs);
+  };
+
   /* Utility */
   llvm::APSInt getLHS() const { return a; }
   llvm::APSInt getRHS() const { return b; }

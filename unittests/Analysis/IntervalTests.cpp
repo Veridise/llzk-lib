@@ -12,10 +12,9 @@ protected:
 
   IntervalTests() : f(Field::getField("babybear")) {}
 
-  /// Uses a bitwidth-safe comparison method to check if expected == actual
-  static testing::AssertionResult
-  checkSafeEq(const llvm::APSInt &expected, const llvm::APSInt &actual) {
-    if (safeEq(expected, actual)) {
+  template <typename T>
+  static testing::AssertionResult checkCond(const T &expected, const T &actual, bool cond) {
+    if (cond) {
       return testing::AssertionSuccess();
     }
     std::string errMsg;
@@ -23,13 +22,19 @@ protected:
     return testing::AssertionFailure() << errMsg;
   }
 
+  /// Uses a bitwidth-safe comparison method to check if expected == actual
+  static testing::AssertionResult
+  checkSafeEq(const llvm::APSInt &expected, const llvm::APSInt &actual) {
+    return checkCond(expected, actual, safeEq(expected, actual));
+  }
+
   inline static void AssertSafeEq(const llvm::APSInt &expected, const llvm::APSInt &actual) {
     ASSERT_TRUE(checkSafeEq(expected, actual));
   }
 
   inline static void
-  AssertUnreducedIntervalsEq(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
-    ASSERT_TRUE(lhs == rhs);
+  AssertUnreducedIntervalEq(const UnreducedInterval &expected, const UnreducedInterval &actual) {
+    ASSERT_TRUE(checkCond(expected, actual, expected == actual));
   }
 };
 
@@ -55,27 +60,33 @@ TEST_F(IntervalTests, UnreducedIntervalWidth) {
 }
 
 TEST_F(IntervalTests, Partitions) {
-  UnreducedInterval a(0, 100), b(100, 200), c(101, 300), d(1, 0);
+  UnreducedInterval a(0, 100), b(100, 200), c(101, 300), d(1, 0), s1(1, 10), s2(3, 7);
 
   // Some basic overlaping intervals
-  AssertUnreducedIntervalsEq(UnreducedInterval(0, 99), a.computeLTPart(b));
-  AssertUnreducedIntervalsEq(UnreducedInterval(0, 100), a.computeLEPart(b));
-  AssertUnreducedIntervalsEq(a.computeLTPart(b), b.computeGEPart(a));
-  ASAssertUnreducedIntervalsEqSERT_EQ(a.computeLEPart(b), b.computeGTPart(a));
+  AssertUnreducedIntervalEq(a, a.computeLTPart(b));
+  AssertUnreducedIntervalEq(a, a.computeLEPart(b));
+  AssertUnreducedIntervalEq(b, b.computeGEPart(a));
+  AssertUnreducedIntervalEq(b, b.computeGTPart(a));
+
+  AssertUnreducedIntervalEq(UnreducedInterval(1, 6), s1.computeLTPart(s2));
+  AssertUnreducedIntervalEq(UnreducedInterval(1, 7), s1.computeLEPart(s2));
+  AssertUnreducedIntervalEq(UnreducedInterval(4, 10), s1.computeGTPart(s2));
+  AssertUnreducedIntervalEq(UnreducedInterval(3, 10), s1.computeGEPart(s2));
 
   // Some non-overlaping intervals, should all be empty
+  llvm::errs() << b.computeLTPart(a) << "\n";
   ASSERT_TRUE(b.computeLTPart(a).reduce(f).isEmpty());
   ASSERT_TRUE(a.computeGTPart(b).reduce(f).isEmpty());
   ASSERT_TRUE(c.computeLEPart(a).reduce(f).isEmpty());
   ASSERT_TRUE(a.computeGEPart(c).reduce(f).isEmpty());
 
   // Any computation where LHS or RHS is empty returns LHS.
-  AssertUnreducedIntervalsEq(a, a.computeLTPart(d));
-  AssertUnreducedIntervalsEq(b, b.computeLEPart(d));
-  AssertUnreducedIntervalsEq(c, c.computeGTPart(d));
-  AssertUnreducedIntervalsEq(d, d.computeGEPart(d));
-  AssertUnreducedIntervalsEq(d, d.computeLTPart(a));
-  AssertUnreducedIntervalsEq(d, d.computeLEPart(b));
-  AssertUnreducedIntervalsEq(d, d.computeGTPart(c));
-  AssertUnreducedIntervalsEq(d, d.computeGEPart(d));
+  AssertUnreducedIntervalEq(a, a.computeLTPart(d));
+  AssertUnreducedIntervalEq(b, b.computeLEPart(d));
+  AssertUnreducedIntervalEq(c, c.computeGTPart(d));
+  AssertUnreducedIntervalEq(d, d.computeGEPart(d));
+  AssertUnreducedIntervalEq(d, d.computeLTPart(a));
+  AssertUnreducedIntervalEq(d, d.computeLEPart(b));
+  AssertUnreducedIntervalEq(d, d.computeGTPart(c));
+  AssertUnreducedIntervalEq(d, d.computeGEPart(d));
 }

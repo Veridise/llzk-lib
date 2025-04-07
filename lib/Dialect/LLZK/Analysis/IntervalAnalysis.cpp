@@ -99,23 +99,36 @@ UnreducedInterval UnreducedInterval::doUnion(const UnreducedInterval &rhs) const
 }
 
 UnreducedInterval UnreducedInterval::computeLTPart(const UnreducedInterval &rhs) const {
+  if (isEmpty() || rhs.isEmpty()) {
+    return *this;
+  }
   auto one = llvm::APSInt(llvm::APInt(a.getBitWidth(), 1));
   auto bound = expandingSub(rhs.b, one);
-  return UnreducedInterval(safeMin(a, bound), safeMin(b, bound));
+  llvm::errs() << "BOUND " << bound << '\n';
+  return UnreducedInterval(a, safeMin(b, bound));
 }
 
 UnreducedInterval UnreducedInterval::computeLEPart(const UnreducedInterval &rhs) const {
-  return UnreducedInterval(safeMin(a, rhs.b), safeMin(b, rhs.b));
+  if (isEmpty() || rhs.isEmpty()) {
+    return *this;
+  }
+  return UnreducedInterval(a, safeMin(b, rhs.b));
 }
 
 UnreducedInterval UnreducedInterval::computeGTPart(const UnreducedInterval &rhs) const {
+  if (isEmpty() || rhs.isEmpty()) {
+    return *this;
+  }
   auto one = llvm::APSInt(llvm::APInt(a.getBitWidth(), 1));
   auto bound = expandingAdd(rhs.a, one);
-  return UnreducedInterval(safeMax(a, bound), safeMax(b, bound));
+  return UnreducedInterval(safeMax(a, bound), b);
 }
 
 UnreducedInterval UnreducedInterval::computeGEPart(const UnreducedInterval &rhs) const {
-  return UnreducedInterval(safeMax(a, rhs.a), safeMax(b, rhs.a));
+  if (isEmpty() || rhs.isEmpty()) {
+    return *this;
+  }
+  return UnreducedInterval(safeMax(a, rhs.a), b);
 }
 
 UnreducedInterval UnreducedInterval::operator-() const { return UnreducedInterval(-b, -a); }
@@ -244,7 +257,7 @@ Interval Interval::join(const Interval &rhs) const {
     return rhs.join(lhs);
   }
   llvm::report_fatal_error("unhandled join case");
-  return Interval::Entire(field.get());
+  return Interval::Entire(f);
 }
 
 Interval Interval::intersect(const Interval &rhs) const {
