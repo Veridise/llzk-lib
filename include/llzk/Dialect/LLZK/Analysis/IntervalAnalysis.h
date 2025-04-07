@@ -619,7 +619,7 @@ private:
 
   ExpressionValue performUnaryArithmetic(mlir::Operation *op, const LatticeValue &a);
 
-  /// @brief Recursively applies the new interval to the val's lattice value and to that values
+  /// @brief Recursively applies the new interval to the val's lattice value and to that value's
   /// operands, if possible. For example, if we know that X*Y is non-zero, then we know X and Y are
   /// non-zero, and can update X and Y's intervals accordingly.
   /// @param after The current lattice state. Assumes that this has already been joined with the
