@@ -335,8 +335,19 @@ public:
   /// Intersect
   Interval intersect(const Interval &rhs) const;
 
-  /// @brief Computes `this` - (`this` & `other`). Note that this is an interval
-  /// difference, not a subtraction operation like the `operator-` below.
+  /// @brief Computes and returns `this` - (`this` & `other`) if the operation
+  /// produces a single interval.
+  ///
+  /// Note that this is an interval difference, not a subtraction operation
+  /// like the `operator-` below.
+  ///
+  /// For example, given `*this` = [1, 10] and `other` = [5, 11], this function
+  /// would return [1, 4], as `this` & `other` (the intersection) = [5, 10], so
+  /// [1, 10] - [5, 10] = [1, 4].
+  ///
+  /// For example, given `*this` = [1, 10] and `other` = [5, 6], this function
+  /// should return [1, 4] and [7, 10], but we don't support having multiple
+  /// disjoint intervals, so `this` is returned as-is.
   Interval difference(const Interval &other) const;
 
   /* arithmetic ops */

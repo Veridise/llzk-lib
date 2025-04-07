@@ -354,7 +354,7 @@ Interval Interval::difference(const Interval &other) const {
     // The intersection needs to be at the end of the interval, otherwise we would
     // split the interval in two, and we aren't set up to support multiple intervals
     // per value.
-    if (a != intersection.a || b != intersection.b) {
+    if (a != intersection.a && b != intersection.b) {
       return *this;
     }
     // Otherwise, remove the intersection and reduce
@@ -366,7 +366,7 @@ Interval Interval::difference(const Interval &other) const {
   }
   // - Mixed internal/external cases. We flip the comparison
   if (isTypeF()) {
-    if (a != intersection.b || b != intersection.a) {
+    if (a != intersection.b && b != intersection.a) {
       return *this;
     }
     // Otherwise, remove the intersection and reduce

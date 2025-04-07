@@ -89,3 +89,15 @@ TEST_F(IntervalTests, Partitions) {
   AssertUnreducedIntervalEq(d, d.computeGTPart(c));
   AssertUnreducedIntervalEq(d, d.computeGEPart(d));
 }
+
+TEST_F(IntervalTests, Difference) {
+  // Following the examples in the Interval::difference docs.
+  auto a = Interval::TypeA(f, f.felt(1), f.felt(10));
+  auto b = Interval::TypeA(f, f.felt(5), f.felt(11));
+  auto c = Interval::TypeA(f, f.felt(5), f.felt(6));
+
+  llvm::errs() << a.intersect(b) << " => " << a.difference(b) << '\n';
+  ASSERT_EQ(Interval::TypeA(f, f.felt(1), f.felt(4)), a.difference(b));
+  llvm::errs() << a.difference(c) << '\n';
+  ASSERT_EQ(a, a.difference(c));
+}
