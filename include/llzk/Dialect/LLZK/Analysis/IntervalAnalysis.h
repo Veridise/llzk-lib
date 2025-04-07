@@ -631,7 +631,7 @@ private:
   llvm::SMTExprRef createFeltSymbol(const char *name) const;
 
   bool isConstOp(mlir::Operation *op) const {
-    return mlir::isa<FeltConstantOp, mlir::arith::ConstantIndexOp>(op);
+    return mlir::isa<FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
   }
 
   llvm::APSInt getConst(mlir::Operation *op) const;

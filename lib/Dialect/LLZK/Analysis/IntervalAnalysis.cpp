@@ -913,6 +913,9 @@ llvm::APSInt IntervalDataFlowAnalysis::getConst(mlir::Operation *op) const {
   })
           .Case<mlir::arith::ConstantIndexOp>([&](mlir::arith::ConstantIndexOp indexConst) {
     return llvm::APInt(field.get().bitWidth(), indexConst.value());
+  })
+          .Case<mlir::arith::ConstantIntOp>([&](mlir::arith::ConstantIntOp intConst) {
+    return llvm::APInt(field.get().bitWidth(), intConst.value());
   }).Default([&](Operation *illegalOp) {
     std::string err;
     debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
