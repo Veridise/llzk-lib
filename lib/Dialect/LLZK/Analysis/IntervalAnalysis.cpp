@@ -171,7 +171,7 @@ llvm::APSInt UnreducedInterval::width() const {
   llvm::APSInt w;
   if (safeGt(a, b)) {
     // This would be reduced to an empty Interval, so the width is just zero.
-    w = llvm::APSInt(llvm::APInt::getZero(a.getBitWidth()));
+    w = llvm::APSInt::getUnsigned(0);
   } else {
     /// Since the range is inclusive, we add one to the difference to get the true width.
     w = expandingSub(b, a)++;
@@ -212,7 +212,7 @@ Interval Interval::join(const Interval &rhs) const {
 
   // Trivial cases
   if (lhs.isEntire() || rhs.isEntire()) {
-    return Interval::Entire(field.get());
+    return Interval::Entire(f);
   }
   if (lhs.isEmpty()) {
     return rhs;
