@@ -852,7 +852,7 @@ void IntervalDataFlowAnalysis::visitOperation(
                       queries */
              && !isReturnOp(op)     /* We do not currently handle return ops as the analysis
                  is currently limited to constrain functions, which return no value. */
-             && !isDefinitionOp(op) /* The analysis ignores field, struct, function definitions. */
+             && !isDefinitionOp(op) /* The analysis ignores definition ops. */
              &&
              !mlir::isa<CreateStructOp>(op) /* We do not need to analyze the creation of structs. */
   ) {
