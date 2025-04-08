@@ -1,7 +1,7 @@
 # What is LLZK? {#overview}
 
 LLZK is an open-source Intermediate Representation (IR) for Zero Knowledge (ZK)
-circuit language.
+circuit languages.
 The LLZK project provides a flexible framework, inspired by LLVM, designed to
 unify diverse ZK front-end languages and backend ZK architectures.
 
