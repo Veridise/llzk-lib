@@ -23,7 +23,7 @@ The general workflow of using LLZK is therefore as follows:
 ### Frontends {#frontends}
 
 Frontends are currently not contained within the LLZK repository, but are rather
-maintained in separate repositories, using the LLZK-lib as a dependency.
+maintained in separate repositories, using LLZK-lib as a dependency.
 
 Veridise currently maintains the following frontends:
 - [Zirgen](https://github.com/Veridise/zir-to-zkir)
