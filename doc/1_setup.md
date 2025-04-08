@@ -147,5 +147,5 @@ like include paths, etc.
 <div class="section_buttons">
 | Previous          |                              Next |
 |:------------------|----------------------------------:|
-| \ref mainpage | \ref tools |
+| \ref overview | \ref tools |
 </div>

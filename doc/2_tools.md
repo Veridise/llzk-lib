@@ -2,7 +2,7 @@
 
 \tableofcontents
 
-# llzk-opt
+# llzk-opt {#llzk-opt}
 
 `llzk-opt` is a version of the [`mlir-opt` tool](https://mlir.llvm.org/docs/Tutorials/MlirOpt/) that supports
 passes on LLZK IR files. You can refer to the `mlir-opt` documentation for a general
@@ -15,7 +15,7 @@ available in `mlir-opt` are not available in `llzk-opt`.
 -I <directory> : Directory of include files
 ```
 
-## LLZK Pass Documentation
+## LLZK Pass Documentation {#passes}
 
 ### Analysis Passes
 
