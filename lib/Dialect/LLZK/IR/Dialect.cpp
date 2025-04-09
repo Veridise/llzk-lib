@@ -7,12 +7,18 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Config/Config.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
 
+#include <mlir/Bytecode/BytecodeImplementation.h>
 #include <mlir/IR/DialectImplementation.h>
+#include <mlir/Support/LLVM.h>
+
+#include <compare>
+#include <string>
 
 // TableGen'd implementation files
 #include "llzk/Dialect/LLZK/IR/Dialect.cpp.inc"
@@ -27,6 +33,103 @@ template <> struct mlir::FieldParser<llvm::APInt> {
     } else {
       return val;
     }
+  }
+};
+
+struct LLZKDialectVersion : public mlir::DialectVersion {
+  static const LLZKDialectVersion &CurrentVersion() {
+    static LLZKDialectVersion current(LLZK_VERSION_MAJOR, LLZK_VERSION_MINOR, LLZK_VERSION_PATCH);
+    return current;
+  }
+
+  LLZKDialectVersion() : LLZKDialectVersion(0, 0, 0) {}
+  LLZKDialectVersion(uint64_t majorV, uint64_t minorV, uint64_t patchV)
+      : majorVersion(majorV), minorVersion(minorV), patchVersion(patchV) {}
+
+  void write(mlir::DialectBytecodeWriter &writer) const {
+    writer.writeVarInt(majorVersion);
+    writer.writeVarInt(minorVersion);
+    writer.writeVarInt(patchVersion);
+  }
+
+  std::string str() const {
+    return (mlir::Twine(majorVersion) + "." + mlir::Twine(minorVersion) + "." +
+            mlir::Twine(patchVersion))
+        .str();
+  }
+
+  std::strong_ordering operator<=>(const LLZKDialectVersion &other) const {
+    if (auto cmp = majorVersion <=> other.majorVersion; cmp != 0) {
+      return cmp;
+    }
+    if (auto cmp = minorVersion <=> other.minorVersion; cmp != 0) {
+      return cmp;
+    }
+    return patchVersion <=> other.patchVersion;
+  }
+
+  bool operator==(const LLZKDialectVersion &other) const { return std::is_eq(operator<=>(other)); }
+
+  uint64_t majorVersion, minorVersion, patchVersion;
+};
+
+/// @brief This implements the bytecode interface for the LLZK dialect.
+struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
+
+  LLZKDialectBytecodeInterface(mlir::Dialect *dialect) : mlir::BytecodeDialectInterface(dialect) {}
+
+  /// @brief Writes the current version of the LLZK-lib to the given writer.
+  void writeVersion(mlir::DialectBytecodeWriter &writer) const override {
+    auto versionOr = writer.getDialectVersion<llzk::LLZKDialect>();
+    // Check if a target version to emit was specified on the writer configs.
+    if (mlir::succeeded(versionOr)) {
+      auto llzkVersion = *reinterpret_cast<const LLZKDialectVersion *>(*versionOr);
+      llzkVersion.write(writer);
+    }
+    // Otherwise, write the current version
+    LLZKDialectVersion::CurrentVersion().write(writer);
+  }
+
+  /// @brief Read the version of this dialect from the provided reader and return it as
+  /// a `unique_ptr` to a dialect version object (or nullptr on failure).
+  std::unique_ptr<mlir::DialectVersion>
+  readVersion(mlir::DialectBytecodeReader &reader) const override {
+    uint64_t majorV, minorV, patchV;
+    if (mlir::failed(reader.readVarInt(majorV)) || mlir::failed(reader.readVarInt(minorV)) ||
+        mlir::failed(reader.readVarInt(patchV))) {
+      return nullptr;
+    }
+    return std::make_unique<LLZKDialectVersion>(majorV, minorV, patchV);
+  }
+
+  /// Hook invoked after parsing completed, if a version directive was present
+  /// and included an entry for the current dialect. This hook offers the
+  /// opportunity to the dialect to visit the IR and upgrades constructs emitted
+  /// by the version of the dialect corresponding to the provided version.
+  mlir::LogicalResult upgradeFromVersion(
+      mlir::Operation *topLevelOp, const mlir::DialectVersion &version
+  ) const override {
+    auto llzkVersion = reinterpret_cast<const LLZKDialectVersion *>(&version);
+    if (!llzkVersion) {
+      return mlir::success();
+    }
+    if (*llzkVersion > LLZKDialectVersion::CurrentVersion()) {
+      topLevelOp->emitError(
+          mlir::Twine("Cannot upgrade from current version ") +
+          LLZKDialectVersion::CurrentVersion().str() + " to future version " + llzkVersion->str()
+      );
+      return mlir::failure();
+    }
+    if (*llzkVersion == LLZKDialectVersion::CurrentVersion()) {
+      // No work to do, versions match.
+      return mlir::success();
+    }
+    topLevelOp->emitWarning(
+        mlir::Twine("LLZK version ") + llzkVersion->str() + " is older than current version " +
+        LLZKDialectVersion::CurrentVersion().str() +
+        " and no upgrade methods have been implemented. Proceed with caution."
+    );
+    return mlir::failure();
   }
 };
 
@@ -57,4 +160,5 @@ auto llzk::LLZKDialect::initialize() -> void {
     #include "llzk/Dialect/LLZK/IR/Attrs.cpp.inc"
   >();
   // clang-format on
+  addInterfaces<LLZKDialectBytecodeInterface>();
 }
