@@ -3,7 +3,6 @@ on:
     types: [submitted]
     branches: [ main ]
 
-
 name: Transition Issue to "To Merge" State
 
 jobs:
