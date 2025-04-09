@@ -10,7 +10,7 @@ YAML_TEMPLATE=$(dirname "$0")/template.yaml
 BRANCH_NAME=$(git symbolic-ref --short -q HEAD | sed -r 's/\//__/g' )
 CHANGELOG_FILE="${CHANGELOG_INPUT}/${BRANCH_NAME}.yaml"
 
-echo "Searching if changelog file ${CHANGELOG_FILE} exists.."
+echo "Searching if changelog file ${CHANGELOG_FILE} exists..."
 test -f ${CHANGELOG_FILE}
 exit_code=$?
 if [ $exit_code -eq  1 ]; then
@@ -18,7 +18,7 @@ if [ $exit_code -eq  1 ]; then
     echo "Run './release_helpers/scripts/createChangelogEntry.sh' to create it."
     exit 1
 fi
-echo "Check if ${CHANGELOG_FILE} has been edited.."
+echo "Check if ${CHANGELOG_FILE} has been edited..."
 diff ${CHANGELOG_FILE} ${YAML_TEMPLATE} > /dev/null
 exit_code=$?
 if [ $exit_code -eq  0 ]; then
@@ -26,7 +26,7 @@ if [ $exit_code -eq  0 ]; then
     echo "Describe your work on ${CHANGELOG_FILE}"
     exit 1
 fi
-echo "Check if unreleased changelog entries are formated properly.."
+echo "Check if unreleased changelog entries are formated properly..."
 python3 "${CHANGELOG_APP}" --ignore-empty  test > "${MDX_TEMP_FILE}"
 exit_code=$?
 if [ $exit_code -eq  1 ]; then
@@ -35,7 +35,7 @@ if [ $exit_code -eq  1 ]; then
     rm "${MDX_TEMP_FILE}"
     exit 1
 fi
-echo "Check if generated file is mdx compliant.."
+echo "Check if generated file is mdx compliant..."
 pushd "${MDX_VALIDATOR_FOLDER}"
 npx nbb -m validate "${MDX_TEMP_FILENAME}"
 exit_code=$?
