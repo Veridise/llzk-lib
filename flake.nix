@@ -105,6 +105,7 @@
           shell = llzkEnv.overrideAttrs (old: {
             nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
               doxygen
+              git
 
               # clang-tidy and clang-format
               clang-tools_18

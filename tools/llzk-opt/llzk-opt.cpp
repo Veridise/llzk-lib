@@ -13,6 +13,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Config/Config.h"
 #include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h"
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h"
@@ -40,6 +41,9 @@ int main(int argc, char **argv) {
   llvm::setBugReportMsg("PLEASE submit a bug report to " BUG_REPORT_URL
                         " and include the crash backtrace, relevant LLZK files,"
                         " and associated run script(s).\n");
+  llvm::cl::AddExtraVersionPrinter([](llvm::raw_ostream &os) {
+    os << "\nLLZK (" LLZK_URL "):\n  LLZK version " LLZK_VERSION_STRING "\n";
+  });
 
   // MLIR initialization
   mlir::DialectRegistry registry;

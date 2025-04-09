@@ -1,0 +1,152 @@
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Release version to prepare"
+        required: true
+        type: string
+      checkout_from:
+        description: "Git ref to checkout from. It could be a branch, a tag or a commit hash"
+        required: true
+        type: string
+        default: main
+
+env:
+  CHANGELOG_INPUT: "changelogs/unreleased"
+  CHANGELOG_APP: $(dirname "$0")/../changelog_updater/generate_changelog.py
+  CHANGELOG_MARKDOWN: "CHANGELOG.md"
+
+jobs:
+  prerelease-branch-exists:
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.check.outputs.BRANCH }}
+      skipped: ${{ steps.skipped.outputs.SKIPPED }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        if: github.event.pull_request.merged == false
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check if pre-release branch exists
+        id: check
+        if: github.event.pull_request.merged == false
+        run: |
+          git config user.name ${{ github.actor	}}
+          git config user.email ${{ github.actor }}@users.noreply.github.com
+          git fetch
+
+          if git branch --all | grep "pre-release"; then
+            BRANCH=$(git branch --all | grep "pre-release" | sed 's/^[[:space:]]*//g')
+            echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
+            FOUND='TRUE'
+          else
+            FOUND='FALSE'
+          fi
+          echo "prerelease branches found: ${FOUND}"
+          echo "BRANCH=${FOUND}" >> $GITHUB_OUTPUT
+
+      - name: Exit on failure
+        id: slack
+        if: ${{ steps.check.outputs.branch == 'TRUE' && github.event.pull_request.merged == false }}
+        run: |
+          echo "*Component:* ${{ github.event.repository.name }}\n *Version:* ${{ inputs.release_version }}\n *Pipeline:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}| ${{ github.run_id }}>\n *Summary:* Existing pre release branch `${{env.BRANCH }}`. You cannot have more than one release branches available at the same time. \n *Status:* Error " >> $GITHUB_OUTPUT
+          # Exit with code 1, as the prepare release has failed
+          exit 1
+
+      - name: Skipping this job when its a merge
+        if: github.event.pull_request.merged == true
+        id: skipped
+        run: |
+          echo "skipping this job because trigger was by PR merge"
+          SKIPPED=TRUE
+          echo "SKIPPED=${SKIPPED}" >> $GITHUB_OUTPUT
+          echo $SKIPPED
+
+      - name: job status
+        if: ${{ steps.skipped.conclusion == 'success' }}
+        run: exit 0
+
+  create-pre-release-files:
+    runs-on: ubuntu-latest
+    needs: prerelease-branch-exists
+    env:
+      RELEASE_VERSION: ${{ inputs.release_version }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          ref: ${{ inputs.checkout_from }}
+          persist-credentials: false
+
+      - name: Setup env with version from branch name
+        if: github.event.pull_request.merged == true
+        run: echo "RELEASE_VERSION=$( echo ${GITHUB_REF_NAME} | cut -d "-" -f 1 )" >> $GITHUB_ENV
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip" # caching pip dependencies
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "latest"
+
+      - name: Install release_helpers dependencies
+        run: |
+          pip install --upgrade pip && pip install -r release_helpers/requirements.txt
+          pushd release_helpers/mdx-validate
+          npm install
+          popd
+
+      - name: Create/Update pre-release files
+        run: |
+          ./release_helpers/scripts/createPreReleaseFiles.sh ${RELEASE_VERSION}
+          BRANCH_NAME=${{ env.RELEASE_VERSION }}-pre-release
+          echo "================================
+                Release changelog generated successfully.
+                Please validate its content bellow.
+
+
+                1) If changes **are** required:
+                  * Update the [PENDING.md](${{ github.server_url }}/${{ github.repository }}/tree/${BRANCH_NAME}/changelogs/PENDING.md)
+                  * Perform the same actions as (2)
+                2) If **NO** changes are required:
+                  * Trigger the [Create Release Candidate](${{ github.server_url }}/${{ github.repository }}/actions/workflows/create-release-candidate.yml) workflow
+                    **_Note:_** Run the workflow from branch **${BRANCH_NAME}**
+
+                ==================================" | sed 's/^[[:space:]]*//g' >> $GITHUB_STEP_SUMMARY
+          cat changelogs/PENDING.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Failure on release changelog creation
+        if: failure()
+        run: |
+          echo "==================================
+                ERROR: Failed to create Release changelog.
+                Check action output and/or contact ops team for clarifications.
+
+                ==================================" | sed 's/^[[:space:]]*//g' >> $GITHUB_STEP_SUMMARY
+
+      - name: Commit changes
+        id: commit
+        run: |
+          git config user.name ${{ github.actor	}}
+          git config user.email ${{ github.actor	}}@users.noreply.github.com
+          git checkout ${{ env.RELEASE_VERSION }}-pre-release 2>/dev/null || git checkout -b ${{ env.RELEASE_VERSION }}-pre-release
+          git add .
+          git commit -m "Setup pre-release files for release ${{ env.RELEASE_VERSION }}"
+          git push --set-upstream origin ${{ env.RELEASE_VERSION }}-pre-release
+
+      - name: check status
+        if: always()
+        id: status-check
+        run: |
+          STATUS=${{ job.status }}
+          echo "STATUS=${STATUS}" >> $GITHUB_ENV
