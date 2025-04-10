@@ -43,3 +43,44 @@ llzk.func @f_not(%a: i1) -> i1 {
 //CHECK-NEXT:     return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
+
+!F = !llzk.felt
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ComponentA {
+    func @compute(%a: !F, %b: !F, %c: !F, %d: !F, %e: !F, %f: !F) -> !llzk.struct<@ComponentA> {
+      %self = new_struct : !llzk.struct<@ComponentA>
+      return %self : !llzk.struct<@ComponentA>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA>, %a: !F, %b: !F, %c: !F, %d: !F, %e: !F, %f: !F) {
+      %0 = arith.constant 1 : i1
+      %1 = llzk.cmp eq(%e, %f)
+      %2 = llzk.cmp lt(%c, %d)
+      %3 = arith.andi %1, %2 : i1
+      %4 = llzk.cmp eq(%a, %b)
+      %5 = arith.ori %3, %4 : i1
+      llzk.emit_eq %5, %0 : i1
+      return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+// CHECK-NEXT:    llzk.struct @ComponentA {
+// CHECK-NEXT:      func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V2:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:      %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V4:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V5:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA>
+// CHECK-NEXT:        return %[[V6]] : !llzk.struct<@ComponentA>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      func @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA>, %[[V8:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V9:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:      %[[V10:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V11:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V12:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V13:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+// CHECK-NEXT:        %[[V14:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        %[[V15:[0-9a-zA-Z_\.]+]] = cmp eq(%[[V12]], %[[V13]])
+// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = cmp lt(%[[V10]], %[[V11]])
+// CHECK-NEXT:        %[[V17:[0-9a-zA-Z_\.]+]] = arith.andi %[[V15]], %[[V16]] : i1
+// CHECK-NEXT:        %[[V18:[0-9a-zA-Z_\.]+]] = cmp eq(%[[V8]], %[[V9]])
+// CHECK-NEXT:        %[[V19:[0-9a-zA-Z_\.]+]] = arith.ori %[[V17]], %[[V18]] : i1
+// CHECK-NEXT:        emit_eq %[[V19]], %[[V14]] : i1, i1
+// CHECK-NEXT:        return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
