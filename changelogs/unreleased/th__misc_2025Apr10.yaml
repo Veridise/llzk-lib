@@ -1,0 +1,3 @@
+added:
+  - CLI option to print all registered ops
+  - Additional lit tests
