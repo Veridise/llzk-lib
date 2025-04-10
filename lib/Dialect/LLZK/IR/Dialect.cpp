@@ -93,8 +93,7 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
     auto versionOr = writer.getDialectVersion<llzk::LLZKDialect>();
     // Check if a target version to emit was specified on the writer configs.
     if (mlir::succeeded(versionOr)) {
-      auto llzkVersion = *reinterpret_cast<const LLZKDialectVersion *>(*versionOr);
-      llzkVersion.write(writer);
+      reinterpret_cast<const LLZKDialectVersion *>(*versionOr)->write(writer);
     } else {
       // Otherwise, write the current version
       LLZKDialectVersion::CurrentVersion().write(writer);
