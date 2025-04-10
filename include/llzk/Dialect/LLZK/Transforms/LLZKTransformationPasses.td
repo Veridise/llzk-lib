@@ -63,10 +63,16 @@ def UnusedDeclarationEliminationPass
 }
 
 def FlatteningPass : Pass<"llzk-flatten", "::mlir::ModuleOp"> {
-  let summary =
-      "Replace parameterized structs with flattened (i.e. no parameter) "
-      "versions of those structs based on requested return type at calls to "
-      "`compute()` functions and unroll loops";
+  let summary = "Flatten structs and unroll loops";
+  let description = [{
+    Performs the following transformations:
+    - Instantiate `affine_map` parameters of StructType and ArrayType
+      to constant values using the arguments at the instantiation site
+    - Replace parameterized structs with flattened (i.e. no parameter)
+      versions of those structs based on requested return type at calls
+      to `compute()` functions and unroll loops
+    - Unroll loops
+  }];
   let constructor = "llzk::createFlatteningPass()";
   let dependentDialects = ["llzk::LLZKDialect"];
 }
