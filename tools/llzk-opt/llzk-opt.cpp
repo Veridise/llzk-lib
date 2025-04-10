@@ -61,11 +61,6 @@ int main(int argc, char **argv) {
   std::tie(inputFilename, outputFilename) =
       registerAndParseCLIOptions(argc, argv, "llzk-opt", registry);
 
-  // Set the include directories from CL option
-  if (mlir::failed(llzk::GlobalSourceMgr::get().setup(IncludeDirs))) {
-    return EXIT_FAILURE;
-  }
-
   if (PrintAllOps) {
     mlir::MLIRContext context;
     context.appendDialectRegistry(registry);
@@ -75,6 +70,12 @@ int main(int argc, char **argv) {
       llvm::outs() << "  " << opName.getStringRef() << '\n';
     }
     llvm::outs() << "}\n";
+    return EXIT_SUCCESS;
+  }
+
+  // Set the include directories from CL option
+  if (mlir::failed(llzk::GlobalSourceMgr::get().setup(IncludeDirs))) {
+    return EXIT_FAILURE;
   }
 
   // Run 'mlir-opt'
