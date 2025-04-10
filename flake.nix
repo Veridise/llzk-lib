@@ -41,6 +41,7 @@
             fi
           '';
         });
+
         llzkDebugClangCov = final.llzkDebugClang.overrideAttrs(attrs: {
           postCheck = ''
             MANIFEST=profiles.manifest
@@ -77,6 +78,7 @@
             fi
           '';
         });
+
         llzkDebugGCC = (final.llzk.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
 
@@ -101,7 +103,7 @@
         # Because `nix develop` is used to set up a dev shell for a given
         # derivation, we just need to extend the llzk derivation with any
         # extra tools we need.
-        devShellBase = { pkgs, llzkEnv ? final.llzk, ... }: {
+        devShellBase = pkgs: llzkEnv: {
           shell = llzkEnv.overrideAttrs (old: {
             nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
               doxygen
@@ -126,9 +128,16 @@
 
               # Needed for using mlir-tblgen inside the dev shell
               export LD_LIBRARY_PATH=${pkgs.z3.lib}/lib:$LD_LIBRARY_PATH
+
+              # Disable container overflow checks because it can give false positives in
+              # newGeneralRewritePatternSet() since LLVM itself is not built with ASan.
+              # https://github.com/google/sanitizers/wiki/AddressSanitizerContainerOverflow#false-positives
+              export ASAN_OPTIONS=detect_container_overflow=0
             '';
           });
         };
+
+        devShellBaseWithDefault = pkgs: final.devShellBase pkgs final.llzk;
       };
     } //
     (flake-utils.lib.eachDefaultSystem (system:
@@ -165,12 +174,12 @@
         };
 
         devShells = flake-utils.lib.flattenTree {
-          default = (pkgs.devShellBase pkgs).shell.overrideAttrs (_: {
+          default = (pkgs.devShellBaseWithDefault pkgs).shell.overrideAttrs (_: {
             # Use Debug by default so assertions are enabled by default.
             cmakeBuildType = "Debug";
           });
-          debugClang = _: (pkgs.devShellBase pkgs pkgs.llzkDebugClang).shell;
-          debugGCC = _: (pkgs.devShellBase pkgs pkgs.llzkDebugGCC).shell;
+          debugClang = (pkgs.devShellBase pkgs pkgs.llzkDebugClang).shell;
+          debugGCC = (pkgs.devShellBase pkgs pkgs.llzkDebugGCC).shell;
 
           llvm = pkgs.mkShell {
             buildInputs = [ pkgs.llzk_llvmPackages.libllvm.dev ];
