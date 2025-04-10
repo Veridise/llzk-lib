@@ -42,6 +42,16 @@ struct LLZKDialectVersion : public mlir::DialectVersion {
     return current;
   }
 
+  static mlir::FailureOr<LLZKDialectVersion> read(mlir::DialectBytecodeReader &reader) {
+    LLZKDialectVersion v;
+    if (mlir::failed(reader.readVarInt(v.majorVersion)) ||
+        mlir::failed(reader.readVarInt(v.minorVersion)) ||
+        mlir::failed(reader.readVarInt(v.patchVersion))) {
+      return mlir::failure();
+    }
+    return v;
+  }
+
   LLZKDialectVersion() : LLZKDialectVersion(0, 0, 0) {}
   LLZKDialectVersion(uint64_t majorV, uint64_t minorV, uint64_t patchV)
       : majorVersion(majorV), minorVersion(minorV), patchVersion(patchV) {}
@@ -83,22 +93,23 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
     auto versionOr = writer.getDialectVersion<llzk::LLZKDialect>();
     // Check if a target version to emit was specified on the writer configs.
     if (mlir::succeeded(versionOr)) {
-      reinterpret_cast<const LLZKDialectVersion *>(*versionOr)->write(writer);
+      auto llzkVersion = *reinterpret_cast<const LLZKDialectVersion *>(*versionOr);
+      llzkVersion.write(writer);
+    } else {
+      // Otherwise, write the current version
+      LLZKDialectVersion::CurrentVersion().write(writer);
     }
-    // Otherwise, write the current version
-    LLZKDialectVersion::CurrentVersion().write(writer);
   }
 
   /// @brief Read the version of this dialect from the provided reader and return it as
   /// a `unique_ptr` to a dialect version object (or nullptr on failure).
   std::unique_ptr<mlir::DialectVersion> readVersion(mlir::DialectBytecodeReader &reader
   ) const override {
-    uint64_t majorV, minorV, patchV;
-    if (mlir::failed(reader.readVarInt(majorV)) || mlir::failed(reader.readVarInt(minorV)) ||
-        mlir::failed(reader.readVarInt(patchV))) {
+    auto versionOr = LLZKDialectVersion::read(reader);
+    if (mlir::failed(versionOr)) {
       return nullptr;
     }
-    return std::make_unique<LLZKDialectVersion>(majorV, minorV, patchV);
+    return std::make_unique<LLZKDialectVersion>(std::move(*versionOr));
   }
 
   /// Hook invoked after parsing completed, if a version directive was present
@@ -112,21 +123,23 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
     if (!llzkVersion) {
       return mlir::success();
     }
-    if (*llzkVersion > LLZKDialectVersion::CurrentVersion()) {
+    const auto &current = LLZKDialectVersion::CurrentVersion();
+    if (*llzkVersion > current) {
       topLevelOp->emitError(
-          mlir::Twine("Cannot upgrade from current version ") +
-          LLZKDialectVersion::CurrentVersion().str() + " to future version " + llzkVersion->str()
+          mlir::Twine("Cannot upgrade from current version ") + current.str() +
+          " to future version " + llzkVersion->str()
       );
       return mlir::failure();
     }
-    if (*llzkVersion == LLZKDialectVersion::CurrentVersion()) {
+    if (*llzkVersion == current) {
       // No work to do, versions match.
       return mlir::success();
     }
+    // NOTE: This is the point at which upgrade functionality should be added
+    // for backwards compatibility.
     topLevelOp->emitWarning(
         mlir::Twine("LLZK version ") + llzkVersion->str() + " is older than current version " +
-        LLZKDialectVersion::CurrentVersion().str() +
-        " and no upgrade methods have been implemented. Proceed with caution."
+        current.str() + " and no upgrade methods have been implemented. Proceed with caution."
     );
     return mlir::failure();
   }
