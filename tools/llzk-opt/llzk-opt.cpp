@@ -36,6 +36,9 @@ static llvm::cl::list<std::string> IncludeDirs(
     llvm::cl::Prefix
 );
 
+static llvm::cl::opt<bool>
+    PrintAllOps("print-llzk-ops", llvm::cl::desc("Print a list of all ops registered in LLZK"));
+
 int main(int argc, char **argv) {
   llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());
   llvm::setBugReportMsg("PLEASE submit a bug report to " BUG_REPORT_URL
@@ -61,6 +64,17 @@ int main(int argc, char **argv) {
   // Set the include directories from CL option
   if (mlir::failed(llzk::GlobalSourceMgr::get().setup(IncludeDirs))) {
     return EXIT_FAILURE;
+  }
+
+  if (PrintAllOps) {
+    mlir::MLIRContext context;
+    context.appendDialectRegistry(registry);
+    context.loadAllAvailableDialects();
+    llvm::outs() << "All ops registered in LLZK IR: {\n";
+    for (const auto &opName : context.getRegisteredOperations()) {
+      llvm::outs() << "  " << opName.getStringRef() << '\n';
+    }
+    llvm::outs() << "}\n";
   }
 
   // Run 'mlir-opt'
