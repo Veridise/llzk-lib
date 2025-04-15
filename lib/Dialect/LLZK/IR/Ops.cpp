@@ -1399,10 +1399,8 @@ LogicalResult FeltToIndexOp::verify() {
         if (FieldReadOp readf = mlir::dyn_cast<FieldReadOp>(op);
             readf && isSignalType(readf.getOperand(0).getType())) {
           return emitOpError()
-              .append(
-                  "input is derived from a Signal struct, which is illegal in struct constrain "
-                  "function"
-              )
+              .append("input is derived from a Signal struct, which is illegal in struct constrain "
+                      "function")
               .attachNote(readf.getLoc())
               .append("Signal struct value is read here");
         }
