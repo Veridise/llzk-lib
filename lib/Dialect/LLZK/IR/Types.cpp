@@ -298,6 +298,8 @@ public:
       } else if (no_var && !llvm::isa<IntegerAttr>(a)) {
         TypeList<IntegerAttr>::reportInvalid(emitError, a, "Concrete array dimension");
         success = false;
+      } else if (failed(verifyAffineMapAttrType(emitError, a))) {
+        success = false;
       } else if (failed(verifyIntAttrType(emitError, a))) {
         success = false;
       }
@@ -366,6 +368,8 @@ public:
         }
       } else if (no_var && !llvm::isa<IntegerAttr>(p)) {
         TypeList<IntegerAttr>::reportInvalid(emitError, p, "Concrete struct parameter");
+        success = false;
+      } else if (failed(verifyAffineMapAttrType(emitError, p))) {
         success = false;
       } else if (failed(verifyIntAttrType(emitError, p))) {
         success = false;
@@ -675,6 +679,24 @@ LogicalResult verifyIntAttrType(EmitErrorFn emitError, Attribute in) {
       if (emitError) {
         emitError()
             .append("IntegerAttr must have type 'index' or 'i1' but found '", attrTy, "'")
+            .report();
+      }
+      return failure();
+    }
+  }
+  return success();
+}
+
+mlir::LogicalResult verifyAffineMapAttrType(EmitErrorFn emitError, mlir::Attribute in) {
+  if (mlir::AffineMapAttr affineAttr = llvm::dyn_cast<mlir::AffineMapAttr>(in)) {
+    mlir::AffineMap map = affineAttr.getValue();
+    if (map.getNumResults() != 1) {
+      if (emitError) {
+        emitError()
+            .append(
+                "AffineMapAttr must yield a single result, but found ", map.getNumResults(),
+                " results"
+            )
             .report();
       }
       return failure();

@@ -1,0 +1,3 @@
+changed:
+  Dialect:
+    - All affine maps are restricted to only producing a single result

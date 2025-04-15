@@ -245,6 +245,9 @@ llvm::SmallVector<mlir::Attribute> forceIntAttrTypes(llvm::ArrayRef<mlir::Attrib
 /// Verify that all IntegerAttr have type IndexType.
 mlir::LogicalResult verifyIntAttrType(EmitErrorFn emitError, mlir::Attribute in);
 
+/// Verify that all AffineMapAttr only have a single result.
+mlir::LogicalResult verifyAffineMapAttrType(EmitErrorFn emitError, mlir::Attribute in);
+
 mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
 void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);
 
