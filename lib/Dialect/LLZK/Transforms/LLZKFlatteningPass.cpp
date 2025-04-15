@@ -1237,7 +1237,7 @@ public:
       return failure();
     }
     FuncOp targetFunc = lookupRes->get();
-    if (succeeded(getParentOfType<StructDefOp>(targetFunc))) {
+    if (targetFunc.isInStruct()) {
       // this pattern only applies when the callee is NOT in a struct
       return failure();
     }

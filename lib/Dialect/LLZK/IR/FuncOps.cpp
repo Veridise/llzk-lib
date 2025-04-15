@@ -194,7 +194,7 @@ LogicalResult FuncOp::verify() {
     if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
       return failure();
     }
-    if ((isStructCompute() || isStructConstrain()) && hasAffineMapAttr(*ptr)) {
+    if (isInStruct() && (nameIsCompute() || nameIsConstrain()) && hasAffineMapAttr(*ptr)) {
       emitErrorFunc().append(
           "\"@", getName(), "\" parameters cannot contain affine map attributes but found ", *ptr
       );
@@ -278,14 +278,6 @@ SymbolRefAttr FuncOp::getFullyQualifiedName() {
   auto res = getPathFromRoot(*this);
   assert(succeeded(res));
   return res.value();
-}
-
-bool FuncOp::isStructCompute() {
-  return succeeded(getParentOfType<StructDefOp>(*this)) && nameIsCompute();
-}
-
-bool FuncOp::isStructConstrain() {
-  return succeeded(getParentOfType<StructDefOp>(*this)) && nameIsConstrain();
 }
 
 StructType FuncOp::getComputeSingleResultType() {

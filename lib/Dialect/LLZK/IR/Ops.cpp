@@ -276,8 +276,7 @@ bool isInStructFunctionNamed(Operation *op, char const *funcName) {
   FailureOr<FuncOp> parentFuncOpt = getParentOfType<FuncOp>(op);
   if (succeeded(parentFuncOpt)) {
     FuncOp parentFunc = parentFuncOpt.value();
-    FailureOr<StructDefOp> parentStruct = getParentOfType<StructDefOp>(parentFunc.getOperation());
-    if (succeeded(parentStruct)) {
+    if (isInStruct(parentFunc.getOperation())) {
       if (parentFunc.getSymName().compare(funcName) == 0) {
         return true;
       }
