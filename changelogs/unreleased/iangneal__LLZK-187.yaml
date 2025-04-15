@@ -1,3 +1,3 @@
 added:
   Dialect:
-    - !Signal may now be used directly in constraints, rather than constraining the inner @reg field
+    - Signal structs may now be used directly in constraints, rather than constraining the inner @reg field
