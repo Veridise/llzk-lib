@@ -1397,7 +1397,7 @@ LogicalResult FeltToIndexOp::verify() {
 
       if (Operation *op = v.getDefiningOp()) {
         if (FieldReadOp readf = mlir::dyn_cast<FieldReadOp>(op);
-            readf && isSignalType(readf.getOperand(0).getType())) {
+            readf && isSignalType(readf.getComponent().getType())) {
           return emitOpError()
               .append("input is derived from a Signal struct, which is illegal in struct constrain "
                       "function")
