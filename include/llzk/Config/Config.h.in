@@ -1,0 +1,17 @@
+//===-- Config.h ------------------------------------------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+#pragma once
+
+#define LLZK_VERSION_STRING "${CMAKE_PROJECT_VERSION}"
+#define LLZK_VERSION_MAJOR ${CMAKE_PROJECT_VERSION_MAJOR}
+#define LLZK_VERSION_MINOR ${CMAKE_PROJECT_VERSION_MINOR}
+#define LLZK_VERSION_PATCH ${CMAKE_PROJECT_VERSION_PATCH}
+
+#define LLZK_URL "${CMAKE_PROJECT_HOMEPAGE_URL}"

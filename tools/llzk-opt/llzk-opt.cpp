@@ -13,6 +13,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Config/Config.h"
 #include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h"
 #include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h"
@@ -35,11 +36,17 @@ static llvm::cl::list<std::string> IncludeDirs(
     llvm::cl::Prefix
 );
 
+static llvm::cl::opt<bool>
+    PrintAllOps("print-llzk-ops", llvm::cl::desc("Print a list of all ops registered in LLZK"));
+
 int main(int argc, char **argv) {
   llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());
   llvm::setBugReportMsg("PLEASE submit a bug report to " BUG_REPORT_URL
                         " and include the crash backtrace, relevant LLZK files,"
                         " and associated run script(s).\n");
+  llvm::cl::AddExtraVersionPrinter([](llvm::raw_ostream &os) {
+    os << "\nLLZK (" LLZK_URL "):\n  LLZK version " LLZK_VERSION_STRING "\n";
+  });
 
   // MLIR initialization
   mlir::DialectRegistry registry;
@@ -53,6 +60,18 @@ int main(int argc, char **argv) {
   std::string inputFilename, outputFilename;
   std::tie(inputFilename, outputFilename) =
       registerAndParseCLIOptions(argc, argv, "llzk-opt", registry);
+
+  if (PrintAllOps) {
+    mlir::MLIRContext context;
+    context.appendDialectRegistry(registry);
+    context.loadAllAvailableDialects();
+    llvm::outs() << "All ops registered in LLZK IR: {\n";
+    for (const auto &opName : context.getRegisteredOperations()) {
+      llvm::outs() << "  " << opName.getStringRef() << '\n';
+    }
+    llvm::outs() << "}\n";
+    return EXIT_SUCCESS;
+  }
 
   // Set the include directories from CL option
   if (mlir::failed(llzk::GlobalSourceMgr::get().setup(IncludeDirs))) {
