@@ -195,10 +195,9 @@ LogicalResult FuncOp::verify() {
       return failure();
     }
     if ((isStructCompute() || isStructConstrain()) && hasAffineMapAttr(*ptr)) {
-      emitErrorFunc(
-      ) << "function "
-        << getName()
-        << " is not allowed to have parameters with affine map attributes; encountered in " << *ptr;
+      emitErrorFunc().append(
+          "\"@", getName(), "\" parameters cannot contain affine map attributes but found ", *ptr
+      );
       return failure();
     }
   }
