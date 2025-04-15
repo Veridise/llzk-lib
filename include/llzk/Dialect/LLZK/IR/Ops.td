@@ -380,9 +380,9 @@ def LLZK_FieldReadOp
   let description = [{
     This operation reads the value of a named field in a struct/component.
 
-    The value can be read from the signals table, in which case it can be 
+    The value can be read from the signals table, in which case it can be
     offset by a constant value. A negative value represents reading a value
-    backwards and a positive value represents reading a value forward. 
+    backwards and a positive value represents reading a value forward.
     Only fields marked as columns can be read in this manner.
   }];
 
@@ -801,7 +801,10 @@ def LLZK_EmitEqualityOp
                               TypesUnify<"lhs", "rhs">,
 ]> {
   let summary = "emit an equality constraint";
-  let description = [{}];
+  let description = [{
+    Emits an equality constraint between lhs and rhs. For Signal structs, the
+    constraint is performed on the Signal's inner `@reg` felt field.
+  }];
 
   let arguments = (ins EmitEqType:$lhs, EmitEqType:$rhs);
 }

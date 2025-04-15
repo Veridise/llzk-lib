@@ -699,3 +699,64 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: @Adder2 ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
 // CHECK-NEXT: }
+
+// -----
+
+// Test that allowing Signals to emit_eq doesn't break the constraint analysis
+!Signal = !llzk.struct<@Signal>
+module attributes {veridise.lang = "llzk"} {
+  // pre-defined
+  llzk.struct @Signal {
+    field @reg : !llzk.felt {llzk.pub}
+
+    func @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
+      %self = new_struct : !llzk.struct<@Signal>
+      writef %self[@reg] = %v : !llzk.struct<@Signal>, !llzk.felt
+      return %self : !llzk.struct<@Signal>
+    }
+
+    func @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
+      return
+    }
+  }
+
+  llzk.struct @Component00 {
+    field @f : !Signal
+
+    func @compute(%0: !Signal) -> !llzk.struct<@Component00> {
+      %self = new_struct : !llzk.struct<@Component00>
+      writef %self[@f] = %0 : !llzk.struct<@Component00>, !Signal
+      return %self : !llzk.struct<@Component00>
+    }
+    func @constrain(%self: !llzk.struct<@Component00>, %0: !Signal) {
+      %b = readf %self[@f] : !llzk.struct<@Component00>, !Signal
+      // Signal is the only struct allowed for emit equal
+      emit_eq %b, %0 : !Signal
+      return
+    }
+  }
+
+  llzk.struct @Component01 {
+    field @f : !llzk.array<2 x !Signal>
+
+    func @compute(%0: !llzk.array<2 x !Signal>) -> !llzk.struct<@Component01> {
+      %self = new_struct : !llzk.struct<@Component01>
+      writef %self[@f] = %0 : !llzk.struct<@Component01>, !llzk.array<2 x !Signal>
+      return %self : !llzk.struct<@Component01>
+    }
+    func @constrain(%self: !llzk.struct<@Component01>, %0: !llzk.array<2 x !Signal>) {
+      %b = readf %self[@f] : !llzk.struct<@Component01>, !llzk.array<2 x !Signal>
+      // Signal is the only struct allowed for emit equal
+      emit_eq %b, %0 : !llzk.array<2 x !Signal>
+      return
+    }
+  }
+}
+
+// CHECK-LABEL: @Signal ConstraintDependencyGraph { }
+// CHECK-NEXT:  @Component00 ConstraintDependencyGraph {
+// CHECK-NEXT:      { %arg0[@f], %arg1 }
+// CHECK-NEXT:  }
+// CHECK-NEXT:  @Component01 ConstraintDependencyGraph {
+// CHECK-NEXT:      { %arg0[@f], %arg1 }
+// CHECK-NEXT:  }

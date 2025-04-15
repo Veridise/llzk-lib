@@ -300,3 +300,47 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     %arg0[@b0] in Entire
 // CHECK-NEXT:     %arg1 in TypeA:[ 0, 65535 ]
 // CHECK-NEXT: }
+
+// -----
+
+// Ensure constraints on Signals or on the Signal's internal reg propagate.
+!Signal = !llzk.struct<@Signal>
+module attributes {veridise.lang = "llzk"} {
+  // pre-defined
+  llzk.struct @Signal {
+    field @reg : !llzk.felt {llzk.pub}
+
+    func @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
+      %self = new_struct : !llzk.struct<@Signal>
+      writef %self[@reg] = %v : !llzk.struct<@Signal>, !llzk.felt
+      return %self : !llzk.struct<@Signal>
+    }
+
+    func @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
+      return
+    }
+  }
+
+  llzk.struct @Component00 {
+    field @f : !Signal
+
+    func @compute(%0: !Signal) -> !llzk.struct<@Component00> {
+      %self = new_struct : !llzk.struct<@Component00>
+      writef %self[@f] = %0 : !llzk.struct<@Component00>, !Signal
+      return %self : !llzk.struct<@Component00>
+    }
+    func @constrain(%self: !llzk.struct<@Component00>, %0: !Signal) {
+      %b = readf %self[@f] : !llzk.struct<@Component00>, !Signal
+      emit_eq %b, %0 : !Signal
+      %reg = readf %0[@reg] : !Signal, !llzk.felt
+      %c0 = constfelt 0
+      emit_eq %reg, %c0 : !llzk.felt
+      return
+    }
+  }
+}
+
+// CHECK-LABEL: @Component00 StructIntervals {
+// CHECK-NEXT:     %arg0[@f] in Degenerate(0)
+// CHECK-NEXT:     %arg1 in Degenerate(0)
+// CHECK-NEXT: }

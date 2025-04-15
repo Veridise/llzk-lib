@@ -208,7 +208,8 @@ class AllowedTypes {
 
   bool no_felt : 1 = false;
   bool no_string : 1 = false;
-  bool no_struct : 1 = false;
+  bool no_non_signal_struct : 1 = false;
+  bool no_signal_struct : 1 = false;
   bool no_array : 1 = false;
   bool no_var : 1 = false;
   bool no_int : 1 = false;
@@ -241,7 +242,14 @@ public:
   }
 
   constexpr AllowedTypes &noStruct() {
-    no_struct = true;
+    no_non_signal_struct = true;
+    no_signal_struct = true;
+    return *this;
+  }
+
+  constexpr AllowedTypes &noStructExceptSignal() {
+    no_non_signal_struct = true;
+    no_signal_struct = false;
     return *this;
   }
 
@@ -376,9 +384,13 @@ public:
   }
 
   // Note: The `no*` flags here refer to Types nested within a TypeAttr parameter.
-  bool isValidStructTypeImpl(Type type) {
-    if (StructType sType = llvm::dyn_cast<StructType>(type)) {
-      return validColumns(sType) && areValidStructTypeParams(sType.getParams());
+  bool isValidStructTypeImpl(Type type, bool allowSignalStruct, bool allowNonSignalStruct) {
+    if (!allowSignalStruct && !allowNonSignalStruct) {
+      return false;
+    }
+    if (StructType sType = llvm::dyn_cast<StructType>(type); sType && validColumns(sType)) {
+      return (allowSignalStruct && isSignalType(sType)) ||
+             (allowNonSignalStruct && areValidStructTypeParams(sType.getParams()));
     }
     return false;
   }
@@ -386,13 +398,14 @@ public:
 
 bool AllowedTypes::isValidTypeImpl(Type type) {
   assert(
-      !(no_int && no_felt && no_string && no_var && no_struct && no_array) &&
+      !(no_int && no_felt && no_string && no_var && no_non_signal_struct && no_signal_struct &&
+        no_array) &&
       "All types have been deactivated"
   );
   return (!no_int && type.isSignlessInteger(1)) || (!no_int && llvm::isa<IndexType>(type)) ||
          (!no_felt && llvm::isa<FeltType>(type)) || (!no_string && llvm::isa<StringType>(type)) ||
-         (!no_var && llvm::isa<TypeVarType>(type)) || (!no_struct && isValidStructTypeImpl(type)) ||
-         (!no_array && isValidArrayTypeImpl(type));
+         (!no_var && llvm::isa<TypeVarType>(type)) || (!no_array && isValidArrayTypeImpl(type)) ||
+         isValidStructTypeImpl(type, !no_signal_struct, !no_non_signal_struct);
 }
 
 } // namespace
@@ -406,7 +419,7 @@ bool isValidColumnType(Type type, SymbolTableCollection &symbolTable, Operation 
 bool isValidGlobalType(Type type) { return AllowedTypes().noVar().isValidTypeImpl(type); }
 
 bool isValidEmitEqType(Type type) {
-  return AllowedTypes().noString().noStruct().isValidTypeImpl(type);
+  return AllowedTypes().noString().noStructExceptSignal().isValidTypeImpl(type);
 }
 
 // Allowed types must align with StructParamTypes (defined below)
@@ -424,12 +437,16 @@ bool isConcreteType(Type type, bool allowStructParams) {
 
 bool isSignalType(Type type) {
   if (auto structParamTy = llvm::dyn_cast<StructType>(type)) {
-    // Only check the leaf part of the reference (i.e. just the struct name itself) to allow cases
-    // where the `COMPONENT_NAME_SIGNAL` struct may be placed within some nesting of modules, as
-    // happens when it's imported via an IncludeOp.
-    return structParamTy.getNameRef().getLeafReference() == COMPONENT_NAME_SIGNAL;
+    return isSignalType(structParamTy);
   }
   return false;
+}
+
+bool isSignalType(StructType sType) {
+  // Only check the leaf part of the reference (i.e. just the struct name itself) to allow cases
+  // where the `COMPONENT_NAME_SIGNAL` struct may be placed within some nesting of modules, as
+  // happens when it's imported via an IncludeOp.
+  return sType.getNameRef().getLeafReference() == COMPONENT_NAME_SIGNAL;
 }
 
 namespace {

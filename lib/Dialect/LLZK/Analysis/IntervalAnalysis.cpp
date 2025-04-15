@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/Analysis/IntervalAnalysis.h"
+#include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Dialect/LLZK/Util/APIntHelper.h"
 #include "llzk/Dialect/LLZK/Util/Debug.h"
 
@@ -789,10 +790,12 @@ void IntervalDataFlowAnalysis::visitOperation(
       operandVals.push_back(*priorState);
       continue;
     }
+
     // Else, look up the stored value by constrain ref.
     // We only care about scalar type values, so we ignore composite types, which
-    // are currently limited to structs and arrays.
-    if (mlir::isa<StructType, ArrayType>(val.getType())) {
+    // are currently limited to non-Signal structs and arrays.
+    Type valTy = val.getType();
+    if (mlir::isa<ArrayType, StructType>(valTy) && !isSignalType(valTy)) {
       operandVals.push_back(LatticeValue());
       continue;
     }
@@ -809,6 +812,7 @@ void IntervalDataFlowAnalysis::visitOperation(
       ) << "state of "
         << val << " is empty; defining operation is unsupported by constrain ref analysis";
       op->emitWarning(warning);
+      propagateIfChanged(after, changed);
       return;
     } else if (!refSet.isSingleValue()) {
       std::string warning;
@@ -818,7 +822,7 @@ void IntervalDataFlowAnalysis::visitOperation(
       operandVals.push_back(LatticeValue());
     } else {
       auto ref = refSet.getSingleValue();
-      auto exprVal = ExpressionValue(field.get(), getOrCreateSymbol(ref));
+      ExpressionValue exprVal(field.get(), getOrCreateSymbol(ref));
       changed |= after->setValue(val, exprVal);
       operandVals.emplace_back(exprVal);
     }
@@ -832,7 +836,7 @@ void IntervalDataFlowAnalysis::visitOperation(
   if (isConstOp(op)) {
     auto constVal = getConst(op);
     auto expr = createConstBitvectorExpr(constVal);
-    auto latticeVal = ExpressionValue(field.get(), expr, constVal);
+    ExpressionValue latticeVal(field.get(), expr, constVal);
     changed |= after->setValue(op->getResult(0), latticeVal);
   } else if (isArithmeticOp(op)) {
     ensure(operandVals.size() <= 2, "arithmetic op with the wrong number of operands");
@@ -846,30 +850,33 @@ void IntervalDataFlowAnalysis::visitOperation(
     changed |= after->setValue(op->getResult(0), result);
   } else if (mlir::isa<EmitEqualityOp>(op)) {
     ensure(operandVals.size() == 2, "constraint op with the wrong number of operands");
-    auto lhsVal = op->getOperand(0);
-    auto rhsVal = op->getOperand(1);
-    auto lhsExpr = operandVals[0].getScalarValue();
-    auto rhsExpr = operandVals[1].getScalarValue();
+    mlir::Value lhsVal = op->getOperand(0), rhsVal = op->getOperand(1);
+    ExpressionValue lhsExpr = operandVals[0].getScalarValue();
+    ExpressionValue rhsExpr = operandVals[1].getScalarValue();
 
-    auto constraint = intersection(smtSolver, lhsExpr, rhsExpr);
+    ExpressionValue constraint = intersection(smtSolver, lhsExpr, rhsExpr);
     // Update the LHS and RHS to the same value, but restricted intervals
     // based on the constraints
-    changed |= applyInterval(after, lhsVal, constraint.getInterval());
-    changed |= applyInterval(after, rhsVal, constraint.getInterval());
+    changed |= applyInterval(op, after, lhsVal, constraint.getInterval());
+    changed |= applyInterval(op, after, rhsVal, constraint.getInterval());
     changed |= after->addSolverConstraint(constraint);
   } else if (isAssertOp(op)) {
     ensure(operandVals.size() == 1, "assert op with the wrong number of operands");
     // assert enforces that the operand is true. So we apply an interval of [1, 1]
     // to the operand.
     changed |= applyInterval(
-        after, op->getOperand(0), Interval::Degenerate(field.get(), field.get().one())
+        op, after, op->getOperand(0), Interval::Degenerate(field.get(), field.get().one())
     );
     // Also add the solver constraint that the expression must be true.
     auto assertExpr = operandVals[0].getScalarValue();
     changed |= after->addSolverConstraint(assertExpr);
+  } else if (mlir::isa<FieldReadOp>(op) && isSignalType(op->getOperand(0).getType())) {
+    // The reg value read from the signal type is equal to the value of the Signal
+    // struct overall.
+    changed |= after->setValue(op->getResult(0), operandVals[0].getScalarValue());
   } else if (!isReadOp(op)          /* We do not need to explicitly handle read ops
                       since they are resolved at the operand value step where constrain refs are
-                      queries */
+                      queries (with the exception of the Signal struct, see above). */
              && !isReturnOp(op)     /* We do not currently handle return ops as the analysis
                  is currently limited to constrain functions, which return no value. */
              && !isDefinitionOp(op) /* The analysis ignores definition ops. */
@@ -984,14 +991,38 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(mlir::Operation *op, const Latt
   return res;
 }
 
-ChangeResult
-IntervalDataFlowAnalysis::applyInterval(Lattice *after, Value val, Interval newInterval) {
+ChangeResult IntervalDataFlowAnalysis::applyInterval(
+    mlir::Operation *originalOp, Lattice *after, Value val, Interval newInterval
+) {
   auto latValRes = after->getValue(val);
   if (failed(latValRes)) {
     // visitOperation didn't add val to the lattice, so there's nothing to do
     return ChangeResult::NoChange;
   }
-  ChangeResult res = after->setValue(val, latValRes->getScalarValue().withInterval(newInterval));
+  ExpressionValue newLatticeVal = latValRes->getScalarValue().withInterval(newInterval);
+  ChangeResult res = after->setValue(val, newLatticeVal);
+  // To allow the dataflow analysis to do its fixed-point iteration, we need to
+  // add the new expression to val's lattice as well.
+  Lattice *valLattice = nullptr;
+  if (auto valOp = val.getDefiningOp()) {
+    // Getting the lattice at valOp gives us the "after" lattice, but we want to
+    // update the "before" lattice so that the inputs to visitOperation will be
+    // changed.
+    if (auto prev = valOp->getPrevNode()) {
+      valLattice = getOrCreate<Lattice>(prev);
+    } else {
+      valLattice = getOrCreate<Lattice>(valOp->getBlock());
+    }
+  } else if (auto blockArg = mlir::dyn_cast<mlir::BlockArgument>(val)) {
+    valLattice = getOrCreate<Lattice>(blockArg.getOwner());
+  } else {
+    valLattice = getOrCreate<Lattice>(val);
+  }
+  ensure(valLattice, "val should have a lattice");
+  if (valLattice != after) {
+    propagateIfChanged(valLattice, valLattice->setValue(val, newLatticeVal));
+  }
+
   // Now we descend into val's operands, if it has any.
   Operation *definingOp = val.getDefiningOp();
   if (!definingOp) {
@@ -1091,7 +1122,8 @@ IntervalDataFlowAnalysis::applyInterval(Lattice *after, Value val, Interval newI
     }
 
     // Now we recurse to each operand
-    return applyInterval(after, lhs, newLhsInterval) | applyInterval(after, rhs, newRhsInterval);
+    return applyInterval(originalOp, after, lhs, newLhsInterval) |
+           applyInterval(originalOp, after, rhs, newRhsInterval);
   };
 
   // If the result of a multiplication is non-zero, then both operands must be
@@ -1112,15 +1144,31 @@ IntervalDataFlowAnalysis::applyInterval(Lattice *after, Value val, Interval newI
                     rhsExpr = rhsLatValRes->getScalarValue();
     Interval newLhsInterval = lhsExpr.getInterval().difference(zeroInt);
     Interval newRhsInterval = rhsExpr.getInterval().difference(zeroInt);
-    return applyInterval(after, lhs, newLhsInterval) | applyInterval(after, rhs, newRhsInterval);
+    return applyInterval(originalOp, after, lhs, newLhsInterval) |
+           applyInterval(originalOp, after, rhs, newRhsInterval);
+  };
+
+  // We have a special case for the Signal struct: if this value is created
+  // from reading a Signal struct's reg field, we also apply the interval to
+  // the struct itself.
+  auto readfCase = [&](FieldReadOp readfOp) {
+    Value comp = readfOp.getComponent();
+    if (isSignalType(comp.getType())) {
+      return applyInterval(originalOp, after, comp, newInterval);
+    }
+    return ChangeResult::NoChange;
   };
 
   // - Apply the rules given the op.
+  // NOTE: disabling clang-format for this because it makes the last case statement
+  // look ugly.
+  // clang-format off
   res |= TypeSwitch<Operation *, ChangeResult>(definingOp)
-             .Case<CmpOp>([&](CmpOp op) { return cmpCase(op); })
-             .Case<MulFeltOp>([&](MulFeltOp op) {
-    return mulCase(op);
-  }).Default([&](Operation *_) { return ChangeResult::NoChange; });
+            .Case<CmpOp>([&](CmpOp op) { return cmpCase(op); })
+            .Case<MulFeltOp>([&](MulFeltOp op) { return mulCase(op); })
+            .Case<FieldReadOp>([&](FieldReadOp op){ return readfCase(op); })
+            .Default([&](Operation *_) { return ChangeResult::NoChange; });
+  // clang-format on
 
   return res;
 }
@@ -1134,13 +1182,19 @@ mlir::LogicalResult StructIntervals::computeIntervals(
   ReturnOp constrainEnd;
   structDef.getConstrainFuncOp().walk([&constrainEnd](ReturnOp r) mutable { constrainEnd = r; });
 
-  auto constrainLattice = solver.lookupState<IntervalAnalysisLattice>(constrainEnd);
+  const IntervalAnalysisLattice *constrainLattice =
+      solver.lookupState<IntervalAnalysisLattice>(constrainEnd);
 
   constrainSolverConstraints = constrainLattice->getConstraints();
 
   for (const auto &ref : ConstrainRef::getAllConstrainRefs(structDef)) {
-    // We only want to compute intervals for field elements and not composite types
-    if (!ref.isScalar()) {
+    // We only want to compute intervals for field elements and not composite types,
+    // with the exception of the Signal struct.
+    if (!ref.isScalar() && !ref.isSignal()) {
+      continue;
+    }
+    // We also don't want to show the interval for a Signal and its internal reg.
+    if (auto parentOr = ref.getParentPrefix(); mlir::succeeded(parentOr) && parentOr->isSignal()) {
       continue;
     }
     auto symbol = ctx.getSymbol(ref);
