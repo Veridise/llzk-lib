@@ -571,3 +571,52 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
+// -----
+
+#map1 = affine_map<()[s0, s1] -> (s0 + s1)>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @T2<[@N]> {
+    func @compute() -> !llzk.struct<@T2<[@N]>> {
+      %self = new_struct : <@T2<[@N]>>
+      return %self : !llzk.struct<@T2<[@N]>>
+    }
+    func @constrain(%self : !llzk.struct<@T2<[@N]>>) {
+      return
+    }
+  }
+  llzk.struct @Tester<[@S0, @S1]> {
+    // expected-error@+1 {{llzk.func' op function compute is not allowed to have parameters with affine map attributes; encountered in '!llzk.struct<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>}}
+    func @compute(%6: !llzk.struct<@T2<[#map1]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+      %self = new_struct : <@Tester<[@S0, @S1]>>
+      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+    }
+    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %6: !llzk.struct<@T2<[#map1]>>) {
+      return
+    }
+  }
+}
+
+// -----
+
+#map1 = affine_map<()[s0, s1] -> (s0 + s1)>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @T2<[@N]> {
+    func @compute() -> !llzk.struct<@T2<[@N]>> {
+      %self = new_struct : <@T2<[@N]>>
+      return %self : !llzk.struct<@T2<[@N]>>
+    }
+    func @constrain(%self : !llzk.struct<@T2<[@N]>>) {
+      return
+    }
+  }
+  llzk.struct @Tester<[@S0, @S1]> {
+     // expected-error@+1 {{llzk.func' op function constrain is not allowed to have parameters with affine map attributes; encountered in '!llzk.struct<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>}}
+    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %6: !llzk.struct<@T2<[#map1]>>) {
+      return
+    }
+    func @compute(%6: !llzk.struct<@T2<[#map1]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+      %self = new_struct : <@Tester<[@S0, @S1]>>
+      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+    }
+  }
+}

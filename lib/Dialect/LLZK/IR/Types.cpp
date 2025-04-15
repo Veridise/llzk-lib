@@ -432,6 +432,15 @@ bool isSignalType(Type type) {
   return false;
 }
 
+bool hasAffineMapAttr(Type type) {
+  bool encountered = false;
+  type.walk([&](AffineMapAttr a) {
+    encountered = true;
+    return WalkResult::interrupt();
+  });
+  return encountered;
+}
+
 namespace {
 
 /// Optional result from type unifications. Maps `AffineMapAttr` appearing in one type to the

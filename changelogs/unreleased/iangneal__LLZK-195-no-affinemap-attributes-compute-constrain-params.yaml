@@ -1,0 +1,3 @@
+changed:
+  Dialect:
+    - StructDefOp @constrain and @compute functions may no longer contain parameters with AffineMapAttrs

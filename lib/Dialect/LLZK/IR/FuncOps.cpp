@@ -1,4 +1,4 @@
-//===-- FuncOps.cpp - Funct and call op implementations ---------*- C++ -*-===//
+//===-- FuncOps.cpp - Func and call op implementations ----------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -185,11 +185,20 @@ bool FuncOp::hasArgPublicAttr(unsigned index) {
 
 LogicalResult FuncOp::verify() {
   OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
-  // Ensure that only valid LLZK types are used for arguments and return
+  // Ensure that only valid LLZK types are used for arguments and return.
+  // @compute and @constrain functions also may not have AffineMapAttrs in their
+  // parameters.
   FunctionType type = getFunctionType();
   llvm::ArrayRef<Type> inTypes = type.getInputs();
   for (auto ptr = inTypes.begin(); ptr < inTypes.end(); ptr++) {
     if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
+      return failure();
+    }
+    if ((isStructCompute() || isStructConstrain()) && hasAffineMapAttr(*ptr)) {
+      emitErrorFunc(
+      ) << "function "
+        << getName()
+        << " is not allowed to have parameters with affine map attributes; encountered in " << *ptr;
       return failure();
     }
   }

@@ -115,6 +115,9 @@ inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type
 /// Return `true` iff the given type is a StructType referencing the `COMPONENT_NAME_SIGNAL` struct.
 bool isSignalType(mlir::Type type);
 
+/// @brief Return `true` iff the given type contains an AffineMapAttr.
+bool hasAffineMapAttr(mlir::Type type);
+
 enum class Side { EMPTY = 0, LHS, RHS, TOMB };
 static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Side &val) {
   switch (val) {
