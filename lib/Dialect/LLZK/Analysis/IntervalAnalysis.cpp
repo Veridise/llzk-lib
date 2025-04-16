@@ -555,8 +555,7 @@ cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const Expre
 }
 
 ExpressionValue fallbackBinaryOp(
-    llvm::SMTSolverRef solver, mlir::Operation *op, const ExpressionValue &lhs,
-    const ExpressionValue &rhs
+    llvm::SMTSolverRef solver, Operation *op, const ExpressionValue &lhs, const ExpressionValue &rhs
 ) {
   ExpressionValue res;
   res.i = Interval::Entire(lhs.getField());
@@ -600,7 +599,7 @@ ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val) {
 }
 
 ExpressionValue
-fallbackUnaryOp(llvm::SMTSolverRef solver, mlir::Operation *op, const ExpressionValue &val) {
+fallbackUnaryOp(llvm::SMTSolverRef solver, Operation *op, const ExpressionValue &val) {
   const Field &field = val.getField();
   ExpressionValue res;
   res.i = Interval::Entire(field);
@@ -643,30 +642,30 @@ void ExpressionValue::print(mlir::raw_ostream &os) const {
 
 /* IntervalAnalysisLattice */
 
-mlir::ChangeResult IntervalAnalysisLattice::join(const AbstractDenseLattice &other) {
+ChangeResult IntervalAnalysisLattice::join(const AbstractDenseLattice &other) {
   const auto *rhs = dynamic_cast<const IntervalAnalysisLattice *>(&other);
   if (!rhs) {
     llvm::report_fatal_error("invalid join lattice type");
   }
-  mlir::ChangeResult res = mlir::ChangeResult::NoChange;
+  ChangeResult res = ChangeResult::NoChange;
   for (auto &[k, v] : rhs->valMap) {
     auto it = valMap.find(k);
     if (it == valMap.end() || it->second != v) {
       valMap[k] = v;
-      res |= mlir::ChangeResult::Change;
+      res |= ChangeResult::Change;
     }
   }
   for (auto &v : rhs->constraints) {
     if (!constraints.contains(v)) {
       constraints.insert(v);
-      res |= mlir::ChangeResult::Change;
+      res |= ChangeResult::Change;
     }
   }
   for (auto &[e, i] : rhs->intervals) {
     auto it = intervals.find(e);
     if (it == intervals.end() || it->second != i) {
       intervals[e] = i;
-      res |= mlir::ChangeResult::Change;
+      res |= ChangeResult::Change;
     }
   }
   return res;
@@ -688,39 +687,38 @@ void IntervalAnalysisLattice::print(mlir::raw_ostream &os) const {
   os << '}';
 }
 
-mlir::FailureOr<IntervalAnalysisLattice::LatticeValue>
-IntervalAnalysisLattice::getValue(mlir::Value v) const {
+FailureOr<IntervalAnalysisLattice::LatticeValue> IntervalAnalysisLattice::getValue(Value v) const {
   auto it = valMap.find(v);
   if (it == valMap.end()) {
-    return mlir::failure();
+    return failure();
   }
   return it->second;
 }
 
-mlir::ChangeResult IntervalAnalysisLattice::setValue(mlir::Value v, ExpressionValue e) {
+ChangeResult IntervalAnalysisLattice::setValue(Value v, ExpressionValue e) {
   LatticeValue val(e);
   if (valMap[v] == val) {
-    return mlir::ChangeResult::NoChange;
+    return ChangeResult::NoChange;
   }
   valMap[v] = val;
   intervals[e.getExpr()] = e.getInterval();
-  return mlir::ChangeResult::Change;
+  return ChangeResult::Change;
 }
 
-mlir::ChangeResult IntervalAnalysisLattice::addSolverConstraint(ExpressionValue e) {
+ChangeResult IntervalAnalysisLattice::addSolverConstraint(ExpressionValue e) {
   if (!constraints.contains(e)) {
     constraints.insert(e);
-    return mlir::ChangeResult::Change;
+    return ChangeResult::Change;
   }
-  return mlir::ChangeResult::NoChange;
+  return ChangeResult::NoChange;
 }
 
-mlir::FailureOr<Interval> IntervalAnalysisLattice::findInterval(llvm::SMTExprRef expr) const {
+FailureOr<Interval> IntervalAnalysisLattice::findInterval(llvm::SMTExprRef expr) const {
   auto it = intervals.find(expr);
   if (it != intervals.end()) {
     return it->second;
   }
-  return mlir::failure();
+  return failure();
 }
 
 /* IntervalDataFlowAnalysis */
@@ -729,7 +727,7 @@ mlir::FailureOr<Interval> IntervalAnalysisLattice::findInterval(llvm::SMTExprRef
 /// flow transfer function passes no data to the callee and sets the post-call
 /// state to that of the pre-call state (i.e., calls are ignored).
 void IntervalDataFlowAnalysis::visitCallControlFlowTransfer(
-    mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
+    CallOpInterface call, dataflow::CallControlFlowAction action,
     const IntervalAnalysisLattice &before, IntervalAnalysisLattice *after
 ) {
   /// `action == CallControlFlowAction::Enter` indicates that:
@@ -773,9 +771,9 @@ void IntervalDataFlowAnalysis::visitCallControlFlowTransfer(
 }
 
 void IntervalDataFlowAnalysis::visitOperation(
-    mlir::Operation *op, const Lattice &before, Lattice *after
+    Operation *op, const Lattice &before, Lattice *after
 ) {
-  mlir::ChangeResult changed = after->join(before);
+  ChangeResult changed = after->join(before);
 
   llvm::SmallVector<LatticeValue> operandVals;
 
@@ -786,7 +784,7 @@ void IntervalDataFlowAnalysis::visitOperation(
     auto val = operand.get();
     // First, lookup the operand value in the before state.
     auto priorState = before.getValue(val);
-    if (mlir::succeeded(priorState)) {
+    if (succeeded(priorState)) {
       operandVals.push_back(*priorState);
       continue;
     }
@@ -848,32 +846,34 @@ void IntervalDataFlowAnalysis::visitOperation(
     }
 
     changed |= after->setValue(op->getResult(0), result);
-  } else if (mlir::isa<EmitEqualityOp>(op)) {
+  } else if (EmitEqualityOp emitEq = mlir::dyn_cast<EmitEqualityOp>(op)) {
     ensure(operandVals.size() == 2, "constraint op with the wrong number of operands");
-    mlir::Value lhsVal = op->getOperand(0), rhsVal = op->getOperand(1);
+    Value lhsVal = emitEq.getLhs(), rhsVal = emitEq.getRhs();
     ExpressionValue lhsExpr = operandVals[0].getScalarValue();
     ExpressionValue rhsExpr = operandVals[1].getScalarValue();
 
     ExpressionValue constraint = intersection(smtSolver, lhsExpr, rhsExpr);
     // Update the LHS and RHS to the same value, but restricted intervals
     // based on the constraints
-    changed |= applyInterval(op, after, lhsVal, constraint.getInterval());
-    changed |= applyInterval(op, after, rhsVal, constraint.getInterval());
+    changed |= applyInterval(emitEq, after, lhsVal, constraint.getInterval());
+    changed |= applyInterval(emitEq, after, rhsVal, constraint.getInterval());
     changed |= after->addSolverConstraint(constraint);
-  } else if (isAssertOp(op)) {
+  } else if (AssertOp assertOp = mlir::dyn_cast<AssertOp>(op)) {
     ensure(operandVals.size() == 1, "assert op with the wrong number of operands");
     // assert enforces that the operand is true. So we apply an interval of [1, 1]
     // to the operand.
     changed |= applyInterval(
-        op, after, op->getOperand(0), Interval::Degenerate(field.get(), field.get().one())
+        assertOp, after, assertOp.getCondition(),
+        Interval::Degenerate(field.get(), field.get().one())
     );
     // Also add the solver constraint that the expression must be true.
     auto assertExpr = operandVals[0].getScalarValue();
     changed |= after->addSolverConstraint(assertExpr);
-  } else if (mlir::isa<FieldReadOp>(op) && isSignalType(op->getOperand(0).getType())) {
+  } else if (auto readf = mlir::dyn_cast<FieldReadOp>(op);
+             readf && isSignalType(readf.getComponent().getType())) {
     // The reg value read from the signal type is equal to the value of the Signal
     // struct overall.
-    changed |= after->setValue(op->getResult(0), operandVals[0].getScalarValue());
+    changed |= after->setValue(readf.getVal(), operandVals[0].getScalarValue());
   } else if (!isReadOp(op)          /* We do not need to explicitly handle read ops
                       since they are resolved at the operand value step where constrain refs are
                       queries (with the exception of the Signal struct, see above). */
@@ -907,7 +907,7 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const ConstrainRef &
   return createFeltSymbol(symbolName.c_str());
 }
 
-llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(mlir::Value val) const {
+llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(Value val) const {
   std::string symbolName;
   llvm::raw_string_ostream ss(symbolName);
   val.print(ss);
@@ -919,7 +919,7 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const char *name) co
   return field.get().createSymbol(smtSolver, name);
 }
 
-llvm::APSInt IntervalDataFlowAnalysis::getConst(mlir::Operation *op) const {
+llvm::APSInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   ensure(isConstOp(op), "op is not a const op");
 
   llvm::APInt fieldConst =
@@ -927,10 +927,10 @@ llvm::APSInt IntervalDataFlowAnalysis::getConst(mlir::Operation *op) const {
           .Case<FeltConstantOp>([&](FeltConstantOp feltConst) {
     return feltConst.getValueAttr().getValue().zext(field.get().bitWidth());
   })
-          .Case<mlir::arith::ConstantIndexOp>([&](mlir::arith::ConstantIndexOp indexConst) {
+          .Case<arith::ConstantIndexOp>([&](arith::ConstantIndexOp indexConst) {
     return llvm::APInt(field.get().bitWidth(), indexConst.value());
   })
-          .Case<mlir::arith::ConstantIntOp>([&](mlir::arith::ConstantIntOp intConst) {
+          .Case<arith::ConstantIntOp>([&](arith::ConstantIntOp intConst) {
     return llvm::APInt(field.get().bitWidth(), intConst.value());
   }).Default([&](Operation *illegalOp) {
     std::string err;
@@ -942,7 +942,7 @@ llvm::APSInt IntervalDataFlowAnalysis::getConst(mlir::Operation *op) const {
 }
 
 ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
-    mlir::Operation *op, const LatticeValue &a, const LatticeValue &b
+    Operation *op, const LatticeValue &a, const LatticeValue &b
 ) {
   ensure(isArithmeticOp(op), "is not arithmetic op");
 
@@ -970,7 +970,7 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
 }
 
 ExpressionValue
-IntervalDataFlowAnalysis::performUnaryArithmetic(mlir::Operation *op, const LatticeValue &a) {
+IntervalDataFlowAnalysis::performUnaryArithmetic(Operation *op, const LatticeValue &a) {
   ensure(isArithmeticOp(op), "is not arithmetic op");
 
   auto val = a.getScalarValue();
@@ -992,7 +992,7 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(mlir::Operation *op, const Latt
 }
 
 ChangeResult IntervalDataFlowAnalysis::applyInterval(
-    mlir::Operation *originalOp, Lattice *after, Value val, Interval newInterval
+    Operation *originalOp, Lattice *after, Value val, Interval newInterval
 ) {
   auto latValRes = after->getValue(val);
   if (failed(latValRes)) {
@@ -1013,7 +1013,7 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
     } else {
       valLattice = getOrCreate<Lattice>(valOp->getBlock());
     }
-  } else if (auto blockArg = mlir::dyn_cast<mlir::BlockArgument>(val)) {
+  } else if (auto blockArg = mlir::dyn_cast<BlockArgument>(val)) {
     valLattice = getOrCreate<Lattice>(blockArg.getOwner());
   } else {
     valLattice = getOrCreate<Lattice>(val);
@@ -1175,7 +1175,7 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
 
 /* StructIntervals */
 
-mlir::LogicalResult StructIntervals::computeIntervals(
+LogicalResult StructIntervals::computeIntervals(
     mlir::DataFlowSolver &solver, mlir::AnalysisManager &am, IntervalAnalysisContext &ctx
 ) {
   // Get the lattice at the end of the constrain function.
@@ -1194,19 +1194,19 @@ mlir::LogicalResult StructIntervals::computeIntervals(
       continue;
     }
     // We also don't want to show the interval for a Signal and its internal reg.
-    if (auto parentOr = ref.getParentPrefix(); mlir::succeeded(parentOr) && parentOr->isSignal()) {
+    if (auto parentOr = ref.getParentPrefix(); succeeded(parentOr) && parentOr->isSignal()) {
       continue;
     }
     auto symbol = ctx.getSymbol(ref);
     auto constrainInterval = constrainLattice->findInterval(symbol);
-    if (mlir::succeeded(constrainInterval)) {
+    if (succeeded(constrainInterval)) {
       constrainFieldRanges[ref] = *constrainInterval;
     } else {
       constrainFieldRanges[ref] = Interval::Entire(ctx.field);
     }
   }
 
-  return mlir::success();
+  return success();
 }
 
 void StructIntervals::print(mlir::raw_ostream &os, bool withConstraints) const {
