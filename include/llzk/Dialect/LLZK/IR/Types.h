@@ -117,7 +117,7 @@ bool isSignalType(mlir::Type type);
 
 /// Return `true` iff the given StructType is referencing the `COMPONENT_NAME_SIGNAL` struct.
 bool isSignalType(StructType sType);
-  
+
 /// @brief Return `true` iff the given type contains an AffineMapAttr.
 bool hasAffineMapAttr(mlir::Type type);
 
