@@ -567,3 +567,52 @@ module attributes {veridise.lang = "llzk"} {
       ]>> // expected-error {{failed to parse struct parameters}}
     > // expected-error {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
 }
+
+// -----
+
+#map = affine_map<(i) -> (i, 2)>
+module attributes {veridise.lang = "llzk"} {
+  // This would also trigger {{'llzk.struct' op attribute 'const_params' failed to satisfy constraint: flat symbol ref array attribute}},
+  // but the below error fires first.
+  llzk.struct @Foo<[@N, @P, #map]> {
+    // expected-error@+1 {{AffineMapAttr must yield a single result, but found 2 results}}
+    func @compute() -> !llzk.struct<@Foo<[@N, @P, #map]>> {
+      %self = new_struct : !llzk.struct<@Foo<[@N, @P, #map]>>
+      return %self : !llzk.struct<@Foo<[@N, @P, #map]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Foo<[@N, @P, #map]>>) {
+      return
+    }
+  }
+}
+
+// -----
+
+#map = affine_map<(i) -> ()>
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Foo<[@N, @P, @A]> {
+    func @compute() -> !llzk.struct<@Foo<[@N, @P, @A]>> {
+      %self = new_struct : !llzk.struct<@Foo<[@N, @P, @A]>>
+      return %self : !llzk.struct<@Foo<[@N, @P, @A]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Foo<[@N, @P, @A]>>) {
+      return
+    }
+  }
+
+  llzk.struct @Bar<[@N, @P]> {
+     // expected-error@+1 {{AffineMapAttr must yield a single result, but found 0 results}}
+    field @foo: !llzk.struct<@Foo<[@N, @P, #map]>>
+
+    func @compute() -> !llzk.struct<@Bar<[@N, @P]>> {
+      %self = new_struct : !llzk.struct<@Bar<[@N, @P]>>
+      return %self : !llzk.struct<@Bar<[@N, @P]>>
+    }
+
+    func @constrain(%self: !llzk.struct<@Bar<[@N, @P]>>) {
+      return
+    }
+  }
+}

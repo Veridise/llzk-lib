@@ -115,6 +115,9 @@ inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type
 /// Return `true` iff the given type is a StructType referencing the `COMPONENT_NAME_SIGNAL` struct.
 bool isSignalType(mlir::Type type);
 
+/// Return `true` iff the given StructType is referencing the `COMPONENT_NAME_SIGNAL` struct.
+bool isSignalType(StructType sType);
+  
 /// @brief Return `true` iff the given type contains an AffineMapAttr.
 bool hasAffineMapAttr(mlir::Type type);
 
@@ -247,6 +250,9 @@ llvm::SmallVector<mlir::Attribute> forceIntAttrTypes(llvm::ArrayRef<mlir::Attrib
 
 /// Verify that all IntegerAttr have type IndexType.
 mlir::LogicalResult verifyIntAttrType(EmitErrorFn emitError, mlir::Attribute in);
+
+/// Verify that all AffineMapAttr only have a single result.
+mlir::LogicalResult verifyAffineMapAttrType(EmitErrorFn emitError, mlir::Attribute in);
 
 mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
 void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);

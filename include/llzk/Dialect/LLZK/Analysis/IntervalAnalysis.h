@@ -670,7 +670,8 @@ private:
   /// @param after The current lattice state. Assumes that this has already been joined with the
   /// `before` lattice in `visitOperation`, so lookups and updates can be performed on the `after`
   /// lattice alone.
-  mlir::ChangeResult applyInterval(Lattice *after, mlir::Value val, Interval newInterval);
+  mlir::ChangeResult
+  applyInterval(mlir::Operation *originalOp, Lattice *after, mlir::Value val, Interval newInterval);
 
   bool isBoolOp(mlir::Operation *op) const {
     return mlir::isa<AndBoolOp, OrBoolOp, XorBoolOp, NotBoolOp>(op);

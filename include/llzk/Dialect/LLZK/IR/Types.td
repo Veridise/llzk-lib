@@ -27,7 +27,7 @@ def GlobalDefType : Type<CPred<"::llzk::isValidGlobalType($_self)">,
                          "any LLZK type except non-constant types">;
 
 def EmitEqType : Type<CPred<"::llzk::isValidEmitEqType($_self)">,
-                      "any LLZK type except struct and string">;
+                      "any LLZK type, excluding non-Signal struct and string types">;
 
 def ConstReadType : Type<CPred<"::llzk::isValidConstReadType($_self)">,
                          "integral, felt, or typevar type">;

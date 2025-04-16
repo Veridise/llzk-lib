@@ -801,7 +801,10 @@ def LLZK_EmitEqualityOp
                               TypesUnify<"lhs", "rhs">,
 ]> {
   let summary = "emit an equality constraint";
-  let description = [{}];
+  let description = [{
+    Emits an equality constraint between lhs and rhs. For the built-in Signal
+    struct, the constraint is performed on the Signal's inner `@reg` felt field.
+  }];
 
   let arguments = (ins EmitEqType:$lhs, EmitEqType:$rhs);
 }

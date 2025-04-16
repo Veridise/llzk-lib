@@ -15,6 +15,7 @@
 #include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h"
 #include "llzk/Dialect/LLZK/Analysis/IntervalAnalysis.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <llvm/ADT/SmallVector.h>
@@ -52,6 +53,10 @@ protected:
 
     for (auto &[s, si] : mia) {
       auto &structDef = const_cast<StructDefOp &>(s);
+      // Don't print the analysis for built-ins.
+      if (isSignalType(structDef.getType())) {
+        continue;
+      }
       auto fullName = getPathFromTopRoot(structDef);
       ensure(
           mlir::succeeded(fullName),

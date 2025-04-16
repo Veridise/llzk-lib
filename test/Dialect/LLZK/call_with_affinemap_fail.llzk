@@ -172,3 +172,35 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@CallKnownGlobalWithMapInit>) { return }
   }
 }
+
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "Inputs/header_11.llzk" as @Lib
+
+  llzk.struct @TooFewResults {
+    func @compute(%a: index, %b: index, %c: index) -> !llzk.struct<@TooManySymbols> {
+      %self = new_struct : !llzk.struct<@TooManySymbols>
+      // expected-error@+1 {{AffineMapAttr must yield a single result, but found 0 results}}
+      %x = llzk.call @Lib::@D1::@compute(){ (%a)[%b, %c] } : () -> !llzk.struct<@Lib::@D1<[affine_map<(i)[k, j] -> ()>]>>
+      return %self : !llzk.struct<@TooManySymbols>
+    }
+
+    func @constrain(%self: !llzk.struct<@TooManySymbols>, %a: index, %b: index, %c: index) { return }
+  }
+}
+
+// -----
+module attributes {veridise.lang = "llzk"} {
+  llzk.include "Inputs/header_11.llzk" as @Lib
+
+  llzk.struct @TooManyResults {
+    func @compute(%a: index, %b: index, %c: index) -> !llzk.struct<@TooManySymbols> {
+      %self = new_struct : !llzk.struct<@TooManySymbols>
+      // expected-error@+1 {{AffineMapAttr must yield a single result, but found 5 results}}
+      %x = llzk.call @Lib::@D1::@compute(){ (%a)[%b, %c] } : () -> !llzk.struct<@Lib::@D1<[affine_map<(i)[k, j] -> (5*i+k, j, i, k, 7)>]>>
+      return %self : !llzk.struct<@TooManySymbols>
+    }
+
+    func @constrain(%self: !llzk.struct<@TooManySymbols>, %a: index, %b: index, %c: index) { return }
+  }
+}
