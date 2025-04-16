@@ -26,6 +26,7 @@
 #include <llvm/ADT/Twine.h>
 
 #include <cstdint>
+#include <numeric>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -34,8 +35,6 @@
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/LLZK/IR/Ops.cpp.inc"
-
-#include <numeric>
 
 namespace llzk {
 
@@ -1375,6 +1374,42 @@ LogicalResult ApplyMapOp::verify() {
 //===------------------------------------------------------------------===//
 
 OpFoldResult LitStringOp::fold(LitStringOp::FoldAdaptor) { return getValueAttr(); }
+
+//===------------------------------------------------------------------===//
+// FeltToIndexOp
+//===------------------------------------------------------------------===//
+
+LogicalResult FeltToIndexOp::verify() {
+  if (auto parentOr = getParentOfType<FuncOp>(*this);
+      succeeded(parentOr) && parentOr->isStructConstrain()) {
+    // Traverse the def-use chain to see if this operand, which is a felt, ever
+    // derives from a Signal struct.
+    SmallVector<Value, 2> frontier {getValue()};
+    DenseSet<Value> visited;
+
+    while (!frontier.empty()) {
+      Value v = frontier.pop_back_val();
+      if (visited.contains(v)) {
+        continue;
+      }
+      visited.insert(v);
+
+      if (Operation *op = v.getDefiningOp()) {
+        if (FieldReadOp readf = mlir::dyn_cast<FieldReadOp>(op);
+            readf && isSignalType(readf.getComponent().getType())) {
+          return emitOpError()
+              .append("input is derived from a Signal struct, which is illegal in struct constrain "
+                      "function")
+              .attachNote(readf.getLoc())
+              .append("Signal struct value is read here");
+        }
+        frontier.insert(frontier.end(), op->operand_begin(), op->operand_end());
+      }
+    }
+  }
+
+  return success();
+}
 
 //===------------------------------------------------------------------===//
 // UnifiableCastOp

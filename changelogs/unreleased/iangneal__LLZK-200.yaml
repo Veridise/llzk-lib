@@ -1,0 +1,3 @@
+changed:
+  Dialect:
+    - The llzk.toindex op's input may not be derived from a Signal within struct @constrain functions

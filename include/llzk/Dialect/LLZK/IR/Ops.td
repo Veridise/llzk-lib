@@ -380,9 +380,9 @@ def LLZK_FieldReadOp
   let description = [{
     This operation reads the value of a named field in a struct/component.
 
-    The value can be read from the signals table, in which case it can be 
+    The value can be read from the signals table, in which case it can be
     offset by a constant value. A negative value represents reading a value
-    backwards and a positive value represents reading a value forward. 
+    backwards and a positive value represents reading a value forward.
     Only fields marked as columns can be read in this manner.
   }];
 
@@ -988,7 +988,8 @@ def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
   let summary = "convert a field element into an index";
   let description = [{
     This operation converts a field element value into an index value to allow
-    use as an array index or loop bound.
+    use as an array index or loop bound. In struct @constrain functions, the
+    argument to this op is not allowed to be derived from a Signal struct.
 
     Example:
     ```llzk
@@ -1000,6 +1001,8 @@ def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
   let arguments = (ins LLZK_FeltType:$value);
   let results = (outs Index:$result);
   let assemblyFormat = [{ $value attr-dict }];
+
+  let hasVerifier = 1;
 }
 
 def LLZK_UnifiableCastOp : LLZK_Op<"unifiable_cast", [Pure]> {

@@ -598,6 +598,50 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
+!Signal = !llzk.struct<@Signal>
+module attributes {veridise.lang = "llzk"} {
+  // pre-defined
+  llzk.struct @Signal {
+    field @reg : !llzk.felt {llzk.pub}
+
+    func @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
+      %self = new_struct : !llzk.struct<@Signal>
+      writef %self[@reg] = %v : !llzk.struct<@Signal>, !llzk.felt
+      return %self : !llzk.struct<@Signal>
+    }
+
+    func @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
+      return
+    }
+  }
+
+  llzk.struct @BadSignalIndex {
+    field @idx : index
+
+    func @compute(%s: !Signal) -> !llzk.struct<@BadSignalIndex> {
+      %self = new_struct : !llzk.struct<@BadSignalIndex>
+      // In the compute function, this is fine
+      %reg = readf %s[@reg] : !Signal, !llzk.felt
+      %idx = toindex %reg
+      writef %self[@idx] = %idx : !llzk.struct<@BadSignalIndex>, index
+      return %self : !llzk.struct<@BadSignalIndex>
+    }
+
+    func @constrain(%self: !llzk.struct<@BadSignalIndex>, %s: !Signal) {
+      // expected-note@+1 {{Signal struct value is read here}}
+      %reg = readf %s[@reg] : !Signal, !llzk.felt
+      // Illegal signal to index conversion in constrain
+      // expected-error@+1 {{'llzk.toindex' op input is derived from a Signal struct, which is illegal in struct constrain function}}
+      %idx = toindex %reg
+      %f = readf %self[@idx] : !llzk.struct<@BadSignalIndex>, index
+      emit_eq %f, %idx : index
+      return
+    }
+  }
+}
+
+// -----
+
 #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @T2<[@N]> {
@@ -617,6 +661,97 @@ module attributes {veridise.lang = "llzk"} {
     func @compute(%6: !llzk.struct<@T2<[#map1]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
       return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+    }
+  }
+}
+
+// -----
+
+!Signal = !llzk.struct<@Signal>
+module attributes {veridise.lang = "llzk"} {
+  // pre-defined
+  llzk.struct @Signal {
+    field @reg : !llzk.felt {llzk.pub}
+
+    func @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
+      %self = new_struct : !llzk.struct<@Signal>
+      writef %self[@reg] = %v : !llzk.struct<@Signal>, !llzk.felt
+      return %self : !llzk.struct<@Signal>
+    }
+
+    func @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
+      return
+    }
+  }
+
+  llzk.struct @BadSignalIndex {
+    func @compute(%s: !Signal) -> !llzk.struct<@BadSignalIndex> {
+      %self = new_struct : !llzk.struct<@BadSignalIndex>
+      return %self : !llzk.struct<@BadSignalIndex>
+    }
+
+    func @constrain(%self: !llzk.struct<@BadSignalIndex>, %s: !Signal) {
+      // expected-note@+1 {{Signal struct value is read here}}
+      %reg = readf %s[@reg] : !Signal, !llzk.felt
+      %res = scf.while (%arg1 = %reg) : (!llzk.felt) -> !llzk.felt {
+        %condition = arith.constant true
+        scf.condition(%condition) %arg1 : !llzk.felt
+      } do {
+        ^bb0(%arg2: !llzk.felt):
+          %next = llzk.add %arg2, %arg2
+          scf.yield %next : !llzk.felt
+      } attributes {}
+      %lb = arith.constant 0 : index
+      %up = arith.constant 4 : index
+      %step = arith.constant 1 : index
+      scf.for %iv = %lb to %up step %step {
+        // expected-error@+1 {{'llzk.toindex' op input is derived from a Signal struct, which is illegal in struct constrain function}}
+        %1 = llzk.toindex %res
+      }
+      return
+    }
+  }
+}
+
+// -----
+
+!Signal = !llzk.struct<@Signal>
+module attributes {veridise.lang = "llzk"} {
+  // pre-defined
+  llzk.struct @Signal {
+    field @reg : !llzk.felt {llzk.pub}
+
+    func @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
+      %self = new_struct : !llzk.struct<@Signal>
+      writef %self[@reg] = %v : !llzk.struct<@Signal>, !llzk.felt
+      return %self : !llzk.struct<@Signal>
+    }
+
+    func @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
+      return
+    }
+  }
+
+  llzk.struct @SignalAsIndexImplicit {
+    func @compute(%s: !Signal) -> !llzk.struct<@SignalAsIndexImplicit> {
+      %self = new_struct : !llzk.struct<@SignalAsIndexImplicit>
+      return %self : !llzk.struct<@SignalAsIndexImplicit>
+    }
+
+    func @constrain(%self: !llzk.struct<@SignalAsIndexImplicit>, %s: !Signal) {
+      // expected-note@+1 {{Signal struct value is read here}}
+      %reg = readf %s[@reg] : !Signal, !llzk.felt
+      %f0 = llzk.constfelt 0
+      %b = cmp eq(%reg, %f0)
+      %t = scf.if %b -> !llzk.felt {
+        scf.yield %f0 : !llzk.felt
+      } else {
+        %f1 = llzk.constfelt 1
+        scf.yield %f1 : !llzk.felt
+      }
+      // expected-error@+1 {{'llzk.toindex' op input is derived from a Signal struct, which is illegal in struct constrain function}}
+      %1 = llzk.toindex %t
+      return
     }
   }
 }
