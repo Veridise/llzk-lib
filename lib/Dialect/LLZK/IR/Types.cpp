@@ -687,9 +687,9 @@ LogicalResult verifyIntAttrType(EmitErrorFn emitError, Attribute in) {
   return success();
 }
 
-mlir::LogicalResult verifyAffineMapAttrType(EmitErrorFn emitError, mlir::Attribute in) {
-  if (mlir::AffineMapAttr affineAttr = llvm::dyn_cast<mlir::AffineMapAttr>(in)) {
-    mlir::AffineMap map = affineAttr.getValue();
+LogicalResult verifyAffineMapAttrType(EmitErrorFn emitError, Attribute in) {
+  if (AffineMapAttr affineAttr = llvm::dyn_cast<AffineMapAttr>(in)) {
+    AffineMap map = affineAttr.getValue();
     if (map.getNumResults() != 1) {
       if (emitError) {
         emitError()
@@ -793,7 +793,7 @@ LogicalResult StructType::verifySymbolRef(SymbolTableCollection &symbolTable, Op
 
 LogicalResult StructType::hasColumns(SymbolTableCollection &symbolTable, Operation *op) const {
   auto lookup = getDefinition(symbolTable, op);
-  if (mlir::failed(lookup)) {
+  if (failed(lookup)) {
     return lookup;
   }
   return lookup->get().hasColumns();
