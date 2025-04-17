@@ -48,6 +48,7 @@ template <typename TypeOfIndex> inline std::optional<int64_t> toI64(TypeOfIndex 
 template <typename OutType> struct CheckAndConvert {
   template <typename InType> static std::optional<OutType> from(InType index, int64_t dimSize) {
     static_assert(sizeof(OutType) == 0, "CheckAndConvert not implemented for requested type.");
+    assert(false);
   }
 };
 
@@ -153,6 +154,7 @@ ArrayIndexGen::delinearize(int64_t linearIndex, MLIRContext *ctx) const {
 
 template <typename InListType> std::optional<int64_t> ArrayIndexGen::linearize(InListType) const {
   static_assert(sizeof(InListType) == 0, "linearize() not implemented for requested type.");
+  assert(false);
 }
 
 template <> std::optional<int64_t> ArrayIndexGen::linearize(ArrayRef<int64_t> multiDimIndex) const {
@@ -176,6 +178,7 @@ template <> std::optional<int64_t> ArrayIndexGen::linearize(ArrayRef<Value> mult
 template <typename InListType>
 std::optional<SmallVector<Attribute>> ArrayIndexGen::checkAndConvert(InListType) {
   static_assert(sizeof(InListType) == 0, "checkAndConvert() not implemented for requested type.");
+  assert(false);
 }
 
 template <>
