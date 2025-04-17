@@ -27,8 +27,9 @@ def AnyLLZKType : Type<CPred<"::llzk::isValidType($_self)">,
 def GlobalDefType : Type<CPred<"::llzk::isValidGlobalType($_self)">,
                          "any LLZK type except non-constant types">;
 
-def EmitEqType : Type<CPred<"::llzk::isValidEmitEqType($_self)">,
-                      "any LLZK type, excluding non-Signal struct and string types">;
+def EmitEqType
+    : Type<CPred<"::llzk::isValidEmitEqType($_self)">,
+           "any LLZK type, excluding non-Signal struct and string types">;
 
 def ConstReadType : Type<CPred<"::llzk::isValidConstReadType($_self)">,
                          "integral, felt, or typevar type">;
@@ -179,6 +180,7 @@ def LLZK_ArrayType
     bool collectIndices(::llvm::function_ref<void(::mlir::ArrayAttr)>) const;
 
   public:
+    /// Return a list of all valid indices for this ArrayType.
     std::optional<::llvm::SmallVector<::mlir::ArrayAttr>> getSubelementIndices() const;
 
     /// Returns if this type is ranked, i.e. it has a known number of dimensions.

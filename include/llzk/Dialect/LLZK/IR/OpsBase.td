@@ -229,10 +229,15 @@ class LLZK_ArrayRefOp<string mnemonic, list<Trait> traits = []>
 
     /// Required by PromotableAllocationOpInterface / mem2reg pass
     ::mlir::Value $cppClass::getStored(const ::mlir::MemorySlot &, ::mlir::RewriterBase &) {
-      }]#!if(
-      isRead,
-      "llvm_unreachable(\"getStored should not be called on $cppClass\")",
-      "return getRvalue()")#[{;
+      }]#!if(isRead,
+             "llvm_unreachable(\"getStored should not be called on "
+             "$cppClass\")",
+             "return getRvalue()")#[{;
+    }
+
+    /// Return `true` if the op is a read, `false` if it's a write.
+    bool $cppClass::isRead() {
+      return }]#!if(isRead, "true", "false")#[{;
     }
   }];
 }

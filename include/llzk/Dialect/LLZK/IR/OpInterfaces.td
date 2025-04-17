@@ -88,6 +88,9 @@ def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
       InterfaceMethod<
           [{Gets the mutable operand range containing the index for each dimension.}],
           "::mlir::MutableOperandRange", "getIndicesMutable", (ins)>,
+      InterfaceMethod<
+          [{Return `true` if the op is a read, `false` if it's a write.}],
+          "bool", "isRead", (ins)>,
   ];
 
   let extraClassDeclaration = [{

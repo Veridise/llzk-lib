@@ -1293,11 +1293,13 @@ DeletionKind ArrayRefOpInterface::rewireScalarOp(
     const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
     RewriterBase &rewriter
 ) {
-  assert(getValueOperandDims().empty() && "only valid for scalar operand");
   assert(slot.ptr == getArrRef());
   assert(slot.elemType == getArrRefType());
-  ArrayAttr index = indexOperandsToAttributeArray();
-  const MemorySlot &memorySlot = subslots.at(index);
+  assert(getValueOperandDims().empty() && "use rewireRangedOp() instead");
+
+  ArrayAttr indexAsAttr = indexOperandsToAttributeArray();
+  assert(indexAsAttr && "canRewire() should have returned false");
+  const MemorySlot &memorySlot = subslots.at(indexAsAttr);
 
   // Write to the sub-slot created for the index of `this`, using index 0
   auto idx0 = rewriter.create<arith::ConstantIndexOp>(getLoc(), 0);
@@ -1314,9 +1316,39 @@ DeletionKind ArrayRefOpInterface::rewireRangedOp(
     const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
     RewriterBase &rewriter
 ) {
-  assert(!getValueOperandDims().empty() && "only valid for ranged operand");
+  assert(slot.ptr == getArrRef());
+  assert(slot.elemType == getArrRefType());
+  ArrayRef<Attribute> readWriteValDims = getValueOperandDims();
+  assert(!readWriteValDims.empty() && "use rewireScalarOp() instead");
 
-  assert(false && "Not yet implemented");
+  ArrayAttr indexAsAttr = indexOperandsToAttributeArray();
+  assert(indexAsAttr && "canRewire() should have returned false");
+
+  // For a ranged value ops, 'indexAsAttr' contains only the front/high dimensions of the access.
+  // Convert `readWriteValDims` to an ArrayType and get its list of sub-indices to compute the low
+  // dimensions for each access in this ranged op.
+  MLIRContext *ctx = getContext();
+  ArrayType readWriteArrType = ArrayType::get(getArrRefType().getElementType(), readWriteValDims);
+  auto subIndices = readWriteArrType.getSubelementIndices();
+  assert(subIndices && "canRewire() should have returned false");
+  Location loc = getLoc();
+  auto idx0 = rewriter.create<arith::ConstantIndexOp>(loc, 0);
+  for (ArrayAttr indexingTail : subIndices.value()) {
+    SmallVector<Attribute> joined;
+    joined.append(indexAsAttr.begin(), indexAsAttr.end());
+    joined.append(indexingTail.begin(), indexingTail.end());
+    ArrayAttr fullIndex = ArrayAttr::get(ctx, joined);
+    const MemorySlot &memorySlot = subslots.at(fullIndex);
+
+    if (isRead()) {
+      rewriter.create<ReadArrayOp>(loc, memorySlot.ptr, ValueRange(idx0));
+      // TODO: what's missing
+    } else {
+      assert(false && "Not implemented");
+      // rewriter.create<WriteArrayOp>(loc, memorySlot.ptr, ValueRange(idx0), init);
+    }
+  }
+  return DeletionKind::Delete;
 }
 
 //===------------------------------------------------------------------===//

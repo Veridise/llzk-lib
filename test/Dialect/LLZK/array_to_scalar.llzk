@@ -52,4 +52,21 @@ module attributes {veridise.lang = "llzk"} {
   // CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = mul %[[V0]], %[[V1]] : !llzk.felt, !llzk.felt
   // CHECK-NEXT:    return %[[V2]] : !llzk.felt
   // CHECK-NEXT:  }
+
+  llzk.func @new_then_return() -> !llzk.array<2,1,2 x !llzk.felt> {
+    %a = llzk.constfelt 45
+    %b = llzk.constfelt 214
+    %c = llzk.constfelt 2
+    %d = llzk.constfelt 52
+  
+    %r = llzk.new_array %a, %b, %c, %d : !llzk.array<2,1,2 x !llzk.felt>
+    return %r: !llzk.array<2,1,2 x !llzk.felt>
+  }
+  // CHECK-LABEL: llzk.func @new_then_return() -> (!llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt) {
+  // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  45
+  // CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = constfelt  214
+  // CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = constfelt  2
+  // CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = constfelt  52
+  // CHECK-NEXT:    return %[[V0]], %[[V1]], %[[V2]], %[[V3]] : !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt
+  // CHECK-NEXT:  }
 }

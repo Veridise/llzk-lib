@@ -13,6 +13,7 @@
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/SymbolTable.h>
+#include <mlir/IR/Value.h>
 #include <mlir/Interfaces/MemorySlotInterfaces.h>
 
 #include <llvm/ADT/DenseMap.h>
@@ -41,6 +42,7 @@ struct Appender {
 
   void append(const mlir::MemorySlot &a);
   void append(const mlir::DestructurableMemorySlot &a);
+  void append(const mlir::OpOperand &a);
   void append(const mlir::NamedAttribute &a);
   void append(const mlir::SymbolTable::SymbolUse &a);
   template <typename T> void append(const std::optional<T> &a);
@@ -64,6 +66,8 @@ void Appender::append(const mlir::DestructurableMemorySlot &a) {
     stream << '\n';
   }
 }
+
+void Appender::append(const mlir::OpOperand &a) { stream << a.get(); }
 
 void Appender::append(const mlir::NamedAttribute &a) {
   stream << a.getName() << '=' << a.getValue();
