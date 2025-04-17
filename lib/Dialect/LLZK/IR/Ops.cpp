@@ -1271,10 +1271,10 @@ bool ArrayRefOpInterface::canRewire(
   }
 
   // For a ranged value ops, 'indexAsAttr' contains only the front/high dimensions of the access.
-  // Convert `readWriteValDims` to an ArrayType (it's element type doesn't matter, hence None) and
-  // get its list of sub-indices to compute the low dimensions for each access in this ranged op.
+  // Convert `readWriteValDims` to an ArrayType and get its list of sub-indices to compute the low
+  // dimensions for each access in this ranged op.
   MLIRContext *ctx = getContext();
-  ArrayType readWriteArrType = ArrayType::get(NoneType::get(ctx), readWriteValDims);
+  ArrayType readWriteArrType = ArrayType::get(getArrRefType().getElementType(), readWriteValDims);
   if (auto subIndices = readWriteArrType.getSubelementIndices()) {
     for (ArrayAttr indexingTail : subIndices.value()) {
       SmallVector<Attribute> joined;
@@ -1314,7 +1314,7 @@ DeletionKind ArrayRefOpInterface::rewireRangedOp(
     const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
     RewriterBase &rewriter
 ) {
-  assert(getValueOperandDims().empty() && "only valid for ranged operand");
+  assert(!getValueOperandDims().empty() && "only valid for ranged operand");
 
   assert(false && "Not yet implemented");
 }
