@@ -20,4 +20,3 @@ llzk.func @extractarr_with_more_dims_than_available() -> index {
   %s = llzk.extractarr %r[%i,%i] : !llzk.array<2 x index>
   return %s: index
 }
-// -----

@@ -7,6 +7,16 @@ llzk.func @more_indices_than_source(%z: !llzk.array<2,2,2 x !llzk.string>) {
   llzk.insertarr %r[%0,%0,%0] = %z : !llzk.array<44,2 x !llzk.string>, !llzk.array<2,2,2 x !llzk.string>
   return
 }
+
+// -----
+llzk.func @should_use_writearr(%elem: !llzk.string) {
+  %r = llzk.new_array : !llzk.array<44,2 x !llzk.string>
+  %0 = arith.constant 0 : index
+  llzk.writearr %r[%0,%0] = %elem : !llzk.array<44,2 x !llzk.string>, !llzk.string
+  // expected-error@+1 {{custom op 'llzk.insertarr' invalid kind of Type specified}}
+  llzk.insertarr %r[%0,%0] = %elem : !llzk.array<44,2 x !llzk.string>, !llzk.string
+  return
+}
 // -----
 llzk.func @insufficient_indices_none(%0: !llzk.felt, %1: !llzk.felt, %z: !llzk.array<2 x !llzk.felt>) {
   %r = llzk.new_array : !llzk.array<4,2 x !llzk.felt>

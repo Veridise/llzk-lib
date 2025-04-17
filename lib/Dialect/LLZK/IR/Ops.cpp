@@ -1149,6 +1149,24 @@ LogicalResult CreateArrayOp::verify() {
 // ReadArrayOp
 //===------------------------------------------------------------------===//
 
+namespace {
+
+LogicalResult
+ensureNumIndicesMatchDims(ArrayType ty, size_t numIndices, const OwningEmitErrorFn &errFn) {
+  ArrayRef<Attribute> dims = ty.getDimensionSizes();
+  // Ensure the number of provided indices matches the array dimensions
+  auto compare = numIndices <=> dims.size();
+  if (compare != 0) {
+    return errFn().append(
+        "has ", (compare < 0 ? "insufficient" : "too many"), " indexed dimensions: expected ",
+        dims.size(), " but found ", numIndices
+    );
+  }
+  return success();
+}
+
+} // namespace
+
 LogicalResult ReadArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(tables, *this, ArrayRef<Type> {getArrRef().getType(), getType()});
@@ -1169,6 +1187,17 @@ bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
   return singletonTypeListsUnify(l, r);
 }
 
+LogicalResult ReadArrayOp::verify() {
+  // Ensure the number of indices used match the shape of the array exactly.
+  Type baseArrRefType = getArrRef().getType();
+  assert(llvm::isa<ArrayType>(baseArrRefType)); // per ODS spec of ReadArrayOp
+  ArrayType baseArrRefArrType = llvm::cast<ArrayType>(baseArrRefType);
+
+  OwningEmitErrorFn errFn = getEmitOpErrFn(this);
+
+  return ensureNumIndicesMatchDims(baseArrRefArrType, getIndices().size(), errFn);
+}
+
 //===------------------------------------------------------------------===//
 // WriteArrayOp
 //===------------------------------------------------------------------===//
@@ -1178,6 +1207,17 @@ LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   return verifyTypeResolution(
       tables, *this, ArrayRef<Type> {getArrRef().getType(), getRvalue().getType()}
   );
+}
+
+LogicalResult WriteArrayOp::verify() {
+  // Ensure the number of indices used match the shape of the array exactly.
+  Type baseArrRefType = getArrRef().getType();
+  assert(llvm::isa<ArrayType>(baseArrRefType)); // per ODS spec of WriteArrayOp
+  ArrayType baseArrRefArrType = llvm::cast<ArrayType>(baseArrRefType);
+
+  OwningEmitErrorFn errFn = getEmitOpErrFn(this);
+
+  return ensureNumIndicesMatchDims(baseArrRefArrType, getIndices().size(), errFn);
 }
 
 //===------------------------------------------------------------------===//
