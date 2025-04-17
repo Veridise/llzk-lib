@@ -22,6 +22,8 @@ std::unique_ptr<mlir::Pass> createRedundantOperationEliminationPass();
 
 std::unique_ptr<mlir::Pass> createUnusedDeclarationEliminationPass();
 
+std::unique_ptr<mlir::Pass> createArrayToScalarPass();
+
 void registerTransformationPassPipelines();
 
 #define GEN_PASS_REGISTRATION

@@ -68,4 +68,58 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
   }];
 }
 
+def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
+  let description = [{
+    Common interface for operations that read or write from an array.
+  }];
+  let cppNamespace = "::llzk";
+
+  let methods = [
+      // Requires implementors to have a '$arr_ref' argument.
+      InterfaceMethod<[{Gets the SSA Value for the referenced array.}],
+                      "::mlir::Value", "getArrRef", (ins)>,
+      InterfaceMethod<
+          [{Gets the mutable operand slot holding the SSA Value for the referenced array.}],
+          "::mlir::OpOperand &", "getArrRefMutable", (ins)>,
+      // Requires implementors to have a '$indices' argument.
+      InterfaceMethod<
+          [{Gets the operand range containing the index for each dimension.}],
+          "::mlir::Operation::operand_range", "getIndices", (ins)>,
+      InterfaceMethod<
+          [{Gets the mutable operand range containing the index for each dimension.}],
+          "::mlir::MutableOperandRange", "getIndicesMutable", (ins)>,
+  ];
+
+  let extraClassDeclaration = [{
+    /// Gets the type of the referenced array.
+    inline ::llzk::ArrayType getArrRefType() {
+      return ::llvm::cast<::llzk::ArrayType>(getArrRef().getType());
+    }
+
+    /// Compute the dimensions of the read/write value. Removing the number
+    /// of indices provided from the front dimensions of the base array type
+    /// gives the dimensions/shape of that value.
+    inline ::mlir::ArrayRef<::mlir::Attribute> getValueOperandDims() {
+      return getArrRefType().getDimensionSizes().drop_front(getIndices().size());
+    }
+
+    ::mlir::ArrayAttr indexOperandsToAttributeArray();
+
+    /// Used by companion interface, DestructurableAccessorOpInterface.
+    bool canRewire(const ::mlir::DestructurableMemorySlot &slot,
+            ::llvm::SmallPtrSetImpl<::mlir::Attribute> &usedIndices,
+            ::mlir::SmallVectorImpl<::mlir::MemorySlot> &mustBeSafelyUsed);
+
+    /// Used by companion interface, DestructurableAccessorOpInterface.
+    ::mlir::DeletionKind rewireScalarOp(const ::mlir::DestructurableMemorySlot &slot,
+            ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
+            ::mlir::RewriterBase &rewriter);
+
+    /// Used by companion interface, DestructurableAccessorOpInterface.
+    ::mlir::DeletionKind rewireRangedOp(const ::mlir::DestructurableMemorySlot &slot,
+            ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
+            ::mlir::RewriterBase &rewriter);
+  }];
+}
+
 #endif // LLZK_OP_INTERFACES

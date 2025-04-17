@@ -158,8 +158,8 @@ class LLZK_Op<string mnemonic, list<Trait> traits = []>
 
 class LLZK_GlobalRefOp<string mnemonic, list<Trait> traits = []>
     : LLZK_Op<mnemonic,
-              traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                      DeclareOpInterfaceMethods<GlobalRefOpInterface>]> {
+              traits#[DeclareOpInterfaceMethods<GlobalRefOpInterface>,
+                      DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let extraClassDeclaration = [{
     /// Gets the definition for the `global` referenced in this op.
     inline ::mlir::FailureOr<SymbolLookupResult<GlobalDefOp>> getGlobalDefOp(::mlir::SymbolTableCollection &tables) {
@@ -170,12 +170,69 @@ class LLZK_GlobalRefOp<string mnemonic, list<Trait> traits = []>
 
 class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
     : LLZK_Op<mnemonic,
-              traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                      DeclareOpInterfaceMethods<FieldRefOpInterface>]> {
+              traits#[DeclareOpInterfaceMethods<FieldRefOpInterface>,
+                      DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let extraClassDeclaration = [{
     /// Gets the definition for the `field` referenced in this op.
     inline ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &tables) {
       return ::llvm::cast<FieldRefOpInterface>(getOperation()).getFieldDefOp(tables);
+    }
+  }];
+}
+
+class LLZK_ArrayRefOp<string mnemonic, list<Trait> traits = []>
+    : LLZK_Op<
+          mnemonic,
+          traits#[DeclareOpInterfaceMethods<ArrayRefOpInterface>,
+                  DeclareOpInterfaceMethods<PromotableMemOpInterface>,
+                  DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
+                  DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+  bit isScalar = ?; // scalar(1) vs ranged(0) ops
+  bit isRead = ?;   // read(1) vs write(0) ops
+
+  let extraClassDeclaration = [{
+    /// Gets the type of the referenced base array.
+    inline ::llzk::ArrayType getArrRefType() {
+      return ::llvm::cast<ArrayRefOpInterface>(getOperation()).getArrRefType();
+    }
+  }];
+
+  let extraClassDefinition = [{
+    /// Required by DestructurableAllocationOpInterface / SROA pass
+    bool $cppClass::canRewire(const ::mlir::DestructurableMemorySlot &slot,
+                ::llvm::SmallPtrSetImpl<::mlir::Attribute> &usedIndices,
+                ::mlir::SmallVectorImpl<::mlir::MemorySlot>
+                &mustBeSafelyUsed) {
+      return ::llvm::cast<ArrayRefOpInterface>(getOperation())
+                .canRewire(slot, usedIndices, mustBeSafelyUsed);
+    }
+
+    /// Required by DestructurableAllocationOpInterface / SROA pass
+    ::mlir::DeletionKind $cppClass::rewire(const
+    ::mlir::DestructurableMemorySlot &slot,
+                ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
+                ::mlir::RewriterBase &rewriter) {
+      return ::llvm::cast<ArrayRefOpInterface>(getOperation())
+                .}]#!if(isScalar, "rewireScalarOp",
+                        "rewireRangedOp")#[{(slot, subslots, rewriter);
+    }
+
+    /// Required by PromotableAllocationOpInterface / mem2reg pass
+    bool $cppClass::loadsFrom(const ::mlir::MemorySlot &slot) {
+      return }]#!if(isRead, "getArrRef() == slot.ptr", "false")#[{;
+    }
+
+    /// Required by PromotableAllocationOpInterface / mem2reg pass
+    bool $cppClass::storesTo(const ::mlir::MemorySlot &slot) {
+      return }]#!if(isRead, "false", "getArrRef() == slot.ptr")#[{;
+    }
+
+    /// Required by PromotableAllocationOpInterface / mem2reg pass
+    ::mlir::Value $cppClass::getStored(const ::mlir::MemorySlot &, ::mlir::RewriterBase &) {
+      }]#!if(
+      isRead,
+      "llvm_unreachable(\"getStored should not be called on $cppClass\")",
+      "return getRvalue()")#[{;
     }
   }];
 }

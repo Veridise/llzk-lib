@@ -9,10 +9,12 @@
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/LLZK/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
+#include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Diagnostics.h>
@@ -651,7 +653,7 @@ namespace {
 inline LogicalResult checkMainFuncParamType(Type pType, FuncOp inFunc, bool appendSelf) {
   if (isSignalType(pType)) {
     return success();
-  } else if (auto arrayParamTy = mlir::dyn_cast<ArrayType>(pType)) {
+  } else if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
     if (isSignalType(arrayParamTy.getElementType())) {
       return success();
     }
@@ -1037,9 +1039,9 @@ void FieldReadOp::build(
 }
 
 LogicalResult FieldReadOp::verify() {
-  mlir::SmallVector<AffineMapAttr, 1> mapAttrs;
+  SmallVector<AffineMapAttr, 1> mapAttrs;
   if (AffineMapAttr map =
-          mlir::dyn_cast_if_present<AffineMapAttr>(getTableOffset().value_or(nullptr))) {
+          llvm::dyn_cast_if_present<AffineMapAttr>(getTableOffset().value_or(nullptr))) {
     mapAttrs.push_back(map);
   }
   return affineMapHelpers::verifyAffineMapInstantiations(
@@ -1145,6 +1147,178 @@ LogicalResult CreateArrayOp::verify() {
   );
 }
 
+// Required by DestructurableAllocationOpInterface / SROA pass
+SmallVector<DestructurableMemorySlot> CreateArrayOp::getDestructurableSlots() {
+  assert(getElements().empty() && "must run after initialization is split from allocation");
+  ArrayType arrType = getType();
+  if (!arrType.hasStaticShape() || arrType.getNumElements() == 1) {
+    return {};
+  }
+  if (auto destructured = arrType.getSubelementIndexMap()) {
+    return {DestructurableMemorySlot {{getResult(), arrType}, std::move(*destructured)}};
+  }
+  return {};
+}
+
+// Required by DestructurableAllocationOpInterface / SROA pass
+DenseMap<Attribute, MemorySlot> CreateArrayOp::destructure(
+    const DestructurableMemorySlot &slot, const SmallPtrSetImpl<Attribute> &usedIndices,
+    RewriterBase &rewriter
+) {
+  assert(slot.ptr == getResult());
+  assert(slot.elemType == getType());
+
+  rewriter.setInsertionPointAfter(*this);
+
+  DenseMap<Attribute, MemorySlot> slotMap; // result
+  for (Attribute index : usedIndices) {
+    // This is an ArrayAttr since indexing is multi-dimensional
+    ArrayAttr indexAsArray = llvm::dyn_cast<ArrayAttr>(index);
+    assert(indexAsArray && "expected ArrayAttr");
+
+    Type destructAs = getType().getTypeAtIndex(indexAsArray);
+    assert(destructAs == slot.elementPtrs.lookup(indexAsArray));
+
+    ArrayType destructAsArrayTy = llvm::dyn_cast<ArrayType>(destructAs);
+    assert(destructAsArrayTy && "expected ArrayType");
+
+    auto subCreate = rewriter.create<CreateArrayOp>(getLoc(), destructAsArrayTy);
+    slotMap.try_emplace<MemorySlot>(index, {subCreate.getResult(), destructAs});
+  }
+
+  return slotMap;
+}
+
+// Required by DestructurableAllocationOpInterface / SROA pass
+void CreateArrayOp::handleDestructuringComplete(
+    const DestructurableMemorySlot &slot, RewriterBase &rewriter
+) {
+  assert(slot.ptr == getResult());
+  rewriter.eraseOp(*this);
+}
+
+// Required by PromotableAllocationOpInterface / mem2reg pass
+SmallVector<MemorySlot> CreateArrayOp::getPromotableSlots() {
+  ArrayType arrType = getType();
+  if (!arrType.hasStaticShape()) {
+    return {};
+  }
+  // Can only support arrays containing a single element (the SROA pass can be run first to
+  // destructure all arrays into size-1 arrays).
+  if (arrType.getNumElements() != 1) {
+    return {};
+  }
+  return {MemorySlot {getResult(), arrType.getElementType()}};
+}
+
+// Required by PromotableAllocationOpInterface / mem2reg pass
+Value CreateArrayOp::getDefaultValue(const MemorySlot &slot, RewriterBase &rewriter) {
+  return rewriter.create<UndefOp>(getLoc(), slot.elemType);
+}
+
+// Required by PromotableAllocationOpInterface / mem2reg pass
+void CreateArrayOp::handleBlockArgument(const MemorySlot &, BlockArgument, RewriterBase &) {
+  assert(false && "Not yet implemented");
+}
+
+// Required by PromotableAllocationOpInterface / mem2reg pass
+void CreateArrayOp::handlePromotionComplete(
+    const MemorySlot &slot, Value defaultValue, RewriterBase &rewriter
+) {
+  if (defaultValue.use_empty()) {
+    rewriter.eraseOp(defaultValue.getDefiningOp());
+  } else {
+    rewriter.eraseOp(*this);
+  }
+}
+
+//===------------------------------------------------------------------===//
+// ArrayRefOpInterface
+//===------------------------------------------------------------------===//
+
+/// Returns the multi-dimensional indices of the array access as an Attribute array or a null
+/// pointer if a valid index cannot be computed for any dimension.
+ArrayAttr ArrayRefOpInterface::indexOperandsToAttributeArray() {
+  ArrayType arrTy = getArrRefType();
+  if (arrTy.hasStaticShape()) {
+    if (auto converted = ArrayIndexGen::from(arrTy).checkAndConvert(getIndices())) {
+      return ArrayAttr::get(getContext(), *converted);
+    }
+  }
+  return nullptr;
+}
+
+// Required by DestructurableAllocationOpInterface / SROA pass
+bool ArrayRefOpInterface::canRewire(
+    const DestructurableMemorySlot &slot, SmallPtrSetImpl<Attribute> &usedIndices,
+    SmallVectorImpl<MemorySlot> &mustBeSafelyUsed
+) {
+  if (slot.ptr != getArrRef()) {
+    return false;
+  }
+
+  ArrayAttr indexAsAttr = indexOperandsToAttributeArray();
+  if (!indexAsAttr) {
+    return false;
+  }
+
+  ArrayRef<Attribute> readWriteValDims = getValueOperandDims();
+
+  // Scalar read/write case has 0 dimensions in the read/write value. Just insert the index.
+  if (readWriteValDims.empty()) {
+    usedIndices.insert(indexAsAttr);
+    return true;
+  }
+
+  // For a ranged value ops, 'indexAsAttr' contains only the front/high dimensions of the access.
+  // Convert `readWriteValDims` to an ArrayType (it's element type doesn't matter, hence None) and
+  // get its list of sub-indices to compute the low dimensions for each access in this ranged op.
+  MLIRContext *ctx = getContext();
+  ArrayType readWriteArrType = ArrayType::get(NoneType::get(ctx), readWriteValDims);
+  if (auto subIndices = readWriteArrType.getSubelementIndices()) {
+    for (ArrayAttr indexingTail : subIndices.value()) {
+      SmallVector<Attribute> joined;
+      joined.append(indexAsAttr.begin(), indexAsAttr.end());
+      joined.append(indexingTail.begin(), indexingTail.end());
+      usedIndices.insert(ArrayAttr::get(ctx, joined));
+    }
+    return true;
+  }
+
+  return false;
+}
+
+// Required by DestructurableAllocationOpInterface / SROA pass
+DeletionKind ArrayRefOpInterface::rewireScalarOp(
+    const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
+    RewriterBase &rewriter
+) {
+  assert(getValueOperandDims().empty() && "only valid for scalar operand");
+  assert(slot.ptr == getArrRef());
+  assert(slot.elemType == getArrRefType());
+  ArrayAttr index = indexOperandsToAttributeArray();
+  const MemorySlot &memorySlot = subslots.at(index);
+
+  // Write to the sub-slot created for the index of `this`, using index 0
+  auto idx0 = rewriter.create<arith::ConstantIndexOp>(getLoc(), 0);
+  rewriter.modifyOpInPlace(*this, [&]() {
+    getArrRefMutable().set(memorySlot.ptr);
+    getIndicesMutable().clear();
+    getIndicesMutable().assign(idx0);
+  });
+  return DeletionKind::Keep;
+}
+
+// Required by DestructurableAllocationOpInterface / SROA pass
+DeletionKind ArrayRefOpInterface::rewireRangedOp(
+    const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
+    RewriterBase &rewriter
+) {
+  assert(getValueOperandDims().empty() && "only valid for ranged operand");
+
+  assert(false && "Not yet implemented");
+}
+
 //===------------------------------------------------------------------===//
 // ReadArrayOp
 //===------------------------------------------------------------------===//
@@ -1169,6 +1343,29 @@ bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
   return singletonTypeListsUnify(l, r);
 }
 
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+bool ReadArrayOp::canUsesBeRemoved(
+    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    SmallVectorImpl<OpOperand *> &newBlockingUses
+) {
+  if (blockingUses.size() != 1) {
+    return false;
+  }
+  Value blockingUse = (*blockingUses.begin())->get();
+  return blockingUse == slot.ptr && getArrRef() == slot.ptr &&
+         getResult().getType() == slot.elemType;
+}
+
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+DeletionKind ReadArrayOp::removeBlockingUses(
+    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    RewriterBase &rewriter, Value reachingDefinition
+) {
+  // `canUsesBeRemoved` checked this blocking use must be the loaded `slot.ptr`
+  rewriter.replaceAllUsesWith(getResult(), reachingDefinition);
+  return DeletionKind::Delete;
+}
+
 //===------------------------------------------------------------------===//
 // WriteArrayOp
 //===------------------------------------------------------------------===//
@@ -1178,6 +1375,27 @@ LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   return verifyTypeResolution(
       tables, *this, ArrayRef<Type> {getArrRef().getType(), getRvalue().getType()}
   );
+}
+
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+bool WriteArrayOp::canUsesBeRemoved(
+    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    SmallVectorImpl<OpOperand *> &newBlockingUses
+) {
+  if (blockingUses.size() != 1) {
+    return false;
+  }
+  Value blockingUse = (*blockingUses.begin())->get();
+  return blockingUse == slot.ptr && getArrRef() == slot.ptr && getRvalue() != slot.ptr &&
+         getRvalue().getType() == slot.elemType;
+}
+
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+DeletionKind WriteArrayOp::removeBlockingUses(
+    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    RewriterBase &rewriter, Value reachingDefinition
+) {
+  return DeletionKind::Delete;
 }
 
 //===------------------------------------------------------------------===//
@@ -1223,6 +1441,22 @@ LogicalResult ExtractArrayOp::inferReturnTypes(
 
 bool ExtractArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
   return singletonTypeListsUnify(l, r);
+}
+
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+bool ExtractArrayOp::canUsesBeRemoved(
+    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    SmallVectorImpl<OpOperand *> &newBlockingUses
+) {
+  assert(false && "Not yet implemented");
+}
+
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+DeletionKind ExtractArrayOp::removeBlockingUses(
+    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    RewriterBase &rewriter, Value reachingDefinition
+) {
+  assert(false && "Not yet implemented");
 }
 
 //===------------------------------------------------------------------===//
@@ -1286,6 +1520,22 @@ LogicalResult InsertArrayOp::verify() {
   }
 
   return success();
+}
+
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+bool InsertArrayOp::canUsesBeRemoved(
+    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    SmallVectorImpl<OpOperand *> &newBlockingUses
+) {
+  assert(false && "Not yet implemented");
+}
+
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+DeletionKind InsertArrayOp::removeBlockingUses(
+    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    RewriterBase &rewriter, Value reachingDefinition
+) {
+  assert(false && "Not yet implemented");
 }
 
 //===------------------------------------------------------------------===//

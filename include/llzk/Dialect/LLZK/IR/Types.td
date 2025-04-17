@@ -14,6 +14,7 @@ include "llzk/Dialect/LLZK/IR/Dialect.td"
 
 include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinTypes.td"
+include "mlir/Interfaces/MemorySlotInterfaces.td"
 
 class LLZK_Type<string name, string typeMnemonic, list<Trait> traits = []>
     : TypeDef<LLZKDialect, name, traits> {
@@ -103,7 +104,10 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
   }];
 }
 
-def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
+def LLZK_ArrayType
+    : LLZK_Type<"Array", "array",
+                [ShapedTypeInterface,
+                 DeclareTypeInterfaceMethods<DestructurableTypeInterface>]> {
   let summary = "n-dimensional array";
   let description = [{
     Array type with a ranked shape and homogeneous element type.
@@ -171,6 +175,12 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
     }]>];
 
   let extraClassDeclaration = [{
+  private:
+    bool collectIndices(::llvm::function_ref<void(::mlir::ArrayAttr)>) const;
+
+  public:
+    std::optional<::llvm::SmallVector<::mlir::ArrayAttr>> getSubelementIndices() const;
+
     /// Returns if this type is ranked, i.e. it has a known number of dimensions.
     /// LLZK arrays are always ranked, i.e. the number of dimensions is known.
     /// Required by the ShapedTypeInterface interface.

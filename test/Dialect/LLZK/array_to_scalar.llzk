@@ -1,0 +1,55 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @new_then_read() -> index {
+    %0 = arith.constant 0 : index
+    %1 = arith.constant 1 : index
+
+    %a = arith.constant 45 : index
+    %b = arith.constant 214 : index
+    %c = arith.constant 15875 : index
+    %d = arith.constant 769 : index
+
+    %r = llzk.new_array %a, %b, %c, %d, %c, %a: !llzk.array<2,3 x index>
+    %x = llzk.readarr %r[%1,%0] : !llzk.array<2,3 x index>, index
+    return %x : index
+  }
+  // CHECK-LABEL: llzk.func @new_then_read() -> index {
+  // CHECK-NEXT:    %[[V:[0-9a-zA-Z_\.]+]] = arith.constant 769 : index
+  // CHECK-NEXT:    return %[[V]] : index
+  // CHECK-NEXT:  }
+
+  llzk.func @multiple_read_and_write() -> !llzk.felt {
+    %0 = arith.constant 0 : index
+    %1 = arith.constant 1 : index
+    %2 = arith.constant 2 : index
+
+    %a = llzk.constfelt 2
+    %b = llzk.constfelt 3
+    %c = llzk.constfelt 5
+    %d = llzk.constfelt 7
+    %e = llzk.constfelt 11
+    %f = llzk.constfelt 13
+    %g = llzk.constfelt 17
+    %h = llzk.constfelt 19
+    %i = llzk.constfelt 23
+    %j = llzk.constfelt 29
+
+    %r = llzk.new_array %a, %b, %c, %d, %e, %f, %g, %h: !llzk.array<4,2 x !llzk.felt>
+    %x = llzk.readarr %r[%2,%0] : !llzk.array<4,2 x !llzk.felt>, !llzk.felt
+    // overwrite the same index to ensure the read survives
+    llzk.writearr %r[%1,%0] = %i : !llzk.array<4,2 x !llzk.felt>, !llzk.felt
+    // write to a different index and then read it to ensure the new value is used
+    llzk.writearr %r[%0,%1] = %j : !llzk.array<4,2 x !llzk.felt>, !llzk.felt
+    %y = llzk.readarr %r[%0,%1] : !llzk.array<4,2 x !llzk.felt>, !llzk.felt
+    // e * j
+    %z = mul %x, %y
+    return %z : !llzk.felt
+  }
+  // CHECK-LABEL: llzk.func @multiple_read_and_write() -> !llzk.felt {
+  // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  11
+  // CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = constfelt  29
+  // CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = mul %[[V0]], %[[V1]] : !llzk.felt, !llzk.felt
+  // CHECK-NEXT:    return %[[V2]] : !llzk.felt
+  // CHECK-NEXT:  }
+}
