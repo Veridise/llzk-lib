@@ -180,10 +180,10 @@ class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-class LLZK_ArrayRefOp<string mnemonic, list<Trait> traits = []>
+class LLZK_ArrayAccessOp<string mnemonic, list<Trait> traits = []>
     : LLZK_Op<
           mnemonic,
-          traits#[DeclareOpInterfaceMethods<ArrayRefOpInterface>,
+          traits#[DeclareOpInterfaceMethods<ArrayAccessOpInterface>,
                   DeclareOpInterfaceMethods<PromotableMemOpInterface>,
                   DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
                   DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
@@ -193,7 +193,7 @@ class LLZK_ArrayRefOp<string mnemonic, list<Trait> traits = []>
   let extraClassDeclaration = [{
     /// Gets the type of the referenced base array.
     inline ::llzk::ArrayType getArrRefType() {
-      return ::llvm::cast<ArrayRefOpInterface>(getOperation()).getArrRefType();
+      return ::llvm::cast<ArrayAccessOpInterface>(getOperation()).getArrRefType();
     }
   }];
 
@@ -203,7 +203,7 @@ class LLZK_ArrayRefOp<string mnemonic, list<Trait> traits = []>
                 ::llvm::SmallPtrSetImpl<::mlir::Attribute> &usedIndices,
                 ::mlir::SmallVectorImpl<::mlir::MemorySlot>
                 &mustBeSafelyUsed) {
-      return ::llvm::cast<ArrayRefOpInterface>(getOperation())
+      return ::llvm::cast<ArrayAccessOpInterface>(getOperation())
                 .canRewire(slot, usedIndices, mustBeSafelyUsed);
     }
 
@@ -212,7 +212,7 @@ class LLZK_ArrayRefOp<string mnemonic, list<Trait> traits = []>
     ::mlir::DestructurableMemorySlot &slot,
                 ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
                 ::mlir::RewriterBase &rewriter) {
-      return ::llvm::cast<ArrayRefOpInterface>(getOperation())
+      return ::llvm::cast<ArrayAccessOpInterface>(getOperation())
                 .}]#!if(isScalar, "rewireScalarOp",
                         "rewireRangedOp")#[{(slot, subslots, rewriter);
     }

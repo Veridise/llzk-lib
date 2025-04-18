@@ -611,7 +611,7 @@ def LLZK_CreateArrayOp
 }
 
 def LLZK_ReadArrayOp
-    : LLZK_ArrayRefOp<
+    : LLZK_ArrayAccessOp<
           "readarr", [ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
   let summary = "read scalar from an array";
   let description = [{
@@ -647,7 +647,7 @@ def LLZK_ReadArrayOp
 }
 
 def LLZK_WriteArrayOp
-    : LLZK_ArrayRefOp<
+    : LLZK_ArrayAccessOp<
           "writearr", [ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
   let summary = "write scalar to an array";
   let description = [{
@@ -684,7 +684,7 @@ def LLZK_WriteArrayOp
 }
 
 def LLZK_ExtractArrayOp
-    : LLZK_ArrayRefOp<"extractarr", [InferTypeOpAdaptorWithIsCompatible]> {
+    : LLZK_ArrayAccessOp<"extractarr", [InferTypeOpAdaptorWithIsCompatible]> {
   let summary = "read subarray from a multi-dimensional array";
   let description = [{
     This operation takes an N-dimensional array and K indices and extracts the
@@ -718,7 +718,7 @@ def LLZK_ExtractArrayOp
   }];
 }
 
-def LLZK_InsertArrayOp : LLZK_ArrayRefOp<"insertarr"> {
+def LLZK_InsertArrayOp : LLZK_ArrayAccessOp<"insertarr"> {
   let summary = "write subarray into a multi-dimensional array";
   let description = [{
     This operation takes an N-dimensional array, K indices, and an (N+K)-dimensional
@@ -756,7 +756,8 @@ def LLZK_InsertArrayOp : LLZK_ArrayRefOp<"insertarr"> {
 
 def LLZK_ArrayLengthOp
     : LLZK_Op<"array_len", [Pure,
-                            DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+                            DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                            DeclareOpInterfaceMethods<ArrayRefOpInterface>]> {
   let summary = "return the length of an array";
   let description = [{
     This operation returns the size of the specified dimension of an array.
@@ -775,6 +776,13 @@ def LLZK_ArrayLengthOp
   let results = (outs Index:$length);
 
   let assemblyFormat = [{ $arr_ref `,` $dim `:` type($arr_ref) attr-dict }];
+
+  let extraClassDeclaration = [{
+    /// Gets the type of the referenced base array.
+    inline ::llzk::ArrayType getArrRefType() {
+      return ::llvm::cast<ArrayRefOpInterface>(getOperation()).getArrRefType();
+    }
+  }];
 }
 
 //===------------------------------------------------------------------===//

@@ -70,7 +70,7 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
 
 def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
   let description = [{
-    Common interface for operations that read or write from an array.
+    Common interface for operations that reference an array value.
   }];
   let cppNamespace = "::llzk";
 
@@ -80,7 +80,24 @@ def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
                       "::mlir::Value", "getArrRef", (ins)>,
       InterfaceMethod<
           [{Gets the mutable operand slot holding the SSA Value for the referenced array.}],
-          "::mlir::OpOperand &", "getArrRefMutable", (ins)>,
+          "::mlir::OpOperand &", "getArrRefMutable", (ins)>];
+
+  let extraClassDeclaration = [{
+    /// Gets the type of the referenced array.
+    inline ::llzk::ArrayType getArrRefType() {
+      return ::llvm::cast<::llzk::ArrayType>(getArrRef().getType());
+    }
+  }];
+}
+
+def ArrayAccessOpInterface
+    : OpInterface<"ArrayAccessOpInterface", [ArrayRefOpInterface]> {
+  let description = [{
+    Common interface for operations that read or write from an array.
+  }];
+  let cppNamespace = "::llzk";
+
+  let methods = [
       // Requires implementors to have a '$indices' argument.
       InterfaceMethod<
           [{Gets the operand range containing the index for each dimension.}],
@@ -94,11 +111,6 @@ def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
   ];
 
   let extraClassDeclaration = [{
-    /// Gets the type of the referenced array.
-    inline ::llzk::ArrayType getArrRefType() {
-      return ::llvm::cast<::llzk::ArrayType>(getArrRef().getType());
-    }
-
     /// Compute the dimensions of the read/write value. Removing the number
     /// of indices provided from the front dimensions of the base array type
     /// gives the dimensions/shape of that value.

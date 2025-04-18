@@ -1233,12 +1233,12 @@ void CreateArrayOp::handlePromotionComplete(
 }
 
 //===------------------------------------------------------------------===//
-// ArrayRefOpInterface
+// ArrayAccessOpInterface
 //===------------------------------------------------------------------===//
 
 /// Returns the multi-dimensional indices of the array access as an Attribute array or a null
 /// pointer if a valid index cannot be computed for any dimension.
-ArrayAttr ArrayRefOpInterface::indexOperandsToAttributeArray() {
+ArrayAttr ArrayAccessOpInterface::indexOperandsToAttributeArray() {
   ArrayType arrTy = getArrRefType();
   if (arrTy.hasStaticShape()) {
     if (auto converted = ArrayIndexGen::from(arrTy).checkAndConvert(getIndices())) {
@@ -1249,7 +1249,7 @@ ArrayAttr ArrayRefOpInterface::indexOperandsToAttributeArray() {
 }
 
 // Required by DestructurableAllocationOpInterface / SROA pass
-bool ArrayRefOpInterface::canRewire(
+bool ArrayAccessOpInterface::canRewire(
     const DestructurableMemorySlot &slot, SmallPtrSetImpl<Attribute> &usedIndices,
     SmallVectorImpl<MemorySlot> &mustBeSafelyUsed
 ) {
@@ -1289,7 +1289,7 @@ bool ArrayRefOpInterface::canRewire(
 }
 
 // Required by DestructurableAllocationOpInterface / SROA pass
-DeletionKind ArrayRefOpInterface::rewireScalarOp(
+DeletionKind ArrayAccessOpInterface::rewireScalarOp(
     const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
     RewriterBase &rewriter
 ) {
@@ -1312,7 +1312,7 @@ DeletionKind ArrayRefOpInterface::rewireScalarOp(
 }
 
 // Required by DestructurableAllocationOpInterface / SROA pass
-DeletionKind ArrayRefOpInterface::rewireRangedOp(
+DeletionKind ArrayAccessOpInterface::rewireRangedOp(
     const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
     RewriterBase &rewriter
 ) {
