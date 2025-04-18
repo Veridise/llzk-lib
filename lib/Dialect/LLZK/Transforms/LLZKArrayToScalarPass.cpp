@@ -37,6 +37,109 @@ using namespace llzk;
 
 namespace {
 
+inline ArrayType splittableArray(ArrayType at) { return at.hasStaticShape() ? at : nullptr; }
+
+inline ArrayType splittableArray(Type t) {
+  if (ArrayType at = dyn_cast<ArrayType>(t)) {
+    return splittableArray(at);
+  } else {
+    return nullptr;
+  }
+}
+
+inline bool containsArrayType(Type t) {
+  return t
+      .walk([](ArrayType a) {
+    return splittableArray(a) ? WalkResult::interrupt() : WalkResult::skip();
+  }).wasInterrupted();
+}
+
+bool containsArrayType(OperandRange::type_range types) {
+  for (Type t : types) {
+    if (containsArrayType(t)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void splitArrayType(Type t, SmallVector<Type> &collect) {
+  if (ArrayType at = splittableArray(t)) {
+    int64_t n = at.getNumElements();
+    assert(std::cmp_less_equal(n, std::numeric_limits<SmallVector<Type>::size_type>::max()));
+    collect.append(n, at.getElementType());
+  } else {
+    collect.push_back(t);
+  }
+}
+
+inline void splitArrayType(ArrayRef<Type> types, SmallVector<Type> &collect) {
+  for (Type t : types) {
+    splitArrayType(t, collect);
+  }
+}
+
+inline SmallVector<Type> splitArrayType(ArrayRef<Type> types) {
+  SmallVector<Type> collect;
+  splitArrayType(types, collect);
+  return collect;
+}
+
+SmallVector<Value>
+genIndexConstants(ArrayAttr index, Location loc, ConversionPatternRewriter &rewriter) {
+  SmallVector<Value> operands;
+  for (Attribute a : index) {
+    // ASSERT: Attributes are index constants, created by ArrayType::getSubelementIndices().
+    IntegerAttr ia = llvm::dyn_cast<IntegerAttr>(a);
+    assert(ia && ia.getType().isIndex());
+    operands.push_back(rewriter.create<arith::ConstantOp>(loc, ia));
+  }
+  return operands;
+}
+
+inline WriteArrayOp createWrite(
+    Location loc, Value baseArrayOp, ArrayAttr index, Value init,
+    ConversionPatternRewriter &rewriter
+) {
+  SmallVector<Value> readOperands = genIndexConstants(index, loc, rewriter);
+  return rewriter.create<WriteArrayOp>(loc, baseArrayOp, ValueRange(readOperands), init);
+}
+
+inline ReadArrayOp
+createRead(Location loc, Value baseArrayOp, ArrayAttr index, ConversionPatternRewriter &rewriter) {
+  SmallVector<Value> readOperands = genIndexConstants(index, loc, rewriter);
+  return rewriter.create<ReadArrayOp>(loc, baseArrayOp, ValueRange(readOperands));
+}
+
+void processInputOperand(
+    Location loc, Value operand, SmallVector<Value> &newOperands,
+    ConversionPatternRewriter &rewriter
+) {
+  if (ArrayType at = splittableArray(operand.getType())) {
+    std::optional<SmallVector<ArrayAttr>> indices = at.getSubelementIndices();
+    assert(indices.has_value() && "passed earlier hasStaticShape() check");
+    for (ArrayAttr index : indices.value()) {
+      newOperands.push_back(createRead(loc, operand, index, rewriter));
+    }
+  } else {
+    newOperands.push_back(operand);
+  }
+}
+
+// For each operand with ArrayType, add N reads from the array and use those N values instead.
+void processInputOperands(
+    ValueRange operands, MutableOperandRange outputOpRef, Operation *op,
+    ConversionPatternRewriter &rewriter
+) {
+  SmallVector<Value> newOperands;
+  for (Value v : operands) {
+    processInputOperand(op->getLoc(), v, newOperands, rewriter);
+  }
+  rewriter.modifyOpInPlace(op, [&outputOpRef, &newOperands]() {
+    outputOpRef.assign(ValueRange(newOperands));
+  });
+}
+
 class SplitInitFromCreate : public OpConversionPattern<CreateArrayOp> {
 public:
   SplitInitFromCreate(MLIRContext *ctx) : OpConversionPattern<CreateArrayOp>(ctx) {}
@@ -67,44 +170,6 @@ public:
   }
 };
 
-inline bool containsArrayType(Type t) {
-  return t
-      .walk([](ArrayType a) {
-    return a.hasStaticShape() ? WalkResult::interrupt() : WalkResult::skip();
-  }).wasInterrupted();
-}
-
-bool containsArrayType(OperandRange::type_range types) {
-  for (Type t : types) {
-    if (containsArrayType(t)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-void splitArrayType(Type t, SmallVector<Type> &collect) {
-  if (ArrayType at = dyn_cast<ArrayType>(t)) {
-    int64_t n = at.getNumElements();
-    assert(std::cmp_less_equal(n, std::numeric_limits<SmallVector<Type>::size_type>::max()));
-    collect.append(n, at.getElementType());
-  } else {
-    collect.push_back(t);
-  }
-}
-
-inline void splitArrayType(ArrayRef<Type> types, SmallVector<Type> &collect) {
-  for (Type t : types) {
-    splitArrayType(t, collect);
-  }
-}
-
-inline SmallVector<Type> splitArrayType(ArrayRef<Type> types) {
-  SmallVector<Type> collect;
-  splitArrayType(types, collect);
-  return collect;
-}
-
 class SplitArrayInFuncDefOp : public OpConversionPattern<FuncOp> {
 public:
   SplitArrayInFuncDefOp(MLIRContext *ctx) : OpConversionPattern<FuncOp>(ctx) {}
@@ -114,58 +179,51 @@ public:
   LogicalResult match(FuncOp op) const override { return failure(legal(op)); }
 
   void rewrite(FuncOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    // Just need to update in/out types of the function to replace arrays with scalars
-    rewriter.modifyOpInPlace(op, [&op]() {
-      FunctionType funcTy = op.getFunctionType();
-      SmallVector<Type> newInputs = splitArrayType(funcTy.getInputs());
-      SmallVector<Type> newOutputs = splitArrayType(funcTy.getResults());
-      FunctionType newTy =
-          FunctionType::get(funcTy.getContext(), TypeRange(newInputs), TypeRange(newOutputs));
-      op.setFunctionType(newTy);
-    });
+    // Update in/out types of the function to replace arrays with scalars
+    FunctionType oldTy = op.getFunctionType();
+    SmallVector<Type> newInputs = splitArrayType(oldTy.getInputs());
+    SmallVector<Type> newOutputs = splitArrayType(oldTy.getResults());
+    FunctionType newTy =
+        FunctionType::get(oldTy.getContext(), TypeRange(newInputs), TypeRange(newOutputs));
+    if (newTy == oldTy) {
+      return; // nothing to change
+    }
+    rewriter.modifyOpInPlace(op, [&op, &newTy]() { op.setFunctionType(newTy); });
+
+    // If the function has a body, ensure the entry block arguments match the function inputs.
+    if (Region *body = op.getCallableRegion()) {
+      Block &entryBlock = body->front();
+      if (std::cmp_equal(entryBlock.getNumArguments(), newInputs.size())) {
+        return; // nothing to change
+      }
+
+      OpBuilder::InsertionGuard guard(rewriter);
+      rewriter.setInsertionPointToStart(&entryBlock);
+      for (unsigned i = 0; i < entryBlock.getNumArguments();) {
+        BlockArgument oldArg = entryBlock.getArgument(i);
+        if (ArrayType at = splittableArray(oldArg.getType())) {
+          Location loc = oldArg.getLoc();
+          // Generate `CreateArrayOp` within the block and replace uses of the argument with it.
+          auto newArray = rewriter.create<CreateArrayOp>(loc, at);
+          rewriter.replaceAllUsesWith(oldArg, newArray);
+          // Remove the argument from the block
+          entryBlock.eraseArgument(i);
+          // For all indices in the ArrayType (i.e. the element count), generate a new block
+          // argument and a write of that argument to the new array.
+          std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
+          assert(allIndices); // follows from legal() check
+          for (ArrayAttr subIdx : allIndices.value()) {
+            BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
+            createWrite(loc, newArray, subIdx, newArg, rewriter);
+            ++i;
+          }
+        } else {
+          ++i;
+        }
+      }
+    }
   }
 };
-
-ReadArrayOp
-createRead(ArrayAttr index, Value baseArrayOp, Location loc, ConversionPatternRewriter &rewriter) {
-  SmallVector<Value> readOperands;
-  for (Attribute a : index) {
-    // ASSERT: Attributes are index constants, created by ArrayType::getSubelementIndices().
-    IntegerAttr ia = llvm::dyn_cast<IntegerAttr>(a);
-    assert(ia && ia.getType().isIndex());
-    readOperands.push_back(rewriter.create<arith::ConstantOp>(loc, ia));
-  }
-  return rewriter.create<ReadArrayOp>(loc, baseArrayOp, ValueRange(readOperands));
-}
-
-void processInputOperand(
-    Value operand, Location loc, SmallVector<Value> &newOperands,
-    ConversionPatternRewriter &rewriter
-) {
-  if (ArrayType at = dyn_cast<ArrayType>(operand.getType())) {
-    std::optional<SmallVector<ArrayAttr>> indices = at.getSubelementIndices();
-    assert(indices.has_value() && "passed earlier hasStaticShape() check");
-    for (ArrayAttr index : indices.value()) {
-      newOperands.push_back(createRead(index, operand, loc, rewriter));
-    }
-  } else {
-    newOperands.push_back(operand);
-  }
-}
-
-// For each operand with ArrayType, add N reads from the array and use those N values instead.
-void processInputOperands(
-    ValueRange operands, MutableOperandRange outputOpRef, Operation *op,
-    ConversionPatternRewriter &rewriter
-) {
-  SmallVector<Value> newOperands;
-  for (Value v : operands) {
-    processInputOperand(v, op->getLoc(), newOperands, rewriter);
-  }
-  rewriter.modifyOpInPlace(op, [&outputOpRef, &newOperands]() {
-    outputOpRef.assign(ValueRange(newOperands));
-  });
-}
 
 class SplitArrayInReturnOp : public OpConversionPattern<ReturnOp> {
 public:
@@ -203,13 +261,15 @@ public:
 
   /// If 'dimIdx' is constant and that dimension of the ArrayType has static size, return it.
   static std::optional<llvm::APInt> getDimSizeIfKnown(Value dimIdx, ArrayType baseArrType) {
-    llvm::APInt idxAP;
-    if (mlir::matchPattern(dimIdx, mlir::m_ConstantInt(&idxAP))) {
-      uint64_t idx64 = idxAP.getZExtValue();
-      assert(std::cmp_less_equal(idx64, std::numeric_limits<size_t>::max()));
-      Attribute dimSizeAttr = baseArrType.getDimensionSizes()[static_cast<size_t>(idx64)];
-      if (mlir::matchPattern(dimSizeAttr, mlir::m_ConstantInt(&idxAP))) {
-        return idxAP;
+    if (splittableArray(baseArrType)) {
+      llvm::APInt idxAP;
+      if (mlir::matchPattern(dimIdx, mlir::m_ConstantInt(&idxAP))) {
+        uint64_t idx64 = idxAP.getZExtValue();
+        assert(std::cmp_less_equal(idx64, std::numeric_limits<size_t>::max()));
+        Attribute dimSizeAttr = baseArrType.getDimensionSizes()[static_cast<size_t>(idx64)];
+        if (mlir::matchPattern(dimSizeAttr, mlir::m_ConstantInt(&idxAP))) {
+          return idxAP;
+        }
       }
     }
     return std::nullopt;
