@@ -18,7 +18,10 @@ module attributes {veridise.lang = "llzk"} {
   // CHECK-NEXT:    %[[V:[0-9a-zA-Z_\.]+]] = arith.constant 769 : index
   // CHECK-NEXT:    return %[[V]] : index
   // CHECK-NEXT:  }
+}
+// -----
 
+module attributes {veridise.lang = "llzk"} {
   llzk.func @multiple_read_and_write() -> !llzk.felt {
     %0 = arith.constant 0 : index
     %1 = arith.constant 1 : index
@@ -52,7 +55,10 @@ module attributes {veridise.lang = "llzk"} {
   // CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = mul %[[V0]], %[[V1]] : !llzk.felt, !llzk.felt
   // CHECK-NEXT:    return %[[V2]] : !llzk.felt
   // CHECK-NEXT:  }
+}
+// -----
 
+module attributes {veridise.lang = "llzk"} {
   llzk.func @new_then_return() -> !llzk.array<2,1,2 x !llzk.felt> {
     %a = llzk.constfelt 45
     %b = llzk.constfelt 214
@@ -69,8 +75,10 @@ module attributes {veridise.lang = "llzk"} {
   // CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = constfelt  52
   // CHECK-NEXT:    return %[[V0]], %[[V1]], %[[V2]], %[[V3]] : !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt
   // CHECK-NEXT:  }
+}
+// -----
 
-
+module attributes {veridise.lang = "llzk"} {
   llzk.func @len() -> index {
     %a = llzk.new_array  : !llzk.array<6,1,2,1,5,1 x !llzk.felt>
     %4 = arith.constant 4 : index
@@ -81,7 +89,10 @@ module attributes {veridise.lang = "llzk"} {
   // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
   // CHECK-NEXT:    return %[[V0]] : index
   // CHECK-NEXT:  }
+}
+// -----
 
+module attributes {veridise.lang = "llzk"} {
   llzk.func @convert_arg(%a: !llzk.array<3,1,2,1,4,1 x !llzk.felt>) -> !llzk.felt {
     %0 = arith.constant 0 : index
     %1 = arith.constant 1 : index
@@ -116,3 +127,4 @@ module attributes {veridise.lang = "llzk"} {
   // CHECK-NEXT:    return %[[V13]] : !llzk.felt
   // CHECK-NEXT:  }
 }
+// -----
