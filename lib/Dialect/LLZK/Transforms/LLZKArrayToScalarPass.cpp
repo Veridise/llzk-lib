@@ -155,14 +155,15 @@ void processInputOperand(
 
 // For each operand with ArrayType, add N reads from the array and use those N values instead.
 void processInputOperands(
-    MutableOperandRange operands, Operation *op, ConversionPatternRewriter &rewriter
+    ValueRange operands, MutableOperandRange outputOpRef, Operation *op,
+    ConversionPatternRewriter &rewriter
 ) {
   SmallVector<Value> newOperands;
-  for (OpOperand &operand : operands) {
-    processInputOperand(operand.get(), op->getLoc(), newOperands, rewriter);
+  for (Value v : operands) {
+    processInputOperand(v, op->getLoc(), newOperands, rewriter);
   }
-  rewriter.modifyOpInPlace(op, [&operands, &newOperands]() {
-    operands.assign(ValueRange(newOperands));
+  rewriter.modifyOpInPlace(op, [&outputOpRef, &newOperands]() {
+    outputOpRef.assign(ValueRange(newOperands));
   });
 }
 
@@ -175,10 +176,7 @@ public:
   LogicalResult match(ReturnOp op) const override { return failure(legal(op)); }
 
   void rewrite(ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
-    // ASSERT: No Pattern in this file replaces ops, only modifies or adds. Hence, the OpAdaptor can
-    // be ignored which simplifies the implementation of processInputOperands().
-    assert(llvm::equal(op.getOperands(), adaptor.getOperands()));
-    processInputOperands(op.getOperandsMutable(), op, rewriter);
+    processInputOperands(adaptor.getOperands(), op.getOperandsMutable(), op, rewriter);
   }
 };
 
@@ -191,14 +189,46 @@ public:
   LogicalResult match(CallOp op) const override { return failure(legal(op)); }
 
   void rewrite(CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
-    // ASSERT: No Pattern in this file replaces ops, only modifies or adds. Hence, the OpAdaptor can
-    // be ignored which simplifies the implementation of processInputOperands().
-    assert(llvm::equal(op.getOperands(), adaptor.getOperands()));
-    processInputOperands(op.getArgOperandsMutable(), op, rewriter);
+    processInputOperands(adaptor.getOperands(), op.getArgOperandsMutable(), op, rewriter);
 
     // TODO: what about the results? Have to expect multiple results instead and add the needed
     // writes to the orginal array instance.
     assert(false && "TODO");
+  }
+};
+
+class ReplaceKnownArrayLengthOp : public OpConversionPattern<ArrayLengthOp> {
+public:
+  ReplaceKnownArrayLengthOp(MLIRContext *ctx) : OpConversionPattern<ArrayLengthOp>(ctx) {}
+
+  /// If 'dimIdx' is constant and that dimension of the ArrayType has static size, return it.
+  static std::optional<llvm::APInt> getDimSizeIfKnown(Value dimIdx, ArrayType baseArrType) {
+    llvm::APInt idxAP;
+    if (mlir::matchPattern(dimIdx, mlir::m_ConstantInt(&idxAP))) {
+      uint64_t idx64 = idxAP.getZExtValue();
+      assert(std::cmp_less_equal(idx64, std::numeric_limits<size_t>::max()));
+      Attribute dimSizeAttr = baseArrType.getDimensionSizes()[static_cast<size_t>(idx64)];
+      if (mlir::matchPattern(dimSizeAttr, mlir::m_ConstantInt(&idxAP))) {
+        return idxAP;
+      }
+    }
+    return std::nullopt;
+  }
+
+  inline static bool legal(ArrayLengthOp op) {
+    // rewrite() can only work with constant dim size, i.e. must consider it legal otherwise
+    return !getDimSizeIfKnown(op.getDim(), op.getArrRefType()).has_value();
+  }
+
+  LogicalResult match(ArrayLengthOp op) const override { return failure(legal(op)); }
+
+  void
+  rewrite(ArrayLengthOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    ArrayType arrTy = dyn_cast<ArrayType>(adaptor.getArrRef().getType());
+    assert(arrTy); // must have array type per ODS spec of ArrayLengthOp
+    std::optional<llvm::APInt> len = getDimSizeIfKnown(adaptor.getDim(), arrTy);
+    assert(len.has_value()); // follows from legal() check
+    rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, llzk::fromAPInt(len.value()));
   }
 };
 
@@ -211,7 +241,8 @@ LogicalResult splitArrayCreateInit(ModuleOp modOp) {
       SplitInitFromCreate,
       SplitArrayInFuncDefOp,
       SplitArrayInReturnOp,
-      SplitArrayInCallOp
+      SplitArrayInCallOp,
+      ReplaceKnownArrayLengthOp
       // clang-format off
       >(ctx);
 
@@ -222,6 +253,7 @@ LogicalResult splitArrayCreateInit(ModuleOp modOp) {
   target.addDynamicallyLegalOp<FuncOp>(SplitArrayInFuncDefOp::legal);
   target.addDynamicallyLegalOp<ReturnOp>(SplitArrayInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitArrayInCallOp::legal);
+  target.addDynamicallyLegalOp<ArrayLengthOp>(ReplaceKnownArrayLengthOp::legal);
 
   return applyFullConversion(modOp, target, std::move(patterns));
 }

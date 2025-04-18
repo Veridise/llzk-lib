@@ -69,4 +69,16 @@ module attributes {veridise.lang = "llzk"} {
   // CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = constfelt  52
   // CHECK-NEXT:    return %[[V0]], %[[V1]], %[[V2]], %[[V3]] : !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt
   // CHECK-NEXT:  }
+
+
+  llzk.func @len() -> index {
+    %a = llzk.new_array  : !llzk.array<6,1,2,1,5,1 x !llzk.felt>
+    %4 = arith.constant 4 : index
+    %z = llzk.array_len %a, %4 : !llzk.array<6,1,2,1,5,1 x !llzk.felt> // result is 5
+    return %z: index
+  }
+  // CHECK-LABEL: llzk.func @len() -> index {
+  // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
+  // CHECK-NEXT:    return %[[V0]] : index
+  // CHECK-NEXT:  }
 }
