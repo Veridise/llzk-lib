@@ -118,6 +118,8 @@ def ArrayAccessOpInterface
       return getArrRefType().getDimensionSizes().drop_front(getIndices().size());
     }
 
+    /// Returns the multi-dimensional indices of the array access as an Attribute
+    /// array or a null pointer if a valid index cannot be computed for any dimension.
     ::mlir::ArrayAttr indexOperandsToAttributeArray();
 
     /// Used by companion interface, DestructurableAccessorOpInterface.

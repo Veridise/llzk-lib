@@ -1236,8 +1236,8 @@ void CreateArrayOp::handlePromotionComplete(
 // ArrayAccessOpInterface
 //===------------------------------------------------------------------===//
 
-/// Returns the multi-dimensional indices of the array access as an Attribute array or a null
-/// pointer if a valid index cannot be computed for any dimension.
+/// Returns the multi-dimensional indices of the array access as an Attribute
+/// array or a null pointer if a valid index cannot be computed for any dimension.
 ArrayAttr ArrayAccessOpInterface::indexOperandsToAttributeArray() {
   ArrayType arrTy = getArrRefType();
   if (arrTy.hasStaticShape()) {
