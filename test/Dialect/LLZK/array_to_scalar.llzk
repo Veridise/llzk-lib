@@ -128,3 +128,18 @@ module attributes {veridise.lang = "llzk"} {
   // CHECK-NEXT:  }
 }
 // -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @uninitialized() -> index {
+    %0 = arith.constant 0 : index
+    %1 = arith.constant 1 : index
+
+    %r = llzk.new_array : !llzk.array<2,3 x index>
+    %x = llzk.readarr %r[%1,%0] : !llzk.array<2,3 x index>, index
+    return %x : index
+  }
+  // CHECK-LABEL: llzk.func @uninitialized() -> index {
+  // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = undef : index
+  // CHECK-NEXT:    return %[[V0]] : index
+  // CHECK-NEXT:  }
+}
