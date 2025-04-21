@@ -14,11 +14,11 @@ module attributes {veridise.lang = "llzk"} {
     %x = llzk.readarr %r[%1,%0] : !llzk.array<2,3 x index>, index
     return %x : index
   }
-  // CHECK-LABEL: llzk.func @new_then_read() -> index {
-  // CHECK-NEXT:    %[[V:[0-9a-zA-Z_\.]+]] = arith.constant 769 : index
-  // CHECK-NEXT:    return %[[V]] : index
-  // CHECK-NEXT:  }
 }
+// CHECK-LABEL: llzk.func @new_then_read() -> index {
+// CHECK-NEXT:    %[[V:[0-9a-zA-Z_\.]+]] = arith.constant 769 : index
+// CHECK-NEXT:    return %[[V]] : index
+// CHECK-NEXT:  }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -49,13 +49,13 @@ module attributes {veridise.lang = "llzk"} {
     %z = mul %x, %y
     return %z : !llzk.felt
   }
-  // CHECK-LABEL: llzk.func @multiple_read_and_write() -> !llzk.felt {
-  // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  11
-  // CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = constfelt  29
-  // CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = mul %[[V0]], %[[V1]] : !llzk.felt, !llzk.felt
-  // CHECK-NEXT:    return %[[V2]] : !llzk.felt
-  // CHECK-NEXT:  }
 }
+// CHECK-LABEL: llzk.func @multiple_read_and_write() -> !llzk.felt {
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  11
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = constfelt  29
+// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = mul %[[V0]], %[[V1]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:    return %[[V2]] : !llzk.felt
+// CHECK-NEXT:  }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -68,14 +68,14 @@ module attributes {veridise.lang = "llzk"} {
     %r = llzk.new_array %a, %b, %c, %d : !llzk.array<2,1,2 x !llzk.felt>
     return %r: !llzk.array<2,1,2 x !llzk.felt>
   }
-  // CHECK-LABEL: llzk.func @new_then_return() -> (!llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt) {
-  // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  45
-  // CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = constfelt  214
-  // CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = constfelt  2
-  // CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = constfelt  52
-  // CHECK-NEXT:    return %[[V0]], %[[V1]], %[[V2]], %[[V3]] : !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt
-  // CHECK-NEXT:  }
 }
+// CHECK-LABEL: llzk.func @new_then_return() -> (!llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt) {
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  45
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = constfelt  214
+// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = constfelt  2
+// CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = constfelt  52
+// CHECK-NEXT:    return %[[V0]], %[[V1]], %[[V2]], %[[V3]] : !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt
+// CHECK-NEXT:  }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -85,11 +85,11 @@ module attributes {veridise.lang = "llzk"} {
     %z = llzk.array_len %a, %4 : !llzk.array<6,1,2,1,5,1 x !llzk.felt> // result is 5
     return %z: index
   }
-  // CHECK-LABEL: llzk.func @len() -> index {
-  // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
-  // CHECK-NEXT:    return %[[V0]] : index
-  // CHECK-NEXT:  }
 }
+// CHECK-LABEL: llzk.func @len() -> index {
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
+// CHECK-NEXT:    return %[[V0]] : index
+// CHECK-NEXT:  }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -99,34 +99,34 @@ module attributes {veridise.lang = "llzk"} {
     %z = llzk.readarr %a[%1,%0,%1,%0,%1,%0] : !llzk.array<3,1,2,1,4,1 x !llzk.felt>, !llzk.felt
     return %z: !llzk.felt
   }
-  // CHECK-LABEL: llzk.func @convert_arg(
-  // CHECK-SAME:              %[[V0:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V1:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V2:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V4:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V5:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V6:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V7:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V8:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V9:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V10:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V11:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V12:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V13:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V14:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V15:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V16:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V17:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V18:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V19:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V20:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V21:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V22:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-  // CHECK-SAME:              %[[V23:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-  // CHECK-NEXT:    return %[[V13]] : !llzk.felt
-  // CHECK-NEXT:  }
 }
+// CHECK-LABEL: llzk.func @convert_arg(
+// CHECK-SAME:              %[[V0:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V1:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V2:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V4:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V5:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V6:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V7:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V8:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V9:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V10:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V11:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V12:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V13:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V14:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V15:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V16:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V17:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V18:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V19:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V20:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V21:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V22:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:              %[[V23:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
+// CHECK-NEXT:    return %[[V13]] : !llzk.felt
+// CHECK-NEXT:  }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -138,11 +138,11 @@ module attributes {veridise.lang = "llzk"} {
     %x = llzk.readarr %r[%1,%0] : !llzk.array<2,3 x index>, index
     return %x : index
   }
-  // CHECK-LABEL: llzk.func @uninitialized() -> index {
-  // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = undef : index
-  // CHECK-NEXT:    return %[[V0]] : index
-  // CHECK-NEXT:  }
 }
+// CHECK-LABEL: llzk.func @uninitialized() -> index {
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = undef : index
+// CHECK-NEXT:    return %[[V0]] : index
+// CHECK-NEXT:  }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -172,4 +172,42 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    %[[V4:[0-9a-zA-Z_\.]+]] = undef : !llzk.felt
 // CHECK-NEXT:    %[[V5:[0-9a-zA-Z_\.]+]] = undef : !llzk.felt
 // CHECK-NEXT:    return %[[V5]], %[[V4]], %[[V3]], %[[V2]], %[[V1]], %[[V0]] : !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @new_then_write_then_read() -> !llzk.felt {
+    %0 = arith.constant 0 : index
+    %1 = arith.constant 1 : index
+
+    %a = llzk.constfelt 0
+    %b = llzk.constfelt 424867
+    %c = llzk.constfelt 2465
+    %d = llzk.constfelt 367
+
+    %r = llzk.new_array %a, %a, %a, %a: !llzk.array<2,2 x !llzk.felt>
+    llzk.writearr %r[%0,%1] = %b: !llzk.array<2,2 x !llzk.felt>, !llzk.felt
+    llzk.writearr %r[%0,%0] = %c: !llzk.array<2,2 x !llzk.felt>, !llzk.felt
+    llzk.writearr %r[%1,%0] = %d: !llzk.array<2,2 x !llzk.felt>, !llzk.felt
+    // [[2465, 424867],[367, 0]]
+    %w = llzk.readarr %r[%0,%0] : !llzk.array<2,2 x !llzk.felt>, !llzk.felt
+    %x = llzk.readarr %r[%0,%1] : !llzk.array<2,2 x !llzk.felt>, !llzk.felt
+    %y = llzk.readarr %r[%1,%0] : !llzk.array<2,2 x !llzk.felt>, !llzk.felt
+    %z = llzk.readarr %r[%1,%1] : !llzk.array<2,2 x !llzk.felt>, !llzk.felt
+
+    %s1 = llzk.add %w, %x   // 2465 + 424867
+    %s2 = llzk.add %s1, %y  // ^ + 367
+    %s3 = llzk.add %s2, %z  // ^ + 0
+    return %s3 : !llzk.felt
+  }
+}
+// CHECK-LABEL: llzk.func @new_then_write_then_read() -> !llzk.felt {
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  0
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = constfelt  424867
+// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = constfelt  2465
+// CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = constfelt  367
+// CHECK-NEXT:    %[[V4:[0-9a-zA-Z_\.]+]] = add %[[V1]], %[[V2]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:    %[[V5:[0-9a-zA-Z_\.]+]] = add %[[V4]], %[[V3]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:    %[[V6:[0-9a-zA-Z_\.]+]] = add %[[V5]], %[[V0]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:    return %[[V6]] : !llzk.felt
 // CHECK-NEXT:  }
