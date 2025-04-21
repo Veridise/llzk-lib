@@ -391,20 +391,22 @@ class SplitArrayInFieldRefOp : public OpConversionPattern<FieldRefOpType> {
   SymbolTableCollection &tables;
   const FieldReplacementMap &repMapRef;
 
-protected:
-  using OpAdaptor = typename FieldRefOpType::Adaptor;
-
-  static GenPrefixType genPrefix(FieldRefOpType, ConversionPatternRewriter &) {
+  inline static void ensureImplementedAtCompile() {
     static_assert(
         sizeof(FieldRefOpType) == 0, "SplitArrayInFieldRefOp not implemented for requested type."
     );
   }
 
+protected:
+  using OpAdaptor = typename FieldRefOpType::Adaptor;
+
+  static GenPrefixType genPrefix(FieldRefOpType, ConversionPatternRewriter &) {
+    ensureImplementedAtCompile();
+  }
+
   static void
   forIndex(Location, GenPrefixType, ArrayAttr, FieldInfo, OpAdaptor, ConversionPatternRewriter &) {
-    static_assert(
-        sizeof(FieldRefOpType) == 0, "SplitArrayInFieldRefOp not implemented for requested type."
-    );
+    ensureImplementedAtCompile();
   }
 
 public:
@@ -413,11 +415,7 @@ public:
   )
       : OpConversionPattern<FieldRefOpType>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
 
-  static bool legal(FieldRefOpType) {
-    static_assert(
-        sizeof(FieldRefOpType) == 0, "SplitArrayInFieldRefOp not implemented for requested type."
-    );
-  }
+  static bool legal(FieldRefOpType) { ensureImplementedAtCompile(); }
 
   LogicalResult match(FieldRefOpType op) const override { return failure(ImplClass::legal(op)); }
 
