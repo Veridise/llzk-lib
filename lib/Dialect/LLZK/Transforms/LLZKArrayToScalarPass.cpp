@@ -485,7 +485,24 @@ public:
   }
 };
 
-LogicalResult splitArrayCreateInit(ModuleOp modOp) {
+LogicalResult
+step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fieldRepMap) {
+  MLIRContext *ctx = modOp.getContext();
+
+  RewritePatternSet patterns(ctx);
+
+  patterns.add<SplitArrayInFieldDefOp>(ctx, symTables, fieldRepMap);
+
+  ConversionTarget target(*ctx);
+  target.addLegalDialect<LLZKDialect, arith::ArithDialect, scf::SCFDialect>();
+  target.addLegalOp<ModuleOp>();
+  target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
+
+  return applyFullConversion(modOp, target, std::move(patterns));
+}
+
+LogicalResult
+step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMap &fieldRepMap) {
   MLIRContext *ctx = modOp.getContext();
 
   RewritePatternSet patterns(ctx);
@@ -499,11 +516,8 @@ LogicalResult splitArrayCreateInit(ModuleOp modOp) {
       // clang-format on
       >(ctx);
 
-  SymbolTableCollection symTables;
-  FieldReplacementMap fieldRepMap;
   patterns.add<
       // clang-format off
-      SplitArrayInFieldDefOp,
       SplitArrayInFieldWriteOp,
       SplitArrayInFieldReadOp
       // clang-format on
@@ -517,11 +531,24 @@ LogicalResult splitArrayCreateInit(ModuleOp modOp) {
   target.addDynamicallyLegalOp<ReturnOp>(SplitArrayInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitArrayInCallOp::legal);
   target.addDynamicallyLegalOp<ArrayLengthOp>(ReplaceKnownArrayLengthOp::legal);
-  target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
   target.addDynamicallyLegalOp<FieldWriteOp>(SplitArrayInFieldWriteOp::legal);
   target.addDynamicallyLegalOp<FieldReadOp>(SplitArrayInFieldReadOp::legal);
 
   return applyFullConversion(modOp, target, std::move(patterns));
+}
+
+LogicalResult splitArrayCreateInit(ModuleOp modOp) {
+  SymbolTableCollection symTables;
+  FieldReplacementMap fieldRepMap;
+
+  // This is divided into 2 steps to simplify the implementation for field-related ops. The issue is
+  // that the conversions for field read/write expect the mapping of array index to field name+type
+  // to already be populated for the referenced field (although this could be computed on demand if
+  // desired but it complicates the implementation a bit).
+  if (failed(step1(modOp, symTables, fieldRepMap))) {
+    return failure();
+  }
+  return step2(modOp, symTables, fieldRepMap);
 }
 
 class ArrayToScalarPass : public llzk::impl::ArrayToScalarPassBase<ArrayToScalarPass> {

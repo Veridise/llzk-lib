@@ -372,3 +372,73 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+!F = !llzk.felt
+module attributes {veridise.lang = "llzk"} {
+  // Order the structs so that the field ref is converted before the field itself
+  llzk.struct @ComponentA2 {
+    func @compute(%p: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
+      %self = new_struct : !llzk.struct<@ComponentA2>
+      %r = readf %p[@f1] : !llzk.struct<@ComponentA1>, !llzk.array<4,3 x !F>
+      return %self : !llzk.struct<@ComponentA2>
+    }
+
+    func @constrain(%self: !llzk.struct<@ComponentA2>, %p: !llzk.struct<@ComponentA1>) {
+      return
+    }
+  }
+
+  llzk.struct @ComponentA1 {
+    llzk.field @f1 : !llzk.array<4,3 x !F>
+
+    func @constrain(%self: !llzk.struct<@ComponentA1>) { return }
+    func @compute() -> !llzk.struct<@ComponentA1> {
+      %self = new_struct : !llzk.struct<@ComponentA1>
+      return %self : !llzk.struct<@ComponentA1>
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @ComponentA2 {
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA2>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_8] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_7] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_10] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_9] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_11] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_2] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_3] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_4] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_5] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_6] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_0] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_1] : <@ComponentA1>, !llzk.felt
+// CHECK-NEXT:      return %[[V1]] : !llzk.struct<@ComponentA2>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V14:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA2>, %[[V15:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.struct @ComponentA1 {
+// CHECK-NEXT:    field @f1_0 : !llzk.felt
+// CHECK-NEXT:    field @f1_1 : !llzk.felt
+// CHECK-NEXT:    field @f1_2 : !llzk.felt
+// CHECK-NEXT:    field @f1_3 : !llzk.felt
+// CHECK-NEXT:    field @f1_4 : !llzk.felt
+// CHECK-NEXT:    field @f1_5 : !llzk.felt
+// CHECK-NEXT:    field @f1_6 : !llzk.felt
+// CHECK-NEXT:    field @f1_7 : !llzk.felt
+// CHECK-NEXT:    field @f1_8 : !llzk.felt
+// CHECK-NEXT:    field @f1_9 : !llzk.felt
+// CHECK-NEXT:    field @f1_10 : !llzk.felt
+// CHECK-NEXT:    field @f1_11 : !llzk.felt
+// CHECK-NEXT:    func @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) {
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @compute() -> !llzk.struct<@ComponentA1> {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA1>
+// CHECK-NEXT:      return %[[V1]] : !llzk.struct<@ComponentA1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
