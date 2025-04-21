@@ -211,7 +211,7 @@ void processInputOperands(
 
 class SplitInitFromCreate : public OpConversionPattern<CreateArrayOp> {
 public:
-  SplitInitFromCreate(MLIRContext *ctx) : OpConversionPattern<CreateArrayOp>(ctx) {}
+  using OpConversionPattern<CreateArrayOp>::OpConversionPattern;
 
   static bool legal(CreateArrayOp op) { return op.getElements().empty(); }
 
@@ -241,7 +241,7 @@ public:
 
 class SplitArrayInFuncDefOp : public OpConversionPattern<FuncOp> {
 public:
-  SplitArrayInFuncDefOp(MLIRContext *ctx) : OpConversionPattern<FuncOp>(ctx) {}
+  using OpConversionPattern<FuncOp>::OpConversionPattern;
 
   inline static bool legal(FuncOp op) { return !containsArrayType(op.getFunctionType()); }
 
@@ -272,7 +272,7 @@ public:
 
 class SplitArrayInReturnOp : public OpConversionPattern<ReturnOp> {
 public:
-  SplitArrayInReturnOp(MLIRContext *ctx) : OpConversionPattern<ReturnOp>(ctx) {}
+  using OpConversionPattern<ReturnOp>::OpConversionPattern;
 
   inline static bool legal(ReturnOp op) { return !containsArrayType(op.getOperands().getTypes()); }
 
@@ -285,7 +285,7 @@ public:
 
 class SplitArrayInCallOp : public OpConversionPattern<CallOp> {
 public:
-  SplitArrayInCallOp(MLIRContext *ctx) : OpConversionPattern<CallOp>(ctx) {}
+  using OpConversionPattern<CallOp>::OpConversionPattern;
 
   inline static bool legal(CallOp op) {
     return !containsArrayType(op.getArgOperands().getTypes()) &&
@@ -307,7 +307,7 @@ public:
 
 class ReplaceKnownArrayLengthOp : public OpConversionPattern<ArrayLengthOp> {
 public:
-  ReplaceKnownArrayLengthOp(MLIRContext *ctx) : OpConversionPattern<ArrayLengthOp>(ctx) {}
+  using OpConversionPattern<ArrayLengthOp>::OpConversionPattern;
 
   /// If 'dimIdx' is constant and that dimension of the ArrayType has static size, return it.
   static std::optional<llvm::APInt> getDimSizeIfKnown(Value dimIdx, ArrayType baseArrType) {
@@ -342,6 +342,147 @@ public:
   }
 };
 
+/// field name and type
+using FieldInfo = std::pair<StringAttr, Type>;
+/// ArrayAttr index -> scalar field info
+using LocalFieldReplacementMap = DenseMap<ArrayAttr, FieldInfo>;
+/// struct -> array-type field name -> LocalFieldReplacementMap
+using FieldReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalFieldReplacementMap>>;
+
+class SplitArrayInFieldDefOp : public OpConversionPattern<FieldDefOp> {
+  SymbolTableCollection &tables;
+  FieldReplacementMap &repMapRef;
+
+public:
+  SplitArrayInFieldDefOp(
+      MLIRContext *ctx, SymbolTableCollection &symTables, FieldReplacementMap &fieldRepMap
+  )
+      : OpConversionPattern<FieldDefOp>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
+
+  inline static bool legal(FieldDefOp op) { return !containsArrayType(op.getType()); }
+
+  LogicalResult match(FieldDefOp op) const override { return failure(legal(op)); }
+
+  void rewrite(FieldDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    StructDefOp inStruct = op->getParentOfType<StructDefOp>();
+    assert(inStruct);
+    LocalFieldReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
+
+    ArrayType arrTy = dyn_cast<ArrayType>(op.getType());
+    assert(arrTy); // follows from legal() check
+    auto subIdxs = arrTy.getSubelementIndices();
+    assert(subIdxs.has_value());
+    Type elemTy = arrTy.getElementType();
+
+    SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
+    for (ArrayAttr idx : subIdxs.value()) {
+      // Create scalar version of the field
+      FieldDefOp newField =
+          rewriter.create<FieldDefOp>(op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn());
+      // Use SymbolTable to give it a unique name and store to the replacement map
+      localRepMapRef[idx] = std::make_pair(structSymbolTable.insert(newField), elemTy);
+    }
+    rewriter.eraseOp(op);
+  }
+};
+
+template <typename ImplClass, typename FieldRefOpType, typename GenPrefixType>
+class SplitArrayInFieldRefOp : public OpConversionPattern<FieldRefOpType> {
+  SymbolTableCollection &tables;
+  const FieldReplacementMap &repMapRef;
+
+  inline static void ensureImplementedAtCompile() {
+    static_assert(
+        sizeof(FieldRefOpType) == 0, "SplitArrayInFieldRefOp not implemented for requested type."
+    );
+  }
+
+protected:
+  using OpAdaptor = typename FieldRefOpType::Adaptor;
+
+  static GenPrefixType genPrefix(FieldRefOpType, ConversionPatternRewriter &) {
+    ensureImplementedAtCompile();
+  }
+
+  static void
+  forIndex(Location, GenPrefixType, ArrayAttr, FieldInfo, OpAdaptor, ConversionPatternRewriter &) {
+    ensureImplementedAtCompile();
+  }
+
+public:
+  SplitArrayInFieldRefOp(
+      MLIRContext *ctx, SymbolTableCollection &symTables, const FieldReplacementMap &fieldRepMap
+  )
+      : OpConversionPattern<FieldRefOpType>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
+
+  static bool legal(FieldRefOpType) { ensureImplementedAtCompile(); }
+
+  LogicalResult match(FieldRefOpType op) const override { return failure(ImplClass::legal(op)); }
+
+  void rewrite(FieldRefOpType op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
+      const override {
+    StructType tgtStructTy = llvm::cast<FieldRefOpInterface>(op.getOperation()).getStructType();
+    assert(tgtStructTy);
+    auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
+    assert(succeeded(tgtStructDef));
+
+    GenPrefixType prefixResult = ImplClass::genPrefix(op, rewriter);
+
+    const LocalFieldReplacementMap &idxToName =
+        repMapRef.at(tgtStructDef->get()).at(op.getFieldNameAttr().getAttr());
+    // Split the array field write into a series of read array + write scalar field
+    for (auto [idx, newField] : idxToName) {
+      ImplClass::forIndex(op.getLoc(), prefixResult, idx, newField, adaptor, rewriter);
+    }
+    rewriter.eraseOp(op);
+  }
+};
+
+class SplitArrayInFieldWriteOp
+    : public SplitArrayInFieldRefOp<SplitArrayInFieldWriteOp, FieldWriteOp, void *> {
+public:
+  using SplitArrayInFieldRefOp<
+      SplitArrayInFieldWriteOp, FieldWriteOp, void *>::SplitArrayInFieldRefOp;
+
+  static bool legal(FieldWriteOp op) { return !containsArrayType(op.getVal().getType()); }
+
+  static void *genPrefix(FieldWriteOp, ConversionPatternRewriter &) { return nullptr; }
+
+  static void forIndex(
+      Location loc, void *, ArrayAttr idx, FieldInfo newField, OpAdaptor adaptor,
+      ConversionPatternRewriter &rewriter
+  ) {
+    ReadArrayOp scalarRead = createRead(loc, adaptor.getVal(), idx, rewriter);
+    rewriter.create<FieldWriteOp>(
+        loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newField.first), scalarRead
+    );
+  }
+};
+
+class SplitArrayInFieldReadOp
+    : public SplitArrayInFieldRefOp<SplitArrayInFieldReadOp, FieldReadOp, Value> {
+public:
+  using SplitArrayInFieldRefOp<SplitArrayInFieldReadOp, FieldReadOp, Value>::SplitArrayInFieldRefOp;
+
+  static bool legal(FieldReadOp op) { return !containsArrayType(op.getResult().getType()); }
+
+  static Value genPrefix(FieldReadOp op, ConversionPatternRewriter &rewriter) {
+    CreateArrayOp newArray =
+        rewriter.create<CreateArrayOp>(op.getLoc(), llvm::cast<ArrayType>(op.getType()));
+    rewriter.replaceAllUsesWith(op, newArray);
+    return newArray;
+  }
+
+  static void forIndex(
+      Location loc, Value newArray, ArrayAttr idx, FieldInfo newField, OpAdaptor adaptor,
+      ConversionPatternRewriter &rewriter
+  ) {
+    FieldReadOp scalarRead =
+        rewriter.create<FieldReadOp>(loc, newField.second, adaptor.getComponent(), newField.first);
+    createWrite(loc, newArray, idx, scalarRead, rewriter);
+  }
+};
+
 LogicalResult splitArrayCreateInit(ModuleOp modOp) {
   MLIRContext *ctx = modOp.getContext();
 
@@ -353,8 +494,18 @@ LogicalResult splitArrayCreateInit(ModuleOp modOp) {
       SplitArrayInReturnOp,
       SplitArrayInCallOp,
       ReplaceKnownArrayLengthOp
-      // clang-format off
+      // clang-format on
       >(ctx);
+
+  SymbolTableCollection symTables;
+  FieldReplacementMap fieldRepMap;
+  patterns.add<
+      // clang-format off
+      SplitArrayInFieldDefOp,
+      SplitArrayInFieldWriteOp,
+      SplitArrayInFieldReadOp
+      // clang-format on
+      >(ctx, symTables, fieldRepMap);
 
   ConversionTarget target(*ctx);
   target.addLegalDialect<LLZKDialect, arith::ArithDialect, scf::SCFDialect>();
@@ -364,6 +515,9 @@ LogicalResult splitArrayCreateInit(ModuleOp modOp) {
   target.addDynamicallyLegalOp<ReturnOp>(SplitArrayInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitArrayInCallOp::legal);
   target.addDynamicallyLegalOp<ArrayLengthOp>(ReplaceKnownArrayLengthOp::legal);
+  target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
+  target.addDynamicallyLegalOp<FieldWriteOp>(SplitArrayInFieldWriteOp::legal);
+  target.addDynamicallyLegalOp<FieldReadOp>(SplitArrayInFieldReadOp::legal);
 
   return applyFullConversion(modOp, target, std::move(patterns));
 }

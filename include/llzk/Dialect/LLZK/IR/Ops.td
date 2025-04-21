@@ -405,6 +405,7 @@ def LLZK_FieldReadOp
     backwards and a positive value represents reading a value forward.
     Only fields marked as columns can be read in this manner.
   }];
+  let isRead = 1;
 
   let arguments = (ins LLZK_StructType:$component,
       FlatSymbolRefAttr:$field_name,
@@ -455,6 +456,7 @@ def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef", [ComputeOnly]> {
   let description = [{
     This operation writes a value to a named field in a struct/component.
   }];
+  let isRead = 1;
 
   let arguments = (ins LLZK_StructType:$component,
       FlatSymbolRefAttr:$field_name, AnyLLZKType:$val);

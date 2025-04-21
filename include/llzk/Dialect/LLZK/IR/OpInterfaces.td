@@ -50,8 +50,11 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
           [{Gets the SSA value with the target component from the FieldRefOp.}],
           "::mlir::Value", "getComponent", (ins)>,
       // Requires implementors to have a '$field_name' argument.
+      InterfaceMethod<
+          [{Gets the field name attribute value from the FieldRefOp.}],
+          "::llvm::StringRef", "getFieldName", (ins)>,
       InterfaceMethod<[{Gets the field name attribute from the FieldRefOp.}],
-                      "::llvm::StringRef", "getFieldName", (ins)>,
+                      "::mlir::FlatSymbolRefAttr", "getFieldNameAttr", (ins)>,
       // Requires the '$component' argument type to be LLZK_StructType.
       InterfaceMethod<[{Gets the struct type of the target component.}],
                       "::llzk::StructType", "getStructType", (ins),
@@ -60,6 +63,9 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
         assert(t.isa<StructType>());
         return t.template cast<StructType>();
       }]>,
+      InterfaceMethod<
+          [{Return `true` if the op is a read, `false` if it's a write.}],
+          "bool", "isRead", (ins)>,
   ];
 
   let extraClassDeclaration = [{
@@ -80,7 +86,8 @@ def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
                       "::mlir::Value", "getArrRef", (ins)>,
       InterfaceMethod<
           [{Gets the mutable operand slot holding the SSA Value for the referenced array.}],
-          "::mlir::OpOperand &", "getArrRefMutable", (ins)>];
+          "::mlir::OpOperand &", "getArrRefMutable", (ins)>,
+  ];
 
   let extraClassDeclaration = [{
     /// Gets the type of the referenced array.

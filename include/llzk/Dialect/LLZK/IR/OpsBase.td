@@ -172,10 +172,19 @@ class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
     : LLZK_Op<mnemonic,
               traits#[DeclareOpInterfaceMethods<FieldRefOpInterface>,
                       DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+  bit isRead = ?; // read(1) vs write(0) ops
+
   let extraClassDeclaration = [{
     /// Gets the definition for the `field` referenced in this op.
     inline ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &tables) {
       return ::llvm::cast<FieldRefOpInterface>(getOperation()).getFieldDefOp(tables);
+    }
+  }];
+
+  let extraClassDefinition = [{
+    /// Return `true` if the op is a read, `false` if it's a write.
+    bool $cppClass::isRead() {
+      return }]#!if(isRead, "true", "false")#[{;
     }
   }];
 }
@@ -187,8 +196,8 @@ class LLZK_ArrayAccessOp<string mnemonic, list<Trait> traits = []>
                   DeclareOpInterfaceMethods<PromotableMemOpInterface>,
                   DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
                   DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-  bit isScalar = ?; // scalar(1) vs ranged(0) ops
   bit isRead = ?;   // read(1) vs write(0) ops
+  bit isScalar = ?; // scalar(1) vs ranged(0) ops
 
   let extraClassDeclaration = [{
     /// Gets the type of the referenced base array.

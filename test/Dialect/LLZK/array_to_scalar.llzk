@@ -211,3 +211,81 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    %[[V6:[0-9a-zA-Z_\.]+]] = add %[[V5]], %[[V0]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:    return %[[V6]] : !llzk.felt
 // CHECK-NEXT:  }
+// -----
+
+!F = !llzk.felt
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @ArrayFields {
+    llzk.field @arr : !llzk.array<2,3 x !F>
+
+    func @compute(%a0: !F, %a1: !F, %a2: !F, %a3: !F, %a4: !F, %a5: !F) -> !llzk.struct<@ArrayFields> {
+      %self = new_struct : !llzk.struct<@ArrayFields>
+      %a = new_array %a0, %a1, %a2, %a3, %a4, %a5 : !llzk.array<2,3 x !F>
+      writef %self[@arr] = %a : !llzk.struct<@ArrayFields>, !llzk.array<2,3 x !F>
+      return %self : !llzk.struct<@ArrayFields>
+    }
+
+    func @constrain(%self: !llzk.struct<@ArrayFields>, %a0: !F, %a1: !F, %a2: !F, %a3: !F, %a4: !F, %a5: !F) {
+      %a = readf %self[@arr] : !llzk.struct<@ArrayFields>, !llzk.array<2,3 x !F>
+
+      %0 = arith.constant 0 : index
+      %1 = arith.constant 1 : index
+      %2 = arith.constant 2 : index
+
+      %b0 = readarr %a[%0, %0] : !llzk.array<2,3 x !F>, !F
+      emit_eq %a0, %b0 : !F
+
+      %b1 = readarr %a[%0, %1] : !llzk.array<2,3 x !F>, !F
+      emit_eq %a1, %b1 : !F
+
+      %b2 = readarr %a[%0, %2] : !llzk.array<2,3 x !F>, !F
+      emit_eq %a2, %b2 : !F
+
+      %b3 = readarr %a[%1, %0] : !llzk.array<2,3 x !F>, !F
+      emit_eq %a3, %b3 : !F
+
+      %b4 = readarr %a[%1, %1] : !llzk.array<2,3 x !F>, !F
+      emit_eq %a4, %b4 : !F
+
+      %b5 = readarr %a[%1, %2] : !llzk.array<2,3 x !F>, !F
+      emit_eq %a5, %b5 : !F
+
+      return
+    }
+  }
+}
+// CHECK-LABEL: llzk.struct @ArrayFields {
+// CHECK-NEXT:    field @arr_0 : !llzk.felt
+// CHECK-NEXT:    field @arr_1 : !llzk.felt
+// CHECK-NEXT:    field @arr_2 : !llzk.felt
+// CHECK-NEXT:    field @arr_3 : !llzk.felt
+// CHECK-NEXT:    field @arr_4 : !llzk.felt
+// CHECK-NEXT:    field @arr_5 : !llzk.felt
+// CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V2:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:    %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V4:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V5:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ArrayFields> {
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = new_struct : <@ArrayFields>
+// CHECK-DAG:       writef %[[V6]][@arr_5] = %[[V5]] : <@ArrayFields>, !llzk.felt
+// CHECK-DAG:       writef %[[V6]][@arr_3] = %[[V3]] : <@ArrayFields>, !llzk.felt
+// CHECK-DAG:       writef %[[V6]][@arr_4] = %[[V4]] : <@ArrayFields>, !llzk.felt
+// CHECK-DAG:       writef %[[V6]][@arr_2] = %[[V2]] : <@ArrayFields>, !llzk.felt
+// CHECK-DAG:       writef %[[V6]][@arr_0] = %[[V0]] : <@ArrayFields>, !llzk.felt
+// CHECK-DAG:       writef %[[V6]][@arr_1] = %[[V1]] : <@ArrayFields>, !llzk.felt
+// CHECK-NEXT:      return %[[V6]] : !llzk.struct<@ArrayFields>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    func @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ArrayFields>, %[[V8:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V9:[0-9a-zA-Z_\.]+]]: !llzk.felt,
+// CHECK-SAME:    %[[V10:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V11:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V12:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V13:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+// CHECK-DAG:       %[[V14:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_5] : <@ArrayFields>, !llzk.felt
+// CHECK-DAG:       %[[V15:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_3] : <@ArrayFields>, !llzk.felt
+// CHECK-DAG:       %[[V16:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_4] : <@ArrayFields>, !llzk.felt
+// CHECK-DAG:       %[[V17:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_2] : <@ArrayFields>, !llzk.felt
+// CHECK-DAG:       %[[V18:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_0] : <@ArrayFields>, !llzk.felt
+// CHECK-DAG:       %[[V19:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_1] : <@ArrayFields>, !llzk.felt
+// CHECK-NEXT:      emit_eq %[[V8]], %[[V18]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:      emit_eq %[[V9]], %[[V19]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:      emit_eq %[[V10]], %[[V17]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:      emit_eq %[[V11]], %[[V15]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:      emit_eq %[[V12]], %[[V16]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:      emit_eq %[[V13]], %[[V14]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
