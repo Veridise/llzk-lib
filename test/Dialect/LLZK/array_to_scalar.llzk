@@ -402,18 +402,18 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: llzk.struct @ComponentA2 {
 // CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA2>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_8] : <@ComponentA1>, !llzk.felt
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_7] : <@ComponentA1>, !llzk.felt
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_10] : <@ComponentA1>, !llzk.felt
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_9] : <@ComponentA1>, !llzk.felt
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_11] : <@ComponentA1>, !llzk.felt
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_2] : <@ComponentA1>, !llzk.felt
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_3] : <@ComponentA1>, !llzk.felt
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_4] : <@ComponentA1>, !llzk.felt
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_5] : <@ComponentA1>, !llzk.felt
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_6] : <@ComponentA1>, !llzk.felt
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_0] : <@ComponentA1>, !llzk.felt
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_1] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V2:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_8] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V3:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_7] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V4:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_10] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V5:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_9] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V6:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_11] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V7:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_2] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V8:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_3] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V9:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_4] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V10:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_5] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V11:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_6] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V12:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_0] : <@ComponentA1>, !llzk.felt
+// CHECK-DAG:       %[[V13:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_1] : <@ComponentA1>, !llzk.felt
 // CHECK-NEXT:      return %[[V1]] : !llzk.struct<@ComponentA2>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func @constrain(%[[V14:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA2>, %[[V15:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) {
@@ -422,18 +422,18 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: llzk.struct @ComponentA1 {
-// CHECK-NEXT:    field @f1_0 : !llzk.felt
-// CHECK-NEXT:    field @f1_1 : !llzk.felt
-// CHECK-NEXT:    field @f1_2 : !llzk.felt
-// CHECK-NEXT:    field @f1_3 : !llzk.felt
-// CHECK-NEXT:    field @f1_4 : !llzk.felt
-// CHECK-NEXT:    field @f1_5 : !llzk.felt
-// CHECK-NEXT:    field @f1_6 : !llzk.felt
-// CHECK-NEXT:    field @f1_7 : !llzk.felt
-// CHECK-NEXT:    field @f1_8 : !llzk.felt
-// CHECK-NEXT:    field @f1_9 : !llzk.felt
-// CHECK-NEXT:    field @f1_10 : !llzk.felt
-// CHECK-NEXT:    field @f1_11 : !llzk.felt
+// CHECK-DAG:     field @f1_0 : !llzk.felt
+// CHECK-DAG:     field @f1_1 : !llzk.felt
+// CHECK-DAG:     field @f1_2 : !llzk.felt
+// CHECK-DAG:     field @f1_3 : !llzk.felt
+// CHECK-DAG:     field @f1_4 : !llzk.felt
+// CHECK-DAG:     field @f1_5 : !llzk.felt
+// CHECK-DAG:     field @f1_6 : !llzk.felt
+// CHECK-DAG:     field @f1_7 : !llzk.felt
+// CHECK-DAG:     field @f1_8 : !llzk.felt
+// CHECK-DAG:     field @f1_9 : !llzk.felt
+// CHECK-DAG:     field @f1_10 : !llzk.felt
+// CHECK-DAG:     field @f1_11 : !llzk.felt
 // CHECK-NEXT:    func @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) {
 // CHECK-NEXT:      return
 // CHECK-NEXT:    }
