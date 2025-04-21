@@ -402,11 +402,13 @@ protected:
 
   static GenPrefixType genPrefix(FieldRefOpType, ConversionPatternRewriter &) {
     ensureImplementedAtCompile();
+    assert(false && "unreachable");
   }
 
   static void
   forIndex(Location, GenPrefixType, ArrayAttr, FieldInfo, OpAdaptor, ConversionPatternRewriter &) {
     ensureImplementedAtCompile();
+    assert(false && "unreachable");
   }
 
 public:
@@ -415,7 +417,10 @@ public:
   )
       : OpConversionPattern<FieldRefOpType>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
 
-  static bool legal(FieldRefOpType) { ensureImplementedAtCompile(); }
+  static bool legal(FieldRefOpType) {
+    ensureImplementedAtCompile();
+    assert(false && "unreachable");
+  }
 
   LogicalResult match(FieldRefOpType op) const override { return failure(ImplClass::legal(op)); }
 
