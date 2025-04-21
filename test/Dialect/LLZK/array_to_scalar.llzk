@@ -143,3 +143,33 @@ module attributes {veridise.lang = "llzk"} {
   // CHECK-NEXT:    return %[[V0]] : index
   // CHECK-NEXT:  }
 }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @f1(%arg: !llzk.felt) -> !llzk.array<3,2 x !llzk.felt> {
+    %0 = arith.constant 0 : index
+    %a = llzk.call @f2() : () -> !llzk.array<3,2 x !llzk.felt>
+    llzk.writearr %a[%0,%0] = %arg : !llzk.array<3,2 x !llzk.felt>, !llzk.felt
+    return %a : !llzk.array<3,2 x !llzk.felt>
+  }
+
+  llzk.func @f2() -> !llzk.array<3,2 x !llzk.felt> {
+    %a = llzk.new_array : !llzk.array<3,2 x !llzk.felt>
+    return %a : !llzk.array<3,2 x !llzk.felt>
+  }
+}
+// CHECK-LABEL: llzk.func @f1(
+// CHECK-SAME:           %[[V0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> (!llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt) {
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]]:6 = call @f2() : () -> (!llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt)
+// CHECK-NEXT:    return %[[V0]], %[[V1]]#1, %[[V1]]#2, %[[V1]]#3, %[[V1]]#4, %[[V1]]#5 : !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: llzk.func @f2() -> (!llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt) {
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = undef : !llzk.felt
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = undef : !llzk.felt
+// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = undef : !llzk.felt
+// CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = undef : !llzk.felt
+// CHECK-NEXT:    %[[V4:[0-9a-zA-Z_\.]+]] = undef : !llzk.felt
+// CHECK-NEXT:    %[[V5:[0-9a-zA-Z_\.]+]] = undef : !llzk.felt
+// CHECK-NEXT:    return %[[V5]], %[[V4]], %[[V3]], %[[V2]], %[[V1]], %[[V0]] : !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt
+// CHECK-NEXT:  }

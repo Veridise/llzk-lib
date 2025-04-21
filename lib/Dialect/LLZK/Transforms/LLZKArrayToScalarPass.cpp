@@ -54,7 +54,7 @@ inline bool containsArrayType(Type t) {
   }).wasInterrupted();
 }
 
-bool containsArrayType(OperandRange::type_range types) {
+template <typename T> bool containsArrayType(ValueTypeRange<T> types) {
   for (Type t : types) {
     if (containsArrayType(t)) {
       return true;
@@ -73,13 +73,14 @@ void splitArrayType(Type t, SmallVector<Type> &collect) {
   }
 }
 
-inline void splitArrayType(ArrayRef<Type> types, SmallVector<Type> &collect) {
+template <typename TypeCollection>
+inline void splitArrayType(TypeCollection types, SmallVector<Type> &collect) {
   for (Type t : types) {
     splitArrayType(t, collect);
   }
 }
 
-inline SmallVector<Type> splitArrayType(ArrayRef<Type> types) {
+template <typename TypeCollection> inline SmallVector<Type> splitArrayType(TypeCollection types) {
   SmallVector<Type> collect;
   splitArrayType(types, collect);
   return collect;
@@ -103,6 +104,74 @@ inline WriteArrayOp createWrite(
 ) {
   SmallVector<Value> readOperands = genIndexConstants(index, loc, rewriter);
   return rewriter.create<WriteArrayOp>(loc, baseArrayOp, ValueRange(readOperands), init);
+}
+
+CallOp newCallOpWithSplitResults(
+    CallOp oldCall, CallOp::Adaptor adaptor, ConversionPatternRewriter &rewriter
+) {
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPointAfter(oldCall);
+
+  Operation::result_range oldResults = oldCall.getResults();
+  CallOp newCall = rewriter.create<CallOp>(
+      oldCall.getLoc(), splitArrayType(oldResults.getTypes()), oldCall.getCallee(),
+      adaptor.getArgOperands()
+  );
+
+  auto newResults = newCall.getResults().begin();
+  for (Value oldVal : oldResults) {
+    if (ArrayType at = splittableArray(oldVal.getType())) {
+      Location loc = oldVal.getLoc();
+      // Generate `CreateArrayOp` and replace uses of the result with it.
+      auto newArray = rewriter.create<CreateArrayOp>(loc, at);
+      rewriter.replaceAllUsesWith(oldVal, newArray);
+
+      // For all indices in the ArrayType (i.e. the element count), write the next
+      // result from the new CallOp to the new array.
+      std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
+      assert(allIndices); // follows from legal() check
+      assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
+      for (ArrayAttr subIdx : allIndices.value()) {
+        createWrite(loc, newArray, subIdx, *newResults, rewriter);
+        newResults++;
+      }
+    } else {
+      newResults++;
+    }
+  }
+  // erase the original CallOp
+  rewriter.eraseOp(oldCall);
+
+  return newCall;
+}
+
+void processBlockArgs(Block &entryBlock, ConversionPatternRewriter &rewriter) {
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPointToStart(&entryBlock);
+
+  for (unsigned i = 0; i < entryBlock.getNumArguments();) {
+    Value oldV = entryBlock.getArgument(i);
+    if (ArrayType at = splittableArray(oldV.getType())) {
+      Location loc = oldV.getLoc();
+      // Generate `CreateArrayOp` and replace uses of the argument with it.
+      auto newArray = rewriter.create<CreateArrayOp>(loc, at);
+      rewriter.replaceAllUsesWith(oldV, newArray);
+      // Remove the argument from the block
+      entryBlock.eraseArgument(i);
+      // For all indices in the ArrayType (i.e. the element count), generate a new block
+      // argument and a write of that argument to the new array.
+      std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
+      assert(allIndices); // follows from legal() check
+      assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
+      for (ArrayAttr subIdx : allIndices.value()) {
+        BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
+        createWrite(loc, newArray, subIdx, newArg, rewriter);
+        ++i;
+      }
+    } else {
+      ++i;
+    }
+  }
 }
 
 inline ReadArrayOp
@@ -196,31 +265,7 @@ public:
       if (std::cmp_equal(entryBlock.getNumArguments(), newInputs.size())) {
         return; // nothing to change
       }
-
-      OpBuilder::InsertionGuard guard(rewriter);
-      rewriter.setInsertionPointToStart(&entryBlock);
-      for (unsigned i = 0; i < entryBlock.getNumArguments();) {
-        BlockArgument oldArg = entryBlock.getArgument(i);
-        if (ArrayType at = splittableArray(oldArg.getType())) {
-          Location loc = oldArg.getLoc();
-          // Generate `CreateArrayOp` within the block and replace uses of the argument with it.
-          auto newArray = rewriter.create<CreateArrayOp>(loc, at);
-          rewriter.replaceAllUsesWith(oldArg, newArray);
-          // Remove the argument from the block
-          entryBlock.eraseArgument(i);
-          // For all indices in the ArrayType (i.e. the element count), generate a new block
-          // argument and a write of that argument to the new array.
-          std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
-          assert(allIndices); // follows from legal() check
-          for (ArrayAttr subIdx : allIndices.value()) {
-            BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
-            createWrite(loc, newArray, subIdx, newArg, rewriter);
-            ++i;
-          }
-        } else {
-          ++i;
-        }
-      }
+      processBlockArgs(entryBlock, rewriter);
     }
   }
 };
@@ -242,16 +287,21 @@ class SplitArrayInCallOp : public OpConversionPattern<CallOp> {
 public:
   SplitArrayInCallOp(MLIRContext *ctx) : OpConversionPattern<CallOp>(ctx) {}
 
-  inline static bool legal(CallOp op) { return !containsArrayType(op.getArgOperands().getTypes()); }
+  inline static bool legal(CallOp op) {
+    return !containsArrayType(op.getArgOperands().getTypes()) &&
+           !containsArrayType(op.getResultTypes());
+  }
 
   LogicalResult match(CallOp op) const override { return failure(legal(op)); }
 
   void rewrite(CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
-    processInputOperands(adaptor.getOperands(), op.getArgOperandsMutable(), op, rewriter);
+    assert(isNullOrEmpty(op.getMapOpGroupSizesAttr()) && "structs must be previously flattened");
 
-    // TODO: what about the results? Have to expect multiple results instead and add the needed
-    // writes to the orginal array instance.
-    assert(false && "TODO");
+    // Create new CallOp with split results first so, then process its inputs to split types
+    CallOp newCall = newCallOpWithSplitResults(op, adaptor, rewriter);
+    processInputOperands(
+        newCall.getArgOperands(), newCall.getArgOperandsMutable(), newCall, rewriter
+    );
   }
 };
 
