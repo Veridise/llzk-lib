@@ -448,10 +448,6 @@ module attributes {veridise.lang = "llzk"} {
   llzk.func @new_then_insert() -> !llzk.felt {
     %a = llzk.constfelt 45
     %b = llzk.constfelt 214
-    %c = llzk.constfelt 2
-    %d = llzk.constfelt 52
-    %e = llzk.constfelt 92
-    %f = llzk.constfelt 10
   
     %x = llzk.new_array : !llzk.array<4,2 x !llzk.felt>
     %y = llzk.new_array %a, %b : !llzk.array<2 x !llzk.felt>
@@ -468,6 +464,52 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: llzk.func @new_then_insert() -> !llzk.felt {
 // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  214
 // CHECK-NEXT:    return %[[V0]] : !llzk.felt
+// CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @new_then_insert_then_insert() -> !llzk.array<2,2,2 x !llzk.felt> {
+    %a = llzk.constfelt 45
+    %b = llzk.constfelt 214
+    %c = llzk.constfelt 2
+    %d = llzk.constfelt 52
+    %e = llzk.constfelt 99
+    %f = llzk.constfelt 73
+  
+    %r = llzk.new_array : !llzk.array<2,2,2 x !llzk.felt>
+    %s = llzk.new_array : !llzk.array<2,2 x !llzk.felt>
+    %t = llzk.new_array %a, %b : !llzk.array<2 x !llzk.felt>
+    %u = llzk.new_array %c, %d : !llzk.array<2 x !llzk.felt>
+    %v = llzk.new_array %e, %f : !llzk.array<2 x !llzk.felt>
+
+    %0 = arith.constant 0 : index
+    %1 = arith.constant 1 : index
+
+    // populate part of %s and assign at position 1 in %r
+    // %r = [[[?, ?], [?, ?]], [[a, b], [?, ?]]]
+    llzk.insertarr %s[%0] = %t : !llzk.array<2,2 x !llzk.felt>, !llzk.array<2 x !llzk.felt>
+    llzk.insertarr %r[%1] = %s : !llzk.array<2,2,2 x !llzk.felt>, !llzk.array<2,2 x !llzk.felt>
+
+    // overwrite values in %s and assign at position 0 in %r
+    // %r = [[[c, d], [e, f]], [[a, b], [?, ?]]]
+    llzk.insertarr %s[%0] = %u : !llzk.array<2,2 x !llzk.felt>, !llzk.array<2 x !llzk.felt>
+    llzk.insertarr %s[%1] = %v : !llzk.array<2,2 x !llzk.felt>, !llzk.array<2 x !llzk.felt>
+    llzk.insertarr %r[%0] = %s : !llzk.array<2,2,2 x !llzk.felt>, !llzk.array<2,2 x !llzk.felt>
+
+    return %r : !llzk.array<2,2,2 x !llzk.felt>
+  }
+}
+// CHECK-LABEL: llzk.func @new_then_insert_then_insert() -> (!llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt) {
+// CHECK-DAG:     %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  73
+// CHECK-DAG:     %[[V1:[0-9a-zA-Z_\.]+]] = constfelt  99
+// CHECK-DAG:     %[[V2:[0-9a-zA-Z_\.]+]] = constfelt  52
+// CHECK-DAG:     %[[V3:[0-9a-zA-Z_\.]+]] = constfelt  2
+// CHECK-DAG:     %[[V4:[0-9a-zA-Z_\.]+]] = constfelt  214
+// CHECK-DAG:     %[[V5:[0-9a-zA-Z_\.]+]] = constfelt  45
+// CHECK-DAG:     %[[V6:[0-9a-zA-Z_\.]+]] = undef : !llzk.felt
+// CHECK-DAG:     %[[V7:[0-9a-zA-Z_\.]+]] = undef : !llzk.felt
+// CHECK-NEXT:    return %[[V3]], %[[V2]], %[[V1]], %[[V0]], %[[V5]], %[[V4]], %[[V7]], %[[V6]]
+// CHECK-SAME:           : !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt, !llzk.felt
 // CHECK-NEXT:  }
 // -----
 
