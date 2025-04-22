@@ -10,6 +10,46 @@
 /// \file
 /// This file implements the `-llzk-array-to-scalar` pass.
 ///
+/// The steps of this transformation are as follows:
+///
+/// 1. Run a dialect conversion that replaces `ArrayType` fields with `N` scalar fields.
+///
+/// 2. Run a dialect conversion that does the following:
+///
+///    - Replace `FieldReadOp` and `FieldWriteOp` targeting the fields that were split in step 1 so
+///      they instead perform scalar reads and writes from the new fields. The transformation is
+///      local to the current op. Therefore, when replacing the `FieldReadOp` a new array is created
+///      locally and all uses of the `FieldReadOp` are replaced with the new array Value, then each
+///      scalar field read is followed by scalar write into the new array. Similarly, when replacing
+///      a `FieldWriteOp`, each element in the array operand needs a scalar read from the array
+///      followed by a scalar write to the new field. Making only local changes keeps this step
+///      simple and later steps will optimize.
+///
+///    - Replace `ArrayLengthOp` with the constant size of the selected dimension.
+///
+///    - Remove element initialization from `CreateArrayOp` and instead insert a list of
+///      `WriteArrayOp` immediately following.
+///
+///    - Desugar `InsertArrayOp` and `ExtractArrayOp` into their element-wise scalar reads/writes.
+///
+///    - Split arrays to scalars in `FuncOp`, `CallOp`, and `ReturnOp` and insert the necessary
+///      create/read/write ops so the changes are as local as possible (just as described for
+///      `FieldReadOp` and `FieldWriteOp`)
+///
+/// 3. Run MLIR "sroa" pass to split each array with linear size `N` into `N` arrays of size 1 (to
+///    prepare for "mem2reg" pass because it's API does not allow for indexing to split aggregates).
+///
+/// 4. Run MLIR "mem2reg" pass to convert all of the size 1 array allocation and access into SSA
+///    values. This pass also runs several standard optimizations so the final result is condensed.
+///
+/// Note: This transformation imposes a "last write wins" semantics on array elements. If
+/// different/configurable semantics are added in the future, some additional transformation would
+/// be necessary before/during this pass so that multiple writes to the same index can be handled
+/// properly while they still exist.
+///
+/// Note: This transformation will introduce an undef op when there exists a read from an array
+/// index that was not earlier written to.
+///
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
