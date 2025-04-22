@@ -136,7 +136,7 @@ public:
 
     constrainFunc.walk([this](EmitContainmentOp emitInOp) {
       outMod.addStatement(std::make_unique<LookupStmt>(
-          translateValueToExpr(emitInOp.getLhs(), translateValueToExpr(emitInOp.getRhs()))
+          translateValueToExpr(emitInOp.getLhs()), translateValueToExpr(emitInOp.getRhs())
       ));
     });
 
