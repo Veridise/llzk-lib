@@ -442,3 +442,30 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      return %[[V1]] : !llzk.struct<@ComponentA1>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @new_then_insert() -> !llzk.felt {
+    %a = llzk.constfelt 45
+    %b = llzk.constfelt 214
+    %c = llzk.constfelt 2
+    %d = llzk.constfelt 52
+    %e = llzk.constfelt 92
+    %f = llzk.constfelt 10
+  
+    %x = llzk.new_array : !llzk.array<4,2 x !llzk.felt>
+    %y = llzk.new_array %a, %b : !llzk.array<2 x !llzk.felt>
+  
+    %0 = arith.constant 0 : index
+    %1 = arith.constant 1 : index
+    %2 = arith.constant 2 : index
+    llzk.insertarr %x[%2] = %y : !llzk.array<4,2 x !llzk.felt>, !llzk.array<2 x !llzk.felt>
+
+    %z = llzk.readarr %x[%2,%1] : !llzk.array<4,2 x !llzk.felt>, !llzk.felt // %b
+    return %z : !llzk.felt
+  }
+}
+// CHECK-LABEL: llzk.func @new_then_insert() -> !llzk.felt {
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  214
+// CHECK-NEXT:    return %[[V0]] : !llzk.felt
+// CHECK-NEXT:  }
