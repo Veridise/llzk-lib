@@ -177,7 +177,8 @@ def LLZK_ArrayType
 
   let extraClassDeclaration = [{
   private:
-    /// Call for given function for each valid index for this ArrayType.
+    /// Call the given function for each valid index for this ArrayType.
+    /// Return `false` if this ArrayType does not have a static shape.
     bool collectIndices(::llvm::function_ref<void(::mlir::ArrayAttr)>) const;
 
   public:

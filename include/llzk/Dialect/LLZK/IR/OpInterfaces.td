@@ -129,12 +129,12 @@ def ArrayAccessOpInterface
     /// array or a null pointer if a valid index cannot be computed for any dimension.
     ::mlir::ArrayAttr indexOperandsToAttributeArray();
 
-    /// Used by companion interface, DestructurableAccessorOpInterface.
+    /// Required by companion interface DestructurableAccessorOpInterface / SROA pass
     bool canRewire(const ::mlir::DestructurableMemorySlot &slot,
             ::llvm::SmallPtrSetImpl<::mlir::Attribute> &usedIndices,
             ::mlir::SmallVectorImpl<::mlir::MemorySlot> &mustBeSafelyUsed);
 
-    /// Used by companion interface, DestructurableAccessorOpInterface.
+    /// Required by companion interface DestructurableAccessorOpInterface / SROA pass
     ::mlir::DeletionKind rewire(const ::mlir::DestructurableMemorySlot &slot,
             ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
             ::mlir::RewriterBase &rewriter);
