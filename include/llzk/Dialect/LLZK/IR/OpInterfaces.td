@@ -135,12 +135,7 @@ def ArrayAccessOpInterface
             ::mlir::SmallVectorImpl<::mlir::MemorySlot> &mustBeSafelyUsed);
 
     /// Used by companion interface, DestructurableAccessorOpInterface.
-    ::mlir::DeletionKind rewireScalarOp(const ::mlir::DestructurableMemorySlot &slot,
-            ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
-            ::mlir::RewriterBase &rewriter);
-
-    /// Used by companion interface, DestructurableAccessorOpInterface.
-    ::mlir::DeletionKind rewireRangedOp(const ::mlir::DestructurableMemorySlot &slot,
+    ::mlir::DeletionKind rewire(const ::mlir::DestructurableMemorySlot &slot,
             ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
             ::mlir::RewriterBase &rewriter);
   }];

@@ -190,22 +190,24 @@ class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
 }
 
 class LLZK_ArrayAccessOp<string mnemonic, list<Trait> traits = []>
-    : LLZK_Op<
-          mnemonic,
-          traits#[DeclareOpInterfaceMethods<ArrayAccessOpInterface>,
-                  DeclareOpInterfaceMethods<PromotableMemOpInterface>,
-                  DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
-                  DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-  bit isRead = ?;   // read(1) vs write(0) ops
-  bit isScalar = ?; // scalar(1) vs ranged(0) ops
-
+    : LLZK_Op<mnemonic,
+              traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                      DeclareOpInterfaceMethods<ArrayAccessOpInterface>]> {
   let extraClassDeclaration = [{
     /// Gets the type of the referenced base array.
     inline ::llzk::ArrayType getArrRefType() {
       return ::llvm::cast<ArrayAccessOpInterface>(getOperation()).getArrRefType();
     }
   }];
+}
 
+// isRead: read(1) vs write(0) ops
+class LLZK_ScalarArrayAccessOp<string mnemonic, bit isRead,
+                               list<Trait> traits = []>
+    : LLZK_ArrayAccessOp<
+          mnemonic,
+          traits#[DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
+                  DeclareOpInterfaceMethods<PromotableMemOpInterface>]> {
   let extraClassDefinition = [{
     /// Required by DestructurableAllocationOpInterface / SROA pass
     bool $cppClass::canRewire(const ::mlir::DestructurableMemorySlot &slot,
@@ -222,8 +224,7 @@ class LLZK_ArrayAccessOp<string mnemonic, list<Trait> traits = []>
                 ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
                 ::mlir::RewriterBase &rewriter) {
       return ::llvm::cast<ArrayAccessOpInterface>(getOperation())
-                .}]#!if(isScalar, "rewireScalarOp",
-                        "rewireRangedOp")#[{(slot, subslots, rewriter);
+                .rewire(slot, subslots, rewriter);
     }
 
     /// Required by PromotableMemOpInterface / mem2reg pass
@@ -244,6 +245,18 @@ class LLZK_ArrayAccessOp<string mnemonic, list<Trait> traits = []>
              "return getRvalue()")#[{;
     }
 
+    /// Return `true` if the op is a read, `false` if it's a write.
+    bool $cppClass::isRead() {
+      return }]#!if(isRead, "true", "false")#[{;
+    }
+  }];
+}
+
+// isRead: read(1) vs write(0) ops
+class LLZK_RangedArrayAccessOp<string mnemonic, bit isRead,
+                               list<Trait> traits = []>
+    : LLZK_ArrayAccessOp<mnemonic, traits> {
+  let extraClassDefinition = [{
     /// Return `true` if the op is a read, `false` if it's a write.
     bool $cppClass::isRead() {
       return }]#!if(isRead, "true", "false")#[{;

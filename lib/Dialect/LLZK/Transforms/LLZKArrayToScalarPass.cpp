@@ -209,7 +209,88 @@ void processInputOperands(
   });
 }
 
-class SplitInitFromCreate : public OpConversionPattern<CreateArrayOp> {
+class SplitInsertArrayOp : public OpConversionPattern<InsertArrayOp> {
+public:
+  using OpConversionPattern<InsertArrayOp>::OpConversionPattern;
+
+  static bool legal(InsertArrayOp op) {
+    return !containsSplittableArrayType(op.getRvalue().getType());
+  }
+
+  LogicalResult match(InsertArrayOp op) const override { return failure(legal(op)); }
+
+  void
+  rewrite(InsertArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    ArrayType at = splittableArray(op.getRvalue().getType());
+    assert(at); // follows from legal() check
+    Location loc = op.getLoc();
+
+    ArrayAttr indexAsAttr =
+        llvm::cast<ArrayAccessOpInterface>(op.getOperation()).indexOperandsToAttributeArray();
+    assert(indexAsAttr); // follows from legal() check
+
+    // For all indices in the ArrayType (i.e. the element count), read from the rvalue
+    // array operand and write to the base array.
+    std::optional<SmallVector<ArrayAttr>> subIndices = at.getSubelementIndices();
+    assert(subIndices); // follows from legal() check
+    assert(std::cmp_equal(subIndices->size(), at.getNumElements()));
+    for (ArrayAttr indexingTail : subIndices.value()) {
+      SmallVector<Attribute> joined;
+      joined.append(indexAsAttr.begin(), indexAsAttr.end());
+      joined.append(indexingTail.begin(), indexingTail.end());
+      ArrayAttr fullIndex = ArrayAttr::get(op.getContext(), joined);
+
+      auto init = createRead(loc, op.getRvalue(), indexingTail, rewriter);
+      createWrite(loc, op.getArrRef(), fullIndex, init, rewriter);
+    }
+
+    rewriter.eraseOp(op);
+  }
+};
+
+class SplitExtractArrayOp : public OpConversionPattern<ExtractArrayOp> {
+public:
+  using OpConversionPattern<ExtractArrayOp>::OpConversionPattern;
+
+  static bool legal(ExtractArrayOp op) {
+    return !containsSplittableArrayType(op.getResult().getType());
+  }
+
+  LogicalResult match(ExtractArrayOp op) const override { return failure(legal(op)); }
+
+  void rewrite(ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
+      const override {
+    ArrayType at = splittableArray(op.getResult().getType());
+    assert(at); // follows from legal() check
+    Location loc = op.getLoc();
+    // Generate `CreateArrayOp` to use in place of the current op.
+    auto newArray = rewriter.create<CreateArrayOp>(loc, at);
+    rewriter.replaceAllUsesWith(op, newArray);
+
+    ArrayAttr indexAsAttr =
+        llvm::cast<ArrayAccessOpInterface>(op.getOperation()).indexOperandsToAttributeArray();
+    assert(indexAsAttr); // follows from legal() check
+
+    // For all indices in the ArrayType (i.e. the element count), read from the original base
+    // array operand and write to the new array.
+    std::optional<SmallVector<ArrayAttr>> subIndices = at.getSubelementIndices();
+    assert(subIndices); // follows from legal() check
+    assert(std::cmp_equal(subIndices->size(), at.getNumElements()));
+    for (ArrayAttr indexingTail : subIndices.value()) {
+      SmallVector<Attribute> joined;
+      joined.append(indexAsAttr.begin(), indexAsAttr.end());
+      joined.append(indexingTail.begin(), indexingTail.end());
+      ArrayAttr fullIndex = ArrayAttr::get(op.getContext(), joined);
+
+      auto init = createRead(loc, op.getArrRef(), fullIndex, rewriter);
+      createWrite(loc, newArray, indexingTail, init, rewriter);
+    }
+
+    rewriter.eraseOp(op);
+  }
+};
+
+class SplitInitFromCreateArrayOp : public OpConversionPattern<CreateArrayOp> {
 public:
   using OpConversionPattern<CreateArrayOp>::OpConversionPattern;
 
@@ -515,7 +596,9 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
   RewritePatternSet patterns(ctx);
   patterns.add<
       // clang-format off
-      SplitInitFromCreate,
+      SplitInitFromCreateArrayOp,
+      SplitInsertArrayOp,
+      SplitExtractArrayOp,
       SplitArrayInFuncDefOp,
       SplitArrayInReturnOp,
       SplitArrayInCallOp,
@@ -533,7 +616,9 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
   ConversionTarget target(*ctx);
   target.addLegalDialect<LLZKDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
-  target.addDynamicallyLegalOp<CreateArrayOp>(SplitInitFromCreate::legal);
+  target.addDynamicallyLegalOp<CreateArrayOp>(SplitInitFromCreateArrayOp::legal);
+  target.addDynamicallyLegalOp<InsertArrayOp>(SplitInsertArrayOp::legal);
+  target.addDynamicallyLegalOp<ExtractArrayOp>(SplitExtractArrayOp::legal);
   target.addDynamicallyLegalOp<FuncOp>(SplitArrayInFuncDefOp::legal);
   target.addDynamicallyLegalOp<ReturnOp>(SplitArrayInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitArrayInCallOp::legal);

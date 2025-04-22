@@ -1262,40 +1262,25 @@ bool ArrayAccessOpInterface::canRewire(
     return false;
   }
 
-  ArrayRef<Attribute> readWriteValDims = getValueOperandDims();
-
-  // Scalar read/write case has 0 dimensions in the read/write value. Just insert the index.
-  if (readWriteValDims.empty()) {
-    usedIndices.insert(indexAsAttr);
-    return true;
+  // Scalar read/write case has 0 dimensions in the read/write value.
+  if (!getValueOperandDims().empty()) {
+    return false;
   }
 
-  // For a ranged value ops, 'indexAsAttr' contains only the front/high dimensions of the access.
-  // Convert `readWriteValDims` to an ArrayType and get its list of sub-indices to compute the low
-  // dimensions for each access in this ranged op.
-  MLIRContext *ctx = getContext();
-  ArrayType readWriteArrType = ArrayType::get(getArrRefType().getElementType(), readWriteValDims);
-  if (auto subIndices = readWriteArrType.getSubelementIndices()) {
-    for (ArrayAttr indexingTail : subIndices.value()) {
-      SmallVector<Attribute> joined;
-      joined.append(indexAsAttr.begin(), indexAsAttr.end());
-      joined.append(indexingTail.begin(), indexingTail.end());
-      usedIndices.insert(ArrayAttr::get(ctx, joined));
-    }
-    return true;
-  }
-
-  return false;
+  // Just insert the index.
+  usedIndices.insert(indexAsAttr);
+  return true;
 }
 
-DeletionKind ArrayAccessOpInterface::rewireScalarOp(
 /// Required by DestructurableAllocationOpInterface / SROA pass
+DeletionKind ArrayAccessOpInterface::rewire(
     const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
     RewriterBase &rewriter
 ) {
   assert(slot.ptr == getArrRef());
   assert(slot.elemType == getArrRefType());
-  assert(getValueOperandDims().empty() && "use rewireRangedOp() instead");
+  // ASSERT: non-scalar read/write should have been desugared earlier
+  assert(getValueOperandDims().empty() && "only scalar read/write supported");
 
   ArrayAttr indexAsAttr = indexOperandsToAttributeArray();
   assert(indexAsAttr && "canRewire() should have returned false");
@@ -1309,46 +1294,6 @@ DeletionKind ArrayAccessOpInterface::rewireScalarOp(
     getIndicesMutable().assign(idx0);
   });
   return DeletionKind::Keep;
-}
-
-// Required by DestructurableAllocationOpInterface / SROA pass
-DeletionKind ArrayAccessOpInterface::rewireRangedOp(
-    const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
-    RewriterBase &rewriter
-) {
-  assert(slot.ptr == getArrRef());
-  assert(slot.elemType == getArrRefType());
-  ArrayRef<Attribute> readWriteValDims = getValueOperandDims();
-  assert(!readWriteValDims.empty() && "use rewireScalarOp() instead");
-
-  ArrayAttr indexAsAttr = indexOperandsToAttributeArray();
-  assert(indexAsAttr && "canRewire() should have returned false");
-
-  // For a ranged value ops, 'indexAsAttr' contains only the front/high dimensions of the access.
-  // Convert `readWriteValDims` to an ArrayType and get its list of sub-indices to compute the low
-  // dimensions for each access in this ranged op.
-  MLIRContext *ctx = getContext();
-  ArrayType readWriteArrType = ArrayType::get(getArrRefType().getElementType(), readWriteValDims);
-  auto subIndices = readWriteArrType.getSubelementIndices();
-  assert(subIndices && "canRewire() should have returned false");
-  Location loc = getLoc();
-  auto idx0 = rewriter.create<arith::ConstantIndexOp>(loc, 0);
-  for (ArrayAttr indexingTail : subIndices.value()) {
-    SmallVector<Attribute> joined;
-    joined.append(indexAsAttr.begin(), indexAsAttr.end());
-    joined.append(indexingTail.begin(), indexingTail.end());
-    ArrayAttr fullIndex = ArrayAttr::get(ctx, joined);
-    const MemorySlot &memorySlot = subslots.at(fullIndex);
-
-    if (isRead()) {
-      rewriter.create<ReadArrayOp>(loc, memorySlot.ptr, ValueRange(idx0));
-      // TODO: what's missing
-    } else {
-      assert(false && "Not implemented");
-      // rewriter.create<WriteArrayOp>(loc, memorySlot.ptr, ValueRange(idx0), init);
-    }
-  }
-  return DeletionKind::Delete;
 }
 
 //===------------------------------------------------------------------===//
@@ -1475,22 +1420,6 @@ bool ExtractArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
   return singletonTypeListsUnify(l, r);
 }
 
-/// Required by PromotableMemOpInterface / mem2reg pass
-bool ExtractArrayOp::canUsesBeRemoved(
-    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    SmallVectorImpl<OpOperand *> &newBlockingUses
-) {
-  assert(false && "Not yet implemented");
-}
-
-/// Required by PromotableMemOpInterface / mem2reg pass
-DeletionKind ExtractArrayOp::removeBlockingUses(
-    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    RewriterBase &rewriter, Value reachingDefinition
-) {
-  assert(false && "Not yet implemented");
-}
-
 //===------------------------------------------------------------------===//
 // InsertArrayOp
 //===------------------------------------------------------------------===//
@@ -1552,22 +1481,6 @@ LogicalResult InsertArrayOp::verify() {
   }
 
   return success();
-}
-
-/// Required by PromotableMemOpInterface / mem2reg pass
-bool InsertArrayOp::canUsesBeRemoved(
-    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    SmallVectorImpl<OpOperand *> &newBlockingUses
-) {
-  assert(false && "Not yet implemented");
-}
-
-/// Required by PromotableMemOpInterface / mem2reg pass
-DeletionKind InsertArrayOp::removeBlockingUses(
-    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    RewriterBase &rewriter, Value reachingDefinition
-) {
-  assert(false && "Not yet implemented");
 }
 
 //===------------------------------------------------------------------===//

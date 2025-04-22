@@ -615,8 +615,9 @@ def LLZK_CreateArrayOp
 }
 
 def LLZK_ReadArrayOp
-    : LLZK_ArrayAccessOp<
-          "readarr", [ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
+    : LLZK_ScalarArrayAccessOp<
+          "readarr",
+          true, [ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
   let summary = "read scalar from an array";
   let description = [{
     This operation reads the value from an array at the specified position.
@@ -639,8 +640,6 @@ def LLZK_ReadArrayOp
     %1 = llzk.readarr %0[%i, %j, %k] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.felt
     ```
   }];
-  let isScalar = 1;
-  let isRead = 1;
 
   let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices);
   let results = (outs ArrayElemType:$result);
@@ -651,8 +650,8 @@ def LLZK_ReadArrayOp
 }
 
 def LLZK_WriteArrayOp
-    : LLZK_ArrayAccessOp<
-          "writearr", [ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
+    : LLZK_ScalarArrayAccessOp<
+          "writearr", false, [ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
   let summary = "write scalar to an array";
   let description = [{
     This operation writes a value into an array at the specified position.
@@ -676,8 +675,6 @@ def LLZK_WriteArrayOp
     llzk.writearr %1[%i, %j] = %0 : !llzk.array<2,2 x !llzk.felt>, !llzk.felt
     ```
   }];
-  let isScalar = 1;
-  let isRead = 0;
 
   let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices,
       ArrayElemType:$rvalue);
@@ -688,7 +685,8 @@ def LLZK_WriteArrayOp
 }
 
 def LLZK_ExtractArrayOp
-    : LLZK_ArrayAccessOp<"extractarr", [InferTypeOpAdaptorWithIsCompatible]> {
+    : LLZK_RangedArrayAccessOp<"extractarr",
+                               true, [InferTypeOpAdaptorWithIsCompatible]> {
   let summary = "read subarray from a multi-dimensional array";
   let description = [{
     This operation takes an N-dimensional array and K indices and extracts the
@@ -711,8 +709,6 @@ def LLZK_ExtractArrayOp
     }
     ```
   }];
-  let isScalar = 0;
-  let isRead = 1;
 
   let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices);
   let results = (outs LLZK_ArrayType:$result);
@@ -722,7 +718,7 @@ def LLZK_ExtractArrayOp
   }];
 }
 
-def LLZK_InsertArrayOp : LLZK_ArrayAccessOp<"insertarr"> {
+def LLZK_InsertArrayOp : LLZK_RangedArrayAccessOp<"insertarr", false> {
   let summary = "write subarray into a multi-dimensional array";
   let description = [{
     This operation takes an N-dimensional array, K indices, and an (N+K)-dimensional
@@ -745,8 +741,6 @@ def LLZK_InsertArrayOp : LLZK_ArrayAccessOp<"insertarr"> {
     // Array %c is now [[%r, %s, %t], [%x, %y, %z]]
     ```
   }];
-  let isScalar = 0;
-  let isRead = 0;
 
   let arguments = (ins LLZK_ArrayType:$arr_ref, Variadic<Index>:$indices,
       LLZK_ArrayType:$rvalue);
