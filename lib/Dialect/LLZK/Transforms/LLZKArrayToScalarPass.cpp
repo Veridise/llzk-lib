@@ -209,6 +209,45 @@ void processInputOperands(
   });
 }
 
+namespace {
+
+enum Direction { SMALL_TO_LARGE, LARGE_TO_SMALL };
+
+template <Direction dir>
+inline void rewriteImpl(
+    ArrayAccessOpInterface op, ArrayType smallType, Value smallArr, Value largeArr,
+    ConversionPatternRewriter &rewriter
+) {
+  assert(smallType); // follows from legal() check
+  Location loc = op.getLoc();
+  MLIRContext *ctx = op.getContext();
+
+  ArrayAttr indexAsAttr = op.indexOperandsToAttributeArray();
+  assert(indexAsAttr); // follows from legal() check
+
+  // For all indices in the ArrayType (i.e. the element count), read from one array into the other
+  // (depending on direction flag).
+  std::optional<SmallVector<ArrayAttr>> subIndices = smallType.getSubelementIndices();
+  assert(subIndices); // follows from legal() check
+  assert(std::cmp_equal(subIndices->size(), smallType.getNumElements()));
+  for (ArrayAttr indexingTail : subIndices.value()) {
+    SmallVector<Attribute> joined;
+    joined.append(indexAsAttr.begin(), indexAsAttr.end());
+    joined.append(indexingTail.begin(), indexingTail.end());
+    ArrayAttr fullIndex = ArrayAttr::get(ctx, joined);
+
+    if constexpr (dir == Direction::SMALL_TO_LARGE) {
+      auto init = createRead(loc, smallArr, indexingTail, rewriter);
+      createWrite(loc, largeArr, fullIndex, init, rewriter);
+    } else if constexpr (dir == Direction::LARGE_TO_SMALL) {
+      auto init = createRead(loc, largeArr, fullIndex, rewriter);
+      createWrite(loc, smallArr, indexingTail, init, rewriter);
+    }
+  }
+}
+
+} // namespace
+
 class SplitInsertArrayOp : public OpConversionPattern<InsertArrayOp> {
 public:
   using OpConversionPattern<InsertArrayOp>::OpConversionPattern;
@@ -222,28 +261,10 @@ public:
   void
   rewrite(InsertArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
     ArrayType at = splittableArray(op.getRvalue().getType());
-    assert(at); // follows from legal() check
-    Location loc = op.getLoc();
-
-    ArrayAttr indexAsAttr =
-        llvm::cast<ArrayAccessOpInterface>(op.getOperation()).indexOperandsToAttributeArray();
-    assert(indexAsAttr); // follows from legal() check
-
-    // For all indices in the ArrayType (i.e. the element count), read from the rvalue
-    // array operand and write to the base array.
-    std::optional<SmallVector<ArrayAttr>> subIndices = at.getSubelementIndices();
-    assert(subIndices); // follows from legal() check
-    assert(std::cmp_equal(subIndices->size(), at.getNumElements()));
-    for (ArrayAttr indexingTail : subIndices.value()) {
-      SmallVector<Attribute> joined;
-      joined.append(indexAsAttr.begin(), indexAsAttr.end());
-      joined.append(indexingTail.begin(), indexingTail.end());
-      ArrayAttr fullIndex = ArrayAttr::get(op.getContext(), joined);
-
-      auto init = createRead(loc, op.getRvalue(), indexingTail, rewriter);
-      createWrite(loc, op.getArrRef(), fullIndex, init, rewriter);
-    }
-
+    rewriteImpl<SMALL_TO_LARGE>(
+        llvm::cast<ArrayAccessOpInterface>(op.getOperation()), at, adaptor.getRvalue(),
+        adaptor.getArrRef(), rewriter
+    );
     rewriter.eraseOp(op);
   }
 };
@@ -261,34 +282,12 @@ public:
   void rewrite(ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
       const override {
     ArrayType at = splittableArray(op.getResult().getType());
-    assert(at); // follows from legal() check
-    Location loc = op.getLoc();
-    MLIRContext *ctx = op.getContext();
-
-    ArrayAttr indexAsAttr =
-        llvm::cast<ArrayAccessOpInterface>(op.getOperation()).indexOperandsToAttributeArray();
-    assert(indexAsAttr); // follows from legal() check
-
-    // Generate `CreateArrayOp` to use in place of the current op.
+    // Generate `CreateArrayOp` in place of the current op.
     auto newArray = rewriter.replaceOpWithNewOp<CreateArrayOp>(op, at);
-
-    OpBuilder::InsertionGuard guard(rewriter);
-    rewriter.setInsertionPointAfter(newArray);
-
-    // For all indices in the ArrayType (i.e. the element count), read from the original base
-    // array operand and write to the new array.
-    std::optional<SmallVector<ArrayAttr>> subIndices = at.getSubelementIndices();
-    assert(subIndices); // follows from legal() check
-    assert(std::cmp_equal(subIndices->size(), at.getNumElements()));
-    for (ArrayAttr indexingTail : subIndices.value()) {
-      SmallVector<Attribute> joined;
-      joined.append(indexAsAttr.begin(), indexAsAttr.end());
-      joined.append(indexingTail.begin(), indexingTail.end());
-      ArrayAttr fullIndex = ArrayAttr::get(ctx, joined);
-
-      auto init = createRead(loc, adaptor.getArrRef(), fullIndex, rewriter);
-      createWrite(loc, newArray, indexingTail, init, rewriter);
-    }
+    rewriteImpl<LARGE_TO_SMALL>(
+        llvm::cast<ArrayAccessOpInterface>(op.getOperation()), at, newArray, adaptor.getArrRef(),
+        rewriter
+    );
   }
 };
 
