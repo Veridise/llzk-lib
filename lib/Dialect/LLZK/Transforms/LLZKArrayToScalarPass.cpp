@@ -282,7 +282,7 @@ public:
       joined.append(indexingTail.begin(), indexingTail.end());
       ArrayAttr fullIndex = ArrayAttr::get(op.getContext(), joined);
 
-      auto init = createRead(loc, op.getArrRef(), fullIndex, rewriter);
+      auto init = createRead(loc, adaptor.getArrRef(), fullIndex, rewriter);
       createWrite(loc, newArray, indexingTail, init, rewriter);
     }
 
