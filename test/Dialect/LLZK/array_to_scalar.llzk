@@ -493,3 +493,27 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-DAG:     %[[V2:[0-9a-zA-Z_\.]+]] = constfelt  10
 // CHECK-NEXT:    return %[[V0]], %[[V1]], %[[V2]] : !llzk.felt, !llzk.felt, !llzk.felt
 // CHECK-NEXT:  }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.func @new_then_extract_then_read() -> !llzk.felt {
+    %a = llzk.constfelt 45
+    %b = llzk.constfelt 214
+    %c = llzk.constfelt 2
+    %d = llzk.constfelt 52
+    %e = llzk.constfelt 92
+    %f = llzk.constfelt 10
+
+    %r = llzk.new_array %a, %b, %c, %d, %e, %f : !llzk.array<2,3,1 x !llzk.felt>
+
+    %0 = arith.constant 0 : index
+    %1 = arith.constant 1 : index
+    %x = llzk.extractarr %r[%1] : !llzk.array<2,3,1 x !llzk.felt>
+    %z = llzk.readarr %x[%0,%0] : !llzk.array<3,1 x !llzk.felt>, !llzk.felt
+    return %z: !llzk.felt
+  }
+}
+// CHECK-LABEL: llzk.func @new_then_extract_then_read() -> !llzk.felt {
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = constfelt  52
+// CHECK-NEXT:    return %[[V0]] : !llzk.felt
+// CHECK-NEXT:  }
