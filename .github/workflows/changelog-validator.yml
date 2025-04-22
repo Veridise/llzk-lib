@@ -11,5 +11,5 @@ on:
 
 jobs:
   call-workflow-changelog-validate:
-    uses: Veridise/open-source-release-helpers/.github/workflows/changelog-validator.yml@iangneal/dev
+    uses: Veridise/open-source-release-helpers/.github/workflows/changelog-validator.yml@36834bcd6c9870d3fed9f26ed9a2b695ba935e4c
     secrets: inherit
