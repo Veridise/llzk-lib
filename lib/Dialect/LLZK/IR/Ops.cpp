@@ -1217,9 +1217,7 @@ Value CreateArrayOp::getDefaultValue(const MemorySlot &slot, RewriterBase &rewri
 }
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
-void CreateArrayOp::handleBlockArgument(const MemorySlot &, BlockArgument, RewriterBase &) {
-  assert(false && "Not yet implemented");
-}
+void CreateArrayOp::handleBlockArgument(const MemorySlot &, BlockArgument, RewriterBase &) {}
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
 void CreateArrayOp::handlePromotionComplete(

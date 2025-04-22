@@ -919,9 +919,7 @@ bool ArrayType::collectIndices(llvm::function_ref<void(ArrayAttr)> inserter) con
   ArrayIndexGen idxGen = ArrayIndexGen::from(*this);
   for (int64_t e = getNumElements(), i = 0; i < e; ++i) {
     auto delinearized = idxGen.delinearize(i, ctx);
-    if (!delinearized.has_value()) {
-      return false;
-    }
+    assert(delinearized.has_value()); // cannot fail since loop is over array size
     inserter(ArrayAttr::get(ctx, delinearized.value()));
   }
   return true;
