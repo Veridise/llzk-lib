@@ -47,16 +47,16 @@ inline ArrayType splittableArray(Type t) {
   }
 }
 
-inline bool containsArrayType(Type t) {
+inline bool containsSplittableArrayType(Type t) {
   return t
       .walk([](ArrayType a) {
     return splittableArray(a) ? WalkResult::interrupt() : WalkResult::skip();
   }).wasInterrupted();
 }
 
-template <typename T> bool containsArrayType(ValueTypeRange<T> types) {
+template <typename T> bool containsSplittableArrayType(ValueTypeRange<T> types) {
   for (Type t : types) {
-    if (containsArrayType(t)) {
+    if (containsSplittableArrayType(t)) {
       return true;
     }
   }
@@ -243,7 +243,7 @@ class SplitArrayInFuncDefOp : public OpConversionPattern<FuncOp> {
 public:
   using OpConversionPattern<FuncOp>::OpConversionPattern;
 
-  inline static bool legal(FuncOp op) { return !containsArrayType(op.getFunctionType()); }
+  inline static bool legal(FuncOp op) { return !containsSplittableArrayType(op.getFunctionType()); }
 
   LogicalResult match(FuncOp op) const override { return failure(legal(op)); }
 
@@ -274,7 +274,9 @@ class SplitArrayInReturnOp : public OpConversionPattern<ReturnOp> {
 public:
   using OpConversionPattern<ReturnOp>::OpConversionPattern;
 
-  inline static bool legal(ReturnOp op) { return !containsArrayType(op.getOperands().getTypes()); }
+  inline static bool legal(ReturnOp op) {
+    return !containsSplittableArrayType(op.getOperands().getTypes());
+  }
 
   LogicalResult match(ReturnOp op) const override { return failure(legal(op)); }
 
@@ -288,8 +290,8 @@ public:
   using OpConversionPattern<CallOp>::OpConversionPattern;
 
   inline static bool legal(CallOp op) {
-    return !containsArrayType(op.getArgOperands().getTypes()) &&
-           !containsArrayType(op.getResultTypes());
+    return !containsSplittableArrayType(op.getArgOperands().getTypes()) &&
+           !containsSplittableArrayType(op.getResultTypes());
   }
 
   LogicalResult match(CallOp op) const override { return failure(legal(op)); }
@@ -359,7 +361,7 @@ public:
   )
       : OpConversionPattern<FieldDefOp>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
 
-  inline static bool legal(FieldDefOp op) { return !containsArrayType(op.getType()); }
+  inline static bool legal(FieldDefOp op) { return !containsSplittableArrayType(op.getType()); }
 
   LogicalResult match(FieldDefOp op) const override { return failure(legal(op)); }
 
@@ -449,7 +451,7 @@ public:
   using SplitArrayInFieldRefOp<
       SplitArrayInFieldWriteOp, FieldWriteOp, void *>::SplitArrayInFieldRefOp;
 
-  static bool legal(FieldWriteOp op) { return !containsArrayType(op.getVal().getType()); }
+  static bool legal(FieldWriteOp op) { return !containsSplittableArrayType(op.getVal().getType()); }
 
   static void *genPrefix(FieldWriteOp, ConversionPatternRewriter &) { return nullptr; }
 
@@ -469,7 +471,9 @@ class SplitArrayInFieldReadOp
 public:
   using SplitArrayInFieldRefOp<SplitArrayInFieldReadOp, FieldReadOp, Value>::SplitArrayInFieldRefOp;
 
-  static bool legal(FieldReadOp op) { return !containsArrayType(op.getResult().getType()); }
+  static bool legal(FieldReadOp op) {
+    return !containsSplittableArrayType(op.getResult().getType());
+  }
 
   static Value genPrefix(FieldReadOp op, ConversionPatternRewriter &rewriter) {
     CreateArrayOp newArray =

@@ -226,12 +226,12 @@ class LLZK_ArrayAccessOp<string mnemonic, list<Trait> traits = []>
                         "rewireRangedOp")#[{(slot, subslots, rewriter);
     }
 
-    /// Required by PromotableAllocationOpInterface / mem2reg pass
+    /// Required by PromotableMemOpInterface / mem2reg pass
     bool $cppClass::loadsFrom(const ::mlir::MemorySlot &slot) {
       return }]#!if(isRead, "getArrRef() == slot.ptr", "false")#[{;
     }
 
-    /// Required by PromotableAllocationOpInterface / mem2reg pass
+    /// Required by PromotableMemOpInterface / mem2reg pass
     bool $cppClass::storesTo(const ::mlir::MemorySlot &slot) {
       return }]#!if(isRead, "false", "getArrRef() == slot.ptr")#[{;
     }
@@ -239,7 +239,7 @@ class LLZK_ArrayAccessOp<string mnemonic, list<Trait> traits = []>
     /// Required by PromotableAllocationOpInterface / mem2reg pass
     ::mlir::Value $cppClass::getStored(const ::mlir::MemorySlot &, ::mlir::RewriterBase &) {
       }]#!if(isRead,
-             "llvm_unreachable(\"getStored should not be called on "
+             "llvm_unreachable(\"getStored() should not be called on "
              "$cppClass\")",
              "return getRvalue()")#[{;
     }

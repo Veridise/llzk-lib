@@ -933,7 +933,7 @@ std::optional<SmallVector<ArrayAttr>> ArrayType::getSubelementIndices() const {
   return success ? std::make_optional(ret) : std::nullopt;
 }
 
-// Required by DestructurableTypeInterface / SROA pass
+/// Required by DestructurableTypeInterface / SROA pass
 std::optional<DenseMap<Attribute, Type>> ArrayType::getSubelementIndexMap() const {
   DenseMap<Attribute, Type> ret;
   Type destructAs = createArrayOfSizeOne(getElementType());
@@ -941,7 +941,7 @@ std::optional<DenseMap<Attribute, Type>> ArrayType::getSubelementIndexMap() cons
   return success ? std::make_optional(ret) : std::nullopt;
 }
 
-// Required by DestructurableTypeInterface / SROA pass
+/// Required by DestructurableTypeInterface / SROA pass
 Type ArrayType::getTypeAtIndex(Attribute index) const {
   if (!hasStaticShape()) {
     return nullptr;

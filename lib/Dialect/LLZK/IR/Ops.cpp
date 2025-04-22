@@ -1147,7 +1147,7 @@ LogicalResult CreateArrayOp::verify() {
   );
 }
 
-// Required by DestructurableAllocationOpInterface / SROA pass
+/// Required by DestructurableAllocationOpInterface / SROA pass
 SmallVector<DestructurableMemorySlot> CreateArrayOp::getDestructurableSlots() {
   assert(getElements().empty() && "must run after initialization is split from allocation");
   ArrayType arrType = getType();
@@ -1160,7 +1160,7 @@ SmallVector<DestructurableMemorySlot> CreateArrayOp::getDestructurableSlots() {
   return {};
 }
 
-// Required by DestructurableAllocationOpInterface / SROA pass
+/// Required by DestructurableAllocationOpInterface / SROA pass
 DenseMap<Attribute, MemorySlot> CreateArrayOp::destructure(
     const DestructurableMemorySlot &slot, const SmallPtrSetImpl<Attribute> &usedIndices,
     RewriterBase &rewriter
@@ -1189,7 +1189,7 @@ DenseMap<Attribute, MemorySlot> CreateArrayOp::destructure(
   return slotMap;
 }
 
-// Required by DestructurableAllocationOpInterface / SROA pass
+/// Required by DestructurableAllocationOpInterface / SROA pass
 void CreateArrayOp::handleDestructuringComplete(
     const DestructurableMemorySlot &slot, RewriterBase &rewriter
 ) {
@@ -1197,7 +1197,7 @@ void CreateArrayOp::handleDestructuringComplete(
   rewriter.eraseOp(*this);
 }
 
-// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableAllocationOpInterface / mem2reg pass
 SmallVector<MemorySlot> CreateArrayOp::getPromotableSlots() {
   ArrayType arrType = getType();
   if (!arrType.hasStaticShape()) {
@@ -1211,17 +1211,17 @@ SmallVector<MemorySlot> CreateArrayOp::getPromotableSlots() {
   return {MemorySlot {getResult(), arrType.getElementType()}};
 }
 
-// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableAllocationOpInterface / mem2reg pass
 Value CreateArrayOp::getDefaultValue(const MemorySlot &slot, RewriterBase &rewriter) {
   return rewriter.create<UndefOp>(getLoc(), slot.elemType);
 }
 
-// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableAllocationOpInterface / mem2reg pass
 void CreateArrayOp::handleBlockArgument(const MemorySlot &, BlockArgument, RewriterBase &) {
   assert(false && "Not yet implemented");
 }
 
-// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableAllocationOpInterface / mem2reg pass
 void CreateArrayOp::handlePromotionComplete(
     const MemorySlot &slot, Value defaultValue, RewriterBase &rewriter
 ) {
@@ -1248,7 +1248,7 @@ ArrayAttr ArrayAccessOpInterface::indexOperandsToAttributeArray() {
   return nullptr;
 }
 
-// Required by DestructurableAllocationOpInterface / SROA pass
+/// Required by DestructurableAllocationOpInterface / SROA pass
 bool ArrayAccessOpInterface::canRewire(
     const DestructurableMemorySlot &slot, SmallPtrSetImpl<Attribute> &usedIndices,
     SmallVectorImpl<MemorySlot> &mustBeSafelyUsed
@@ -1288,8 +1288,8 @@ bool ArrayAccessOpInterface::canRewire(
   return false;
 }
 
-// Required by DestructurableAllocationOpInterface / SROA pass
 DeletionKind ArrayAccessOpInterface::rewireScalarOp(
+/// Required by DestructurableAllocationOpInterface / SROA pass
     const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
     RewriterBase &rewriter
 ) {
@@ -1375,7 +1375,7 @@ bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
   return singletonTypeListsUnify(l, r);
 }
 
-/// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableMemOpInterface / mem2reg pass
 bool ReadArrayOp::canUsesBeRemoved(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
     SmallVectorImpl<OpOperand *> &newBlockingUses
@@ -1388,7 +1388,7 @@ bool ReadArrayOp::canUsesBeRemoved(
          getResult().getType() == slot.elemType;
 }
 
-/// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableMemOpInterface / mem2reg pass
 DeletionKind ReadArrayOp::removeBlockingUses(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
     RewriterBase &rewriter, Value reachingDefinition
@@ -1409,7 +1409,7 @@ LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   );
 }
 
-/// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableMemOpInterface / mem2reg pass
 bool WriteArrayOp::canUsesBeRemoved(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
     SmallVectorImpl<OpOperand *> &newBlockingUses
@@ -1422,7 +1422,7 @@ bool WriteArrayOp::canUsesBeRemoved(
          getRvalue().getType() == slot.elemType;
 }
 
-/// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableMemOpInterface / mem2reg pass
 DeletionKind WriteArrayOp::removeBlockingUses(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
     RewriterBase &rewriter, Value reachingDefinition
@@ -1475,7 +1475,7 @@ bool ExtractArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
   return singletonTypeListsUnify(l, r);
 }
 
-/// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableMemOpInterface / mem2reg pass
 bool ExtractArrayOp::canUsesBeRemoved(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
     SmallVectorImpl<OpOperand *> &newBlockingUses
@@ -1483,7 +1483,7 @@ bool ExtractArrayOp::canUsesBeRemoved(
   assert(false && "Not yet implemented");
 }
 
-/// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableMemOpInterface / mem2reg pass
 DeletionKind ExtractArrayOp::removeBlockingUses(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
     RewriterBase &rewriter, Value reachingDefinition
@@ -1554,7 +1554,7 @@ LogicalResult InsertArrayOp::verify() {
   return success();
 }
 
-/// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableMemOpInterface / mem2reg pass
 bool InsertArrayOp::canUsesBeRemoved(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
     SmallVectorImpl<OpOperand *> &newBlockingUses
@@ -1562,7 +1562,7 @@ bool InsertArrayOp::canUsesBeRemoved(
   assert(false && "Not yet implemented");
 }
 
-/// Required by PromotableAllocationOpInterface / mem2reg pass
+/// Required by PromotableMemOpInterface / mem2reg pass
 DeletionKind InsertArrayOp::removeBlockingUses(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
     RewriterBase &rewriter, Value reachingDefinition
