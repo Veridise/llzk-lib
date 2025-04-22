@@ -3,6 +3,7 @@ set(LLZK_DEP_DIALECT_LIBS
     ${LLZK_DEP_DIALECT_LIBS}
     PARENT_SCOPE)
 add_subdirectory(Dialect/LLZK)
+add_subdirectory(Target)
 
 if(LLZK_ENABLE_BINDINGS_PYTHON)
   add_subdirectory(Bindings/Python)

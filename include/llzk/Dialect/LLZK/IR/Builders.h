@@ -35,6 +35,8 @@ inline mlir::OwningOpRef<mlir::ModuleOp> createLLZKModule(mlir::MLIRContext *con
 
 void addLangAttrForLLZKDialect(mlir::ModuleOp mod);
 
+bool isLLZKModule(mlir::ModuleOp mod);
+
 /// @brief Builds out a LLZK-compliant module and provides utilities for populating
 /// that module. This class is designed to be used by front-ends looking to
 /// generate LLZK IR programatically and is also a useful unit testing facility.

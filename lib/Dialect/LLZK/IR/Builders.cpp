@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/LLZK/IR/Builders.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
+#include <llzk/Dialect/LLZK/Util/SymbolLookup.h>
 
 #include <llvm/Support/ErrorHandling.h>
 
@@ -26,6 +27,15 @@ void addLangAttrForLLZKDialect(mlir::ModuleOp mod) {
   MLIRContext *ctx = mod.getContext();
   if (auto dialect = ctx->getOrLoadDialect<LLZKDialect>()) {
     mod->setAttr(LANG_ATTR_NAME, StringAttr::get(ctx, dialect->getNamespace()));
+  } else {
+    llvm::report_fatal_error("Could not load LLZK dialect!");
+  }
+}
+
+bool isLLZKModule(mlir::ModuleOp mod) {
+  MLIRContext *ctx = mod.getContext();
+  if (auto dialect = ctx->getOrLoadDialect<LLZKDialect>()) {
+    return mod->getAttr(LANG_ATTR_NAME) == StringAttr::get(ctx, dialect->getNamespace());
   } else {
     llvm::report_fatal_error("Could not load LLZK dialect!");
   }
