@@ -263,13 +263,17 @@ public:
     ArrayType at = splittableArray(op.getResult().getType());
     assert(at); // follows from legal() check
     Location loc = op.getLoc();
-    // Generate `CreateArrayOp` to use in place of the current op.
-    auto newArray = rewriter.create<CreateArrayOp>(loc, at);
-    rewriter.replaceAllUsesWith(op, newArray);
+    MLIRContext *ctx = op.getContext();
 
     ArrayAttr indexAsAttr =
         llvm::cast<ArrayAccessOpInterface>(op.getOperation()).indexOperandsToAttributeArray();
     assert(indexAsAttr); // follows from legal() check
+
+    // Generate `CreateArrayOp` to use in place of the current op.
+    auto newArray = rewriter.replaceOpWithNewOp<CreateArrayOp>(op, at);
+
+    OpBuilder::InsertionGuard guard(rewriter);
+    rewriter.setInsertionPointAfter(newArray);
 
     // For all indices in the ArrayType (i.e. the element count), read from the original base
     // array operand and write to the new array.
@@ -280,13 +284,11 @@ public:
       SmallVector<Attribute> joined;
       joined.append(indexAsAttr.begin(), indexAsAttr.end());
       joined.append(indexingTail.begin(), indexingTail.end());
-      ArrayAttr fullIndex = ArrayAttr::get(op.getContext(), joined);
+      ArrayAttr fullIndex = ArrayAttr::get(ctx, joined);
 
       auto init = createRead(loc, adaptor.getArrRef(), fullIndex, rewriter);
       createWrite(loc, newArray, indexingTail, init, rewriter);
     }
-
-    rewriter.eraseOp(op);
   }
 };
 
@@ -586,6 +588,7 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fie
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
 
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split array fields\n";);
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
@@ -626,6 +629,7 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
   target.addDynamicallyLegalOp<FieldWriteOp>(SplitArrayInFieldWriteOp::legal);
   target.addDynamicallyLegalOp<FieldReadOp>(SplitArrayInFieldReadOp::legal);
 
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 2: update/split other array ops\n";);
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
