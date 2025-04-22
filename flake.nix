@@ -2,6 +2,14 @@
   inputs = {
     llzk-pkgs.url = "github:Veridise/llzk-nix-pkgs?ref=main";
 
+    release-helpers = {
+      url = "github:Veridise/open-source-release-helpers?ref=main";
+      inputs = {
+        nixpkgs.follows = "llzk-pkgs/nixpkgs";
+        flake-utils.follows = "llzk-pkgs/flake-utils";
+      };
+    };
+
     nixpkgs = {
       url = "github:NixOS/nixpkgs";
       follows = "llzk-pkgs/nixpkgs";
@@ -16,7 +24,7 @@
   # Custom colored bash prompt
   nixConfig.bash-prompt = ''\[\e[0;32m\][LLZK]\[\e[m\] \[\e[38;5;244m\]\w\[\e[m\] % '';
 
-  outputs = { self, nixpkgs, flake-utils, llzk-pkgs }:
+  outputs = { self, nixpkgs, flake-utils, llzk-pkgs, release-helpers }:
     {
       # First, we define the packages used in this repository/flake
       overlays.default = final: prev: {
@@ -123,6 +131,9 @@
               # Add binary dir to PATH for convenience
               export PATH="$PWD"/build/bin:"$PATH"
 
+              # Add release helpers to the PATH for convenience
+              export PATH="${pkgs.changelogCreator.out}/bin":"$PATH"
+
               # TODO: only enable if python bindings enabled
               export PYTHONPATH="$PYTHONPATH":"$PWD"/build/python
 
@@ -148,6 +159,7 @@
           overlays = [
             self.overlays.default
             llzk-pkgs.overlays.default
+            release-helpers.overlays.default
           ];
         };
       in
@@ -155,7 +167,7 @@
         # Now, we can define the actual outputs of the flake
         packages = flake-utils.lib.flattenTree {
           # Copy the packages from the overlay.
-          inherit (pkgs) llzk llzkWithPython;
+          inherit (pkgs) llzk llzkWithPython changelogCreator;
 
           # For debug purposes, expose the MLIR/LLVM packages.
           inherit (pkgs) mlir mlirWithPython;

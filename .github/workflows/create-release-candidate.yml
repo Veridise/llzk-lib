@@ -4,32 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  create-rc:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout repo
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+  call-workflow-create-release-candidate:
+    uses: Veridise/open-source-release-helpers/.github/workflows/create-release-candidate.yml@main
+    secrets: inherit
 
-      - name: Create pre-release tag
-        run: |
-          echo "Increasing pre-release counter.."
-          RELEASE_COUNTER=$( cat .pre_release.counter )
-          RELEASE_COUNTER=$((RELEASE_COUNTER+1))
-          echo -n $RELEASE_COUNTER > .pre_release.counter
-          RELEASE_VERSION=$( echo ${{ github.ref_name }} | cut -d "-" -f 1 )
-          RC_TAG=${RELEASE_VERSION}-rc${RELEASE_COUNTER}
-          echo Release candidate tag: ${RC_TAG}
-          echo "RC_TAG=${RC_TAG}" >> $GITHUB_ENV
-
-      - name: Update pre-release counter and create rc git tag
-        id: commit
-        run: |
-          git config user.name ${{ github.actor	}}
-          git config user.email ${{ github.actor }}@users.noreply.github.com
-          git add .pre_release.counter
-          git commit -m "Update pre-release counter for RC ${{ env.RC_TAG }}"
-          git push
-          git tag ${{ env.RC_TAG }}
-          git push origin ${{ env.RC_TAG }}

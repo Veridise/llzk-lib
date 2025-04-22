@@ -10,52 +10,6 @@ on:
       - unittests
 
 jobs:
-  changelog-validate:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check if run on pre-release branch
-        id: check_pre_release_branch
-        run: |
-          echo "Checking if the github.ref_name (${{ github.ref_name }}) matches pre-release branch..."
-          skip_validation=0
-          if [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+-pre-release$ ]]; then
-              skip_validation=1
-              echo "Changelog validator is skipped. We are running on a pre-release branch" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "skip_validation=${skip_validation}" >> $GITHUB_OUTPUT
-
-      - name: Check out repository code
-        if: ${{ steps.check_pre_release_branch.outputs.skip_validation == 0 }}
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Setup python
-        if: ${{ steps.check_pre_release_branch.outputs.skip_validation == 0 }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip" # caching pip dependencies
-
-      - name: Setup node
-        if: ${{ steps.check_pre_release_branch.outputs.skip_validation == 0 }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: latest
-
-      - name: Install app and test dependencies
-        if: ${{ steps.check_pre_release_branch.outputs.skip_validation == 0 }}
-        run: |
-          pip install --upgrade pip && pip install -r release_helpers/requirements.txt
-          if [ -d "release_helpers/mdx-validate" ]; then
-            pushd release_helpers/mdx-validate
-            npm install
-            popd
-          else
-            echo "::warning ::release_helpers submodule is not updated. Current version does not validate the mdx format."
-          fi
-
-      - name: Validate change log entry for current branch
-        if: ${{ steps.check_pre_release_branch.outputs.skip_validation == 0 }}
-        run: |
-          ./release_helpers/scripts/validateChangelogEntry.sh
+  call-workflow-changelog-validate:
+    uses: Veridise/open-source-release-helpers/.github/workflows/changelog-validator.yml@main
+    secrets: inherit
