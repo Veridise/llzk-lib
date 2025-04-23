@@ -24,7 +24,7 @@ namespace picus {
 
 InputStmt::InputStmt(VarExpr Var) : var(Var) {}
 
-void InputStmt::print(llvm::raw_ostream &os) const { os << "(input " << var << ")\n"; }
+void InputStmt::print(llvm::raw_ostream &os) const { os << "(input " << var << ")"; }
 
 //===----------------------------------------------------------------------===//
 // OutputStmt
@@ -32,7 +32,7 @@ void InputStmt::print(llvm::raw_ostream &os) const { os << "(input " << var << "
 
 OutputStmt::OutputStmt(VarExpr Var) : var(Var) {}
 
-void OutputStmt::print(llvm::raw_ostream &os) const { os << "(output " << var << ")\n"; }
+void OutputStmt::print(llvm::raw_ostream &os) const { os << "(output " << var << ")"; }
 
 //===----------------------------------------------------------------------===//
 // AssertStmt
@@ -40,7 +40,7 @@ void OutputStmt::print(llvm::raw_ostream &os) const { os << "(output " << var <<
 
 AssertStmt::AssertStmt(Expression::ptr Expr) : expr(std::move(Expr)) { assert(expr); }
 
-void AssertStmt::print(llvm::raw_ostream &os) const { os << "(assert " << *expr << ")\n"; }
+void AssertStmt::print(llvm::raw_ostream &os) const { os << "(assert " << *expr << ")"; }
 
 //===----------------------------------------------------------------------===//
 // LookupStmt
@@ -68,7 +68,7 @@ void LookupStmt::print(llvm::raw_ostream &os) const {
   llvm::interleave(exprs, os, " ");
   os << "] [";
   llvm::interleave(fixedRefs, os, " ");
-  os << "])\n";
+  os << "])";
 }
 
 //===----------------------------------------------------------------------===//
@@ -83,7 +83,7 @@ void CallStmt::print(llvm::raw_ostream &os) const {
   llvm::interleave(outputs, os, " ");
   os << "] " << moduleName << "[";
   llvm::interleave(inputs, os, " ");
-  os << "])\n";
+  os << "])";
 }
 
 } // namespace picus

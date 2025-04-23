@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <llzk/Dialect/LLZK/Util/AttributeHelper.h>
 #include <llzk/Target/Picus/Language/Circuit.h>
 #include <llzk/Target/Picus/Language/Statement.h>
 
@@ -55,19 +56,17 @@ Expression::ptr FixedValues::getFixedValueRef(llvm::StringRef name) {
   }
 
   // Wrap ConstExpr into Expression::ptr if needed
-  return std::make_unique<ConstExpr>(it->second.front());
+  return std::make_unique<ConstExpr>(llzk::toAPInt(std::distance(values.begin(), it)));
 }
 
 void FixedValues::print(llvm::raw_ostream &os) const {
-  os << "FixedValues {\n";
+  os << "(fixed \n";
   for (const auto &entry : values) {
-    os << "  " << entry.getKey() << ": [";
-    for (const auto &expr : entry.second) {
-      expr.print(os), os << ", ";
-    }
+    os << "[";
+    llvm::interleave(entry.second, os, " ");
     os << "]\n";
   }
-  os << "}\n";
+  os << ")\n";
 }
 
 //===----------------------------------------------------------------------===//
