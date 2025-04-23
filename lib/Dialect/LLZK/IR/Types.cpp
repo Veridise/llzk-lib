@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/LLZK/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
 #include "llzk/Dialect/LLZK/Util/StreamHelper.h"
@@ -860,7 +861,7 @@ LogicalResult computeShapeFromDims(
   // Convert the Attributes to int64_t
   for (Attribute a : dimensionSizes) {
     if (auto p = a.dyn_cast<IntegerAttr>()) {
-      shape.push_back(p.getValue().getSExtValue());
+      shape.push_back(fromAPInt(p.getValue()));
     } else if (a.isa<SymbolRefAttr, AffineMapAttr>()) {
       // The ShapedTypeInterface uses 'kDynamic' for dimensions with non-static size.
       shape.push_back(ShapedType::kDynamic);
@@ -902,6 +903,58 @@ ArrayType::cloneWith(Type elementType, std::optional<ArrayRef<Attribute>> dimens
   return ArrayType::get(
       elementType, dimensions.has_value() ? dimensions.value() : getDimensionSizes()
   );
+}
+
+namespace {
+
+inline ArrayType createArrayOfSizeOne(Type elemType) { return ArrayType::get(elemType, {1}); }
+
+} // namespace
+
+bool ArrayType::collectIndices(llvm::function_ref<void(ArrayAttr)> inserter) const {
+  if (!hasStaticShape()) {
+    return false;
+  }
+  MLIRContext *ctx = getContext();
+  ArrayIndexGen idxGen = ArrayIndexGen::from(*this);
+  for (int64_t e = getNumElements(), i = 0; i < e; ++i) {
+    auto delinearized = idxGen.delinearize(i, ctx);
+    assert(delinearized.has_value()); // cannot fail since loop is over array size
+    inserter(ArrayAttr::get(ctx, delinearized.value()));
+  }
+  return true;
+}
+
+std::optional<SmallVector<ArrayAttr>> ArrayType::getSubelementIndices() const {
+  SmallVector<ArrayAttr> ret;
+  bool success = collectIndices([&ret](ArrayAttr v) { ret.push_back(v); });
+  return success ? std::make_optional(ret) : std::nullopt;
+}
+
+/// Required by DestructurableTypeInterface / SROA pass
+std::optional<DenseMap<Attribute, Type>> ArrayType::getSubelementIndexMap() const {
+  DenseMap<Attribute, Type> ret;
+  Type destructAs = createArrayOfSizeOne(getElementType());
+  bool success = collectIndices([&](ArrayAttr v) { ret[v] = destructAs; });
+  return success ? std::make_optional(ret) : std::nullopt;
+}
+
+/// Required by DestructurableTypeInterface / SROA pass
+Type ArrayType::getTypeAtIndex(Attribute index) const {
+  if (!hasStaticShape()) {
+    return nullptr;
+  }
+  // Since indexing is multi-dimensional, `index` should be ArrayAttr
+  ArrayAttr indexAttr = llvm::dyn_cast<ArrayAttr>(index);
+  if (!indexAttr) {
+    return nullptr;
+  }
+  // Ensure the shape is valid and dimensions are valid for the shape by computing linear index.
+  if (!ArrayIndexGen::from(*this).linearize(indexAttr.getValue())) {
+    return nullptr;
+  }
+  // If that's successful, the destructured type is the size-1 array of the element type.
+  return createArrayOfSizeOne(getElementType());
 }
 
 //===------------------------------------------------------------------===//

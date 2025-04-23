@@ -77,4 +77,13 @@ def FlatteningPass : Pass<"llzk-flatten", "::mlir::ModuleOp"> {
   let dependentDialects = ["llzk::LLZKDialect"];
 }
 
+def ArrayToScalarPass : Pass<"llzk-array-to-scalar", "::mlir::ModuleOp"> {
+  let summary = "Replace arrays with scalar values";
+  let description = [{
+    Replace known-shape arrays with the proper number of scalar values
+  }];
+  let constructor = "llzk::createArrayToScalarPass()";
+  let dependentDialects = ["llzk::LLZKDialect"];
+}
+
 #endif // LLZK_TRANSFORMATION_PASSES_TD

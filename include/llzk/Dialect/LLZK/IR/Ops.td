@@ -26,6 +26,26 @@ include "llzk/Dialect/LLZK/IR/FuncOps.td"
 // Basic constructs
 //===------------------------------------------------------------------===//
 
+def LLZK_UndefOp : LLZK_Op<"undef", [Pure]> {
+  let summary = "Creates an undefined value of the specified type.";
+  let description = [{
+    This operation has no operands or attributes. It represents an undefined
+    value of the specified LLZK IR dialect type. This op can be introduced by
+    the `llzk-array-to-scalar` pass if there is a read from an array index
+    that was not dominated by an earlier write to that same index.
+
+    Example:
+
+    ```llzk
+    %0 = llzk.undef : !llzk.felt
+    ```
+  }];
+  let results = (outs AnyLLZKType:$res);
+  let assemblyFormat = [{
+    `:` type($res) attr-dict
+  }];
+}
+
 def LLZK_FeltConstantOp
     : LLZK_Op<"constfelt", [ConstantLike, Pure,
                             DeclareOpInterfaceMethods<
@@ -266,8 +286,8 @@ def LLZK_StructDefOp
     ::std::vector<FieldDefOp> getFieldDefs();
 
     /// Returns wether the struct defines fields marked as columns.
-    mlir::LogicalResult hasColumns() {
-      return mlir::success(llvm::any_of(getFieldDefs(), [](FieldDefOp fdOp) {
+    ::mlir::LogicalResult hasColumns() {
+      return ::mlir::success(::llvm::any_of(getFieldDefs(), [](FieldDefOp fdOp) {
         return fdOp.getColumn();
       }));
     }
@@ -385,6 +405,7 @@ def LLZK_FieldReadOp
     backwards and a positive value represents reading a value forward.
     Only fields marked as columns can be read in this manner.
   }];
+  let isRead = 1;
 
   let arguments = (ins LLZK_StructType:$component,
       FlatSymbolRefAttr:$field_name,
@@ -435,6 +456,7 @@ def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef", [ComputeOnly]> {
   let description = [{
     This operation writes a value to a named field in a struct/component.
   }];
+  let isRead = 1;
 
   let arguments = (ins LLZK_StructType:$component,
       FlatSymbolRefAttr:$field_name, AnyLLZKType:$val);
@@ -476,6 +498,8 @@ def LLZK_CreateArrayOp
           [Pure, AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
            DeclareOpInterfaceMethods<SymbolUserOpInterface>,
            DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
+           DeclareOpInterfaceMethods<PromotableAllocationOpInterface>,
+           DeclareOpInterfaceMethods<DestructurableAllocationOpInterface>,
            VariadicTypesMatchWith<
                "operand types match result type", "result", "elements",
                "resultTypeToElementsTypes($_self)", "std::equal_to<>()">]> {
@@ -591,9 +615,9 @@ def LLZK_CreateArrayOp
 }
 
 def LLZK_ReadArrayOp
-    : LLZK_Op<
-          "readarr", [DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                      ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
+    : LLZK_ScalarArrayAccessOp<
+          "readarr",
+          true, [ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
   let summary = "read scalar from an array";
   let description = [{
     This operation reads the value from an array at the specified position.
@@ -628,8 +652,8 @@ def LLZK_ReadArrayOp
 }
 
 def LLZK_WriteArrayOp
-    : LLZK_Op<"writearr", [DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                           ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
+    : LLZK_ScalarArrayAccessOp<
+          "writearr", false, [ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
   let summary = "write scalar to an array";
   let description = [{
     This operation writes a value into an array at the specified position.
@@ -665,8 +689,8 @@ def LLZK_WriteArrayOp
 }
 
 def LLZK_ExtractArrayOp
-    : LLZK_Op<"extractarr", [DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                             InferTypeOpAdaptorWithIsCompatible]> {
+    : LLZK_RangedArrayAccessOp<"extractarr",
+                               true, [InferTypeOpAdaptorWithIsCompatible]> {
   let summary = "read subarray from a multi-dimensional array";
   let description = [{
     This operation takes an N-dimensional array and K indices and extracts the
@@ -698,8 +722,7 @@ def LLZK_ExtractArrayOp
   }];
 }
 
-def LLZK_InsertArrayOp
-    : LLZK_Op<"insertarr", [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+def LLZK_InsertArrayOp : LLZK_RangedArrayAccessOp<"insertarr", false> {
   let summary = "write subarray into a multi-dimensional array";
   let description = [{
     This operation takes an N-dimensional array, K indices, and an (N+K)-dimensional
@@ -735,7 +758,8 @@ def LLZK_InsertArrayOp
 
 def LLZK_ArrayLengthOp
     : LLZK_Op<"array_len", [Pure,
-                            DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+                            DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                            DeclareOpInterfaceMethods<ArrayRefOpInterface>]> {
   let summary = "return the length of an array";
   let description = [{
     This operation returns the size of the specified dimension of an array.
@@ -754,6 +778,13 @@ def LLZK_ArrayLengthOp
   let results = (outs Index:$length);
 
   let assemblyFormat = [{ $arr_ref `,` $dim `:` type($arr_ref) attr-dict }];
+
+  let extraClassDeclaration = [{
+    /// Gets the type of the referenced base array.
+    inline ::llzk::ArrayType getArrRefType() {
+      return ::llvm::cast<ArrayRefOpInterface>(getOperation()).getArrRefType();
+    }
+  }];
 }
 
 //===------------------------------------------------------------------===//
@@ -1035,7 +1066,9 @@ def LLZK_UnifiableCastOp : LLZK_Op<"unifiable_cast", [Pure]> {
 
   let arguments = (ins AnyLLZKType:$input);
   let results = (outs AnyLLZKType:$result);
-  let assemblyFormat = "$input `:` functional-type($input, results) attr-dict";
+  let assemblyFormat = [{
+    $input `:` functional-type($input, results) attr-dict
+  }];
 
   let hasVerifier = 1;
 }

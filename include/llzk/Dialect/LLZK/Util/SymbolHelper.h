@@ -149,7 +149,7 @@ verifyTypeResolution(mlir::SymbolTableCollection &tables, mlir::Operation *origi
 /// Ensure that all symbols used within all Type instances can be resolved.
 template <std::ranges::input_range Range>
 mlir::LogicalResult verifyTypeResolution(
-    mlir::SymbolTableCollection &tables, mlir::Operation *origin, Range const &types
+    mlir::SymbolTableCollection &tables, mlir::Operation *origin, const Range &types
 ) {
   // Check all before returning to present all applicable type errors in one compilation.
   bool failed = false;

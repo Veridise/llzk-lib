@@ -50,8 +50,11 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
           [{Gets the SSA value with the target component from the FieldRefOp.}],
           "::mlir::Value", "getComponent", (ins)>,
       // Requires implementors to have a '$field_name' argument.
+      InterfaceMethod<
+          [{Gets the field name attribute value from the FieldRefOp.}],
+          "::llvm::StringRef", "getFieldName", (ins)>,
       InterfaceMethod<[{Gets the field name attribute from the FieldRefOp.}],
-                      "::llvm::StringRef", "getFieldName", (ins)>,
+                      "::mlir::FlatSymbolRefAttr", "getFieldNameAttr", (ins)>,
       // Requires the '$component' argument type to be LLZK_StructType.
       InterfaceMethod<[{Gets the struct type of the target component.}],
                       "::llzk::StructType", "getStructType", (ins),
@@ -60,11 +63,81 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
         assert(t.isa<StructType>());
         return t.template cast<StructType>();
       }]>,
+      InterfaceMethod<
+          [{Return `true` if the op is a read, `false` if it's a write.}],
+          "bool", "isRead", (ins)>,
   ];
 
   let extraClassDeclaration = [{
     /// Gets the definition for the `field` referenced in this op.
     ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &tables);
+  }];
+}
+
+def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
+  let description = [{
+    Common interface for operations that reference an array value.
+  }];
+  let cppNamespace = "::llzk";
+
+  let methods = [
+      // Requires implementors to have a '$arr_ref' argument.
+      InterfaceMethod<[{Gets the SSA Value for the referenced array.}],
+                      "::mlir::Value", "getArrRef", (ins)>,
+      InterfaceMethod<
+          [{Gets the mutable operand slot holding the SSA Value for the referenced array.}],
+          "::mlir::OpOperand &", "getArrRefMutable", (ins)>,
+  ];
+
+  let extraClassDeclaration = [{
+    /// Gets the type of the referenced array.
+    inline ::llzk::ArrayType getArrRefType() {
+      return ::llvm::cast<::llzk::ArrayType>(getArrRef().getType());
+    }
+  }];
+}
+
+def ArrayAccessOpInterface
+    : OpInterface<"ArrayAccessOpInterface", [ArrayRefOpInterface]> {
+  let description = [{
+    Common interface for operations that read or write from an array.
+  }];
+  let cppNamespace = "::llzk";
+
+  let methods = [
+      // Requires implementors to have a '$indices' argument.
+      InterfaceMethod<
+          [{Gets the operand range containing the index for each dimension.}],
+          "::mlir::Operation::operand_range", "getIndices", (ins)>,
+      InterfaceMethod<
+          [{Gets the mutable operand range containing the index for each dimension.}],
+          "::mlir::MutableOperandRange", "getIndicesMutable", (ins)>,
+      InterfaceMethod<
+          [{Return `true` if the op is a read, `false` if it's a write.}],
+          "bool", "isRead", (ins)>,
+  ];
+
+  let extraClassDeclaration = [{
+    /// Compute the dimensions of the read/write value. Removing the number
+    /// of indices provided from the front dimensions of the base array type
+    /// gives the dimensions/shape of that value.
+    inline ::mlir::ArrayRef<::mlir::Attribute> getValueOperandDims() {
+      return getArrRefType().getDimensionSizes().drop_front(getIndices().size());
+    }
+
+    /// Returns the multi-dimensional indices of the array access as an Attribute
+    /// array or a null pointer if a valid index cannot be computed for any dimension.
+    ::mlir::ArrayAttr indexOperandsToAttributeArray();
+
+    /// Required by companion interface DestructurableAccessorOpInterface / SROA pass
+    bool canRewire(const ::mlir::DestructurableMemorySlot &slot,
+            ::llvm::SmallPtrSetImpl<::mlir::Attribute> &usedIndices,
+            ::mlir::SmallVectorImpl<::mlir::MemorySlot> &mustBeSafelyUsed);
+
+    /// Required by companion interface DestructurableAccessorOpInterface / SROA pass
+    ::mlir::DeletionKind rewire(const ::mlir::DestructurableMemorySlot &slot,
+            ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
+            ::mlir::RewriterBase &rewriter);
   }];
 }
 

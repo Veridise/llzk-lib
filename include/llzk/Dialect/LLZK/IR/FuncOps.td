@@ -171,13 +171,13 @@ def FuncOp
     /// check that this FuncOp is located within a StructDefOp must be done separately).
     inline bool nameIsConstrain() { return FUNC_NAME_CONSTRAIN == getSymName(); }
 
-    /// Return `true` iff the function is with a StructDefOp
+    /// Return `true` iff the function is within a StructDefOp
     bool isInStruct() { return ::llzk::isInStruct(*this); }
 
-    /// Return `true` iff the function is with a StructDefOp and named `FUNC_NAME_COMPUTE`.
+    /// Return `true` iff the function is within a StructDefOp and named `FUNC_NAME_COMPUTE`.
     inline bool isStructCompute() { return isInStruct() && nameIsCompute(); }
 
-    /// Return `true` iff the function is with a StructDefOp and named `FUNC_NAME_CONSTRAIN`.
+    /// Return `true` iff the function is within a StructDefOp and named `FUNC_NAME_CONSTRAIN`.
     inline bool isStructConstrain() { return isInStruct() && nameIsConstrain(); }
 
     /// Assuming the name is `FUNC_NAME_COMPUTE`, return the single StructType result.

@@ -14,6 +14,7 @@ include "llzk/Dialect/LLZK/IR/Dialect.td"
 
 include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinTypes.td"
+include "mlir/Interfaces/MemorySlotInterfaces.td"
 
 class LLZK_Type<string name, string typeMnemonic, list<Trait> traits = []>
     : TypeDef<LLZKDialect, name, traits> {
@@ -26,8 +27,9 @@ def AnyLLZKType : Type<CPred<"::llzk::isValidType($_self)">,
 def GlobalDefType : Type<CPred<"::llzk::isValidGlobalType($_self)">,
                          "any LLZK type except non-constant types">;
 
-def EmitEqType : Type<CPred<"::llzk::isValidEmitEqType($_self)">,
-                      "any LLZK type, excluding non-Signal struct and string types">;
+def EmitEqType
+    : Type<CPred<"::llzk::isValidEmitEqType($_self)">,
+           "any LLZK type, excluding non-Signal struct and string types">;
 
 def ConstReadType : Type<CPred<"::llzk::isValidConstReadType($_self)">,
                          "integral, felt, or typevar type">;
@@ -103,7 +105,10 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
   }];
 }
 
-def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
+def LLZK_ArrayType
+    : LLZK_Type<"Array", "array",
+                [ShapedTypeInterface,
+                 DeclareTypeInterfaceMethods<DestructurableTypeInterface>]> {
   let summary = "n-dimensional array";
   let description = [{
     Array type with a ranked shape and homogeneous element type.
@@ -171,6 +176,15 @@ def LLZK_ArrayType : LLZK_Type<"Array", "array", [ShapedTypeInterface]> {
     }]>];
 
   let extraClassDeclaration = [{
+  private:
+    /// Call the given function for each valid index for this ArrayType.
+    /// Return `false` if this ArrayType does not have a static shape.
+    bool collectIndices(::llvm::function_ref<void(::mlir::ArrayAttr)>) const;
+
+  public:
+    /// Return a list of all valid indices for this ArrayType.
+    std::optional<::llvm::SmallVector<::mlir::ArrayAttr>> getSubelementIndices() const;
+
     /// Returns if this type is ranked, i.e. it has a known number of dimensions.
     /// LLZK arrays are always ranked, i.e. the number of dimensions is known.
     /// Required by the ShapedTypeInterface interface.

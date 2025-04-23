@@ -158,8 +158,8 @@ class LLZK_Op<string mnemonic, list<Trait> traits = []>
 
 class LLZK_GlobalRefOp<string mnemonic, list<Trait> traits = []>
     : LLZK_Op<mnemonic,
-              traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                      DeclareOpInterfaceMethods<GlobalRefOpInterface>]> {
+              traits#[DeclareOpInterfaceMethods<GlobalRefOpInterface>,
+                      DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let extraClassDeclaration = [{
     /// Gets the definition for the `global` referenced in this op.
     inline ::mlir::FailureOr<SymbolLookupResult<GlobalDefOp>> getGlobalDefOp(::mlir::SymbolTableCollection &tables) {
@@ -170,12 +170,96 @@ class LLZK_GlobalRefOp<string mnemonic, list<Trait> traits = []>
 
 class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
     : LLZK_Op<mnemonic,
-              traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                      DeclareOpInterfaceMethods<FieldRefOpInterface>]> {
+              traits#[DeclareOpInterfaceMethods<FieldRefOpInterface>,
+                      DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+  bit isRead = ?; // read(1) vs write(0) ops
+
   let extraClassDeclaration = [{
     /// Gets the definition for the `field` referenced in this op.
     inline ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &tables) {
       return ::llvm::cast<FieldRefOpInterface>(getOperation()).getFieldDefOp(tables);
+    }
+  }];
+
+  let extraClassDefinition = [{
+    /// Return `true` if the op is a read, `false` if it's a write.
+    bool $cppClass::isRead() {
+      return }]#!if(isRead, "true", "false")#[{;
+    }
+  }];
+}
+
+class LLZK_ArrayAccessOp<string mnemonic, list<Trait> traits = []>
+    : LLZK_Op<mnemonic,
+              traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                      DeclareOpInterfaceMethods<ArrayAccessOpInterface>]> {
+  let extraClassDeclaration = [{
+    /// Gets the type of the referenced base array.
+    inline ::llzk::ArrayType getArrRefType() {
+      return ::llvm::cast<ArrayAccessOpInterface>(getOperation()).getArrRefType();
+    }
+  }];
+}
+
+// isRead: read(1) vs write(0) ops
+class LLZK_ScalarArrayAccessOp<string mnemonic, bit isRead,
+                               list<Trait> traits = []>
+    : LLZK_ArrayAccessOp<
+          mnemonic,
+          traits#[DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
+                  DeclareOpInterfaceMethods<PromotableMemOpInterface>]> {
+  let extraClassDefinition = [{
+    /// Required by DestructurableAllocationOpInterface / SROA pass
+    bool $cppClass::canRewire(const ::mlir::DestructurableMemorySlot &slot,
+                ::llvm::SmallPtrSetImpl<::mlir::Attribute> &usedIndices,
+                ::mlir::SmallVectorImpl<::mlir::MemorySlot>
+                &mustBeSafelyUsed) {
+      return ::llvm::cast<ArrayAccessOpInterface>(getOperation())
+                .canRewire(slot, usedIndices, mustBeSafelyUsed);
+    }
+
+    /// Required by DestructurableAllocationOpInterface / SROA pass
+    ::mlir::DeletionKind $cppClass::rewire(const
+    ::mlir::DestructurableMemorySlot &slot,
+                ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
+                ::mlir::RewriterBase &rewriter) {
+      return ::llvm::cast<ArrayAccessOpInterface>(getOperation())
+                .rewire(slot, subslots, rewriter);
+    }
+
+    /// Required by PromotableMemOpInterface / mem2reg pass
+    bool $cppClass::loadsFrom(const ::mlir::MemorySlot &slot) {
+      return }]#!if(isRead, "getArrRef() == slot.ptr", "false")#[{;
+    }
+
+    /// Required by PromotableMemOpInterface / mem2reg pass
+    bool $cppClass::storesTo(const ::mlir::MemorySlot &slot) {
+      return }]#!if(isRead, "false", "getArrRef() == slot.ptr")#[{;
+    }
+
+    /// Required by PromotableAllocationOpInterface / mem2reg pass
+    ::mlir::Value $cppClass::getStored(const ::mlir::MemorySlot &, ::mlir::RewriterBase &) {
+      }]#!if(isRead,
+             "llvm_unreachable(\"getStored() should not be called on "
+             "$cppClass\")",
+             "return getRvalue()")#[{;
+    }
+
+    /// Return `true` if the op is a read, `false` if it's a write.
+    bool $cppClass::isRead() {
+      return }]#!if(isRead, "true", "false")#[{;
+    }
+  }];
+}
+
+// isRead: read(1) vs write(0) ops
+class LLZK_RangedArrayAccessOp<string mnemonic, bit isRead,
+                               list<Trait> traits = []>
+    : LLZK_ArrayAccessOp<mnemonic, traits> {
+  let extraClassDefinition = [{
+    /// Return `true` if the op is a read, `false` if it's a write.
+    bool $cppClass::isRead() {
+      return }]#!if(isRead, "true", "false")#[{;
     }
   }];
 }
