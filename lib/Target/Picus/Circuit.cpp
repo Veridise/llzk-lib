@@ -21,7 +21,10 @@ namespace picus {
 // Circuit
 //===----------------------------------------------------------------------===//
 
+Circuit::Circuit(PrimeNumber Prime) : prime(Prime) {}
+
 void Circuit::print(llvm::raw_ostream &os) const {
+  prime.print(os);
   for (auto &mod : modules) {
     mod.getValue().print(os);
   }
@@ -78,7 +81,15 @@ Module::Module(llvm::StringRef Name) : name(Name) {}
 void Module::print(llvm::raw_ostream &os) const {
   os << "(begin-module " << name << ")\n";
   llvm::interleave(statements, os, "\n");
-  os << "(end-module)\n";
+  os << "\n(end-module)\n";
 }
+
+//===----------------------------------------------------------------------===//
+// PrimeNumber
+//===----------------------------------------------------------------------===//
+
+PrimeNumber::PrimeNumber(llvm::APInt Prime) : prime(Prime) {}
+
+void PrimeNumber::print(llvm::raw_ostream &os) const { os << "(prime-number " << prime << ")"; }
 
 } // namespace picus

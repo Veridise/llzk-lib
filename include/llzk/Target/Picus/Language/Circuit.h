@@ -56,10 +56,21 @@ private:
   llvm::SmallVector<std::unique_ptr<Statement>> statements;
 };
 
+/// Declares the prime number used by the circuit.
+class PrimeNumber {
+public:
+  PrimeNumber(llvm::APInt);
+  void print(llvm::raw_ostream &) const;
+
+private:
+  llvm::APInt prime;
+};
+
 /// Top level class that represents a complete Picus program.
 /// Comprised of a sequence of top-level statements defining elements of the circuit.
 class Circuit {
 public:
+  Circuit(PrimeNumber);
   /// Prints the program as an collection of s-expressions into the output stream.
   void print(llvm::raw_ostream &) const;
 
@@ -69,6 +80,7 @@ public:
   FixedValues &getFixedValues() { return fixed; }
 
 private:
+  PrimeNumber prime;
   llvm::StringMap<Module> modules;
   FixedValues fixed;
 };

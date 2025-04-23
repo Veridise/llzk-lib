@@ -144,7 +144,6 @@ public:
   }
 
   LogicalResult translateStructInputsAndOutputs(StructDefOp structOp) {
-
     auto constrainFunc = structOp.getConstrainFuncOp();
     // Function arguments (except self) are considered inputs
     auto region = constrainFunc.getCallableRegion();
@@ -261,14 +260,14 @@ template <typename Op, typename Fn> LogicalResult translateOps(ModuleOp op, Fn f
   return failure(result == WalkResult::interrupt());
 }
 
-std::unique_ptr<Circuit> llzk::translateModuleToPicus(Operation *op) {
+std::unique_ptr<Circuit> llzk::translateModuleToPicus(Operation *op, llvm::APInt primeNumber) {
   assert(
       validInputOperation(op) &&
       "Operation has to be either llzk.struct or module with llzk attribute"
   );
 
   auto modOp = mlir::cast<ModuleOp>(op);
-  auto circuit = std::make_unique<Circuit>();
+  auto circuit = std::make_unique<Circuit>(primeNumber);
 
   auto &fixedValues = circuit->getFixedValues();
   if (failed(translateOps<GlobalDefOp>(modOp, [&fixedValues](GlobalDefOp globalOp) {
