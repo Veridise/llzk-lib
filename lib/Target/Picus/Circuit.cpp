@@ -26,11 +26,47 @@ void Circuit::print(llvm::raw_ostream &os) const {
   fixed.print(os);
 }
 
+
 Module &Circuit::emplaceModule(llvm::StringRef name) {
   if (!modules.contains(name)) {
     modules.insert({name, Module(name)});
   }
   return (*modules.find(name)).getValue();
+}
+
+
+void FixedValues::addFixedValues(llvm::StringRef name, ConstExpr expr) {
+  // Insert single ConstExpr into values[name]
+  values[name].push_back(expr);
+}
+
+void FixedValues::addFixedValues(llvm::StringRef name, llvm::ArrayRef<ConstExpr> exprs) {
+  // Append array of ConstExpr to values[name]
+  for (const auto &e : exprs)
+    values[name].push_back(e);
+}
+
+Expression::ptr FixedValues::getFixedValueRef(llvm::StringRef name) {
+  // Dummy: Return null or wrap first expression
+  auto it = values.find(name);
+  if (it == values.end() || it->second.empty()) {
+    llvm::errs() << "No fixed value found for name: " << name << "\n";
+    return nullptr;
+  }
+
+  // Wrap ConstExpr into Expression::ptr if needed
+  return std::make_unique<ConstExpr>(it->second.front());
+}
+
+void FixedValues::print(llvm::raw_ostream &os) const {
+  os << "FixedValues {\n";
+  for (const auto &entry : values) {
+    os << "  " << entry.getKey() << ": [";
+    for (const auto &expr : entry.second)
+      expr.print(os), os << ", ";
+    os << "]\n";
+  }
+  os << "}\n";
 }
 
 //===----------------------------------------------------------------------===//

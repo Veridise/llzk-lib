@@ -136,7 +136,7 @@ public:
 
     constrainFunc.walk([this](EmitContainmentOp emitInOp) {
       outMod.addStatement(std::make_unique<LookupStmt>(
-          translateValueToExpr(emitInOp.getLhs(), translateValueToExpr(emitInOp.getRhs()))
+          translateValueToExpr(emitInOp.getLhs()), translateValueToExpr(emitInOp.getRhs())
       ));
     });
 
@@ -241,3 +241,8 @@ std::unique_ptr<Circuit> llzk::translateModuleToPicus(Operation *op) {
 
   return circuit;
 }
+
+// void testFixed() {
+//   picus::FixedValues fv;
+//   fv.addFixedValues("x", picus::ConstExpr(/* dummy */ llvm::APInt(32, 1)));
+// }
