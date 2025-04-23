@@ -11,6 +11,7 @@
 #include <llzk/Dialect/LLZK/IR/Builders.h>
 #include <llzk/Dialect/LLZK/IR/Ops.h>
 #include <llzk/Dialect/LLZK/IR/Types.h>
+#include <llzk/Dialect/LLZK/Util/AttributeHelper.h>
 #include <llzk/Target/Picus/Export.h>
 #include <llzk/Target/Picus/Language/Circuit.h>
 #include <llzk/Target/Picus/Language/Expression.h>
@@ -41,6 +42,10 @@ static bool validInputOperation(Operation *op) {
 
 static StringAttr inputVarName(MLIRContext *ctx, unsigned argNo) {
   return StringAttr::get(ctx, "input_" + Twine(argNo));
+}
+
+static StringAttr inputVarName(MLIRContext *ctx, unsigned argNo, unsigned idx) {
+  return StringAttr::get(ctx, "input_" + Twine(argNo) + "_" + Twine(idx));
 }
 
 namespace {
@@ -74,6 +79,43 @@ public:
     })
         .Case<FeltConstantOp>([](FeltConstantOp feltConst) {
       return std::make_unique<ConstExpr>(feltConst.getValue().getValue());
+    })
+        .Case<ReadArrayOp>([](ReadArrayOp readArrOp) -> Expression::ptr {
+      // Only constant indexed arrays coming from arguments are currently allowed
+      auto arrValue = readArrOp.getArrRef();
+      if (!mlir::isa<BlockArgument>(arrValue)) {
+        readArrOp->emitOpError() << "is an unsupported " << readArrOp->getName()
+                                 << " operation: array must be a function argument";
+        return nullptr;
+      }
+      auto arg = mlir::cast<BlockArgument>(arrValue);
+      auto indices = readArrOp.getIndices();
+      if (indices.size() != 1) {
+        readArrOp->emitOpError() << "is an unsupported " << readArrOp->getName()
+                                 << " operation: must have only one index";
+        return nullptr;
+      }
+      if (auto constIndex =
+              mlir::dyn_cast_if_present<arith::ConstantIndexOp>(indices.front().getDefiningOp())) {
+        return std::make_unique<VarExpr>(inputVarName(
+            readArrOp.getContext(), arg.getArgNumber(),
+            llzk::fromAPInt(mlir::cast<IntegerAttr>(constIndex.getValue()).getValue())
+        ));
+      }
+      readArrOp->emitOpError() << "is an unsupported " << readArrOp->getName()
+                               << " operation: index must be constant";
+      return nullptr;
+    })
+        .Case<FieldReadOp>([](FieldReadOp fieldRead) -> Expression::ptr {
+      // Only reading from self is currently allowed.
+      auto structRefArg = mlir::dyn_cast<BlockArgument>(fieldRead.getComponent());
+      if (!structRefArg || structRefArg.getArgNumber() != 0) {
+        fieldRead->emitOpError() << "is an unsupported " << fieldRead->getName()
+                                 << " operation: only reading fields from self is allowed";
+        return nullptr;
+      }
+
+      return std::make_unique<VarExpr>(fieldRead.getFieldName());
     })
         .Case<NegFeltOp>([this](NegFeltOp negOp) {
       return std::make_unique<NegExpr>(translateValueToExpr(negOp.getOperand()));
@@ -140,7 +182,7 @@ public:
       ));
     });
 
-    constrainFunc.walk([this](CallOp callOp) {
+    constrainFunc.walk([](CallOp callOp) {
       if (callOp.getCallee().getLeafReference().getValue() != "constrain") {
         return;
       }
@@ -246,3 +288,4 @@ std::unique_ptr<Circuit> llzk::translateModuleToPicus(Operation *op) {
 //   picus::FixedValues fv;
 //   fv.addFixedValues("x", picus::ConstExpr(/* dummy */ llvm::APInt(32, 1)));
 // }
+
