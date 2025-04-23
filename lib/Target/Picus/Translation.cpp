@@ -152,9 +152,21 @@ public:
       return failure();
     }
     unsigned argCount = 1; // Start at 1 because we ignore self.
-    for (auto _ : region->getArguments().drop_front()) {
-      auto name = inputVarName(structOp.getContext(), argCount);
-      outMod.addStatement(std::make_unique<InputStmt>(VarExpr(name)));
+    for (auto arg : region->getArguments().drop_front()) {
+      if (auto arrType = mlir::dyn_cast<ArrayType>(arg.getType())) {
+        auto shape = arrType.getShape();
+        if (shape.size() != 1 || shape[0] <= 0) {
+          return structOp->emitOpError()
+                 << "is not supported. Array arguments must only have 1 known dimension";
+        }
+        for (int64_t idx = 0; idx < shape[0]; idx++) {
+          auto name = inputVarName(structOp.getContext(), argCount, idx);
+          outMod.addStatement(std::make_unique<InputStmt>(VarExpr(name)));
+        }
+      } else {
+        auto name = inputVarName(structOp.getContext(), argCount);
+        outMod.addStatement(std::make_unique<InputStmt>(VarExpr(name)));
+      }
       argCount++;
     }
 
