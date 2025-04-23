@@ -11,6 +11,7 @@
 #include <llzk/Target/Picus/Language/Statement.h>
 
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/Support/raw_ostream.h>
 
 namespace picus {
@@ -26,14 +27,12 @@ void Circuit::print(llvm::raw_ostream &os) const {
   fixed.print(os);
 }
 
-
 Module &Circuit::emplaceModule(llvm::StringRef name) {
   if (!modules.contains(name)) {
     modules.insert({name, Module(name)});
   }
   return (*modules.find(name)).getValue();
 }
-
 
 void FixedValues::addFixedValues(llvm::StringRef name, ConstExpr expr) {
   // Insert single ConstExpr into values[name]
@@ -42,8 +41,9 @@ void FixedValues::addFixedValues(llvm::StringRef name, ConstExpr expr) {
 
 void FixedValues::addFixedValues(llvm::StringRef name, llvm::ArrayRef<ConstExpr> exprs) {
   // Append array of ConstExpr to values[name]
-  for (const auto &e : exprs)
+  for (const auto &e : exprs) {
     values[name].push_back(e);
+  }
 }
 
 Expression::ptr FixedValues::getFixedValueRef(llvm::StringRef name) {
@@ -62,8 +62,9 @@ void FixedValues::print(llvm::raw_ostream &os) const {
   os << "FixedValues {\n";
   for (const auto &entry : values) {
     os << "  " << entry.getKey() << ": [";
-    for (const auto &expr : entry.second)
+    for (const auto &expr : entry.second) {
       expr.print(os), os << ", ";
+    }
     os << "]\n";
   }
   os << "}\n";
@@ -72,6 +73,8 @@ void FixedValues::print(llvm::raw_ostream &os) const {
 //===----------------------------------------------------------------------===//
 // Module
 //===----------------------------------------------------------------------===//
+
+Module::Module(llvm::StringRef Name) : name(Name) {}
 
 void Module::print(llvm::raw_ostream &os) const {
   os << "(begin-module " << name << ")\n";

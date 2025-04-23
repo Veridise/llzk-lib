@@ -60,8 +60,6 @@ private:
 /// Comprised of a sequence of top-level statements defining elements of the circuit.
 class Circuit {
 public:
-  ~Circuit();
-
   /// Prints the program as an collection of s-expressions into the output stream.
   void print(llvm::raw_ostream &) const;
 
