@@ -155,7 +155,7 @@ public:
     for (auto arg : region->getArguments().drop_front()) {
       if (auto arrType = mlir::dyn_cast<ArrayType>(arg.getType())) {
         auto shape = arrType.getShape();
-        if (shape.size() != 1 || shape[0] <= 0) {
+        if (shape.size() != 1 || shape[0] < 0) {
           return structOp->emitOpError()
                  << "is not supported. Array arguments must only have 1 known dimension";
         }
