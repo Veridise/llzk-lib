@@ -537,9 +537,7 @@ public:
   }
 };
 
-/// Common implementation for handling `FieldWriteOp` and `FieldReadOp`. The `forIndex()` function
-/// should be implemented to generate the necessary code for each index of the referenced array. The
-/// `genHeader()` function is called before
+/// Common implementation for handling `FieldWriteOp` and `FieldReadOp`.
 ///
 /// @tparam ImplClass       the concrete subclass
 /// @tparam FieldRefOpType  the concrete op class
