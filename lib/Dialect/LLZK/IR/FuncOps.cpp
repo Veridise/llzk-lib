@@ -13,8 +13,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
-#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
+#include "llzk/Util/AttributeHelper.h"
+#include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/OpImplementation.h>

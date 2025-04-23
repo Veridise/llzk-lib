@@ -9,8 +9,8 @@
 
 #include "llzk/Dialect/LLZK/IR/Builders.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
-#include "llzk/Dialect/LLZK/Util/ArrayTypeHelper.h"
-#include "llzk/Dialect/LLZK/Util/Debug.h"
+#include "llzk/Util/ArrayTypeHelper.h"
+#include "llzk/Util/Debug.h"
 
 #include <gtest/gtest.h>
 

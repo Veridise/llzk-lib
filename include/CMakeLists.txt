@@ -19,8 +19,9 @@ install(
   PATTERN CMakeFiles EXCLUDE)
 
 # subdirectories will add their IncGen targets as deps to the header folder
+add_subdirectory(llzk/Analysis)
 add_subdirectory(llzk/Config)
-add_subdirectory(llzk/Dialect/LLZK/Analysis)
 add_subdirectory(llzk/Dialect/LLZK/IR)
-add_subdirectory(llzk/Dialect/LLZK/Transforms)
-add_subdirectory(llzk/Dialect/LLZK/Validators)
+add_subdirectory(llzk/Transforms)
+add_subdirectory(llzk/Util)
+add_subdirectory(llzk/Validators)

@@ -1,0 +1,13 @@
+add_library(LLZKAnalysis)
+add_library(LLZK::LLZKAnalysis ALIAS LLZKAnalysis)
+
+file(GLOB LLZKAnalysis_SOURCES "*.cpp")
+target_sources(LLZKAnalysis PRIVATE ${LLZKAnalysis_SOURCES})
+target_link_libraries(
+  LLZKAnalysis PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
+                     MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
+                     LLVMHeaders MLIRHeaders)
+add_dependencies(LLZKAnalysis LLZKDialect LLZKDialectHeaders)
+llzk_target_add_mlir_link_settings(LLZKAnalysis)
+
+install(TARGETS LLZKAnalysis EXPORT LLZKTargets)

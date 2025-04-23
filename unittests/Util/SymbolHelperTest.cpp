@@ -8,8 +8,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/IR/Builders.h"
-#include "llzk/Dialect/LLZK/Util/Debug.h"
-#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
+#include "llzk/Util/Debug.h"
+#include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
 

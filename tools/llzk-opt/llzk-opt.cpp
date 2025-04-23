@@ -15,10 +15,10 @@
 
 #include "llzk/Config/Config.h"
 #include "llzk/Dialect/InitDialects.h"
-#include "llzk/Dialect/LLZK/Analysis/AnalysisPasses.h"
-#include "llzk/Dialect/LLZK/Transforms/LLZKTransformationPasses.h"
-#include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
-#include "llzk/Dialect/LLZK/Validators/LLZKValidationPasses.h"
+#include "llzk/Analysis/AnalysisPasses.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/IncludeHelper.h"
+#include "llzk/Validators/LLZKValidationPasses.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>

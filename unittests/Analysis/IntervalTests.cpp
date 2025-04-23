@@ -1,5 +1,5 @@
-#include "llzk/Dialect/LLZK/Analysis/IntervalAnalysis.h"
-#include "llzk/Dialect/LLZK/Util/Debug.h"
+#include "llzk/Analysis/IntervalAnalysis.h"
+#include "llzk/Util/Debug.h"
 
 #include <gtest/gtest.h>
 #include <string>

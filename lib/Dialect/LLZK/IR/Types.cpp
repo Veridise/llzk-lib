@@ -9,11 +9,11 @@
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
-#include "llzk/Dialect/LLZK/Util/ArrayTypeHelper.h"
-#include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
-#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
-#include "llzk/Dialect/LLZK/Util/StreamHelper.h"
-#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
+#include "llzk/Util/ArrayTypeHelper.h"
+#include "llzk/Util/AttributeHelper.h"
+#include "llzk/Util/ErrorHelper.h"
+#include "llzk/Util/StreamHelper.h"
+#include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinTypeInterfaces.h>

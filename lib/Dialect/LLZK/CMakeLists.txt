@@ -1,6 +1,6 @@
 add_library(LLZKDialect)
 add_library(LLZK::LLZKDialect ALIAS LLZKDialect)
-target_link_libraries(LLZKAllDialects INTERFACE LLZK::LLZKDialect)
+target_link_libraries(LLZKAllDialects INTERFACE LLZKDialect)
 
 file(GLOB_RECURSE LLZKDialect_SOURCES "**/*.cpp")
 target_sources(LLZKDialect PRIVATE ${LLZKDialect_SOURCES})

@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/IR/Builders.h"
-#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolHelper.h"
 
 #include <llvm/Support/ErrorHandling.h>
 

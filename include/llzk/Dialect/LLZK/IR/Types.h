@@ -10,8 +10,8 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
-#include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
-#include "llzk/Dialect/LLZK/Util/SymbolLookup.h" // IWYU pragma: keep
+#include "llzk/Util/ErrorHelper.h"
+#include "llzk/Util/SymbolLookup.h" // IWYU pragma: keep
 
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinTypes.h>

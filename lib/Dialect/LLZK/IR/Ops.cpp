@@ -9,10 +9,10 @@
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
-#include "llzk/Dialect/LLZK/Util/ArrayTypeHelper.h"
-#include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
-#include "llzk/Dialect/LLZK/Util/IncludeHelper.h"
-#include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
+#include "llzk/Util/ArrayTypeHelper.h"
+#include "llzk/Util/AttributeHelper.h"
+#include "llzk/Util/IncludeHelper.h"
+#include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/IR/Attributes.h>
