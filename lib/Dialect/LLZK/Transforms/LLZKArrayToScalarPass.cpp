@@ -77,8 +77,10 @@ using namespace llzk;
 
 namespace {
 
+/// If the given ArrayType can be split into scalars, return it, otherwise nullptr.
 inline ArrayType splittableArray(ArrayType at) { return at.hasStaticShape() ? at : nullptr; }
 
+/// If the given Type is an ArrayType that can be split into scalars, return it, otherwise nullptr.
 inline ArrayType splittableArray(Type t) {
   if (ArrayType at = dyn_cast<ArrayType>(t)) {
     return splittableArray(at);
@@ -87,6 +89,7 @@ inline ArrayType splittableArray(Type t) {
   }
 }
 
+/// Return `true` iff the given type is or contains an ArrayType that can be split into scalars.
 inline bool containsSplittableArrayType(Type t) {
   return t
       .walk([](ArrayType a) {
@@ -94,6 +97,7 @@ inline bool containsSplittableArrayType(Type t) {
   }).wasInterrupted();
 }
 
+/// Return `true` iff the given range contains any ArrayType that can be split into scalars.
 template <typename T> bool containsSplittableArrayType(ValueTypeRange<T> types) {
   for (Type t : types) {
     if (containsSplittableArrayType(t)) {
@@ -103,7 +107,9 @@ template <typename T> bool containsSplittableArrayType(ValueTypeRange<T> types) 
   return false;
 }
 
-void splitArrayType(Type t, SmallVector<Type> &collect) {
+/// If the given Type is an ArrayType that can be split into scalars, append `collect` with all of
+/// the scalar types that result from splitting the ArrayType. Otherwise, just push the `Type`.
+void splitArrayTypeTo(Type t, SmallVector<Type> &collect) {
   if (ArrayType at = splittableArray(t)) {
     int64_t n = at.getNumElements();
     assert(std::cmp_less_equal(n, std::numeric_limits<SmallVector<Type>::size_type>::max()));
@@ -113,19 +119,24 @@ void splitArrayType(Type t, SmallVector<Type> &collect) {
   }
 }
 
+/// For each Type in the given input collection, call `splitArrayTypeTo(Type,...)`.
 template <typename TypeCollection>
-inline void splitArrayType(TypeCollection types, SmallVector<Type> &collect) {
+inline void splitArrayTypeTo(TypeCollection types, SmallVector<Type> &collect) {
   for (Type t : types) {
-    splitArrayType(t, collect);
+    splitArrayTypeTo(t, collect);
   }
 }
 
+/// Return a list such that each scalar Type is directly added to the list but for each splittable
+/// ArrayType, the proper number of scalar element types are added instead.
 template <typename TypeCollection> inline SmallVector<Type> splitArrayType(TypeCollection types) {
   SmallVector<Type> collect;
-  splitArrayType(types, collect);
+  splitArrayTypeTo(types, collect);
   return collect;
 }
 
+/// Generate `arith::ConstantOp` at the current position of the `rewriter` for each int attribute in
+/// the ArrayAttr.
 SmallVector<Value>
 genIndexConstants(ArrayAttr index, Location loc, ConversionPatternRewriter &rewriter) {
   SmallVector<Value> operands;
@@ -138,7 +149,7 @@ genIndexConstants(ArrayAttr index, Location loc, ConversionPatternRewriter &rewr
   return operands;
 }
 
-inline WriteArrayOp createWrite(
+inline WriteArrayOp genWrite(
     Location loc, Value baseArrayOp, ArrayAttr index, Value init,
     ConversionPatternRewriter &rewriter
 ) {
@@ -146,6 +157,9 @@ inline WriteArrayOp createWrite(
   return rewriter.create<WriteArrayOp>(loc, baseArrayOp, ValueRange(readOperands), init);
 }
 
+/// Replace the given CallOp with a new one where any ArrayType in the results are split into their
+/// scalar elements. Also, after the CallOp, generate a CreateArrayOp for each ArrayType result and
+/// generate writes from the corresponding scalar result values to the new array.
 CallOp newCallOpWithSplitResults(
     CallOp oldCall, CallOp::Adaptor adaptor, ConversionPatternRewriter &rewriter
 ) {
@@ -172,7 +186,7 @@ CallOp newCallOpWithSplitResults(
       assert(allIndices); // follows from legal() check
       assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
       for (ArrayAttr subIdx : allIndices.value()) {
-        createWrite(loc, newArray, subIdx, *newResults, rewriter);
+        genWrite(loc, newArray, subIdx, *newResults, rewriter);
         newResults++;
       }
     } else {
@@ -185,6 +199,10 @@ CallOp newCallOpWithSplitResults(
   return newCall;
 }
 
+/// For each argument to the Block that has a splittable ArrayType, replace it with the necessary
+/// number of scalar arguments, generate a CreateArrayOp, and generate writes from the new block
+/// scalar arguments to the new array. All users of the original block argument are updated to
+/// target the result of the CreateArrayOp.
 void processBlockArgs(Block &entryBlock, ConversionPatternRewriter &rewriter) {
   OpBuilder::InsertionGuard guard(rewriter);
   rewriter.setInsertionPointToStart(&entryBlock);
@@ -205,7 +223,7 @@ void processBlockArgs(Block &entryBlock, ConversionPatternRewriter &rewriter) {
       assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
       for (ArrayAttr subIdx : allIndices.value()) {
         BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
-        createWrite(loc, newArray, subIdx, newArg, rewriter);
+        genWrite(loc, newArray, subIdx, newArg, rewriter);
         ++i;
       }
     } else {
@@ -215,11 +233,13 @@ void processBlockArgs(Block &entryBlock, ConversionPatternRewriter &rewriter) {
 }
 
 inline ReadArrayOp
-createRead(Location loc, Value baseArrayOp, ArrayAttr index, ConversionPatternRewriter &rewriter) {
+genRead(Location loc, Value baseArrayOp, ArrayAttr index, ConversionPatternRewriter &rewriter) {
   SmallVector<Value> readOperands = genIndexConstants(index, loc, rewriter);
   return rewriter.create<ReadArrayOp>(loc, baseArrayOp, ValueRange(readOperands));
 }
 
+// If the operand has ArrayType, add N reads from the array to the `newOperands` list otherwise add
+// the original operand to the list.
 void processInputOperand(
     Location loc, Value operand, SmallVector<Value> &newOperands,
     ConversionPatternRewriter &rewriter
@@ -228,7 +248,7 @@ void processInputOperand(
     std::optional<SmallVector<ArrayAttr>> indices = at.getSubelementIndices();
     assert(indices.has_value() && "passed earlier hasStaticShape() check");
     for (ArrayAttr index : indices.value()) {
-      newOperands.push_back(createRead(loc, operand, index, rewriter));
+      newOperands.push_back(genRead(loc, operand, index, rewriter));
     }
   } else {
     newOperands.push_back(operand);
@@ -251,8 +271,15 @@ void processInputOperands(
 
 namespace {
 
-enum Direction { SMALL_TO_LARGE, LARGE_TO_SMALL };
+enum Direction {
+  /// Copying a smaller array into a larger one, i.e. `InsertArrayOp`
+  SMALL_TO_LARGE,
+  /// Copying a larger array into a smaller one, i.e. `ExtractArrayOp`
+  LARGE_TO_SMALL,
+};
 
+/// Common implementation for handling `InsertArrayOp` and `ExtractArrayOp`. For all indices in the
+/// given ArrayType, perform writes from one array to the other, in the specified Direction.
 template <Direction dir>
 inline void rewriteImpl(
     ArrayAccessOpInterface op, ArrayType smallType, Value smallArr, Value largeArr,
@@ -277,11 +304,11 @@ inline void rewriteImpl(
     ArrayAttr fullIndex = ArrayAttr::get(ctx, joined);
 
     if constexpr (dir == Direction::SMALL_TO_LARGE) {
-      auto init = createRead(loc, smallArr, indexingTail, rewriter);
-      createWrite(loc, largeArr, fullIndex, init, rewriter);
+      auto init = genRead(loc, smallArr, indexingTail, rewriter);
+      genWrite(loc, largeArr, fullIndex, init, rewriter);
     } else if constexpr (dir == Direction::LARGE_TO_SMALL) {
-      auto init = createRead(loc, largeArr, fullIndex, rewriter);
-      createWrite(loc, smallArr, indexingTail, init, rewriter);
+      auto init = genRead(loc, largeArr, fullIndex, rewriter);
+      genWrite(loc, smallArr, indexingTail, init, rewriter);
     }
   }
 }
@@ -510,11 +537,19 @@ public:
   }
 };
 
-template <typename ImplClass, typename FieldRefOpType, typename GenPrefixType>
+/// Common implementation for handling `FieldWriteOp` and `FieldReadOp`. The `forIndex()` function
+/// should be implemented to generate the necessary code for each index of the referenced array. The
+/// `genHeader()` function is called before
+///
+/// @tparam ImplClass       the concrete subclass
+/// @tparam FieldRefOpType  the concrete op class
+/// @tparam GenHeaderType   return type of `genHeader()`, used to pass data to `forIndex()`
+template <typename ImplClass, typename FieldRefOpType, typename GenHeaderType>
 class SplitArrayInFieldRefOp : public OpConversionPattern<FieldRefOpType> {
   SymbolTableCollection &tables;
   const FieldReplacementMap &repMapRef;
 
+  // static check to ensure the functions are implemented in all subclasses
   inline static void ensureImplementedAtCompile() {
     static_assert(
         sizeof(FieldRefOpType) == 0, "SplitArrayInFieldRefOp not implemented for requested type."
@@ -524,13 +559,17 @@ class SplitArrayInFieldRefOp : public OpConversionPattern<FieldRefOpType> {
 protected:
   using OpAdaptor = typename FieldRefOpType::Adaptor;
 
-  static GenPrefixType genPrefix(FieldRefOpType, ConversionPatternRewriter &) {
+  /// Executed at the start of `rewrite()` to (optionally) generate anything that should be before
+  /// the element-wise operations that will be added by `forIndex()`.
+  static GenHeaderType genHeader(FieldRefOpType, ConversionPatternRewriter &) {
     ensureImplementedAtCompile();
     assert(false && "unreachable");
   }
 
+  /// Executed for each multi-dimensional array index in the ArrayType of the original field to
+  /// generate the element-wise scalar operations on the new scalar fields.
   static void
-  forIndex(Location, GenPrefixType, ArrayAttr, FieldInfo, OpAdaptor, ConversionPatternRewriter &) {
+  forIndex(Location, GenHeaderType, ArrayAttr, FieldInfo, OpAdaptor, ConversionPatternRewriter &) {
     ensureImplementedAtCompile();
     assert(false && "unreachable");
   }
@@ -555,7 +594,7 @@ public:
     auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
     assert(succeeded(tgtStructDef));
 
-    GenPrefixType prefixResult = ImplClass::genPrefix(op, rewriter);
+    GenHeaderType prefixResult = ImplClass::genHeader(op, rewriter);
 
     const LocalFieldReplacementMap &idxToName =
         repMapRef.at(tgtStructDef->get()).at(op.getFieldNameAttr().getAttr());
@@ -575,13 +614,13 @@ public:
 
   static bool legal(FieldWriteOp op) { return !containsSplittableArrayType(op.getVal().getType()); }
 
-  static void *genPrefix(FieldWriteOp, ConversionPatternRewriter &) { return nullptr; }
+  static void *genHeader(FieldWriteOp, ConversionPatternRewriter &) { return nullptr; }
 
   static void forIndex(
       Location loc, void *, ArrayAttr idx, FieldInfo newField, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
-    ReadArrayOp scalarRead = createRead(loc, adaptor.getVal(), idx, rewriter);
+    ReadArrayOp scalarRead = genRead(loc, adaptor.getVal(), idx, rewriter);
     rewriter.create<FieldWriteOp>(
         loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newField.first), scalarRead
     );
@@ -589,15 +628,16 @@ public:
 };
 
 class SplitArrayInFieldReadOp
-    : public SplitArrayInFieldRefOp<SplitArrayInFieldReadOp, FieldReadOp, Value> {
+    : public SplitArrayInFieldRefOp<SplitArrayInFieldReadOp, FieldReadOp, CreateArrayOp> {
 public:
-  using SplitArrayInFieldRefOp<SplitArrayInFieldReadOp, FieldReadOp, Value>::SplitArrayInFieldRefOp;
+  using SplitArrayInFieldRefOp<
+      SplitArrayInFieldReadOp, FieldReadOp, CreateArrayOp>::SplitArrayInFieldRefOp;
 
   static bool legal(FieldReadOp op) {
     return !containsSplittableArrayType(op.getResult().getType());
   }
 
-  static Value genPrefix(FieldReadOp op, ConversionPatternRewriter &rewriter) {
+  static CreateArrayOp genHeader(FieldReadOp op, ConversionPatternRewriter &rewriter) {
     CreateArrayOp newArray =
         rewriter.create<CreateArrayOp>(op.getLoc(), llvm::cast<ArrayType>(op.getType()));
     rewriter.replaceAllUsesWith(op, newArray);
@@ -605,12 +645,12 @@ public:
   }
 
   static void forIndex(
-      Location loc, Value newArray, ArrayAttr idx, FieldInfo newField, OpAdaptor adaptor,
+      Location loc, CreateArrayOp newArray, ArrayAttr idx, FieldInfo newField, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
     FieldReadOp scalarRead =
         rewriter.create<FieldReadOp>(loc, newField.second, adaptor.getComponent(), newField.first);
-    createWrite(loc, newArray, idx, scalarRead, rewriter);
+    genWrite(loc, newArray, idx, scalarRead, rewriter);
   }
 };
 
