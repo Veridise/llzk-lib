@@ -1338,9 +1338,7 @@ bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 
 LogicalResult ReadArrayOp::verify() {
   // Ensure the number of indices used match the shape of the array exactly.
-  Type baseArrRefType = getArrRef().getType();
-  assert(llvm::isa<ArrayType>(baseArrRefType)); // per ODS spec of ReadArrayOp
-  ArrayType baseArrRefArrType = llvm::cast<ArrayType>(baseArrRefType);
+  ArrayType baseArrRefArrType = getArrRefType();
 
   OwningEmitErrorFn errFn = getEmitOpErrFn(this);
 
@@ -1377,19 +1375,13 @@ DeletionKind ReadArrayOp::removeBlockingUses(
 LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getArrRef().getType(), getRvalue().getType()}
+      tables, *this, ArrayRef<Type> {getArrRefType(), getRvalue().getType()}
   );
 }
 
 LogicalResult WriteArrayOp::verify() {
   // Ensure the number of indices used match the shape of the array exactly.
-  Type baseArrRefType = getArrRef().getType();
-  assert(llvm::isa<ArrayType>(baseArrRefType)); // per ODS spec of WriteArrayOp
-  ArrayType baseArrRefArrType = llvm::cast<ArrayType>(baseArrRefType);
-
-  OwningEmitErrorFn errFn = getEmitOpErrFn(this);
-
-  return ensureNumIndicesMatchDims(baseArrRefArrType, getIndices().size(), errFn);
+  return ensureNumIndicesMatchDims(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
 }
 
 /// Required by PromotableMemOpInterface / mem2reg pass
@@ -1419,7 +1411,7 @@ DeletionKind WriteArrayOp::removeBlockingUses(
 
 LogicalResult ExtractArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getArrRef().getType());
+  return verifyTypeResolution(tables, *this, getArrRefType());
 }
 
 LogicalResult ExtractArrayOp::inferReturnTypes(
@@ -1465,16 +1457,14 @@ bool ExtractArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 LogicalResult InsertArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the types are valid
   return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getArrRef().getType(), getRvalue().getType()}
+      tables, *this, ArrayRef<Type> {getArrRefType(), getRvalue().getType()}
   );
 }
 
 LogicalResult InsertArrayOp::verify() {
   size_t numIndices = getIndices().size();
 
-  Type baseArrRefType = getArrRef().getType();
-  assert(llvm::isa<ArrayType>(baseArrRefType)); // per ODS spec of InsertArrayOp
-  ArrayType baseArrRefArrType = llvm::cast<ArrayType>(baseArrRefType);
+  ArrayType baseArrRefArrType = getArrRefType();
 
   Type rValueType = getRvalue().getType();
   assert(llvm::isa<ArrayType>(rValueType)); // per ODS spec of InsertArrayOp
@@ -1527,7 +1517,7 @@ LogicalResult InsertArrayOp::verify() {
 
 LogicalResult ArrayLengthOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getArrRef().getType());
+  return verifyTypeResolution(tables, *this, getArrRefType());
 }
 
 //===------------------------------------------------------------------===//
