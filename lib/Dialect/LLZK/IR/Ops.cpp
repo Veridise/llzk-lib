@@ -1338,11 +1338,7 @@ bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 
 LogicalResult ReadArrayOp::verify() {
   // Ensure the number of indices used match the shape of the array exactly.
-  ArrayType baseArrRefArrType = getArrRefType();
-
-  OwningEmitErrorFn errFn = getEmitOpErrFn(this);
-
-  return ensureNumIndicesMatchDims(baseArrRefArrType, getIndices().size(), errFn);
+  return ensureNumIndicesMatchDims(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
 }
 
 /// Required by PromotableMemOpInterface / mem2reg pass
