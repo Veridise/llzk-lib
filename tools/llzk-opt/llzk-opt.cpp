@@ -13,9 +13,9 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Config/Config.h"
 #include "llzk/Dialect/InitDialects.h"
-#include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/IncludeHelper.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
