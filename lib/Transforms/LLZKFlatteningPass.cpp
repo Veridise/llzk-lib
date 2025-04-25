@@ -172,10 +172,9 @@ public:
     if (isMoreConcreteUnification(oldType, newType, checkInstantiations)) {
       return true;
     }
-    LLVM_DEBUG(
-        llvm::dbgs() << "[" << patName << "] Cannot replace old type " << oldType
-                     << " with new type " << newType
-                     << " because it does not define a compatible and more concrete type.\n";
+    LLVM_DEBUG(llvm::dbgs() << "[" << patName << "] Cannot replace old type " << oldType
+                            << " with new type " << newType
+                            << " because it does not define a compatible and more concrete type.\n";
     );
     return false;
   }
@@ -251,9 +250,8 @@ template <typename OpTy> class GeneralTypeReplacePattern : public OpConversionPa
 public:
   using OpConversionPattern<OpTy>::OpConversionPattern;
 
-  LogicalResult matchAndRewrite(
-      OpTy op, OpTy::Adaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
+  LogicalResult matchAndRewrite(OpTy op, OpTy::Adaptor adaptor, ConversionPatternRewriter &rewriter)
+      const override {
     const TypeConverter *converter = OpConversionPattern<OpTy>::getTypeConverter();
     assert(converter);
     // Convert result types
@@ -495,9 +493,8 @@ class StructCloner {
         // future proof: use higher priority than GeneralTypeReplacePattern
         : OpConversionPattern<CallOp>(converter, ctx, 2) {}
 
-    LogicalResult matchAndRewrite(
-        CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
-    ) const override {
+    LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
+        const override {
       // Convert the result types of the CallOp
       SmallVector<Type> newResultTypes;
       if (failed(getTypeConverter()->convertTypes(op.getResultTypes(), newResultTypes))) {
@@ -783,9 +780,8 @@ public:
       // future proof: use higher priority than GeneralTypeReplacePattern
       : OpConversionPattern<CallOp>(converter, ctx, 2), tracker_(tracker) {}
 
-  LogicalResult matchAndRewrite(
-      CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
-  ) const override {
+  LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
+      const override {
     // Convert the result types of the CallOp
     SmallVector<Type> newResultTypes;
     if (failed(getTypeConverter()->convertTypes(op.getResultTypes(), newResultTypes))) {

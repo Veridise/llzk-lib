@@ -417,11 +417,11 @@ void ConstraintDependencyGraph::walkConstrainOp(
   }
 }
 
-ConstraintDependencyGraph
-ConstraintDependencyGraph::translate(ConstrainRefRemappings translation) const {
+ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemappings translation
+) const {
   ConstraintDependencyGraph res(mod, structDef);
-  auto translate =
-      [&translation](const ConstrainRef &elem) -> mlir::FailureOr<std::vector<ConstrainRef>> {
+  auto translate = [&translation](const ConstrainRef &elem
+                   ) -> mlir::FailureOr<std::vector<ConstrainRef>> {
     std::vector<ConstrainRef> refs;
     for (auto &[prefix, vals] : translation) {
       if (!elem.isValidPrefix(prefix)) {
