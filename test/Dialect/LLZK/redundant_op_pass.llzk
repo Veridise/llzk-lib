@@ -106,7 +106,7 @@ module attributes {veridise.lang = "llzk"} {
 // This tests that nothing that shouldn't be removed is removed, since
 // there are no redundant ops to remove here.
 module attributes {veridise.lang = "llzk"} {
-  llzk_include.from "Dialect/LLZK/zir_example_1.llzk" as @std
+  include.from "Dialect/LLZK/zir_example_1.llzk" as @std
 }
 
 // CHECK-LABEL: module @std attributes {veridise.lang = "llzk"} {

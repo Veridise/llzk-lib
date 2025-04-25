@@ -1,7 +1,7 @@
 // RUN: llzk-opt -I %input_dir -split-input-file -llzk-inline-includes %s 2>&1 | FileCheck --enable-var-scope %s
 
 module attributes {veridise.lang = "llzk"} {
-  llzk_include.from "Inputs/header_1.llzk" as @alias1
+  include.from "Inputs/header_1.llzk" as @alias1
 
   llzk.func @test_func() {
     llzk.call @alias1::@pkg_two::@my_func_2() : () -> ()
@@ -27,7 +27,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   module @outer {
-    llzk_include.from "Inputs/header_1.llzk" as @alias2
+    include.from "Inputs/header_1.llzk" as @alias2
 
     llzk.func @test_func() {
       llzk.call @outer::@alias2::@pkg_two::@my_func_2() : () -> ()
@@ -58,7 +58,7 @@ module attributes {veridise.lang = "llzk"} {
   module @a {
     module @b {
       module @c {
-        llzk_include.from "Inputs/header_1.llzk" as @alias3
+        include.from "Inputs/header_1.llzk" as @alias3
       }
     }
   }
@@ -92,7 +92,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  llzk_include.from "Inputs/header_2.llzk" as @double
+  include.from "Inputs/header_2.llzk" as @double
 
   llzk.func @test_func() {
     llzk.call @double::@test_func() : () -> ()
@@ -125,7 +125,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  llzk_include.from "Dialect/LLZK/zir_example_0.llzk" as @std
+  include.from "Dialect/LLZK/zir_example_0.llzk" as @std
 
   llzk.struct @C1 {
     field @z : !llzk.struct<@std::@risc0::@Reg> {llzk.pub}
@@ -219,7 +219,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  llzk_include.from "Inputs/header_9.llzk" as @libA
+  include.from "Inputs/header_9.llzk" as @libA
 
   llzk.struct @D {
     field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
@@ -272,7 +272,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  llzk_include.from "Inputs/header_10.llzk" as @libA
+  include.from "Inputs/header_10.llzk" as @libA
 
   llzk.struct @StructD {
     field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}

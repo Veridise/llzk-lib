@@ -14,7 +14,7 @@ include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def IncludeDialect : Dialect {
-  let name = "llzk_include";
+  let name = "include";
   let summary =
       "LLZK include operations.";
 

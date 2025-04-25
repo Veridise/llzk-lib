@@ -24,7 +24,7 @@ def LLZK_IncludeOp
     Example:
 
     ```llzk
-    llzk_include.from "lib.llzk" as @aliasName
+    include.from "lib.llzk" as @aliasName
     ```
   }];
 
