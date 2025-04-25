@@ -2,8 +2,12 @@ set(LLZK_DEP_DIALECT_LIBS MLIRFuncDialect MLIRSCFDialect)
 set(LLZK_DEP_DIALECT_LIBS
     ${LLZK_DEP_DIALECT_LIBS}
     PARENT_SCOPE)
+
+# All dialects
+add_subdirectory(Include)
 add_subdirectory(LLZK)
 
+# Registration of dialects
 add_library(LLZKDialectRegistration)
 add_library(LLZK::DialectRegistration ALIAS LLZKDialectRegistration)
 # Ensures that the target can be imported as "LLZK::DialectRegistration" and not

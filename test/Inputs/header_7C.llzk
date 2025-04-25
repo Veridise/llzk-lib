@@ -2,7 +2,7 @@
 
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{found cyclic include}}
-  llzk.include "Inputs/header_7A.llzk" as @cycle
+  include.include "Inputs/header_7A.llzk" as @cycle
 
   llzk.func private @func_in_7c()
 }

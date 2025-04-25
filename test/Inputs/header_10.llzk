@@ -1,7 +1,7 @@
 // Imported via `include_pass.llzk`
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_8.llzk" as @libB
+  include.include "Inputs/header_8.llzk" as @libB
 
   llzk.struct @StructB {
     field @x : !llzk.struct<@libB::@libC::@StructC>

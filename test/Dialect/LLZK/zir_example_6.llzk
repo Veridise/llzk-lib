@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 #mapDiv = affine_map<()[s0, s1] -> (s0 floordiv s1)>
 #mapAdd = affine_map<()[s0, s1] -> (s0 + s1)>

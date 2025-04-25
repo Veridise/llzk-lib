@@ -6,8 +6,8 @@ target_sources(LLZKUtil PRIVATE ${LLZKUtil_SOURCES})
 target_link_libraries(
   LLZKUtil PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
                      MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
-                     LLVMHeaders MLIRHeaders)
-add_dependencies(LLZKUtil LLZKDialect LLZKDialectHeaders)
+                     LLVMHeaders MLIRHeaders LLZKIncludeDialect)
+add_dependencies(LLZKUtil LLZKDialect LLZKIncludeDialect LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKUtil)
 
 install(TARGETS LLZKUtil EXPORT LLZKTargets)

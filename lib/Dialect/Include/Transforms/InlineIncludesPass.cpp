@@ -12,21 +12,21 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Transforms/LLZKTransformationPasses.h"
-#include "llzk/Util/IncludeHelper.h"
+#include "llzk/Dialect/Include/IR/Ops.h"
+#include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
+#include "llzk/Dialect/Include/Util/IncludeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/Pass.h>
 
 // Include the generated base pass class definitions.
-namespace llzk {
+namespace llzk::include {
 #define GEN_PASS_DEF_INLINEINCLUDESPASS
-#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
-} // namespace llzk
+#include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h.inc"
+} // namespace llzk::include
 
 using namespace mlir;
-using namespace llzk;
+using namespace llzk::include;
 
 namespace {
 using IncludeStack = std::vector<std::pair<StringRef, Location>>;
@@ -36,7 +36,7 @@ inline bool contains(IncludeStack &stack, StringRef &&loc) {
   return std::find_if(stack.begin(), stack.end(), path_match) != stack.end();
 }
 
-class InlineIncludesPass : public llzk::impl::InlineIncludesPassBase<InlineIncludesPass> {
+class InlineIncludesPass : public llzk::include::impl::InlineIncludesPassBase<InlineIncludesPass> {
   void runOnOperation() override {
     std::vector<std::pair<ModuleOp, IncludeStack>> currLevel = {
         std::make_pair(getOperation(), IncludeStack())
@@ -73,6 +73,6 @@ class InlineIncludesPass : public llzk::impl::InlineIncludesPassBase<InlineInclu
 
 } // namespace
 
-std::unique_ptr<mlir::Pass> llzk::createInlineIncludesPass() {
+std::unique_ptr<mlir::Pass> llzk::include::createInlineIncludesPass() {
   return std::make_unique<InlineIncludesPass>();
 };

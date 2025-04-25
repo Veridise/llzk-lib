@@ -1,7 +1,7 @@
-// RUN: llzk-opt -I %S -llzk-inline-includes %s 2>&1 | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -I %input_dir -llzk-inline-includes %s 2>&1 | FileCheck --enable-var-scope %s
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "zir_example_0.llzk" as @std
+  include.include "Dialect/LLZK/zir_example_0.llzk" as @std
 
   llzk.func private @LookupDelta(%table: !llzk.felt, %index: !llzk.felt, %count: !llzk.felt)
 
@@ -30,7 +30,7 @@ module attributes {veridise.lang = "llzk"} {
     // translation but it would also be valid to just put the `pub` modifier on `addr`.
     // ZIR frontend should mark return value with `pub`
     field @synthetic_return: !llzk.felt {llzk.pub}
-    
+
     func @compute(%val: !llzk.felt) -> !llzk.struct<@NondetBitReg> {
       %self = new_struct : !llzk.struct<@NondetBitReg>
       writef %self[@reg] = %val : !llzk.struct<@NondetBitReg>, !llzk.felt
@@ -55,7 +55,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ArgU16 {
     field @count: !llzk.felt
     field @val: !llzk.felt
-    
+
     func @compute(%count: !llzk.felt, %val: !llzk.felt) -> !llzk.struct<@ArgU16> {
       %self = new_struct : !llzk.struct<@ArgU16>
       writef %self[@count] = %count : !llzk.struct<@ArgU16>, !llzk.felt
@@ -74,7 +74,7 @@ module attributes {veridise.lang = "llzk"} {
     field @arg: !llzk.struct<@ArgU16>
     // ZIR frontend should mark return value with `pub`
     field @synthetic_return : !llzk.felt {llzk.pub}
-    
+
     func @compute(%val: !llzk.felt) -> !llzk.struct<@NondetU16Reg> {
       %self = new_struct : !llzk.struct<@NondetU16Reg>
       %const_1 = constfelt 1
@@ -104,7 +104,7 @@ module attributes {veridise.lang = "llzk"} {
     field @ret: !llzk.struct<@NondetU16Reg>
     // ZIR frontend should mark return value with `pub`
     field @synthetic_return : !llzk.felt {llzk.pub}
-    
+
     func @compute(%val: !llzk.felt) -> !llzk.struct<@U16Reg> {
       %self = new_struct : !llzk.struct<@U16Reg>
       %ret = call @NondetU16Reg::@compute(%val) : (!llzk.felt) -> (!llzk.struct<@NondetU16Reg>)

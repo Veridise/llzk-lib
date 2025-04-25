@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-inline-includes -llzk-duplicate-read-write-elim -llzk-duplicate-op-elim %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -I %input_dir -split-input-file -llzk-inline-includes -llzk-duplicate-read-write-elim -llzk-duplicate-op-elim %s 2>&1 | FileCheck %s
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component {
@@ -106,7 +106,7 @@ module attributes {veridise.lang = "llzk"} {
 // This tests that nothing that shouldn't be removed is removed, since
 // there are no redundant ops to remove here.
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "zir_example_1.llzk" as @std
+  include.include "Dialect/LLZK/zir_example_1.llzk" as @std
 }
 
 // CHECK-LABEL: module @std attributes {veridise.lang = "llzk"} {

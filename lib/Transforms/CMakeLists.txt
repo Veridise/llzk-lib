@@ -6,7 +6,8 @@ target_sources(LLZKTransforms PRIVATE ${LLZKTransforms_SOURCES})
 target_link_libraries(
   LLZKTransforms PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
                      MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
-                     LLVMHeaders MLIRHeaders)
+                     LLVMHeaders MLIRHeaders
+                     LLZKDialect)
 add_dependencies(LLZKTransforms LLZKDialect LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKTransforms)
 

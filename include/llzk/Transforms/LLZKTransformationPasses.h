@@ -13,7 +13,6 @@
 
 namespace llzk {
 
-std::unique_ptr<mlir::Pass> createInlineIncludesPass();
 std::unique_ptr<mlir::Pass> createFlatteningPass();
 
 std::unique_ptr<mlir::Pass> createRedundantReadAndWriteEliminationPass();

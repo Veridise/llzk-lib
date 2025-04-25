@@ -12,6 +12,7 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/SymbolLookup.h" // IWYU pragma: keep
 
 #include <mlir/Bytecode/BytecodeOpInterface.h>
@@ -301,12 +302,6 @@ public:
                      << "\" within a '" << getOperationName<StructDefOp>() << "' definition";
   }
 };
-
-template <typename OpType, typename... Args>
-inline OpType delegate_to_build(mlir::Location location, Args &&...args) {
-  mlir::OpBuilder builder(location->getContext());
-  return builder.create<OpType>(location, std::forward<Args>(args)...);
-}
 
 template <unsigned N>
 inline mlir::ParseResult parseDimAndSymbolList(

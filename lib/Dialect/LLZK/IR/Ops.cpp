@@ -11,7 +11,7 @@
 #include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Util/ArrayTypeHelper.h"
 #include "llzk/Util/AttributeHelper.h"
-#include "llzk/Util/IncludeHelper.h"
+#include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Dialect/Utils/IndexingUtils.h>
@@ -288,73 +288,6 @@ bool isInStructFunctionNamed(Operation *op, char const *funcName) {
 
 template <typename TypeClass> LogicalResult InStruct<TypeClass>::verifyTrait(Operation *op) {
   return verifyInStruct(op);
-}
-
-//===------------------------------------------------------------------===//
-// IncludeOp (see IncludeHelper.cpp for other functions)
-//===------------------------------------------------------------------===//
-
-IncludeOp IncludeOp::create(Location loc, llvm::StringRef name, llvm::StringRef path) {
-  return delegate_to_build<IncludeOp>(loc, name, path);
-}
-
-IncludeOp IncludeOp::create(Location loc, StringAttr name, StringAttr path) {
-  return delegate_to_build<IncludeOp>(loc, name, path);
-}
-
-InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const char *aspect) {
-  std::string prefix = std::string();
-  if (SymbolOpInterface symbol = llvm::dyn_cast<SymbolOpInterface>(origin)) {
-    prefix += "\"@";
-    prefix += symbol.getName();
-    prefix += "\" ";
-  }
-  return origin->emitOpError().append(
-      prefix, "must use type of its ancestor '", StructDefOp::getOperationName(), "' \"",
-      expected.getHeaderString(), "\" as ", aspect, " type"
-  );
-}
-
-/// Verifies that the given `actualType` matches the `StructDefOp` given (i.e. for the "self" type
-/// parameter and return of the struct functions).
-LogicalResult checkSelfType(
-    SymbolTableCollection &tables, StructDefOp &expectedStruct, Type actualType, Operation *origin,
-    const char *aspect
-) {
-  if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {
-    auto actualStructOpt =
-        lookupTopLevelSymbol<StructDefOp>(tables, actualStructType.getNameRef(), origin);
-    if (failed(actualStructOpt)) {
-      return origin->emitError().append(
-          "could not find '", StructDefOp::getOperationName(), "' named \"",
-          actualStructType.getNameRef(), "\""
-      );
-    }
-    StructDefOp actualStruct = actualStructOpt.value().get();
-    if (actualStruct != expectedStruct) {
-      return genCompareErr(expectedStruct, origin, aspect)
-          .attachNote(actualStruct.getLoc())
-          .append("uses this type instead");
-    }
-    // Check for an EXACT match in the parameter list since it must reference the "self" type.
-    if (expectedStruct.getConstParamsAttr() != actualStructType.getParams()) {
-      // To make error messages more consistent and meaningful, if the parameters don't match
-      // because the actual type uses symbols that are not defined, generate an error about the
-      // undefined symbol(s).
-      if (ArrayAttr tyParams = actualStructType.getParams()) {
-        if (failed(verifyParamsOfType(tables, tyParams.getValue(), actualStructType, origin))) {
-          return failure();
-        }
-      }
-      // Otherwise, generate an error stating the parent struct type must be used.
-      return genCompareErr(expectedStruct, origin, aspect)
-          .attachNote(actualStruct.getLoc())
-          .append("should be type of this '", StructDefOp::getOperationName(), "'");
-    }
-  } else {
-    return genCompareErr(expectedStruct, origin, aspect);
-  }
-  return success();
 }
 
 //===------------------------------------------------------------------===//
@@ -1640,6 +1573,61 @@ LogicalResult UnifiableCastOp::verify() {
                          << getResult().getType() << " are not unifiable";
   }
 
+  return success();
+}
+
+InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const char *aspect) {
+  std::string prefix = std::string();
+  if (SymbolOpInterface symbol = llvm::dyn_cast<SymbolOpInterface>(origin)) {
+    prefix += "\"@";
+    prefix += symbol.getName();
+    prefix += "\" ";
+  }
+  return origin->emitOpError().append(
+      prefix, "must use type of its ancestor '", StructDefOp::getOperationName(), "' \"",
+      expected.getHeaderString(), "\" as ", aspect, " type"
+  );
+}
+
+/// Verifies that the given `actualType` matches the `StructDefOp` given (i.e. for the "self" type
+/// parameter and return of the struct functions).
+LogicalResult checkSelfType(
+    SymbolTableCollection &tables, StructDefOp &expectedStruct, Type actualType, Operation *origin,
+    const char *aspect
+) {
+  if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {
+    auto actualStructOpt =
+        lookupTopLevelSymbol<StructDefOp>(tables, actualStructType.getNameRef(), origin);
+    if (failed(actualStructOpt)) {
+      return origin->emitError().append(
+          "could not find '", StructDefOp::getOperationName(), "' named \"",
+          actualStructType.getNameRef(), "\""
+      );
+    }
+    StructDefOp actualStruct = actualStructOpt.value().get();
+    if (actualStruct != expectedStruct) {
+      return genCompareErr(expectedStruct, origin, aspect)
+          .attachNote(actualStruct.getLoc())
+          .append("uses this type instead");
+    }
+    // Check for an EXACT match in the parameter list since it must reference the "self" type.
+    if (expectedStruct.getConstParamsAttr() != actualStructType.getParams()) {
+      // To make error messages more consistent and meaningful, if the parameters don't match
+      // because the actual type uses symbols that are not defined, generate an error about the
+      // undefined symbol(s).
+      if (ArrayAttr tyParams = actualStructType.getParams()) {
+        if (failed(verifyParamsOfType(tables, tyParams.getValue(), actualStructType, origin))) {
+          return failure();
+        }
+      }
+      // Otherwise, generate an error stating the parent struct type must be used.
+      return genCompareErr(expectedStruct, origin, aspect)
+          .attachNote(actualStruct.getLoc())
+          .append("should be type of this '", StructDefOp::getOperationName(), "'");
+    }
+  } else {
+    return genCompareErr(expectedStruct, origin, aspect);
+  }
   return success();
 }
 

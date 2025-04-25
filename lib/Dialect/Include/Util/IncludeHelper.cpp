@@ -12,9 +12,9 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Util/ErrorHelper.h"
-#include "llzk/Util/IncludeHelper.h"
+#include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/AsmState.h>
@@ -31,7 +31,7 @@
 
 #include <functional>
 
-namespace llzk {
+namespace llzk::include {
 
 namespace {
 using namespace mlir;
@@ -221,4 +221,4 @@ FailureOr<OwningOpRef<ModuleOp>> IncludeOp::openModule() {
   return parseFile(this->getPathAttr(), *this);
 }
 
-} // namespace llzk
+} // namespace llzk::include

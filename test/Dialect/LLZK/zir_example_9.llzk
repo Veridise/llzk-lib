@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 #map = affine_map<()[s0, s1] -> (s0 + s1)>
 module attributes {veridise.lang = "llzk"} {
@@ -89,7 +89,7 @@ module attributes {veridise.lang = "llzk"} {
       return
     }
   }
-  
+
   llzk.struct @Bar<[@N, @P, @Aff$0]> {
     field @"$super" : !llzk.struct<@Component<[]>>
     field @"$temp_1" : !llzk.struct<@Component<[]>>

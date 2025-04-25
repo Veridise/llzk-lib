@@ -1,0 +1,46 @@
+//===-- Ops.cpp - Include op implementations --------------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+#include "llzk/Dialect/Include/IR/Ops.h"
+#include "llzk/Util/BuilderHelper.h"
+
+#include <mlir/Dialect/Utils/IndexingUtils.h>
+#include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/Diagnostics.h>
+#include <mlir/IR/OwningOpRef.h>
+#include <mlir/IR/SymbolTable.h>
+#include <mlir/IR/ValueRange.h>
+#include <mlir/Support/LogicalResult.h>
+
+#include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/StringSet.h>
+#include <llvm/ADT/Twine.h>
+
+// TableGen'd implementation files
+#define GET_OP_CLASSES
+#include "llzk/Dialect/Include/IR/Ops.cpp.inc"
+
+namespace llzk::include {
+
+using namespace mlir;
+
+//===------------------------------------------------------------------===//
+// IncludeOp (see IncludeHelper.cpp for other functions)
+//===------------------------------------------------------------------===//
+
+IncludeOp IncludeOp::create(Location loc, llvm::StringRef name, llvm::StringRef path) {
+  return delegate_to_build<IncludeOp>(loc, name, path);
+}
+
+IncludeOp IncludeOp::create(Location loc, StringAttr name, StringAttr path) {
+  return delegate_to_build<IncludeOp>(loc, name, path);
+}
+
+} // namespace llzk::include

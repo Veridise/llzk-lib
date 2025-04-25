@@ -1,7 +1,8 @@
 add_executable(llzk-lsp-server llzk-lsp-server.cpp)
 target_link_libraries(
   llzk-lsp-server PUBLIC ${LLZK_DEP_DIALECT_LIBS} MLIRLspServerLib
-                         LLZK::DialectRegistration)
+                         LLZK::DialectRegistration LLZK::LLZKAnalysis
+                         LLZK::LLZKTransforms LLZK::LLZKUtil LLZK::LLZKValidators)
 llzk_target_add_mlir_link_settings(llzk-lsp-server)
 target_link_libraries(llzk-lsp-server PUBLIC LLZKDialectHeaders MLIRIR)
 include_directories(${MLIR_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS})

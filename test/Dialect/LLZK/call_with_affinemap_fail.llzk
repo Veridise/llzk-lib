@@ -1,8 +1,8 @@
-// RUN: llzk-opt -I %S -split-input-file -verify-diagnostics %s
+// RUN: llzk-opt -I %input_dir -split-input-file -verify-diagnostics %s
 
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_11.llzk" as @Lib
+  include.include "Inputs/header_11.llzk" as @Lib
 
   llzk.struct @MissingInstantiations {
     func @compute(%n: index) -> !llzk.struct<@MissingInstantiations> {
@@ -17,7 +17,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_11.llzk" as @Lib
+  include.include "Inputs/header_11.llzk" as @Lib
 
   llzk.struct @EmptyInstantiations {
     func @compute(%n: index) -> !llzk.struct<@EmptyInstantiations> {
@@ -32,7 +32,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_11.llzk" as @Lib
+  include.include "Inputs/header_11.llzk" as @Lib
 
   llzk.struct @TooFewInstantiations {
     func @compute(%n: index) -> !llzk.struct<@TooFewInstantiations> {
@@ -47,7 +47,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_11.llzk" as @Lib
+  include.include "Inputs/header_11.llzk" as @Lib
 
   llzk.struct @TooManyInstantiations {
     func @compute(%n: index) -> !llzk.struct<@TooManyInstantiations> {
@@ -62,7 +62,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_11.llzk" as @Lib
+  include.include "Inputs/header_11.llzk" as @Lib
 
   llzk.struct @TooFewDimensions {
     func @compute(%n: index) -> !llzk.struct<@TooFewDimensions> {
@@ -77,7 +77,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_11.llzk" as @Lib
+  include.include "Inputs/header_11.llzk" as @Lib
 
   llzk.struct @TooManyDimensions {
     func @compute(%a: index, %b: index) -> !llzk.struct<@TooManyDimensions> {
@@ -92,7 +92,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_11.llzk" as @Lib
+  include.include "Inputs/header_11.llzk" as @Lib
 
   llzk.struct @TooFewSymbols {
     func @compute(%n: index) -> !llzk.struct<@TooFewSymbols> {
@@ -107,7 +107,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_11.llzk" as @Lib
+  include.include "Inputs/header_11.llzk" as @Lib
 
   llzk.struct @TooManySymbols {
     func @compute(%a: index, %b: index, %c: index) -> !llzk.struct<@TooManySymbols> {
@@ -138,7 +138,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_11.llzk" as @Lib
+  include.include "Inputs/header_11.llzk" as @Lib
 
   llzk.struct @CallKnownConstrainWithMapInit {
     func @compute(%0: !llzk.struct<@Lib::@D0>) -> !llzk.struct<@CallKnownConstrainWithMapInit> {
@@ -175,7 +175,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_11.llzk" as @Lib
+  include.include "Inputs/header_11.llzk" as @Lib
 
   llzk.struct @TooFewResults {
     func @compute(%a: index, %b: index, %c: index) -> !llzk.struct<@TooManySymbols> {
@@ -191,7 +191,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.include "Inputs/header_11.llzk" as @Lib
+  include.include "Inputs/header_11.llzk" as @Lib
 
   llzk.struct @TooManyResults {
     func @compute(%a: index, %b: index, %c: index) -> !llzk.struct<@TooManySymbols> {

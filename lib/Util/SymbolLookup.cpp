@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 
@@ -22,6 +23,7 @@
 
 namespace llzk {
 using namespace mlir;
+using namespace include;
 
 namespace {
 SymbolLookupResultUntyped
