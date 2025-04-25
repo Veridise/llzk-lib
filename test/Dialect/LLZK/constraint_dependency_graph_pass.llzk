@@ -456,7 +456,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  include.include "Dialect/LLZK/zir_example_0.llzk" as @zir
+  llzk_include.from "Dialect/LLZK/zir_example_0.llzk" as @zir
 }
 
 // CHECK: @zir::@risc0::@ValU32 ConstraintDependencyGraph { }
@@ -472,7 +472,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  include.include "Dialect/LLZK/zir_example_1.llzk" as @zir
+  llzk_include.from "Dialect/LLZK/zir_example_1.llzk" as @zir
 }
 
 // CHECK: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
@@ -495,7 +495,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  include.include "Dialect/LLZK/zir_example_2.llzk" as @zir
+  llzk_include.from "Dialect/LLZK/zir_example_2.llzk" as @zir
 }
 
 // CHECK: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
@@ -545,7 +545,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  include.include "Dialect/LLZK/zir_example_3.llzk" as @zir
+  llzk_include.from "Dialect/LLZK/zir_example_3.llzk" as @zir
 }
 
 // COM: @zir::@B is empty since it uses an uninitialized array
@@ -567,7 +567,7 @@ module attributes {veridise.lang = "llzk"} {
 // This check ensures that calling the same function from multiple different
 // contexts will converge correctly.
 module attributes {veridise.lang = "llzk"} {
-  include.include "Inputs/bits.llzk" as @bits
+  llzk_include.from "Inputs/bits.llzk" as @bits
 }
 
 // CHECK-LABEL: @bits::@Component ConstraintDependencyGraph { }

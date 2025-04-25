@@ -16,7 +16,7 @@ include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
 def LLZK_IncludeOp
-    : Op<IncludeDialect, "include", [HasParent<"::mlir::ModuleOp">, Symbol]> {
+    : Op<IncludeDialect, "from", [HasParent<"::mlir::ModuleOp">, Symbol]> {
   let summary = "include operation";
   let description = [{
     This operation imports the contents of another source file in place of itself.
@@ -24,7 +24,7 @@ def LLZK_IncludeOp
     Example:
 
     ```llzk
-    include.include "lib.llzk" as @aliasName
+    llzk_include.from "lib.llzk" as @aliasName
     ```
   }];
 

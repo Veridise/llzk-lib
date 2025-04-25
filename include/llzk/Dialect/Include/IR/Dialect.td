@@ -14,11 +14,11 @@ include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def IncludeDialect : Dialect {
-  let name = "include";
+  let name = "llzk_include";
   let summary =
       "LLZK include operations.";
 
-  let cppNamespace = "llzk::include";
+  let cppNamespace = "::llzk::include";
 
   let dependentDialects = ["::mlir::BuiltinDialect"];
 }

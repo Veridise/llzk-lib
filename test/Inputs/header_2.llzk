@@ -1,7 +1,7 @@
 // Imported via `include_pass.llzk`
 
 module attributes {veridise.lang = "llzk"} {
-  include.include "Inputs/header_1.llzk" as @std
+  llzk_include.from "Inputs/header_1.llzk" as @std
 
   llzk.func @test_func() {
     llzk.call @std::@pkg_two::@my_func_2() : () -> ()
