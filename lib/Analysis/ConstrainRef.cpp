@@ -237,8 +237,8 @@ bool ConstrainRef::isValidPrefix(const ConstrainRef &prefix) const {
   return true;
 }
 
-mlir::FailureOr<std::vector<ConstrainRefIndex>> ConstrainRef::getSuffix(const ConstrainRef &prefix
-) const {
+mlir::FailureOr<std::vector<ConstrainRefIndex>>
+ConstrainRef::getSuffix(const ConstrainRef &prefix) const {
   if (!isValidPrefix(prefix)) {
     return mlir::failure();
   }
@@ -344,8 +344,9 @@ size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
   if (val.isConstantFelt()) {
     return OpHash<FeltConstantOp> {}(std::get<FeltConstantOp>(*val.constantVal));
   } else if (val.isConstantIndex()) {
-    return OpHash<mlir::arith::ConstantIndexOp> {
-    }(std::get<mlir::arith::ConstantIndexOp>(*val.constantVal));
+    return OpHash<mlir::arith::ConstantIndexOp> {}(
+        std::get<mlir::arith::ConstantIndexOp>(*val.constantVal)
+    );
   } else if (val.isTemplateConstant()) {
     return OpHash<ConstReadOp> {}(std::get<ConstReadOp>(*val.constantVal));
   } else {

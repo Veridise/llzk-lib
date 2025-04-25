@@ -806,7 +806,8 @@ void IntervalDataFlowAnalysis::visitOperation(
       // op the reference analysis cannot handle. We emit a warning and return
       // early, since there's no meaningful computation we can do for this op.
       std::string warning;
-      debug::Appender(warning
+      debug::Appender(
+          warning
       ) << "state of "
         << val << " is empty; defining operation is unsupported by constrain ref analysis";
       op->emitWarning(warning);

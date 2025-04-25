@@ -20,5 +20,4 @@ inline OpType delegate_to_build(mlir::Location location, Args &&...args) {
   return builder.create<OpType>(location, std::forward<Args>(args)...);
 }
 
-
 } // namespace llzk

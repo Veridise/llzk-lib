@@ -13,8 +13,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Include/IR/Ops.h"
-#include "llzk/Util/ErrorHelper.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
+#include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/AsmState.h>

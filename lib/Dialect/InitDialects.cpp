@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/Include/IR/Dialect.h" // IWYU pragma: keep
+#include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h" // IWYU pragma: keep
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -17,6 +17,8 @@
 
 namespace llzk {
 void registerAllDialects(mlir::DialectRegistry &registry) {
-  registry.insert<llzk::LLZKDialect, llzk::include::IncludeDialect, mlir::arith::ArithDialect, mlir::scf::SCFDialect>();
+  registry.insert<
+      llzk::LLZKDialect, llzk::include::IncludeDialect, mlir::arith::ArithDialect,
+      mlir::scf::SCFDialect>();
 }
 } // namespace llzk
