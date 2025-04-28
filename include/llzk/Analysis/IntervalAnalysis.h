@@ -13,6 +13,7 @@
 #include "llzk/Analysis/AnalysisWrappers.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/DenseAnalysis.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Compare.h"
@@ -686,24 +687,24 @@ private:
   bool isAssertOp(mlir::Operation *op) const { return mlir::isa<AssertOp>(op); }
 
   bool isReadOp(mlir::Operation *op) const {
-    return mlir::isa<FieldReadOp, ConstReadOp, ReadArrayOp>(op);
+    return mlir::isa<FieldReadOp, ConstReadOp, array::ReadArrayOp>(op);
   }
 
   bool isWriteOp(mlir::Operation *op) const {
-    return mlir::isa<FieldWriteOp, WriteArrayOp, InsertArrayOp>(op);
+    return mlir::isa<FieldWriteOp, array::WriteArrayOp, array::InsertArrayOp>(op);
   }
 
-  bool isArrayLengthOp(mlir::Operation *op) const { return mlir::isa<ArrayLengthOp>(op); }
+  bool isArrayLengthOp(mlir::Operation *op) const { return mlir::isa<array::ArrayLengthOp>(op); }
 
   bool isEmitOp(mlir::Operation *op) const {
     return mlir::isa<EmitEqualityOp, EmitContainmentOp>(op);
   }
 
   bool isCreateOp(mlir::Operation *op) const {
-    return mlir::isa<CreateStructOp, CreateArrayOp>(op);
+    return mlir::isa<CreateStructOp, array::CreateArrayOp>(op);
   }
 
-  bool isExtractArrayOp(mlir::Operation *op) const { return mlir::isa<ExtractArrayOp>(op); }
+  bool isExtractArrayOp(mlir::Operation *op) const { return mlir::isa<array::ExtractArrayOp>(op); }
 
   bool isDefinitionOp(mlir::Operation *op) const {
     return mlir::isa<StructDefOp, FuncDefOp, FieldDefOp, GlobalDefOp, mlir::ModuleOp>(op);

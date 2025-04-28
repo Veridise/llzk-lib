@@ -10,6 +10,7 @@
 #include "llzk/Analysis/ConstrainRefLattice.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/DenseAnalysis.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -142,9 +143,9 @@ void ConstrainRefAnalysis::visitOperation(
     auto [fieldVals, _] = ops.referenceField(fieldOpRes.value());
 
     propagateIfChanged(after, after->setValue(res, fieldVals));
-  } else if (mlir::isa<ReadArrayOp>(op)) {
+  } else if (mlir::isa<array::ReadArrayOp>(op)) {
     arraySubdivisionOpUpdate(op, operandVals, before, after);
-  } else if (auto createArray = mlir::dyn_cast<CreateArrayOp>(op)) {
+  } else if (auto createArray = mlir::dyn_cast<array::CreateArrayOp>(op)) {
     // Create an array using the operand values, if they exist.
     // Currently, the new array must either be fully initialized or uninitialized.
 
@@ -160,7 +161,7 @@ void ConstrainRefAnalysis::visitOperation(
     auto res = createArray->getResult(0);
 
     propagateIfChanged(after, after->setValue(res, newArrayVal));
-  } else if (auto extractArray = mlir::dyn_cast<ExtractArrayOp>(op)) {
+  } else if (auto extractArray = mlir::dyn_cast<array::ExtractArrayOp>(op)) {
     arraySubdivisionOpUpdate(op, operandVals, before, after);
   } else {
     // Standard union of operands into the results value.
@@ -194,7 +195,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
     mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
     const ConstrainRefLattice &before, ConstrainRefLattice *after
 ) {
-  ensure(mlir::isa<ReadArrayOp>(op) || mlir::isa<ExtractArrayOp>(op), "wrong type of op provided!");
+  ensure(mlir::isa<array::ReadArrayOp, array::ExtractArrayOp>(op), "wrong type of op provided!");
 
   // We index the first operand by all remaining indices.
   assert(op->getNumResults() == 1);

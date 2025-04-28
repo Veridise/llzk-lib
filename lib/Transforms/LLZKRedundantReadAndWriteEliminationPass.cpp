@@ -640,7 +640,7 @@ class RedundantReadAndWriteEliminationPass
       }
     }
     // array ops
-    else if (auto newArray = dyn_cast<CreateArrayOp>(op)) {
+    else if (auto newArray = dyn_cast<array::CreateArrayOp>(op)) {
       auto arrayVal = ReferenceNode::create(newArray, newArray);
       state[newArray] = arrayVal;
 
@@ -659,14 +659,14 @@ class RedundantReadAndWriteEliminationPass
       }
 
       readVals.push_back(newArray);
-    } else if (auto readarr = dyn_cast<ReadArrayOp>(op)) {
+    } else if (auto readarr = dyn_cast<array::ReadArrayOp>(op)) {
       doArrayReadLike(readarr);
-    } else if (auto writearr = dyn_cast<WriteArrayOp>(op)) {
+    } else if (auto writearr = dyn_cast<array::WriteArrayOp>(op)) {
       doArrayWriteLike(writearr);
-    } else if (auto extractarr = dyn_cast<ExtractArrayOp>(op)) {
+    } else if (auto extractarr = dyn_cast<array::ExtractArrayOp>(op)) {
       // Logic is essentially the same as readarr
       doArrayReadLike(extractarr);
-    } else if (auto insertarr = dyn_cast<InsertArrayOp>(op)) {
+    } else if (auto insertarr = dyn_cast<array::InsertArrayOp>(op)) {
       // Logic is essentially the same as writearr
       doArrayWriteLike(insertarr);
     }
