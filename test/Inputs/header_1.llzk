@@ -1,11 +1,11 @@
 // Imported via `include_pass.llzk`
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.func private @my_func_0()
+  function.def private @my_func_0()
   module @pkg_one {
-    llzk.func private @my_func_1()
+    function.def private @my_func_1()
   }
   module @pkg_two {
-    llzk.func private @my_func_2()
+    function.def private @my_func_2()
   }
 }

@@ -2,14 +2,14 @@
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Tester<[@S0, @S1]> {
-    func @compute(%0: index) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+    function.def @compute(%0: index) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
       // expected-error@+1 {{'llzk.unifiable_cast' op input type 'index' and output type '!llzk.felt' are not unifiable}}
       %r0 = unifiable_cast %0 : (index) -> !llzk.felt
-      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+      function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
-    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %0: index) {
-      return
+    function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %0: index) {
+      function.return
     }
   }
 }
@@ -18,14 +18,14 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Tester<[@S0, @S1]> {
-    func @compute(%1: i1) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+    function.def @compute(%1: i1) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
       // expected-error@+1 {{'llzk.unifiable_cast' op input type 'i1' and output type 'index' are not unifiable}}
       %r1 = unifiable_cast %1 : (i1) -> index
-     return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+     function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
-    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %1: i1) {
-      return
+    function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %1: i1) {
+      function.return
     }
   }
 }
@@ -35,14 +35,14 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Tester<[@S0, @S1]> {
-    func @compute(%2: !llzk.felt) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+    function.def @compute(%2: !llzk.felt) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
       // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.felt' and output type '!llzk.string' are not unifiable}}
       %r2 = unifiable_cast %2 : (!llzk.felt) -> !llzk.string
-      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+      function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
-    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %2: !llzk.felt) {
-      return
+    function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %2: !llzk.felt) {
+      function.return
     }
   }
 }
@@ -51,32 +51,32 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @T1<[]> {
-    func @compute() -> !llzk.struct<@T1<[]>> {
+    function.def @compute() -> !llzk.struct<@T1<[]>> {
       %self = new_struct : <@T1<[]>>
-      return %self : !llzk.struct<@T1<[]>>
+      function.return %self : !llzk.struct<@T1<[]>>
     }
-    func @constrain(%self : !llzk.struct<@T1<[]>>) {
-      return
+    function.def @constrain(%self : !llzk.struct<@T1<[]>>) {
+      function.return
     }
   }
   llzk.struct @T2<[@N]> {
-    func @compute() -> !llzk.struct<@T2<[@N]>> {
+    function.def @compute() -> !llzk.struct<@T2<[@N]>> {
       %self = new_struct : <@T2<[@N]>>
-      return %self : !llzk.struct<@T2<[@N]>>
+      function.return %self : !llzk.struct<@T2<[@N]>>
     }
-    func @constrain(%self : !llzk.struct<@T2<[@N]>>) {
-      return
+    function.def @constrain(%self : !llzk.struct<@T2<[@N]>>) {
+      function.return
     }
   }
   llzk.struct @Tester<[@S0, @S1]> {
-    func @compute(%3: !llzk.struct<@T1<[]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+    function.def @compute(%3: !llzk.struct<@T1<[]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
       // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.struct<@T1<[]>>' and output type '!llzk.struct<@T2<[@S0]>>' are not unifiable}}
       %r3 = unifiable_cast %3 : (!llzk.struct<@T1<[]>>) -> !llzk.struct<@T2<[@S0]>>
-      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+      function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
-    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %3: !llzk.struct<@T1<[]>>) {
-      return
+    function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %3: !llzk.struct<@T1<[]>>) {
+      function.return
     }
   }
 }
@@ -85,23 +85,23 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @T2<[@N]> {
-    func @compute() -> !llzk.struct<@T2<[@N]>> {
+    function.def @compute() -> !llzk.struct<@T2<[@N]>> {
       %self = new_struct : <@T2<[@N]>>
-      return %self : !llzk.struct<@T2<[@N]>>
+      function.return %self : !llzk.struct<@T2<[@N]>>
     }
-    func @constrain(%self : !llzk.struct<@T2<[@N]>>) {
-      return
+    function.def @constrain(%self : !llzk.struct<@T2<[@N]>>) {
+      function.return
     }
   }
   llzk.struct @Tester<[@S0, @S1]> {
-    func @compute(%4: !llzk.struct<@T2<[1]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+    function.def @compute(%4: !llzk.struct<@T2<[1]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
       // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.struct<@T2<[1]>>' and output type '!llzk.struct<@T2<[!llzk.felt]>>' are not unifiable}}
       %r4 = unifiable_cast %4 : (!llzk.struct<@T2<[1]>>) -> !llzk.struct<@T2<[!llzk.felt]>>
-      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+      function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
-    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %4: !llzk.struct<@T2<[1]>>) {
-      return
+    function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %4: !llzk.struct<@T2<[1]>>) {
+      function.return
     }
   }
 }
@@ -112,23 +112,23 @@ module attributes {veridise.lang = "llzk"} {
 #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @T2<[@N]> {
-    func @compute() -> !llzk.struct<@T2<[@N]>> {
+    function.def @compute() -> !llzk.struct<@T2<[@N]>> {
       %self = new_struct : <@T2<[@N]>>
-      return %self : !llzk.struct<@T2<[@N]>>
+      function.return %self : !llzk.struct<@T2<[@N]>>
     }
-    func @constrain(%self : !llzk.struct<@T2<[@N]>>) {
-      return
+    function.def @constrain(%self : !llzk.struct<@T2<[@N]>>) {
+      function.return
     }
   }
   llzk.struct @Tester<[@S0, @S1]> {
-    func @compute(%6: !llzk.struct<@T2<[index]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+    function.def @compute(%6: !llzk.struct<@T2<[index]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
       // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.struct<@T2<[index]>>' and output type '!llzk.struct<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>' are not unifiable}}
       %r6 = unifiable_cast %6 : (!llzk.struct<@T2<[index]>>) -> !llzk.struct<@T2<[#map1]>>
-      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+      function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
-    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %6: !llzk.struct<@T2<[index]>>) {
-      return
+    function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %6: !llzk.struct<@T2<[index]>>) {
+      function.return
     }
   }
 }
@@ -138,23 +138,23 @@ module attributes {veridise.lang = "llzk"} {
 #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @T2<[@N]> {
-    func @compute() -> !llzk.struct<@T2<[@N]>> {
+    function.def @compute() -> !llzk.struct<@T2<[@N]>> {
       %self = new_struct : <@T2<[@N]>>
-      return %self : !llzk.struct<@T2<[@N]>>
+      function.return %self : !llzk.struct<@T2<[@N]>>
     }
-    func @constrain(%self : !llzk.struct<@T2<[@N]>>) {
-      return
+    function.def @constrain(%self : !llzk.struct<@T2<[@N]>>) {
+      function.return
     }
   }
   llzk.struct @Tester<[@S0, @S1]> {
-    func @compute(%7: !llzk.struct<@T2<[!llzk.felt]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+    function.def @compute(%7: !llzk.struct<@T2<[!llzk.felt]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
       // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.struct<@T2<[!llzk.felt]>>' and output type '!llzk.struct<@T2<[1234]>>' are not unifiable}}
       %r7 = unifiable_cast %7 : (!llzk.struct<@T2<[!llzk.felt]>>) -> !llzk.struct<@T2<[1234]>>
-      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+      function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
-    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>) {
-      return
+    function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>) {
+      function.return
     }
   }
 }
@@ -164,32 +164,32 @@ module attributes {veridise.lang = "llzk"} {
 #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @T2<[@N]> {
-    func @compute() -> !llzk.struct<@T2<[@N]>> {
+    function.def @compute() -> !llzk.struct<@T2<[@N]>> {
       %self = new_struct : <@T2<[@N]>>
-      return %self : !llzk.struct<@T2<[@N]>>
+      function.return %self : !llzk.struct<@T2<[@N]>>
     }
-    func @constrain(%self : !llzk.struct<@T2<[@N]>>) {
-      return
+    function.def @constrain(%self : !llzk.struct<@T2<[@N]>>) {
+      function.return
     }
   }
   llzk.struct @T3<[@A, @B, @C, @D, @E]> {
-    func @compute() -> !llzk.struct<@T3<[@A, @B, @C, @D, @E]>> {
+    function.def @compute() -> !llzk.struct<@T3<[@A, @B, @C, @D, @E]>> {
       %self = new_struct : <@T3<[@A, @B, @C, @D, @E]>>
-      return %self : !llzk.struct<@T3<[@A, @B, @C, @D, @E]>>
+      function.return %self : !llzk.struct<@T3<[@A, @B, @C, @D, @E]>>
     }
-    func @constrain(%self : !llzk.struct<@T3<[@A, @B, @C, @D, @E]>>) {
-      return
+    function.def @constrain(%self : !llzk.struct<@T3<[@A, @B, @C, @D, @E]>>) {
+      function.return
     }
   }
   llzk.struct @Tester<[@S0, @S1]> {
-    func @compute(%18: !llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+    function.def @compute(%18: !llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
       // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>' and output type '!llzk.struct<@T3<[!llzk.string, affine_map<()[s0, s1] -> (s0 + s1)>, 1, @S0, !llzk.struct<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>]>>' are not unifiable}}
       %19 = unifiable_cast %18 : (!llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@T3<[!llzk.string, #map1, 1, @S0, !llzk.struct<@T2<[#map1]>>]>>
-      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+      function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
-    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %18: !llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>) {
-      return
+    function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %18: !llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>) {
+      function.return
     }
   }
 }

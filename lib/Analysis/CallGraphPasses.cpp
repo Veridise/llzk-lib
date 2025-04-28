@@ -20,6 +20,7 @@
 
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Analysis/CallGraphAnalyses.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include <llvm/ADT/SmallVector.h>

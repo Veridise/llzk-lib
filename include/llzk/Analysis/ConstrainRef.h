@@ -10,7 +10,6 @@
 #pragma once
 
 #include "llzk/Analysis/AbstractLatticeValue.h"
-#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/Hash.h"

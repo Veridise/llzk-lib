@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/CallGraph.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -28,6 +29,8 @@
 
 namespace llzk {
 
+using namespace function;
+
 //===----------------------------------------------------------------------===//
 // CallGraphNode
 //===----------------------------------------------------------------------===//
@@ -42,8 +45,8 @@ mlir::Region *CallGraphNode::getCallableRegion() const {
   return callableRegion;
 }
 
-llzk::FuncDefOp CallGraphNode::getCalledFunction() const {
-  return mlir::dyn_cast<llzk::FuncDefOp>(getCallableRegion()->getParentOp());
+FuncDefOp CallGraphNode::getCalledFunction() const {
+  return mlir::dyn_cast<FuncDefOp>(getCallableRegion()->getParentOp());
 }
 
 /// Adds an reference edge to the given node. This is only valid on the
@@ -161,7 +164,7 @@ CallGraphNode *CallGraph::lookupNode(mlir::Region *region) const {
 CallGraphNode *CallGraph::resolveCallable(
     mlir::CallOpInterface call, mlir::SymbolTableCollection &symbolTable
 ) const {
-  auto res = llzk::resolveCallable<llzk::FuncDefOp>(symbolTable, call);
+  auto res = llzk::resolveCallable<FuncDefOp>(symbolTable, call);
   if (mlir::succeeded(res)) {
     if (auto *node = lookupNode(res->get().getCallableRegion())) {
       return node;

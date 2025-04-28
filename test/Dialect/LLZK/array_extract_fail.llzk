@@ -1,22 +1,22 @@
 // RUN: llzk-opt %s -split-input-file -verify-diagnostics
 
-llzk.func @should_use_array.read_instead_of_array.extract() -> index {
+function.def @should_use_array_read_instead_of_array_extract() -> index {
   %a = arith.constant 946 : index
   %b = arith.constant 413 : index
   %r = array.new %a, %b : !llzk.array<2 x index>
   %i = arith.constant 1 : index
   // expected-error@+1 {{'array.extract' op cannot select all dimensions of an array. Use 'array.read' instead.}}
   %s = array.extract %r[%i] : !llzk.array<2 x index>
-  return %s: index
+  function.return %s: index
 }
 // -----
 
-llzk.func @array.extract_with_more_dims_than_available() -> index {
+function.def @array_extract_with_more_dims_than_available() -> index {
   %a = arith.constant 946 : index
   %b = arith.constant 413 : index
   %r = array.new %a, %b : !llzk.array<2 x index>
   %i = arith.constant 0 : index
   // expected-error@+1 {{'array.extract' op cannot select more dimensions than exist in the source array}}
   %s = array.extract %r[%i,%i] : !llzk.array<2 x index>
-  return %s: index
+  function.return %s: index
 }

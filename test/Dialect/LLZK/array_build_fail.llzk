@@ -1,6 +1,6 @@
 // RUN: llzk-opt %s -split-input-file -verify-diagnostics
 
-llzk.func @constant_scalar_mismatch() {
+function.def @constant_scalar_mismatch() {
   %a = llzk.constfelt 6744573456376
   %b = arith.constant 2 : index // expected-note {{prior use here}}
   // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!llzk.felt' vs 'index'}}
@@ -9,7 +9,7 @@ llzk.func @constant_scalar_mismatch() {
 
 // -----
 
-llzk.func @param_scalar_mismatch(
+function.def @param_scalar_mismatch(
       %a: !llzk.felt,
       %b: !llzk.felt,
       %c: index // expected-note {{prior use here}}
@@ -20,7 +20,7 @@ llzk.func @param_scalar_mismatch(
 
 // -----
 
-llzk.func @mismatch_to_type_attr(
+function.def @mismatch_to_type_attr(
       %a: !llzk.array<3 x index>, // expected-note {{prior use here}}
       %b: !llzk.felt
       ) {
@@ -31,7 +31,7 @@ llzk.func @mismatch_to_type_attr(
 
 // -----
 
-llzk.func @mismatch_to_type_attr_size() {
+function.def @mismatch_to_type_attr_size() {
   %a = llzk.constfelt 6744573456376
   %b = llzk.constfelt 381928390103509
   // expected-error@+1 {{custom op 'array.new' 2 operands present, but expected 3}}
@@ -40,118 +40,118 @@ llzk.func @mismatch_to_type_attr_size() {
 
 // -----
 
-llzk.func @multi_array_not_enough_values(%a: index, %b: index) -> !llzk.array<2,2 x index> {
+function.def @multi_array_not_enough_values(%a: index, %b: index) -> !llzk.array<2,2 x index> {
   %c = arith.constant 324 : index
   // expected-error@+1 {{custom op 'array.new' 3 operands present, but expected 4}}
   %r = array.new %a, %b, %c: !llzk.array<2,2 x index>
-  return %r: !llzk.array<2,2 x index>
+  function.return %r: !llzk.array<2,2 x index>
 }
 // -----
 
-llzk.func @multi_array_too_many_values(%a: index, %b: index) -> !llzk.array<2,2 x index> {
+function.def @multi_array_too_many_values(%a: index, %b: index) -> !llzk.array<2,2 x index> {
   %c = arith.constant 324 : index
   %d = arith.constant 999 : index
   %e = arith.constant 879 : index
   // expected-error@+1 {{custom op 'array.new' 5 operands present, but expected 4}}
   %r = array.new %a, %b, %c, %d, %e: !llzk.array<2,2 x index>
-  return %r: !llzk.array<2,2 x index>
+  function.return %r: !llzk.array<2,2 x index>
 }
 // -----
-llzk.func @missing_instantiations() {
+function.def @missing_instantiations() {
   // expected-error@+1 {{'array.new' op map instantiation group count (0) does not match the number of affine map instantiations (1) required by the type}}
   %r = array.new : !llzk.array<affine_map<(i) -> (i)> x index>
-  return
+  function.return
 }
 // -----
-llzk.func @empty_instantiations() {
+function.def @empty_instantiations() {
   // expected-error@+1 {{expected '(' in operand list}}
   %r = array.new { } : !llzk.array<affine_map<(i) -> (i)> x index>
-  return
+  function.return
 }
 // -----
 !at = !llzk.array<affine_map<(i)[k] -> (5*i+k)>, affine_map<()[c] -> (c)>, affine_map<(j) -> (j+2)> x index>
-llzk.func @too_few_instantiations() -> !at {
+function.def @too_few_instantiations() -> !at {
   %a = arith.constant 2 : index
   %b = arith.constant 4 : index
   %c = arith.constant 6 : index
   // expected-error@+1 {{'array.new' op map instantiation group count (2) does not match the number of affine map instantiations (3) required by the type}}
   %r = array.new { (%a)[%b], ()[%c] } : !at // { operandSegmentSizes = array<i32: 0, 3> }
-  return %r: !at
+  function.return %r: !at
 }
 // -----
 !at = !llzk.array<affine_map<(i)[k] -> (5*i+k)> x index>
-llzk.func @too_many_instantiations() -> !at {
+function.def @too_many_instantiations() -> !at {
   %a = arith.constant 2 : index
   %b = arith.constant 4 : index
   %c = arith.constant 6 : index
   // expected-error@+1 {{'array.new' op map instantiation group count (2) does not match the number of affine map instantiations (1) required by the type}}
   %r = array.new { (%a)[%b], ()[%c] } : !at // { operandSegmentSizes = array<i32: 0, 3> }
-  return %r: !at
+  function.return %r: !at
 }
 // -----
-llzk.func @too_few_dimensions() {
+function.def @too_few_dimensions() {
   %c = arith.constant 6 : index
   // expected-error@+1 {{'array.new' op instantiation of map 0 expected 1 but found 0 dimension values in ()}}
   %r = array.new { ()[%c] } : !llzk.array<affine_map<(i)[k] -> (5*i+k)> x index>
-  return
+  function.return
 }
 // -----
-llzk.func @too_many_dimensions() {
+function.def @too_many_dimensions() {
   %a = arith.constant 2 : index
   %b = arith.constant 4 : index
   %c = arith.constant 6 : index
   // expected-error@+1 {{'array.new' op instantiation of map 0 expected 1 but found 2 dimension values in ()}}
   %r = array.new { (%a, %b)[%c] } : !llzk.array<affine_map<(i)[k] -> (5*i+k)> x index>
-  return
+  function.return
 }
 
 // -----
-llzk.func @too_few_results() {
+function.def @too_few_results() {
   %a = arith.constant 2 : index
   // expected-error@+1 {{AffineMapAttr must yield a single result, but found 0 results}}
   %r = array.new { (%a) } : !llzk.array<affine_map<(i) -> ()> x index>
-  return
+  function.return
 }
 
 // -----
-llzk.func @too_many_results() {
+function.def @too_many_results() {
   %a = arith.constant 2 : index
   // expected-error@+1 {{AffineMapAttr must yield a single result, but found 2 results}}
   %r = array.new { (%a) } : !llzk.array<affine_map<(i) -> (i, 2*i)> x index>
-  return
+  function.return
 }
 
 // -----
-llzk.func @too_few_symbols() {
+function.def @too_few_symbols() {
   %a = arith.constant 2 : index
   // expected-error@+1 {{'array.new' op instantiation of map 0 expected 1 but found 0 symbol values in []}}
   %r = array.new { (%a)[] } : !llzk.array<affine_map<(i)[k] -> (5*i+k)> x index>
-  return
+  function.return
 }
 // -----
-llzk.func @too_many_symbols() {
+function.def @too_many_symbols() {
   %a = arith.constant 2 : index
   %b = arith.constant 4 : index
   %c = arith.constant 6 : index
   // expected-error@+1 {{'array.new' op instantiation of map 0 expected 1 but found 2 symbol values in []}}
   %r = array.new { (%a)[%b, %c] } : !llzk.array<affine_map<(i)[k] -> (5*i+k)> x index>
-  return
+  function.return
 }
 // -----
 !at = !llzk.array<affine_map<(i)->(i)> x index>
-llzk.func @cannot_have_elements_after_affine_map_instantiation() -> !at {
+function.def @cannot_have_elements_after_affine_map_instantiation() -> !at {
   %a = arith.constant 2 : index
   %b = arith.constant 4 : index
   // expected-error@+1 {{expected ':'}}
   %r = array.new { (%a) } %b : !at
-  return %r: !at
+  function.return %r: !at
 }
 // -----
 !at = !llzk.array<affine_map<(i)->(i)> x index>
-llzk.func @cannot_have_elements_before_affine_map_instantiation() -> !at {
+function.def @cannot_have_elements_before_affine_map_instantiation() -> !at {
   %a = arith.constant 2 : index
   %b = arith.constant 4 : index
   // expected-error@+1 {{expected ':'}}
   %r = array.new %b { (%a) }: !at
-  return %r: !at
+  function.return %r: !at
 }

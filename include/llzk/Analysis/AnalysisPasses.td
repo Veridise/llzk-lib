@@ -10,31 +10,26 @@
 #ifndef LLZK_ANALYSIS_TD
 #define LLZK_ANALYSIS_TD
 
-include "mlir/Pass/PassBase.td"
+include "llzk/Pass/PassBase.td"
 
-def CallGraphPrinterPass : Pass<"llzk-print-call-graph", "::mlir::ModuleOp"> {
+def CallGraphPrinterPass : LLZKPass<"llzk-print-call-graph"> {
   let summary = "Print the LLZK module's call graph.";
   let constructor = "llzk::createCallGraphPrinterPass(llvm::errs())";
-  let dependentDialects = ["llzk::LLZKDialect"];
 }
 
-def CallGraphSCCsPrinterPass
-    : Pass<"llzk-print-call-graph-sccs", "::mlir::ModuleOp"> {
+def CallGraphSCCsPrinterPass : LLZKPass<"llzk-print-call-graph-sccs"> {
   let summary = "Print the SCCs from the LLZK module's call graph.";
   let constructor = "llzk::createCallGraphSCCsPrinterPass(llvm::errs())";
-  let dependentDialects = ["llzk::LLZKDialect"];
 }
 
 def ConstraintDependencyGraphPrinterPass
-    : Pass<"llzk-print-constraint-dependency-graphs", "::mlir::ModuleOp"> {
+    : LLZKPass<"llzk-print-constraint-dependency-graphs"> {
   let summary = "Print constraint dependency graph for all LLZK structs.";
   let constructor =
       "llzk::createConstraintDependencyGraphPrinterPass(llvm::errs())";
-  let dependentDialects = ["llzk::LLZKDialect", "llzk::array::ArrayDialect", "llzk::include::IncludeDialect"];
 }
 
-def IntervalAnalysisPrinterPass
-    : Pass<"llzk-print-interval-analysis", "::mlir::ModuleOp"> {
+def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
   let summary = "Print interval analysis results for all LLZK structs.";
   let constructor = "llzk::createIntervalAnalysisPrinterPass(llvm::errs())";
   let options =
@@ -45,7 +40,6 @@ def IntervalAnalysisPrinterPass
               /* default */ "false",
               "Whether to output SMT solver constraints along with intervals.">,
   ];
-  let dependentDialects = ["llzk::LLZKDialect"];
 }
 
 #endif // LLZK_ANALYSIS_TD

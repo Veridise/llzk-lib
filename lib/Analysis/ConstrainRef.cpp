@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/ConstrainRef.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"

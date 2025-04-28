@@ -10,6 +10,7 @@
 #include "llzk/Analysis/ConstrainRefLattice.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/DenseAnalysis.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -218,7 +219,7 @@ ConstrainRefLatticeValue ConstrainRefLattice::getOrDefault(mlir::Value v) const 
 
 ConstrainRefLatticeValue ConstrainRefLattice::getReturnValue(unsigned i) const {
   auto op = this->getPoint().get<mlir::Operation *>();
-  if (auto retOp = mlir::dyn_cast<ReturnOp>(op)) {
+  if (auto retOp = mlir::dyn_cast<function::ReturnOp>(op)) {
     if (i >= retOp.getNumOperands()) {
       llvm::report_fatal_error("return value requested is out of range");
     }

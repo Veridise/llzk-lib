@@ -11,29 +11,28 @@
 
 #include <gtest/gtest.h>
 
+#include "../LLZKTestBase.h"
+
 /* Tests for the ModuleBuilder */
 
 using namespace llzk;
 
 /// TODO: likely a good candidate for property-based testing.
 /// A potential good option for a future date: https://github.com/emil-e/rapidcheck
-class ModuleBuilderTests : public ::testing::Test {
+class ModuleBuilderTests : public LLZKTest {
 protected:
   static constexpr auto structAName = "structA";
   static constexpr auto structBName = "structB";
   static constexpr auto structCName = "structC";
 
-  mlir::MLIRContext context;
   mlir::OwningOpRef<mlir::ModuleOp> mod;
   ModuleBuilder builder;
 
-  ModuleBuilderTests() : context(), mod(createLLZKModule(&context)), builder(mod.get()) {
-    context.loadDialect<llzk::LLZKDialect>();
-  }
+  ModuleBuilderTests() : LLZKTest(), mod(createLLZKModule(&ctx)), builder(mod.get()) {}
 
   void SetUp() override {
     // Create a new module and builder for each test.
-    mod = createLLZKModule(&context);
+    mod = createLLZKModule(&ctx);
     builder = ModuleBuilder(mod.get());
   }
 };
@@ -104,7 +103,7 @@ TEST_F(ModuleBuilderTests, testConstruction) {
   for (auto s : builder.getRootModule().getOps<llzk::StructDefOp>()) {
     numStructs++;
     size_t numFn = 0;
-    for (auto fn : s.getOps<llzk::FuncDefOp>()) {
+    for (auto fn : s.getOps<llzk::function::FuncDefOp>()) {
       numFn++;
       ASSERT_EQ(fn.getName(), llzk::FUNC_NAME_CONSTRAIN);
     }

@@ -4,9 +4,9 @@ module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'include.from' op expected 'builtin.module' from included file to have "veridise.lang" attribute}}
   include.from "Inputs/header_3.llzk" as @alias1
 
-  llzk.func @test_func() {
-    llzk.call @alias1::@pkg_two::@my_func_2() : () -> ()
-    return
+  function.def @test_func() {
+    function.call @alias1::@pkg_two::@my_func_2() : () -> ()
+    function.return
   }
 }
 // -----
@@ -16,9 +16,9 @@ module attributes {veridise.lang = "llzk"} {
     // expected-error@+1 {{'include.from' op expected 'builtin.module' from included file to be unnamed}}
     include.from "Inputs/header_4.llzk" as @alias2
 
-    llzk.func @test_func() {
-      llzk.call @outer::@alias2::@pkg_two::@my_func_2() : () -> ()
-      return
+    function.def @test_func() {
+      function.call @outer::@alias2::@pkg_two::@my_func_2() : () -> ()
+      function.return
     }
   }
 }
@@ -34,11 +34,11 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 
-  llzk.func @test_func() {
-    // expected-error@+2 {{'llzk.call' op references unknown symbol "@a::@b::@c::@alias3::@pkg_two::@my_func_2"}}
-    // expected-error@+1 {{expected 'llzk.func' named "@a::@b::@c::@alias3::@pkg_two::@my_func_2"}}
-    llzk.call @a::@b::@c::@alias3::@pkg_two::@my_func_2() : () -> ()
-    return
+  function.def @test_func() {
+    // expected-error@+2 {{'function.call' op references unknown symbol "@a::@b::@c::@alias3::@pkg_two::@my_func_2"}}
+    // expected-error@+1 {{expected 'function.def' named "@a::@b::@c::@alias3::@pkg_two::@my_func_2"}}
+    function.call @a::@b::@c::@alias3::@pkg_two::@my_func_2() : () -> ()
+    function.return
   }
 }
 // -----
@@ -64,22 +64,22 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   include.from "Inputs/header_7A.llzk" as @a // expected-note {{included from here}}
-  llzk.func @test_func_A() {
+  function.def @test_func_A() {
     // Note: The error only occurs during inlining, not during the symbol
     //  lookup because that process is bounded by the SymbolRefAttr itself.
-    llzk.call @a::@b::@c::@func_in_7c() : () -> ()
-    return
+    function.call @a::@b::@c::@func_in_7c() : () -> ()
+    function.return
   }
 }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   include.from "Inputs/header_7A.llzk" as @entry // expected-note {{included from here}}
-  llzk.func @test_func_B() {
+  function.def @test_func_B() {
     // Note: Even in this case, symbol lookup will traverse the include cycle but
     //  again, it's bounded by the SymbolRefAttr itself so it will only traverse twice.
-    llzk.call @entry::@b::@c::@cycle::@b::@c::@cycle::@b::@c::@func_in_7c() : () -> ()
-    return
+    function.call @entry::@b::@c::@cycle::@b::@c::@cycle::@b::@c::@func_in_7c() : () -> ()
+    function.return
   }
 }
 // -----

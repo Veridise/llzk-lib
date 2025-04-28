@@ -4,8 +4,8 @@ module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'include.from' op expected 'builtin.module' from included file to have "veridise.lang" attribute}}
   include.from "Inputs/header_3.llzk" as @std
 
-  llzk.func @test_func() {
-    llzk.call @std::@pkg_two::@my_func_2() : () -> ()
-    return
+  function.def @test_func() {
+    function.call @std::@pkg_two::@my_func_2() : () -> ()
+    function.return
   }
 }

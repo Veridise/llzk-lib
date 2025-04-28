@@ -24,8 +24,8 @@ class Array_Op<string mnemonic, list<Trait> traits = []>
 
 class ArrayAccessOp<string mnemonic, list<Trait> traits = []>
     : Array_Op<mnemonic,
-              traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                      DeclareOpInterfaceMethods<ArrayAccessOpInterface>]> {
+               traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                       DeclareOpInterfaceMethods<ArrayAccessOpInterface>]> {
   let extraClassDeclaration = [{
     /// Gets the type of the referenced base array.
     inline ::llzk::ArrayType getArrRefType() {
@@ -35,8 +35,7 @@ class ArrayAccessOp<string mnemonic, list<Trait> traits = []>
 }
 
 // isRead: read(1) vs write(0) ops
-class ScalarArrayAccessOp<string mnemonic, bit isRead,
-                               list<Trait> traits = []>
+class ScalarArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
     : ArrayAccessOp<
           mnemonic,
           traits#[DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
@@ -86,8 +85,7 @@ class ScalarArrayAccessOp<string mnemonic, bit isRead,
 }
 
 // isRead: read(1) vs write(0) ops
-class RangedArrayAccessOp<string mnemonic, bit isRead,
-                               list<Trait> traits = []>
+class RangedArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
     : ArrayAccessOp<mnemonic, traits> {
   let extraClassDefinition = [{
     /// Return `true` if the op is a read, `false` if it's a write.
@@ -225,8 +223,7 @@ def LLZK_CreateArrayOp
 
 def LLZK_ReadArrayOp
     : ScalarArrayAccessOp<
-          "read",
-          true, [ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
+          "read", true, [ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
   let summary = "read scalar from an array";
   let description = [{
     This operation reads the value from an array at the specified position.
@@ -299,7 +296,7 @@ def LLZK_WriteArrayOp
 
 def LLZK_ExtractArrayOp
     : RangedArrayAccessOp<"extract",
-                               true, [InferTypeOpAdaptorWithIsCompatible]> {
+                          true, [InferTypeOpAdaptorWithIsCompatible]> {
   let summary = "read subarray from a multi-dimensional array";
   let description = [{
     This operation takes an N-dimensional array and K indices and extracts the
@@ -318,7 +315,7 @@ def LLZK_ExtractArrayOp
     scf.for %iv = %lb to %up step %step {
       %p = array.extract %in[%iv] : !llzk.array<@N,2 x !llzk.felt>
       %c = array.read %a[%iv] : !llzk.array<@N x !llzk.struct<@SubC>>, !llzk.struct<@SubC>
-      llzk.call @SubC::@constrain(%c, %p) : (!llzk.struct<@SubC>, !llzk.array<2 x !llzk.felt>) -> ()
+      function.call @SubC::@constrain(%c, %p) : (!llzk.struct<@SubC>, !llzk.array<2 x !llzk.felt>) -> ()
     }
     ```
   }];
@@ -366,9 +363,8 @@ def LLZK_InsertArrayOp : RangedArrayAccessOp<"insert", false> {
 }
 
 def LLZK_ArrayLengthOp
-    : Array_Op<"len", [Pure,
-                            DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                            DeclareOpInterfaceMethods<ArrayRefOpInterface>]> {
+    : Array_Op<"len", [Pure, DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                       DeclareOpInterfaceMethods<ArrayRefOpInterface>]> {
   let summary = "return the length of an array";
   let description = [{
     This operation returns the size of the specified dimension of an array.

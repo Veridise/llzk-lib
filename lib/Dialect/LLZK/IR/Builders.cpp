@@ -15,6 +15,7 @@
 namespace llzk {
 
 using namespace mlir;
+using namespace function;
 
 OwningOpRef<ModuleOp> createLLZKModule(MLIRContext *context, Location loc) {
   auto mod = ModuleOp::create(loc);

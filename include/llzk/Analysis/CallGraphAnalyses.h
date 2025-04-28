@@ -10,6 +10,7 @@
 #pragma once
 
 #include "llzk/Analysis/CallGraph.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include <mlir/Analysis/CallGraph.h>
@@ -59,7 +60,7 @@ public:
 class CallGraphReachabilityAnalysis {
 
   // Maps function -> callees
-  using CalleeMapTy = mlir::DenseMap<FuncDefOp, mlir::DenseSet<FuncDefOp>>;
+  using CalleeMapTy = mlir::DenseMap<function::FuncDefOp, mlir::DenseSet<function::FuncDefOp>>;
 
   mutable CalleeMapTy reachabilityMap;
 
@@ -73,12 +74,12 @@ public:
   }
 
   /// Returns whether B is reachable from A.
-  bool isReachable(FuncDefOp &A, FuncDefOp &B) const;
+  bool isReachable(function::FuncDefOp &A, function::FuncDefOp &B) const;
 
   const llzk::CallGraph &getCallGraph() const { return callGraph.get(); }
 
 private:
-  inline bool isReachableCached(FuncDefOp &A, FuncDefOp &B) const {
+  inline bool isReachableCached(function::FuncDefOp &A, function::FuncDefOp &B) const {
     auto it = reachabilityMap.find(A);
     return it != reachabilityMap.end() && it->second.find(B) != it->second.end();
   }

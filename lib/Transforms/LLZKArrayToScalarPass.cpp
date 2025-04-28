@@ -53,13 +53,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/ArrayTypeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
-#include <mlir/Pass/Pass.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/DialectConversion.h>
 #include <mlir/Transforms/Passes.h>
@@ -75,6 +75,7 @@ namespace llzk {
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
+using namespace llzk::function;
 
 #define DEBUG_TYPE "llzk-array-to-scalar"
 
@@ -667,8 +668,9 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fie
 
   ConversionTarget target(*ctx);
   target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, include::IncludeDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+
+      LLZKDialect, array::ArrayDialect, include::IncludeDialect, function::FunctionDialect,
+      arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
 
@@ -702,8 +704,9 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
 
   ConversionTarget target(*ctx);
   target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, include::IncludeDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+
+      LLZKDialect, array::ArrayDialect, include::IncludeDialect, function::FunctionDialect,
+      arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<CreateArrayOp>(SplitInitFromCreateArrayOp::legal);
   target.addDynamicallyLegalOp<InsertArrayOp>(SplitInsertArrayOp::legal);

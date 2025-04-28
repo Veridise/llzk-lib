@@ -22,6 +22,7 @@ install(
 add_subdirectory(llzk/Analysis)
 add_subdirectory(llzk/Config)
 add_subdirectory(llzk/Dialect/Array/IR)
+add_subdirectory(llzk/Dialect/Function/IR)
 add_subdirectory(llzk/Dialect/Include/IR)
 add_subdirectory(llzk/Dialect/Include/Transforms)
 add_subdirectory(llzk/Dialect/LLZK/IR)

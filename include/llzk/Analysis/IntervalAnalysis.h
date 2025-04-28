@@ -14,7 +14,7 @@
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Compare.h"
 
@@ -22,12 +22,11 @@
 #include <mlir/Pass/AnalysisManager.h>
 #include <mlir/Support/LLVM.h>
 
+#include <llvm/ADT/MapVector.h>
 #include <llvm/Support/SMTAPI.h>
 
 #include <array>
 #include <mutex>
-
-#include "llvm/ADT/MapVector.h"
 
 namespace llzk {
 
@@ -707,12 +706,12 @@ private:
   bool isExtractArrayOp(mlir::Operation *op) const { return mlir::isa<array::ExtractArrayOp>(op); }
 
   bool isDefinitionOp(mlir::Operation *op) const {
-    return mlir::isa<StructDefOp, FuncDefOp, FieldDefOp, GlobalDefOp, mlir::ModuleOp>(op);
+    return mlir::isa<StructDefOp, function::FuncDefOp, FieldDefOp, GlobalDefOp, mlir::ModuleOp>(op);
   }
 
-  bool isCallOp(mlir::Operation *op) const { return mlir::isa<CallOp>(op); }
+  bool isCallOp(mlir::Operation *op) const { return mlir::isa<function::CallOp>(op); }
 
-  bool isReturnOp(mlir::Operation *op) const { return mlir::isa<ReturnOp>(op); }
+  bool isReturnOp(mlir::Operation *op) const { return mlir::isa<function::ReturnOp>(op); }
 
   /// @brief Used for sanity checking and warnings about the analysis. If new operations
   /// are introduced and encountered, we can use this (and related methods) to issue

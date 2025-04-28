@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/DenseAnalysis.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -37,6 +38,9 @@ using namespace mlir;
 using namespace mlir::dataflow;
 
 namespace llzk {
+
+using namespace function;
+
 namespace dataflow {
 
 //===----------------------------------------------------------------------===//
@@ -113,12 +117,12 @@ void AbstractDenseForwardDataFlowAnalysis::visitCallOperation(
   for (Operation *predecessor : predecessors) {
     // Get the lattices at callee return:
     //
-    //   func.func @callee() {
+    //   function.def @callee() {
     //     ...
     //     return  // predecessor
     //     // latticeAtCalleeReturn
     //   }
-    //   func.func @caller() {
+    //   function.def @caller() {
     //     ...
     //     call @callee
     //     // latticeAfterCall
@@ -301,4 +305,5 @@ AbstractDenseForwardDataFlowAnalysis::getLatticeFor(ProgramPoint dependent, Prog
 }
 
 } // namespace dataflow
+
 } // namespace llzk

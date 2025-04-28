@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/CallGraphAnalyses.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include <llvm/ADT/DepthFirstIterator.h>
@@ -20,6 +21,8 @@
 #include <llvm/Support/ErrorHandling.h>
 
 namespace llzk {
+
+using namespace function;
 
 CallGraphAnalysis::CallGraphAnalysis(mlir::Operation *op) : cg(nullptr) {
   if (auto modOp = mlir::dyn_cast<mlir::ModuleOp>(op)) {

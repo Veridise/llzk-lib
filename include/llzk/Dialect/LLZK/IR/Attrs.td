@@ -63,7 +63,7 @@ def LLZK_PubModifierAttr : LLZK_Attr<"Public", "pub"> {
     ```llzk
     llzk.field @field_name : !llzk.felt {llzk.pub}
 
-    llzk.func @func_name(%0: !llzk.felt {llzk.pub})
+    function.def @func_name(%0: !llzk.felt {llzk.pub})
     ```
   }];
 }

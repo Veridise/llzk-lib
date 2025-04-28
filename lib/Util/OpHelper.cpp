@@ -7,12 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Util/OpHelper.h"
 
+using namespace mlir;
+
 namespace llzk {
 
-using namespace mlir;
+using namespace function;
 
 bool isInStruct(Operation *op) { return succeeded(getParentOfType<StructDefOp>(op)); }
 

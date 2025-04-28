@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include <mlir/IR/Builders.h>
@@ -160,8 +161,8 @@ public:
   }
 
   ModuleBuilder &
-  insertGlobalCall(llzk::FuncDefOp caller, std::string_view callee, mlir::Location callLoc);
-  ModuleBuilder &insertGlobalCall(llzk::FuncDefOp caller, std::string_view callee) {
+  insertGlobalCall(function::FuncDefOp caller, std::string_view callee, mlir::Location callLoc);
+  ModuleBuilder &insertGlobalCall(function::FuncDefOp caller, std::string_view callee) {
     return insertGlobalCall(caller, callee, getUnknownLoc());
   }
 
@@ -177,27 +178,27 @@ public:
     return mlir::failure();
   }
 
-  mlir::FailureOr<llzk::FuncDefOp> getComputeFn(std::string_view structName) const {
+  mlir::FailureOr<function::FuncDefOp> getComputeFn(std::string_view structName) const {
     if (computeFnMap.find(structName) != computeFnMap.end()) {
       return computeFnMap.at(structName);
     }
     return mlir::failure();
   }
-  inline mlir::FailureOr<llzk::FuncDefOp> getComputeFn(llzk::StructDefOp op) const {
+  inline mlir::FailureOr<function::FuncDefOp> getComputeFn(llzk::StructDefOp op) const {
     return getComputeFn(op.getName());
   }
 
-  mlir::FailureOr<llzk::FuncDefOp> getConstrainFn(std::string_view structName) {
+  mlir::FailureOr<function::FuncDefOp> getConstrainFn(std::string_view structName) {
     if (constrainFnMap.find(structName) != constrainFnMap.end()) {
       return constrainFnMap.at(structName);
     }
     return mlir::failure();
   }
-  inline mlir::FailureOr<llzk::FuncDefOp> getConstrainFn(llzk::StructDefOp op) {
+  inline mlir::FailureOr<function::FuncDefOp> getConstrainFn(llzk::StructDefOp op) {
     return getConstrainFn(op.getName());
   }
 
-  mlir::FailureOr<llzk::FuncDefOp> getGlobalFunc(std::string_view funcName) const {
+  mlir::FailureOr<function::FuncDefOp> getGlobalFunc(std::string_view funcName) const {
     if (globalFuncMap.find(funcName) != globalFuncMap.end()) {
       return globalFuncMap.at(funcName);
     }
@@ -239,10 +240,10 @@ private:
 
   Def2NodeMap computeNodes, constrainNodes;
 
-  std::unordered_map<std::string_view, llzk::FuncDefOp> globalFuncMap;
+  std::unordered_map<std::string_view, function::FuncDefOp> globalFuncMap;
   std::unordered_map<std::string_view, llzk::StructDefOp> structMap;
-  std::unordered_map<std::string_view, llzk::FuncDefOp> computeFnMap;
-  std::unordered_map<std::string_view, llzk::FuncDefOp> constrainFnMap;
+  std::unordered_map<std::string_view, function::FuncDefOp> computeFnMap;
+  std::unordered_map<std::string_view, function::FuncDefOp> constrainFnMap;
 
   /// @brief Ensure that a global function with the given funcName has not been added,
   /// reporting a fatal error otherwise.

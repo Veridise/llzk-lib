@@ -13,14 +13,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
-#include "llzk/Dialect/Include/IR/Dialect.h"
-#include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
-#include <llzk/Dialect/LLZK/IR/Attrs.h>
 
 #include <mlir/Dialect/Affine/IR/AffineOps.h>
 #include <mlir/Dialect/Affine/LoopUtils.h>
@@ -34,7 +33,6 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
-#include <mlir/Pass/Pass.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -54,9 +52,10 @@ namespace llzk {
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
 
-using namespace llzk::array;
-using namespace llzk;
 using namespace mlir;
+using namespace llzk;
+using namespace llzk::array;
+using namespace llzk::function;
 
 #define DEBUG_TYPE "llzk-flatten"
 
@@ -350,8 +349,8 @@ newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionT
 ConversionTarget newBaseTarget(MLIRContext *ctx) {
   ConversionTarget target(*ctx);
   target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, include::IncludeDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+      LLZKDialect, array::ArrayDialect, include::IncludeDialect, function::FunctionDialect,
+      arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   return target;
 }

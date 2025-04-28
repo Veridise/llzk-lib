@@ -4,37 +4,37 @@
 !ToFelt = !llzk.struct<@ToFelt<[#id]>>
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ToFelt<[@A]> {
-    func @compute() -> !llzk.struct<@ToFelt<[@A]>> {
+    function.def @compute() -> !llzk.struct<@ToFelt<[@A]>> {
       %self = new_struct : !llzk.struct<@ToFelt<[@A]>>
-      return %self: !llzk.struct<@ToFelt<[@A]>>
+      function.return %self: !llzk.struct<@ToFelt<[@A]>>
     }
 
-    func @constrain(%self: !llzk.struct<@ToFelt<[@A]>>) { return }
+    function.def @constrain(%self: !llzk.struct<@ToFelt<[@A]>>) { function.return }
   }
 
   llzk.struct @Component01<[@T]> {
-    func @compute(%inp: !llzk.struct<@ToFelt<[@T]>>) -> !llzk.struct<@Component01<[@T]>> {
+    function.def @compute(%inp: !llzk.struct<@ToFelt<[@T]>>) -> !llzk.struct<@Component01<[@T]>> {
       %self = new_struct : !llzk.struct<@Component01<[@T]>>
-      return %self : !llzk.struct<@Component01<[@T]>>
+      function.return %self : !llzk.struct<@Component01<[@T]>>
     }
 
-    func @constrain(%self: !llzk.struct<@Component01<[@T]>>, %inp: !llzk.struct<@ToFelt<[@T]>>) { return }
+    function.def @constrain(%self: !llzk.struct<@Component01<[@T]>>, %inp: !llzk.struct<@ToFelt<[@T]>>) { function.return }
   }
 
   llzk.struct @ComponentB {
-    func @compute() -> !llzk.struct<@ComponentB> {
+    function.def @compute() -> !llzk.struct<@ComponentB> {
       // In real code, this should be loop induction variable
       %n = arith.constant 2 : index
-      %in = llzk.call @ToFelt::@compute(){(%n)} : () -> !ToFelt
+      %in = function.call @ToFelt::@compute(){(%n)} : () -> !ToFelt
       // ERROR: The input argument here produces a `@Component01<[@T]>` not `@Component01<[!ToFelt]>` which is an error.
       // expected-error@+1 {{result type mismatch: due to struct instantiation, expected type '!llzk.struct<@Component01<[2]>>', but found '!llzk.struct<@Component01<[!llzk.struct<@ToFelt<[affine_map<(d0) -> (d0)>]>>]>>'}}
-      %out = llzk.call @Component01::@compute(%in) : (!ToFelt) -> !llzk.struct<@Component01<[!ToFelt]>>
+      %out = function.call @Component01::@compute(%in) : (!ToFelt) -> !llzk.struct<@Component01<[!ToFelt]>>
 
       %self = new_struct : !llzk.struct<@ComponentB>
-      return %self : !llzk.struct<@ComponentB>
+      function.return %self : !llzk.struct<@ComponentB>
     }
 
-    func @constrain(%self: !llzk.struct<@ComponentB>) { return }
+    function.def @constrain(%self: !llzk.struct<@ComponentB>) { function.return }
   }
 }
 // -----
@@ -43,7 +43,7 @@ module attributes {veridise.lang = "llzk"} {
     // expected-error@+1 {{Cannot update type of 'llzk.field' because there are multiple 'llzk.writef' with different value types}}
     field @f : !llzk.array<@A x !llzk.felt> {llzk.pub}
 
-    func @compute() -> !llzk.struct<@Component02<[@A,@B]>> {
+    function.def @compute() -> !llzk.struct<@Component02<[@A,@B]>> {
       %self = new_struct : !llzk.struct<@Component02<[@A,@B]>>
       %0 = array.new : !llzk.array<@A x !llzk.felt>
       // expected-note@+2 {{type written here is '!llzk.array<@A x !llzk.felt>'}}
@@ -54,18 +54,18 @@ module attributes {veridise.lang = "llzk"} {
       // expected-note@+2 {{type written here is '!llzk.array<@B x !llzk.felt>'}}
       // expected-note@+1 {{type written here is '!llzk.array<3 x !llzk.felt>'}}
       writef %self[@f] = %1 : !llzk.struct<@Component02<[@A,@B]>>, !llzk.array<@B x !llzk.felt>
-      return %self: !llzk.struct<@Component02<[@A,@B]>>
+      function.return %self: !llzk.struct<@Component02<[@A,@B]>>
     }
 
-    func @constrain(%self: !llzk.struct<@Component02<[@A,@B]>>) { return }
+    function.def @constrain(%self: !llzk.struct<@Component02<[@A,@B]>>) { function.return }
   }
 
   llzk.struct @Main {
-    func @compute() -> !llzk.struct<@Main> {
-      llzk.call @Component02::@compute() : () -> !llzk.struct<@Component02<[2,3]>>
+    function.def @compute() -> !llzk.struct<@Main> {
+      function.call @Component02::@compute() : () -> !llzk.struct<@Component02<[2,3]>>
       %self = new_struct : !llzk.struct<@Main>
-      return %self : !llzk.struct<@Main>
+      function.return %self : !llzk.struct<@Main>
     }
-    func @constrain(%arg0: !llzk.struct<@Main>) { return }
+    function.def @constrain(%arg0: !llzk.struct<@Main>) { function.return }
   }
 }

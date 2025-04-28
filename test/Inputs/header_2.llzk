@@ -3,8 +3,8 @@
 module attributes {veridise.lang = "llzk"} {
   include.from "Inputs/header_1.llzk" as @std
 
-  llzk.func @test_func() {
-    llzk.call @std::@pkg_two::@my_func_2() : () -> ()
-    return
+  function.def @test_func() {
+    function.call @std::@pkg_two::@my_func_2() : () -> ()
+    function.return
   }
 }

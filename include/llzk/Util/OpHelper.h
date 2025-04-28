@@ -15,11 +15,15 @@
 #include <mlir/IR/Operation.h>
 #include <mlir/Support/LogicalResult.h>
 
+#include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/StringRef.h>
 
 namespace llzk {
 
 class StructDefOp;
+namespace function {
+class FuncDefOp;
+}
 
 /// Get the operation name, like "llzk.emit_op" for the given OpType.
 /// This function can be used when the compiler would complain about
@@ -64,13 +68,14 @@ mlir::LogicalResult verifyInStructFunctionNamed(
 ) {
   return isInStructFunctionNamed(op, FuncName)
              ? mlir::success()
-             : op->emitOpError(prefix()) << "only valid within a '" << getOperationName<FuncDefOp>()
-                                         << "' named \"@" << FuncName << "\" within a '"
-                                         << getOperationName<StructDefOp>() << "' definition";
+             : op->emitOpError(prefix())
+                   << "only valid within a '" << getOperationName<function::FuncDefOp>()
+                   << "' named \"@" << FuncName << "\" within a '"
+                   << getOperationName<StructDefOp>() << "' definition";
 }
 
-/// This class provides a verifier for ops that are expecting to have
-/// an ancestor llzk::FuncDefOp with the given name.
+/// This class provides a verifier for ops that are expecting to have an ancestor FuncDefOp with the
+/// given name.
 template <char const *FuncName> struct InStructFunctionNamed {
   template <typename TypeClass> class Impl : public mlir::OpTrait::TraitBase<TypeClass, Impl> {
   public:
@@ -125,10 +130,10 @@ public:
   static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
     return !isInStructFunctionNamed(op, FUNC_NAME_CONSTRAIN)
                ? mlir::success()
-               : op->emitOpError()
-                     << "is ComputeOnly so it cannot be used within a '"
-                     << getOperationName<FuncDefOp>() << "' named \"@" << FUNC_NAME_CONSTRAIN
-                     << "\" within a '" << getOperationName<StructDefOp>() << "' definition";
+               : op->emitOpError() << "is ComputeOnly so it cannot be used within a '"
+                                   << getOperationName<function::FuncDefOp>() << "' named \"@"
+                                   << FUNC_NAME_CONSTRAIN << "\" within a '"
+                                   << getOperationName<StructDefOp>() << "' definition";
   }
 };
 

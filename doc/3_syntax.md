@@ -15,14 +15,14 @@ program = program_header, { include | global_const | global_func | component } ;
 program_header = "#dialect", identifier ;
 include = "#include", ? path ? ;
 global_const = identifier, ":=", const_expr, ";" , [ annotation ] ;
-global_func = "func", identifier, parameters, "->", type, body ;
+global_func = "function.def", identifier, parameters, "->", type, body ;
 component = "struct", identifier, [ struct_params ],
 						"{", fields, funcs, "}", [ annotation ] ;
 struct_params = "<", [ identifier, { "," , identifier }], ">" ;
 fields = { identifier, ":", type, "," , [ annotation ] } ;
 funcs = ( compute , constrain ) | ( constrain, compute ) ;
-compute = "func compute", parameters, body ;
-constrain = "func constrain", parameters, body ;
+compute = "function.def compute", parameters, body ;
+constrain = "function.def constrain", parameters, body ;
 parameters = "(", [ param, { "," , param }], ")" ;
 param = identifier, ":", type ;
 body = "{", { statement, ";", [ annotation ] }, "}" ;

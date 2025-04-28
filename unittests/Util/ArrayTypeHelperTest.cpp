@@ -14,17 +14,14 @@
 
 #include <gtest/gtest.h>
 
+#include "../LLZKTestBase.h"
+
 using namespace llzk;
 using namespace mlir;
 
-class ArrayTypeHelperTests : public ::testing::Test {
+class ArrayTypeHelperTests : public LLZKTest {
 protected:
-  MLIRContext ctx;
-  Location loc;
-
-  ArrayTypeHelperTests() : ctx(), loc(llzk::getUnknownLoc(&ctx)) {
-    ctx.loadDialect<llzk::LLZKDialect>();
-  }
+  ArrayTypeHelperTests() : LLZKTest() {}
 };
 
 TEST_F(ArrayTypeHelperTests, test_delinearize_too_small) {

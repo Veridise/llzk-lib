@@ -2,135 +2,135 @@
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Main {
-    func @compute() -> !llzk.struct<@Main> {
+    function.def @compute() -> !llzk.struct<@Main> {
       %self = new_struct : !llzk.struct<@Main>
-      return %self : !llzk.struct<@Main>
+      function.return %self : !llzk.struct<@Main>
     }
-    func @constrain(%self: !llzk.struct<@Main>)  {
-      return
+    function.def @constrain(%self: !llzk.struct<@Main>)  {
+      function.return
     }
   }
 }
 //CHECK-LABEL: llzk.struct @Main {
-//CHECK-NEXT:    func @compute() -> !llzk.struct<@Main> {
+//CHECK-NEXT:    function.def @compute() -> !llzk.struct<@Main> {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
-//CHECK-NEXT:      return %[[SELF:[0-9a-zA-Z_\.]+]] : !llzk.struct<@Main>
+//CHECK-NEXT:      function.return %[[SELF:[0-9a-zA-Z_\.]+]] : !llzk.struct<@Main>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
-//CHECK-NEXT:      return
+//CHECK-NEXT:    function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+//CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Main<[]> {
-    func @compute() -> !llzk.struct<@Main<[]>> {
+    function.def @compute() -> !llzk.struct<@Main<[]>> {
       %self = new_struct : !llzk.struct<@Main<[]>>
-      return %self : !llzk.struct<@Main<[]>>
+      function.return %self : !llzk.struct<@Main<[]>>
     }
-    func @constrain(%self: !llzk.struct<@Main<[]>>)  {
-      return
+    function.def @constrain(%self: !llzk.struct<@Main<[]>>)  {
+      function.return
     }
   }
 }
 //CHECK-LABEL: llzk.struct @Main<[]> {
-//CHECK-NEXT:    func @compute() -> !llzk.struct<@Main<[]>> {
+//CHECK-NEXT:    function.def @compute() -> !llzk.struct<@Main<[]>> {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Main<[]>>
-//CHECK-NEXT:      return %[[SELF:[0-9a-zA-Z_\.]+]] : !llzk.struct<@Main<[]>>
+//CHECK-NEXT:      function.return %[[SELF:[0-9a-zA-Z_\.]+]] : !llzk.struct<@Main<[]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main<[]>>) {
-//CHECK-NEXT:      return
+//CHECK-NEXT:    function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main<[]>>) {
+//CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
-    func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentA> {
+    function.def @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>
-      return %self : !llzk.struct<@ComponentA>
+      function.return %self : !llzk.struct<@ComponentA>
     }
 
-    func @constrain(%self: !llzk.struct<@ComponentA>, %a: !llzk.felt) {
-      return
+    function.def @constrain(%self: !llzk.struct<@ComponentA>, %a: !llzk.felt) {
+      function.return
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentA {
-//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentA>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentA>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentB<[]> {
-    func @compute(%a: index) -> !llzk.struct<@ComponentB<[]>> {
+    function.def @compute(%a: index) -> !llzk.struct<@ComponentB<[]>> {
       %self = new_struct : !llzk.struct<@ComponentB<[]>>
-      return %self : !llzk.struct<@ComponentB<[]>>
+      function.return %self : !llzk.struct<@ComponentB<[]>>
     }
 
-    func @constrain(%self: !llzk.struct<@ComponentB<[]>>, %a: index) {
-      return
+    function.def @constrain(%self: !llzk.struct<@ComponentB<[]>>, %a: index) {
+      function.return
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentB<[]> {
-//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@ComponentB<[]>> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@ComponentB<[]>> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB<[]>>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentB<[]>>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentB<[]>>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB<[]>>, %[[A0:[0-9a-zA-Z_\.]+]]: index) {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB<[]>>, %[[A0:[0-9a-zA-Z_\.]+]]: index) {
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentC<[@A]> {
-    func @constrain(%self: !llzk.struct<@ComponentC<[@A]>>, %a: !llzk.felt, %b: !llzk.felt) { return }
-    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentC<[@A]>> {
+    function.def @constrain(%self: !llzk.struct<@ComponentC<[@A]>>, %a: !llzk.felt, %b: !llzk.felt) { function.return }
+    function.def @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentC<[@A]>> {
       %self = new_struct : !llzk.struct<@ComponentC<[@A]>>
-      return %self : !llzk.struct<@ComponentC<[@A]>>
+      function.return %self : !llzk.struct<@ComponentC<[@A]>>
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentC<[@A]> {
-//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentC<[@A]>>,
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentC<[@A]>>,
 //CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
-//CHECK-NEXT:       return
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentC<[@A]>> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentC<[@A]>> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentC<[@A]>>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentC<[@A]>>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentC<[@A]>>
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentD<[@B, @D, @C]> {
-    func @constrain(%self: !llzk.struct<@ComponentD<[@B, @D, @C]>>, %a: !llzk.felt, %b: !llzk.felt) {
-      return
+    function.def @constrain(%self: !llzk.struct<@ComponentD<[@B, @D, @C]>>, %a: !llzk.felt, %b: !llzk.felt) {
+      function.return
     }
 
-    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentD<[@B, @D, @C]>> {
+    function.def @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentD<[@B, @D, @C]>> {
       %self = new_struct : !llzk.struct<@ComponentD<[@B, @D, @C]>>
-      return %self : !llzk.struct<@ComponentD<[@B, @D, @C]>>
+      function.return %self : !llzk.struct<@ComponentD<[@B, @D, @C]>>
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentD<[@B, @D, @C]> {
-//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentD<[@B, @D, @C]>>,
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentD<[@B, @D, @C]>>,
 //CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
-//CHECK-NEXT:       return
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentD<[@B, @D, @C]>> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentD<[@B, @D, @C]>> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentD<[@B, @D, @C]>>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentD<[@B, @D, @C]>>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentD<[@B, @D, @C]>>
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
@@ -140,96 +140,96 @@ module attributes {veridise.lang = "llzk"} {
     llzk.field @f1 : !llzk.felt
     llzk.field @f2 : !llzk.felt {llzk.pub}
 
-    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentE<[@B, @D, @C]>> {
+    function.def @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentE<[@B, @D, @C]>> {
       %self = new_struct : !llzk.struct<@ComponentE<[@B, @D, @C]>>
-      return %self : !llzk.struct<@ComponentE<[@B, @D, @C]>>
+      function.return %self : !llzk.struct<@ComponentE<[@B, @D, @C]>>
     }
 
-    func @constrain(%self: !llzk.struct<@ComponentE<[@B, @D, @C]>>, %a: !llzk.felt, %b: !llzk.felt) {
-      return
+    function.def @constrain(%self: !llzk.struct<@ComponentE<[@B, @D, @C]>>, %a: !llzk.felt, %b: !llzk.felt) {
+      function.return
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentE<[@B, @D, @C]> {
 //CHECK-NEXT:     field @f1 : !llzk.felt
 //CHECK-NEXT:     field @f2 : !llzk.felt {llzk.pub}
-//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentE<[@B, @D, @C]>> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentE<[@B, @D, @C]>> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentE<[@B, @D, @C]>>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentE<[@B, @D, @C]>>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentE<[@B, @D, @C]>>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentE<[@B, @D, @C]>>,
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentE<[@B, @D, @C]>>,
 //CHECK-SAME:     %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
-//CHECK-NEXT:       return
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentG1 {
-    func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentG1> {
+    function.def @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentG1> {
       %self = new_struct : !llzk.struct<@ComponentG1>
-      return %self : !llzk.struct<@ComponentG1>
+      function.return %self : !llzk.struct<@ComponentG1>
     }
-    func @constrain(%self: !llzk.struct<@ComponentG1>, %a: !llzk.felt) { return }
+    function.def @constrain(%self: !llzk.struct<@ComponentG1>, %a: !llzk.felt) { function.return }
   }
 
   llzk.struct @ComponentG2 {
     llzk.field @f2 : !llzk.struct<@ComponentG1>
 
-    func @compute() -> !llzk.struct<@ComponentG2> {
+    function.def @compute() -> !llzk.struct<@ComponentG2> {
       %self = new_struct : !llzk.struct<@ComponentG2>
-      return %self : !llzk.struct<@ComponentG2>
+      function.return %self : !llzk.struct<@ComponentG2>
     }
 
-    func @constrain(%self: !llzk.struct<@ComponentG2>) {
+    function.def @constrain(%self: !llzk.struct<@ComponentG2>) {
       %b = llzk.nondetfelt
-      return
+      function.return
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentG1 {
-//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentG1> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentG1> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentG1>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentG1>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentG1>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentG1>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentG1>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 //CHECK-LABEL:  llzk.struct @ComponentG2 {
 //CHECK-NEXT:     field @f2 : !llzk.struct<@ComponentG1>
-//CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentG2> {
+//CHECK-NEXT:     function.def @compute() -> !llzk.struct<@ComponentG2> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentG2>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentG2>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentG2>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentG2>) {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentG2>) {
 //CHECK-NEXT:       %felt_nondet = nondetfelt
-//CHECK-NEXT:       return
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentH {
-    func @compute() -> !llzk.struct<@ComponentH> {
+    function.def @compute() -> !llzk.struct<@ComponentH> {
       %self = new_struct : !llzk.struct<@ComponentH>
-      return %self : !llzk.struct<@ComponentH>
+      function.return %self : !llzk.struct<@ComponentH>
     }
 
-    func @constrain(%self: !llzk.struct<@ComponentH>) {
-      call @ComponentH::@constrain(%self) : (!llzk.struct<@ComponentH>) -> ()
-      return
+    function.def @constrain(%self: !llzk.struct<@ComponentH>) {
+      function.call @ComponentH::@constrain(%self) : (!llzk.struct<@ComponentH>) -> ()
+      function.return
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentH {
-//CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentH> {
+//CHECK-NEXT:     function.def @compute() -> !llzk.struct<@ComponentH> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentH>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentH>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentH>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentH>) {
-//CHECK-NEXT:       call @ComponentH::@constrain(%[[SELF]]) : (!llzk.struct<@ComponentH>) -> ()
-//CHECK-NEXT:       return
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentH>) {
+//CHECK-NEXT:       function.call @ComponentH::@constrain(%[[SELF]]) : (!llzk.struct<@ComponentH>) -> ()
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
@@ -238,106 +238,106 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentJ1 {
     field @f1 : !llzk.felt
 
-    func @compute(%p: !llzk.felt) -> !llzk.struct<@ComponentJ1> {
+    function.def @compute(%p: !llzk.felt) -> !llzk.struct<@ComponentJ1> {
       %self = new_struct : !llzk.struct<@ComponentJ1>
-      return %self : !llzk.struct<@ComponentJ1>
+      function.return %self : !llzk.struct<@ComponentJ1>
     }
-    func @constrain(%self: !llzk.struct<@ComponentJ1>, %p: !llzk.felt) { return }
+    function.def @constrain(%self: !llzk.struct<@ComponentJ1>, %p: !llzk.felt) { function.return }
   }
 
   llzk.struct @ComponentJ2 {
     field @f2 : !llzk.felt
     field @f3 : !llzk.struct<@ComponentJ1>
 
-    func @compute() -> !llzk.struct<@ComponentJ2> {
+    function.def @compute() -> !llzk.struct<@ComponentJ2> {
       %self = new_struct : !llzk.struct<@ComponentJ2>
-      return %self : !llzk.struct<@ComponentJ2>
+      function.return %self : !llzk.struct<@ComponentJ2>
     }
 
-    func @constrain(%self: !llzk.struct<@ComponentJ2>) {
+    function.def @constrain(%self: !llzk.struct<@ComponentJ2>) {
       %a = readf %self[@f2] : !llzk.struct<@ComponentJ2>, !llzk.felt
       %b = readf %self[@f3] : !llzk.struct<@ComponentJ2>, !llzk.struct<@ComponentJ1>
-      call @ComponentJ1::@constrain(%b, %a) : (!llzk.struct<@ComponentJ1>, !llzk.felt) -> ()
-      return
+      function.call @ComponentJ1::@constrain(%b, %a) : (!llzk.struct<@ComponentJ1>, !llzk.felt) -> ()
+      function.return
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentJ1 {
 //CHECK-NEXT:     field @f1 : !llzk.felt
-//CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentJ1> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentJ1> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentJ1>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentJ1>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentJ1>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentJ1>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentJ1>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 //CHECK-LABEL:  llzk.struct @ComponentJ2 {
 //CHECK-NEXT:     field @f2 : !llzk.felt
 //CHECK-NEXT:     field @f3 : !llzk.struct<@ComponentJ1>
-//CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentJ2> {
+//CHECK-NEXT:     function.def @compute() -> !llzk.struct<@ComponentJ2> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentJ2>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentJ2>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentJ2>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentJ2>) {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentJ2>) {
 //CHECK-NEXT:       %0 = readf %[[SELF]][@f2] : <@ComponentJ2>, !llzk.felt
 //CHECK-NEXT:       %1 = readf %[[SELF]][@f3] : <@ComponentJ2>, !llzk.struct<@ComponentJ1>
-//CHECK-NEXT:       call @ComponentJ1::@constrain(%1, %0) : (!llzk.struct<@ComponentJ1>, !llzk.felt) -> ()
-//CHECK-NEXT:       return
+//CHECK-NEXT:       function.call @ComponentJ1::@constrain(%1, %0) : (!llzk.struct<@ComponentJ1>, !llzk.felt) -> ()
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.func @identity(%x: !llzk.felt) -> !llzk.felt {
-    return %x: !llzk.felt
+  function.def @identity(%x: !llzk.felt) -> !llzk.felt {
+    function.return %x: !llzk.felt
   }
 
   llzk.struct @ComponentK {
-    func @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentK> {
+    function.def @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentK> {
       %self = new_struct : !llzk.struct<@ComponentK>
-      return %self : !llzk.struct<@ComponentK>
+      function.return %self : !llzk.struct<@ComponentK>
     }
 
-    func @constrain(%self: !llzk.struct<@ComponentK>, %a: !llzk.felt) {
-      call @identity(%a) : (!llzk.felt) -> (!llzk.felt)
-      return
+    function.def @constrain(%self: !llzk.struct<@ComponentK>, %a: !llzk.felt) {
+      function.call @identity(%a) : (!llzk.felt) -> (!llzk.felt)
+      function.return
     }
   }
 }
-//CHECK-LABEL:  llzk.func @identity
+//CHECK-LABEL:  function.def @identity
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     return %[[A0:[0-9a-zA-Z_\.]+]] : !llzk.felt
+//CHECK-NEXT:     function.return %[[A0:[0-9a-zA-Z_\.]+]] : !llzk.felt
 //CHECK-NEXT:   }
 //CHECK-LABEL:  llzk.struct @ComponentK {
-//CHECK-NEXT:     func @compute(%[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentK> {
+//CHECK-NEXT:     function.def @compute(%[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentK> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentK>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentK>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentK>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentK>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
-//CHECK-NEXT:       %0 = call @identity(%[[A1:[0-9a-zA-Z_\.]+]]) : (!llzk.felt) -> !llzk.felt
-//CHECK-NEXT:       return
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentK>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-NEXT:       %0 = function.call @identity(%[[A1:[0-9a-zA-Z_\.]+]]) : (!llzk.felt) -> !llzk.felt
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentM {
-    func @compute(%p: !llzk.felt) -> !llzk.struct<@ComponentM> {
+    function.def @compute(%p: !llzk.felt) -> !llzk.struct<@ComponentM> {
       %self = new_struct : !llzk.struct<@ComponentM>
       // initialize all fields of `%self` here
-      return %self : !llzk.struct<@ComponentM>
+      function.return %self : !llzk.struct<@ComponentM>
     }
-    func @constrain(%self: !llzk.struct<@ComponentM>, %p: !llzk.felt) { return }
+    function.def @constrain(%self: !llzk.struct<@ComponentM>, %p: !llzk.felt) { function.return }
   }
 }
 //CHECK-LABEL:   llzk.struct @ComponentM {
-//CHECK-NEXT:      func @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentM> {
+//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentM> {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentM>
-//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@ComponentM>
+//CHECK-NEXT:        function.return %[[SELF]] : !llzk.struct<@ComponentM>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      func @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentM>, %arg1: !llzk.felt) {
-//CHECK-NEXT:        return
+//CHECK-NEXT:      function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentM>, %arg1: !llzk.felt) {
+//CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 // -----
@@ -345,19 +345,19 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   module @mod1 {
     llzk.struct @ComponentP1 {
-      func @compute() -> !llzk.struct<@mod1::@ComponentP1> {
+      function.def @compute() -> !llzk.struct<@mod1::@ComponentP1> {
         %self = new_struct : !llzk.struct<@mod1::@ComponentP1>
-        return %self : !llzk.struct<@mod1::@ComponentP1>
+        function.return %self : !llzk.struct<@mod1::@ComponentP1>
       }
-      func @constrain(%self: !llzk.struct<@mod1::@ComponentP1>) { return }
+      function.def @constrain(%self: !llzk.struct<@mod1::@ComponentP1>) { function.return }
     }
     module @mod2 {
       llzk.struct @ComponentP2 {
-        func @compute() -> !llzk.struct<@mod1::@mod2::@ComponentP2> {
+        function.def @compute() -> !llzk.struct<@mod1::@mod2::@ComponentP2> {
           %self = new_struct : !llzk.struct<@mod1::@mod2::@ComponentP2>
-          return %self : !llzk.struct<@mod1::@mod2::@ComponentP2>
+          function.return %self : !llzk.struct<@mod1::@mod2::@ComponentP2>
         }
-        func @constrain(%self: !llzk.struct<@mod1::@mod2::@ComponentP2>) { return }
+        function.def @constrain(%self: !llzk.struct<@mod1::@mod2::@ComponentP2>) { function.return }
       }
     }
   }
@@ -367,31 +367,31 @@ module attributes {veridise.lang = "llzk"} {
     llzk.field @f3 : !llzk.array<27,3,2,1,1,7 x !llzk.struct<@mod1::@ComponentP1>>
     llzk.field @f4 : !llzk.array<2 x !llzk.struct<@mod1::@mod2::@ComponentP2>>
 
-    func @compute() -> !llzk.struct<@ComponentP3> {
+    function.def @compute() -> !llzk.struct<@ComponentP3> {
       %self = new_struct : !llzk.struct<@ComponentP3>
-      return %self : !llzk.struct<@ComponentP3>
+      function.return %self : !llzk.struct<@ComponentP3>
     }
-    func @constrain(%self: !llzk.struct<@ComponentP3>) { return }
+    function.def @constrain(%self: !llzk.struct<@ComponentP3>) { function.return }
   }
 }
 //CHECK-LABEL:  module @mod1 {
 //CHECK-LABEL:    llzk.struct @ComponentP1 {
-//CHECK-NEXT:       func @compute() -> !llzk.struct<@mod1::@ComponentP1> {
+//CHECK-NEXT:       function.def @compute() -> !llzk.struct<@mod1::@ComponentP1> {
 //CHECK-NEXT:         %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@mod1::@ComponentP1>
-//CHECK-NEXT:         return %[[SELF]] : !llzk.struct<@mod1::@ComponentP1>
+//CHECK-NEXT:         function.return %[[SELF]] : !llzk.struct<@mod1::@ComponentP1>
 //CHECK-NEXT:       }
-//CHECK-NEXT:       func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@mod1::@ComponentP1>) {
-//CHECK-NEXT:         return
+//CHECK-NEXT:       function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@mod1::@ComponentP1>) {
+//CHECK-NEXT:         function.return
 //CHECK-NEXT:       }
 //CHECK-NEXT:     }
 //CHECK-LABEL:    module @mod2 {
 //CHECK-LABEL:      llzk.struct @ComponentP2 {
-//CHECK-NEXT:         func @compute() -> !llzk.struct<@mod1::@mod2::@ComponentP2> {
+//CHECK-NEXT:         function.def @compute() -> !llzk.struct<@mod1::@mod2::@ComponentP2> {
 //CHECK-NEXT:           %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@mod1::@mod2::@ComponentP2>
-//CHECK-NEXT:           return %[[SELF]] : !llzk.struct<@mod1::@mod2::@ComponentP2>
+//CHECK-NEXT:           function.return %[[SELF]] : !llzk.struct<@mod1::@mod2::@ComponentP2>
 //CHECK-NEXT:         }
-//CHECK-NEXT:         func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@mod1::@mod2::@ComponentP2>) {
-//CHECK-NEXT:           return
+//CHECK-NEXT:         function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@mod1::@mod2::@ComponentP2>) {
+//CHECK-NEXT:           function.return
 //CHECK-NEXT:         }
 //CHECK-NEXT:       }
 //CHECK-NEXT:     }
@@ -401,31 +401,31 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     field @f2 : !llzk.struct<@mod1::@mod2::@ComponentP2>
 //CHECK-NEXT:     field @f3 : !llzk.array<27,3,2,1,1,7 x !llzk.struct<@mod1::@ComponentP1>>
 //CHECK-NEXT:     field @f4 : !llzk.array<2 x !llzk.struct<@mod1::@mod2::@ComponentP2>>
-//CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentP3> {
+//CHECK-NEXT:     function.def @compute() -> !llzk.struct<@ComponentP3> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentP3>
-//CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@ComponentP3>
+//CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentP3>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentP3>) {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentP3>) {
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentP1 {
-    func @compute() -> !llzk.struct<@ComponentP1> {
+    function.def @compute() -> !llzk.struct<@ComponentP1> {
       %self = new_struct : !llzk.struct<@ComponentP1>
-      return %self : !llzk.struct<@ComponentP1>
+      function.return %self : !llzk.struct<@ComponentP1>
     }
-    func @constrain(%self: !llzk.struct<@ComponentP1>) { return }
+    function.def @constrain(%self: !llzk.struct<@ComponentP1>) { function.return }
   }
   module @mod2 {
     llzk.struct @ComponentP2 {
-      func @compute() -> !llzk.struct<@mod2::@ComponentP2> {
+      function.def @compute() -> !llzk.struct<@mod2::@ComponentP2> {
         %self = new_struct : !llzk.struct<@mod2::@ComponentP2>
-        return %self : !llzk.struct<@mod2::@ComponentP2>
+        function.return %self : !llzk.struct<@mod2::@ComponentP2>
       }
-      func @constrain(%self: !llzk.struct<@mod2::@ComponentP2>) { return }
+      function.def @constrain(%self: !llzk.struct<@mod2::@ComponentP2>) { function.return }
     }
   }
   module @mod1 {
@@ -435,31 +435,31 @@ module attributes {veridise.lang = "llzk"} {
       llzk.field @f3 : !llzk.array<27,3,2,1,1,7 x !llzk.struct<@ComponentP1>>
       llzk.field @f4 : !llzk.array<2 x !llzk.struct<@mod2::@ComponentP2>>
 
-      func @compute() -> !llzk.struct<@mod1::@ComponentP3> {
+      function.def @compute() -> !llzk.struct<@mod1::@ComponentP3> {
         %self = new_struct : !llzk.struct<@mod1::@ComponentP3>
-        return %self : !llzk.struct<@mod1::@ComponentP3>
+        function.return %self : !llzk.struct<@mod1::@ComponentP3>
       }
-      func @constrain(%self: !llzk.struct<@mod1::@ComponentP3>) { return }
+      function.def @constrain(%self: !llzk.struct<@mod1::@ComponentP3>) { function.return }
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentP1 {
-//CHECK-NEXT:     func @compute() -> !llzk.struct<@ComponentP1> {
+//CHECK-NEXT:     function.def @compute() -> !llzk.struct<@ComponentP1> {
 //CHECK-NEXT:       %self = new_struct : <@ComponentP1>
-//CHECK-NEXT:       return %self : !llzk.struct<@ComponentP1>
+//CHECK-NEXT:       function.return %self : !llzk.struct<@ComponentP1>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     func @constrain(%arg0: !llzk.struct<@ComponentP1>) {
-//CHECK-NEXT:       return
+//CHECK-NEXT:     function.def @constrain(%arg0: !llzk.struct<@ComponentP1>) {
+//CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 //CHECK-LABEL:  module @mod2 {
 //CHECK-LABEL:    llzk.struct @ComponentP2 {
-//CHECK-NEXT:       func @compute() -> !llzk.struct<@mod2::@ComponentP2> {
+//CHECK-NEXT:       function.def @compute() -> !llzk.struct<@mod2::@ComponentP2> {
 //CHECK-NEXT:         %self = new_struct : <@mod2::@ComponentP2>
-//CHECK-NEXT:         return %self : !llzk.struct<@mod2::@ComponentP2>
+//CHECK-NEXT:         function.return %self : !llzk.struct<@mod2::@ComponentP2>
 //CHECK-NEXT:       }
-//CHECK-NEXT:       func @constrain(%arg0: !llzk.struct<@mod2::@ComponentP2>) {
-//CHECK-NEXT:         return
+//CHECK-NEXT:       function.def @constrain(%arg0: !llzk.struct<@mod2::@ComponentP2>) {
+//CHECK-NEXT:         function.return
 //CHECK-NEXT:       }
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
@@ -469,12 +469,12 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       field @f2 : !llzk.struct<@mod2::@ComponentP2>
 //CHECK-NEXT:       field @f3 : !llzk.array<27,3,2,1,1,7 x !llzk.struct<@ComponentP1>>
 //CHECK-NEXT:       field @f4 : !llzk.array<2 x !llzk.struct<@mod2::@ComponentP2>>
-//CHECK-NEXT:       func @compute() -> !llzk.struct<@mod1::@ComponentP3> {
+//CHECK-NEXT:       function.def @compute() -> !llzk.struct<@mod1::@ComponentP3> {
 //CHECK-NEXT:         %self = new_struct : <@mod1::@ComponentP3>
-//CHECK-NEXT:         return %self : !llzk.struct<@mod1::@ComponentP3>
+//CHECK-NEXT:         function.return %self : !llzk.struct<@mod1::@ComponentP3>
 //CHECK-NEXT:       }
-//CHECK-NEXT:       func @constrain(%arg0: !llzk.struct<@mod1::@ComponentP3>) {
-//CHECK-NEXT:         return
+//CHECK-NEXT:       function.def @constrain(%arg0: !llzk.struct<@mod1::@ComponentP3>) {
+//CHECK-NEXT:         function.return
 //CHECK-NEXT:       }
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }

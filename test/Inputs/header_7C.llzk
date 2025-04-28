@@ -4,5 +4,5 @@ module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{found cyclic include}}
   include.from "Inputs/header_7A.llzk" as @cycle
 
-  llzk.func private @func_in_7c()
+  function.def private @func_in_7c()
 }

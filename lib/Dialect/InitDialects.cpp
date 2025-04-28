@@ -7,10 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Array/IR/Dialect.h"   // IWYU pragma: keep
-#include "llzk/Dialect/Include/IR/Dialect.h" // IWYU pragma: keep
+#include "llzk/Dialect/Array/IR/Dialect.h"
+#include "llzk/Dialect/Function/IR/Dialect.h"
+#include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/InitDialects.h"
-#include "llzk/Dialect/LLZK/IR/Dialect.h" // IWYU pragma: keep
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -19,7 +20,14 @@
 namespace llzk {
 void registerAllDialects(mlir::DialectRegistry &registry) {
   registry.insert<
-      llzk::LLZKDialect, llzk::array::ArrayDialect, llzk::include::IncludeDialect,
-      mlir::arith::ArithDialect, mlir::scf::SCFDialect>();
+      // clang-format off
+      llzk::LLZKDialect,
+      llzk::array::ArrayDialect,
+      llzk::include::IncludeDialect,
+      llzk::function::FunctionDialect,
+      mlir::arith::ArithDialect,
+      mlir::scf::SCFDialect
+      // clang-format on
+      >();
 }
 } // namespace llzk

@@ -10,16 +10,11 @@
 #ifndef LLZK_INCLUDE_INLINE_INCLUDES_PASS_TD
 #define LLZK_INCLUDE_INLINE_INCLUDES_PASS_TD
 
-include "mlir/Pass/PassBase.td"
+include "llzk/Pass/PassBase.td"
 
-def InlineIncludesPass : Pass<"llzk-inline-includes", "::mlir::ModuleOp"> {
+def InlineIncludesPass : LLZKPass<"llzk-inline-includes"> {
   let summary = "Replace all IncludeOp with contents of the referenced file.";
   let constructor = "llzk::include::createInlineIncludesPass()";
-
-  // LLZKDialect is dependent as encountering an LLZK op during the inlining
-  // may cause a crash otherwise, as dialects are loaded lazily.
-  let dependentDialects = ["llzk::include::IncludeDialect",
-                           "llzk::LLZKDialect"];
 }
 
 #endif // LLZK_INCLUDE_INLINE_INCLUDES_PASS_TD

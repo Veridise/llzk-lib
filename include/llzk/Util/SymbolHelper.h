@@ -13,12 +13,18 @@
 #include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/Interfaces/CallInterfaces.h>
 
 #include <llvm/Support/Casting.h>
 
 #include <ranges>
 
 namespace llzk {
+
+class StructType;
+namespace function {
+class FuncDefOp;
+}
 
 llvm::SmallVector<mlir::StringRef> getNames(mlir::SymbolRefAttr ref);
 llvm::SmallVector<mlir::FlatSymbolRefAttr> getPieces(mlir::SymbolRefAttr ref);
@@ -80,16 +86,16 @@ mlir::SymbolRefAttr appendLeafName(mlir::SymbolRefAttr orig, const mlir::Twine &
 
 mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(StructDefOp &to);
-mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(FuncDefOp &to);
+mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(function::FuncDefOp &to);
 
 /// @brief With include statements, there may be root modules nested within
 /// other root modules. This function resolves the topmost root module.
 mlir::FailureOr<mlir::ModuleOp> getTopRootModule(mlir::Operation *from);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromTopRoot(StructDefOp &to);
-mlir::FailureOr<mlir::SymbolRefAttr> getPathFromTopRoot(FuncDefOp &to);
+mlir::FailureOr<mlir::SymbolRefAttr> getPathFromTopRoot(function::FuncDefOp &to);
 
 /// @brief Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers
-/// @tparam T the type of symbol being resolved (e.g., llzk::FuncDefOp)
+/// @tparam T the type of symbol being resolved (e.g., function::FuncDefOp)
 /// @param symbolTable
 /// @param call
 /// @return the symbol or failure

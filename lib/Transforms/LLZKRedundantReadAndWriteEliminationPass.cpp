@@ -13,11 +13,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/IR/BuiltinOps.h>
-#include <mlir/Pass/Pass.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
@@ -35,6 +35,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace llzk;
+using namespace llzk::function;
 
 #define DEBUG_TYPE "llzk-redundant-read-write-pass"
 
@@ -325,9 +326,9 @@ class RedundantReadAndWriteEliminationPass
           RedundantReadAndWriteEliminationPass> {
   /// @brief Run the pass over the LLZK module. Currently the pass is intraprocedural,
   /// so this defers the optimization to `runOnFunc` for each function in the module.
-  /// @note Due to MLIR limitations, you need to write passes as passes over ModuleOps,
-  /// as setting them up as llzk::FuncDefOp passes doesn't properly search FuncOps and
-  /// ultimately the pass does not run.
+  /// @note Due to MLIR limitations, you need to write passes as passes over ModuleOp,
+  /// as setting them up as passes over FuncDefOp doesn't properly search all FuncDefOp
+  /// and ultimately the pass does not run.
   void runOnOperation() override {
     getOperation().walk([&](FuncDefOp fn) { runOnFunc(fn); });
   }

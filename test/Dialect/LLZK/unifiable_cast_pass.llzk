@@ -4,64 +4,64 @@
 #map = affine_map<()[s0, s1] -> (s0 + s1)>
 module attributes { veridise.lang = "llzk" } {
   llzk.struct @A<[@X, @Y, @N]> {
-    func @compute(%0: !llzk.array<@N x !llzk.felt>) -> !llzk.struct<@A<[@X, @Y, @N]>> {
+    function.def @compute(%0: !llzk.array<@N x !llzk.felt>) -> !llzk.struct<@A<[@X, @Y, @N]>> {
       %self = new_struct : <@A<[@X, @Y, @N]>>
-      return %self : !llzk.struct<@A<[@X, @Y, @N]>>
+      function.return %self : !llzk.struct<@A<[@X, @Y, @N]>>
     }
-    func @constrain(%self: !llzk.struct<@A<[@X, @Y, @N]>>, %0: !llzk.array<@N x !llzk.felt>) {
-      return
+    function.def @constrain(%self: !llzk.struct<@A<[@X, @Y, @N]>>, %0: !llzk.array<@N x !llzk.felt>) {
+      function.return
     }
   }
   llzk.struct @B<[@X, @Y, @N]> {
     field @a : !llzk.struct<@A<[@X, @Y, #map]>>
-    func @compute(%a0: !llzk.array<@N x !llzk.felt>) -> !llzk.struct<@B<[@X, @Y, @N]>> {
+    function.def @compute(%a0: !llzk.array<@N x !llzk.felt>) -> !llzk.struct<@B<[@X, @Y, @N]>> {
       %self = new_struct : <@B<[@X, @Y, @N]>>
       %0 = read_const @X : index
       %1 = read_const @Y : index
       %2 = unifiable_cast %a0 : (!llzk.array<@N x !llzk.felt>) -> !llzk.array<#map x !llzk.felt>
-      %3 = call @A::@compute(%2){()[%0, %1]} : (!llzk.array<#map x !llzk.felt>) -> !llzk.struct<@A<[@X, @Y, #map]>>
+      %3 = function.call @A::@compute(%2){()[%0, %1]} : (!llzk.array<#map x !llzk.felt>) -> !llzk.struct<@A<[@X, @Y, #map]>>
       writef %self[@a] = %3 : !llzk.struct<@B<[@X, @Y, @N]>>, !llzk.struct<@A<[@X, @Y, #map]>>
-      return %self : !llzk.struct<@B<[@X, @Y, @N]>>
+      function.return %self : !llzk.struct<@B<[@X, @Y, @N]>>
     }
-    func @constrain(%self: !llzk.struct<@B<[@X, @Y, @N]>>, %a0: !llzk.array<@N x !llzk.felt>) {
+    function.def @constrain(%self: !llzk.struct<@B<[@X, @Y, @N]>>, %a0: !llzk.array<@N x !llzk.felt>) {
       %2 = unifiable_cast %a0 : (!llzk.array<@N x !llzk.felt>) -> !llzk.array<#map x !llzk.felt>
       %a = readf %self[@a] : !llzk.struct<@B<[@X, @Y, @N]>>, !llzk.struct<@A<[@X, @Y, #map]>>
-      call @A::@constrain(%a, %2) : (!llzk.struct<@A<[@X, @Y, #map]>>, !llzk.array<#map x !llzk.felt>) -> ()
-      return
+      function.call @A::@constrain(%a, %2) : (!llzk.struct<@A<[@X, @Y, #map]>>, !llzk.array<#map x !llzk.felt>) -> ()
+      function.return
     }
   }
 }
 //       CHECK: #map = affine_map<()[s0, s1] -> (s0 + s1)>
 //       CHECK: module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL:   llzk.struct @A<[@X, @Y, @N]> {
-// CHECK-LABEL:     func @compute
+// CHECK-LABEL:     function.def @compute
 //  CHECK-SAME:                  (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.array<@N x !llzk.felt>) -> !llzk.struct<@A<[@X, @Y, @N]>> {
 //  CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@A<[@X, @Y, @N]>>
-//  CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@A<[@X, @Y, @N]>>
+//  CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@A<[@X, @Y, @N]>>
 //  CHECK-NEXT:     }
-// CHECK-LABEL:     func @constrain
+// CHECK-LABEL:     function.def @constrain
 //  CHECK-SAME:                   (%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@A<[@X, @Y, @N]>>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.array<@N x !llzk.felt>) {
-//  CHECK-NEXT:       return
+//  CHECK-NEXT:       function.return
 //  CHECK-NEXT:     }
 //  CHECK-NEXT:   }
 // CHECK-LABEL:   llzk.struct @B<[@X, @Y, @N]> {
 //  CHECK-NEXT:     field @a : !llzk.struct<@A<[@X, @Y, #map]>>
-// CHECK-LABEL:     func @compute
+// CHECK-LABEL:     function.def @compute
 //  CHECK-SAME:                  (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.array<@N x !llzk.felt>) -> !llzk.struct<@B<[@X, @Y, @N]>> {
 //  CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@B<[@X, @Y, @N]>>
 //  CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = read_const @X : index
 //  CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = read_const @Y : index
 //  CHECK-NEXT:       %[[T2:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A0]] : (!llzk.array<@N x !llzk.felt>) -> !llzk.array<#map x !llzk.felt>
-//  CHECK-NEXT:       %[[T3:[0-9a-zA-Z_\.]+]] = call @A::@compute(%[[T2]]) {()[%[[T0]], %[[T1]]]} : (!llzk.array<#map x !llzk.felt>) -> !llzk.struct<@A<[@X, @Y, #map]>>
+//  CHECK-NEXT:       %[[T3:[0-9a-zA-Z_\.]+]] = function.call @A::@compute(%[[T2]]) {()[%[[T0]], %[[T1]]]} : (!llzk.array<#map x !llzk.felt>) -> !llzk.struct<@A<[@X, @Y, #map]>>
 //  CHECK-NEXT:       writef %[[SELF]][@a] = %[[T3]] : <@B<[@X, @Y, @N]>>, !llzk.struct<@A<[@X, @Y, #map]>>
-//  CHECK-NEXT:       return %[[SELF]] : !llzk.struct<@B<[@X, @Y, @N]>>
+//  CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@B<[@X, @Y, @N]>>
 //  CHECK-NEXT:     }
-// CHECK-LABEL:     func @constrain
+// CHECK-LABEL:     function.def @constrain
 //  CHECK-SAME:                    (%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@B<[@X, @Y, @N]>>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.array<@N x !llzk.felt>) {
 //  CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A0]] : (!llzk.array<@N x !llzk.felt>) -> !llzk.array<#map x !llzk.felt>
 //  CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@a] : <@B<[@X, @Y, @N]>>, !llzk.struct<@A<[@X, @Y, #map]>>
-//  CHECK-NEXT:       call @A::@constrain(%[[T1]], %[[T0]]) : (!llzk.struct<@A<[@X, @Y, #map]>>, !llzk.array<#map x !llzk.felt>) -> ()
-//  CHECK-NEXT:       return
+//  CHECK-NEXT:       function.call @A::@constrain(%[[T1]], %[[T0]]) : (!llzk.struct<@A<[@X, @Y, #map]>>, !llzk.array<#map x !llzk.felt>) -> ()
+//  CHECK-NEXT:       function.return
 //  CHECK-NEXT:     }
 //  CHECK-NEXT:   }
 //  CHECK-NEXT: }
@@ -72,34 +72,34 @@ module attributes { veridise.lang = "llzk" } {
 #map2 = affine_map<()[s0, s1, s2] -> (s0 + s1 + s2)>
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @T1<[]> {
-    func @compute() -> !llzk.struct<@T1<[]>> {
+    function.def @compute() -> !llzk.struct<@T1<[]>> {
       %self = new_struct : <@T1<[]>>
-      return %self : !llzk.struct<@T1<[]>>
+      function.return %self : !llzk.struct<@T1<[]>>
     }
-    func @constrain(%self : !llzk.struct<@T1<[]>>) {
-      return
+    function.def @constrain(%self : !llzk.struct<@T1<[]>>) {
+      function.return
     }
   }
   llzk.struct @T2<[@N]> {
-    func @compute() -> !llzk.struct<@T2<[@N]>> {
+    function.def @compute() -> !llzk.struct<@T2<[@N]>> {
       %self = new_struct : <@T2<[@N]>>
-      return %self : !llzk.struct<@T2<[@N]>>
+      function.return %self : !llzk.struct<@T2<[@N]>>
     }
-    func @constrain(%self : !llzk.struct<@T2<[@N]>>) {
-      return
+    function.def @constrain(%self : !llzk.struct<@T2<[@N]>>) {
+      function.return
     }
   }
   llzk.struct @T3<[@A, @B, @C, @D, @E]> {
-    func @compute() -> !llzk.struct<@T3<[@A, @B, @C, @D, @E]>> {
+    function.def @compute() -> !llzk.struct<@T3<[@A, @B, @C, @D, @E]>> {
       %self = new_struct : <@T3<[@A, @B, @C, @D, @E]>>
-      return %self : !llzk.struct<@T3<[@A, @B, @C, @D, @E]>>
+      function.return %self : !llzk.struct<@T3<[@A, @B, @C, @D, @E]>>
     }
-    func @constrain(%self : !llzk.struct<@T3<[@A, @B, @C, @D, @E]>>) {
-      return
+    function.def @constrain(%self : !llzk.struct<@T3<[@A, @B, @C, @D, @E]>>) {
+      function.return
     }
   }
   llzk.struct @Tester<[@S0, @S1]> {
-    func @compute(%0: index, %1: i1, %2: !llzk.felt, %3: !llzk.struct<@T1<[]>>,
+    function.def @compute(%0: index, %1: i1, %2: !llzk.felt, %3: !llzk.struct<@T1<[]>>,
                   %4: !llzk.struct<@T2<[1]>>, %5: !llzk.struct<@T2<[@S0]>>,
                   %6: !llzk.struct<@T2<[7]>>, %7: !llzk.struct<@T2<[!llzk.felt]>>,
                   %8: !llzk.array<2,2 x !llzk.felt>, %9: !llzk.array<2,@S0 x !llzk.felt>,
@@ -126,23 +126,23 @@ module attributes {veridise.lang = "llzk"} {
       // Test that if structs have the same name they unify if their params unify
       %19 = unifiable_cast %18 : (!llzk.struct<@T3<[1, 7, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@T3<[#map1, #map1, 1, @S0, !llzk.struct<@T2<[#map2]>>]>>
       %21 = unifiable_cast %20 : (!llzk.array<1, 7, @S0, 1 x !llzk.struct<@T2<[1]>>>) -> !llzk.array<#map1, #map1, 1, @S0 x !llzk.struct<@T2<[#map2]>>>
-      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+      function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
-    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %0: index, %1: i1, %2: !llzk.felt, %3: !llzk.struct<@T1<[]>>,
+    function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %0: index, %1: i1, %2: !llzk.felt, %3: !llzk.struct<@T1<[]>>,
                   %4: !llzk.struct<@T2<[1]>>, %5: !llzk.struct<@T2<[@S0]>>,
                   %6: !llzk.struct<@T2<[7]>>, %7: !llzk.struct<@T2<[!llzk.felt]>>,
                   %8: !llzk.array<2,2 x !llzk.felt>, %9: !llzk.array<2,@S0 x !llzk.felt>,
                   %10: !llzk.array<2,7 x !llzk.felt>, %11: !llzk.string, %12: !llzk.tvar<@S1>,
                   %18: !llzk.struct<@T3<[1, 7, @S0, 1, !llzk.struct<@T2<[1]>>]>>,
                   %20: !llzk.array<1, 7, @S0, 1 x !llzk.struct<@T2<[1]>>>) {
-      return
+      function.return
     }
   }
 }
 
 //       CHECK: module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL:  llzk.struct @Tester<[@S0, @S1]> {
-// CHECK-LABEL:    func @compute(
+// CHECK-LABEL:    function.def @compute(
 //  CHECK-SAME:                  %[[A0:[0-9a-zA-Z_\.]+]]: index,
 //  CHECK-SAME:                  %[[A1:[0-9a-zA-Z_\.]+]]: i1,
 //  CHECK-SAME:                  %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt,
@@ -176,9 +176,9 @@ module attributes {veridise.lang = "llzk"} {
 //  CHECK-NEXT:      %[[T13:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A2]] : (!llzk.felt) -> !llzk.tvar<@S1>
 //  CHECK-NEXT:      %[[T14:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A13]] : (!llzk.struct<@T3<[1, 7, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@T3<[#map, #map, 1, @S0, !llzk.struct<@T2<[#map1]>>]>>
 //  CHECK-NEXT:      %[[T15:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A14]] : (!llzk.array<1,7,@S0,1 x !llzk.struct<@T2<[1]>>>) -> !llzk.array<#map,#map,1,@S0 x !llzk.struct<@T2<[#map1]>>>
-//  CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@Tester<[@S0, @S1]>>
+//  CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@Tester<[@S0, @S1]>>
 //  CHECK-NEXT:    }
-// CHECK-LABEL:    func @constrain(
+// CHECK-LABEL:    function.def @constrain(
 //  CHECK-SAME:                    %[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Tester<[@S0, @S1]>>,
 //  CHECK-SAME:                    %[[A0:[0-9a-zA-Z_\.]+]]: index,
 //  CHECK-SAME:                    %[[A1:[0-9a-zA-Z_\.]+]]: i1,
@@ -196,7 +196,7 @@ module attributes {veridise.lang = "llzk"} {
 //  CHECK-SAME:                    %[[A13:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T3<[1, 7, @S0, 1, !llzk.struct<@T2<[1]>>]>>,
 //  CHECK-SAME:                    %[[A14:[0-9a-zA-Z_\.]+]]: !llzk.array<1,7,@S0,1 x !llzk.struct<@T2<[1]>>>
 //  CHECK-SAME:    ) {
-//  CHECK-NEXT:      return
+//  CHECK-NEXT:      function.return
 //  CHECK-NEXT:    }
 //  CHECK-NEXT:  }
 //  CHECK-NEXT: }

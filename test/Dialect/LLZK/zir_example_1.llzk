@@ -8,136 +8,136 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @C1 {
     field @z : !llzk.struct<@std::@risc0::@Reg> {llzk.pub}
 
-    func @compute(%x: !llzk.felt, %y: !llzk.felt) -> !llzk.struct<@C1> {
+    function.def @compute(%x: !llzk.felt, %y: !llzk.felt) -> !llzk.struct<@C1> {
       %self = new_struct : !llzk.struct<@C1>
       %add_0 = add %x, %y
-      %reg_0 = call @std::@risc0::@Reg::@compute(%add_0) : (!llzk.felt) -> (!llzk.struct<@std::@risc0::@Reg>)
+      %reg_0 = function.call @std::@risc0::@Reg::@compute(%add_0) : (!llzk.felt) -> (!llzk.struct<@std::@risc0::@Reg>)
       writef %self[@z] = %reg_0 : !llzk.struct<@C1>, !llzk.struct<@std::@risc0::@Reg>
-      return %self: !llzk.struct<@C1>
+      function.return %self: !llzk.struct<@C1>
     }
 
-    func @constrain(%self: !llzk.struct<@C1>, %x: !llzk.felt, %y: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@C1>, %x: !llzk.felt, %y: !llzk.felt) {
       %reg_0 = readf %self[@z] : !llzk.struct<@C1>, !llzk.struct<@std::@risc0::@Reg>
       %add_0 = add %x, %y
-      call @std::@risc0::@Reg::@constrain(%reg_0, %add_0) : (!llzk.struct<@std::@risc0::@Reg>, !llzk.felt) -> ()
-      return
+      function.call @std::@risc0::@Reg::@constrain(%reg_0, %add_0) : (!llzk.struct<@std::@risc0::@Reg>, !llzk.felt) -> ()
+      function.return
     }
   }
 
   llzk.struct @C2 {
     field @fc1 : !llzk.struct<@C1>
 
-    func @compute(%x: !llzk.struct<@std::@risc0::@ValU32>) -> !llzk.struct<@C2> {
+    function.def @compute(%x: !llzk.struct<@std::@risc0::@ValU32>) -> !llzk.struct<@C2> {
       %self = new_struct : !llzk.struct<@C2>
       %t1 = readf %x[@low] : !llzk.struct<@std::@risc0::@ValU32>, !llzk.felt
       %t2 = readf %x[@high] : !llzk.struct<@std::@risc0::@ValU32>, !llzk.felt
-      %t0 = call @C1::@compute(%t1, %t2) : (!llzk.felt, !llzk.felt) -> (!llzk.struct<@C1>)
+      %t0 = function.call @C1::@compute(%t1, %t2) : (!llzk.felt, !llzk.felt) -> (!llzk.struct<@C1>)
       writef %self[@fc1] = %t0 : !llzk.struct<@C2>, !llzk.struct<@C1>
       //
-      return %self: !llzk.struct<@C2>
+      function.return %self: !llzk.struct<@C2>
     }
 
-    func @constrain(%self: !llzk.struct<@C2>, %x: !llzk.struct<@std::@risc0::@ValU32>) {
+    function.def @constrain(%self: !llzk.struct<@C2>, %x: !llzk.struct<@std::@risc0::@ValU32>) {
       // c1.constrain(x.low, x.high)
       %t0 = readf %self[@fc1] : !llzk.struct<@C2>, !llzk.struct<@C1>
       %t1 = readf %x[@low] : !llzk.struct<@std::@risc0::@ValU32>, !llzk.felt
       %t2 = readf %x[@high] : !llzk.struct<@std::@risc0::@ValU32>, !llzk.felt
-      call @C1::@constrain(%t0, %t1, %t2) : (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> ()
+      function.call @C1::@constrain(%t0, %t1, %t2) : (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> ()
       // emit c1.z.reg = 0
       %t3 = readf %t0[@z] : !llzk.struct<@C1>, !llzk.struct<@std::@risc0::@Reg>
       %t4 = readf %t3[@reg] : !llzk.struct<@std::@risc0::@Reg>, !llzk.felt
       %zero = constfelt 0
       emit_eq %t4, %zero : !llzk.felt
       //
-      return
+      function.return
     }
   }
 }
 
 //CHECK-LABEL:   llzk.struct @C1 {
 //CHECK-NEXT:      field @z : !llzk.struct<@std::@risc0::@Reg> {llzk.pub}
-//CHECK-NEXT:      func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@C1> {
+//CHECK-NEXT:      function.def @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@C1> {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@C1>
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = add %arg0, %arg1
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = call @std::@risc0::@Reg::@compute(%[[T0]]) : (!llzk.felt) -> !llzk.struct<@std::@risc0::@Reg>
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = function.call @std::@risc0::@Reg::@compute(%[[T0]]) : (!llzk.felt) -> !llzk.struct<@std::@risc0::@Reg>
 //CHECK-NEXT:        writef %[[SELF]][@z] = %[[T1]] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
-//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@C1>
+//CHECK-NEXT:        function.return %[[SELF]] : !llzk.struct<@C1>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@C1>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@C1>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@z] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
 //CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = add %arg1, %arg2
-//CHECK-NEXT:        call @std::@risc0::@Reg::@constrain(%[[T0]], %[[T1]]) : (!llzk.struct<@std::@risc0::@Reg>, !llzk.felt) -> ()
-//CHECK-NEXT:        return
+//CHECK-NEXT:        function.call @std::@risc0::@Reg::@constrain(%[[T0]], %[[T1]]) : (!llzk.struct<@std::@risc0::@Reg>, !llzk.felt) -> ()
+//CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   llzk.struct @C2 {
 //CHECK-NEXT:      field @fc1 : !llzk.struct<@C1>
-//CHECK-NEXT:      func @compute(%arg0: !llzk.struct<@std::@risc0::@ValU32>) -> !llzk.struct<@C2> {
+//CHECK-NEXT:      function.def @compute(%arg0: !llzk.struct<@std::@risc0::@ValU32>) -> !llzk.struct<@C2> {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@C2>
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@low] : <@std::@risc0::@ValU32>, !llzk.felt
 //CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = readf %arg0[@high] : <@std::@risc0::@ValU32>, !llzk.felt
-//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = call @C1::@compute(%[[T0]], %[[T1]]) : (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>
+//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = function.call @C1::@compute(%[[T0]], %[[T1]]) : (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>
 //CHECK-NEXT:        writef %[[SELF]][@fc1] = %[[T2]] : <@C2>, !llzk.struct<@C1>
-//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@C2>
+//CHECK-NEXT:        function.return %[[SELF]] : !llzk.struct<@C2>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      func @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@C2>, %arg1: !llzk.struct<@std::@risc0::@ValU32>) {
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@C2>, %arg1: !llzk.struct<@std::@risc0::@ValU32>) {
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@fc1] : <@C2>, !llzk.struct<@C1>
 //CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = readf %arg1[@low] : <@std::@risc0::@ValU32>, !llzk.felt
 //CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = readf %arg1[@high] : <@std::@risc0::@ValU32>, !llzk.felt
-//CHECK-NEXT:        call @C1::@constrain(%[[T0]], %[[T1]], %[[T2]]) : (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> ()
+//CHECK-NEXT:        function.call @C1::@constrain(%[[T0]], %[[T1]], %[[T2]]) : (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> ()
 //CHECK-NEXT:        %[[T3:[0-9a-zA-Z_\.]+]] = readf %[[T0]][@z] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
 //CHECK-NEXT:        %[[T4:[0-9a-zA-Z_\.]+]] = readf %[[T3]][@reg] : <@std::@risc0::@Reg>, !llzk.felt
 //CHECK-NEXT:        %felt_const_0 = constfelt 0
 //CHECK-NEXT:        emit_eq %[[T4]], %felt_const_0 : !llzk.felt, !llzk.felt
-//CHECK-NEXT:        return
+//CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 
 // CG: // ---- CallGraph ----
-// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@risc0::@ValU32>, sym_name = "compute"}
+// CG-DAG: // - Node : 'function.def' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@risc0::@ValU32>, sym_name = "compute"}
 // CG-NEXT: //
-// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-DAG: // - Node : 'function.def' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
 // CG-NEXT: //
-// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.felt) -> !llzk.struct<@risc0::@Reg>, sym_name = "compute"}
+// CG-DAG: // - Node : 'function.def' - Region #0 : {function_type = (!llzk.felt) -> !llzk.struct<@risc0::@Reg>, sym_name = "compute"}
 // CG-NEXT: //
-// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@Reg>, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-DAG: // - Node : 'function.def' - Region #0 : {function_type = (!llzk.struct<@risc0::@Reg>, !llzk.felt) -> (), sym_name = "constrain"}
 // CG-NEXT: //
-// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>, sym_name = "compute"}
-// CG-NEXT: // -- Call-Edge : 'llzk.func' - Region #0 : {function_type = (!llzk.felt) -> !llzk.struct<@risc0::@Reg>, sym_name = "compute"}
+// CG-DAG: // - Node : 'function.def' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>, sym_name = "compute"}
+// CG-NEXT: // -- Call-Edge : 'function.def' - Region #0 : {function_type = (!llzk.felt) -> !llzk.struct<@risc0::@Reg>, sym_name = "compute"}
 // CG-NEXT: //
-// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
-// CG-NEXT: // -- Call-Edge : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@Reg>, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-DAG: // - Node : 'function.def' - Region #0 : {function_type = (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-NEXT: // -- Call-Edge : 'function.def' - Region #0 : {function_type = (!llzk.struct<@risc0::@Reg>, !llzk.felt) -> (), sym_name = "constrain"}
 // CG-NEXT: //
-// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>) -> !llzk.struct<@C2>, sym_name = "compute"}
-// CG-NEXT: // -- Call-Edge : 'llzk.func' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>, sym_name = "compute"}
+// CG-DAG: // - Node : 'function.def' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>) -> !llzk.struct<@C2>, sym_name = "compute"}
+// CG-NEXT: // -- Call-Edge : 'function.def' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>, sym_name = "compute"}
 // CG-NEXT: //
-// CG-DAG: // - Node : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@C2>, !llzk.struct<@risc0::@ValU32>) -> (), sym_name = "constrain"}
-// CG-NEXT: // -- Call-Edge : 'llzk.func' - Region #0 : {function_type = (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-DAG: // - Node : 'function.def' - Region #0 : {function_type = (!llzk.struct<@C2>, !llzk.struct<@risc0::@ValU32>) -> (), sym_name = "constrain"}
+// CG-NEXT: // -- Call-Edge : 'function.def' - Region #0 : {function_type = (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
 // CG-NEXT: //
 // CG-NEXT: // -- SCCs --
 // CG-DAG: // - SCC :
-// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@risc0::@ValU32>, sym_name = "compute"}
+// CG-NEXT: // -- Node :'function.def' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@risc0::@ValU32>, sym_name = "compute"}
 // CG-EMPTY:
 // CG-DAG: // - SCC :
-// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-NEXT: // -- Node :'function.def' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
 // CG-EMPTY:
 // CG-DAG: // - SCC :
-// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.felt) -> !llzk.struct<@risc0::@Reg>, sym_name = "compute"}
+// CG-NEXT: // -- Node :'function.def' - Region #0 : {function_type = (!llzk.felt) -> !llzk.struct<@risc0::@Reg>, sym_name = "compute"}
 // CG-EMPTY:
 // CG-DAG: // - SCC :
-// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@Reg>, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-NEXT: // -- Node :'function.def' - Region #0 : {function_type = (!llzk.struct<@risc0::@Reg>, !llzk.felt) -> (), sym_name = "constrain"}
 // CG-EMPTY:
 // CG-DAG: // - SCC :
-// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>, sym_name = "compute"}
+// CG-NEXT: // -- Node :'function.def' - Region #0 : {function_type = (!llzk.felt, !llzk.felt) -> !llzk.struct<@C1>, sym_name = "compute"}
 // CG-NEMPTY
 // CG-DAG: // - SCC :
-// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
+// CG-NEXT: // -- Node :'function.def' - Region #0 : {function_type = (!llzk.struct<@C1>, !llzk.felt, !llzk.felt) -> (), sym_name = "constrain"}
 // CG-EMPTY:
 // CG-DAG: // - SCC :
-// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>) -> !llzk.struct<@C2>, sym_name = "compute"}
+// CG-NEXT: // -- Node :'function.def' - Region #0 : {function_type = (!llzk.struct<@risc0::@ValU32>) -> !llzk.struct<@C2>, sym_name = "compute"}
 // CG-EMPTY:
 // CG-DAG: // - SCC :
-// CG-NEXT: // -- Node :'llzk.func' - Region #0 : {function_type = (!llzk.struct<@C2>, !llzk.struct<@risc0::@ValU32>) -> (), sym_name = "constrain"}
+// CG-NEXT: // -- Node :'function.def' - Region #0 : {function_type = (!llzk.struct<@C2>, !llzk.struct<@risc0::@ValU32>) -> (), sym_name = "constrain"}
 // CG-EMPTY:
 // CG-DAG: // - SCC :
 // CG-NEXT: // -- Node :<External-Caller-Node>

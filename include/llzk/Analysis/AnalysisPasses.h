@@ -9,11 +9,7 @@
 
 #pragma once
 
-#include "llzk/Dialect/Array/IR/Dialect.h"
-#include "llzk/Dialect/Include/IR/Dialect.h"
-#include "llzk/Dialect/LLZK/IR/Dialect.h"
-
-#include <mlir/Pass/Pass.h>
+#include "llzk/Pass/PassBase.h"
 
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/STLExtras.h>

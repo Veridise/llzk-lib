@@ -8,7 +8,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @IsZero {
     llzk.field @bit : !llzk.felt
 
-    func @compute(%a: !llzk.felt) -> !llzk.struct<@IsZero> {
+    function.def @compute(%a: !llzk.felt) -> !llzk.struct<@IsZero> {
       %self = new_struct : !llzk.struct<@IsZero>
       %z = llzk.constfelt 0
       %b = llzk.cmp eq(%a, %z)
@@ -19,24 +19,24 @@ module attributes {veridise.lang = "llzk"} {
         scf.yield %2 : !llzk.felt
       } 
       llzk.writef %self[@bit] = %0 : !llzk.struct<@IsZero>, !llzk.felt
-      return %self : !llzk.struct<@IsZero>
+      function.return %self : !llzk.struct<@IsZero>
     }
 
-    func @constrain(%self : !llzk.struct<@IsZero>, %a: !llzk.felt) {
+    function.def @constrain(%self : !llzk.struct<@IsZero>, %a: !llzk.felt) {
       %0 = llzk.readf %self[@bit] : !llzk.struct<@IsZero>, !llzk.felt
       %1 = llzk.constfelt 1
       %2 = llzk.sub %0, %1 
       %3 = llzk.mul %0, %2  
       %4 = llzk.constfelt 0
       llzk.emit_eq %3, %4 : !llzk.felt
-      return
+      function.return
     }
   }
 }
 
 // CHECK-LABEL:  llzk.struct @IsZero {
 // CHECK-NEXT:     field @bit : !llzk.felt
-// CHECK-NEXT:     func @compute(%[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) -> !llzk.struct<@IsZero> {
+// CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) -> !llzk.struct<@IsZero> {
 // CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@IsZero>
 // CHECK-NEXT:       %[[Z:[0-9a-zA-Z_.]+]] = constfelt 0
 // CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = cmp eq(%[[A0]], %[[Z]])
@@ -47,58 +47,58 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:         scf.yield %[[T2]] : !llzk.felt
 // CHECK-NEXT:       }
 // CHECK-NEXT:       writef %[[SELF]][@bit] = %[[T1]] : <@IsZero>, !llzk.felt
-// CHECK-NEXT:       return %[[SELF]]
+// CHECK-NEXT:       function.return %[[SELF]]
 // CHECK-NEXT:     }
-// CHECK-NEXT:     func @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@IsZero>, %[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) {
+// CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@IsZero>, %[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) {
 // CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = readf %[[SELF]][@bit] : <@IsZero>, !llzk.felt
 // CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = constfelt 1
 // CHECK-NEXT:       %[[T2:[0-9a-zA-Z_.]+]] = sub %[[T0]], %[[T1]] 
 // CHECK-NEXT:       %[[T3:[0-9a-zA-Z_.]+]] = mul %[[T0]], %[[T2]]  
 // CHECK-NEXT:       %[[T4:[0-9a-zA-Z_.]+]] = constfelt 0
 // CHECK-NEXT:       emit_eq %[[T3]], %[[T4]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:       return
+// CHECK-NEXT:       function.return
 // CHECK-NEXT:     }
 // CHECK-NEXT: }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   // This test case showcases that you don't need to add `scf.yield`
-  // if the `scf.if` operation does not return a value.
+  // if the `scf.if` operation does not function.return a value.
   llzk.struct @C {
     llzk.field @data : !llzk.felt
 
-    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@C> {
+    function.def @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@C> {
       %self = new_struct : !llzk.struct<@C>
       %z = llzk.constfelt 0
       %0 = llzk.cmp ne(%a, %z)
       scf.if %0 {
         llzk.writef %self[@data] = %b : !llzk.struct<@C>, !llzk.felt
       }
-      return %self : !llzk.struct<@C>
+      function.return %self : !llzk.struct<@C>
     }
 
-    func @constrain(%self : !llzk.struct<@C>, %a: !llzk.felt, %b: !llzk.felt) {
-      return
+    function.def @constrain(%self : !llzk.struct<@C>, %a: !llzk.felt, %b: !llzk.felt) {
+      function.return
     }
   }
 }
 
 // CHECK-LABEL:  llzk.struct @C {
 // CHECK-NEXT:    field @data : !llzk.felt
-// CHECK-NEXT:    func @compute(%[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_.]+]]: !llzk.felt) -> !llzk.struct<@C> {
+// CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_.]+]]: !llzk.felt) -> !llzk.struct<@C> {
 // CHECK-NEXT:     %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@C>
 // CHECK-NEXT:     %[[T0:[0-9a-zA-Z_.]+]] = constfelt 0
 // CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.]+]] = cmp ne(%[[A0]], %[[T0]])
 // CHECK-NEXT:     scf.if %[[T1]] {
 // CHECK-NEXT:       llzk.writef %[[SELF]][@data] = %[[A1]] : <@C>, !llzk.felt
 // CHECK-NEXT:     }
-// CHECK-NEXT:     return %[[SELF]]
+// CHECK-NEXT:     function.return %[[SELF]]
 // CHECK-NEXT:   }
-// CHECK-NEXT:   func @constrain(
+// CHECK-NEXT:   function.def @constrain(
 // CHECK-SAME:        %[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@C>, 
 // CHECK-SAME:        %[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt, 
 // CHECK-SAME:        %[[A1:[0-9a-zA-Z_.]+]]: !llzk.felt) {
-// CHECK-NEXT:     return
+// CHECK-NEXT:     function.return
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 

@@ -15,8 +15,7 @@ include "mlir/IR/DialectBase.td"
 
 def ArrayDialect : Dialect {
   let name = "array";
-  let summary =
-      "LLZK array operations.";
+  let summary = "LLZK array operations.";
 
   let cppNamespace = "::llzk::array";
 

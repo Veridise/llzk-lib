@@ -12,6 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
@@ -24,7 +25,9 @@
 #define DEBUG_TYPE "llzk-symbol-helpers"
 
 namespace llzk {
+
 using namespace mlir;
+using namespace function;
 
 namespace {
 

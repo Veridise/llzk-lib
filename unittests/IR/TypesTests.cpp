@@ -12,15 +12,14 @@
 
 #include <gtest/gtest.h>
 
+#include "../LLZKTestBase.h"
+
 using namespace llzk;
 using namespace mlir;
 
-class TypeTests : public ::testing::Test {
-public:
-  MLIRContext ctx;
-
+class TypeTests : public LLZKTest {
 protected:
-  TypeTests() : ctx() { ctx.loadDialect<llzk::LLZKDialect>(); }
+  TypeTests() : LLZKTest() {}
 };
 
 TEST_F(TypeTests, testArrayTypeCloneSuccessNewType) {

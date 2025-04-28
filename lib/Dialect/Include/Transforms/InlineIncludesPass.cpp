@@ -17,7 +17,6 @@
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
-#include <mlir/Pass/Pass.h>
 
 // Include the generated base pass class definitions.
 namespace llzk::include {

@@ -5,22 +5,22 @@ module attributes {veridise.lang = "llzk"} {
     // expected-error@+1 {{'llzk.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type 'index'}}
     llzk.field @f1 : !llzk.tvar<@T> {column}
 
-    func @constrain(%self: !llzk.struct<@ComponentA1<[@T]>>) { return }
-    func @compute() -> !llzk.struct<@ComponentA1<[@T]>> {
+    function.def @constrain(%self: !llzk.struct<@ComponentA1<[@T]>>) { function.return }
+    function.def @compute() -> !llzk.struct<@ComponentA1<[@T]>> {
       %self = new_struct : !llzk.struct<@ComponentA1<[@T]>>
-      return %self : !llzk.struct<@ComponentA1<[@T]>>
+      function.return %self : !llzk.struct<@ComponentA1<[@T]>>
     }
   }
 
   llzk.struct @ComponentA2 {
-    func @compute(%p: !llzk.struct<@ComponentA1<[index]>>) -> !llzk.struct<@ComponentA2> {
+    function.def @compute(%p: !llzk.struct<@ComponentA1<[index]>>) -> !llzk.struct<@ComponentA2> {
       %self = new_struct : !llzk.struct<@ComponentA2>
       %r = readf %p[@f1] : !llzk.struct<@ComponentA1<[index]>>, index {tableOffset = -1 : index}
-      return %self : !llzk.struct<@ComponentA2>
+      function.return %self : !llzk.struct<@ComponentA2>
     }
 
-    func @constrain(%self: !llzk.struct<@ComponentA2>, %p: !llzk.struct<@ComponentA1<[index]>>) {
-      return
+    function.def @constrain(%self: !llzk.struct<@ComponentA2>, %p: !llzk.struct<@ComponentA1<[index]>>) {
+      function.return
     }
   }
 }

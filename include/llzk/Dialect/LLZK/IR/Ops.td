@@ -20,7 +20,6 @@ include "mlir/IR/SymbolInterfaces.td"
 include "llzk/Dialect/LLZK/IR/Attrs.td"
 include "llzk/Dialect/LLZK/IR/Types.td"
 include "llzk/Dialect/LLZK/IR/OpsBase.td"
-include "llzk/Dialect/LLZK/IR/FuncOps.td"
 
 //===------------------------------------------------------------------===//
 // Basic constructs
@@ -219,13 +218,13 @@ def LLZK_StructDefOp
         field @f1 : !llzk.array<5 x index>
         field @f2 : !llzk.felt {llzk.pub}
 
-        func @compute(%p: !llzk.felt) -> !llzk.struct<@ComponentA> {
+        function.def @compute(%p: !llzk.felt) -> !llzk.struct<@ComponentA> {
           %self = new_struct : !llzk.struct<@ComponentA>
           // initialize all fields of `%self` here
           return %self : !llzk.struct<@ComponentA>
         }
 
-        func @constrain(%self: !llzk.struct<@ComponentA>, %p: !llzk.felt) {
+        function.def @constrain(%self: !llzk.struct<@ComponentA>, %p: !llzk.felt) {
           // emit constraints here
           return
         }
@@ -265,10 +264,10 @@ def LLZK_StructDefOp
     }
 
     /// Gets the FuncDefOp that defines the compute function in this structure, if present.
-    FuncDefOp getComputeFuncOp();
+    ::llzk::function::FuncDefOp getComputeFuncOp();
 
     /// Gets the FuncDefOp that defines the constrain function in this structure, if present.
-    FuncDefOp getConstrainFuncOp();
+    ::llzk::function::FuncDefOp getConstrainFuncOp();
 
     /// Generate header string, in the same format as the assemblyFormat
     ::std::string getHeaderString();

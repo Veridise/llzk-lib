@@ -27,9 +27,9 @@
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Include/IR/Ops.cpp.inc"
 
-namespace llzk::include {
-
 using namespace mlir;
+
+namespace llzk::include {
 
 //===------------------------------------------------------------------===//
 // IncludeOp (see IncludeHelper.cpp for other functions)

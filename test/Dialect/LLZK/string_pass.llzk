@@ -2,23 +2,23 @@
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Foo<[]> {
-    func @compute() -> !llzk.struct<@Foo<[]>> {
+    function.def @compute() -> !llzk.struct<@Foo<[]>> {
       %self = new_struct : !llzk.struct<@Foo<[]>>
       %str = new_string "this is a string"
-      return %self : !llzk.struct<@Foo<[]>>
+      function.return %self : !llzk.struct<@Foo<[]>>
     }
-    func @constrain(%self: !llzk.struct<@Foo<[]>>) { return }
+    function.def @constrain(%self: !llzk.struct<@Foo<[]>>) { function.return }
   }
 }
 //CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    llzk.struct @Foo<[]> {
-//CHECK-NEXT:      func @compute() -> !llzk.struct<@Foo<[]>> {
+//CHECK-NEXT:      function.def @compute() -> !llzk.struct<@Foo<[]>> {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Foo<[]>>
 //CHECK-NEXT:        %[[STR:[0-9a-zA-Z_\.]+]] = new_string "this is a string"
-//CHECK-NEXT:        return %[[SELF]] : !llzk.struct<@Foo<[]>>
+//CHECK-NEXT:        function.return %[[SELF]] : !llzk.struct<@Foo<[]>>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      func @constrain(%arg0: !llzk.struct<@Foo<[]>>) {
-//CHECK-NEXT:        return
+//CHECK-NEXT:      function.def @constrain(%arg0: !llzk.struct<@Foo<[]>>) {
+//CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }

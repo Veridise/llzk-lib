@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <mlir/Pass/Pass.h>
+#include "llzk/Pass/PassBase.h"
 
 namespace llzk::include {
 

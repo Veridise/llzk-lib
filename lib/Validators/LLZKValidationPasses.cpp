@@ -13,11 +13,11 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 
 #include <mlir/IR/BuiltinOps.h>
-#include <mlir/Pass/Pass.h>
 
 // Include the generated base pass class definitions.
 namespace llzk {
@@ -27,6 +27,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace llzk;
+using namespace llzk::function;
 
 namespace {
 class FieldWriteValidatorPass

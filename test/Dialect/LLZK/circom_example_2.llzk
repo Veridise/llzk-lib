@@ -32,20 +32,20 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @GetWeight<[@A]> { // instantiations of A are {0, 5, 10, ... 5*P}
     field @out: !llzk.felt {llzk.pub}
 
-    func @compute(%inp: !llzk.felt) -> !llzk.struct<@GetWeight<[@A]>> {
+    function.def @compute(%inp: !llzk.felt) -> !llzk.struct<@GetWeight<[@A]>> {
       %self = new_struct : !llzk.struct<@GetWeight<[@A]>>
       %constA = read_const @A : !llzk.felt
       %inpA = mul %constA, %inp
       writef %self[@out] = %inpA : !llzk.struct<@GetWeight<[@A]>>, !llzk.felt
-      return %self: !llzk.struct<@GetWeight<[@A]>>
+      function.return %self: !llzk.struct<@GetWeight<[@A]>>
     }
 
-    func @constrain(%self: !llzk.struct<@GetWeight<[@A]>>, %inp: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@GetWeight<[@A]>>, %inp: !llzk.felt) {
       %constA = read_const @A : !llzk.felt
       %inpA = mul %constA, %inp
       %out = readf %self[@out] : !llzk.struct<@GetWeight<[@A]>>, !llzk.felt
       emit_eq %out, %inpA : !llzk.felt
-      return
+      function.return
     }
   }
 
@@ -53,7 +53,7 @@ module attributes {veridise.lang = "llzk"} {
     field @ws: !llzk.array<@P x !GetWeightStride5>
     field @ret: !llzk.array<@P x !llzk.felt> {llzk.pub}
 
-    func @compute(%inp: !llzk.array<@P x !llzk.felt>) -> !llzk.struct<@ComputeValue<[@P]>> {
+    function.def @compute(%inp: !llzk.array<@P x !llzk.felt>) -> !llzk.struct<@ComputeValue<[@P]>> {
       %self = new_struct : !llzk.struct<@ComputeValue<[@P]>>
       //
       %lb = arith.constant 0 : index
@@ -65,7 +65,7 @@ module attributes {veridise.lang = "llzk"} {
       %temp_ws = array.new : !llzk.array<@P x !GetWeightStride5>
       scf.for %i = %lb to %up step %step {
         %inpi = array.read %inp[%i] : !llzk.array<@P x !llzk.felt>, !llzk.felt
-        %wsi = llzk.call @GetWeight::@compute(%inpi){(%i)} : (!llzk.felt) -> !GetWeightStride5
+        %wsi = function.call @GetWeight::@compute(%inpi){(%i)} : (!llzk.felt) -> !GetWeightStride5
         array.write %temp_ws[%i] = %wsi : !llzk.array<@P x !GetWeightStride5>, !GetWeightStride5
       }
       llzk.writef %self[@ws] = %temp_ws : !llzk.struct<@ComputeValue<[@P]>>, !llzk.array<@P x !GetWeightStride5>
@@ -80,10 +80,10 @@ module attributes {veridise.lang = "llzk"} {
       }
       llzk.writef %self[@ret] = %temp_ret : !llzk.struct<@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.felt>
       //
-      return %self: !llzk.struct<@ComputeValue<[@P]>>
+      function.return %self: !llzk.struct<@ComputeValue<[@P]>>
     }
 
-    func @constrain(%self: !llzk.struct<@ComputeValue<[@P]>>, %inp: !llzk.array<@P x !llzk.felt>) {
+    function.def @constrain(%self: !llzk.struct<@ComputeValue<[@P]>>, %inp: !llzk.array<@P x !llzk.felt>) {
       %lb = arith.constant 0 : index
       %up = read_const @P : index
       %step = arith.constant 1 : index
@@ -94,7 +94,7 @@ module attributes {veridise.lang = "llzk"} {
       scf.for %i = %lb to %up step %step {
         %wsi = array.read %temp_ws[%i] : !llzk.array<@P x !GetWeightStride5>, !GetWeightStride5
         %inpi = array.read %inp[%i] : !llzk.array<@P x !llzk.felt>, !llzk.felt
-        llzk.call @GetWeight::@constrain(%wsi, %inpi) : (!GetWeightStride5, !llzk.felt) -> ()
+        function.call @GetWeight::@constrain(%wsi, %inpi) : (!GetWeightStride5, !llzk.felt) -> ()
       }
       // for(j = 0; j < @P; j++) {
       //   emit ret[j] = ws[j].out;
@@ -107,7 +107,7 @@ module attributes {veridise.lang = "llzk"} {
         llzk.emit_eq %retj, %wsjout : !llzk.felt
       }
       //
-      return
+      function.return
     }
   }
 }
@@ -116,26 +116,26 @@ module attributes {veridise.lang = "llzk"} {
 //
 // CHECK-LABEL: llzk.struct @GetWeight<[@A]> {
 // CHECK-NEXT:    field @out : !llzk.felt {llzk.pub}
-// CHECK-NEXT:    func @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@GetWeight<[@A]>> {
+// CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@GetWeight<[@A]>> {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@GetWeight<[@A]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = read_const @A : !llzk.felt
 // CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = mul %[[V_2]], %[[V_0]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      writef %[[V_1]][@out] = %[[V_3]] : <@GetWeight<[@A]>>, !llzk.felt
-// CHECK-NEXT:      return %[[V_1]] : !llzk.struct<@GetWeight<[@A]>>
+// CHECK-NEXT:      function.return %[[V_1]] : !llzk.struct<@GetWeight<[@A]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    func @constrain(%[[V_4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@GetWeight<[@A]>>, %[[V_5:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+// CHECK-NEXT:    function.def @constrain(%[[V_4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@GetWeight<[@A]>>, %[[V_5:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
 // CHECK-NEXT:      %[[V_6:[0-9a-zA-Z_\.]+]] = read_const @A : !llzk.felt
 // CHECK-NEXT:      %[[V_7:[0-9a-zA-Z_\.]+]] = mul %[[V_6]], %[[V_5]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      %[[V_8:[0-9a-zA-Z_\.]+]] = readf %[[V_4]][@out] : <@GetWeight<[@A]>>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V_8]], %[[V_7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      return
+// CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: llzk.struct @ComputeValue<[@P]> {
 // CHECK-NEXT:    field @ws : !llzk.array<@P x !llzk.struct<@GetWeight<[#[[$ATTR_0]]]>>>
 // CHECK-NEXT:    field @ret : !llzk.array<@P x !llzk.felt> {llzk.pub}
-// CHECK-NEXT:    func @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !llzk.array<@P x !llzk.felt>) -> !llzk.struct<@ComputeValue<[@P]>> {
+// CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !llzk.array<@P x !llzk.felt>) -> !llzk.struct<@ComputeValue<[@P]>> {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComputeValue<[@P]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = read_const @P : index
@@ -143,7 +143,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = array.new  : <@P x !llzk.struct<@GetWeight<[#[[$ATTR_0]]]>>>
 // CHECK-NEXT:      scf.for %[[V_6:[0-9a-zA-Z_\.]+]] = %[[V_2]] to %[[V_3]] step %[[V_4]] {
 // CHECK-NEXT:        %[[V_7:[0-9a-zA-Z_\.]+]] = array.read %[[V_0]]{{\[}}%[[V_6]]] : <@P x !llzk.felt>, !llzk.felt
-// CHECK-NEXT:        %[[V_8:[0-9a-zA-Z_\.]+]] = llzk.call @GetWeight::@compute(%[[V_7]]) {(%[[V_6]])} : (!llzk.felt) -> !llzk.struct<@GetWeight<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:        %[[V_8:[0-9a-zA-Z_\.]+]] = function.call @GetWeight::@compute(%[[V_7]]) {(%[[V_6]])} : (!llzk.felt) -> !llzk.struct<@GetWeight<[#[[$ATTR_0]]]>>
 // CHECK-NEXT:        array.write %[[V_5]]{{\[}}%[[V_6]]] = %[[V_8]] : <@P x !llzk.struct<@GetWeight<[#[[$ATTR_0]]]>>>, !llzk.struct<@GetWeight<[#[[$ATTR_0]]]>>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      writef %[[V_1]][@ws] = %[[V_5]] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.struct<@GetWeight<[#[[$ATTR_0]]]>>>
@@ -154,9 +154,9 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        array.write %[[V_9]]{{\[}}%[[V_10]]] = %[[V_12]] : <@P x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      }
 // CHECK-NEXT:      writef %[[V_1]][@ret] = %[[V_9]] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.felt>
-// CHECK-NEXT:      return %[[V_1]] : !llzk.struct<@ComputeValue<[@P]>>
+// CHECK-NEXT:      function.return %[[V_1]] : !llzk.struct<@ComputeValue<[@P]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    func @constrain(%[[V_13:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComputeValue<[@P]>>, %[[V_14:[0-9a-zA-Z_\.]+]]: !llzk.array<@P x !llzk.felt>) {
+// CHECK-NEXT:    function.def @constrain(%[[V_13:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComputeValue<[@P]>>, %[[V_14:[0-9a-zA-Z_\.]+]]: !llzk.array<@P x !llzk.felt>) {
 // CHECK-NEXT:      %[[V_15:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V_16:[0-9a-zA-Z_\.]+]] = read_const @P : index
 // CHECK-NEXT:      %[[V_17:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
@@ -164,7 +164,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      scf.for %[[V_19:[0-9a-zA-Z_\.]+]] = %[[V_15]] to %[[V_16]] step %[[V_17]] {
 // CHECK-NEXT:        %[[V_20:[0-9a-zA-Z_\.]+]] = array.read %[[V_18]]{{\[}}%[[V_19]]] : <@P x !llzk.struct<@GetWeight<[#[[$ATTR_0]]]>>>, !llzk.struct<@GetWeight<[#[[$ATTR_0]]]>>
 // CHECK-NEXT:        %[[V_21:[0-9a-zA-Z_\.]+]] = array.read %[[V_14]]{{\[}}%[[V_19]]] : <@P x !llzk.felt>, !llzk.felt
-// CHECK-NEXT:        llzk.call @GetWeight::@constrain(%[[V_20]], %[[V_21]]) : (!llzk.struct<@GetWeight<[#[[$ATTR_0]]]>>, !llzk.felt) -> ()
+// CHECK-NEXT:        function.call @GetWeight::@constrain(%[[V_20]], %[[V_21]]) : (!llzk.struct<@GetWeight<[#[[$ATTR_0]]]>>, !llzk.felt) -> ()
 // CHECK-NEXT:      }
 // CHECK-NEXT:      %[[V_22:[0-9a-zA-Z_\.]+]] = readf %[[V_13]][@ret] : <@ComputeValue<[@P]>>, !llzk.array<@P x !llzk.felt>
 // CHECK-NEXT:      scf.for %[[V_23:[0-9a-zA-Z_\.]+]] = %[[V_15]] to %[[V_16]] step %[[V_17]] {
@@ -173,6 +173,6 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V_26:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_25]][@out] : <@GetWeight<[#[[$ATTR_0]]]>>, !llzk.felt
 // CHECK-NEXT:        llzk.emit_eq %[[V_24]], %[[V_26]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      }
-// CHECK-NEXT:      return
+// CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

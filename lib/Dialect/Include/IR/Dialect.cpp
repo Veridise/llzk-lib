@@ -38,10 +38,5 @@ auto llzk::include::IncludeDialect::initialize() -> void {
     #define GET_OP_LIST
     #include "llzk/Dialect/Include/IR/Ops.cpp.inc"
   >();
-
-  addTypes<>();
-
-  addAttributes<>();
   // clang-format on
-  // addInterfaces<LLZKDialectBytecodeInterface>();
 }

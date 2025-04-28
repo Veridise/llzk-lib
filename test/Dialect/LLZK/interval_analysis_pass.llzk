@@ -2,17 +2,17 @@
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ConstantConstraint {
-    func @compute(%a: !llzk.felt) -> !llzk.struct<@ConstantConstraint> {
+    function.def @compute(%a: !llzk.felt) -> !llzk.struct<@ConstantConstraint> {
       %self = new_struct : !llzk.struct<@ConstantConstraint>
-      return %self : !llzk.struct<@ConstantConstraint>
+      function.return %self : !llzk.struct<@ConstantConstraint>
     }
 
-    func @constrain(%self: !llzk.struct<@ConstantConstraint>, %const: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@ConstantConstraint>, %const: !llzk.felt) {
       %a = constfelt 1
       %b = constfelt 2
       %c = add %a, %b
       emit_eq %const, %c : !llzk.felt
-      return
+      function.return
     }
   }
 }
@@ -25,19 +25,19 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @CmpConstraint {
-    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@CmpConstraint> {
+    function.def @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@CmpConstraint> {
       %self = new_struct : !llzk.struct<@CmpConstraint>
-      return %self : !llzk.struct<@CmpConstraint>
+      function.return %self : !llzk.struct<@CmpConstraint>
     }
 
-    func @constrain(%self: !llzk.struct<@CmpConstraint>, %a: !llzk.felt, %b: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@CmpConstraint>, %a: !llzk.felt, %b: !llzk.felt) {
       %x = constfelt 1
       %y = constfelt 2
       %cmpA = cmp gt(%a, %x)
       assert %cmpA
       %cmpB = cmp le(%b, %y)
       assert %cmpB
-      return
+      function.return
     }
   }
 }
@@ -55,12 +55,12 @@ module attributes {veridise.lang = "llzk"} {
     llzk.field @foo : !llzk.felt
     llzk.field @bar : !llzk.felt
 
-    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@FieldRangeConstraint> {
+    function.def @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@FieldRangeConstraint> {
       %self = new_struct : !llzk.struct<@FieldRangeConstraint>
-      return %self : !llzk.struct<@FieldRangeConstraint>
+      function.return %self : !llzk.struct<@FieldRangeConstraint>
     }
 
-    func @constrain(%self: !llzk.struct<@FieldRangeConstraint>, %a: !llzk.felt, %b: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@FieldRangeConstraint>, %a: !llzk.felt, %b: !llzk.felt) {
       %x = constfelt 1
       %y = constfelt 2
       %cmpA = cmp gt(%a, %x)
@@ -71,7 +71,7 @@ module attributes {veridise.lang = "llzk"} {
       emit_eq %foo, %x : !llzk.felt
       %bar = readf %self[@bar] : !llzk.struct<@FieldRangeConstraint>, !llzk.felt
       emit_eq %bar, %b : !llzk.felt
-      return
+      function.return
     }
   }
 }
@@ -88,12 +88,12 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ArithConstraint {
 
-    func @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ArithConstraint> {
+    function.def @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ArithConstraint> {
       %self = new_struct : !llzk.struct<@ArithConstraint>
-      return %self : !llzk.struct<@ArithConstraint>
+      function.return %self : !llzk.struct<@ArithConstraint>
     }
 
-    func @constrain(%self: !llzk.struct<@ArithConstraint>, %a: !llzk.felt, %b: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@ArithConstraint>, %a: !llzk.felt, %b: !llzk.felt) {
       %5 = constfelt 5
       %7 = constfelt 7
       %11 = constfelt 11
@@ -117,7 +117,7 @@ module attributes {veridise.lang = "llzk"} {
       %notzero = cmp ne(%final, %0)
       assert %notzero
 
-      return
+      function.return
     }
   }
 }
@@ -134,12 +134,12 @@ module attributes {veridise.lang = "llzk"} {
 
     llzk.field @arr : !llzk.array<3 x !llzk.felt>
 
-    func @compute() -> !llzk.struct<@ArrayConstraint> {
+    function.def @compute() -> !llzk.struct<@ArrayConstraint> {
       %self = new_struct : !llzk.struct<@ArrayConstraint>
-      return %self : !llzk.struct<@ArrayConstraint>
+      function.return %self : !llzk.struct<@ArrayConstraint>
     }
 
-    func @constrain(%self: !llzk.struct<@ArrayConstraint>) {
+    function.def @constrain(%self: !llzk.struct<@ArrayConstraint>) {
       %5 = constfelt 5
       %7 = constfelt 7
       %11 = constfelt 11
@@ -161,7 +161,7 @@ module attributes {veridise.lang = "llzk"} {
 
       emit_eq %c, %a : !llzk.felt
 
-      return
+      function.return
     }
   }
 }
@@ -178,7 +178,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @Div<[]> {
     field @"$super" : !llzk.felt
     field @reciprocal : !llzk.felt
-    func @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@Div<[]>> {
+    function.def @compute(%arg0: !llzk.felt, %arg1: !llzk.felt) -> !llzk.struct<@Div<[]>> {
       %self = new_struct : <@Div<[]>>
       %0 = inv %arg1 : !llzk.felt
       writef %self[@reciprocal] = %0 : <@Div<[]>>, !llzk.felt
@@ -187,15 +187,15 @@ module attributes {veridise.lang = "llzk"} {
       %felt_const_1 = constfelt  1
       %3 = mul %1, %arg0 : !llzk.felt, !llzk.felt
       writef %self[@"$super"] = %3 : <@Div<[]>>, !llzk.felt
-      return %self : !llzk.struct<@Div<[]>>
+      function.return %self : !llzk.struct<@Div<[]>>
     }
-    func @constrain(%arg0: !llzk.struct<@Div<[]>>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+    function.def @constrain(%arg0: !llzk.struct<@Div<[]>>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
       %0 = readf %arg0[@reciprocal] : <@Div<[]>>, !llzk.felt
       %1 = mul %0, %arg2 : !llzk.felt, !llzk.felt
       %felt_const_1 = constfelt  1
       // Since reciprocal * arg2 === 1, reciprocal nor arg2 can be 0
       emit_eq %1, %felt_const_1 : !llzk.felt, !llzk.felt
-      return
+      function.return
     }
   }
 }
@@ -215,12 +215,12 @@ module attributes {veridise.lang = "llzk"} {
     field @b1 : !llzk.felt
     field @b0 : !llzk.felt
 
-    func @compute(%u16 : !llzk.felt) -> !llzk.struct<@ByteDecompCorrect> {
+    function.def @compute(%u16 : !llzk.felt) -> !llzk.struct<@ByteDecompCorrect> {
       %self = new_struct : !llzk.struct<@ByteDecompCorrect>
-      return %self : !llzk.struct<@ByteDecompCorrect>
+      function.return %self : !llzk.struct<@ByteDecompCorrect>
     }
 
-    func @constrain(%self : !llzk.struct<@ByteDecompCorrect>, %u16 : !llzk.felt) {
+    function.def @constrain(%self : !llzk.struct<@ByteDecompCorrect>, %u16 : !llzk.felt) {
       %b0 = readf %self[@b0] : !llzk.struct<@ByteDecompCorrect>, !llzk.felt
       %b1 = readf %self[@b1] : !llzk.struct<@ByteDecompCorrect>, !llzk.felt
       %256 = constfelt 256
@@ -231,7 +231,7 @@ module attributes {veridise.lang = "llzk"} {
       %b1_mul = mul %b1, %256
       %reconstructed = add %b1_mul, %b0
       emit_eq %reconstructed, %u16 : !llzk.felt
-      return
+      function.return
     }
   }
 
@@ -240,12 +240,12 @@ module attributes {veridise.lang = "llzk"} {
     field @b1 : !llzk.felt
     field @b0 : !llzk.felt
 
-    func @compute(%u16 : !llzk.felt) -> !llzk.struct<@ByteDecompIncorrect> {
+    function.def @compute(%u16 : !llzk.felt) -> !llzk.struct<@ByteDecompIncorrect> {
       %self = new_struct : !llzk.struct<@ByteDecompIncorrect>
-      return %self : !llzk.struct<@ByteDecompIncorrect>
+      function.return %self : !llzk.struct<@ByteDecompIncorrect>
     }
 
-    func @constrain(%self : !llzk.struct<@ByteDecompIncorrect>, %u16 : !llzk.felt) {
+    function.def @constrain(%self : !llzk.struct<@ByteDecompIncorrect>, %u16 : !llzk.felt) {
       %b0 = readf %self[@b0] : !llzk.struct<@ByteDecompIncorrect>, !llzk.felt
       %b1 = readf %self[@b1] : !llzk.struct<@ByteDecompIncorrect>, !llzk.felt
       %256 = constfelt 256
@@ -253,7 +253,7 @@ module attributes {veridise.lang = "llzk"} {
       %reconstructed = add %b1_mul, %b0
       // b0 and b1 are not constrained to be a byte, so these values could be anything
       emit_eq %reconstructed, %u16 : !llzk.felt
-      return
+      function.return
     }
   }
 
@@ -262,12 +262,12 @@ module attributes {veridise.lang = "llzk"} {
     field @b1 : !llzk.felt
     field @b0 : !llzk.felt
 
-    func @compute(%u16 : !llzk.felt) -> !llzk.struct<@ByteDecompPartial> {
+    function.def @compute(%u16 : !llzk.felt) -> !llzk.struct<@ByteDecompPartial> {
       %self = new_struct : !llzk.struct<@ByteDecompPartial>
-      return %self : !llzk.struct<@ByteDecompPartial>
+      function.return %self : !llzk.struct<@ByteDecompPartial>
     }
 
-    func @constrain(%self : !llzk.struct<@ByteDecompPartial>, %u16 : !llzk.felt) {
+    function.def @constrain(%self : !llzk.struct<@ByteDecompPartial>, %u16 : !llzk.felt) {
       %b0 = readf %self[@b0] : !llzk.struct<@ByteDecompPartial>, !llzk.felt
       %b1 = readf %self[@b1] : !llzk.struct<@ByteDecompPartial>, !llzk.felt
       %256 = constfelt 256
@@ -280,7 +280,7 @@ module attributes {veridise.lang = "llzk"} {
       // by bytes, so they could be any value (even above 16-bits, if b0 and b1)
       // are carefully selected to overflow into 16 bits).
       emit_eq %reconstructed, %u16 : !llzk.felt
-      return
+      function.return
     }
   }
 }
@@ -310,32 +310,32 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @Signal {
     field @reg : !llzk.felt {llzk.pub}
 
-    func @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
+    function.def @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
       %self = new_struct : !llzk.struct<@Signal>
       writef %self[@reg] = %v : !llzk.struct<@Signal>, !llzk.felt
-      return %self : !llzk.struct<@Signal>
+      function.return %self : !llzk.struct<@Signal>
     }
 
-    func @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
-      return
+    function.def @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
+      function.return
     }
   }
 
   llzk.struct @Component00 {
     field @f : !Signal
 
-    func @compute(%0: !Signal) -> !llzk.struct<@Component00> {
+    function.def @compute(%0: !Signal) -> !llzk.struct<@Component00> {
       %self = new_struct : !llzk.struct<@Component00>
       writef %self[@f] = %0 : !llzk.struct<@Component00>, !Signal
-      return %self : !llzk.struct<@Component00>
+      function.return %self : !llzk.struct<@Component00>
     }
-    func @constrain(%self: !llzk.struct<@Component00>, %0: !Signal) {
+    function.def @constrain(%self: !llzk.struct<@Component00>, %0: !Signal) {
       %b = readf %self[@f] : !llzk.struct<@Component00>, !Signal
       emit_eq %b, %0 : !Signal
       %reg = readf %0[@reg] : !Signal, !llzk.felt
       %c0 = constfelt 0
       emit_eq %reg, %c0 : !llzk.felt
-      return
+      function.return
     }
   }
 }

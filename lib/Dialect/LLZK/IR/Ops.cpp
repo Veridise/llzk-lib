@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
@@ -42,6 +43,7 @@
 namespace llzk {
 
 using namespace mlir;
+using namespace function;
 
 //===------------------------------------------------------------------===//
 // AssertOp
@@ -407,7 +409,7 @@ LogicalResult StructDefOp::verifyRegions() {
   }
 
   // Verify parameter types are valid. Skip the first parameter of the "constrain" function; it is
-  // already checked via verifyFuncTypeConstrain() in FuncOps.cpp.
+  // already checked via verifyFuncTypeConstrain() in Function/IR/Ops.cpp.
   ArrayRef<Type> computeParams = foundCompute->getFunctionType().getInputs();
   ArrayRef<Type> constrainParams = foundConstrain->getFunctionType().getInputs().drop_front();
   if (COMPONENT_NAME_MAIN == this->getSymName()) {

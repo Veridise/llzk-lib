@@ -7,12 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Builders.h"
-#include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include "OpTestBase.h"
 
 using namespace llzk;
+using namespace llzk::function;
 using namespace mlir;
 
 //===------------------------------------------------------------------===//
@@ -30,10 +31,10 @@ TEST_F(OpTests, testCallNoAffine_GoodNoArgs) {
   OpBuilder bldr(funcA->getBody());
   CallOp op = bldr.create<CallOp>(loc, funcB->getResultTypes(), funcB->getFullyQualifiedName());
   // module attributes {veridise.lang = "llzk"} {
-  //   llzk.func @FuncA() -> index {
+  //   function.def @FuncA() -> index {
   //     %0 = call @FuncB() : () -> index
   //   }
-  //   llzk.func @FuncB() -> index {
+  //   function.def @FuncB() -> index {
   //   }
   // }
   ASSERT_TRUE(verify(mod.get()));
@@ -55,12 +56,12 @@ TEST_F(OpTests, testCallNoAffine_GoodWithArgs) {
       loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1, v2}
   );
   // module attributes {veridise.lang = "llzk"} {
-  //   llzk.func @FuncA(%arg0: index, %arg1: index) -> index {
+  //   function.def @FuncA(%arg0: index, %arg1: index) -> index {
   //     %idx5 = arith.constant 5 : index
   //     %idx2 = arith.constant 2 : index
   //     %0 = call @FuncB(%idx5, %idx2) : (index, index) -> index
   //   }
-  //   llzk.func @FuncB(%arg0: index, %arg1: index) -> index {
+  //   function.def @FuncB(%arg0: index, %arg1: index) -> index {
   //   }
   // }
   ASSERT_TRUE(verify(mod.get()));
@@ -81,11 +82,11 @@ TEST_F(OpTests, testCallNoAffine_TooFewValues) {
       loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1}
   );
   // module attributes {veridise.lang = "llzk"} {
-  //   llzk.func @FuncA(%arg0: index, %arg1: index) -> index {
+  //   function.def @FuncA(%arg0: index, %arg1: index) -> index {
   //     %idx5 = arith.constant 5 : index
   //     %0 = call @FuncB(%idx5) : (index) -> index
   //   }
-  //   llzk.func @FuncB(%arg0: index, %arg1: index) -> index {
+  //   function.def @FuncB(%arg0: index, %arg1: index) -> index {
   //   }
   // }
   EXPECT_DEATH(
@@ -93,7 +94,7 @@ TEST_F(OpTests, testCallNoAffine_TooFewValues) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op incorrect number of operands for callee, expected 2"
+      "error: 'function.call' op incorrect number of operands for callee, expected 2"
   );
 }
 
@@ -111,11 +112,11 @@ TEST_F(OpTests, testCallNoAffine_WrongRetTy) {
       loc, TypeRange {bldr.getI1Type()}, funcB->getFullyQualifiedName(), ValueRange {v1}
   );
   // module attributes {veridise.lang = "llzk"} {
-  //   llzk.func @FuncA(%arg0: index) -> index {
+  //   function.def @FuncA(%arg0: index) -> index {
   //     %idx5 = arith.constant 5 : index
   //     %0 = call @FuncB(%idx5) : (index) -> i1
   //   }
-  //   llzk.func @FuncB(%arg0: index) -> index {
+  //   function.def @FuncB(%arg0: index) -> index {
   //   }
   // }
   EXPECT_DEATH(
@@ -123,7 +124,7 @@ TEST_F(OpTests, testCallNoAffine_WrongRetTy) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op result type mismatch: expected type 'index', but found 'i1' for "
+      "error: 'function.call' op result type mismatch: expected type 'index', but found 'i1' for "
       "result number 0"
   );
 }
@@ -137,10 +138,10 @@ TEST_F(OpTests, testCallNoAffine_InvalidCalleeName) {
   OpBuilder bldr(funcA->getBody());
   CallOp op = bldr.create<CallOp>(loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "invalidName"));
   // module attributes {veridise.lang = "llzk"} {
-  //   llzk.func @FuncA() -> index {
+  //   function.def @FuncA() -> index {
   //     call @invalidName() : () -> ()
   //   }
-  //   llzk.func @FuncB() -> index {
+  //   function.def @FuncB() -> index {
   //   }
   // }
   EXPECT_DEATH(
@@ -148,7 +149,7 @@ TEST_F(OpTests, testCallNoAffine_InvalidCalleeName) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op references unknown symbol \"@invalidName\""
+      "error: 'function.call' op references unknown symbol \"@invalidName\""
   );
 }
 
@@ -212,7 +213,7 @@ TEST_F(OpTests, testCallWithAffine_WrongStructNameInResultType) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op result type mismatch: expected type '!llzk.struct<@StructB<\\[@T0, "
+      "error: 'function.call' op result type mismatch: expected type '!llzk.struct<@StructB<\\[@T0, "
       "@T1\\]>>', but found '!llzk.struct<@StructA<\\[affine_map<\\(d0\\) -> \\(d0\\)>, "
       "affine_map<\\(d0\\) -> \\(d0\\)>\\]>>' for result number 0"
   );
@@ -309,7 +310,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountLessThanDimSizeCount) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
+      "error: 'function.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
       "length of 'mapOpGroupSizes' attribute \\(1\\)"
   );
 }
@@ -341,7 +342,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountMoreThanDimSizeCount) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
+      "error: 'function.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
       "length of 'mapOpGroupSizes' attribute \\(3\\)"
   );
 }
@@ -372,7 +373,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
+      "error: 'function.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
       "length of 'mapOpGroupSizes' attribute \\(0\\)"
   );
 }
@@ -404,7 +405,7 @@ TEST_F(OpTests, testCallWithAffine_DimSizeCount0) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op length of 'numDimsPerMap' attribute \\(0\\) does not match with "
+      "error: 'function.call' op length of 'numDimsPerMap' attribute \\(0\\) does not match with "
       "length of 'mapOpGroupSizes' attribute \\(2\\)"
   );
 }
@@ -435,7 +436,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0DimSizeCount0) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op map instantiation group count \\(0\\) does not match the number of "
+      "error: 'function.call' op map instantiation group count \\(0\\) does not match the number of "
       "affine map instantiations \\(2\\) required by the type"
   );
 }
@@ -467,7 +468,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeLessThanDimSize) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op map instantiation group 1 dimension count \\(1\\) exceeds group 1 "
+      "error: 'function.call' op map instantiation group 1 dimension count \\(1\\) exceeds group 1 "
       "size in 'mapOpGroupSizes' attribute \\(0\\)"
   );
 }
@@ -500,7 +501,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeMoreThanDimSize) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op instantiation of map 1 expected 0 but found 1 symbol values in \\[\\]"
+      "error: 'function.call' op instantiation of map 1 expected 0 but found 1 symbol values in \\[\\]"
   );
 }
 
@@ -532,7 +533,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountAndDimSizeCountMoreThanType) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.call' op map instantiation group count \\(3\\) does not match the number of "
+      "error: 'function.call' op map instantiation group count \\(3\\) does not match the number of "
       "affine map instantiations \\(2\\) required by the type"
   );
 }
@@ -546,15 +547,15 @@ TEST_F(OpTests, test_calleeIs_withStructCompute) {
   llzkBldr.insertComputeCall(structNameA, structNameB);
   // module attributes {veridise.lang = "llzk"} {
   //   llzk.struct @StructB {
-  //     func @constrain(%arg0: !llzk.struct<@StructB>) {
+  //     function.def @constrain(%arg0: !llzk.struct<@StructB>) {
   //     }
-  //     func @compute() -> !llzk.struct<@StructB> {
+  //     function.def @compute() -> !llzk.struct<@StructB> {
   //     }
   //   }
   //   llzk.struct @StructA {
-  //     func @constrain(%arg0: !llzk.struct<@StructA>) {
+  //     function.def @constrain(%arg0: !llzk.struct<@StructA>) {
   //     }
-  //     func @compute() -> !llzk.struct<@StructA> {
+  //     function.def @compute() -> !llzk.struct<@StructA> {
   //       %0 = call @StructB::@compute() : () -> !llzk.struct<@StructB>
   //     }
   //   }
@@ -579,18 +580,18 @@ TEST_F(OpTests, test_calleeIs_withStructConstrain) {
   llzkBldr.insertConstrainCall(structNameA, structNameB);
   // module attributes {veridise.lang = "llzk"} {
   //   llzk.struct @StructB {
-  //     func @constrain(%arg0: !llzk.struct<@StructB>) {
+  //     function.def @constrain(%arg0: !llzk.struct<@StructB>) {
   //     }
-  //     func @compute() -> !llzk.struct<@StructB> {
+  //     function.def @compute() -> !llzk.struct<@StructB> {
   //     }
   //   }
   //   llzk.struct @StructA {
   //     field @StructB1 : !llzk.struct<@StructB>
-  //     func @constrain(%arg0: !llzk.struct<@StructA>) {
+  //     function.def @constrain(%arg0: !llzk.struct<@StructA>) {
   //       %0 = readf %arg0[@StructB1] : <@StructA>, !llzk.struct<@StructB>
   //       call @StructB::@constrain(%0) : (!llzk.struct<@StructB>) -> ()
   //     }
-  //     func @compute() -> !llzk.struct<@StructA> {
+  //     function.def @compute() -> !llzk.struct<@StructA> {
   //     }
   //   }
   // }
@@ -615,10 +616,10 @@ TEST_F(OpTests, test_calleeIs_withGlobalCompute) {
   ASSERT_TRUE(succeeded(funcEntry));
   llzkBldr.insertGlobalCall(*funcEntry, "compute");
   // module attributes {veridise.lang = "llzk"} {
-  //   llzk.func @entry() -> index {
+  //   function.def @entry() -> index {
   //     %0 = call @compute() : () -> index
   //   }
-  //   llzk.func @compute() -> index {
+  //   function.def @compute() -> index {
   //   }
   // }
 
@@ -640,10 +641,10 @@ TEST_F(OpTests, test_calleeIs_withGlobalConstrain) {
   ASSERT_TRUE(succeeded(funcEntry));
   llzkBldr.insertGlobalCall(*funcEntry, "constrain");
   // module attributes {veridise.lang = "llzk"} {
-  //   llzk.func @entry() -> index {
+  //   function.def @entry() -> index {
   //     %0 = call @constrain() : () -> index
   //   }
-  //   llzk.func @constrain() -> index {
+  //   function.def @constrain() -> index {
   //   }
   // }
 

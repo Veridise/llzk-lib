@@ -20,7 +20,6 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Dominance.h>
-#include <mlir/Pass/Pass.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/PostOrderIterator.h>
@@ -36,6 +35,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace llzk;
+using namespace llzk::function;
 
 #define DEBUG_TYPE "llzk-duplicate-op-elim"
 

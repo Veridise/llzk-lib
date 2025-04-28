@@ -1,4 +1,4 @@
-//===-- FuncOps.cpp - Func and call op implementations ----------*- C++ -*-===//
+//===-- Ops.cpp - Func and call op implementations --------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -23,9 +23,17 @@
 
 #include <llvm/ADT/MapVector.h>
 
-namespace llzk {
+// TableGen'd implementation files
+#define GET_OP_CLASSES
+#include "llzk/Dialect/Function/IR/Ops.cpp.inc"
 
 using namespace mlir;
+
+namespace llzk {
+class StructDefOp;
+}
+
+namespace llzk::function {
 
 namespace {
 /// Ensure that all symbols used within the FunctionType can be resolved.
@@ -230,7 +238,7 @@ verifyFuncTypeCompute(FuncDefOp &origin, SymbolTableCollection &tables, StructDe
   // After the more specific checks (to ensure more specific error messages would be produced if
   // necessary), do the general check that all symbol references in the types are valid. The return
   // types were already checked so just check the input types.
-  return verifyTypeResolution(tables, origin, funcType.getInputs());
+  return llzk::verifyTypeResolution(tables, origin, funcType.getInputs());
 }
 
 LogicalResult
@@ -255,7 +263,7 @@ verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, Struct
   // necessary), do the general check that all symbol references in the types are valid. There are
   // no return types, just check the remaining input types (the first was already checked via
   // the checkSelfType() call above).
-  return verifyTypeResolution(tables, origin, inputTypes.drop_front());
+  return llzk::verifyTypeResolution(tables, origin, inputTypes.drop_front());
 }
 
 } // namespace
@@ -676,4 +684,4 @@ void CallOp::setCalleeFromCallable(CallInterfaceCallable callee) {
   setCalleeAttr(callee.get<SymbolRefAttr>());
 }
 
-} // namespace llzk
+} // namespace llzk::function

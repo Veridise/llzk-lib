@@ -1,4 +1,4 @@
-//===-- FuncOps.td -----------------------------------------*- tablegen -*-===//
+//===-- Ops.td ---------------------------------------------*- tablegen -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -15,6 +15,9 @@
 #ifndef LLZK_FUNC_OPS
 #define LLZK_FUNC_OPS
 
+include "llzk/Dialect/LLZK/IR/OpsBase.td"
+include "llzk/Dialect/Function/IR/Dialect.td"
+
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/SymbolInterfaces.td"
 include "mlir/Interfaces/CallInterfaces.td"
@@ -23,18 +26,19 @@ include "mlir/Interfaces/FunctionInterfaces.td"
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-include "llzk/Dialect/LLZK/IR/OpsBase.td"
+class LLZK_Function_Op<string mnemonic, list<Trait> traits = []>
+    : Op<FunctionDialect, mnemonic, traits>;
 
 //===----------------------------------------------------------------------===//
 // FuncDefOp
 //===----------------------------------------------------------------------===//
 
 def FuncDefOp
-    : LLZK_Op<"func", [ParentOneOf<["::mlir::ModuleOp", "::llzk::StructDefOp"]>,
-                       DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                       AffineScope, AutomaticAllocationScope,
-                       FunctionOpInterface, IsolatedFromAbove,
-                       OpAsmOpInterface]> {
+    : LLZK_Function_Op<
+          "def", [ParentOneOf<["::mlir::ModuleOp", "::llzk::StructDefOp"]>,
+                  DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
+                  AutomaticAllocationScope, FunctionOpInterface,
+                  IsolatedFromAbove, OpAsmOpInterface]> {
   // NOTE: Cannot have SymbolTable trait because that would cause global
   // functions without a body to produce "Operations with a 'SymbolTable' must
   // have exactly one block"
@@ -57,18 +61,18 @@ def FuncDefOp
 
     ```llzk
     // External function definitions.
-    llzk.func private @abort()
-    llzk.func private @scribble(!llzk.array<5 x !llzk.felt>, !llzk.struct<@Hello>) -> i1
+    function.def private @abort()
+    function.def private @scribble(!llzk.array<5 x !llzk.felt>, !llzk.struct<@Hello>) -> i1
 
     // A function that returns its argument twice:
-    llzk.func @count(%x: !llzk.felt) -> (!llzk.felt, !llzk.felt) {
+    function.def @count(%x: !llzk.felt) -> (!llzk.felt, !llzk.felt) {
       return %x, %x: !llzk.felt, !llzk.felt
     }
 
     // Function definition within a component
     llzk.struct @NonZero {
-      func @compute(%a: !llzk.felt) { return }
-      func @constrain(%a: !llzk.felt) { return }
+      function.def @compute(%a: !llzk.felt) { return }
+      function.def @constrain(%a: !llzk.felt) { return }
     }
     ```
   }];
@@ -81,13 +85,15 @@ def FuncDefOp
   // the arguments, results, and function itself.
   //    ```llzk
   //    // Argument attribute
-  //    llzk.func private @example_fn_arg(%x: i1 {llzk.pub})
+  //    function.def private @example_fn_arg(%x: i1 {llzk.pub})
   //
   //    // Result attribute
-  //    llzk.func @example_fn_result() -> (i1 {dialectName.attrName = 0 : i1})
+  //    function.def @example_fn_result() -> (i1 {dialectName.attrName = 0 :
+  //    i1})
   //
   //    // Function attribute
-  //    llzk.func @example_fn_attr() attributes {dialectName.attrName = false}
+  //    function.def @example_fn_attr() attributes {dialectName.attrName =
+  //    false}
   //    ```
   let arguments = (ins SymbolNameAttr:$sym_name,
       TypeAttrOf<FunctionType>:$function_type,
@@ -123,6 +129,14 @@ def FuncDefOp
     /// asserts that the attributes of the current function and dest are
     /// compatible.
     void cloneInto(FuncDefOp dest, ::mlir::IRMapping &mapper);
+
+    /// Return `true` iff the function def has the `allow_constraints` attribute.
+    inline bool hasAllowConstraintsAttr() {
+      return getOperation()->hasAttr(llzk::function::AllowConstraintsAttr::name);
+    }
+
+    /// Add (resp. remove) the `allow_constraints` attribute to (resp. from) the function def.
+    void setAllowConstraintsAttr(bool newValue = true);
 
     /// Return `true` iff the argument at the given index has `pub` attribute.
     bool hasArgPublicAttr(unsigned index);
@@ -160,7 +174,7 @@ def FuncDefOp
     //===------------------------------------------------------------------===//
 
     /// Return the full name for this function from the root module, including
-    /// all module and struct scopes.
+    /// all surrounding symbol table names (i.e. modules and structs).
     ::mlir::SymbolRefAttr getFullyQualifiedName();
 
     /// Return `true` iff the function name is `FUNC_NAME_COMPUTE` (if needed, a check
@@ -193,11 +207,12 @@ def FuncDefOp
 //===----------------------------------------------------------------------===//
 
 def ReturnOp
-    : LLZK_Op<"return", [HasParent<"::llzk::FuncDefOp">, Pure,
-                         MemRefsNormalizable, ReturnLike, Terminator]> {
+    : LLZK_Function_Op<"return", [HasParent<"::llzk::function::FuncDefOp">,
+                                  Pure, MemRefsNormalizable, ReturnLike,
+                                  Terminator]> {
   let summary = "Function return operation";
   let description = [{
-    The `llzk.return` operation represents a return operation within a function.
+    The `function.return` operation represents a return operation within a function.
     The operation takes variable number of operands and produces no results.
     The operand number and types must match the signature of the function
     that contains the operation.
@@ -205,7 +220,7 @@ def ReturnOp
     Example:
 
     ```llzk
-    llzk.func @foo() : (!llzk.felt, index) {
+    function.def @foo() : (!llzk.felt, index) {
       ...
       return %0, %1 : !llzk.felt, index
     }
@@ -226,14 +241,14 @@ def ReturnOp
 // CallOp
 //===----------------------------------------------------------------------===//
 
-def CallOp
-    : LLZK_Op<"call", [MemRefsNormalizable, AttrSizedOperandSegments,
-                       VerifySizesForMultiAffineOps<1>,
-                       DeclareOpInterfaceMethods<CallOpInterface>,
-                       DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+def CallOp : LLZK_Function_Op<
+                 "call", [MemRefsNormalizable, AttrSizedOperandSegments,
+                          VerifySizesForMultiAffineOps<1>,
+                          DeclareOpInterfaceMethods<CallOpInterface>,
+                          DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "call operation";
   let description = [{
-    The `llzk.call` operation represents a call to another function. The operands
+    The `function.call` operation represents a call to another function. The operands
     and result types of the call must match the specified function type. The
     callee is encoded as a symbol reference attribute named "callee" which must
     be the full path to the target function from the root module (i.e. the module
@@ -242,12 +257,12 @@ def CallOp
     Example:
     ```llzk
     // Call a global function defined in the root module.
-    llzk.call @do_stuff(%0) : (!llzk.struct<@Bob>) -> ()
-    %1, %2 = llzk.call @split(%x) : (index) -> (index, index)
+    function.call @do_stuff(%0) : (!llzk.struct<@Bob>) -> ()
+    %1, %2 = function.call @split(%x) : (index) -> (index, index)
 
     // Call a function within a component
-    %2 = llzk.call @OtherStruct::@compute(%3, %4) : (index, index) -> !llzk.struct<@OtherStruct>
-    llzk.call @OtherStruct::@constrain(%5, %6) : (!llzk.struct<@OtherStruct>, !llzk.felt) -> ()
+    %2 = function.call @OtherStruct::@compute(%3, %4) : (index, index) -> !llzk.struct<@OtherStruct>
+    function.call @OtherStruct::@constrain(%5, %6) : (!llzk.struct<@OtherStruct>, !llzk.felt) -> ()
     ```
 
     When the return StructType of a `compute()` function uses AffineMapAttr to
@@ -258,7 +273,7 @@ def CallOp
     Examples:
     ```llzk
     #M = affine_map<(i)[] -> (5*i+1)>
-    %r = llzk.call @A::@compute(%x){(%i)} : (!llzk.felt) -> !llzk.struct<@A<[#M]>>
+    %r = function.call @A::@compute(%x){(%i)} : (!llzk.felt) -> !llzk.struct<@A<[#M]>>
     ```
   }];
 
@@ -276,7 +291,7 @@ def CallOp
       [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::SymbolRefAttr":$callee,
            CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
-       OpBuilder<(ins "::llzk::FuncDefOp":$callee,
+       OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
                      CArg<"::mlir::ValueRange", "{}">:$argOperands),
                  [{
                     build($_builder, $_state, callee.getFunctionType().getResults(),
@@ -296,7 +311,7 @@ def CallOp
                     build($_builder, $_state, resultTypes, callee, mapOperands,
                           $_builder.getDenseI32ArrayAttr(numDimsPerMap), argOperands);
                   }]>,
-       OpBuilder<(ins "::llzk::FuncDefOp":$callee,
+       OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::mlir::DenseI32ArrayAttr":$numDimsPerMap,
                      CArg<"::mlir::ValueRange", "{}">:$argOperands),
@@ -304,7 +319,7 @@ def CallOp
                     build($_builder, $_state, callee.getFunctionType().getResults(),
                           ::mlir::SymbolRefAttr::get(callee), mapOperands, numDimsPerMap, argOperands);
                   }]>,
-       OpBuilder<(ins "::llzk::FuncDefOp":$callee,
+       OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::llvm::ArrayRef<int32_t>":$numDimsPerMap,
                      CArg<"::mlir::ValueRange", "{}">:$argOperands),

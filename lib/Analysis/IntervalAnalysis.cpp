@@ -1179,8 +1179,10 @@ LogicalResult StructIntervals::computeIntervals(
     mlir::DataFlowSolver &solver, mlir::AnalysisManager &am, IntervalAnalysisContext &ctx
 ) {
   // Get the lattice at the end of the constrain function.
-  ReturnOp constrainEnd;
-  structDef.getConstrainFuncOp().walk([&constrainEnd](ReturnOp r) mutable { constrainEnd = r; });
+  function::ReturnOp constrainEnd;
+  structDef.getConstrainFuncOp().walk([&constrainEnd](function::ReturnOp r) mutable {
+    constrainEnd = r;
+  });
 
   const IntervalAnalysisLattice *constrainLattice =
       solver.lookupState<IntervalAnalysisLattice>(constrainEnd);

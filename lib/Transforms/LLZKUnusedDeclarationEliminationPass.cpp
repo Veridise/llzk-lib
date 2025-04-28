@@ -18,7 +18,6 @@
 #include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/BuiltinOps.h>
-#include <mlir/Pass/Pass.h>
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
