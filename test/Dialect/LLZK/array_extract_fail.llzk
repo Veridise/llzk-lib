@@ -1,22 +1,22 @@
 // RUN: llzk-opt %s -split-input-file -verify-diagnostics
 
-llzk.func @should_use_readarr_instead_of_extractarr() -> index {
+llzk.func @should_use_array.read_instead_of_array.extract() -> index {
   %a = arith.constant 946 : index
   %b = arith.constant 413 : index
-  %r = llzk.new_array %a, %b : !llzk.array<2 x index>
+  %r = array.new %a, %b : !llzk.array<2 x index>
   %i = arith.constant 1 : index
-  // expected-error@+1 {{'llzk.extractarr' op cannot select all dimensions of an array. Use 'llzk.readarr' instead.}}
-  %s = llzk.extractarr %r[%i] : !llzk.array<2 x index>
+  // expected-error@+1 {{'array.extract' op cannot select all dimensions of an array. Use 'array.read' instead.}}
+  %s = array.extract %r[%i] : !llzk.array<2 x index>
   return %s: index
 }
 // -----
 
-llzk.func @extractarr_with_more_dims_than_available() -> index {
+llzk.func @array.extract_with_more_dims_than_available() -> index {
   %a = arith.constant 946 : index
   %b = arith.constant 413 : index
-  %r = llzk.new_array %a, %b : !llzk.array<2 x index>
+  %r = array.new %a, %b : !llzk.array<2 x index>
   %i = arith.constant 0 : index
-  // expected-error@+1 {{'llzk.extractarr' op cannot select more dimensions than exist in the source array}}
-  %s = llzk.extractarr %r[%i,%i] : !llzk.array<2 x index>
+  // expected-error@+1 {{'array.extract' op cannot select more dimensions than exist in the source array}}
+  %s = array.extract %r[%i,%i] : !llzk.array<2 x index>
   return %s: index
 }

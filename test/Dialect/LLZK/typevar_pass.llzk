@@ -24,7 +24,7 @@ module attributes {veridise.lang = "llzk"} {
   // Specialization of the parameterized struct for Felt type
   llzk.struct @FeltA {
     field @a : !llzk.struct<@A<[!llzk.felt]>>
-    
+
     func @compute() -> !llzk.struct<@FeltA> {
       %self = new_struct : !llzk.struct<@FeltA>
       %c = constfelt 57
@@ -44,7 +44,7 @@ module attributes {veridise.lang = "llzk"} {
   // Specialization of the parameterized struct for Felt type
   llzk.struct @IndexA {
     field @a : !llzk.struct<@A<[index]>>
-    
+
     func @compute() -> !llzk.struct<@IndexA> {
       %self = new_struct : !llzk.struct<@IndexA>
       %c = arith.constant 57 : index
@@ -206,7 +206,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentB4<[@T]> {
     field @f : !llzk.tvar<@T>
-  
+
     func @compute(%0: !llzk.tvar<@T>) -> !llzk.struct<@ComponentB4<[@T]>> {
       %self = new_struct : !llzk.struct<@ComponentB4<[@T]>>
       writef %self[@f] = %0 : !llzk.struct<@ComponentB4<[@T]>>, !llzk.tvar<@T>
@@ -296,14 +296,14 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-// TypeVarType in CreateArrayOp (`new_array`), exact match
+// TypeVarType in CreateArrayOp (`array.new`), exact match
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentC<[@T]> {
     field @f : !llzk.array<2 x !llzk.tvar<@T>>
 
     func @compute(%a1: !llzk.tvar<@T>, %a2: !llzk.tvar<@T>) -> !llzk.struct<@ComponentC<[@T]>> {
       %self = new_struct : !llzk.struct<@ComponentC<[@T]>>
-      %arr = new_array %a1, %a2 : !llzk.array<2 x !llzk.tvar<@T>>
+      %arr = array.new %a1, %a2 : !llzk.array<2 x !llzk.tvar<@T>>
       writef %self[@f] = %arr : !llzk.struct<@ComponentC<[@T]>>, !llzk.array<2 x !llzk.tvar<@T>>
       return %self : !llzk.struct<@ComponentC<[@T]>>
     }
@@ -315,7 +315,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    field @f : !llzk.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:    func @compute(%arg0: !llzk.tvar<@T>, %arg1: !llzk.tvar<@T>) -> !llzk.struct<@ComponentC<[@T]>> {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentC<[@T]>>
-//CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = new_array %arg0, %arg1 : <2 x !llzk.tvar<@T>>
+//CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = array.new %arg0, %arg1 : <2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      writef %[[SELF]][@f] = %[[T3]] : <@ComponentC<[@T]>>, !llzk.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@ComponentC<[@T]>>
 //CHECK-NEXT:    }
@@ -332,11 +332,11 @@ module attributes {veridise.lang = "llzk"} {
 
     func @compute(%a1: !llzk.tvar<@T>, %a2: !llzk.tvar<@T>) -> !llzk.struct<@ComponentD<[@T]>> {
       %self = new_struct : !llzk.struct<@ComponentD<[@T]>>
-      %arr = new_array : !llzk.array<2 x !llzk.tvar<@T>>
+      %arr = array.new : !llzk.array<2 x !llzk.tvar<@T>>
       %0 = arith.constant 0 : index
-      writearr %arr[%0] = %a1 : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
+      array.write %arr[%0] = %a1 : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
       %1 = arith.constant 0 : index
-      writearr %arr[%1] = %a2 : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
+      array.write %arr[%1] = %a2 : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
       writef %self[@f] = %arr : !llzk.struct<@ComponentD<[@T]>>, !llzk.array<2 x !llzk.tvar<@T>>
       return %self : !llzk.struct<@ComponentD<[@T]>>
     }
@@ -344,10 +344,10 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@ComponentD<[@T]>>, %a1: !llzk.tvar<@T>, %a2: !llzk.tvar<@T>) {
       %arr = readf %self[@f] : !llzk.struct<@ComponentD<[@T]>>, !llzk.array<2 x !llzk.tvar<@T>>
       %0 = arith.constant 0 : index
-      %r1 = readarr %arr[%0] : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
+      %r1 = array.read %arr[%0] : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
       emit_eq %r1, %a1 : !llzk.tvar<@T>
       %1 = arith.constant 0 : index
-      %r2 = readarr %arr[%1] : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
+      %r2 = array.read %arr[%1] : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
       emit_eq %r2, %a2 : !llzk.tvar<@T>
       return
     }
@@ -357,21 +357,21 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    field @f : !llzk.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:    func @compute(%arg0: !llzk.tvar<@T>, %arg1: !llzk.tvar<@T>) -> !llzk.struct<@ComponentD<[@T]>> {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentD<[@T]>>
-//CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = new_array  : <2 x !llzk.tvar<@T>>
+//CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:      writearr %[[T3]][%[[T4]]] = %arg0 : <2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
+//CHECK-NEXT:      array.write %[[T3]][%[[T4]]] = %arg0 : <2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
 //CHECK-NEXT:      %[[T5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:      writearr %[[T3]][%[[T5]]] = %arg1 : <2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
+//CHECK-NEXT:      array.write %[[T3]][%[[T5]]] = %arg1 : <2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
 //CHECK-NEXT:      writef %[[SELF]][@f] = %[[T3]] : <@ComponentD<[@T]>>, !llzk.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@ComponentD<[@T]>>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    func @constrain(%arg0: !llzk.struct<@ComponentD<[@T]>>, %arg1: !llzk.tvar<@T>, %arg2: !llzk.tvar<@T>) {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@f] : <@ComponentD<[@T]>>, !llzk.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      %[[T7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = readarr %[[T0]][%[[T7]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
+//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[T7]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
 //CHECK-NEXT:      emit_eq %[[T1]], %arg1 : !llzk.tvar<@T>, !llzk.tvar<@T>
 //CHECK-NEXT:      %[[T8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = readarr %[[T0]][%[[T8]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
+//CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[T8]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
 //CHECK-NEXT:      emit_eq %[[T2]], %arg2 : !llzk.tvar<@T>, !llzk.tvar<@T>
 //CHECK-NEXT:      return
 //CHECK-NEXT:    }
@@ -385,11 +385,11 @@ module attributes {veridise.lang = "llzk"} {
 
     func @compute(%a1: !llzk.tvar<@X>, %a2: !llzk.tvar<@Y>) -> !llzk.struct<@ComponentE<[@T, @X, @Y]>> {
       %self = new_struct : !llzk.struct<@ComponentE<[@T, @X, @Y]>>
-      %arr = new_array : !llzk.array<2 x !llzk.tvar<@T>>
+      %arr = array.new : !llzk.array<2 x !llzk.tvar<@T>>
       %0 = arith.constant 0 : index
-      writearr %arr[%0] = %a1 : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@X>
+      array.write %arr[%0] = %a1 : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@X>
       %1 = arith.constant 0 : index
-      writearr %arr[%1] = %a2 : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@Y>
+      array.write %arr[%1] = %a2 : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@Y>
       writef %self[@f] = %arr : !llzk.struct<@ComponentE<[@T, @X, @Y]>>, !llzk.array<2 x !llzk.tvar<@T>>
       return %self : !llzk.struct<@ComponentE<[@T, @X, @Y]>>
     }
@@ -397,10 +397,10 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@ComponentE<[@T, @X, @Y]>>, %a1: !llzk.tvar<@X>, %a2: !llzk.tvar<@Y>) {
       %arr = readf %self[@f] : !llzk.struct<@ComponentE<[@T, @X, @Y]>>, !llzk.array<2 x !llzk.tvar<@T>>
       %0 = arith.constant 0 : index
-      %r1 = readarr %arr[%0] : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@X>
+      %r1 = array.read %arr[%0] : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@X>
       emit_eq %r1, %a1 : !llzk.tvar<@X>
       %1 = arith.constant 0 : index
-      %r2 = readarr %arr[%1] : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@Y>
+      %r2 = array.read %arr[%1] : !llzk.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@Y>
       emit_eq %r2, %a2 : !llzk.tvar<@Y>
       return
     }
@@ -410,21 +410,21 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    field @f : !llzk.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:    func @compute(%arg0: !llzk.tvar<@X>, %arg1: !llzk.tvar<@Y>) -> !llzk.struct<@ComponentE<[@T, @X, @Y]>> {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentE<[@T, @X, @Y]>>
-//CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = new_array  : <2 x !llzk.tvar<@T>>
+//CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:      writearr %[[T3]][%[[T4]]] = %arg0 : <2 x !llzk.tvar<@T>>, !llzk.tvar<@X>
+//CHECK-NEXT:      array.write %[[T3]][%[[T4]]] = %arg0 : <2 x !llzk.tvar<@T>>, !llzk.tvar<@X>
 //CHECK-NEXT:      %[[T5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:      writearr %[[T3]][%[[T5]]] = %arg1 : <2 x !llzk.tvar<@T>>, !llzk.tvar<@Y>
+//CHECK-NEXT:      array.write %[[T3]][%[[T5]]] = %arg1 : <2 x !llzk.tvar<@T>>, !llzk.tvar<@Y>
 //CHECK-NEXT:      writef %[[SELF]][@f] = %[[T3]] : <@ComponentE<[@T, @X, @Y]>>, !llzk.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@ComponentE<[@T, @X, @Y]>>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    func @constrain(%arg0: !llzk.struct<@ComponentE<[@T, @X, @Y]>>, %arg1: !llzk.tvar<@X>, %arg2: !llzk.tvar<@Y>) {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@f] : <@ComponentE<[@T, @X, @Y]>>, !llzk.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      %[[T7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = readarr %[[T0]][%[[T7]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@X>
+//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[T7]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@X>
 //CHECK-NEXT:      emit_eq %[[T1]], %arg1 : !llzk.tvar<@X>, !llzk.tvar<@X>
 //CHECK-NEXT:      %[[T8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = readarr %[[T0]][%[[T8]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@Y>
+//CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[T8]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@Y>
 //CHECK-NEXT:      emit_eq %[[T2]], %arg2 : !llzk.tvar<@Y>, !llzk.tvar<@Y>
 //CHECK-NEXT:      return
 //CHECK-NEXT:    }
@@ -562,14 +562,14 @@ module attributes {veridise.lang = "llzk"} {
 
     func @compute() -> !llzk.struct<@ComponentG<[@S, @T]>> {
       %self = new_struct : !llzk.struct<@ComponentG<[@S, @T]>>
-      %arr = new_array : !llzk.array<@S x !llzk.tvar<@T>>
+      %arr = array.new : !llzk.array<@S x !llzk.tvar<@T>>
       %lb = arith.constant 0 : index
       %up = llzk.read_const @S : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         // Although a type variable is used, this struct can only be instantiated
         //  with `@T = index` since an `index` value is assigned to the tvar array.
-        llzk.writearr %arr[%iv] = %iv : !llzk.array<@S x !llzk.tvar<@T>>, index
+        array.write %arr[%iv] = %iv : !llzk.array<@S x !llzk.tvar<@T>>, index
       }
       writef %self[@f] = %arr : !llzk.struct<@ComponentG<[@S, @T]>>, !llzk.array<@S x !llzk.tvar<@T>>
       return %self : !llzk.struct<@ComponentG<[@S, @T]>>
@@ -581,7 +581,7 @@ module attributes {veridise.lang = "llzk"} {
       %up = llzk.read_const @S : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        %temp = llzk.readarr %arr[%iv] : !llzk.array<@S x !llzk.tvar<@T>>, !llzk.tvar<@T>
+        %temp = array.read %arr[%iv] : !llzk.array<@S x !llzk.tvar<@T>>, !llzk.tvar<@T>
         llzk.emit_eq %temp, %iv : !llzk.tvar<@T>, index
       }
       return
@@ -592,12 +592,12 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    field @f : !llzk.array<@S x !llzk.tvar<@T>>
 //CHECK-NEXT:    func @compute() -> !llzk.struct<@ComponentG<[@S, @T]>> {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentG<[@S, @T]>>
-//CHECK-NEXT:      %[[T5:[0-9a-zA-Z_\.]+]] = new_array  : <@S x !llzk.tvar<@T>>
+//CHECK-NEXT:      %[[T5:[0-9a-zA-Z_\.]+]] = array.new  : <@S x !llzk.tvar<@T>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = read_const @S : index
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:      scf.for %arg0 = %[[T3]] to %[[T0]] step %[[T4]] {
-//CHECK-NEXT:        llzk.writearr %[[T5]][%arg0] = %arg0 : <@S x !llzk.tvar<@T>>, index
+//CHECK-NEXT:        array.write %[[T5]][%arg0] = %arg0 : <@S x !llzk.tvar<@T>>, index
 //CHECK-NEXT:      }
 //CHECK-NEXT:      writef %[[SELF]][@f] = %[[T5]] : <@ComponentG<[@S, @T]>>, !llzk.array<@S x !llzk.tvar<@T>>
 //CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@ComponentG<[@S, @T]>>
@@ -608,7 +608,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = read_const @S : index
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:      scf.for %arg1 = %[[T3]] to %[[T1]] step %[[T4]] {
-//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[T0]][%arg1] : <@S x !llzk.tvar<@T>>, !llzk.tvar<@T>
+//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%arg1] : <@S x !llzk.tvar<@T>>, !llzk.tvar<@T>
 //CHECK-NEXT:        llzk.emit_eq %[[T2]], %arg1 : !llzk.tvar<@T>, index
 //CHECK-NEXT:      }
 //CHECK-NEXT:      return

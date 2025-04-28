@@ -14,7 +14,7 @@ module attributes {veridise.lang = "llzk"} {
       %3 = arith.constant 3 : index
       %4 = arith.constant 4 : index
       %5 = arith.constant 5 : index
-      %arr = llzk.new_array{(%1),(%2,%3),(%4)[%5]} : !Ty
+      %arr = array.new{(%1),(%2,%3),(%4)[%5]} : !Ty
 
       %self = new_struct : !llzk.struct<@Component01>
       llzk.writef %self[@out] = %arr : !llzk.struct<@Component01>, !Ty
@@ -29,7 +29,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: llzk.struct @Component01 {
 // CHECK-NEXT:    field @out : !llzk.array<1,5,9 x index>
 // CHECK-NEXT:    func @compute() -> !llzk.struct<@Component01> {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_array  : <1,5,9 x index>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = array.new  : <1,5,9 x index>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component01>
 // CHECK-NEXT:      writef %[[V1]][@out] = %[[V0]] : <@Component01>, !llzk.array<1,5,9 x index>
 // CHECK-NEXT:      return %[[V1]] : !llzk.struct<@Component01>
@@ -58,11 +58,11 @@ module attributes {veridise.lang = "llzk"} {
       %3 = arith.constant 3 : index
       %4 = arith.constant 4 : index
       %5 = arith.constant 5 : index
-      %arr = llzk.new_array{(%1),(%2,%x),(%4)[%5]} : !Ty // !llzk.array<1,(x+2),9 x index>
+      %arr = array.new{(%1),(%2,%x),(%4)[%5]} : !Ty // !llzk.array<1,(x+2),9 x index>
 
       %0 = arith.constant 0 : index
-      llzk.writearr %arr[%0,%0,%0] = %5 : !Ty, index
-      llzk.writearr %arr[%0,%0,%1] = %4 : !Ty, index
+      array.write %arr[%0,%0,%0] = %5 : !Ty, index
+      array.write %arr[%0,%0,%1] = %4 : !Ty, index
 
       %self = new_struct : !llzk.struct<@Component02>
       llzk.writef %self[@out] = %arr : !llzk.struct<@Component02>, !Ty
@@ -83,9 +83,9 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = new_array{(%[[V3]], %[[V0]])} : <1,#[[$M0]],9 x index>
-// CHECK-NEXT:      writearr %[[V6]]{{\[}}%[[V1]], %[[V1]], %[[V1]]] = %[[V5]] : <1,#[[$M0]],9 x index>, index
-// CHECK-NEXT:      writearr %[[V6]]{{\[}}%[[V1]], %[[V1]], %[[V2]]] = %[[V4]] : <1,#[[$M0]],9 x index>, index
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = array.new{(%[[V3]], %[[V0]])} : <1,#[[$M0]],9 x index>
+// CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V1]], %[[V1]], %[[V1]]] = %[[V5]] : <1,#[[$M0]],9 x index>, index
+// CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V1]], %[[V1]], %[[V2]]] = %[[V4]] : <1,#[[$M0]],9 x index>, index
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = new_struct : <@Component02>
 // CHECK-NEXT:      writef %[[V7]][@out] = %[[V6]] : <@Component02>, !llzk.array<1,#[[$M0]],9 x index>
 // CHECK-NEXT:      return %[[V7]] : !llzk.struct<@Component02>
@@ -115,10 +115,10 @@ module attributes {veridise.lang = "llzk"} {
       %2 = arith.constant 2 : index
       %3 = arith.constant 3 : index
       scf.for %i = %0 to %x step %1 {
-        %arr = llzk.new_array{(%i)[%1],(%i),()[%2,%3]} : !Ty // !llzk.array<(i+1),(i+2),5 x index>
-        %a = llzk.extractarr %arr[%0, %0] : !Ty
+        %arr = array.new{(%i)[%1],(%i),()[%2,%3]} : !Ty // !llzk.array<(i+1),(i+2),5 x index>
+        %a = array.extract %arr[%0, %0] : !Ty
         llzk.writef %self[@a] = %a : !llzk.struct<@Component03>, !llzk.array<#M3 x index>
-        %b = llzk.extractarr %arr[%0, %1] : !Ty
+        %b = array.extract %arr[%0, %1] : !Ty
         llzk.writef %self[@b] = %b : !llzk.struct<@Component03>, !llzk.array<#M3 x index>
       }
       return %self : !llzk.struct<@Component03>
@@ -139,10 +139,10 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = new_struct : <@Component03>
 // CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]]){{\[}}%[[V1]]], (%[[V4]])} : <#[[$M1]],#[[$M2]],5 x index>
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = llzk.extractarr %[[V5]]{{\[}}%[[V2]], %[[V2]]] : <#[[$M1]],#[[$M2]],5 x index>
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]]){{\[}}%[[V1]]], (%[[V4]])} : <#[[$M1]],#[[$M2]],5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = array.extract %[[V5]]{{\[}}%[[V2]], %[[V2]]] : <#[[$M1]],#[[$M2]],5 x index>
 // CHECK-NEXT:        llzk.writef %[[V3]][@a] = %[[V6]] : <@Component03>, !llzk.array<5 x index>
-// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = llzk.extractarr %[[V5]]{{\[}}%[[V2]], %[[V1]]] : <#[[$M1]],#[[$M2]],5 x index>
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = array.extract %[[V5]]{{\[}}%[[V2]], %[[V1]]] : <#[[$M1]],#[[$M2]],5 x index>
 // CHECK-NEXT:        llzk.writef %[[V3]][@b] = %[[V7]] : <@Component03>, !llzk.array<5 x index>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      return %[[V3]] : !llzk.struct<@Component03>
@@ -173,9 +173,9 @@ module attributes {veridise.lang = "llzk"} {
       scf.for %i = %0 to %x step %1 {
         %sum = scf.for %j = %0 to %2 step %1
           iter_args(%cur_sum = %0) -> index {
-          %arr = llzk.new_array{(%i)[%1],(%j),()[%2,%3]} : !Ty // !llzk.array<(i+1),(j+2),5 x index>
-          %a = llzk.readarr %arr[%0, %0, %0] : !Ty, index
-          %b = llzk.readarr %arr[%0, %1, %0] : !Ty, index
+          %arr = array.new{(%i)[%1],(%j),()[%2,%3]} : !Ty // !llzk.array<(i+1),(j+2),5 x index>
+          %a = array.read %arr[%0, %0, %0] : !Ty, index
+          %b = array.read %arr[%0, %1, %0] : !Ty, index
           %c = arith.addi %a, %b : index
           scf.yield %c : index
         }
@@ -197,12 +197,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = new_struct : <@Component04>
 // CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]]){{\[}}%[[V1]]]} : <#[[$M3]],2,5 x index>
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V5]]{{\[}}%[[V2]], %[[V2]], %[[V2]]] : <#[[$M3]],2,5 x index>, index
-// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V5]]{{\[}}%[[V2]], %[[V1]], %[[V2]]] : <#[[$M3]],2,5 x index>, index
-// CHECK-NEXT:        %[[V8:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]]){{\[}}%[[V1]]]} : <#[[$M3]],3,5 x index>
-// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V8]]{{\[}}%[[V2]], %[[V2]], %[[V2]]] : <#[[$M3]],3,5 x index>, index
-// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = llzk.readarr %[[V8]]{{\[}}%[[V2]], %[[V1]], %[[V2]]] : <#[[$M3]],3,5 x index>, index
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]]){{\[}}%[[V1]]]} : <#[[$M3]],2,5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = array.read %[[V5]]{{\[}}%[[V2]], %[[V2]], %[[V2]]] : <#[[$M3]],2,5 x index>, index
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = array.read %[[V5]]{{\[}}%[[V2]], %[[V1]], %[[V2]]] : <#[[$M3]],2,5 x index>, index
+// CHECK-NEXT:        %[[V8:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]]){{\[}}%[[V1]]]} : <#[[$M3]],3,5 x index>
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V8]]{{\[}}%[[V2]], %[[V2]], %[[V2]]] : <#[[$M3]],3,5 x index>, index
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = array.read %[[V8]]{{\[}}%[[V2]], %[[V1]], %[[V2]]] : <#[[$M3]],3,5 x index>, index
 // CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = arith.addi %[[V9]], %[[V10]] : index
 // CHECK-NEXT:        llzk.writef %[[V3]][@f] = %[[V11]] : <@Component04>, index
 // CHECK-NEXT:      }
@@ -235,10 +235,10 @@ module attributes {veridise.lang = "llzk"} {
       %3 = arith.constant 3 : index
       scf.for %i = %0 to %2 step %1 {
         scf.for %j = %0 to %x step %1 {
-          %arr = llzk.new_array{(%i)[%1],(%j),()[%2,%3]} : !Ty1 // !llzk.array<(i+1),(j+2),5 x index>
-          %inner = llzk.new_array{(%j),()[%2,%3]} : !Ty2 // !llzk.array<(j+2),5 x index>
-          llzk.insertarr %arr[%0] = %inner : !Ty1, !Ty2
-          %len = llzk.array_len %arr, %1 : !Ty1 // len(dimension 1) == (j+2)
+          %arr = array.new{(%i)[%1],(%j),()[%2,%3]} : !Ty1 // !llzk.array<(i+1),(j+2),5 x index>
+          %inner = array.new{(%j),()[%2,%3]} : !Ty2 // !llzk.array<(j+2),5 x index>
+          array.insert %arr[%0] = %inner : !Ty1, !Ty2
+          %len = array.len %arr, %1 : !Ty1 // len(dimension 1) == (j+2)
           llzk.writef %self[@f] = %len : !llzk.struct<@Component05>, index
         }
       }
@@ -258,17 +258,17 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = new_struct : <@Component05>
 // CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]])} : <1,#[[$M4]],5 x index>
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]])} : <#[[$M4]],5 x index>
-// CHECK-NEXT:        llzk.insertarr %[[V5]]{{\[}}%[[V2]]] = %[[V6]] : <1,#[[$M4]],5 x index>, <#[[$M4]],5 x index>
-// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = llzk.array_len %[[V5]], %[[V1]] : <1,#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]])} : <1,#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]])} : <#[[$M4]],5 x index>
+// CHECK-NEXT:        array.insert %[[V5]]{{\[}}%[[V2]]] = %[[V6]] : <1,#[[$M4]],5 x index>, <#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = array.len %[[V5]], %[[V1]] : <1,#[[$M4]],5 x index>
 // CHECK-NEXT:        llzk.writef %[[V3]][@f] = %[[V7]] : <@Component05>, index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      scf.for %[[V8:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V8]])} : <2,#[[$M4]],5 x index>
-// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V8]])} : <#[[$M4]],5 x index>
-// CHECK-NEXT:        llzk.insertarr %[[V9]]{{\[}}%[[V2]]] = %[[V10]] : <2,#[[$M4]],5 x index>, <#[[$M4]],5 x index>
-// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = llzk.array_len %[[V9]], %[[V1]] : <2,#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = array.new{(%[[V8]])} : <2,#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = array.new{(%[[V8]])} : <#[[$M4]],5 x index>
+// CHECK-NEXT:        array.insert %[[V9]]{{\[}}%[[V2]]] = %[[V10]] : <2,#[[$M4]],5 x index>, <#[[$M4]],5 x index>
+// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = array.len %[[V9]], %[[V1]] : <2,#[[$M4]],5 x index>
 // CHECK-NEXT:        llzk.writef %[[V3]][@f] = %[[V11]] : <@Component05>, index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      return %[[V3]] : !llzk.struct<@Component05>
@@ -296,10 +296,10 @@ module attributes {veridise.lang = "llzk"} {
       %3 = arith.constant 3 : index
       scf.for %i = %0 to %2 step %1 {
         scf.for %j = %0 to %x step %1 {
-          %arr = llzk.new_array{(%i)[%1],(%j),()[%2,%3]} : !Ty1 // !llzk.array<(i+1),(j+2),5 x index>
-          %inner = llzk.new_array{(%j),()[%i,%j]} : !Ty2 // !llzk.array<(j+2),??? x index>
-          llzk.insertarr %arr[%0] = %inner : !Ty1, !Ty2
-          %len = llzk.array_len %arr, %1 : !Ty1 // len(dimension 1) == (j+2)
+          %arr = array.new{(%i)[%1],(%j),()[%2,%3]} : !Ty1 // !llzk.array<(i+1),(j+2),5 x index>
+          %inner = array.new{(%j),()[%i,%j]} : !Ty2 // !llzk.array<(j+2),??? x index>
+          array.insert %arr[%0] = %inner : !Ty1, !Ty2
+          %len = array.len %arr, %1 : !Ty1 // len(dimension 1) == (j+2)
           llzk.writef %self[@f] = %len : !llzk.struct<@Component05B>, index
         }
       }
@@ -320,17 +320,17 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = new_struct : <@Component05B>
 // CHECK-NEXT:      scf.for %[[V4:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]])} : <1,#[[$M5]],5 x index>
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V4]]), (){{\[}}%[[V2]], %[[V4]]]} : <#[[$M5]],#[[$M6]] x index>
-// CHECK-NEXT:        llzk.insertarr %[[V5]]{{\[}}%[[V2]]] = %[[V6]] : <1,#[[$M5]],5 x index>, <#[[$M5]],#[[$M6]] x index>
-// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = llzk.array_len %[[V5]], %[[V1]] : <1,#[[$M5]],5 x index>
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]])} : <1,#[[$M5]],5 x index>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = array.new{(%[[V4]]), (){{\[}}%[[V2]], %[[V4]]]} : <#[[$M5]],#[[$M6]] x index>
+// CHECK-NEXT:        array.insert %[[V5]]{{\[}}%[[V2]]] = %[[V6]] : <1,#[[$M5]],5 x index>, <#[[$M5]],#[[$M6]] x index>
+// CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = array.len %[[V5]], %[[V1]] : <1,#[[$M5]],5 x index>
 // CHECK-NEXT:        llzk.writef %[[V3]][@f] = %[[V7]] : <@Component05B>, index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      scf.for %[[V8:[0-9a-zA-Z_\.]+]] = %[[V2]] to %[[V0]] step %[[V1]] {
-// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V8]])} : <2,#[[$M5]],5 x index>
-// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = llzk.new_array{(%[[V8]]), (){{\[}}%[[V1]], %[[V8]]]} : <#[[$M5]],#[[$M6]] x index>
-// CHECK-NEXT:        llzk.insertarr %[[V9]]{{\[}}%[[V2]]] = %[[V10]] : <2,#[[$M5]],5 x index>, <#[[$M5]],#[[$M6]] x index>
-// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = llzk.array_len %[[V9]], %[[V1]] : <2,#[[$M5]],5 x index>
+// CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = array.new{(%[[V8]])} : <2,#[[$M5]],5 x index>
+// CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = array.new{(%[[V8]]), (){{\[}}%[[V1]], %[[V8]]]} : <#[[$M5]],#[[$M6]] x index>
+// CHECK-NEXT:        array.insert %[[V9]]{{\[}}%[[V2]]] = %[[V10]] : <2,#[[$M5]],5 x index>, <#[[$M5]],#[[$M6]] x index>
+// CHECK-NEXT:        %[[V11:[0-9a-zA-Z_\.]+]] = array.len %[[V9]], %[[V1]] : <2,#[[$M5]],5 x index>
 // CHECK-NEXT:        llzk.writef %[[V3]][@f] = %[[V11]] : <@Component05B>, index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      return %[[V3]] : !llzk.struct<@Component05B>
@@ -352,27 +352,27 @@ module attributes {veridise.lang = "llzk"} {
     %b = arith.constant 4 : index
     %c = arith.constant 6 : index
     %d = arith.constant 1 : index
-    %r = llzk.new_array { (%a)[%b], ()[%c], (%d) } : !Ty
+    %r = array.new { (%a)[%b], ()[%c], (%d) } : !Ty
     return %r: !Ty
   }
 
   llzk.struct @Main {
     field @a: !Ty
-  
+
     func @compute() -> !llzk.struct<@Main> {
       %self = llzk.new_struct : !llzk.struct<@Main>
       %temp = llzk.call @test06() : () -> !Ty
       llzk.writef %self[@a] = %temp : !llzk.struct<@Main>, !Ty
       return %self: !llzk.struct<@Main>
     }
-  
+
     func @constrain(%self: !llzk.struct<@Main>) {
       return
     }
   }
 }
 // CHECK-LABEL: llzk.func @test06() -> !llzk.array<14,6,3 x !llzk.felt> {
-// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = new_array  : <14,6,3 x !llzk.felt>
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = array.new  : <14,6,3 x !llzk.felt>
 // CHECK-NEXT:    return %[[V0]] : !llzk.array<14,6,3 x !llzk.felt>
 // CHECK-NEXT:  }
 //
@@ -398,10 +398,10 @@ module attributes {veridise.lang = "llzk"} {
 
     func @compute() -> !llzk.struct<@Component10> {
       %self = new_struct : !llzk.struct<@Component10>
-  
+
       %1 = arith.constant 1 : index
       // expected-remark@+1 {{Cannot fold affine_map for array dimension 0 due to divide by 0 or modulus with negative divisor}}
-      %arr = llzk.new_array {(%1)} : !Ty
+      %arr = array.new {(%1)} : !Ty
 
       llzk.writef %self[@out] = %arr : !llzk.struct<@Component10>, !Ty
       return %self : !llzk.struct<@Component10>
@@ -418,7 +418,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    func @compute() -> !llzk.struct<@Component10> {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component10>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = new_array{(%[[V0]])} : <#[[$M0]] x index>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = array.new{(%[[V0]])} : <#[[$M0]] x index>
 // CHECK-NEXT:      writef %[[V1]][@out] = %[[V2]] : <@Component10>, !llzk.array<#[[$M0]] x index>
 // CHECK-NEXT:      return %[[V1]] : !llzk.struct<@Component10>
 // CHECK-NEXT:    }

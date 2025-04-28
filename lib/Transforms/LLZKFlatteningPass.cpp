@@ -12,6 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
@@ -52,6 +54,7 @@ namespace llzk {
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
 
+using namespace llzk::array;
 using namespace llzk;
 using namespace mlir;
 
@@ -346,7 +349,9 @@ newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionT
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects.
 ConversionTarget newBaseTarget(MLIRContext *ctx) {
   ConversionTarget target(*ctx);
-  target.addLegalDialect<LLZKDialect, arith::ArithDialect, scf::SCFDialect>();
+  target.addLegalDialect<
+      LLZKDialect, array::ArrayDialect, include::IncludeDialect, arith::ArithDialect,
+      scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   return target;
 }

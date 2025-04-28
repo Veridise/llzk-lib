@@ -4,9 +4,9 @@ llzk.func @arr_constant_index() -> !llzk.array<3 x index> {
   %a = arith.constant 45 : index
   %b = arith.constant 214 : index // expected-note {{prior use here}}
   %c = arith.constant 2 : index
-  %r = llzk.new_array %a, %b, %c : !llzk.array<3 x index>
+  %r = array.new %a, %b, %c : !llzk.array<3 x index>
   // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!llzk.array<3 x index>' vs 'index'}}
-  llzk.writearr %b[%c] = %b : !llzk.array<3 x index>, index
+  array.write %b[%c] = %b : !llzk.array<3 x index>, index
   return %r: !llzk.array<3 x index>
 }
 // -----
@@ -15,9 +15,9 @@ llzk.func @arr_mix_index(%a: index, %b: index) -> !llzk.array<4 x index> {
   %c = arith.constant 324 : index
   %d = arith.constant 999 : index
   %i = arith.constant 0 : index
-  %r = llzk.new_array %a, %b, %c, %d: !llzk.array<4 x index> // expected-note {{prior use here}}
+  %r = array.new %a, %b, %c, %d: !llzk.array<4 x index> // expected-note {{prior use here}}
   // expected-error@+1 {{use of value '%r' expects different type than prior uses: 'index' vs '!llzk.array<4 x index>'}}
-  llzk.writearr %r[%r] = %b : !llzk.array<4 x index>, index
+  array.write %r[%r] = %b : !llzk.array<4 x index>, index
   return %r: !llzk.array<4 x index>
 }
 // -----
@@ -27,9 +27,9 @@ llzk.func @arr_mix_index(%a: index, %b: index) -> !llzk.array<4 x index> {
   %d = arith.constant 999 : index
   %i = arith.constant 0 : index
   %f = llzk.constfelt 6744573456376 // expected-note {{prior use here}}
-  %r = llzk.new_array %a, %b, %c, %d: !llzk.array<4 x index>
+  %r = array.new %a, %b, %c, %d: !llzk.array<4 x index>
   // expected-error@+1 {{use of value '%f' expects different type than prior uses: 'index' vs '!llzk.felt'}}
-  llzk.writearr %r[%f] = %b : !llzk.array<4 x index>, index
+  array.write %r[%f] = %b : !llzk.array<4 x index>, index
   return %r: !llzk.array<4 x index>
 }
 // -----
@@ -39,9 +39,9 @@ llzk.func @arr_mix_index(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.array<4 x !llz
   %d = llzk.constfelt 999
   %i = arith.constant 0 : index
   %v = arith.constant 5751 : index // expected-note {{prior use here}}
-  %r = llzk.new_array %a, %b, %c, %d: !llzk.array<4 x !llzk.felt>
+  %r = array.new %a, %b, %c, %d: !llzk.array<4 x !llzk.felt>
   // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!llzk.felt' vs 'index'}}
-  llzk.writearr %r[%i] = %v : !llzk.array<4 x !llzk.felt>, !llzk.felt
+  array.write %r[%i] = %v : !llzk.array<4 x !llzk.felt>, !llzk.felt
   return %r: !llzk.array<4 x !llzk.felt>
 }
 // -----
@@ -49,9 +49,9 @@ llzk.func @arr_mix_index(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.array<4 x !llz
 llzk.func @arr_wrong_array_elem_type(%a: !llzk.felt) -> !llzk.array<1 x !llzk.felt> {
   %i = arith.constant 0 : index
   %v = arith.constant 632 : index
-  %r = llzk.new_array %a: !llzk.array<1 x !llzk.felt>
-  // expected-error@+1 {{'llzk.writearr' op failed to verify that rvalue type matches with arr_ref element type}}
-  llzk.writearr %r[%i] = %v : !llzk.array<1 x !llzk.felt>, index
+  %r = array.new %a: !llzk.array<1 x !llzk.felt>
+  // expected-error@+1 {{'array.write' op failed to verify that rvalue type matches with arr_ref element type}}
+  array.write %r[%i] = %v : !llzk.array<1 x !llzk.felt>, index
   return %r: !llzk.array<1 x !llzk.felt>
 }
 
@@ -61,9 +61,9 @@ llzk.func @write_too_few_indices() {
   %0 = arith.constant 0 : index
   %1 = arith.constant 1 : index
 
-  %r = llzk.new_array : !llzk.array<2,4,3 x index>
-  // expected-error@+1 {{'llzk.writearr' op has insufficient indexed dimensions: expected 3 but found 2}}
-  llzk.writearr %r[%1,%0] = %0 : !llzk.array<2,4,3 x index>, index
+  %r = array.new : !llzk.array<2,4,3 x index>
+  // expected-error@+1 {{'array.write' op has insufficient indexed dimensions: expected 3 but found 2}}
+  array.write %r[%1,%0] = %0 : !llzk.array<2,4,3 x index>, index
 }
 
 // -----
@@ -72,7 +72,7 @@ llzk.func @write_too_many_indices() {
   %0 = arith.constant 0 : index
   %1 = arith.constant 1 : index
 
-  %r = llzk.new_array : !llzk.array<2,4,3 x index>
-  // expected-error@+1 {{'llzk.writearr' op has too many indexed dimensions: expected 3 but found 4}}
-  llzk.writearr %r[%1,%0,%1,%0] = %0 : !llzk.array<2,4,3 x index>, index
+  %r = array.new : !llzk.array<2,4,3 x index>
+  // expected-error@+1 {{'array.write' op has too many indexed dimensions: expected 3 but found 4}}
+  array.write %r[%1,%0,%1,%0] = %0 : !llzk.array<2,4,3 x index>, index
 }

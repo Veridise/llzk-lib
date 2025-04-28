@@ -64,7 +64,7 @@ module attributes {veridise.lang = "llzk"} {
 
     func @constrain(%self: !llzk.struct<@ComponentB1<[@T]>>) { return }
   }
-  
+
   llzk.struct @ComponentB2 {
     // Note: If @X were defined (see ComponentB* tests in types_pass.llzk), using
     //  "!llzk.tvar<@X>" is redundant. Just "@X" for the parameter would be equivalent.
@@ -80,7 +80,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-// TypeVarType in CreateArrayOp (`new_array`), non-exact match via unification of `tvar`
+// TypeVarType in CreateArrayOp (`array.new`), non-exact match via unification of `tvar`
 // See description of LLZK_CreateArrayOp for full explanation of why this fails.
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentC1<[@T]> {
@@ -99,7 +99,7 @@ module attributes {veridise.lang = "llzk"} {
       %a1 = call @ComponentC1::@compute() : () -> !llzk.struct<@ComponentC1<[5]>> // expected-note {{prior use here}}
       %a2 = call @ComponentC1::@compute() : () -> !llzk.struct<@ComponentC1<[7]>>
       // expected-error@+1 {{use of value '%a1' expects different type than prior uses: '!llzk.tvar<@T>' vs '!llzk.struct<@ComponentC1<[5]>>'}}
-      %arr = new_array %a1, %a2 : !llzk.array<2 x !llzk.tvar<@T>>
+      %arr = array.new %a1, %a2 : !llzk.array<2 x !llzk.tvar<@T>>
       writef %self[@f] = %arr : !llzk.struct<@ComponentC2<[@T]>>, !llzk.array<2 x !llzk.tvar<@T>>
       return %self : !llzk.struct<@ComponentC2<[@T]>>
     }

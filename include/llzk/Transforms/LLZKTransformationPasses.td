@@ -68,7 +68,7 @@ def FlatteningPass : Pass<"llzk-flatten", "::mlir::ModuleOp"> {
     - Unroll loops
   }];
   let constructor = "llzk::createFlatteningPass()";
-  let dependentDialects = ["llzk::LLZKDialect"];
+  let dependentDialects = ["llzk::LLZKDialect", "llzk::array::ArrayDialect"];
 }
 
 def ArrayToScalarPass : Pass<"llzk-array-to-scalar", "::mlir::ModuleOp"> {
@@ -77,7 +77,7 @@ def ArrayToScalarPass : Pass<"llzk-array-to-scalar", "::mlir::ModuleOp"> {
     Replace known-shape arrays with the proper number of scalar values
   }];
   let constructor = "llzk::createArrayToScalarPass()";
-  let dependentDialects = ["llzk::LLZKDialect"];
+  let dependentDialects = ["llzk::LLZKDialect", "llzk::array::ArrayDialect"];
 }
 
 #endif // LLZK_TRANSFORMATION_PASSES_TD

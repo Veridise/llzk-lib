@@ -6,7 +6,7 @@ module attributes {veridise.lang = "llzk"} {
     func @compute(%arg0: !llzk.array<@Aff x !llzk.felt>) -> !llzk.struct<@Unpack<[@N, @P, @Aff]>> {
       %self = new_struct : !llzk.struct<@Unpack<[@N, @P, @Aff]>>
       %c0 = arith.constant 0 : index
-      %0 = readarr %arg0[%c0] : !llzk.array<@Aff x !llzk.felt>, !llzk.felt
+      %0 = array.read %arg0[%c0] : !llzk.array<@Aff x !llzk.felt>, !llzk.felt
       return %self : !llzk.struct<@Unpack<[@N, @P, @Aff]>>
     }
     func @constrain(%arg0: !llzk.struct<@Unpack<[@N, @P, @Aff]>>, %arg1: !llzk.array<@Aff x !llzk.felt>) {
@@ -20,7 +20,7 @@ module attributes {veridise.lang = "llzk"} {
       %2 = llzk.constfelt 42
       %3 = llzk.constfelt 42
 
-      %arr = new_array %0, %1, %2, %3 : !llzk.array<4 x !llzk.felt>
+      %arr = array.new %0, %1, %2, %3 : !llzk.array<4 x !llzk.felt>
       %a = arith.constant 8 : index
       %b = arith.constant 2 : index
       %s = llzk.call @Unpack::@compute(%arr) {()[%a, %b]}
@@ -37,7 +37,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.array<4 x !llzk.felt>) -> !llzk.struct<@Unpack_8_2_4> {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = new_struct : <@Unpack_8_2_4>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = readarr %[[V0]]{{\[}}%[[V1]]] : <4 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = array.read %[[V0]]{{\[}}%[[V1]]] : <4 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      return %[[V2]] : !llzk.struct<@Unpack_8_2_4>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Unpack_8_2_4>, %[[V5:[0-9a-zA-Z_\.]+]]: !llzk.array<4 x !llzk.felt>) {
@@ -48,7 +48,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: llzk.struct @User1 {
 // CHECK-NEXT:    func @compute() -> !llzk.struct<@User1> {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = constfelt 42
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_array %[[V0]], %[[V0]], %[[V0]], %[[V0]] : <4 x !llzk.felt>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = array.new %[[V0]], %[[V0]], %[[V0]], %[[V0]] : <4 x !llzk.felt>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = call @Unpack_8_2_4::@compute(%[[V1]]) : (!llzk.array<4 x !llzk.felt>) -> !llzk.struct<@Unpack_8_2_4>
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = new_struct : <@User1>
 // CHECK-NEXT:      return %[[V3]] : !llzk.struct<@User1>

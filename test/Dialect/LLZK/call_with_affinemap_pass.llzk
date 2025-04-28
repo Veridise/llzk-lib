@@ -41,11 +41,11 @@ module attributes {veridise.lang = "llzk"} {
       %n = arith.constant 2 : index
       // The array length is a function of 'i' and it contains non-homogeneous structs
       //    !ToFelt = !llzk.struct<@ToFelt<[#id]>>
-      %arr = llzk.new_array{(%n)} : !llzk.array<#IdxToLen x !ToFelt>
+      %arr = array.new{(%n)} : !llzk.array<#IdxToLen x !ToFelt>
       // Real code would probably have a loop here j= 0..n that assigns values to the array
       //
       // Creates a VarArray with length as a function of 'n' and non-homogeneous element type
-      %wsi = llzk.call @VarArray::@compute(%arr){(%n)} 
+      %wsi = llzk.call @VarArray::@compute(%arr){(%n)}
         : (!llzk.array<#IdxToLen x !ToFelt>) -> !llzk.struct<@VarArray<[#IdxToLen, !ToFelt]>>
       //
       return %self : !llzk.struct<@ComponentB>
@@ -88,8 +88,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    func @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@ComponentB> {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = new_array{(%[[V_2]])} : <#[[$M1]] x !llzk.struct<@ToFelt<[#[[$M0]]]>>>
-// CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = call @VarArray::@compute(%[[V_3]]) {(%[[V_2]])} 
+// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = array.new{(%[[V_2]])} : <#[[$M1]] x !llzk.struct<@ToFelt<[#[[$M0]]]>>>
+// CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = call @VarArray::@compute(%[[V_3]]) {(%[[V_2]])}
 // CHECK-SAME:        : (!llzk.array<#[[$M1]] x !llzk.struct<@ToFelt<[#[[$M0]]]>>>) -> !llzk.struct<@VarArray<[#[[$M1]], !llzk.struct<@ToFelt<[#[[$M0]]]>>]>>
 // CHECK-NEXT:      return %[[V_1]] : !llzk.struct<@ComponentB>
 // CHECK-NEXT:    }

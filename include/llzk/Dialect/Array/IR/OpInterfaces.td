@@ -17,7 +17,7 @@ def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
   let description = [{
     Common interface for operations that reference an array value.
   }];
-  let cppNamespace = "::llzk";
+  let cppNamespace = "::llzk::array";
 
   let methods = [
       // Requires implementors to have a '$arr_ref' argument.
@@ -41,7 +41,7 @@ def ArrayAccessOpInterface
   let description = [{
     Common interface for operations that read or write from an array.
   }];
-  let cppNamespace = "::llzk";
+  let cppNamespace = "::llzk::array";
 
   let methods = [
       // Requires implementors to have a '$indices' argument.

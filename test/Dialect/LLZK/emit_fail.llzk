@@ -371,7 +371,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
     %a = arith.constant 433 : index
     %b = arith.constant 535 : index
-    %z = llzk.new_array %a, %b: !llzk.array<2 x index>
+    %z = array.new %a, %b: !llzk.array<2 x index>
     // expected-error@+1 {{'llzk.emit_in' op only valid within a 'llzk.func' named "@constrain" within a 'llzk.struct' definition}}
     llzk.emit_in %z, %a : !llzk.array<2 x index>
 }

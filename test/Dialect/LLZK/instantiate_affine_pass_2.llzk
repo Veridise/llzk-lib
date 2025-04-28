@@ -3,7 +3,7 @@
 #id = affine_map<(i)->(i)>
 #IdxToLen = affine_map<(i)->(5*i+1)>
 !ToFelt = !llzk.struct<@ToFelt<[#id]>>
-// In this test, `#IdxToLen` is instantiated via a `new_array` op but there are no instantiations of
+// In this test, `#IdxToLen` is instantiated via a `array.new` op but there are no instantiations of
 // the `!llzk.struct<@ToFelt<[#id]>>` StructType (i.e. no calls to `@ToFelt::@compute()`) so no
 // flattened versions of `@ToFelt` or `@VarArray` are created (the latter has an instantiation but
 // only the first parameter is concrete due to the aforementioned and we do not do partial flattening).
@@ -45,11 +45,11 @@ module attributes {veridise.lang = "llzk"} {
       %n = arith.constant 2 : index
       // The array length is a function of 'i' and it contains non-homogeneous structs
       //    !ToFelt = !llzk.struct<@ToFelt<[#id]>>
-      %arr = llzk.new_array{(%n)} : !llzk.array<#IdxToLen x !ToFelt>
+      %arr = array.new{(%n)} : !llzk.array<#IdxToLen x !ToFelt>
       // Real code would probably have a loop here j= 0..n that assigns values to the array
       //
       // Creates a VarArray with length as a function of 'n' and non-homogeneous element type
-      %wsi = llzk.call @VarArray::@compute(%arr){(%n)} 
+      %wsi = llzk.call @VarArray::@compute(%arr){(%n)}
         : (!llzk.array<#IdxToLen x !ToFelt>) -> !llzk.struct<@VarArray<[#IdxToLen, !ToFelt]>>
       //
       return %self : !llzk.struct<@ComponentB>
@@ -90,7 +90,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: llzk.struct @ComponentB {
 // CHECK-NEXT:    func @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.struct<@ComponentB> {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = new_array  : <11 x !llzk.struct<@ToFelt<[#[[$M0]]]>>>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = array.new  : <11 x !llzk.struct<@ToFelt<[#[[$M0]]]>>>
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = call @VarArray::@compute(%[[V2]]) : (!llzk.array<11 x !llzk.struct<@ToFelt<[#[[$M0]]]>>>) -> !llzk.struct<@VarArray<[11, !llzk.struct<@ToFelt<[#[[$M0]]]>>]>>
 // CHECK-NEXT:      return %[[V1]] : !llzk.struct<@ComponentB>
 // CHECK-NEXT:    }

@@ -96,7 +96,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @ComponentB2<[@C]> {
-    llzk.field @f2 : !llzk.felt 
+    llzk.field @f2 : !llzk.felt
 
     func @compute(%0: !llzk.struct<@ComponentB1<[@C]>>) -> !llzk.struct<@ComponentB2<[@C]>> {
       %self = new_struct : !llzk.struct<@ComponentB2<[@C]>>
@@ -296,7 +296,7 @@ module attributes {veridise.lang = "llzk"} {
     %2 = arith.constant 22 : index
     %3 = arith.constant 33 : index
     %4 = arith.constant 44 : index
-    %r = llzk.new_array %1, %2, %3, %4 : !llzk.array<2,2 x index>
+    %r = array.new %1, %2, %3, %4 : !llzk.array<2,2 x index>
     return %r: !llzk.array<2,2 x index>
   }
 
@@ -333,7 +333,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T22:[0-9a-zA-Z_\.]+]] = arith.constant 22 : index
 //CHECK-NEXT:      %[[T33:[0-9a-zA-Z_\.]+]] = arith.constant 33 : index
 //CHECK-NEXT:      %[[T44:[0-9a-zA-Z_\.]+]] = arith.constant 44 : index
-//CHECK-NEXT:      %array = new_array %[[T11]], %[[T22]], %[[T33]], %[[T44]] : <2,2 x index>
+//CHECK-NEXT:      %array = array.new %[[T11]], %[[T22]], %[[T33]], %[[T44]] : <2,2 x index>
 //CHECK-NEXT:      return %array : !llzk.array<2,2 x index>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    llzk.struct @ComponentF2 {

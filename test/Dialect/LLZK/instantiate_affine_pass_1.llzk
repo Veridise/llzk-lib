@@ -41,7 +41,7 @@ module attributes {veridise.lang = "llzk"} {
     field @arrs: !llzk.array<@N x !HeterArr> {llzk.pub}
 
     func @compute() -> !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>> {
-      %arrs_temp = new_array : !llzk.array<@N x !HeterArr>
+      %arrs_temp = array.new : !llzk.array<@N x !HeterArr>
 
       %0 = arith.constant 0 : index
       %1 = arith.constant 1 : index
@@ -50,18 +50,18 @@ module attributes {veridise.lang = "llzk"} {
       scf.for %i = %1 to %n step %step { // range: [1,N)
         // The array length is a function of 'i' and it contains non-homogeneous structs
         //    !ToFelt = !llzk.struct<@ToFelt<[#Values]>>
-        %arr = llzk.new_array{(%i)} : !llzk.array<#IdxToLen x !ToFelt>
+        %arr = array.new{(%i)} : !llzk.array<#IdxToLen x !ToFelt>
         scf.for %j = %0 to %i step %step { // range: [0,i)
           %v = llzk.call @ToFelt::@compute(){(%i, %j)} : () -> !ToFelt
-          llzk.writearr %arr[%j] = %v : !llzk.array<#IdxToLen x !ToFelt>, !ToFelt
+          array.write %arr[%j] = %v : !llzk.array<#IdxToLen x !ToFelt>, !ToFelt
         }
         // Create a VarArray with length as a function of 'i' and non-homogeneous element type
         %va = llzk.call @VarArray::@compute(%arr){(%i)} : (!llzk.array<#IdxToLen x !ToFelt>) -> !HeterArr
-        llzk.writearr %arrs_temp[%i] = %va : !llzk.array<@N x !HeterArr>, !HeterArr
+        array.write %arrs_temp[%i] = %va : !llzk.array<@N x !HeterArr>, !HeterArr
       }
       //
       %self = new_struct : !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>>
-      writef %self[@arrs] = %arrs_temp 
+      writef %self[@arrs] = %arrs_temp
             : !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>>, !llzk.array<@N x !HeterArr>
       return %self : !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>>
     }
@@ -74,11 +74,11 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @Main {
     func @compute() -> !llzk.struct<@Main> {
       %self = llzk.new_struct : !llzk.struct<@Main>
-      %x = llzk.call @TestLoopWithAffineArrayStruct::@compute() 
+      %x = llzk.call @TestLoopWithAffineArrayStruct::@compute()
             : () -> !llzk.struct<@TestLoopWithAffineArrayStruct<[2]>>
       return %self: !llzk.struct<@Main>
     }
-  
+
     func @constrain(%self: !llzk.struct<@Main>) {
       return
     }
@@ -114,12 +114,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    func @compute() -> !llzk.struct<@TestLoopWithAffineArrayStruct_2> {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = new_array  : <2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = new_array  : <2 x !llzk.struct<@ToFelt_1>>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !llzk.struct<@ToFelt_1>>
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = call @ToFelt_1::@compute() : () -> !llzk.struct<@ToFelt_1>
-// CHECK-NEXT:      writearr %[[V3]]{{\[}}%[[V1]]] = %[[V4]] : <2 x !llzk.struct<@ToFelt_1>>, !llzk.struct<@ToFelt_1>
+// CHECK-NEXT:      array.write %[[V3]]{{\[}}%[[V1]]] = %[[V4]] : <2 x !llzk.struct<@ToFelt_1>>, !llzk.struct<@ToFelt_1>
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = call @"VarArray_2_!s<@ToFelt_1>"::@compute(%[[V3]]) : (!llzk.array<2 x !llzk.struct<@ToFelt_1>>) -> !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">
-// CHECK-NEXT:      writearr %[[V2]]{{\[}}%[[V0]]] = %[[V5]] : <2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>, !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:      array.write %[[V2]]{{\[}}%[[V0]]] = %[[V5]] : <2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>, !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = new_struct : <@TestLoopWithAffineArrayStruct_2>
 // CHECK-NEXT:      writef %[[V6]][@arrs] = %[[V2]] : <@TestLoopWithAffineArrayStruct_2>, !llzk.array<2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>
 // CHECK-NEXT:      return %[[V6]] : !llzk.struct<@TestLoopWithAffineArrayStruct_2>

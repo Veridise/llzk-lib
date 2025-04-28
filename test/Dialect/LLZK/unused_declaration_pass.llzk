@@ -252,7 +252,7 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@VarArray<[@N, @T]>>, %inp: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %first : !llzk.tvar<@T>) {
       %arr = readf %self[@valUsed] : !llzk.struct<@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
       %idx = arith.constant 0 : index
-      %elem = readarr %arr[%idx] : !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
+      %elem = array.read %arr[%idx] : !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
       %inner = readf %elem[@val] : !llzk.struct<@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
       emit_eq %first, %inner : !llzk.tvar<@T>
       return
@@ -299,7 +299,7 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT:    func @constrain(%[[VAL_3:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !llzk.tvar<@T>) {
 // STRICT-NEXT:      %[[VAL_6:.*]] = readf %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
 // STRICT-NEXT:      %[[VAL_7:.*]] = arith.constant 0 : index
-// STRICT-NEXT:      %[[VAL_8:.*]] = readarr %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
+// STRICT-NEXT:      %[[VAL_8:.*]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
 // STRICT-NEXT:      %[[VAL_9:.*]] = readf %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
 // STRICT-NEXT:      emit_eq %[[VAL_5]], %[[VAL_9]] : !llzk.tvar<@T>, !llzk.tvar<@T>
 // STRICT-NEXT:      return
@@ -343,7 +343,7 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:    func @constrain(%[[VAL_3:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !llzk.tvar<@T>) {
 // RELAX-NEXT:      %[[VAL_6:.*]] = readf %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
 // RELAX-NEXT:      %[[VAL_7:.*]] = arith.constant 0 : index
-// RELAX-NEXT:      %[[VAL_8:.*]] = readarr %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
+// RELAX-NEXT:      %[[VAL_8:.*]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
 // RELAX-NEXT:      %[[VAL_9:.*]] = readf %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
 // RELAX-NEXT:      emit_eq %[[VAL_5]], %[[VAL_9]] : !llzk.tvar<@T>, !llzk.tvar<@T>
 // RELAX-NEXT:      return

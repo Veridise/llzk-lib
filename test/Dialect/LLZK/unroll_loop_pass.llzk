@@ -8,7 +8,7 @@ module attributes {veridise.lang = "llzk"} {
       %step = arith.constant 1 : index
       %fval = llzk.constfelt 7
       scf.for %iv = %lb to %up step %step {
-        %elem = llzk.readarr %in[%iv] : !llzk.array<5 x !llzk.felt>, !llzk.felt
+        %elem = array.read %in[%iv] : !llzk.array<5 x !llzk.felt>, !llzk.felt
         llzk.emit_eq %elem, %fval : !llzk.felt
       }
       return
@@ -28,15 +28,15 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = constfelt 7
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V5]]] : <5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]]] : <5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V8]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V6]]] : <5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]]] : <5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V9]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V4]]] : <5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]]] : <5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V10]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V3]]] : <5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]]] : <5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V11]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V2]]] : <5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]]] : <5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V12]], %[[V7]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      return
 // CHECK-NEXT:    }
@@ -56,7 +56,7 @@ module attributes {veridise.lang = "llzk"} {
       %fval = llzk.constfelt 7
       scf.for %i = %lb to %up step %step {
         scf.for %j = %lb to %up step %step {
-          %elem = llzk.readarr %in[%i,%j] : !llzk.array<5,5 x !llzk.felt>, !llzk.felt
+          %elem = array.read %in[%i,%j] : !llzk.array<5,5 x !llzk.felt>, !llzk.felt
           llzk.emit_eq %elem, %fval : !llzk.felt
         }
       }
@@ -77,55 +77,55 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = constfelt 7
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V5]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V8]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V5]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V9]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V5]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V10]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V5]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V11]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V5]], %[[V2]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V2]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V12]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V6]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V13]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V6]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V14]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V6]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V15]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V6]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V16]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V6]], %[[V2]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V2]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V17]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V4]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V18]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V4]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V19]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V20:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V4]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V20:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V20]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V21:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V4]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V21:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V21]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V22:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V4]], %[[V2]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V22:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V2]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V22]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V23:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V3]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V23:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V23]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V24:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V3]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V24:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V24]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V25:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V3]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V25:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V25]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V26:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V3]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V26:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V26]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V27:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V3]], %[[V2]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V27:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V2]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V27]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V28:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V2]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V28:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V28]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V29:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V2]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V29:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V29]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V30:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V2]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V30:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V30]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V31:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V2]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V31:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V31]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V32:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V2]], %[[V2]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V32:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V2]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V32]], %[[V7]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      return
 // CHECK-NEXT:    }
@@ -146,7 +146,7 @@ module attributes {veridise.lang = "llzk"} {
       %fval = llzk.constfelt 7
       scf.for %i = %lb to %up step %step {
         scf.for %j = %lb to %i step %step {
-          %elem = llzk.readarr %in[%i,%j] : !llzk.array<5,5 x !llzk.felt>, !llzk.felt
+          %elem = array.read %in[%i,%j] : !llzk.array<5,5 x !llzk.felt>, !llzk.felt
           llzk.emit_eq %elem, %fval : !llzk.felt
         }
       }
@@ -167,25 +167,25 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = constfelt 7
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V6]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V8]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V4]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V9]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V4]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V10]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V3]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V11]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V3]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V12]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V3]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V13]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V2]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V5]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V14]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V2]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V6]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V15]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V2]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V4]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V16]], %[[V7]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = readarr %[[V1]]{{\[}}%[[V2]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
+// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V3]]] : <5,5 x !llzk.felt>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V17]], %[[V7]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      return
 // CHECK-NEXT:    }
@@ -196,7 +196,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-// Before the loop in Component02 can unroll, the struct must be instantiated. 
+// Before the loop in Component02 can unroll, the struct must be instantiated.
 !Signal = !llzk.struct<@Signal>
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
@@ -229,9 +229,9 @@ module attributes {veridise.lang = "llzk"} {
       %up = arith.constant 2 : index
       %step = arith.constant 1 : index
       scf.for %i = %lb to %up step %step {
-        %i0 = llzk.readarr %0[%i] : !llzk.array<2 x !Signal>, !Signal
+        %i0 = array.read %0[%i] : !llzk.array<2 x !Signal>, !Signal
         %i0val = llzk.readf %i0[@reg] : !Signal, !llzk.felt
-        %ib = llzk.readarr %b[%i] : !llzk.array<2 x !Signal>, !Signal
+        %ib = array.read %b[%i] : !llzk.array<2 x !Signal>, !Signal
         %ibval = llzk.readf %ib[@reg] : !Signal, !llzk.felt
         llzk.emit_eq %i0val, %ibval : !llzk.felt
       }
@@ -250,15 +250,15 @@ module attributes {veridise.lang = "llzk"} {
 
     func @compute(%in: !llzk.array<@N,2 x !Signal>) -> !llzk.struct<@Component02<[@N]>> {
       %self = new_struct : !llzk.struct<@Component02<[@N]>>
-      %a = new_array : !llzk.array<@N x !llzk.struct<@Component01>>
+      %a = array.new : !llzk.array<@N x !llzk.struct<@Component01>>
 
       %lb = arith.constant 0 : index
       %up = read_const @N : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        %p = llzk.extractarr %in[%iv] : !llzk.array<@N,2 x !Signal>
+        %p = array.extract %in[%iv] : !llzk.array<@N,2 x !Signal>
         %c = llzk.call @Component01::@compute(%p) : (!llzk.array<2 x !Signal>) -> !llzk.struct<@Component01>
-        llzk.writearr %a[%iv] = %c : !llzk.array<@N x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
+        array.write %a[%iv] = %c : !llzk.array<@N x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
       }
 
       writef %self[@g] = %a : !llzk.struct<@Component02<[@N]>>, !llzk.array<@N x !llzk.struct<@Component01>>
@@ -272,8 +272,8 @@ module attributes {veridise.lang = "llzk"} {
       %up = read_const @N : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        %p = llzk.extractarr %in[%iv] : !llzk.array<@N,2 x !Signal>
-        %c = llzk.readarr %a[%iv] : !llzk.array<@N x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
+        %p = array.extract %in[%iv] : !llzk.array<@N,2 x !Signal>
+        %c = array.read %a[%iv] : !llzk.array<@N x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
         llzk.call @Component01::@constrain(%c, %p) : (!llzk.struct<@Component01>, !llzk.array<2 x !Signal>) -> ()
       }
       return
@@ -282,14 +282,14 @@ module attributes {veridise.lang = "llzk"} {
 
   llzk.struct @Main {
     field @sub: !llzk.struct<@Component02<[3]>>
-  
+
     func @compute(%input: !llzk.array<3,2 x !Signal>) -> !llzk.struct<@Main> {
       %self = llzk.new_struct : !llzk.struct<@Main>
       %sub = llzk.call @Component02::@compute(%input) : (!llzk.array<3,2 x !Signal>) -> !llzk.struct<@Component02<[3]>>
       llzk.writef %self[@sub] = %sub : !llzk.struct<@Main>, !llzk.struct<@Component02<[3]>>
       return %self: !llzk.struct<@Main>
     }
-  
+
     func @constrain(%self: !llzk.struct<@Main>, %input: !llzk.array<3,2 x !Signal>) {
       %sub = llzk.readf %self[@sub] : !llzk.struct<@Main>, !llzk.struct<@Component02<[3]>>
       llzk.call @Component02::@constrain(%sub, %input) : (!llzk.struct<@Component02<[3]>>, !llzk.array<3,2 x !Signal>) -> ()
@@ -320,14 +320,14 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = readf %[[V2]][@f] : <@Component01>, !llzk.array<2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = readarr %[[V3]]{{\[}}%[[V5]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = array.read %[[V3]]{{\[}}%[[V5]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@reg] : <@Signal>, !llzk.felt
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = readarr %[[V6]]{{\[}}%[[V5]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V5]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = readf %[[V9]][@reg] : <@Signal>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V8]], %[[V10]] : !llzk.felt, !llzk.felt
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = readarr %[[V3]]{{\[}}%[[V4]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V3]]{{\[}}%[[V4]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = readf %[[V11]][@reg] : <@Signal>, !llzk.felt
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = readarr %[[V6]]{{\[}}%[[V4]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V4]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
 // CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = readf %[[V13]][@reg] : <@Signal>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V12]], %[[V14]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      return
@@ -341,16 +341,16 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = new_struct : <@Component02_3>
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = new_array  : <3 x !llzk.struct<@Component01>>
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = extractarr %[[V0]]{{\[}}%[[V3]]] : <3,2 x !llzk.struct<@Signal>>
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = array.new  : <3 x !llzk.struct<@Component01>>
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = array.extract %[[V0]]{{\[}}%[[V3]]] : <3,2 x !llzk.struct<@Signal>>
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = call @Component01::@compute(%[[V6]]) : (!llzk.array<2 x !llzk.struct<@Signal>>) -> !llzk.struct<@Component01>
-// CHECK-NEXT:      writearr %[[V5]]{{\[}}%[[V3]]] = %[[V7]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = extractarr %[[V0]]{{\[}}%[[V2]]] : <3,2 x !llzk.struct<@Signal>>
+// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V3]]] = %[[V7]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.extract %[[V0]]{{\[}}%[[V2]]] : <3,2 x !llzk.struct<@Signal>>
 // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = call @Component01::@compute(%[[V8]]) : (!llzk.array<2 x !llzk.struct<@Signal>>) -> !llzk.struct<@Component01>
-// CHECK-NEXT:      writearr %[[V5]]{{\[}}%[[V2]]] = %[[V9]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = extractarr %[[V0]]{{\[}}%[[V1]]] : <3,2 x !llzk.struct<@Signal>>
+// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V2]]] = %[[V9]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.extract %[[V0]]{{\[}}%[[V1]]] : <3,2 x !llzk.struct<@Signal>>
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = call @Component01::@compute(%[[V10]]) : (!llzk.array<2 x !llzk.struct<@Signal>>) -> !llzk.struct<@Component01>
-// CHECK-NEXT:      writearr %[[V5]]{{\[}}%[[V1]]] = %[[V11]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
+// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V1]]] = %[[V11]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
 // CHECK-NEXT:      writef %[[V4]][@g] = %[[V5]] : <@Component02_3>, !llzk.array<3 x !llzk.struct<@Component01>>
 // CHECK-NEXT:      return %[[V4]] : !llzk.struct<@Component02_3>
 // CHECK-NEXT:    }
@@ -359,14 +359,14 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = readf %[[V12]][@g] : <@Component02_3>, !llzk.array<3 x !llzk.struct<@Component01>>
-// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = extractarr %[[V13]]{{\[}}%[[V16]]] : <3,2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = readarr %[[V17]]{{\[}}%[[V16]]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
+// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = array.extract %[[V13]]{{\[}}%[[V16]]] : <3,2 x !llzk.struct<@Signal>>
+// CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V16]]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
 // CHECK-NEXT:      call @Component01::@constrain(%[[V19]], %[[V18]]) : (!llzk.struct<@Component01>, !llzk.array<2 x !llzk.struct<@Signal>>) -> ()
-// CHECK-NEXT:      %[[V20:[0-9a-zA-Z_\.]+]] = extractarr %[[V13]]{{\[}}%[[V15]]] : <3,2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      %[[V21:[0-9a-zA-Z_\.]+]] = readarr %[[V17]]{{\[}}%[[V15]]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
+// CHECK-NEXT:      %[[V20:[0-9a-zA-Z_\.]+]] = array.extract %[[V13]]{{\[}}%[[V15]]] : <3,2 x !llzk.struct<@Signal>>
+// CHECK-NEXT:      %[[V21:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V15]]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
 // CHECK-NEXT:      call @Component01::@constrain(%[[V21]], %[[V20]]) : (!llzk.struct<@Component01>, !llzk.array<2 x !llzk.struct<@Signal>>) -> ()
-// CHECK-NEXT:      %[[V22:[0-9a-zA-Z_\.]+]] = extractarr %[[V13]]{{\[}}%[[V14]]] : <3,2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      %[[V23:[0-9a-zA-Z_\.]+]] = readarr %[[V17]]{{\[}}%[[V14]]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
+// CHECK-NEXT:      %[[V22:[0-9a-zA-Z_\.]+]] = array.extract %[[V13]]{{\[}}%[[V14]]] : <3,2 x !llzk.struct<@Signal>>
+// CHECK-NEXT:      %[[V23:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V14]]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
 // CHECK-NEXT:      call @Component01::@constrain(%[[V23]], %[[V22]]) : (!llzk.struct<@Component01>, !llzk.array<2 x !llzk.struct<@Signal>>) -> ()
 // CHECK-NEXT:      return
 // CHECK-NEXT:    }

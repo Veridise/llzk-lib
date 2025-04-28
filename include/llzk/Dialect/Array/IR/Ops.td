@@ -12,7 +12,10 @@
 
 include "llzk/Dialect/Array/IR/Dialect.td"
 include "llzk/Dialect/Array/IR/OpInterfaces.td"
+include "llzk/Dialect/LLZK/IR/Types.td"
+include "llzk/Util/OpHelper.td"
 
+include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
@@ -100,7 +103,7 @@ class RangedArrayAccessOp<string mnemonic, bit isRead,
 
 def LLZK_CreateArrayOp
     : Array_Op<
-          "new_array",
+          "new",
           [Pure, AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
            DeclareOpInterfaceMethods<SymbolUserOpInterface>,
            DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
@@ -117,20 +120,20 @@ def LLZK_CreateArrayOp
 
     Examples:
     ```llzk
-    %0 = llzk.new_array %a, %b, %c : !llzk.array<3 x !llzk.felt>
+    %0 = array.new %a, %b, %c : !llzk.array<3 x !llzk.felt>
 
     // Create an array from the given values using the specified shape
-    %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2,2 x !llzk.felt>
+    %1 = array.new %a, %b, %c, %d : !llzk.array<2,2 x !llzk.felt>
 
     // Create an uninitialized array
-    %2 = llzk.new_array : !llzk.array<3,2 x !llzk.felt>
+    %2 = array.new : !llzk.array<3,2 x !llzk.felt>
     ```
 
     The values used to construct the array must have type that exactly matches
     the element type of the specified array type. This is true even if a `tvar`
     type is used. In other words, cannot mix `tvar<@X>` with `tvar<@Y>` or any
     concrete type. In such a scenario, first create an uninitialized array, as
-    shown in the examples above, and then use `writearr` to write each element
+    shown in the examples above, and then use `array.write` to write each element
     of the array.
 
     Implementation note: This restriction exists due to a combination of:
@@ -159,14 +162,14 @@ def LLZK_CreateArrayOp
     ```llzk
     // Create an uninitialized array with dimension size defined by AffineMap
     #IdxToLen = affine_map<(i) -> (5*i+1)>
-    %3 = llzk.new_array {(%i)} : !llzk.array<#IdxToLen x index>
+    %3 = array.new {(%i)} : !llzk.array<#IdxToLen x index>
 
     // Create an uninitialized array with multiple dimensions defined by
     //  AffineMap. The list of instantiation parameters are assigned to
     //  the AffineMap dimensions left-to-right.
     #M1 = affine_map<(i)[c] -> (c+i)>
     #M3 = affine_map<(m,n) -> (5*m+n)>
-    %4 = llzk.new_array{(%i)[%c], (%m,%n)} : !llzk.array<#M1,2,#M3 x i1>
+    %4 = array.new{(%i)[%c], (%m,%n)} : !llzk.array<#M1,2,#M3 x i1>
     ```
   }];
 
@@ -222,7 +225,7 @@ def LLZK_CreateArrayOp
 
 def LLZK_ReadArrayOp
     : ScalarArrayAccessOp<
-          "readarr",
+          "read",
           true, [ArrayTypeElemsUnifyWithResultCustomInfer<"arr_ref">]> {
   let summary = "read scalar from an array";
   let description = [{
@@ -231,9 +234,9 @@ def LLZK_ReadArrayOp
     Example of 1-dimensional array:
     ```llzk
     %i = arith.constant 0 : index
-    %0 = llzk.new_array %a, %b, %c : !llzk.array<3 x !llzk.felt>
+    %0 = array.new %a, %b, %c : !llzk.array<3 x !llzk.felt>
     // %1 is now equal to %a
-    %1 = llzk.readarr %0[%i] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+    %1 = array.read %0[%i] : !llzk.array<3 x !llzk.felt>, !llzk.felt
     ```
 
     Example of 3-dimensional array:
@@ -241,9 +244,9 @@ def LLZK_ReadArrayOp
     %i = arith.constant 0 : index
     %j = arith.constant 1 : index
     %k = arith.constant 4 : index
-    %0 = llzk.new_array ... : !llzk.array<3,10,15 x !llzk.felt>
+    %0 = array.new ... : !llzk.array<3,10,15 x !llzk.felt>
     // %1 is now equal to %a
-    %1 = llzk.readarr %0[%i, %j, %k] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.felt
+    %1 = array.read %0[%i, %j, %k] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.felt
     ```
   }];
 
@@ -259,7 +262,7 @@ def LLZK_ReadArrayOp
 
 def LLZK_WriteArrayOp
     : ScalarArrayAccessOp<
-          "writearr", false, [ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
+          "write", false, [ArrayElemTypeUnifyWith<"arr_ref", "rvalue">]> {
   let summary = "write scalar to an array";
   let description = [{
     This operation writes a value into an array at the specified position.
@@ -268,9 +271,9 @@ def LLZK_WriteArrayOp
     ```llzk
     %i = arith.constant 0 : index
     %0 = llzk.constfelt 42
-    %1 = llzk.new_array %a, %b, %c : !llzk.array<3 x !llzk.felt>
+    %1 = array.new %a, %b, %c : !llzk.array<3 x !llzk.felt>
     // The array now is [%0, %b, %c]
-    llzk.writearr %1[%i] = %0 : !llzk.array<3 x !llzk.felt>, !llzk.felt
+    array.write %1[%i] = %0 : !llzk.array<3 x !llzk.felt>, !llzk.felt
     ```
 
     Example of 2-dimensional array:
@@ -278,9 +281,9 @@ def LLZK_WriteArrayOp
     %i = arith.constant 0 : index
     %j = arith.constant 0 : index
     %0 = llzk.constfelt 42
-    %1 = llzk.new_array %a, %b, %c, %d : !llzk.array<2,2 x !llzk.felt>
+    %1 = array.new %a, %b, %c, %d : !llzk.array<2,2 x !llzk.felt>
     // The array now is [[%0, %b], [%c, %d]]
-    llzk.writearr %1[%i, %j] = %0 : !llzk.array<2,2 x !llzk.felt>, !llzk.felt
+    array.write %1[%i, %j] = %0 : !llzk.array<2,2 x !llzk.felt>, !llzk.felt
     ```
   }];
 
@@ -295,26 +298,26 @@ def LLZK_WriteArrayOp
 }
 
 def LLZK_ExtractArrayOp
-    : RangedArrayAccessOp<"extractarr",
+    : RangedArrayAccessOp<"extract",
                                true, [InferTypeOpAdaptorWithIsCompatible]> {
   let summary = "read subarray from a multi-dimensional array";
   let description = [{
     This operation takes an N-dimensional array and K indices and extracts the
     (N-K)-dimensional array by applying the given indices to the first `K`
-    dimensions of the array. Error if `K >= N`. Use `readarr` instead if `K == N`.
+    dimensions of the array. Error if `K >= N`. Use `array.read` instead if `K == N`.
 
     Extracting a 1-D array from 3-D array by selecting the index of 2 dimensions:
     ```llzk
     %i = arith.constant 1 : index
-    %0 = llzk.new_array ... : !llzk.array<3,10,15 x !llzk.felt>
-    %1 = llzk.extractarr %0[%i,%i] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.array<15 x !llzk.felt>
+    %0 = array.new ... : !llzk.array<3,10,15 x !llzk.felt>
+    %1 = array.extract %0[%i,%i] : !llzk.array<3,10,15 x !llzk.felt>, !llzk.array<15 x !llzk.felt>
     ```
 
     Extracting 1-D arrays for subcomponents:
     ```llzk
     scf.for %iv = %lb to %up step %step {
-      %p = llzk.extractarr %in[%iv] : !llzk.array<@N,2 x !llzk.felt>
-      %c = llzk.readarr %a[%iv] : !llzk.array<@N x !llzk.struct<@SubC>>, !llzk.struct<@SubC>
+      %p = array.extract %in[%iv] : !llzk.array<@N,2 x !llzk.felt>
+      %c = array.read %a[%iv] : !llzk.array<@N x !llzk.struct<@SubC>>, !llzk.struct<@SubC>
       llzk.call @SubC::@constrain(%c, %p) : (!llzk.struct<@SubC>, !llzk.array<2 x !llzk.felt>) -> ()
     }
     ```
@@ -328,26 +331,26 @@ def LLZK_ExtractArrayOp
   }];
 }
 
-def LLZK_InsertArrayOp : RangedArrayAccessOp<"insertarr", false> {
+def LLZK_InsertArrayOp : RangedArrayAccessOp<"insert", false> {
   let summary = "write subarray into a multi-dimensional array";
   let description = [{
     This operation takes an N-dimensional array, K indices, and an (N+K)-dimensional
     array and inserts the N-dimensional array into the (N+K)-dimensional array at the
     position specified by applying the given indices to the first `K` dimensions of
-    the (N+K)-dimensional array. Use `writearr` instead if `N == 0` (LLZK array type
+    the (N+K)-dimensional array. Use `array.write` instead if `N == 0` (LLZK array type
     must have at least 1 dimension so a 0-dimensional array cannot exist anyway).
 
     Inserting 1-D arrays into a 2-D array:
     ```llzk
-    %c = llzk.new_array : !llzk.array<2,3 x index>
+    %c = array.new : !llzk.array<2,3 x index>
     // Array %c is uninitialized [[?, ?, ?], [?, ?, ?]]
     %0 = arith.constant 0 : index
-    %a = llzk.new_array %r, %s, %t : !llzk.array<3 x index>
-    llzk.insertarr %c[%0] = %a : !llzk.array<2,3 x index>, !llzk.array<3 x index>
+    %a = array.new %r, %s, %t : !llzk.array<3 x index>
+    array.insert %c[%0] = %a : !llzk.array<2,3 x index>, !llzk.array<3 x index>
     // Array %c is now [[%r, %s, %t], [?, ?, ?]]
     %1 = arith.constant 1 : index
-    %b = llzk.new_array %x, %y, %z : !llzk.array<3 x index>
-    llzk.insertarr %c[%1] = %b : !llzk.array<2,3 x index>, !llzk.array<3 x index>
+    %b = array.new %x, %y, %z : !llzk.array<3 x index>
+    array.insert %c[%1] = %b : !llzk.array<2,3 x index>, !llzk.array<3 x index>
     // Array %c is now [[%r, %s, %t], [%x, %y, %z]]
     ```
   }];
@@ -363,7 +366,7 @@ def LLZK_InsertArrayOp : RangedArrayAccessOp<"insertarr", false> {
 }
 
 def LLZK_ArrayLengthOp
-    : Array_Op<"array_len", [Pure,
+    : Array_Op<"len", [Pure,
                             DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                             DeclareOpInterfaceMethods<ArrayRefOpInterface>]> {
   let summary = "return the length of an array";
@@ -372,11 +375,11 @@ def LLZK_ArrayLengthOp
 
     Example:
     ```llzk
-    %a = llzk.new_array : !llzk.array<2,3 x !llzk.felt>
+    %a = array.new : !llzk.array<2,3 x !llzk.felt>
     %0 = arith.constant 0 : index
-    %x = llzk.array_len %a, %0 : !llzk.array<2,3 x !llzk.felt> // result is 2
+    %x = array.len %a, %0 : !llzk.array<2,3 x !llzk.felt> // result is 2
     %1 = arith.constant 1 : index
-    %y = llzk.array_len %a, %1 : !llzk.array<2,3 x !llzk.felt> // result is 3
+    %y = array.len %a, %1 : !llzk.array<2,3 x !llzk.felt> // result is 3
     ```
   }];
 

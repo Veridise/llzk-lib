@@ -4,16 +4,16 @@ llzk.func @arr_constant_index() -> !llzk.array<3 x index> {
   %a = arith.constant 45 : index
   %b = arith.constant 214 : index
   %c = arith.constant 2 : index
-  %r = llzk.new_array %a, %b, %c : !llzk.array<3 x index>
-  llzk.writearr %r[%c] = %b : !llzk.array<3 x index>, index
+  %r = array.new %a, %b, %c : !llzk.array<3 x index>
+  array.write %r[%c] = %b : !llzk.array<3 x index>, index
   return %r: !llzk.array<3 x index>
 }
 //CHECK-LABEL:  llzk.func @arr_constant_index() -> !llzk.array<3 x index> {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 45 : index
 //CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 214 : index
 //CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = new_array %[[T1]], %[[T2]], %[[T3]] : <3 x index>
-//CHECK-NEXT:     writearr %[[T4]][%[[T3]]] = %[[T2]] : <3 x index>, index
+//CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = array.new %[[T1]], %[[T2]], %[[T3]] : <3 x index>
+//CHECK-NEXT:     array.write %[[T4]][%[[T3]]] = %[[T2]] : <3 x index>, index
 //CHECK-NEXT:     return %[[T4]] : !llzk.array<3 x index>
 //CHECK-NEXT:   }
 // -----
@@ -22,8 +22,8 @@ llzk.func @arr_mix_index(%a: index, %b: index) -> !llzk.array<4 x index> {
   %c = arith.constant 324 : index
   %d = arith.constant 999  : index
   %i = arith.constant 0 : index
-  %r = llzk.new_array %a, %b, %c, %d: !llzk.array<4 x index>
-  llzk.writearr %r[%i] = %b : !llzk.array<4 x index>, index
+  %r = array.new %a, %b, %c, %d: !llzk.array<4 x index>
+  array.write %r[%i] = %b : !llzk.array<4 x index>, index
   return %r: !llzk.array<4 x index>
 }
 //CHECK-LABEL:  llzk.func @arr_mix_index
@@ -31,8 +31,8 @@ llzk.func @arr_mix_index(%a: index, %b: index) -> !llzk.array<4 x index> {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 324 : index
 //CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 999 : index
 //CHECK-NEXT:     %[[I:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = new_array %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <4 x index>
-//CHECK-NEXT:     writearr %[[T3]][%[[I]]] = %[[A1]] : <4 x index>, index
+//CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <4 x index>
+//CHECK-NEXT:     array.write %[[T3]][%[[I]]] = %[[A1]] : <4 x index>, index
 //CHECK-NEXT:     return %[[T3]] : !llzk.array<4 x index>
 //CHECK-NEXT:   }
 // -----
@@ -45,8 +45,8 @@ llzk.func @arr_arr_mix_index(%a: index) -> !llzk.array<2,3 x index> {
   %d1 = arith.constant 547 : index
   %e1 = arith.constant 54795 : index
   %i = arith.constant 1 : index
-  %r = llzk.new_array %c, %d, %e, %c1, %d1, %e1: !llzk.array<2,3 x index>
-  llzk.writearr %r[%i, %i] = %a : !llzk.array<2,3 x index>, index
+  %r = array.new %c, %d, %e, %c1, %d1, %e1: !llzk.array<2,3 x index>
+  array.write %r[%i, %i] = %a : !llzk.array<2,3 x index>, index
   return %r: !llzk.array<2,3 x index>
 }
 //CHECK-LABEL:  llzk.func @arr_arr_mix_index
@@ -58,8 +58,8 @@ llzk.func @arr_arr_mix_index(%a: index) -> !llzk.array<2,3 x index> {
 //CHECK-NEXT:     %[[T6:[0-9a-zA-Z_\.]+]] = arith.constant 547 : index
 //CHECK-NEXT:     %[[T7:[0-9a-zA-Z_\.]+]] = arith.constant 54795 : index
 //CHECK-NEXT:     %[[I:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-//CHECK-NEXT:     %[[T9:[0-9a-zA-Z_\.]+]] = new_array %[[T1]], %[[T2]], %[[T3]], %[[T5]], %[[T6]], %[[T7]] : <2,3 x index>
-//CHECK-NEXT:     writearr %[[T9]][%[[I]], %[[I]]] = %[[A0]] : <2,3 x index>, index
+//CHECK-NEXT:     %[[T9:[0-9a-zA-Z_\.]+]] = array.new %[[T1]], %[[T2]], %[[T3]], %[[T5]], %[[T6]], %[[T7]] : <2,3 x index>
+//CHECK-NEXT:     array.write %[[T9]][%[[I]], %[[I]]] = %[[A0]] : <2,3 x index>, index
 //CHECK-NEXT:     return %[[T9]] : !llzk.array<2,3 x index>
 //CHECK-NEXT:   }
 

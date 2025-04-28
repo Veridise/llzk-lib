@@ -13,7 +13,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @NoConstraints ConstraintDependencyGraph { }
+// CHECK-LABEL: @NoConstraints ConstraintDependencyGraph { }
 
 // -----
 
@@ -43,7 +43,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @Adder ConstraintDependencyGraph {
+// CHECK-LABEL: @Adder ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
 // CHECK-NEXT: }
 
@@ -76,7 +76,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @Adder2 ConstraintDependencyGraph {
+// CHECK-LABEL: @Adder2 ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
 // CHECK-NEXT: }
 
@@ -96,7 +96,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @ComponentB ConstraintDependencyGraph {
+// CHECK-LABEL: @ComponentB ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1, %arg2 }
 // CHECK-NEXT: }
 
@@ -134,7 +134,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @EnsureZero ConstraintDependencyGraph {
+// CHECK-LABEL: @EnsureZero ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1, <constfelt: 0> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @EnsureBothZero ConstraintDependencyGraph {
@@ -183,7 +183,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @Passthrough ConstraintDependencyGraph {
+// CHECK-LABEL: @Passthrough ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@out], %arg1 }
 // CHECK-NEXT: }
 // CHECK-NEXT: @EnsureIsZero ConstraintDependencyGraph {
@@ -198,7 +198,7 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@ArrayCheck>, %in: !llzk.array<5 x !llzk.felt>) {
       %fval = llzk.constfelt 7
       %idx = arith.constant 3 : index
-      %elem = llzk.readarr %in[%idx] : !llzk.array<5 x !llzk.felt>, !llzk.felt
+      %elem = array.read %in[%idx] : !llzk.array<5 x !llzk.felt>, !llzk.felt
       llzk.emit_eq %elem, %fval : !llzk.felt
       return
     }
@@ -210,7 +210,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @ArrayCheck ConstraintDependencyGraph {
+// CHECK-LABEL: @ArrayCheck ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1[3], <constfelt: 7> }
 // CHECK-NEXT: }
 
@@ -224,7 +224,7 @@ module attributes {veridise.lang = "llzk"} {
       %step = arith.constant 1 : index
       %fval = llzk.constfelt 7
       scf.for %iv = %lb to %up step %step {
-        %elem = llzk.readarr %in[%iv] : !llzk.array<5 x !llzk.felt>, !llzk.felt
+        %elem = array.read %in[%iv] : !llzk.array<5 x !llzk.felt>, !llzk.felt
         llzk.emit_eq %elem, %fval : !llzk.felt
       }
       return
@@ -237,7 +237,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @ArrayForCheck ConstraintDependencyGraph {
+// CHECK-LABEL: @ArrayForCheck ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1[0:5], <constfelt: 7> }
 // CHECK-NEXT: }
 
@@ -260,7 +260,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @ConstConstraints ConstraintDependencyGraph {
+// CHECK-LABEL: @ConstConstraints ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1, <constfelt: 1> },
 // CHECK-NEXT:     { %arg2, <constfelt: 1> }
 // CHECK-NEXT: }
@@ -280,8 +280,8 @@ module attributes {veridise.lang = "llzk"} {
       %const2 = read_const @B : !llzk.felt
       %0 = arith.constant 0 : index
       %2 = arith.constant 2 : index
-      %elem0 = readarr %arr[%0] : !llzk.array<3 x !llzk.felt>, !llzk.felt
-      %elem2 = readarr %arr[%2] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %elem0 = array.read %arr[%0] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %elem2 = array.read %arr[%2] : !llzk.array<3 x !llzk.felt>, !llzk.felt
       emit_eq %elem0, %const0 : !llzk.felt
       emit_eq %elem2, %const2 : !llzk.felt
       return
@@ -301,12 +301,12 @@ module attributes {veridise.lang = "llzk"} {
       // split into two arrays and constrain each
       %check0 = readf %self[@check0] : !llzk.struct<@MatrixConstrain>, !llzk.struct<@ArrayConstrain<[7, 11]>>
       %0 = arith.constant 0 : index
-      %arr0 = extractarr %mat[%0] : !llzk.array<2,3 x !llzk.felt>
+      %arr0 = array.extract %mat[%0] : !llzk.array<2,3 x !llzk.felt>
       call @ArrayConstrain::@constrain(%check0, %arr0) : (!llzk.struct<@ArrayConstrain<[7, 11]>>, !llzk.array<3 x !llzk.felt>) -> ()
 
       %check1 = readf %self[@check1] : !llzk.struct<@MatrixConstrain>, !llzk.struct<@ArrayConstrain<[13, 17]>>
       %1 = arith.constant 1 : index
-      %arr1 = extractarr %mat[%1] : !llzk.array<2,3 x !llzk.felt>
+      %arr1 = array.extract %mat[%1] : !llzk.array<2,3 x !llzk.felt>
       call @ArrayConstrain::@constrain(%check1, %arr1) : (!llzk.struct<@ArrayConstrain<[13, 17]>>, !llzk.array<3 x !llzk.felt>) -> ()
       return
     }
@@ -315,7 +315,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // COM: Propagation of template constants is not currently implemented and
 // COM: should likely be relegated to a specialized transformation pass.
-// CHECK: @ArrayConstrain ConstraintDependencyGraph {
+// CHECK-LABEL: @ArrayConstrain ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1[0], @ArrayConstrain<[@A]> },
 // CHECK-NEXT:     { %arg1[2], @ArrayConstrain<[@B]> }
 // CHECK-NEXT: }
@@ -339,7 +339,7 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@ArrayConstrain>, %arr: !llzk.array<3 x !llzk.felt>) {
       %const = constfelt 7
       %1 = arith.constant 1 : index
-      %elem = readarr %arr[%1] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %elem = array.read %arr[%1] : !llzk.array<3 x !llzk.felt>, !llzk.felt
       emit_eq %elem, %const : !llzk.felt
       return
     }
@@ -368,11 +368,11 @@ module attributes {veridise.lang = "llzk"} {
       %e = readf %self[@e] : !llzk.struct<@MatrixConstrain>, !llzk.felt
       %f = readf %self[@f] : !llzk.struct<@MatrixConstrain>, !llzk.felt
 
-      %mat = new_array %a, %b, %c, %d, %e, %f : !llzk.array<2,3 x !llzk.felt>
+      %mat = array.new %a, %b, %c, %d, %e, %f : !llzk.array<2,3 x !llzk.felt>
 
       %check = readf %self[@check] : !llzk.struct<@MatrixConstrain>, !llzk.struct<@ArrayConstrain>
       %0 = arith.constant 0 : index
-      %arr = extractarr %mat[%0] : !llzk.array<2,3 x !llzk.felt>
+      %arr = array.extract %mat[%0] : !llzk.array<2,3 x !llzk.felt>
       call @ArrayConstrain::@constrain(%check, %arr) : (!llzk.struct<@ArrayConstrain>, !llzk.array<3 x !llzk.felt>) -> ()
 
       return
@@ -380,7 +380,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK: @ArrayConstrain ConstraintDependencyGraph {
+// CHECK-LABEL: @ArrayConstrain ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1[1], <constfelt: 7> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @MatrixConstrain ConstraintDependencyGraph {
@@ -399,14 +399,14 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@UnknownArrayConstrain<[@N]>>, %arr: !llzk.array<@N x !llzk.felt>) {
       %const = constfelt 7
       %1 = arith.constant 1 : index
-      %elem = readarr %arr[%1] : !llzk.array<@N x !llzk.felt>, !llzk.felt
+      %elem = array.read %arr[%1] : !llzk.array<@N x !llzk.felt>, !llzk.felt
       emit_eq %elem, %const : !llzk.felt
       return
     }
   }
 }
 
-// CHECK: @UnknownArrayConstrain ConstraintDependencyGraph {
+// CHECK-LABEL: @UnknownArrayConstrain ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1[1], <constfelt: 7> }
 // CHECK-NEXT: }
 
@@ -422,7 +422,7 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@UnknownArrayConstrain<[@N]>>, %arr: !llzk.array<@N x !llzk.felt>) {
       %const = constfelt 7
       %1 = arith.constant 1 : index
-      %elem = readarr %arr[%1] : !llzk.array<@N x !llzk.felt>, !llzk.felt
+      %elem = array.read %arr[%1] : !llzk.array<@N x !llzk.felt>, !llzk.felt
       emit_eq %elem, %const : !llzk.felt
       return
     }
@@ -439,14 +439,14 @@ module attributes {veridise.lang = "llzk"} {
     func @constrain(%self: !llzk.struct<@UnknownMatrixConstrain<[@M, @N]>>, %mat: !llzk.array<@M,@N x !llzk.felt>) {
       %check = readf %self[@check] : !llzk.struct<@UnknownMatrixConstrain<[@M, @N]>>, !llzk.struct<@UnknownArrayConstrain<[@N]>>
       %0 = arith.constant 0 : index
-      %arr = extractarr %mat[%0] : !llzk.array<@M,@N x !llzk.felt>
+      %arr = array.extract %mat[%0] : !llzk.array<@M,@N x !llzk.felt>
       call @UnknownArrayConstrain::@constrain(%check, %arr) : (!llzk.struct<@UnknownArrayConstrain<[@N]>>, !llzk.array<@N x !llzk.felt>) -> ()
       return
     }
   }
 }
 
-// CHECK: @UnknownArrayConstrain ConstraintDependencyGraph {
+// CHECK-LABEL: @UnknownArrayConstrain ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1[1], <constfelt: 7> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @UnknownMatrixConstrain ConstraintDependencyGraph {
@@ -459,7 +459,7 @@ module attributes {veridise.lang = "llzk"} {
   include.from "Dialect/LLZK/zir_example_0.llzk" as @zir
 }
 
-// CHECK: @zir::@risc0::@ValU32 ConstraintDependencyGraph { }
+// CHECK-LABEL: @zir::@risc0::@ValU32 ConstraintDependencyGraph { }
 // CHECK-NEXT: @zir::@risc0::@Reg ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@reg], %arg1 }
 // CHECK-NEXT: }
@@ -475,7 +475,7 @@ module attributes {veridise.lang = "llzk"} {
   include.from "Dialect/LLZK/zir_example_1.llzk" as @zir
 }
 
-// CHECK: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
+// CHECK-LABEL: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
 // CHECK-NEXT: @zir::@std::@risc0::@Reg ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@reg], %arg1 }
 // CHECK-NEXT: }
@@ -498,7 +498,7 @@ module attributes {veridise.lang = "llzk"} {
   include.from "Dialect/LLZK/zir_example_2.llzk" as @zir
 }
 
-// CHECK: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
+// CHECK-LABEL: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
 // CHECK-NEXT: @zir::@std::@risc0::@Reg ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@reg], %arg1 }
 // CHECK-NEXT: }
@@ -549,7 +549,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // COM: @zir::@B is empty since it uses an uninitialized array
-// CHECK: @zir::@Head ConstraintDependencyGraph {
+// CHECK-LABEL: @zir::@Head ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@$super], %arg1[0] }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@A ConstraintDependencyGraph {

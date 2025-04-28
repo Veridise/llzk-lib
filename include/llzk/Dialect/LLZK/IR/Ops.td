@@ -705,7 +705,7 @@ def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
     Example:
     ```llzk
     %0 = llzk.toindex %a
-    %1 = llzk.readarr %b[%0]
+    %1 = array.read %b[%0]
     ```
   }];
 

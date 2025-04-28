@@ -30,7 +30,7 @@ def ConstraintDependencyGraphPrinterPass
   let summary = "Print constraint dependency graph for all LLZK structs.";
   let constructor =
       "llzk::createConstraintDependencyGraphPrinterPass(llvm::errs())";
-  let dependentDialects = ["llzk::LLZKDialect"];
+  let dependentDialects = ["llzk::LLZKDialect", "llzk::array::ArrayDialect", "llzk::include::IncludeDialect"];
 }
 
 def IntervalAnalysisPrinterPass

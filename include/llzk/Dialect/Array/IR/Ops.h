@@ -10,6 +10,8 @@
 #pragma once
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Util/OpHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Location.h>

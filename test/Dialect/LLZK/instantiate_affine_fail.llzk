@@ -45,12 +45,12 @@ module attributes {veridise.lang = "llzk"} {
 
     func @compute() -> !llzk.struct<@Component02<[@A,@B]>> {
       %self = new_struct : !llzk.struct<@Component02<[@A,@B]>>
-      %0 = new_array : !llzk.array<@A x !llzk.felt>
+      %0 = array.new : !llzk.array<@A x !llzk.felt>
       // expected-note@+2 {{type written here is '!llzk.array<@A x !llzk.felt>'}}
       // expected-note@+1 {{type written here is '!llzk.array<2 x !llzk.felt>'}}
       writef %self[@f] = %0 : !llzk.struct<@Component02<[@A,@B]>>, !llzk.array<@A x !llzk.felt>
       %n = arith.constant 5 : index
-      %1 = new_array : !llzk.array<@B x !llzk.felt>
+      %1 = array.new : !llzk.array<@B x !llzk.felt>
       // expected-note@+2 {{type written here is '!llzk.array<@B x !llzk.felt>'}}
       // expected-note@+1 {{type written here is '!llzk.array<3 x !llzk.felt>'}}
       writef %self[@f] = %1 : !llzk.struct<@Component02<[@A,@B]>>, !llzk.array<@B x !llzk.felt>

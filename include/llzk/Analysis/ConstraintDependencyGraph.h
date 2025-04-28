@@ -67,7 +67,7 @@ protected:
       const ConstrainRefLattice &before, ConstrainRefLattice *after
   );
 
-  // Perform the update for either a readarr op or an extractarr op, which
+  // Perform the update for either a array.read op or an array.extract op, which
   // operate very similarly: index into the first operand using a variable number
   // of provided indices.
   void arraySubdivisionOpUpdate(

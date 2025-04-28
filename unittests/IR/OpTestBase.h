@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Builders.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
@@ -25,7 +26,9 @@ protected:
   mlir::Location loc;
   mlir::OwningOpRef<mlir::ModuleOp> mod;
 
-  OpTests() : ctx(), loc(llzk::getUnknownLoc(&ctx)), mod() { ctx.loadDialect<llzk::LLZKDialect>(); }
+  OpTests() : ctx(), loc(llzk::getUnknownLoc(&ctx)), mod() {
+    ctx.loadDialect<llzk::LLZKDialect, llzk::array::ArrayDialect>();
+  }
 
   void SetUp() override {
     // Create a new module for each test

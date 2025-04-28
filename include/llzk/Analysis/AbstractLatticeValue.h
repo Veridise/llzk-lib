@@ -38,9 +38,9 @@ concept ScalarLatticeValue = requires(Val lhs, Val rhs, mlir::raw_ostream &os) {
 };
 
 template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeValue {
-  /// For arrays of values created by, e.g., the LLZK new_array op. A recursive
+  /// For arrays of values created by, e.g., the LLZK array.new op. A recursive
   /// definition allows arrays to be constructed of other existing values, which is
-  /// how the `new_array` operator works.
+  /// how the `array.new` operator works.
   /// - Unique pointers are used as each value must be self contained for the
   /// sake of consistent translations. Copies are explicit.
   /// - This array is flattened, with the dimensions stored in another structure.

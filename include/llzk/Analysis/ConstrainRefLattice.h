@@ -26,9 +26,9 @@ class ConstrainRefLatticeValue
   using Base = dataflow::AbstractLatticeValue<ConstrainRefLatticeValue, ConstrainRefSet>;
   /// For scalar values.
   using ScalarTy = ConstrainRefSet;
-  /// For arrays of values created by, e.g., the LLZK new_array op. A recursive
+  /// For arrays of values created by, e.g., the LLZK array.new op. A recursive
   /// definition allows arrays to be constructed of other existing values, which is
-  /// how the `new_array` operator works.
+  /// how the `array.new` operator works.
   /// - Unique pointers are used as each value must be self contained for the
   /// sake of consistent translations. Copies are explicit.
   /// - This array is flattened, with the dimensions stored in another structure.
@@ -67,7 +67,7 @@ public:
   std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
   referenceField(SymbolLookupResult<FieldDefOp> fieldRef) const;
 
-  /// @brief Perform an extractarr or readarr operation, depending on how many indices
+  /// @brief Perform an array.extract or array.read operation, depending on how many indices
   /// are provided.
   std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
   extract(const std::vector<ConstrainRefIndex> &indices) const;

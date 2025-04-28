@@ -9,6 +9,10 @@
 
 #pragma once
 
+#include "llzk/Dialect/Array/IR/Dialect.h"
+#include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
+
 #include <mlir/Pass/Pass.h>
 
 #include <llvm/ADT/SCCIterator.h>

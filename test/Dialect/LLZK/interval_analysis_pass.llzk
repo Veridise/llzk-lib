@@ -147,9 +147,9 @@ module attributes {veridise.lang = "llzk"} {
       %i0 = arith.constant 0 : index
       %i1 = arith.constant 1 : index
       %i2 = arith.constant 2 : index
-      %a = readarr %arr[%i0] : !llzk.array<3 x !llzk.felt>, !llzk.felt
-      %b = readarr %arr[%i1] : !llzk.array<3 x !llzk.felt>, !llzk.felt
-      %c = readarr %arr[%i2] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %a = array.read %arr[%i0] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %b = array.read %arr[%i1] : !llzk.array<3 x !llzk.felt>, !llzk.felt
+      %c = array.read %arr[%i2] : !llzk.array<3 x !llzk.felt>, !llzk.felt
       %cmp1 = cmp ge(%a, %5)
       assert %cmp1
       %cmp2 = cmp le(%a, %7)
