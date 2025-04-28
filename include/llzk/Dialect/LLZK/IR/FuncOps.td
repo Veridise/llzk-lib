@@ -26,10 +26,10 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 include "llzk/Dialect/LLZK/IR/OpsBase.td"
 
 //===----------------------------------------------------------------------===//
-// FuncOp
+// FuncDefOp
 //===----------------------------------------------------------------------===//
 
-def FuncOp
+def FuncDefOp
     : LLZK_Op<"func", [ParentOneOf<["::mlir::ModuleOp", "::llzk::StructDefOp"]>,
                        DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                        AffineScope, AutomaticAllocationScope,
@@ -100,11 +100,11 @@ def FuncOp
       CArg<"::llvm::ArrayRef<::mlir::NamedAttribute>", "{}">:$attrs,
       CArg<"::llvm::ArrayRef<::mlir::DictionaryAttr>", "{}">:$argAttrs)>];
   let extraClassDeclaration = [{
-    static FuncOp create(::mlir::Location location, ::llvm::StringRef name, ::mlir::FunctionType type,
+    static FuncDefOp create(::mlir::Location location, ::llvm::StringRef name, ::mlir::FunctionType type,
                          ::llvm::ArrayRef<::mlir::NamedAttribute> attrs = {});
-    static FuncOp create(::mlir::Location location, ::llvm::StringRef name, ::mlir::FunctionType type,
+    static FuncDefOp create(::mlir::Location location, ::llvm::StringRef name, ::mlir::FunctionType type,
                          ::mlir::Operation::dialect_attr_range attrs);
-    static FuncOp create(::mlir::Location location, ::llvm::StringRef name, ::mlir::FunctionType type,
+    static FuncDefOp create(::mlir::Location location, ::llvm::StringRef name, ::mlir::FunctionType type,
                          ::llvm::ArrayRef<::mlir::NamedAttribute> attrs,
                          ::llvm::ArrayRef<::mlir::DictionaryAttr> argAttrs);
 
@@ -115,14 +115,14 @@ def FuncOp
     /// included in the new function. Replaces references to cloned sub-values
     /// with the corresponding value that is copied, and adds those mappings to
     /// the mapper.
-    FuncOp clone(::mlir::IRMapping &mapper);
-    FuncOp clone();
+    FuncDefOp clone(::mlir::IRMapping &mapper);
+    FuncDefOp clone();
 
     /// Clone the internal blocks and attributes from this function into dest.
     /// Any cloned blocks are appended to the back of dest. This function
     /// asserts that the attributes of the current function and dest are
     /// compatible.
-    void cloneInto(FuncOp dest, ::mlir::IRMapping &mapper);
+    void cloneInto(FuncDefOp dest, ::mlir::IRMapping &mapper);
 
     /// Return `true` iff the argument at the given index has `pub` attribute.
     bool hasArgPublicAttr(unsigned index);
@@ -164,11 +164,11 @@ def FuncOp
     ::mlir::SymbolRefAttr getFullyQualifiedName();
 
     /// Return `true` iff the function name is `FUNC_NAME_COMPUTE` (if needed, a check
-    /// that this FuncOp is located within a StructDefOp must be done separately).
+    /// that this FuncDefOp is located within a StructDefOp must be done separately).
     inline bool nameIsCompute() { return FUNC_NAME_COMPUTE == getSymName(); }
 
     /// Return `true` iff the function name is `FUNC_NAME_CONSTRAIN` (if needed, a
-    /// check that this FuncOp is located within a StructDefOp must be done separately).
+    /// check that this FuncDefOp is located within a StructDefOp must be done separately).
     inline bool nameIsConstrain() { return FUNC_NAME_CONSTRAIN == getSymName(); }
 
     /// Return `true` iff the function is within a StructDefOp
@@ -193,8 +193,8 @@ def FuncOp
 //===----------------------------------------------------------------------===//
 
 def ReturnOp
-    : LLZK_Op<"return", [HasParent<"::llzk::FuncOp">, Pure, MemRefsNormalizable,
-                         ReturnLike, Terminator]> {
+    : LLZK_Op<"return", [HasParent<"::llzk::FuncDefOp">, Pure,
+                         MemRefsNormalizable, ReturnLike, Terminator]> {
   let summary = "Function return operation";
   let description = [{
     The `llzk.return` operation represents a return operation within a function.
@@ -276,7 +276,7 @@ def CallOp
       [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::SymbolRefAttr":$callee,
            CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
-       OpBuilder<(ins "::llzk::FuncOp":$callee,
+       OpBuilder<(ins "::llzk::FuncDefOp":$callee,
                      CArg<"::mlir::ValueRange", "{}">:$argOperands),
                  [{
                     build($_builder, $_state, callee.getFunctionType().getResults(),
@@ -296,7 +296,7 @@ def CallOp
                     build($_builder, $_state, resultTypes, callee, mapOperands,
                           $_builder.getDenseI32ArrayAttr(numDimsPerMap), argOperands);
                   }]>,
-       OpBuilder<(ins "::llzk::FuncOp":$callee,
+       OpBuilder<(ins "::llzk::FuncDefOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::mlir::DenseI32ArrayAttr":$numDimsPerMap,
                      CArg<"::mlir::ValueRange", "{}">:$argOperands),
@@ -304,7 +304,7 @@ def CallOp
                     build($_builder, $_state, callee.getFunctionType().getResults(),
                           ::mlir::SymbolRefAttr::get(callee), mapOperands, numDimsPerMap, argOperands);
                   }]>,
-       OpBuilder<(ins "::llzk::FuncOp":$callee,
+       OpBuilder<(ins "::llzk::FuncDefOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::llvm::ArrayRef<int32_t>":$numDimsPerMap,
                      CArg<"::mlir::ValueRange", "{}">:$argOperands),
@@ -343,10 +343,10 @@ def CallOp
 
   // NOTE: In CreateArrayOp, the `verify()` function is declared in order to
   // call `verifyAffineMapInstantiations()`. However, in this op that check must
-  // happen within `verifySymbolUses()` instead because the target FuncOp must
-  // be resolved to determine if a target function named "compute"/"constrain"
-  // is defined within a StructDefOp or within a ModuleOp because the
-  // verification differs for those cases.
+  // happen within `verifySymbolUses()` instead because the target FuncDefOp
+  // must be resolved to determine if a target function named
+  // "compute"/"constrain" is defined within a StructDefOp or within a ModuleOp
+  // because the verification differs for those cases.
 }
 
 #endif // LLZK_FUNC_OPS

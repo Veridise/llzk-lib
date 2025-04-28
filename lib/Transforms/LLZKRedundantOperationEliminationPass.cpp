@@ -160,7 +160,7 @@ class RedundantOperationEliminationPass
     }
   }
 
-  bool isPurposelessConstrainFunc(SymbolTableCollection &symbolTables, FuncOp fn) {
+  bool isPurposelessConstrainFunc(SymbolTableCollection &symbolTables, FuncDefOp fn) {
     if (!fn.isStructConstrain()) {
       return false;
     }
@@ -181,11 +181,11 @@ class RedundantOperationEliminationPass
   }
 
   bool callsPurposelessConstrainFunc(SymbolTableCollection &symbolTables, CallOp call) {
-    auto callLookup = resolveCallable<FuncOp>(symbolTables, call);
+    auto callLookup = resolveCallable<FuncDefOp>(symbolTables, call);
     return succeeded(callLookup) && isPurposelessConstrainFunc(symbolTables, callLookup->get());
   }
 
-  void runOnFunc(SymbolTableCollection &symbolTables, FuncOp fn) {
+  void runOnFunc(SymbolTableCollection &symbolTables, FuncDefOp fn) {
     TranslationMap map;
     SmallVector<Operation *> redundantOps;
     DenseSet<OperationComparator> uniqueOps;

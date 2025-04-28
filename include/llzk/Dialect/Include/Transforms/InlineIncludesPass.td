@@ -18,7 +18,8 @@ def InlineIncludesPass : Pass<"llzk-inline-includes", "::mlir::ModuleOp"> {
 
   // LLZKDialect is dependent as encountering an LLZK op during the inlining
   // may cause a crash otherwise, as dialects are loaded lazily.
-  let dependentDialects = ["llzk::include::IncludeDialect", "llzk::LLZKDialect"];
+  let dependentDialects = ["llzk::include::IncludeDialect",
+                           "llzk::LLZKDialect"];
 }
 
 #endif // LLZK_INCLUDE_INLINE_INCLUDES_PASS_TD

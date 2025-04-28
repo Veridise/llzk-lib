@@ -55,9 +55,9 @@ FailureOr<StructDefOp> verifyInStruct(Operation *op) {
 }
 
 bool isInStructFunctionNamed(Operation *op, char const *funcName) {
-  FailureOr<FuncOp> parentFuncOpt = getParentOfType<FuncOp>(op);
+  FailureOr<FuncDefOp> parentFuncOpt = getParentOfType<FuncDefOp>(op);
   if (succeeded(parentFuncOpt)) {
-    FuncOp parentFunc = parentFuncOpt.value();
+    FuncDefOp parentFunc = parentFuncOpt.value();
     if (isInStruct(parentFunc.getOperation())) {
       if (parentFunc.getSymName().compare(funcName) == 0) {
         return true;
@@ -364,7 +364,7 @@ LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 namespace {
 
-inline LogicalResult checkMainFuncParamType(Type pType, FuncOp inFunc, bool appendSelf) {
+inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool appendSelf) {
   if (isSignalType(pType)) {
     return success();
   } else if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
@@ -390,8 +390,8 @@ inline LogicalResult checkMainFuncParamType(Type pType, FuncOp inFunc, bool appe
 
 LogicalResult StructDefOp::verifyRegions() {
   assert(getBody().hasOneBlock()); // per ODS, SizedRegion<1>
-  std::optional<FuncOp> foundCompute = std::nullopt;
-  std::optional<FuncOp> foundConstrain = std::nullopt;
+  std::optional<FuncDefOp> foundCompute = std::nullopt;
+  std::optional<FuncDefOp> foundConstrain = std::nullopt;
   {
     // Verify the following:
     // 1. The only ops within the body are field and function definitions
@@ -399,7 +399,7 @@ LogicalResult StructDefOp::verifyRegions() {
     OwningEmitErrorFn emitError = getEmitOpErrFn(this);
     for (Operation &op : getBody().front()) {
       if (!llvm::isa<FieldDefOp>(op)) {
-        if (FuncOp funcDef = llvm::dyn_cast<FuncOp>(op)) {
+        if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
           if (funcDef.nameIsCompute()) {
             if (foundCompute) {
               return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
@@ -421,7 +421,7 @@ LogicalResult StructDefOp::verifyRegions() {
         } else {
           return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
                                   << "'; only '" << FieldDefOp::getOperationName() << "'"
-                                  << " and '" << FuncOp::getOperationName()
+                                  << " and '" << FuncDefOp::getOperationName()
                                   << "' operations are permitted";
         }
       }
@@ -500,12 +500,12 @@ std::vector<FieldDefOp> StructDefOp::getFieldDefs() {
   return res;
 }
 
-FuncOp StructDefOp::getComputeFuncOp() {
-  return llvm::dyn_cast_if_present<FuncOp>(lookupSymbol(FUNC_NAME_COMPUTE));
+FuncDefOp StructDefOp::getComputeFuncOp() {
+  return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_COMPUTE));
 }
 
-FuncOp StructDefOp::getConstrainFuncOp() {
-  return llvm::dyn_cast_if_present<FuncOp>(lookupSymbol(FUNC_NAME_CONSTRAIN));
+FuncDefOp StructDefOp::getConstrainFuncOp() {
+  return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_CONSTRAIN));
 }
 
 bool StructDefOp::isMainComponent() { return COMPONENT_NAME_MAIN == this->getSymName(); }
@@ -1313,7 +1313,7 @@ OpFoldResult LitStringOp::fold(LitStringOp::FoldAdaptor) { return getValueAttr()
 //===------------------------------------------------------------------===//
 
 LogicalResult FeltToIndexOp::verify() {
-  if (auto parentOr = getParentOfType<FuncOp>(*this);
+  if (auto parentOr = getParentOfType<FuncDefOp>(*this);
       succeeded(parentOr) && parentOr->isStructConstrain()) {
     // Traverse the def-use chain to see if this operand, which is a felt, ever
     // derives from a Signal struct.

@@ -104,7 +104,7 @@ TEST_F(ModuleBuilderTests, testConstruction) {
   for (auto s : builder.getRootModule().getOps<llzk::StructDefOp>()) {
     numStructs++;
     size_t numFn = 0;
-    for (auto fn : s.getOps<llzk::FuncOp>()) {
+    for (auto fn : s.getOps<llzk::FuncDefOp>()) {
       numFn++;
       ASSERT_EQ(fn.getName(), llzk::FUNC_NAME_CONSTRAIN);
     }

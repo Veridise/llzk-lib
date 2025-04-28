@@ -92,7 +92,7 @@ void AbstractDenseForwardDataFlowAnalysis::visitCallOperation(
 ) {
   // Allow for customizing the behavior of calls to external symbols, including
   // when the analysis is explicitly marked as non-interprocedural.
-  auto callable = resolveCallable<FuncOp>(tables, call);
+  auto callable = resolveCallable<FuncDefOp>(tables, call);
   if (!getSolverConfig().isInterprocedural() ||
       (mlir::succeeded(callable) && !callable->get().getCallableRegion())) {
     return visitCallControlFlowTransfer(call, CallControlFlowAction::ExternalCallee, before, after);
@@ -167,7 +167,7 @@ void AbstractDenseForwardDataFlowAnalysis::processOperation(Operation *op) {
 }
 
 /// LLZK: Removing use of PredecessorState because it does not work with LLZK's
-/// CallOp and FuncOp definitions.
+/// CallOp and FuncDefOp definitions.
 void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
   // If the block is not executable, bail out.
   if (!getOrCreateFor<Executable>(block, block)->isLive()) {
@@ -192,7 +192,7 @@ void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
 
       SmallVector<Operation *> callsites;
       moduleOpRes->walk([this, &callable, &callsites](CallOp call) mutable {
-        auto calledFnRes = resolveCallable<FuncOp>(tables, call);
+        auto calledFnRes = resolveCallable<FuncDefOp>(tables, call);
         if (mlir::succeeded(calledFnRes) &&
             calledFnRes->get().getCallableRegion() == callable.getCallableRegion()) {
           callsites.push_back(call);

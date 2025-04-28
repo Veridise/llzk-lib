@@ -15,8 +15,7 @@ include "mlir/IR/DialectBase.td"
 
 def IncludeDialect : Dialect {
   let name = "include";
-  let summary =
-      "LLZK include operations.";
+  let summary = "LLZK include operations.";
 
   let cppNamespace = "::llzk::include";
 

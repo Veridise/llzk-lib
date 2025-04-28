@@ -325,15 +325,15 @@ class RedundantReadAndWriteEliminationPass
   /// @brief Run the pass over the LLZK module. Currently the pass is intraprocedural,
   /// so this defers the optimization to `runOnFunc` for each function in the module.
   /// @note Due to MLIR limitations, you need to write passes as passes over ModuleOps,
-  /// as setting them up as llzk::FuncOp passes doesn't properly search FuncOps and
+  /// as setting them up as llzk::FuncDefOp passes doesn't properly search FuncOps and
   /// ultimately the pass does not run.
   void runOnOperation() override {
-    getOperation().walk([&](FuncOp fn) { runOnFunc(fn); });
+    getOperation().walk([&](FuncDefOp fn) { runOnFunc(fn); });
   }
 
   /// @brief Remove redundant reads and writes from the given function operation.
   /// @param fn
-  void runOnFunc(FuncOp fn) {
+  void runOnFunc(FuncDefOp fn) {
     // Nothing to do for body-less functions.
     if (fn.getCallableRegion() == nullptr) {
       return;

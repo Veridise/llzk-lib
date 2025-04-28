@@ -706,7 +706,7 @@ private:
   bool isExtractArrayOp(mlir::Operation *op) const { return mlir::isa<ExtractArrayOp>(op); }
 
   bool isDefinitionOp(mlir::Operation *op) const {
-    return mlir::isa<StructDefOp, FuncOp, FieldDefOp, GlobalDefOp, mlir::ModuleOp>(op);
+    return mlir::isa<StructDefOp, FuncDefOp, FieldDefOp, GlobalDefOp, mlir::ModuleOp>(op);
   }
 
   bool isCallOp(mlir::Operation *op) const { return mlir::isa<CallOp>(op); }

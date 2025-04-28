@@ -105,7 +105,7 @@ FailureOr<SymbolRefAttr> getPathFromRoot(StructDefOp &to, RootSelector whichRoot
   return buildPathFromRoot(to, to.getOperation(), std::move(path), whichRoot);
 }
 
-FailureOr<SymbolRefAttr> getPathFromRoot(FuncOp &to, RootSelector whichRoot) {
+FailureOr<SymbolRefAttr> getPathFromRoot(FuncDefOp &to, RootSelector whichRoot) {
   std::vector<FlatSymbolRefAttr> path;
   // Add the name of the function (its name is not optional)
   path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
@@ -119,8 +119,8 @@ FailureOr<SymbolRefAttr> getPathFromRoot(FuncOp &to, RootSelector whichRoot) {
     return buildPathFromRoot(parentMod.getOperation(), current, std::move(path), whichRoot);
   } else {
     // This is an error in the compiler itself. In current implementation,
-    //  FuncOp must have either StructDefOp or ModuleOp as its parent.
-    return current->emitError().append("orphaned '", FuncOp::getOperationName(), "'");
+    //  FuncDefOp must have either StructDefOp or ModuleOp as its parent.
+    return current->emitError().append("orphaned '", FuncDefOp::getOperationName(), "'");
   }
 }
 } // namespace
@@ -195,7 +195,7 @@ FailureOr<SymbolRefAttr> getPathFromRoot(StructDefOp &to) {
   return getPathFromRoot(to, RootSelector::CLOSEST);
 }
 
-FailureOr<SymbolRefAttr> getPathFromRoot(FuncOp &to) {
+FailureOr<SymbolRefAttr> getPathFromRoot(FuncDefOp &to) {
   return getPathFromRoot(to, RootSelector::CLOSEST);
 }
 
@@ -208,7 +208,7 @@ FailureOr<SymbolRefAttr> getPathFromTopRoot(StructDefOp &to) {
   return getPathFromRoot(to, RootSelector::FURTHEST);
 }
 
-FailureOr<SymbolRefAttr> getPathFromTopRoot(FuncOp &to) {
+FailureOr<SymbolRefAttr> getPathFromTopRoot(FuncDefOp &to) {
   return getPathFromRoot(to, RootSelector::FURTHEST);
 }
 

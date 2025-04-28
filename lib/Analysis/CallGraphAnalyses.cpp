@@ -45,7 +45,7 @@ CallGraphReachabilityAnalysis::CallGraphReachabilityAnalysis(
     // getting the CallGraphAnalysis will enforce the need for a module op
     : callGraph(am.getAnalysis<CallGraphAnalysis>().getCallGraph()) {}
 
-bool CallGraphReachabilityAnalysis::isReachable(FuncOp &A, FuncOp &B) const {
+bool CallGraphReachabilityAnalysis::isReachable(FuncDefOp &A, FuncDefOp &B) const {
   if (isReachableCached(A, B)) {
     return true;
   }
@@ -70,11 +70,11 @@ bool CallGraphReachabilityAnalysis::isReachable(FuncOp &A, FuncOp &B) const {
     if (currNode->isExternal()) {
       continue;
     }
-    FuncOp currFn = currNode->getCalledFunction();
+    FuncDefOp currFn = currNode->getCalledFunction();
 
     // Update the cache according to the path before checking if B is reachable.
     for (unsigned i = 0; i < dfsIt.getPathLength(); i++) {
-      FuncOp ancestorFn = dfsIt.getPath(i)->getCalledFunction();
+      FuncDefOp ancestorFn = dfsIt.getPath(i)->getCalledFunction();
       reachabilityMap[ancestorFn].insert(currFn);
     }
 

@@ -68,11 +68,11 @@ public:
   static mlir::LogicalResult verifyTrait(mlir::Operation *op);
 };
 
-/// Return true iff the given Operation is contained within a FuncOp with the given name that is
+/// Return true iff the given Operation is contained within a FuncDefOp with the given name that is
 /// itself contained within a StructDefOp.
 bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName);
 
-/// Checks if the given Operation is contained within a FuncOp with the given name that is itself
+/// Checks if the given Operation is contained within a FuncDefOp with the given name that is itself
 /// contained within a StructDefOp, producing an error if not.
 template <char const *FuncName, unsigned PrefixLen>
 mlir::LogicalResult verifyInStructFunctionNamed(
@@ -80,13 +80,13 @@ mlir::LogicalResult verifyInStructFunctionNamed(
 ) {
   return isInStructFunctionNamed(op, FuncName)
              ? mlir::success()
-             : op->emitOpError(prefix()) << "only valid within a '" << getOperationName<FuncOp>()
+             : op->emitOpError(prefix()) << "only valid within a '" << getOperationName<FuncDefOp>()
                                          << "' named \"@" << FuncName << "\" within a '"
                                          << getOperationName<StructDefOp>() << "' definition";
 }
 
 /// This class provides a verifier for ops that are expecting to have
-/// an ancestor llzk::FuncOp with the given name.
+/// an ancestor llzk::FuncDefOp with the given name.
 template <char const *FuncName> struct InStructFunctionNamed {
   template <typename TypeClass> class Impl : public mlir::OpTrait::TraitBase<TypeClass, Impl> {
   public:
@@ -143,7 +143,7 @@ public:
                ? mlir::success()
                : op->emitOpError()
                      << "is ComputeOnly so it cannot be used within a '"
-                     << getOperationName<FuncOp>() << "' named \"@" << FUNC_NAME_CONSTRAIN
+                     << getOperationName<FuncDefOp>() << "' named \"@" << FUNC_NAME_CONSTRAIN
                      << "\" within a '" << getOperationName<StructDefOp>() << "' definition";
   }
 };

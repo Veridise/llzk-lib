@@ -234,7 +234,7 @@ static struct {
   /// Subset that define the general builder function:
   /// `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)`
   const std::tuple<
-      FieldDefOp, FieldWriteOp, FieldReadOp, CreateStructOp, FuncOp, ReturnOp, InsertArrayOp,
+      FieldDefOp, FieldWriteOp, FieldReadOp, CreateStructOp, FuncDefOp, ReturnOp, InsertArrayOp,
       ExtractArrayOp, ReadArrayOp, WriteArrayOp, EmitContainmentOp>
       WithGeneralBuilder {};
   /// Subset that do NOT define the general builder function. These cannot use
@@ -338,7 +338,7 @@ newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionT
   // Special case for CreateArrayOp since GeneralTypeReplacePattern does not work
   patterns.add<CreateArrayOpTypeReplacePattern>(tyConv, ctx);
   // Add builtin FunctionType converter
-  populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns, tyConv);
+  populateFunctionOpInterfaceTypeConversionPattern<FuncDefOp>(patterns, tyConv);
   scf::populateSCFStructuralTypeConversionsAndLegality(tyConv, patterns, target);
   return patterns;
 }
@@ -1180,15 +1180,15 @@ public:
   }
 };
 
-/// Update FuncOp return type by checking the updated types from ReturnOp.
-class UpdateFuncTypeFromReturn final : public OpRewritePattern<FuncOp> {
+/// Update FuncDefOp return type by checking the updated types from ReturnOp.
+class UpdateFuncTypeFromReturn final : public OpRewritePattern<FuncDefOp> {
   ConversionTracker &tracker_;
 
 public:
   UpdateFuncTypeFromReturn(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx), tracker_(tracker) {}
 
-  LogicalResult matchAndRewrite(FuncOp op, PatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(FuncDefOp op, PatternRewriter &rewriter) const override {
     Region &body = op.getFunctionBody();
     if (body.empty()) {
       return failure();
@@ -1219,7 +1219,7 @@ public:
   }
 };
 
-/// Update CallOp result type based on the updated return type from the target FuncOp.
+/// Update CallOp result type based on the updated return type from the target FuncDefOp.
 /// This only applies to global (i.e. non-struct) functions because the functions within structs
 /// only return StructType or nothing and propagating those can result in bringing un-instantiated
 /// types from a templated struct into the current call which will give errors.
@@ -1232,11 +1232,11 @@ public:
 
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     SymbolTableCollection tables;
-    auto lookupRes = lookupTopLevelSymbol<FuncOp>(tables, op.getCalleeAttr(), op);
+    auto lookupRes = lookupTopLevelSymbol<FuncDefOp>(tables, op.getCalleeAttr(), op);
     if (failed(lookupRes)) {
       return failure();
     }
-    FuncOp targetFunc = lookupRes->get();
+    FuncDefOp targetFunc = lookupRes->get();
     if (targetFunc.isInStruct()) {
       // this pattern only applies when the callee is NOT in a struct
       return failure();
@@ -1306,7 +1306,7 @@ public:
         return failure();
       }
       SymbolTableCollection tables;
-      auto lookupRes = lookupTopLevelSymbol<FuncOp>(tables, op.getCalleeAttr(), op);
+      auto lookupRes = lookupTopLevelSymbol<FuncDefOp>(tables, op.getCalleeAttr(), op);
       if (failed(lookupRes)) {
         return failure();
       }
@@ -1353,7 +1353,7 @@ private:
   /// argument types to the function return type in the CallOp.
   inline LogicalResult instantiateViaTargetType(
       const AffineMapFolder::Input &in, AffineMapFolder::Output &out,
-      OperandRange::type_range callArgTypes, FuncOp targetFunc
+      OperandRange::type_range callArgTypes, FuncDefOp targetFunc
   ) const {
     assert(targetFunc.isStructCompute()); // since `op.calleeIsStructCompute()`
     ArrayAttr targetResTyParams = targetFunc.getComputeSingleResultType().getParams();

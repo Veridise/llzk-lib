@@ -38,32 +38,32 @@ verifyTypeResolution(SymbolTableCollection &tables, Operation *origin, FunctionT
 } // namespace
 
 //===----------------------------------------------------------------------===//
-// FuncOp
+// FuncDefOp
 //===----------------------------------------------------------------------===//
 
-FuncOp FuncOp::create(
+FuncDefOp FuncDefOp::create(
     Location location, StringRef name, FunctionType type, ArrayRef<NamedAttribute> attrs
 ) {
-  return delegate_to_build<FuncOp>(location, name, type, attrs);
+  return delegate_to_build<FuncDefOp>(location, name, type, attrs);
 }
 
-FuncOp FuncOp::create(
+FuncDefOp FuncDefOp::create(
     Location location, StringRef name, FunctionType type, Operation::dialect_attr_range attrs
 ) {
   SmallVector<NamedAttribute, 8> attrRef(attrs);
   return create(location, name, type, llvm::ArrayRef(attrRef));
 }
 
-FuncOp FuncOp::create(
+FuncDefOp FuncDefOp::create(
     Location location, StringRef name, FunctionType type, ArrayRef<NamedAttribute> attrs,
     ArrayRef<DictionaryAttr> argAttrs
 ) {
-  FuncOp func = create(location, name, type, attrs);
+  FuncDefOp func = create(location, name, type, attrs);
   func.setAllArgAttrs(argAttrs);
   return func;
 }
 
-void FuncOp::build(
+void FuncDefOp::build(
     OpBuilder &builder, OperationState &state, StringRef name, FunctionType type,
     ArrayRef<NamedAttribute> attrs, ArrayRef<DictionaryAttr> argAttrs
 ) {
@@ -82,7 +82,7 @@ void FuncOp::build(
   );
 }
 
-ParseResult FuncOp::parse(OpAsmParser &parser, OperationState &result) {
+ParseResult FuncDefOp::parse(OpAsmParser &parser, OperationState &result) {
   auto buildFuncType = [](Builder &builder, ArrayRef<Type> argTypes, ArrayRef<Type> results,
                           function_interface_impl::VariadicFlag,
                           std::string &) { return builder.getFunctionType(argTypes, results); };
@@ -93,7 +93,7 @@ ParseResult FuncOp::parse(OpAsmParser &parser, OperationState &result) {
   );
 }
 
-void FuncOp::print(OpAsmPrinter &p) {
+void FuncDefOp::print(OpAsmPrinter &p) {
   function_interface_impl::printFunctionOp(
       p, *this, /*isVariadic=*/false, getFunctionTypeAttrName(), getArgAttrsAttrName(),
       getResAttrsAttrName()
@@ -102,7 +102,7 @@ void FuncOp::print(OpAsmPrinter &p) {
 
 /// Clone the internal blocks from this function into dest and all attributes
 /// from this function to dest.
-void FuncOp::cloneInto(FuncOp dest, IRMapping &mapper) {
+void FuncDefOp::cloneInto(FuncDefOp dest, IRMapping &mapper) {
   // Add the attributes of this function to dest.
   llvm::MapVector<StringAttr, Attribute> newAttrMap;
   for (const auto &attr : dest->getAttrs()) {
@@ -127,9 +127,9 @@ void FuncOp::cloneInto(FuncOp dest, IRMapping &mapper) {
 /// provided (leaving them alone if no entry is present). Replaces references
 /// to cloned sub-values with the corresponding value that is copied, and adds
 /// those mappings to the mapper.
-FuncOp FuncOp::clone(IRMapping &mapper) {
+FuncDefOp FuncDefOp::clone(IRMapping &mapper) {
   // Create the new function.
-  FuncOp newFunc = cast<FuncOp>(getOperation()->cloneWithoutRegions());
+  FuncDefOp newFunc = cast<FuncDefOp>(getOperation()->cloneWithoutRegions());
 
   // If the function has a body, then the user might be deleting arguments to
   // the function by specifying them in the mapper. If so, we don't add the
@@ -169,12 +169,12 @@ FuncOp FuncOp::clone(IRMapping &mapper) {
   return newFunc;
 }
 
-FuncOp FuncOp::clone() {
+FuncDefOp FuncDefOp::clone() {
   IRMapping mapper;
   return clone(mapper);
 }
 
-bool FuncOp::hasArgPublicAttr(unsigned index) {
+bool FuncDefOp::hasArgPublicAttr(unsigned index) {
   if (index < this->getNumArguments()) {
     DictionaryAttr res = function_interface_impl::getArgAttrDict(*this, index);
     return res ? res.contains(PublicAttr::name) : false;
@@ -184,7 +184,7 @@ bool FuncOp::hasArgPublicAttr(unsigned index) {
   }
 }
 
-LogicalResult FuncOp::verify() {
+LogicalResult FuncDefOp::verify() {
   OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
   // Ensure that only valid LLZK types are used for arguments and return.
   // @compute and @constrain functions also may not have AffineMapAttrs in their
@@ -214,7 +214,7 @@ LogicalResult FuncOp::verify() {
 namespace {
 
 LogicalResult
-verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
+verifyFuncTypeCompute(FuncDefOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
   FunctionType funcType = origin.getFunctionType();
   llvm::ArrayRef<Type> resTypes = funcType.getResults();
   // Must return type of parent struct
@@ -234,7 +234,7 @@ verifyFuncTypeCompute(FuncOp &origin, SymbolTableCollection &tables, StructDefOp
 }
 
 LogicalResult
-verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
+verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
   FunctionType funcType = origin.getFunctionType();
   // Must return '()' type, i.e. have no return types
   if (funcType.getResults().size() != 0) {
@@ -260,7 +260,7 @@ verifyFuncTypeConstrain(FuncOp &origin, SymbolTableCollection &tables, StructDef
 
 } // namespace
 
-LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Additional checks for the compute/constrain functions w/in a struct
   FailureOr<StructDefOp> parentStructOpt = getParentOfType<StructDefOp>(*this);
   if (succeeded(parentStructOpt)) {
@@ -275,13 +275,13 @@ LogicalResult FuncOp::verifySymbolUses(SymbolTableCollection &tables) {
   return verifyTypeResolution(tables, *this, getFunctionType());
 }
 
-SymbolRefAttr FuncOp::getFullyQualifiedName() {
+SymbolRefAttr FuncDefOp::getFullyQualifiedName() {
   auto res = getPathFromRoot(*this);
   assert(succeeded(res));
   return res.value();
 }
 
-StructType FuncOp::getComputeSingleResultType() {
+StructType FuncDefOp::getComputeSingleResultType() {
   assert(isStructCompute() && "violated implementation pre-condition");
   return getIfSingleton<StructType>(getResultTypes());
 }
@@ -291,7 +291,7 @@ StructType FuncOp::getComputeSingleResultType() {
 //===----------------------------------------------------------------------===//
 
 LogicalResult ReturnOp::verify() {
-  auto function = cast<FuncOp>((*this)->getParentOp());
+  auto function = cast<FuncDefOp>((*this)->getParentOp());
 
   // The operand number and types must match the function signature.
   const auto results = function.getFunctionType().getResults();
@@ -422,7 +422,7 @@ protected:
 };
 
 struct KnownTargetVerifier : public CallOpVerifier {
-  KnownTargetVerifier(CallOp *c, SymbolLookupResult<FuncOp> &&tgtRes)
+  KnownTargetVerifier(CallOp *c, SymbolLookupResult<FuncDefOp> &&tgtRes)
       : CallOpVerifier(c, tgtRes.get().getSymName()), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
         includeSymNames(tgtRes.getIncludeSymNames()) {}
 
@@ -448,8 +448,8 @@ struct KnownTargetVerifier : public CallOpVerifier {
     if (CalleeKind::Compute == tgtKind && isInStruct(tgt.getOperation())) {
       // Return type should be a single StructType. If that is not the case here, just bail without
       // producing an error. The combination of this KnownTargetVerifier resolving the callee to a
-      // specific FuncOp and verifyFuncTypeCompute() ensuring all FUNC_NAME_COMPUTE FuncOps have a
-      // single StructType return value will produce a more relevant error message in that case.
+      // specific FuncDefOp and verifyFuncTypeCompute() ensuring all FUNC_NAME_COMPUTE FuncOps have
+      // a single StructType return value will produce a more relevant error message in that case.
       if (StructType retTy = callOp->getComputeSingleResultType()) {
         if (ArrayAttr params = retTy.getParams()) {
           // Collect the struct parameters that are defined via AffineMapAttr
@@ -492,7 +492,7 @@ private:
     return success();
   }
 
-  FuncOp tgt;
+  FuncDefOp tgt;
   FunctionType tgtType;
   std::vector<llvm::StringRef> includeSymNames;
 };
@@ -620,9 +620,9 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
 
   // Otherwise, callee must be specified via full path from the root module. Perform the full set of
   // checks against the known target function.
-  auto tgtOpt = lookupTopLevelSymbol<FuncOp>(tables, calleeAttr, *this);
+  auto tgtOpt = lookupTopLevelSymbol<FuncDefOp>(tables, calleeAttr, *this);
   if (failed(tgtOpt)) {
-    return this->emitError() << "expected '" << FuncOp::getOperationName() << "' named \""
+    return this->emitError() << "expected '" << FuncDefOp::getOperationName() << "' named \""
                              << calleeAttr << "\"";
   }
   return KnownTargetVerifier(this, std::move(*tgtOpt)).verify();

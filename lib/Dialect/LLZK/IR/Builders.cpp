@@ -110,7 +110,7 @@ ModuleBuilder &ModuleBuilder::insertComputeFn(StructDefOp op, Location loc) {
 
   OpBuilder opBuilder(op.getBody());
 
-  auto fnOp = opBuilder.create<FuncOp>(
+  auto fnOp = opBuilder.create<FuncDefOp>(
       loc, StringAttr::get(context, FUNC_NAME_COMPUTE),
       FunctionType::get(context, {}, {op.getType()})
   );
@@ -124,7 +124,7 @@ ModuleBuilder &ModuleBuilder::insertConstrainFn(StructDefOp op, Location loc) {
 
   OpBuilder opBuilder(op.getBody());
 
-  auto fnOp = opBuilder.create<FuncOp>(
+  auto fnOp = opBuilder.create<FuncDefOp>(
       loc, StringAttr::get(context, FUNC_NAME_CONSTRAIN),
       FunctionType::get(context, {op.getType()}, {})
   );
@@ -190,7 +190,7 @@ ModuleBuilder::insertGlobalFunc(std::string_view funcName, FunctionType type, Lo
   ensureNoSuchGlobalFunc(funcName);
 
   OpBuilder opBuilder(rootModule.getBody(), rootModule.getBody()->begin());
-  auto funcDef = opBuilder.create<FuncOp>(loc, funcName, type);
+  auto funcDef = opBuilder.create<FuncDefOp>(loc, funcName, type);
   (void)funcDef.addEntryBlock();
   globalFuncMap[funcName] = funcDef;
 
@@ -198,9 +198,9 @@ ModuleBuilder::insertGlobalFunc(std::string_view funcName, FunctionType type, Lo
 }
 
 ModuleBuilder &
-ModuleBuilder::insertGlobalCall(FuncOp caller, std::string_view callee, Location callLoc) {
+ModuleBuilder::insertGlobalCall(FuncDefOp caller, std::string_view callee, Location callLoc) {
   ensureGlobalFnExists(callee);
-  FuncOp calleeFn = globalFuncMap.at(callee);
+  FuncDefOp calleeFn = globalFuncMap.at(callee);
 
   OpBuilder builder(caller.getBody());
   builder.create<CallOp>(callLoc, calleeFn.getResultTypes(), calleeFn.getFullyQualifiedName());

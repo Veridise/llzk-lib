@@ -32,7 +32,7 @@
 ///
 ///    - Desugar `InsertArrayOp` and `ExtractArrayOp` into their element-wise scalar reads/writes.
 ///
-///    - Split arrays to scalars in `FuncOp`, `CallOp`, and `ReturnOp` and insert the necessary
+///    - Split arrays to scalars in `FuncDefOp`, `CallOp`, and `ReturnOp` and insert the necessary
 ///      create/read/write ops so the changes are as local as possible (just as described for
 ///      `FieldReadOp` and `FieldWriteOp`)
 ///
@@ -388,15 +388,17 @@ public:
   }
 };
 
-class SplitArrayInFuncDefOp : public OpConversionPattern<FuncOp> {
+class SplitArrayInFuncDefOp : public OpConversionPattern<FuncDefOp> {
 public:
-  using OpConversionPattern<FuncOp>::OpConversionPattern;
+  using OpConversionPattern<FuncDefOp>::OpConversionPattern;
 
-  inline static bool legal(FuncOp op) { return !containsSplittableArrayType(op.getFunctionType()); }
+  inline static bool legal(FuncDefOp op) {
+    return !containsSplittableArrayType(op.getFunctionType());
+  }
 
-  LogicalResult match(FuncOp op) const override { return failure(legal(op)); }
+  LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
 
-  void rewrite(FuncOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  void rewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     // Update in/out types of the function to replace arrays with scalars
     FunctionType oldTy = op.getFunctionType();
     SmallVector<Type> newInputs = splitArrayType(oldTy.getInputs());
@@ -699,7 +701,7 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
   target.addDynamicallyLegalOp<CreateArrayOp>(SplitInitFromCreateArrayOp::legal);
   target.addDynamicallyLegalOp<InsertArrayOp>(SplitInsertArrayOp::legal);
   target.addDynamicallyLegalOp<ExtractArrayOp>(SplitExtractArrayOp::legal);
-  target.addDynamicallyLegalOp<FuncOp>(SplitArrayInFuncDefOp::legal);
+  target.addDynamicallyLegalOp<FuncDefOp>(SplitArrayInFuncDefOp::legal);
   target.addDynamicallyLegalOp<ReturnOp>(SplitArrayInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitArrayInCallOp::legal);
   target.addDynamicallyLegalOp<ArrayLengthOp>(ReplaceKnownArrayLengthOp::legal);

@@ -153,7 +153,7 @@ TEST_F(CallGraphTests, lookupInSymbolFQNTest) {
 
   // But we can find B::@compute in B with the symbol helpers
   mlir::SymbolTableCollection tables;
-  auto res = llzk::lookupTopLevelSymbol<llzk::FuncOp>(
+  auto res = llzk::lookupTopLevelSymbol<llzk::FuncDefOp>(
       tables, computeFn->getFullyQualifiedName(), computeFn->getOperation()
   );
   ASSERT_EQ(*computeFn, res.value().get());

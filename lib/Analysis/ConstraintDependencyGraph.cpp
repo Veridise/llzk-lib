@@ -34,14 +34,14 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
   LLVM_DEBUG(
       llvm::dbgs() << "ConstrainRefAnalysis::visitCallControlFlowTransfer: " << call << '\n'
   );
-  auto fnOpRes = resolveCallable<FuncOp>(tables, call);
+  auto fnOpRes = resolveCallable<FuncDefOp>(tables, call);
   ensure(succeeded(fnOpRes), "could not resolve called function");
 
   LLVM_DEBUG({
     llvm::dbgs().indent(4) << "parent op is ";
     if (auto s = call->getParentOfType<StructDefOp>()) {
       llvm::dbgs() << s.getName();
-    } else if (auto p = call->getParentOfType<FuncOp>()) {
+    } else if (auto p = call->getParentOfType<FuncDefOp>()) {
       llvm::dbgs() << p.getName();
     } else {
       llvm::dbgs() << "<UNKNOWN PARENT TYPE>";
@@ -78,7 +78,7 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
 
     // Translate argument values based on the operands given at the call site.
     std::unordered_map<ConstrainRef, ConstrainRefLatticeValue, ConstrainRef::Hash> translation;
-    auto funcOpRes = resolveCallable<FuncOp>(tables, call);
+    auto funcOpRes = resolveCallable<FuncDefOp>(tables, call);
     ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
     auto funcOp = funcOpRes->get();
 
@@ -334,7 +334,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
    * add them to the transitive closures.
    */
   constrainFnOp.walk([this, &solver, &am](CallOp fnCall) mutable {
-    auto res = resolveCallable<FuncOp>(tables, fnCall);
+    auto res = resolveCallable<FuncDefOp>(tables, fnCall);
     ensure(mlir::succeeded(res), "could not resolve constrain call");
 
     auto fn = res->get();

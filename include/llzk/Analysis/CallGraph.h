@@ -35,7 +35,7 @@ class SymbolTableCollection;
 
 namespace llzk {
 
-class FuncOp;
+class FuncDefOp;
 
 /// This is a simple port of the mlir::CallGraphNode with llzk::CallGraph
 /// as a friend class, for mlir::CallGraphNode has a private constructor and
@@ -112,7 +112,7 @@ public:
   /// Returns the called function that the callable region represents.
   /// As per getCallableRegion, this can only be called on non-external nodes.
   /// This is an LLZK-specific addition.
-  llzk::FuncOp getCalledFunction() const;
+  llzk::FuncDefOp getCalledFunction() const;
 
   /// Adds an abstract reference edge to the given node. An abstract edge does
   /// not come from any observable operations, so this is only valid on the

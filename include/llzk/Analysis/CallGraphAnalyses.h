@@ -59,7 +59,7 @@ public:
 class CallGraphReachabilityAnalysis {
 
   // Maps function -> callees
-  using CalleeMapTy = mlir::DenseMap<FuncOp, mlir::DenseSet<FuncOp>>;
+  using CalleeMapTy = mlir::DenseMap<FuncDefOp, mlir::DenseSet<FuncDefOp>>;
 
   mutable CalleeMapTy reachabilityMap;
 
@@ -73,12 +73,12 @@ public:
   }
 
   /// Returns whether B is reachable from A.
-  bool isReachable(FuncOp &A, FuncOp &B) const;
+  bool isReachable(FuncDefOp &A, FuncDefOp &B) const;
 
   const llzk::CallGraph &getCallGraph() const { return callGraph.get(); }
 
 private:
-  inline bool isReachableCached(FuncOp &A, FuncOp &B) const {
+  inline bool isReachableCached(FuncDefOp &A, FuncDefOp &B) const {
     auto it = reachabilityMap.find(A);
     return it != reachabilityMap.end() && it->second.find(B) != it->second.end();
   }

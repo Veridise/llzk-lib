@@ -264,11 +264,11 @@ def LLZK_StructDefOp
       }));
     }
 
-    /// Gets the FuncOp that defines the compute function in this structure, if present.
-    FuncOp getComputeFuncOp();
+    /// Gets the FuncDefOp that defines the compute function in this structure, if present.
+    FuncDefOp getComputeFuncOp();
 
-    /// Gets the FuncOp that defines the constrain function in this structure, if present.
-    FuncOp getConstrainFuncOp();
+    /// Gets the FuncDefOp that defines the constrain function in this structure, if present.
+    FuncDefOp getConstrainFuncOp();
 
     /// Generate header string, in the same format as the assemblyFormat
     ::std::string getHeaderString();
