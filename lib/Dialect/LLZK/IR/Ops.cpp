@@ -48,7 +48,7 @@ bool isInStruct(Operation *op) { return succeeded(getParentOfType<StructDefOp>(o
 FailureOr<StructDefOp> verifyInStruct(Operation *op) {
   FailureOr<StructDefOp> res = getParentOfType<StructDefOp>(op);
   if (failed(res)) {
-    return op->emitOpError() << "only valid within a '" << getOperationName<StructDefOp>()
+    return op->emitOpError() << "only valid within a '" << StructDefOp::getOperationName()
                              << "' ancestor";
   }
   return res;
