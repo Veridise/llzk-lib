@@ -1,4 +1,4 @@
-//===-- AffineHelpers.cpp ---------------------------------------*- C++ -*-===//
+//===-- AffineHelper.cpp ---------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/AffineHelpers.h"
+#include "llzk/Util/AffineHelper.h"
 
 #include <numeric>
 

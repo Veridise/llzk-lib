@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Util/AffineHelpers.h"
+#include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 

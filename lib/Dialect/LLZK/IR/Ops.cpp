@@ -10,7 +10,7 @@
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
-#include "llzk/Util/AffineHelpers.h"
+#include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/ArrayTypeHelper.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/SymbolHelper.h"

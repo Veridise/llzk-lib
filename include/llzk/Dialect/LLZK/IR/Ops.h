@@ -12,7 +12,7 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
-#include "llzk/Util/AffineHelpers.h"
+#include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolLookup.h"
