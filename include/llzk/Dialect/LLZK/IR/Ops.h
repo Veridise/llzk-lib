@@ -14,6 +14,7 @@
 #include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Util/AffineHelpers.h"
 #include "llzk/Util/BuilderHelper.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/Bytecode/BytecodeOpInterface.h>
@@ -35,20 +36,6 @@
 
 // Types that must come before the "Ops.h.inc" import
 namespace llzk {
-
-/// Symbol name for the struct/component representing a signal. A "signal" has direct correspondence
-/// to a circom signal or AIR/PLONK column, opposed to intermediate values or other expressions.
-constexpr char COMPONENT_NAME_SIGNAL[] = "Signal";
-
-/// Symbol name for the main entry point struct/component (if any). There are additional
-/// restrictions on the struct with this name:
-/// 1. It cannot have struct parameters.
-/// 2. The parameter types of its functions (besides the required "self" parameter) can
-///     only be `struct<Signal>` or `array<.. x struct<Signal>>`.
-constexpr char COMPONENT_NAME_MAIN[] = "Main";
-
-constexpr char FUNC_NAME_COMPUTE[] = "compute";
-constexpr char FUNC_NAME_CONSTRAIN[] = "constrain";
 
 /// Get the operation name, like "llzk.emit_op" for the given OpType.
 /// This function can be used when the compiler would complain about

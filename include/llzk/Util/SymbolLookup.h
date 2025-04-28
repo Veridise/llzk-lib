@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "llzk/Util/Constants.h"
+
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/OwningOpRef.h>
@@ -25,8 +27,6 @@
 #include <vector>
 
 namespace llzk {
-
-constexpr char LANG_ATTR_NAME[] = "veridise.lang";
 
 using ManagedResources =
     std::shared_ptr<std::pair<mlir::OwningOpRef<mlir::ModuleOp>, mlir::SymbolTableCollection>>;
