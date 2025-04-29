@@ -14,10 +14,12 @@
 #include "llzk/Dialect/LLZK/Util/StreamHelper.h"
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinTypeInterfaces.h>
 #include <mlir/IR/DialectImplementation.h>
 #include <mlir/IR/SymbolTable.h>
+#include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/STLExtras.h>
@@ -732,11 +734,23 @@ LogicalResult verifyAffineMapAttrType(EmitErrorFn emitError, Attribute in) {
 }
 
 ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
-  auto parseResult = FieldParser<SmallVector<Attribute>>::parse(parser);
-  if (failed(parseResult)) {
+  SmallVector<Attribute> attrs;
+  auto parseElement = [&]() -> ParseResult {
+    auto qResult = parser.parseOptionalQuestion();
+    if (succeeded(qResult)) {
+      auto &builder = parser.getBuilder();
+      value.push_back(builder.getIntegerAttr(builder.getIndexType(), ShapedType::kDynamic));
+      return qResult;
+    }
+    auto attrParseResult = FieldParser<Attribute>::parse(parser);
+    if (succeeded(attrParseResult)) {
+      value.push_back(forceIntAttrType(*attrParseResult));
+    }
+    return ParseResult(attrParseResult);
+  };
+  if (failed(parser.parseCommaSeparatedList(AsmParser::Delimiter::None, parseElement))) {
     return parser.emitError(parser.getCurrentLocation(), "failed to parse array dimensions");
   }
-  value = forceIntAttrTypes(*parseResult);
   return success();
 }
 
@@ -745,6 +759,12 @@ namespace {
 // Adapted from AsmPrinter::printStrippedAttrOrType(), but without printing type.
 void printAttrs(AsmPrinter &printer, ArrayRef<Attribute> attrs, const StringRef &separator) {
   llvm::interleave(attrs, printer.getStream(), [&printer](Attribute a) {
+    if (auto intAttr = mlir::dyn_cast_if_present<IntegerAttr>(a)) {
+      if (intAttr.getValue().getSExtValue() == ShapedType::kDynamic) {
+        printer.getStream() << "?";
+        return;
+      }
+    }
     if (succeeded(printer.printAlias(a))) {
       return;
     }

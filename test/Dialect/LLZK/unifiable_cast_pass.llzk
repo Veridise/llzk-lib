@@ -105,7 +105,8 @@ module attributes {veridise.lang = "llzk"} {
                   %8: !llzk.array<2,2 x !llzk.felt>, %9: !llzk.array<2,@S0 x !llzk.felt>,
                   %10: !llzk.array<2,7 x !llzk.felt>, %11: !llzk.string, %12: !llzk.tvar<@S1>,
                   %18: !llzk.struct<@T3<[1, 7, @S0, 1, !llzk.struct<@T2<[1]>>]>>,
-                  %20: !llzk.array<1, 7, @S0, 1 x !llzk.struct<@T2<[1]>>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+                  %20: !llzk.array<1, 7, @S0, 1 x !llzk.struct<@T2<[1]>>>,
+                  %22: !llzk.array<? x !llzk.felt>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
       // Tests for equality
       %r0 = unifiable_cast %0 : (index) -> index
@@ -126,6 +127,8 @@ module attributes {veridise.lang = "llzk"} {
       // Test that if structs have the same name they unify if their params unify
       %19 = unifiable_cast %18 : (!llzk.struct<@T3<[1, 7, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@T3<[#map1, #map1, 1, @S0, !llzk.struct<@T2<[#map2]>>]>>
       %21 = unifiable_cast %20 : (!llzk.array<1, 7, @S0, 1 x !llzk.struct<@T2<[1]>>>) -> !llzk.array<#map1, #map1, 1, @S0 x !llzk.struct<@T2<[#map2]>>>
+      %23 = unifiable_cast %22 : (!llzk.array<? x !llzk.felt>) -> !llzk.array<1 x !llzk.felt>
+      %24 = unifiable_cast %23 : (!llzk.array<1 x !llzk.felt>) -> !llzk.array<? x !llzk.felt>
       return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
     func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %0: index, %1: i1, %2: !llzk.felt, %3: !llzk.struct<@T1<[]>>,
@@ -134,7 +137,8 @@ module attributes {veridise.lang = "llzk"} {
                   %8: !llzk.array<2,2 x !llzk.felt>, %9: !llzk.array<2,@S0 x !llzk.felt>,
                   %10: !llzk.array<2,7 x !llzk.felt>, %11: !llzk.string, %12: !llzk.tvar<@S1>,
                   %18: !llzk.struct<@T3<[1, 7, @S0, 1, !llzk.struct<@T2<[1]>>]>>,
-                  %20: !llzk.array<1, 7, @S0, 1 x !llzk.struct<@T2<[1]>>>) {
+                  %20: !llzk.array<1, 7, @S0, 1 x !llzk.struct<@T2<[1]>>>,
+                  %22: !llzk.array<? x !llzk.felt>) {
       return
     }
   }
@@ -158,6 +162,7 @@ module attributes {veridise.lang = "llzk"} {
 //  CHECK-SAME:                  %[[A12:[0-9a-zA-Z_\.]+]]: !llzk.tvar<@S1>,
 //  CHECK-SAME:                  %[[A13:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T3<[1, 7, @S0, 1, !llzk.struct<@T2<[1]>>]>>,
 //  CHECK-SAME:                  %[[A14:[0-9a-zA-Z_\.]+]]: !llzk.array<1,7,@S0,1 x !llzk.struct<@T2<[1]>>>
+//  CHECK-SAME:                  %[[A15:[0-9a-zA-Z_\.]+]]: !llzk.array<? x !llzk.felt>
 //  CHECK-SAME:    ) -> !llzk.struct<@Tester<[@S0, @S1]>> {
 //  CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Tester<[@S0, @S1]>>
 //  CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A0]] : (index) -> index
@@ -176,6 +181,8 @@ module attributes {veridise.lang = "llzk"} {
 //  CHECK-NEXT:      %[[T13:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A2]] : (!llzk.felt) -> !llzk.tvar<@S1>
 //  CHECK-NEXT:      %[[T14:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A13]] : (!llzk.struct<@T3<[1, 7, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@T3<[#map, #map, 1, @S0, !llzk.struct<@T2<[#map1]>>]>>
 //  CHECK-NEXT:      %[[T15:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A14]] : (!llzk.array<1,7,@S0,1 x !llzk.struct<@T2<[1]>>>) -> !llzk.array<#map,#map,1,@S0 x !llzk.struct<@T2<[#map1]>>>
+//  CHECK-NEXT:      %[[T16:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A15]] : (!llzk.array<? x !llzk.felt>) -> !llzk.array<1 x !llzk.felt>
+//  CHECK-NEXT:      %[[T17:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[T16]] : (!llzk.array<1 x !llzk.felt>) -> !llzk.array<? x !llzk.felt>
 //  CHECK-NEXT:      return %[[SELF]] : !llzk.struct<@Tester<[@S0, @S1]>>
 //  CHECK-NEXT:    }
 // CHECK-LABEL:    func @constrain(
@@ -195,6 +202,7 @@ module attributes {veridise.lang = "llzk"} {
 //  CHECK-SAME:                    %[[A12:[0-9a-zA-Z_\.]+]]: !llzk.tvar<@S1>,
 //  CHECK-SAME:                    %[[A13:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T3<[1, 7, @S0, 1, !llzk.struct<@T2<[1]>>]>>,
 //  CHECK-SAME:                    %[[A14:[0-9a-zA-Z_\.]+]]: !llzk.array<1,7,@S0,1 x !llzk.struct<@T2<[1]>>>
+//  CHECK-SAME:                    %[[A15:[0-9a-zA-Z_\.]+]]: !llzk.array<? x !llzk.felt>
 //  CHECK-SAME:    ) {
 //  CHECK-NEXT:      return
 //  CHECK-NEXT:    }
