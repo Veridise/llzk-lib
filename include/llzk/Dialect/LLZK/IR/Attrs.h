@@ -17,5 +17,3 @@
 // Include TableGen'd declarations
 #define GET_ATTRDEF_CLASSES
 #include "llzk/Dialect/LLZK/IR/Attrs.h.inc"
-
-namespace llzk {} // namespace llzk

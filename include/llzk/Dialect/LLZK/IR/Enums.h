@@ -17,5 +17,3 @@
 
 // Include TableGen'd declarations
 #include "llzk/Dialect/LLZK/IR/Enums.h.inc"
-
-namespace llzk {} // namespace llzk

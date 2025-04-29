@@ -14,5 +14,3 @@
 
 // Include TableGen'd files
 #include "llzk/Dialect/LLZK/IR/Dialect.h.inc"
-
-namespace llzk {} // namespace llzk
