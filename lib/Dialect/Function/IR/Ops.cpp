@@ -234,8 +234,11 @@ LogicalResult FuncDefOp::verifyRegions() {
     return success(); // TODO: Ian's cast check
   } else {
     // Check: When constraints are NOT allowed, ensure there are no constraints.
-    return failure(containsConstraintOp(getOperation()));
+    if (containsConstraintOp(getOperation())) {
+      return emitError("TODO");
+    }
   }
+  return success();
 }
 
 namespace {
