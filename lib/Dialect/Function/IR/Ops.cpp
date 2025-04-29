@@ -226,6 +226,7 @@ LogicalResult FuncDefOp::verifyRegions() {
   //
   return success(); // TODO: should use condition below
   // return success(hasAllowConstraintsAttr() || !containsConstraintOp(this->getOperation()));
+  // TODO: add a check that if constraints are allowed, casts on signals aren't allowed.
 }
 
 namespace {
