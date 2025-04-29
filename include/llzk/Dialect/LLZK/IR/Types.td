@@ -144,6 +144,4 @@ class VarTypeOr<Type allowedConcreteType, string text = TypeVarSummary.r>
                      .cppClassName#">($_self)">,
            allowedConcreteType.summary#" or "#text, "::mlir::Type">;
 
-def LLZK_String : LLZK_Type<"String", "string"> { let summary = "string type"; }
-
 #endif // LLZK_TYPES
