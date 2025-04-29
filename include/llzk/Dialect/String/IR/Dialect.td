@@ -20,6 +20,8 @@ def StringDialect : Dialect {
   let cppNamespace = "::llzk::string";
 
   let dependentDialects = ["::mlir::BuiltinDialect"];
+
+  let useDefaultTypePrinterParser = true;
 }
 
 #endif // LLZK_STRING_DIALECT

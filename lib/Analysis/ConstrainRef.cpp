@@ -10,6 +10,7 @@
 #include "llzk/Analysis/ConstrainRef.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -20,6 +21,7 @@ using namespace mlir;
 namespace llzk {
 
 using namespace array;
+using namespace string;
 
 /* ConstrainRefIndex */
 

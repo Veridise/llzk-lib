@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -44,6 +45,7 @@ namespace llzk {
 using namespace mlir;
 using namespace function;
 using namespace array;
+using namespace string;
 
 //===------------------------------------------------------------------===//
 // AssertOp
@@ -839,12 +841,6 @@ LogicalResult ApplyMapOp::verify() {
 
   return success();
 }
-
-//===------------------------------------------------------------------===//
-// LitStringOp
-//===------------------------------------------------------------------===//
-
-OpFoldResult LitStringOp::fold(LitStringOp::FoldAdaptor) { return getValueAttr(); }
 
 //===------------------------------------------------------------------===//
 // UnifiableCastOp
