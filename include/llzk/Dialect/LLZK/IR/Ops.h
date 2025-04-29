@@ -32,7 +32,6 @@
 #include <llvm/ADT/StringRef.h>
 
 // Include TableGen'd declarations
-#define GET_OP_CLASSES
 #include "llzk/Dialect/LLZK/IR/OpInterfaces.h.inc"
 
 // Include TableGen'd declarations

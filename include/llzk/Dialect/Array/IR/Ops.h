@@ -17,7 +17,6 @@
 #include <mlir/IR/Location.h>
 
 // Include TableGen'd declarations
-#define GET_OP_CLASSES
 #include "llzk/Dialect/Array/IR/OpInterfaces.h.inc"
 
 // Include TableGen'd declarations

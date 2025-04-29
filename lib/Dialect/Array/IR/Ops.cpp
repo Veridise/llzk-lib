@@ -26,7 +26,6 @@
 #include <llvm/ADT/Twine.h>
 
 // TableGen'd implementation files
-#define GET_OP_CLASSES
 #include "llzk/Dialect/Array/IR/OpInterfaces.cpp.inc"
 
 // TableGen'd implementation files

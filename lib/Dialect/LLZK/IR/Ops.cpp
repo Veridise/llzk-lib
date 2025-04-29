@@ -33,7 +33,6 @@
 #include <numeric>
 
 // TableGen'd implementation files
-#define GET_OP_CLASSES
 #include "llzk/Dialect/LLZK/IR/OpInterfaces.cpp.inc"
 
 // TableGen'd implementation files
