@@ -408,6 +408,14 @@ LogicalResult StructDefOp::verifyRegions() {
     }
   }
 
+  // Ensure that "constrain" has the `AllowConstraintsAttr` and "compute" does not.
+  if (!foundConstrain->hasAllowConstraintsAttr()) {
+    foundConstrain->setAllowConstraintsAttr();
+  }
+  if (foundCompute->hasAllowConstraintsAttr()) {
+    foundCompute->setAllowConstraintsAttr(false);
+  }
+
   // Verify parameter types are valid. Skip the first parameter of the "constrain" function; it is
   // already checked via verifyFuncTypeConstrain() in Function/IR/Ops.cpp.
   ArrayRef<Type> computeParams = foundCompute->getFunctionType().getInputs();

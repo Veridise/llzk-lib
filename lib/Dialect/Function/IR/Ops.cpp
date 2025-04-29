@@ -183,6 +183,14 @@ FuncDefOp FuncDefOp::clone() {
   return clone(mapper);
 }
 
+void FuncDefOp::setAllowConstraintsAttr(bool newValue) {
+  if (newValue) {
+    getOperation()->setAttr(AllowConstraintsAttr::name, AllowConstraintsAttr::get(getContext()));
+  } else {
+    getOperation()->removeAttr(AllowConstraintsAttr::name);
+  }
+}
+
 bool FuncDefOp::hasArgPublicAttr(unsigned index) {
   if (index < this->getNumArguments()) {
     DictionaryAttr res = function_interface_impl::getArgAttrDict(*this, index);
@@ -221,12 +229,13 @@ LogicalResult FuncDefOp::verify() {
 }
 
 LogicalResult FuncDefOp::verifyRegions() {
-  // TODO: either StructDefOp should automatically set allow-constraints on the "constrain" function
-  // within or that must be manually set when building the function and set in ".llzk" source.
-  //
-  return success(); // TODO: should use condition below
-  // return success(hasAllowConstraintsAttr() || !containsConstraintOp(this->getOperation()));
-  // TODO: add a check that if constraints are allowed, casts on signals aren't allowed.
+  if (hasAllowConstraintsAttr()) {
+    // Check: When constraints are allowed, casts on Signals are not allowed.
+    return success(); // TODO: Ian's cast check
+  } else {
+    // Check: When constraints are NOT allowed, ensure there are no constraints.
+    return failure(containsConstraintOp(getOperation()));
+  }
 }
 
 namespace {
