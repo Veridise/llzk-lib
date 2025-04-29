@@ -678,45 +678,6 @@ def LLZK_NotBoolOp : LLZK_UnaryOpBase<"not", I1, [ComputeOnly]> {
 // Conversion operators
 //===------------------------------------------------------------------===//
 
-def LLZK_IntToFeltOp : LLZK_Op<"tofelt", [Pure]> {
-  let summary = "convert an integer into a field element";
-  let description = [{
-    This operation converts a supported integer type value into a field element value.
-
-    Example:
-
-    ```llzk
-    %0 = llzk.cmp lt(%a, %b)
-    %1 = llzk.tofelt %0 : i1
-    ```
-  }];
-
-  let arguments = (ins AnyLLZKIntType:$value);
-  let results = (outs LLZK_FeltType:$result);
-  let assemblyFormat = [{ $value `:` type($value) attr-dict }];
-}
-
-def LLZK_FeltToIndexOp : LLZK_Op<"toindex", [Pure]> {
-  let summary = "convert a field element into an index";
-  let description = [{
-    This operation converts a field element value into an index value to allow
-    use as an array index or loop bound. In struct @constrain functions, the
-    argument to this op is not allowed to be derived from a Signal struct.
-
-    Example:
-    ```llzk
-    %0 = llzk.toindex %a
-    %1 = array.read %b[%0]
-    ```
-  }];
-
-  let arguments = (ins LLZK_FeltType:$value);
-  let results = (outs Index:$result);
-  let assemblyFormat = [{ $value attr-dict }];
-
-  let hasVerifier = 1;
-}
-
 def LLZK_UnifiableCastOp : LLZK_Op<"unifiable_cast", [Pure]> {
   let summary = "cast between two unifiable types";
   let description = [{
@@ -727,8 +688,8 @@ def LLZK_UnifiableCastOp : LLZK_Op<"unifiable_cast", [Pure]> {
     is no need for casting between types. This op is meant to be used in situations where
     is not possible to modify the given or the target type and they are different but unifiable.
     For example, inside a conversion pattern the driver may introduce `unrealized_conversion_cast`
-    operations if the types are not equal. This will happen regardless of wether the two types unify.
-    This cast can be introduced instead of the default cast operation to satisfy MLIR's assumtions
+    operations if the types are not equal. This will happen regardless of whether the two types unify.
+    This cast can be introduced instead of the default cast operation to satisfy MLIR's assumptions
     on type equality.
 
     Example:

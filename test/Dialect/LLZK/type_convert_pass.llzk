@@ -1,46 +1,46 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
 function.def @felt_to_index(%a: !llzk.felt) -> index {
-  %b = llzk.toindex %a
+  %b = cast.toindex %a
   function.return %b: index
 }
 //CHECK-LABEL: function.def @felt_to_index(
 //CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> index {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = toindex %[[A0]]
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.toindex %[[A0]]
 //CHECK-NEXT:    function.return %[[T0]] : index
 //CHECK-NEXT:  }
 // -----
 
 function.def @i1_to_felt(%a: i1) -> !llzk.felt {
-  %b = llzk.tofelt %a : i1
+  %b = cast.tofelt %a : i1
   function.return %b: !llzk.felt
 }
 //CHECK-LABEL: function.def @i1_to_felt(
 //CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: i1) -> !llzk.felt {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = tofelt %[[A0]] : i1
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[A0]] : i1
 //CHECK-NEXT:    function.return %[[T0]] : !llzk.felt
 //CHECK-NEXT:  }
 // -----
 
 function.def @index_to_felt(%a: index) -> !llzk.felt {
-  %b = llzk.tofelt %a : index
+  %b = cast.tofelt %a : index
   function.return %b: !llzk.felt
 }
 //CHECK-LABEL: function.def @index_to_felt(
 //CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.felt {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = tofelt %[[A0]] : index
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[A0]] : index
 //CHECK-NEXT:    function.return %[[T0]] : !llzk.felt
 //CHECK-NEXT:  }
 // -----
 
 function.def @lt_felt(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
   %0 = llzk.cmp lt(%a, %b)
-  %1 = llzk.tofelt %0 : i1
+  %1 = cast.tofelt %0 : i1
   function.return %1: !llzk.felt
 }
 //CHECK-LABEL: function.def @lt_felt(
 //CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
 //CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cmp lt(%[[A0]], %[[A1]])
-//CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = tofelt %[[T0]] : i1
+//CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[T0]] : i1
 //CHECK-NEXT:    function.return %[[T1]] : !llzk.felt
 //CHECK-NEXT:  }

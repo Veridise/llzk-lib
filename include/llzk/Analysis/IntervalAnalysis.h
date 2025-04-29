@@ -14,6 +14,7 @@
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Compare.h"
@@ -29,6 +30,8 @@
 #include <mutex>
 
 namespace llzk {
+
+using namespace cast;
 
 /* Field */
 
