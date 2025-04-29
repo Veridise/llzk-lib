@@ -213,9 +213,10 @@ TEST_F(OpTests, testCallWithAffine_WrongStructNameInResultType) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'function.call' op result type mismatch: expected type '!llzk.struct<@StructB<\\[@T0, "
-      "@T1\\]>>', but found '!llzk.struct<@StructA<\\[affine_map<\\(d0\\) -> \\(d0\\)>, "
-      "affine_map<\\(d0\\) -> \\(d0\\)>\\]>>' for result number 0"
+      "error: 'function.call' op result type mismatch: expected type "
+      "'!llzk.struct<@StructB<\\[@T0, @T1\\]>>', but found "
+      "'!llzk.struct<@StructA<\\[affine_map<\\(d0\\) -> \\(d0\\)>, affine_map<\\(d0\\) -> "
+      "\\(d0\\)>\\]>>' for result number 0"
   );
 }
 
@@ -436,8 +437,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0DimSizeCount0) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'function.call' op map instantiation group count \\(0\\) does not match the number of "
-      "affine map instantiations \\(2\\) required by the type"
+      "error: 'function.call' op map instantiation group count \\(0\\) does not match the number "
+      "of affine map instantiations \\(2\\) required by the type"
   );
 }
 
@@ -501,7 +502,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeMoreThanDimSize) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'function.call' op instantiation of map 1 expected 0 but found 1 symbol values in \\[\\]"
+      "error: 'function.call' op instantiation of map 1 expected 0 but found 1 symbol values in "
+      "\\[\\]"
   );
 }
 
@@ -533,8 +535,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountAndDimSizeCountMoreThanType) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'function.call' op map instantiation group count \\(3\\) does not match the number of "
-      "affine map instantiations \\(2\\) required by the type"
+      "error: 'function.call' op map instantiation group count \\(3\\) does not match the number "
+      "of affine map instantiations \\(2\\) required by the type"
   );
 }
 
