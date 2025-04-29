@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
 
@@ -15,6 +16,7 @@
 #include "../LLZKTestBase.h"
 
 using namespace llzk;
+using namespace llzk::array;
 using namespace mlir;
 
 class TypeTests : public LLZKTest {

@@ -9,10 +9,9 @@
 
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolLookup.h" // IWYU pragma: keep
-#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinTypes.h>
@@ -33,8 +32,31 @@
 
 // forward-declare ops
 #define GET_OP_FWD_DEFINES
-#include "llzk/Dialect/LLZK/IR/Ops.h.inc"
+#include "llzk/Dialect/Array/IR/Ops.h.inc"
 
 // Include TableGen'd declarations
 #define GET_TYPEDEF_CLASSES
-#include "llzk/Dialect/LLZK/IR/Types.h.inc"
+#include "llzk/Dialect/Array/IR/Types.h.inc"
+
+namespace llzk::array {
+
+mlir::LogicalResult computeDimsFromShape(
+    mlir::MLIRContext *ctx, llvm::ArrayRef<int64_t> shape,
+    llvm::SmallVector<mlir::Attribute> &dimensionSizes
+);
+
+mlir::LogicalResult computeShapeFromDims(
+    EmitErrorFn emitError, mlir::MLIRContext *ctx, llvm::ArrayRef<mlir::Attribute> dimensionSizes,
+    llvm::SmallVector<int64_t> &shape
+);
+
+mlir::ParseResult parseDerivedShape(
+    mlir::AsmParser &parser, llvm::SmallVector<int64_t> &shape,
+    llvm::SmallVector<mlir::Attribute> dimensionSizes
+);
+void printDerivedShape(
+    mlir::AsmPrinter &printer, llvm::ArrayRef<int64_t> shape,
+    llvm::ArrayRef<mlir::Attribute> dimensionSizes
+);
+
+} // namespace llzk::array

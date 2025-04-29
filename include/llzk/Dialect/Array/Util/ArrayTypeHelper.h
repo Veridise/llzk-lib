@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Util/AttributeHelper.h"
 
 #include <mlir/IR/Attributes.h>
@@ -23,7 +23,7 @@
 
 #include <optional>
 
-namespace llzk {
+namespace llzk::array {
 
 /// @brief Helper for converting between linear and multi-dimensional indexing with checks to ensure
 /// indices are in range for the ArrayType.
@@ -57,4 +57,4 @@ public:
   std::optional<llvm::SmallVector<mlir::Attribute>> checkAndConvert(InListType multiDimIndex);
 };
 
-} // namespace llzk
+} // namespace llzk::array

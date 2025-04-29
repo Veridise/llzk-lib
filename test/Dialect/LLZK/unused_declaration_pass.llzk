@@ -3,13 +3,13 @@
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component {
-    field @matrix : !llzk.array<7,3 x !llzk.felt>
+    field @matrix : !array.array<7,3 x !llzk.felt>
 
-    function.def @compute(%inputArr : !llzk.array<3 x !llzk.felt>) -> !llzk.struct<@Component> {
+    function.def @compute(%inputArr : !array.array<3 x !llzk.felt>) -> !llzk.struct<@Component> {
       %self = new_struct : !llzk.struct<@Component>
       function.return %self : !llzk.struct<@Component>
     }
-    function.def @constrain(%self: !llzk.struct<@Component>, %inputArr : !llzk.array<3 x !llzk.felt>) {
+    function.def @constrain(%self: !llzk.struct<@Component>, %inputArr : !array.array<3 x !llzk.felt>) {
       function.return
     }
   }
@@ -19,11 +19,11 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT: }
 
 // RELAX-LABEL: llzk.struct @Component {
-// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !llzk.array<3 x !llzk.felt>) -> !llzk.struct<@Component> {
+// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.array<3 x !llzk.felt>) -> !llzk.struct<@Component> {
 // RELAX-NEXT:      %[[VAL_1:.*]] = new_struct : <@Component>
 // RELAX-NEXT:      function.return %[[VAL_1]] : !llzk.struct<@Component>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@Component>, %[[VAL_3:.*]]: !llzk.array<3 x !llzk.felt>) {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@Component>, %[[VAL_3:.*]]: !array.array<3 x !llzk.felt>) {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
@@ -147,15 +147,15 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @VarArray<[@N, @T]> {
-    field @val: !llzk.array<@N x !llzk.tvar<@T>>
+    field @val: !array.array<@N x !llzk.tvar<@T>>
 
-    function.def @compute(%inp: !llzk.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
+    function.def @compute(%inp: !array.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
       %self = new_struct : !llzk.struct<@VarArray<[@N, @T]>>
-      writef %self[@val] = %inp : !llzk.struct<@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.tvar<@T>>
+      writef %self[@val] = %inp : !llzk.struct<@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
       function.return %self : !llzk.struct<@VarArray<[@N, @T]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@VarArray<[@N, @T]>>, %inp: !llzk.array<@N x !llzk.tvar<@T>>) {
+    function.def @constrain(%self: !llzk.struct<@VarArray<[@N, @T]>>, %inp: !array.array<@N x !llzk.tvar<@T>>) {
       function.return
     }
   }
@@ -175,11 +175,11 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // STRICT-LABEL: llzk.struct @VarArray<[@N, @T]> {
-// STRICT-NEXT:    function.def @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
+// STRICT-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
 // STRICT-NEXT:      %[[VAL_1:.*]] = new_struct : <@VarArray<[@N, @T]>>
 // STRICT-NEXT:      function.return %[[VAL_1]] : !llzk.struct<@VarArray<[@N, @T]>>
 // STRICT-NEXT:    }
-// STRICT-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) {
+// STRICT-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !array.array<@N x !llzk.tvar<@T>>) {
 // STRICT-NEXT:      function.return
 // STRICT-NEXT:    }
 // STRICT-NEXT:  }
@@ -196,11 +196,11 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT:  }
 
 // RELAX-LABEL: llzk.struct @VarArray<[@N, @T]> {
-// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
+// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
 // RELAX-NEXT:      %[[VAL_1:.*]] = new_struct : <@VarArray<[@N, @T]>>
 // RELAX-NEXT:      function.return %[[VAL_1]] : !llzk.struct<@VarArray<[@N, @T]>>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !llzk.array<@N x !llzk.tvar<@T>>) {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !array.array<@N x !llzk.tvar<@T>>) {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
@@ -239,20 +239,20 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @VarArray<[@N, @T]> {
-    field @valUnused: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
-    field @valUsed: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+    field @valUnused: !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+    field @valUsed: !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
 
-    function.def @compute(%inp: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %first : !llzk.tvar<@T>) -> !llzk.struct<@VarArray<[@N, @T]>> {
+    function.def @compute(%inp: !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %first : !llzk.tvar<@T>) -> !llzk.struct<@VarArray<[@N, @T]>> {
       %self = new_struct : !llzk.struct<@VarArray<[@N, @T]>>
-      writef %self[@valUnused] = %inp : !llzk.struct<@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
-      writef %self[@valUsed] = %inp : !llzk.struct<@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+      writef %self[@valUnused] = %inp : !llzk.struct<@VarArray<[@N, @T]>>, !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+      writef %self[@valUsed] = %inp : !llzk.struct<@VarArray<[@N, @T]>>, !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
       function.return %self : !llzk.struct<@VarArray<[@N, @T]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@VarArray<[@N, @T]>>, %inp: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %first : !llzk.tvar<@T>) {
-      %arr = readf %self[@valUsed] : !llzk.struct<@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+    function.def @constrain(%self: !llzk.struct<@VarArray<[@N, @T]>>, %inp: !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %first : !llzk.tvar<@T>) {
+      %arr = readf %self[@valUsed] : !llzk.struct<@VarArray<[@N, @T]>>, !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
       %idx = arith.constant 0 : index
-      %elem = array.read %arr[%idx] : !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
+      %elem = array.read %arr[%idx] : !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
       %inner = readf %elem[@val] : !llzk.struct<@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
       emit_eq %first, %inner : !llzk.tvar<@T>
       function.return
@@ -290,14 +290,14 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT:  }
 
 // STRICT-LABEL: llzk.struct @VarArray<[@N, @T]> {
-// STRICT-NEXT:    field @valUsed : !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
-// STRICT-NEXT:    function.def @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@VarArray<[@N, @T]>> {
+// STRICT-NEXT:    field @valUsed : !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// STRICT-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@VarArray<[@N, @T]>> {
 // STRICT-NEXT:      %[[VAL_2:.*]] = new_struct : <@VarArray<[@N, @T]>>
-// STRICT-NEXT:      writef %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// STRICT-NEXT:      writef %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
 // STRICT-NEXT:      function.return %[[VAL_2]] : !llzk.struct<@VarArray<[@N, @T]>>
 // STRICT-NEXT:    }
-// STRICT-NEXT:    function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !llzk.tvar<@T>) {
-// STRICT-NEXT:      %[[VAL_6:.*]] = readf %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// STRICT-NEXT:    function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !llzk.tvar<@T>) {
+// STRICT-NEXT:      %[[VAL_6:.*]] = readf %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
 // STRICT-NEXT:      %[[VAL_7:.*]] = arith.constant 0 : index
 // STRICT-NEXT:      %[[VAL_8:.*]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
 // STRICT-NEXT:      %[[VAL_9:.*]] = readf %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
@@ -334,14 +334,14 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: llzk.struct @VarArray<[@N, @T]> {
-// RELAX-NEXT:    field @valUsed : !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
-// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@VarArray<[@N, @T]>> {
+// RELAX-NEXT:    field @valUsed : !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !llzk.tvar<@T>) -> !llzk.struct<@VarArray<[@N, @T]>> {
 // RELAX-NEXT:      %[[VAL_2:.*]] = new_struct : <@VarArray<[@N, @T]>>
-// RELAX-NEXT:      writef %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// RELAX-NEXT:      writef %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
 // RELAX-NEXT:      function.return %[[VAL_2]] : !llzk.struct<@VarArray<[@N, @T]>>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !llzk.tvar<@T>) {
-// RELAX-NEXT:      %[[VAL_6:.*]] = readf %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !llzk.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
+// RELAX-NEXT:    function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !llzk.tvar<@T>) {
+// RELAX-NEXT:      %[[VAL_6:.*]] = readf %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !array.array<@N x !llzk.struct<@std::@Wrapper<[@T]>>>
 // RELAX-NEXT:      %[[VAL_7:.*]] = arith.constant 0 : index
 // RELAX-NEXT:      %[[VAL_8:.*]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !llzk.struct<@std::@Wrapper<[@T]>>>, !llzk.struct<@std::@Wrapper<[@T]>>
 // RELAX-NEXT:      %[[VAL_9:.*]] = readf %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>

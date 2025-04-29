@@ -4,9 +4,9 @@ function.def @arr_constant_index() -> index {
   %a = arith.constant 45 : index // expected-note {{prior use here}}
   %b = arith.constant 214 : index
   %c = arith.constant 2 : index
-  %r = array.new %a, %b, %c : !llzk.array<3 x index>
-  // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!llzk.array<3 x index>' vs 'index'}}
-  %i = array.read %a[%c] : !llzk.array<3 x index>, index
+  %r = array.new %a, %b, %c : !array.array<3 x index>
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<3 x index>' vs 'index'}}
+  %i = array.read %a[%c] : !array.array<3 x index>, index
   function.return %i: index
 }
 // -----
@@ -15,9 +15,9 @@ function.def @arr_mix_index(%a: index, %b: index) -> index {
   %c = arith.constant 324 : index
   %d = arith.constant 999 : index
   %i = arith.constant 0 : index
-  %r = array.new %a, %b, %c, %d: !llzk.array<4 x index> // expected-note {{prior use here}}
-  // expected-error@+1 {{use of value '%r' expects different type than prior uses: 'index' vs '!llzk.array<4 x index>'}}
-  %v = array.read %r[%r] : !llzk.array<4 x index>, index
+  %r = array.new %a, %b, %c, %d: !array.array<4 x index> // expected-note {{prior use here}}
+  // expected-error@+1 {{use of value '%r' expects different type than prior uses: 'index' vs '!array.array<4 x index>'}}
+  %v = array.read %r[%r] : !array.array<4 x index>, index
   function.return %v: index
 }
 // -----
@@ -27,19 +27,19 @@ function.def @arr_mix_index(%a: index, %b: index) -> index {
   %d = arith.constant 999 : index
   %i = arith.constant 0 : index
   %f = llzk.constfelt 6744573456376 // expected-note {{prior use here}}
-  %r = array.new %a, %b, %c, %d: !llzk.array<4 x index>
+  %r = array.new %a, %b, %c, %d: !array.array<4 x index>
   // expected-error@+1 {{use of value '%f' expects different type than prior uses: 'index' vs '!llzk.felt'}}
-  %v = array.read %r[%f] : !llzk.array<4 x index>, index
+  %v = array.read %r[%f] : !array.array<4 x index>, index
   function.return %v: index
 }
 // -----
 
-function.def @arr_wrong_array_elem_type(%a: !llzk.felt) -> !llzk.array<1 x !llzk.felt> {
+function.def @arr_wrong_array_elem_type(%a: !llzk.felt) -> !array.array<1 x !llzk.felt> {
   %i = arith.constant 0 : index
-  %r = array.new %a: !llzk.array<1 x !llzk.felt>
+  %r = array.new %a: !array.array<1 x !llzk.felt>
   // expected-error@+1 {{'array.read' op failed to verify that result type matches with arr_ref element type}}
-  %v = array.read %r[%i] : !llzk.array<1 x !llzk.felt>, index
-  function.return %r: !llzk.array<1 x !llzk.felt>
+  %v = array.read %r[%i] : !array.array<1 x !llzk.felt>, index
+  function.return %r: !array.array<1 x !llzk.felt>
 }
 
 // -----
@@ -48,9 +48,9 @@ function.def @read_too_few_indices() -> index {
   %0 = arith.constant 0 : index
   %1 = arith.constant 1 : index
 
-  %r = array.new : !llzk.array<2,4,3 x index>
+  %r = array.new : !array.array<2,4,3 x index>
   // expected-error@+1 {{'array.read' op has insufficient indexed dimensions: expected 3 but found 2}}
-  %x = array.read %r[%1,%0] : !llzk.array<2,4,3 x index>, index
+  %x = array.read %r[%1,%0] : !array.array<2,4,3 x index>, index
   function.return %x : index
 }
 
@@ -61,8 +61,8 @@ function.def @read_too_many_indices() -> index {
   %1 = arith.constant 1 : index
   %2 = arith.constant 2 : index
 
-  %r = array.new : !llzk.array<2,4,3 x index>
+  %r = array.new : !array.array<2,4,3 x index>
   // expected-error@+1 {{'array.read' op has too many indexed dimensions: expected 3 but found 4}}
-  %x = array.read %r[%1,%0,%2,%0] : !llzk.array<2,4,3 x index>, index
+  %x = array.read %r[%1,%0,%2,%0] : !array.array<2,4,3 x index>, index
   function.return %x : index
 }

@@ -136,16 +136,16 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentM {
-    llzk.field @f2 : !llzk.array<2 x index>
+    llzk.field @f2 : !array.array<2 x index>
 
     function.def @compute() -> !llzk.struct<@ComponentM> {
       %self = new_struct : !llzk.struct<@ComponentM>
       function.return %self : !llzk.struct<@ComponentM>
     }
 
-    function.def @constrain(%p: !llzk.struct<@ComponentM>, %0: !llzk.array<7 x index>) { // expected-note {{prior use here}}
-      // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!llzk.array<2 x index>' vs '!llzk.array<7 x index>'}}
-      writef %p[@f2] = %0 : !llzk.struct<@ComponentM>, !llzk.array<2 x index>
+    function.def @constrain(%p: !llzk.struct<@ComponentM>, %0: !array.array<7 x index>) { // expected-note {{prior use here}}
+      // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!array.array<2 x index>' vs '!array.array<7 x index>'}}
+      writef %p[@f2] = %0 : !llzk.struct<@ComponentM>, !array.array<2 x index>
       function.return
     }
   }

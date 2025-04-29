@@ -3,7 +3,7 @@
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA1 {
     // expected-note@+1 {{field defined here}}
-    llzk.field @f1 : !llzk.felt 
+    llzk.field @f1 : !llzk.felt
 
     function.def @constrain(%self: !llzk.struct<@ComponentA1>) { function.return }
     function.def @compute() -> !llzk.struct<@ComponentA1> {
@@ -81,8 +81,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA2 {
-    // expected-error@+1 {{'llzk.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!llzk.array<2 x !llzk.string>'}}
-    llzk.field @f1 : !llzk.array<2 x !llzk.string> {column}
+    // expected-error@+1 {{'llzk.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!array.array<2 x !llzk.string>'}}
+    llzk.field @f1 : !array.array<2 x !llzk.string> {column}
     function.def @compute() -> !llzk.struct<@ComponentA2> {
       %self = new_struct : !llzk.struct<@ComponentA2>
       function.return %self : !llzk.struct<@ComponentA2>
@@ -98,8 +98,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA2 {
-    // expected-error@+1 {{'llzk.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!llzk.array<2 x index>'}}
-    llzk.field @f1 : !llzk.array<2 x index> {column}
+    // expected-error@+1 {{'llzk.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!array.array<2 x index>'}}
+    llzk.field @f1 : !array.array<2 x index> {column}
     function.def @compute() -> !llzk.struct<@ComponentA2> {
       %self = new_struct : !llzk.struct<@ComponentA2>
       function.return %self : !llzk.struct<@ComponentA2>
@@ -116,7 +116,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA1 {
     // Even if the struct's field is of felt type, it is not marked as a column.
-    llzk.field @f1 : !llzk.felt 
+    llzk.field @f1 : !llzk.felt
 
     function.def @constrain(%self: !llzk.struct<@ComponentA1>) { function.return }
     function.def @compute() -> !llzk.struct<@ComponentA1> {

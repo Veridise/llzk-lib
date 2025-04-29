@@ -7,12 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Util/AffineHelper.h"
-#include "llzk/Util/ArrayTypeHelper.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -43,6 +43,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace function;
+using namespace array;
 
 //===------------------------------------------------------------------===//
 // AssertOp

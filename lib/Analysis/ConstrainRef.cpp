@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/ConstrainRef.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Debug.h"
@@ -17,6 +18,8 @@
 using namespace mlir;
 
 namespace llzk {
+
+using namespace array;
 
 /* ConstrainRefIndex */
 
@@ -142,7 +145,7 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
           tables, mod, getStructDef(tables, mod, structTy), blockArg, subFields
       );
       res.insert(res.end(), subRes.begin(), subRes.end());
-    } else if (auto arrayTy = mlir::dyn_cast<llzk::ArrayType>(f.getType())) {
+    } else if (auto arrayTy = mlir::dyn_cast<llzk::array::ArrayType>(f.getType())) {
       // Create refs for each array element
       auto subRes = getAllConstrainRefs(tables, mod, arrayTy, blockArg, subFields);
       res.insert(res.end(), subRes.begin(), subRes.end());

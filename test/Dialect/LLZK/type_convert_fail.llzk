@@ -10,9 +10,9 @@ function.def @string_to_index(
 // -----
 
 function.def @array_to_index(
-    %a: !llzk.array<2 x !llzk.felt> // expected-note {{prior use here}}
+    %a: !array.array<2 x !llzk.felt> // expected-note {{prior use here}}
   ) -> index {
-  // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!llzk.felt' vs '!llzk.array<2 x !llzk.felt>'}}
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!llzk.felt' vs '!array.array<2 x !llzk.felt>'}}
   %b = llzk.toindex %a
   function.return %b: index
 }
@@ -61,9 +61,9 @@ function.def @string_to_felt(%a: !llzk.string) -> !llzk.felt {
 }
 // -----
 
-function.def @array_to_felt(%a: !llzk.array<7 x i1>) -> !llzk.felt {
-  // expected-error@+1 {{'llzk.tofelt' op operand #0 must be 1-bit signless integer or index, but got '!llzk.array<7 x i1>'}}
-  %b = llzk.tofelt %a : !llzk.array<7 x i1>
+function.def @array_to_felt(%a: !array.array<7 x i1>) -> !llzk.felt {
+  // expected-error@+1 {{'llzk.tofelt' op operand #0 must be 1-bit signless integer or index, but got '!array.array<7 x i1>'}}
+  %b = llzk.tofelt %a : !array.array<7 x i1>
   function.return %b: !llzk.felt
 }
 // -----

@@ -13,12 +13,12 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
-  llzk.global @g : !llzk.array<@b x i1>
+  llzk.global @g : !array.array<@b x i1>
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
-  llzk.global @g : !llzk.array<affine_map<(i)->(i)> x i1>
+  llzk.global @g : !array.array<affine_map<(i)->(i)> x i1>
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
@@ -101,34 +101,34 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op with type '!llzk.array<2 x !llzk.string>' expected builtin.array attribute value but found builtin.string}}
-  llzk.global const @g : !llzk.array<2 x !llzk.string> = "a string and something else"
+  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !llzk.string>' expected builtin.array attribute value but found builtin.string}}
+  llzk.global const @g : !array.array<2 x !llzk.string> = "a string and something else"
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op with type '!llzk.array<2 x !llzk.string>' expected builtin.array attribute value to contain 2 elements but found 0}}
-  llzk.global const @g : !llzk.array<2 x !llzk.string> = []
+  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !llzk.string>' expected builtin.array attribute value to contain 2 elements but found 0}}
+  llzk.global const @g : !array.array<2 x !llzk.string> = []
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op with type '!llzk.array<2 x !llzk.string>' expected builtin.string array element but found builtin.integer}}
-  llzk.global const @g : !llzk.array<2 x !llzk.string> = [7, 8]
+  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !llzk.string>' expected builtin.string array element but found builtin.integer}}
+  llzk.global const @g : !array.array<2 x !llzk.string> = [7, 8]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op with type '!llzk.array<2 x !llzk.string>' expected builtin.array attribute value to contain 2 elements but found 3}}
-  llzk.global const @g : !llzk.array<2 x !llzk.string> = ["too", "many", "strings"]
+  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !llzk.string>' expected builtin.array attribute value to contain 2 elements but found 3}}
+  llzk.global const @g : !array.array<2 x !llzk.string> = ["too", "many", "strings"]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+2 {{'llzk.global' op with type '!llzk.array<4 x !llzk.string>' expected builtin.string array element but found builtin.integer}}
-  // expected-error@+1 {{'llzk.global' op with type '!llzk.array<4 x !llzk.string>' expected builtin.string array element but found builtin.affine_map}}
-  llzk.global const @g : !llzk.array<4 x !llzk.string> = ["a string and something else", false, affine_map<(i)->(i)>, -100]
+  // expected-error@+2 {{'llzk.global' op with type '!array.array<4 x !llzk.string>' expected builtin.string array element but found builtin.integer}}
+  // expected-error@+1 {{'llzk.global' op with type '!array.array<4 x !llzk.string>' expected builtin.string array element but found builtin.affine_map}}
+  llzk.global const @g : !array.array<4 x !llzk.string> = ["a string and something else", false, affine_map<(i)->(i)>, -100]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op with type '!llzk.array<2,2,1,2 x !llzk.felt>' expected builtin.array attribute value to contain 8 elements but found 4}}
-  llzk.global const @g : !llzk.array<2,2,1,2 x !llzk.felt> = [6, 12134, 45523, 15623]
+  // expected-error@+1 {{'llzk.global' op with type '!array.array<2,2,1,2 x !llzk.felt>' expected builtin.array attribute value to contain 8 elements but found 4}}
+  llzk.global const @g : !array.array<2,2,1,2 x !llzk.felt> = [6, 12134, 45523, 15623]
 }
 // -----
 

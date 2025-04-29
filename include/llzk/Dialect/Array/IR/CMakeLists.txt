@@ -4,6 +4,10 @@ set(LLVM_TARGET_DEFINITIONS "Dialect.td")
 mlir_tablegen(Dialect.h.inc -gen-dialect-decls -dialect=array)
 mlir_tablegen(Dialect.cpp.inc -gen-dialect-defs -dialect=array)
 
+set(LLVM_TARGET_DEFINITIONS "Types.td")
+mlir_tablegen(Types.h.inc -gen-typedef-decls -typedefs-dialect=array)
+mlir_tablegen(Types.cpp.inc -gen-typedef-defs -typedefs-dialect=array)
+
 set(LLVM_TARGET_DEFINITIONS "Ops.td")
 mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=array)
 mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=array)

@@ -52,43 +52,43 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @emitin_in_compute {
-    function.def @compute(%a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_compute> {
+    function.def @compute(%a: !llzk.felt, %b: !array.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_compute> {
       // expected-error@+1 {{'llzk.emit_in' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
-      llzk.emit_in %b, %a : !llzk.array<5 x !llzk.felt>
+      llzk.emit_in %b, %a : !array.array<5 x !llzk.felt>
       %self = new_struct : !llzk.struct<@emitin_in_compute>
       function.return %self : !llzk.struct<@emitin_in_compute>
     }
 
-    function.def @constrain(%self: !llzk.struct<@emitin_in_compute>, %a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) { function.return }
+    function.def @constrain(%self: !llzk.struct<@emitin_in_compute>, %a: !llzk.felt, %b: !array.array<5 x !llzk.felt>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @emitin_in_compute_in_loop {
-    function.def @compute(%a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_compute_in_loop> {
+    function.def @compute(%a: !llzk.felt, %b: !array.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_compute_in_loop> {
       %lb = arith.constant 0 : index
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         // expected-error@+1 {{'llzk.emit_in' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
-        llzk.emit_in %b, %a : !llzk.array<5 x !llzk.felt>
+        llzk.emit_in %b, %a : !array.array<5 x !llzk.felt>
       }
       %self = new_struct : !llzk.struct<@emitin_in_compute_in_loop>
       function.return %self : !llzk.struct<@emitin_in_compute_in_loop>
     }
 
-    function.def @constrain(%self: !llzk.struct<@emitin_in_compute_in_loop>, %a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) { function.return }
+    function.def @constrain(%self: !llzk.struct<@emitin_in_compute_in_loop>, %a: !llzk.felt, %b: !array.array<5 x !llzk.felt>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @emitin_in_compute_in_deep_branches {
-    function.def @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !llzk.array<5 x index>) -> !llzk.struct<@emitin_in_compute_in_deep_branches> {
+    function.def @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !array.array<5 x index>) -> !llzk.struct<@emitin_in_compute_in_deep_branches> {
       scf.if %a {
         scf.if %b {
           scf.if %c {
             // expected-error@+1 {{'llzk.emit_in' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
-            llzk.emit_in %y, %x : !llzk.array<5 x index>
+            llzk.emit_in %y, %x : !array.array<5 x index>
           }
         }
       }
@@ -96,7 +96,7 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !llzk.struct<@emitin_in_compute_in_deep_branches>
     }
 
-    function.def @constrain(%self: !llzk.struct<@emitin_in_compute_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !llzk.array<5 x index>) { function.return }
+    function.def @constrain(%self: !llzk.struct<@emitin_in_compute_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !array.array<5 x index>) { function.return }
   }
 }
 // -----
@@ -106,9 +106,9 @@ function.def @constrain(%a: !llzk.felt, %b: !llzk.felt) {
   function.return
 }
 // -----
-function.def @constrain(%x: index, %y: !llzk.array<5 x index>) {
+function.def @constrain(%x: index, %y: !array.array<5 x index>) {
   // expected-error@+1 {{'llzk.emit_in' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
-  llzk.emit_in %y, %x : !llzk.array<5 x index>
+  llzk.emit_in %y, %x : !array.array<5 x index>
   function.return
 }
 // -----

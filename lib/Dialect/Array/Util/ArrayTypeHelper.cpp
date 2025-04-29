@@ -12,8 +12,9 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/IR/Matchers.h>
 
@@ -21,6 +22,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/STLFunctionalExtras.h>
 
+using namespace llzk::array;
 using namespace llzk;
 using namespace mlir;
 

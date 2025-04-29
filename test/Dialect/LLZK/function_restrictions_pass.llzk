@@ -76,17 +76,17 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @emitin_in_loop {
-    function.def @compute(%a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_loop> {
+    function.def @compute(%a: !llzk.felt, %b: !array.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_loop> {
       %self = new_struct : !llzk.struct<@emitin_in_loop>
       function.return %self : !llzk.struct<@emitin_in_loop>
     }
 
-    function.def @constrain(%self: !llzk.struct<@emitin_in_loop>, %a: !llzk.felt, %b: !llzk.array<5 x !llzk.felt>) {
+    function.def @constrain(%self: !llzk.struct<@emitin_in_loop>, %a: !llzk.felt, %b: !array.array<5 x !llzk.felt>) {
       %lb = arith.constant 0 : index
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        llzk.emit_in %b, %a : !llzk.array<5 x !llzk.felt>
+        llzk.emit_in %b, %a : !array.array<5 x !llzk.felt>
       }
       function.return
     }
@@ -94,12 +94,12 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL:  llzk.struct @emitin_in_loop {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_loop> {
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<5 x !llzk.felt>) -> !llzk.struct<@emitin_in_loop> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@emitin_in_loop>
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@emitin_in_loop>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@emitin_in_loop>,
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.array<5 x !llzk.felt>) {
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !array.array<5 x !llzk.felt>) {
 //CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 //CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
@@ -113,16 +113,16 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @emitin_in_deep_branches {
-    function.def @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !llzk.array<5 x index>) -> !llzk.struct<@emitin_in_deep_branches> {
+    function.def @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !array.array<5 x index>) -> !llzk.struct<@emitin_in_deep_branches> {
       %self = new_struct : !llzk.struct<@emitin_in_deep_branches>
       function.return %self : !llzk.struct<@emitin_in_deep_branches>
     }
 
-    function.def @constrain(%self: !llzk.struct<@emitin_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !llzk.array<5 x index>) {
+    function.def @constrain(%self: !llzk.struct<@emitin_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !array.array<5 x index>) {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            llzk.emit_in %y, %x : !llzk.array<5 x index>
+            llzk.emit_in %y, %x : !array.array<5 x index>
           }
         }
       }
@@ -132,12 +132,12 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL:  llzk.struct @emitin_in_deep_branches {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
-//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: index, %[[A4:[0-9a-zA-Z_\.]+]]: !llzk.array<5 x index>) -> !llzk.struct<@emitin_in_deep_branches> {
+//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: index, %[[A4:[0-9a-zA-Z_\.]+]]: !array.array<5 x index>) -> !llzk.struct<@emitin_in_deep_branches> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@emitin_in_deep_branches>
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@emitin_in_deep_branches>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@emitin_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
-//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: i1, %[[A4:[0-9a-zA-Z_\.]+]]: index, %[[A5:[0-9a-zA-Z_\.]+]]: !llzk.array<5 x index>) {
+//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: i1, %[[A4:[0-9a-zA-Z_\.]+]]: index, %[[A5:[0-9a-zA-Z_\.]+]]: !array.array<5 x index>) {
 //CHECK-NEXT:       scf.if %[[A1]] {
 //CHECK-NEXT:         scf.if %[[A2]] {
 //CHECK-NEXT:           scf.if %[[A3]] {

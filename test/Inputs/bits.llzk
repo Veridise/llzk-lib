@@ -22,21 +22,21 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   llzk.struct @NondetExtReg<[]> {
-    field @"$super" : !llzk.array<4 x !llzk.felt>
-    field @reg : !llzk.array<4 x !llzk.felt>
-    function.def @compute(%arg0: !llzk.array<4 x !llzk.felt>) -> !llzk.struct<@NondetExtReg<[]>> {
+    field @"$super" : !array.array<4 x !llzk.felt>
+    field @reg : !array.array<4 x !llzk.felt>
+    function.def @compute(%arg0: !array.array<4 x !llzk.felt>) -> !llzk.struct<@NondetExtReg<[]>> {
       %self = new_struct : <@NondetExtReg<[]>>
-      writef %self[@reg] = %arg0 : <@NondetExtReg<[]>>, !llzk.array<4 x !llzk.felt>
-      writef %self[@"$super"] = %arg0 : <@NondetExtReg<[]>>, !llzk.array<4 x !llzk.felt>
+      writef %self[@reg] = %arg0 : <@NondetExtReg<[]>>, !array.array<4 x !llzk.felt>
+      writef %self[@"$super"] = %arg0 : <@NondetExtReg<[]>>, !array.array<4 x !llzk.felt>
       function.return %self : !llzk.struct<@NondetExtReg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@NondetExtReg<[]>>, %arg1: !llzk.array<4 x !llzk.felt>) {
+    function.def @constrain(%arg0: !llzk.struct<@NondetExtReg<[]>>, %arg1: !array.array<4 x !llzk.felt>) {
       function.return
     }
   }
   llzk.struct @EqzExt<[]> {
     field @"$super" : !llzk.struct<@Component<[]>>
-    function.def @compute(%arg0: !llzk.array<4 x !llzk.felt>) -> !llzk.struct<@EqzExt<[]>> {
+    function.def @compute(%arg0: !array.array<4 x !llzk.felt>) -> !llzk.struct<@EqzExt<[]>> {
       %self = new_struct : <@EqzExt<[]>>
       %c0 = arith.constant 0 : index
       %0 = array.read %arg0[%c0] : <4 x !llzk.felt>, !llzk.felt
@@ -62,7 +62,7 @@ module attributes {veridise.lang = "llzk"} {
       writef %self[@"$super"] = %11 : <@EqzExt<[]>>, !llzk.struct<@Component<[]>>
       function.return %self : !llzk.struct<@EqzExt<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@EqzExt<[]>>, %arg1: !llzk.array<4 x !llzk.felt>) {
+    function.def @constrain(%arg0: !llzk.struct<@EqzExt<[]>>, %arg1: !array.array<4 x !llzk.felt>) {
       function.return
     }
   }
@@ -90,12 +90,12 @@ module attributes {veridise.lang = "llzk"} {
     field @"$super" : !llzk.struct<@NondetExtReg<[]>>
     field @"$temp" : !llzk.struct<@EqzExt<[]>>
     field @reg : !llzk.struct<@NondetExtReg<[]>>
-    function.def @compute(%arg0: !llzk.array<4 x !llzk.felt>) -> !llzk.struct<@ExtReg<[]>> {
+    function.def @compute(%arg0: !array.array<4 x !llzk.felt>) -> !llzk.struct<@ExtReg<[]>> {
       %self = new_struct : <@ExtReg<[]>>
-      %0 = function.call @NondetExtReg::@compute(%arg0) : (!llzk.array<4 x !llzk.felt>) -> !llzk.struct<@NondetExtReg<[]>>
+      %0 = function.call @NondetExtReg::@compute(%arg0) : (!array.array<4 x !llzk.felt>) -> !llzk.struct<@NondetExtReg<[]>>
       writef %self[@reg] = %0 : <@ExtReg<[]>>, !llzk.struct<@NondetExtReg<[]>>
       %1 = readf %self[@reg] : <@ExtReg<[]>>, !llzk.struct<@NondetExtReg<[]>>
-      %2 = readf %1[@"$super"] : <@NondetExtReg<[]>>, !llzk.array<4 x !llzk.felt>
+      %2 = readf %1[@"$super"] : <@NondetExtReg<[]>>, !array.array<4 x !llzk.felt>
       %c0 = arith.constant 0 : index
       %3 = array.read %2[%c0] : <4 x !llzk.felt>, !llzk.felt
       %c1 = arith.constant 1 : index
@@ -117,16 +117,16 @@ module attributes {veridise.lang = "llzk"} {
       %13 = sub %5, %9 : !llzk.felt, !llzk.felt
       %14 = sub %6, %10 : !llzk.felt, !llzk.felt
       %array = array.new %11, %12, %13, %14 : <4 x !llzk.felt>
-      %15 = function.call @EqzExt::@compute(%array) : (!llzk.array<4 x !llzk.felt>) -> !llzk.struct<@EqzExt<[]>>
+      %15 = function.call @EqzExt::@compute(%array) : (!array.array<4 x !llzk.felt>) -> !llzk.struct<@EqzExt<[]>>
       writef %self[@"$temp"] = %15 : <@ExtReg<[]>>, !llzk.struct<@EqzExt<[]>>
       %16 = readf %self[@"$temp"] : <@ExtReg<[]>>, !llzk.struct<@EqzExt<[]>>
       writef %self[@"$super"] = %1 : <@ExtReg<[]>>, !llzk.struct<@NondetExtReg<[]>>
       function.return %self : !llzk.struct<@ExtReg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@ExtReg<[]>>, %arg1: !llzk.array<4 x !llzk.felt>) {
+    function.def @constrain(%arg0: !llzk.struct<@ExtReg<[]>>, %arg1: !array.array<4 x !llzk.felt>) {
       %0 = readf %arg0[@reg] : <@ExtReg<[]>>, !llzk.struct<@NondetExtReg<[]>>
-      function.call @NondetExtReg::@constrain(%0, %arg1) : (!llzk.struct<@NondetExtReg<[]>>, !llzk.array<4 x !llzk.felt>) -> ()
-      %1 = readf %0[@"$super"] : <@NondetExtReg<[]>>, !llzk.array<4 x !llzk.felt>
+      function.call @NondetExtReg::@constrain(%0, %arg1) : (!llzk.struct<@NondetExtReg<[]>>, !array.array<4 x !llzk.felt>) -> ()
+      %1 = readf %0[@"$super"] : <@NondetExtReg<[]>>, !array.array<4 x !llzk.felt>
       %c0 = arith.constant 0 : index
       %2 = array.read %1[%c0] : <4 x !llzk.felt>, !llzk.felt
       %c1 = arith.constant 1 : index
@@ -149,7 +149,7 @@ module attributes {veridise.lang = "llzk"} {
       %13 = sub %5, %9 : !llzk.felt, !llzk.felt
       %array = array.new %10, %11, %12, %13 : <4 x !llzk.felt>
       %14 = readf %arg0[@"$temp"] : <@ExtReg<[]>>, !llzk.struct<@EqzExt<[]>>
-      function.call @EqzExt::@constrain(%14, %array) : (!llzk.struct<@EqzExt<[]>>, !llzk.array<4 x !llzk.felt>) -> ()
+      function.call @EqzExt::@constrain(%14, %array) : (!llzk.struct<@EqzExt<[]>>, !array.array<4 x !llzk.felt>) -> ()
       function.return
     }
   }
@@ -178,18 +178,18 @@ module attributes {veridise.lang = "llzk"} {
   }
   llzk.struct @Log<[]> {
     field @"$super" : !llzk.struct<@Component<[]>>
-    function.def @compute(%arg0: !llzk.string, %arg1: !llzk.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Log<[]>> {
+    function.def @compute(%arg0: !llzk.string, %arg1: !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Log<[]>> {
       %self = new_struct : <@Log<[]>>
-      %0 = function.call @Log$$extern(%arg0, %arg1) : (!llzk.string, !llzk.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>>
+      %0 = function.call @Log$$extern(%arg0, %arg1) : (!llzk.string, !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>>
       writef %self[@"$super"] = %0 : <@Log<[]>>, !llzk.struct<@Component<[]>>
       function.return %self : !llzk.struct<@Log<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@Log<[]>>, %arg1: !llzk.string, %arg2: !llzk.array<-9223372036854775808 x !llzk.felt>) {
-      %0 = function.call @Log$$extern(%arg1, %arg2) : (!llzk.string, !llzk.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>>
+    function.def @constrain(%arg0: !llzk.struct<@Log<[]>>, %arg1: !llzk.string, %arg2: !array.array<-9223372036854775808 x !llzk.felt>) {
+      %0 = function.call @Log$$extern(%arg1, %arg2) : (!llzk.string, !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>>
       function.return
     }
   }
-  function.def private @Log$$extern(!llzk.string, !llzk.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>> attributes {extern}
+  function.def private @Log$$extern(!llzk.string, !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>> attributes {extern}
   llzk.struct @Abort<[]> {
     field @"$super" : !llzk.struct<@Component<[]>>
     function.def @compute() -> !llzk.struct<@Abort<[]>> {
