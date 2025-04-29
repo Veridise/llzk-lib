@@ -97,33 +97,33 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{integer literal not valid for specified type}}
-  llzk.global const @g : !llzk.string = 65723456
+  llzk.global const @g : !string.string = 65723456
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !llzk.string>' expected builtin.array attribute value but found builtin.string}}
-  llzk.global const @g : !array.array<2 x !llzk.string> = "a string and something else"
+  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !string.string>' expected builtin.array attribute value but found builtin.string}}
+  llzk.global const @g : !array.array<2 x !string.string> = "a string and something else"
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !llzk.string>' expected builtin.array attribute value to contain 2 elements but found 0}}
-  llzk.global const @g : !array.array<2 x !llzk.string> = []
+  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !string.string>' expected builtin.array attribute value to contain 2 elements but found 0}}
+  llzk.global const @g : !array.array<2 x !string.string> = []
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !llzk.string>' expected builtin.string array element but found builtin.integer}}
-  llzk.global const @g : !array.array<2 x !llzk.string> = [7, 8]
+  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !string.string>' expected builtin.string array element but found builtin.integer}}
+  llzk.global const @g : !array.array<2 x !string.string> = [7, 8]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !llzk.string>' expected builtin.array attribute value to contain 2 elements but found 3}}
-  llzk.global const @g : !array.array<2 x !llzk.string> = ["too", "many", "strings"]
+  // expected-error@+1 {{'llzk.global' op with type '!array.array<2 x !string.string>' expected builtin.array attribute value to contain 2 elements but found 3}}
+  llzk.global const @g : !array.array<2 x !string.string> = ["too", "many", "strings"]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+2 {{'llzk.global' op with type '!array.array<4 x !llzk.string>' expected builtin.string array element but found builtin.integer}}
-  // expected-error@+1 {{'llzk.global' op with type '!array.array<4 x !llzk.string>' expected builtin.string array element but found builtin.affine_map}}
-  llzk.global const @g : !array.array<4 x !llzk.string> = ["a string and something else", false, affine_map<(i)->(i)>, -100]
+  // expected-error@+2 {{'llzk.global' op with type '!array.array<4 x !string.string>' expected builtin.string array element but found builtin.integer}}
+  // expected-error@+1 {{'llzk.global' op with type '!array.array<4 x !string.string>' expected builtin.string array element but found builtin.affine_map}}
+  llzk.global const @g : !array.array<4 x !string.string> = ["a string and something else", false, affine_map<(i)->(i)>, -100]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
@@ -143,17 +143,17 @@ module attributes {veridise.lang = "llzk"} {
 // TEST: global with "const" not initialized
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'llzk.global' op marked as 'const' must be assigned a value}}
-  llzk.global const @g : !llzk.string
+  llzk.global const @g : !string.string
 }
 // -----
 
 // TEST: GlobalReadOp with unknown symbol name
 module attributes {veridise.lang = "llzk"} {
-  llzk.global @g : !llzk.string = "Hello"
+  llzk.global @g : !string.string = "Hello"
   llzk.struct @Component02 {
     function.def @compute() -> !llzk.struct<@Component02> {
       // expected-error@+1 {{'llzk.readg' op references unknown symbol "@unknown"}}
-      %t = llzk.readg @unknown : !llzk.string
+      %t = llzk.readg @unknown : !string.string
       %self = new_struct : !llzk.struct<@Component02>
       function.return %self : !llzk.struct<@Component02>
     }
@@ -167,8 +167,8 @@ module attributes {veridise.lang = "llzk"} {
   llzk.global @g : !llzk.felt = 6546
   llzk.struct @Component03 {
     function.def @compute() -> !llzk.struct<@Component03> {
-      // expected-error@+1 {{'llzk.readg' op has wrong type; expected '!llzk.felt', got '!llzk.string'}}
-      %t = llzk.readg @g : !llzk.string
+      // expected-error@+1 {{'llzk.readg' op has wrong type; expected '!llzk.felt', got '!string.string'}}
+      %t = llzk.readg @g : !string.string
       %self = new_struct : !llzk.struct<@Component03>
       function.return %self : !llzk.struct<@Component03>
     }

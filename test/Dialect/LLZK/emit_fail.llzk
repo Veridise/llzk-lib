@@ -448,13 +448,13 @@ module attributes {veridise.lang = "llzk"} {
 // Test: cannot use string type with [emit_eq] op
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component24 {
-    function.def @compute(%a: !llzk.string, %b: !llzk.string) -> !llzk.struct<@Component24> {
+    function.def @compute(%a: !string.string, %b: !string.string) -> !llzk.struct<@Component24> {
       %self = new_struct : !llzk.struct<@Component24>
       function.return %self : !llzk.struct<@Component24>
     }
-    function.def @constrain(%a: !llzk.string, %b: !llzk.string) {
-      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!llzk.string'}}
-      llzk.emit_eq %a, %b : !llzk.string
+    function.def @constrain(%a: !string.string, %b: !string.string) {
+      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!string.string'}}
+      llzk.emit_eq %a, %b : !string.string
       function.return
     }
   }
@@ -464,13 +464,13 @@ module attributes {veridise.lang = "llzk"} {
 // Test: cannot use string type with [emit_eq] op (at depth)
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component25 {
-    function.def @compute(%a: !array.array<2 x !llzk.string>, %b: !array.array<2 x !llzk.string>) -> !llzk.struct<@Component25> {
+    function.def @compute(%a: !array.array<2 x !string.string>, %b: !array.array<2 x !string.string>) -> !llzk.struct<@Component25> {
       %self = new_struct : !llzk.struct<@Component25>
       function.return %self : !llzk.struct<@Component25>
     }
-    function.def @constrain(%self: !llzk.struct<@Component25>, %a: !array.array<2 x !llzk.string>, %b: !array.array<2 x !llzk.string>) {
-      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.array<2 x !llzk.string>'}}
-      llzk.emit_eq %a, %b : !array.array<2 x !llzk.string>
+    function.def @constrain(%self: !llzk.struct<@Component25>, %a: !array.array<2 x !string.string>, %b: !array.array<2 x !string.string>) {
+      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.array<2 x !string.string>'}}
+      llzk.emit_eq %a, %b : !array.array<2 x !string.string>
       function.return
     }
   }

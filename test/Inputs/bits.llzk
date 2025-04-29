@@ -178,18 +178,18 @@ module attributes {veridise.lang = "llzk"} {
   }
   llzk.struct @Log<[]> {
     field @"$super" : !llzk.struct<@Component<[]>>
-    function.def @compute(%arg0: !llzk.string, %arg1: !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Log<[]>> {
+    function.def @compute(%arg0: !string.string, %arg1: !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Log<[]>> {
       %self = new_struct : <@Log<[]>>
-      %0 = function.call @Log$$extern(%arg0, %arg1) : (!llzk.string, !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>>
+      %0 = function.call @Log$$extern(%arg0, %arg1) : (!string.string, !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>>
       writef %self[@"$super"] = %0 : <@Log<[]>>, !llzk.struct<@Component<[]>>
       function.return %self : !llzk.struct<@Log<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@Log<[]>>, %arg1: !llzk.string, %arg2: !array.array<-9223372036854775808 x !llzk.felt>) {
-      %0 = function.call @Log$$extern(%arg1, %arg2) : (!llzk.string, !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>>
+    function.def @constrain(%arg0: !llzk.struct<@Log<[]>>, %arg1: !string.string, %arg2: !array.array<-9223372036854775808 x !llzk.felt>) {
+      %0 = function.call @Log$$extern(%arg1, %arg2) : (!string.string, !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>>
       function.return
     }
   }
-  function.def private @Log$$extern(!llzk.string, !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>> attributes {extern}
+  function.def private @Log$$extern(!string.string, !array.array<-9223372036854775808 x !llzk.felt>) -> !llzk.struct<@Component<[]>> attributes {extern}
   llzk.struct @Abort<[]> {
     field @"$super" : !llzk.struct<@Component<[]>>
     function.def @compute() -> !llzk.struct<@Abort<[]>> {
@@ -206,18 +206,18 @@ module attributes {veridise.lang = "llzk"} {
   function.def private @Abort$$extern() -> !llzk.struct<@Component<[]>> attributes {extern}
   llzk.struct @Assert<[]> {
     field @"$super" : !llzk.struct<@Component<[]>>
-    function.def @compute(%arg0: !llzk.felt, %arg1: !llzk.string) -> !llzk.struct<@Assert<[]>> {
+    function.def @compute(%arg0: !llzk.felt, %arg1: !string.string) -> !llzk.struct<@Assert<[]>> {
       %self = new_struct : <@Assert<[]>>
-      %0 = function.call @Assert$$extern(%arg0, %arg1) : (!llzk.felt, !llzk.string) -> !llzk.struct<@Component<[]>>
+      %0 = function.call @Assert$$extern(%arg0, %arg1) : (!llzk.felt, !string.string) -> !llzk.struct<@Component<[]>>
       writef %self[@"$super"] = %0 : <@Assert<[]>>, !llzk.struct<@Component<[]>>
       function.return %self : !llzk.struct<@Assert<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@Assert<[]>>, %arg1: !llzk.felt, %arg2: !llzk.string) {
-      %0 = function.call @Assert$$extern(%arg1, %arg2) : (!llzk.felt, !llzk.string) -> !llzk.struct<@Component<[]>>
+    function.def @constrain(%arg0: !llzk.struct<@Assert<[]>>, %arg1: !llzk.felt, %arg2: !string.string) {
+      %0 = function.call @Assert$$extern(%arg1, %arg2) : (!llzk.felt, !string.string) -> !llzk.struct<@Component<[]>>
       function.return
     }
   }
-  function.def private @Assert$$extern(!llzk.felt, !llzk.string) -> !llzk.struct<@Component<[]>> attributes {extern}
+  function.def private @Assert$$extern(!llzk.felt, !string.string) -> !llzk.struct<@Component<[]>> attributes {extern}
   llzk.struct @AssertBit<[]> {
     field @"$super" : !llzk.struct<@Component<[]>>
     field @"$temp" : !llzk.struct<@Component<[]>>
