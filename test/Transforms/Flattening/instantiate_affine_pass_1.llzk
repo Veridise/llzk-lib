@@ -91,7 +91,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V1]][@val] = %[[V0]] : <@"VarArray_2_!s<@ToFelt_1>">, !array.array<2 x !llzk.struct<@ToFelt_1>>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">, %[[V3:[0-9a-zA-Z_\.]+]]: !array.array<2 x !llzk.struct<@ToFelt_1>>) {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">, %[[V3:[0-9a-zA-Z_\.]+]]: !array.array<2 x !llzk.struct<@ToFelt_1>>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -104,7 +104,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V1]][@out] = %[[V0]] : <@ToFelt_1>, !llzk.felt
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@ToFelt_1>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_1>) {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_1>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -124,7 +124,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V6]][@arrs] = %[[V2]] : <@TestLoopWithAffineArrayStruct_2>, !array.array<2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>
 // CHECK-NEXT:      function.return %[[V6]] : !llzk.struct<@TestLoopWithAffineArrayStruct_2>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestLoopWithAffineArrayStruct_2>) {
+// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestLoopWithAffineArrayStruct_2>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -135,7 +135,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @TestLoopWithAffineArrayStruct_2::@compute() : () -> !llzk.struct<@TestLoopWithAffineArrayStruct_2>
 // CHECK-NEXT:      function.return %[[V0]] : !llzk.struct<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

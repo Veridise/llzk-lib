@@ -82,7 +82,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:          function.return %[[SELF]] : !llzk.struct<@risc0::@ValU32>
 //CHECK-NEXT:        }
 //CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@risc0::@ValU32>,
-//CHECK-SAME:        %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-SAME:        %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:          function.return
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
@@ -93,7 +93,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:          writef %[[SELF]][@reg] = %[[A0]] : <@risc0::@Reg>, !llzk.felt
 //CHECK-NEXT:          function.return %[[SELF]] : !llzk.struct<@risc0::@Reg>
 //CHECK-NEXT:        }
-//CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@risc0::@Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@risc0::@Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@reg] : <@risc0::@Reg>, !llzk.felt
 //CHECK-NEXT:          emit_eq %[[A1]], %[[T0]] : !llzk.felt, !llzk.felt
 //CHECK-NEXT:          function.return
@@ -111,7 +111,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:          function.return %[[SELF]] : !llzk.struct<@risc0::@Div>
 //CHECK-NEXT:        }
 //CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@risc0::@Div>,
-//CHECK-SAME:        %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-SAME:        %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@reciprocal] : <@risc0::@Div>, !llzk.felt
 //CHECK-NEXT:          %[[T1:[0-9a-zA-Z_\.]+]] = mul %[[T0]], %[[A2]]
 //CHECK-NEXT:          %felt_const_1 = constfelt 1

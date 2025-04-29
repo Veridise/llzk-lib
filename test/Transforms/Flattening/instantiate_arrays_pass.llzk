@@ -34,7 +34,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V1]][@out] = %[[V0]] : <@Component01>, !array.array<1,5,9 x index>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Component01>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01>) {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -90,7 +90,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V7]][@out] = %[[V6]] : <@Component02>, !array.array<1,#[[$M0]],9 x index>
 // CHECK-NEXT:      function.return %[[V7]] : !llzk.struct<@Component02>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component02>, %[[V9:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component02>, %[[V9:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -147,7 +147,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[V3]] : !llzk.struct<@Component03>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component03>, %[[V9:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component03>, %[[V9:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -208,7 +208,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[V3]] : !llzk.struct<@Component04>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component04>, %[[V13:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component04>, %[[V13:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -273,7 +273,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[V3]] : !llzk.struct<@Component05>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component05>, %[[V13:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component05>, %[[V13:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -335,7 +335,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[V3]] : !llzk.struct<@Component05B>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component05B>, %[[V13:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component05B>, %[[V13:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -384,7 +384,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V0]][@a] = %[[V1]] : <@Main>, !array.array<14,6,3 x !llzk.felt>
 // CHECK-NEXT:      function.return %[[V0]] : !llzk.struct<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -422,7 +422,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V1]][@out] = %[[V2]] : <@Component10>, !array.array<#[[$M0]] x index>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Component10>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component10>) {
+// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component10>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

@@ -42,7 +42,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      array.insert %[[VAL_2]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <7,3 x !llzk.felt>, <3 x !llzk.felt>
 // CHECK-NEXT:      function.return %[[VAL_1]] : !llzk.struct<@Component>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_5:.*]]: !llzk.struct<@Component>, %[[VAL_6:.*]]: !array.array<3 x !llzk.felt>) {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_5:.*]]: !llzk.struct<@Component>, %[[VAL_6:.*]]: !array.array<3 x !llzk.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      %[[VAL_7:.*]] = readf %[[VAL_5]][@matrix] : <@Component>, !array.array<7,3 x !llzk.felt>
 // CHECK-NEXT:      %[[VAL_8:.*]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[VAL_9:.*]] = arith.constant 3 : index
@@ -96,7 +96,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_2]] : !llzk.struct<@Component>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_7:.*]]: !llzk.struct<@Component>, %[[VAL_8:.*]]: !array.array<3 x !llzk.felt>, %[[VAL_9:.*]]: i1) {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_7:.*]]: !llzk.struct<@Component>, %[[VAL_8:.*]]: !array.array<3 x !llzk.felt>, %[[VAL_9:.*]]: i1) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -121,7 +121,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:            writef %[[VAL_2]][@high] = %[[VAL_1]] : <@risc0::@ValU32>, !llzk.felt
 // CHECK-NEXT:            function.return %[[VAL_2]] : !llzk.struct<@risc0::@ValU32>
 // CHECK-NEXT:          }
-// CHECK-NEXT:          function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@risc0::@ValU32>, %[[VAL_4:.*]]: !llzk.felt, %[[VAL_5:.*]]: !llzk.felt) {
+// CHECK-NEXT:          function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@risc0::@ValU32>, %[[VAL_4:.*]]: !llzk.felt, %[[VAL_5:.*]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:            function.return
 // CHECK-NEXT:          }
 // CHECK-NEXT:        }
@@ -132,7 +132,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:            writef %[[VAL_7]][@reg] = %[[VAL_6]] : <@risc0::@Reg>, !llzk.felt
 // CHECK-NEXT:            function.return %[[VAL_7]] : !llzk.struct<@risc0::@Reg>
 // CHECK-NEXT:          }
-// CHECK-NEXT:          function.def @constrain(%[[VAL_8:.*]]: !llzk.struct<@risc0::@Reg>, %[[VAL_9:.*]]: !llzk.felt) {
+// CHECK-NEXT:          function.def @constrain(%[[VAL_8:.*]]: !llzk.struct<@risc0::@Reg>, %[[VAL_9:.*]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:            %[[VAL_10:.*]] = readf %[[VAL_8]][@reg] : <@risc0::@Reg>, !llzk.felt
 // CHECK-NEXT:            emit_eq %[[VAL_9]], %[[VAL_10]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:            function.return
@@ -149,7 +149,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:            writef %[[VAL_13]][@synthetic_return] = %[[VAL_15]] : <@risc0::@Div>, !llzk.felt
 // CHECK-NEXT:            function.return %[[VAL_13]] : !llzk.struct<@risc0::@Div>
 // CHECK-NEXT:          }
-// CHECK-NEXT:          function.def @constrain(%[[VAL_16:.*]]: !llzk.struct<@risc0::@Div>, %[[VAL_17:.*]]: !llzk.felt, %[[VAL_18:.*]]: !llzk.felt) {
+// CHECK-NEXT:          function.def @constrain(%[[VAL_16:.*]]: !llzk.struct<@risc0::@Div>, %[[VAL_17:.*]]: !llzk.felt, %[[VAL_18:.*]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:            %[[VAL_19:.*]] = readf %[[VAL_16]][@reciprocal] : <@risc0::@Div>, !llzk.felt
 // CHECK-NEXT:            %[[VAL_20:.*]] = mul %[[VAL_19]], %[[VAL_18]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:            %[[VAL_21:.*]] = constfelt  1
@@ -171,7 +171,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        writef %[[VAL_26]][@z] = %[[VAL_28]] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
 // CHECK-NEXT:        function.return %[[VAL_26]] : !llzk.struct<@C1>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_29:.*]]: !llzk.struct<@C1>, %[[VAL_30:.*]]: !llzk.felt, %[[VAL_31:.*]]: !llzk.felt) {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_29:.*]]: !llzk.struct<@C1>, %[[VAL_30:.*]]: !llzk.felt, %[[VAL_31:.*]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:        %[[VAL_32:.*]] = readf %[[VAL_29]][@z] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
 // CHECK-NEXT:        %[[VAL_33:.*]] = add %[[VAL_30]], %[[VAL_31]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:        function.call @std::@risc0::@Reg::@constrain(%[[VAL_32]], %[[VAL_33]]) : (!llzk.struct<@std::@risc0::@Reg>, !llzk.felt) -> ()
@@ -188,7 +188,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        writef %[[VAL_35]][@fc1] = %[[VAL_38]] : <@C2>, !llzk.struct<@C1>
 // CHECK-NEXT:        function.return %[[VAL_35]] : !llzk.struct<@C2>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_39:.*]]: !llzk.struct<@C2>, %[[VAL_40:.*]]: !llzk.struct<@std::@risc0::@ValU32>) {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_39:.*]]: !llzk.struct<@C2>, %[[VAL_40:.*]]: !llzk.struct<@std::@risc0::@ValU32>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:        %[[VAL_41:.*]] = readf %[[VAL_39]][@fc1] : <@C2>, !llzk.struct<@C1>
 // CHECK-NEXT:        %[[VAL_42:.*]] = readf %[[VAL_40]][@low] : <@std::@risc0::@ValU32>, !llzk.felt
 // CHECK-NEXT:        %[[VAL_43:.*]] = readf %[[VAL_40]][@high] : <@std::@risc0::@ValU32>, !llzk.felt
@@ -260,7 +260,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[VAL_0:.*]] = new_struct : <@A>
 // CHECK-NEXT:      function.return %[[VAL_0]] : !llzk.struct<@A>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !llzk.struct<@A>) {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !llzk.struct<@A>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -271,7 +271,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[VAL_0:.*]] = new_struct : <@B>
 // CHECK-NEXT:      function.return %[[VAL_0]] : !llzk.struct<@B>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !llzk.struct<@B>) {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !llzk.struct<@B>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -282,7 +282,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[VAL_0:.*]] = new_struct : <@C>
 // CHECK-NEXT:      function.return %[[VAL_0]] : !llzk.struct<@C>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !llzk.struct<@C>) {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !llzk.struct<@C>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -293,7 +293,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
 // CHECK-NEXT:      function.return %[[VAL_0]] : !llzk.struct<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !llzk.struct<@Main>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

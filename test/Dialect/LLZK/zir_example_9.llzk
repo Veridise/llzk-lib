@@ -136,7 +136,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component<[]>>
 // CHECK-NEXT:      function.return %[[V0]] : !llzk.struct<@Component<[]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component<[]>>) {
+// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component<[]>>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -148,7 +148,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V1]][@reg] = %[[V0]] : <@Reg>, !llzk.felt
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Reg>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Reg>, %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Reg>, %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = readf %[[V2]][@reg] : <@Reg>, !llzk.felt
 // CHECK-NEXT:      emit_eq %[[V3]], %[[V4]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      function.return
@@ -166,7 +166,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V2]][@synthetic_return] = %[[V4]] : <@Div<[]>>, !llzk.felt
 // CHECK-NEXT:      function.return %[[V2]] : !llzk.struct<@Div<[]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V5:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Div<[]>>, %[[V6:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V7:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+// CHECK-NEXT:    function.def @constrain(%[[V5:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Div<[]>>, %[[V6:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V7:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = readf %[[V5]][@reciprocal] : <@Div<[]>>, !llzk.felt
 // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = mul %[[V8]], %[[V7]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = constfelt  1
@@ -195,7 +195,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V1]][@"$super"] = %[[V7]] : <@Foo<[@N, @P, @Aff$0]>>, !llzk.struct<@Component<[]>>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Foo<[@N, @P, @Aff$0]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Foo<[@N, @P, @Aff$0]>>, %[[V9:[0-9a-zA-Z_\.]+]]: !array.array<@Aff$0 x !llzk.felt>) {
+// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Foo<[@N, @P, @Aff$0]>>, %[[V9:[0-9a-zA-Z_\.]+]]: !array.array<@Aff$0 x !llzk.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = read_const @N : !llzk.felt
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = read_const @P : !llzk.felt
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = readf %[[V8]][@"$temp"] : <@Foo<[@N, @P, @Aff$0]>>, !llzk.struct<@Div<[]>>
@@ -231,7 +231,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V1]][@"$super"] = %[[V13]] : <@Bar<[@N, @P, @Aff$0]>>, !llzk.struct<@Component<[]>>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Bar<[@N, @P, @Aff$0]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V14:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Bar<[@N, @P, @Aff$0]>>, %[[V15:[0-9a-zA-Z_\.]+]]: !array.array<@Aff$0 x !llzk.felt>) {
+// CHECK-NEXT:    function.def @constrain(%[[V14:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Bar<[@N, @P, @Aff$0]>>, %[[V15:[0-9a-zA-Z_\.]+]]: !array.array<@Aff$0 x !llzk.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = read_const @N : !llzk.felt
 // CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = read_const @P : !llzk.felt
 // CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = readf %[[V14]][@"$temp"] : <@Bar<[@N, @P, @Aff$0]>>, !llzk.struct<@Div<[]>>

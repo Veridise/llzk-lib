@@ -94,7 +94,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component02>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Component02>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component02>) {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component02>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -120,7 +120,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component03>
 // CHECK-NEXT:      function.return %[[V0]] : !llzk.struct<@Component03>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component03>) {
+// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component03>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = readg @g : i1
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -163,7 +163,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component04>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Component04>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component04>) {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component04>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -204,7 +204,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component05A<[@Z]>>
 // CHECK-NEXT:        function.return %[[V1]] : !llzk.struct<@Component05A<[@Z]>>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component05A<[@Z]>>) {
+// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component05A<[@Z]>>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -214,7 +214,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = new_struct : <@Component05B>
 // CHECK-NEXT:        function.return %[[V3]] : !llzk.struct<@Component05B>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component05B>) {
+// CHECK-NEXT:      function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component05B>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -253,7 +253,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Component06<[@Z]>>
 // CHECK-NEXT:        function.return %[[V0]] : !llzk.struct<@Component06<[@Z]>>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component06<[@Z]>>) {
+// CHECK-NEXT:      function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component06<[@Z]>>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -265,7 +265,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
 // CHECK-NEXT:        function.return %[[V1]] : !llzk.struct<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) {
+// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = readg @gvar : !llzk.struct<@Component06<[4]>>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

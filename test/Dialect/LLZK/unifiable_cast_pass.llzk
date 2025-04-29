@@ -40,7 +40,7 @@ module attributes { veridise.lang = "llzk" } {
 //  CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@A<[@X, @Y, @N]>>
 //  CHECK-NEXT:     }
 // CHECK-LABEL:     function.def @constrain
-//  CHECK-SAME:                   (%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@A<[@X, @Y, @N]>>, %[[A0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.felt>) {
+//  CHECK-SAME:                   (%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@A<[@X, @Y, @N]>>, %[[A0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
 //  CHECK-NEXT:       function.return
 //  CHECK-NEXT:     }
 //  CHECK-NEXT:   }
@@ -57,7 +57,7 @@ module attributes { veridise.lang = "llzk" } {
 //  CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@B<[@X, @Y, @N]>>
 //  CHECK-NEXT:     }
 // CHECK-LABEL:     function.def @constrain
-//  CHECK-SAME:                    (%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@B<[@X, @Y, @N]>>, %[[A0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.felt>) {
+//  CHECK-SAME:                    (%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@B<[@X, @Y, @N]>>, %[[A0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
 //  CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = unifiable_cast %[[A0]] : (!array.array<@N x !llzk.felt>) -> !array.array<#map x !llzk.felt>
 //  CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@a] : <@B<[@X, @Y, @N]>>, !llzk.struct<@A<[@X, @Y, #map]>>
 //  CHECK-NEXT:       function.call @A::@constrain(%[[T1]], %[[T0]]) : (!llzk.struct<@A<[@X, @Y, #map]>>, !array.array<#map x !llzk.felt>) -> ()
@@ -195,7 +195,7 @@ module attributes {veridise.lang = "llzk"} {
 //  CHECK-SAME:                    %[[A12:[0-9a-zA-Z_\.]+]]: !llzk.tvar<@S1>,
 //  CHECK-SAME:                    %[[A13:[0-9a-zA-Z_\.]+]]: !llzk.struct<@T3<[1, 7, @S0, 1, !llzk.struct<@T2<[1]>>]>>,
 //  CHECK-SAME:                    %[[A14:[0-9a-zA-Z_\.]+]]: !array.array<1,7,@S0,1 x !llzk.struct<@T2<[1]>>>
-//  CHECK-SAME:    ) {
+//  CHECK-SAME:    ) attributes {function.allow_constraints = #function.allow_constraints} {
 //  CHECK-NEXT:      function.return
 //  CHECK-NEXT:    }
 //  CHECK-NEXT:  }

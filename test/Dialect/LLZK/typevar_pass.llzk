@@ -68,7 +68,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@x] = %arg0 : <@A<[@Ty]>>, !llzk.tvar<@Ty>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@A<[@Ty]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@A<[@Ty]>>, %arg1: !llzk.tvar<@Ty>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@A<[@Ty]>>, %arg1: !llzk.tvar<@Ty>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@x] : <@A<[@Ty]>>, !llzk.tvar<@Ty>
 //CHECK-NEXT:      emit_eq %[[T0]], %arg1 : !llzk.tvar<@Ty>, !llzk.tvar<@Ty>
 //CHECK-NEXT:      function.return
@@ -83,7 +83,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@a] = %[[T0]] : <@FeltA>, !llzk.struct<@A<[!llzk.felt]>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@FeltA>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@FeltA>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@FeltA>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      %[[C2:[0-9a-zA-Z_\.]+]] = constfelt 57
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = readf %arg0[@a] : <@FeltA>, !llzk.struct<@A<[!llzk.felt]>>
 //CHECK-NEXT:      function.call @A::@constrain(%[[T1]], %[[C2]]) : (!llzk.struct<@A<[!llzk.felt]>>, !llzk.felt) -> ()
@@ -99,7 +99,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@a] = %[[T0]] : <@IndexA>, !llzk.struct<@A<[index]>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@IndexA>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@IndexA>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@IndexA>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      %[[C2:[0-9a-zA-Z_\.]+]] = arith.constant 57 : index
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = readf %arg0[@a] : <@IndexA>, !llzk.struct<@A<[index]>>
 //CHECK-NEXT:      function.call @A::@constrain(%[[T1]], %[[C2]]) : (!llzk.struct<@A<[index]>>, index) -> ()
@@ -165,7 +165,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@f] = %arg0 : <@ComponentB1<[@T]>>, !llzk.tvar<@T>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentB1<[@T]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB1<[@T]>>, %arg1: !llzk.tvar<@T>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB1<[@T]>>, %arg1: !llzk.tvar<@T>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -176,7 +176,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@f] = %arg0 : <@ComponentB2<[@X]>>, !llzk.struct<@ComponentB1<[@X]>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentB2<[@X]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB2<[@X]>>, %arg1: !llzk.struct<@ComponentB1<[@X]>>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB2<[@X]>>, %arg1: !llzk.struct<@ComponentB1<[@X]>>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg1[@f] : <@ComponentB1<[@X]>>, !llzk.tvar<@X>
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = readf %arg0[@f] : <@ComponentB2<[@X]>>, !llzk.struct<@ComponentB1<[@X]>>
 //CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = readf %[[T1]][@f] : <@ComponentB1<[@X]>>, !llzk.tvar<@X>
@@ -191,7 +191,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@f] = %arg0 : <@ComponentB3<[@X]>>, !llzk.struct<@ComponentB1<[!llzk.tvar<@X>]>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentB3<[@X]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB3<[@X]>>, %arg1: !llzk.struct<@ComponentB1<[!llzk.tvar<@X>]>>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB3<[@X]>>, %arg1: !llzk.struct<@ComponentB1<[!llzk.tvar<@X>]>>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg1[@f] : <@ComponentB1<[!llzk.tvar<@X>]>>, !llzk.tvar<@X>
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = readf %arg0[@f] : <@ComponentB3<[@X]>>, !llzk.struct<@ComponentB1<[!llzk.tvar<@X>]>>
 //CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = readf %[[T1]][@f] : <@ComponentB1<[!llzk.tvar<@X>]>>, !llzk.tvar<@X>
@@ -260,7 +260,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@f] = %arg0 : <@ComponentB4<[@T]>>, !llzk.tvar<@T>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentB4<[@T]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB4<[@T]>>, %arg1: !llzk.tvar<@T>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB4<[@T]>>, %arg1: !llzk.tvar<@T>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -271,7 +271,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@f] = %arg0 : <@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>>, !llzk.struct<@ComponentB4<[@B]>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>>, %arg1: !llzk.struct<@ComponentB4<[@C]>>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>>, %arg1: !llzk.struct<@ComponentB4<[@C]>>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg1[@f] : <@ComponentB4<[@C]>>, !llzk.tvar<@D>
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = readf %arg0[@f] : <@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>>, !llzk.struct<@ComponentB4<[@E]>>
 //CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = readf %[[T1]][@f] : <@ComponentB4<[@E]>>, !llzk.tvar<@F>
@@ -286,7 +286,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@f] = %arg0 : <@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>>, !llzk.struct<@ComponentB4<[!llzk.tvar<@B>]>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>>, %arg1: !llzk.struct<@ComponentB4<[!llzk.tvar<@C>]>>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>>, %arg1: !llzk.struct<@ComponentB4<[!llzk.tvar<@C>]>>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg1[@f] : <@ComponentB4<[!llzk.tvar<@C>]>>, !llzk.tvar<@D>
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = readf %arg0[@f] : <@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>>, !llzk.struct<@ComponentB4<[!llzk.tvar<@E>]>>
 //CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = readf %[[T1]][@f] : <@ComponentB4<[!llzk.tvar<@E>]>>, !llzk.tvar<@F>
@@ -319,7 +319,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@f] = %[[T3]] : <@ComponentC<[@T]>>, !array.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentC<[@T]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentC<[@T]>>, %arg1: !llzk.tvar<@T>, %arg2: !llzk.tvar<@T>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentC<[@T]>>, %arg1: !llzk.tvar<@T>, %arg2: !llzk.tvar<@T>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -365,7 +365,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@f] = %[[T3]] : <@ComponentD<[@T]>>, !array.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentD<[@T]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentD<[@T]>>, %arg1: !llzk.tvar<@T>, %arg2: !llzk.tvar<@T>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentD<[@T]>>, %arg1: !llzk.tvar<@T>, %arg2: !llzk.tvar<@T>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@f] : <@ComponentD<[@T]>>, !array.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      %[[T7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[T7]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
@@ -418,7 +418,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@f] = %[[T3]] : <@ComponentE<[@T, @X, @Y]>>, !array.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentE<[@T, @X, @Y]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentE<[@T, @X, @Y]>>, %arg1: !llzk.tvar<@X>, %arg2: !llzk.tvar<@Y>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentE<[@T, @X, @Y]>>, %arg1: !llzk.tvar<@X>, %arg2: !llzk.tvar<@Y>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@f] : <@ComponentE<[@T, @X, @Y]>>, !array.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      %[[T7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[T7]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@X>
@@ -460,7 +460,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentF1<[@C, @T]>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentF1<[@C, @T]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentF1<[@C, @T]>>, %arg1: !llzk.tvar<@T>, %arg2: !array.array<@C x !llzk.tvar<@T>>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentF1<[@C, @T]>>, %arg1: !llzk.tvar<@T>, %arg2: !array.array<@C x !llzk.tvar<@T>>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      emit_in %arg2, %arg1 : <@C x !llzk.tvar<@T>>, !llzk.tvar<@T>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
@@ -470,7 +470,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentF2<[@C, @X, @Y]>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentF2<[@C, @X, @Y]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentF2<[@C, @X, @Y]>>, %arg1: !llzk.tvar<@X>, %arg2: !array.array<@C x !llzk.tvar<@Y>>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentF2<[@C, @X, @Y]>>, %arg1: !llzk.tvar<@X>, %arg2: !array.array<@C x !llzk.tvar<@Y>>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      emit_in %arg2, %arg1 : <@C x !llzk.tvar<@Y>>, !llzk.tvar<@X>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
@@ -520,7 +520,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = neg %arg0 : !llzk.tvar<@T>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@UnaryFelt<[@T]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@UnaryFelt<[@T]>>, %arg1: !llzk.tvar<@T>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@UnaryFelt<[@T]>>, %arg1: !llzk.tvar<@T>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -530,7 +530,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = add %arg0, %arg1 : !llzk.tvar<@T>, !llzk.tvar<@U>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@BinaryFelt<[@T, @U]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@BinaryFelt<[@T, @U]>>, %arg1: !llzk.tvar<@T>, %arg2: !llzk.tvar<@U>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@BinaryFelt<[@T, @U]>>, %arg1: !llzk.tvar<@T>, %arg2: !llzk.tvar<@U>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -540,7 +540,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = not %arg0 : !llzk.tvar<@T>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@UnaryBool<[@T]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@UnaryBool<[@T]>>, %arg1: !llzk.tvar<@T>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@UnaryBool<[@T]>>, %arg1: !llzk.tvar<@T>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -550,7 +550,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = xor %arg0, %arg1 : !llzk.tvar<@T>, !llzk.tvar<@U>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@BinaryBool<[@T, @U]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@BinaryBool<[@T, @U]>>, %arg1: !llzk.tvar<@T>, %arg2: !llzk.tvar<@U>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@BinaryBool<[@T, @U]>>, %arg1: !llzk.tvar<@T>, %arg2: !llzk.tvar<@U>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -602,7 +602,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@f] = %[[T5]] : <@ComponentG<[@S, @T]>>, !array.array<@S x !llzk.tvar<@T>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentG<[@S, @T]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentG<[@S, @T]>>) {
+//CHECK-NEXT:    function.def @constrain(%arg0: !llzk.struct<@ComponentG<[@S, @T]>>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %arg0[@f] : <@ComponentG<[@S, @T]>>, !array.array<@S x !llzk.tvar<@T>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = read_const @S : index

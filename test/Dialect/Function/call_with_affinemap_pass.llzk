@@ -66,7 +66,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V_1]][@val] = %[[V_0]] : <@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
 // CHECK-NEXT:      function.return %[[V_1]] : !llzk.struct<@VarArray<[@N, @T]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[V_3:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.tvar<@T>>) {
+// CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[V_3:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.tvar<@T>>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -79,7 +79,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V_0]][@out] = %[[V_1]] : <@ToFelt<[@A]>>, !llzk.felt
 // CHECK-NEXT:      function.return %[[V_0]] : !llzk.struct<@ToFelt<[@A]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt<[@A]>>) {
+// CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt<[@A]>>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -93,7 +93,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-SAME:        : (!array.array<#[[$M1]] x !llzk.struct<@ToFelt<[#[[$M0]]]>>>) -> !llzk.struct<@VarArray<[#[[$M1]], !llzk.struct<@ToFelt<[#[[$M0]]]>>]>>
 // CHECK-NEXT:      function.return %[[V_1]] : !llzk.struct<@ComponentB>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V_5:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB>, %[[V_6:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:    function.def @constrain(%[[V_5:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB>, %[[V_6:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

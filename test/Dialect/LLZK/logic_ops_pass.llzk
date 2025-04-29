@@ -72,7 +72,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        function.return %[[V6]] : !llzk.struct<@ComponentA>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA>, %[[V8:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V9:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-// CHECK-SAME:      %[[V10:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V11:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V12:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V13:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+// CHECK-SAME:      %[[V10:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V11:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V12:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V13:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:        %[[V14:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:        %[[V15:[0-9a-zA-Z_\.]+]] = cmp eq(%[[V12]], %[[V13]])
 // CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = cmp lt(%[[V10]], %[[V11]])

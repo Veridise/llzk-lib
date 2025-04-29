@@ -63,7 +63,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        writef %[[SELF]][@z] = %[[T1]] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
 //CHECK-NEXT:        function.return %[[SELF]] : !llzk.struct<@C1>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@C1>, %arg1: !llzk.felt, %arg2: !llzk.felt) {
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@C1>, %arg1: !llzk.felt, %arg2: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@z] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
 //CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = add %arg1, %arg2
 //CHECK-NEXT:        function.call @std::@risc0::@Reg::@constrain(%[[T0]], %[[T1]]) : (!llzk.struct<@std::@risc0::@Reg>, !llzk.felt) -> ()
@@ -80,7 +80,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        writef %[[SELF]][@fc1] = %[[T2]] : <@C2>, !llzk.struct<@C1>
 //CHECK-NEXT:        function.return %[[SELF]] : !llzk.struct<@C2>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@C2>, %arg1: !llzk.struct<@std::@risc0::@ValU32>) {
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@C2>, %arg1: !llzk.struct<@std::@risc0::@ValU32>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@fc1] : <@C2>, !llzk.struct<@C1>
 //CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = readf %arg1[@low] : <@std::@risc0::@ValU32>, !llzk.felt
 //CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = readf %arg1[@high] : <@std::@risc0::@ValU32>, !llzk.felt

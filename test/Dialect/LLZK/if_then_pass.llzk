@@ -49,7 +49,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:       writef %[[SELF]][@bit] = %[[T1]] : <@IsZero>, !llzk.felt
 // CHECK-NEXT:       function.return %[[SELF]]
 // CHECK-NEXT:     }
-// CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@IsZero>, %[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) {
+// CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@IsZero>, %[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = readf %[[SELF]][@bit] : <@IsZero>, !llzk.felt
 // CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = constfelt 1
 // CHECK-NEXT:       %[[T2:[0-9a-zA-Z_.]+]] = sub %[[T0]], %[[T1]] 
@@ -97,7 +97,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:   function.def @constrain(
 // CHECK-SAME:        %[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@C>, 
 // CHECK-SAME:        %[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt, 
-// CHECK-SAME:        %[[A1:[0-9a-zA-Z_.]+]]: !llzk.felt) {
+// CHECK-SAME:        %[[A1:[0-9a-zA-Z_.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:     function.return
 // CHECK-NEXT:   }
 // CHECK-NEXT: }

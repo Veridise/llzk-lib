@@ -26,7 +26,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      assert %[[T1]]
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@Component01<[@C]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01<[@C]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01<[@C]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = read_const @C : !llzk.felt
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = cmp gt(%[[A1]], %[[T0]])
 //CHECK-NEXT:      assert %[[T1]]

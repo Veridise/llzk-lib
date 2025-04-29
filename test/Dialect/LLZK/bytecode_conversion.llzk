@@ -22,7 +22,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:       %[[VAL_2:.*]] = constfelt 1
 // CHECK-NEXT:       function.return %[[VAL_1]] : !llzk.struct<@ComponentA>
 // CHECK-NEXT:     }
-// CHECK-NEXT:     function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@ComponentA>, %[[VAL_4:.*]]: !llzk.felt) {
+// CHECK-NEXT:     function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@ComponentA>, %[[VAL_4:.*]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:       function.return
 // CHECK-NEXT:     }
 // CHECK-NEXT:   }

@@ -33,7 +33,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       }
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentA>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@ComponentA>, %[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@ComponentA>, %[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
@@ -72,7 +72,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1>}
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentA>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@ComponentA>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@ComponentA>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
@@ -113,7 +113,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentA>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@ComponentA>,
-//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }

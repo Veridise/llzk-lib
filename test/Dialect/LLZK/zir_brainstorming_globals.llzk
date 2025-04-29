@@ -79,7 +79,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V1]][@"$super"] = %[[V0]] : <@NondetReg<[]>>, !llzk.felt
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@NondetReg<[]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@NondetReg<[]>>, %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@NondetReg<[]>>, %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -94,7 +94,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V1]][@init] = %[[V2]] : <@Global<[@Type]>>, i1
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Global<[@Type]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Global<[@Type]>>, %[[V4:[0-9a-zA-Z_\.]+]]: !llzk.tvar<@Type>) {
+// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Global<[@Type]>>, %[[V4:[0-9a-zA-Z_\.]+]]: !llzk.tvar<@Type>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -116,7 +116,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writeg @globals::@A = %[[V7]] : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Top>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Top>, %[[V9:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Top>, %[[V9:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = readg @globals::@A : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = readf %[[V10]][@init] : <@Global<[!llzk.struct<@NondetReg<[]>>]>>, i1
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = arith.constant false

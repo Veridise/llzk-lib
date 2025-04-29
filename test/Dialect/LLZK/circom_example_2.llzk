@@ -123,7 +123,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V_1]][@out] = %[[V_3]] : <@GetWeight<[@A]>>, !llzk.felt
 // CHECK-NEXT:      function.return %[[V_1]] : !llzk.struct<@GetWeight<[@A]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V_4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@GetWeight<[@A]>>, %[[V_5:[0-9a-zA-Z_\.]+]]: !llzk.felt) {
+// CHECK-NEXT:    function.def @constrain(%[[V_4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@GetWeight<[@A]>>, %[[V_5:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      %[[V_6:[0-9a-zA-Z_\.]+]] = read_const @A : !llzk.felt
 // CHECK-NEXT:      %[[V_7:[0-9a-zA-Z_\.]+]] = mul %[[V_6]], %[[V_5]] : !llzk.felt, !llzk.felt
 // CHECK-NEXT:      %[[V_8:[0-9a-zA-Z_\.]+]] = readf %[[V_4]][@out] : <@GetWeight<[@A]>>, !llzk.felt
@@ -156,7 +156,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      writef %[[V_1]][@ret] = %[[V_9]] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.felt>
 // CHECK-NEXT:      function.return %[[V_1]] : !llzk.struct<@ComputeValue<[@P]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V_13:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComputeValue<[@P]>>, %[[V_14:[0-9a-zA-Z_\.]+]]: !array.array<@P x !llzk.felt>) {
+// CHECK-NEXT:    function.def @constrain(%[[V_13:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComputeValue<[@P]>>, %[[V_14:[0-9a-zA-Z_\.]+]]: !array.array<@P x !llzk.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      %[[V_15:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V_16:[0-9a-zA-Z_\.]+]] = read_const @P : index
 // CHECK-NEXT:      %[[V_17:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index

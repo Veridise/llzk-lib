@@ -44,7 +44,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@ToFelt_2>
 // CHECK-NEXT:      function.return %[[V0]] : !llzk.struct<@ToFelt_2>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_2>) {
+// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_2>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -54,7 +54,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA_2>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@ComponentA_2>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA_2>, %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_2>) {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA_2>, %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_2>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -66,7 +66,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB>
 // CHECK-NEXT:      function.return %[[V2]] : !llzk.struct<@ComponentB>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB>) {
+// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB>) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
