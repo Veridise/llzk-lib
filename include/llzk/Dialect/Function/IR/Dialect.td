@@ -20,6 +20,8 @@ def FunctionDialect : Dialect {
   let cppNamespace = "::llzk::function";
 
   let dependentDialects = ["::mlir::BuiltinDialect"];
+
+  let useDefaultAttributePrinterParser = true;
 }
 
 #endif // LLZK_FUNCTION_DIALECT
