@@ -235,7 +235,7 @@ LogicalResult FuncDefOp::verifyRegions() {
   } else {
     // Check: When constraints are NOT allowed, ensure there are no constraints.
     if (containsConstraintOp(getOperation())) {
-      return emitError("TODO");
+      return emitError("TODO: FuncDefOp::verifyRegions");
     }
   }
   return success();

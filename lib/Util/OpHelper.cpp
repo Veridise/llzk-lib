@@ -45,4 +45,17 @@ template <typename TypeClass> LogicalResult InStruct<TypeClass>::verifyTrait(Ope
   return verifyInStruct(op);
 }
 
+// Again, only valid/implemented for StructDefOp
+template <> LogicalResult InitAllowConstraintsAttrs<StructDefOp>::verifyTrait(Operation *structOp) {
+  assert(llvm::isa<StructDefOp>(structOp));
+  llvm::cast<StructDefOp>(structOp).getBody().walk([](FuncDefOp funcDef) {
+    if (funcDef.nameIsConstrain()) {
+      funcDef.setAllowConstraintsAttr();
+    } else if (funcDef.nameIsCompute()) {
+      funcDef.setAllowConstraintsAttr(false);
+    }
+  });
+  return success();
+}
+
 } // namespace llzk

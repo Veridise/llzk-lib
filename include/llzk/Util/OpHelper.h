@@ -56,6 +56,15 @@ public:
   static mlir::LogicalResult verifyTrait(mlir::Operation *op);
 };
 
+/// Only valid/implemented for StructDefOp. Sets the proper AllowConstraintsAttrs on the functions
+/// defined within the StructDefOp.
+template <typename TypeClass>
+class InitAllowConstraintsAttrs
+    : public mlir::OpTrait::TraitBase<TypeClass, InitAllowConstraintsAttrs> {
+public:
+  static mlir::LogicalResult verifyTrait(mlir::Operation *op);
+};
+
 /// Return true iff the given Operation is contained within a FuncDefOp with the given name that is
 /// itself contained within a StructDefOp.
 bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName);

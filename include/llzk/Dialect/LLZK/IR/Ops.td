@@ -202,7 +202,7 @@ def LLZK_GlobalWriteOp
 def LLZK_StructDefOp
     : LLZK_Op<"struct", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
                          IsolatedFromAbove, GraphRegionNoTerminator,
-                         OpAsmOpInterface,
+                         OpAsmOpInterface, InitAllowConstraintsAttrs,
                          DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "circuit component definition";
   let description = [{

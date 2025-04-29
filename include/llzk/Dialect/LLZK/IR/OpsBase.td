@@ -23,6 +23,13 @@ include "mlir/IR/SymbolInterfaces.td"
 // Custom traits that can be applied to Ops
 //===----------------------------------------------------------------------===//
 
+/// Only valid/implemented for StructDefOp. Sets the proper
+/// AllowConstraintsAttrs on the functions defined within the StructDefOp.
+def InitAllowConstraintsAttrs : NativeOpTrait<"InitAllowConstraintsAttrs">,
+                                StructuralOpTrait {
+  string cppNamespace = "::llzk";
+}
+
 /// Verifies that an Op marked with this Trait cannot be used within a
 /// "constrain()" function. However, this does not restrict it from being used
 /// within a free function since those can be called by a "compute()" function.
