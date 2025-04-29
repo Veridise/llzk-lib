@@ -7,11 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_OP_INTERFACES
-#define LLZK_OP_INTERFACES
+#ifndef LLZK_ARRAY_OP_INTERFACES
+#define LLZK_ARRAY_OP_INTERFACES
 
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/Interfaces/MemorySlotInterfaces.td"
+include "llzk/Dialect/Array/IR/Types.td"
 
 def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
   let description = [{
@@ -30,8 +31,8 @@ def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
 
   let extraClassDeclaration = [{
     /// Gets the type of the referenced array.
-    inline ::llzk::ArrayType getArrRefType() {
-      return ::llvm::cast<::llzk::ArrayType>(getArrRef().getType());
+    inline ::llzk::array::ArrayType getArrRefType() {
+      return ::llvm::cast<::llzk::array::ArrayType>(getArrRef().getType());
     }
   }];
 }
@@ -80,4 +81,4 @@ def ArrayAccessOpInterface
   }];
 }
 
-#endif // LLZK_OP_INTERFACES
+#endif // LLZK_ARRAY_OP_INTERFACES

@@ -62,7 +62,7 @@ def FuncDefOp
     ```llzk
     // External function definitions.
     function.def private @abort()
-    function.def private @scribble(!llzk.array<5 x !llzk.felt>, !llzk.struct<@Hello>) -> i1
+    function.def private @scribble(!array.array<5 x !llzk.felt>, !llzk.struct<@Hello>) -> i1
 
     // A function that returns its argument twice:
     function.def @count(%x: !llzk.felt) -> (!llzk.felt, !llzk.felt) {

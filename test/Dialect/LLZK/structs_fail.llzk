@@ -110,7 +110,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentL {
     // expected-error@+2 {{'llzk.field' op references unknown symbol "@Missing"}}
     // expected-error@+1 {{could not find 'llzk.struct' named "@Missing"}}
-    llzk.field @f : !llzk.array<2,3,2 x !llzk.struct<@Missing>>
+    llzk.field @f : !array.array<2,3,2 x !llzk.struct<@Missing>>
 
     function.def @compute() -> !llzk.struct<@ComponentL> {
       %self = new_struct : !llzk.struct<@ComponentL>
@@ -125,7 +125,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentM {
     // expected-error@+2 {{'llzk.field' op references unknown symbol "@path::@to::@Missing"}}
     // expected-error@+1 {{could not find 'llzk.struct' named "@path::@to::@Missing"}}
-    llzk.field @f : !llzk.array<2,3,2 x !llzk.struct<@path::@to::@Missing>>
+    llzk.field @f : !array.array<2,3,2 x !llzk.struct<@path::@to::@Missing>>
 
     function.def @compute() -> !llzk.struct<@ComponentM> {
       %self = new_struct : !llzk.struct<@ComponentM>
@@ -284,7 +284,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Main {
-    // expected-error@+1 {{"@Main" component "@compute" function parameters must be one of: {!llzk.struct<@Signal>, !llzk.array<.. x !llzk.struct<@Signal>>}}}
+    // expected-error@+1 {{"@Main" component "@compute" function parameters must be one of: {!llzk.struct<@Signal>, !array.array<.. x !llzk.struct<@Signal>>}}}
     function.def @compute(%0: i1) -> !llzk.struct<@Main> {
       %self = new_struct : !llzk.struct<@Main>
       function.return %self : !llzk.struct<@Main>
@@ -301,7 +301,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = new_struct : !llzk.struct<@Main>
       function.return %self : !llzk.struct<@Main>
     }
-    // expected-error@+1 {{"@Main" component "@constrain" function parameters must be one of: {!llzk.struct<@Main>, !llzk.struct<@Signal>, !llzk.array<.. x !llzk.struct<@Signal>>}}}
+    // expected-error@+1 {{"@Main" component "@constrain" function parameters must be one of: {!llzk.struct<@Main>, !llzk.struct<@Signal>, !array.array<.. x !llzk.struct<@Signal>>}}}
     function.def @constrain(%self: !llzk.struct<@Main>, %0: i1)  {
       function.return
     }
@@ -367,7 +367,7 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !llzk.struct<@Main>
     }
     // expected-error@+1 {{expected "@constrain" function argument types (sans the first one) to match "@compute" function argument types}}
-    function.def @constrain(%self: !llzk.struct<@Main>, %0: !llzk.array<4 x !llzk.struct<@Signal>>)  {
+    function.def @constrain(%self: !llzk.struct<@Main>, %0: !array.array<4 x !llzk.struct<@Signal>>)  {
       function.return
     }
   }

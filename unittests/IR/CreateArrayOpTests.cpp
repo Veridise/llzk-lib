@@ -23,14 +23,14 @@ using namespace mlir;
 
 TEST_F(OpTests, testElementInit_GoodEmpty) {
   OpBuilder bldr(mod->getRegion());
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {2, 2}); // !llzk.array<2,2 x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {2, 2}); // !array.array<2,2 x index>
   CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy);
   ASSERT_TRUE(verify(op));
 }
 
 TEST_F(OpTests, testElementInit_GoodNonEmpty) {
   OpBuilder bldr(mod->getRegion());
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {2}); // !llzk.array<2 x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {2}); // !array.array<2 x index>
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 766);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 562);
   CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange {v1, v2});
@@ -39,7 +39,7 @@ TEST_F(OpTests, testElementInit_GoodNonEmpty) {
 
 TEST_F(OpTests, testElementInit_TooFew) {
   OpBuilder bldr(mod->getRegion());
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {5}); // !llzk.array<5 x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {5}); // !array.array<5 x index>
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 766);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 562);
   CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange {v1, v2});
@@ -51,7 +51,7 @@ TEST_F(OpTests, testElementInit_TooFew) {
 
 TEST_F(OpTests, testElementInit_TooMany) {
   OpBuilder bldr(mod->getRegion());
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {1}); // !llzk.array<1 x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {1}); // !array.array<1 x index>
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 766);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 562);
   CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy, ValueRange {v1, v2});
@@ -64,7 +64,7 @@ TEST_F(OpTests, testElementInit_TooMany) {
 TEST_F(OpTests, testElementInit_WithAffineMapType) {
   OpBuilder bldr(mod->getRegion());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !llzk.array<#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !array.array<#m x index>
   CreateArrayOp op = bldr.create<CreateArrayOp>(loc, arrTy);
   EXPECT_DEATH(
       { assert(verify(op)); },
@@ -80,7 +80,7 @@ TEST_F(OpTests, testElementInit_WithAffineMapType) {
 TEST_F(OpTests, testMapOpInit_Good) {
   OpBuilder bldr(mod->getRegion());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m, m});  // !llzk.array<#m,#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m, m});  // !array.array<#m,#m x index>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 10);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 98);
@@ -93,7 +93,7 @@ TEST_F(OpTests, testMapOpInit_Good) {
 TEST_F(OpTests, testMapOpInit_Op1_Dim1_Type2) {
   OpBuilder bldr(mod->getRegion());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m, m});  // !llzk.array<#m,#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m, m});  // !array.array<#m,#m x index>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 10);
   CreateArrayOp op =
@@ -108,7 +108,7 @@ TEST_F(OpTests, testMapOpInit_Op1_Dim1_Type2) {
 TEST_F(OpTests, testMapOpInit_Op1_Dim2_Type2) {
   OpBuilder bldr(mod->getRegion());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m, m});  // !llzk.array<#m,#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m, m});  // !array.array<#m,#m x index>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 10);
   CreateArrayOp op =
@@ -123,7 +123,7 @@ TEST_F(OpTests, testMapOpInit_Op1_Dim2_Type2) {
 TEST_F(OpTests, testMapOpInit_Op2_Dim1_Type2) {
   OpBuilder bldr(mod->getRegion());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m, m});  // !llzk.array<#m,#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m, m});  // !array.array<#m,#m x index>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 10);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 98);
@@ -140,7 +140,7 @@ TEST_F(OpTests, testMapOpInit_Op2_Dim1_Type2) {
 TEST_F(OpTests, testMapOpInit_Op3_Dim3_Type1) {
   OpBuilder bldr(mod->getRegion());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !llzk.array<#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !array.array<#m x index>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 10);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 98);
@@ -159,7 +159,7 @@ TEST_F(OpTests, testMapOpInit_Op3_Dim3_Type1) {
 TEST_F(OpTests, testMapOpInit_Op3_Dim2_Type1) {
   OpBuilder bldr(mod->getRegion());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !llzk.array<#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !array.array<#m x index>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 10);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 98);
@@ -178,7 +178,7 @@ TEST_F(OpTests, testMapOpInit_Op3_Dim2_Type1) {
 TEST_F(OpTests, testMapOpInit_Op2_Dim3_Type1) {
   OpBuilder bldr(mod->getRegion());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !llzk.array<#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !array.array<#m x index>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 10);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 98);
@@ -195,7 +195,7 @@ TEST_F(OpTests, testMapOpInit_Op2_Dim3_Type1) {
 TEST_F(OpTests, testMapOpInit_NumDimsTooHigh) {
   OpBuilder bldr(mod->getRegion());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !llzk.array<#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !array.array<#m x index>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 10);
   CreateArrayOp op =
@@ -210,7 +210,7 @@ TEST_F(OpTests, testMapOpInit_NumDimsTooHigh) {
 TEST_F(OpTests, testMapOpInit_TooManyOpsForMap) {
   OpBuilder bldr(mod->getRegion());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !llzk.array<#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !array.array<#m x index>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 10);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 23);
@@ -229,7 +229,7 @@ TEST_F(OpTests, testMapOpInit_TooFewOpsForMap) {
   AffineMapAttr m = AffineMapAttr::get(AffineMap::get(
       /*dimCount=*/2, /*symbolCount=*/0, bldr.getAffineDimExpr(0) + bldr.getAffineDimExpr(1)
   ));
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m}); // !llzk.array<#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m}); // !array.array<#m x index>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 10);
   CreateArrayOp op =
@@ -244,7 +244,7 @@ TEST_F(OpTests, testMapOpInit_TooFewOpsForMap) {
 TEST_F(OpTests, testMapOpInit_WrongTypeForMapOperands) {
   OpBuilder bldr(mod->getRegion());
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
-  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !llzk.array<#m x index>
+  ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m});     // !array.array<#m x index>
 
   FeltConstAttr a = bldr.getAttr<FeltConstAttr>(APInt::getZero(64));
   auto v1 = bldr.create<FeltConstantOp>(loc, a);

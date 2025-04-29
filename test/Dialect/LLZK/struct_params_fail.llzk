@@ -481,8 +481,8 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !llzk.struct<@ReadConstBadTypeA<[@T]>>
     }
     function.def @constrain(%self: !llzk.struct<@ReadConstBadTypeA<[@T]>>) {
-      // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!llzk.array<54 x index>'}}
-      %0 = read_const @T : !llzk.array<54 x index>
+      // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!array.array<54 x index>'}}
+      %0 = read_const @T : !array.array<54 x index>
       function.return
     }
   }
@@ -555,12 +555,12 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   function.def private @in_return_deep() ->
-    !llzk.array<2 x
+    !array.array<2 x
       !llzk.struct<@DeepInvalidArrayTypeA<[
-        !llzk.array<2 x
+        !array.array<2 x
           !llzk.struct<@DeepInvalidArrayTypeA<[
             !llzk.struct<@DeepInvalidArrayTypeA<[
-              !llzk.array<2 x !llzk.array<4 x i1>> // expected-error {{'llzk.array' element type cannot be 'llzk.array'}}
+              !array.array<2 x !array.array<4 x i1>> // expected-error {{'array.array' element type cannot be 'array.array'}}
             ]>> // expected-error {{failed to parse struct parameters}}
           ]>> // expected-error {{failed to parse struct parameters}}
         > // expected-error {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}

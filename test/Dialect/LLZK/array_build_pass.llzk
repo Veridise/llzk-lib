@@ -1,138 +1,138 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-function.def @arr_constant_index() -> !llzk.array<3 x index> {
+function.def @arr_constant_index() -> !array.array<3 x index> {
   %a = arith.constant 45 : index
   %b = arith.constant 214 : index
   %c = arith.constant 2 : index
-  %r = array.new %a, %b, %c : !llzk.array<3 x index>
-  function.return %r: !llzk.array<3 x index>
+  %r = array.new %a, %b, %c : !array.array<3 x index>
+  function.return %r: !array.array<3 x index>
 }
-//CHECK-LABEL:  function.def @arr_constant_index() -> !llzk.array<3 x index> {
+//CHECK-LABEL:  function.def @arr_constant_index() -> !array.array<3 x index> {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 45 : index
 //CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 214 : index
 //CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 //CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = array.new %[[T1]], %[[T2]], %[[T3]] : <3 x index>
-//CHECK-NEXT:     function.return %[[T4]] : !llzk.array<3 x index>
+//CHECK-NEXT:     function.return %[[T4]] : !array.array<3 x index>
 //CHECK-NEXT:   }
 // -----
 
-function.def @arr_mix_index(%a: index, %b: index) -> !llzk.array<4 x index> {
+function.def @arr_mix_index(%a: index, %b: index) -> !array.array<4 x index> {
   %c = arith.constant 324 : index
   %d = arith.constant 999 : index
-  %r = array.new %a, %b, %c, %d: !llzk.array<4 x index>
-  function.return %r: !llzk.array<4 x index>
+  %r = array.new %a, %b, %c, %d: !array.array<4 x index>
+  function.return %r: !array.array<4 x index>
 }
 //CHECK-LABEL:  function.def @arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> !llzk.array<4 x index> {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> !array.array<4 x index> {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 324 : index
 //CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 999 : index
 //CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <4 x index>
-//CHECK-NEXT:     function.return %[[T3]] : !llzk.array<4 x index>
+//CHECK-NEXT:     function.return %[[T3]] : !array.array<4 x index>
 //CHECK-NEXT:   }
 // -----
 
-function.def @arr_mix_index(%a: index, %b: index) -> !llzk.array<2,2 x index> {
+function.def @arr_mix_index(%a: index, %b: index) -> !array.array<2,2 x index> {
   %c = arith.constant 324 : index
   %d = arith.constant 999 : index
-  %r = array.new %a, %b, %c, %d: !llzk.array<2,2 x index>
-  function.return %r: !llzk.array<2,2 x index>
+  %r = array.new %a, %b, %c, %d: !array.array<2,2 x index>
+  function.return %r: !array.array<2,2 x index>
 }
 //CHECK-LABEL:  function.def @arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> !llzk.array<2,2 x index> {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> !array.array<2,2 x index> {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 324 : index
 //CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 999 : index
 //CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <2,2 x index>
-//CHECK-NEXT:     function.return %[[T3]] : !llzk.array<2,2 x index>
+//CHECK-NEXT:     function.return %[[T3]] : !array.array<2,2 x index>
 //CHECK-NEXT:   }
 // -----
 
-function.def @arr_3D(%0: index, %1: index, %2: index, %3: index, %4: index, %5: index, %6: index, %7: index) -> !llzk.array<2,2,2 x index> {
-  %r = array.new %0, %1, %2, %3, %4, %5, %6, %7: !llzk.array<2,2,2 x index>
-  function.return %r: !llzk.array<2,2,2 x index>
+function.def @arr_3D(%0: index, %1: index, %2: index, %3: index, %4: index, %5: index, %6: index, %7: index) -> !array.array<2,2,2 x index> {
+  %r = array.new %0, %1, %2, %3, %4, %5, %6, %7: !array.array<2,2,2 x index>
+  function.return %r: !array.array<2,2,2 x index>
 }
 //CHECK-LABEL:  function.def @arr_3D
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index,
 //CHECK-SAME:    %[[A2:[0-9a-zA-Z_\.]+]]: index, %[[A3:[0-9a-zA-Z_\.]+]]: index,
 //CHECK-SAME:    %[[A4:[0-9a-zA-Z_\.]+]]: index, %[[A5:[0-9a-zA-Z_\.]+]]: index,
 //CHECK-SAME:    %[[A6:[0-9a-zA-Z_\.]+]]: index, %[[A7:[0-9a-zA-Z_\.]+]]: index)
-//CHECK-SAME:   -> !llzk.array<2,2,2 x index> {
+//CHECK-SAME:   -> !array.array<2,2,2 x index> {
 //CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[A2]], %[[A3]], %[[A4]], %[[A5]], %[[A6]], %[[A7]] : <2,2,2 x index>
-//CHECK-NEXT:     function.return %[[T3]] : !llzk.array<2,2,2 x index>
+//CHECK-NEXT:     function.return %[[T3]] : !array.array<2,2,2 x index>
 //CHECK-NEXT:   }
 // -----
 
-function.def @arr_arr_mix_index(%a: index, %b: index) -> !llzk.array<2 , 2 x index> {
+function.def @arr_arr_mix_index(%a: index, %b: index) -> !array.array<2 , 2 x index> {
   %c = arith.constant 343245 : index
   %d = arith.constant 345 : index
-  %r = array.new %a, %b, %c, %d: !llzk.array<2 , 2 x index>
-  function.return %r: !llzk.array<2 , 2 x index>
+  %r = array.new %a, %b, %c, %d: !array.array<2 , 2 x index>
+  function.return %r: !array.array<2 , 2 x index>
 }
 //CHECK-LABEL:  function.def @arr_arr_mix_index
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> !llzk.array<2,2 x index> {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: index) -> !array.array<2,2 x index> {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 343245 : index
 //CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 345 : index
 //CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[T1]], %[[T2]] : <2,2 x index>
-//CHECK-NEXT:     function.return %[[T3]] : !llzk.array<2,2 x index>
+//CHECK-NEXT:     function.return %[[T3]] : !array.array<2,2 x index>
 //CHECK-NEXT:   }
 // -----
 
-function.def @arr_constant_felt() -> !llzk.array<2 x !llzk.felt> {
+function.def @arr_constant_felt() -> !array.array<2 x !llzk.felt> {
   %a = llzk.constfelt 6744573456376
   %b = llzk.constfelt 381928390103509
-  %r = array.new %a, %b : !llzk.array<2 x !llzk.felt>
-  function.return %r: !llzk.array<2 x !llzk.felt>
+  %r = array.new %a, %b : !array.array<2 x !llzk.felt>
+  function.return %r: !array.array<2 x !llzk.felt>
 }
-//CHECK-LABEL:  function.def @arr_constant_felt() -> !llzk.array<2 x !llzk.felt> {
+//CHECK-LABEL:  function.def @arr_constant_felt() -> !array.array<2 x !llzk.felt> {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = constfelt 6744573456376
 //CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = constfelt 381928390103509
 //CHECK-NEXT:     %[[T3:[0-9a-zA-Z_\.]+]] = array.new %[[T1]], %[[T2]] : <2 x !llzk.felt>
-//CHECK-NEXT:     function.return %[[T3]] : !llzk.array<2 x !llzk.felt>
+//CHECK-NEXT:     function.return %[[T3]] : !array.array<2 x !llzk.felt>
 //CHECK-NEXT:   }
 // -----
 
-function.def @arr_params_felt(%a: !llzk.felt, %b: !llzk.felt, %c: !llzk.felt, %d: !llzk.felt) -> !llzk.array<4 x !llzk.felt> {
-  %r = array.new %a, %b, %c, %d: !llzk.array<4 x !llzk.felt>
-  function.return %r: !llzk.array<4 x !llzk.felt>
+function.def @arr_params_felt(%a: !llzk.felt, %b: !llzk.felt, %c: !llzk.felt, %d: !llzk.felt) -> !array.array<4 x !llzk.felt> {
+  %r = array.new %a, %b, %c, %d: !array.array<4 x !llzk.felt>
+  function.return %r: !array.array<4 x !llzk.felt>
 }
 //CHECK-LABEL:  function.def @arr_params_felt
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-//CHECK-SAME:    %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A3:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.array<4 x !llzk.felt> {
+//CHECK-SAME:    %[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A3:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !array.array<4 x !llzk.felt> {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = array.new %[[A0]], %[[A1]], %[[A2]], %[[A3]] : <4 x !llzk.felt>
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.array<4 x !llzk.felt>
+//CHECK-NEXT:     function.return %[[T1]] : !array.array<4 x !llzk.felt>
 //CHECK-NEXT:   }
 // -----
 
-function.def @arr_uninitialized() -> !llzk.array<3 x index> {
-  %r = array.new : !llzk.array<3 x index>
-  function.return %r: !llzk.array<3 x index>
+function.def @arr_uninitialized() -> !array.array<3 x index> {
+  %r = array.new : !array.array<3 x index>
+  function.return %r: !array.array<3 x index>
 }
-//CHECK-LABEL:  function.def @arr_uninitialized() -> !llzk.array<3 x index> {
+//CHECK-LABEL:  function.def @arr_uninitialized() -> !array.array<3 x index> {
 //CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = array.new : <3 x index>
-//CHECK-NEXT:     function.return %[[T4]] : !llzk.array<3 x index>
+//CHECK-NEXT:     function.return %[[T4]] : !array.array<3 x index>
 //CHECK-NEXT:   }
 // -----
 
-function.def @arr_uninitialized_multi() -> !llzk.array<3,4,5 x index> {
-  %r = array.new : !llzk.array<3,4,5 x index>
-  function.return %r: !llzk.array<3,4,5 x index>
+function.def @arr_uninitialized_multi() -> !array.array<3,4,5 x index> {
+  %r = array.new : !array.array<3,4,5 x index>
+  function.return %r: !array.array<3,4,5 x index>
 }
-//CHECK-LABEL:  function.def @arr_uninitialized_multi() -> !llzk.array<3,4,5 x index> {
+//CHECK-LABEL:  function.def @arr_uninitialized_multi() -> !array.array<3,4,5 x index> {
 //CHECK-NEXT:     %[[T4:[0-9a-zA-Z_\.]+]] = array.new : <3,4,5 x index>
-//CHECK-NEXT:     function.return %[[T4]] : !llzk.array<3,4,5 x index>
+//CHECK-NEXT:     function.return %[[T4]] : !array.array<3,4,5 x index>
 //CHECK-NEXT:   }
 // -----
 
-function.def @arr_size_0() -> !llzk.array<0 x index> {
-  %r = array.new : !llzk.array<0 x index>
-  function.return %r: !llzk.array<0 x index>
+function.def @arr_size_0() -> !array.array<0 x index> {
+  %r = array.new : !array.array<0 x index>
+  function.return %r: !array.array<0 x index>
 }
-//CHECK-LABEL:  function.def @arr_size_0() -> !llzk.array<0 x index> {
+//CHECK-LABEL:  function.def @arr_size_0() -> !array.array<0 x index> {
 //CHECK-NEXT:     %array = array.new  : <0 x index>
-//CHECK-NEXT:     function.return %array : !llzk.array<0 x index>
+//CHECK-NEXT:     function.return %array : !array.array<0 x index>
 //CHECK-NEXT:   }
 
 // -----
-!at = !llzk.array<affine_map<(i)[k] -> (5*i+k)>, affine_map<()[c] -> (c)>, affine_map<(j) -> (j+2)> x !llzk.felt>
+!at = !array.array<affine_map<(i)[k] -> (5*i+k)>, affine_map<()[c] -> (c)>, affine_map<(j) -> (j+2)> x !llzk.felt>
 function.def @test_all_forms_of_affine_map_instantiation() -> !at {
   %a = arith.constant 2 : index
   %b = arith.constant 4 : index
@@ -147,11 +147,11 @@ function.def @test_all_forms_of_affine_map_instantiation() -> !at {
 // CHECK: #[[$M2:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 2)>
 //
 // CHECK-LABEL: function.def @test_all_forms_of_affine_map_instantiation() ->
-// CHECK-SAME:             !llzk.array<#[[$M0]],#[[$M1]],#[[$M2]] x !llzk.felt> {
+// CHECK-SAME:             !array.array<#[[$M0]],#[[$M1]],#[[$M2]] x !llzk.felt> {
 // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 6 : index
 // CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:    %[[V4:[0-9a-zA-Z_\.]+]] = array.new{(%[[V0]]){{\[}}%[[V1]]], (){{\[}}%[[V2]]], (%[[V3]])} : <#[[$M0]],#[[$M1]],#[[$M2]] x !llzk.felt>
-// CHECK-NEXT:    function.return %[[V4]] : !llzk.array<#[[$M0]],#[[$M1]],#[[$M2]] x !llzk.felt>
+// CHECK-NEXT:    function.return %[[V4]] : !array.array<#[[$M0]],#[[$M1]],#[[$M2]] x !llzk.felt>
 // CHECK-NEXT:  }

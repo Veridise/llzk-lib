@@ -1,9 +1,9 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
 function.def @array_len_test() -> index {
-  %a = array.new : !llzk.array<2,3 x !llzk.felt>
+  %a = array.new : !array.array<2,3 x !llzk.felt>
   %0 = arith.constant 0 : index
-  %x = array.len %a, %0 : !llzk.array<2,3 x !llzk.felt> // result is 2
+  %x = array.len %a, %0 : !array.array<2,3 x !llzk.felt> // result is 2
   function.return %x: index
 }
 //CHECK-LABEL: function.def @array_len_test() -> index {
@@ -15,8 +15,8 @@ function.def @array_len_test() -> index {
 // -----
 
 function.def @array_len_test_unknown_idx_value(%0: index) -> index {
-  %a = array.new : !llzk.array<2,3 x !llzk.felt>
-  %x = array.len %a, %0 : !llzk.array<2,3 x !llzk.felt>
+  %a = array.new : !array.array<2,3 x !llzk.felt>
+  %x = array.len %a, %0 : !array.array<2,3 x !llzk.felt>
   function.return %x: index
 }
 //CHECK-LABEL: function.def @array_len_test

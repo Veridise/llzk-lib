@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Builders.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
-#include "llzk/Util/ArrayTypeHelper.h"
 #include "llzk/Util/Debug.h"
 
 #include <gtest/gtest.h>
@@ -17,6 +17,7 @@
 #include "../LLZKTestBase.h"
 
 using namespace llzk;
+using namespace llzk::array;
 using namespace mlir;
 
 class ArrayTypeHelperTests : public LLZKTest {

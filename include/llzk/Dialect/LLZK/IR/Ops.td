@@ -20,6 +20,7 @@ include "mlir/IR/SymbolInterfaces.td"
 include "llzk/Dialect/LLZK/IR/Attrs.td"
 include "llzk/Dialect/LLZK/IR/Types.td"
 include "llzk/Dialect/LLZK/IR/OpsBase.td"
+include "llzk/Dialect/Array/IR/Types.td"
 
 //===------------------------------------------------------------------===//
 // Basic constructs
@@ -135,7 +136,7 @@ def LLZK_GlobalDefOp
     llzk.global @b : i1 = false
 
     // Uninitialized global variable.
-    llzk.global @a : !llzk.array<2,2 x i1>
+    llzk.global @a : !array.array<2,2 x i1>
     ```
   }];
 
@@ -215,7 +216,7 @@ def LLZK_StructDefOp
 
       ```llzk
       llzk.struct @ComponentA {
-        field @f1 : !llzk.array<5 x index>
+        field @f1 : !array.array<5 x index>
         field @f2 : !llzk.felt {llzk.pub}
 
         function.def @compute(%p: !llzk.felt) -> !llzk.struct<@ComponentA> {
@@ -731,8 +732,8 @@ def LLZK_UnifiableCastOp : LLZK_Op<"unifiable_cast", [Pure]> {
 
     Example:
     ```llzk
-    %0 = some_other_op : !llzk.array<@N x !llzk.felt>
-    %1 = unifiable_cast %0 : (!llzk.array<@N x @llzk.felt>) -> !llzk.array<affine_map<()[s0, s1] -> (s0 + s1)> x !llzk.felt>
+    %0 = some_other_op : !array.array<@N x !llzk.felt>
+    %1 = unifiable_cast %0 : (!array.array<@N x @llzk.felt>) -> !array.array<affine_map<()[s0, s1] -> (s0 + s1)> x !llzk.felt>
     ```
   }];
 

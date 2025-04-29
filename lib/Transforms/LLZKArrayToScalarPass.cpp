@@ -53,11 +53,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
-#include "llzk/Util/ArrayTypeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>

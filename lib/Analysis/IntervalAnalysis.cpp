@@ -18,6 +18,8 @@ using namespace mlir;
 
 namespace llzk {
 
+using namespace array;
+
 /* Field */
 
 Field::Field(std::string_view primeStr) : primeMod(llvm::APSInt(primeStr)) {

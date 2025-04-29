@@ -25,7 +25,7 @@ include "mlir/Interfaces/InferTypeOpInterface.td"
 // the list of operands is split into logical pieces for the operand components.
 //
 // For example, suppose the `CreateArrayOp` is used to create an array with type
-//    `!llzk.array<affine_map<(d0)->(d0)>,affine_map<(d0)[s0]->(d0+s0)> x i1>`
+//    `!array.array<affine_map<(d0)->(d0)>,affine_map<(d0)[s0]->(d0+s0)> x i1>`
 //
 // 1) `CreateArrayOp` requires the `AttrSizedOperandSegments` trait because it
 // defines two variadic arguments: `$elements` and `$mapOperands` (in that
@@ -105,13 +105,13 @@ class TypesUnify<string lhsArg, string rhsArg, string lhsSummary = lhsArg,
 // Returns success if `elementArg` unifies with the `arrayArg` element type.
 class ArrayElemTypeUnifyWith<string arrayArg, string elementArg>
     : TypesUnify<arrayArg, elementArg, arrayArg#" element", elementArg,
-                 "::llvm::cast<::llzk::ArrayType>($_self).getElementType()">;
+                 "::llvm::cast<::llzk::array::ArrayType>($_self).getElementType()">;
 
 // Returns success if `$result` unifies with the `arrayArg` element type.
 class ArrayElemTypeUnifyWithResult<string arrayArg>
     : TypeMatchResultWith<
           arrayArg, arrayArg#" element",
-          "::llvm::cast<::llzk::ArrayType>($_self).getElementType()",
+          "::llvm::cast<::llzk::array::ArrayType>($_self).getElementType()",
           "::llzk::typesUnify">;
 
 // ArrayElemTypeUnifyWithResult + InferTypeOpAdaptorWithIsCompatible (i.e.

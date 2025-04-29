@@ -8,13 +8,13 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !llzk.struct<@Hello>) { function.return }
   }
-  function.def private @a(!llzk.array<5 x !llzk.felt>, !llzk.struct<@Hello>)
+  function.def private @a(!array.array<5 x !llzk.felt>, !llzk.struct<@Hello>)
 }
-//CHECK-LABEL:  function.def private @a(!llzk.array<5 x !llzk.felt>, !llzk.struct<@Hello>)
+//CHECK-LABEL:  function.def private @a(!array.array<5 x !llzk.felt>, !llzk.struct<@Hello>)
 // -----
 
-function.def private @b(!llzk.array<3,2,1 x !llzk.felt>)
-//CHECK-LABEL:  function.def private @b(!llzk.array<3,2,1 x !llzk.felt>)
+function.def private @b(!array.array<3,2,1 x !llzk.felt>)
+//CHECK-LABEL:  function.def private @b(!array.array<3,2,1 x !llzk.felt>)
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -25,29 +25,29 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !llzk.struct<@Bob>) { function.return }
   }
-  function.def private @c(%x: !llzk.array<5 x !llzk.struct<@Bob>>) -> !llzk.array<5 x !llzk.struct<@Bob>>
+  function.def private @c(%x: !array.array<5 x !llzk.struct<@Bob>>) -> !array.array<5 x !llzk.struct<@Bob>>
 }
-//CHECK-LABEL:  function.def private @c(!llzk.array<5 x !llzk.struct<@Bob>>) -> !llzk.array<5 x !llzk.struct<@Bob>>
+//CHECK-LABEL:  function.def private @c(!array.array<5 x !llzk.struct<@Bob>>) -> !array.array<5 x !llzk.struct<@Bob>>
 // -----
 
-function.def private @d(%x: !llzk.array<54 x index>) -> index
-//CHECK-LABEL:  function.def private @d(!llzk.array<54 x index>) -> index
+function.def private @d(%x: !array.array<54 x index>) -> index
+//CHECK-LABEL:  function.def private @d(!array.array<54 x index>) -> index
 // -----
 
 function.def private @f(!llzk.felt) -> i1
 //CHECK-LABEL:  function.def private @f(!llzk.felt) -> i1
 // -----
 
-function.def private @g(%x: !llzk.array<2,3,2 x index>)
-//CHECK-LABEL:  function.def private @g(!llzk.array<2,3,2 x index>)
+function.def private @g(%x: !array.array<2,3,2 x index>)
+//CHECK-LABEL:  function.def private @g(!array.array<2,3,2 x index>)
 // -----
 
 function.def private @h(%x: !llzk.string)
 //CHECK-LABEL:  function.def private @h(!llzk.string)
 // -----
 
-function.def private @i(%x: !llzk.array<4 x !llzk.string>)
-//CHECK-LABEL:  function.def private @i(!llzk.array<4 x !llzk.string>)
+function.def private @i(%x: !array.array<4 x !llzk.string>)
+//CHECK-LABEL:  function.def private @i(!array.array<4 x !llzk.string>)
 // -----
 
 module attributes {veridise.lang = "llzk"} {

@@ -92,15 +92,15 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @ComponentC2<[@T]> {
-    field @f : !llzk.array<2 x !llzk.tvar<@T>>
+    field @f : !array.array<2 x !llzk.tvar<@T>>
 
     function.def @compute() -> !llzk.struct<@ComponentC2<[@T]>> {
       %self = new_struct : !llzk.struct<@ComponentC2<[@T]>>
       %a1 = function.call @ComponentC1::@compute() : () -> !llzk.struct<@ComponentC1<[5]>> // expected-note {{prior use here}}
       %a2 = function.call @ComponentC1::@compute() : () -> !llzk.struct<@ComponentC1<[7]>>
       // expected-error@+1 {{use of value '%a1' expects different type than prior uses: '!llzk.tvar<@T>' vs '!llzk.struct<@ComponentC1<[5]>>'}}
-      %arr = array.new %a1, %a2 : !llzk.array<2 x !llzk.tvar<@T>>
-      writef %self[@f] = %arr : !llzk.struct<@ComponentC2<[@T]>>, !llzk.array<2 x !llzk.tvar<@T>>
+      %arr = array.new %a1, %a2 : !array.array<2 x !llzk.tvar<@T>>
+      writef %self[@f] = %arr : !llzk.struct<@ComponentC2<[@T]>>, !array.array<2 x !llzk.tvar<@T>>
       function.return %self : !llzk.struct<@ComponentC2<[@T]>>
     }
 

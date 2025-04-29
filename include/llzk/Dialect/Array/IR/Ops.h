@@ -10,6 +10,7 @@
 #pragma once
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Util/OpHelper.h"
 
@@ -17,7 +18,6 @@
 #include <mlir/IR/Location.h>
 
 // Include TableGen'd declarations
-#define GET_OP_CLASSES
 #include "llzk/Dialect/Array/IR/OpInterfaces.h.inc"
 
 // Include TableGen'd declarations
