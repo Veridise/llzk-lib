@@ -2,16 +2,16 @@
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component01<[@C]> {
-    function.def @compute(%a: !llzk.felt) -> !llzk.struct<@Component01<[@C]>> {
+    function.def @compute(%a: !felt.felt) -> !llzk.struct<@Component01<[@C]>> {
       %self = new_struct : !llzk.struct<@Component01<[@C]>>
-      %b = read_const @C : !llzk.felt
+      %b = read_const @C : !felt.felt
       %c = cmp gt(%a, %b)
       assert %c
       function.return %self : !llzk.struct<@Component01<[@C]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@Component01<[@C]>>, %a: !llzk.felt) {
-      %b = read_const @C : !llzk.felt
+    function.def @constrain(%self: !llzk.struct<@Component01<[@C]>>, %a: !felt.felt) {
+      %b = read_const @C : !felt.felt
       %c = cmp gt(%a, %b)
       assert %c
       function.return
@@ -19,15 +19,15 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: llzk.struct @Component01<[@C]> {
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@Component01<[@C]>> {
+//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@Component01<[@C]>> {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Component01<[@C]>>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = read_const @C : !llzk.felt
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = read_const @C : !felt.felt
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = cmp gt(%[[A0]], %[[T0]])
 //CHECK-NEXT:      assert %[[T1]]
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@Component01<[@C]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01<[@C]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = read_const @C : !llzk.felt
+//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01<[@C]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = read_const @C : !felt.felt
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = cmp gt(%[[A1]], %[[T0]])
 //CHECK-NEXT:      assert %[[T1]]
 //CHECK-NEXT:      function.return
@@ -35,13 +35,13 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-function.def @test_in_global_func(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
+function.def @test_in_global_func(%a: !felt.felt, %b: !felt.felt) -> i1 {
   %c = cmp gt(%a, %b)
   assert %c
   function.return %c : i1
 }
 //CHECK-LABEL: function.def @test_in_global_func
-//CHECK-SAME:  (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> i1 {
+//CHECK-SAME:  (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
 //CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cmp gt(%[[A0]], %[[A1]])
 //CHECK-NEXT:    assert %[[T0]]
 //CHECK-NEXT:    function.return %[[T0]] : i1

@@ -215,20 +215,20 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  function.def private @id(%a: !llzk.felt) -> !llzk.felt
-  function.def @callop_unknown_in_return_type(%a: !llzk.felt) {
+  function.def private @id(%a: !felt.felt) -> !felt.felt
+  function.def @callop_unknown_in_return_type(%a: !felt.felt) {
     // expected-error@+1 {{'function.call' op references unknown symbol "@Unknown"}}
-    %sum = function.call @id(%a) : (!llzk.felt) -> (!llzk.tvar<@Unknown>)
+    %sum = function.call @id(%a) : (!felt.felt) -> (!llzk.tvar<@Unknown>)
     function.return
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  function.def private @id(%a: !llzk.felt) -> !llzk.felt
-  function.def @callop_unknown_in_return_type(%a: !llzk.felt) { // expected-note {{prior use here}}
+  function.def private @id(%a: !felt.felt) -> !felt.felt
+  function.def @callop_unknown_in_return_type(%a: !felt.felt) { // expected-note {{prior use here}}
     // See NOTE on line 4.
-    // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!llzk.felt'}}
-    %sum = function.call @id(%a) : (!llzk.tvar<@Unknown>) -> (!llzk.felt)
+    // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!felt.felt'}}
+    %sum = function.call @id(%a) : (!llzk.tvar<@Unknown>) -> (!felt.felt)
     function.return
   }
 }
@@ -273,7 +273,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @FieldDefOpWithUnknownScalarArray {
     // expected-error@+1 {{'llzk.field' op references unknown symbol "@Unknown"}}
-    field @ret: !array.array<@Unknown x !llzk.felt>
+    field @ret: !array.array<@Unknown x !felt.felt>
     function.def @compute() -> !llzk.struct<@FieldDefOpWithUnknownScalarArray> {
       %self = new_struct : !llzk.struct<@FieldDefOpWithUnknownScalarArray>
       function.return %self : !llzk.struct<@FieldDefOpWithUnknownScalarArray>
@@ -310,7 +310,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @FieldReadWithUnknownInBase<[@A]> {
-    field @f: !llzk.felt
+    field @f: !felt.felt
     function.def @compute() -> !llzk.struct<@FieldReadWithUnknownInBase<[@A]>> {
       %self = new_struct : !llzk.struct<@FieldReadWithUnknownInBase<[@A]>>
       function.return %self : !llzk.struct<@FieldReadWithUnknownInBase<[@A]>>
@@ -318,7 +318,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !llzk.struct<@FieldReadWithUnknownInBase<[@A]>>) { // expected-note {{prior use here}}
       // See NOTE on line 4.
       // expected-error@+1 {{use of value '%self' expects different type than prior uses: '!llzk.struct<@FieldReadWithUnknownInBase<[@Unknown]>>' vs '!llzk.struct<@FieldReadWithUnknownInBase<[@A]>>'}}
-      %0 = llzk.readf %self[@f] : !llzk.struct<@FieldReadWithUnknownInBase<[@Unknown]>>, !llzk.felt
+      %0 = llzk.readf %self[@f] : !llzk.struct<@FieldReadWithUnknownInBase<[@Unknown]>>, !felt.felt
       function.return
     }
   }
@@ -356,7 +356,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @FieldWriteWithUnknownInBase<[@A]> {
-    field @f: !llzk.felt
+    field @f: !felt.felt
     function.def @compute(%0: i1) -> !llzk.struct<@FieldWriteWithUnknownInBase<[@A]>> {
       %self = new_struct : !llzk.struct<@FieldWriteWithUnknownInBase<[@A]>>
       function.return %self : !llzk.struct<@FieldWriteWithUnknownInBase<[@A]>>
@@ -409,27 +409,27 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   function.def @create_array_op_unknown() {
     // expected-error@+1 {{'array.new' op references unknown symbol "@Unknown"}}
-    %arr = array.new : !array.array<@Unknown x !llzk.felt>
+    %arr = array.new : !array.array<@Unknown x !felt.felt>
     function.return
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @ReadArrayOp_unknown_base(
-    %arr: !array.array<5 x !llzk.felt>, // expected-note {{prior use here}}
+    %arr: !array.array<5 x !felt.felt>, // expected-note {{prior use here}}
     %k: index
   ) {
     // See NOTE on line 4.
-    // expected-error@+1 {{use of value '%arr' expects different type than prior uses: '!array.array<@Unknown x !llzk.felt>' vs '!array.array<5 x !llzk.felt>'}}
-    %v = array.read %arr[%k] : !array.array<@Unknown x !llzk.felt>, !llzk.felt
+    // expected-error@+1 {{use of value '%arr' expects different type than prior uses: '!array.array<@Unknown x !felt.felt>' vs '!array.array<5 x !felt.felt>'}}
+    %v = array.read %arr[%k] : !array.array<@Unknown x !felt.felt>, !felt.felt
     function.return
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  function.def @ReadArrayOp_unknown_result_tvar(%arr: !array.array<5 x !llzk.felt>, %k: index) {
+  function.def @ReadArrayOp_unknown_result_tvar(%arr: !array.array<5 x !felt.felt>, %k: index) {
     // expected-error@+1 {{'array.read' op references unknown symbol "@Unknown"}}
-    %v = array.read %arr[%k] : !array.array<5 x !llzk.felt>, !llzk.tvar<@Unknown>
+    %v = array.read %arr[%k] : !array.array<5 x !felt.felt>, !llzk.tvar<@Unknown>
     function.return
   }
 }
@@ -452,26 +452,26 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @WriteArrayOp_unknown_base(
-      %arr: !array.array<5 x !llzk.felt>, // expected-note {{prior use here}}
+      %arr: !array.array<5 x !felt.felt>, // expected-note {{prior use here}}
       %k: index,
-      %v: !llzk.felt
+      %v: !felt.felt
   ) {
     // See NOTE on line 4.
-    // expected-error@+1 {{use of value '%arr' expects different type than prior uses: '!array.array<@Unknown x !llzk.felt>' vs '!array.array<5 x !llzk.felt>'}}
-    array.write %arr[%k] = %v : !array.array<@Unknown x !llzk.felt>, !llzk.felt
+    // expected-error@+1 {{use of value '%arr' expects different type than prior uses: '!array.array<@Unknown x !felt.felt>' vs '!array.array<5 x !felt.felt>'}}
+    array.write %arr[%k] = %v : !array.array<@Unknown x !felt.felt>, !felt.felt
     function.return
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @WriteArrayOp_unknown_result_tvar(
-      %arr: !array.array<5 x !llzk.felt>,
+      %arr: !array.array<5 x !felt.felt>,
       %k: index,
-      %v: !llzk.felt // expected-note {{prior use here}}
+      %v: !felt.felt // expected-note {{prior use here}}
   ) {
     // See NOTE on line 4.
-    // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!llzk.felt'}}
-    array.write %arr[%k] = %v : !array.array<5 x !llzk.felt>, !llzk.tvar<@Unknown>
+    // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!felt.felt'}}
+    array.write %arr[%k] = %v : !array.array<5 x !felt.felt>, !llzk.tvar<@Unknown>
     function.return
   }
 }
@@ -511,12 +511,12 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @array_len_with_unknown_base(
-      %a: !array.array<2,3 x !llzk.felt>, // expected-note {{prior use here}}
+      %a: !array.array<2,3 x !felt.felt>, // expected-note {{prior use here}}
       %0: index
   ) -> index {
     // See NOTE on line 4.
-    // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<2,@Unknown x !llzk.felt>' vs '!array.array<2,3 x !llzk.felt>'}}
-    %x = array.len %a, %0 : !array.array<2,@Unknown x !llzk.felt>
+    // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<2,@Unknown x !felt.felt>' vs '!array.array<2,3 x !felt.felt>'}}
+    %x = array.len %a, %0 : !array.array<2,@Unknown x !felt.felt>
     function.return %x: index
   }
 }
@@ -524,11 +524,11 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @EmitEqOp_With_Unknown_In_LHS {
     function.def @constrain(%self: !llzk.struct<@EmitEqOp_With_Unknown_In_LHS>) {
-      %a = array.new : !array.array<5 x !llzk.felt> // expected-note {{prior use here}}
-      %b = array.new : !array.array<5 x !llzk.felt>
+      %a = array.new : !array.array<5 x !felt.felt> // expected-note {{prior use here}}
+      %b = array.new : !array.array<5 x !felt.felt>
       // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<@Unknown x !llzk.felt>' vs '!array.array<5 x !llzk.felt>'}}
-      llzk.emit_eq %a, %b : !array.array<@Unknown x !llzk.felt>
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<@Unknown x !felt.felt>' vs '!array.array<5 x !felt.felt>'}}
+      llzk.emit_eq %a, %b : !array.array<@Unknown x !felt.felt>
       function.return
     }
 
@@ -542,11 +542,11 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @EmitEqOp_With_Unknown_In_RHS {
     function.def @constrain(%self: !llzk.struct<@EmitEqOp_With_Unknown_In_RHS>) {
-      %a = array.new : !array.array<5 x !llzk.felt>
-      %b = array.new : !array.array<5 x !llzk.felt> // expected-note {{prior use here}}
+      %a = array.new : !array.array<5 x !felt.felt>
+      %b = array.new : !array.array<5 x !felt.felt> // expected-note {{prior use here}}
       // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.array<@Unknown x !llzk.felt>' vs '!array.array<5 x !llzk.felt>'}}
-      llzk.emit_eq %a, %b : !array.array<5 x !llzk.felt>, !array.array<@Unknown x !llzk.felt>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.array<@Unknown x !felt.felt>' vs '!array.array<5 x !felt.felt>'}}
+      llzk.emit_eq %a, %b : !array.array<5 x !felt.felt>, !array.array<@Unknown x !felt.felt>
       function.return
     }
 
@@ -560,11 +560,11 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @EmitInOp_With_Unknown_In_LHS {
     function.def @constrain(%self: !llzk.struct<@EmitInOp_With_Unknown_In_LHS>) {
-      %a = array.new : !array.array<5 x !llzk.felt> // expected-note {{prior use here}}
-      %b = llzk.constfelt 3
+      %a = array.new : !array.array<5 x !felt.felt> // expected-note {{prior use here}}
+      %b = felt.const 3
       // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<@Unknown x !llzk.felt>' vs '!array.array<5 x !llzk.felt>'}}
-      llzk.emit_in %a, %b : !array.array<@Unknown x !llzk.felt>
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<@Unknown x !felt.felt>' vs '!array.array<5 x !felt.felt>'}}
+      llzk.emit_in %a, %b : !array.array<@Unknown x !felt.felt>
       function.return
     }
 
@@ -578,11 +578,11 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @EmitInOp_With_Unknown_In_RHS {
     function.def @constrain(%self: !llzk.struct<@EmitInOp_With_Unknown_In_RHS>) {
-      %a = array.new : !array.array<5 x !llzk.felt>
-      %b = llzk.constfelt 3 // expected-note {{prior use here}}
+      %a = array.new : !array.array<5 x !felt.felt>
+      %b = felt.const 3 // expected-note {{prior use here}}
       // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!llzk.felt'}}
-      llzk.emit_in %a, %b : !array.array<5 x !llzk.felt>, !llzk.tvar<@Unknown>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!felt.felt'}}
+      llzk.emit_in %a, %b : !array.array<5 x !felt.felt>, !llzk.tvar<@Unknown>
       function.return
     }
 

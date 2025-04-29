@@ -8,17 +8,17 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  function.def @identity(%x: !llzk.felt) -> !llzk.felt {
+  function.def @identity(%x: !felt.felt) -> !felt.felt {
     // expected-error@+1 {{'llzk.struct' op expects parent op 'builtin.module'}}
     llzk.struct @ComponentA {}
-    function.return %x: !llzk.felt
+    function.return %x: !felt.felt
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentB<[@B, @D, @C]> {
     // expected-error@+1 {{'llzk.struct' op must define only "@compute" and "@constrain" functions; found "@invalidname"}}
-    function.def @invalidname(%a: !llzk.felt, %b: !llzk.felt) {
+    function.def @invalidname(%a: !felt.felt, %b: !felt.felt) {
       function.return
     }
   }
@@ -27,7 +27,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentE<[@B, @D, @C]> {
     // expected-note@+1 {{see existing symbol definition here}}
-    function.def @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentE<[@B, @D, @C]>> {
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !llzk.struct<@ComponentE<[@B, @D, @C]>> {
       %self = new_struct : !llzk.struct<@ComponentE<[@B, @D, @C]>>
       function.return %self : !llzk.struct<@ComponentE<[@B, @D, @C]>>
     }
@@ -42,7 +42,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'llzk.struct' op must define exactly one 'constrain' function}}
   llzk.struct @ComponentF<[@B, @D, @C]> {
-    function.def @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentF<[@B, @D, @C]>> {
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !llzk.struct<@ComponentF<[@B, @D, @C]>> {
       %self = new_struct : !llzk.struct<@ComponentF<[@B, @D, @C]>>
       function.return %self : !llzk.struct<@ComponentF<[@B, @D, @C]>>
     }
@@ -63,9 +63,9 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentH {
-    llzk.field @f2 : !llzk.felt // expected-note {{see existing symbol definition here}}
+    llzk.field @f2 : !felt.felt // expected-note {{see existing symbol definition here}}
     // expected-error@+1 {{redefinition of symbol named 'f2'}}
-    llzk.field @f2 : !llzk.felt
+    llzk.field @f2 : !felt.felt
 
     function.def @compute() -> !llzk.struct<@ComponentH> {
       %self = new_struct : !llzk.struct<@ComponentH>
@@ -323,15 +323,15 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Signal {
-    field @reg : !llzk.felt {llzk.pub}
+    field @reg : !felt.felt {llzk.pub}
 
-    function.def @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
+    function.def @compute(%v: !felt.felt) -> !llzk.struct<@Signal> {
       %self = new_struct : !llzk.struct<@Signal>
-      writef %self[@reg] = %v : !llzk.struct<@Signal>, !llzk.felt
+      writef %self[@reg] = %v : !llzk.struct<@Signal>, !felt.felt
       function.return %self : !llzk.struct<@Signal>
     }
 
-    function.def @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@Signal>, %v: !felt.felt) {
       function.return
     }
   }
@@ -349,15 +349,15 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Signal {
-    field @reg : !llzk.felt {llzk.pub}
+    field @reg : !felt.felt {llzk.pub}
 
-    function.def @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
+    function.def @compute(%v: !felt.felt) -> !llzk.struct<@Signal> {
       %self = new_struct : !llzk.struct<@Signal>
-      writef %self[@reg] = %v : !llzk.struct<@Signal>, !llzk.felt
+      writef %self[@reg] = %v : !llzk.struct<@Signal>, !felt.felt
       function.return %self : !llzk.struct<@Signal>
     }
 
-    function.def @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@Signal>, %v: !felt.felt) {
       function.return
     }
   }

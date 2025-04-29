@@ -8,6 +8,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
@@ -43,8 +45,9 @@
 namespace llzk {
 
 using namespace mlir;
-using namespace function;
 using namespace array;
+using namespace felt;
+using namespace function;
 using namespace string;
 
 //===------------------------------------------------------------------===//
@@ -74,7 +77,7 @@ ParseResult GlobalDefOp::parseGlobalInitialValue(
   Type specifiedType = typeAttr.getValue();
 
   // Special case for parsing LLZK FeltType to match format of FeltConstantOp.
-  // Not actually necessary but the default format is verbose. ex: "#llzk<constfelt 35>"
+  // Not actually necessary but the default format is verbose. ex: "#llzk<felt.const 35>"
   if (isa<FeltType>(specifiedType)) {
     FeltConstAttr feltConstAttr;
     if (parser.parseCustomAttributeWithFallback<FeltConstAttr>(feltConstAttr)) {
@@ -96,7 +99,7 @@ void GlobalDefOp::printGlobalInitialValue(
   if (initialValue) {
     p << " = ";
     // Special case for LLZK FeltType to match format of FeltConstantOp.
-    // Not actually necessary but the default format is verbose. ex: "#llzk<constfelt 35>"
+    // Not actually necessary but the default format is verbose. ex: "#llzk<felt.const 35>"
     if (FeltConstAttr feltConstAttr = llvm::dyn_cast<FeltConstAttr>(initialValue)) {
       p.printStrippedAttrOrType<FeltConstAttr>(feltConstAttr);
     } else {
@@ -155,7 +158,7 @@ LogicalResult ensureAttrTypeMatch(
     }
   } else if (llvm::isa<FeltType>(type)) {
     if (!llvm::isa<FeltConstAttr, IntegerAttr>(valAttr)) {
-      return reportMismatch(errFn, rootType, aspect, "llzk.felt", valAttr);
+      return reportMismatch(errFn, rootType, aspect, "felt.felt", valAttr);
     }
   } else if (llvm::isa<StringType>(type)) {
     if (!llvm::isa<StringAttr>(valAttr)) {
@@ -742,28 +745,6 @@ LogicalResult FieldReadOp::verify() {
   return affineMapHelpers::verifyAffineMapInstantiations(
       getMapOperands(), getNumDimsPerMap(), mapAttrs, *this
   );
-}
-
-//===------------------------------------------------------------------===//
-// FeltConstantOp
-//===------------------------------------------------------------------===//
-
-void FeltConstantOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
-  llvm::SmallString<32> buf;
-  llvm::raw_svector_ostream os(buf);
-  os << "felt_const_";
-  getValue().getValue().toStringUnsigned(buf);
-  setNameFn(getResult(), buf);
-}
-
-OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValue(); }
-
-//===------------------------------------------------------------------===//
-// FeltNonDetOp
-//===------------------------------------------------------------------===//
-
-void FeltNonDetOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
-  setNameFn(getResult(), "felt_nondet");
 }
 
 //===------------------------------------------------------------------===//

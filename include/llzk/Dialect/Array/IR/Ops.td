@@ -118,13 +118,13 @@ def LLZK_CreateArrayOp
 
     Examples:
     ```llzk
-    %0 = array.new %a, %b, %c : !array.array<3 x !llzk.felt>
+    %0 = array.new %a, %b, %c : !array.array<3 x !felt.felt>
 
     // Create an array from the given values using the specified shape
-    %1 = array.new %a, %b, %c, %d : !array.array<2,2 x !llzk.felt>
+    %1 = array.new %a, %b, %c, %d : !array.array<2,2 x !felt.felt>
 
     // Create an uninitialized array
-    %2 = array.new : !array.array<3,2 x !llzk.felt>
+    %2 = array.new : !array.array<3,2 x !felt.felt>
     ```
 
     The values used to construct the array must have type that exactly matches
@@ -231,9 +231,9 @@ def LLZK_ReadArrayOp
     Example of 1-dimensional array:
     ```llzk
     %i = arith.constant 0 : index
-    %0 = array.new %a, %b, %c : !array.array<3 x !llzk.felt>
+    %0 = array.new %a, %b, %c : !array.array<3 x !felt.felt>
     // %1 is now equal to %a
-    %1 = array.read %0[%i] : !array.array<3 x !llzk.felt>, !llzk.felt
+    %1 = array.read %0[%i] : !array.array<3 x !felt.felt>, !felt.felt
     ```
 
     Example of 3-dimensional array:
@@ -241,9 +241,9 @@ def LLZK_ReadArrayOp
     %i = arith.constant 0 : index
     %j = arith.constant 1 : index
     %k = arith.constant 4 : index
-    %0 = array.new ... : !array.array<3,10,15 x !llzk.felt>
+    %0 = array.new ... : !array.array<3,10,15 x !felt.felt>
     // %1 is now equal to %a
-    %1 = array.read %0[%i, %j, %k] : !array.array<3,10,15 x !llzk.felt>, !llzk.felt
+    %1 = array.read %0[%i, %j, %k] : !array.array<3,10,15 x !felt.felt>, !felt.felt
     ```
   }];
 
@@ -267,20 +267,20 @@ def LLZK_WriteArrayOp
     Example of 1-dimensional array:
     ```llzk
     %i = arith.constant 0 : index
-    %0 = llzk.constfelt 42
-    %1 = array.new %a, %b, %c : !array.array<3 x !llzk.felt>
+    %0 = felt.const 42
+    %1 = array.new %a, %b, %c : !array.array<3 x !felt.felt>
     // The array now is [%0, %b, %c]
-    array.write %1[%i] = %0 : !array.array<3 x !llzk.felt>, !llzk.felt
+    array.write %1[%i] = %0 : !array.array<3 x !felt.felt>, !felt.felt
     ```
 
     Example of 2-dimensional array:
     ```llzk
     %i = arith.constant 0 : index
     %j = arith.constant 0 : index
-    %0 = llzk.constfelt 42
-    %1 = array.new %a, %b, %c, %d : !array.array<2,2 x !llzk.felt>
+    %0 = felt.const 42
+    %1 = array.new %a, %b, %c, %d : !array.array<2,2 x !felt.felt>
     // The array now is [[%0, %b], [%c, %d]]
-    array.write %1[%i, %j] = %0 : !array.array<2,2 x !llzk.felt>, !llzk.felt
+    array.write %1[%i, %j] = %0 : !array.array<2,2 x !felt.felt>, !felt.felt
     ```
   }];
 
@@ -306,16 +306,16 @@ def LLZK_ExtractArrayOp
     Extracting a 1-D array from 3-D array by selecting the index of 2 dimensions:
     ```llzk
     %i = arith.constant 1 : index
-    %0 = array.new ... : !array.array<3,10,15 x !llzk.felt>
-    %1 = array.extract %0[%i,%i] : !array.array<3,10,15 x !llzk.felt>, !array.array<15 x !llzk.felt>
+    %0 = array.new ... : !array.array<3,10,15 x !felt.felt>
+    %1 = array.extract %0[%i,%i] : !array.array<3,10,15 x !felt.felt>, !array.array<15 x !felt.felt>
     ```
 
     Extracting 1-D arrays for subcomponents:
     ```llzk
     scf.for %iv = %lb to %up step %step {
-      %p = array.extract %in[%iv] : !array.array<@N,2 x !llzk.felt>
+      %p = array.extract %in[%iv] : !array.array<@N,2 x !felt.felt>
       %c = array.read %a[%iv] : !array.array<@N x !llzk.struct<@SubC>>, !llzk.struct<@SubC>
-      function.call @SubC::@constrain(%c, %p) : (!llzk.struct<@SubC>, !array.array<2 x !llzk.felt>) -> ()
+      function.call @SubC::@constrain(%c, %p) : (!llzk.struct<@SubC>, !array.array<2 x !felt.felt>) -> ()
     }
     ```
   }];
@@ -371,11 +371,11 @@ def LLZK_ArrayLengthOp
 
     Example:
     ```llzk
-    %a = array.new : !array.array<2,3 x !llzk.felt>
+    %a = array.new : !array.array<2,3 x !felt.felt>
     %0 = arith.constant 0 : index
-    %x = array.len %a, %0 : !array.array<2,3 x !llzk.felt> // result is 2
+    %x = array.len %a, %0 : !array.array<2,3 x !felt.felt> // result is 2
     %1 = arith.constant 1 : index
-    %y = array.len %a, %1 : !array.array<2,3 x !llzk.felt> // result is 3
+    %y = array.len %a, %1 : !array.array<2,3 x !felt.felt> // result is 3
     ```
   }];
 

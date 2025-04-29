@@ -4,15 +4,15 @@ function.def private @abort()
 //CHECK-LABEL:  function.def private @abort()
 // -----
 
-function.def private @scribble(!llzk.felt, !llzk.felt)
-//CHECK-LABEL:  function.def private @scribble(!llzk.felt, !llzk.felt)
+function.def private @scribble(!felt.felt, !felt.felt)
+//CHECK-LABEL:  function.def private @scribble(!felt.felt, !felt.felt)
 // -----
 
-function.def @identity(%x: !llzk.felt) -> !llzk.felt {
-  function.return %x: !llzk.felt
+function.def @identity(%x: !felt.felt) -> !felt.felt {
+  function.return %x: !felt.felt
 }
-//CHECK-LABEL:  function.def @identity(%arg0: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     function.return %arg0 : !llzk.felt
+//CHECK-LABEL:  function.def @identity(%arg0: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     function.return %arg0 : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
@@ -41,11 +41,11 @@ function.def private @example_arg_attr1(%x: i1 {llzk.pub}, %y: i1)
 // -----
 
 function.def private @example_arg_attr2(
-    %a: !llzk.felt {llzk.pub},
+    %a: !felt.felt {llzk.pub},
     %b: index {llzk.pub}) {
   function.return
 }
-//CHECK-LABEL:  function.def private @example_arg_attr2(%arg0: !llzk.felt {llzk.pub}, %arg1: index {llzk.pub}) {
+//CHECK-LABEL:  function.def private @example_arg_attr2(%arg0: !felt.felt {llzk.pub}, %arg1: index {llzk.pub}) {
 //CHECK-NEXT:     function.return
 //CHECK-NEXT:   }
 // -----

@@ -1,28 +1,28 @@
 // RUN: llzk-opt %s -split-input-file -verify-diagnostics
 
 function.def @constant_scalar_mismatch() {
-  %a = llzk.constfelt 6744573456376
+  %a = felt.const 6744573456376
   %b = arith.constant 2 : index // expected-note {{prior use here}}
-  // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!llzk.felt' vs 'index'}}
-  %r = array.new %a, %b : !array.array<2 x !llzk.felt>
+  // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!felt.felt' vs 'index'}}
+  %r = array.new %a, %b : !array.array<2 x !felt.felt>
 }
 
 // -----
 
 function.def @param_scalar_mismatch(
-      %a: !llzk.felt,
-      %b: !llzk.felt,
+      %a: !felt.felt,
+      %b: !felt.felt,
       %c: index // expected-note {{prior use here}}
       ) {
-  // expected-error@+1 {{use of value '%c' expects different type than prior uses: '!llzk.felt' vs 'index'}}
-  %r = array.new %a, %b, %c: !array.array<3 x !llzk.felt>
+  // expected-error@+1 {{use of value '%c' expects different type than prior uses: '!felt.felt' vs 'index'}}
+  %r = array.new %a, %b, %c: !array.array<3 x !felt.felt>
 }
 
 // -----
 
 function.def @mismatch_to_type_attr(
       %a: !array.array<3 x index>, // expected-note {{prior use here}}
-      %b: !llzk.felt
+      %b: !felt.felt
       ) {
   %c = arith.constant 324 : index
   // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!array.array<3 x index>'}}
@@ -32,10 +32,10 @@ function.def @mismatch_to_type_attr(
 // -----
 
 function.def @mismatch_to_type_attr_size() {
-  %a = llzk.constfelt 6744573456376
-  %b = llzk.constfelt 381928390103509
+  %a = felt.const 6744573456376
+  %b = felt.const 381928390103509
   // expected-error@+1 {{custom op 'array.new' 2 operands present, but expected 3}}
-  %r = array.new %a, %b : !array.array<3 x !llzk.felt>
+  %r = array.new %a, %b : !array.array<3 x !felt.felt>
 }
 
 // -----

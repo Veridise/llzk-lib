@@ -6,6 +6,7 @@ set(LLZK_DEP_DIALECT_LIBS
 # All dialects
 add_subdirectory(Array)
 add_subdirectory(Cast)
+add_subdirectory(Felt)
 add_subdirectory(Function)
 add_subdirectory(Include)
 add_subdirectory(LLZK)

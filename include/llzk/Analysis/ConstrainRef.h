@@ -10,6 +10,7 @@
 #pragma once
 
 #include "llzk/Analysis/AbstractLatticeValue.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/Hash.h"
@@ -94,7 +95,7 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Constra
 }
 
 /// @brief Defines a reference to a llzk object within a constrain function call.
-/// The object may be a reference to an individual felt, constfelt, or a composite type,
+/// The object may be a reference to an individual felt, felt.const, or a composite type,
 /// like an array or an entire struct.
 /// - ConstrainRefs are allowed to reference composite types so that references can be generated
 /// for intermediate operations (e.g., readf to read a nested struct).
@@ -136,7 +137,7 @@ public:
       : blockArg(b), fieldRefs(), constantVal(std::nullopt) {}
   ConstrainRef(mlir::BlockArgument b, std::vector<ConstrainRefIndex> f)
       : blockArg(b), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
-  explicit ConstrainRef(FeltConstantOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
+  explicit ConstrainRef(felt::FeltConstantOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
   explicit ConstrainRef(mlir::arith::ConstantIndexOp c)
       : blockArg(nullptr), fieldRefs(), constantVal(c) {}
   explicit ConstrainRef(ConstReadOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
@@ -144,7 +145,7 @@ public:
   mlir::Type getType() const;
 
   bool isConstantFelt() const {
-    return constantVal.has_value() && std::holds_alternative<FeltConstantOp>(*constantVal);
+    return constantVal.has_value() && std::holds_alternative<felt::FeltConstantOp>(*constantVal);
   }
   bool isConstantIndex() const {
     return constantVal.has_value() &&
@@ -155,7 +156,7 @@ public:
   }
   bool isConstant() const { return constantVal.has_value(); }
 
-  bool isFeltVal() const { return mlir::isa<FeltType>(getType()); }
+  bool isFeltVal() const { return mlir::isa<felt::FeltType>(getType()); }
   bool isIndexVal() const { return mlir::isa<mlir::IndexType>(getType()); }
   bool isIntegerVal() const { return mlir::isa<mlir::IntegerType>(getType()); }
   bool isTypeVarVal() const { return mlir::isa<TypeVarType>(getType()); }
@@ -173,7 +174,7 @@ public:
 
   mlir::APInt getConstantFeltValue() const {
     ensure(isConstantFelt(), __FUNCTION__ + mlir::Twine(" requires a constant felt!"));
-    return std::get<FeltConstantOp>(*constantVal).getValueAttr().getValue();
+    return std::get<felt::FeltConstantOp>(*constantVal).getValueAttr().getValue();
   }
   mlir::APInt getConstantIndexValue() const {
     ensure(isConstantIndex(), __FUNCTION__ + mlir::Twine(" requires a constant index!"));
@@ -197,8 +198,8 @@ public:
   mlir::FailureOr<std::vector<ConstrainRefIndex>> getSuffix(const ConstrainRef &prefix) const;
 
   /// @brief Create a new reference with prefix replaced with other iff prefix is a valid prefix for
-  /// this reference. If this reference is a constfelt, the translation will always succeed and
-  /// return the constfelt unchanged.
+  /// this reference. If this reference is a felt.const, the translation will always succeed and
+  /// return the felt.const unchanged.
   /// @param prefix
   /// @param other
   /// @return
@@ -256,7 +257,8 @@ private:
 
   std::vector<ConstrainRefIndex> fieldRefs;
   // using mutable to reduce constant casts for certain get* functions.
-  mutable std::optional<std::variant<FeltConstantOp, mlir::arith::ConstantIndexOp, ConstReadOp>>
+  mutable std::optional<
+      std::variant<felt::FeltConstantOp, mlir::arith::ConstantIndexOp, ConstReadOp>>
       constantVal;
 };
 

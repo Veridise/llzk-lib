@@ -5,11 +5,11 @@ module attributes {veridise.lang = "llzk"} {
   llzk.global @s : !string.string
   llzk.global @i : index
   llzk.global @b : i1
-  llzk.global @f : !llzk.felt
+  llzk.global @f : !felt.felt
 
   llzk.global @ax : !array.array<3 x !string.string>
   llzk.global @ab : !array.array<2,2 x i1>
-  llzk.global @af : !array.array<6,5,3 x !llzk.felt>
+  llzk.global @af : !array.array<6,5,3 x !felt.felt>
   llzk.global @ai : !array.array<3,3 x index>
 
   llzk.global @c : !llzk.struct<@Component01B>
@@ -35,10 +35,10 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-DAG: llzk.global @s : !string.string
 // CHECK-DAG: llzk.global @i : index
 // CHECK-DAG: llzk.global @b : i1
-// CHECK-DAG: llzk.global @f : !llzk.felt
+// CHECK-DAG: llzk.global @f : !felt.felt
 // CHECK-DAG: llzk.global @ax : !array.array<3 x !string.string>
 // CHECK-DAG: llzk.global @ab : !array.array<2,2 x i1>
-// CHECK-DAG: llzk.global @af : !array.array<6,5,3 x !llzk.felt>
+// CHECK-DAG: llzk.global @af : !array.array<6,5,3 x !felt.felt>
 // CHECK-DAG: llzk.global @ai : !array.array<3,3 x index>
 // CHECK-DAG: llzk.global @c2s : !llzk.struct<@Component01A<[!string.string]>>
 // CHECK-DAG: llzk.global @c2i : !llzk.struct<@Component01A<[23423]>>
@@ -55,12 +55,12 @@ module attributes {veridise.lang = "llzk"} {
   llzk.global @b0 : i1 = 0
   llzk.global const @b1 : i1 = 1
 
-  llzk.global @f : !llzk.felt = 35
+  llzk.global @f : !felt.felt = 35
 
   llzk.global @a1i : !array.array<1 x index> = [2]
   llzk.global @a2s : !array.array<2 x !string.string> = ["hello", "world"]
   llzk.global @a4b : !array.array<2,2 x i1> = [0,1,1,0]
-  llzk.global @a4f : !array.array<2,1,1,2 x !llzk.felt> = [6, 12134, 45523, 15623]
+  llzk.global @a4f : !array.array<2,1,1,2 x !felt.felt> = [6, 12134, 45523, 15623]
 }
 // CHECK-DAG: llzk.global const @s : !string.string = "Hello World!"
 // CHECK-DAG: llzk.global @i : index = 1
@@ -68,29 +68,29 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-DAG: llzk.global const @t : i1 = true
 // CHECK-DAG: llzk.global @b0 : i1 = false
 // CHECK-DAG: llzk.global const @b1 : i1 = true
-// CHECK-DAG: llzk.global @f : !llzk.felt = 35
+// CHECK-DAG: llzk.global @f : !felt.felt = 35
 // CHECK-DAG: llzk.global @a1i : !array.array<1 x index> = [2]
 // CHECK-DAG: llzk.global @a2s : !array.array<2 x !string.string> = ["hello", "world"]
 // CHECK-DAG: llzk.global @a4b : !array.array<2,2 x i1> = [0, 1, 1, 0]
-// CHECK-DAG: llzk.global @a4f : !array.array<2,1,1,2 x !llzk.felt> = [6, 12134, 45523, 15623]
+// CHECK-DAG: llzk.global @a4f : !array.array<2,1,1,2 x !felt.felt> = [6, 12134, 45523, 15623]
 // -----
 
 // TEST: GlobalReadOp in "compute()"
 module attributes {veridise.lang = "llzk"} {
-  llzk.global const @g : !llzk.felt = 23452
+  llzk.global const @g : !felt.felt = 23452
   llzk.struct @Component02 {
     function.def @compute() -> !llzk.struct<@Component02> {
-      %t = llzk.readg @g : !llzk.felt
+      %t = llzk.readg @g : !felt.felt
       %self = new_struct : !llzk.struct<@Component02>
       function.return %self : !llzk.struct<@Component02>
     }
     function.def @constrain(%self: !llzk.struct<@Component02>) { function.return }
   }
 }
-// CHECK-LABEL: llzk.global const @g : !llzk.felt = 23452
+// CHECK-LABEL: llzk.global const @g : !felt.felt = 23452
 // CHECK-LABEL: llzk.struct @Component02 {
 // CHECK-NEXT:    function.def @compute() -> !llzk.struct<@Component02> {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = readg @g : !llzk.felt
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = readg @g : !felt.felt
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component02>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Component02>
 // CHECK-NEXT:    }
@@ -144,22 +144,22 @@ module attributes {veridise.lang = "llzk"} {
 
 // TEST: GlobalWriteOp (can only be within "compute()")
 module attributes {veridise.lang = "llzk"} {
-  llzk.global @g : !llzk.felt = 125
+  llzk.global @g : !felt.felt = 125
   llzk.struct @Component04 {
     function.def @compute() -> !llzk.struct<@Component04> {
-      %c = constfelt 99999
-      llzk.writeg @g = %c : !llzk.felt
+      %c = felt.const 99999
+      llzk.writeg @g = %c : !felt.felt
       %self = new_struct : !llzk.struct<@Component04>
       function.return %self : !llzk.struct<@Component04>
     }
     function.def @constrain(%self: !llzk.struct<@Component04>) { function.return }
   }
 }
-// CHECK-LABEL: llzk.global @g : !llzk.felt = 125
+// CHECK-LABEL: llzk.global @g : !felt.felt = 125
 // CHECK-LABEL: llzk.struct @Component04 {
 // CHECK-NEXT:    function.def @compute() -> !llzk.struct<@Component04> {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = constfelt 99999
-// CHECK-NEXT:      writeg @g = %[[V0]] : !llzk.felt
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 99999
+// CHECK-NEXT:      writeg @g = %[[V0]] : !felt.felt
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Component04>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Component04>
 // CHECK-NEXT:    }
@@ -173,7 +173,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.global const @N : index = 3
 
-  function.def @b(%x: !array.array<@N x !llzk.felt>) {
+  function.def @b(%x: !array.array<@N x !felt.felt>) {
     function.return
   }
 
@@ -196,7 +196,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    llzk.global const @N : index = 3
-// CHECK-NEXT:    function.def @b(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.felt>) {
+// CHECK-NEXT:    function.def @b(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !felt.felt>) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    llzk.struct @Component05A<[@Z]> {

@@ -2,220 +2,220 @@
 
 // Field element basic arithmetic operations
 
-function.def @f_constant() -> !llzk.felt {
-  %c = llzk.constfelt 42
-  function.return %c: !llzk.felt
+function.def @f_constant() -> !felt.felt {
+  %c = felt.const 42
+  function.return %c: !felt.felt
 }
-//CHECK-LABEL:  function.def @f_constant() -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = constfelt 42
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-LABEL:  function.def @f_constant() -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.const 42
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_add(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
-  %c = llzk.add %a, %b
-  function.return %c: !llzk.felt
+function.def @f_add(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+  %c = felt.add %a, %b
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_add
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = add %[[A0]], %[[A1]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.add %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_sub(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
-  %c = llzk.sub %a, %b
-  function.return %c: !llzk.felt
+function.def @f_sub(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+  %c = felt.sub %a, %b
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_sub
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = sub %[[A0]], %[[A1]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.sub %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_mul(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
-  %c = llzk.mul %a, %b
-  function.return %c: !llzk.felt
+function.def @f_mul(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+  %c = felt.mul %a, %b
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_mul
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = mul %[[A0]], %[[A1]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.mul %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_div(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
-  %c = llzk.div %a, %b
-  function.return %c: !llzk.felt
+function.def @f_div(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+  %c = felt.div %a, %b
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_div
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = div %[[A0]], %[[A1]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.div %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_mod(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
-  %c = llzk.mod %a, %b
-  function.return %c: !llzk.felt
+function.def @f_mod(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+  %c = felt.mod %a, %b
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_mod
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = mod %[[A0]], %[[A1]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.mod %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_neg(%a: !llzk.felt) -> !llzk.felt {
-  %c = llzk.neg %a
-  function.return %c: !llzk.felt
+function.def @f_neg(%a: !felt.felt) -> !felt.felt {
+  %c = felt.neg %a
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_neg
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = neg %[[A0]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.neg %[[A0]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_inv(%a: !llzk.felt) -> !llzk.felt {
-  %c = llzk.inv %a
-  function.return %c: !llzk.felt
+function.def @f_inv(%a: !felt.felt) -> !felt.felt {
+  %c = felt.inv %a
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_inv
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = inv %[[A0]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.inv %[[A0]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_and(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
-  %c = llzk.bit_and %a, %b
-  function.return %c: !llzk.felt
+function.def @f_bit_and(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+  %c = felt.bit_and %a, %b
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_bit_and
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bit_and %[[A0]], %[[A1]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_and %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_or(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
-  %c = llzk.bit_or %a, %b
-  function.return %c: !llzk.felt
+function.def @f_bit_or(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+  %c = felt.bit_or %a, %b
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_bit_or
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bit_or %[[A0]], %[[A1]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_or %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_xor(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
-  %c = llzk.bit_xor %a, %b
-  function.return %c: !llzk.felt
+function.def @f_bit_xor(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+  %c = felt.bit_xor %a, %b
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_bit_xor
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bit_xor %[[A0]], %[[A1]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_xor %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_not(%a: !llzk.felt) -> !llzk.felt {
-  %c = llzk.bit_not %a
-  function.return %c: !llzk.felt
+function.def @f_bit_not(%a: !felt.felt) -> !felt.felt {
+  %c = felt.bit_not %a
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_bit_not
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bit_not %[[A0]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_not %[[A0]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_shl(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
-  %c = llzk.shl %a, %b
-  function.return %c: !llzk.felt
+function.def @f_shl(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+  %c = felt.shl %a, %b
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_shl
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = shl %[[A0]], %[[A1]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.shl %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_shr(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
-  %c = llzk.shr %a, %b
-  function.return %c: !llzk.felt
+function.def @f_shr(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+  %c = felt.shr %a, %b
+  function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_shr
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = shr %[[A0]], %[[A1]]
-//CHECK-NEXT:     function.return %[[T1]] : !llzk.felt
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.shr %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_eq(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
+function.def @f_eq(%a: !felt.felt, %b: !felt.felt) -> i1 {
   %c = cmp eq(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_eq
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> i1 {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp eq(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_ne(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
+function.def @f_ne(%a: !felt.felt, %b: !felt.felt) -> i1 {
   %c = cmp ne(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_ne
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> i1 {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp ne(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_lt(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
+function.def @f_lt(%a: !felt.felt, %b: !felt.felt) -> i1 {
   %c = cmp lt(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_lt
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> i1 {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp lt(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_le(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
+function.def @f_le(%a: !felt.felt, %b: !felt.felt) -> i1 {
   %c = cmp le(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_le
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> i1 {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp le(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_gt(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
+function.def @f_gt(%a: !felt.felt, %b: !felt.felt) -> i1 {
   %c = cmp gt(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_gt
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> i1 {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp gt(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_ge(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
+function.def @f_ge(%a: !felt.felt, %b: !felt.felt) -> i1 {
   %c = cmp ge(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_ge
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> i1 {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp ge(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }

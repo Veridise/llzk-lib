@@ -1,33 +1,33 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
 function.def @f_and(
-    %a: !llzk.felt, // expected-note {{prior use here}}
-    %b: !llzk.felt
+    %a: !felt.felt, // expected-note {{prior use here}}
+    %b: !felt.felt
 ) -> i1 {
-  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'i1' vs '!llzk.felt'}}
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'i1' vs '!felt.felt'}}
   %c = llzk.and %a, %b
   function.return %c: i1
 }
 // -----
 
-function.def @f_or(%a: !llzk.felt, %b: !llzk.felt) -> i1 {
-  // expected-error@+1 {{'llzk.or' op operand #0 must be 1-bit signless integer or type variable, but got '!llzk.felt'}}
-  %c = llzk.or %a, %b : !llzk.felt, !llzk.felt
+function.def @f_or(%a: !felt.felt, %b: !felt.felt) -> i1 {
+  // expected-error@+1 {{'llzk.or' op operand #0 must be 1-bit signless integer or type variable, but got '!felt.felt'}}
+  %c = llzk.or %a, %b : !felt.felt, !felt.felt
   function.return %c: i1
 }
 // -----
 
 function.def @f_not1(
-    %a: !array.array<4 x !llzk.felt> // expected-note {{prior use here}}
+    %a: !array.array<4 x !felt.felt> // expected-note {{prior use here}}
 ) -> i1 {
-  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'i1' vs '!array.array<4 x !llzk.felt>'}}
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'i1' vs '!array.array<4 x !felt.felt>'}}
   %c = llzk.not %a
   function.return %c: i1
 }
 // -----
 
-function.def @f_not2(%a: !array.array<4 x !llzk.felt>) -> i1 {
-  // expected-error@+1 {{'llzk.not' op operand #0 must be 1-bit signless integer or type variable, but got '!array.array<4 x !llzk.felt>'}}
-  %c = llzk.not %a : !array.array<4 x !llzk.felt>
+function.def @f_not2(%a: !array.array<4 x !felt.felt>) -> i1 {
+  // expected-error@+1 {{'llzk.not' op operand #0 must be 1-bit signless integer or type variable, but got '!array.array<4 x !felt.felt>'}}
+  %c = llzk.not %a : !array.array<4 x !felt.felt>
   function.return %c: i1
 }

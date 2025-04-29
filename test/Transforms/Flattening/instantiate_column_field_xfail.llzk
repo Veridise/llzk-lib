@@ -5,7 +5,7 @@
 module attributes {veridise.lang = "llzk"} {
   llzk.global @i : index = -1
   llzk.struct @ComponentA1 {
-    llzk.field @f1 : !llzk.felt {column}
+    llzk.field @f1 : !felt.felt {column}
 
     function.def @constrain(%self: !llzk.struct<@ComponentA1>) { function.return }
     function.def @compute() -> !llzk.struct<@ComponentA1> {
@@ -17,7 +17,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA2 {
     function.def @compute(%p: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
       %self = new_struct : !llzk.struct<@ComponentA2>
-      %r = readf %p[@f1] : !llzk.struct<@ComponentA1>, !llzk.felt {tableOffset = @i}
+      %r = readf %p[@f1] : !llzk.struct<@ComponentA1>, !felt.felt {tableOffset = @i}
       function.return %self : !llzk.struct<@ComponentA2>
     }
 
@@ -39,7 +39,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: llzk.struct @ComponentA1 {
-//CHECK-NEXT:    field @f1 : !llzk.felt {column}
+//CHECK-NEXT:    field @f1 : !felt.felt {column}
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
@@ -51,7 +51,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL: llzk.struct @ComponentA2 {
 //CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA2>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@f1] : <@ComponentA1>, !llzk.felt {tableOffset = -1 : index}
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@f1] : <@ComponentA1>, !felt.felt {tableOffset = -1 : index}
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentA2>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA2>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) attributes {function.allow_constraints = #function.allow_constraints} {
@@ -76,7 +76,7 @@ module attributes {veridise.lang = "llzk"} {
     llzk.global @i : index = -1
   }
   llzk.struct @ComponentA1 {
-    llzk.field @f1 : !llzk.felt {column}
+    llzk.field @f1 : !felt.felt {column}
 
     function.def @constrain(%self: !llzk.struct<@ComponentA1>) { function.return }
     function.def @compute() -> !llzk.struct<@ComponentA1> {
@@ -88,7 +88,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA2 {
     function.def @compute(%p: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
       %self = new_struct : !llzk.struct<@ComponentA2>
-      %r = readf %p[@f1] : !llzk.struct<@ComponentA1>, !llzk.felt {tableOffset = @mod::@i}
+      %r = readf %p[@f1] : !llzk.struct<@ComponentA1>, !felt.felt {tableOffset = @mod::@i}
       function.return %self : !llzk.struct<@ComponentA2>
     }
 
@@ -110,7 +110,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: llzk.struct @ComponentA1 {
-//CHECK-NEXT:    field @f1 : !llzk.felt {column}
+//CHECK-NEXT:    field @f1 : !felt.felt {column}
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
@@ -122,7 +122,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL: llzk.struct @ComponentA2 {
 //CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA2>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@f1] : <@ComponentA1>, !llzk.felt {tableOffset = -1 : index}
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[A0]][@f1] : <@ComponentA1>, !felt.felt {tableOffset = -1 : index}
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@ComponentA2>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA2>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) attributes {function.allow_constraints = #function.allow_constraints} {

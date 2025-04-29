@@ -13,6 +13,7 @@
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Util/AttributeHelper.h"
 
 #include <mlir/Bytecode/BytecodeImplementation.h>
 #include <mlir/IR/DialectImplementation.h>
@@ -23,19 +24,6 @@
 
 // TableGen'd implementation files
 #include "llzk/Dialect/LLZK/IR/Dialect.cpp.inc"
-
-template <> struct mlir::FieldParser<llvm::APInt> {
-  static mlir::FailureOr<llvm::APInt> parse(mlir::AsmParser &parser) {
-    auto loc = parser.getCurrentLocation();
-    llvm::APInt val;
-    auto result = parser.parseOptionalInteger(val);
-    if (!result.has_value() || *result) {
-      return parser.emitError(loc, "expected integer value");
-    } else {
-      return val;
-    }
-  }
-};
 
 struct LLZKDialectVersion : public mlir::DialectVersion {
   static const LLZKDialectVersion &CurrentVersion() {

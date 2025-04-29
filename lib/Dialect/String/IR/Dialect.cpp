@@ -1,4 +1,4 @@
-//===-- Dialect.cpp - Array dialect implementation --------------*- C++ -*-===//
+//===-- Dialect.cpp - String dialect implementation --------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -33,7 +33,7 @@
 #include "llzk/Dialect/String/IR/Types.cpp.inc"
 
 //===------------------------------------------------------------------===//
-// ArrayDialect
+// StringDialect
 //===------------------------------------------------------------------===//
 
 auto llzk::string::StringDialect::initialize() -> void {

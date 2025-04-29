@@ -10,8 +10,22 @@
 #pragma once
 
 #include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/DialectImplementation.h>
 
 #include <llvm/ADT/APInt.h>
+
+template <> struct mlir::FieldParser<llvm::APInt> {
+  static mlir::FailureOr<llvm::APInt> parse(mlir::AsmParser &parser) {
+    auto loc = parser.getCurrentLocation();
+    llvm::APInt val;
+    auto result = parser.parseOptionalInteger(val);
+    if (!result.has_value() || *result) {
+      return parser.emitError(loc, "expected integer value");
+    } else {
+      return val;
+    }
+  }
+};
 
 namespace llzk {
 

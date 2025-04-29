@@ -10,6 +10,7 @@
 #pragma once
 
 #include "llzk/Dialect/Cast/IR/Dialect.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
 
 #include <mlir/IR/BuiltinOps.h>

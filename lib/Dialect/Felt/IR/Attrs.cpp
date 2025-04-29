@@ -1,4 +1,4 @@
-//===-- Attrs.cpp - LLZK Attr method implementations ------------*- C++ -*-===//
+//===-- Attrs.cpp - Felt Attr method implementations ------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -7,11 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/Attrs.h"
-#include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 
-namespace llzk {
+namespace llzk::felt {
 
 mlir::Type FeltConstAttr::getType() const { return FeltType::get(this->getContext()); }
 
-} // namespace llzk
+} // namespace llzk::felt

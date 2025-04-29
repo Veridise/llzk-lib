@@ -175,26 +175,26 @@ module attributes {veridise.lang = "llzk"} {
 // No change because there is no compute function.call that instantiates all of the parameters
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component02<[@A]> {
-    function.def @compute(%0: !llzk.felt) -> !llzk.struct<@Component02<[@A]>> {
+    function.def @compute(%0: !felt.felt) -> !llzk.struct<@Component02<[@A]>> {
       %self = new_struct : !llzk.struct<@Component02<[@A]>>
       function.return %self : !llzk.struct<@Component02<[@A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@Component02<[@A]>>, %0: !llzk.felt) {
-      %1 = read_const @A : !llzk.felt
-      emit_eq %0, %1 : !llzk.felt
+    function.def @constrain(%self: !llzk.struct<@Component02<[@A]>>, %0: !felt.felt) {
+      %1 = read_const @A : !felt.felt
+      emit_eq %0, %1 : !felt.felt
       function.return
     }
   }
 }
 //CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    llzk.struct @Component02<[@A]> {
-//CHECK-NEXT:      function.def @compute(%arg0: !llzk.felt) -> !llzk.struct<@Component02<[@A]>> {
+//CHECK-NEXT:      function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@Component02<[@A]>> {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Component02<[@A]>>
 //CHECK-NEXT:        function.return %[[SELF]] : !llzk.struct<@Component02<[@A]>>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%arg0: !llzk.struct<@Component02<[@A]>>, %arg1: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = read_const @A : !llzk.felt
-//CHECK-NEXT:        emit_eq %arg1, %[[T0]] : !llzk.felt, !llzk.felt
+//CHECK-NEXT:      function.def @constrain(%arg0: !llzk.struct<@Component02<[@A]>>, %arg1: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = read_const @A : !felt.felt
+//CHECK-NEXT:        emit_eq %arg1, %[[T0]] : !felt.felt, !felt.felt
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
@@ -909,13 +909,13 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestReadConstAsFelt<[@A]> {
-    function.def @compute(%0: !llzk.felt) -> !llzk.struct<@TestReadConstAsFelt<[@A]>> {
+    function.def @compute(%0: !felt.felt) -> !llzk.struct<@TestReadConstAsFelt<[@A]>> {
       %self = new_struct : !llzk.struct<@TestReadConstAsFelt<[@A]>>
       function.return %self : !llzk.struct<@TestReadConstAsFelt<[@A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@TestReadConstAsFelt<[@A]>>, %0: !llzk.felt) {
-      %1 = read_const @A : !llzk.felt
-      emit_eq %0, %1 : !llzk.felt
+    function.def @constrain(%self: !llzk.struct<@TestReadConstAsFelt<[@A]>>, %0: !felt.felt) {
+      %1 = read_const @A : !felt.felt
+      emit_eq %0, %1 : !felt.felt
       function.return
     }
   }
@@ -924,27 +924,27 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @compute() -> !llzk.struct<@Main> {
       %self = new_struct : !llzk.struct<@Main>
-      %0 = constfelt 45
-      %1 = function.call @TestReadConstAsFelt::@compute(%0) : (!llzk.felt) -> !llzk.struct<@TestReadConstAsFelt<[45]>>
+      %0 = felt.const 45
+      %1 = function.call @TestReadConstAsFelt::@compute(%0) : (!felt.felt) -> !llzk.struct<@TestReadConstAsFelt<[45]>>
       writef %self[@sub] = %1 : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsFelt<[45]>>
       function.return %self : !llzk.struct<@Main>
     }
     function.def @constrain(%self: !llzk.struct<@Main>) {
-      %0 = constfelt 45
+      %0 = felt.const 45
       %1 = readf %self[@sub] : !llzk.struct<@Main>, !llzk.struct<@TestReadConstAsFelt<[45]>>
-      function.call @TestReadConstAsFelt::@constrain(%1, %0) : (!llzk.struct<@TestReadConstAsFelt<[45]>>, !llzk.felt) -> ()
+      function.call @TestReadConstAsFelt::@constrain(%1, %0) : (!llzk.struct<@TestReadConstAsFelt<[45]>>, !felt.felt) -> ()
       function.return
     }
   }
 }
 // CHECK-LABEL: llzk.struct @TestReadConstAsFelt_45 {
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@TestReadConstAsFelt_45> {
+// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@TestReadConstAsFelt_45> {
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = new_struct : <@TestReadConstAsFelt_45>
 // CHECK-NEXT:      function.return %[[VAL_1]] : !llzk.struct<@TestReadConstAsFelt_45>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestReadConstAsFelt_45>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = constfelt 45
-// CHECK-NEXT:      emit_eq %[[VAL_3]], %[[VAL_4]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestReadConstAsFelt_45>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const 45
+// CHECK-NEXT:      emit_eq %[[VAL_3]], %[[VAL_4]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -952,16 +952,16 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: llzk.struct @Main {
 // CHECK-NEXT:    field @sub : !llzk.struct<@TestReadConstAsFelt_45>
 // CHECK-NEXT:    function.def @compute() -> !llzk.struct<@Main> {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = constfelt 45
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const 45
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TestReadConstAsFelt_45::@compute(%[[VAL_1]]) : (!llzk.felt) -> !llzk.struct<@TestReadConstAsFelt_45>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TestReadConstAsFelt_45::@compute(%[[VAL_1]]) : (!felt.felt) -> !llzk.struct<@TestReadConstAsFelt_45>
 // CHECK-NEXT:      writef %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !llzk.struct<@TestReadConstAsFelt_45>
 // CHECK-NEXT:      function.return %[[VAL_0]] : !llzk.struct<@Main>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) attributes {function.allow_constraints = #function.allow_constraints} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = constfelt 45
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const 45
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = readf %[[VAL_3]][@sub] : <@Main>, !llzk.struct<@TestReadConstAsFelt_45>
-// CHECK-NEXT:      function.call @TestReadConstAsFelt_45::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!llzk.struct<@TestReadConstAsFelt_45>, !llzk.felt) -> ()
+// CHECK-NEXT:      function.call @TestReadConstAsFelt_45::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!llzk.struct<@TestReadConstAsFelt_45>, !felt.felt) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

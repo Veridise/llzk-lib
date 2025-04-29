@@ -37,55 +37,13 @@ def LLZK_UndefOp : LLZK_Op<"undef", [Pure]> {
     Example:
 
     ```llzk
-    %0 = llzk.undef : !llzk.felt
+    %0 = llzk.undef : !felt.felt
     ```
   }];
   let results = (outs AnyLLZKType:$res);
   let assemblyFormat = [{
     `:` type($res) attr-dict
   }];
-}
-
-def LLZK_FeltConstantOp
-    : LLZK_Op<"constfelt", [ConstantLike, Pure,
-                            DeclareOpInterfaceMethods<
-                                OpAsmOpInterface, ["getAsmResultNames"]>]> {
-  let summary = "field element constant";
-  let description = [{
-    This operation produces a felt-typed SSA value holding an integer constant.
-
-    Example:
-
-    ```llzk
-    %0 = llzk.constfelt 42
-    ```
-  }];
-
-  let arguments = (ins LLZK_FeltConstAttr:$value);
-  let results = (outs LLZK_FeltType:$result);
-  let assemblyFormat = [{ $value attr-dict }];
-  let hasFolder = 1;
-}
-
-def LLZK_FeltNonDetOp
-    : LLZK_Op<"nondetfelt", [ConstantLike, Pure,
-                             DeclareOpInterfaceMethods<
-                                 OpAsmOpInterface, ["getAsmResultNames"]>]> {
-  let summary = "uninitialized field element";
-  let description = [{
-    This operation produces a felt-typed SSA value without a specified value.
-    This can be used in `constrain()` functions in place of expressions that
-    cannot be included in constraints.
-
-    Example:
-
-    ```llzk
-    %0 = llzk.nondetfelt
-    ```
-  }];
-
-  let results = (outs LLZK_FeltType:$result);
-  let assemblyFormat = [{ attr-dict }];
 }
 
 def LLZK_AssertOp
@@ -217,15 +175,15 @@ def LLZK_StructDefOp
       ```llzk
       llzk.struct @ComponentA {
         field @f1 : !array.array<5 x index>
-        field @f2 : !llzk.felt {llzk.pub}
+        field @f2 : !felt.felt {llzk.pub}
 
-        function.def @compute(%p: !llzk.felt) -> !llzk.struct<@ComponentA> {
+        function.def @compute(%p: !felt.felt) -> !llzk.struct<@ComponentA> {
           %self = new_struct : !llzk.struct<@ComponentA>
           // initialize all fields of `%self` here
           return %self : !llzk.struct<@ComponentA>
         }
 
-        function.def @constrain(%self: !llzk.struct<@ComponentA>, %p: !llzk.felt) {
+        function.def @constrain(%self: !llzk.struct<@ComponentA>, %p: !felt.felt) {
           // emit constraints here
           return
         }
@@ -332,8 +290,8 @@ def LLZK_FieldDefOp
     Example:
 
     ```llzk
-    llzk.field @f1 : !llzk.felt
-    llzk.field @f2 : !llzk.felt {llzk.pub}
+    llzk.field @f1 : !felt.felt
+    llzk.field @f2 : !felt.felt {llzk.pub}
     ```
   }];
 
@@ -530,74 +488,6 @@ def LLZK_EmitContainmentOp
 // Field element operators
 //===------------------------------------------------------------------===//
 
-def LLZK_AddFeltOp : LLZK_BinaryOpBase<"add", LLZK_FeltType, [Commutative]> {
-  let summary = "addition operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_SubFeltOp : LLZK_BinaryOpBase<"sub", LLZK_FeltType> {
-  let summary = "subtraction operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_MulFeltOp : LLZK_BinaryOpBase<"mul", LLZK_FeltType, [Commutative]> {
-  let summary = "multiplication operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_DivFeltOp : LLZK_BinaryOpBase<"div", LLZK_FeltType> {
-  let summary = "division operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_ModFeltOp : LLZK_BinaryOpBase<"mod", LLZK_FeltType> {
-  let summary = "modulus/remainder operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_NegFeltOp : LLZK_UnaryOpBase<"neg", LLZK_FeltType> {
-  let summary = "negation operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_InvFeltOp : LLZK_UnaryOpBase<"inv", LLZK_FeltType, [ComputeOnly]> {
-  let summary = "inverse operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_AndFeltOp
-    : LLZK_BinaryOpBase<"bit_and", LLZK_FeltType, [ComputeOnly, Commutative]> {
-  let summary = "bitwise AND operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_OrFeltOp
-    : LLZK_BinaryOpBase<"bit_or", LLZK_FeltType, [ComputeOnly, Commutative]> {
-  let summary = "bitwise OR operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_XorFeltOp
-    : LLZK_BinaryOpBase<"bit_xor", LLZK_FeltType, [ComputeOnly, Commutative]> {
-  let summary = "bitwise XOR operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_NotFeltOp : LLZK_UnaryOpBase<"bit_not", LLZK_FeltType, [ComputeOnly]> {
-  let summary = "bit flip operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_ShlFeltOp : LLZK_BinaryOpBase<"shl", LLZK_FeltType, [ComputeOnly]> {
-  let summary = "left shift operator for field elements";
-  let description = [{}];
-}
-
-def LLZK_ShrFeltOp : LLZK_BinaryOpBase<"shr", LLZK_FeltType, [ComputeOnly]> {
-  let summary = "right shift operator for field elements";
-  let description = [{}];
-}
-
 // Match format of Index comparisons (for now)
 def LLZK_CmpOp : LLZK_Op<"cmp", [Pure]> {
   let summary = "compare field element values";
@@ -694,8 +584,8 @@ def LLZK_UnifiableCastOp : LLZK_Op<"unifiable_cast", [Pure]> {
 
     Example:
     ```llzk
-    %0 = some_other_op : !array.array<@N x !llzk.felt>
-    %1 = unifiable_cast %0 : (!array.array<@N x @llzk.felt>) -> !array.array<affine_map<()[s0, s1] -> (s0 + s1)> x !llzk.felt>
+    %0 = some_other_op : !array.array<@N x !felt.felt>
+    %1 = unifiable_cast %0 : (!array.array<@N x @felt.felt>) -> !array.array<affine_map<()[s0, s1] -> (s0 + s1)> x !felt.felt>
     ```
   }];
 

@@ -44,7 +44,7 @@ function.def @f_not(%a: i1) -> i1 {
 //CHECK-NEXT:   }
 // -----
 
-!F = !llzk.felt
+!F = !felt.felt
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
     function.def @compute(%a: !F, %b: !F, %c: !F, %d: !F, %e: !F, %f: !F) -> !llzk.struct<@ComponentA> {
@@ -66,13 +66,13 @@ module attributes {veridise.lang = "llzk"} {
 }
 // CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    llzk.struct @ComponentA {
-// CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V1:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V2:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-// CHECK-SAME:      %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V4:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V5:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
+// CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V2:[0-9a-zA-Z_\.]+]]: !felt.felt,
+// CHECK-SAME:      %[[V3:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V4:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V5:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@ComponentA> {
 // CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA>
 // CHECK-NEXT:        function.return %[[V6]] : !llzk.struct<@ComponentA>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA>, %[[V8:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V9:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-// CHECK-SAME:      %[[V10:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V11:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V12:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[V13:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+// CHECK-NEXT:      function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V9:[0-9a-zA-Z_\.]+]]: !felt.felt,
+// CHECK-SAME:      %[[V10:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V11:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V13:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:        %[[V14:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:        %[[V15:[0-9a-zA-Z_\.]+]] = cmp eq(%[[V12]], %[[V13]])
 // CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = cmp lt(%[[V10]], %[[V11]])

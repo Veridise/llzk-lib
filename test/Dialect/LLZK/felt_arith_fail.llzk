@@ -1,38 +1,38 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
 function.def @f_neg(
-    %a: !llzk.felt // expected-note {{prior use here}}
-) -> !llzk.felt {
-  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!llzk.felt'}}
-  %c = llzk.neg %a : index
-  function.return %c: !llzk.felt
+    %a: !felt.felt // expected-note {{prior use here}}
+) -> !felt.felt {
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!felt.felt'}}
+  %c = felt.neg %a : index
+  function.return %c: !felt.felt
 }
 // -----
 
 function.def @f_inv(
     %a: index
-) -> !llzk.felt {
-  // expected-error@+1 {{'llzk.inv' op operand #0 must be finite field element or type variable, but got 'index'}}
-  %c = llzk.inv %a : index
-  function.return %c: !llzk.felt
+) -> !felt.felt {
+  // expected-error@+1 {{'felt.inv' op operand #0 must be finite field element or type variable, but got 'index'}}
+  %c = felt.inv %a : index
+  function.return %c: !felt.felt
 }
 // -----
 
 function.def @f_sub(
-    %a: !llzk.felt,
-    %b: !llzk.felt // expected-note {{prior use here}}
-) -> !llzk.felt {
-  // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'i1' vs '!llzk.felt'}}
-  %c = llzk.sub %a, %b : !llzk.felt, i1
-  function.return %c: !llzk.felt
+    %a: !felt.felt,
+    %b: !felt.felt // expected-note {{prior use here}}
+) -> !felt.felt {
+  // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'i1' vs '!felt.felt'}}
+  %c = felt.sub %a, %b : !felt.felt, i1
+  function.return %c: !felt.felt
 }
 // -----
 
 function.def @f_add(
-    %a: !llzk.felt,
+    %a: !felt.felt,
     %b: !array.array<5 x i1>
-) -> !llzk.felt {
-  // expected-error@+1 {{'llzk.add' op operand #1 must be finite field element or type variable, but got '!array.array<5 x i1>'}}
-  %c = llzk.add %a, %b : !llzk.felt, !array.array<5 x i1>
-  function.return %c: !llzk.felt
+) -> !felt.felt {
+  // expected-error@+1 {{'felt.add' op operand #1 must be finite field element or type variable, but got '!array.array<5 x i1>'}}
+  %c = felt.add %a, %b : !felt.felt, !array.array<5 x i1>
+  function.return %c: !felt.felt
 }

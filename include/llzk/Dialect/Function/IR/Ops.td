@@ -62,17 +62,17 @@ def FuncDefOp
     ```llzk
     // External function definitions.
     function.def private @abort()
-    function.def private @scribble(!array.array<5 x !llzk.felt>, !llzk.struct<@Hello>) -> i1
+    function.def private @scribble(!array.array<5 x !felt.felt>, !llzk.struct<@Hello>) -> i1
 
     // A function that returns its argument twice:
-    function.def @count(%x: !llzk.felt) -> (!llzk.felt, !llzk.felt) {
-      return %x, %x: !llzk.felt, !llzk.felt
+    function.def @count(%x: !felt.felt) -> (!felt.felt, !felt.felt) {
+      return %x, %x: !felt.felt, !felt.felt
     }
 
     // Function definition within a component
     llzk.struct @NonZero {
-      function.def @compute(%a: !llzk.felt) { return }
-      function.def @constrain(%a: !llzk.felt) { return }
+      function.def @compute(%a: !felt.felt) { return }
+      function.def @constrain(%a: !felt.felt) { return }
     }
     ```
   }];
@@ -221,9 +221,9 @@ def ReturnOp
     Example:
 
     ```llzk
-    function.def @foo() : (!llzk.felt, index) {
+    function.def @foo() : (!felt.felt, index) {
       ...
-      return %0, %1 : !llzk.felt, index
+      return %0, %1 : !felt.felt, index
     }
     ```
   }];
@@ -263,7 +263,7 @@ def CallOp : LLZK_Function_Op<
 
     // Call a function within a component
     %2 = function.call @OtherStruct::@compute(%3, %4) : (index, index) -> !llzk.struct<@OtherStruct>
-    function.call @OtherStruct::@constrain(%5, %6) : (!llzk.struct<@OtherStruct>, !llzk.felt) -> ()
+    function.call @OtherStruct::@constrain(%5, %6) : (!llzk.struct<@OtherStruct>, !felt.felt) -> ()
     ```
 
     When the return StructType of a `compute()` function uses AffineMapAttr to
@@ -274,7 +274,7 @@ def CallOp : LLZK_Function_Op<
     Examples:
     ```llzk
     #M = affine_map<(i)[] -> (5*i+1)>
-    %r = function.call @A::@compute(%x){(%i)} : (!llzk.felt) -> !llzk.struct<@A<[#M]>>
+    %r = function.call @A::@compute(%x){(%i)} : (!felt.felt) -> !llzk.struct<@A<[#M]>>
     ```
   }];
 

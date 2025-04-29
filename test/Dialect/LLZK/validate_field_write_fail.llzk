@@ -2,18 +2,18 @@
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @MultipleWrites {
-    llzk.field @f : !llzk.felt
+    llzk.field @f : !felt.felt
 
-    function.def @compute(%1: !llzk.felt) -> !llzk.struct<@MultipleWrites> {
+    function.def @compute(%1: !felt.felt) -> !llzk.struct<@MultipleWrites> {
       %self = new_struct : !llzk.struct<@MultipleWrites>
       // expected-note@+1 {{earlier write here}}
-      writef %self[@f] = %1 : !llzk.struct<@MultipleWrites>, !llzk.felt
+      writef %self[@f] = %1 : !llzk.struct<@MultipleWrites>, !felt.felt
       // expected-warning@+1 {{found multiple writes to 'llzk.field' named "@f"}}
-      writef %self[@f] = %1 : !llzk.struct<@MultipleWrites>, !llzk.felt
+      writef %self[@f] = %1 : !llzk.struct<@MultipleWrites>, !felt.felt
       function.return %self : !llzk.struct<@MultipleWrites>
     }
 
-    function.def @constrain(%self: !llzk.struct<@MultipleWrites>, %1: !llzk.felt)  { function.return }
+    function.def @constrain(%self: !llzk.struct<@MultipleWrites>, %1: !felt.felt)  { function.return }
   }
 }
 // -----
@@ -37,9 +37,9 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @NoWrites {
-    llzk.field @a : !llzk.felt
-    llzk.field @b : !llzk.felt
-    llzk.field @c : !llzk.felt
+    llzk.field @a : !felt.felt
+    llzk.field @b : !felt.felt
+    llzk.field @c : !felt.felt
 
     // expected-warning@+3 {{'function.def' op "@compute" missing write to 'llzk.field' named "@a"}}
     // expected-warning@+2 {{'function.def' op "@compute" missing write to 'llzk.field' named "@b"}}

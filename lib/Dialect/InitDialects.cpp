@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
+#include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/InitDialects.h"
@@ -26,6 +27,7 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       llzk::LLZKDialect,
       llzk::array::ArrayDialect,
       llzk::cast::CastDialect,
+      llzk::felt::FeltDialect,
       llzk::include::IncludeDialect,
       llzk::function::FunctionDialect,
       llzk::string::StringDialect,

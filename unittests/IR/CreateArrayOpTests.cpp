@@ -8,12 +8,15 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Builders.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include "OpTestBase.h"
 
 using namespace llzk::array;
+using namespace llzk::felt;
 using namespace llzk;
 using namespace mlir;
 
@@ -252,6 +255,6 @@ TEST_F(OpTests, testMapOpInit_WrongTypeForMapOperands) {
       bldr.create<CreateArrayOp>(loc, arrTy, ArrayRef {ValueRange {v1}}, ArrayRef<int32_t> {1});
   EXPECT_DEATH(
       { assert(verify(op)); },
-      "error: 'array.new' op operand #0 must be variadic of index, but got '!llzk.felt'"
+      "error: 'array.new' op operand #0 must be variadic of index, but got '!felt.felt'"
   );
 }

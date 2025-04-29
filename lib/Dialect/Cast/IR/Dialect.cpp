@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/IR/Attributes.h>

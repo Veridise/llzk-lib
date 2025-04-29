@@ -11,6 +11,7 @@
 #define LLZK_TYPES
 
 include "llzk/Dialect/LLZK/IR/Dialect.td"
+include "llzk/Dialect/Felt/IR/Types.td"
 
 include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinTypes.td"
@@ -35,17 +36,6 @@ def ConstReadType : Type<CPred<"::llzk::isValidConstReadType($_self)">,
                          "integral, felt, or typevar type">;
 
 def AnyLLZKIntType : AnyTypeOf<[I1, Index]>;
-
-def LLZK_FeltType : LLZK_Type<"Felt", "felt"> {
-  let summary = "finite field element";
-  let description = [{}];
-
-  let extraClassDeclaration = [{
-    static ::llzk::FeltType get(::mlir::MLIRContext *context) {
-      return Base::get(context);
-    }
-  }];
-}
 
 def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
   let summary = "circuit component";

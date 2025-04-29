@@ -15,6 +15,7 @@
 #include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Compare.h"
@@ -32,6 +33,7 @@
 namespace llzk {
 
 using namespace cast;
+using namespace felt;
 
 /* Field */
 

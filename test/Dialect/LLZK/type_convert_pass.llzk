@@ -1,46 +1,46 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-function.def @felt_to_index(%a: !llzk.felt) -> index {
+function.def @felt_to_index(%a: !felt.felt) -> index {
   %b = cast.toindex %a
   function.return %b: index
 }
 //CHECK-LABEL: function.def @felt_to_index(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> index {
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> index {
 //CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.toindex %[[A0]]
 //CHECK-NEXT:    function.return %[[T0]] : index
 //CHECK-NEXT:  }
 // -----
 
-function.def @i1_to_felt(%a: i1) -> !llzk.felt {
+function.def @i1_to_felt(%a: i1) -> !felt.felt {
   %b = cast.tofelt %a : i1
-  function.return %b: !llzk.felt
+  function.return %b: !felt.felt
 }
 //CHECK-LABEL: function.def @i1_to_felt(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: i1) -> !llzk.felt {
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: i1) -> !felt.felt {
 //CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[A0]] : i1
-//CHECK-NEXT:    function.return %[[T0]] : !llzk.felt
+//CHECK-NEXT:    function.return %[[T0]] : !felt.felt
 //CHECK-NEXT:  }
 // -----
 
-function.def @index_to_felt(%a: index) -> !llzk.felt {
+function.def @index_to_felt(%a: index) -> !felt.felt {
   %b = cast.tofelt %a : index
-  function.return %b: !llzk.felt
+  function.return %b: !felt.felt
 }
 //CHECK-LABEL: function.def @index_to_felt(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: index) -> !llzk.felt {
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: index) -> !felt.felt {
 //CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[A0]] : index
-//CHECK-NEXT:    function.return %[[T0]] : !llzk.felt
+//CHECK-NEXT:    function.return %[[T0]] : !felt.felt
 //CHECK-NEXT:  }
 // -----
 
-function.def @lt_felt(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.felt {
+function.def @lt_felt(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
   %0 = llzk.cmp lt(%a, %b)
   %1 = cast.tofelt %0 : i1
-  function.return %1: !llzk.felt
+  function.return %1: !felt.felt
 }
 //CHECK-LABEL: function.def @lt_felt(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.felt {
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
 //CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cmp lt(%[[A0]], %[[A1]])
 //CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[T0]] : i1
-//CHECK-NEXT:    function.return %[[T1]] : !llzk.felt
+//CHECK-NEXT:    function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:  }

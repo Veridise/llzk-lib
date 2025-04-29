@@ -100,7 +100,7 @@ private:
 ///     %arg2 === %arg2 / %arg3[@foo]
 /// Or any other form of constraint including those values.
 ///
-/// The CDG also records information about constant values (e.g., constfelt) that
+/// The CDG also records information about constant values (e.g., felt.const) that
 /// are included in constraints, but does not compute a transitive closure over
 /// constant values, as constant value usage in constraints does not imply any
 /// dependency between signal values (e.g., constraints a + b === 0 and c + d === 0 both use

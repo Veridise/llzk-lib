@@ -221,7 +221,7 @@ inline bool singletonTypeListsUnify(
 
 /// Return `true` iff the types unify and `newTy` is "more concrete" than `oldTy`.
 ///
-/// The types `i1`, `index`, `llzk.felt`, and `string.string` are concrete whereas `llzk.tvar` is
+/// The types `i1`, `index`, `felt.felt`, and `string.string` are concrete whereas `llzk.tvar` is
 /// not (because it may be substituted with any type during struct instantiation). When considering
 /// the attributes with `array.array` and `llzk.struct` types, we define IntegerAttr and TypeAttr as
 /// concrete, AffineMapAttr as less concrete than those, and SymbolRefAttr as least concrete.

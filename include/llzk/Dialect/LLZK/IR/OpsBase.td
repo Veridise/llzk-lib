@@ -53,6 +53,41 @@ class InStructFunctionNamed<string name>
 // Base Op classes
 //===----------------------------------------------------------------------===//
 
+// Note: `resultType.builderCall` must not be empty
+class BinaryOpBase<Dialect dialect, string mnemonic, Type resultType,
+                        list<Trait> traits = []>
+    : NaryOpBase<dialect, mnemonic, resultType.builderCall,
+                      traits#[Pure, TypeUnifyWithResult<"lhs">,
+                              TypeUnifyWithResult<"rhs">]> {
+
+  let arguments = (ins VarTypeOr<resultType>:$lhs, VarTypeOr<resultType>:$rhs);
+  let results = (outs resultType:$result);
+
+  let assemblyFormat = [{
+      $lhs `,` $rhs
+      `` custom<InferredOrParsedType>(type($lhs), "true")
+      `` custom<InferredOrParsedType>(type($rhs), "false")
+      attr-dict
+  }];
+}
+
+// Note: `resultType.builderCall` must not be empty
+class UnaryOpBase<Dialect dialect, string mnemonic, Type resultType,
+                       list<Trait> traits = []>
+    : NaryOpBase<dialect, mnemonic, resultType.builderCall,
+                      traits#[Pure, TypeUnifyWithResult<"operand">]> {
+
+  let arguments = (ins VarTypeOr<resultType>:$operand);
+  let results = (outs resultType:$result);
+
+  let assemblyFormat = [{
+      $operand
+      `` custom<InferredOrParsedType>(type($operand), "true")
+      attr-dict
+  }];
+}
+
+
 class LLZK_Op<string mnemonic, list<Trait> traits = []>
     : Op<LLZKDialect, mnemonic, traits>;
 
@@ -89,68 +124,14 @@ class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-class LLZK_NaryOpBase<string mnemonic, string defaultTypeBuilder,
-                      list<Trait> traits = []> : LLZK_Op<mnemonic, traits> {
-  let extraClassDeclaration = [{
-    static ::mlir::ParseResult parseInferredOrParsedType(
-        ::mlir::OpAsmParser &parser, ::mlir::Type &opType, bool isFirst
-    ) {
-      if (mlir::succeeded(isFirst ? parser.parseOptionalColon() : parser.parseOptionalComma())) {
-        // If there is a comma, parse the `opType`
-        mlir::Type type;
-        if (parser.parseCustomTypeWithFallback(type)) {
-          return mlir::failure();
-        }
-        opType = type;
-      } else {
-        // Otherwise, build the default type
-        opType =
-        }]#!subst("$_builder", "parser.getBuilder()", defaultTypeBuilder)#[{;
-      }
-      return mlir::success();
-    }
-
-    static void printInferredOrParsedType(::mlir::OpAsmPrinter &printer,
-        ::mlir::Operation *op, ::mlir::Type opType, bool isFirst
-    ) {
-      printer << (isFirst ? " : " : ", ");
-      printer.printStrippedAttrOrType(opType);
-    }
-  }];
-}
-
 // Note: `resultType.builderCall` must not be empty
 class LLZK_BinaryOpBase<string mnemonic, Type resultType,
                         list<Trait> traits = []>
-    : LLZK_NaryOpBase<mnemonic, resultType.builderCall,
-                      traits#[Pure, TypeUnifyWithResult<"lhs">,
-                              TypeUnifyWithResult<"rhs">]> {
-
-  let arguments = (ins VarTypeOr<resultType>:$lhs, VarTypeOr<resultType>:$rhs);
-  let results = (outs resultType:$result);
-
-  let assemblyFormat = [{
-      $lhs `,` $rhs
-      `` custom<InferredOrParsedType>(type($lhs), "true")
-      `` custom<InferredOrParsedType>(type($rhs), "false")
-      attr-dict
-  }];
-}
+    : BinaryOpBase<LLZKDialect, mnemonic, resultType, traits>;
 
 // Note: `resultType.builderCall` must not be empty
 class LLZK_UnaryOpBase<string mnemonic, Type resultType,
                        list<Trait> traits = []>
-    : LLZK_NaryOpBase<mnemonic, resultType.builderCall,
-                      traits#[Pure, TypeUnifyWithResult<"operand">]> {
-
-  let arguments = (ins VarTypeOr<resultType>:$operand);
-  let results = (outs resultType:$result);
-
-  let assemblyFormat = [{
-      $operand
-      `` custom<InferredOrParsedType>(type($operand), "true")
-      attr-dict
-  }];
-}
+    : UnaryOpBase<LLZKDialect, mnemonic, resultType, traits>;
 
 #endif // LLZK_OPS_BASE

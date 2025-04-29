@@ -17,6 +17,7 @@
 
 using namespace llzk;
 using namespace llzk::array;
+using namespace llzk::felt;
 using namespace mlir;
 
 class TypeTests : public LLZKTest {

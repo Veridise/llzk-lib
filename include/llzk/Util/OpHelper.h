@@ -10,6 +10,7 @@
 #pragma once
 
 #include "llzk/Util/AffineHelper.h"
+#include "llzk/Util/Constants.h"
 
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/Operation.h>
@@ -139,10 +140,14 @@ public:
   static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
     return !isInStructFunctionNamed(op, FUNC_NAME_CONSTRAIN)
                ? mlir::success()
-               : op->emitOpError() << "is ComputeOnly so it cannot be used within a '"
-                                   << getOperationName<function::FuncDefOp>() << "' named \"@"
-                                   << FUNC_NAME_CONSTRAIN << "\" within a '"
-                                   << getOperationName<StructDefOp>() << "' definition";
+               : op->emitOpError(
+                 ) << "is ComputeOnly so it cannot be used within a '"
+                   << "function.def" // TODO: refactor the computeonly attribute to avoid this issue
+                   //  << getOperationName<function::FuncDefOp>()
+                   << "' named \"@" << FUNC_NAME_CONSTRAIN << "\" within a '"
+                   << "llzk.struct"
+                   //  << getOperationName<StructDefOp>()
+                   << "' definition";
   }
 };
 

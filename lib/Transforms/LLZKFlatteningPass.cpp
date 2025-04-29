@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
@@ -55,6 +56,7 @@ namespace llzk {
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
+using namespace llzk::felt;
 using namespace llzk::function;
 
 #define DEBUG_TYPE "llzk-flatten"
@@ -349,8 +351,8 @@ newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionT
 ConversionTarget newBaseTarget(MLIRContext *ctx) {
   ConversionTarget target(*ctx);
   target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, include::IncludeDialect, function::FunctionDialect,
-      arith::ArithDialect, scf::SCFDialect>();
+      LLZKDialect, array::ArrayDialect, felt::FeltDialect, include::IncludeDialect,
+      function::FunctionDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   return target;
 }

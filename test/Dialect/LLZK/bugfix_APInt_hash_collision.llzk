@@ -2,13 +2,13 @@
 
 module attributes {veridise.lang = "llzk"} {
   function.def @hash_collision_requires_custom_equality_check() {
-    %felt_const_49151 = constfelt 49151
-    %felt_const_16 = constfelt 16
+    %felt_const_49151 = felt.const 49151
+    %felt_const_16 = felt.const 16
     function.return
   }
 }
 //CHECK-LABEL:  function.def @hash_collision_requires_custom_equality_check() {
-//CHECK-NEXT:     %felt_const_49151 = constfelt 49151
-//CHECK-NEXT:     %felt_const_16 = constfelt 16
+//CHECK-NEXT:     %felt_const_49151 = felt.const 49151
+//CHECK-NEXT:     %felt_const_16 = felt.const 16
 //CHECK-NEXT:     function.return
 //CHECK-NEXT:   }

@@ -2,12 +2,12 @@
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
-    function.def @constrain(%self: !llzk.struct<@ComponentA>, %a: !llzk.felt, %b: !llzk.felt) {
-      llzk.emit_eq %a, %b : !llzk.felt
+    function.def @constrain(%self: !llzk.struct<@ComponentA>, %a: !felt.felt, %b: !felt.felt) {
+      llzk.emit_eq %a, %b : !felt.felt
       function.return
     }
 
-    function.def @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@ComponentA> {
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>
       function.return %self : !llzk.struct<@ComponentA>
     }
@@ -15,12 +15,12 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL:  llzk.struct @ComponentA {
 //CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA>,
-//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
-//CHECK-NEXT:       emit_eq %[[A0]], %[[A1]] : !llzk.felt, !llzk.felt
+//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+//CHECK-NEXT:       emit_eq %[[A0]], %[[A1]] : !felt.felt, !felt.felt
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt,
+//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@ComponentA> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA>
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentA>
 //CHECK-NEXT:     }
@@ -29,12 +29,12 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentB {
-    function.def @constrain(%self: !llzk.struct<@ComponentB>, %a: !llzk.felt, %b: !array.array<5 x !llzk.felt>) {
-      llzk.emit_in %b, %a : !array.array<5 x !llzk.felt>
+    function.def @constrain(%self: !llzk.struct<@ComponentB>, %a: !felt.felt, %b: !array.array<5 x !felt.felt>) {
+      llzk.emit_in %b, %a : !array.array<5 x !felt.felt>
       function.return
     }
 
-    function.def @compute(%a: !llzk.felt, %b: !array.array<5 x !llzk.felt>) -> !llzk.struct<@ComponentB> {
+    function.def @compute(%a: !felt.felt, %b: !array.array<5 x !felt.felt>) -> !llzk.struct<@ComponentB> {
       %self = new_struct : !llzk.struct<@ComponentB>
       function.return %self : !llzk.struct<@ComponentB>
     }
@@ -42,12 +42,12 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL:  llzk.struct @ComponentB {
 //CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB>,
-//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<5 x !llzk.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
-//CHECK-NEXT:       emit_in %[[A1]], %[[A0]] : <5 x !llzk.felt>, !llzk.felt
+//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<5 x !felt.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
+//CHECK-NEXT:       emit_in %[[A1]], %[[A0]] : <5 x !felt.felt>, !felt.felt
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<5 x !llzk.felt>) -> !llzk.struct<@ComponentB> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt,
+//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<5 x !felt.felt>) -> !llzk.struct<@ComponentB> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB>
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentB>
 //CHECK-NEXT:     }
@@ -140,15 +140,15 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   llzk.struct @Signal {
-    field @reg : !llzk.felt {llzk.pub}
+    field @reg : !felt.felt {llzk.pub}
 
-    function.def @compute(%v: !llzk.felt) -> !llzk.struct<@Signal> {
+    function.def @compute(%v: !felt.felt) -> !llzk.struct<@Signal> {
       %self = new_struct : !llzk.struct<@Signal>
-      writef %self[@reg] = %v : !llzk.struct<@Signal>, !llzk.felt
+      writef %self[@reg] = %v : !llzk.struct<@Signal>, !felt.felt
       function.return %self : !llzk.struct<@Signal>
     }
 
-    function.def @constrain(%self: !llzk.struct<@Signal>, %v: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@Signal>, %v: !felt.felt) {
       function.return
     }
   }
@@ -187,13 +187,13 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // CHECK-LABEL:   llzk.struct @Signal {
-// CHECK-NEXT:      field @reg : !llzk.felt {llzk.pub}
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@Signal> {
+// CHECK-NEXT:      field @reg : !felt.felt {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !llzk.struct<@Signal> {
 // CHECK-NEXT:        %[[VAL_1:.*]] = new_struct : <@Signal>
-// CHECK-NEXT:        writef %[[VAL_1]][@reg] = %[[VAL_0]] : <@Signal>, !llzk.felt
+// CHECK-NEXT:        writef %[[VAL_1]][@reg] = %[[VAL_0]] : <@Signal>, !felt.felt
 // CHECK-NEXT:        function.return %[[VAL_1]] : !llzk.struct<@Signal>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@Signal>, %[[VAL_3:.*]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@Signal>, %[[VAL_3:.*]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

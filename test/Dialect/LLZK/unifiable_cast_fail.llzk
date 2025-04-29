@@ -4,8 +4,8 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @Tester<[@S0, @S1]> {
     function.def @compute(%0: index) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'llzk.unifiable_cast' op input type 'index' and output type '!llzk.felt' are not unifiable}}
-      %r0 = unifiable_cast %0 : (index) -> !llzk.felt
+      // expected-error@+1 {{'llzk.unifiable_cast' op input type 'index' and output type '!felt.felt' are not unifiable}}
+      %r0 = unifiable_cast %0 : (index) -> !felt.felt
       function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
     function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %0: index) {
@@ -35,13 +35,13 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Tester<[@S0, @S1]> {
-    function.def @compute(%2: !llzk.felt) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+    function.def @compute(%2: !felt.felt) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.felt' and output type '!string.string' are not unifiable}}
-      %r2 = unifiable_cast %2 : (!llzk.felt) -> !string.string
+      // expected-error@+1 {{'llzk.unifiable_cast' op input type '!felt.felt' and output type '!string.string' are not unifiable}}
+      %r2 = unifiable_cast %2 : (!felt.felt) -> !string.string
       function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
-    function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %2: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %2: !felt.felt) {
       function.return
     }
   }
@@ -96,8 +96,8 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @Tester<[@S0, @S1]> {
     function.def @compute(%4: !llzk.struct<@T2<[1]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.struct<@T2<[1]>>' and output type '!llzk.struct<@T2<[!llzk.felt]>>' are not unifiable}}
-      %r4 = unifiable_cast %4 : (!llzk.struct<@T2<[1]>>) -> !llzk.struct<@T2<[!llzk.felt]>>
+      // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.struct<@T2<[1]>>' and output type '!llzk.struct<@T2<[!felt.felt]>>' are not unifiable}}
+      %r4 = unifiable_cast %4 : (!llzk.struct<@T2<[1]>>) -> !llzk.struct<@T2<[!felt.felt]>>
       function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
     function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %4: !llzk.struct<@T2<[1]>>) {
@@ -147,10 +147,10 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   llzk.struct @Tester<[@S0, @S1]> {
-    function.def @compute(%7: !llzk.struct<@T2<[!llzk.felt]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+    function.def @compute(%7: !llzk.struct<@T2<[!felt.felt]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.struct<@T2<[!llzk.felt]>>' and output type '!llzk.struct<@T2<[1234]>>' are not unifiable}}
-      %r7 = unifiable_cast %7 : (!llzk.struct<@T2<[!llzk.felt]>>) -> !llzk.struct<@T2<[1234]>>
+      // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.struct<@T2<[!felt.felt]>>' and output type '!llzk.struct<@T2<[1234]>>' are not unifiable}}
+      %r7 = unifiable_cast %7 : (!llzk.struct<@T2<[!felt.felt]>>) -> !llzk.struct<@T2<[1234]>>
       function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
     function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>) {

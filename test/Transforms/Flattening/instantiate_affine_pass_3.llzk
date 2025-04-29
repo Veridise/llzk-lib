@@ -4,12 +4,12 @@
 !ToFelt = !llzk.struct<@ToFelt<[#id]>>
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ToFelt<[@A]> {
-    // field @out: !llzk.felt {llzk.pub}
+    // field @out: !felt.felt {llzk.pub}
 
     function.def @compute() -> !llzk.struct<@ToFelt<[@A]>> {
       %self = new_struct : !llzk.struct<@ToFelt<[@A]>>
-      // %constA = read_const @A : !llzk.felt
-      // writef %self[@out] = %constA : !llzk.struct<@ToFelt<[@A]>>, !llzk.felt
+      // %constA = read_const @A : !felt.felt
+      // writef %self[@out] = %constA : !llzk.struct<@ToFelt<[@A]>>, !felt.felt
       function.return %self: !llzk.struct<@ToFelt<[@A]>>
     }
 

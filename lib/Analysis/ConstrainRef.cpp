@@ -21,6 +21,7 @@ using namespace mlir;
 namespace llzk {
 
 using namespace array;
+using namespace felt;
 using namespace string;
 
 /* ConstrainRefIndex */
@@ -272,7 +273,7 @@ ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) c
 
 void ConstrainRef::print(mlir::raw_ostream &os) const {
   if (isConstantFelt()) {
-    os << "<constfelt: " << getConstantFeltValue() << '>';
+    os << "<felt.const: " << getConstantFeltValue() << '>';
   } else if (isConstantIndex()) {
     os << "<index: " << getConstantIndexValue() << '>';
   } else if (isTemplateConstant()) {

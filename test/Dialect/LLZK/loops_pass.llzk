@@ -2,38 +2,38 @@
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
-    function.def @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentA> {
+    function.def @compute(%a: !felt.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>
-      %res = scf.while (%arg1 = %a) : (!llzk.felt) -> !llzk.felt {
+      %res = scf.while (%arg1 = %a) : (!felt.felt) -> !felt.felt {
         %condition = arith.constant true
-        scf.condition(%condition) %arg1 : !llzk.felt
+        scf.condition(%condition) %arg1 : !felt.felt
       } do {
-        ^bb0(%arg2: !llzk.felt):
-          %next = llzk.add %arg2, %arg2
-          scf.yield %next : !llzk.felt
+        ^bb0(%arg2: !felt.felt):
+          %next = felt.add %arg2, %arg2
+          scf.yield %next : !felt.felt
       } attributes {}
       function.return %self : !llzk.struct<@ComponentA>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentA>, %a: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@ComponentA>, %a: !felt.felt) {
       function.return
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentA {
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.felt) -> !llzk.struct<@ComponentA> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@ComponentA>
-//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = scf.while (%[[A1:[0-9a-zA-Z_.]+]] = %[[A0]]) : (!llzk.felt) -> !llzk.felt {
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = scf.while (%[[A1:[0-9a-zA-Z_.]+]] = %[[A0]]) : (!felt.felt) -> !felt.felt {
 //CHECK-NEXT:         %[[T1:[0-9a-zA-Z_.]+]] = arith.constant true
-//CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !llzk.felt
+//CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !felt.felt
 //CHECK-NEXT:       } do {
-//CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_.]+]]: !llzk.felt):
-//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.]+]] = llzk.add %[[A2]], %[[A2]]
-//CHECK-NEXT:         scf.yield %[[T2]] : !llzk.felt
+//CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_.]+]]: !felt.felt):
+//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.]+]] = felt.add %[[A2]], %[[A2]]
+//CHECK-NEXT:         scf.yield %[[T2]] : !felt.felt
 //CHECK-NEXT:       }
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentA>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@ComponentA>, %[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@ComponentA>, %[[A0:[0-9a-zA-Z_.]+]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
@@ -41,38 +41,38 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
-    function.def @compute(%a: !llzk.felt) -> !llzk.struct<@ComponentA> {
+    function.def @compute(%a: !felt.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>
-      %res = scf.while (%arg1 = %a) : (!llzk.felt) -> !llzk.felt {
+      %res = scf.while (%arg1 = %a) : (!felt.felt) -> !felt.felt {
         %condition = arith.constant true
-        scf.condition(%condition) %arg1 : !llzk.felt
+        scf.condition(%condition) %arg1 : !felt.felt
       } do {
-        ^bb0(%arg2: !llzk.felt):
-          %next = llzk.add %arg2, %arg2
-          scf.yield %next : !llzk.felt
+        ^bb0(%arg2: !felt.felt):
+          %next = felt.add %arg2, %arg2
+          scf.yield %next : !felt.felt
       } attributes { llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1> }
       function.return %self : !llzk.struct<@ComponentA>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentA>, %a: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@ComponentA>, %a: !felt.felt) {
       function.return
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentA {
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@ComponentA> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@ComponentA>
-//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = scf.while (%[[A1:[0-9a-zA-Z_\.]+]] = %[[A0]]) : (!llzk.felt) -> !llzk.felt {
+//CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = scf.while (%[[A1:[0-9a-zA-Z_\.]+]] = %[[A0]]) : (!felt.felt) -> !felt.felt {
 //CHECK-NEXT:         %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant true
-//CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !llzk.felt
+//CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !felt.felt
 //CHECK-NEXT:       } do {
-//CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_\.]+]]: !llzk.felt):
-//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_\.]+]] = llzk.add %[[A2]], %[[A2]]
-//CHECK-NEXT:         scf.yield %[[T2]] : !llzk.felt
+//CHECK-NEXT:       ^bb0(%[[A2:[0-9a-zA-Z_\.]+]]: !felt.felt):
+//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_\.]+]] = felt.add %[[A2]], %[[A2]]
+//CHECK-NEXT:         scf.yield %[[T2]] : !felt.felt
 //CHECK-NEXT:       } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1>}
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentA>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@ComponentA>, %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@ComponentA>, %[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
@@ -80,40 +80,40 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
-    function.def @compute(%a: !llzk.felt, %d: !llzk.felt) -> !llzk.struct<@ComponentA> {
+    function.def @compute(%a: !felt.felt, %d: !felt.felt) -> !llzk.struct<@ComponentA> {
       %self = new_struct : !llzk.struct<@ComponentA>
       %lb = arith.constant 0 : index
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
       %res = scf.for %iv = %lb to %up step %step
-          iter_args(%sum = %d) -> !llzk.felt {
-        %1 = llzk.add %a, %sum
-        scf.yield %1 : !llzk.felt
-      }    
+          iter_args(%sum = %d) -> !felt.felt {
+        %1 = felt.add %a, %sum
+        scf.yield %1 : !felt.felt
+      }
       function.return %self : !llzk.struct<@ComponentA>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentA>, %a: !llzk.felt, %d: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@ComponentA>, %a: !felt.felt, %d: !felt.felt) {
       function.return
     }
   }
 }
 //CHECK-LABEL:  llzk.struct @ComponentA {
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt,
-//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) -> !llzk.struct<@ComponentA> {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt,
+//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@ComponentA> {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@ComponentA>
 //CHECK-NEXT:       %[[LB:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:       %[[UB:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 //CHECK-NEXT:       %[[ST:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[LB]] to %[[UB]] step %[[ST]]
-//CHECK-SAME:         iter_args(%[[T1:[0-9a-zA-Z_\.]+]] = %[[A1]]) -> (!llzk.felt) {
-//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_\.]+]] = llzk.add %[[A0]], %[[T1]]
-//CHECK-NEXT:         scf.yield %[[T2]] : !llzk.felt
+//CHECK-SAME:         iter_args(%[[T1:[0-9a-zA-Z_\.]+]] = %[[A1]]) -> (!felt.felt) {
+//CHECK-NEXT:         %[[T2:[0-9a-zA-Z_\.]+]] = felt.add %[[A0]], %[[T1]]
+//CHECK-NEXT:         scf.yield %[[T2]] : !felt.felt
 //CHECK-NEXT:       }
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@ComponentA>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@ComponentA>,
-//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }

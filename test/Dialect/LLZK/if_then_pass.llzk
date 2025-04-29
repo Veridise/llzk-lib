@@ -6,56 +6,56 @@ module attributes {veridise.lang = "llzk"} {
   // Only constraints that the stored value is a boolean.
   // A real circuit would have more stuff
   llzk.struct @IsZero {
-    llzk.field @bit : !llzk.felt
+    llzk.field @bit : !felt.felt
 
-    function.def @compute(%a: !llzk.felt) -> !llzk.struct<@IsZero> {
+    function.def @compute(%a: !felt.felt) -> !llzk.struct<@IsZero> {
       %self = new_struct : !llzk.struct<@IsZero>
-      %z = llzk.constfelt 0
+      %z = felt.const 0
       %b = llzk.cmp eq(%a, %z)
-      %0 = scf.if %b -> !llzk.felt {
-        scf.yield %z : !llzk.felt
+      %0 = scf.if %b -> !felt.felt {
+        scf.yield %z : !felt.felt
       } else {
-        %2 = llzk.constfelt 1
-        scf.yield %2 : !llzk.felt
-      } 
-      llzk.writef %self[@bit] = %0 : !llzk.struct<@IsZero>, !llzk.felt
+        %2 = felt.const 1
+        scf.yield %2 : !felt.felt
+      }
+      llzk.writef %self[@bit] = %0 : !llzk.struct<@IsZero>, !felt.felt
       function.return %self : !llzk.struct<@IsZero>
     }
 
-    function.def @constrain(%self : !llzk.struct<@IsZero>, %a: !llzk.felt) {
-      %0 = llzk.readf %self[@bit] : !llzk.struct<@IsZero>, !llzk.felt
-      %1 = llzk.constfelt 1
-      %2 = llzk.sub %0, %1 
-      %3 = llzk.mul %0, %2  
-      %4 = llzk.constfelt 0
-      llzk.emit_eq %3, %4 : !llzk.felt
+    function.def @constrain(%self : !llzk.struct<@IsZero>, %a: !felt.felt) {
+      %0 = llzk.readf %self[@bit] : !llzk.struct<@IsZero>, !felt.felt
+      %1 = felt.const 1
+      %2 = felt.sub %0, %1
+      %3 = felt.mul %0, %2
+      %4 = felt.const 0
+      llzk.emit_eq %3, %4 : !felt.felt
       function.return
     }
   }
 }
 
 // CHECK-LABEL:  llzk.struct @IsZero {
-// CHECK-NEXT:     field @bit : !llzk.felt
-// CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) -> !llzk.struct<@IsZero> {
+// CHECK-NEXT:     field @bit : !felt.felt
+// CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.felt) -> !llzk.struct<@IsZero> {
 // CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@IsZero>
-// CHECK-NEXT:       %[[Z:[0-9a-zA-Z_.]+]] = constfelt 0
+// CHECK-NEXT:       %[[Z:[0-9a-zA-Z_.]+]] = felt.const 0
 // CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = cmp eq(%[[A0]], %[[Z]])
-// CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = scf.if %[[T0]] -> (!llzk.felt) {
-// CHECK-NEXT:         scf.yield %[[Z]] : !llzk.felt
+// CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = scf.if %[[T0]] -> (!felt.felt) {
+// CHECK-NEXT:         scf.yield %[[Z]] : !felt.felt
 // CHECK-NEXT:       } else {
-// CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.]+]] = llzk.constfelt 1
-// CHECK-NEXT:         scf.yield %[[T2]] : !llzk.felt
+// CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.]+]] = felt.const 1
+// CHECK-NEXT:         scf.yield %[[T2]] : !felt.felt
 // CHECK-NEXT:       }
-// CHECK-NEXT:       writef %[[SELF]][@bit] = %[[T1]] : <@IsZero>, !llzk.felt
+// CHECK-NEXT:       writef %[[SELF]][@bit] = %[[T1]] : <@IsZero>, !felt.felt
 // CHECK-NEXT:       function.return %[[SELF]]
 // CHECK-NEXT:     }
-// CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@IsZero>, %[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
-// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = readf %[[SELF]][@bit] : <@IsZero>, !llzk.felt
-// CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = constfelt 1
-// CHECK-NEXT:       %[[T2:[0-9a-zA-Z_.]+]] = sub %[[T0]], %[[T1]] 
-// CHECK-NEXT:       %[[T3:[0-9a-zA-Z_.]+]] = mul %[[T0]], %[[T2]]  
-// CHECK-NEXT:       %[[T4:[0-9a-zA-Z_.]+]] = constfelt 0
-// CHECK-NEXT:       emit_eq %[[T3]], %[[T4]] : !llzk.felt, !llzk.felt
+// CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@IsZero>, %[[A0:[0-9a-zA-Z_.]+]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = readf %[[SELF]][@bit] : <@IsZero>, !felt.felt
+// CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = felt.const 1
+// CHECK-NEXT:       %[[T2:[0-9a-zA-Z_.]+]] = felt.sub %[[T0]], %[[T1]]
+// CHECK-NEXT:       %[[T3:[0-9a-zA-Z_.]+]] = felt.mul %[[T0]], %[[T2]]
+// CHECK-NEXT:       %[[T4:[0-9a-zA-Z_.]+]] = felt.const 0
+// CHECK-NEXT:       emit_eq %[[T3]], %[[T4]] : !felt.felt, !felt.felt
 // CHECK-NEXT:       function.return
 // CHECK-NEXT:     }
 // CHECK-NEXT: }
@@ -65,39 +65,39 @@ module attributes {veridise.lang = "llzk"} {
   // This test case showcases that you don't need to add `scf.yield`
   // if the `scf.if` operation does not function.return a value.
   llzk.struct @C {
-    llzk.field @data : !llzk.felt
+    llzk.field @data : !felt.felt
 
-    function.def @compute(%a: !llzk.felt, %b: !llzk.felt) -> !llzk.struct<@C> {
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !llzk.struct<@C> {
       %self = new_struct : !llzk.struct<@C>
-      %z = llzk.constfelt 0
+      %z = felt.const 0
       %0 = llzk.cmp ne(%a, %z)
       scf.if %0 {
-        llzk.writef %self[@data] = %b : !llzk.struct<@C>, !llzk.felt
+        llzk.writef %self[@data] = %b : !llzk.struct<@C>, !felt.felt
       }
       function.return %self : !llzk.struct<@C>
     }
 
-    function.def @constrain(%self : !llzk.struct<@C>, %a: !llzk.felt, %b: !llzk.felt) {
+    function.def @constrain(%self : !llzk.struct<@C>, %a: !felt.felt, %b: !felt.felt) {
       function.return
     }
   }
 }
 
 // CHECK-LABEL:  llzk.struct @C {
-// CHECK-NEXT:    field @data : !llzk.felt
-// CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt, %[[A1:[0-9a-zA-Z_.]+]]: !llzk.felt) -> !llzk.struct<@C> {
+// CHECK-NEXT:    field @data : !felt.felt
+// CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_.]+]]: !felt.felt) -> !llzk.struct<@C> {
 // CHECK-NEXT:     %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@C>
-// CHECK-NEXT:     %[[T0:[0-9a-zA-Z_.]+]] = constfelt 0
+// CHECK-NEXT:     %[[T0:[0-9a-zA-Z_.]+]] = felt.const 0
 // CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.]+]] = cmp ne(%[[A0]], %[[T0]])
 // CHECK-NEXT:     scf.if %[[T1]] {
-// CHECK-NEXT:       llzk.writef %[[SELF]][@data] = %[[A1]] : <@C>, !llzk.felt
+// CHECK-NEXT:       llzk.writef %[[SELF]][@data] = %[[A1]] : <@C>, !felt.felt
 // CHECK-NEXT:     }
 // CHECK-NEXT:     function.return %[[SELF]]
 // CHECK-NEXT:   }
 // CHECK-NEXT:   function.def @constrain(
-// CHECK-SAME:        %[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@C>, 
-// CHECK-SAME:        %[[A0:[0-9a-zA-Z_.]+]]: !llzk.felt, 
-// CHECK-SAME:        %[[A1:[0-9a-zA-Z_.]+]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+// CHECK-SAME:        %[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@C>,
+// CHECK-SAME:        %[[A0:[0-9a-zA-Z_.]+]]: !felt.felt,
+// CHECK-SAME:        %[[A1:[0-9a-zA-Z_.]+]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // CHECK-NEXT:     function.return
 // CHECK-NEXT:   }
 // CHECK-NEXT: }

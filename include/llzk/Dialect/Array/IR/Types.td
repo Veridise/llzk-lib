@@ -35,7 +35,7 @@ def LLZK_ArrayType
 
     ```llzk
     // Example array of 5 by 2 elements of `Felt` type.
-    !array.array<5,2 x !llzk.felt>
+    !array.array<5,2 x !felt.felt>
 
     // Example array using a struct parameter for one dimension.
     !array.array<5,@A x index>

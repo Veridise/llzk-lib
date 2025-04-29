@@ -1,11 +1,11 @@
 // RUN: llzk-opt %s -split-input-file -verify-diagnostics
 
 function.def @wrong_arg_type(
-      %c: !llzk.felt // expected-note {{prior use here}}
-    ) -> !llzk.felt {
-  // expected-error@+1 {{use of value '%c' expects different type than prior uses: 'i1' vs '!llzk.felt'}}
+      %c: !felt.felt // expected-note {{prior use here}}
+    ) -> !felt.felt {
+  // expected-error@+1 {{use of value '%c' expects different type than prior uses: 'i1' vs '!felt.felt'}}
   assert %c
-  function.return %c : !llzk.felt
+  function.return %c : !felt.felt
 }
 // -----
 

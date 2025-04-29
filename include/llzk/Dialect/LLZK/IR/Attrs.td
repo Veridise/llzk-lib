@@ -12,16 +12,11 @@
 
 include "llzk/Dialect/LLZK/IR/Dialect.td"
 include "llzk/Dialect/LLZK/IR/Enums.td"
+include "llzk/Util/AttributeHelper.td"
 
 include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinAttributeInterfaces.td"
 include "mlir/IR/EnumAttr.td"
-
-// APInts that allows comparison involving different bitwidths.
-class APIntParameter<string desc = "">
-    : AttrOrTypeParameter<"::llvm::APInt", desc> {
-  let comparator = "::llvm::APInt::isSameValue($_lhs, $_rhs)";
-}
 
 class LLZK_Attr<string name, string attrMnemonic, list<Trait> traits = []>
     : AttrDef<LLZKDialect, name, traits> {
@@ -39,31 +34,15 @@ def LLZK_CmpPredicateAttr
   let assemblyFormat = [{ $value }];
 }
 
-def LLZK_FeltConstAttr
-    : LLZK_Attr<"FeltConst", "constfelt", [TypedAttrInterface]> {
-  let summary = "finite field element";
-  let description = [{
-    A felt attribute represents a finite field element.
-  }];
-
-  let parameters = (ins APIntParameter<"The felt constant value">:$value);
-
-  let assemblyFormat = [{ $value }];
-
-  let extraClassDeclaration = [{
-    ::mlir::Type getType() const;
-  }];
-}
-
 def LLZK_PubModifierAttr : LLZK_Attr<"Public", "pub"> {
   let summary = "A unit attribute to mark a type as public";
   let description = [{
     Examples:
 
     ```llzk
-    llzk.field @field_name : !llzk.felt {llzk.pub}
+    llzk.field @field_name : !felt.felt {llzk.pub}
 
-    function.def @func_name(%0: !llzk.felt {llzk.pub})
+    function.def @func_name(%0: !felt.felt {llzk.pub})
     ```
   }];
 }

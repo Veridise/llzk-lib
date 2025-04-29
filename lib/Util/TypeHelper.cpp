@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
@@ -32,6 +33,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace array;
+using namespace felt;
 using namespace string;
 
 //===------------------------------------------------------------------===//

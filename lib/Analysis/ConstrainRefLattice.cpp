@@ -10,6 +10,7 @@
 #include "llzk/Analysis/ConstrainRefLattice.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/DenseAnalysis.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -25,6 +26,8 @@
 #define DEBUG_TYPE "llzk-constrain-ref-lattice"
 
 namespace llzk {
+
+using namespace felt;
 
 /* ConstrainRefLatticeValue */
 
@@ -170,8 +173,8 @@ mlir::FailureOr<ConstrainRef> ConstrainRefLattice::getSourceRef(mlir::Value val)
   if (auto blockArg = mlir::dyn_cast<mlir::BlockArgument>(val)) {
     return ConstrainRef(blockArg);
   } else if (auto defOp = val.getDefiningOp()) {
-    if (auto constFelt = mlir::dyn_cast<FeltConstantOp>(defOp)) {
-      return ConstrainRef(constFelt);
+    if (auto feltConst = mlir::dyn_cast<FeltConstantOp>(defOp)) {
+      return ConstrainRef(feltConst);
     } else if (auto constIdx = mlir::dyn_cast<mlir::arith::ConstantIndexOp>(defOp)) {
       return ConstrainRef(constIdx);
     } else if (auto readConst = mlir::dyn_cast<ConstReadOp>(defOp)) {

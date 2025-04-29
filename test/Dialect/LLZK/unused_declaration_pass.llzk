@@ -3,13 +3,13 @@
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component {
-    field @matrix : !array.array<7,3 x !llzk.felt>
+    field @matrix : !array.array<7,3 x !felt.felt>
 
-    function.def @compute(%inputArr : !array.array<3 x !llzk.felt>) -> !llzk.struct<@Component> {
+    function.def @compute(%inputArr : !array.array<3 x !felt.felt>) -> !llzk.struct<@Component> {
       %self = new_struct : !llzk.struct<@Component>
       function.return %self : !llzk.struct<@Component>
     }
-    function.def @constrain(%self: !llzk.struct<@Component>, %inputArr : !array.array<3 x !llzk.felt>) {
+    function.def @constrain(%self: !llzk.struct<@Component>, %inputArr : !array.array<3 x !felt.felt>) {
       function.return
     }
   }
@@ -19,11 +19,11 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT: }
 
 // RELAX-LABEL: llzk.struct @Component {
-// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.array<3 x !llzk.felt>) -> !llzk.struct<@Component> {
+// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.array<3 x !felt.felt>) -> !llzk.struct<@Component> {
 // RELAX-NEXT:      %[[VAL_1:.*]] = new_struct : <@Component>
 // RELAX-NEXT:      function.return %[[VAL_1]] : !llzk.struct<@Component>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@Component>, %[[VAL_3:.*]]: !array.array<3 x !llzk.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@Component>, %[[VAL_3:.*]]: !array.array<3 x !felt.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
@@ -161,9 +161,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @Main {
-    field @a : !llzk.struct<@VarArray<[2, !llzk.felt]>> // unused, should be removed
+    field @a : !llzk.struct<@VarArray<[2, !felt.felt]>> // unused, should be removed
     field @b : !llzk.struct<@VarArray<[7, index]>> // unused, should be removed
-    field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub} // unused, shouldn't be removed since it's an output
+    field @c : !llzk.struct<@VarArray<[2, !felt.felt]>> {llzk.pub} // unused, shouldn't be removed since it's an output
     function.def @compute() -> !llzk.struct<@Main> {
       %self = new_struct : !llzk.struct<@Main>
       function.return %self : !llzk.struct<@Main>
@@ -185,7 +185,7 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT:  }
 
 // STRICT-LABEL: llzk.struct @Main {
-// STRICT-NEXT:    field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
+// STRICT-NEXT:    field @c : !llzk.struct<@VarArray<[2, !felt.felt]>> {llzk.pub}
 // STRICT-NEXT:    function.def @compute() -> !llzk.struct<@Main> {
 // STRICT-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
 // STRICT-NEXT:      function.return %[[VAL_0]] : !llzk.struct<@Main>
@@ -206,7 +206,7 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: llzk.struct @Main {
-// RELAX-NEXT:    field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
+// RELAX-NEXT:    field @c : !llzk.struct<@VarArray<[2, !felt.felt]>> {llzk.pub}
 // RELAX-NEXT:    function.def @compute() -> !llzk.struct<@Main> {
 // RELAX-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !llzk.struct<@Main>
@@ -260,9 +260,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @Main {
-    field @a : !llzk.struct<@VarArray<[2, !llzk.felt]>> // unused, should be removed
+    field @a : !llzk.struct<@VarArray<[2, !felt.felt]>> // unused, should be removed
     field @b : !llzk.struct<@VarArray<[7, index]>> // unused, should be removed
-    field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub} // unused, shouldn't be removed since it's an output
+    field @c : !llzk.struct<@VarArray<[2, !felt.felt]>> {llzk.pub} // unused, shouldn't be removed since it's an output
     function.def @compute() -> !llzk.struct<@Main> {
       %self = new_struct : !llzk.struct<@Main>
       function.return %self : !llzk.struct<@Main>
@@ -307,7 +307,7 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT:  }
 
 // STRICT-LABEL: llzk.struct @Main {
-// STRICT-NEXT:    field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
+// STRICT-NEXT:    field @c : !llzk.struct<@VarArray<[2, !felt.felt]>> {llzk.pub}
 // STRICT-NEXT:    function.def @compute() -> !llzk.struct<@Main> {
 // STRICT-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
 // STRICT-NEXT:      function.return %[[VAL_0]] : !llzk.struct<@Main>
@@ -351,7 +351,7 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: llzk.struct @Main {
-// RELAX-NEXT:    field @c : !llzk.struct<@VarArray<[2, !llzk.felt]>> {llzk.pub}
+// RELAX-NEXT:    field @c : !llzk.struct<@VarArray<[2, !felt.felt]>> {llzk.pub}
 // RELAX-NEXT:    function.def @compute() -> !llzk.struct<@Main> {
 // RELAX-NEXT:      %[[VAL_0:.*]] = new_struct : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !llzk.struct<@Main>
@@ -369,13 +369,13 @@ module attributes {veridise.lang = "llzk"} {
     // @val is read-only in this module, but not read-only in all modules,
     // so this test will examine if our symbol lookup works across modules
     llzk.struct @Wrapper {
-      field @val : !llzk.felt {llzk.pub}
-      function.def @compute(%inp : !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
+      field @val : !felt.felt {llzk.pub}
+      function.def @compute(%inp : !felt.felt) -> !llzk.struct<@nested::@Wrapper> {
         %self = new_struct : !llzk.struct<@nested::@Wrapper>
-        writef %self[@val] = %inp : !llzk.struct<@nested::@Wrapper>, !llzk.felt
+        writef %self[@val] = %inp : !llzk.struct<@nested::@Wrapper>, !felt.felt
         function.return %self : !llzk.struct<@nested::@Wrapper>
       }
-      function.def @constrain(%self : !llzk.struct<@nested::@Wrapper>, %inp : !llzk.felt) {
+      function.def @constrain(%self : !llzk.struct<@nested::@Wrapper>, %inp : !felt.felt) {
         function.return
       }
     }
@@ -384,16 +384,16 @@ module attributes {veridise.lang = "llzk"} {
   module @user {
     llzk.struct @Unwrapper {
       field @comp : !llzk.struct<@nested::@Wrapper>
-      function.def @compute(%inp : !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
+      function.def @compute(%inp : !felt.felt) -> !llzk.struct<@user::@Unwrapper> {
         %self = new_struct : !llzk.struct<@user::@Unwrapper>
-        %wrapped = function.call @nested::@Wrapper::@compute(%inp) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
+        %wrapped = function.call @nested::@Wrapper::@compute(%inp) : (!felt.felt) -> !llzk.struct<@nested::@Wrapper>
         writef %self[@comp] = %wrapped : !llzk.struct<@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
         function.return %self : !llzk.struct<@user::@Unwrapper>
       }
-      function.def @constrain(%self : !llzk.struct<@user::@Unwrapper>, %inp : !llzk.felt) {
+      function.def @constrain(%self : !llzk.struct<@user::@Unwrapper>, %inp : !felt.felt) {
         %wrapper = readf %self[@comp] : !llzk.struct<@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
-        %wrapped = readf %wrapper[@val] : !llzk.struct<@nested::@Wrapper>, !llzk.felt
-        emit_eq %wrapped, %inp : !llzk.felt
+        %wrapped = readf %wrapper[@val] : !llzk.struct<@nested::@Wrapper>, !felt.felt
+        emit_eq %wrapped, %inp : !felt.felt
         function.return
       }
     }
@@ -430,13 +430,13 @@ module attributes {veridise.lang = "llzk"} {
 
 // RELAX-LABEL: module @nested {
 // RELAX-NEXT:    llzk.struct @Wrapper {
-// RELAX-NEXT:      field @val : !llzk.felt {llzk.pub}
-// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
+// RELAX-NEXT:      field @val : !felt.felt {llzk.pub}
+// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !llzk.struct<@nested::@Wrapper> {
 // RELAX-NEXT:        %[[VAL_1:.*]] = new_struct : <@nested::@Wrapper>
-// RELAX-NEXT:        writef %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !llzk.felt
+// RELAX-NEXT:        writef %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !felt.felt
 // RELAX-NEXT:        function.return %[[VAL_1]] : !llzk.struct<@nested::@Wrapper>
 // RELAX-NEXT:      }
-// RELAX-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@nested::@Wrapper>, %[[VAL_3:.*]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+// RELAX-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@nested::@Wrapper>, %[[VAL_3:.*]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
 // RELAX-NEXT:    }
@@ -445,16 +445,16 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-LABEL: module @user {
 // RELAX-NEXT:    llzk.struct @Unwrapper {
 // RELAX-NEXT:      field @comp : !llzk.struct<@nested::@Wrapper>
-// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
+// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !llzk.struct<@user::@Unwrapper> {
 // RELAX-NEXT:        %[[VAL_1:.*]] = new_struct : <@user::@Unwrapper>
-// RELAX-NEXT:        %[[VAL_2:.*]] = function.call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:        %[[VAL_2:.*]] = function.call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!felt.felt) -> !llzk.struct<@nested::@Wrapper>
 // RELAX-NEXT:        writef %[[VAL_1]][@comp] = %[[VAL_2]] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
 // RELAX-NEXT:        function.return %[[VAL_1]] : !llzk.struct<@user::@Unwrapper>
 // RELAX-NEXT:      }
-// RELAX-NEXT:      function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@user::@Unwrapper>, %[[VAL_4:.*]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+// RELAX-NEXT:      function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@user::@Unwrapper>, %[[VAL_4:.*]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // RELAX-NEXT:        %[[VAL_5:.*]] = readf %[[VAL_3]][@comp] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
-// RELAX-NEXT:        %[[VAL_6:.*]] = readf %[[VAL_5]][@val] : <@nested::@Wrapper>, !llzk.felt
-// RELAX-NEXT:        emit_eq %[[VAL_6]], %[[VAL_4]] : !llzk.felt, !llzk.felt
+// RELAX-NEXT:        %[[VAL_6:.*]] = readf %[[VAL_5]][@val] : <@nested::@Wrapper>, !felt.felt
+// RELAX-NEXT:        emit_eq %[[VAL_6]], %[[VAL_4]] : !felt.felt, !felt.felt
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
 // RELAX-NEXT:    }
@@ -478,13 +478,13 @@ module attributes {veridise.lang = "llzk"} {
     // @val is read-only in this module, but not read-only in all modules,
     // so this test will examine if our symbol lookup works across modules
     llzk.struct @Wrapper {
-      field @val : !llzk.felt {llzk.pub}
-      function.def @compute(%inp : !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
+      field @val : !felt.felt {llzk.pub}
+      function.def @compute(%inp : !felt.felt) -> !llzk.struct<@nested::@Wrapper> {
         %self = new_struct : !llzk.struct<@nested::@Wrapper>
-        writef %self[@val] = %inp : !llzk.struct<@nested::@Wrapper>, !llzk.felt
+        writef %self[@val] = %inp : !llzk.struct<@nested::@Wrapper>, !felt.felt
         function.return %self : !llzk.struct<@nested::@Wrapper>
       }
-      function.def @constrain(%self : !llzk.struct<@nested::@Wrapper>, %inp : !llzk.felt) {
+      function.def @constrain(%self : !llzk.struct<@nested::@Wrapper>, %inp : !felt.felt) {
         function.return
       }
     }
@@ -493,16 +493,16 @@ module attributes {veridise.lang = "llzk"} {
   module @user {
     llzk.struct @Unwrapper {
       field @val : !llzk.struct<@nested::@Wrapper>
-      function.def @compute(%inp : !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
+      function.def @compute(%inp : !felt.felt) -> !llzk.struct<@user::@Unwrapper> {
         %self = new_struct : !llzk.struct<@user::@Unwrapper>
-        %wrapped = function.call @nested::@Wrapper::@compute(%inp) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
+        %wrapped = function.call @nested::@Wrapper::@compute(%inp) : (!felt.felt) -> !llzk.struct<@nested::@Wrapper>
         writef %self[@val] = %wrapped : !llzk.struct<@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
         function.return %self : !llzk.struct<@user::@Unwrapper>
       }
-      function.def @constrain(%self : !llzk.struct<@user::@Unwrapper>, %inp : !llzk.felt) {
+      function.def @constrain(%self : !llzk.struct<@user::@Unwrapper>, %inp : !felt.felt) {
         %wrapper = readf %self[@val] : !llzk.struct<@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
-        %wrapped = readf %wrapper[@val] : !llzk.struct<@nested::@Wrapper>, !llzk.felt
-        emit_eq %wrapped, %inp : !llzk.felt
+        %wrapped = readf %wrapper[@val] : !llzk.struct<@nested::@Wrapper>, !felt.felt
+        emit_eq %wrapped, %inp : !felt.felt
         function.return
       }
     }
@@ -538,13 +538,13 @@ module attributes {veridise.lang = "llzk"} {
 
 // RELAX-LABEL: module @nested {
 // RELAX-NEXT:    llzk.struct @Wrapper {
-// RELAX-NEXT:      field @val : !llzk.felt {llzk.pub}
-// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@nested::@Wrapper> {
+// RELAX-NEXT:      field @val : !felt.felt {llzk.pub}
+// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !llzk.struct<@nested::@Wrapper> {
 // RELAX-NEXT:        %[[VAL_1:.*]] = new_struct : <@nested::@Wrapper>
-// RELAX-NEXT:        writef %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !llzk.felt
+// RELAX-NEXT:        writef %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !felt.felt
 // RELAX-NEXT:        function.return %[[VAL_1]] : !llzk.struct<@nested::@Wrapper>
 // RELAX-NEXT:      }
-// RELAX-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@nested::@Wrapper>, %[[VAL_3:.*]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+// RELAX-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !llzk.struct<@nested::@Wrapper>, %[[VAL_3:.*]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
 // RELAX-NEXT:    }
@@ -553,16 +553,16 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-LABEL: module @user {
 // RELAX-NEXT:    llzk.struct @Unwrapper {
 // RELAX-NEXT:      field @val : !llzk.struct<@nested::@Wrapper>
-// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !llzk.felt) -> !llzk.struct<@user::@Unwrapper> {
+// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !llzk.struct<@user::@Unwrapper> {
 // RELAX-NEXT:        %[[VAL_1:.*]] = new_struct : <@user::@Unwrapper>
-// RELAX-NEXT:        %[[VAL_2:.*]] = function.call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!llzk.felt) -> !llzk.struct<@nested::@Wrapper>
+// RELAX-NEXT:        %[[VAL_2:.*]] = function.call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!felt.felt) -> !llzk.struct<@nested::@Wrapper>
 // RELAX-NEXT:        writef %[[VAL_1]][@val] = %[[VAL_2]] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
 // RELAX-NEXT:        function.return %[[VAL_1]] : !llzk.struct<@user::@Unwrapper>
 // RELAX-NEXT:      }
-// RELAX-NEXT:      function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@user::@Unwrapper>, %[[VAL_4:.*]]: !llzk.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+// RELAX-NEXT:      function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@user::@Unwrapper>, %[[VAL_4:.*]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
 // RELAX-NEXT:        %[[VAL_5:.*]] = readf %[[VAL_3]][@val] : <@user::@Unwrapper>, !llzk.struct<@nested::@Wrapper>
-// RELAX-NEXT:        %[[VAL_6:.*]] = readf %[[VAL_5]][@val] : <@nested::@Wrapper>, !llzk.felt
-// RELAX-NEXT:        emit_eq %[[VAL_6]], %[[VAL_4]] : !llzk.felt, !llzk.felt
+// RELAX-NEXT:        %[[VAL_6:.*]] = readf %[[VAL_5]][@val] : <@nested::@Wrapper>, !felt.felt
+// RELAX-NEXT:        emit_eq %[[VAL_6]], %[[VAL_4]] : !felt.felt, !felt.felt
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
 // RELAX-NEXT:    }

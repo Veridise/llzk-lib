@@ -10,7 +10,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%p: !llzk.struct<@ComponentB>) {
       // expected-error@+2 {{'llzk.readf' op references unknown symbol "@f2"}}
       // expected-error@+1 {{could not find 'llzk.field' named "@f2" in "@ComponentB"}}
-      %0 = readf %p[@f2] : !llzk.struct<@ComponentB>, !llzk.felt
+      %0 = readf %p[@f2] : !llzk.struct<@ComponentB>, !felt.felt
       function.return
     }
   }
@@ -26,8 +26,8 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%p: !llzk.struct<@ComponentC>) {
-      // expected-error@+1 {{'llzk.readf' op has wrong type; expected 'index', got '!llzk.felt}}
-      %0 = readf %p[@f2] : !llzk.struct<@ComponentC>, !llzk.felt
+      // expected-error@+1 {{'llzk.readf' op has wrong type; expected 'index', got '!felt.felt}}
+      %0 = readf %p[@f2] : !llzk.struct<@ComponentC>, !felt.felt
       function.return
     }
   }
@@ -69,15 +69,15 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentH {
-    function.def @compute(%0: !llzk.felt) -> !llzk.struct<@ComponentH> {
+    function.def @compute(%0: !felt.felt) -> !llzk.struct<@ComponentH> {
       %self = new_struct : !llzk.struct<@ComponentH>
       // expected-error@+2 {{'llzk.writef' op references unknown symbol "@f2"}}
       // expected-error@+1 {{could not find 'llzk.field' named "@f2" in "@ComponentH"}}
-      writef %self[@f2] = %0 : !llzk.struct<@ComponentH>, !llzk.felt
+      writef %self[@f2] = %0 : !llzk.struct<@ComponentH>, !felt.felt
       function.return %self : !llzk.struct<@ComponentH>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentH>, %0: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@ComponentH>, %0: !felt.felt) {
       function.return
     }
   }
@@ -87,14 +87,14 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentJ {
     llzk.field @f2 : index
 
-    function.def @compute(%0: !llzk.felt) -> !llzk.struct<@ComponentJ> {
+    function.def @compute(%0: !felt.felt) -> !llzk.struct<@ComponentJ> {
       %self = new_struct : !llzk.struct<@ComponentJ>
-      // expected-error@+1 {{'llzk.writef' op has wrong type; expected 'index', got '!llzk.felt}}
-      writef %self[@f2] = %0 : !llzk.struct<@ComponentJ>, !llzk.felt
+      // expected-error@+1 {{'llzk.writef' op has wrong type; expected 'index', got '!felt.felt}}
+      writef %self[@f2] = %0 : !llzk.struct<@ComponentJ>, !felt.felt
       function.return %self : !llzk.struct<@ComponentJ>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentJ>, %0: !llzk.felt) {
+    function.def @constrain(%self: !llzk.struct<@ComponentJ>, %0: !felt.felt) {
       function.return
     }
   }
@@ -109,7 +109,7 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !llzk.struct<@ComponentK>
     }
 
-    function.def @constrain(%p: !llzk.struct<@ComponentK>, %0: !llzk.felt) { // expected-note {{prior use here}}
+    function.def @constrain(%p: !llzk.struct<@ComponentK>, %0: !felt.felt) { // expected-note {{prior use here}}
       // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!llzk.struct<@WrongComponent>' vs '!llzk.struct<@ComponentK>'}}
       writef %p[@f2] = %0 : !llzk.struct<@WrongComponent>, index
       function.return
@@ -126,7 +126,7 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !llzk.struct<@ComponentL>
     }
 
-    function.def @constrain(%p: !llzk.struct<@WrongComponent>, %0: !llzk.felt) { // expected-note {{prior use here}}
+    function.def @constrain(%p: !llzk.struct<@WrongComponent>, %0: !felt.felt) { // expected-note {{prior use here}}
       // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!llzk.struct<@ComponentL>' vs '!llzk.struct<@WrongComponent>'}}
       writef %p[@f2] = %0 : !llzk.struct<@ComponentL>, index
       function.return
@@ -153,7 +153,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @WrongComponent { // expected-note {{uses this type instead}}
-    llzk.field @f : !llzk.felt
+    llzk.field @f : !felt.felt
     function.def @compute() -> !llzk.struct<@WrongComponent> {
       %self = new_struct : !llzk.struct<@WrongComponent>
       function.return %self : !llzk.struct<@WrongComponent>
@@ -162,12 +162,12 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @ComponentN {
-    function.def @compute(%0: !llzk.struct<@WrongComponent>, %1: !llzk.felt) -> !llzk.struct<@ComponentN> {
+    function.def @compute(%0: !llzk.struct<@WrongComponent>, %1: !felt.felt) -> !llzk.struct<@ComponentN> {
       %self = new_struct : !llzk.struct<@ComponentN>
       // expected-error@+1 {{'llzk.writef' op must use type of its ancestor 'llzk.struct' "@ComponentN" as base value type}}
-      writef %0[@f] = %1 : !llzk.struct<@WrongComponent>, !llzk.felt
+      writef %0[@f] = %1 : !llzk.struct<@WrongComponent>, !felt.felt
       function.return %self : !llzk.struct<@ComponentN>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentN>, %0: !llzk.struct<@WrongComponent>, %1: !llzk.felt)  { function.return }
+    function.def @constrain(%self: !llzk.struct<@ComponentN>, %0: !llzk.struct<@WrongComponent>, %1: !felt.felt)  { function.return }
   }
 }

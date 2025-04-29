@@ -21,12 +21,12 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @ToFelt<[@A]> {
-    field @out: !llzk.felt {llzk.pub}
+    field @out: !felt.felt {llzk.pub}
 
     function.def @compute() -> !llzk.struct<@ToFelt<[@A]>> {
       %self = new_struct : !llzk.struct<@ToFelt<[@A]>>
-      %constA = read_const @A : !llzk.felt
-      writef %self[@out] = %constA : !llzk.struct<@ToFelt<[@A]>>, !llzk.felt
+      %constA = read_const @A : !felt.felt
+      writef %self[@out] = %constA : !llzk.struct<@ToFelt<[@A]>>, !felt.felt
       function.return %self: !llzk.struct<@ToFelt<[@A]>>
     }
 
@@ -97,11 +97,11 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: llzk.struct @ToFelt_1 {
-// CHECK-NEXT:    field @out : !llzk.felt {llzk.pub}
+// CHECK-NEXT:    field @out : !felt.felt {llzk.pub}
 // CHECK-NEXT:    function.def @compute() -> !llzk.struct<@ToFelt_1> {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = constfelt 1
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 1
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ToFelt_1>
-// CHECK-NEXT:      writef %[[V1]][@out] = %[[V0]] : <@ToFelt_1>, !llzk.felt
+// CHECK-NEXT:      writef %[[V1]][@out] = %[[V0]] : <@ToFelt_1>, !felt.felt
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@ToFelt_1>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_1>) attributes {function.allow_constraints = #function.allow_constraints} {
