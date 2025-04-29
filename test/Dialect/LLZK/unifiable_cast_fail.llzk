@@ -2,6 +2,23 @@
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Tester<[@S0, @S1]> {
+    func @compute(%0: !llzk.array<1 x !llzk.felt>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
+
+      %self = new_struct : <@Tester<[@S0, @S1]>>
+      // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.array<1 x !llzk.felt>' and output type '!llzk.array<2 x !llzk.felt>' are not unifiable}}
+      %r0 = unifiable_cast %0 : (!llzk.array<1 x !llzk.felt>) -> !llzk.array<2 x !llzk.felt>
+      return %self : !llzk.struct<@Tester<[@S0, @S1]>>
+    }
+    func @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %0: index) {
+      return
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  llzk.struct @Tester<[@S0, @S1]> {
     func @compute(%0: index) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
       // expected-error@+1 {{'llzk.unifiable_cast' op input type 'index' and output type '!llzk.felt' are not unifiable}}

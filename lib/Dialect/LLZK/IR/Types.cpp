@@ -15,6 +15,7 @@
 #include "llzk/Dialect/LLZK/Util/SymbolHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinTypeInterfaces.h>
 #include <mlir/IR/DialectImplementation.h>
@@ -485,12 +486,15 @@ struct UnifierImpl {
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
         overrideSuccess(nullptr) {}
 
-  bool typeParamsUnify(const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams) {
+  bool typeParamsUnify(
+      const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams,
+      bool unifyDynamicSize = false
+  ) {
+    auto pred = [this, unifyDynamicSize](auto lhsAttr, auto rhsAttr) {
+      return paramAttrUnify(lhsAttr, rhsAttr, unifyDynamicSize);
+    };
     return (lhsParams.size() == rhsParams.size()) &&
-           std::equal(
-               lhsParams.begin(), lhsParams.end(), rhsParams.begin(),
-               std::bind_front(&UnifierImpl::paramAttrUnify, this)
-           );
+           std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), pred);
   }
 
   UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
@@ -505,9 +509,11 @@ struct UnifierImpl {
 
   /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
   /// are equivalent or could be equivalent after full instantiation of struct parameters.
-  bool typeParamsUnify(const ArrayAttr &lhsParams, const ArrayAttr &rhsParams) {
+  bool typeParamsUnify(
+      const ArrayAttr &lhsParams, const ArrayAttr &rhsParams, bool unifyDynamicSize = false
+  ) {
     if (lhsParams && rhsParams) {
-      return typeParamsUnify(lhsParams.getValue(), rhsParams.getValue());
+      return typeParamsUnify(lhsParams.getValue(), rhsParams.getValue(), unifyDynamicSize);
     }
     // When one or the other is null, they're only equivalent if both are null
     return !lhsParams && !rhsParams;
@@ -519,7 +525,9 @@ struct UnifierImpl {
       return false;
     }
     // Check if the dimension size attributes unify between the LHS and RHS
-    return typeParamsUnify(lhs.getDimensionSizes(), rhs.getDimensionSizes());
+    return typeParamsUnify(
+        lhs.getDimensionSizes(), rhs.getDimensionSizes(), /*unifyDynamicSize=*/true
+    );
   }
 
   bool structTypesUnify(StructType lhs, StructType rhs) {
@@ -582,7 +590,7 @@ private:
     }
   }
 
-  bool paramAttrUnify(Attribute lhsAttr, Attribute rhsAttr) {
+  bool paramAttrUnify(Attribute lhsAttr, Attribute rhsAttr, bool unifyDynamicSize = false) {
     assertValidAttrForParamOfType(lhsAttr);
     assertValidAttrForParamOfType(rhsAttr);
     // Straightforward equality check.
@@ -612,6 +620,30 @@ private:
     if (SymbolRefAttr rhsSymRef = rhsAttr.dyn_cast<SymbolRefAttr>()) {
       track(Side::RHS, rhsSymRef, lhsAttr);
       return true;
+    }
+    // If either side is ShapedType::kDynamic then similarly to Symbols assume the they unify.
+    auto dyn_cast_if_kDynamic = [](Attribute attr) -> IntegerAttr {
+      if (auto intAttr = attr.dyn_cast<IntegerAttr>()) {
+        if (intAttr.getValue().getSExtValue() == ShapedType::kDynamic) {
+          return intAttr;
+        }
+      }
+      return nullptr;
+    };
+    auto isa_const = [](Attribute attr) {
+      return mlir::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(attr);
+    };
+    if (auto lhsIntAttr = dyn_cast_if_kDynamic(lhsAttr)) {
+      if (isa_const(rhsAttr)) {
+        /*track(Side::LHS, lhsIntAttr, rhsAttr);*/
+        return true;
+      }
+    }
+    if (auto rhsIntAttr = dyn_cast_if_kDynamic(rhsAttr)) {
+      if (isa_const(lhsAttr)) {
+        /*track(Side::RHS, rhsIntAttr, lhsAttr);*/
+        return true;
+      }
     }
     // If both are type refs, check for unification of the types.
     if (TypeAttr lhsTy = lhsAttr.dyn_cast<TypeAttr>()) {
