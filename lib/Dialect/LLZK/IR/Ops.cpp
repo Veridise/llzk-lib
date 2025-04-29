@@ -408,13 +408,9 @@ LogicalResult StructDefOp::verifyRegions() {
     }
   }
 
-  // Verify that "constrain" has the `AllowConstraintsAttr` and "compute" does not.
-  if (!foundConstrain->hasAllowConstraintsAttr()) {
-    return this->emitError("TODO: StructDefOp::verifyRegions");
-  }
-  if (foundCompute->hasAllowConstraintsAttr()) {
-    return this->emitError("TODO: StructDefOp::verifyRegions");
-  }
+  // ASSERT: The `InitAllowConstraintsAttrs` trait on StructDefOp set the attributes correctly.
+  assert(foundConstrain->hasAllowConstraintsAttr());
+  assert(!foundCompute->hasAllowConstraintsAttr());
 
   // Verify parameter types are valid. Skip the first parameter of the "constrain" function; it is
   // already checked via verifyFuncTypeConstrain() in Function/IR/Ops.cpp.
