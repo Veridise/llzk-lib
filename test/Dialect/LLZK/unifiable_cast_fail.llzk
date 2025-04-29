@@ -37,8 +37,8 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @Tester<[@S0, @S1]> {
     function.def @compute(%2: !llzk.felt) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.felt' and output type '!llzk.string' are not unifiable}}
-      %r2 = unifiable_cast %2 : (!llzk.felt) -> !llzk.string
+      // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.felt' and output type '!string.string' are not unifiable}}
+      %r2 = unifiable_cast %2 : (!llzk.felt) -> !string.string
       function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
     function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %2: !llzk.felt) {
@@ -184,8 +184,8 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @Tester<[@S0, @S1]> {
     function.def @compute(%18: !llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@Tester<[@S0, @S1]>> {
       %self = new_struct : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>' and output type '!llzk.struct<@T3<[!llzk.string, affine_map<()[s0, s1] -> (s0 + s1)>, 1, @S0, !llzk.struct<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>]>>' are not unifiable}}
-      %19 = unifiable_cast %18 : (!llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@T3<[!llzk.string, #map1, 1, @S0, !llzk.struct<@T2<[#map1]>>]>>
+      // expected-error@+1 {{'llzk.unifiable_cast' op input type '!llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>' and output type '!llzk.struct<@T3<[!string.string, affine_map<()[s0, s1] -> (s0 + s1)>, 1, @S0, !llzk.struct<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>]>>' are not unifiable}}
+      %19 = unifiable_cast %18 : (!llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>) -> !llzk.struct<@T3<[!string.string, #map1, 1, @S0, !llzk.struct<@T2<[#map1]>>]>>
       function.return %self : !llzk.struct<@Tester<[@S0, @S1]>>
     }
     function.def @constrain(%self: !llzk.struct<@Tester<[@S0, @S1]>>, %18: !llzk.struct<@T3<[1, 1, @S0, 1, !llzk.struct<@T2<[1]>>]>>) {

@@ -11,6 +11,7 @@
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/StreamHelper.h"
@@ -31,6 +32,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace array;
+using namespace string;
 
 //===------------------------------------------------------------------===//
 // Helpers

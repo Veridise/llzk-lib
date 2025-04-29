@@ -42,17 +42,17 @@ function.def private @g(%x: !array.array<2,3,2 x index>)
 //CHECK-LABEL:  function.def private @g(!array.array<2,3,2 x index>)
 // -----
 
-function.def private @h(%x: !llzk.string)
-//CHECK-LABEL:  function.def private @h(!llzk.string)
+function.def private @h(%x: !string.string)
+//CHECK-LABEL:  function.def private @h(!string.string)
 // -----
 
-function.def private @i(%x: !array.array<4 x !llzk.string>)
-//CHECK-LABEL:  function.def private @i(!array.array<4 x !llzk.string>)
+function.def private @i(%x: !array.array<4 x !string.string>)
+//CHECK-LABEL:  function.def private @i(!array.array<4 x !string.string>)
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @CJ {
-    field @s : !llzk.string
+    field @s : !string.string
     function.def @compute() -> !llzk.struct<@CJ> {
       %self = new_struct : !llzk.struct<@CJ>
       function.return %self : !llzk.struct<@CJ>
@@ -61,7 +61,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: llzk.struct @CJ {
-//CHECK-NEXT:    field @s : !llzk.string
+//CHECK-NEXT:    field @s : !string.string
 //CHECK-NEXT:    function.def @compute() -> !llzk.struct<@CJ> {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@CJ>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@CJ>

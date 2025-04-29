@@ -30,8 +30,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA2 {
-    // expected-error@+1 {{'llzk.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!llzk.string'}}
-    llzk.field @f1 : !llzk.string {column}
+    // expected-error@+1 {{'llzk.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!string.string'}}
+    llzk.field @f1 : !string.string {column}
     function.def @compute() -> !llzk.struct<@ComponentA2> {
       %self = new_struct : !llzk.struct<@ComponentA2>
       function.return %self : !llzk.struct<@ComponentA2>
@@ -81,8 +81,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA2 {
-    // expected-error@+1 {{'llzk.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!array.array<2 x !llzk.string>'}}
-    llzk.field @f1 : !array.array<2 x !llzk.string> {column}
+    // expected-error@+1 {{'llzk.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!array.array<2 x !string.string>'}}
+    llzk.field @f1 : !array.array<2 x !string.string> {column}
     function.def @compute() -> !llzk.struct<@ComponentA2> {
       %self = new_struct : !llzk.struct<@ComponentA2>
       function.return %self : !llzk.struct<@ComponentA2>

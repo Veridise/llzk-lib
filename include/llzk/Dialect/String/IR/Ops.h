@@ -1,4 +1,4 @@
-//===-- PassBase.h - Base LLZK pass definition file -------------*- C++ -*-===//
+//===-- Ops.h ---------------------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -9,10 +9,12 @@
 
 #pragma once
 
-#include "llzk/Dialect/Array/IR/Dialect.h"
-#include "llzk/Dialect/Function/IR/Dialect.h"
-#include "llzk/Dialect/Include/IR/Dialect.h"
-#include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
+#include "llzk/Dialect/String/IR/Types.h"
 
-#include <mlir/Pass/Pass.h>
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/Location.h>
+
+// Include TableGen'd declarations
+#define GET_OP_CLASSES
+#include "llzk/Dialect/String/IR/Ops.h.inc"

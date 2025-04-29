@@ -130,7 +130,7 @@ def LLZK_GlobalDefOp
 
     ```llzk
     // Global constant (denoted by "const" modifier) string.
-    llzk.global const @s : !llzk.string = "Hello World!"
+    llzk.global const @s : !string.string = "Hello World!"
 
     // Global variable (i.e. no "const" modifier) with initial value.
     llzk.global @b : i1 = false
@@ -792,17 +792,6 @@ def LLZK_ApplyMapOp : LLZK_Op<"applymap", [Pure]> {
                           getOperands().end()};
     }
   }];
-}
-
-def LLZK_LitStringOp : LLZK_Op<"new_string", [Pure, ConstantLike]> {
-  let summary = "literal string";
-  let arguments = (ins StrAttr:$value);
-  let results = (outs LLZK_String:$result);
-
-  let assemblyFormat = [{
-    $value attr-dict
-  }];
-  let hasFolder = 1;
 }
 
 #endif // LLZK_OPS
