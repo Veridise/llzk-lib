@@ -539,6 +539,7 @@ void FieldDefOp::build(
     odsState.getOrAddProperties<Properties>().column = odsBuilder.getUnitAttr();
   }
 }
+
 void FieldDefOp::setPublicAttr(bool newValue) {
   if (newValue) {
     getOperation()->setAttr(PublicAttr::name, PublicAttr::get(getContext()));

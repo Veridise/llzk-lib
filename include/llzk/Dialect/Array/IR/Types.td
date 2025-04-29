@@ -22,8 +22,8 @@ def ArrayElemType : Type<CPred<"::llzk::isValidArrayElemType($_self)">,
 
 def LLZK_ArrayType
     : TypeDef<ArrayDialect, "Array",
-                [ShapedTypeInterface,
-                 DeclareTypeInterfaceMethods<DestructurableTypeInterface>]> {
+              [ShapedTypeInterface,
+               DeclareTypeInterfaceMethods<DestructurableTypeInterface>]> {
   let mnemonic = "array";
   let summary = "n-dimensional array";
   let description = [{

@@ -104,8 +104,9 @@ class TypesUnify<string lhsArg, string rhsArg, string lhsSummary = lhsArg,
 
 // Returns success if `elementArg` unifies with the `arrayArg` element type.
 class ArrayElemTypeUnifyWith<string arrayArg, string elementArg>
-    : TypesUnify<arrayArg, elementArg, arrayArg#" element", elementArg,
-                 "::llvm::cast<::llzk::array::ArrayType>($_self).getElementType()">;
+    : TypesUnify<
+          arrayArg, elementArg, arrayArg#" element", elementArg,
+          "::llvm::cast<::llzk::array::ArrayType>($_self).getElementType()">;
 
 // Returns success if `$result` unifies with the `arrayArg` element type.
 class ArrayElemTypeUnifyWithResult<string arrayArg>
