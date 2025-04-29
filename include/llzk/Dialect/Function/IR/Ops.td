@@ -197,9 +197,10 @@ def FuncDefOp
     /// Assuming the name is `FUNC_NAME_COMPUTE`, return the single StructType result.
     ::llzk::StructType getSingleResultTypeOfCompute();
   }];
-  let hasCustomAssemblyFormat = 1;
 
+  let hasCustomAssemblyFormat = 1;
   let hasVerifier = 1;
+  let hasRegionVerifier = 1;
 }
 
 //===----------------------------------------------------------------------===//

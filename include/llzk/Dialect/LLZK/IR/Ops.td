@@ -466,7 +466,8 @@ def LLZK_CreateStructOp
 
 class LLZK_EmitOp<string mnemonic, list<Trait> traits = []>
     : LLZK_Op<mnemonic,
-              traits#[InStructFunctionNamed<"::llzk::FUNC_NAME_CONSTRAIN">,
+              traits#[ConstraintOpInterface,
+                      InStructFunctionNamed<"::llzk::FUNC_NAME_CONSTRAIN">,
                       DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
 
   let assemblyFormat = [{

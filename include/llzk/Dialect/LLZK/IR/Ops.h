@@ -11,6 +11,7 @@
 
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/OpInterfaces.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/Constants.h"
@@ -30,9 +31,6 @@
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
-
-// Include TableGen'd declarations
-#include "llzk/Dialect/LLZK/IR/OpInterfaces.h.inc"
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES

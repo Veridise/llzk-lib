@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/OpInterfaces.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -217,6 +218,14 @@ LogicalResult FuncDefOp::verify() {
     }
   }
   return success();
+}
+
+LogicalResult FuncDefOp::verifyRegions() {
+  // TODO: either StructDefOp should automatically set allow-constraints on the "constrain" function
+  // within or that must be manually set when building the function and set in ".llzk" source.
+  //
+  return success(); // TODO: should use condition below
+  // return success(hasAllowConstraintsAttr() || !containsConstraintOp(this->getOperation()));
 }
 
 namespace {
