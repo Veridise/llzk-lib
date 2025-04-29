@@ -289,7 +289,7 @@ SymbolRefAttr FuncDefOp::getFullyQualifiedName() {
   return res.value();
 }
 
-StructType FuncDefOp::getComputeSingleResultType() {
+StructType FuncDefOp::getSingleResultTypeOfCompute() {
   assert(isStructCompute() && "violated implementation pre-condition");
   return getIfSingleton<StructType>(getResultTypes());
 }
@@ -458,7 +458,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
       // producing an error. The combination of this KnownTargetVerifier resolving the callee to a
       // specific FuncDefOp and verifyFuncTypeCompute() ensuring all FUNC_NAME_COMPUTE FuncOps have
       // a single StructType return value will produce a more relevant error message in that case.
-      if (StructType retTy = callOp->getComputeSingleResultType()) {
+      if (StructType retTy = callOp->getSingleResultTypeOfCompute()) {
         if (ArrayAttr params = retTy.getParams()) {
           // Collect the struct parameters that are defined via AffineMapAttr
           SmallVector<AffineMapAttr> mapAttrs;
@@ -661,7 +661,7 @@ bool calleeIsStructFunctionImpl(
 
 bool CallOp::calleeIsStructCompute() {
   return calleeIsStructFunctionImpl(FUNC_NAME_COMPUTE, getCallee(), [this]() {
-    return this->getComputeSingleResultType();
+    return this->getSingleResultTypeOfCompute();
   });
 }
 
@@ -671,7 +671,7 @@ bool CallOp::calleeIsStructConstrain() {
   });
 }
 
-StructType CallOp::getComputeSingleResultType() {
+StructType CallOp::getSingleResultTypeOfCompute() {
   assert(calleeIsCompute() && "violated implementation pre-condition");
   return getIfSingleton<StructType>(getResultTypes());
 }

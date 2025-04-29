@@ -195,7 +195,7 @@ def FuncDefOp
     inline bool isStructConstrain() { return isInStruct() && nameIsConstrain(); }
 
     /// Assuming the name is `FUNC_NAME_COMPUTE`, return the single StructType result.
-    ::llzk::StructType getComputeSingleResultType();
+    ::llzk::StructType getSingleResultTypeOfCompute();
   }];
   let hasCustomAssemblyFormat = 1;
 
@@ -346,7 +346,7 @@ def CallOp : LLZK_Function_Op<
     bool calleeIsStructConstrain();
 
     /// Assuming the callee is `FUNC_NAME_COMPUTE`, return the single StructType result.
-    ::llzk::StructType getComputeSingleResultType();
+    ::llzk::StructType getSingleResultTypeOfCompute();
   }];
 
   let assemblyFormat = [{

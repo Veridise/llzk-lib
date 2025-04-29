@@ -1276,7 +1276,7 @@ public:
       // this pattern only applies when the callee is "compute()" within a struct
       return failure();
     }
-    StructType oldRetTy = op.getComputeSingleResultType();
+    StructType oldRetTy = op.getSingleResultTypeOfCompute();
     LLVM_DEBUG({
       llvm::dbgs() << "[InstantiateAtCallOpCompute] target: " << op.getCallee() << '\n';
       llvm::dbgs() << "[InstantiateAtCallOpCompute]   oldRetTy: " << oldRetTy << '\n';
@@ -1360,7 +1360,7 @@ private:
       OperandRange::type_range callArgTypes, FuncDefOp targetFunc
   ) const {
     assert(targetFunc.isStructCompute()); // since `op.calleeIsStructCompute()`
-    ArrayAttr targetResTyParams = targetFunc.getComputeSingleResultType().getParams();
+    ArrayAttr targetResTyParams = targetFunc.getSingleResultTypeOfCompute().getParams();
     assert(!isNullOrEmpty(targetResTyParams)); // same cardinality as `in.paramsOfStructTy`
     assert(in.paramsOfStructTy.size() == targetResTyParams.size()); // verifier ensures this
 
