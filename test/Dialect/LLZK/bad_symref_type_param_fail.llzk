@@ -528,7 +528,7 @@ module attributes {veridise.lang = "llzk"} {
       %b = array.new : !array.array<5 x !felt.felt>
       // See NOTE on line 4.
       // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<@Unknown x !felt.felt>' vs '!array.array<5 x !felt.felt>'}}
-      llzk.emit_eq %a, %b : !array.array<@Unknown x !felt.felt>
+      constrain.eq %a, %b : !array.array<@Unknown x !felt.felt>
       function.return
     }
 
@@ -546,7 +546,7 @@ module attributes {veridise.lang = "llzk"} {
       %b = array.new : !array.array<5 x !felt.felt> // expected-note {{prior use here}}
       // See NOTE on line 4.
       // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.array<@Unknown x !felt.felt>' vs '!array.array<5 x !felt.felt>'}}
-      llzk.emit_eq %a, %b : !array.array<5 x !felt.felt>, !array.array<@Unknown x !felt.felt>
+      constrain.eq %a, %b : !array.array<5 x !felt.felt>, !array.array<@Unknown x !felt.felt>
       function.return
     }
 
@@ -564,7 +564,7 @@ module attributes {veridise.lang = "llzk"} {
       %b = felt.const 3
       // See NOTE on line 4.
       // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<@Unknown x !felt.felt>' vs '!array.array<5 x !felt.felt>'}}
-      llzk.emit_in %a, %b : !array.array<@Unknown x !felt.felt>
+      constrain.in %a, %b : !array.array<@Unknown x !felt.felt>
       function.return
     }
 
@@ -582,7 +582,7 @@ module attributes {veridise.lang = "llzk"} {
       %b = felt.const 3 // expected-note {{prior use here}}
       // See NOTE on line 4.
       // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!felt.felt'}}
-      llzk.emit_in %a, %b : !array.array<5 x !felt.felt>, !llzk.tvar<@Unknown>
+      constrain.in %a, %b : !array.array<5 x !felt.felt>, !llzk.tvar<@Unknown>
       function.return
     }
 

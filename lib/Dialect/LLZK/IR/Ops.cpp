@@ -283,35 +283,6 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 //===------------------------------------------------------------------===//
-// EmitEqualityOp
-//===------------------------------------------------------------------===//
-
-LogicalResult EmitEqualityOp::verifySymbolUses(SymbolTableCollection &tables) {
-  // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
-  );
-}
-
-Type EmitEqualityOp::inferRHS(Type lhsType) { return lhsType; }
-
-//===------------------------------------------------------------------===//
-// EmitContainmentOp
-//===------------------------------------------------------------------===//
-
-LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &tables) {
-  // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
-  );
-}
-
-Type EmitContainmentOp::inferRHS(Type lhsType) {
-  assert(llvm::isa<ArrayType>(lhsType)); // per ODS spec of EmitContainmentOp
-  return llvm::cast<ArrayType>(lhsType).getElementType();
-}
-
-//===------------------------------------------------------------------===//
 // ApplyMapOp
 //===------------------------------------------------------------------===//
 

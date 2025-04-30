@@ -37,7 +37,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.struct<@Adder>, %a: !felt.felt, %b: !felt.felt) {
       %sum = struct.readf %self[@sum] : !struct.struct<@Adder>, !felt.felt
       %c = function.call @global_add(%a, %b) : (!felt.felt, !felt.felt) -> (!felt.felt)
-      llzk.emit_eq %sum, %c : !felt.felt
+      constrain.eq %sum, %c : !felt.felt
       function.return
     }
   }
@@ -70,7 +70,7 @@ module attributes {veridise.lang = "llzk"} {
       %sum = struct.readf %self[@sum] : !struct.struct<@Adder2>, !felt.felt
       %c = function.call @global_add(%a, %b) : (!felt.felt, !felt.felt) -> (!felt.felt)
       %d = felt.add %c, %c
-      llzk.emit_eq %sum, %d : !felt.felt
+      constrain.eq %sum, %d : !felt.felt
       function.return
     }
   }
@@ -112,7 +112,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.struct<@EnsureZero>, %a: !felt.felt) {
       %zero = felt.const 0
-      llzk.emit_eq %a, %zero : !felt.felt
+      constrain.eq %a, %zero : !felt.felt
       function.return
     }
   }
@@ -127,8 +127,8 @@ module attributes {veridise.lang = "llzk"} {
     // as it does not determine that %a and %b must be precisely equal to 0.
     function.def @constrain(%self: !struct.struct<@EnsureBothZero>, %a: !felt.felt, %b: !felt.felt) {
       %zero = felt.const 0
-      llzk.emit_eq %a, %b : !felt.felt
-      llzk.emit_eq %a, %zero : !felt.felt
+      constrain.eq %a, %b : !felt.felt
+      constrain.eq %a, %zero : !felt.felt
       function.return
     }
   }
@@ -199,7 +199,7 @@ module attributes {veridise.lang = "llzk"} {
       %fval = felt.const 7
       %idx = arith.constant 3 : index
       %elem = array.read %in[%idx] : !array.array<5 x !felt.felt>, !felt.felt
-      llzk.emit_eq %elem, %fval : !felt.felt
+      constrain.eq %elem, %fval : !felt.felt
       function.return
     }
 
@@ -225,7 +225,7 @@ module attributes {veridise.lang = "llzk"} {
       %fval = felt.const 7
       scf.for %iv = %lb to %up step %step {
         %elem = array.read %in[%iv] : !array.array<5 x !felt.felt>, !felt.felt
-        llzk.emit_eq %elem, %fval : !felt.felt
+        constrain.eq %elem, %fval : !felt.felt
       }
       function.return
     }
@@ -253,8 +253,8 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.struct<@ConstConstraints>, %a: !felt.felt, %b: !felt.felt) {
       %c = felt.const 1
-      llzk.emit_eq %a, %c : !felt.felt
-      llzk.emit_eq %b, %c : !felt.felt
+      constrain.eq %a, %c : !felt.felt
+      constrain.eq %b, %c : !felt.felt
       function.return
     }
   }
@@ -282,8 +282,8 @@ module attributes {veridise.lang = "llzk"} {
       %2 = arith.constant 2 : index
       %elem0 = array.read %arr[%0] : !array.array<3 x !felt.felt>, !felt.felt
       %elem2 = array.read %arr[%2] : !array.array<3 x !felt.felt>, !felt.felt
-      llzk.emit_eq %elem0, %const0 : !felt.felt
-      llzk.emit_eq %elem2, %const2 : !felt.felt
+      constrain.eq %elem0, %const0 : !felt.felt
+      constrain.eq %elem2, %const2 : !felt.felt
       function.return
     }
   }
@@ -340,7 +340,7 @@ module attributes {veridise.lang = "llzk"} {
       %const = felt.const 7
       %1 = arith.constant 1 : index
       %elem = array.read %arr[%1] : !array.array<3 x !felt.felt>, !felt.felt
-      llzk.emit_eq %elem, %const : !felt.felt
+      constrain.eq %elem, %const : !felt.felt
       function.return
     }
   }
@@ -400,7 +400,7 @@ module attributes {veridise.lang = "llzk"} {
       %const = felt.const 7
       %1 = arith.constant 1 : index
       %elem = array.read %arr[%1] : !array.array<@N x !felt.felt>, !felt.felt
-      llzk.emit_eq %elem, %const : !felt.felt
+      constrain.eq %elem, %const : !felt.felt
       function.return
     }
   }
@@ -423,7 +423,7 @@ module attributes {veridise.lang = "llzk"} {
       %const = felt.const 7
       %1 = arith.constant 1 : index
       %elem = array.read %arr[%1] : !array.array<@N x !felt.felt>, !felt.felt
-      llzk.emit_eq %elem, %const : !felt.felt
+      constrain.eq %elem, %const : !felt.felt
       function.return
     }
   }
@@ -656,7 +656,7 @@ module attributes {veridise.lang = "llzk"} {
       %c = function.call @extern_add(%a, %b) : (!felt.felt, !felt.felt) -> (!felt.felt)
       // We make no assumptions about what %c could be, so this constraint is
       // effectively `%sum === {}`, so the CDG will be empty.
-      llzk.emit_eq %sum, %c : !felt.felt
+      constrain.eq %sum, %c : !felt.felt
       function.return
     }
   }
@@ -690,7 +690,7 @@ module attributes {veridise.lang = "llzk"} {
       %c = function.call @global_add(%a, %b) : (!felt.felt, !felt.felt) -> (!felt.felt)
       %d = felt.add %c, %c
       function.call @irrelevant() : () -> () // testing to see that this doesn't erase the prior values
-      llzk.emit_eq %sum, %d : !felt.felt
+      constrain.eq %sum, %d : !felt.felt
       function.return
     }
   }
@@ -731,7 +731,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.struct<@Component00>, %0: !Signal) {
       %b = struct.readf %self[@f] : !struct.struct<@Component00>, !Signal
       // Signal is the only struct allowed for emit equal
-      llzk.emit_eq %b, %0 : !Signal
+      constrain.eq %b, %0 : !Signal
       function.return
     }
   }
@@ -747,7 +747,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.struct<@Component01>, %0: !array.array<2 x !Signal>) {
       %b = struct.readf %self[@f] : !struct.struct<@Component01>, !array.array<2 x !Signal>
       // Signal is the only struct allowed for emit equal
-      llzk.emit_eq %b, %0 : !array.array<2 x !Signal>
+      constrain.eq %b, %0 : !array.array<2 x !Signal>
       function.return
     }
   }

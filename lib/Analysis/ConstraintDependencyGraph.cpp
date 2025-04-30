@@ -11,6 +11,7 @@
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -29,6 +30,7 @@ namespace llzk {
 
 using namespace array;
 using namespace component;
+using namespace constrain;
 using namespace function;
 
 /* ConstrainRefAnalysis */

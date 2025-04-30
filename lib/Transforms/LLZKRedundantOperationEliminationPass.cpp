@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/CallGraphAnalyses.h"
+#include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -35,6 +36,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace llzk;
+using namespace llzk::constrain;
 using namespace llzk::function;
 
 #define DEBUG_TYPE "llzk-duplicate-op-elim"
@@ -83,9 +85,11 @@ public:
     if (lhs.op->getName() != rhs.op->getName()) {
       return false;
     }
+    // TODO-IAN: Refactor this after we have registered all new subdialects.
     // uninterested in operating over non llzk/arith ops
     auto dialectName = lhs.op->getDialect()->getNamespace();
     if (dialectName != LLZKDialect::getDialectNamespace() &&
+        dialectName != ConstrainDialect::getDialectNamespace() &&
         dialectName != arith::ArithDialect::getDialectNamespace()) {
       return false;
     }

@@ -52,11 +52,11 @@ module attributes {veridise.lang = "llzk"} {
       %res_inv = struct.readf %self[@reciprocal] : !struct.struct<@Div<[]>>, !felt.felt
       %res_mul_1 = felt.mul %res_inv, %rhs
       %const_1 = felt.const 1
-      llzk.emit_eq %res_mul_1, %const_1 : !felt.felt
+      constrain.eq %res_mul_1, %const_1 : !felt.felt
       // emit self.synthetic_return = self.reciprocal * lhs;
       %res_self = struct.readf %self[@synthetic_return] : !struct.struct<@Div<[]>>, !felt.felt
       %res_mul_2 = felt.mul %res_inv, %lhs
-      llzk.emit_eq %res_self, %res_mul_2 : !felt.felt
+      constrain.eq %res_self, %res_mul_2 : !felt.felt
       //
       function.return
     }
@@ -173,7 +173,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      llzk.emit_eq %[[V9]], %[[V10]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = struct.readf %[[V5]][@synthetic_return] : <@Div<[]>>, !felt.felt
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = felt.mul %[[V8]], %[[V6]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V11]], %[[V12]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V11]], %[[V12]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

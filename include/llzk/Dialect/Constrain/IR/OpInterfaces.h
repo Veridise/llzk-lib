@@ -12,4 +12,13 @@
 #include "llzk/Dialect/LLZK/IR/Types.h"
 
 // Include TableGen'd declarations
-#include "llzk/Dialect/LLZK/IR/OpInterfaces.h.inc"
+#include "llzk/Dialect/Constrain/IR/OpInterfaces.h.inc"
+
+namespace llzk::constrain {
+
+inline bool containsConstraintOp(mlir::Operation *op) {
+  return op->walk([](ConstraintOpInterface p) { return mlir::WalkResult::interrupt(); }
+  ).wasInterrupted();
+}
+
+} // namespace llzk::constrain

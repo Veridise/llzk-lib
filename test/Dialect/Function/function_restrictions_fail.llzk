@@ -22,6 +22,8 @@ module attributes {veridise.lang = "llzk"} {
       scf.for %iv = %lb to %up step %step {
         // expected-error@+1 {{'llzk.emit_eq' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
         llzk.emit_eq %a, %b : !felt.felt
+        // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+        constrain.eq %a, %b : !felt.felt
       }
       %self = struct.new : !struct.struct<@emiteq_in_compute_in_loop>
       function.return %self : !struct.struct<@emiteq_in_compute_in_loop>
@@ -39,6 +41,8 @@ module attributes {veridise.lang = "llzk"} {
           scf.if %c {
             // expected-error@+1 {{'llzk.emit_eq' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
             llzk.emit_eq %x, %y : !felt.felt
+            // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+            constrain.eq %x, %y : !felt.felt
           }
         }
       }
@@ -57,6 +61,12 @@ module attributes {veridise.lang = "llzk"} {
       llzk.emit_in %b, %a : !array.array<5 x !felt.felt>
       %self = struct.new : !struct.struct<@emitin_in_compute>
       function.return %self : !struct.struct<@emitin_in_compute>
+  llzk.struct @emitin_in_compute {
+    function.def @compute(%a: !felt.felt, %b: !array.array<5 x !felt.felt>) -> !llzk.struct<@emitin_in_compute> {
+      // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+      constrain.in %b, %a : !array.array<5 x !felt.felt>
+      %self = llzk.new_struct : !llzk.struct<@emitin_in_compute>
+      function.return %self : !llzk.struct<@emitin_in_compute>
     }
 
     function.def @constrain(%self: !struct.struct<@emitin_in_compute>, %a: !felt.felt, %b: !array.array<5 x !felt.felt>) { function.return }
@@ -72,6 +82,8 @@ module attributes {veridise.lang = "llzk"} {
       scf.for %iv = %lb to %up step %step {
         // expected-error@+1 {{'llzk.emit_in' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
         llzk.emit_in %b, %a : !array.array<5 x !felt.felt>
+        // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+        constrain.in %b, %a : !array.array<5 x !felt.felt>
       }
       %self = struct.new : !struct.struct<@emitin_in_compute_in_loop>
       function.return %self : !struct.struct<@emitin_in_compute_in_loop>
@@ -89,6 +101,8 @@ module attributes {veridise.lang = "llzk"} {
           scf.if %c {
             // expected-error@+1 {{'llzk.emit_in' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
             llzk.emit_in %y, %x : !array.array<5 x index>
+            // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+            constrain.in %y, %x : !array.array<5 x index>
           }
         }
       }
@@ -103,12 +117,16 @@ module attributes {veridise.lang = "llzk"} {
 function.def @constrain(%a: !felt.felt, %b: !felt.felt) {
   // expected-error@+1 {{'llzk.emit_eq' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
   llzk.emit_eq %a, %b : !felt.felt
+  // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+  constrain.eq %a, %b : !felt.felt
   function.return
 }
 // -----
 function.def @constrain(%x: index, %y: !array.array<5 x index>) {
   // expected-error@+1 {{'llzk.emit_in' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
   llzk.emit_in %y, %x : !array.array<5 x index>
+  // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+  constrain.in %y, %x : !array.array<5 x index>
   function.return
 }
 // -----
@@ -663,6 +681,8 @@ module attributes {veridise.lang = "llzk"} {
       %idx = cast.toindex %reg
       %f = struct.readf %self[@idx] : !struct.struct<@BadSignalIndex>, index
       llzk.emit_eq %f, %idx : index
+      %f = llzk.readf %self[@idx] : !llzk.struct<@BadSignalIndex>, index
+      constrain.eq %f, %idx : index
       function.return
     }
   }

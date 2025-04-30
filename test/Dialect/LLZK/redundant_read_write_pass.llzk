@@ -136,9 +136,9 @@ module attributes {veridise.lang = "llzk"} {
       %arr_i = array.extract %mat[%i] : !array.array<7,3 x !felt.felt>
       %arr_j = array.extract %mat[%j] : !array.array<7,3 x !felt.felt>
       %arr_k = array.extract %mat[%k] : !array.array<7,3 x !felt.felt> // redundant extract
-      llzk.emit_eq %arr_i, %arr_j : !array.array<3 x !felt.felt>
-      llzk.emit_eq %arr_j, %arr_k : !array.array<3 x !felt.felt> // this constraint is redundant, but will not be removed in this pass
-      llzk.emit_eq %arr_k, %arr_i : !array.array<3 x !felt.felt> // same with above
+      constrain.eq %arr_i, %arr_j : !array.array<3 x !felt.felt>
+      constrain.eq %arr_j, %arr_k : !array.array<3 x !felt.felt> // this constraint is redundant, but will not be removed in this pass
+      constrain.eq %arr_k, %arr_i : !array.array<3 x !felt.felt> // same with above
       function.return
     }
   }
@@ -162,9 +162,9 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[VAL_10:.*]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[VAL_11:.*]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_8]]] : <7,3 x !felt.felt>
 // CHECK-NEXT:      %[[VAL_12:.*]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_9]]] : <7,3 x !felt.felt>
-// CHECK-NEXT:      llzk.emit_eq %[[VAL_11]], %[[VAL_12]] : !array.array<3 x !felt.felt>, !array.array<3 x !felt.felt>
-// CHECK-NEXT:      llzk.emit_eq %[[VAL_12]], %[[VAL_12]] : !array.array<3 x !felt.felt>, !array.array<3 x !felt.felt>
-// CHECK-NEXT:      llzk.emit_eq %[[VAL_12]], %[[VAL_11]] : !array.array<3 x !felt.felt>, !array.array<3 x !felt.felt>
+// CHECK-NEXT:      constrain.eq %[[VAL_11]], %[[VAL_12]] : !array.array<3 x !felt.felt>, !array.array<3 x !felt.felt>
+// CHECK-NEXT:      constrain.eq %[[VAL_12]], %[[VAL_12]] : !array.array<3 x !felt.felt>, !array.array<3 x !felt.felt>
+// CHECK-NEXT:      constrain.eq %[[VAL_12]], %[[VAL_11]] : !array.array<3 x !felt.felt>, !array.array<3 x !felt.felt>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

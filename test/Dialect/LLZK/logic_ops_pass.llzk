@@ -59,7 +59,7 @@ module attributes {veridise.lang = "llzk"} {
       %3 = arith.andi %1, %2 : i1
       %4 = llzk.cmp eq(%a, %b)
       %5 = arith.ori %3, %4 : i1
-      llzk.emit_eq %5, %0 : i1
+      constrain.eq %5, %0 : i1
       function.return
     }
   }
@@ -79,7 +79,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V17:[0-9a-zA-Z_\.]+]] = arith.andi %[[V15]], %[[V16]] : i1
 // CHECK-NEXT:        %[[V18:[0-9a-zA-Z_\.]+]] = llzk.cmp eq(%[[V8]], %[[V9]])
 // CHECK-NEXT:        %[[V19:[0-9a-zA-Z_\.]+]] = arith.ori %[[V17]], %[[V18]] : i1
-// CHECK-NEXT:        llzk.emit_eq %[[V19]], %[[V14]] : i1, i1
+// CHECK-NEXT:        constrain.eq %[[V19]], %[[V14]] : i1, i1
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

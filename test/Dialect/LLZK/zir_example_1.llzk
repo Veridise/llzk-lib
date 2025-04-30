@@ -47,7 +47,7 @@ module attributes {veridise.lang = "llzk"} {
       %t3 = struct.readf %t0[@z] : !struct.struct<@C1>, !struct.struct<@std::@risc0::@Reg>
       %t4 = struct.readf %t3[@reg] : !struct.struct<@std::@risc0::@Reg>, !felt.felt
       %zero = felt.const 0
-      llzk.emit_eq %t4, %zero : !felt.felt
+      constrain.eq %t4, %zero : !felt.felt
       //
       function.return
     }
@@ -88,7 +88,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T3:[0-9a-zA-Z_\.]+]] = struct.readf %[[T0]][@z] : <@C1>, !struct.struct<@std::@risc0::@Reg>
 //CHECK-NEXT:        %[[T4:[0-9a-zA-Z_\.]+]] = struct.readf %[[T3]][@reg] : <@std::@risc0::@Reg>, !felt.felt
 //CHECK-NEXT:        %felt_const_0 = felt.const 0
-//CHECK-NEXT:        llzk.emit_eq %[[T4]], %felt_const_0 : !felt.felt, !felt.felt
+//CHECK-NEXT:        constrain.eq %[[T4]], %felt_const_0 : !felt.felt, !felt.felt
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }

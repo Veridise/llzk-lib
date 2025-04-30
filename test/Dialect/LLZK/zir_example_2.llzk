@@ -18,7 +18,7 @@ module attributes {veridise.lang = "llzk"} {
       %t02 = felt.sub %const_1, %val
       %t03 = felt.mul %t02, %val
       %const_0 = felt.const 0
-      llzk.emit_eq %t03, %const_0 : !felt.felt
+      constrain.eq %t03, %const_0 : !felt.felt
       function.return
     }
   }
@@ -208,7 +208,7 @@ module attributes {veridise.lang = "llzk"} {
       %t07 = felt.mul %t06, %const_2         // low1.synthetic_return * 2
       %t08 = struct.readf %low0[@synthetic_return] : !struct.struct<@NondetBitReg>, !felt.felt
       %t04 = felt.add %t07, %t08             // low1.synthetic_return * 2 + low0.synthetic_return
-      llzk.emit_eq %t05, %t04 : !felt.felt
+      constrain.eq %t05, %t04 : !felt.felt
       // upperDiff.constrain(mode * 0xffff + (1 - mode) * 0xbfff - x.high);
       %const_0xffff = felt.const 0xffff
       %t09 = felt.mul %mode, %const_0xffff   // mode * 0xffff
@@ -243,7 +243,7 @@ module attributes {veridise.lang = "llzk"} {
       %t26 = felt.mul %const_0x4000, %t25    // 0x4000 * x.high
       %t27 = struct.readf %med14[@synthetic_return] : !struct.struct<@NondetU16Reg>, !felt.felt
       %t28 = felt.add %t26, %t27             // 0x4000 * x.high + med14.synthetic_return
-      llzk.emit_eq %t24, %t28 : !felt.felt
+      constrain.eq %t24, %t28 : !felt.felt
       // Must always constrain the synthetic function.return value in case
       // it's used in a constraint by an outer component.
       // emit synthetic_return = addr;
@@ -266,7 +266,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = felt.sub %[[C1]], %[[A1]]
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = felt.mul %[[T00]], %[[A1]]
 //CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = felt.const 0
-//CHECK-NEXT:        llzk.emit_eq %[[T01]], %[[C0]] : !felt.felt, !felt.felt
+//CHECK-NEXT:        constrain.eq %[[T01]], %[[C0]] : !felt.felt, !felt.felt
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
@@ -419,7 +419,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T04:[0-9a-zA-Z_\.]+]] = felt.mul %[[T03]], %[[C2]]
 //CHECK-NEXT:        %[[T05:[0-9a-zA-Z_\.]+]] = struct.readf %[[T00]][@synthetic_return] : <@NondetBitReg>, !felt.felt
 //CHECK-NEXT:        %[[T06:[0-9a-zA-Z_\.]+]] = felt.add %[[T04]], %[[T05]]
-//CHECK-NEXT:        llzk.emit_eq %[[T02]], %[[T06]] : !felt.felt, !felt.felt
+//CHECK-NEXT:        constrain.eq %[[T02]], %[[T06]] : !felt.felt, !felt.felt
 //CHECK-NEXT:        %[[C65535:[0-9a-zA-Z_\.]+]] = felt.const 65535
 //CHECK-NEXT:        %[[T07:[0-9a-zA-Z_\.]+]] = felt.mul %[[A2]], %[[C65535]]
 //CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = felt.const 1

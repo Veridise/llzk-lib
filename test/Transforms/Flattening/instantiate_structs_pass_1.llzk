@@ -181,7 +181,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.struct<@Component02<[@A]>>, %0: !felt.felt) {
       %1 = llzk.read_const @A : !felt.felt
-      llzk.emit_eq %0, %1 : !felt.felt
+      constrain.eq %0, %1 : !felt.felt
       function.return
     }
   }
@@ -194,7 +194,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:      function.def @constrain(%arg0: !struct.struct<@Component02<[@A]>>, %arg1: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = llzk.read_const @A : !felt.felt
-//CHECK-NEXT:        llzk.emit_eq %arg1, %[[T0]] : !felt.felt, !felt.felt
+//CHECK-NEXT:        constrain.eq %arg1, %[[T0]] : !felt.felt, !felt.felt
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
@@ -367,7 +367,7 @@ module attributes {veridise.lang = "llzk"} {
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         %temp = array.read %arr[%iv] : !array.array<@S x !llzk.tvar<@T>>, !llzk.tvar<@T>
-        llzk.emit_eq %temp, %iv : !llzk.tvar<@T>, index // requires that @T==index
+        constrain.eq %temp, %iv : !llzk.tvar<@T>, index // requires that @T==index
       }
       function.return
     }
@@ -414,15 +414,15 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@f] : <@Component05_5_i>, !array.array<5 x index>
 // CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V12]]] : <5 x index>, index
-// CHECK-NEXT:      llzk.emit_eq %[[V14]], %[[V12]] : index, index
+// CHECK-NEXT:      constrain.eq %[[V14]], %[[V12]] : index, index
 // CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V11]]] : <5 x index>, index
-// CHECK-NEXT:      llzk.emit_eq %[[V15]], %[[V11]] : index, index
+// CHECK-NEXT:      constrain.eq %[[V15]], %[[V11]] : index, index
 // CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V10]]] : <5 x index>, index
-// CHECK-NEXT:      llzk.emit_eq %[[V16]], %[[V10]] : index, index
+// CHECK-NEXT:      constrain.eq %[[V16]], %[[V10]] : index, index
 // CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V9]]] : <5 x index>, index
-// CHECK-NEXT:      llzk.emit_eq %[[V17]], %[[V9]] : index, index
+// CHECK-NEXT:      constrain.eq %[[V17]], %[[V9]] : index, index
 // CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V8]]] : <5 x index>, index
-// CHECK-NEXT:      llzk.emit_eq %[[V18]], %[[V8]] : index, index
+// CHECK-NEXT:      constrain.eq %[[V18]], %[[V8]] : index, index
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -613,7 +613,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.struct<@TestReadConstAsBool0<[@A]>>, %0: i1) {
       %1 = llzk.read_const @A : i1
-      llzk.emit_eq %0, %1 : i1
+      constrain.eq %0, %1 : i1
       function.return
     }
   }
@@ -642,7 +642,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.struct<@TestReadConstAsBool0_0>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:      llzk.emit_eq %[[VAL_3]], %[[VAL_4]] : i1, i1
+// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : i1, i1
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -673,7 +673,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.struct<@TestReadConstAsBool1<[@A]>>, %0: i1) {
       %1 = llzk.read_const @A : i1
-      llzk.emit_eq %0, %1 : i1
+      constrain.eq %0, %1 : i1
       function.return
     }
   }
@@ -702,7 +702,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.struct<@TestReadConstAsBool1_1>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      llzk.emit_eq %[[VAL_3]], %[[VAL_4]] : i1, i1
+// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : i1, i1
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -734,7 +734,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.struct<@TestReadConstAsBool2<[@A]>>, %0: i1) {
       // expected-warning@+1 {{Interpretting non-zero value 2 as true}}
       %1 = llzk.read_const @A : i1
-      llzk.emit_eq %0, %1 : i1
+      constrain.eq %0, %1 : i1
       function.return
     }
   }
@@ -764,7 +764,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.struct<@TestReadConstAsBool2_2>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      llzk.emit_eq %[[VAL_3]], %[[VAL_4]] : i1, i1
+// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : i1, i1
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -795,7 +795,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.struct<@TestReadConstAsBoolTrue<[@A]>>, %0: i1) {
       %1 = llzk.read_const @A : i1
-      llzk.emit_eq %0, %1 : i1
+      constrain.eq %0, %1 : i1
       function.return
     }
   }
@@ -824,7 +824,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.struct<@TestReadConstAsBoolTrue_1>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      llzk.emit_eq %[[VAL_3]], %[[VAL_4]] : i1, i1
+// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : i1, i1
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -855,7 +855,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.struct<@TestReadConstAsBoolFalse<[@A]>>, %0: i1) {
       %1 = llzk.read_const @A : i1
-      llzk.emit_eq %0, %1 : i1
+      constrain.eq %0, %1 : i1
       function.return
     }
   }
@@ -884,7 +884,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.struct<@TestReadConstAsBoolFalse_0>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:      llzk.emit_eq %[[VAL_3]], %[[VAL_4]] : i1, i1
+// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : i1, i1
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -915,7 +915,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.struct<@TestReadConstAsFelt<[@A]>>, %0: !felt.felt) {
       %1 = llzk.read_const @A : !felt.felt
-      llzk.emit_eq %0, %1 : !felt.felt
+      constrain.eq %0, %1 : !felt.felt
       function.return
     }
   }
@@ -944,7 +944,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.struct<@TestReadConstAsFelt_45>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const 45
-// CHECK-NEXT:      llzk.emit_eq %[[VAL_3]], %[[VAL_4]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

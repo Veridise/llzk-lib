@@ -12,7 +12,7 @@ module attributes {veridise.lang = "llzk"} {
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        llzk.emit_eq %a, %b : !felt.felt
+        constrain.eq %a, %b : !felt.felt
       }
       function.return
     }
@@ -28,7 +28,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 //CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_\.]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
-//CHECK-NEXT:         llzk.emit_eq %[[A1]], %[[A2]] : !felt.felt, !felt.felt
+//CHECK-NEXT:         constrain.eq %[[A1]], %[[A2]] : !felt.felt, !felt.felt
 //CHECK-NEXT:       }
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
@@ -46,7 +46,7 @@ module attributes {veridise.lang = "llzk"} {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            llzk.emit_eq %x, %y : !felt.felt
+            constrain.eq %x, %y : !felt.felt
           }
         }
       }
@@ -65,7 +65,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       scf.if %[[A1]] {
 //CHECK-NEXT:         scf.if %[[A2]] {
 //CHECK-NEXT:           scf.if %[[A3]] {
-//CHECK-NEXT:             llzk.emit_eq %[[A4]], %[[A5]] : !felt.felt, !felt.felt
+//CHECK-NEXT:             constrain.eq %[[A4]], %[[A5]] : !felt.felt, !felt.felt
 //CHECK-NEXT:           }
 //CHECK-NEXT:         }
 //CHECK-NEXT:       }
@@ -86,7 +86,7 @@ module attributes {veridise.lang = "llzk"} {
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        llzk.emit_in %b, %a : !array.array<5 x !felt.felt>
+        constrain.in %b, %a : !array.array<5 x !felt.felt>
       }
       function.return
     }
@@ -104,7 +104,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 //CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:       scf.for %[[A3:[0-9a-zA-Z_\.]+]] = %[[T0]] to %[[T4]] step %[[T1]] {
-//CHECK-NEXT:         llzk.emit_in %[[A2]], %[[A1]] : <5 x !felt.felt>, !felt.felt
+//CHECK-NEXT:         constrain.in %[[A2]], %[[A1]] : <5 x !felt.felt>, !felt.felt
 //CHECK-NEXT:       }
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
@@ -122,7 +122,7 @@ module attributes {veridise.lang = "llzk"} {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            llzk.emit_in %y, %x : !array.array<5 x index>
+            constrain.in %y, %x : !array.array<5 x index>
           }
         }
       }
@@ -141,7 +141,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       scf.if %[[A1]] {
 //CHECK-NEXT:         scf.if %[[A2]] {
 //CHECK-NEXT:           scf.if %[[A3]] {
-//CHECK-NEXT:             llzk.emit_in %[[A5]], %[[A4]] : <5 x index>, index
+//CHECK-NEXT:             constrain.in %[[A5]], %[[A4]] : <5 x index>, index
 //CHECK-NEXT:           }
 //CHECK-NEXT:         }
 //CHECK-NEXT:       }

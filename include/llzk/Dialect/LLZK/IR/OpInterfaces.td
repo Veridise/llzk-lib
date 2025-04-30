@@ -12,14 +12,6 @@
 
 include "llzk/Dialect/LLZK/IR/Types.td"
 
-// TODO: move to 'constrain' dialect
-def ConstraintOpInterface : OpInterface<"ConstraintOpInterface"> {
-  let description = [{
-    Common interface for operations that produce a constraint.
-  }];
-  let cppNamespace = "::llzk";
-}
-
 def GlobalRefOpInterface : OpInterface<"GlobalRefOpInterface"> {
   let description = [{
     Common interface for operations that read or write from a global.

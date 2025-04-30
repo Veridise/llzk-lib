@@ -86,7 +86,7 @@ private:
 /// iff `a` and `b` appear in the same constraint.
 ///
 /// Less formally, a CDG is a set of signals that constrain one another through
-/// one or more emit operations (`emit_in` or `emit_eq`). The CDG only
+/// one or more emit operations (`constrain.in` or `constrain.eq`). The CDG only
 /// indicate that signals are connected by constraints, but do not include information
 /// about the type of computation that binds them together.
 ///
@@ -140,7 +140,8 @@ public:
   /// This method looks for constraints to the value in the ref and constraints to any
   /// prefix of this value.
   /// For example, if ref is an array element (foo[2]), this looks for constraints on
-  /// foo[2] as well as foo, as arrays may be constrained in their entirity via emit_in operations.
+  /// foo[2] as well as foo, as arrays may be constrained in their entirity via constrain.in
+  /// operations.
   /// @param ref
   /// @return The set of references that are connected to ref via constraints.
   ConstrainRefSet getConstrainingValues(const ConstrainRef &ref) const;

@@ -445,7 +445,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.struct<@ComponentV<[@A]>>, %0: !felt.felt) {
       // expected-error@+1 {{'llzk.read_const' op references unknown symbol "@X"}}
       %1 = llzk.read_const @X : !felt.felt
-      llzk.emit_eq %0, %1 : !felt.felt
+      constrain.eq %0, %1 : !felt.felt
       function.return
     }
   }

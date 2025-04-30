@@ -11,7 +11,7 @@ module attributes {veridise.lang = "llzk"} {
       %a = felt.const 1
       %b = felt.const 2
       %c = felt.add %a, %b
-      llzk.emit_eq %const, %c : !felt.felt
+      constrain.eq %const, %c : !felt.felt
       function.return
     }
   }
@@ -159,7 +159,7 @@ module attributes {veridise.lang = "llzk"} {
       %cmp4 = llzk.cmp le(%b, %11)
       llzk.assert %cmp4
 
-      llzk.emit_eq %c, %a : !felt.felt
+      constrain.eq %c, %a : !felt.felt
 
       function.return
     }
@@ -194,7 +194,7 @@ module attributes {veridise.lang = "llzk"} {
       %1 = felt.mul %0, %arg2 : !felt.felt, !felt.felt
       %felt_const_1 = felt.const  1
       // Since reciprocal * arg2 === 1, reciprocal nor arg2 can be 0
-      llzk.emit_eq %1, %felt_const_1 : !felt.felt, !felt.felt
+      constrain.eq %1, %felt_const_1 : !felt.felt, !felt.felt
       function.return
     }
   }
@@ -230,7 +230,7 @@ module attributes {veridise.lang = "llzk"} {
       llzk.assert %b1_is_byte
       %b1_mul = felt.mul %b1, %256
       %reconstructed = felt.add %b1_mul, %b0
-      llzk.emit_eq %reconstructed, %u16 : !felt.felt
+      constrain.eq %reconstructed, %u16 : !felt.felt
       function.return
     }
   }
@@ -252,7 +252,7 @@ module attributes {veridise.lang = "llzk"} {
       %b1_mul = felt.mul %b1, %256
       %reconstructed = felt.add %b1_mul, %b0
       // b0 and b1 are not constrained to be a byte, so these values could be anything
-      llzk.emit_eq %reconstructed, %u16 : !felt.felt
+      constrain.eq %reconstructed, %u16 : !felt.felt
       function.return
     }
   }
@@ -279,7 +279,7 @@ module attributes {veridise.lang = "llzk"} {
       // u16 is constrained to be 16 bites, but b0 and b1 aren't guaranteed to
       // by bytes, so they could be any value (even above 16-bits, if b0 and b1)
       // are carefully selected to overflow into 16 bits).
-      llzk.emit_eq %reconstructed, %u16 : !felt.felt
+      constrain.eq %reconstructed, %u16 : !felt.felt
       function.return
     }
   }
@@ -334,7 +334,7 @@ module attributes {veridise.lang = "llzk"} {
       llzk.emit_eq %b, %0 : !Signal
       %reg = struct.readf %0[@reg] : !Signal, !felt.felt
       %c0 = felt.const 0
-      llzk.emit_eq %reg, %c0 : !felt.felt
+      constrain.eq %reg, %c0 : !felt.felt
       function.return
     }
   }

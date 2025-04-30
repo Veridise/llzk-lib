@@ -1,4 +1,4 @@
-//===-- OpInterfaces.h ------------------------------------------*- C++ -*-===//
+//===-- Dialect.h -----------------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -9,7 +9,8 @@
 
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/Types.h"
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/Location.h>
 
 // Include TableGen'd declarations
-#include "llzk/Dialect/LLZK/IR/OpInterfaces.h.inc"
+#include "llzk/Dialect/Constrain/IR/Dialect.h.inc"

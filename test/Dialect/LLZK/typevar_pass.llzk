@@ -16,7 +16,7 @@ module attributes {veridise.lang = "llzk"} {
       %1 = struct.readf %self[@x] : !struct.struct<@A<[@Ty]>>, !llzk.tvar<@Ty>
       // Validation here must be assumed correct when the struct
       //  verifies itself because the type is not known.
-      llzk.emit_eq %1, %0 : !llzk.tvar<@Ty>
+      constrain.eq %1, %0 : !llzk.tvar<@Ty>
       function.return
     }
   }
@@ -345,10 +345,10 @@ module attributes {veridise.lang = "llzk"} {
       %arr = struct.readf %self[@f] : !struct.struct<@ComponentD<[@T]>>, !array.array<2 x !llzk.tvar<@T>>
       %0 = arith.constant 0 : index
       %r1 = array.read %arr[%0] : !array.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
-      llzk.emit_eq %r1, %a1 : !llzk.tvar<@T>
+      constrain.eq %r1, %a1 : !llzk.tvar<@T>
       %1 = arith.constant 0 : index
       %r2 = array.read %arr[%1] : !array.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
-      llzk.emit_eq %r2, %a2 : !llzk.tvar<@T>
+      constrain.eq %r2, %a2 : !llzk.tvar<@T>
       function.return
     }
   }
@@ -369,10 +369,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@f] : <@ComponentD<[@T]>>, !array.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      %[[T7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[T7]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
-//CHECK-NEXT:      llzk.emit_eq %[[T1]], %arg1 : !llzk.tvar<@T>, !llzk.tvar<@T>
+//CHECK-NEXT:      constrain.eq %[[T1]], %arg1 : !llzk.tvar<@T>, !llzk.tvar<@T>
 //CHECK-NEXT:      %[[T8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[T8]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@T>
-//CHECK-NEXT:      llzk.emit_eq %[[T2]], %arg2 : !llzk.tvar<@T>, !llzk.tvar<@T>
+//CHECK-NEXT:      constrain.eq %[[T2]], %arg2 : !llzk.tvar<@T>, !llzk.tvar<@T>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -398,10 +398,10 @@ module attributes {veridise.lang = "llzk"} {
       %arr = struct.readf %self[@f] : !struct.struct<@ComponentE<[@T, @X, @Y]>>, !array.array<2 x !llzk.tvar<@T>>
       %0 = arith.constant 0 : index
       %r1 = array.read %arr[%0] : !array.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@X>
-      llzk.emit_eq %r1, %a1 : !llzk.tvar<@X>
+      constrain.eq %r1, %a1 : !llzk.tvar<@X>
       %1 = arith.constant 0 : index
       %r2 = array.read %arr[%1] : !array.array<2 x !llzk.tvar<@T>>, !llzk.tvar<@Y>
-      llzk.emit_eq %r2, %a2 : !llzk.tvar<@Y>
+      constrain.eq %r2, %a2 : !llzk.tvar<@Y>
       function.return
     }
   }
@@ -422,10 +422,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@f] : <@ComponentE<[@T, @X, @Y]>>, !array.array<2 x !llzk.tvar<@T>>
 //CHECK-NEXT:      %[[T7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[T7]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@X>
-//CHECK-NEXT:      llzk.emit_eq %[[T1]], %arg1 : !llzk.tvar<@X>, !llzk.tvar<@X>
+//CHECK-NEXT:      constrain.eq %[[T1]], %arg1 : !llzk.tvar<@X>, !llzk.tvar<@X>
 //CHECK-NEXT:      %[[T8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[T8]]] : <2 x !llzk.tvar<@T>>, !llzk.tvar<@Y>
-//CHECK-NEXT:      llzk.emit_eq %[[T2]], %arg2 : !llzk.tvar<@Y>, !llzk.tvar<@Y>
+//CHECK-NEXT:      constrain.eq %[[T2]], %arg2 : !llzk.tvar<@Y>, !llzk.tvar<@Y>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -582,7 +582,7 @@ module attributes {veridise.lang = "llzk"} {
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         %temp = array.read %arr[%iv] : !array.array<@S x !llzk.tvar<@T>>, !llzk.tvar<@T>
-        llzk.emit_eq %temp, %iv : !llzk.tvar<@T>, index
+        constrain.eq %temp, %iv : !llzk.tvar<@T>, index
       }
       function.return
     }
@@ -609,7 +609,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:      scf.for %arg1 = %[[T3]] to %[[T1]] step %[[T4]] {
 //CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%arg1] : <@S x !llzk.tvar<@T>>, !llzk.tvar<@T>
-//CHECK-NEXT:        llzk.emit_eq %[[T2]], %arg1 : !llzk.tvar<@T>, index
+//CHECK-NEXT:        constrain.eq %[[T2]], %arg1 : !llzk.tvar<@T>, index
 //CHECK-NEXT:      }
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }

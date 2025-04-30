@@ -7,6 +7,7 @@ set(LLZK_DEP_DIALECT_LIBS
 add_subdirectory(Shared)
 add_subdirectory(Array)
 add_subdirectory(Cast)
+add_subdirectory(Constrain)
 add_subdirectory(Felt)
 add_subdirectory(Function)
 add_subdirectory(Include)

@@ -54,6 +54,7 @@
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
@@ -671,7 +672,7 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fie
   ConversionTarget target(*ctx);
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, felt::FeltDialect, function::FunctionDialect,
-      include::IncludeDialect, component::StructDialect, arith::ArithDialect, scf::SCFDialect>();
+      include::IncludeDialect, component::StructDialect, constrain::ConstrainDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
 
@@ -707,6 +708,8 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, component::StructDialect, felt::FeltDialect,
       function::FunctionDialect, include::IncludeDialect, arith::ArithDialect, scf::SCFDialect>();
+      LLZKDialect, array::ArrayDialect, constrain::ConstrainDialect, felt::FeltDialect,
+      include::IncludeDialect, function::FunctionDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<CreateArrayOp>(SplitInitFromCreateArrayOp::legal);
   target.addDynamicallyLegalOp<InsertArrayOp>(SplitInsertArrayOp::legal);

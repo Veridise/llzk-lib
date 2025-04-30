@@ -171,7 +171,7 @@ module attributes {veridise.lang = "llzk"} {
       %0 = struct.readf %arg0[@reciprocal] : <@Div<[]>>, !felt.felt
       %1 = felt.mul %0, %arg2 : !felt.felt, !felt.felt
       %felt_const_1 = felt.const  1
-      llzk.emit_eq %1, %felt_const_1 : !felt.felt, !felt.felt
+      constrain.eq %1, %felt_const_1 : !felt.felt, !felt.felt
       %2 = felt.mul %0, %arg1 : !felt.felt, !felt.felt
       function.return
     }

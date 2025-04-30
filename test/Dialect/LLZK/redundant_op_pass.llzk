@@ -23,9 +23,9 @@ module attributes {veridise.lang = "llzk"} {
       %arr_i = array.extract %mat[%i] : !array.array<7,3 x !felt.felt>
       %arr_j = array.extract %mat[%j] : !array.array<7,3 x !felt.felt>
       %arr_k = array.extract %mat[%k] : !array.array<7,3 x !felt.felt> // redundant extract
-      llzk.emit_eq %arr_i, %arr_j : !array.array<3 x !felt.felt>
-      llzk.emit_eq %arr_j, %arr_k : !array.array<3 x !felt.felt> // this constraint is unnecessary, ends comparing %mat[3] == %mat[3]
-      llzk.emit_eq %arr_k, %arr_i : !array.array<3 x !felt.felt> // this is the same as the first emit_eq op, just with LHS and RHS flipped
+      constrain.eq %arr_i, %arr_j : !array.array<3 x !felt.felt>
+      constrain.eq %arr_j, %arr_k : !array.array<3 x !felt.felt> // this constraint is unnecessary, ends comparing %mat[3] == %mat[3]
+      constrain.eq %arr_k, %arr_i : !array.array<3 x !felt.felt> // this is the same as the first constrain.eq op, just with LHS and RHS flipped
       function.return
     }
   }
@@ -48,7 +48,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[VAL_9:.*]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[VAL_10:.*]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_8]]] : <7,3 x !felt.felt>
 // CHECK-NEXT:      %[[VAL_11:.*]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_9]]] : <7,3 x !felt.felt>
-// CHECK-NEXT:      llzk.emit_eq %[[VAL_10]], %[[VAL_11]] : !array.array<3 x !felt.felt>, !array.array<3 x !felt.felt>
+// CHECK-NEXT:      constrain.eq %[[VAL_10]], %[[VAL_11]] : !array.array<3 x !felt.felt>, !array.array<3 x !felt.felt>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -135,6 +135,9 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:          function.def @constrain(%[[VAL_8:.*]]: !struct.struct<@risc0::@Reg>, %[[VAL_9:.*]]: !felt.felt) attributes {function.allow_constraint} {
 // CHECK-NEXT:            %[[VAL_10:.*]] = struct.readf %[[VAL_8]][@reg] : <@risc0::@Reg>, !felt.felt
 // CHECK-NEXT:            llzk.emit_eq %[[VAL_9]], %[[VAL_10]] : !felt.felt, !felt.felt
+// CHECK-NEXT:          function.def @constrain(%[[VAL_8:.*]]: !llzk.struct<@risc0::@Reg>, %[[VAL_9:.*]]: !felt.felt) attributes {function.allow_constraint} {
+// CHECK-NEXT:            %[[VAL_10:.*]] = llzk.readf %[[VAL_8]][@reg] : <@risc0::@Reg>, !felt.felt
+// CHECK-NEXT:            constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.felt, !felt.felt
 // CHECK-NEXT:            function.return
 // CHECK-NEXT:          }
 // CHECK-NEXT:        }
@@ -155,8 +158,10 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:            %[[VAL_21:.*]] = felt.const  1
 // CHECK-NEXT:            llzk.emit_eq %[[VAL_20]], %[[VAL_21]] : !felt.felt, !felt.felt
 // CHECK-NEXT:            %[[VAL_22:.*]] = struct.readf %[[VAL_16]][@synthetic_return] : <@risc0::@Div>, !felt.felt
+// CHECK-NEXT:            constrain.eq %[[VAL_20]], %[[VAL_21]] : !felt.felt, !felt.felt
+// CHECK-NEXT:            %[[VAL_22:.*]] = llzk.readf %[[VAL_16]][@synthetic_return] : <@risc0::@Div>, !felt.felt
 // CHECK-NEXT:            %[[VAL_23:.*]] = felt.mul %[[VAL_19]], %[[VAL_17]] : !felt.felt, !felt.felt
-// CHECK-NEXT:            llzk.emit_eq %[[VAL_22]], %[[VAL_23]] : !felt.felt, !felt.felt
+// CHECK-NEXT:            constrain.eq %[[VAL_22]], %[[VAL_23]] : !felt.felt, !felt.felt
 // CHECK-NEXT:            function.return
 // CHECK-NEXT:          }
 // CHECK-NEXT:        }
@@ -196,7 +201,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[VAL_44:.*]] = struct.readf %[[VAL_41]][@z] : <@C1>, !struct.struct<@std::@risc0::@Reg>
 // CHECK-NEXT:        %[[VAL_45:.*]] = struct.readf %[[VAL_44]][@reg] : <@std::@risc0::@Reg>, !felt.felt
 // CHECK-NEXT:        %[[VAL_46:.*]] = felt.const  0
-// CHECK-NEXT:        llzk.emit_eq %[[VAL_45]], %[[VAL_46]] : !felt.felt, !felt.felt
+// CHECK-NEXT:        constrain.eq %[[VAL_45]], %[[VAL_46]] : !felt.felt, !felt.felt
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

@@ -256,7 +256,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.struct<@ComponentE1<[@A]>>, %0: !felt.felt) {
       %1 = llzk.read_const @A : !felt.felt
-      llzk.emit_eq %0, %1 : !felt.felt
+      constrain.eq %0, %1 : !felt.felt
       function.return
     }
   }
@@ -269,7 +269,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:      function.def @constrain(%arg0: !struct.struct<@ComponentE1<[@A]>>, %arg1: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = llzk.read_const @A : !felt.felt
-//CHECK-NEXT:        llzk.emit_eq %arg1, %[[T0]] : !felt.felt, !felt.felt
+//CHECK-NEXT:        constrain.eq %arg1, %[[T0]] : !felt.felt, !felt.felt
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }

@@ -233,22 +233,22 @@ module attributes {veridise.lang = "llzk"} {
       %2 = arith.constant 2 : index
 
       %b0 = array.read %a[%0, %0] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a0, %b0 : !F
+      constrain.eq %a0, %b0 : !F
 
       %b1 = array.read %a[%0, %1] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a1, %b1 : !F
+      constrain.eq %a1, %b1 : !F
 
       %b2 = array.read %a[%0, %2] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a2, %b2 : !F
+      constrain.eq %a2, %b2 : !F
 
       %b3 = array.read %a[%1, %0] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a3, %b3 : !F
+      constrain.eq %a3, %b3 : !F
 
       %b4 = array.read %a[%1, %1] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a4, %b4 : !F
+      constrain.eq %a4, %b4 : !F
 
       %b5 = array.read %a[%1, %2] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a5, %b5 : !F
+      constrain.eq %a5, %b5 : !F
 
       function.return
     }
@@ -311,27 +311,27 @@ module attributes {veridise.lang = "llzk"} {
 
       %a0 = array.read %a[%0, %0] : !array.array<2,3 x !F>, !F
       %b0 = array.read %b[%0, %0] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a0, %b0 : !F
+      constrain.eq %a0, %b0 : !F
 
       %a1 = array.read %a[%0, %1] : !array.array<2,3 x !F>, !F
       %b1 = array.read %b[%0, %1] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a1, %b1 : !F
+      constrain.eq %a1, %b1 : !F
 
       %a2 = array.read %a[%0, %2] : !array.array<2,3 x !F>, !F
       %b2 = array.read %b[%0, %2] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a2, %b2 : !F
+      constrain.eq %a2, %b2 : !F
 
       %a3 = array.read %a[%1, %0] : !array.array<2,3 x !F>, !F
       %b3 = array.read %b[%1, %0] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a3, %b3 : !F
+      constrain.eq %a3, %b3 : !F
 
       %a4 = array.read %a[%1, %1] : !array.array<2,3 x !F>, !F
       %b4 = array.read %b[%1, %1] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a4, %b4 : !F
+      constrain.eq %a4, %b4 : !F
 
       %a5 = array.read %a[%1, %2] : !array.array<2,3 x !F>, !F
       %b5 = array.read %b[%1, %2] : !array.array<2,3 x !F>, !F
-      llzk.emit_eq %a5, %b5 : !F
+      constrain.eq %a5, %b5 : !F
 
       function.return
     }
