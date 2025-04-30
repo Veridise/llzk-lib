@@ -472,6 +472,9 @@ namespace {
 /// key indicates which input expression the `AffineMapAttr` is from. Additionally, if a conflict is
 /// found (i.e. multiple occurances of a specific `AffineMapAttr` on the same side map to different
 /// `IntegerAttr` from the other side), the mapped value will be `nullptr`.
+///
+/// This map is for tracking replacement of `AffineMapAttr` with integer constant values to
+/// determine if a type unification is due to a concrete integer instantiation of `AffineMapAttr`.
 using AffineInstantiations = DenseMap<std::pair<AffineMapAttr, Side>, IntegerAttr>;
 
 struct UnifierImpl {
@@ -621,10 +624,10 @@ private:
       track(Side::RHS, rhsSymRef, lhsAttr);
       return true;
     }
-    // If either side is ShapedType::kDynamic then similarly to Symbols assume the they unify.
-    auto dyn_cast_if_kDynamic = [](Attribute attr) -> IntegerAttr {
+    // If either side is ShapedType::kDynamic then, similarly to Symbols, assume they unify.
+    auto dyn_cast_if_dynamic = [](Attribute attr) -> IntegerAttr {
       if (auto intAttr = attr.dyn_cast<IntegerAttr>()) {
-        if (intAttr.getValue().getSExtValue() == ShapedType::kDynamic) {
+        if (ShapedType::isDynamic(fromAPInt(intAttr.getValue()))) {
           return intAttr;
         }
       }
@@ -633,15 +636,13 @@ private:
     auto isa_const = [](Attribute attr) {
       return mlir::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(attr);
     };
-    if (auto lhsIntAttr = dyn_cast_if_kDynamic(lhsAttr)) {
+    if (auto lhsIntAttr = dyn_cast_if_dynamic(lhsAttr)) {
       if (isa_const(rhsAttr)) {
-        /*track(Side::LHS, lhsIntAttr, rhsAttr);*/
         return true;
       }
     }
-    if (auto rhsIntAttr = dyn_cast_if_kDynamic(rhsAttr)) {
+    if (auto rhsIntAttr = dyn_cast_if_dynamic(rhsAttr)) {
       if (isa_const(lhsAttr)) {
-        /*track(Side::RHS, rhsIntAttr, lhsAttr);*/
         return true;
       }
     }
@@ -792,7 +793,7 @@ namespace {
 void printAttrs(AsmPrinter &printer, ArrayRef<Attribute> attrs, const StringRef &separator) {
   llvm::interleave(attrs, printer.getStream(), [&printer](Attribute a) {
     if (auto intAttr = mlir::dyn_cast_if_present<IntegerAttr>(a)) {
-      if (intAttr.getValue().getSExtValue() == ShapedType::kDynamic) {
+      if (ShapedType::isDynamic(fromAPInt(intAttr.getValue()))) {
         printer.getStream() << "?";
         return;
       }

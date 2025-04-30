@@ -161,6 +161,9 @@ namespace llzk {
 /// key indicates which input expression the `SymbolRefAttr` is from. Additionally, if a conflict is
 /// found (i.e. multiple occurances of a specific `SymbolRefAttr` on the same side map to different
 /// Attributes from the other side). The mapped value will be `nullptr`.
+///
+/// This map is used by the `llzk-flatten` pass to replace struct parameter `SymbolRefAttr` with
+/// static concrete values to produce the flattened versions of structs.
 using UnificationMap = mlir::DenseMap<std::pair<mlir::SymbolRefAttr, Side>, mlir::Attribute>;
 
 /// Return `true` iff the two ArrayRef instances containing StructType or ArrayType parameters
