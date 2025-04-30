@@ -589,6 +589,7 @@ private:
 
   void track(Side side, AffineMapAttr affineAttr, IntegerAttr intAttr) {
     if (affineToIntTracker) {
+      assert(!isDynamic(intAttr));
       track(*affineToIntTracker, side, affineAttr, intAttr);
     }
   }
@@ -600,18 +601,22 @@ private:
     if (lhsAttr == rhsAttr) {
       return true;
     }
-    // AffineMapAttr can unify with IntegerAttr because struct parameter instantiation will result
-    // in conversion of AffineMapAttr to IntegerAttr.
+    // AffineMapAttr can unify with IntegerAttr (other than kDynamic) because struct parameter
+    // instantiation will result in conversion of AffineMapAttr to IntegerAttr.
     if (AffineMapAttr lhsAffine = lhsAttr.dyn_cast<AffineMapAttr>()) {
       if (IntegerAttr rhsInt = rhsAttr.dyn_cast<IntegerAttr>()) {
-        track(Side::LHS, lhsAffine, rhsInt);
-        return true;
+        if (!isDynamic(rhsInt)) {
+          track(Side::LHS, lhsAffine, rhsInt);
+          return true;
+        }
       }
     }
     if (AffineMapAttr rhsAffine = rhsAttr.dyn_cast<AffineMapAttr>()) {
       if (IntegerAttr lhsInt = lhsAttr.dyn_cast<IntegerAttr>()) {
-        track(Side::RHS, rhsAffine, lhsInt);
-        return true;
+        if (!isDynamic(lhsInt)) {
+          track(Side::RHS, rhsAffine, lhsInt);
+          return true;
+        }
       }
     }
     // If either side is a SymbolRefAttr, assume they unify because either flattening or a pass with
@@ -627,7 +632,7 @@ private:
     // If either side is ShapedType::kDynamic then, similarly to Symbols, assume they unify.
     auto dyn_cast_if_dynamic = [](Attribute attr) -> IntegerAttr {
       if (auto intAttr = attr.dyn_cast<IntegerAttr>()) {
-        if (ShapedType::isDynamic(fromAPInt(intAttr.getValue()))) {
+        if (isDynamic(intAttr)) {
           return intAttr;
         }
       }
@@ -793,7 +798,7 @@ namespace {
 void printAttrs(AsmPrinter &printer, ArrayRef<Attribute> attrs, const StringRef &separator) {
   llvm::interleave(attrs, printer.getStream(), [&printer](Attribute a) {
     if (auto intAttr = mlir::dyn_cast_if_present<IntegerAttr>(a)) {
-      if (ShapedType::isDynamic(fromAPInt(intAttr.getValue()))) {
+      if (isDynamic(intAttr)) {
         printer.getStream() << "?";
         return;
       }

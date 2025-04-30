@@ -10,8 +10,9 @@
 #pragma once
 
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/Util/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/Util/ErrorHelper.h"
-#include "llzk/Dialect/LLZK/Util/SymbolLookup.h" // IWYU pragma: keep
+#include "llzk/Dialect/LLZK/Util/SymbolLookup.h"
 
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinTypes.h>
@@ -155,6 +156,10 @@ template <> struct DenseMapInfo<llzk::Side> {
 } // namespace llvm
 
 namespace llzk {
+
+inline bool isDynamic(mlir::IntegerAttr intAttr) {
+  return mlir::ShapedType::isDynamic(fromAPInt(intAttr.getValue()));
+}
 
 /// Optional result from type unifications. Maps `SymbolRefAttr` appearing in one type to the
 /// associated `Attribute` from the other type at the same nested position. The `Side` enum in the
