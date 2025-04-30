@@ -15,6 +15,7 @@
 #include "llzk/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -36,6 +37,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace llzk;
+using namespace llzk::component;
 using namespace llzk::constrain;
 using namespace llzk::function;
 
@@ -89,6 +91,7 @@ public:
     // uninterested in operating over non llzk/arith ops
     auto dialectName = lhs.op->getDialect()->getNamespace();
     if (dialectName != LLZKDialect::getDialectNamespace() &&
+        dialectName != StructDialect::getDialectNamespace() &&
         dialectName != ConstrainDialect::getDialectNamespace() &&
         dialectName != arith::ArithDialect::getDialectNamespace()) {
       return false;

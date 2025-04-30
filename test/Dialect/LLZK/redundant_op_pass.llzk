@@ -135,9 +135,6 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:          function.def @constrain(%[[VAL_8:.*]]: !struct.struct<@risc0::@Reg>, %[[VAL_9:.*]]: !felt.felt) attributes {function.allow_constraint} {
 // CHECK-NEXT:            %[[VAL_10:.*]] = struct.readf %[[VAL_8]][@reg] : <@risc0::@Reg>, !felt.felt
 // CHECK-NEXT:            constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.felt, !felt.felt
-// CHECK-NEXT:          function.def @constrain(%[[VAL_8:.*]]: !llzk.struct<@risc0::@Reg>, %[[VAL_9:.*]]: !felt.felt) attributes {function.allow_constraint} {
-// CHECK-NEXT:            %[[VAL_10:.*]] = llzk.readf %[[VAL_8]][@reg] : <@risc0::@Reg>, !felt.felt
-// CHECK-NEXT:            constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.felt, !felt.felt
 // CHECK-NEXT:            function.return
 // CHECK-NEXT:          }
 // CHECK-NEXT:        }
@@ -158,8 +155,6 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:            %[[VAL_21:.*]] = felt.const  1
 // CHECK-NEXT:            constrain.eq %[[VAL_20]], %[[VAL_21]] : !felt.felt, !felt.felt
 // CHECK-NEXT:            %[[VAL_22:.*]] = struct.readf %[[VAL_16]][@synthetic_return] : <@risc0::@Div>, !felt.felt
-// CHECK-NEXT:            constrain.eq %[[VAL_20]], %[[VAL_21]] : !felt.felt, !felt.felt
-// CHECK-NEXT:            %[[VAL_22:.*]] = llzk.readf %[[VAL_16]][@synthetic_return] : <@risc0::@Div>, !felt.felt
 // CHECK-NEXT:            %[[VAL_23:.*]] = felt.mul %[[VAL_19]], %[[VAL_17]] : !felt.felt, !felt.felt
 // CHECK-NEXT:            constrain.eq %[[VAL_22]], %[[VAL_23]] : !felt.felt, !felt.felt
 // CHECK-NEXT:            function.return
