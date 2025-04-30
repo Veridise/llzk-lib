@@ -20,7 +20,8 @@ def ConstrainDialect : Dialect {
   let cppNamespace = "::llzk::constrain";
 
   let dependentDialects = ["::mlir::BuiltinDialect", "::llzk::LLZKDialect",
-    "::llzk::array::ArrayDialect", "::llzk::function::FunctionDialect"];
+                           "::llzk::array::ArrayDialect",
+                           "::llzk::function::FunctionDialect"];
 }
 
 #endif // LLZK_CONSTRAIN_DIALECT

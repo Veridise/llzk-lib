@@ -29,14 +29,9 @@
 
 #include <cassert>
 
-namespace llzk {
-
 using namespace mlir;
-using namespace llzk::component;
 
-//===------------------------------------------------------------------===//
-// StructType
-//===------------------------------------------------------------------===//
+namespace llzk::component {
 
 LogicalResult StructType::verify(EmitErrorFn emitError, SymbolRefAttr nameRef, ArrayAttr params) {
   return verifyStructTypeParams(emitError, params);
@@ -80,4 +75,4 @@ LogicalResult StructType::hasColumns(SymbolTableCollection &symbolTable, Operati
   return lookup->get().hasColumns();
 }
 
-} // namespace llzk
+} // namespace llzk::component

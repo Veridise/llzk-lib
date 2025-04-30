@@ -27,8 +27,8 @@ include "mlir/IR/SymbolInterfaces.td"
 
 class EmitOp<string mnemonic, list<Trait> traits = []>
     : Op<ConstrainDialect, mnemonic,
-              traits#[ConstraintOpInterface, ConstraintGen,
-                      DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+         traits#[ConstraintOpInterface, ConstraintGen,
+                 DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
 
   let assemblyFormat = [{
     $lhs `,` $rhs `:` type($lhs)
@@ -66,8 +66,7 @@ class EmitOp<string mnemonic, list<Trait> traits = []>
 }
 
 def EmitEqualityOp
-    : EmitOp<"eq", [Commutative, ElementwiseMappable,
-                              TypesUnify<"lhs", "rhs">,
+    : EmitOp<"eq", [Commutative, ElementwiseMappable, TypesUnify<"lhs", "rhs">,
 ]> {
   let summary = "emit an equality constraint";
   let description = [{
@@ -78,8 +77,7 @@ def EmitEqualityOp
   let arguments = (ins EmitEqType:$lhs, EmitEqType:$rhs);
 }
 
-def EmitContainmentOp
-    : EmitOp<"in", [ArrayElemTypeUnifyWith<"lhs", "rhs">]> {
+def EmitContainmentOp : EmitOp<"in", [ArrayElemTypeUnifyWith<"lhs", "rhs">]> {
   let summary = "emit a containment constraint";
   let description = [{}];
 

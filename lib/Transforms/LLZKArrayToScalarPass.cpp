@@ -672,7 +672,8 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fie
   ConversionTarget target(*ctx);
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, felt::FeltDialect, function::FunctionDialect,
-      include::IncludeDialect, component::StructDialect, constrain::ConstrainDialect, arith::ArithDialect, scf::SCFDialect>();
+      include::IncludeDialect, component::StructDialect, constrain::ConstrainDialect,
+      arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
 
