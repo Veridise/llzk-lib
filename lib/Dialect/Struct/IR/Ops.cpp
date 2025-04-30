@@ -259,8 +259,8 @@ LogicalResult StructDefOp::verifyRegions() {
             // tag the error with correct location and correct op name.
             return op.emitError() << "'" << getOperationName() << "' op " << "must define only \"@"
                                   << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
-                                  << "\" functions;"
-                                  << " found \"@" << funcDef.getSymName() << "\"";
+                                  << "\" functions;" << " found \"@" << funcDef.getSymName()
+                                  << "\"";
           }
         } else {
           return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
