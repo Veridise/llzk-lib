@@ -70,7 +70,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(%arg0: !struct.struct<@A<[@Ty]>>, %arg1: !llzk.tvar<@Ty>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@x] : <@A<[@Ty]>>, !llzk.tvar<@Ty>
-//CHECK-NEXT:      llzk.emit_eq %[[T0]], %arg1 : !llzk.tvar<@Ty>, !llzk.tvar<@Ty>
+//CHECK-NEXT:      constrain.eq %[[T0]], %arg1 : !llzk.tvar<@Ty>, !llzk.tvar<@Ty>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -135,7 +135,7 @@ module attributes {veridise.lang = "llzk"} {
       %v0 = struct.readf %c0[@f] : !struct.struct<@ComponentB1<[@X]>>, !llzk.tvar<@X>
       %c1 = struct.readf %self[@f] : !struct.struct<@ComponentB2<[@X]>>, !struct.struct<@ComponentB1<[@X]>>
       %v1 = struct.readf %c1[@f] : !struct.struct<@ComponentB1<[@X]>>, !llzk.tvar<@X>
-      llzk.emit_eq %v0, %v1 : !llzk.tvar<@X>
+      constrain.eq %v0, %v1 : !llzk.tvar<@X>
       function.return
     }
   }
@@ -153,7 +153,7 @@ module attributes {veridise.lang = "llzk"} {
       %v0 = struct.readf %c0[@f] : !struct.struct<@ComponentB1<[!llzk.tvar<@X>]>>, !llzk.tvar<@X>
       %c1 = struct.readf %self[@f] : !struct.struct<@ComponentB3<[@X]>>, !struct.struct<@ComponentB1<[!llzk.tvar<@X>]>>
       %v1 = struct.readf %c1[@f] : !struct.struct<@ComponentB1<[!llzk.tvar<@X>]>>, !llzk.tvar<@X>
-      llzk.emit_eq %v0, %v1 : !llzk.tvar<@X>
+      constrain.eq %v0, %v1 : !llzk.tvar<@X>
       function.return
     }
   }
@@ -180,7 +180,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg1[@f] : <@ComponentB1<[@X]>>, !llzk.tvar<@X>
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@f] : <@ComponentB2<[@X]>>, !struct.struct<@ComponentB1<[@X]>>
 //CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = struct.readf %[[T1]][@f] : <@ComponentB1<[@X]>>, !llzk.tvar<@X>
-//CHECK-NEXT:      llzk.emit_eq %[[T0]], %[[T2]] : !llzk.tvar<@X>, !llzk.tvar<@X>
+//CHECK-NEXT:      constrain.eq %[[T0]], %[[T2]] : !llzk.tvar<@X>, !llzk.tvar<@X>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -195,7 +195,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg1[@f] : <@ComponentB1<[!llzk.tvar<@X>]>>, !llzk.tvar<@X>
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@f] : <@ComponentB3<[@X]>>, !struct.struct<@ComponentB1<[!llzk.tvar<@X>]>>
 //CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = struct.readf %[[T1]][@f] : <@ComponentB1<[!llzk.tvar<@X>]>>, !llzk.tvar<@X>
-//CHECK-NEXT:      llzk.emit_eq %[[T0]], %[[T2]] : !llzk.tvar<@X>, !llzk.tvar<@X>
+//CHECK-NEXT:      constrain.eq %[[T0]], %[[T2]] : !llzk.tvar<@X>, !llzk.tvar<@X>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -230,7 +230,7 @@ module attributes {veridise.lang = "llzk"} {
       %v0 = struct.readf %c0[@f] : !struct.struct<@ComponentB4<[@C]>>, !llzk.tvar<@D>
       %c1 = struct.readf %self[@f] : !struct.struct<@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>>, !struct.struct<@ComponentB4<[@E]>>
       %v1 = struct.readf %c1[@f] : !struct.struct<@ComponentB4<[@E]>>, !llzk.tvar<@F>
-      llzk.emit_eq %v0, %v1 : !llzk.tvar<@D>, !llzk.tvar<@F>
+      constrain.eq %v0, %v1 : !llzk.tvar<@D>, !llzk.tvar<@F>
       function.return
     }
   }
@@ -248,7 +248,7 @@ module attributes {veridise.lang = "llzk"} {
       %v0 = struct.readf %c0[@f] : !struct.struct<@ComponentB4<[!llzk.tvar<@C>]>>, !llzk.tvar<@D>
       %c1 = struct.readf %self[@f] : !struct.struct<@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>>, !struct.struct<@ComponentB4<[!llzk.tvar<@E>]>>
       %v1 = struct.readf %c1[@f] : !struct.struct<@ComponentB4<[!llzk.tvar<@E>]>>, !llzk.tvar<@F>
-      llzk.emit_eq %v0, %v1 : !llzk.tvar<@D>, !llzk.tvar<@F>
+      constrain.eq %v0, %v1 : !llzk.tvar<@D>, !llzk.tvar<@F>
       function.return
     }
   }
@@ -275,7 +275,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg1[@f] : <@ComponentB4<[@C]>>, !llzk.tvar<@D>
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@f] : <@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>>, !struct.struct<@ComponentB4<[@E]>>
 //CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = struct.readf %[[T1]][@f] : <@ComponentB4<[@E]>>, !llzk.tvar<@F>
-//CHECK-NEXT:      llzk.emit_eq %[[T0]], %[[T2]] : !llzk.tvar<@D>, !llzk.tvar<@F>
+//CHECK-NEXT:      constrain.eq %[[T0]], %[[T2]] : !llzk.tvar<@D>, !llzk.tvar<@F>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -290,7 +290,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg1[@f] : <@ComponentB4<[!llzk.tvar<@C>]>>, !llzk.tvar<@D>
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@f] : <@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>>, !struct.struct<@ComponentB4<[!llzk.tvar<@E>]>>
 //CHECK-NEXT:      %[[T2:[0-9a-zA-Z_\.]+]] = struct.readf %[[T1]][@f] : <@ComponentB4<[!llzk.tvar<@E>]>>, !llzk.tvar<@F>
-//CHECK-NEXT:      llzk.emit_eq %[[T0]], %[[T2]] : !llzk.tvar<@D>, !llzk.tvar<@F>
+//CHECK-NEXT:      constrain.eq %[[T0]], %[[T2]] : !llzk.tvar<@D>, !llzk.tvar<@F>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -439,7 +439,7 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.struct<@ComponentF1<[@C, @T]>>
     }
     function.def @constrain(%self: !struct.struct<@ComponentF1<[@C, @T]>>, %a: !llzk.tvar<@T>, %b: !array.array<@C x !llzk.tvar<@T>>) {
-      llzk.emit_in %b, %a : !array.array<@C x !llzk.tvar<@T>>
+      constrain.in %b, %a : !array.array<@C x !llzk.tvar<@T>>
       function.return
     }
   }
@@ -450,7 +450,7 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.struct<@ComponentF2<[@C, @X, @Y]>>
     }
     function.def @constrain(%self: !struct.struct<@ComponentF2<[@C, @X, @Y]>>, %a: !llzk.tvar<@X>, %b: !array.array<@C x !llzk.tvar<@Y>>) {
-      llzk.emit_in %b, %a : !array.array<@C x !llzk.tvar<@Y>>, !llzk.tvar<@X>
+      constrain.in %b, %a : !array.array<@C x !llzk.tvar<@Y>>, !llzk.tvar<@X>
       function.return
     }
   }
@@ -461,7 +461,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.struct<@ComponentF1<[@C, @T]>>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(%arg0: !struct.struct<@ComponentF1<[@C, @T]>>, %arg1: !llzk.tvar<@T>, %arg2: !array.array<@C x !llzk.tvar<@T>>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      llzk.emit_in %arg2, %arg1 : <@C x !llzk.tvar<@T>>, !llzk.tvar<@T>
+//CHECK-NEXT:      constrain.in %arg2, %arg1 : <@C x !llzk.tvar<@T>>, !llzk.tvar<@T>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -471,7 +471,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.struct<@ComponentF2<[@C, @X, @Y]>>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(%arg0: !struct.struct<@ComponentF2<[@C, @X, @Y]>>, %arg1: !llzk.tvar<@X>, %arg2: !array.array<@C x !llzk.tvar<@Y>>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      llzk.emit_in %arg2, %arg1 : <@C x !llzk.tvar<@Y>>, !llzk.tvar<@X>
+//CHECK-NEXT:      constrain.in %arg2, %arg1 : <@C x !llzk.tvar<@Y>>, !llzk.tvar<@X>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }

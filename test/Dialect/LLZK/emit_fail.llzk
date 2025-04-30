@@ -123,7 +123,7 @@ module attributes {veridise.lang = "llzk"} {
           %b: !felt.felt
           ) {
       // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs '!struct.struct<@TestComponent07>'}}
-      llzk.emit_eq %a, %b : !felt.felt
+      constrain.eq %a, %b : !felt.felt
       function.return
     }
   }
@@ -142,7 +142,7 @@ module attributes {veridise.lang = "llzk"} {
           %b: !struct.struct<@TestComponent08> // expected-note {{prior use here}}
           ) {
       // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'index' vs '!struct.struct<@TestComponent08>'}}
-      llzk.emit_eq %a, %b : index
+      constrain.eq %a, %b : index
       function.return
     }
   }
@@ -198,8 +198,8 @@ module attributes {veridise.lang = "llzk"} {
           %a: !struct.struct<@TestComponent11>,
           %b: !struct.struct<@TestComponent11>
           ) {
-      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!struct.struct<@TestComponent11>'}}
-      llzk.emit_eq %a, %b : !struct.struct<@TestComponent11>
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!struct.struct<@TestComponent11>'}}
+      constrain.eq %a, %b : !struct.struct<@TestComponent11>
       function.return
     }
   }
@@ -217,8 +217,8 @@ module attributes {veridise.lang = "llzk"} {
           %a: !array.array<3 x !struct.struct<@TestComponent12>>,
           %b: !array.array<3 x !struct.struct<@TestComponent12>>
           ) {
-      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.array<3 x !struct.struct<@TestComponent12>>'}}
-      llzk.emit_eq %a, %b : !array.array<3 x !struct.struct<@TestComponent12>>
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.array<3 x !struct.struct<@TestComponent12>>'}}
+      constrain.eq %a, %b : !array.array<3 x !struct.struct<@TestComponent12>>
       function.return
     }
   }
@@ -236,8 +236,8 @@ module attributes {veridise.lang = "llzk"} {
           %a: !array.array<3,2 x !struct.struct<@TestComponent13>>,
           %b: !array.array<3,2 x !struct.struct<@TestComponent13>>
           ) {
-      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.array<3,2 x !struct.struct<@TestComponent13>>'}}
-      llzk.emit_eq %a, %b : !array.array<3,2 x !struct.struct<@TestComponent13>>
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.array<3,2 x !struct.struct<@TestComponent13>>'}}
+      constrain.eq %a, %b : !array.array<3,2 x !struct.struct<@TestComponent13>>
       function.return
     }
   }
@@ -469,8 +469,8 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.struct<@Component25>
     }
     function.def @constrain(%self: !struct.struct<@Component25>, %a: !array.array<2 x !string.string>, %b: !array.array<2 x !string.string>) {
-      // expected-error@+1 {{'llzk.emit_eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.array<2 x !string.string>'}}
-      llzk.emit_eq %a, %b : !array.array<2 x !string.string>
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.array<2 x !string.string>'}}
+      constrain.eq %a, %b : !array.array<2 x !string.string>
       function.return
     }
   }

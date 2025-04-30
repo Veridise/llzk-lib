@@ -82,7 +82,7 @@ module attributes {veridise.lang = "llzk"} {
       %0 = struct.readf %arg0[@reg] : <@Reg<[]>>, !struct.struct<@NondetReg<[]>>
       function.call @NondetReg::@constrain(%0, %arg1) : (!struct.struct<@NondetReg<[]>>, !felt.felt) -> ()
       %1 = struct.readf %0[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      llzk.emit_eq %arg1, %1 : !felt.felt, !felt.felt
+      constrain.eq %arg1, %1 : !felt.felt, !felt.felt
       function.return
     }
   }
@@ -238,7 +238,7 @@ module attributes {veridise.lang = "llzk"} {
       %0 = felt.sub %felt_const_1, %arg1 : !felt.felt, !felt.felt
       %1 = felt.mul %arg1, %0 : !felt.felt, !felt.felt
       %felt_const_0 = felt.const  0
-      llzk.emit_eq %1, %felt_const_0 : !felt.felt, !felt.felt
+      constrain.eq %1, %felt_const_0 : !felt.felt, !felt.felt
       %2 = struct.readf %arg0[@"$temp"] : <@AssertBit<[]>>, !struct.struct<@Component<[]>>
       function.call @Component::@constrain(%2) : (!struct.struct<@Component<[]>>) -> ()
       function.return
@@ -287,7 +287,7 @@ module attributes {veridise.lang = "llzk"} {
       function.call @NondetBitReg::@constrain(%0, %arg1) : (!struct.struct<@NondetBitReg<[]>>, !felt.felt) -> ()
       %1 = struct.readf %0[@"$super"] : <@NondetBitReg<[]>>, !struct.struct<@NondetReg<[]>>
       %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      llzk.emit_eq %arg1, %2 : !felt.felt, !felt.felt
+      constrain.eq %arg1, %2 : !felt.felt, !felt.felt
       function.return
     }
   }
@@ -323,7 +323,7 @@ module attributes {veridise.lang = "llzk"} {
       %4 = felt.sub %felt_const_3, %arg1 : !felt.felt, !felt.felt
       %5 = felt.mul %3, %4 : !felt.felt, !felt.felt
       %felt_const_0 = felt.const  0
-      llzk.emit_eq %5, %felt_const_0 : !felt.felt, !felt.felt
+      constrain.eq %5, %felt_const_0 : !felt.felt, !felt.felt
       %6 = struct.readf %arg0[@"$temp"] : <@AssertTwit<[]>>, !struct.struct<@Component<[]>>
       function.call @Component::@constrain(%6) : (!struct.struct<@Component<[]>>) -> ()
       function.return
@@ -497,7 +497,7 @@ module attributes {veridise.lang = "llzk"} {
       function.call @NondetTwitReg::@constrain(%0, %arg1) : (!struct.struct<@NondetTwitReg<[]>>, !felt.felt) -> ()
       %1 = struct.readf %0[@"$super"] : <@NondetTwitReg<[]>>, !struct.struct<@NondetReg<[]>>
       %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      llzk.emit_eq %arg1, %2 : !felt.felt, !felt.felt
+      constrain.eq %arg1, %2 : !felt.felt, !felt.felt
       function.return
     }
   }
@@ -517,7 +517,7 @@ module attributes {veridise.lang = "llzk"} {
       %0 = struct.readf %arg0[@reg] : <@FakeTwitReg<[]>>, !struct.struct<@NondetFakeTwitReg<[]>>
       function.call @NondetFakeTwitReg::@constrain(%0, %arg1) : (!struct.struct<@NondetFakeTwitReg<[]>>, !felt.felt) -> ()
       %1 = struct.readf %0[@"$super"] : <@NondetFakeTwitReg<[]>>, !felt.felt
-      llzk.emit_eq %arg1, %1 : !felt.felt, !felt.felt
+      constrain.eq %arg1, %1 : !felt.felt, !felt.felt
       function.return
     }
   }

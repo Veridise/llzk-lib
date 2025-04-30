@@ -3,7 +3,7 @@
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA {
     function.def @constrain(%self: !struct.struct<@ComponentA>, %a: !felt.felt, %b: !felt.felt) {
-      llzk.emit_eq %a, %b : !felt.felt
+      constrain.eq %a, %b : !felt.felt
       function.return
     }
 
@@ -30,7 +30,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB {
     function.def @constrain(%self: !struct.struct<@ComponentB>, %a: !felt.felt, %b: !array.array<5 x !felt.felt>) {
-      llzk.emit_in %b, %a : !array.array<5 x !felt.felt>
+      constrain.in %b, %a : !array.array<5 x !felt.felt>
       function.return
     }
 
@@ -57,7 +57,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentC {
     function.def @constrain(%self: !struct.struct<@ComponentC>, %a: index, %b: !array.array<89 x index>) {
-      llzk.emit_in %b, %a : !array.array<89 x index>
+      constrain.in %b, %a : !array.array<89 x index>
       function.return
     }
 
@@ -85,7 +85,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentD {
     function.def @constrain(%self: !struct.struct<@ComponentD>, %b: !array.array<89 x !struct.struct<@ComponentD>>) {
-      llzk.emit_in %b, %self : !array.array<89 x !struct.struct<@ComponentD>>
+      constrain.in %b, %self : !array.array<89 x !struct.struct<@ComponentD>>
       function.return
     }
 
@@ -98,7 +98,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  struct.def @ComponentD {
 //CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComponentD>,
 //CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<89 x !struct.struct<@ComponentD>>) attributes {function.allow_constraint} {
-//CHECK-NEXT:       llzk.emit_in %[[A1]], %[[A0]] : <89 x !struct.struct<@ComponentD>>, !struct.struct<@ComponentD>
+//CHECK-NEXT:       constrain.in %[[A1]], %[[A0]] : <89 x !struct.struct<@ComponentD>>, !struct.struct<@ComponentD>
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @compute(%[[A1:[0-9a-zA-Z_\.]+]]: !array.array<89 x !struct.struct<@ComponentD>>) -> !struct.struct<@ComponentD> attributes {function.allow_witness} {
@@ -111,7 +111,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentE {
     function.def @constrain(%self: !struct.struct<@ComponentE>, %a: index, %b: !array.array<89,2 x index>) {
-      llzk.emit_in %b, %a : !array.array<89,2 x index>
+      constrain.in %b, %a : !array.array<89,2 x index>
       function.return
     }
 
@@ -207,7 +207,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.struct<@Component00>, %[[VAL_3:.*]]: !struct.struct<@Signal>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        %[[VAL_4:.*]] = struct.readf %[[VAL_2]][@f] : <@Component00>, !struct.struct<@Signal>
-// CHECK-NEXT:        llzk.emit_eq %[[VAL_4]], %[[VAL_3]] : !struct.struct<@Signal>, !struct.struct<@Signal>
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !struct.struct<@Signal>, !struct.struct<@Signal>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -221,7 +221,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.struct<@Component01>, %[[VAL_3:.*]]: !array.array<2 x !struct.struct<@Signal>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        %[[VAL_4:.*]] = struct.readf %[[VAL_2]][@f] : <@Component01>, !array.array<2 x !struct.struct<@Signal>>
-// CHECK-NEXT:        llzk.emit_eq %[[VAL_4]], %[[VAL_3]] : !array.array<2 x !struct.struct<@Signal>>, !array.array<2 x !struct.struct<@Signal>>
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !array.array<2 x !struct.struct<@Signal>>, !array.array<2 x !struct.struct<@Signal>>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

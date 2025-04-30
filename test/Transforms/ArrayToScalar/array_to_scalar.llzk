@@ -280,12 +280,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-DAG:       %[[V17:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_2] : <@ArrayFields>, !felt.felt
 // CHECK-DAG:       %[[V18:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_0] : <@ArrayFields>, !felt.felt
 // CHECK-DAG:       %[[V19:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_1] : <@ArrayFields>, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V8]], %[[V18]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V9]], %[[V19]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V10]], %[[V17]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V11]], %[[V15]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V12]], %[[V16]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V13]], %[[V14]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V8]], %[[V18]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V9]], %[[V19]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V10]], %[[V17]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V11]], %[[V15]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V12]], %[[V16]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V13]], %[[V14]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -363,12 +363,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-DAG:       %[[V17:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_2] : <@ArrayFieldsAndParams>, !felt.felt
 // CHECK-DAG:       %[[V18:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_1] : <@ArrayFieldsAndParams>, !felt.felt
 // CHECK-DAG:       %[[V19:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_0] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V19]], %[[V8]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V18]], %[[V9]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V17]], %[[V10]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V16]], %[[V11]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V15]], %[[V12]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V14]], %[[V13]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V19]], %[[V8]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V18]], %[[V9]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V17]], %[[V10]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V16]], %[[V11]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V15]], %[[V12]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V14]], %[[V13]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

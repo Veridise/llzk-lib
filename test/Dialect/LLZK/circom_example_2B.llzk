@@ -80,7 +80,7 @@ module attributes {veridise.lang = "llzk"} {
       %sum = struct.readf %self[@sum] : !struct.struct<@GetSum<[@A]>>, !felt.felt
       %out = struct.readf %self[@out] : !struct.struct<@GetSum<[@A]>>, !Signal
       %out_unwrap = struct.readf %out[@reg] : !Signal, !felt.felt
-      llzk.emit_eq %out_unwrap, %sum : !felt.felt
+      constrain.eq %out_unwrap, %sum : !felt.felt
       function.return
     }
   }
@@ -184,7 +184,7 @@ module attributes {veridise.lang = "llzk"} {
         %wsj = array.read %temp_ws[%j] : !array.array<@P x !struct.struct<@GetSum<[#IdxToLen]>>>, !struct.struct<@GetSum<[#IdxToLen]>>
         %wsjout = struct.readf %wsj[@out] : !struct.struct<@GetSum<[#IdxToLen]>>, !Signal
         %wsjout_unwrap = struct.readf %wsjout[@reg] : !Signal, !felt.felt
-        llzk.emit_eq %retj_unwrap, %wsjout_unwrap : !felt.felt
+        constrain.eq %retj_unwrap, %wsjout_unwrap : !felt.felt
       }
 
       function.return
@@ -247,7 +247,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V_15:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_13]][@sum] : <@GetSum<[@A]>>, !felt.felt
 // CHECK-NEXT:      %[[V_16:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_13]][@out] : <@GetSum<[@A]>>, !struct.struct<@Signal>
 // CHECK-NEXT:      %[[V_17:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_16]][@reg] : <@Signal>, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V_17]], %[[V_15]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V_17]], %[[V_15]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -322,7 +322,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V_38:[0-9a-zA-Z_\.]+]] = array.read %[[V_27]]{{\[}}%[[V_35]]] : <@P x !struct.struct<@GetSum<[#[[$M0]]]>>>, !struct.struct<@GetSum<[#[[$M0]]]>>
 // CHECK-NEXT:        %[[V_39:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_38]][@out] : <@GetSum<[#[[$M0]]]>>, !struct.struct<@Signal>
 // CHECK-NEXT:        %[[V_40:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_39]][@reg] : <@Signal>, !felt.felt
-// CHECK-NEXT:        llzk.emit_eq %[[V_37]], %[[V_40]] : !felt.felt, !felt.felt
+// CHECK-NEXT:        constrain.eq %[[V_37]], %[[V_40]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }

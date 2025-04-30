@@ -65,7 +65,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.struct<@Component01>, %0: !array.array<2 x !felt.felt>) {
       %b = struct.readf %self[@f] : !struct.struct<@Component01>, !array.array<2 x !felt.felt>
-      llzk.emit_eq %0, %b : !array.array<2 x !felt.felt>
+      constrain.eq %0, %b : !array.array<2 x !felt.felt>
       function.return
     }
   }
@@ -114,7 +114,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@Component01>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<2 x !felt.felt>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@f] : <@Component01>, !array.array<2 x !felt.felt>
-//CHECK-NEXT:      llzk.emit_eq %[[A1]], %[[T0]] : !array.array<2 x !felt.felt>, !array.array<2 x !felt.felt>
+//CHECK-NEXT:      constrain.eq %[[A1]], %[[T0]] : !array.array<2 x !felt.felt>, !array.array<2 x !felt.felt>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }

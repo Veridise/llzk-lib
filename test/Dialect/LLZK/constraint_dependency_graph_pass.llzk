@@ -85,7 +85,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB {
     function.def @constrain(%self: !struct.struct<@ComponentB>, %a: !felt.felt, %b: !array.array<5 x !felt.felt>) {
-      llzk.emit_in %b, %a : !array.array<5 x !felt.felt>
+      constrain.in %b, %a : !array.array<5 x !felt.felt>
       function.return
     }
 
@@ -157,7 +157,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.struct<@Passthrough>, %in: !felt.felt) {
       %out = struct.readf %self[@out] : !struct.struct<@Passthrough>, !felt.felt
-      llzk.emit_eq %in, %out : !felt.felt
+      constrain.eq %in, %out : !felt.felt
       function.return
     }
   }
@@ -177,7 +177,7 @@ module attributes {veridise.lang = "llzk"} {
       %p_0 = struct.readf %self[@p] : !struct.struct<@EnsureIsZero>, !struct.struct<@Passthrough>
       function.call @Passthrough::@constrain(%p_0, %zero) : (!struct.struct<@Passthrough>, !felt.felt) -> ()
       %out = struct.readf %p_0[@out] : !struct.struct<@Passthrough>, !felt.felt
-      llzk.emit_eq %in, %out : !felt.felt
+      constrain.eq %in, %out : !felt.felt
       function.return
     }
   }
@@ -702,7 +702,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-// Test that allowing Signals to emit_eq doesn't break the constraint analysis
+// Test that allowing Signals to constrain.eq doesn't break the constraint analysis
 !Signal = !struct.struct<@Signal>
 module attributes {veridise.lang = "llzk"} {
   // pre-defined

@@ -33,7 +33,7 @@ module attributes {veridise.lang = "llzk"} {
       %1 = arith.constant 0 : index
       %2 = array.read %arr[%1] : !array.array<@N x !llzk.tvar<@T>>, !llzk.tvar<@T>
       %3 = struct.readf %self[@"$super"] : !struct.struct<@Head<[@T, @N]>>, !llzk.tvar<@T>
-      llzk.emit_eq %2, %3 : !llzk.tvar<@T>
+      constrain.eq %2, %3 : !llzk.tvar<@T>
       function.return
     }
   }
@@ -115,7 +115,7 @@ module attributes {veridise.lang = "llzk"} {
       %5 = struct.readf %4[@"$super"] : !struct.struct<@Head<[!struct.struct<@A<[1]>>, 2]>>, !struct.struct<@A<[1]>>
       %6 = struct.readf %5[@"$super"] : !struct.struct<@A<[1]>>, !struct.struct<@Head<[!felt.felt, 3]>>
       %7 = struct.readf %6[@"$super"] : !struct.struct<@Head<[!felt.felt, 3]>>, !felt.felt
-      llzk.emit_eq %3, %7 : !felt.felt
+      constrain.eq %3, %7 : !felt.felt
       %8 = struct.readf %self[@"$super"]: !struct.struct<@Top>, !struct.struct<@VoidComponent>
       function.call @VoidComponent::@constrain(%8) : (!struct.struct<@VoidComponent>) -> ()
       function.return
@@ -146,7 +146,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[C2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = array.read %arg1[%[[C2]]] : <@N x !llzk.tvar<@T>>, !llzk.tvar<@T>
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@"$super"] : <@Head<[@T, @N]>>, !llzk.tvar<@T>
-//CHECK-NEXT:      llzk.emit_eq %[[T0]], %[[T1]] : !llzk.tvar<@T>, !llzk.tvar<@T>
+//CHECK-NEXT:      constrain.eq %[[T0]], %[[T1]] : !llzk.tvar<@T>, !llzk.tvar<@T>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -219,7 +219,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[T5:[0-9a-zA-Z_\.]+]] = struct.readf %[[T4]][@"$super"] : <@Head<[!struct.struct<@A<[1]>>, 2]>>, !struct.struct<@A<[1]>>
 //CHECK-NEXT:      %[[T6:[0-9a-zA-Z_\.]+]] = struct.readf %[[T5]][@"$super"] : <@A<[1]>>, !struct.struct<@Head<[!felt.felt, 3]>>
 //CHECK-NEXT:      %[[T7:[0-9a-zA-Z_\.]+]] = struct.readf %[[T6]][@"$super"] : <@Head<[!felt.felt, 3]>>, !felt.felt
-//CHECK-NEXT:      llzk.emit_eq %[[T3]], %[[T7]] : !felt.felt, !felt.felt
+//CHECK-NEXT:      constrain.eq %[[T3]], %[[T7]] : !felt.felt, !felt.felt
 //CHECK-NEXT:      %[[T8:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@"$super"] : <@Top>, !struct.struct<@VoidComponent>
 //CHECK-NEXT:      function.call @VoidComponent::@constrain(%[[T8]]) : (!struct.struct<@VoidComponent>) -> ()
 //CHECK-NEXT:      function.return

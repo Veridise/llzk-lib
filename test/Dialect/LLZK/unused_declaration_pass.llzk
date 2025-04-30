@@ -232,7 +232,7 @@ module attributes {veridise.lang = "llzk"} {
 
       function.def @constrain(%self: !struct.struct<@std::@Wrapper<[@T]>>, %inp: !llzk.tvar<@T>) {
         %val = struct.readf %self[@val] : !struct.struct<@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-        llzk.emit_eq %val, %inp : !llzk.tvar<@T>
+        constrain.eq %val, %inp : !llzk.tvar<@T>
         function.return
       }
     }
@@ -254,7 +254,7 @@ module attributes {veridise.lang = "llzk"} {
       %idx = arith.constant 0 : index
       %elem = array.read %arr[%idx] : !array.array<@N x !struct.struct<@std::@Wrapper<[@T]>>>, !struct.struct<@std::@Wrapper<[@T]>>
       %inner = struct.readf %elem[@val] : !struct.struct<@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-      llzk.emit_eq %first, %inner : !llzk.tvar<@T>
+      constrain.eq %first, %inner : !llzk.tvar<@T>
       function.return
     }
   }
@@ -283,7 +283,7 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT:      }
 // STRICT-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.struct<@std::@Wrapper<[@T]>>, %[[VAL_3:.*]]: !llzk.tvar<@T>) attributes {function.allow_constraint} {
 // STRICT-NEXT:        %[[VAL_4:.*]] = struct.readf %[[VAL_2]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-// STRICT-NEXT:        llzk.emit_eq %[[VAL_4]], %[[VAL_3]] : !llzk.tvar<@T>, !llzk.tvar<@T>
+// STRICT-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !llzk.tvar<@T>, !llzk.tvar<@T>
 // STRICT-NEXT:        function.return
 // STRICT-NEXT:      }
 // STRICT-NEXT:    }
@@ -301,7 +301,7 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT:      %[[VAL_7:.*]] = arith.constant 0 : index
 // STRICT-NEXT:      %[[VAL_8:.*]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !struct.struct<@std::@Wrapper<[@T]>>>, !struct.struct<@std::@Wrapper<[@T]>>
 // STRICT-NEXT:      %[[VAL_9:.*]] = struct.readf %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-// STRICT-NEXT:      llzk.emit_eq %[[VAL_5]], %[[VAL_9]] : !llzk.tvar<@T>, !llzk.tvar<@T>
+// STRICT-NEXT:      constrain.eq %[[VAL_5]], %[[VAL_9]] : !llzk.tvar<@T>, !llzk.tvar<@T>
 // STRICT-NEXT:      function.return
 // STRICT-NEXT:    }
 // STRICT-NEXT:  }
@@ -327,7 +327,7 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:      }
 // RELAX-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.struct<@std::@Wrapper<[@T]>>, %[[VAL_3:.*]]: !llzk.tvar<@T>) attributes {function.allow_constraint} {
 // RELAX-NEXT:        %[[VAL_4:.*]] = struct.readf %[[VAL_2]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-// RELAX-NEXT:        llzk.emit_eq %[[VAL_4]], %[[VAL_3]] : !llzk.tvar<@T>, !llzk.tvar<@T>
+// RELAX-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !llzk.tvar<@T>, !llzk.tvar<@T>
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
 // RELAX-NEXT:    }
@@ -345,7 +345,7 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:      %[[VAL_7:.*]] = arith.constant 0 : index
 // RELAX-NEXT:      %[[VAL_8:.*]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !struct.struct<@std::@Wrapper<[@T]>>>, !struct.struct<@std::@Wrapper<[@T]>>
 // RELAX-NEXT:      %[[VAL_9:.*]] = struct.readf %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !llzk.tvar<@T>
-// RELAX-NEXT:      llzk.emit_eq %[[VAL_5]], %[[VAL_9]] : !llzk.tvar<@T>, !llzk.tvar<@T>
+// RELAX-NEXT:      constrain.eq %[[VAL_5]], %[[VAL_9]] : !llzk.tvar<@T>, !llzk.tvar<@T>
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
@@ -393,7 +393,7 @@ module attributes {veridise.lang = "llzk"} {
       function.def @constrain(%self : !struct.struct<@user::@Unwrapper>, %inp : !felt.felt) {
         %wrapper = struct.readf %self[@comp] : !struct.struct<@user::@Unwrapper>, !struct.struct<@nested::@Wrapper>
         %wrapped = struct.readf %wrapper[@val] : !struct.struct<@nested::@Wrapper>, !felt.felt
-        llzk.emit_eq %wrapped, %inp : !felt.felt
+        constrain.eq %wrapped, %inp : !felt.felt
         function.return
       }
     }
@@ -454,7 +454,7 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:      function.def @constrain(%[[VAL_3:.*]]: !struct.struct<@user::@Unwrapper>, %[[VAL_4:.*]]: !felt.felt) attributes {function.allow_constraint} {
 // RELAX-NEXT:        %[[VAL_5:.*]] = struct.readf %[[VAL_3]][@comp] : <@user::@Unwrapper>, !struct.struct<@nested::@Wrapper>
 // RELAX-NEXT:        %[[VAL_6:.*]] = struct.readf %[[VAL_5]][@val] : <@nested::@Wrapper>, !felt.felt
-// RELAX-NEXT:        llzk.emit_eq %[[VAL_6]], %[[VAL_4]] : !felt.felt, !felt.felt
+// RELAX-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_4]] : !felt.felt, !felt.felt
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
 // RELAX-NEXT:    }
@@ -502,7 +502,7 @@ module attributes {veridise.lang = "llzk"} {
       function.def @constrain(%self : !struct.struct<@user::@Unwrapper>, %inp : !felt.felt) {
         %wrapper = struct.readf %self[@val] : !struct.struct<@user::@Unwrapper>, !struct.struct<@nested::@Wrapper>
         %wrapped = struct.readf %wrapper[@val] : !struct.struct<@nested::@Wrapper>, !felt.felt
-        llzk.emit_eq %wrapped, %inp : !felt.felt
+        constrain.eq %wrapped, %inp : !felt.felt
         function.return
       }
     }
@@ -562,7 +562,7 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:      function.def @constrain(%[[VAL_3:.*]]: !struct.struct<@user::@Unwrapper>, %[[VAL_4:.*]]: !felt.felt) attributes {function.allow_constraint} {
 // RELAX-NEXT:        %[[VAL_5:.*]] = struct.readf %[[VAL_3]][@val] : <@user::@Unwrapper>, !struct.struct<@nested::@Wrapper>
 // RELAX-NEXT:        %[[VAL_6:.*]] = struct.readf %[[VAL_5]][@val] : <@nested::@Wrapper>, !felt.felt
-// RELAX-NEXT:        llzk.emit_eq %[[VAL_6]], %[[VAL_4]] : !felt.felt, !felt.felt
+// RELAX-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_4]] : !felt.felt, !felt.felt
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
 // RELAX-NEXT:    }

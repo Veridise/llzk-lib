@@ -25,7 +25,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.struct<@Reg>, %v: !felt.felt) {
       %0 = struct.readf %self[@reg] : !struct.struct<@Reg>, !felt.felt
-      llzk.emit_eq %v, %0 : !felt.felt
+      constrain.eq %v, %0 : !felt.felt
       function.return
     }
   }
@@ -150,7 +150,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.struct<@Reg>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.readf %[[V2]][@reg] : <@Reg>, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V3]], %[[V4]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V3]], %[[V4]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -170,7 +170,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = struct.readf %[[V5]][@reciprocal] : <@Div<[]>>, !felt.felt
 // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = felt.mul %[[V8]], %[[V7]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      llzk.emit_eq %[[V9]], %[[V10]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V9]], %[[V10]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = struct.readf %[[V5]][@synthetic_return] : <@Div<[]>>, !felt.felt
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = felt.mul %[[V8]], %[[V6]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      constrain.eq %[[V11]], %[[V12]] : !felt.felt, !felt.felt

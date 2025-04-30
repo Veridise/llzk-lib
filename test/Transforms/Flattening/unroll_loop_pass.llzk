@@ -233,7 +233,7 @@ module attributes {veridise.lang = "llzk"} {
         %i0val = struct.readf %i0[@reg] : !Signal, !felt.felt
         %ib = array.read %b[%i] : !array.array<2 x !Signal>, !Signal
         %ibval = struct.readf %ib[@reg] : !Signal, !felt.felt
-        llzk.emit_eq %i0val, %ibval : !felt.felt
+        constrain.eq %i0val, %ibval : !felt.felt
       }
       //TODO: It would be better to allow the line below instead of needing the loop above.
       //  However, `constrain.eq` is restricted to not allow StructType. Maybe we could add an
@@ -324,12 +324,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@reg] : <@Signal>, !felt.felt
 // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V5]]] : <2 x !struct.struct<@Signal>>, !struct.struct<@Signal>
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = struct.readf %[[V9]][@reg] : <@Signal>, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V8]], %[[V10]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V8]], %[[V10]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V3]]{{\[}}%[[V4]]] : <2 x !struct.struct<@Signal>>, !struct.struct<@Signal>
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readf %[[V11]][@reg] : <@Signal>, !felt.felt
 // CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V4]]] : <2 x !struct.struct<@Signal>>, !struct.struct<@Signal>
 // CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.readf %[[V13]][@reg] : <@Signal>, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V12]], %[[V14]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V12]], %[[V14]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

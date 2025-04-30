@@ -68,9 +68,9 @@ module attributes {veridise.lang = "llzk"} {
       %cmpB = llzk.cmp le(%b, %y)
       llzk.assert %cmpB
       %foo = struct.readf %self[@foo] : !struct.struct<@FieldRangeConstraint>, !felt.felt
-      llzk.emit_eq %foo, %x : !felt.felt
+      constrain.eq %foo, %x : !felt.felt
       %bar = struct.readf %self[@bar] : !struct.struct<@FieldRangeConstraint>, !felt.felt
-      llzk.emit_eq %bar, %b : !felt.felt
+      constrain.eq %bar, %b : !felt.felt
       function.return
     }
   }
@@ -331,7 +331,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.struct<@Component00>, %0: !Signal) {
       %b = struct.readf %self[@f] : !struct.struct<@Component00>, !Signal
-      llzk.emit_eq %b, %0 : !Signal
+      constrain.eq %b, %0 : !Signal
       %reg = struct.readf %0[@reg] : !Signal, !felt.felt
       %c0 = felt.const 0
       constrain.eq %reg, %c0 : !felt.felt

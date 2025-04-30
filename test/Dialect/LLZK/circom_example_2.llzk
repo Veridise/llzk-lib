@@ -44,7 +44,7 @@ module attributes {veridise.lang = "llzk"} {
       %constA = llzk.read_const @A : !felt.felt
       %inpA = felt.mul %constA, %inp
       %out = struct.readf %self[@out] : !struct.struct<@GetWeight<[@A]>>, !felt.felt
-      llzk.emit_eq %out, %inpA : !felt.felt
+      constrain.eq %out, %inpA : !felt.felt
       function.return
     }
   }
@@ -104,7 +104,7 @@ module attributes {veridise.lang = "llzk"} {
         %retj = array.read %temp_ret[%j] : !array.array<@P x !felt.felt>, !felt.felt
         %wsj = array.read %temp_ws[%j] : !array.array<@P x !GetWeightStride5>, !GetWeightStride5
         %wsjout = struct.readf %wsj[@out] : !GetWeightStride5, !felt.felt
-        llzk.emit_eq %retj, %wsjout : !felt.felt
+        constrain.eq %retj, %wsjout : !felt.felt
       }
       //
       function.return
@@ -127,7 +127,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V_6:[0-9a-zA-Z_\.]+]] = llzk.read_const @A : !felt.felt
 // CHECK-NEXT:      %[[V_7:[0-9a-zA-Z_\.]+]] = felt.mul %[[V_6]], %[[V_5]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      %[[V_8:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_4]][@out] : <@GetWeight<[@A]>>, !felt.felt
-// CHECK-NEXT:      llzk.emit_eq %[[V_8]], %[[V_7]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[V_8]], %[[V_7]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -171,7 +171,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V_24:[0-9a-zA-Z_\.]+]] = array.read %[[V_22]]{{\[}}%[[V_23]]] : <@P x !felt.felt>, !felt.felt
 // CHECK-NEXT:        %[[V_25:[0-9a-zA-Z_\.]+]] = array.read %[[V_18]]{{\[}}%[[V_23]]] : <@P x !struct.struct<@GetWeight<[#[[$ATTR_0]]]>>>, !struct.struct<@GetWeight<[#[[$ATTR_0]]]>>
 // CHECK-NEXT:        %[[V_26:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_25]][@out] : <@GetWeight<[#[[$ATTR_0]]]>>, !felt.felt
-// CHECK-NEXT:        llzk.emit_eq %[[V_24]], %[[V_26]] : !felt.felt, !felt.felt
+// CHECK-NEXT:        constrain.eq %[[V_24]], %[[V_26]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
