@@ -145,7 +145,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA1 {
     function.def @compute() -> !llzk.struct<@ComponentA1> { // expected-note {{callee defined here}}
-      %self = new_struct : !llzk.struct<@ComponentA1>
+      %self = llzk.new_struct : !llzk.struct<@ComponentA1>
       function.return %self : !llzk.struct<@ComponentA1>
     }
     function.def @constrain(%self: !llzk.struct<@ComponentA1>) { function.return }
@@ -153,7 +153,7 @@ module attributes {veridise.lang = "llzk"} {
 
   llzk.struct @ComponentA2 {
     function.def @compute(%0: !felt.felt) -> !llzk.struct<@ComponentA2> {
-      %self = new_struct : !llzk.struct<@ComponentA2>
+      %self = llzk.new_struct : !llzk.struct<@ComponentA2>
       // expected-error@+1 {{'function.call' op incorrect number of operands for callee, expected 0}}
       %x = function.call @ComponentA1::@compute(%0) : (!felt.felt) -> (!llzk.struct<@ComponentA1>)
       function.return %self : !llzk.struct<@ComponentA2>
@@ -166,7 +166,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentB1 {
     function.def @compute() -> !llzk.struct<@ComponentB1> {
-      %self = new_struct : !llzk.struct<@ComponentB1>
+      %self = llzk.new_struct : !llzk.struct<@ComponentB1>
       function.return %self : !llzk.struct<@ComponentB1>
     }
     function.def @constrain(%self: !llzk.struct<@ComponentB1>) { function.return }
@@ -174,7 +174,7 @@ module attributes {veridise.lang = "llzk"} {
 
   llzk.struct @ComponentB2 {
     function.def @compute(%0: !llzk.struct<@ComponentB1>) -> !llzk.struct<@ComponentB2> {
-      %self = new_struct : !llzk.struct<@ComponentB2>
+      %self = llzk.new_struct : !llzk.struct<@ComponentB2>
       function.return %self : !llzk.struct<@ComponentB2>
     }
 

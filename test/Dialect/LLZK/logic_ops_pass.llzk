@@ -6,7 +6,7 @@ function.def @f_and(%a: i1, %b: i1) -> i1 attributes {function.allow_witness} {
 }
 //CHECK-LABEL:  function.def @f_and
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = and %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.and %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
@@ -17,7 +17,7 @@ function.def @f_or(%a: i1, %b: i1) -> i1 attributes {function.allow_witness} {
 }
 //CHECK-LABEL:  function.def @f_or
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = or %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.or %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
@@ -28,7 +28,7 @@ function.def @f_xor(%a: i1, %b: i1) -> i1 attributes {function.allow_witness} {
 }
 //CHECK-LABEL:  function.def @f_xor
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = xor %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.xor %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
@@ -39,7 +39,7 @@ function.def @f_not(%a: i1) -> i1 attributes {function.allow_witness} {
 }
 //CHECK-LABEL:  function.def @f_not
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = not %[[A0]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.not %[[A0]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
@@ -48,7 +48,7 @@ function.def @f_not(%a: i1) -> i1 attributes {function.allow_witness} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
     function.def @compute(%a: !F, %b: !F, %c: !F, %d: !F, %e: !F, %f: !F) -> !llzk.struct<@ComponentA> {
-      %self = new_struct : !llzk.struct<@ComponentA>
+      %self = llzk.new_struct : !llzk.struct<@ComponentA>
       function.return %self : !llzk.struct<@ComponentA>
     }
 
@@ -68,18 +68,18 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    llzk.struct @ComponentA {
 // CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V2:[0-9a-zA-Z_\.]+]]: !felt.felt,
 // CHECK-SAME:      %[[V3:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V4:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V5:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@ComponentA>  attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ComponentA>
 // CHECK-NEXT:        function.return %[[V6]] : !llzk.struct<@ComponentA>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V9:[0-9a-zA-Z_\.]+]]: !felt.felt,
 // CHECK-SAME:      %[[V10:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V11:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V13:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 // CHECK-NEXT:        %[[V14:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:        %[[V15:[0-9a-zA-Z_\.]+]] = cmp eq(%[[V12]], %[[V13]])
-// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = cmp lt(%[[V10]], %[[V11]])
+// CHECK-NEXT:        %[[V15:[0-9a-zA-Z_\.]+]] = llzk.cmp eq(%[[V12]], %[[V13]])
+// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = llzk.cmp lt(%[[V10]], %[[V11]])
 // CHECK-NEXT:        %[[V17:[0-9a-zA-Z_\.]+]] = arith.andi %[[V15]], %[[V16]] : i1
-// CHECK-NEXT:        %[[V18:[0-9a-zA-Z_\.]+]] = cmp eq(%[[V8]], %[[V9]])
+// CHECK-NEXT:        %[[V18:[0-9a-zA-Z_\.]+]] = llzk.cmp eq(%[[V8]], %[[V9]])
 // CHECK-NEXT:        %[[V19:[0-9a-zA-Z_\.]+]] = arith.ori %[[V17]], %[[V18]] : i1
-// CHECK-NEXT:        emit_eq %[[V19]], %[[V14]] : i1, i1
+// CHECK-NEXT:        llzk.emit_eq %[[V19]], %[[V14]] : i1, i1
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

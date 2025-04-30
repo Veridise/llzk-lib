@@ -39,7 +39,7 @@ function.def @i1_to_index(
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @C1 {
     function.def @compute() -> !llzk.struct<@C1> {
-      %self = new_struct : !llzk.struct<@C1>
+      %self = llzk.new_struct : !llzk.struct<@C1>
       function.return %self : !llzk.struct<@C1>
     }
     function.def @constrain(%self: !llzk.struct<@C1>) { function.return }
@@ -71,7 +71,7 @@ function.def @array_to_felt(%a: !array.array<7 x i1>) -> !felt.felt {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @C2 {
     function.def @compute() -> !llzk.struct<@C2> {
-      %self = new_struct : !llzk.struct<@C2>
+      %self = llzk.new_struct : !llzk.struct<@C2>
       function.return %self : !llzk.struct<@C2>
     }
     function.def @constrain(%self: !llzk.struct<@C2>) { function.return }

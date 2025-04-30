@@ -4,7 +4,7 @@
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent01 {
     function.def @compute() -> !llzk.struct<@TestComponent01> {
-      %self = new_struct : !llzk.struct<@TestComponent01>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent01>
       function.return %self : !llzk.struct<@TestComponent01>
     }
     function.def @constrain(
@@ -23,7 +23,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent02 {
     function.def @compute() -> !llzk.struct<@TestComponent02> {
-      %self = new_struct : !llzk.struct<@TestComponent02>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent02>
       function.return %self : !llzk.struct<@TestComponent02>
     }
     function.def @constrain(
@@ -42,7 +42,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent03 {
     function.def @compute() -> !llzk.struct<@TestComponent03> {
-      %self = new_struct : !llzk.struct<@TestComponent03>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent03>
       function.return %self : !llzk.struct<@TestComponent03>
     }
     function.def @constrain(
@@ -61,7 +61,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent04 {
     function.def @compute() -> !llzk.struct<@TestComponent04> {
-      %self = new_struct : !llzk.struct<@TestComponent04>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent04>
       function.return %self : !llzk.struct<@TestComponent04>
     }
     function.def @constrain(%a: !felt.felt, %b: !felt.felt) {
@@ -77,7 +77,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent05 {
     function.def @compute() -> !llzk.struct<@TestComponent05> {
-      %self = new_struct : !llzk.struct<@TestComponent05>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent05>
       function.return %self : !llzk.struct<@TestComponent05>
     }
     function.def @constrain(
@@ -96,7 +96,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent06 {
     function.def @compute() -> !llzk.struct<@TestComponent06> {
-      %self = new_struct : !llzk.struct<@TestComponent06>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent06>
       function.return %self : !llzk.struct<@TestComponent06>
     }
     function.def @constrain(
@@ -115,7 +115,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent07 {
     function.def @compute() -> !llzk.struct<@TestComponent07> {
-      %self = new_struct : !llzk.struct<@TestComponent07>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent07>
       function.return %self : !llzk.struct<@TestComponent07>
     }
     function.def @constrain(
@@ -134,7 +134,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent08 {
     function.def @compute() -> !llzk.struct<@TestComponent08> {
-      %self = new_struct : !llzk.struct<@TestComponent08>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent08>
       function.return %self : !llzk.struct<@TestComponent08>
     }
     function.def @constrain(
@@ -153,7 +153,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent09 {
     function.def @compute() -> !llzk.struct<@TestComponent09> {
-      %self = new_struct : !llzk.struct<@TestComponent09>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent09>
       function.return %self : !llzk.struct<@TestComponent09>
     }
     function.def @constrain(
@@ -172,7 +172,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent10 {
     function.def @compute() -> !llzk.struct<@TestComponent10> {
-      %self = new_struct : !llzk.struct<@TestComponent10>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent10>
       function.return %self : !llzk.struct<@TestComponent10>
     }
     function.def @constrain(
@@ -191,7 +191,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent11 {
     function.def @compute() -> !llzk.struct<@TestComponent11> {
-      %self = new_struct : !llzk.struct<@TestComponent11>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent11>
       function.return %self : !llzk.struct<@TestComponent11>
     }
     function.def @constrain(
@@ -210,7 +210,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent12 {
     function.def @compute() -> !llzk.struct<@TestComponent12> {
-      %self = new_struct : !llzk.struct<@TestComponent12>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent12>
       function.return %self : !llzk.struct<@TestComponent12>
     }
     function.def @constrain(
@@ -229,7 +229,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent13 {
     function.def @compute() -> !llzk.struct<@TestComponent13> {
-      %self = new_struct : !llzk.struct<@TestComponent13>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent13>
       function.return %self : !llzk.struct<@TestComponent13>
     }
     function.def @constrain(
@@ -248,7 +248,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent14 {
     function.def @compute() -> !llzk.struct<@TestComponent14> {
-      %self = new_struct : !llzk.struct<@TestComponent14>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent14>
       function.return %self : !llzk.struct<@TestComponent14>
     }
     function.def @constrain(
@@ -267,7 +267,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent15 {
     function.def @compute() -> !llzk.struct<@TestComponent15> {
-      %self = new_struct : !llzk.struct<@TestComponent15>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent15>
       function.return %self : !llzk.struct<@TestComponent15>
     }
     function.def @constrain(
@@ -286,7 +286,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent16 {
     function.def @compute() -> !llzk.struct<@TestComponent16> {
-      %self = new_struct : !llzk.struct<@TestComponent16>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent16>
       function.return %self : !llzk.struct<@TestComponent16>
     }
     function.def @constrain(
@@ -305,7 +305,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent17 {
     function.def @compute() -> !llzk.struct<@TestComponent17> {
-      %self = new_struct : !llzk.struct<@TestComponent17>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent17>
       function.return %self : !llzk.struct<@TestComponent17>
     }
     function.def @constrain(
@@ -324,7 +324,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent18 {
     function.def @compute() -> !llzk.struct<@TestComponent18> {
-      %self = new_struct : !llzk.struct<@TestComponent18>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent18>
       function.return %self : !llzk.struct<@TestComponent18>
     }
     function.def @constrain(
@@ -343,7 +343,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestComponent19 {
     function.def @compute() -> !llzk.struct<@TestComponent19> {
-      %self = new_struct : !llzk.struct<@TestComponent19>
+      %self = llzk.new_struct : !llzk.struct<@TestComponent19>
       function.return %self : !llzk.struct<@TestComponent19>
     }
     function.def @constrain(
@@ -387,7 +387,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @compute() -> !llzk.struct<@Component20> {
-      %self = new_struct : !llzk.struct<@Component20>
+      %self = llzk.new_struct : !llzk.struct<@Component20>
       function.return %self : !llzk.struct<@Component20>
     }
   }
@@ -404,7 +404,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @compute() -> !llzk.struct<@Component21> {
-      %self = new_struct : !llzk.struct<@Component21>
+      %self = llzk.new_struct : !llzk.struct<@Component21>
       function.return %self : !llzk.struct<@Component21>
     }
   }
@@ -421,7 +421,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @compute() -> !llzk.struct<@Component22> {
-      %self = new_struct : !llzk.struct<@Component22>
+      %self = llzk.new_struct : !llzk.struct<@Component22>
       function.return %self : !llzk.struct<@Component22>
     }
   }
@@ -438,7 +438,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @compute() -> !llzk.struct<@Component23> {
-      %self = new_struct : !llzk.struct<@Component23>
+      %self = llzk.new_struct : !llzk.struct<@Component23>
       function.return %self : !llzk.struct<@Component23>
     }
   }
@@ -449,7 +449,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component24 {
     function.def @compute(%a: !string.string, %b: !string.string) -> !llzk.struct<@Component24> {
-      %self = new_struct : !llzk.struct<@Component24>
+      %self = llzk.new_struct : !llzk.struct<@Component24>
       function.return %self : !llzk.struct<@Component24>
     }
     function.def @constrain(%a: !string.string, %b: !string.string) {
@@ -465,7 +465,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component25 {
     function.def @compute(%a: !array.array<2 x !string.string>, %b: !array.array<2 x !string.string>) -> !llzk.struct<@Component25> {
-      %self = new_struct : !llzk.struct<@Component25>
+      %self = llzk.new_struct : !llzk.struct<@Component25>
       function.return %self : !llzk.struct<@Component25>
     }
     function.def @constrain(%self: !llzk.struct<@Component25>, %a: !array.array<2 x !string.string>, %b: !array.array<2 x !string.string>) {

@@ -140,7 +140,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL: function.def @uninitialized() -> index {
-// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = undef : index
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = llzk.undef : index
 // CHECK-NEXT:    function.return %[[V0]] : index
 // CHECK-NEXT:  }
 // -----
@@ -165,12 +165,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: function.def @f2() -> (!felt.felt, !felt.felt, !felt.felt, !felt.felt, !felt.felt, !felt.felt) {
-// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = undef : !felt.felt
-// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = undef : !felt.felt
-// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = undef : !felt.felt
-// CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = undef : !felt.felt
-// CHECK-NEXT:    %[[V4:[0-9a-zA-Z_\.]+]] = undef : !felt.felt
-// CHECK-NEXT:    %[[V5:[0-9a-zA-Z_\.]+]] = undef : !felt.felt
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = llzk.undef : !felt.felt
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = llzk.undef : !felt.felt
+// CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = llzk.undef : !felt.felt
+// CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = llzk.undef : !felt.felt
+// CHECK-NEXT:    %[[V4:[0-9a-zA-Z_\.]+]] = llzk.undef : !felt.felt
+// CHECK-NEXT:    %[[V5:[0-9a-zA-Z_\.]+]] = llzk.undef : !felt.felt
 // CHECK-NEXT:    function.return %[[V5]], %[[V4]], %[[V3]], %[[V2]], %[[V1]], %[[V0]] : !felt.felt, !felt.felt, !felt.felt, !felt.felt, !felt.felt, !felt.felt
 // CHECK-NEXT:  }
 // -----
@@ -219,73 +219,73 @@ module attributes {veridise.lang = "llzk"} {
     llzk.field @arr : !array.array<2,3 x !F>
 
     function.def @compute(%a0: !F, %a1: !F, %a2: !F, %a3: !F, %a4: !F, %a5: !F) -> !llzk.struct<@ArrayFields> {
-      %self = new_struct : !llzk.struct<@ArrayFields>
+      %self = llzk.new_struct : !llzk.struct<@ArrayFields>
       %a = array.new %a0, %a1, %a2, %a3, %a4, %a5 : !array.array<2,3 x !F>
-      writef %self[@arr] = %a : !llzk.struct<@ArrayFields>, !array.array<2,3 x !F>
+      llzk.writef %self[@arr] = %a : !llzk.struct<@ArrayFields>, !array.array<2,3 x !F>
       function.return %self : !llzk.struct<@ArrayFields>
     }
 
     function.def @constrain(%self: !llzk.struct<@ArrayFields>, %a0: !F, %a1: !F, %a2: !F, %a3: !F, %a4: !F, %a5: !F) {
-      %a = readf %self[@arr] : !llzk.struct<@ArrayFields>, !array.array<2,3 x !F>
+      %a = llzk.readf %self[@arr] : !llzk.struct<@ArrayFields>, !array.array<2,3 x !F>
 
       %0 = arith.constant 0 : index
       %1 = arith.constant 1 : index
       %2 = arith.constant 2 : index
 
       %b0 = array.read %a[%0, %0] : !array.array<2,3 x !F>, !F
-      emit_eq %a0, %b0 : !F
+      llzk.emit_eq %a0, %b0 : !F
 
       %b1 = array.read %a[%0, %1] : !array.array<2,3 x !F>, !F
-      emit_eq %a1, %b1 : !F
+      llzk.emit_eq %a1, %b1 : !F
 
       %b2 = array.read %a[%0, %2] : !array.array<2,3 x !F>, !F
-      emit_eq %a2, %b2 : !F
+      llzk.emit_eq %a2, %b2 : !F
 
       %b3 = array.read %a[%1, %0] : !array.array<2,3 x !F>, !F
-      emit_eq %a3, %b3 : !F
+      llzk.emit_eq %a3, %b3 : !F
 
       %b4 = array.read %a[%1, %1] : !array.array<2,3 x !F>, !F
-      emit_eq %a4, %b4 : !F
+      llzk.emit_eq %a4, %b4 : !F
 
       %b5 = array.read %a[%1, %2] : !array.array<2,3 x !F>, !F
-      emit_eq %a5, %b5 : !F
+      llzk.emit_eq %a5, %b5 : !F
 
       function.return
     }
   }
 }
 // CHECK-LABEL: llzk.struct @ArrayFields {
-// CHECK-NEXT:    field @arr_0 : !felt.felt
-// CHECK-NEXT:    field @arr_1 : !felt.felt
-// CHECK-NEXT:    field @arr_2 : !felt.felt
-// CHECK-NEXT:    field @arr_3 : !felt.felt
-// CHECK-NEXT:    field @arr_4 : !felt.felt
-// CHECK-NEXT:    field @arr_5 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_0 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_1 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_2 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_3 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_4 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_5 : !felt.felt
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V2:[0-9a-zA-Z_\.]+]]: !felt.felt,
 // CHECK-SAME:    %[[V3:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V4:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V5:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@ArrayFields>  attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = new_struct : <@ArrayFields>
-// CHECK-DAG:       writef %[[V6]][@arr_5] = %[[V5]] : <@ArrayFields>, !felt.felt
-// CHECK-DAG:       writef %[[V6]][@arr_3] = %[[V3]] : <@ArrayFields>, !felt.felt
-// CHECK-DAG:       writef %[[V6]][@arr_4] = %[[V4]] : <@ArrayFields>, !felt.felt
-// CHECK-DAG:       writef %[[V6]][@arr_2] = %[[V2]] : <@ArrayFields>, !felt.felt
-// CHECK-DAG:       writef %[[V6]][@arr_0] = %[[V0]] : <@ArrayFields>, !felt.felt
-// CHECK-DAG:       writef %[[V6]][@arr_1] = %[[V1]] : <@ArrayFields>, !felt.felt
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ArrayFields>
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_5] = %[[V5]] : <@ArrayFields>, !felt.felt
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_3] = %[[V3]] : <@ArrayFields>, !felt.felt
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_4] = %[[V4]] : <@ArrayFields>, !felt.felt
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_2] = %[[V2]] : <@ArrayFields>, !felt.felt
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_0] = %[[V0]] : <@ArrayFields>, !felt.felt
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_1] = %[[V1]] : <@ArrayFields>, !felt.felt
 // CHECK-NEXT:      function.return %[[V6]] : !llzk.struct<@ArrayFields>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ArrayFields>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V9:[0-9a-zA-Z_\.]+]]: !felt.felt,
 // CHECK-SAME:    %[[V10:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V11:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V13:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
-// CHECK-DAG:       %[[V14:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_5] : <@ArrayFields>, !felt.felt
-// CHECK-DAG:       %[[V15:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_3] : <@ArrayFields>, !felt.felt
-// CHECK-DAG:       %[[V16:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_4] : <@ArrayFields>, !felt.felt
-// CHECK-DAG:       %[[V17:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_2] : <@ArrayFields>, !felt.felt
-// CHECK-DAG:       %[[V18:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_0] : <@ArrayFields>, !felt.felt
-// CHECK-DAG:       %[[V19:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_1] : <@ArrayFields>, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V8]], %[[V18]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V9]], %[[V19]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V10]], %[[V17]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V11]], %[[V15]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V12]], %[[V16]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V13]], %[[V14]] : !felt.felt, !felt.felt
+// CHECK-DAG:       %[[V14:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_5] : <@ArrayFields>, !felt.felt
+// CHECK-DAG:       %[[V15:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_3] : <@ArrayFields>, !felt.felt
+// CHECK-DAG:       %[[V16:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_4] : <@ArrayFields>, !felt.felt
+// CHECK-DAG:       %[[V17:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_2] : <@ArrayFields>, !felt.felt
+// CHECK-DAG:       %[[V18:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_0] : <@ArrayFields>, !felt.felt
+// CHECK-DAG:       %[[V19:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_1] : <@ArrayFields>, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V8]], %[[V18]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V9]], %[[V19]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V10]], %[[V17]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V11]], %[[V15]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V12]], %[[V16]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V13]], %[[V14]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -297,13 +297,13 @@ module attributes {veridise.lang = "llzk"} {
     llzk.field @arr : !array.array<2,3 x !F>
 
     function.def @compute(%a: !array.array<2,3 x !F>) -> !llzk.struct<@ArrayFieldsAndParams> {
-      %self = new_struct : !llzk.struct<@ArrayFieldsAndParams>
-      writef %self[@arr] = %a : !llzk.struct<@ArrayFieldsAndParams>, !array.array<2,3 x !F>
+      %self = llzk.new_struct : !llzk.struct<@ArrayFieldsAndParams>
+      llzk.writef %self[@arr] = %a : !llzk.struct<@ArrayFieldsAndParams>, !array.array<2,3 x !F>
       function.return %self : !llzk.struct<@ArrayFieldsAndParams>
     }
 
     function.def @constrain(%self: !llzk.struct<@ArrayFieldsAndParams>, %b: !array.array<2,3 x !F>) {
-      %a = readf %self[@arr] : !llzk.struct<@ArrayFieldsAndParams>, !array.array<2,3 x !F>
+      %a = llzk.readf %self[@arr] : !llzk.struct<@ArrayFieldsAndParams>, !array.array<2,3 x !F>
 
       %0 = arith.constant 0 : index
       %1 = arith.constant 1 : index
@@ -311,64 +311,64 @@ module attributes {veridise.lang = "llzk"} {
 
       %a0 = array.read %a[%0, %0] : !array.array<2,3 x !F>, !F
       %b0 = array.read %b[%0, %0] : !array.array<2,3 x !F>, !F
-      emit_eq %a0, %b0 : !F
+      llzk.emit_eq %a0, %b0 : !F
 
       %a1 = array.read %a[%0, %1] : !array.array<2,3 x !F>, !F
       %b1 = array.read %b[%0, %1] : !array.array<2,3 x !F>, !F
-      emit_eq %a1, %b1 : !F
+      llzk.emit_eq %a1, %b1 : !F
 
       %a2 = array.read %a[%0, %2] : !array.array<2,3 x !F>, !F
       %b2 = array.read %b[%0, %2] : !array.array<2,3 x !F>, !F
-      emit_eq %a2, %b2 : !F
+      llzk.emit_eq %a2, %b2 : !F
 
       %a3 = array.read %a[%1, %0] : !array.array<2,3 x !F>, !F
       %b3 = array.read %b[%1, %0] : !array.array<2,3 x !F>, !F
-      emit_eq %a3, %b3 : !F
+      llzk.emit_eq %a3, %b3 : !F
 
       %a4 = array.read %a[%1, %1] : !array.array<2,3 x !F>, !F
       %b4 = array.read %b[%1, %1] : !array.array<2,3 x !F>, !F
-      emit_eq %a4, %b4 : !F
+      llzk.emit_eq %a4, %b4 : !F
 
       %a5 = array.read %a[%1, %2] : !array.array<2,3 x !F>, !F
       %b5 = array.read %b[%1, %2] : !array.array<2,3 x !F>, !F
-      emit_eq %a5, %b5 : !F
+      llzk.emit_eq %a5, %b5 : !F
 
       function.return
     }
   }
 }
 // CHECK-LABEL: llzk.struct @ArrayFieldsAndParams {
-// CHECK-NEXT:    field @arr_0 : !felt.felt
-// CHECK-NEXT:    field @arr_1 : !felt.felt
-// CHECK-NEXT:    field @arr_2 : !felt.felt
-// CHECK-NEXT:    field @arr_3 : !felt.felt
-// CHECK-NEXT:    field @arr_4 : !felt.felt
-// CHECK-NEXT:    field @arr_5 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_0 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_1 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_2 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_3 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_4 : !felt.felt
+// CHECK-NEXT:    llzk.field @arr_5 : !felt.felt
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V2:[0-9a-zA-Z_\.]+]]: !felt.felt,
 // CHECK-SAME:    %[[V3:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V4:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V5:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@ArrayFieldsAndParams>  attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = new_struct : <@ArrayFieldsAndParams>
-// CHECK-DAG:       writef %[[V6]][@arr_5] = %[[V5]] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-DAG:       writef %[[V6]][@arr_4] = %[[V4]] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-DAG:       writef %[[V6]][@arr_3] = %[[V3]] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-DAG:       writef %[[V6]][@arr_2] = %[[V2]] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-DAG:       writef %[[V6]][@arr_1] = %[[V1]] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-DAG:       writef %[[V6]][@arr_0] = %[[V0]] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ArrayFieldsAndParams>
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_5] = %[[V5]] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_4] = %[[V4]] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_3] = %[[V3]] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_2] = %[[V2]] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_1] = %[[V1]] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-DAG:       llzk.writef %[[V6]][@arr_0] = %[[V0]] : <@ArrayFieldsAndParams>, !felt.felt
 // CHECK-NEXT:      function.return %[[V6]] : !llzk.struct<@ArrayFieldsAndParams>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ArrayFieldsAndParams>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V9:[0-9a-zA-Z_\.]+]]: !felt.felt,
 // CHECK-SAME:    %[[V10:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V11:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V13:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
-// CHECK-DAG:       %[[V14:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_5] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-DAG:       %[[V15:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_4] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-DAG:       %[[V16:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_3] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-DAG:       %[[V17:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_2] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-DAG:       %[[V18:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_1] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-DAG:       %[[V19:[0-9a-zA-Z_\.]+]] = readf %[[V7]][@arr_0] : <@ArrayFieldsAndParams>, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V19]], %[[V8]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V18]], %[[V9]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V17]], %[[V10]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V16]], %[[V11]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V15]], %[[V12]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V14]], %[[V13]] : !felt.felt, !felt.felt
+// CHECK-DAG:       %[[V14:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_5] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-DAG:       %[[V15:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_4] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-DAG:       %[[V16:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_3] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-DAG:       %[[V17:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_2] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-DAG:       %[[V18:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_1] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-DAG:       %[[V19:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@arr_0] : <@ArrayFieldsAndParams>, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V19]], %[[V8]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V18]], %[[V9]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V17]], %[[V10]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V16]], %[[V11]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V15]], %[[V12]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V14]], %[[V13]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -379,8 +379,8 @@ module attributes {veridise.lang = "llzk"} {
   // Order the structs so that the field ref is converted before the field itself
   llzk.struct @ComponentA2 {
     function.def @compute(%p: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> {
-      %self = new_struct : !llzk.struct<@ComponentA2>
-      %r = readf %p[@f1] : !llzk.struct<@ComponentA1>, !array.array<4,3 x !F>
+      %self = llzk.new_struct : !llzk.struct<@ComponentA2>
+      %r = llzk.readf %p[@f1] : !llzk.struct<@ComponentA1>, !array.array<4,3 x !F>
       function.return %self : !llzk.struct<@ComponentA2>
     }
 
@@ -394,26 +394,26 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !llzk.struct<@ComponentA1>) { function.return }
     function.def @compute() -> !llzk.struct<@ComponentA1> {
-      %self = new_struct : !llzk.struct<@ComponentA1>
+      %self = llzk.new_struct : !llzk.struct<@ComponentA1>
       function.return %self : !llzk.struct<@ComponentA1>
     }
   }
 }
 // CHECK-LABEL: llzk.struct @ComponentA2 {
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) -> !llzk.struct<@ComponentA2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA2>
-// CHECK-DAG:       %[[V2:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_8] : <@ComponentA1>, !felt.felt
-// CHECK-DAG:       %[[V3:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_7] : <@ComponentA1>, !felt.felt
-// CHECK-DAG:       %[[V4:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_10] : <@ComponentA1>, !felt.felt
-// CHECK-DAG:       %[[V5:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_9] : <@ComponentA1>, !felt.felt
-// CHECK-DAG:       %[[V6:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_11] : <@ComponentA1>, !felt.felt
-// CHECK-DAG:       %[[V7:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_2] : <@ComponentA1>, !felt.felt
-// CHECK-DAG:       %[[V8:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_3] : <@ComponentA1>, !felt.felt
-// CHECK-DAG:       %[[V9:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_4] : <@ComponentA1>, !felt.felt
-// CHECK-DAG:       %[[V10:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_5] : <@ComponentA1>, !felt.felt
-// CHECK-DAG:       %[[V11:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_6] : <@ComponentA1>, !felt.felt
-// CHECK-DAG:       %[[V12:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_0] : <@ComponentA1>, !felt.felt
-// CHECK-DAG:       %[[V13:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1_1] : <@ComponentA1>, !felt.felt
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ComponentA2>
+// CHECK-DAG:       %[[V2:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_8] : <@ComponentA1>, !felt.felt
+// CHECK-DAG:       %[[V3:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_7] : <@ComponentA1>, !felt.felt
+// CHECK-DAG:       %[[V4:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_10] : <@ComponentA1>, !felt.felt
+// CHECK-DAG:       %[[V5:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_9] : <@ComponentA1>, !felt.felt
+// CHECK-DAG:       %[[V6:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_11] : <@ComponentA1>, !felt.felt
+// CHECK-DAG:       %[[V7:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_2] : <@ComponentA1>, !felt.felt
+// CHECK-DAG:       %[[V8:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_3] : <@ComponentA1>, !felt.felt
+// CHECK-DAG:       %[[V9:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_4] : <@ComponentA1>, !felt.felt
+// CHECK-DAG:       %[[V10:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_5] : <@ComponentA1>, !felt.felt
+// CHECK-DAG:       %[[V11:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_6] : <@ComponentA1>, !felt.felt
+// CHECK-DAG:       %[[V12:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_0] : <@ComponentA1>, !felt.felt
+// CHECK-DAG:       %[[V13:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1_1] : <@ComponentA1>, !felt.felt
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@ComponentA2>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V14:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA2>, %[[V15:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) attributes {function.allow_constraint} {
@@ -422,23 +422,23 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: llzk.struct @ComponentA1 {
-// CHECK-DAG:     field @f1_0 : !felt.felt
-// CHECK-DAG:     field @f1_1 : !felt.felt
-// CHECK-DAG:     field @f1_2 : !felt.felt
-// CHECK-DAG:     field @f1_3 : !felt.felt
-// CHECK-DAG:     field @f1_4 : !felt.felt
-// CHECK-DAG:     field @f1_5 : !felt.felt
-// CHECK-DAG:     field @f1_6 : !felt.felt
-// CHECK-DAG:     field @f1_7 : !felt.felt
-// CHECK-DAG:     field @f1_8 : !felt.felt
-// CHECK-DAG:     field @f1_9 : !felt.felt
-// CHECK-DAG:     field @f1_10 : !felt.felt
-// CHECK-DAG:     field @f1_11 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_0 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_1 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_2 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_3 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_4 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_5 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_6 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_7 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_8 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_9 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_10 : !felt.felt
+// CHECK-DAG:     llzk.field @f1_11 : !felt.felt
 // CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA1>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @compute() -> !llzk.struct<@ComponentA1> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentA1>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ComponentA1>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@ComponentA1>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -506,8 +506,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-DAG:     %[[V3:[0-9a-zA-Z_\.]+]] = felt.const  2
 // CHECK-DAG:     %[[V4:[0-9a-zA-Z_\.]+]] = felt.const  214
 // CHECK-DAG:     %[[V5:[0-9a-zA-Z_\.]+]] = felt.const  45
-// CHECK-DAG:     %[[V6:[0-9a-zA-Z_\.]+]] = undef : !felt.felt
-// CHECK-DAG:     %[[V7:[0-9a-zA-Z_\.]+]] = undef : !felt.felt
+// CHECK-DAG:     %[[V6:[0-9a-zA-Z_\.]+]] = llzk.undef : !felt.felt
+// CHECK-DAG:     %[[V7:[0-9a-zA-Z_\.]+]] = llzk.undef : !felt.felt
 // CHECK-NEXT:    function.return %[[V3]], %[[V2]], %[[V1]], %[[V0]], %[[V5]], %[[V4]], %[[V7]], %[[V6]]
 // CHECK-SAME:           : !felt.felt, !felt.felt, !felt.felt, !felt.felt, !felt.felt, !felt.felt, !felt.felt, !felt.felt
 // CHECK-NEXT:  }
@@ -590,8 +590,8 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentB2<[@N]> {
     function.def @compute(%p: !llzk.struct<@ComponentB1<[@N]>>) -> !llzk.struct<@ComponentB2<[@N]>> {
-      %self = new_struct : !llzk.struct<@ComponentB2<[@N]>>
-      %r = readf %p[@f1] : !llzk.struct<@ComponentB1<[@N]>>, !array.array<4,@N x !felt.felt>
+      %self = llzk.new_struct : !llzk.struct<@ComponentB2<[@N]>>
+      %r = llzk.readf %p[@f1] : !llzk.struct<@ComponentB1<[@N]>>, !array.array<4,@N x !felt.felt>
       function.return %self : !llzk.struct<@ComponentB2<[@N]>>
     }
 
@@ -605,15 +605,15 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !llzk.struct<@ComponentB1<[@N]>>) { function.return }
     function.def @compute() -> !llzk.struct<@ComponentB1<[@N]>> {
-      %self = new_struct : !llzk.struct<@ComponentB1<[@N]>>
+      %self = llzk.new_struct : !llzk.struct<@ComponentB1<[@N]>>
       function.return %self : !llzk.struct<@ComponentB1<[@N]>>
     }
   }
 }
 // CHECK-LABEL: llzk.struct @ComponentB2<[@N]> {
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB1<[@N]>>) -> !llzk.struct<@ComponentB2<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB2<[@N]>>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = readf %[[V0]][@f1] : <@ComponentB1<[@N]>>, !array.array<4,@N x !felt.felt>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ComponentB2<[@N]>>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V0]][@f1] : <@ComponentB1<[@N]>>, !array.array<4,@N x !felt.felt>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@ComponentB2<[@N]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB2<[@N]>>, %[[V4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB1<[@N]>>) attributes {function.allow_constraint} {
@@ -622,12 +622,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: llzk.struct @ComponentB1<[@N]> {
-// CHECK-NEXT:    field @f1 : !array.array<4,@N x !felt.felt>
+// CHECK-NEXT:    llzk.field @f1 : !array.array<4,@N x !felt.felt>
 // CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB1<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @compute() -> !llzk.struct<@ComponentB1<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentB1<[@N]>>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ComponentB1<[@N]>>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@ComponentB1<[@N]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -637,7 +637,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentC1<[@N]> {
     function.def @compute(%p: !array.array<@N x !felt.felt>) -> !llzk.struct<@ComponentC1<[@N]>> {
-      %self = new_struct : !llzk.struct<@ComponentC1<[@N]>>
+      %self = llzk.new_struct : !llzk.struct<@ComponentC1<[@N]>>
       function.return %self : !llzk.struct<@ComponentC1<[@N]>>
     }
 
@@ -650,9 +650,9 @@ module attributes {veridise.lang = "llzk"} {
     llzk.field @f1 : !llzk.struct<@ComponentC1<[@N]>>
 
     function.def @compute(%p: !array.array<@N x !felt.felt>) -> !llzk.struct<@ComponentC2<[@N]>> {
-      %self = new_struct : !llzk.struct<@ComponentC2<[@N]>>
+      %self = llzk.new_struct : !llzk.struct<@ComponentC2<[@N]>>
       %c = function.call @ComponentC1::@compute(%p) : (!array.array<@N x !felt.felt>) -> !llzk.struct<@ComponentC1<[@N]>>
-      writef %self[@f1] = %c : !llzk.struct<@ComponentC2<[@N]>>, !llzk.struct<@ComponentC1<[@N]>>
+      llzk.writef %self[@f1] = %c : !llzk.struct<@ComponentC2<[@N]>>, !llzk.struct<@ComponentC1<[@N]>>
       function.return %self : !llzk.struct<@ComponentC2<[@N]>>
     }
 
@@ -663,7 +663,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // CHECK-LABEL: llzk.struct @ComponentC1<[@N]> {
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !felt.felt>) -> !llzk.struct<@ComponentC1<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentC1<[@N]>>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ComponentC1<[@N]>>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@ComponentC1<[@N]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentC1<[@N]>>, %[[V3:[0-9a-zA-Z_\.]+]]: !array.array<@N x !felt.felt>) attributes {function.allow_constraint} {
@@ -672,11 +672,11 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: llzk.struct @ComponentC2<[@N]> {
-// CHECK-NEXT:    field @f1 : !llzk.struct<@ComponentC1<[@N]>>
+// CHECK-NEXT:    llzk.field @f1 : !llzk.struct<@ComponentC1<[@N]>>
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !felt.felt>) -> !llzk.struct<@ComponentC2<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComponentC2<[@N]>>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ComponentC2<[@N]>>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @ComponentC1::@compute(%[[V0]]) : (!array.array<@N x !felt.felt>) -> !llzk.struct<@ComponentC1<[@N]>>
-// CHECK-NEXT:      writef %[[V1]][@f1] = %[[V2]] : <@ComponentC2<[@N]>>, !llzk.struct<@ComponentC1<[@N]>>
+// CHECK-NEXT:      llzk.writef %[[V1]][@f1] = %[[V2]] : <@ComponentC2<[@N]>>, !llzk.struct<@ComponentC1<[@N]>>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@ComponentC2<[@N]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentC2<[@N]>>, %[[V4:[0-9a-zA-Z_\.]+]]: !array.array<@N x !felt.felt>) attributes {function.allow_constraint} {

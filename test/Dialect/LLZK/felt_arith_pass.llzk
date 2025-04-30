@@ -156,67 +156,67 @@ function.def @f_shr(%a: !felt.felt, %b: !felt.felt) -> !felt.felt attributes {fu
 // -----
 
 function.def @f_eq(%a: !felt.felt, %b: !felt.felt) -> i1 {
-  %c = cmp eq(%a, %b)
+  %c = llzk.cmp eq(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_eq
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp eq(%[[A0]], %[[A1]])
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.cmp eq(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
 function.def @f_ne(%a: !felt.felt, %b: !felt.felt) -> i1 {
-  %c = cmp ne(%a, %b)
+  %c = llzk.cmp ne(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_ne
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp ne(%[[A0]], %[[A1]])
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.cmp ne(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
 function.def @f_lt(%a: !felt.felt, %b: !felt.felt) -> i1 {
-  %c = cmp lt(%a, %b)
+  %c = llzk.cmp lt(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_lt
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp lt(%[[A0]], %[[A1]])
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.cmp lt(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
 function.def @f_le(%a: !felt.felt, %b: !felt.felt) -> i1 {
-  %c = cmp le(%a, %b)
+  %c = llzk.cmp le(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_le
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp le(%[[A0]], %[[A1]])
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.cmp le(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
 function.def @f_gt(%a: !felt.felt, %b: !felt.felt) -> i1 {
-  %c = cmp gt(%a, %b)
+  %c = llzk.cmp gt(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_gt
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp gt(%[[A0]], %[[A1]])
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.cmp gt(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
 function.def @f_ge(%a: !felt.felt, %b: !felt.felt) -> i1 {
-  %c = cmp ge(%a, %b)
+  %c = llzk.cmp ge(%a, %b)
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_ge
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = cmp ge(%[[A0]], %[[A1]])
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.cmp ge(%[[A0]], %[[A1]])
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----

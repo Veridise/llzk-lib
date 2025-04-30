@@ -3,7 +3,7 @@
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
     function.def @compute(%a: !felt.felt) -> !llzk.struct<@ComponentA> {
-      %self = new_struct : !llzk.struct<@ComponentA>
+      %self = llzk.new_struct : !llzk.struct<@ComponentA>
       %res = scf.while (%arg1 = %a) : (!felt.felt) -> !felt.felt {
         %condition = arith.constant true
         scf.condition(%condition) %arg1 : !felt.felt
@@ -22,7 +22,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL:  llzk.struct @ComponentA {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.felt) -> !llzk.struct<@ComponentA> attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@ComponentA>
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = llzk.new_struct : <@ComponentA>
 //CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = scf.while (%[[A1:[0-9a-zA-Z_.]+]] = %[[A0]]) : (!felt.felt) -> !felt.felt {
 //CHECK-NEXT:         %[[T1:[0-9a-zA-Z_.]+]] = arith.constant true
 //CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !felt.felt
@@ -42,7 +42,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
     function.def @compute(%a: !felt.felt) -> !llzk.struct<@ComponentA> {
-      %self = new_struct : !llzk.struct<@ComponentA>
+      %self = llzk.new_struct : !llzk.struct<@ComponentA>
       %res = scf.while (%arg1 = %a) : (!felt.felt) -> !felt.felt {
         %condition = arith.constant true
         scf.condition(%condition) %arg1 : !felt.felt
@@ -61,7 +61,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL:  llzk.struct @ComponentA {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@ComponentA> attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@ComponentA>
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = llzk.new_struct : <@ComponentA>
 //CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = scf.while (%[[A1:[0-9a-zA-Z_\.]+]] = %[[A0]]) : (!felt.felt) -> !felt.felt {
 //CHECK-NEXT:         %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant true
 //CHECK-NEXT:         scf.condition(%[[T1]]) %[[A1]] : !felt.felt
@@ -81,7 +81,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
     function.def @compute(%a: !felt.felt, %d: !felt.felt) -> !llzk.struct<@ComponentA> {
-      %self = new_struct : !llzk.struct<@ComponentA>
+      %self = llzk.new_struct : !llzk.struct<@ComponentA>
       %lb = arith.constant 0 : index
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
@@ -101,7 +101,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  llzk.struct @ComponentA {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt,
 //CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@ComponentA>  attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@ComponentA>
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = llzk.new_struct : <@ComponentA>
 //CHECK-NEXT:       %[[LB:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:       %[[UB:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 //CHECK-NEXT:       %[[ST:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index

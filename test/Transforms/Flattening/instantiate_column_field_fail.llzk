@@ -7,15 +7,15 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !llzk.struct<@ComponentA1<[@T]>>) { function.return }
     function.def @compute() -> !llzk.struct<@ComponentA1<[@T]>> {
-      %self = new_struct : !llzk.struct<@ComponentA1<[@T]>>
+      %self = llzk.new_struct : !llzk.struct<@ComponentA1<[@T]>>
       function.return %self : !llzk.struct<@ComponentA1<[@T]>>
     }
   }
 
   llzk.struct @ComponentA2 {
     function.def @compute(%p: !llzk.struct<@ComponentA1<[index]>>) -> !llzk.struct<@ComponentA2> {
-      %self = new_struct : !llzk.struct<@ComponentA2>
-      %r = readf %p[@f1] : !llzk.struct<@ComponentA1<[index]>>, index {tableOffset = -1 : index}
+      %self = llzk.new_struct : !llzk.struct<@ComponentA2>
+      %r = llzk.readf %p[@f1] : !llzk.struct<@ComponentA1<[index]>>, index {tableOffset = -1 : index}
       function.return %self : !llzk.struct<@ComponentA2>
     }
 

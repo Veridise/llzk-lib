@@ -3,7 +3,7 @@
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Hello {
     function.def @compute() -> !llzk.struct<@Hello> {
-      %self = new_struct : !llzk.struct<@Hello>
+      %self = llzk.new_struct : !llzk.struct<@Hello>
       function.return %self : !llzk.struct<@Hello>
     }
     function.def @constrain(%self: !llzk.struct<@Hello>) { function.return }
@@ -20,7 +20,7 @@ function.def private @b(!array.array<3,2,1 x !felt.felt>)
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Bob {
     function.def @compute() -> !llzk.struct<@Bob> {
-      %self = new_struct : !llzk.struct<@Bob>
+      %self = llzk.new_struct : !llzk.struct<@Bob>
       function.return %self : !llzk.struct<@Bob>
     }
     function.def @constrain(%self: !llzk.struct<@Bob>) { function.return }
@@ -52,18 +52,18 @@ function.def private @i(%x: !array.array<4 x !string.string>)
 
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @CJ {
-    field @s : !string.string
+    llzk.field @s : !string.string
     function.def @compute() -> !llzk.struct<@CJ> {
-      %self = new_struct : !llzk.struct<@CJ>
+      %self = llzk.new_struct : !llzk.struct<@CJ>
       function.return %self : !llzk.struct<@CJ>
     }
     function.def @constrain(%self: !llzk.struct<@CJ>) { function.return }
   }
 }
 //CHECK-LABEL: llzk.struct @CJ {
-//CHECK-NEXT:    field @s : !string.string
+//CHECK-NEXT:    llzk.field @s : !string.string
 //CHECK-NEXT:    function.def @compute() -> !llzk.struct<@CJ> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@CJ>
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@CJ>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@CJ>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@CJ>) attributes {function.allow_constraint} {

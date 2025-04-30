@@ -5,7 +5,7 @@
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ToFelt<[@A]> {
     function.def @compute() -> !llzk.struct<@ToFelt<[@A]>> {
-      %self = new_struct : !llzk.struct<@ToFelt<[@A]>>
+      %self = llzk.new_struct : !llzk.struct<@ToFelt<[@A]>>
       function.return %self: !llzk.struct<@ToFelt<[@A]>>
     }
 
@@ -14,7 +14,7 @@ module attributes {veridise.lang = "llzk"} {
 
   llzk.struct @Component01<[@T]> {
     function.def @compute(%inp: !llzk.struct<@ToFelt<[@T]>>) -> !llzk.struct<@Component01<[@T]>> {
-      %self = new_struct : !llzk.struct<@Component01<[@T]>>
+      %self = llzk.new_struct : !llzk.struct<@Component01<[@T]>>
       function.return %self : !llzk.struct<@Component01<[@T]>>
     }
 
@@ -30,7 +30,7 @@ module attributes {veridise.lang = "llzk"} {
       // expected-error@+1 {{result type mismatch: due to struct instantiation, expected type '!llzk.struct<@Component01<[2]>>', but found '!llzk.struct<@Component01<[!llzk.struct<@ToFelt<[affine_map<(d0) -> (d0)>]>>]>>'}}
       %out = function.call @Component01::@compute(%in) : (!ToFelt) -> !llzk.struct<@Component01<[!ToFelt]>>
 
-      %self = new_struct : !llzk.struct<@ComponentB>
+      %self = llzk.new_struct : !llzk.struct<@ComponentB>
       function.return %self : !llzk.struct<@ComponentB>
     }
 
@@ -41,19 +41,19 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Component02<[@A,@B]> {
     // expected-error@+1 {{Cannot update type of 'llzk.field' because there are multiple 'llzk.writef' with different value types}}
-    field @f : !array.array<@A x !felt.felt> {llzk.pub}
+    llzk.field @f : !array.array<@A x !felt.felt> {llzk.pub}
 
     function.def @compute() -> !llzk.struct<@Component02<[@A,@B]>> {
-      %self = new_struct : !llzk.struct<@Component02<[@A,@B]>>
+      %self = llzk.new_struct : !llzk.struct<@Component02<[@A,@B]>>
       %0 = array.new : !array.array<@A x !felt.felt>
       // expected-note@+2 {{type written here is '!array.array<@A x !felt.felt>'}}
       // expected-note@+1 {{type written here is '!array.array<2 x !felt.felt>'}}
-      writef %self[@f] = %0 : !llzk.struct<@Component02<[@A,@B]>>, !array.array<@A x !felt.felt>
+      llzk.writef %self[@f] = %0 : !llzk.struct<@Component02<[@A,@B]>>, !array.array<@A x !felt.felt>
       %n = arith.constant 5 : index
       %1 = array.new : !array.array<@B x !felt.felt>
       // expected-note@+2 {{type written here is '!array.array<@B x !felt.felt>'}}
       // expected-note@+1 {{type written here is '!array.array<3 x !felt.felt>'}}
-      writef %self[@f] = %1 : !llzk.struct<@Component02<[@A,@B]>>, !array.array<@B x !felt.felt>
+      llzk.writef %self[@f] = %1 : !llzk.struct<@Component02<[@A,@B]>>, !array.array<@B x !felt.felt>
       function.return %self: !llzk.struct<@Component02<[@A,@B]>>
     }
 
@@ -63,7 +63,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @Main {
     function.def @compute() -> !llzk.struct<@Main> {
       function.call @Component02::@compute() : () -> !llzk.struct<@Component02<[2,3]>>
-      %self = new_struct : !llzk.struct<@Main>
+      %self = llzk.new_struct : !llzk.struct<@Main>
       function.return %self : !llzk.struct<@Main>
     }
     function.def @constrain(%arg0: !llzk.struct<@Main>) { function.return }

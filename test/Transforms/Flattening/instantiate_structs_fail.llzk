@@ -3,7 +3,7 @@
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @Unpack<[@N, @P, @Aff]> {
     function.def @compute(%arg0: !array.array<@Aff x !felt.felt>) -> !llzk.struct<@Unpack<[@N, @P, @Aff]>> {
-      %self = new_struct : !llzk.struct<@Unpack<[@N, @P, @Aff]>>
+      %self = llzk.new_struct : !llzk.struct<@Unpack<[@N, @P, @Aff]>>
       function.return %self : !llzk.struct<@Unpack<[@N, @P, @Aff]>>
     }
     function.def @constrain(%arg0: !llzk.struct<@Unpack<[@N, @P, @Aff]>>, %arg1: !array.array<@Aff x !felt.felt>) { function.return }
@@ -19,7 +19,7 @@ module attributes {veridise.lang = "llzk"} {
       // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!array.array<4 x !felt.felt>', but found '!array.array<2 x !felt.felt>' for operand number 0}}
       %s = function.call @Unpack::@compute(%arr) {()[%a, %b]}
         : (!array.array<2 x !felt.felt>) -> !llzk.struct<@Unpack<[8, 2, affine_map<()[s0, s1] -> (s0 floordiv s1)>]>>
-      %self = new_struct : !llzk.struct<@User1>
+      %self = llzk.new_struct : !llzk.struct<@User1>
       function.return %self : !llzk.struct<@User1>
     }
     function.def @constrain(%arg0: !llzk.struct<@User1>) { function.return }

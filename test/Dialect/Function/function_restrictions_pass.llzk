@@ -3,7 +3,7 @@
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @emiteq_in_loop {
     function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !llzk.struct<@emiteq_in_loop> {
-      %self = new_struct : !llzk.struct<@emiteq_in_loop>
+      %self = llzk.new_struct : !llzk.struct<@emiteq_in_loop>
       function.return %self : !llzk.struct<@emiteq_in_loop>
     }
 
@@ -20,7 +20,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL:  llzk.struct @emiteq_in_loop {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@emiteq_in_loop> attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@emiteq_in_loop>
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@emiteq_in_loop>
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@emiteq_in_loop>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@emiteq_in_loop>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
@@ -38,7 +38,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @emiteq_in_deep_branches {
     function.def @compute(%a: i1, %b: i1, %c: i1, %x: !felt.felt, %y: !felt.felt) -> !llzk.struct<@emiteq_in_deep_branches> {
-      %self = new_struct : !llzk.struct<@emiteq_in_deep_branches>
+      %self = llzk.new_struct : !llzk.struct<@emiteq_in_deep_branches>
       function.return %self : !llzk.struct<@emiteq_in_deep_branches>
     }
 
@@ -57,7 +57,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  llzk.struct @emiteq_in_deep_branches {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1, %[[A3:[0-9a-zA-Z_\.]+]]: !felt.felt,
 //CHECK-SAME:      %[[A4:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@emiteq_in_deep_branches>  attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@emiteq_in_deep_branches>
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@emiteq_in_deep_branches>
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@emiteq_in_deep_branches>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@emiteq_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1,
@@ -77,7 +77,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @emitin_in_loop {
     function.def @compute(%a: !felt.felt, %b: !array.array<5 x !felt.felt>) -> !llzk.struct<@emitin_in_loop> {
-      %self = new_struct : !llzk.struct<@emitin_in_loop>
+      %self = llzk.new_struct : !llzk.struct<@emitin_in_loop>
       function.return %self : !llzk.struct<@emitin_in_loop>
     }
 
@@ -95,7 +95,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  llzk.struct @emitin_in_loop {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt,
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<5 x !felt.felt>) -> !llzk.struct<@emitin_in_loop>  attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@emitin_in_loop>
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@emitin_in_loop>
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@emitin_in_loop>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@emitin_in_loop>,
@@ -114,7 +114,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @emitin_in_deep_branches {
     function.def @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !array.array<5 x index>) -> !llzk.struct<@emitin_in_deep_branches> {
-      %self = new_struct : !llzk.struct<@emitin_in_deep_branches>
+      %self = llzk.new_struct : !llzk.struct<@emitin_in_deep_branches>
       function.return %self : !llzk.struct<@emitin_in_deep_branches>
     }
 
@@ -133,7 +133,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  llzk.struct @emitin_in_deep_branches {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
 //CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: index, %[[A4:[0-9a-zA-Z_\.]+]]: !array.array<5 x index>) -> !llzk.struct<@emitin_in_deep_branches>  attributes {function.allow_witness} {
-//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@emitin_in_deep_branches>
+//CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@emitin_in_deep_branches>
 //CHECK-NEXT:       function.return %[[SELF]] : !llzk.struct<@emitin_in_deep_branches>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@emitin_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
@@ -168,7 +168,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @compute(%a: i1) -> !llzk.struct<@Test> {
       %1 = function.call @compute(%a) : (i1) -> i1
       %2 = function.call @constrain(%a) : (i1) -> i1
-      %self = new_struct : !llzk.struct<@Test>
+      %self = llzk.new_struct : !llzk.struct<@Test>
       function.return %self : !llzk.struct<@Test>
     }
 
@@ -195,7 +195,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       function.def @compute(%arg0: i1) -> !llzk.struct<@Test> attributes {function.allow_witness} {
 //CHECK-NEXT:         %0 = function.call @compute(%arg0) : (i1) -> i1
 //CHECK-NEXT:         %1 = function.call @constrain(%arg0) : (i1) -> i1
-//CHECK-NEXT:         %self = new_struct : <@Test>
+//CHECK-NEXT:         %self = llzk.new_struct : <@Test>
 //CHECK-NEXT:         function.return %self : !llzk.struct<@Test>
 //CHECK-NEXT:       }
 //CHECK-NEXT:       function.def @constrain(%arg0: !llzk.struct<@Test>, %arg1: i1) attributes {function.allow_constraint} {
@@ -210,7 +210,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @inv_in_compute {
     function.def @compute(%a: !felt.felt) -> !llzk.struct<@inv_in_compute> {
-      %self = new_struct : !llzk.struct<@inv_in_compute>
+      %self = llzk.new_struct : !llzk.struct<@inv_in_compute>
       %c = felt.inv %a
       function.return %self : !llzk.struct<@inv_in_compute>
     }
@@ -223,7 +223,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     llzk.struct @inv_in_compute {
 //CHECK-NEXT:       function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@inv_in_compute> attributes {function.allow_witness} {
-//CHECK-NEXT:         %self = new_struct : <@inv_in_compute>
+//CHECK-NEXT:         %self = llzk.new_struct : <@inv_in_compute>
 //CHECK-NEXT:         %0 = felt.inv %arg0
 //CHECK-NEXT:         function.return %self : !llzk.struct<@inv_in_compute>
 //CHECK-NEXT:       }
@@ -241,7 +241,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   llzk.struct @verifyStructTargetMatch_is_not_too_restrictive {
     function.def @compute() -> !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive> {
-      %self = new_struct : !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive>
+      %self = llzk.new_struct : !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive>
       function.call @S::@global_fun() : () -> ()
       function.return %self : !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive>
     }
@@ -253,7 +253,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL: llzk.struct @verifyStructTargetMatch_is_not_too_restrictive {
 //CHECK-NEXT:    function.def @compute() -> !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[VAL_0:.*]] = new_struct : <@verifyStructTargetMatch_is_not_too_restrictive>
+//CHECK-NEXT:      %[[VAL_0:.*]] = llzk.new_struct : <@verifyStructTargetMatch_is_not_too_restrictive>
 //CHECK-NEXT:      function.call @S::@global_fun() : () -> ()
 //CHECK-NEXT:      function.return %[[VAL_0]] : !llzk.struct<@verifyStructTargetMatch_is_not_too_restrictive>
 //CHECK-NEXT:    }

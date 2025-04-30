@@ -159,7 +159,7 @@ def LLZK_GlobalWriteOp : LLZK_GlobalRefOp<"writeg", [WitnessGen]> {
 def LLZK_StructDefOp
     : LLZK_Op<"struct", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
                          IsolatedFromAbove, GraphRegionNoTerminator,
-                         OpAsmOpInterface, SetFuncAllowAttrs,
+                         SetFuncAllowAttrs,
                          DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "circuit component definition";
   let description = [{
@@ -234,15 +234,6 @@ def LLZK_StructDefOp
     bool hasParamNamed(::mlir::StringAttr find);
     inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
       return hasParamNamed(find.getRootReference());
-    }
-
-    //===------------------------------------------------------------------===//
-    // OpAsmOpInterface Methods
-    //===------------------------------------------------------------------===//
-
-    /// Allow the dialect prefix to be omitted.
-    static ::llvm::StringRef getDefaultDialect() {
-      return "llzk";
     }
 
     //===------------------------------------------------------------------===//

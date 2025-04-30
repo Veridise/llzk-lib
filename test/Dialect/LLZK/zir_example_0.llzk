@@ -4,13 +4,13 @@
 module attributes {veridise.lang = "llzk"} {
   module @risc0 {
     llzk.struct @ValU32 {
-      field @low : !felt.felt
-      field @high : !felt.felt
+      llzk.field @low : !felt.felt
+      llzk.field @high : !felt.felt
 
       function.def @compute(%low: !felt.felt, %high: !felt.felt) -> !llzk.struct<@risc0::@ValU32> {
-        %self = new_struct : !llzk.struct<@risc0::@ValU32>
-        writef %self[@low] = %low : !llzk.struct<@risc0::@ValU32>, !felt.felt
-        writef %self[@high] = %high : !llzk.struct<@risc0::@ValU32>, !felt.felt
+        %self = llzk.new_struct : !llzk.struct<@risc0::@ValU32>
+        llzk.writef %self[@low] = %low : !llzk.struct<@risc0::@ValU32>, !felt.felt
+        llzk.writef %self[@high] = %high : !llzk.struct<@risc0::@ValU32>, !felt.felt
         function.return %self : !llzk.struct<@risc0::@ValU32>
       }
 
@@ -21,48 +21,48 @@ module attributes {veridise.lang = "llzk"} {
 
     llzk.struct @Reg {
       // ZIR frontend should mark function.return value with `pub`
-      field @reg : !felt.felt {llzk.pub}
+      llzk.field @reg : !felt.felt {llzk.pub}
 
       function.def @compute(%v: !felt.felt) -> !llzk.struct<@risc0::@Reg> {
-        %self = new_struct : !llzk.struct<@risc0::@Reg>
-        writef %self[@reg] = %v : !llzk.struct<@risc0::@Reg>, !felt.felt
+        %self = llzk.new_struct : !llzk.struct<@risc0::@Reg>
+        llzk.writef %self[@reg] = %v : !llzk.struct<@risc0::@Reg>, !felt.felt
         function.return %self : !llzk.struct<@risc0::@Reg>
       }
 
       function.def @constrain(%self: !llzk.struct<@risc0::@Reg>, %v: !felt.felt) {
-        %0 = readf %self[@reg] : !llzk.struct<@risc0::@Reg>, !felt.felt
-        emit_eq %v, %0 : !felt.felt
+        %0 = llzk.readf %self[@reg] : !llzk.struct<@risc0::@Reg>, !felt.felt
+        llzk.emit_eq %v, %0 : !felt.felt
         function.return
       }
     }
 
     llzk.struct @Div {
-      field @reciprocal : !felt.felt
+      llzk.field @reciprocal : !felt.felt
       // ZIR frontend should mark function.return value with `pub`
-      field @synthetic_return : !felt.felt {llzk.pub}
+      llzk.field @synthetic_return : !felt.felt {llzk.pub}
 
       function.def @compute(%lhs: !felt.felt, %rhs: !felt.felt) -> !llzk.struct<@risc0::@Div> {
-        %self = new_struct : !llzk.struct<@risc0::@Div>
+        %self = llzk.new_struct : !llzk.struct<@risc0::@Div>
         // res_inv := inv(rhs);
         %res_inv = felt.inv %rhs
-        writef %self[@reciprocal] = %res_inv : !llzk.struct<@risc0::@Div>, !felt.felt
+        llzk.writef %self[@reciprocal] = %res_inv : !llzk.struct<@risc0::@Div>, !felt.felt
         // self.synthetic_return := res_inv * lhs;
         %res_mul = felt.mul %res_inv, %lhs
-        writef %self[@synthetic_return] = %res_mul : !llzk.struct<@risc0::@Div>, !felt.felt
+        llzk.writef %self[@synthetic_return] = %res_mul : !llzk.struct<@risc0::@Div>, !felt.felt
         //
         function.return %self : !llzk.struct<@risc0::@Div>
       }
 
       function.def @constrain(%self: !llzk.struct<@risc0::@Div>, %lhs: !felt.felt, %rhs: !felt.felt) {
         // emit self.reciprocal * rhs = 1;
-        %res_inv = readf %self[@reciprocal] : !llzk.struct<@risc0::@Div>, !felt.felt
+        %res_inv = llzk.readf %self[@reciprocal] : !llzk.struct<@risc0::@Div>, !felt.felt
         %res_mul_1 = felt.mul %res_inv, %rhs
         %const_1 = felt.const 1
-        emit_eq %res_mul_1, %const_1 : !felt.felt
+        llzk.emit_eq %res_mul_1, %const_1 : !felt.felt
         // emit self.synthetic_return = self.reciprocal * lhs;
-        %res_self = readf %self[@synthetic_return] : !llzk.struct<@risc0::@Div>, !felt.felt
+        %res_self = llzk.readf %self[@synthetic_return] : !llzk.struct<@risc0::@Div>, !felt.felt
         %res_mul_2 = felt.mul %res_inv, %lhs
-        emit_eq %res_self, %res_mul_2 : !felt.felt
+        llzk.emit_eq %res_self, %res_mul_2 : !felt.felt
         //
         function.return
       }
@@ -73,12 +73,12 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    module @risc0 {
 //CHECK-NEXT:      llzk.struct @ValU32 {
-//CHECK-NEXT:        field @low : !felt.felt
-//CHECK-NEXT:        field @high : !felt.felt
+//CHECK-NEXT:        llzk.field @low : !felt.felt
+//CHECK-NEXT:        llzk.field @high : !felt.felt
 //CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@risc0::@ValU32> attributes {function.allow_witness} {
-//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@risc0::@ValU32>
-//CHECK-NEXT:          writef %[[SELF]][@low] = %[[A0]] : <@risc0::@ValU32>, !felt.felt
-//CHECK-NEXT:          writef %[[SELF]][@high] = %[[A1]] : <@risc0::@ValU32>, !felt.felt
+//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@risc0::@ValU32>
+//CHECK-NEXT:          llzk.writef %[[SELF]][@low] = %[[A0]] : <@risc0::@ValU32>, !felt.felt
+//CHECK-NEXT:          llzk.writef %[[SELF]][@high] = %[[A1]] : <@risc0::@ValU32>, !felt.felt
 //CHECK-NEXT:          function.return %[[SELF]] : !llzk.struct<@risc0::@ValU32>
 //CHECK-NEXT:        }
 //CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@risc0::@ValU32>,
@@ -87,38 +87,38 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
 //CHECK-NEXT:      llzk.struct @Reg {
-//CHECK-NEXT:        field @reg : !felt.felt {llzk.pub}
+//CHECK-NEXT:        llzk.field @reg : !felt.felt {llzk.pub}
 //CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@risc0::@Reg> attributes {function.allow_witness} {
-//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@risc0::@Reg>
-//CHECK-NEXT:          writef %[[SELF]][@reg] = %[[A0]] : <@risc0::@Reg>, !felt.felt
+//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@risc0::@Reg>
+//CHECK-NEXT:          llzk.writef %[[SELF]][@reg] = %[[A0]] : <@risc0::@Reg>, !felt.felt
 //CHECK-NEXT:          function.return %[[SELF]] : !llzk.struct<@risc0::@Reg>
 //CHECK-NEXT:        }
 //CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@risc0::@Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@reg] : <@risc0::@Reg>, !felt.felt
-//CHECK-NEXT:          emit_eq %[[A1]], %[[T0]] : !felt.felt, !felt.felt
+//CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = llzk.readf %[[SELF]][@reg] : <@risc0::@Reg>, !felt.felt
+//CHECK-NEXT:          llzk.emit_eq %[[A1]], %[[T0]] : !felt.felt, !felt.felt
 //CHECK-NEXT:          function.return
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
 //CHECK-NEXT:      llzk.struct @Div {
-//CHECK-NEXT:        field @reciprocal : !felt.felt
-//CHECK-NEXT:        field @synthetic_return : !felt.felt {llzk.pub}
+//CHECK-NEXT:        llzk.field @reciprocal : !felt.felt
+//CHECK-NEXT:        llzk.field @synthetic_return : !felt.felt {llzk.pub}
 //CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@risc0::@Div> attributes {function.allow_witness} {
-//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@risc0::@Div>
+//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@risc0::@Div>
 //CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = felt.inv %[[A1]]
-//CHECK-NEXT:          writef %[[SELF]][@reciprocal] = %[[T0]] : <@risc0::@Div>, !felt.felt
+//CHECK-NEXT:          llzk.writef %[[SELF]][@reciprocal] = %[[T0]] : <@risc0::@Div>, !felt.felt
 //CHECK-NEXT:          %[[T1:[0-9a-zA-Z_\.]+]] = felt.mul %[[T0]], %[[A0]]
-//CHECK-NEXT:          writef %[[SELF]][@synthetic_return] = %[[T1]] : <@risc0::@Div>, !felt.felt
+//CHECK-NEXT:          llzk.writef %[[SELF]][@synthetic_return] = %[[T1]] : <@risc0::@Div>, !felt.felt
 //CHECK-NEXT:          function.return %[[SELF]] : !llzk.struct<@risc0::@Div>
 //CHECK-NEXT:        }
 //CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@risc0::@Div>,
 //CHECK-SAME:        %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@reciprocal] : <@risc0::@Div>, !felt.felt
+//CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = llzk.readf %[[SELF]][@reciprocal] : <@risc0::@Div>, !felt.felt
 //CHECK-NEXT:          %[[T1:[0-9a-zA-Z_\.]+]] = felt.mul %[[T0]], %[[A2]]
 //CHECK-NEXT:          %felt_const_1 = felt.const 1
-//CHECK-NEXT:          emit_eq %[[T1]], %felt_const_1 : !felt.felt, !felt.felt
-//CHECK-NEXT:          %[[T2:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@synthetic_return] : <@risc0::@Div>, !felt.felt
+//CHECK-NEXT:          llzk.emit_eq %[[T1]], %felt_const_1 : !felt.felt, !felt.felt
+//CHECK-NEXT:          %[[T2:[0-9a-zA-Z_\.]+]] = llzk.readf %[[SELF]][@synthetic_return] : <@risc0::@Div>, !felt.felt
 //CHECK-NEXT:          %[[T3:[0-9a-zA-Z_\.]+]] = felt.mul %[[T0]], %[[A1]]
-//CHECK-NEXT:          emit_eq %[[T2]], %[[T3]] : !felt.felt, !felt.felt
+//CHECK-NEXT:          llzk.emit_eq %[[T2]], %[[T3]] : !felt.felt, !felt.felt
 //CHECK-NEXT:          function.return
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }

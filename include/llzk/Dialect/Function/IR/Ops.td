@@ -39,7 +39,7 @@ def FuncDefOp
           "def", [ParentOneOf<["::mlir::ModuleOp", "::llzk::StructDefOp"]>,
                   DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
                   AutomaticAllocationScope, FunctionOpInterface,
-                  IsolatedFromAbove, OpAsmOpInterface]> {
+                  IsolatedFromAbove]> {
   // NOTE: Cannot have SymbolTable trait because that would cause global
   // functions without a body to produce "Operations with a 'SymbolTable' must
   // have exactly one block"
@@ -165,13 +165,6 @@ def FuncDefOp
 
     /// Returns the result types of this function.
     ::llvm::ArrayRef<::mlir::Type> getResultTypes() { return getFunctionType().getResults(); }
-
-    //===------------------------------------------------------------------===//
-    // OpAsmOpInterface Methods
-    //===------------------------------------------------------------------===//
-
-    /// Allow the dialect prefix to be omitted.
-    static ::llvm::StringRef getDefaultDialect() { return "llzk"; }
 
     //===------------------------------------------------------------------===//
     // SymbolOpInterface Methods

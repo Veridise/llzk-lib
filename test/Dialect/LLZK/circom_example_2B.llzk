@@ -39,11 +39,11 @@
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   llzk.struct @Signal {
-    field @reg : !felt.felt {llzk.pub}
+    llzk.field @reg : !felt.felt {llzk.pub}
 
     function.def @compute(%v: !felt.felt) -> !llzk.struct<@Signal> {
-      %self = new_struct : !llzk.struct<@Signal>
-      writef %self[@reg] = %v : !llzk.struct<@Signal>, !felt.felt
+      %self = llzk.new_struct : !llzk.struct<@Signal>
+      llzk.writef %self[@reg] = %v : !llzk.struct<@Signal>, !felt.felt
       function.return %self : !llzk.struct<@Signal>
     }
 
@@ -53,8 +53,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @GetSum<[@A]> { // instantiations of A are {1, 6, 11, ... 5*P+1}
-    field @out: !Signal {llzk.pub}
-    field @sum: !felt.felt
+    llzk.field @out: !Signal {llzk.pub}
+    llzk.field @sum: !felt.felt
 
     function.def @compute(%inp: !array.array<@A x !Signal>) -> !llzk.struct<@GetSum<[@A]>> {
       %self = llzk.new_struct : !llzk.struct<@GetSum<[@A]>>
@@ -90,11 +90,11 @@ module attributes {veridise.lang = "llzk"} {
   // and can't be created via `array.new` outside the loop where the loop induction
   // variable does not yet exist.
   llzk.struct @VarArray<[@N, @T]> {
-    field @val: !array.array<@N x !llzk.tvar<@T>>
+    llzk.field @val: !array.array<@N x !llzk.tvar<@T>>
 
     function.def @compute(%inp: !array.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
-      %self = new_struct : !llzk.struct<@VarArray<[@N, @T]>>
-      writef %self[@val] = %inp : !llzk.struct<@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
+      %self = llzk.new_struct : !llzk.struct<@VarArray<[@N, @T]>>
+      llzk.writef %self[@val] = %inp : !llzk.struct<@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
       function.return %self : !llzk.struct<@VarArray<[@N, @T]>>
     }
 
@@ -104,9 +104,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @ComputeValue<[@P]> {
-    field @ret: !array.array<@P x !Signal> {llzk.pub}
-    field @ws: !array.array<@P x !llzk.struct<@GetSum<[#IdxToLen]>>>
-    field @arrs: !array.array<@P x !IdxToLenSigArray>
+    llzk.field @ret: !array.array<@P x !Signal> {llzk.pub}
+    llzk.field @ws: !array.array<@P x !llzk.struct<@GetSum<[#IdxToLen]>>>
+    llzk.field @arrs: !array.array<@P x !IdxToLenSigArray>
 
     function.def @compute(%inp: !array.array<@P x !Signal>) -> !llzk.struct<@ComputeValue<[@P]>> {
       %self = llzk.new_struct : !llzk.struct<@ComputeValue<[@P]>>
@@ -192,7 +192,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @Main {
-    field @sub: !llzk.struct<@ComputeValue<[3]>>
+    llzk.field @sub: !llzk.struct<@ComputeValue<[3]>>
 
     function.def @compute(%input: !array.array<3 x !Signal> {llzk.pub}) -> !llzk.struct<@Main> {
       %self = llzk.new_struct : !llzk.struct<@Main>
@@ -212,10 +212,10 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 * 5 + 1)>
 //
 // CHECK-LABEL: llzk.struct @Signal {
-// CHECK-NEXT:    field @reg : !felt.felt {llzk.pub}
+// CHECK-NEXT:    llzk.field @reg : !felt.felt {llzk.pub}
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@Signal> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@Signal>
-// CHECK-NEXT:      writef %[[V_1]][@reg] = %[[V_0]] : <@Signal>, !felt.felt
+// CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@Signal>
+// CHECK-NEXT:      llzk.writef %[[V_1]][@reg] = %[[V_0]] : <@Signal>, !felt.felt
 // CHECK-NEXT:      function.return %[[V_1]] : !llzk.struct<@Signal>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Signal>, %[[V_3:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
@@ -224,13 +224,13 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: llzk.struct @GetSum<[@A]> {
-// CHECK-NEXT:    field @out : !llzk.struct<@Signal> {llzk.pub}
-// CHECK-NEXT:    field @sum : !felt.felt
+// CHECK-NEXT:    llzk.field @out : !llzk.struct<@Signal> {llzk.pub}
+// CHECK-NEXT:    llzk.field @sum : !felt.felt
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.array<@A x !llzk.struct<@Signal>>) -> !llzk.struct<@GetSum<[@A]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@GetSum<[@A]>>
+// CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@GetSum<[@A]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = felt.const 0
 // CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = read_const @A : index
+// CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = llzk.read_const @A : index
 // CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V_6:[0-9a-zA-Z_\.]+]] = scf.for %[[V_7:[0-9a-zA-Z_\.]+]] = %[[V_3]] to %[[V_4]] step %[[V_5]] iter_args(%[[V_8:[0-9a-zA-Z_\.]+]] = %[[V_2]]) -> (!felt.felt) {
 // CHECK-NEXT:        %[[V_9:[0-9a-zA-Z_\.]+]] = array.read %[[V_0]]{{\[}}%[[V_7]]] : <@A x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
@@ -238,25 +238,25 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V_11:[0-9a-zA-Z_\.]+]] = felt.add %[[V_8]], %[[V_10]] : !felt.felt, !felt.felt
 // CHECK-NEXT:        scf.yield %[[V_11]] : !felt.felt
 // CHECK-NEXT:      }
-// CHECK-NEXT:      writef %[[V_1]][@sum] = %[[V_6]] : <@GetSum<[@A]>>, !felt.felt
+// CHECK-NEXT:      llzk.writef %[[V_1]][@sum] = %[[V_6]] : <@GetSum<[@A]>>, !felt.felt
 // CHECK-NEXT:      %[[V_12:[0-9a-zA-Z_\.]+]] = function.call @Signal::@compute(%[[V_6]]) : (!felt.felt) -> !llzk.struct<@Signal>
-// CHECK-NEXT:      writef %[[V_1]][@out] = %[[V_12]] : <@GetSum<[@A]>>, !llzk.struct<@Signal>
+// CHECK-NEXT:      llzk.writef %[[V_1]][@out] = %[[V_12]] : <@GetSum<[@A]>>, !llzk.struct<@Signal>
 // CHECK-NEXT:      function.return %[[V_1]] : !llzk.struct<@GetSum<[@A]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V_13:[0-9a-zA-Z_\.]+]]: !llzk.struct<@GetSum<[@A]>>, %[[V_14:[0-9a-zA-Z_\.]+]]: !array.array<@A x !llzk.struct<@Signal>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V_15:[0-9a-zA-Z_\.]+]] = readf %[[V_13]][@sum] : <@GetSum<[@A]>>, !felt.felt
-// CHECK-NEXT:      %[[V_16:[0-9a-zA-Z_\.]+]] = readf %[[V_13]][@out] : <@GetSum<[@A]>>, !llzk.struct<@Signal>
-// CHECK-NEXT:      %[[V_17:[0-9a-zA-Z_\.]+]] = readf %[[V_16]][@reg] : <@Signal>, !felt.felt
-// CHECK-NEXT:      emit_eq %[[V_17]], %[[V_15]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      %[[V_15:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_13]][@sum] : <@GetSum<[@A]>>, !felt.felt
+// CHECK-NEXT:      %[[V_16:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_13]][@out] : <@GetSum<[@A]>>, !llzk.struct<@Signal>
+// CHECK-NEXT:      %[[V_17:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_16]][@reg] : <@Signal>, !felt.felt
+// CHECK-NEXT:      llzk.emit_eq %[[V_17]], %[[V_15]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: llzk.struct @VarArray<[@N, @T]> {
-// CHECK-NEXT:    field @val : !array.array<@N x !llzk.tvar<@T>>
+// CHECK-NEXT:    llzk.field @val : !array.array<@N x !llzk.tvar<@T>>
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@VarArray<[@N, @T]>>
-// CHECK-NEXT:      writef %[[V_1]][@val] = %[[V_0]] : <@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
+// CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@VarArray<[@N, @T]>>
+// CHECK-NEXT:      llzk.writef %[[V_1]][@val] = %[[V_0]] : <@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
 // CHECK-NEXT:      function.return %[[V_1]] : !llzk.struct<@VarArray<[@N, @T]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@VarArray<[@N, @T]>>, %[[V_3:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.tvar<@T>>) attributes {function.allow_constraint} {
@@ -265,13 +265,13 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: llzk.struct @ComputeValue<[@P]> {
-// CHECK-NEXT:    field @ret : !array.array<@P x !llzk.struct<@Signal>> {llzk.pub}
-// CHECK-NEXT:    field @ws : !array.array<@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>
-// CHECK-NEXT:    field @arrs : !array.array<@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>
+// CHECK-NEXT:    llzk.field @ret : !array.array<@P x !llzk.struct<@Signal>> {llzk.pub}
+// CHECK-NEXT:    llzk.field @ws : !array.array<@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>
+// CHECK-NEXT:    llzk.field @arrs : !array.array<@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.array<@P x !llzk.struct<@Signal>>) -> !llzk.struct<@ComputeValue<[@P]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@ComputeValue<[@P]>>
+// CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ComputeValue<[@P]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = read_const @P : index
+// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = llzk.read_const @P : index
 // CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = array.new  : <@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>
 // CHECK-NEXT:      %[[V_6:[0-9a-zA-Z_\.]+]] = array.new  : <@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>
@@ -291,23 +291,23 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V_17:[0-9a-zA-Z_\.]+]] = function.call @VarArray::@compute(%[[V_9]]) {(%[[V_7]])} : (!array.array<#[[$M0]] x !llzk.struct<@Signal>>) -> !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>
 // CHECK-NEXT:        array.write %[[V_6]]{{\[}}%[[V_7]]] = %[[V_17]] : <@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>, !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      writef %[[V_1]][@ws] = %[[V_5]] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>
-// CHECK-NEXT:      writef %[[V_1]][@arrs] = %[[V_6]] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>
+// CHECK-NEXT:      llzk.writef %[[V_1]][@ws] = %[[V_5]] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>
+// CHECK-NEXT:      llzk.writef %[[V_1]][@arrs] = %[[V_6]] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>
 // CHECK-NEXT:      %[[V_18:[0-9a-zA-Z_\.]+]] = array.new  : <@P x !llzk.struct<@Signal>>
 // CHECK-NEXT:      scf.for %[[V_19:[0-9a-zA-Z_\.]+]] = %[[V_2]] to %[[V_3]] step %[[V_4]] {
 // CHECK-NEXT:        %[[V_20:[0-9a-zA-Z_\.]+]] = array.read %[[V_5]]{{\[}}%[[V_19]]] : <@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>, !llzk.struct<@GetSum<[#[[$M0]]]>>
 // CHECK-NEXT:        %[[V_21:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_20]][@out] : <@GetSum<[#[[$M0]]]>>, !llzk.struct<@Signal>
 // CHECK-NEXT:        array.write %[[V_18]]{{\[}}%[[V_19]]] = %[[V_21]] : <@P x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      writef %[[V_1]][@ret] = %[[V_18]] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@Signal>>
+// CHECK-NEXT:      llzk.writef %[[V_1]][@ret] = %[[V_18]] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@Signal>>
 // CHECK-NEXT:      function.return %[[V_1]] : !llzk.struct<@ComputeValue<[@P]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V_22:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComputeValue<[@P]>>, %[[V_23:[0-9a-zA-Z_\.]+]]: !array.array<@P x !llzk.struct<@Signal>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V_24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V_25:[0-9a-zA-Z_\.]+]] = read_const @P : index
+// CHECK-NEXT:      %[[V_25:[0-9a-zA-Z_\.]+]] = llzk.read_const @P : index
 // CHECK-NEXT:      %[[V_26:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V_27:[0-9a-zA-Z_\.]+]] = readf %[[V_22]][@ws] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>
-// CHECK-NEXT:      %[[V_28:[0-9a-zA-Z_\.]+]] = readf %[[V_22]][@arrs] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>
+// CHECK-NEXT:      %[[V_27:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_22]][@ws] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>
+// CHECK-NEXT:      %[[V_28:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_22]][@arrs] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>>
 // CHECK-NEXT:      scf.for %[[V_29:[0-9a-zA-Z_\.]+]] = %[[V_24]] to %[[V_25]] step %[[V_26]] {
 // CHECK-NEXT:        %[[V_30:[0-9a-zA-Z_\.]+]] = array.read %[[V_27]]{{\[}}%[[V_29]]] : <@P x !llzk.struct<@GetSum<[#[[$M0]]]>>>, !llzk.struct<@GetSum<[#[[$M0]]]>>
 // CHECK-NEXT:        %[[V_31:[0-9a-zA-Z_\.]+]] = array.read %[[V_23]]{{\[}}%[[V_29]]] : <@P x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
@@ -315,7 +315,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V_33:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_32]][@val] : <@VarArray<[#[[$M0]], !llzk.struct<@Signal>]>>, !array.array<#[[$M0]] x !llzk.struct<@Signal>>
 // CHECK-NEXT:        function.call @GetSum::@constrain(%[[V_30]], %[[V_33]]) : (!llzk.struct<@GetSum<[#[[$M0]]]>>, !array.array<#[[$M0]] x !llzk.struct<@Signal>>) -> ()
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[V_34:[0-9a-zA-Z_\.]+]] = readf %[[V_22]][@ret] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@Signal>>
+// CHECK-NEXT:      %[[V_34:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_22]][@ret] : <@ComputeValue<[@P]>>, !array.array<@P x !llzk.struct<@Signal>>
 // CHECK-NEXT:      scf.for %[[V_35:[0-9a-zA-Z_\.]+]] = %[[V_24]] to %[[V_25]] step %[[V_26]] {
 // CHECK-NEXT:        %[[V_36:[0-9a-zA-Z_\.]+]] = array.read %[[V_34]]{{\[}}%[[V_35]]] : <@P x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
 // CHECK-NEXT:        %[[V_37:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_36]][@reg] : <@Signal>, !felt.felt
@@ -329,15 +329,15 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: llzk.struct @Main {
-// CHECK-NEXT:    field @sub : !llzk.struct<@ComputeValue<[3]>>
+// CHECK-NEXT:    llzk.field @sub : !llzk.struct<@ComputeValue<[3]>>
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.array<3 x !llzk.struct<@Signal>> {llzk.pub}) -> !llzk.struct<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+// CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@Main>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = function.call @ComputeValue::@compute(%[[V_0]]) : (!array.array<3 x !llzk.struct<@Signal>>) -> !llzk.struct<@ComputeValue<[3]>>
-// CHECK-NEXT:      writef %[[V_1]][@sub] = %[[V_2]] : <@Main>, !llzk.struct<@ComputeValue<[3]>>
+// CHECK-NEXT:      llzk.writef %[[V_1]][@sub] = %[[V_2]] : <@Main>, !llzk.struct<@ComputeValue<[3]>>
 // CHECK-NEXT:      function.return %[[V_1]] : !llzk.struct<@Main>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V_3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>, %[[V_4:[0-9a-zA-Z_\.]+]]: !array.array<3 x !llzk.struct<@Signal>> {llzk.pub}) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = readf %[[V_3]][@sub] : <@Main>, !llzk.struct<@ComputeValue<[3]>>
+// CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V_3]][@sub] : <@Main>, !llzk.struct<@ComputeValue<[3]>>
 // CHECK-NEXT:      function.call @ComputeValue::@constrain(%[[V_5]], %[[V_4]]) : (!llzk.struct<@ComputeValue<[3]>>, !array.array<3 x !llzk.struct<@Signal>>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }

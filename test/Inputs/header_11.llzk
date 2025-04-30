@@ -3,7 +3,7 @@
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @D0 {
     function.def @compute() -> !llzk.struct<@D0> {
-      %self = new_struct : !llzk.struct<@D0>
+      %self = llzk.new_struct : !llzk.struct<@D0>
       function.return %self: !llzk.struct<@D0>
     }
     function.def @constrain(%self: !llzk.struct<@D0>) {
@@ -12,7 +12,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   llzk.struct @D1<[@M]> {
     function.def @compute() -> !llzk.struct<@D1<[@M]>> {
-      %self = new_struct : !llzk.struct<@D1<[@M]>>
+      %self = llzk.new_struct : !llzk.struct<@D1<[@M]>>
       function.return %self: !llzk.struct<@D1<[@M]>>
     }
     function.def @constrain(%self: !llzk.struct<@D1<[@M]>>) {
@@ -21,7 +21,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   llzk.struct @D2<[@M, @N]> {
     function.def @compute() -> !llzk.struct<@D2<[@M, @N]>> {
-      %self = new_struct : !llzk.struct<@D2<[@M, @N]>>
+      %self = llzk.new_struct : !llzk.struct<@D2<[@M, @N]>>
       function.return %self: !llzk.struct<@D2<[@M, @N]>>
     }
     function.def @constrain(%self: !llzk.struct<@D2<[@M, @N]>>) {

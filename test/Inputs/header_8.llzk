@@ -4,7 +4,7 @@ module attributes {veridise.lang = "llzk"} {
   module @libC {
     llzk.struct @StructC {
       function.def @compute() -> !llzk.struct<@libC::@StructC> {
-        %self = new_struct : !llzk.struct<@libC::@StructC>
+        %self = llzk.new_struct : !llzk.struct<@libC::@StructC>
         function.return %self : !llzk.struct<@libC::@StructC>
       }
       function.def @constrain(%self: !llzk.struct<@libC::@StructC>) {

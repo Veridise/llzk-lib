@@ -9,7 +9,7 @@ module attributes {veridise.lang = "llzk"} {
     llzk.field @bit : !felt.felt
 
     function.def @compute(%a: !felt.felt) -> !llzk.struct<@IsZero> {
-      %self = new_struct : !llzk.struct<@IsZero>
+      %self = llzk.new_struct : !llzk.struct<@IsZero>
       %z = felt.const 0
       %b = llzk.cmp eq(%a, %z)
       %0 = scf.if %b -> !felt.felt {
@@ -35,27 +35,27 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // CHECK-LABEL:  llzk.struct @IsZero {
-// CHECK-NEXT:     field @bit : !felt.felt
+// CHECK-NEXT:     llzk.field @bit : !felt.felt
 // CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.felt) -> !llzk.struct<@IsZero> attributes {function.allow_witness} {
-// CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@IsZero>
+// CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = llzk.new_struct : <@IsZero>
 // CHECK-NEXT:       %[[Z:[0-9a-zA-Z_.]+]] = felt.const 0
-// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = cmp eq(%[[A0]], %[[Z]])
+// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = llzk.cmp eq(%[[A0]], %[[Z]])
 // CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = scf.if %[[T0]] -> (!felt.felt) {
 // CHECK-NEXT:         scf.yield %[[Z]] : !felt.felt
 // CHECK-NEXT:       } else {
 // CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.]+]] = felt.const 1
 // CHECK-NEXT:         scf.yield %[[T2]] : !felt.felt
 // CHECK-NEXT:       }
-// CHECK-NEXT:       writef %[[SELF]][@bit] = %[[T1]] : <@IsZero>, !felt.felt
+// CHECK-NEXT:       llzk.writef %[[SELF]][@bit] = %[[T1]] : <@IsZero>, !felt.felt
 // CHECK-NEXT:       function.return %[[SELF]]
 // CHECK-NEXT:     }
 // CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !llzk.struct<@IsZero>, %[[A0:[0-9a-zA-Z_.]+]]: !felt.felt) attributes {function.allow_constraint} {
-// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = readf %[[SELF]][@bit] : <@IsZero>, !felt.felt
+// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = llzk.readf %[[SELF]][@bit] : <@IsZero>, !felt.felt
 // CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = felt.const 1
 // CHECK-NEXT:       %[[T2:[0-9a-zA-Z_.]+]] = felt.sub %[[T0]], %[[T1]]
 // CHECK-NEXT:       %[[T3:[0-9a-zA-Z_.]+]] = felt.mul %[[T0]], %[[T2]]
 // CHECK-NEXT:       %[[T4:[0-9a-zA-Z_.]+]] = felt.const 0
-// CHECK-NEXT:       emit_eq %[[T3]], %[[T4]] : !felt.felt, !felt.felt
+// CHECK-NEXT:       llzk.emit_eq %[[T3]], %[[T4]] : !felt.felt, !felt.felt
 // CHECK-NEXT:       function.return
 // CHECK-NEXT:     }
 // CHECK-NEXT: }
@@ -68,7 +68,7 @@ module attributes {veridise.lang = "llzk"} {
     llzk.field @data : !felt.felt
 
     function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !llzk.struct<@C> {
-      %self = new_struct : !llzk.struct<@C>
+      %self = llzk.new_struct : !llzk.struct<@C>
       %z = felt.const 0
       %0 = llzk.cmp ne(%a, %z)
       scf.if %0 {
@@ -84,11 +84,11 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // CHECK-LABEL:  llzk.struct @C {
-// CHECK-NEXT:    field @data : !felt.felt
+// CHECK-NEXT:    llzk.field @data : !felt.felt
 // CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_.]+]]: !felt.felt) -> !llzk.struct<@C> attributes {function.allow_witness} {
-// CHECK-NEXT:     %[[SELF:[0-9a-zA-Z_.]+]] = new_struct : <@C>
+// CHECK-NEXT:     %[[SELF:[0-9a-zA-Z_.]+]] = llzk.new_struct : <@C>
 // CHECK-NEXT:     %[[T0:[0-9a-zA-Z_.]+]] = felt.const 0
-// CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.]+]] = cmp ne(%[[A0]], %[[T0]])
+// CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.]+]] = llzk.cmp ne(%[[A0]], %[[T0]])
 // CHECK-NEXT:     scf.if %[[T1]] {
 // CHECK-NEXT:       llzk.writef %[[SELF]][@data] = %[[A1]] : <@C>, !felt.felt
 // CHECK-NEXT:     }

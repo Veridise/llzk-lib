@@ -7,11 +7,11 @@
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   llzk.struct @VarArray<[@N, @T]> {
-    field @val: !array.array<@N x !llzk.tvar<@T>>
+    llzk.field @val: !array.array<@N x !llzk.tvar<@T>>
 
     function.def @compute(%inp: !array.array<@N x !llzk.tvar<@T>>) -> !llzk.struct<@VarArray<[@N, @T]>> {
-      %self = new_struct : !llzk.struct<@VarArray<[@N, @T]>>
-      writef %self[@val] = %inp : !llzk.struct<@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
+      %self = llzk.new_struct : !llzk.struct<@VarArray<[@N, @T]>>
+      llzk.writef %self[@val] = %inp : !llzk.struct<@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
       function.return %self : !llzk.struct<@VarArray<[@N, @T]>>
     }
 
@@ -21,12 +21,12 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   llzk.struct @ToFelt<[@A]> {
-    field @out: !felt.felt {llzk.pub}
+    llzk.field @out: !felt.felt {llzk.pub}
 
     function.def @compute() -> !llzk.struct<@ToFelt<[@A]>> {
-      %self = new_struct : !llzk.struct<@ToFelt<[@A]>>
-      %constA = read_const @A : !felt.felt
-      writef %self[@out] = %constA : !llzk.struct<@ToFelt<[@A]>>, !felt.felt
+      %self = llzk.new_struct : !llzk.struct<@ToFelt<[@A]>>
+      %constA = llzk.read_const @A : !felt.felt
+      llzk.writef %self[@out] = %constA : !llzk.struct<@ToFelt<[@A]>>, !felt.felt
       function.return %self: !llzk.struct<@ToFelt<[@A]>>
     }
 
@@ -38,14 +38,14 @@ module attributes {veridise.lang = "llzk"} {
   llzk.struct @TestLoopWithAffineArrayStruct<[@N]> {
     // The `pub` here is intended to test that attributes are copied by
     //  UpdateFieldTypeFromWrite when creating a new FieldDefOp.
-    field @arrs: !array.array<@N x !HeterArr> {llzk.pub}
+    llzk.field @arrs: !array.array<@N x !HeterArr> {llzk.pub}
 
     function.def @compute() -> !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>> {
       %arrs_temp = array.new : !array.array<@N x !HeterArr>
 
       %0 = arith.constant 0 : index
       %1 = arith.constant 1 : index
-      %n = read_const @N : index
+      %n = llzk.read_const @N : index
       %step = arith.constant 1 : index
       scf.for %i = %1 to %n step %step { // range: [1,N)
         // The array length is a function of 'i' and it contains non-homogeneous structs
@@ -60,8 +60,8 @@ module attributes {veridise.lang = "llzk"} {
         array.write %arrs_temp[%i] = %va : !array.array<@N x !HeterArr>, !HeterArr
       }
       //
-      %self = new_struct : !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>>
-      writef %self[@arrs] = %arrs_temp
+      %self = llzk.new_struct : !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>>
+      llzk.writef %self[@arrs] = %arrs_temp
             : !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>>, !array.array<@N x !HeterArr>
       function.return %self : !llzk.struct<@TestLoopWithAffineArrayStruct<[@N]>>
     }
@@ -85,10 +85,10 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL: llzk.struct @"VarArray_2_!s<@ToFelt_1>" {
-// CHECK-NEXT:    field @val : !array.array<2 x !llzk.struct<@ToFelt_1>>
+// CHECK-NEXT:    llzk.field @val : !array.array<2 x !llzk.struct<@ToFelt_1>>
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<2 x !llzk.struct<@ToFelt_1>>) -> !llzk.struct<@"VarArray_2_!s<@ToFelt_1>"> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@"VarArray_2_!s<@ToFelt_1>">
-// CHECK-NEXT:      writef %[[V1]][@val] = %[[V0]] : <@"VarArray_2_!s<@ToFelt_1>">, !array.array<2 x !llzk.struct<@ToFelt_1>>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:      llzk.writef %[[V1]][@val] = %[[V0]] : <@"VarArray_2_!s<@ToFelt_1>">, !array.array<2 x !llzk.struct<@ToFelt_1>>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">, %[[V3:[0-9a-zA-Z_\.]+]]: !array.array<2 x !llzk.struct<@ToFelt_1>>) attributes {function.allow_constraint} {
@@ -97,11 +97,11 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: llzk.struct @ToFelt_1 {
-// CHECK-NEXT:    field @out : !felt.felt {llzk.pub}
+// CHECK-NEXT:    llzk.field @out : !felt.felt {llzk.pub}
 // CHECK-NEXT:    function.def @compute() -> !llzk.struct<@ToFelt_1> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 1
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@ToFelt_1>
-// CHECK-NEXT:      writef %[[V1]][@out] = %[[V0]] : <@ToFelt_1>, !felt.felt
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ToFelt_1>
+// CHECK-NEXT:      llzk.writef %[[V1]][@out] = %[[V0]] : <@ToFelt_1>, !felt.felt
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@ToFelt_1>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_1>) attributes {function.allow_constraint} {
@@ -110,7 +110,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: llzk.struct @TestLoopWithAffineArrayStruct_2 {
-// CHECK-NEXT:    field @arrs : !array.array<2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">> {llzk.pub}
+// CHECK-NEXT:    llzk.field @arrs : !array.array<2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">> {llzk.pub}
 // CHECK-NEXT:    function.def @compute() -> !llzk.struct<@TestLoopWithAffineArrayStruct_2> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
@@ -120,8 +120,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      array.write %[[V3]]{{\[}}%[[V1]]] = %[[V4]] : <2 x !llzk.struct<@ToFelt_1>>, !llzk.struct<@ToFelt_1>
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = function.call @"VarArray_2_!s<@ToFelt_1>"::@compute(%[[V3]]) : (!array.array<2 x !llzk.struct<@ToFelt_1>>) -> !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">
 // CHECK-NEXT:      array.write %[[V2]]{{\[}}%[[V0]]] = %[[V5]] : <2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>, !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = new_struct : <@TestLoopWithAffineArrayStruct_2>
-// CHECK-NEXT:      writef %[[V6]][@arrs] = %[[V2]] : <@TestLoopWithAffineArrayStruct_2>, !array.array<2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@TestLoopWithAffineArrayStruct_2>
+// CHECK-NEXT:      llzk.writef %[[V6]][@arrs] = %[[V2]] : <@TestLoopWithAffineArrayStruct_2>, !array.array<2 x !llzk.struct<@"VarArray_2_!s<@ToFelt_1>">>
 // CHECK-NEXT:      function.return %[[V6]] : !llzk.struct<@TestLoopWithAffineArrayStruct_2>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !llzk.struct<@TestLoopWithAffineArrayStruct_2>) attributes {function.allow_constraint} {
@@ -131,7 +131,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // CHECK-LABEL: llzk.struct @Main {
 // CHECK-NEXT:    function.def @compute() -> !llzk.struct<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = new_struct : <@Main>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@Main>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @TestLoopWithAffineArrayStruct_2::@compute() : () -> !llzk.struct<@TestLoopWithAffineArrayStruct_2>
 // CHECK-NEXT:      function.return %[[V0]] : !llzk.struct<@Main>
 // CHECK-NEXT:    }

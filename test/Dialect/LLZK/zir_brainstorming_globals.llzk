@@ -4,12 +4,12 @@
 // code to track if globals have been initialized and requires LLZK to have zero-initialization semantics.
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @NondetReg<[]> {
-    field @"$super" : !felt.felt
-    field @reg : !felt.felt
+    llzk.field @"$super" : !felt.felt
+    llzk.field @reg : !felt.felt
     function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@NondetReg<[]>> {
-      %self = new_struct : <@NondetReg<[]>>
-      writef %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.felt
-      writef %self[@"$super"] = %arg0 : <@NondetReg<[]>>, !felt.felt
+      %self = llzk.new_struct : <@NondetReg<[]>>
+      llzk.writef %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.felt
+      llzk.writef %self[@"$super"] = %arg0 : <@NondetReg<[]>>, !felt.felt
       function.return %self : !llzk.struct<@NondetReg<[]>>
     }
     function.def @constrain(%arg0: !llzk.struct<@NondetReg<[]>>, %arg1: !felt.felt) {
@@ -19,14 +19,14 @@ module attributes {veridise.lang = "llzk"} {
 
   // BEGIN: BOILERPLATE
   llzk.struct @Global<[@Type]> {
-    field @val : !llzk.tvar<@Type>
-    field @init : i1
+    llzk.field @val : !llzk.tvar<@Type>
+    llzk.field @init : i1
 
     function.def @compute(%v: !llzk.tvar<@Type>) -> !llzk.struct<@Global<[@Type]>> {
-      %self = new_struct : !llzk.struct<@Global<[@Type]>>
-      writef %self[@val] = %v : !llzk.struct<@Global<[@Type]>>, !llzk.tvar<@Type>
+      %self = llzk.new_struct : !llzk.struct<@Global<[@Type]>>
+      llzk.writef %self[@val] = %v : !llzk.struct<@Global<[@Type]>>, !llzk.tvar<@Type>
       %true = arith.constant true
-      writef %self[@init] = %true : !llzk.struct<@Global<[@Type]>>, i1
+      llzk.writef %self[@init] = %true : !llzk.struct<@Global<[@Type]>>, i1
       function.return %self : !llzk.struct<@Global<[@Type]>>
     }
 
@@ -42,41 +42,41 @@ module attributes {veridise.lang = "llzk"} {
 
   llzk.struct @Top {
     function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@Top> {
-      %self = new_struct : <@Top>
+      %self = llzk.new_struct : <@Top>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.felt) -> !llzk.struct<@NondetReg<[]>>
       // BEGIN: BOILERPLATE - Ensure it was NOT previously written
-      %g = readg @globals::@A : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
-      %i = readf %g[@init] : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>, i1
+      %g = llzk.readg @globals::@A : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
+      %i = llzk.readf %g[@init] : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>, i1
       %f = arith.constant false // default, 0-initialized value of 'i1' field
       %x = arith.cmpi eq, %i, %f : i1
-      assert %x, "Invalid set of \"global\"" // mirror zirgen message
+      llzk.assert %x, "Invalid set of \"global\"" // mirror zirgen message
       %1 = function.call @Global::@compute(%0) : (!llzk.struct<@NondetReg<[]>>) -> !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
       // END: BOILERPLATE
-      writeg @globals::@A = %1 : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
+      llzk.writeg @globals::@A = %1 : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
       function.return %self : !llzk.struct<@Top>
     }
     function.def @constrain(%arg0: !llzk.struct<@Top>, %arg1: !felt.felt) {
-      %g = readg @globals::@A : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
+      %g = llzk.readg @globals::@A : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
       // BEGIN: BOILERPLATE - Ensure it was previously written
-      %i = readf %g[@init] : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>, i1
+      %i = llzk.readf %g[@init] : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>, i1
       %f = arith.constant false // default, 0-initialized value of 'i1' field
       %x = arith.cmpi ne, %i, %f : i1
-      assert %x, "Read before write \"global\"" // mirror zirgen message
-      %0 = readf %g[@val] : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>, !llzk.struct<@NondetReg<[]>>
+      llzk.assert %x, "Read before write \"global\"" // mirror zirgen message
+      %0 = llzk.readf %g[@val] : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>, !llzk.struct<@NondetReg<[]>>
       // END: BOILERPLATE
-      %1 = readf %0[@reg] : !llzk.struct<@NondetReg<[]>>, !felt.felt
+      %1 = llzk.readf %0[@reg] : !llzk.struct<@NondetReg<[]>>, !felt.felt
       function.return
     }
   }
 }
 
 // CHECK-LABEL: llzk.struct @NondetReg<[]> {
-// CHECK-NEXT:    field @"$super" : !felt.felt
-// CHECK-NEXT:    field @reg : !felt.felt
+// CHECK-NEXT:    llzk.field @"$super" : !felt.felt
+// CHECK-NEXT:    llzk.field @reg : !felt.felt
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@NondetReg<[]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@NondetReg<[]>>
-// CHECK-NEXT:      writef %[[V1]][@reg] = %[[V0]] : <@NondetReg<[]>>, !felt.felt
-// CHECK-NEXT:      writef %[[V1]][@"$super"] = %[[V0]] : <@NondetReg<[]>>, !felt.felt
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@NondetReg<[]>>
+// CHECK-NEXT:      llzk.writef %[[V1]][@reg] = %[[V0]] : <@NondetReg<[]>>, !felt.felt
+// CHECK-NEXT:      llzk.writef %[[V1]][@"$super"] = %[[V0]] : <@NondetReg<[]>>, !felt.felt
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@NondetReg<[]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@NondetReg<[]>>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
@@ -85,13 +85,13 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: llzk.struct @Global<[@Type]> {
-// CHECK-NEXT:    field @val : !llzk.tvar<@Type>
-// CHECK-NEXT:    field @init : i1
+// CHECK-NEXT:    llzk.field @val : !llzk.tvar<@Type>
+// CHECK-NEXT:    llzk.field @init : i1
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.tvar<@Type>) -> !llzk.struct<@Global<[@Type]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Global<[@Type]>>
-// CHECK-NEXT:      writef %[[V1]][@val] = %[[V0]] : <@Global<[@Type]>>, !llzk.tvar<@Type>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@Global<[@Type]>>
+// CHECK-NEXT:      llzk.writef %[[V1]][@val] = %[[V0]] : <@Global<[@Type]>>, !llzk.tvar<@Type>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      writef %[[V1]][@init] = %[[V2]] : <@Global<[@Type]>>, i1
+// CHECK-NEXT:      llzk.writef %[[V1]][@init] = %[[V2]] : <@Global<[@Type]>>, i1
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Global<[@Type]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Global<[@Type]>>, %[[V4:[0-9a-zA-Z_\.]+]]: !llzk.tvar<@Type>) attributes {function.allow_constraint} {
@@ -105,25 +105,25 @@ module attributes {veridise.lang = "llzk"} {
 //
 // CHECK-LABEL: llzk.struct @Top {
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@Top> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = new_struct : <@Top>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@Top>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @NondetReg::@compute(%[[V0]]) : (!felt.felt) -> !llzk.struct<@NondetReg<[]>>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = readg @globals::@A : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = readf %[[V3]][@init] : <@Global<[!llzk.struct<@NondetReg<[]>>]>>, i1
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = llzk.readg @globals::@A : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V3]][@init] : <@Global<[!llzk.struct<@NondetReg<[]>>]>>, i1
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[V4]], %[[V5]] : i1
-// CHECK-NEXT:      assert %[[V6]], "Invalid set of \22global\22"
+// CHECK-NEXT:      llzk.assert %[[V6]], "Invalid set of \22global\22"
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = function.call @Global::@compute(%[[V2]]) : (!llzk.struct<@NondetReg<[]>>) -> !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
-// CHECK-NEXT:      writeg @globals::@A = %[[V7]] : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
+// CHECK-NEXT:      llzk.writeg @globals::@A = %[[V7]] : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
 // CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Top>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Top>, %[[V9:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = readg @globals::@A : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = readf %[[V10]][@init] : <@Global<[!llzk.struct<@NondetReg<[]>>]>>, i1
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = llzk.readg @globals::@A : !llzk.struct<@Global<[!llzk.struct<@NondetReg<[]>>]>>
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V10]][@init] : <@Global<[!llzk.struct<@NondetReg<[]>>]>>, i1
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = arith.cmpi ne, %[[V11]], %[[V12]] : i1
-// CHECK-NEXT:      assert %[[V13]], "Read before write \22global\22"
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = readf %[[V10]][@val] : <@Global<[!llzk.struct<@NondetReg<[]>>]>>, !llzk.struct<@NondetReg<[]>>
-// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = readf %[[V14]][@reg] : <@NondetReg<[]>>, !felt.felt
+// CHECK-NEXT:      llzk.assert %[[V13]], "Read before write \22global\22"
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V10]][@val] : <@Global<[!llzk.struct<@NondetReg<[]>>]>>, !llzk.struct<@NondetReg<[]>>
+// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V14]][@reg] : <@NondetReg<[]>>, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

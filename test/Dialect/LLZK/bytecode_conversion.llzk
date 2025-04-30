@@ -5,7 +5,7 @@
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentA {
     function.def @compute(%a: !felt.felt) -> !llzk.struct<@ComponentA> {
-      %self = new_struct : !llzk.struct<@ComponentA>
+      %self = llzk.new_struct : !llzk.struct<@ComponentA>
       %1 = felt.const     1 // extra spaces are intentional
       function.return %self : !llzk.struct<@ComponentA>
     }
@@ -18,7 +18,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // CHECK-LABEL: llzk.struct @ComponentA {
 // CHECK-NEXT:     function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !llzk.struct<@ComponentA> attributes {function.allow_witness} {
-// CHECK-NEXT:       %[[VAL_1:.*]] = new_struct : <@ComponentA>
+// CHECK-NEXT:       %[[VAL_1:.*]] = llzk.new_struct : <@ComponentA>
 // CHECK-NEXT:       %[[VAL_2:.*]] = felt.const 1
 // CHECK-NEXT:       function.return %[[VAL_1]] : !llzk.struct<@ComponentA>
 // CHECK-NEXT:     }

@@ -40,7 +40,7 @@ function.def @lt_felt(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
 }
 //CHECK-LABEL: function.def @lt_felt(
 //CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cmp lt(%[[A0]], %[[A1]])
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = llzk.cmp lt(%[[A0]], %[[A1]])
 //CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[T0]] : i1
 //CHECK-NEXT:    function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:  }
