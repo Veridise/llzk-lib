@@ -691,11 +691,11 @@ private:
   bool isAssertOp(mlir::Operation *op) const { return mlir::isa<AssertOp>(op); }
 
   bool isReadOp(mlir::Operation *op) const {
-    return mlir::isa<FieldReadOp, ConstReadOp, array::ReadArrayOp>(op);
+    return mlir::isa<component::FieldReadOp, ConstReadOp, array::ReadArrayOp>(op);
   }
 
   bool isWriteOp(mlir::Operation *op) const {
-    return mlir::isa<FieldWriteOp, array::WriteArrayOp, array::InsertArrayOp>(op);
+    return mlir::isa<component::FieldWriteOp, array::WriteArrayOp, array::InsertArrayOp>(op);
   }
 
   bool isArrayLengthOp(mlir::Operation *op) const { return mlir::isa<array::ArrayLengthOp>(op); }
@@ -705,13 +705,15 @@ private:
   }
 
   bool isCreateOp(mlir::Operation *op) const {
-    return mlir::isa<CreateStructOp, array::CreateArrayOp>(op);
+    return mlir::isa<component::CreateStructOp, array::CreateArrayOp>(op);
   }
 
   bool isExtractArrayOp(mlir::Operation *op) const { return mlir::isa<array::ExtractArrayOp>(op); }
 
   bool isDefinitionOp(mlir::Operation *op) const {
-    return mlir::isa<StructDefOp, function::FuncDefOp, FieldDefOp, GlobalDefOp, mlir::ModuleOp>(op);
+    return mlir::isa<
+        component::StructDefOp, function::FuncDefOp, component::FieldDefOp, GlobalDefOp,
+        mlir::ModuleOp>(op);
   }
 
   bool isCallOp(mlir::Operation *op) const { return mlir::isa<function::CallOp>(op); }
@@ -755,8 +757,8 @@ public:
   /// for other constraints can be queried via the getChildAnalysis method.
   /// @return
   static mlir::FailureOr<StructIntervals> compute(
-      mlir::ModuleOp mod, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am,
-      IntervalAnalysisContext &ctx
+      mlir::ModuleOp mod, component::StructDefOp s, mlir::DataFlowSolver &solver,
+      mlir::AnalysisManager &am, IntervalAnalysisContext &ctx
   ) {
     StructIntervals si(mod, s);
     if (si.computeIntervals(solver, am, ctx).failed()) {
@@ -786,14 +788,14 @@ public:
 
 private:
   mlir::ModuleOp mod;
-  StructDefOp structDef;
+  component::StructDefOp structDef;
   llvm::SMTSolverRef smtSolver;
   // llvm::MapVector keeps insertion order for consistent iteration
   llvm::MapVector<ConstrainRef, Interval> constrainFieldRanges;
   // llvm::SetVector for the same reasons as above
   llvm::SetVector<ExpressionValue> constrainSolverConstraints;
 
-  StructIntervals(mlir::ModuleOp m, StructDefOp s) : mod(m), structDef(s) {}
+  StructIntervals(mlir::ModuleOp m, component::StructDefOp s) : mod(m), structDef(s) {}
 };
 
 /* StructIntervalAnalysis */

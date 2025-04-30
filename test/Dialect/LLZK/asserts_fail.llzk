@@ -10,18 +10,18 @@ function.def @wrong_arg_type(
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @Component01<[@T]> {
+  struct.def @Component01<[@T]> {
     function.def @compute(
           %c: !llzk.tvar<@T> // expected-note {{prior use here}}
-        ) -> !llzk.struct<@Component01<[@T]>> {
-      %self = llzk.new_struct : !llzk.struct<@Component01<[@T]>>
+        ) -> !struct.struct<@Component01<[@T]>> {
+      %self = struct.new : !struct.struct<@Component01<[@T]>>
       // I doubt there's any reason to support type variable used as the assert condition.
       // expected-error@+1 {{use of value '%c' expects different type than prior uses: 'i1' vs '!llzk.tvar<@T>'}}
       llzk.assert %c
-      function.return %self : !llzk.struct<@Component01<[@T]>>
+      function.return %self : !struct.struct<@Component01<[@T]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@Component01<[@T]>>, %c: !llzk.tvar<@T>) {
+    function.def @constrain(%self: !struct.struct<@Component01<[@T]>>, %c: !llzk.tvar<@T>) {
       function.return
     }
   }

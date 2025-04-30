@@ -23,61 +23,6 @@ class LLZK_Type<string name, string typeMnemonic, list<Trait> traits = []>
   let mnemonic = typeMnemonic;
 }
 
-def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
-  let summary = "circuit component";
-  let description = [{}];
-
-  let parameters =
-      (ins TypeParameter<
-           "::mlir::SymbolRefAttr",
-           "Fully-qualified name of the struct definition.">:$nameRef,
-          OptionalParameter<"::mlir::ArrayAttr", "Struct parameters">:$params);
-
-  let assemblyFormat =
-      [{ `<` $nameRef ( `<` custom<StructParams>($params)^ `>` )? `>` }];
-
-  let genVerifyDecl = 1;
-
-  let skipDefaultBuilders = 1;
-  let builders = [TypeBuilderWithInferredContext<
-                      (ins "::mlir::SymbolRefAttr":$structName), [{
-                    return $_get(structName.getContext(), structName, ::mlir::ArrayAttr());
-                  }]>,
-                  TypeBuilderWithInferredContext<
-                      (ins "::mlir::SymbolRefAttr":$structName,
-                          "::mlir::ArrayAttr":$params),
-                      [{
-                    ::mlir::MLIRContext *ctx = structName.getContext();
-                    if (params) {
-                      params = ::mlir::ArrayAttr::get(ctx, forceIntAttrTypes(params.getValue()));
-                    }
-                    return $_get(ctx, structName, params);
-                  }]>,
-                  TypeBuilderWithInferredContext<
-                      (ins "::mlir::SymbolRefAttr":$structName,
-                          "::llvm::ArrayRef<::mlir::Attribute>":$paramsRef),
-                      [{
-                    ::mlir::MLIRContext *ctx = structName.getContext();
-                    ::llvm::SmallVector<::mlir::Attribute> p = forceIntAttrTypes(paramsRef);
-                    return $_get(ctx, structName, ::mlir::ArrayAttr::get(ctx, p));
-                  }]>];
-
-  let extraClassDeclaration = [{
-    /// Gets the `struct` op that defines this struct. Provided `op` is
-    /// used as a starting point for the lookup. Should not be assumed to
-    /// be non-`null` as we don't verify all types during verification.
-    ::mlir::FailureOr<SymbolLookupResult<StructDefOp>> getDefinition
-        (::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op) const;
-
-    // Verifies that this type references a valid struct, relative to the given `op`.
-    ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
-
-    /// Returns wether the struct this type refers to has fields marked as columns.
-    /// A lookup is necessary first and will forward the failure state if it fails.
-    mlir::LogicalResult hasColumns(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) const;
-  }];
-}
-
 def TypeVarSummary { string r = "type variable"; }
 
 def LLZK_TypeVarType : LLZK_Type<"TypeVar", "tvar"> {
@@ -92,7 +37,7 @@ def LLZK_TypeVarType : LLZK_Type<"TypeVar", "tvar"> {
 
 
     ```llzk
-    llzk.struct @A<[@Ty]> {
+    struct.def @A<[@Ty]> {
       field @x : !array.array<2 x !llzk.tvar<@Ty>>
       ...
     }

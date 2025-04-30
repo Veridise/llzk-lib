@@ -37,16 +37,3 @@
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
 #include "llzk/Dialect/LLZK/IR/Ops.h.inc"
-
-namespace llzk {
-// TODO: these should probably move to `struct` dialect
-
-mlir::InFlightDiagnostic
-genCompareErr(StructDefOp &expected, mlir::Operation *origin, const char *aspect);
-
-mlir::LogicalResult checkSelfType(
-    mlir::SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, mlir::Type actualType,
-    mlir::Operation *origin, const char *aspect
-);
-
-} // namespace llzk

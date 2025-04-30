@@ -21,6 +21,7 @@ using namespace mlir;
 namespace llzk {
 
 using namespace array;
+using namespace component;
 using namespace felt;
 using namespace string;
 
@@ -142,13 +143,13 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
     // Make a reference to the current field, regardless of if it is a composite
     // type or not.
     res.emplace_back(blockArg, subFields);
-    if (auto structTy = mlir::dyn_cast<llzk::StructType>(f.getType())) {
+    if (auto structTy = mlir::dyn_cast<StructType>(f.getType())) {
       // Create refs for each field
       auto subRes = getAllConstrainRefs(
           tables, mod, getStructDef(tables, mod, structTy), blockArg, subFields
       );
       res.insert(res.end(), subRes.begin(), subRes.end());
-    } else if (auto arrayTy = mlir::dyn_cast<llzk::array::ArrayType>(f.getType())) {
+    } else if (auto arrayTy = mlir::dyn_cast<ArrayType>(f.getType())) {
       // Create refs for each array element
       auto subRes = getAllConstrainRefs(tables, mod, arrayTy, blockArg, subFields);
       res.insert(res.end(), subRes.begin(), subRes.end());

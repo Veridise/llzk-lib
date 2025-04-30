@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -28,10 +29,7 @@
 #include "llzk/Dialect/Function/IR/Ops.cpp.inc"
 
 using namespace mlir;
-
-namespace llzk {
-class StructDefOp;
-}
+using namespace llzk::component;
 
 namespace llzk::function {
 

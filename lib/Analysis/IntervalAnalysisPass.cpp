@@ -28,6 +28,8 @@ namespace llzk {
 #define GEN_PASS_DEF_INTERVALANALYSISPRINTERPASS
 #include "llzk/Analysis/AnalysisPasses.h.inc"
 
+using namespace component;
+
 class IntervalAnalysisPrinterPass
     : public impl::IntervalAnalysisPrinterPassBase<IntervalAnalysisPrinterPass> {
   llvm::raw_ostream &os;

@@ -3,26 +3,26 @@
 // COM: https://veridise.atlassian.net/browse/LLZK-205
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentA {
-    function.def @compute(%a: !felt.felt) -> !llzk.struct<@ComponentA> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentA>
+  struct.def @ComponentA {
+    function.def @compute(%a: !felt.felt) -> !struct.struct<@ComponentA> {
+      %self = struct.new : !struct.struct<@ComponentA>
       %1 = felt.const     1 // extra spaces are intentional
-      function.return %self : !llzk.struct<@ComponentA>
+      function.return %self : !struct.struct<@ComponentA>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentA>, %a: !felt.felt) {
+    function.def @constrain(%self: !struct.struct<@ComponentA>, %a: !felt.felt) {
       function.return
     }
   }
 }
 
-// CHECK-LABEL: llzk.struct @ComponentA {
-// CHECK-NEXT:     function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !llzk.struct<@ComponentA> attributes {function.allow_witness} {
-// CHECK-NEXT:       %[[VAL_1:.*]] = llzk.new_struct : <@ComponentA>
+// CHECK-LABEL: struct.def @ComponentA {
+// CHECK-NEXT:     function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !struct.struct<@ComponentA> attributes {function.allow_witness} {
+// CHECK-NEXT:       %[[VAL_1:.*]] = struct.new : <@ComponentA>
 // CHECK-NEXT:       %[[VAL_2:.*]] = felt.const 1
-// CHECK-NEXT:       function.return %[[VAL_1]] : !llzk.struct<@ComponentA>
+// CHECK-NEXT:       function.return %[[VAL_1]] : !struct.struct<@ComponentA>
 // CHECK-NEXT:     }
-// CHECK-NEXT:     function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@ComponentA>, %[[VAL_4:.*]]: !felt.felt) attributes {function.allow_constraint} {
+// CHECK-NEXT:     function.def @constrain(%[[VAL_3:.*]]: !struct.struct<@ComponentA>, %[[VAL_4:.*]]: !felt.felt) attributes {function.allow_constraint} {
 // CHECK-NEXT:       function.return
 // CHECK-NEXT:     }
 // CHECK-NEXT:   }

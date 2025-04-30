@@ -127,21 +127,21 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   include.from "Dialect/LLZK/zir_example_0.llzk" as @std
 
-  llzk.struct @C1 {
-    llzk.field @z : !llzk.struct<@std::@risc0::@Reg> {llzk.pub}
+  struct.def @C1 {
+    struct.field @z : !struct.struct<@std::@risc0::@Reg> {llzk.pub}
 
-    function.def @compute(%x: !felt.felt, %y: !felt.felt) -> !llzk.struct<@C1> {
-      %self = llzk.new_struct : !llzk.struct<@C1>
+    function.def @compute(%x: !felt.felt, %y: !felt.felt) -> !struct.struct<@C1> {
+      %self = struct.new : !struct.struct<@C1>
       %add_0 = felt.add %x, %y
-      %reg_0 = function.call @std::@risc0::@Reg::@compute(%add_0) : (!felt.felt) -> (!llzk.struct<@std::@risc0::@Reg>)
-      llzk.writef %self[@z] = %reg_0 : !llzk.struct<@C1>, !llzk.struct<@std::@risc0::@Reg>
-      function.return %self: !llzk.struct<@C1>
+      %reg_0 = function.call @std::@risc0::@Reg::@compute(%add_0) : (!felt.felt) -> (!struct.struct<@std::@risc0::@Reg>)
+      struct.writef %self[@z] = %reg_0 : !struct.struct<@C1>, !struct.struct<@std::@risc0::@Reg>
+      function.return %self: !struct.struct<@C1>
     }
 
-    function.def @constrain(%self: !llzk.struct<@C1>, %x: !felt.felt, %y: !felt.felt) {
-      %reg_0 = llzk.readf %self[@z] : !llzk.struct<@C1>, !llzk.struct<@std::@risc0::@Reg>
+    function.def @constrain(%self: !struct.struct<@C1>, %x: !felt.felt, %y: !felt.felt) {
+      %reg_0 = struct.readf %self[@z] : !struct.struct<@C1>, !struct.struct<@std::@risc0::@Reg>
       %add_0 = felt.add %x, %y
-      function.call @std::@risc0::@Reg::@constrain(%reg_0, %add_0) : (!llzk.struct<@std::@risc0::@Reg>, !felt.felt) -> ()
+      function.call @std::@risc0::@Reg::@constrain(%reg_0, %add_0) : (!struct.struct<@std::@risc0::@Reg>, !felt.felt) -> ()
       function.return
     }
   }
@@ -149,49 +149,49 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    module @std attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      module @risc0 {
-//CHECK-NEXT:        llzk.struct @ValU32 {
-//CHECK-NEXT:          llzk.field @low : !felt.felt
-//CHECK-NEXT:          llzk.field @high : !felt.felt
-//CHECK-NEXT:          function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !llzk.struct<@risc0::@ValU32> attributes {function.allow_witness} {
-//CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@risc0::@ValU32>
-//CHECK-NEXT:            llzk.writef %[[SELF]][@low] = %arg0 : <@risc0::@ValU32>, !felt.felt
-//CHECK-NEXT:            llzk.writef %[[SELF]][@high] = %arg1 : <@risc0::@ValU32>, !felt.felt
-//CHECK-NEXT:            function.return %[[SELF]] : !llzk.struct<@risc0::@ValU32>
+//CHECK-NEXT:        struct.def @ValU32 {
+//CHECK-NEXT:          struct.field @low : !felt.felt
+//CHECK-NEXT:          struct.field @high : !felt.felt
+//CHECK-NEXT:          function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !struct.struct<@risc0::@ValU32> attributes {function.allow_witness} {
+//CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@ValU32>
+//CHECK-NEXT:            struct.writef %[[SELF]][@low] = %arg0 : <@risc0::@ValU32>, !felt.felt
+//CHECK-NEXT:            struct.writef %[[SELF]][@high] = %arg1 : <@risc0::@ValU32>, !felt.felt
+//CHECK-NEXT:            function.return %[[SELF]] : !struct.struct<@risc0::@ValU32>
 //CHECK-NEXT:          }
-//CHECK-NEXT:          function.def @constrain(%arg0: !llzk.struct<@risc0::@ValU32>, %arg1: !felt.felt, %arg2: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:          function.def @constrain(%arg0: !struct.struct<@risc0::@ValU32>, %arg1: !felt.felt, %arg2: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:            function.return
 //CHECK-NEXT:          }
 //CHECK-NEXT:        }
-//CHECK-NEXT:        llzk.struct @Reg {
-//CHECK-NEXT:          llzk.field @reg : !felt.felt {llzk.pub}
-//CHECK-NEXT:          function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@risc0::@Reg> attributes {function.allow_witness} {
-//CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@risc0::@Reg>
-//CHECK-NEXT:            llzk.writef %[[SELF]][@reg] = %arg0 : <@risc0::@Reg>, !felt.felt
-//CHECK-NEXT:            function.return %[[SELF]] : !llzk.struct<@risc0::@Reg>
+//CHECK-NEXT:        struct.def @Reg {
+//CHECK-NEXT:          struct.field @reg : !felt.felt {llzk.pub}
+//CHECK-NEXT:          function.def @compute(%arg0: !felt.felt) -> !struct.struct<@risc0::@Reg> attributes {function.allow_witness} {
+//CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@Reg>
+//CHECK-NEXT:            struct.writef %[[SELF]][@reg] = %arg0 : <@risc0::@Reg>, !felt.felt
+//CHECK-NEXT:            function.return %[[SELF]] : !struct.struct<@risc0::@Reg>
 //CHECK-NEXT:          }
-//CHECK-NEXT:          function.def @constrain(%arg0: !llzk.struct<@risc0::@Reg>, %arg1: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:            %[[T0:[0-9a-zA-Z_\.]+]] = llzk.readf %arg0[@reg] : <@risc0::@Reg>, !felt.felt
+//CHECK-NEXT:          function.def @constrain(%arg0: !struct.struct<@risc0::@Reg>, %arg1: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:            %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@reg] : <@risc0::@Reg>, !felt.felt
 //CHECK-NEXT:            llzk.emit_eq %arg1, %[[T0]] : !felt.felt, !felt.felt
 //CHECK-NEXT:            function.return
 //CHECK-NEXT:          }
 //CHECK-NEXT:        }
-//CHECK-NEXT:        llzk.struct @Div {
-//CHECK-NEXT:          llzk.field @reciprocal : !felt.felt
-//CHECK-NEXT:          llzk.field @synthetic_return : !felt.felt {llzk.pub}
-//CHECK-NEXT:          function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !llzk.struct<@risc0::@Div> attributes {function.allow_witness} {
-//CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@risc0::@Div>
+//CHECK-NEXT:        struct.def @Div {
+//CHECK-NEXT:          struct.field @reciprocal : !felt.felt
+//CHECK-NEXT:          struct.field @synthetic_return : !felt.felt {llzk.pub}
+//CHECK-NEXT:          function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !struct.struct<@risc0::@Div> attributes {function.allow_witness} {
+//CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@Div>
 //CHECK-NEXT:            %[[T0:[0-9a-zA-Z_\.]+]] = felt.inv %arg1
-//CHECK-NEXT:            llzk.writef %[[SELF]][@reciprocal] = %[[T0]] : <@risc0::@Div>, !felt.felt
+//CHECK-NEXT:            struct.writef %[[SELF]][@reciprocal] = %[[T0]] : <@risc0::@Div>, !felt.felt
 //CHECK-NEXT:            %[[T1:[0-9a-zA-Z_\.]+]] = felt.mul %[[T0]], %arg0
-//CHECK-NEXT:            llzk.writef %[[SELF]][@synthetic_return] = %[[T1]] : <@risc0::@Div>, !felt.felt
-//CHECK-NEXT:            function.return %[[SELF]] : !llzk.struct<@risc0::@Div>
+//CHECK-NEXT:            struct.writef %[[SELF]][@synthetic_return] = %[[T1]] : <@risc0::@Div>, !felt.felt
+//CHECK-NEXT:            function.return %[[SELF]] : !struct.struct<@risc0::@Div>
 //CHECK-NEXT:          }
-//CHECK-NEXT:          function.def @constrain(%arg0: !llzk.struct<@risc0::@Div>, %arg1: !felt.felt, %arg2: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:            %[[T0:[0-9a-zA-Z_\.]+]] = llzk.readf %arg0[@reciprocal] : <@risc0::@Div>, !felt.felt
+//CHECK-NEXT:          function.def @constrain(%arg0: !struct.struct<@risc0::@Div>, %arg1: !felt.felt, %arg2: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:            %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@reciprocal] : <@risc0::@Div>, !felt.felt
 //CHECK-NEXT:            %[[T1:[0-9a-zA-Z_\.]+]] = felt.mul %[[T0]], %arg2
 //CHECK-NEXT:            %felt_const_1 = felt.const 1
 //CHECK-NEXT:            llzk.emit_eq %[[T1]], %felt_const_1 : !felt.felt, !felt.felt
-//CHECK-NEXT:            %[[T2:[0-9a-zA-Z_\.]+]] = llzk.readf %arg0[@synthetic_return] : <@risc0::@Div>, !felt.felt
+//CHECK-NEXT:            %[[T2:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@synthetic_return] : <@risc0::@Div>, !felt.felt
 //CHECK-NEXT:            %[[T3:[0-9a-zA-Z_\.]+]] = felt.mul %[[T0]], %arg1
 //CHECK-NEXT:            llzk.emit_eq %[[T2]], %[[T3]] : !felt.felt, !felt.felt
 //CHECK-NEXT:            function.return
@@ -199,19 +199,19 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
-//CHECK-NEXT:    llzk.struct @C1 {
-//CHECK-NEXT:      llzk.field @z : !llzk.struct<@std::@risc0::@Reg> {llzk.pub}
-//CHECK-NEXT:      function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !llzk.struct<@C1> attributes {function.allow_witness} {
-//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@C1>
+//CHECK-NEXT:    struct.def @C1 {
+//CHECK-NEXT:      struct.field @z : !struct.struct<@std::@risc0::@Reg> {llzk.pub}
+//CHECK-NEXT:      function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !struct.struct<@C1> attributes {function.allow_witness} {
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@C1>
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = felt.add %arg0, %arg1
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = function.call @std::@risc0::@Reg::@compute(%[[T0]]) : (!felt.felt) -> !llzk.struct<@std::@risc0::@Reg>
-//CHECK-NEXT:        llzk.writef %[[SELF]][@z] = %[[T1]] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
-//CHECK-NEXT:        function.return %[[SELF]] : !llzk.struct<@C1>
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = function.call @std::@risc0::@Reg::@compute(%[[T0]]) : (!felt.felt) -> !struct.struct<@std::@risc0::@Reg>
+//CHECK-NEXT:        struct.writef %[[SELF]][@z] = %[[T1]] : <@C1>, !struct.struct<@std::@risc0::@Reg>
+//CHECK-NEXT:        function.return %[[SELF]] : !struct.struct<@C1>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%arg0: !llzk.struct<@C1>, %arg1: !felt.felt, %arg2: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = llzk.readf %arg0[@z] : <@C1>, !llzk.struct<@std::@risc0::@Reg>
+//CHECK-NEXT:      function.def @constrain(%arg0: !struct.struct<@C1>, %arg1: !felt.felt, %arg2: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@z] : <@C1>, !struct.struct<@std::@risc0::@Reg>
 //CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = felt.add %arg1, %arg2
-//CHECK-NEXT:        function.call @std::@risc0::@Reg::@constrain(%[[T0]], %[[T1]]) : (!llzk.struct<@std::@risc0::@Reg>, !felt.felt) -> ()
+//CHECK-NEXT:        function.call @std::@risc0::@Reg::@constrain(%[[T0]], %[[T1]]) : (!struct.struct<@std::@risc0::@Reg>, !felt.felt) -> ()
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
@@ -221,19 +221,19 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   include.from "Inputs/header_9.llzk" as @libA
 
-  llzk.struct @D {
-    llzk.field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
+  struct.def @D {
+    struct.field @z : !struct.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
 
-    function.def @compute(%x: !felt.felt, %y: !felt.felt) -> !llzk.struct<@D> {
-      %self = llzk.new_struct : !llzk.struct<@D>
-      %reg_0 = function.call @libA::@libB::@libC::@StructC::@compute() : () -> (!llzk.struct<@libA::@libB::@libC::@StructC>)
-      llzk.writef %self[@z] = %reg_0 : !llzk.struct<@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
-      function.return %self: !llzk.struct<@D>
+    function.def @compute(%x: !felt.felt, %y: !felt.felt) -> !struct.struct<@D> {
+      %self = struct.new : !struct.struct<@D>
+      %reg_0 = function.call @libA::@libB::@libC::@StructC::@compute() : () -> (!struct.struct<@libA::@libB::@libC::@StructC>)
+      struct.writef %self[@z] = %reg_0 : !struct.struct<@D>, !struct.struct<@libA::@libB::@libC::@StructC>
+      function.return %self: !struct.struct<@D>
     }
 
-    function.def @constrain(%self: !llzk.struct<@D>, %x: !felt.felt, %y: !felt.felt) {
-      %reg_0 = llzk.readf %self[@z] : !llzk.struct<@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
-      function.call @libA::@libB::@libC::@StructC::@constrain(%reg_0) : (!llzk.struct<@libA::@libB::@libC::@StructC>) -> ()
+    function.def @constrain(%self: !struct.struct<@D>, %x: !felt.felt, %y: !felt.felt) {
+      %reg_0 = struct.readf %self[@z] : !struct.struct<@D>, !struct.struct<@libA::@libB::@libC::@StructC>
+      function.call @libA::@libB::@libC::@StructC::@constrain(%reg_0) : (!struct.struct<@libA::@libB::@libC::@StructC>) -> ()
       function.return
     }
   }
@@ -242,29 +242,29 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    module @libA attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      module @libB attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        module @libC {
-//CHECK-NEXT:          llzk.struct @StructC {
-//CHECK-NEXT:            function.def @compute() -> !llzk.struct<@libC::@StructC> attributes {function.allow_witness} {
-//CHECK-NEXT:              %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@libC::@StructC>
-//CHECK-NEXT:              function.return %[[SELF]] : !llzk.struct<@libC::@StructC>
+//CHECK-NEXT:          struct.def @StructC {
+//CHECK-NEXT:            function.def @compute() -> !struct.struct<@libC::@StructC> attributes {function.allow_witness} {
+//CHECK-NEXT:              %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@libC::@StructC>
+//CHECK-NEXT:              function.return %[[SELF]] : !struct.struct<@libC::@StructC>
 //CHECK-NEXT:            }
-//CHECK-NEXT:            function.def @constrain(%arg0: !llzk.struct<@libC::@StructC>) attributes {function.allow_constraint} {
+//CHECK-NEXT:            function.def @constrain(%arg0: !struct.struct<@libC::@StructC>) attributes {function.allow_constraint} {
 //CHECK-NEXT:              function.return
 //CHECK-NEXT:            }
 //CHECK-NEXT:          }
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
-//CHECK-NEXT:    llzk.struct @D {
-//CHECK-NEXT:      llzk.field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
-//CHECK-NEXT:      function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !llzk.struct<@D> attributes {function.allow_witness} {
-//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@D>
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = function.call @libA::@libB::@libC::@StructC::@compute() : () -> !llzk.struct<@libA::@libB::@libC::@StructC>
-//CHECK-NEXT:        llzk.writef %[[SELF]][@z] = %[[T0]] : <@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
-//CHECK-NEXT:        function.return %[[SELF]] : !llzk.struct<@D>
+//CHECK-NEXT:    struct.def @D {
+//CHECK-NEXT:      struct.field @z : !struct.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
+//CHECK-NEXT:      function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !struct.struct<@D> attributes {function.allow_witness} {
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@D>
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = function.call @libA::@libB::@libC::@StructC::@compute() : () -> !struct.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        struct.writef %[[SELF]][@z] = %[[T0]] : <@D>, !struct.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        function.return %[[SELF]] : !struct.struct<@D>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%arg0: !llzk.struct<@D>, %arg1: !felt.felt, %arg2: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = llzk.readf %arg0[@z] : <@D>, !llzk.struct<@libA::@libB::@libC::@StructC>
-//CHECK-NEXT:        function.call @libA::@libB::@libC::@StructC::@constrain(%[[T0]]) : (!llzk.struct<@libA::@libB::@libC::@StructC>) -> ()
+//CHECK-NEXT:      function.def @constrain(%arg0: !struct.struct<@D>, %arg1: !felt.felt, %arg2: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@z] : <@D>, !struct.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        function.call @libA::@libB::@libC::@StructC::@constrain(%[[T0]]) : (!struct.struct<@libA::@libB::@libC::@StructC>) -> ()
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
@@ -274,28 +274,28 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   include.from "Inputs/header_10.llzk" as @libA
 
-  llzk.struct @StructD {
-    llzk.field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
-    llzk.field @y : !llzk.struct<@libA::@StructB> {llzk.pub}
+  struct.def @StructD {
+    struct.field @z : !struct.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
+    struct.field @y : !struct.struct<@libA::@StructB> {llzk.pub}
 
-    function.def @compute(%x: !felt.felt, %y: !felt.felt) -> !llzk.struct<@StructD> {
-      %self = llzk.new_struct : !llzk.struct<@StructD>
+    function.def @compute(%x: !felt.felt, %y: !felt.felt) -> !struct.struct<@StructD> {
+      %self = struct.new : !struct.struct<@StructD>
 
-      %reg_0 = function.call @libA::@libB::@libC::@StructC::@compute() : () -> (!llzk.struct<@libA::@libB::@libC::@StructC>)
-      llzk.writef %self[@z] = %reg_0 : !llzk.struct<@StructD>, !llzk.struct<@libA::@libB::@libC::@StructC>
+      %reg_0 = function.call @libA::@libB::@libC::@StructC::@compute() : () -> (!struct.struct<@libA::@libB::@libC::@StructC>)
+      struct.writef %self[@z] = %reg_0 : !struct.struct<@StructD>, !struct.struct<@libA::@libB::@libC::@StructC>
 
-      %reg_1 = function.call @libA::@StructB::@compute() : () -> (!llzk.struct<@libA::@StructB>)
-      llzk.writef %self[@y] = %reg_1 : !llzk.struct<@StructD>, !llzk.struct<@libA::@StructB>
+      %reg_1 = function.call @libA::@StructB::@compute() : () -> (!struct.struct<@libA::@StructB>)
+      struct.writef %self[@y] = %reg_1 : !struct.struct<@StructD>, !struct.struct<@libA::@StructB>
 
-      function.return %self: !llzk.struct<@StructD>
+      function.return %self: !struct.struct<@StructD>
     }
 
-    function.def @constrain(%self: !llzk.struct<@StructD>, %x: !felt.felt, %y: !felt.felt) {
-      %reg_0 = llzk.readf %self[@z] : !llzk.struct<@StructD>, !llzk.struct<@libA::@libB::@libC::@StructC>
-      function.call @libA::@libB::@libC::@StructC::@constrain(%reg_0) : (!llzk.struct<@libA::@libB::@libC::@StructC>) -> ()
+    function.def @constrain(%self: !struct.struct<@StructD>, %x: !felt.felt, %y: !felt.felt) {
+      %reg_0 = struct.readf %self[@z] : !struct.struct<@StructD>, !struct.struct<@libA::@libB::@libC::@StructC>
+      function.call @libA::@libB::@libC::@StructC::@constrain(%reg_0) : (!struct.struct<@libA::@libB::@libC::@StructC>) -> ()
 
-      %reg_1 = llzk.readf %self[@y] : !llzk.struct<@StructD>, !llzk.struct<@libA::@StructB>
-      function.call @libA::@StructB::@constrain(%reg_1) : (!llzk.struct<@libA::@StructB>) -> ()
+      %reg_1 = struct.readf %self[@y] : !struct.struct<@StructD>, !struct.struct<@libA::@StructB>
+      function.call @libA::@StructB::@constrain(%reg_1) : (!struct.struct<@libA::@StructB>) -> ()
 
       function.return
     }
@@ -305,46 +305,46 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    module @libA attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      module @libB attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        module @libC {
-//CHECK-NEXT:          llzk.struct @StructC {
-//CHECK-NEXT:            function.def @compute() -> !llzk.struct<@libC::@StructC> attributes {function.allow_witness} {
-//CHECK-NEXT:              %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@libC::@StructC>
-//CHECK-NEXT:              function.return %[[SELF]] : !llzk.struct<@libC::@StructC>
+//CHECK-NEXT:          struct.def @StructC {
+//CHECK-NEXT:            function.def @compute() -> !struct.struct<@libC::@StructC> attributes {function.allow_witness} {
+//CHECK-NEXT:              %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@libC::@StructC>
+//CHECK-NEXT:              function.return %[[SELF]] : !struct.struct<@libC::@StructC>
 //CHECK-NEXT:            }
-//CHECK-NEXT:            function.def @constrain(%arg0: !llzk.struct<@libC::@StructC>) attributes {function.allow_constraint} {
+//CHECK-NEXT:            function.def @constrain(%arg0: !struct.struct<@libC::@StructC>) attributes {function.allow_constraint} {
 //CHECK-NEXT:              function.return
 //CHECK-NEXT:            }
 //CHECK-NEXT:          }
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
-//CHECK-NEXT:      llzk.struct @StructB {
-//CHECK-NEXT:        llzk.field @x : !llzk.struct<@libB::@libC::@StructC>
-//CHECK-NEXT:        function.def @compute() -> !llzk.struct<@StructB> attributes {function.allow_witness} {
-//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@StructB>
-//CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = function.call @libB::@libC::@StructC::@compute() : () -> !llzk.struct<@libB::@libC::@StructC>
-//CHECK-NEXT:          llzk.writef %[[SELF]][@x] = %[[T0]] : <@StructB>, !llzk.struct<@libB::@libC::@StructC>
-//CHECK-NEXT:          function.return %[[SELF]] : !llzk.struct<@StructB>
+//CHECK-NEXT:      struct.def @StructB {
+//CHECK-NEXT:        struct.field @x : !struct.struct<@libB::@libC::@StructC>
+//CHECK-NEXT:        function.def @compute() -> !struct.struct<@StructB> attributes {function.allow_witness} {
+//CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@StructB>
+//CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = function.call @libB::@libC::@StructC::@compute() : () -> !struct.struct<@libB::@libC::@StructC>
+//CHECK-NEXT:          struct.writef %[[SELF]][@x] = %[[T0]] : <@StructB>, !struct.struct<@libB::@libC::@StructC>
+//CHECK-NEXT:          function.return %[[SELF]] : !struct.struct<@StructB>
 //CHECK-NEXT:        }
-//CHECK-NEXT:        function.def @constrain(%arg0: !llzk.struct<@StructB>) attributes {function.allow_constraint} {
+//CHECK-NEXT:        function.def @constrain(%arg0: !struct.struct<@StructB>) attributes {function.allow_constraint} {
 //CHECK-NEXT:          function.return
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
-//CHECK-NEXT:    llzk.struct @StructD {
-//CHECK-NEXT:      llzk.field @z : !llzk.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
-//CHECK-NEXT:      llzk.field @y : !llzk.struct<@libA::@StructB> {llzk.pub}
-//CHECK-NEXT:      function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !llzk.struct<@StructD> attributes {function.allow_witness} {
-//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@StructD>
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = function.call @libA::@libB::@libC::@StructC::@compute() : () -> !llzk.struct<@libA::@libB::@libC::@StructC>
-//CHECK-NEXT:        llzk.writef %[[SELF]][@z] = %[[T0]] : <@StructD>, !llzk.struct<@libA::@libB::@libC::@StructC>
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = function.call @libA::@StructB::@compute() : () -> !llzk.struct<@libA::@StructB>
-//CHECK-NEXT:        llzk.writef %[[SELF]][@y] = %[[T1]] : <@StructD>, !llzk.struct<@libA::@StructB>
-//CHECK-NEXT:        function.return %[[SELF]] : !llzk.struct<@StructD>
+//CHECK-NEXT:    struct.def @StructD {
+//CHECK-NEXT:      struct.field @z : !struct.struct<@libA::@libB::@libC::@StructC> {llzk.pub}
+//CHECK-NEXT:      struct.field @y : !struct.struct<@libA::@StructB> {llzk.pub}
+//CHECK-NEXT:      function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !struct.struct<@StructD> attributes {function.allow_witness} {
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@StructD>
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = function.call @libA::@libB::@libC::@StructC::@compute() : () -> !struct.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        struct.writef %[[SELF]][@z] = %[[T0]] : <@StructD>, !struct.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = function.call @libA::@StructB::@compute() : () -> !struct.struct<@libA::@StructB>
+//CHECK-NEXT:        struct.writef %[[SELF]][@y] = %[[T1]] : <@StructD>, !struct.struct<@libA::@StructB>
+//CHECK-NEXT:        function.return %[[SELF]] : !struct.struct<@StructD>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%arg0: !llzk.struct<@StructD>, %arg1: !felt.felt, %arg2: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = llzk.readf %arg0[@z] : <@StructD>, !llzk.struct<@libA::@libB::@libC::@StructC>
-//CHECK-NEXT:        function.call @libA::@libB::@libC::@StructC::@constrain(%[[T0]]) : (!llzk.struct<@libA::@libB::@libC::@StructC>) -> ()
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = llzk.readf %arg0[@y] : <@StructD>, !llzk.struct<@libA::@StructB>
-//CHECK-NEXT:        function.call @libA::@StructB::@constrain(%[[T1]]) : (!llzk.struct<@libA::@StructB>) -> ()
+//CHECK-NEXT:      function.def @constrain(%arg0: !struct.struct<@StructD>, %arg1: !felt.felt, %arg2: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@z] : <@StructD>, !struct.struct<@libA::@libB::@libC::@StructC>
+//CHECK-NEXT:        function.call @libA::@libB::@libC::@StructC::@constrain(%[[T0]]) : (!struct.struct<@libA::@libB::@libC::@StructC>) -> ()
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@y] : <@StructD>, !struct.struct<@libA::@StructB>
+//CHECK-NEXT:        function.call @libA::@StructB::@constrain(%[[T1]]) : (!struct.struct<@libA::@StructB>) -> ()
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }

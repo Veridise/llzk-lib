@@ -1,72 +1,72 @@
 // RUN: llzk-opt -I %S -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck %s
 
 #id = affine_map<(i)->(i)>
-!ToFelt = !llzk.struct<@ToFelt<[#id]>>
+!ToFelt = !struct.struct<@ToFelt<[#id]>>
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ToFelt<[@A]> {
-    // llzk.field @out: !felt.felt {llzk.pub}
+  struct.def @ToFelt<[@A]> {
+    // struct.field @out: !felt.felt {llzk.pub}
 
-    function.def @compute() -> !llzk.struct<@ToFelt<[@A]>> {
-      %self = llzk.new_struct : !llzk.struct<@ToFelt<[@A]>>
+    function.def @compute() -> !struct.struct<@ToFelt<[@A]>> {
+      %self = struct.new : !struct.struct<@ToFelt<[@A]>>
       // %constA = llzk.read_const @A : !felt.felt
-      // llzk.writef %self[@out] = %constA : !llzk.struct<@ToFelt<[@A]>>, !felt.felt
-      function.return %self: !llzk.struct<@ToFelt<[@A]>>
+      // struct.writef %self[@out] = %constA : !struct.struct<@ToFelt<[@A]>>, !felt.felt
+      function.return %self: !struct.struct<@ToFelt<[@A]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ToFelt<[@A]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ToFelt<[@A]>>) { function.return }
   }
 
-  llzk.struct @ComponentA<[@T]> {
-    function.def @compute(%inp: !llzk.struct<@ToFelt<[@T]>>) -> !llzk.struct<@ComponentA<[@T]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentA<[@T]>>
-      function.return %self : !llzk.struct<@ComponentA<[@T]>>
+  struct.def @ComponentA<[@T]> {
+    function.def @compute(%inp: !struct.struct<@ToFelt<[@T]>>) -> !struct.struct<@ComponentA<[@T]>> {
+      %self = struct.new : !struct.struct<@ComponentA<[@T]>>
+      function.return %self : !struct.struct<@ComponentA<[@T]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentA<[@T]>>, %inp: !llzk.struct<@ToFelt<[@T]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentA<[@T]>>, %inp: !struct.struct<@ToFelt<[@T]>>) { function.return }
   }
 
-  llzk.struct @ComponentB {
-    function.def @compute() -> !llzk.struct<@ComponentB> {
+  struct.def @ComponentB {
+    function.def @compute() -> !struct.struct<@ComponentB> {
       // In real code, this should be loop induction variable
       %n = arith.constant 2 : index
       %in = function.call @ToFelt::@compute(){(%n)} : () -> !ToFelt
-      %out = function.call @ComponentA::@compute(%in) : (!ToFelt) -> !llzk.struct<@ComponentA<[2]>>
+      %out = function.call @ComponentA::@compute(%in) : (!ToFelt) -> !struct.struct<@ComponentA<[2]>>
 
-      %self = llzk.new_struct : !llzk.struct<@ComponentB>
-      function.return %self : !llzk.struct<@ComponentB>
+      %self = struct.new : !struct.struct<@ComponentB>
+      function.return %self : !struct.struct<@ComponentB>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentB>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentB>) { function.return }
   }
 }
-// CHECK-LABEL: llzk.struct @ToFelt_2 {
-// CHECK-NEXT:    function.def @compute() -> !llzk.struct<@ToFelt_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ToFelt_2>
-// CHECK-NEXT:      function.return %[[V0]] : !llzk.struct<@ToFelt_2>
+// CHECK-LABEL: struct.def @ToFelt_2 {
+// CHECK-NEXT:    function.def @compute() -> !struct.struct<@ToFelt_2> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@ToFelt_2>
+// CHECK-NEXT:      function.return %[[V0]] : !struct.struct<@ToFelt_2>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.struct<@ToFelt_2>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: llzk.struct @ComponentA_2 {
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_2>) -> !llzk.struct<@ComponentA_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ComponentA_2>
-// CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@ComponentA_2>
+// CHECK-LABEL: struct.def @ComponentA_2 {
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.struct<@ToFelt_2>) -> !struct.struct<@ComponentA_2> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA_2>
+// CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@ComponentA_2>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentA_2>, %[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ToFelt_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComponentA_2>, %[[V3:[0-9a-zA-Z_\.]+]]: !struct.struct<@ToFelt_2>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: llzk.struct @ComponentB {
-// CHECK-NEXT:    function.def @compute() -> !llzk.struct<@ComponentB> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = function.call @ToFelt_2::@compute() : () -> !llzk.struct<@ToFelt_2>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @ComponentA_2::@compute(%[[V0]]) : (!llzk.struct<@ToFelt_2>) -> !llzk.struct<@ComponentA_2>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@ComponentB>
-// CHECK-NEXT:      function.return %[[V2]] : !llzk.struct<@ComponentB>
+// CHECK-LABEL: struct.def @ComponentB {
+// CHECK-NEXT:    function.def @compute() -> !struct.struct<@ComponentB> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = function.call @ToFelt_2::@compute() : () -> !struct.struct<@ToFelt_2>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @ComponentA_2::@compute(%[[V0]]) : (!struct.struct<@ToFelt_2>) -> !struct.struct<@ComponentA_2>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB>
+// CHECK-NEXT:      function.return %[[V2]] : !struct.struct<@ComponentB>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@ComponentB>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComponentB>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

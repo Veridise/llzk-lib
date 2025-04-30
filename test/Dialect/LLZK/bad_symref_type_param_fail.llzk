@@ -10,8 +10,8 @@
 
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@Unknown"}}
-  // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
-  function.def private @in_return_struct() -> !llzk.struct<@Unknown>
+  // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+  function.def private @in_return_struct() -> !struct.struct<@Unknown>
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
@@ -21,26 +21,26 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@Unknown"}}
-  // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
-  function.def private @in_return_array_of_struct() -> !array.array<2 x !llzk.struct<@Unknown>>
+  // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+  function.def private @in_return_array_of_struct() -> !array.array<2 x !struct.struct<@Unknown>>
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @A<[@T]> {
-    function.def @compute() -> !llzk.struct<@A<[@T]>> {
-      %self = llzk.new_struct : !llzk.struct<@A<[@T]>>
-      function.return %self : !llzk.struct<@A<[@T]>>
+  struct.def @A<[@T]> {
+    function.def @compute() -> !struct.struct<@A<[@T]>> {
+      %self = struct.new : !struct.struct<@A<[@T]>>
+      function.return %self : !struct.struct<@A<[@T]>>
     }
-    function.def @constrain(%self: !llzk.struct<@A<[@T]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@A<[@T]>>) { function.return }
   }
 
   // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
   function.def private @in_return_deep() ->
-    !array.array<2 x !llzk.struct<@A<[
-      !array.array<2 x !llzk.struct<@A<[
-        !llzk.struct<@A<[
-          !array.array<2 x !llzk.struct<@A<[
-            !llzk.struct<@A<[!llzk.tvar<@Unknown>]>>
+    !array.array<2 x !struct.struct<@A<[
+      !array.array<2 x !struct.struct<@A<[
+        !struct.struct<@A<[
+          !array.array<2 x !struct.struct<@A<[
+            !struct.struct<@A<[!llzk.tvar<@Unknown>]>>
           ]>>>
         ]>>
       ]>>>
@@ -49,8 +49,8 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@Unknown"}}
-  // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
-  function.def private @in_arg_struct(!llzk.struct<@Unknown>) -> i1
+  // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+  function.def private @in_arg_struct(!struct.struct<@Unknown>) -> i1
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
@@ -60,26 +60,26 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@Unknown"}}
-  // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
-  function.def private @in_arg_array_of_struct(!array.array<2 x !llzk.struct<@Unknown>>) -> i1
+  // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+  function.def private @in_arg_array_of_struct(!array.array<2 x !struct.struct<@Unknown>>) -> i1
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @A<[@T]> {
-    function.def @compute() -> !llzk.struct<@A<[@T]>> {
-      %self = llzk.new_struct : !llzk.struct<@A<[@T]>>
-      function.return %self : !llzk.struct<@A<[@T]>>
+  struct.def @A<[@T]> {
+    function.def @compute() -> !struct.struct<@A<[@T]>> {
+      %self = struct.new : !struct.struct<@A<[@T]>>
+      function.return %self : !struct.struct<@A<[@T]>>
     }
-    function.def @constrain(%self: !llzk.struct<@A<[@T]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@A<[@T]>>) { function.return }
   }
 
   // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
   function.def private @in_arg_deep(
-    !array.array<2 x !llzk.struct<@A<[
-      !llzk.struct<@A<[
-        !array.array<2 x !llzk.struct<@A<[
-          !array.array<2 x !llzk.struct<@A<[
-            !llzk.struct<@A<[!llzk.tvar<@Unknown>]>>
+    !array.array<2 x !struct.struct<@A<[
+      !struct.struct<@A<[
+        !array.array<2 x !struct.struct<@A<[
+          !array.array<2 x !struct.struct<@A<[
+            !struct.struct<@A<[!llzk.tvar<@Unknown>]>>
           ]>>>
         ]>>>
       ]>>
@@ -88,129 +88,129 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InComputeReturnStruct<[@N]> {
+  struct.def @InComputeReturnStruct<[@N]> {
     // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
-    function.def @compute() -> !llzk.struct<@InComputeReturnStruct<[@Unknown]>> {
-      %self = llzk.new_struct : !llzk.struct<@InComputeReturnStruct<[@N]>>
-      function.return %self : !llzk.struct<@InComputeReturnStruct<[@N]>>
+    function.def @compute() -> !struct.struct<@InComputeReturnStruct<[@Unknown]>> {
+      %self = struct.new : !struct.struct<@InComputeReturnStruct<[@N]>>
+      function.return %self : !struct.struct<@InComputeReturnStruct<[@N]>>
     }
-    function.def @constrain(%self: !llzk.struct<@InComputeReturnStruct<[@N]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InComputeReturnStruct<[@N]>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InComputeReturnArrayOfScalar<[@N]> {
+  struct.def @InComputeReturnArrayOfScalar<[@N]> {
     // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
-    function.def @compute() -> !llzk.struct<@InComputeReturnArrayOfScalar<[!array.array<@Unknown x i1>]>> {
-      %self = llzk.new_struct : !llzk.struct<@InComputeReturnArrayOfScalar<[@N]>>
-      function.return %self : !llzk.struct<@InComputeReturnArrayOfScalar<[@N]>>
+    function.def @compute() -> !struct.struct<@InComputeReturnArrayOfScalar<[!array.array<@Unknown x i1>]>> {
+      %self = struct.new : !struct.struct<@InComputeReturnArrayOfScalar<[@N]>>
+      function.return %self : !struct.struct<@InComputeReturnArrayOfScalar<[@N]>>
     }
-    function.def @constrain(%self: !llzk.struct<@InComputeReturnArrayOfScalar<[@N]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InComputeReturnArrayOfScalar<[@N]>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InComputeReturnArrayOfStruct<[@N]> {
+  struct.def @InComputeReturnArrayOfStruct<[@N]> {
     // expected-error@+2 {{'function.def' op references unknown symbol "@Unknown"}}
-    // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
-    function.def @compute() -> !llzk.struct<@InComputeReturnArrayOfStruct<[!array.array<1 x !llzk.struct<@Unknown>>]>> {
-      %self = llzk.new_struct : !llzk.struct<@InComputeReturnArrayOfStruct<[@N]>>
-      function.return %self : !llzk.struct<@InComputeReturnArrayOfStruct<[@N]>>
+    // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+    function.def @compute() -> !struct.struct<@InComputeReturnArrayOfStruct<[!array.array<1 x !struct.struct<@Unknown>>]>> {
+      %self = struct.new : !struct.struct<@InComputeReturnArrayOfStruct<[@N]>>
+      function.return %self : !struct.struct<@InComputeReturnArrayOfStruct<[@N]>>
     }
-    function.def @constrain(%self: !llzk.struct<@InComputeReturnArrayOfStruct<[@N]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InComputeReturnArrayOfStruct<[@N]>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InComputeArgStruct {
+  struct.def @InComputeArgStruct {
     // expected-error@+2 {{'function.def' op references unknown symbol "@Unknown"}}
-    // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
-    function.def @compute(%0: !llzk.struct<@Unknown>) -> !llzk.struct<@InComputeArgStruct> {
-      %self = llzk.new_struct : !llzk.struct<@InComputeArgStruct>
-      function.return %self : !llzk.struct<@InComputeArgStruct>
+    // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+    function.def @compute(%0: !struct.struct<@Unknown>) -> !struct.struct<@InComputeArgStruct> {
+      %self = struct.new : !struct.struct<@InComputeArgStruct>
+      function.return %self : !struct.struct<@InComputeArgStruct>
     }
-    function.def @constrain(%self: !llzk.struct<@InComputeArgStruct>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InComputeArgStruct>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InComputeArgArrayOfScalar {
+  struct.def @InComputeArgArrayOfScalar {
     // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
-    function.def @compute(%0: !array.array<@Unknown x index>) -> !llzk.struct<@InComputeArgArrayOfScalar> {
-      %self = llzk.new_struct : !llzk.struct<@InComputeArgArrayOfScalar>
-      function.return %self : !llzk.struct<@InComputeArgArrayOfScalar>
+    function.def @compute(%0: !array.array<@Unknown x index>) -> !struct.struct<@InComputeArgArrayOfScalar> {
+      %self = struct.new : !struct.struct<@InComputeArgArrayOfScalar>
+      function.return %self : !struct.struct<@InComputeArgArrayOfScalar>
     }
-    function.def @constrain(%self: !llzk.struct<@InComputeArgArrayOfScalar>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InComputeArgArrayOfScalar>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InComputeArgArrayOfStruct {
+  struct.def @InComputeArgArrayOfStruct {
     // expected-error@+2 {{'function.def' op references unknown symbol "@Unknown"}}
-    // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
-    function.def @compute(%0: !array.array<2 x !llzk.struct<@Unknown>>) -> !llzk.struct<@InComputeArgArrayOfStruct> {
-      %self = llzk.new_struct : !llzk.struct<@InComputeArgArrayOfStruct>
-      function.return %self : !llzk.struct<@InComputeArgArrayOfStruct>
+    // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+    function.def @compute(%0: !array.array<2 x !struct.struct<@Unknown>>) -> !struct.struct<@InComputeArgArrayOfStruct> {
+      %self = struct.new : !struct.struct<@InComputeArgArrayOfStruct>
+      function.return %self : !struct.struct<@InComputeArgArrayOfStruct>
     }
-    function.def @constrain(%self: !llzk.struct<@InComputeArgArrayOfStruct>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InComputeArgArrayOfStruct>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InConstrainArgStruct {
-    function.def @compute() -> !llzk.struct<@InConstrainArgStruct> {
-      %self = llzk.new_struct : !llzk.struct<@InConstrainArgStruct>
-      function.return %self : !llzk.struct<@InConstrainArgStruct>
+  struct.def @InConstrainArgStruct {
+    function.def @compute() -> !struct.struct<@InConstrainArgStruct> {
+      %self = struct.new : !struct.struct<@InConstrainArgStruct>
+      function.return %self : !struct.struct<@InConstrainArgStruct>
     }
     // expected-error@+2 {{'function.def' op references unknown symbol "@Unknown"}}
-    // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
-    function.def @constrain(%self: !llzk.struct<@InConstrainArgStruct>, %0: !llzk.struct<@Unknown>) { function.return }
+    // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+    function.def @constrain(%self: !struct.struct<@InConstrainArgStruct>, %0: !struct.struct<@Unknown>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InConstrainArgArrayOfScalar {
-    function.def @compute() -> !llzk.struct<@InConstrainArgArrayOfScalar> {
-      %self = llzk.new_struct : !llzk.struct<@InConstrainArgArrayOfScalar>
-      function.return %self : !llzk.struct<@InConstrainArgArrayOfScalar>
+  struct.def @InConstrainArgArrayOfScalar {
+    function.def @compute() -> !struct.struct<@InConstrainArgArrayOfScalar> {
+      %self = struct.new : !struct.struct<@InConstrainArgArrayOfScalar>
+      function.return %self : !struct.struct<@InConstrainArgArrayOfScalar>
     }
     // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
-    function.def @constrain(%self: !llzk.struct<@InConstrainArgArrayOfScalar>, %0: !array.array<@Unknown x index>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InConstrainArgArrayOfScalar>, %0: !array.array<@Unknown x index>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InConstrainArgArrayOfStruct {
-    function.def @compute() -> !llzk.struct<@InConstrainArgArrayOfStruct> {
-      %self = llzk.new_struct : !llzk.struct<@InConstrainArgArrayOfStruct>
-      function.return %self : !llzk.struct<@InConstrainArgArrayOfStruct>
+  struct.def @InConstrainArgArrayOfStruct {
+    function.def @compute() -> !struct.struct<@InConstrainArgArrayOfStruct> {
+      %self = struct.new : !struct.struct<@InConstrainArgArrayOfStruct>
+      function.return %self : !struct.struct<@InConstrainArgArrayOfStruct>
     }
     // expected-error@+2 {{'function.def' op references unknown symbol "@Unknown"}}
-    // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
-    function.def @constrain(%self: !llzk.struct<@InConstrainArgArrayOfStruct>, %0: !array.array<2 x !llzk.struct<@Unknown>>) { function.return }
+    // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+    function.def @constrain(%self: !struct.struct<@InConstrainArgArrayOfStruct>, %0: !array.array<2 x !struct.struct<@Unknown>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InReturnOp {
-    function.def @compute() -> !llzk.struct<@InReturnOp> {
-      %self = llzk.new_struct : !llzk.struct<@InReturnOp> // expected-note {{prior use here}}
+  struct.def @InReturnOp {
+    function.def @compute() -> !struct.struct<@InReturnOp> {
+      %self = struct.new : !struct.struct<@InReturnOp> // expected-note {{prior use here}}
       // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%self' expects different type than prior uses: '!llzk.struct<@Unknown>' vs '!llzk.struct<@InReturnOp>'}}
-      function.return %self : !llzk.struct<@Unknown>
+      // expected-error@+1 {{use of value '%self' expects different type than prior uses: '!struct.struct<@Unknown>' vs '!struct.struct<@InReturnOp>'}}
+      function.return %self : !struct.struct<@Unknown>
     }
-    function.def @constrain(%self: !llzk.struct<@InReturnOp>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InReturnOp>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InReturnOpAndTypeAttr {
-    function.def @compute() -> !llzk.struct<@InReturnOpAndTypeAttr> {
-      %self = llzk.new_struct : !llzk.struct<@Unknown>
-      // expected-error@+1 {{type of return operand 0 ('!llzk.struct<@Unknown>') doesn't match function result type ('!llzk.struct<@InReturnOpAndTypeAttr>') in function @compute}}
-      function.return %self : !llzk.struct<@Unknown>
+  struct.def @InReturnOpAndTypeAttr {
+    function.def @compute() -> !struct.struct<@InReturnOpAndTypeAttr> {
+      %self = struct.new : !struct.struct<@Unknown>
+      // expected-error@+1 {{type of return operand 0 ('!struct.struct<@Unknown>') doesn't match function result type ('!struct.struct<@InReturnOpAndTypeAttr>') in function @compute}}
+      function.return %self : !struct.struct<@Unknown>
     }
-    function.def @constrain(%self: !llzk.struct<@InReturnOpAndTypeAttr>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InReturnOpAndTypeAttr>) { function.return }
   }
 }
 // -----
@@ -234,73 +234,73 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InNewStruct {
-    function.def @compute() -> !llzk.struct<@InNewStruct> {
-      %self = llzk.new_struct : !llzk.struct<@InNewStruct>
-      // expected-error@+2 {{'llzk.new_struct' op references unknown symbol "@Unknown"}}
-      // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
-      %u = llzk.new_struct : !llzk.struct<@Unknown>
-      function.return %self : !llzk.struct<@InNewStruct>
+  struct.def @InNewStruct {
+    function.def @compute() -> !struct.struct<@InNewStruct> {
+      %self = struct.new : !struct.struct<@InNewStruct>
+      // expected-error@+2 {{'struct.new' op references unknown symbol "@Unknown"}}
+      // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+      %u = struct.new : !struct.struct<@Unknown>
+      function.return %self : !struct.struct<@InNewStruct>
     }
-    function.def @constrain(%self: !llzk.struct<@InNewStruct>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InNewStruct>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InNewStructParam<[@A]> {
-    function.def @compute() -> !llzk.struct<@InNewStructParam<[@A]>> {
-      %self = llzk.new_struct : !llzk.struct<@InNewStructParam<[@A]>>
-      // expected-error@+1 {{'llzk.new_struct' op references unknown symbol "@Unknown"}}
-      %u = llzk.new_struct : !llzk.struct<@InNewStructParam<[@Unknown]>>
-      function.return %self : !llzk.struct<@InNewStructParam<[@A]>>
+  struct.def @InNewStructParam<[@A]> {
+    function.def @compute() -> !struct.struct<@InNewStructParam<[@A]>> {
+      %self = struct.new : !struct.struct<@InNewStructParam<[@A]>>
+      // expected-error@+1 {{'struct.new' op references unknown symbol "@Unknown"}}
+      %u = struct.new : !struct.struct<@InNewStructParam<[@Unknown]>>
+      function.return %self : !struct.struct<@InNewStructParam<[@A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@InNewStructParam<[@A]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InNewStructParam<[@A]>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @InNewStructArrayParam<[@A]> {
-    function.def @compute() -> !llzk.struct<@InNewStructArrayParam<[@A]>> {
-      %self = llzk.new_struct : !llzk.struct<@InNewStructArrayParam<[@A]>>
-      // expected-error@+1 {{'llzk.new_struct' op references unknown symbol "@Unknown"}}
-      %u = llzk.new_struct : !llzk.struct<@InNewStructArrayParam<[!array.array<@Unknown x i1>]>>
-      function.return %self : !llzk.struct<@InNewStructArrayParam<[@A]>>
+  struct.def @InNewStructArrayParam<[@A]> {
+    function.def @compute() -> !struct.struct<@InNewStructArrayParam<[@A]>> {
+      %self = struct.new : !struct.struct<@InNewStructArrayParam<[@A]>>
+      // expected-error@+1 {{'struct.new' op references unknown symbol "@Unknown"}}
+      %u = struct.new : !struct.struct<@InNewStructArrayParam<[!array.array<@Unknown x i1>]>>
+      function.return %self : !struct.struct<@InNewStructArrayParam<[@A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@InNewStructArrayParam<[@A]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@InNewStructArrayParam<[@A]>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @FieldDefOpWithUnknownScalarArray {
-    // expected-error@+1 {{'llzk.field' op references unknown symbol "@Unknown"}}
-    llzk.field @ret: !array.array<@Unknown x !felt.felt>
-    function.def @compute() -> !llzk.struct<@FieldDefOpWithUnknownScalarArray> {
-      %self = llzk.new_struct : !llzk.struct<@FieldDefOpWithUnknownScalarArray>
-      function.return %self : !llzk.struct<@FieldDefOpWithUnknownScalarArray>
+  struct.def @FieldDefOpWithUnknownScalarArray {
+    // expected-error@+1 {{'struct.field' op references unknown symbol "@Unknown"}}
+    struct.field @ret: !array.array<@Unknown x !felt.felt>
+    function.def @compute() -> !struct.struct<@FieldDefOpWithUnknownScalarArray> {
+      %self = struct.new : !struct.struct<@FieldDefOpWithUnknownScalarArray>
+      function.return %self : !struct.struct<@FieldDefOpWithUnknownScalarArray>
     }
-    function.def @constrain(%self: !llzk.struct<@FieldDefOpWithUnknownScalarArray>) { function.return }
+    function.def @constrain(%self: !struct.struct<@FieldDefOpWithUnknownScalarArray>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @FieldDefOpWithUnknownTypeVar {
-    // expected-error@+1 {{'llzk.field' op references unknown symbol "@Unknown"}}
-    llzk.field @ret: !llzk.tvar<@Unknown>
-    function.def @compute() -> !llzk.struct<@FieldDefOpWithUnknownTypeVar> {
-      %self = llzk.new_struct : !llzk.struct<@FieldDefOpWithUnknownTypeVar>
-      function.return %self : !llzk.struct<@FieldDefOpWithUnknownTypeVar>
+  struct.def @FieldDefOpWithUnknownTypeVar {
+    // expected-error@+1 {{'struct.field' op references unknown symbol "@Unknown"}}
+    struct.field @ret: !llzk.tvar<@Unknown>
+    function.def @compute() -> !struct.struct<@FieldDefOpWithUnknownTypeVar> {
+      %self = struct.new : !struct.struct<@FieldDefOpWithUnknownTypeVar>
+      function.return %self : !struct.struct<@FieldDefOpWithUnknownTypeVar>
     }
-    function.def @constrain(%self: !llzk.struct<@FieldDefOpWithUnknownTypeVar>) { function.return }
+    function.def @constrain(%self: !struct.struct<@FieldDefOpWithUnknownTypeVar>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ConstReadWithUnknown<[@T]> {
-    function.def @compute() -> !llzk.struct<@ConstReadWithUnknown<[@T]>> {
-      %self = llzk.new_struct : !llzk.struct<@ConstReadWithUnknown<[@T]>>
-      function.return %self : !llzk.struct<@ConstReadWithUnknown<[@T]>>
+  struct.def @ConstReadWithUnknown<[@T]> {
+    function.def @compute() -> !struct.struct<@ConstReadWithUnknown<[@T]>> {
+      %self = struct.new : !struct.struct<@ConstReadWithUnknown<[@T]>>
+      function.return %self : !struct.struct<@ConstReadWithUnknown<[@T]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ConstReadWithUnknown<[@T]>>) {
+    function.def @constrain(%self: !struct.struct<@ConstReadWithUnknown<[@T]>>) {
       // expected-error@+1 {{'llzk.read_const' op references unknown symbol "@Unknown"}}
       %0 = llzk.read_const @T : !llzk.tvar<@Unknown>
       function.return
@@ -309,98 +309,98 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @FieldReadWithUnknownInBase<[@A]> {
-    llzk.field @f: !felt.felt
-    function.def @compute() -> !llzk.struct<@FieldReadWithUnknownInBase<[@A]>> {
-      %self = llzk.new_struct : !llzk.struct<@FieldReadWithUnknownInBase<[@A]>>
-      function.return %self : !llzk.struct<@FieldReadWithUnknownInBase<[@A]>>
+  struct.def @FieldReadWithUnknownInBase<[@A]> {
+    struct.field @f: !felt.felt
+    function.def @compute() -> !struct.struct<@FieldReadWithUnknownInBase<[@A]>> {
+      %self = struct.new : !struct.struct<@FieldReadWithUnknownInBase<[@A]>>
+      function.return %self : !struct.struct<@FieldReadWithUnknownInBase<[@A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@FieldReadWithUnknownInBase<[@A]>>) { // expected-note {{prior use here}}
+    function.def @constrain(%self: !struct.struct<@FieldReadWithUnknownInBase<[@A]>>) { // expected-note {{prior use here}}
       // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%self' expects different type than prior uses: '!llzk.struct<@FieldReadWithUnknownInBase<[@Unknown]>>' vs '!llzk.struct<@FieldReadWithUnknownInBase<[@A]>>'}}
-      %0 = llzk.readf %self[@f] : !llzk.struct<@FieldReadWithUnknownInBase<[@Unknown]>>, !felt.felt
+      // expected-error@+1 {{use of value '%self' expects different type than prior uses: '!struct.struct<@FieldReadWithUnknownInBase<[@Unknown]>>' vs '!struct.struct<@FieldReadWithUnknownInBase<[@A]>>'}}
+      %0 = struct.readf %self[@f] : !struct.struct<@FieldReadWithUnknownInBase<[@Unknown]>>, !felt.felt
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @FieldReadWithUnknownInResultTypeVar {
-    llzk.field @f: index
-    function.def @compute() -> !llzk.struct<@FieldReadWithUnknownInResultTypeVar> {
-      %self = llzk.new_struct : !llzk.struct<@FieldReadWithUnknownInResultTypeVar>
-      function.return %self : !llzk.struct<@FieldReadWithUnknownInResultTypeVar>
+  struct.def @FieldReadWithUnknownInResultTypeVar {
+    struct.field @f: index
+    function.def @compute() -> !struct.struct<@FieldReadWithUnknownInResultTypeVar> {
+      %self = struct.new : !struct.struct<@FieldReadWithUnknownInResultTypeVar>
+      function.return %self : !struct.struct<@FieldReadWithUnknownInResultTypeVar>
     }
-    function.def @constrain(%self: !llzk.struct<@FieldReadWithUnknownInResultTypeVar>) {
-      // expected-error@+1 {{'llzk.readf' op references unknown symbol "@Unknown"}}
-      %0 = llzk.readf %self[@f] : !llzk.struct<@FieldReadWithUnknownInResultTypeVar>, !llzk.tvar<@Unknown>
+    function.def @constrain(%self: !struct.struct<@FieldReadWithUnknownInResultTypeVar>) {
+      // expected-error@+1 {{'struct.readf' op references unknown symbol "@Unknown"}}
+      %0 = struct.readf %self[@f] : !struct.struct<@FieldReadWithUnknownInResultTypeVar>, !llzk.tvar<@Unknown>
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @FieldReadWithUnknownInResultArr<[@A]> {
-    llzk.field @f: !array.array<@A x i1>
-    function.def @compute() -> !llzk.struct<@FieldReadWithUnknownInResultArr<[@A]>> {
-      %self = llzk.new_struct : !llzk.struct<@FieldReadWithUnknownInResultArr<[@A]>>
-      function.return %self : !llzk.struct<@FieldReadWithUnknownInResultArr<[@A]>>
+  struct.def @FieldReadWithUnknownInResultArr<[@A]> {
+    struct.field @f: !array.array<@A x i1>
+    function.def @compute() -> !struct.struct<@FieldReadWithUnknownInResultArr<[@A]>> {
+      %self = struct.new : !struct.struct<@FieldReadWithUnknownInResultArr<[@A]>>
+      function.return %self : !struct.struct<@FieldReadWithUnknownInResultArr<[@A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@FieldReadWithUnknownInResultArr<[@A]>>) {
-      // expected-error@+1 {{'llzk.readf' op references unknown symbol "@Unknown"}}
-      %0 = llzk.readf %self[@f] : !llzk.struct<@FieldReadWithUnknownInResultArr<[@A]>>, !array.array<@Unknown x i1>
+    function.def @constrain(%self: !struct.struct<@FieldReadWithUnknownInResultArr<[@A]>>) {
+      // expected-error@+1 {{'struct.readf' op references unknown symbol "@Unknown"}}
+      %0 = struct.readf %self[@f] : !struct.struct<@FieldReadWithUnknownInResultArr<[@A]>>, !array.array<@Unknown x i1>
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @FieldWriteWithUnknownInBase<[@A]> {
-    llzk.field @f: !felt.felt
-    function.def @compute(%0: i1) -> !llzk.struct<@FieldWriteWithUnknownInBase<[@A]>> {
-      %self = llzk.new_struct : !llzk.struct<@FieldWriteWithUnknownInBase<[@A]>>
-      function.return %self : !llzk.struct<@FieldWriteWithUnknownInBase<[@A]>>
+  struct.def @FieldWriteWithUnknownInBase<[@A]> {
+    struct.field @f: !felt.felt
+    function.def @compute(%0: i1) -> !struct.struct<@FieldWriteWithUnknownInBase<[@A]>> {
+      %self = struct.new : !struct.struct<@FieldWriteWithUnknownInBase<[@A]>>
+      function.return %self : !struct.struct<@FieldWriteWithUnknownInBase<[@A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@FieldWriteWithUnknownInBase<[@A]>>, %0: i1) { // expected-note {{prior use here}}
+    function.def @constrain(%self: !struct.struct<@FieldWriteWithUnknownInBase<[@A]>>, %0: i1) { // expected-note {{prior use here}}
       // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%self' expects different type than prior uses: '!llzk.struct<@FieldWriteWithUnknownInBase<[@Unknown]>>' vs '!llzk.struct<@FieldWriteWithUnknownInBase<[@A]>>'}}
-      llzk.writef %self[@f] = %0 : !llzk.struct<@FieldWriteWithUnknownInBase<[@Unknown]>>, i1
+      // expected-error@+1 {{use of value '%self' expects different type than prior uses: '!struct.struct<@FieldWriteWithUnknownInBase<[@Unknown]>>' vs '!struct.struct<@FieldWriteWithUnknownInBase<[@A]>>'}}
+      struct.writef %self[@f] = %0 : !struct.struct<@FieldWriteWithUnknownInBase<[@Unknown]>>, i1
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @FieldWriteWithUnknownInRHSTypeVar<[@A]> {
-    llzk.field @f: !llzk.tvar<@A>
+  struct.def @FieldWriteWithUnknownInRHSTypeVar<[@A]> {
+    struct.field @f: !llzk.tvar<@A>
     function.def @compute(
       %0: !llzk.tvar<@A> // expected-note {{prior use here}}
-    ) -> !llzk.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>> {
-      %self = llzk.new_struct : !llzk.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>
+    ) -> !struct.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>> {
+      %self = struct.new : !struct.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>
       // See NOTE on line 4.
       // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!llzk.tvar<@A>'}}
-      llzk.writef %self[@f] = %0 : !llzk.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>, !llzk.tvar<@Unknown>
-      function.return %self : !llzk.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>
+      struct.writef %self[@f] = %0 : !struct.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>, !llzk.tvar<@Unknown>
+      function.return %self : !struct.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>) {
+    function.def @constrain(%self: !struct.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>) {
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @FieldWriteWithUnknownInRHSArr<[@A]> {
-    llzk.field @f: !array.array<@A x i1>
+  struct.def @FieldWriteWithUnknownInRHSArr<[@A]> {
+    struct.field @f: !array.array<@A x i1>
     function.def @compute(
       %0: !array.array<@A x i1> // expected-note {{prior use here}}
-    ) -> !llzk.struct<@FieldWriteWithUnknownInRHSArr<[@A]>> {
-      %self = llzk.new_struct : !llzk.struct<@FieldWriteWithUnknownInRHSArr<[@A]>>
+    ) -> !struct.struct<@FieldWriteWithUnknownInRHSArr<[@A]>> {
+      %self = struct.new : !struct.struct<@FieldWriteWithUnknownInRHSArr<[@A]>>
       // See NOTE on line 4.
       // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!array.array<@Unknown x i1>' vs '!array.array<@A x i1>'}}
-      llzk.writef %self[@f] = %0 : !llzk.struct<@FieldWriteWithUnknownInRHSArr<[@A]>>, !array.array<@Unknown x i1>
-      function.return %self : !llzk.struct<@FieldWriteWithUnknownInRHSArr<[@A]>>
+      struct.writef %self[@f] = %0 : !struct.struct<@FieldWriteWithUnknownInRHSArr<[@A]>>, !array.array<@Unknown x i1>
+      function.return %self : !struct.struct<@FieldWriteWithUnknownInRHSArr<[@A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@FieldWriteWithUnknownInRHSArr<[@A]>>) {
+    function.def @constrain(%self: !struct.struct<@FieldWriteWithUnknownInRHSArr<[@A]>>) {
       function.return
     }
   }
@@ -435,16 +435,16 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ReadArrayOpWithUnknownInResultTypeArrElem<[@T]> {
-    function.def @compute(%arr: !array.array<5 x !llzk.tvar<@T>>) -> !llzk.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
-      %self = llzk.new_struct : !llzk.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>
-      function.return %self : !llzk.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>
+  struct.def @ReadArrayOpWithUnknownInResultTypeArrElem<[@T]> {
+    function.def @compute(%arr: !array.array<5 x !llzk.tvar<@T>>) -> !struct.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
+      %self = struct.new : !struct.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>
+      function.return %self : !struct.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>, %arr: !array.array<5 x !llzk.tvar<@T>>) {
+    function.def @constrain(%self: !struct.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>, %arr: !array.array<5 x !llzk.tvar<@T>>) {
       %k = arith.constant 0 : index
       // expected-error@+2 {{'array.read' op references unknown symbol "@Unknown"}}
-      // expected-error@+1 {{could not find 'llzk.struct' named "@Unknown"}}
-      %v = array.read %arr[%k] : !array.array<5 x !llzk.tvar<@T>>, !llzk.struct<@Unknown>
+      // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+      %v = array.read %arr[%k] : !array.array<5 x !llzk.tvar<@T>>, !struct.struct<@Unknown>
       function.return
     }
   }
@@ -477,20 +477,20 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @WriteArrayOpWithUnknownInResultTypeArrElem<[@T]> {
+  struct.def @WriteArrayOpWithUnknownInResultTypeArrElem<[@T]> {
     function.def @compute(%arr: !array.array<5 x !llzk.tvar<@T>>,
-      %v: !llzk.struct<@T> // expected-note {{prior use here}}
-    ) -> !llzk.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
-      %self = llzk.new_struct : !llzk.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>
+      %v: !struct.struct<@T> // expected-note {{prior use here}}
+    ) -> !struct.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
+      %self = struct.new : !struct.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>
       %k = arith.constant 0 : index
       // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!llzk.struct<@Unknown>' vs '!llzk.struct<@T>'}}
-      array.write %arr[%k] = %v : !array.array<5 x !llzk.tvar<@T>>, !llzk.struct<@Unknown>
-      function.return %self : !llzk.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>
+      // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!struct.struct<@Unknown>' vs '!struct.struct<@T>'}}
+      array.write %arr[%k] = %v : !array.array<5 x !llzk.tvar<@T>>, !struct.struct<@Unknown>
+      function.return %self : !struct.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>
     }
-    function.def @constrain(%self: !llzk.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>,
+    function.def @constrain(%self: !struct.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>,
         %arr: !array.array<5 x !llzk.tvar<@T>>,
-        %v: !llzk.struct<@T>
+        %v: !struct.struct<@T>
     ) {
       %k = arith.constant 0 : index
       function.return
@@ -522,8 +522,8 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @EmitEqOp_With_Unknown_In_LHS {
-    function.def @constrain(%self: !llzk.struct<@EmitEqOp_With_Unknown_In_LHS>) {
+  struct.def @EmitEqOp_With_Unknown_In_LHS {
+    function.def @constrain(%self: !struct.struct<@EmitEqOp_With_Unknown_In_LHS>) {
       %a = array.new : !array.array<5 x !felt.felt> // expected-note {{prior use here}}
       %b = array.new : !array.array<5 x !felt.felt>
       // See NOTE on line 4.
@@ -532,16 +532,16 @@ module attributes {veridise.lang = "llzk"} {
       function.return
     }
 
-    function.def @compute() -> !llzk.struct<@EmitEqOp_With_Unknown_In_LHS> {
-      %self = llzk.new_struct : !llzk.struct<@EmitEqOp_With_Unknown_In_LHS>
-      function.return %self : !llzk.struct<@EmitEqOp_With_Unknown_In_LHS>
+    function.def @compute() -> !struct.struct<@EmitEqOp_With_Unknown_In_LHS> {
+      %self = struct.new : !struct.struct<@EmitEqOp_With_Unknown_In_LHS>
+      function.return %self : !struct.struct<@EmitEqOp_With_Unknown_In_LHS>
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @EmitEqOp_With_Unknown_In_RHS {
-    function.def @constrain(%self: !llzk.struct<@EmitEqOp_With_Unknown_In_RHS>) {
+  struct.def @EmitEqOp_With_Unknown_In_RHS {
+    function.def @constrain(%self: !struct.struct<@EmitEqOp_With_Unknown_In_RHS>) {
       %a = array.new : !array.array<5 x !felt.felt>
       %b = array.new : !array.array<5 x !felt.felt> // expected-note {{prior use here}}
       // See NOTE on line 4.
@@ -550,16 +550,16 @@ module attributes {veridise.lang = "llzk"} {
       function.return
     }
 
-    function.def @compute() -> !llzk.struct<@EmitEqOp_With_Unknown_In_RHS> {
-      %self = llzk.new_struct : !llzk.struct<@EmitEqOp_With_Unknown_In_RHS>
-      function.return %self : !llzk.struct<@EmitEqOp_With_Unknown_In_RHS>
+    function.def @compute() -> !struct.struct<@EmitEqOp_With_Unknown_In_RHS> {
+      %self = struct.new : !struct.struct<@EmitEqOp_With_Unknown_In_RHS>
+      function.return %self : !struct.struct<@EmitEqOp_With_Unknown_In_RHS>
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @EmitInOp_With_Unknown_In_LHS {
-    function.def @constrain(%self: !llzk.struct<@EmitInOp_With_Unknown_In_LHS>) {
+  struct.def @EmitInOp_With_Unknown_In_LHS {
+    function.def @constrain(%self: !struct.struct<@EmitInOp_With_Unknown_In_LHS>) {
       %a = array.new : !array.array<5 x !felt.felt> // expected-note {{prior use here}}
       %b = felt.const 3
       // See NOTE on line 4.
@@ -568,16 +568,16 @@ module attributes {veridise.lang = "llzk"} {
       function.return
     }
 
-    function.def @compute() -> !llzk.struct<@EmitInOp_With_Unknown_In_LHS> {
-      %self = llzk.new_struct : !llzk.struct<@EmitInOp_With_Unknown_In_LHS>
-      function.return %self : !llzk.struct<@EmitInOp_With_Unknown_In_LHS>
+    function.def @compute() -> !struct.struct<@EmitInOp_With_Unknown_In_LHS> {
+      %self = struct.new : !struct.struct<@EmitInOp_With_Unknown_In_LHS>
+      function.return %self : !struct.struct<@EmitInOp_With_Unknown_In_LHS>
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @EmitInOp_With_Unknown_In_RHS {
-    function.def @constrain(%self: !llzk.struct<@EmitInOp_With_Unknown_In_RHS>) {
+  struct.def @EmitInOp_With_Unknown_In_RHS {
+    function.def @constrain(%self: !struct.struct<@EmitInOp_With_Unknown_In_RHS>) {
       %a = array.new : !array.array<5 x !felt.felt>
       %b = felt.const 3 // expected-note {{prior use here}}
       // See NOTE on line 4.
@@ -586,9 +586,9 @@ module attributes {veridise.lang = "llzk"} {
       function.return
     }
 
-    function.def @compute() -> !llzk.struct<@EmitInOp_With_Unknown_In_RHS> {
-      %self = llzk.new_struct : !llzk.struct<@EmitInOp_With_Unknown_In_RHS>
-      function.return %self : !llzk.struct<@EmitInOp_With_Unknown_In_RHS>
+    function.def @compute() -> !struct.struct<@EmitInOp_With_Unknown_In_RHS> {
+      %self = struct.new : !struct.struct<@EmitInOp_With_Unknown_In_RHS>
+      function.return %self : !struct.struct<@EmitInOp_With_Unknown_In_RHS>
     }
   }
 }

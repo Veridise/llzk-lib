@@ -20,17 +20,6 @@ include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
 //===----------------------------------------------------------------------===//
-// Custom traits that can be applied to Ops
-//===----------------------------------------------------------------------===//
-
-/// Only valid/implemented for StructDefOp. Sets the proper
-/// `AllowConstraintAttr` and `AllowWitnessAttr` on the functions defined within
-/// the StructDefOp.
-def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
-  string cppNamespace = "::llzk";
-}
-
-//===----------------------------------------------------------------------===//
 // Base Op classes
 //===----------------------------------------------------------------------===//
 
@@ -79,27 +68,6 @@ class LLZK_GlobalRefOp<string mnemonic, list<Trait> traits = []>
     /// Gets the definition for the `global` referenced in this op.
     inline ::mlir::FailureOr<SymbolLookupResult<GlobalDefOp>> getGlobalDefOp(::mlir::SymbolTableCollection &tables) {
       return ::llvm::cast<GlobalRefOpInterface>(getOperation()).getGlobalDefOp(tables);
-    }
-  }];
-}
-
-class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
-    : LLZK_Op<mnemonic,
-              traits#[DeclareOpInterfaceMethods<FieldRefOpInterface>,
-                      DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-  bit isRead = ?; // read(1) vs write(0) ops
-
-  let extraClassDeclaration = [{
-    /// Gets the definition for the `field` referenced in this op.
-    inline ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &tables) {
-      return ::llvm::cast<FieldRefOpInterface>(getOperation()).getFieldDefOp(tables);
-    }
-  }];
-
-  let extraClassDefinition = [{
-    /// Return `true` if the op is a read, `false` if it's a write.
-    bool $cppClass::isRead() {
-      return }]#!if(isRead, "true", "false")#[{;
     }
   }];
 }

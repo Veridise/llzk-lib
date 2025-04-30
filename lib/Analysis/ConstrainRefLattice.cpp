@@ -27,6 +27,7 @@
 
 namespace llzk {
 
+using namespace component;
 using namespace felt;
 
 /* ConstrainRefLatticeValue */

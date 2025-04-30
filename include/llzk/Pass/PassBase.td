@@ -18,6 +18,7 @@ class LLZKPass<string passArg, string operation = "::mlir::ModuleOp">
       // clang-format off
       "llzk::LLZKDialect",
       "llzk::array::ArrayDialect",
+      "llzk::component::StructDialect",
       "llzk::felt::FeltDialect",
       "llzk::include::IncludeDialect",
       "llzk::function::FunctionDialect",

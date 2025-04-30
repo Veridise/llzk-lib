@@ -10,6 +10,8 @@
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/StreamHelper.h"
@@ -30,6 +32,7 @@
 namespace llzk {
 
 using namespace mlir;
+using namespace llzk::component;
 
 //===------------------------------------------------------------------===//
 // StructType

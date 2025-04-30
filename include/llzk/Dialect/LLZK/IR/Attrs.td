@@ -40,7 +40,7 @@ def LLZK_PubModifierAttr : LLZK_Attr<"Public", "pub"> {
     Examples:
 
     ```llzk
-    llzk.field @field_name : !felt.felt {llzk.pub}
+    struct.field @field_name : !felt.felt {llzk.pub}
 
     function.def @func_name(%0: !felt.felt {llzk.pub})
     ```

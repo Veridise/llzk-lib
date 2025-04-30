@@ -28,6 +28,7 @@
 namespace llzk {
 
 using namespace array;
+using namespace component;
 using namespace function;
 
 /* ConstrainRefAnalysis */

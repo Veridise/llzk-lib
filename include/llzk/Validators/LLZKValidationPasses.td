@@ -18,7 +18,7 @@
 include "llzk/Pass/PassBase.td"
 
 def FieldWriteValidatorPass
-    : LLZKPass<"llzk-validate-field-writes", "::llzk::StructDefOp"> {
+    : LLZKPass<"llzk-validate-field-writes", "::llzk::component::StructDefOp"> {
   let summary =
       "Detect multiple and missing writes to the same field of a component.";
   let constructor = "llzk::createFieldWriteValidatorPass()";

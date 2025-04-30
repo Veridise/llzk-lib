@@ -38,6 +38,7 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::felt;
 using namespace llzk::function;
+using namespace llzk::component;
 
 #define DEBUG_TYPE "llzk-redundant-read-write-pass"
 

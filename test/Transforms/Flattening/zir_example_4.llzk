@@ -2,93 +2,93 @@
 
 #map = affine_map<()[s0, s1] -> (s0 floordiv s1)>
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @S<[@X, @N, @P]> {
-    function.def @compute(%arg0: !array.array<@X x !felt.felt>) -> !llzk.struct<@S<[@X, @N, @P]>> {
-      %self = llzk.new_struct : !llzk.struct<@S<[@X, @N, @P]>>
+  struct.def @S<[@X, @N, @P]> {
+    function.def @compute(%arg0: !array.array<@X x !felt.felt>) -> !struct.struct<@S<[@X, @N, @P]>> {
+      %self = struct.new : !struct.struct<@S<[@X, @N, @P]>>
       %c0 = arith.constant 0 : index
       %0 = array.read %arg0[%c0] : !array.array<@X x !felt.felt>, !felt.felt
-      function.return %self : !llzk.struct<@S<[@X, @N, @P]>>
+      function.return %self : !struct.struct<@S<[@X, @N, @P]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@S<[@X, @N, @P]>>, %arg1: !array.array<@X x !felt.felt>) {
+    function.def @constrain(%arg0: !struct.struct<@S<[@X, @N, @P]>>, %arg1: !array.array<@X x !felt.felt>) {
       function.return
     }
   }
-  llzk.struct @B<[@N]> {
-    function.def @compute() -> !llzk.struct<@B<[@N]>> {
-      %self = llzk.new_struct : !llzk.struct<@B<[@N]>>
-      function.return %self : !llzk.struct<@B<[@N]>>
+  struct.def @B<[@N]> {
+    function.def @compute() -> !struct.struct<@B<[@N]>> {
+      %self = struct.new : !struct.struct<@B<[@N]>>
+      function.return %self : !struct.struct<@B<[@N]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@B<[@N]>>) {
+    function.def @constrain(%arg0: !struct.struct<@B<[@N]>>) {
       function.return
     }
   }
-  llzk.struct @A<[@N]> {
-    function.def @compute() -> !llzk.struct<@A<[@N]>> {
-      %self = llzk.new_struct : !llzk.struct<@A<[@N]>>
+  struct.def @A<[@N]> {
+    function.def @compute() -> !struct.struct<@A<[@N]>> {
+      %self = struct.new : !struct.struct<@A<[@N]>>
       %0 = llzk.read_const @N : index
       %c2 = arith.constant 2 : index
       %array = array.new{()[%0, %c2]} : !array.array<#map x !felt.felt>
-      %1 = function.call @S::@compute(%array) {()[%0, %c2]} : (!array.array<#map x !felt.felt>) -> !llzk.struct<@S<[#map, @N, 2]>>
-      %2 = function.call @B::@compute() {()[%0, %c2]} : () -> !llzk.struct<@B<[#map]>>
-      function.return %self : !llzk.struct<@A<[@N]>>
+      %1 = function.call @S::@compute(%array) {()[%0, %c2]} : (!array.array<#map x !felt.felt>) -> !struct.struct<@S<[#map, @N, 2]>>
+      %2 = function.call @B::@compute() {()[%0, %c2]} : () -> !struct.struct<@B<[#map]>>
+      function.return %self : !struct.struct<@A<[@N]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@A<[@N]>>) {
+    function.def @constrain(%arg0: !struct.struct<@A<[@N]>>) {
       function.return
     }
   }
-  llzk.struct @Main {
-    function.def @compute() -> !llzk.struct<@Main> {
-      %s = function.call @A::@compute() : () -> !llzk.struct<@A<[4]>>
-      %self = llzk.new_struct : !llzk.struct<@Main>
-      function.return %self : !llzk.struct<@Main>
+  struct.def @Main {
+    function.def @compute() -> !struct.struct<@Main> {
+      %s = function.call @A::@compute() : () -> !struct.struct<@A<[4]>>
+      %self = struct.new : !struct.struct<@Main>
+      function.return %self : !struct.struct<@Main>
     }
-    function.def @constrain(%arg0: !llzk.struct<@Main>) {
+    function.def @constrain(%arg0: !struct.struct<@Main>) {
       function.return
     }
   }
 }
-// CHECK-LABEL: llzk.struct @S_2_4_2 {
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<2 x !felt.felt>) -> !llzk.struct<@S_2_4_2> attributes {function.allow_witness} {
+// CHECK-LABEL: struct.def @S_2_4_2 {
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<2 x !felt.felt>) -> !struct.struct<@S_2_4_2> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@S_2_4_2>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@S_2_4_2>
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = array.read %[[V0]]{{\[}}%[[V1]]] : <2 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      function.return %[[V2]] : !llzk.struct<@S_2_4_2>
+// CHECK-NEXT:      function.return %[[V2]] : !struct.struct<@S_2_4_2>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@S_2_4_2>, %[[V5:[0-9a-zA-Z_\.]+]]: !array.array<2 x !felt.felt>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.struct<@S_2_4_2>, %[[V5:[0-9a-zA-Z_\.]+]]: !array.array<2 x !felt.felt>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: llzk.struct @B_2 {
-// CHECK-NEXT:    function.def @compute() -> !llzk.struct<@B_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@B_2>
-// CHECK-NEXT:      function.return %[[V0]] : !llzk.struct<@B_2>
+// CHECK-LABEL: struct.def @B_2 {
+// CHECK-NEXT:    function.def @compute() -> !struct.struct<@B_2> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@B_2>
+// CHECK-NEXT:      function.return %[[V0]] : !struct.struct<@B_2>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !llzk.struct<@B_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.struct<@B_2>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: llzk.struct @A_4 {
-// CHECK-NEXT:    function.def @compute() -> !llzk.struct<@A_4> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@A_4>
+// CHECK-LABEL: struct.def @A_4 {
+// CHECK-NEXT:    function.def @compute() -> !struct.struct<@A_4> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@A_4>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.felt>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @S_2_4_2::@compute(%[[V1]]) : (!array.array<2 x !felt.felt>) -> !llzk.struct<@S_2_4_2>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = function.call @B_2::@compute() : () -> !llzk.struct<@B_2>
-// CHECK-NEXT:      function.return %[[V0]] : !llzk.struct<@A_4>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @S_2_4_2::@compute(%[[V1]]) : (!array.array<2 x !felt.felt>) -> !struct.struct<@S_2_4_2>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = function.call @B_2::@compute() : () -> !struct.struct<@B_2>
+// CHECK-NEXT:      function.return %[[V0]] : !struct.struct<@A_4>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@A_4>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.struct<@A_4>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: llzk.struct @Main {
-// CHECK-NEXT:    function.def @compute() -> !llzk.struct<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = function.call @A_4::@compute() : () -> !llzk.struct<@A_4>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@Main>
-// CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Main>
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    function.def @compute() -> !struct.struct<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = function.call @A_4::@compute() : () -> !struct.struct<@A_4>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.struct<@Main>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

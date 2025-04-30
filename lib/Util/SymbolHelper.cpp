@@ -29,6 +29,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace array;
+using namespace component;
 using namespace function;
 
 namespace {

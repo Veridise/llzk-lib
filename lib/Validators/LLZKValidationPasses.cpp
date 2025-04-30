@@ -27,6 +27,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace llzk;
+using namespace llzk::component;
 using namespace llzk::function;
 
 namespace {

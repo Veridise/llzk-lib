@@ -1,8 +1,8 @@
 // RUN: llzk-opt -I %S -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @SingleLoop {
-    function.def @constrain(%self: !llzk.struct<@SingleLoop>, %in: !array.array<5 x !felt.felt>) {
+  struct.def @SingleLoop {
+    function.def @constrain(%self: !struct.struct<@SingleLoop>, %in: !array.array<5 x !felt.felt>) {
       %lb = arith.constant 0 : index
       %up = arith.constant 5 : index
       %step = arith.constant 1 : index
@@ -14,14 +14,14 @@ module attributes {veridise.lang = "llzk"} {
       function.return
     }
 
-    function.def @compute(%in: !array.array<5 x !felt.felt>) -> !llzk.struct<@SingleLoop> {
-      %self = llzk.new_struct : !llzk.struct<@SingleLoop>
-      function.return %self : !llzk.struct<@SingleLoop>
+    function.def @compute(%in: !array.array<5 x !felt.felt>) -> !struct.struct<@SingleLoop> {
+      %self = struct.new : !struct.struct<@SingleLoop>
+      function.return %self : !struct.struct<@SingleLoop>
     }
   }
 }
-// CHECK-LABEL: llzk.struct @SingleLoop {
-// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@SingleLoop>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.array<5 x !felt.felt>) attributes {function.allow_constraint} {
+// CHECK-LABEL: struct.def @SingleLoop {
+// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.struct<@SingleLoop>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.array<5 x !felt.felt>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
@@ -40,16 +40,16 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      llzk.emit_eq %[[V12]], %[[V7]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @compute(%[[V13:[0-9a-zA-Z_\.]+]]: !array.array<5 x !felt.felt>) -> !llzk.struct<@SingleLoop> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@SingleLoop>
-// CHECK-NEXT:      function.return %[[V14]] : !llzk.struct<@SingleLoop>
+// CHECK-NEXT:    function.def @compute(%[[V13:[0-9a-zA-Z_\.]+]]: !array.array<5 x !felt.felt>) -> !struct.struct<@SingleLoop> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.new : <@SingleLoop>
+// CHECK-NEXT:      function.return %[[V14]] : !struct.struct<@SingleLoop>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @NestedLoopEasy {
-    function.def @constrain(%self: !llzk.struct<@NestedLoopEasy>, %in: !array.array<5,5 x !felt.felt>) {
+  struct.def @NestedLoopEasy {
+    function.def @constrain(%self: !struct.struct<@NestedLoopEasy>, %in: !array.array<5,5 x !felt.felt>) {
       %lb = arith.constant 0 : index
       %up = arith.constant 5 : index
       %step = arith.constant 1 : index
@@ -63,14 +63,14 @@ module attributes {veridise.lang = "llzk"} {
       function.return
     }
 
-    function.def @compute(%in: !array.array<5,5 x !felt.felt>) -> !llzk.struct<@NestedLoopEasy> {
-      %self = llzk.new_struct : !llzk.struct<@NestedLoopEasy>
-      function.return %self : !llzk.struct<@NestedLoopEasy>
+    function.def @compute(%in: !array.array<5,5 x !felt.felt>) -> !struct.struct<@NestedLoopEasy> {
+      %self = struct.new : !struct.struct<@NestedLoopEasy>
+      function.return %self : !struct.struct<@NestedLoopEasy>
     }
   }
 }
-// CHECK-LABEL: llzk.struct @NestedLoopEasy {
-// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@NestedLoopEasy>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.array<5,5 x !felt.felt>) attributes {function.allow_constraint} {
+// CHECK-LABEL: struct.def @NestedLoopEasy {
+// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.struct<@NestedLoopEasy>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.array<5,5 x !felt.felt>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
@@ -129,17 +129,17 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      llzk.emit_eq %[[V32]], %[[V7]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @compute(%[[V33:[0-9a-zA-Z_\.]+]]: !array.array<5,5 x !felt.felt>) -> !llzk.struct<@NestedLoopEasy> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V34:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@NestedLoopEasy>
-// CHECK-NEXT:      function.return %[[V34]] : !llzk.struct<@NestedLoopEasy>
+// CHECK-NEXT:    function.def @compute(%[[V33:[0-9a-zA-Z_\.]+]]: !array.array<5,5 x !felt.felt>) -> !struct.struct<@NestedLoopEasy> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V34:[0-9a-zA-Z_\.]+]] = struct.new : <@NestedLoopEasy>
+// CHECK-NEXT:      function.return %[[V34]] : !struct.struct<@NestedLoopEasy>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
 
 // Inner loop range depends on outer loop. Requires erasing 0-count loops.
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @NestedLoopHard {
-    function.def @constrain(%self: !llzk.struct<@NestedLoopHard>, %in: !array.array<5,5 x !felt.felt>) {
+  struct.def @NestedLoopHard {
+    function.def @constrain(%self: !struct.struct<@NestedLoopHard>, %in: !array.array<5,5 x !felt.felt>) {
       %lb = arith.constant 0 : index
       %up = arith.constant 5 : index
       %step = arith.constant 1 : index
@@ -153,14 +153,14 @@ module attributes {veridise.lang = "llzk"} {
       function.return
     }
 
-    function.def @compute(%in: !array.array<5,5 x !felt.felt>) -> !llzk.struct<@NestedLoopHard> {
-      %self = llzk.new_struct : !llzk.struct<@NestedLoopHard>
-      function.return %self : !llzk.struct<@NestedLoopHard>
+    function.def @compute(%in: !array.array<5,5 x !felt.felt>) -> !struct.struct<@NestedLoopHard> {
+      %self = struct.new : !struct.struct<@NestedLoopHard>
+      function.return %self : !struct.struct<@NestedLoopHard>
     }
   }
 }
-// CHECK-LABEL: llzk.struct @NestedLoopHard {
-// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !llzk.struct<@NestedLoopHard>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.array<5,5 x !felt.felt>) attributes {function.allow_constraint} {
+// CHECK-LABEL: struct.def @NestedLoopHard {
+// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.struct<@NestedLoopHard>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.array<5,5 x !felt.felt>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
@@ -189,50 +189,50 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      llzk.emit_eq %[[V17]], %[[V7]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @compute(%[[V18:[0-9a-zA-Z_\.]+]]: !array.array<5,5 x !felt.felt>) -> !llzk.struct<@NestedLoopHard> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@NestedLoopHard>
-// CHECK-NEXT:      function.return %[[V19]] : !llzk.struct<@NestedLoopHard>
+// CHECK-NEXT:    function.def @compute(%[[V18:[0-9a-zA-Z_\.]+]]: !array.array<5,5 x !felt.felt>) -> !struct.struct<@NestedLoopHard> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = struct.new : <@NestedLoopHard>
+// CHECK-NEXT:      function.return %[[V19]] : !struct.struct<@NestedLoopHard>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
 
 // Before the loop in Component02 can unroll, the struct must be instantiated.
-!Signal = !llzk.struct<@Signal>
+!Signal = !struct.struct<@Signal>
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
-  llzk.struct @Signal {
-    llzk.field @reg : !felt.felt {llzk.pub}
+  struct.def @Signal {
+    struct.field @reg : !felt.felt {llzk.pub}
 
-    function.def @compute(%v: !felt.felt) -> !llzk.struct<@Signal> {
-      %self = llzk.new_struct : !llzk.struct<@Signal>
-      llzk.writef %self[@reg] = %v : !llzk.struct<@Signal>, !felt.felt
-      function.return %self : !llzk.struct<@Signal>
+    function.def @compute(%v: !felt.felt) -> !struct.struct<@Signal> {
+      %self = struct.new : !struct.struct<@Signal>
+      struct.writef %self[@reg] = %v : !struct.struct<@Signal>, !felt.felt
+      function.return %self : !struct.struct<@Signal>
     }
 
-    function.def @constrain(%self: !llzk.struct<@Signal>, %v: !felt.felt) {
+    function.def @constrain(%self: !struct.struct<@Signal>, %v: !felt.felt) {
       function.return
     }
   }
 
-  llzk.struct @Component01 {
-    llzk.field @f : !array.array<2 x !Signal>
+  struct.def @Component01 {
+    struct.field @f : !array.array<2 x !Signal>
 
-    function.def @compute(%0: !array.array<2 x !Signal>) -> !llzk.struct<@Component01> {
-      %self = llzk.new_struct : !llzk.struct<@Component01>
-      llzk.writef %self[@f] = %0 : !llzk.struct<@Component01>, !array.array<2 x !Signal>
-      function.return %self : !llzk.struct<@Component01>
+    function.def @compute(%0: !array.array<2 x !Signal>) -> !struct.struct<@Component01> {
+      %self = struct.new : !struct.struct<@Component01>
+      struct.writef %self[@f] = %0 : !struct.struct<@Component01>, !array.array<2 x !Signal>
+      function.return %self : !struct.struct<@Component01>
     }
-    function.def @constrain(%self: !llzk.struct<@Component01>, %0: !array.array<2 x !Signal>) {
-      %b = llzk.readf %self[@f] : !llzk.struct<@Component01>, !array.array<2 x !Signal>
+    function.def @constrain(%self: !struct.struct<@Component01>, %0: !array.array<2 x !Signal>) {
+      %b = struct.readf %self[@f] : !struct.struct<@Component01>, !array.array<2 x !Signal>
 
       %lb = arith.constant 0 : index
       %up = arith.constant 2 : index
       %step = arith.constant 1 : index
       scf.for %i = %lb to %up step %step {
         %i0 = array.read %0[%i] : !array.array<2 x !Signal>, !Signal
-        %i0val = llzk.readf %i0[@reg] : !Signal, !felt.felt
+        %i0val = struct.readf %i0[@reg] : !Signal, !felt.felt
         %ib = array.read %b[%i] : !array.array<2 x !Signal>, !Signal
-        %ibval = llzk.readf %ib[@reg] : !Signal, !felt.felt
+        %ibval = struct.readf %ib[@reg] : !Signal, !felt.felt
         llzk.emit_eq %i0val, %ibval : !felt.felt
       }
       //TODO: It would be better to allow the line below instead of needing the loop above.
@@ -245,144 +245,144 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 
-  llzk.struct @Component02<[@N]> {
-    llzk.field @g : !array.array<@N x !llzk.struct<@Component01>>
+  struct.def @Component02<[@N]> {
+    struct.field @g : !array.array<@N x !struct.struct<@Component01>>
 
-    function.def @compute(%in: !array.array<@N,2 x !Signal>) -> !llzk.struct<@Component02<[@N]>> {
-      %self = llzk.new_struct : !llzk.struct<@Component02<[@N]>>
-      %a = array.new : !array.array<@N x !llzk.struct<@Component01>>
+    function.def @compute(%in: !array.array<@N,2 x !Signal>) -> !struct.struct<@Component02<[@N]>> {
+      %self = struct.new : !struct.struct<@Component02<[@N]>>
+      %a = array.new : !array.array<@N x !struct.struct<@Component01>>
 
       %lb = arith.constant 0 : index
       %up = llzk.read_const @N : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         %p = array.extract %in[%iv] : !array.array<@N,2 x !Signal>
-        %c = function.call @Component01::@compute(%p) : (!array.array<2 x !Signal>) -> !llzk.struct<@Component01>
-        array.write %a[%iv] = %c : !array.array<@N x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
+        %c = function.call @Component01::@compute(%p) : (!array.array<2 x !Signal>) -> !struct.struct<@Component01>
+        array.write %a[%iv] = %c : !array.array<@N x !struct.struct<@Component01>>, !struct.struct<@Component01>
       }
 
-      llzk.writef %self[@g] = %a : !llzk.struct<@Component02<[@N]>>, !array.array<@N x !llzk.struct<@Component01>>
-      function.return %self : !llzk.struct<@Component02<[@N]>>
+      struct.writef %self[@g] = %a : !struct.struct<@Component02<[@N]>>, !array.array<@N x !struct.struct<@Component01>>
+      function.return %self : !struct.struct<@Component02<[@N]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@Component02<[@N]>>, %in: !array.array<@N,2 x !Signal>) {
-      %a = llzk.readf %self[@g] : !llzk.struct<@Component02<[@N]>>, !array.array<@N x !llzk.struct<@Component01>>
+    function.def @constrain(%self: !struct.struct<@Component02<[@N]>>, %in: !array.array<@N,2 x !Signal>) {
+      %a = struct.readf %self[@g] : !struct.struct<@Component02<[@N]>>, !array.array<@N x !struct.struct<@Component01>>
 
       %lb = arith.constant 0 : index
       %up = llzk.read_const @N : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         %p = array.extract %in[%iv] : !array.array<@N,2 x !Signal>
-        %c = array.read %a[%iv] : !array.array<@N x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
-        function.call @Component01::@constrain(%c, %p) : (!llzk.struct<@Component01>, !array.array<2 x !Signal>) -> ()
+        %c = array.read %a[%iv] : !array.array<@N x !struct.struct<@Component01>>, !struct.struct<@Component01>
+        function.call @Component01::@constrain(%c, %p) : (!struct.struct<@Component01>, !array.array<2 x !Signal>) -> ()
       }
       function.return
     }
   }
 
-  llzk.struct @Main {
-    llzk.field @sub: !llzk.struct<@Component02<[3]>>
+  struct.def @Main {
+    struct.field @sub: !struct.struct<@Component02<[3]>>
 
-    function.def @compute(%input: !array.array<3,2 x !Signal>) -> !llzk.struct<@Main> {
-      %self = llzk.new_struct : !llzk.struct<@Main>
-      %sub = function.call @Component02::@compute(%input) : (!array.array<3,2 x !Signal>) -> !llzk.struct<@Component02<[3]>>
-      llzk.writef %self[@sub] = %sub : !llzk.struct<@Main>, !llzk.struct<@Component02<[3]>>
-      function.return %self: !llzk.struct<@Main>
+    function.def @compute(%input: !array.array<3,2 x !Signal>) -> !struct.struct<@Main> {
+      %self = struct.new : !struct.struct<@Main>
+      %sub = function.call @Component02::@compute(%input) : (!array.array<3,2 x !Signal>) -> !struct.struct<@Component02<[3]>>
+      struct.writef %self[@sub] = %sub : !struct.struct<@Main>, !struct.struct<@Component02<[3]>>
+      function.return %self: !struct.struct<@Main>
     }
 
-    function.def @constrain(%self: !llzk.struct<@Main>, %input: !array.array<3,2 x !Signal>) {
-      %sub = llzk.readf %self[@sub] : !llzk.struct<@Main>, !llzk.struct<@Component02<[3]>>
-      function.call @Component02::@constrain(%sub, %input) : (!llzk.struct<@Component02<[3]>>, !array.array<3,2 x !Signal>) -> ()
+    function.def @constrain(%self: !struct.struct<@Main>, %input: !array.array<3,2 x !Signal>) {
+      %sub = struct.readf %self[@sub] : !struct.struct<@Main>, !struct.struct<@Component02<[3]>>
+      function.call @Component02::@constrain(%sub, %input) : (!struct.struct<@Component02<[3]>>, !array.array<3,2 x !Signal>) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: llzk.struct @Signal {
-// CHECK-NEXT:    llzk.field @reg : !felt.felt {llzk.pub}
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !llzk.struct<@Signal> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@Signal>
-// CHECK-NEXT:      llzk.writef %[[V1]][@reg] = %[[V0]] : <@Signal>, !felt.felt
-// CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Signal>
+// CHECK-LABEL: struct.def @Signal {
+// CHECK-NEXT:    struct.field @reg : !felt.felt {llzk.pub}
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@Signal> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Signal>
+// CHECK-NEXT:      struct.writef %[[V1]][@reg] = %[[V0]] : <@Signal>, !felt.felt
+// CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@Signal>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Signal>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.struct<@Signal>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: llzk.struct @Component01 {
-// CHECK-NEXT:    llzk.field @f : !array.array<2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<2 x !llzk.struct<@Signal>>) -> !llzk.struct<@Component01> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@Component01>
-// CHECK-NEXT:      llzk.writef %[[V1]][@f] = %[[V0]] : <@Component01>, !array.array<2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Component01>
+// CHECK-LABEL: struct.def @Component01 {
+// CHECK-NEXT:    struct.field @f : !array.array<2 x !struct.struct<@Signal>>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<2 x !struct.struct<@Signal>>) -> !struct.struct<@Component01> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component01>
+// CHECK-NEXT:      struct.writef %[[V1]][@f] = %[[V0]] : <@Component01>, !array.array<2 x !struct.struct<@Signal>>
+// CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@Component01>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01>, %[[V3:[0-9a-zA-Z_\.]+]]: !array.array<2 x !llzk.struct<@Signal>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.struct<@Component01>, %[[V3:[0-9a-zA-Z_\.]+]]: !array.array<2 x !struct.struct<@Signal>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V2]][@f] : <@Component01>, !array.array<2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = array.read %[[V3]]{{\[}}%[[V5]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V7]][@reg] : <@Signal>, !felt.felt
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V5]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V9]][@reg] : <@Signal>, !felt.felt
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.readf %[[V2]][@f] : <@Component01>, !array.array<2 x !struct.struct<@Signal>>
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = array.read %[[V3]]{{\[}}%[[V5]]] : <2 x !struct.struct<@Signal>>, !struct.struct<@Signal>
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@reg] : <@Signal>, !felt.felt
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V5]]] : <2 x !struct.struct<@Signal>>, !struct.struct<@Signal>
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = struct.readf %[[V9]][@reg] : <@Signal>, !felt.felt
 // CHECK-NEXT:      llzk.emit_eq %[[V8]], %[[V10]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V3]]{{\[}}%[[V4]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V11]][@reg] : <@Signal>, !felt.felt
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V4]]] : <2 x !llzk.struct<@Signal>>, !llzk.struct<@Signal>
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V13]][@reg] : <@Signal>, !felt.felt
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V3]]{{\[}}%[[V4]]] : <2 x !struct.struct<@Signal>>, !struct.struct<@Signal>
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readf %[[V11]][@reg] : <@Signal>, !felt.felt
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V4]]] : <2 x !struct.struct<@Signal>>, !struct.struct<@Signal>
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.readf %[[V13]][@reg] : <@Signal>, !felt.felt
 // CHECK-NEXT:      llzk.emit_eq %[[V12]], %[[V14]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: llzk.struct @Component02_3 {
-// CHECK-NEXT:    llzk.field @g : !array.array<3 x !llzk.struct<@Component01>>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<3,2 x !llzk.struct<@Signal>>) -> !llzk.struct<@Component02_3> attributes {function.allow_witness} {
+// CHECK-LABEL: struct.def @Component02_3 {
+// CHECK-NEXT:    struct.field @g : !array.array<3 x !struct.struct<@Component01>>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<3,2 x !struct.struct<@Signal>>) -> !struct.struct<@Component02_3> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@Component02_3>
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = array.new  : <3 x !llzk.struct<@Component01>>
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = array.extract %[[V0]]{{\[}}%[[V3]]] : <3,2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[V6]]) : (!array.array<2 x !llzk.struct<@Signal>>) -> !llzk.struct<@Component01>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V3]]] = %[[V7]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.extract %[[V0]]{{\[}}%[[V2]]] : <3,2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[V8]]) : (!array.array<2 x !llzk.struct<@Signal>>) -> !llzk.struct<@Component01>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V2]]] = %[[V9]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.extract %[[V0]]{{\[}}%[[V1]]] : <3,2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[V10]]) : (!array.array<2 x !llzk.struct<@Signal>>) -> !llzk.struct<@Component01>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V1]]] = %[[V11]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
-// CHECK-NEXT:      llzk.writef %[[V4]][@g] = %[[V5]] : <@Component02_3>, !array.array<3 x !llzk.struct<@Component01>>
-// CHECK-NEXT:      function.return %[[V4]] : !llzk.struct<@Component02_3>
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02_3>
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = array.new  : <3 x !struct.struct<@Component01>>
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = array.extract %[[V0]]{{\[}}%[[V3]]] : <3,2 x !struct.struct<@Signal>>
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[V6]]) : (!array.array<2 x !struct.struct<@Signal>>) -> !struct.struct<@Component01>
+// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V3]]] = %[[V7]] : <3 x !struct.struct<@Component01>>, !struct.struct<@Component01>
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.extract %[[V0]]{{\[}}%[[V2]]] : <3,2 x !struct.struct<@Signal>>
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[V8]]) : (!array.array<2 x !struct.struct<@Signal>>) -> !struct.struct<@Component01>
+// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V2]]] = %[[V9]] : <3 x !struct.struct<@Component01>>, !struct.struct<@Component01>
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.extract %[[V0]]{{\[}}%[[V1]]] : <3,2 x !struct.struct<@Signal>>
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[V10]]) : (!array.array<2 x !struct.struct<@Signal>>) -> !struct.struct<@Component01>
+// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V1]]] = %[[V11]] : <3 x !struct.struct<@Component01>>, !struct.struct<@Component01>
+// CHECK-NEXT:      struct.writef %[[V4]][@g] = %[[V5]] : <@Component02_3>, !array.array<3 x !struct.struct<@Component01>>
+// CHECK-NEXT:      function.return %[[V4]] : !struct.struct<@Component02_3>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component02_3>, %[[V13:[0-9a-zA-Z_\.]+]]: !array.array<3,2 x !llzk.struct<@Signal>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V12:[0-9a-zA-Z_\.]+]]: !struct.struct<@Component02_3>, %[[V13:[0-9a-zA-Z_\.]+]]: !array.array<3,2 x !struct.struct<@Signal>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V12]][@g] : <@Component02_3>, !array.array<3 x !llzk.struct<@Component01>>
-// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = array.extract %[[V13]]{{\[}}%[[V16]]] : <3,2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V16]]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
-// CHECK-NEXT:      function.call @Component01::@constrain(%[[V19]], %[[V18]]) : (!llzk.struct<@Component01>, !array.array<2 x !llzk.struct<@Signal>>) -> ()
-// CHECK-NEXT:      %[[V20:[0-9a-zA-Z_\.]+]] = array.extract %[[V13]]{{\[}}%[[V15]]] : <3,2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      %[[V21:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V15]]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
-// CHECK-NEXT:      function.call @Component01::@constrain(%[[V21]], %[[V20]]) : (!llzk.struct<@Component01>, !array.array<2 x !llzk.struct<@Signal>>) -> ()
-// CHECK-NEXT:      %[[V22:[0-9a-zA-Z_\.]+]] = array.extract %[[V13]]{{\[}}%[[V14]]] : <3,2 x !llzk.struct<@Signal>>
-// CHECK-NEXT:      %[[V23:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V14]]] : <3 x !llzk.struct<@Component01>>, !llzk.struct<@Component01>
-// CHECK-NEXT:      function.call @Component01::@constrain(%[[V23]], %[[V22]]) : (!llzk.struct<@Component01>, !array.array<2 x !llzk.struct<@Signal>>) -> ()
+// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = struct.readf %[[V12]][@g] : <@Component02_3>, !array.array<3 x !struct.struct<@Component01>>
+// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = array.extract %[[V13]]{{\[}}%[[V16]]] : <3,2 x !struct.struct<@Signal>>
+// CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V16]]] : <3 x !struct.struct<@Component01>>, !struct.struct<@Component01>
+// CHECK-NEXT:      function.call @Component01::@constrain(%[[V19]], %[[V18]]) : (!struct.struct<@Component01>, !array.array<2 x !struct.struct<@Signal>>) -> ()
+// CHECK-NEXT:      %[[V20:[0-9a-zA-Z_\.]+]] = array.extract %[[V13]]{{\[}}%[[V15]]] : <3,2 x !struct.struct<@Signal>>
+// CHECK-NEXT:      %[[V21:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V15]]] : <3 x !struct.struct<@Component01>>, !struct.struct<@Component01>
+// CHECK-NEXT:      function.call @Component01::@constrain(%[[V21]], %[[V20]]) : (!struct.struct<@Component01>, !array.array<2 x !struct.struct<@Signal>>) -> ()
+// CHECK-NEXT:      %[[V22:[0-9a-zA-Z_\.]+]] = array.extract %[[V13]]{{\[}}%[[V14]]] : <3,2 x !struct.struct<@Signal>>
+// CHECK-NEXT:      %[[V23:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V14]]] : <3 x !struct.struct<@Component01>>, !struct.struct<@Component01>
+// CHECK-NEXT:      function.call @Component01::@constrain(%[[V23]], %[[V22]]) : (!struct.struct<@Component01>, !array.array<2 x !struct.struct<@Signal>>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: llzk.struct @Main {
-// CHECK-NEXT:    llzk.field @sub : !llzk.struct<@Component02_3>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<3,2 x !llzk.struct<@Signal>>) -> !llzk.struct<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@Main>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @Component02_3::@compute(%[[V0]]) : (!array.array<3,2 x !llzk.struct<@Signal>>) -> !llzk.struct<@Component02_3>
-// CHECK-NEXT:      llzk.writef %[[V1]][@sub] = %[[V2]] : <@Main>, !llzk.struct<@Component02_3>
-// CHECK-NEXT:      function.return %[[V1]] : !llzk.struct<@Main>
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    struct.field @sub : !struct.struct<@Component02_3>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<3,2 x !struct.struct<@Signal>>) -> !struct.struct<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @Component02_3::@compute(%[[V0]]) : (!array.array<3,2 x !struct.struct<@Signal>>) -> !struct.struct<@Component02_3>
+// CHECK-NEXT:      struct.writef %[[V1]][@sub] = %[[V2]] : <@Main>, !struct.struct<@Component02_3>
+// CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Main>, %[[V4:[0-9a-zA-Z_\.]+]]: !array.array<3,2 x !llzk.struct<@Signal>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = llzk.readf %[[V3]][@sub] : <@Main>, !llzk.struct<@Component02_3>
-// CHECK-NEXT:      function.call @Component02_3::@constrain(%[[V5]], %[[V4]]) : (!llzk.struct<@Component02_3>, !array.array<3,2 x !llzk.struct<@Signal>>) -> ()
+// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.struct<@Main>, %[[V4:[0-9a-zA-Z_\.]+]]: !array.array<3,2 x !struct.struct<@Signal>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readf %[[V3]][@sub] : <@Main>, !struct.struct<@Component02_3>
+// CHECK-NEXT:      function.call @Component02_3::@constrain(%[[V5]], %[[V4]]) : (!struct.struct<@Component02_3>, !array.array<3,2 x !struct.struct<@Signal>>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

@@ -1,146 +1,146 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentA1<[@A, @B]> {
-    function.def @compute() -> !llzk.struct<@ComponentA1<[@A, @B]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentA1<[@A, @B]>>
-      function.return %self : !llzk.struct<@ComponentA1<[@A, @B]>>
+  struct.def @ComponentA1<[@A, @B]> {
+    function.def @compute() -> !struct.struct<@ComponentA1<[@A, @B]>> {
+      %self = struct.new : !struct.struct<@ComponentA1<[@A, @B]>>
+      function.return %self : !struct.struct<@ComponentA1<[@A, @B]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentA1<[@A, @B]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentA1<[@A, @B]>>) { function.return }
   }
 
-  llzk.struct @ComponentA2<[@C]> {
-    // expected-error@+1 {{'llzk.struct' type has 3 parameters but "ComponentA1" expects 2}}
-    llzk.field @f3 : !llzk.struct<@ComponentA1<[5, @C, 6]>>
+  struct.def @ComponentA2<[@C]> {
+    // expected-error@+1 {{'struct.struct' type has 3 parameters but "ComponentA1" expects 2}}
+    struct.field @f3 : !struct.struct<@ComponentA1<[5, @C, 6]>>
 
-    function.def @compute() -> !llzk.struct<@ComponentA2<[@C]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentA2<[@C]>>
-      function.return %self : !llzk.struct<@ComponentA2<[@C]>>
+    function.def @compute() -> !struct.struct<@ComponentA2<[@C]>> {
+      %self = struct.new : !struct.struct<@ComponentA2<[@C]>>
+      function.return %self : !struct.struct<@ComponentA2<[@C]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentA2<[@C]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentA2<[@C]>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentB1<[@A, @B]> {
-    function.def @compute() -> !llzk.struct<@ComponentB1<[@A, @B]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentB1<[@A, @B]>>
-      function.return %self : !llzk.struct<@ComponentB1<[@A, @B]>>
+  struct.def @ComponentB1<[@A, @B]> {
+    function.def @compute() -> !struct.struct<@ComponentB1<[@A, @B]>> {
+      %self = struct.new : !struct.struct<@ComponentB1<[@A, @B]>>
+      function.return %self : !struct.struct<@ComponentB1<[@A, @B]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentB1<[@A, @B]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentB1<[@A, @B]>>) { function.return }
   }
 
-  llzk.struct @ComponentB2 {
-    llzk.field @f3 : !llzk.struct<@ComponentB1<[5,5]>>
+  struct.def @ComponentB2 {
+    struct.field @f3 : !struct.struct<@ComponentB1<[5,5]>>
 
-    function.def @compute() -> !llzk.struct<@ComponentB2> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentB2>
-      function.return %self : !llzk.struct<@ComponentB2>
+    function.def @compute() -> !struct.struct<@ComponentB2> {
+      %self = struct.new : !struct.struct<@ComponentB2>
+      function.return %self : !struct.struct<@ComponentB2>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentB2>) {
-      // expected-error@+1 {{'llzk.readf' op has wrong type; expected '!llzk.struct<@ComponentB1<[5, 5]>>', got '!llzk.struct<@ComponentB1<[5, 6]>>'}}
-      %b = llzk.readf %self[@f3] : !llzk.struct<@ComponentB2>, !llzk.struct<@ComponentB1<[5,6]>>
+    function.def @constrain(%self: !struct.struct<@ComponentB2>) {
+      // expected-error@+1 {{'struct.readf' op has wrong type; expected '!struct.struct<@ComponentB1<[5, 5]>>', got '!struct.struct<@ComponentB1<[5, 6]>>'}}
+      %b = struct.readf %self[@f3] : !struct.struct<@ComponentB2>, !struct.struct<@ComponentB1<[5,6]>>
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentC1<[@A, @B]> {
-    function.def @compute() -> !llzk.struct<@ComponentC1<[@A, @B]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentC1<[@A, @B]>>
-      function.return %self : !llzk.struct<@ComponentC1<[@A, @B]>>
+  struct.def @ComponentC1<[@A, @B]> {
+    function.def @compute() -> !struct.struct<@ComponentC1<[@A, @B]>> {
+      %self = struct.new : !struct.struct<@ComponentC1<[@A, @B]>>
+      function.return %self : !struct.struct<@ComponentC1<[@A, @B]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentC1<[@A, @B]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentC1<[@A, @B]>>) { function.return }
   }
 
-  llzk.struct @ComponentC2 {
-    llzk.field @f3 : !llzk.struct<@ComponentC1<[5,5]>>
+  struct.def @ComponentC2 {
+    struct.field @f3 : !struct.struct<@ComponentC1<[5,5]>>
 
-    function.def @compute() -> !llzk.struct<@ComponentC2> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentC2>
-      function.return %self : !llzk.struct<@ComponentC2>
+    function.def @compute() -> !struct.struct<@ComponentC2> {
+      %self = struct.new : !struct.struct<@ComponentC2>
+      function.return %self : !struct.struct<@ComponentC2>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentC2>) {
-      // expected-error@+1 {{'llzk.readf' op has wrong type; expected '!llzk.struct<@ComponentC1<[5, 5]>>', got '!llzk.struct<@ComponentC1<[5, 6, 4]>>'}}
-      %b = llzk.readf %self[@f3] : !llzk.struct<@ComponentC2>, !llzk.struct<@ComponentC1<[5,6,4]>>
+    function.def @constrain(%self: !struct.struct<@ComponentC2>) {
+      // expected-error@+1 {{'struct.readf' op has wrong type; expected '!struct.struct<@ComponentC1<[5, 5]>>', got '!struct.struct<@ComponentC1<[5, 6, 4]>>'}}
+      %b = struct.readf %self[@f3] : !struct.struct<@ComponentC2>, !struct.struct<@ComponentC1<[5,6,4]>>
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentD1<[@A, @B]> {
-    function.def @compute() -> !llzk.struct<@ComponentD1<[@A, @B]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentD1<[@A, @B]>>
-      function.return %self : !llzk.struct<@ComponentD1<[@A, @B]>>
+  struct.def @ComponentD1<[@A, @B]> {
+    function.def @compute() -> !struct.struct<@ComponentD1<[@A, @B]>> {
+      %self = struct.new : !struct.struct<@ComponentD1<[@A, @B]>>
+      function.return %self : !struct.struct<@ComponentD1<[@A, @B]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentD1<[@A, @B]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentD1<[@A, @B]>>) { function.return }
   }
 
-  llzk.struct @ComponentD2 {
-    llzk.field @f3 : !llzk.struct<@ComponentD1<[5,5]>>
+  struct.def @ComponentD2 {
+    struct.field @f3 : !struct.struct<@ComponentD1<[5,5]>>
 
-    function.def @compute() -> !llzk.struct<@ComponentD2> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentD2>
-      function.return %self : !llzk.struct<@ComponentD2>
+    function.def @compute() -> !struct.struct<@ComponentD2> {
+      %self = struct.new : !struct.struct<@ComponentD2>
+      function.return %self : !struct.struct<@ComponentD2>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentD2>) {
-      // expected-error@+1 {{'llzk.readf' op has wrong type; expected '!llzk.struct<@ComponentD1<[5, 5]>>', got '!llzk.struct<@ComponentD1<[5]>>'}}
-      %b = llzk.readf %self[@f3] : !llzk.struct<@ComponentD2>, !llzk.struct<@ComponentD1<[5]>>
+    function.def @constrain(%self: !struct.struct<@ComponentD2>) {
+      // expected-error@+1 {{'struct.readf' op has wrong type; expected '!struct.struct<@ComponentD1<[5, 5]>>', got '!struct.struct<@ComponentD1<[5]>>'}}
+      %b = struct.readf %self[@f3] : !struct.struct<@ComponentD2>, !struct.struct<@ComponentD1<[5]>>
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentE1<[@A, @B]> {
-    function.def @compute() -> !llzk.struct<@ComponentE1<[@A, @B]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentE1<[@A, @B]>>
-      function.return %self : !llzk.struct<@ComponentE1<[@A, @B]>>
+  struct.def @ComponentE1<[@A, @B]> {
+    function.def @compute() -> !struct.struct<@ComponentE1<[@A, @B]>> {
+      %self = struct.new : !struct.struct<@ComponentE1<[@A, @B]>>
+      function.return %self : !struct.struct<@ComponentE1<[@A, @B]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentE1<[@A, @B]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentE1<[@A, @B]>>) { function.return }
   }
 
-  llzk.struct @ComponentE2<[@C]> {
-    llzk.field @f3 : !llzk.struct<@ComponentE1<[5, @C]>>
+  struct.def @ComponentE2<[@C]> {
+    struct.field @f3 : !struct.struct<@ComponentE1<[5, @C]>>
 
-    function.def @compute() -> !llzk.struct<@ComponentE2<[@C]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentE2<[@C]>>
-      function.return %self : !llzk.struct<@ComponentE2<[@C]>>
+    function.def @compute() -> !struct.struct<@ComponentE2<[@C]>> {
+      %self = struct.new : !struct.struct<@ComponentE2<[@C]>>
+      function.return %self : !struct.struct<@ComponentE2<[@C]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentE2<[@C]>>) {
+    function.def @constrain(%self: !struct.struct<@ComponentE2<[@C]>>) {
       // expected-note@+1 {{prior use here}}
-      %b = llzk.readf %self[@f3] : !llzk.struct<@ComponentE2<[@C]>>, !llzk.struct<@ComponentE1<[5, @C]>>
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!llzk.struct<@ComponentE1<[5, @C, 4]>>' vs '!llzk.struct<@ComponentE1<[5, @C]>>'}}
-      function.call @ComponentE1::@constrain(%b) : (!llzk.struct<@ComponentE1<[5,@C,4]>>) -> ()
+      %b = struct.readf %self[@f3] : !struct.struct<@ComponentE2<[@C]>>, !struct.struct<@ComponentE1<[5, @C]>>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!struct.struct<@ComponentE1<[5, @C, 4]>>' vs '!struct.struct<@ComponentE1<[5, @C]>>'}}
+      function.call @ComponentE1::@constrain(%b) : (!struct.struct<@ComponentE1<[5,@C,4]>>) -> ()
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentF1<[@A, @B]> {
-    function.def @compute() -> !llzk.struct<@ComponentF1<[@A, @B]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentF1<[@A, @B]>>
-      function.return %self : !llzk.struct<@ComponentF1<[@A, @B]>>
+  struct.def @ComponentF1<[@A, @B]> {
+    function.def @compute() -> !struct.struct<@ComponentF1<[@A, @B]>> {
+      %self = struct.new : !struct.struct<@ComponentF1<[@A, @B]>>
+      function.return %self : !struct.struct<@ComponentF1<[@A, @B]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentF1<[@A, @B]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentF1<[@A, @B]>>) { function.return }
   }
 
-  llzk.struct @ComponentF2<[@C]> {
-    // expected-error@+1 {{'llzk.struct' type has 3 parameters but "ComponentF1" expects 2}}
-    function.def @compute(%0: !llzk.struct<@ComponentF1<[5,@C,88]>>) -> !llzk.struct<@ComponentF2<[@C]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentF2<[@C]>>
-      function.return %self : !llzk.struct<@ComponentF2<[@C]>>
+  struct.def @ComponentF2<[@C]> {
+    // expected-error@+1 {{'struct.struct' type has 3 parameters but "ComponentF1" expects 2}}
+    function.def @compute(%0: !struct.struct<@ComponentF1<[5,@C,88]>>) -> !struct.struct<@ComponentF2<[@C]>> {
+      %self = struct.new : !struct.struct<@ComponentF2<[@C]>>
+      function.return %self : !struct.struct<@ComponentF2<[@C]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentF2<[@C]>>, %0: !llzk.struct<@ComponentF1<[5,@C,88]>>) {
+    function.def @constrain(%self: !struct.struct<@ComponentF2<[@C]>>, %0: !struct.struct<@ComponentF1<[5,@C,88]>>) {
       function.return
     }
   }
@@ -148,301 +148,301 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 // No parameters used to reference self type within component
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentG<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
-    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'llzk.struct' "@ComponentG<[@A, @B]>" as return type}}
-    function.def @compute() -> !llzk.struct<@ComponentG> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentG>
-      function.return %self : !llzk.struct<@ComponentG>
+  struct.def @ComponentG<[@A, @B]> { // expected-note {{should be type of this 'struct.def'}}
+    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@ComponentG<[@A, @B]>" as return type}}
+    function.def @compute() -> !struct.struct<@ComponentG> {
+      %self = struct.new : !struct.struct<@ComponentG>
+      function.return %self : !struct.struct<@ComponentG>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentG>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentG>) { function.return }
   }
 }
 // -----
 // Fewer parameters used to reference self type within component
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentH<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
-    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'llzk.struct' "@ComponentH<[@A, @B]>" as return type}}
-    function.def @compute() -> !llzk.struct<@ComponentH<[@A]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentH<[@A]>>
-      function.return %self : !llzk.struct<@ComponentH<[@A]>>
+  struct.def @ComponentH<[@A, @B]> { // expected-note {{should be type of this 'struct.def'}}
+    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@ComponentH<[@A, @B]>" as return type}}
+    function.def @compute() -> !struct.struct<@ComponentH<[@A]>> {
+      %self = struct.new : !struct.struct<@ComponentH<[@A]>>
+      function.return %self : !struct.struct<@ComponentH<[@A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentH<[@A]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentH<[@A]>>) { function.return }
   }
 }
 // -----
 // More parameters used to reference self type within component
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentI<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
-    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'llzk.struct' "@ComponentI<[@A, @B]>" as return type}}
-    function.def @compute() -> !llzk.struct<@ComponentI<[@A, @B, @B]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentI<[@A, @B, @B]>>
-      function.return %self : !llzk.struct<@ComponentI<[@A, @B, @B]>>
+  struct.def @ComponentI<[@A, @B]> { // expected-note {{should be type of this 'struct.def'}}
+    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@ComponentI<[@A, @B]>" as return type}}
+    function.def @compute() -> !struct.struct<@ComponentI<[@A, @B, @B]>> {
+      %self = struct.new : !struct.struct<@ComponentI<[@A, @B, @B]>>
+      function.return %self : !struct.struct<@ComponentI<[@A, @B, @B]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentI<[@A, @B, @B]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentI<[@A, @B, @B]>>) { function.return }
   }
 }
 // -----
 // Different parameters used to reference self type within component
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentJ<[@A, @B]> { // expected-note {{should be type of this 'llzk.struct'}}
-    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'llzk.struct' "@ComponentJ<[@A, @B]>" as return type}}
-    function.def @compute() -> !llzk.struct<@ComponentJ<[@B, @A]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentJ<[@B, @A]>>
-      function.return %self : !llzk.struct<@ComponentJ<[@B, @A]>>
+  struct.def @ComponentJ<[@A, @B]> { // expected-note {{should be type of this 'struct.def'}}
+    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@ComponentJ<[@A, @B]>" as return type}}
+    function.def @compute() -> !struct.struct<@ComponentJ<[@B, @A]>> {
+      %self = struct.new : !struct.struct<@ComponentJ<[@B, @A]>>
+      function.return %self : !struct.struct<@ComponentJ<[@B, @A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentJ<[@B, @A]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentJ<[@B, @A]>>) { function.return }
   }
 }
 // -----
 // Unknown parameters used to reference self type within component
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentK<[@A, @B]> {
+  struct.def @ComponentK<[@A, @B]> {
     // expected-error@+2 {{'function.def' op references unknown symbol "@C"}}
     // expected-error@+1 {{'function.def' op references unknown symbol "@D"}}
-    function.def @compute() -> !llzk.struct<@ComponentK<[@C, @D]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentK<[@C, @D]>>
-      function.return %self : !llzk.struct<@ComponentK<[@C, @D]>>
+    function.def @compute() -> !struct.struct<@ComponentK<[@C, @D]>> {
+      %self = struct.new : !struct.struct<@ComponentK<[@C, @D]>>
+      function.return %self : !struct.struct<@ComponentK<[@C, @D]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentK<[@C, @D]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentK<[@C, @D]>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentL1<[@Z]> { // expected-note {{type parameters must unify with parameters defined here}}
-    function.def @compute() -> !llzk.struct<@ComponentL1<[@Z]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentL1<[@Z]>>
-      function.return %self : !llzk.struct<@ComponentL1<[@Z]>>
+  struct.def @ComponentL1<[@Z]> { // expected-note {{type parameters must unify with parameters defined here}}
+    function.def @compute() -> !struct.struct<@ComponentL1<[@Z]>> {
+      %self = struct.new : !struct.struct<@ComponentL1<[@Z]>>
+      function.return %self : !struct.struct<@ComponentL1<[@Z]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentL1<[@Z]>>)  { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentL1<[@Z]>>)  { function.return }
   }
-  llzk.struct @ComponentL2 {
-    // expected-error@+1 {{Cannot unify parameters of type '!llzk.struct<@ComponentL1>' with parameters of 'llzk.struct' "@ComponentL1<[@Z]>"}}
-    llzk.field @f : !llzk.struct<@ComponentL1>
+  struct.def @ComponentL2 {
+    // expected-error@+1 {{Cannot unify parameters of type '!struct.struct<@ComponentL1>' with parameters of 'struct.def' "@ComponentL1<[@Z]>"}}
+    struct.field @f : !struct.struct<@ComponentL1>
 
-    function.def @compute() -> !llzk.struct<@ComponentL2> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentL2>
-      function.return %self : !llzk.struct<@ComponentL2>
+    function.def @compute() -> !struct.struct<@ComponentL2> {
+      %self = struct.new : !struct.struct<@ComponentL2>
+      function.return %self : !struct.struct<@ComponentL2>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentL2>)  { function.return }
-  }
-}
-// -----
-module attributes {veridise.lang = "llzk"} {
-  module @a {
-    llzk.struct @ComponentM1<[@Z]> { // expected-note {{type parameters must unify with parameters defined here}}
-      function.def @compute() -> !llzk.struct<@a::@ComponentM1<[@Z]>> {
-        %self = llzk.new_struct : !llzk.struct<@a::@ComponentM1<[@Z]>>
-        function.return %self : !llzk.struct<@a::@ComponentM1<[@Z]>>
-      }
-      function.def @constrain(%self: !llzk.struct<@a::@ComponentM1<[@Z]>>)  { function.return }
-    }
-  }
-  module @b {
-    llzk.struct @ComponentM2 {
-      // expected-error@+1 {{Cannot unify parameters of type '!llzk.struct<@a::@ComponentM1>' with parameters of 'llzk.struct' "@a::@ComponentM1<[@Z]>"}}
-      llzk.field @f : !llzk.struct<@a::@ComponentM1>
-
-      function.def @compute() -> !llzk.struct<@b::@ComponentM2> {
-        %self = llzk.new_struct : !llzk.struct<@b::@ComponentM2>
-        function.return %self : !llzk.struct<@b::@ComponentM2>
-      }
-      function.def @constrain(%self: !llzk.struct<@b::@ComponentM2>)  { function.return }
-    }
+    function.def @constrain(%self: !struct.struct<@ComponentL2>)  { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   module @a {
-    llzk.struct @ComponentN1 {
-      function.def @compute() -> !llzk.struct<@a::@ComponentN1> {
-        %self = llzk.new_struct : !llzk.struct<@a::@ComponentN1>
-        function.return %self : !llzk.struct<@a::@ComponentN1>
+    struct.def @ComponentM1<[@Z]> { // expected-note {{type parameters must unify with parameters defined here}}
+      function.def @compute() -> !struct.struct<@a::@ComponentM1<[@Z]>> {
+        %self = struct.new : !struct.struct<@a::@ComponentM1<[@Z]>>
+        function.return %self : !struct.struct<@a::@ComponentM1<[@Z]>>
       }
-      function.def @constrain(%self: !llzk.struct<@a::@ComponentN1>)  { function.return }
+      function.def @constrain(%self: !struct.struct<@a::@ComponentM1<[@Z]>>)  { function.return }
     }
   }
   module @b {
-    llzk.struct @ComponentN2<[@A]> {
-      // expected-error@+1 {{'llzk.struct' type has 2 parameters but "ComponentN1" expects 0}}
-      llzk.field @f : !llzk.struct<@a::@ComponentN1<[@A, @A]>>
+    struct.def @ComponentM2 {
+      // expected-error@+1 {{Cannot unify parameters of type '!struct.struct<@a::@ComponentM1>' with parameters of 'struct.def' "@a::@ComponentM1<[@Z]>"}}
+      struct.field @f : !struct.struct<@a::@ComponentM1>
 
-      function.def @compute() -> !llzk.struct<@b::@ComponentN2<[@A]>> {
-        %self = llzk.new_struct : !llzk.struct<@b::@ComponentN2<[@A]>>
-        function.return %self : !llzk.struct<@b::@ComponentN2<[@A]>>
+      function.def @compute() -> !struct.struct<@b::@ComponentM2> {
+        %self = struct.new : !struct.struct<@b::@ComponentM2>
+        function.return %self : !struct.struct<@b::@ComponentM2>
       }
-      function.def @constrain(%self: !llzk.struct<@b::@ComponentN2<[@A]>>)  { function.return }
+      function.def @constrain(%self: !struct.struct<@b::@ComponentM2>)  { function.return }
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   module @a {
-    llzk.struct @ComponentO1<[@Z]> {
-      function.def @compute() -> !llzk.struct<@a::@ComponentO1<[@Z]>> {
-        %self = llzk.new_struct : !llzk.struct<@a::@ComponentO1<[@Z]>>
-        function.return %self : !llzk.struct<@a::@ComponentO1<[@Z]>>
+    struct.def @ComponentN1 {
+      function.def @compute() -> !struct.struct<@a::@ComponentN1> {
+        %self = struct.new : !struct.struct<@a::@ComponentN1>
+        function.return %self : !struct.struct<@a::@ComponentN1>
       }
-      function.def @constrain(%self: !llzk.struct<@a::@ComponentO1<[@Z]>>)  { function.return }
+      function.def @constrain(%self: !struct.struct<@a::@ComponentN1>)  { function.return }
     }
   }
   module @b {
-    llzk.struct @ComponentO2 {
-      // expected-error@+1 {{'llzk.field' op references unknown symbol "@A"}}
-      llzk.field @f : !llzk.struct<@a::@ComponentO1<[@A]>>
+    struct.def @ComponentN2<[@A]> {
+      // expected-error@+1 {{'struct.struct' type has 2 parameters but "ComponentN1" expects 0}}
+      struct.field @f : !struct.struct<@a::@ComponentN1<[@A, @A]>>
 
-      function.def @compute() -> !llzk.struct<@b::@ComponentO2> {
-        %self = llzk.new_struct : !llzk.struct<@b::@ComponentO2>
-        function.return %self : !llzk.struct<@b::@ComponentO2>
+      function.def @compute() -> !struct.struct<@b::@ComponentN2<[@A]>> {
+        %self = struct.new : !struct.struct<@b::@ComponentN2<[@A]>>
+        function.return %self : !struct.struct<@b::@ComponentN2<[@A]>>
       }
-      function.def @constrain(%self: !llzk.struct<@b::@ComponentO2>)  { function.return }
+      function.def @constrain(%self: !struct.struct<@b::@ComponentN2<[@A]>>)  { function.return }
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   module @a {
-    llzk.struct @ComponentP1<[@Z]> {
-      function.def @compute() -> !llzk.struct<@a::@ComponentP1<[@Z]>> {
-        %self = llzk.new_struct : !llzk.struct<@a::@ComponentP1<[@Z]>>
-        function.return %self : !llzk.struct<@a::@ComponentP1<[@Z]>>
+    struct.def @ComponentO1<[@Z]> {
+      function.def @compute() -> !struct.struct<@a::@ComponentO1<[@Z]>> {
+        %self = struct.new : !struct.struct<@a::@ComponentO1<[@Z]>>
+        function.return %self : !struct.struct<@a::@ComponentO1<[@Z]>>
       }
-      function.def @constrain(%self: !llzk.struct<@a::@ComponentP1<[@Z]>>)  { function.return }
+      function.def @constrain(%self: !struct.struct<@a::@ComponentO1<[@Z]>>)  { function.return }
     }
   }
   module @b {
-    llzk.struct @ComponentP2 {
-      // expected-error@+1 {{'llzk.field' op references unknown symbol "@constrain"}}
-      llzk.field @f : !llzk.struct<@a::@ComponentP1<[@constrain]>>
+    struct.def @ComponentO2 {
+      // expected-error@+1 {{'struct.field' op references unknown symbol "@A"}}
+      struct.field @f : !struct.struct<@a::@ComponentO1<[@A]>>
 
-      function.def @compute() -> !llzk.struct<@b::@ComponentP2> {
-        %self = llzk.new_struct : !llzk.struct<@b::@ComponentP2>
-        function.return %self : !llzk.struct<@b::@ComponentP2>
+      function.def @compute() -> !struct.struct<@b::@ComponentO2> {
+        %self = struct.new : !struct.struct<@b::@ComponentO2>
+        function.return %self : !struct.struct<@b::@ComponentO2>
       }
-      function.def @constrain(%self: !llzk.struct<@b::@ComponentP2>)  { function.return }
+      function.def @constrain(%self: !struct.struct<@b::@ComponentO2>)  { function.return }
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   module @a {
-    llzk.struct @ComponentQ1<[@Z]> {
-      function.def @compute() -> !llzk.struct<@a::@ComponentQ1<[@Z]>> {
-        %self = llzk.new_struct : !llzk.struct<@a::@ComponentQ1<[@Z]>>
-        function.return %self : !llzk.struct<@a::@ComponentQ1<[@Z]>>
+    struct.def @ComponentP1<[@Z]> {
+      function.def @compute() -> !struct.struct<@a::@ComponentP1<[@Z]>> {
+        %self = struct.new : !struct.struct<@a::@ComponentP1<[@Z]>>
+        function.return %self : !struct.struct<@a::@ComponentP1<[@Z]>>
       }
-      function.def @constrain(%self: !llzk.struct<@a::@ComponentQ1<[@Z]>>)  { function.return }
+      function.def @constrain(%self: !struct.struct<@a::@ComponentP1<[@Z]>>)  { function.return }
     }
   }
   module @b {
-    llzk.struct @ComponentQ2 {
-      // expected-error@+1 {{ref "@b::@ComponentQ2::@constrain" in type '!llzk.struct<@a::@ComponentQ1<[@b::@ComponentQ2::@constrain]>>' refers to a 'function.def' which is not allowed}}
-      llzk.field @f : !llzk.struct<@a::@ComponentQ1<[@b::@ComponentQ2::@constrain]>>
+    struct.def @ComponentP2 {
+      // expected-error@+1 {{'struct.field' op references unknown symbol "@constrain"}}
+      struct.field @f : !struct.struct<@a::@ComponentP1<[@constrain]>>
 
-      function.def @compute() -> !llzk.struct<@b::@ComponentQ2> {
-        %self = llzk.new_struct : !llzk.struct<@b::@ComponentQ2>
-        function.return %self : !llzk.struct<@b::@ComponentQ2>
+      function.def @compute() -> !struct.struct<@b::@ComponentP2> {
+        %self = struct.new : !struct.struct<@b::@ComponentP2>
+        function.return %self : !struct.struct<@b::@ComponentP2>
       }
-      function.def @constrain(%self: !llzk.struct<@b::@ComponentQ2>)  { function.return }
+      function.def @constrain(%self: !struct.struct<@b::@ComponentP2>)  { function.return }
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   module @a {
-    llzk.struct @ComponentR1<[@Z]> {
-      function.def @compute() -> !llzk.struct<@a::@ComponentR1<[@Z]>> {
-        %self = llzk.new_struct : !llzk.struct<@a::@ComponentR1<[@Z]>>
-        function.return %self : !llzk.struct<@a::@ComponentR1<[@Z]>>
+    struct.def @ComponentQ1<[@Z]> {
+      function.def @compute() -> !struct.struct<@a::@ComponentQ1<[@Z]>> {
+        %self = struct.new : !struct.struct<@a::@ComponentQ1<[@Z]>>
+        function.return %self : !struct.struct<@a::@ComponentQ1<[@Z]>>
       }
-      function.def @constrain(%self: !llzk.struct<@a::@ComponentR1<[@Z]>>)  { function.return }
+      function.def @constrain(%self: !struct.struct<@a::@ComponentQ1<[@Z]>>)  { function.return }
     }
   }
   module @b {
-    llzk.struct @ComponentR2 {
-      // expected-error@+1 {{ref "@b" in type '!llzk.struct<@a::@ComponentR1<[@b]>>' refers to a 'builtin.module' which is not allowed}}
-      llzk.field @f : !llzk.struct<@a::@ComponentR1<[@b]>>
+    struct.def @ComponentQ2 {
+      // expected-error@+1 {{ref "@b::@ComponentQ2::@constrain" in type '!struct.struct<@a::@ComponentQ1<[@b::@ComponentQ2::@constrain]>>' refers to a 'function.def' which is not allowed}}
+      struct.field @f : !struct.struct<@a::@ComponentQ1<[@b::@ComponentQ2::@constrain]>>
 
-      function.def @compute() -> !llzk.struct<@b::@ComponentR2> {
-        %self = llzk.new_struct : !llzk.struct<@b::@ComponentR2>
-        function.return %self : !llzk.struct<@b::@ComponentR2>
+      function.def @compute() -> !struct.struct<@b::@ComponentQ2> {
+        %self = struct.new : !struct.struct<@b::@ComponentQ2>
+        function.return %self : !struct.struct<@b::@ComponentQ2>
       }
-      function.def @constrain(%self: !llzk.struct<@b::@ComponentR2>)  { function.return }
+      function.def @constrain(%self: !struct.struct<@b::@ComponentQ2>)  { function.return }
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentS1<[@Z]> {
-    function.def @compute() -> !llzk.struct<@ComponentS1<[@Z]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentS1<[@Z]>>
-      function.return %self : !llzk.struct<@ComponentS1<[@Z]>>
+  module @a {
+    struct.def @ComponentR1<[@Z]> {
+      function.def @compute() -> !struct.struct<@a::@ComponentR1<[@Z]>> {
+        %self = struct.new : !struct.struct<@a::@ComponentR1<[@Z]>>
+        function.return %self : !struct.struct<@a::@ComponentR1<[@Z]>>
+      }
+      function.def @constrain(%self: !struct.struct<@a::@ComponentR1<[@Z]>>)  { function.return }
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentS1<[@Z]>>)  { function.return }
   }
-  llzk.struct @ComponentS2 {
-    // expected-error@+1 {{ref "@ComponentS2" in type '!llzk.struct<@ComponentS1<[@ComponentS2]>>' refers to a 'llzk.struct' which is not allowed}}
-    llzk.field @f : !llzk.struct<@ComponentS1<[@ComponentS2]>>
+  module @b {
+    struct.def @ComponentR2 {
+      // expected-error@+1 {{ref "@b" in type '!struct.struct<@a::@ComponentR1<[@b]>>' refers to a 'builtin.module' which is not allowed}}
+      struct.field @f : !struct.struct<@a::@ComponentR1<[@b]>>
 
-    function.def @compute() -> !llzk.struct<@ComponentS2> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentS2>
-      function.return %self : !llzk.struct<@ComponentS2>
+      function.def @compute() -> !struct.struct<@b::@ComponentR2> {
+        %self = struct.new : !struct.struct<@b::@ComponentR2>
+        function.return %self : !struct.struct<@b::@ComponentR2>
+      }
+      function.def @constrain(%self: !struct.struct<@b::@ComponentR2>)  { function.return }
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentS2>)  { function.return }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  struct.def @ComponentS1<[@Z]> {
+    function.def @compute() -> !struct.struct<@ComponentS1<[@Z]>> {
+      %self = struct.new : !struct.struct<@ComponentS1<[@Z]>>
+      function.return %self : !struct.struct<@ComponentS1<[@Z]>>
+    }
+    function.def @constrain(%self: !struct.struct<@ComponentS1<[@Z]>>)  { function.return }
+  }
+  struct.def @ComponentS2 {
+    // expected-error@+1 {{ref "@ComponentS2" in type '!struct.struct<@ComponentS1<[@ComponentS2]>>' refers to a 'struct.def' which is not allowed}}
+    struct.field @f : !struct.struct<@ComponentS1<[@ComponentS2]>>
+
+    function.def @compute() -> !struct.struct<@ComponentS2> {
+      %self = struct.new : !struct.struct<@ComponentS2>
+      function.return %self : !struct.struct<@ComponentS2>
+    }
+    function.def @constrain(%self: !struct.struct<@ComponentS2>)  { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def private @some_function() -> ()
-  llzk.struct @ComponentT1<[@Z]> {
-    function.def @compute() -> !llzk.struct<@ComponentT1<[@Z]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentT1<[@Z]>>
-      function.return %self : !llzk.struct<@ComponentT1<[@Z]>>
+  struct.def @ComponentT1<[@Z]> {
+    function.def @compute() -> !struct.struct<@ComponentT1<[@Z]>> {
+      %self = struct.new : !struct.struct<@ComponentT1<[@Z]>>
+      function.return %self : !struct.struct<@ComponentT1<[@Z]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentT1<[@Z]>>)  { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentT1<[@Z]>>)  { function.return }
   }
-  llzk.struct @ComponentT2 {
-    // expected-error@+1 {{ref "@some_function" in type '!llzk.struct<@ComponentT1<[@some_function]>>' refers to a 'function.def' which is not allowed}}
-    llzk.field @f : !llzk.struct<@ComponentT1<[@some_function]>>
+  struct.def @ComponentT2 {
+    // expected-error@+1 {{ref "@some_function" in type '!struct.struct<@ComponentT1<[@some_function]>>' refers to a 'function.def' which is not allowed}}
+    struct.field @f : !struct.struct<@ComponentT1<[@some_function]>>
 
-    function.def @compute() -> !llzk.struct<@ComponentT2> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentT2>
-      function.return %self : !llzk.struct<@ComponentT2>
+    function.def @compute() -> !struct.struct<@ComponentT2> {
+      %self = struct.new : !struct.struct<@ComponentT2>
+      function.return %self : !struct.struct<@ComponentT2>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentT2>)  { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentT2>)  { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   module @a {
-    llzk.struct @ComponentU1<[@Z]> {
-      function.def @compute() -> !llzk.struct<@a::@ComponentU1<[@Z]>> {
-        %self = llzk.new_struct : !llzk.struct<@a::@ComponentU1<[@Z]>>
-        function.return %self : !llzk.struct<@a::@ComponentU1<[@Z]>>
+    struct.def @ComponentU1<[@Z]> {
+      function.def @compute() -> !struct.struct<@a::@ComponentU1<[@Z]>> {
+        %self = struct.new : !struct.struct<@a::@ComponentU1<[@Z]>>
+        function.return %self : !struct.struct<@a::@ComponentU1<[@Z]>>
       }
-      function.def @constrain(%self: !llzk.struct<@a::@ComponentU1<[@Z]>>)  { function.return }
+      function.def @constrain(%self: !struct.struct<@a::@ComponentU1<[@Z]>>)  { function.return }
     }
   }
   // expected-error@+1 {{'function.def' op references unknown symbol "@D"}}
-  function.def @fun3(%0: !llzk.struct<@a::@ComponentU1<[@D]>>) -> !llzk.struct<@a::@ComponentU1<[@D]>> {
-    function.return %0 : !llzk.struct<@a::@ComponentU1<[@D]>>
+  function.def @fun3(%0: !struct.struct<@a::@ComponentU1<[@D]>>) -> !struct.struct<@a::@ComponentU1<[@D]>> {
+    function.return %0 : !struct.struct<@a::@ComponentU1<[@D]>>
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @bad(%0: !felt.felt) {
-    // expected-error@+1 {{'llzk.read_const' op only valid within a 'llzk.struct' ancestor}}
+    // expected-error@+1 {{'llzk.read_const' op only valid within a 'struct.def' ancestor}}
     %1 = llzk.read_const @X : !felt.felt
     function.return
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentV<[@A]> { // expected-note {{must reference a parameter of this struct}}
-    function.def @compute(%0: !felt.felt) -> !llzk.struct<@ComponentV<[@A]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentV<[@A]>>
-      function.return %self : !llzk.struct<@ComponentV<[@A]>>
+  struct.def @ComponentV<[@A]> { // expected-note {{must reference a parameter of this struct}}
+    function.def @compute(%0: !felt.felt) -> !struct.struct<@ComponentV<[@A]>> {
+      %self = struct.new : !struct.struct<@ComponentV<[@A]>>
+      function.return %self : !struct.struct<@ComponentV<[@A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentV<[@A]>>, %0: !felt.felt) {
+    function.def @constrain(%self: !struct.struct<@ComponentV<[@A]>>, %0: !felt.felt) {
       // expected-error@+1 {{'llzk.read_const' op references unknown symbol "@X"}}
       %1 = llzk.read_const @X : !felt.felt
       llzk.emit_eq %0, %1 : !felt.felt
@@ -452,35 +452,35 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.struct' op has more than one parameter named "@A"}}
-  llzk.struct @ComponentW<[@A, @A]> {
-    function.def @compute() -> !llzk.struct<@ComponentW<[@A, @A]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentW<[@A, @A]>>
-      function.return %self : !llzk.struct<@ComponentW<[@A, @A]>>
+  // expected-error@+1 {{'struct.def' op has more than one parameter named "@A"}}
+  struct.def @ComponentW<[@A, @A]> {
+    function.def @compute() -> !struct.struct<@ComponentW<[@A, @A]>> {
+      %self = struct.new : !struct.struct<@ComponentW<[@A, @A]>>
+      function.return %self : !struct.struct<@ComponentW<[@A, @A]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentW<[@A, @A]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentW<[@A, @A]>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @F() { function.return } // expected-note {{symbol already defined here}}
-  // expected-error@+1 {{'llzk.struct' op parameter name "@F" conflicts with an existing symbol}}
-  llzk.struct @ComponentX<[@F]> {
-    function.def @compute() -> !llzk.struct<@ComponentX<[@F]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentX<[@F]>>
-      function.return %self : !llzk.struct<@ComponentX<[@F]>>
+  // expected-error@+1 {{'struct.def' op parameter name "@F" conflicts with an existing symbol}}
+  struct.def @ComponentX<[@F]> {
+    function.def @compute() -> !struct.struct<@ComponentX<[@F]>> {
+      %self = struct.new : !struct.struct<@ComponentX<[@F]>>
+      function.return %self : !struct.struct<@ComponentX<[@F]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ComponentX<[@F]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@ComponentX<[@F]>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ReadConstBadTypeA<[@T]> {
-    function.def @compute() -> !llzk.struct<@ReadConstBadTypeA<[@T]>> {
-      %self = llzk.new_struct : !llzk.struct<@ReadConstBadTypeA<[@T]>>
-      function.return %self : !llzk.struct<@ReadConstBadTypeA<[@T]>>
+  struct.def @ReadConstBadTypeA<[@T]> {
+    function.def @compute() -> !struct.struct<@ReadConstBadTypeA<[@T]>> {
+      %self = struct.new : !struct.struct<@ReadConstBadTypeA<[@T]>>
+      function.return %self : !struct.struct<@ReadConstBadTypeA<[@T]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ReadConstBadTypeA<[@T]>>) {
+    function.def @constrain(%self: !struct.struct<@ReadConstBadTypeA<[@T]>>) {
       // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!array.array<54 x index>'}}
       %0 = llzk.read_const @T : !array.array<54 x index>
       function.return
@@ -489,26 +489,26 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ReadConstBadTypeB<[@T]> {
-    function.def @compute() -> !llzk.struct<@ReadConstBadTypeB<[@T]>> {
-      %self = llzk.new_struct : !llzk.struct<@ReadConstBadTypeB<[@T]>>
-      function.return %self : !llzk.struct<@ReadConstBadTypeB<[@T]>>
+  struct.def @ReadConstBadTypeB<[@T]> {
+    function.def @compute() -> !struct.struct<@ReadConstBadTypeB<[@T]>> {
+      %self = struct.new : !struct.struct<@ReadConstBadTypeB<[@T]>>
+      function.return %self : !struct.struct<@ReadConstBadTypeB<[@T]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ReadConstBadTypeB<[@T]>>) {
-      // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!llzk.struct<@ReadConstBadTypeB<[@T]>>'}}
-      %0 = llzk.read_const @T : !llzk.struct<@ReadConstBadTypeB<[@T]>>
+    function.def @constrain(%self: !struct.struct<@ReadConstBadTypeB<[@T]>>) {
+      // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!struct.struct<@ReadConstBadTypeB<[@T]>>'}}
+      %0 = llzk.read_const @T : !struct.struct<@ReadConstBadTypeB<[@T]>>
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ReadConstBadTypeC<[@T]> {
-    function.def @compute() -> !llzk.struct<@ReadConstBadTypeC<[@T]>> {
-      %self = llzk.new_struct : !llzk.struct<@ReadConstBadTypeC<[@T]>>
-      function.return %self : !llzk.struct<@ReadConstBadTypeC<[@T]>>
+  struct.def @ReadConstBadTypeC<[@T]> {
+    function.def @compute() -> !struct.struct<@ReadConstBadTypeC<[@T]>> {
+      %self = struct.new : !struct.struct<@ReadConstBadTypeC<[@T]>>
+      function.return %self : !struct.struct<@ReadConstBadTypeC<[@T]>>
     }
-    function.def @constrain(%self: !llzk.struct<@ReadConstBadTypeC<[@T]>>) {
+    function.def @constrain(%self: !struct.struct<@ReadConstBadTypeC<[@T]>>) {
       // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!string.string'}}
       %0 = llzk.read_const @T : !string.string
       function.return
@@ -517,49 +517,49 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @BadParamTypeA<[@C]> {
-    function.def @compute() -> !llzk.struct<@BadParamTypeA<[@C]>> {
-      %self = llzk.new_struct : !llzk.struct<@BadParamTypeA<[@C]>>
-      function.return %self : !llzk.struct<@BadParamTypeA<[@C]>>
+  struct.def @BadParamTypeA<[@C]> {
+    function.def @compute() -> !struct.struct<@BadParamTypeA<[@C]>> {
+      %self = struct.new : !struct.struct<@BadParamTypeA<[@C]>>
+      function.return %self : !struct.struct<@BadParamTypeA<[@C]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@BadParamTypeA<[@C]>>) {
+    function.def @constrain(%self: !struct.struct<@BadParamTypeA<[@C]>>) {
       function.return
     }
   }
-  llzk.struct @BadParamTypeB {
+  struct.def @BadParamTypeB {
     // expected-error@+1 {{expected a valid LLZK type but found 'f32'}}
-    llzk.field @f3 : !llzk.struct<@BadParamTypeA<[f32]>>
+    struct.field @f3 : !struct.struct<@BadParamTypeA<[f32]>>
 
-    function.def @compute() -> !llzk.struct<@BadParamTypeB> {
-      %self = llzk.new_struct : !llzk.struct<@BadParamTypeB>
-      function.return %self : !llzk.struct<@BadParamTypeB>
+    function.def @compute() -> !struct.struct<@BadParamTypeB> {
+      %self = struct.new : !struct.struct<@BadParamTypeB>
+      function.return %self : !struct.struct<@BadParamTypeB>
     }
 
-    function.def @constrain(%self: !llzk.struct<@BadParamTypeB>) {
+    function.def @constrain(%self: !struct.struct<@BadParamTypeB>) {
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @DeepInvalidArrayTypeA<[@C]> {
-    function.def @compute() -> !llzk.struct<@DeepInvalidArrayTypeA<[@C]>> {
-      %self = llzk.new_struct : !llzk.struct<@DeepInvalidArrayTypeA<[@C]>>
-      function.return %self : !llzk.struct<@DeepInvalidArrayTypeA<[@C]>>
+  struct.def @DeepInvalidArrayTypeA<[@C]> {
+    function.def @compute() -> !struct.struct<@DeepInvalidArrayTypeA<[@C]>> {
+      %self = struct.new : !struct.struct<@DeepInvalidArrayTypeA<[@C]>>
+      function.return %self : !struct.struct<@DeepInvalidArrayTypeA<[@C]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@DeepInvalidArrayTypeA<[@C]>>) {
+    function.def @constrain(%self: !struct.struct<@DeepInvalidArrayTypeA<[@C]>>) {
       function.return
     }
   }
 
   function.def private @in_return_deep() ->
     !array.array<2 x
-      !llzk.struct<@DeepInvalidArrayTypeA<[
+      !struct.struct<@DeepInvalidArrayTypeA<[
         !array.array<2 x
-          !llzk.struct<@DeepInvalidArrayTypeA<[
-            !llzk.struct<@DeepInvalidArrayTypeA<[
+          !struct.struct<@DeepInvalidArrayTypeA<[
+            !struct.struct<@DeepInvalidArrayTypeA<[
               !array.array<2 x !array.array<4 x i1>> // expected-error {{'array.array' element type cannot be 'array.array'}}
             ]>> // expected-error {{failed to parse struct parameters}}
           ]>> // expected-error {{failed to parse struct parameters}}
@@ -572,16 +572,16 @@ module attributes {veridise.lang = "llzk"} {
 
 #map = affine_map<(i) -> (i, 2)>
 module attributes {veridise.lang = "llzk"} {
-  // This would also trigger {{'llzk.struct' op attribute 'const_params' failed to satisfy constraint: flat symbol ref array attribute}},
+  // This would also trigger {{'struct.def' op attribute 'const_params' failed to satisfy constraint: flat symbol ref array attribute}},
   // but the below error fires first.
-  llzk.struct @Foo<[@N, @P, #map]> {
+  struct.def @Foo<[@N, @P, #map]> {
     // expected-error@+1 {{AffineMapAttr must yield a single result, but found 2 results}}
-    function.def @compute() -> !llzk.struct<@Foo<[@N, @P, #map]>> {
-      %self = llzk.new_struct : !llzk.struct<@Foo<[@N, @P, #map]>>
-      function.return %self : !llzk.struct<@Foo<[@N, @P, #map]>>
+    function.def @compute() -> !struct.struct<@Foo<[@N, @P, #map]>> {
+      %self = struct.new : !struct.struct<@Foo<[@N, @P, #map]>>
+      function.return %self : !struct.struct<@Foo<[@N, @P, #map]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@Foo<[@N, @P, #map]>>) {
+    function.def @constrain(%self: !struct.struct<@Foo<[@N, @P, #map]>>) {
       function.return
     }
   }
@@ -591,27 +591,27 @@ module attributes {veridise.lang = "llzk"} {
 
 #map = affine_map<(i) -> ()>
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @Foo<[@N, @P, @A]> {
-    function.def @compute() -> !llzk.struct<@Foo<[@N, @P, @A]>> {
-      %self = llzk.new_struct : !llzk.struct<@Foo<[@N, @P, @A]>>
-      function.return %self : !llzk.struct<@Foo<[@N, @P, @A]>>
+  struct.def @Foo<[@N, @P, @A]> {
+    function.def @compute() -> !struct.struct<@Foo<[@N, @P, @A]>> {
+      %self = struct.new : !struct.struct<@Foo<[@N, @P, @A]>>
+      function.return %self : !struct.struct<@Foo<[@N, @P, @A]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@Foo<[@N, @P, @A]>>) {
+    function.def @constrain(%self: !struct.struct<@Foo<[@N, @P, @A]>>) {
       function.return
     }
   }
 
-  llzk.struct @Bar<[@N, @P]> {
+  struct.def @Bar<[@N, @P]> {
      // expected-error@+1 {{AffineMapAttr must yield a single result, but found 0 results}}
-    llzk.field @foo: !llzk.struct<@Foo<[@N, @P, #map]>>
+    struct.field @foo: !struct.struct<@Foo<[@N, @P, #map]>>
 
-    function.def @compute() -> !llzk.struct<@Bar<[@N, @P]>> {
-      %self = llzk.new_struct : !llzk.struct<@Bar<[@N, @P]>>
-      function.return %self : !llzk.struct<@Bar<[@N, @P]>>
+    function.def @compute() -> !struct.struct<@Bar<[@N, @P]>> {
+      %self = struct.new : !struct.struct<@Bar<[@N, @P]>>
+      function.return %self : !struct.struct<@Bar<[@N, @P]>>
     }
 
-    function.def @constrain(%self: !llzk.struct<@Bar<[@N, @P]>>) {
+    function.def @constrain(%self: !struct.struct<@Bar<[@N, @P]>>) {
       function.return
     }
   }

@@ -22,6 +22,8 @@
 
 namespace llzk {
 
+using namespace component;
+
 #define GEN_PASS_DEF_CONSTRAINTDEPENDENCYGRAPHPRINTERPASS
 #include "llzk/Analysis/AnalysisPasses.h.inc"
 

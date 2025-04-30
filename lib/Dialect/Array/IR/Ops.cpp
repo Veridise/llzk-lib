@@ -22,7 +22,6 @@
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/Twine.h>
 
 // TableGen'd implementation files

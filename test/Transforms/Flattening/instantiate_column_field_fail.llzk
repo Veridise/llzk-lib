@@ -1,25 +1,25 @@
 // RUN: llzk-opt -split-input-file %s -llzk-flatten -verify-diagnostics 
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @ComponentA1<[@T]> {
-    // expected-error@+1 {{'llzk.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type 'index'}}
-    llzk.field @f1 : !llzk.tvar<@T> {column}
+  struct.def @ComponentA1<[@T]> {
+    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type 'index'}}
+    struct.field @f1 : !llzk.tvar<@T> {column}
 
-    function.def @constrain(%self: !llzk.struct<@ComponentA1<[@T]>>) { function.return }
-    function.def @compute() -> !llzk.struct<@ComponentA1<[@T]>> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentA1<[@T]>>
-      function.return %self : !llzk.struct<@ComponentA1<[@T]>>
+    function.def @constrain(%self: !struct.struct<@ComponentA1<[@T]>>) { function.return }
+    function.def @compute() -> !struct.struct<@ComponentA1<[@T]>> {
+      %self = struct.new : !struct.struct<@ComponentA1<[@T]>>
+      function.return %self : !struct.struct<@ComponentA1<[@T]>>
     }
   }
 
-  llzk.struct @ComponentA2 {
-    function.def @compute(%p: !llzk.struct<@ComponentA1<[index]>>) -> !llzk.struct<@ComponentA2> {
-      %self = llzk.new_struct : !llzk.struct<@ComponentA2>
-      %r = llzk.readf %p[@f1] : !llzk.struct<@ComponentA1<[index]>>, index {tableOffset = -1 : index}
-      function.return %self : !llzk.struct<@ComponentA2>
+  struct.def @ComponentA2 {
+    function.def @compute(%p: !struct.struct<@ComponentA1<[index]>>) -> !struct.struct<@ComponentA2> {
+      %self = struct.new : !struct.struct<@ComponentA2>
+      %r = struct.readf %p[@f1] : !struct.struct<@ComponentA1<[index]>>, index {tableOffset = -1 : index}
+      function.return %self : !struct.struct<@ComponentA2>
     }
 
-    function.def @constrain(%self: !llzk.struct<@ComponentA2>, %p: !llzk.struct<@ComponentA1<[index]>>) {
+    function.def @constrain(%self: !struct.struct<@ComponentA2>, %p: !struct.struct<@ComponentA1<[index]>>) {
       function.return
     }
   }

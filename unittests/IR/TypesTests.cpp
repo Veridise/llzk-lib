@@ -16,9 +16,10 @@
 #include "../LLZKTestBase.h"
 
 using namespace llzk;
-using namespace llzk::array;
-using namespace llzk::felt;
 using namespace mlir;
+using namespace llzk::array;
+using namespace llzk::component;
+using namespace llzk::felt;
 
 class TypeTests : public LLZKTest {
 protected:

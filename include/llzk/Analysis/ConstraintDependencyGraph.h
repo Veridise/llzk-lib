@@ -117,7 +117,8 @@ public:
   /// for other constraints can be queried via the getChildAnalysis method.
   /// @return
   static mlir::FailureOr<ConstraintDependencyGraph> compute(
-      mlir::ModuleOp mod, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
+      mlir::ModuleOp mod, component::StructDefOp s, mlir::DataFlowSolver &solver,
+      mlir::AnalysisManager &am
   );
 
   /// @brief Dumps the CDG to stderr.
@@ -165,7 +166,7 @@ private:
   mlir::ModuleOp mod;
   // Using mutable because many operations are not const by default, even for "const"-like
   // operations, like "getName()", and this reduces const_casts.
-  mutable StructDefOp structDef;
+  mutable component::StructDefOp structDef;
 
   // Transitive closure only over signals.
   llvm::EquivalenceClasses<ConstrainRef> signalSets;
@@ -179,7 +180,8 @@ private:
   /// @brief Constructs an empty CDG. The CDG is populated using computeConstraints.
   /// @param m The parent LLZK-compliant module.
   /// @param s The struct to analyze.
-  ConstraintDependencyGraph(mlir::ModuleOp m, StructDefOp s) : mod(m), structDef(s), signalSets() {}
+  ConstraintDependencyGraph(mlir::ModuleOp m, component::StructDefOp s)
+      : mod(m), structDef(s), signalSets() {}
 
   /// @brief Runs the constraint analysis to compute a transitive closure over ConstrainRefs
   /// as operated over by emit operations.

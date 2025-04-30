@@ -100,7 +100,7 @@ TEST_F(ModuleBuilderTests, testConstruction) {
       .insertConstrainCall(structAName, structBName);
 
   size_t numStructs = 0;
-  for (auto s : builder.getRootModule().getOps<llzk::StructDefOp>()) {
+  for (auto s : builder.getRootModule().getOps<llzk::component::StructDefOp>()) {
     numStructs++;
     size_t numFn = 0;
     for (auto fn : s.getOps<llzk::function::FuncDefOp>()) {

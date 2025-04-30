@@ -2,19 +2,19 @@
 
 #map = affine_map<()[s0, s1] -> (s0 floordiv s1)>
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @Unpack<[@N, @P, @Aff]> {
-    function.def @compute(%arg0: !array.array<@Aff x !felt.felt>) -> !llzk.struct<@Unpack<[@N, @P, @Aff]>> {
-      %self = llzk.new_struct : !llzk.struct<@Unpack<[@N, @P, @Aff]>>
+  struct.def @Unpack<[@N, @P, @Aff]> {
+    function.def @compute(%arg0: !array.array<@Aff x !felt.felt>) -> !struct.struct<@Unpack<[@N, @P, @Aff]>> {
+      %self = struct.new : !struct.struct<@Unpack<[@N, @P, @Aff]>>
       %c0 = arith.constant 0 : index
       %0 = array.read %arg0[%c0] : !array.array<@Aff x !felt.felt>, !felt.felt
-      function.return %self : !llzk.struct<@Unpack<[@N, @P, @Aff]>>
+      function.return %self : !struct.struct<@Unpack<[@N, @P, @Aff]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@Unpack<[@N, @P, @Aff]>>, %arg1: !array.array<@Aff x !felt.felt>) {
+    function.def @constrain(%arg0: !struct.struct<@Unpack<[@N, @P, @Aff]>>, %arg1: !array.array<@Aff x !felt.felt>) {
       function.return
     }
   }
-  llzk.struct @User1 {
-    function.def @compute() -> !llzk.struct<@User1> {
+  struct.def @User1 {
+    function.def @compute() -> !struct.struct<@User1> {
       %0 = felt.const 42
       %1 = felt.const 42
       %2 = felt.const 42
@@ -24,36 +24,36 @@ module attributes {veridise.lang = "llzk"} {
       %a = arith.constant 8 : index
       %b = arith.constant 2 : index
       %s = function.call @Unpack::@compute(%arr) {()[%a, %b]}
-        : (!array.array<4 x !felt.felt>) -> !llzk.struct<@Unpack<[8, 2, #map]>>
-      %self = llzk.new_struct : !llzk.struct<@User1>
-      function.return %self : !llzk.struct<@User1>
+        : (!array.array<4 x !felt.felt>) -> !struct.struct<@Unpack<[8, 2, #map]>>
+      %self = struct.new : !struct.struct<@User1>
+      function.return %self : !struct.struct<@User1>
     }
-    function.def @constrain(%arg0: !llzk.struct<@User1>) {
+    function.def @constrain(%arg0: !struct.struct<@User1>) {
       function.return
     }
   }
 }
-// CHECK-LABEL: llzk.struct @Unpack_8_2_4 {
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<4 x !felt.felt>) -> !llzk.struct<@Unpack_8_2_4> attributes {function.allow_witness} {
+// CHECK-LABEL: struct.def @Unpack_8_2_4 {
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<4 x !felt.felt>) -> !struct.struct<@Unpack_8_2_4> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@Unpack_8_2_4>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@Unpack_8_2_4>
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = array.read %[[V0]]{{\[}}%[[V1]]] : <4 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      function.return %[[V2]] : !llzk.struct<@Unpack_8_2_4>
+// CHECK-NEXT:      function.return %[[V2]] : !struct.struct<@Unpack_8_2_4>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Unpack_8_2_4>, %[[V5:[0-9a-zA-Z_\.]+]]: !array.array<4 x !felt.felt>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.struct<@Unpack_8_2_4>, %[[V5:[0-9a-zA-Z_\.]+]]: !array.array<4 x !felt.felt>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: llzk.struct @User1 {
-// CHECK-NEXT:    function.def @compute() -> !llzk.struct<@User1> attributes {function.allow_witness} {
+// CHECK-LABEL: struct.def @User1 {
+// CHECK-NEXT:    function.def @compute() -> !struct.struct<@User1> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 42
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = array.new %[[V0]], %[[V0]], %[[V0]], %[[V0]] : <4 x !felt.felt>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @Unpack_8_2_4::@compute(%[[V1]]) : (!array.array<4 x !felt.felt>) -> !llzk.struct<@Unpack_8_2_4>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = llzk.new_struct : <@User1>
-// CHECK-NEXT:      function.return %[[V3]] : !llzk.struct<@User1>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @Unpack_8_2_4::@compute(%[[V1]]) : (!array.array<4 x !felt.felt>) -> !struct.struct<@Unpack_8_2_4>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@User1>
+// CHECK-NEXT:      function.return %[[V3]] : !struct.struct<@User1>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !llzk.struct<@User1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.struct<@User1>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

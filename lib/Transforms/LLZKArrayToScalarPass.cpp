@@ -76,6 +76,7 @@ namespace llzk {
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
+using namespace llzk::component;
 using namespace llzk::function;
 
 #define DEBUG_TYPE "llzk-array-to-scalar"
@@ -669,9 +670,8 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fie
 
   ConversionTarget target(*ctx);
   target.addLegalDialect<
-
-      LLZKDialect, array::ArrayDialect, felt::FeltDialect, include::IncludeDialect,
-      function::FunctionDialect, arith::ArithDialect, scf::SCFDialect>();
+      LLZKDialect, array::ArrayDialect, felt::FeltDialect, function::FunctionDialect,
+      include::IncludeDialect, component::StructDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
 
@@ -705,8 +705,8 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
 
   ConversionTarget target(*ctx);
   target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, felt::FeltDialect, include::IncludeDialect,
-      function::FunctionDialect, arith::ArithDialect, scf::SCFDialect>();
+      LLZKDialect, array::ArrayDialect, component::StructDialect, felt::FeltDialect,
+      function::FunctionDialect, include::IncludeDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<CreateArrayOp>(SplitInitFromCreateArrayOp::legal);
   target.addDynamicallyLegalOp<InsertArrayOp>(SplitInsertArrayOp::legal);

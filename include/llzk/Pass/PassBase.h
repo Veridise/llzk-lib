@@ -15,5 +15,6 @@
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
+#include "llzk/Dialect/Struct/IR/Dialect.h"
 
 #include <mlir/Pass/Pass.h>

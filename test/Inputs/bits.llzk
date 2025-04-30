@@ -1,43 +1,43 @@
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @Component<[]> {
-    function.def @compute() -> !llzk.struct<@Component<[]>> {
-      %self = llzk.new_struct : <@Component<[]>>
-      function.return %self : !llzk.struct<@Component<[]>>
+  struct.def @Component<[]> {
+    function.def @compute() -> !struct.struct<@Component<[]>> {
+      %self = struct.new : <@Component<[]>>
+      function.return %self : !struct.struct<@Component<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@Component<[]>>) {
+    function.def @constrain(%arg0: !struct.struct<@Component<[]>>) {
       function.return
     }
   }
-  llzk.struct @NondetReg<[]> {
-    llzk.field @"$super" : !felt.felt
-    llzk.field @reg : !felt.felt
-    function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@NondetReg<[]>> {
-      %self = llzk.new_struct : <@NondetReg<[]>>
-      llzk.writef %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.felt
-      llzk.writef %self[@"$super"] = %arg0 : <@NondetReg<[]>>, !felt.felt
-      function.return %self : !llzk.struct<@NondetReg<[]>>
+  struct.def @NondetReg<[]> {
+    struct.field @"$super" : !felt.felt
+    struct.field @reg : !felt.felt
+    function.def @compute(%arg0: !felt.felt) -> !struct.struct<@NondetReg<[]>> {
+      %self = struct.new : <@NondetReg<[]>>
+      struct.writef %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.felt
+      struct.writef %self[@"$super"] = %arg0 : <@NondetReg<[]>>, !felt.felt
+      function.return %self : !struct.struct<@NondetReg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@NondetReg<[]>>, %arg1: !felt.felt) {
+    function.def @constrain(%arg0: !struct.struct<@NondetReg<[]>>, %arg1: !felt.felt) {
       function.return
     }
   }
-  llzk.struct @NondetExtReg<[]> {
-    llzk.field @"$super" : !array.array<4 x !felt.felt>
-    llzk.field @reg : !array.array<4 x !felt.felt>
-    function.def @compute(%arg0: !array.array<4 x !felt.felt>) -> !llzk.struct<@NondetExtReg<[]>> {
-      %self = llzk.new_struct : <@NondetExtReg<[]>>
-      llzk.writef %self[@reg] = %arg0 : <@NondetExtReg<[]>>, !array.array<4 x !felt.felt>
-      llzk.writef %self[@"$super"] = %arg0 : <@NondetExtReg<[]>>, !array.array<4 x !felt.felt>
-      function.return %self : !llzk.struct<@NondetExtReg<[]>>
+  struct.def @NondetExtReg<[]> {
+    struct.field @"$super" : !array.array<4 x !felt.felt>
+    struct.field @reg : !array.array<4 x !felt.felt>
+    function.def @compute(%arg0: !array.array<4 x !felt.felt>) -> !struct.struct<@NondetExtReg<[]>> {
+      %self = struct.new : <@NondetExtReg<[]>>
+      struct.writef %self[@reg] = %arg0 : <@NondetExtReg<[]>>, !array.array<4 x !felt.felt>
+      struct.writef %self[@"$super"] = %arg0 : <@NondetExtReg<[]>>, !array.array<4 x !felt.felt>
+      function.return %self : !struct.struct<@NondetExtReg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@NondetExtReg<[]>>, %arg1: !array.array<4 x !felt.felt>) {
+    function.def @constrain(%arg0: !struct.struct<@NondetExtReg<[]>>, %arg1: !array.array<4 x !felt.felt>) {
       function.return
     }
   }
-  llzk.struct @EqzExt<[]> {
-    llzk.field @"$super" : !llzk.struct<@Component<[]>>
-    function.def @compute(%arg0: !array.array<4 x !felt.felt>) -> !llzk.struct<@EqzExt<[]>> {
-      %self = llzk.new_struct : <@EqzExt<[]>>
+  struct.def @EqzExt<[]> {
+    struct.field @"$super" : !struct.struct<@Component<[]>>
+    function.def @compute(%arg0: !array.array<4 x !felt.felt>) -> !struct.struct<@EqzExt<[]>> {
+      %self = struct.new : <@EqzExt<[]>>
       %c0 = arith.constant 0 : index
       %0 = array.read %arg0[%c0] : <4 x !felt.felt>, !felt.felt
       %c1 = arith.constant 1 : index
@@ -58,44 +58,44 @@ module attributes {veridise.lang = "llzk"} {
       %9 = llzk.and %8, %6 : i1, i1
       %10 = llzk.and %9, %7 : i1, i1
       llzk.assert %10, "failed assertion: extended field element is not equal to zero"
-      %11 = function.call @Component::@compute() : () -> !llzk.struct<@Component<[]>>
-      llzk.writef %self[@"$super"] = %11 : <@EqzExt<[]>>, !llzk.struct<@Component<[]>>
-      function.return %self : !llzk.struct<@EqzExt<[]>>
+      %11 = function.call @Component::@compute() : () -> !struct.struct<@Component<[]>>
+      struct.writef %self[@"$super"] = %11 : <@EqzExt<[]>>, !struct.struct<@Component<[]>>
+      function.return %self : !struct.struct<@EqzExt<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@EqzExt<[]>>, %arg1: !array.array<4 x !felt.felt>) {
+    function.def @constrain(%arg0: !struct.struct<@EqzExt<[]>>, %arg1: !array.array<4 x !felt.felt>) {
       function.return
     }
   }
-  llzk.struct @Reg<[]> {
-    llzk.field @"$super" : !llzk.struct<@NondetReg<[]>>
-    llzk.field @reg : !llzk.struct<@NondetReg<[]>>
-    function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@Reg<[]>> {
-      %self = llzk.new_struct : <@Reg<[]>>
-      %0 = function.call @NondetReg::@compute(%arg0) : (!felt.felt) -> !llzk.struct<@NondetReg<[]>>
-      llzk.writef %self[@reg] = %0 : <@Reg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %1 = llzk.readf %self[@reg] : <@Reg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %2 = llzk.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      llzk.writef %self[@"$super"] = %1 : <@Reg<[]>>, !llzk.struct<@NondetReg<[]>>
-      function.return %self : !llzk.struct<@Reg<[]>>
+  struct.def @Reg<[]> {
+    struct.field @"$super" : !struct.struct<@NondetReg<[]>>
+    struct.field @reg : !struct.struct<@NondetReg<[]>>
+    function.def @compute(%arg0: !felt.felt) -> !struct.struct<@Reg<[]>> {
+      %self = struct.new : <@Reg<[]>>
+      %0 = function.call @NondetReg::@compute(%arg0) : (!felt.felt) -> !struct.struct<@NondetReg<[]>>
+      struct.writef %self[@reg] = %0 : <@Reg<[]>>, !struct.struct<@NondetReg<[]>>
+      %1 = struct.readf %self[@reg] : <@Reg<[]>>, !struct.struct<@NondetReg<[]>>
+      %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      struct.writef %self[@"$super"] = %1 : <@Reg<[]>>, !struct.struct<@NondetReg<[]>>
+      function.return %self : !struct.struct<@Reg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@Reg<[]>>, %arg1: !felt.felt) {
-      %0 = llzk.readf %arg0[@reg] : <@Reg<[]>>, !llzk.struct<@NondetReg<[]>>
-      function.call @NondetReg::@constrain(%0, %arg1) : (!llzk.struct<@NondetReg<[]>>, !felt.felt) -> ()
-      %1 = llzk.readf %0[@"$super"] : <@NondetReg<[]>>, !felt.felt
+    function.def @constrain(%arg0: !struct.struct<@Reg<[]>>, %arg1: !felt.felt) {
+      %0 = struct.readf %arg0[@reg] : <@Reg<[]>>, !struct.struct<@NondetReg<[]>>
+      function.call @NondetReg::@constrain(%0, %arg1) : (!struct.struct<@NondetReg<[]>>, !felt.felt) -> ()
+      %1 = struct.readf %0[@"$super"] : <@NondetReg<[]>>, !felt.felt
       llzk.emit_eq %arg1, %1 : !felt.felt, !felt.felt
       function.return
     }
   }
-  llzk.struct @ExtReg<[]> {
-    llzk.field @"$super" : !llzk.struct<@NondetExtReg<[]>>
-    llzk.field @"$temp" : !llzk.struct<@EqzExt<[]>>
-    llzk.field @reg : !llzk.struct<@NondetExtReg<[]>>
-    function.def @compute(%arg0: !array.array<4 x !felt.felt>) -> !llzk.struct<@ExtReg<[]>> {
-      %self = llzk.new_struct : <@ExtReg<[]>>
-      %0 = function.call @NondetExtReg::@compute(%arg0) : (!array.array<4 x !felt.felt>) -> !llzk.struct<@NondetExtReg<[]>>
-      llzk.writef %self[@reg] = %0 : <@ExtReg<[]>>, !llzk.struct<@NondetExtReg<[]>>
-      %1 = llzk.readf %self[@reg] : <@ExtReg<[]>>, !llzk.struct<@NondetExtReg<[]>>
-      %2 = llzk.readf %1[@"$super"] : <@NondetExtReg<[]>>, !array.array<4 x !felt.felt>
+  struct.def @ExtReg<[]> {
+    struct.field @"$super" : !struct.struct<@NondetExtReg<[]>>
+    struct.field @"$temp" : !struct.struct<@EqzExt<[]>>
+    struct.field @reg : !struct.struct<@NondetExtReg<[]>>
+    function.def @compute(%arg0: !array.array<4 x !felt.felt>) -> !struct.struct<@ExtReg<[]>> {
+      %self = struct.new : <@ExtReg<[]>>
+      %0 = function.call @NondetExtReg::@compute(%arg0) : (!array.array<4 x !felt.felt>) -> !struct.struct<@NondetExtReg<[]>>
+      struct.writef %self[@reg] = %0 : <@ExtReg<[]>>, !struct.struct<@NondetExtReg<[]>>
+      %1 = struct.readf %self[@reg] : <@ExtReg<[]>>, !struct.struct<@NondetExtReg<[]>>
+      %2 = struct.readf %1[@"$super"] : <@NondetExtReg<[]>>, !array.array<4 x !felt.felt>
       %c0 = arith.constant 0 : index
       %3 = array.read %2[%c0] : <4 x !felt.felt>, !felt.felt
       %c1 = arith.constant 1 : index
@@ -117,16 +117,16 @@ module attributes {veridise.lang = "llzk"} {
       %13 = felt.sub %5, %9 : !felt.felt, !felt.felt
       %14 = felt.sub %6, %10 : !felt.felt, !felt.felt
       %array = array.new %11, %12, %13, %14 : <4 x !felt.felt>
-      %15 = function.call @EqzExt::@compute(%array) : (!array.array<4 x !felt.felt>) -> !llzk.struct<@EqzExt<[]>>
-      llzk.writef %self[@"$temp"] = %15 : <@ExtReg<[]>>, !llzk.struct<@EqzExt<[]>>
-      %16 = llzk.readf %self[@"$temp"] : <@ExtReg<[]>>, !llzk.struct<@EqzExt<[]>>
-      llzk.writef %self[@"$super"] = %1 : <@ExtReg<[]>>, !llzk.struct<@NondetExtReg<[]>>
-      function.return %self : !llzk.struct<@ExtReg<[]>>
+      %15 = function.call @EqzExt::@compute(%array) : (!array.array<4 x !felt.felt>) -> !struct.struct<@EqzExt<[]>>
+      struct.writef %self[@"$temp"] = %15 : <@ExtReg<[]>>, !struct.struct<@EqzExt<[]>>
+      %16 = struct.readf %self[@"$temp"] : <@ExtReg<[]>>, !struct.struct<@EqzExt<[]>>
+      struct.writef %self[@"$super"] = %1 : <@ExtReg<[]>>, !struct.struct<@NondetExtReg<[]>>
+      function.return %self : !struct.struct<@ExtReg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@ExtReg<[]>>, %arg1: !array.array<4 x !felt.felt>) {
-      %0 = llzk.readf %arg0[@reg] : <@ExtReg<[]>>, !llzk.struct<@NondetExtReg<[]>>
-      function.call @NondetExtReg::@constrain(%0, %arg1) : (!llzk.struct<@NondetExtReg<[]>>, !array.array<4 x !felt.felt>) -> ()
-      %1 = llzk.readf %0[@"$super"] : <@NondetExtReg<[]>>, !array.array<4 x !felt.felt>
+    function.def @constrain(%arg0: !struct.struct<@ExtReg<[]>>, %arg1: !array.array<4 x !felt.felt>) {
+      %0 = struct.readf %arg0[@reg] : <@ExtReg<[]>>, !struct.struct<@NondetExtReg<[]>>
+      function.call @NondetExtReg::@constrain(%0, %arg1) : (!struct.struct<@NondetExtReg<[]>>, !array.array<4 x !felt.felt>) -> ()
+      %1 = struct.readf %0[@"$super"] : <@NondetExtReg<[]>>, !array.array<4 x !felt.felt>
       %c0 = arith.constant 0 : index
       %2 = array.read %1[%c0] : <4 x !felt.felt>, !felt.felt
       %c1 = arith.constant 1 : index
@@ -148,27 +148,27 @@ module attributes {veridise.lang = "llzk"} {
       %12 = felt.sub %4, %8 : !felt.felt, !felt.felt
       %13 = felt.sub %5, %9 : !felt.felt, !felt.felt
       %array = array.new %10, %11, %12, %13 : <4 x !felt.felt>
-      %14 = llzk.readf %arg0[@"$temp"] : <@ExtReg<[]>>, !llzk.struct<@EqzExt<[]>>
-      function.call @EqzExt::@constrain(%14, %array) : (!llzk.struct<@EqzExt<[]>>, !array.array<4 x !felt.felt>) -> ()
+      %14 = struct.readf %arg0[@"$temp"] : <@ExtReg<[]>>, !struct.struct<@EqzExt<[]>>
+      function.call @EqzExt::@constrain(%14, %array) : (!struct.struct<@EqzExt<[]>>, !array.array<4 x !felt.felt>) -> ()
       function.return
     }
   }
-  llzk.struct @Div<[]> {
-    llzk.field @"$super" : !felt.felt
-    llzk.field @reciprocal : !felt.felt
-    function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !llzk.struct<@Div<[]>> {
-      %self = llzk.new_struct : <@Div<[]>>
+  struct.def @Div<[]> {
+    struct.field @"$super" : !felt.felt
+    struct.field @reciprocal : !felt.felt
+    function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !struct.struct<@Div<[]>> {
+      %self = struct.new : <@Div<[]>>
       %0 = felt.inv %arg1 : !felt.felt
-      llzk.writef %self[@reciprocal] = %0 : <@Div<[]>>, !felt.felt
-      %1 = llzk.readf %self[@reciprocal] : <@Div<[]>>, !felt.felt
+      struct.writef %self[@reciprocal] = %0 : <@Div<[]>>, !felt.felt
+      %1 = struct.readf %self[@reciprocal] : <@Div<[]>>, !felt.felt
       %2 = felt.mul %1, %arg1 : !felt.felt, !felt.felt
       %felt_const_1 = felt.const  1
       %3 = felt.mul %1, %arg0 : !felt.felt, !felt.felt
-      llzk.writef %self[@"$super"] = %3 : <@Div<[]>>, !felt.felt
-      function.return %self : !llzk.struct<@Div<[]>>
+      struct.writef %self[@"$super"] = %3 : <@Div<[]>>, !felt.felt
+      function.return %self : !struct.struct<@Div<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@Div<[]>>, %arg1: !felt.felt, %arg2: !felt.felt) {
-      %0 = llzk.readf %arg0[@reciprocal] : <@Div<[]>>, !felt.felt
+    function.def @constrain(%arg0: !struct.struct<@Div<[]>>, %arg1: !felt.felt, %arg2: !felt.felt) {
+      %0 = struct.readf %arg0[@reciprocal] : <@Div<[]>>, !felt.felt
       %1 = felt.mul %0, %arg2 : !felt.felt, !felt.felt
       %felt_const_1 = felt.const  1
       llzk.emit_eq %1, %felt_const_1 : !felt.felt, !felt.felt
@@ -176,126 +176,126 @@ module attributes {veridise.lang = "llzk"} {
       function.return
     }
   }
-  llzk.struct @Log<[]> {
-    llzk.field @"$super" : !llzk.struct<@Component<[]>>
-    function.def @compute(%arg0: !string.string, %arg1: !array.array<-9223372036854775808 x !felt.felt>) -> !llzk.struct<@Log<[]>> {
-      %self = llzk.new_struct : <@Log<[]>>
-      %0 = function.call @Log$$extern(%arg0, %arg1) : (!string.string, !array.array<-9223372036854775808 x !felt.felt>) -> !llzk.struct<@Component<[]>>
-      llzk.writef %self[@"$super"] = %0 : <@Log<[]>>, !llzk.struct<@Component<[]>>
-      function.return %self : !llzk.struct<@Log<[]>>
+  struct.def @Log<[]> {
+    struct.field @"$super" : !struct.struct<@Component<[]>>
+    function.def @compute(%arg0: !string.string, %arg1: !array.array<-9223372036854775808 x !felt.felt>) -> !struct.struct<@Log<[]>> {
+      %self = struct.new : <@Log<[]>>
+      %0 = function.call @Log$$extern(%arg0, %arg1) : (!string.string, !array.array<-9223372036854775808 x !felt.felt>) -> !struct.struct<@Component<[]>>
+      struct.writef %self[@"$super"] = %0 : <@Log<[]>>, !struct.struct<@Component<[]>>
+      function.return %self : !struct.struct<@Log<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@Log<[]>>, %arg1: !string.string, %arg2: !array.array<-9223372036854775808 x !felt.felt>) {
-      %0 = function.call @Log$$extern(%arg1, %arg2) : (!string.string, !array.array<-9223372036854775808 x !felt.felt>) -> !llzk.struct<@Component<[]>>
+    function.def @constrain(%arg0: !struct.struct<@Log<[]>>, %arg1: !string.string, %arg2: !array.array<-9223372036854775808 x !felt.felt>) {
+      %0 = function.call @Log$$extern(%arg1, %arg2) : (!string.string, !array.array<-9223372036854775808 x !felt.felt>) -> !struct.struct<@Component<[]>>
       function.return
     }
   }
-  function.def private @Log$$extern(!string.string, !array.array<-9223372036854775808 x !felt.felt>) -> !llzk.struct<@Component<[]>> attributes {extern}
-  llzk.struct @Abort<[]> {
-    llzk.field @"$super" : !llzk.struct<@Component<[]>>
-    function.def @compute() -> !llzk.struct<@Abort<[]>> {
-      %self = llzk.new_struct : <@Abort<[]>>
-      %0 = function.call @Abort$$extern() : () -> !llzk.struct<@Component<[]>>
-      llzk.writef %self[@"$super"] = %0 : <@Abort<[]>>, !llzk.struct<@Component<[]>>
-      function.return %self : !llzk.struct<@Abort<[]>>
+  function.def private @Log$$extern(!string.string, !array.array<-9223372036854775808 x !felt.felt>) -> !struct.struct<@Component<[]>> attributes {extern}
+  struct.def @Abort<[]> {
+    struct.field @"$super" : !struct.struct<@Component<[]>>
+    function.def @compute() -> !struct.struct<@Abort<[]>> {
+      %self = struct.new : <@Abort<[]>>
+      %0 = function.call @Abort$$extern() : () -> !struct.struct<@Component<[]>>
+      struct.writef %self[@"$super"] = %0 : <@Abort<[]>>, !struct.struct<@Component<[]>>
+      function.return %self : !struct.struct<@Abort<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@Abort<[]>>) {
-      %0 = function.call @Abort$$extern() : () -> !llzk.struct<@Component<[]>>
+    function.def @constrain(%arg0: !struct.struct<@Abort<[]>>) {
+      %0 = function.call @Abort$$extern() : () -> !struct.struct<@Component<[]>>
       function.return
     }
   }
-  function.def private @Abort$$extern() -> !llzk.struct<@Component<[]>> attributes {extern}
-  llzk.struct @Assert<[]> {
-    llzk.field @"$super" : !llzk.struct<@Component<[]>>
-    function.def @compute(%arg0: !felt.felt, %arg1: !string.string) -> !llzk.struct<@Assert<[]>> {
-      %self = llzk.new_struct : <@Assert<[]>>
-      %0 = function.call @Assert$$extern(%arg0, %arg1) : (!felt.felt, !string.string) -> !llzk.struct<@Component<[]>>
-      llzk.writef %self[@"$super"] = %0 : <@Assert<[]>>, !llzk.struct<@Component<[]>>
-      function.return %self : !llzk.struct<@Assert<[]>>
+  function.def private @Abort$$extern() -> !struct.struct<@Component<[]>> attributes {extern}
+  struct.def @Assert<[]> {
+    struct.field @"$super" : !struct.struct<@Component<[]>>
+    function.def @compute(%arg0: !felt.felt, %arg1: !string.string) -> !struct.struct<@Assert<[]>> {
+      %self = struct.new : <@Assert<[]>>
+      %0 = function.call @Assert$$extern(%arg0, %arg1) : (!felt.felt, !string.string) -> !struct.struct<@Component<[]>>
+      struct.writef %self[@"$super"] = %0 : <@Assert<[]>>, !struct.struct<@Component<[]>>
+      function.return %self : !struct.struct<@Assert<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@Assert<[]>>, %arg1: !felt.felt, %arg2: !string.string) {
-      %0 = function.call @Assert$$extern(%arg1, %arg2) : (!felt.felt, !string.string) -> !llzk.struct<@Component<[]>>
+    function.def @constrain(%arg0: !struct.struct<@Assert<[]>>, %arg1: !felt.felt, %arg2: !string.string) {
+      %0 = function.call @Assert$$extern(%arg1, %arg2) : (!felt.felt, !string.string) -> !struct.struct<@Component<[]>>
       function.return
     }
   }
-  function.def private @Assert$$extern(!felt.felt, !string.string) -> !llzk.struct<@Component<[]>> attributes {extern}
-  llzk.struct @AssertBit<[]> {
-    llzk.field @"$super" : !llzk.struct<@Component<[]>>
-    llzk.field @"$temp" : !llzk.struct<@Component<[]>>
-    function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@AssertBit<[]>> {
-      %self = llzk.new_struct : <@AssertBit<[]>>
+  function.def private @Assert$$extern(!felt.felt, !string.string) -> !struct.struct<@Component<[]>> attributes {extern}
+  struct.def @AssertBit<[]> {
+    struct.field @"$super" : !struct.struct<@Component<[]>>
+    struct.field @"$temp" : !struct.struct<@Component<[]>>
+    function.def @compute(%arg0: !felt.felt) -> !struct.struct<@AssertBit<[]>> {
+      %self = struct.new : <@AssertBit<[]>>
       %felt_const_1 = felt.const  1
       %0 = felt.sub %felt_const_1, %arg0 : !felt.felt, !felt.felt
       %1 = felt.mul %arg0, %0 : !felt.felt, !felt.felt
       %felt_const_0 = felt.const  0
-      %2 = function.call @Component::@compute() : () -> !llzk.struct<@Component<[]>>
-      llzk.writef %self[@"$temp"] = %2 : <@AssertBit<[]>>, !llzk.struct<@Component<[]>>
-      %3 = llzk.readf %self[@"$temp"] : <@AssertBit<[]>>, !llzk.struct<@Component<[]>>
-      llzk.writef %self[@"$super"] = %3 : <@AssertBit<[]>>, !llzk.struct<@Component<[]>>
-      function.return %self : !llzk.struct<@AssertBit<[]>>
+      %2 = function.call @Component::@compute() : () -> !struct.struct<@Component<[]>>
+      struct.writef %self[@"$temp"] = %2 : <@AssertBit<[]>>, !struct.struct<@Component<[]>>
+      %3 = struct.readf %self[@"$temp"] : <@AssertBit<[]>>, !struct.struct<@Component<[]>>
+      struct.writef %self[@"$super"] = %3 : <@AssertBit<[]>>, !struct.struct<@Component<[]>>
+      function.return %self : !struct.struct<@AssertBit<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@AssertBit<[]>>, %arg1: !felt.felt) {
+    function.def @constrain(%arg0: !struct.struct<@AssertBit<[]>>, %arg1: !felt.felt) {
       %felt_const_1 = felt.const  1
       %0 = felt.sub %felt_const_1, %arg1 : !felt.felt, !felt.felt
       %1 = felt.mul %arg1, %0 : !felt.felt, !felt.felt
       %felt_const_0 = felt.const  0
       llzk.emit_eq %1, %felt_const_0 : !felt.felt, !felt.felt
-      %2 = llzk.readf %arg0[@"$temp"] : <@AssertBit<[]>>, !llzk.struct<@Component<[]>>
-      function.call @Component::@constrain(%2) : (!llzk.struct<@Component<[]>>) -> ()
+      %2 = struct.readf %arg0[@"$temp"] : <@AssertBit<[]>>, !struct.struct<@Component<[]>>
+      function.call @Component::@constrain(%2) : (!struct.struct<@Component<[]>>) -> ()
       function.return
     }
   }
-  llzk.struct @NondetBitReg<[]> {
-    llzk.field @"$super" : !llzk.struct<@NondetReg<[]>>
-    llzk.field @"$temp" : !llzk.struct<@AssertBit<[]>>
-    llzk.field @reg : !llzk.struct<@NondetReg<[]>>
-    function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@NondetBitReg<[]>> {
-      %self = llzk.new_struct : <@NondetBitReg<[]>>
-      %0 = function.call @NondetReg::@compute(%arg0) : (!felt.felt) -> !llzk.struct<@NondetReg<[]>>
-      llzk.writef %self[@reg] = %0 : <@NondetBitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %1 = llzk.readf %self[@reg] : <@NondetBitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %2 = llzk.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      %3 = function.call @AssertBit::@compute(%2) : (!felt.felt) -> !llzk.struct<@AssertBit<[]>>
-      llzk.writef %self[@"$temp"] = %3 : <@NondetBitReg<[]>>, !llzk.struct<@AssertBit<[]>>
-      %4 = llzk.readf %self[@"$temp"] : <@NondetBitReg<[]>>, !llzk.struct<@AssertBit<[]>>
-      llzk.writef %self[@"$super"] = %1 : <@NondetBitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      function.return %self : !llzk.struct<@NondetBitReg<[]>>
+  struct.def @NondetBitReg<[]> {
+    struct.field @"$super" : !struct.struct<@NondetReg<[]>>
+    struct.field @"$temp" : !struct.struct<@AssertBit<[]>>
+    struct.field @reg : !struct.struct<@NondetReg<[]>>
+    function.def @compute(%arg0: !felt.felt) -> !struct.struct<@NondetBitReg<[]>> {
+      %self = struct.new : <@NondetBitReg<[]>>
+      %0 = function.call @NondetReg::@compute(%arg0) : (!felt.felt) -> !struct.struct<@NondetReg<[]>>
+      struct.writef %self[@reg] = %0 : <@NondetBitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %1 = struct.readf %self[@reg] : <@NondetBitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %3 = function.call @AssertBit::@compute(%2) : (!felt.felt) -> !struct.struct<@AssertBit<[]>>
+      struct.writef %self[@"$temp"] = %3 : <@NondetBitReg<[]>>, !struct.struct<@AssertBit<[]>>
+      %4 = struct.readf %self[@"$temp"] : <@NondetBitReg<[]>>, !struct.struct<@AssertBit<[]>>
+      struct.writef %self[@"$super"] = %1 : <@NondetBitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      function.return %self : !struct.struct<@NondetBitReg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@NondetBitReg<[]>>, %arg1: !felt.felt) {
-      %0 = llzk.readf %arg0[@reg] : <@NondetBitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      function.call @NondetReg::@constrain(%0, %arg1) : (!llzk.struct<@NondetReg<[]>>, !felt.felt) -> ()
-      %1 = llzk.readf %0[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      %2 = llzk.readf %arg0[@"$temp"] : <@NondetBitReg<[]>>, !llzk.struct<@AssertBit<[]>>
-      function.call @AssertBit::@constrain(%2, %1) : (!llzk.struct<@AssertBit<[]>>, !felt.felt) -> ()
+    function.def @constrain(%arg0: !struct.struct<@NondetBitReg<[]>>, %arg1: !felt.felt) {
+      %0 = struct.readf %arg0[@reg] : <@NondetBitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      function.call @NondetReg::@constrain(%0, %arg1) : (!struct.struct<@NondetReg<[]>>, !felt.felt) -> ()
+      %1 = struct.readf %0[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %2 = struct.readf %arg0[@"$temp"] : <@NondetBitReg<[]>>, !struct.struct<@AssertBit<[]>>
+      function.call @AssertBit::@constrain(%2, %1) : (!struct.struct<@AssertBit<[]>>, !felt.felt) -> ()
       function.return
     }
   }
-  llzk.struct @BitReg<[]> {
-    llzk.field @"$super" : !llzk.struct<@NondetBitReg<[]>>
-    llzk.field @reg : !llzk.struct<@NondetBitReg<[]>>
-    function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@BitReg<[]>> {
-      %self = llzk.new_struct : <@BitReg<[]>>
-      %0 = function.call @NondetBitReg::@compute(%arg0) : (!felt.felt) -> !llzk.struct<@NondetBitReg<[]>>
-      llzk.writef %self[@reg] = %0 : <@BitReg<[]>>, !llzk.struct<@NondetBitReg<[]>>
-      %1 = llzk.readf %self[@reg] : <@BitReg<[]>>, !llzk.struct<@NondetBitReg<[]>>
-      %2 = llzk.readf %1[@"$super"] : <@NondetBitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %3 = llzk.readf %2[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      llzk.writef %self[@"$super"] = %1 : <@BitReg<[]>>, !llzk.struct<@NondetBitReg<[]>>
-      function.return %self : !llzk.struct<@BitReg<[]>>
+  struct.def @BitReg<[]> {
+    struct.field @"$super" : !struct.struct<@NondetBitReg<[]>>
+    struct.field @reg : !struct.struct<@NondetBitReg<[]>>
+    function.def @compute(%arg0: !felt.felt) -> !struct.struct<@BitReg<[]>> {
+      %self = struct.new : <@BitReg<[]>>
+      %0 = function.call @NondetBitReg::@compute(%arg0) : (!felt.felt) -> !struct.struct<@NondetBitReg<[]>>
+      struct.writef %self[@reg] = %0 : <@BitReg<[]>>, !struct.struct<@NondetBitReg<[]>>
+      %1 = struct.readf %self[@reg] : <@BitReg<[]>>, !struct.struct<@NondetBitReg<[]>>
+      %2 = struct.readf %1[@"$super"] : <@NondetBitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %3 = struct.readf %2[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      struct.writef %self[@"$super"] = %1 : <@BitReg<[]>>, !struct.struct<@NondetBitReg<[]>>
+      function.return %self : !struct.struct<@BitReg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@BitReg<[]>>, %arg1: !felt.felt) {
-      %0 = llzk.readf %arg0[@reg] : <@BitReg<[]>>, !llzk.struct<@NondetBitReg<[]>>
-      function.call @NondetBitReg::@constrain(%0, %arg1) : (!llzk.struct<@NondetBitReg<[]>>, !felt.felt) -> ()
-      %1 = llzk.readf %0[@"$super"] : <@NondetBitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %2 = llzk.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
+    function.def @constrain(%arg0: !struct.struct<@BitReg<[]>>, %arg1: !felt.felt) {
+      %0 = struct.readf %arg0[@reg] : <@BitReg<[]>>, !struct.struct<@NondetBitReg<[]>>
+      function.call @NondetBitReg::@constrain(%0, %arg1) : (!struct.struct<@NondetBitReg<[]>>, !felt.felt) -> ()
+      %1 = struct.readf %0[@"$super"] : <@NondetBitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
       llzk.emit_eq %arg1, %2 : !felt.felt, !felt.felt
       function.return
     }
   }
-  llzk.struct @AssertTwit<[]> {
-    llzk.field @"$super" : !llzk.struct<@Component<[]>>
-    llzk.field @"$temp" : !llzk.struct<@Component<[]>>
-    function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@AssertTwit<[]>> {
-      %self = llzk.new_struct : <@AssertTwit<[]>>
+  struct.def @AssertTwit<[]> {
+    struct.field @"$super" : !struct.struct<@Component<[]>>
+    struct.field @"$temp" : !struct.struct<@Component<[]>>
+    function.def @compute(%arg0: !felt.felt) -> !struct.struct<@AssertTwit<[]>> {
+      %self = struct.new : <@AssertTwit<[]>>
       %felt_const_1 = felt.const  1
       %0 = felt.sub %felt_const_1, %arg0 : !felt.felt, !felt.felt
       %1 = felt.mul %arg0, %0 : !felt.felt, !felt.felt
@@ -306,13 +306,13 @@ module attributes {veridise.lang = "llzk"} {
       %4 = felt.sub %felt_const_3, %arg0 : !felt.felt, !felt.felt
       %5 = felt.mul %3, %4 : !felt.felt, !felt.felt
       %felt_const_0 = felt.const  0
-      %6 = function.call @Component::@compute() : () -> !llzk.struct<@Component<[]>>
-      llzk.writef %self[@"$temp"] = %6 : <@AssertTwit<[]>>, !llzk.struct<@Component<[]>>
-      %7 = llzk.readf %self[@"$temp"] : <@AssertTwit<[]>>, !llzk.struct<@Component<[]>>
-      llzk.writef %self[@"$super"] = %7 : <@AssertTwit<[]>>, !llzk.struct<@Component<[]>>
-      function.return %self : !llzk.struct<@AssertTwit<[]>>
+      %6 = function.call @Component::@compute() : () -> !struct.struct<@Component<[]>>
+      struct.writef %self[@"$temp"] = %6 : <@AssertTwit<[]>>, !struct.struct<@Component<[]>>
+      %7 = struct.readf %self[@"$temp"] : <@AssertTwit<[]>>, !struct.struct<@Component<[]>>
+      struct.writef %self[@"$super"] = %7 : <@AssertTwit<[]>>, !struct.struct<@Component<[]>>
+      function.return %self : !struct.struct<@AssertTwit<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@AssertTwit<[]>>, %arg1: !felt.felt) {
+    function.def @constrain(%arg0: !struct.struct<@AssertTwit<[]>>, %arg1: !felt.felt) {
       %felt_const_1 = felt.const  1
       %0 = felt.sub %felt_const_1, %arg1 : !felt.felt, !felt.felt
       %1 = felt.mul %arg1, %0 : !felt.felt, !felt.felt
@@ -324,35 +324,35 @@ module attributes {veridise.lang = "llzk"} {
       %5 = felt.mul %3, %4 : !felt.felt, !felt.felt
       %felt_const_0 = felt.const  0
       llzk.emit_eq %5, %felt_const_0 : !felt.felt, !felt.felt
-      %6 = llzk.readf %arg0[@"$temp"] : <@AssertTwit<[]>>, !llzk.struct<@Component<[]>>
-      function.call @Component::@constrain(%6) : (!llzk.struct<@Component<[]>>) -> ()
+      %6 = struct.readf %arg0[@"$temp"] : <@AssertTwit<[]>>, !struct.struct<@Component<[]>>
+      function.call @Component::@constrain(%6) : (!struct.struct<@Component<[]>>) -> ()
       function.return
     }
   }
-  llzk.struct @BitAnd<[]> {
-    llzk.field @"$super" : !llzk.struct<@Reg<[]>>
-    llzk.field @"$temp" : !llzk.struct<@Reg<[]>>
-    function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !llzk.struct<@BitAnd<[]>> {
-      %self = llzk.new_struct : <@BitAnd<[]>>
+  struct.def @BitAnd<[]> {
+    struct.field @"$super" : !struct.struct<@Reg<[]>>
+    struct.field @"$temp" : !struct.struct<@Reg<[]>>
+    function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !struct.struct<@BitAnd<[]>> {
+      %self = struct.new : <@BitAnd<[]>>
       %0 = felt.mul %arg0, %arg1 : !felt.felt, !felt.felt
-      %1 = function.call @Reg::@compute(%0) : (!felt.felt) -> !llzk.struct<@Reg<[]>>
-      llzk.writef %self[@"$temp"] = %1 : <@BitAnd<[]>>, !llzk.struct<@Reg<[]>>
-      %2 = llzk.readf %self[@"$temp"] : <@BitAnd<[]>>, !llzk.struct<@Reg<[]>>
-      llzk.writef %self[@"$super"] = %2 : <@BitAnd<[]>>, !llzk.struct<@Reg<[]>>
-      function.return %self : !llzk.struct<@BitAnd<[]>>
+      %1 = function.call @Reg::@compute(%0) : (!felt.felt) -> !struct.struct<@Reg<[]>>
+      struct.writef %self[@"$temp"] = %1 : <@BitAnd<[]>>, !struct.struct<@Reg<[]>>
+      %2 = struct.readf %self[@"$temp"] : <@BitAnd<[]>>, !struct.struct<@Reg<[]>>
+      struct.writef %self[@"$super"] = %2 : <@BitAnd<[]>>, !struct.struct<@Reg<[]>>
+      function.return %self : !struct.struct<@BitAnd<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@BitAnd<[]>>, %arg1: !felt.felt, %arg2: !felt.felt) {
+    function.def @constrain(%arg0: !struct.struct<@BitAnd<[]>>, %arg1: !felt.felt, %arg2: !felt.felt) {
       %0 = felt.mul %arg1, %arg2 : !felt.felt, !felt.felt
-      %1 = llzk.readf %arg0[@"$temp"] : <@BitAnd<[]>>, !llzk.struct<@Reg<[]>>
-      function.call @Reg::@constrain(%1, %0) : (!llzk.struct<@Reg<[]>>, !felt.felt) -> ()
+      %1 = struct.readf %arg0[@"$temp"] : <@BitAnd<[]>>, !struct.struct<@Reg<[]>>
+      function.call @Reg::@constrain(%1, %0) : (!struct.struct<@Reg<[]>>, !felt.felt) -> ()
       function.return
     }
   }
-  llzk.struct @BitOr<[]> {
-    llzk.field @"$super" : !llzk.struct<@Reg<[]>>
-    llzk.field @"$temp" : !llzk.struct<@Reg<[]>>
-    function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !llzk.struct<@BitOr<[]>> {
-      %self = llzk.new_struct : <@BitOr<[]>>
+  struct.def @BitOr<[]> {
+    struct.field @"$super" : !struct.struct<@Reg<[]>>
+    struct.field @"$temp" : !struct.struct<@Reg<[]>>
+    function.def @compute(%arg0: !felt.felt, %arg1: !felt.felt) -> !struct.struct<@BitOr<[]>> {
+      %self = struct.new : <@BitOr<[]>>
       %felt_const_1 = felt.const  1
       %felt_const_1_0 = felt.const  1
       %0 = felt.sub %felt_const_1_0, %arg0 : !felt.felt, !felt.felt
@@ -360,13 +360,13 @@ module attributes {veridise.lang = "llzk"} {
       %1 = felt.sub %felt_const_1_1, %arg1 : !felt.felt, !felt.felt
       %2 = felt.mul %0, %1 : !felt.felt, !felt.felt
       %3 = felt.sub %felt_const_1, %2 : !felt.felt, !felt.felt
-      %4 = function.call @Reg::@compute(%3) : (!felt.felt) -> !llzk.struct<@Reg<[]>>
-      llzk.writef %self[@"$temp"] = %4 : <@BitOr<[]>>, !llzk.struct<@Reg<[]>>
-      %5 = llzk.readf %self[@"$temp"] : <@BitOr<[]>>, !llzk.struct<@Reg<[]>>
-      llzk.writef %self[@"$super"] = %5 : <@BitOr<[]>>, !llzk.struct<@Reg<[]>>
-      function.return %self : !llzk.struct<@BitOr<[]>>
+      %4 = function.call @Reg::@compute(%3) : (!felt.felt) -> !struct.struct<@Reg<[]>>
+      struct.writef %self[@"$temp"] = %4 : <@BitOr<[]>>, !struct.struct<@Reg<[]>>
+      %5 = struct.readf %self[@"$temp"] : <@BitOr<[]>>, !struct.struct<@Reg<[]>>
+      struct.writef %self[@"$super"] = %5 : <@BitOr<[]>>, !struct.struct<@Reg<[]>>
+      function.return %self : !struct.struct<@BitOr<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@BitOr<[]>>, %arg1: !felt.felt, %arg2: !felt.felt) {
+    function.def @constrain(%arg0: !struct.struct<@BitOr<[]>>, %arg1: !felt.felt, %arg2: !felt.felt) {
       %felt_const_1 = felt.const  1
       %felt_const_1_0 = felt.const  1
       %0 = felt.sub %felt_const_1_0, %arg1 : !felt.felt, !felt.felt
@@ -374,149 +374,149 @@ module attributes {veridise.lang = "llzk"} {
       %1 = felt.sub %felt_const_1_1, %arg2 : !felt.felt, !felt.felt
       %2 = felt.mul %0, %1 : !felt.felt, !felt.felt
       %3 = felt.sub %felt_const_1, %2 : !felt.felt, !felt.felt
-      %4 = llzk.readf %arg0[@"$temp"] : <@BitOr<[]>>, !llzk.struct<@Reg<[]>>
-      function.call @Reg::@constrain(%4, %3) : (!llzk.struct<@Reg<[]>>, !felt.felt) -> ()
+      %4 = struct.readf %arg0[@"$temp"] : <@BitOr<[]>>, !struct.struct<@Reg<[]>>
+      function.call @Reg::@constrain(%4, %3) : (!struct.struct<@Reg<[]>>, !felt.felt) -> ()
       function.return
     }
   }
-  llzk.struct @NondetTwitReg<[]> {
-    llzk.field @"$super" : !llzk.struct<@NondetReg<[]>>
-    llzk.field @"$temp" : !llzk.struct<@AssertTwit<[]>>
-    llzk.field @reg : !llzk.struct<@NondetReg<[]>>
-    function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@NondetTwitReg<[]>> {
-      %self = llzk.new_struct : <@NondetTwitReg<[]>>
-      %0 = function.call @NondetReg::@compute(%arg0) : (!felt.felt) -> !llzk.struct<@NondetReg<[]>>
-      llzk.writef %self[@reg] = %0 : <@NondetTwitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %1 = llzk.readf %self[@reg] : <@NondetTwitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %2 = llzk.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      %3 = function.call @AssertTwit::@compute(%2) : (!felt.felt) -> !llzk.struct<@AssertTwit<[]>>
-      llzk.writef %self[@"$temp"] = %3 : <@NondetTwitReg<[]>>, !llzk.struct<@AssertTwit<[]>>
-      %4 = llzk.readf %self[@"$temp"] : <@NondetTwitReg<[]>>, !llzk.struct<@AssertTwit<[]>>
-      llzk.writef %self[@"$super"] = %1 : <@NondetTwitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      function.return %self : !llzk.struct<@NondetTwitReg<[]>>
+  struct.def @NondetTwitReg<[]> {
+    struct.field @"$super" : !struct.struct<@NondetReg<[]>>
+    struct.field @"$temp" : !struct.struct<@AssertTwit<[]>>
+    struct.field @reg : !struct.struct<@NondetReg<[]>>
+    function.def @compute(%arg0: !felt.felt) -> !struct.struct<@NondetTwitReg<[]>> {
+      %self = struct.new : <@NondetTwitReg<[]>>
+      %0 = function.call @NondetReg::@compute(%arg0) : (!felt.felt) -> !struct.struct<@NondetReg<[]>>
+      struct.writef %self[@reg] = %0 : <@NondetTwitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %1 = struct.readf %self[@reg] : <@NondetTwitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %3 = function.call @AssertTwit::@compute(%2) : (!felt.felt) -> !struct.struct<@AssertTwit<[]>>
+      struct.writef %self[@"$temp"] = %3 : <@NondetTwitReg<[]>>, !struct.struct<@AssertTwit<[]>>
+      %4 = struct.readf %self[@"$temp"] : <@NondetTwitReg<[]>>, !struct.struct<@AssertTwit<[]>>
+      struct.writef %self[@"$super"] = %1 : <@NondetTwitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      function.return %self : !struct.struct<@NondetTwitReg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@NondetTwitReg<[]>>, %arg1: !felt.felt) {
-      %0 = llzk.readf %arg0[@reg] : <@NondetTwitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      function.call @NondetReg::@constrain(%0, %arg1) : (!llzk.struct<@NondetReg<[]>>, !felt.felt) -> ()
-      %1 = llzk.readf %0[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      %2 = llzk.readf %arg0[@"$temp"] : <@NondetTwitReg<[]>>, !llzk.struct<@AssertTwit<[]>>
-      function.call @AssertTwit::@constrain(%2, %1) : (!llzk.struct<@AssertTwit<[]>>, !felt.felt) -> ()
+    function.def @constrain(%arg0: !struct.struct<@NondetTwitReg<[]>>, %arg1: !felt.felt) {
+      %0 = struct.readf %arg0[@reg] : <@NondetTwitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      function.call @NondetReg::@constrain(%0, %arg1) : (!struct.struct<@NondetReg<[]>>, !felt.felt) -> ()
+      %1 = struct.readf %0[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %2 = struct.readf %arg0[@"$temp"] : <@NondetTwitReg<[]>>, !struct.struct<@AssertTwit<[]>>
+      function.call @AssertTwit::@constrain(%2, %1) : (!struct.struct<@AssertTwit<[]>>, !felt.felt) -> ()
       function.return
     }
   }
-  llzk.struct @NondetFakeTwitReg<[]> {
-    llzk.field @"$super" : !felt.felt
-    llzk.field @reg1 : !llzk.struct<@NondetBitReg<[]>>
-    llzk.field @"$temp_1" : !llzk.struct<@Div<[]>>
-    llzk.field @"$temp_0" : !llzk.struct<@BitAnd<[]>>
-    llzk.field @reg0 : !llzk.struct<@NondetBitReg<[]>>
-    llzk.field @"$temp" : !llzk.struct<@BitAnd<[]>>
-    function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@NondetFakeTwitReg<[]>> {
-      %self = llzk.new_struct : <@NondetFakeTwitReg<[]>>
+  struct.def @NondetFakeTwitReg<[]> {
+    struct.field @"$super" : !felt.felt
+    struct.field @reg1 : !struct.struct<@NondetBitReg<[]>>
+    struct.field @"$temp_1" : !struct.struct<@Div<[]>>
+    struct.field @"$temp_0" : !struct.struct<@BitAnd<[]>>
+    struct.field @reg0 : !struct.struct<@NondetBitReg<[]>>
+    struct.field @"$temp" : !struct.struct<@BitAnd<[]>>
+    function.def @compute(%arg0: !felt.felt) -> !struct.struct<@NondetFakeTwitReg<[]>> {
+      %self = struct.new : <@NondetFakeTwitReg<[]>>
       %felt_const_1 = felt.const  1
-      %0 = function.call @BitAnd::@compute(%arg0, %felt_const_1) : (!felt.felt, !felt.felt) -> !llzk.struct<@BitAnd<[]>>
-      llzk.writef %self[@"$temp"] = %0 : <@NondetFakeTwitReg<[]>>, !llzk.struct<@BitAnd<[]>>
-      %1 = llzk.readf %self[@"$temp"] : <@NondetFakeTwitReg<[]>>, !llzk.struct<@BitAnd<[]>>
-      %2 = llzk.readf %1[@"$super"] : <@BitAnd<[]>>, !llzk.struct<@Reg<[]>>
-      %3 = llzk.readf %2[@"$super"] : <@Reg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %4 = llzk.readf %3[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      %5 = function.call @NondetBitReg::@compute(%4) : (!felt.felt) -> !llzk.struct<@NondetBitReg<[]>>
-      llzk.writef %self[@reg0] = %5 : <@NondetFakeTwitReg<[]>>, !llzk.struct<@NondetBitReg<[]>>
-      %6 = llzk.readf %self[@reg0] : <@NondetFakeTwitReg<[]>>, !llzk.struct<@NondetBitReg<[]>>
+      %0 = function.call @BitAnd::@compute(%arg0, %felt_const_1) : (!felt.felt, !felt.felt) -> !struct.struct<@BitAnd<[]>>
+      struct.writef %self[@"$temp"] = %0 : <@NondetFakeTwitReg<[]>>, !struct.struct<@BitAnd<[]>>
+      %1 = struct.readf %self[@"$temp"] : <@NondetFakeTwitReg<[]>>, !struct.struct<@BitAnd<[]>>
+      %2 = struct.readf %1[@"$super"] : <@BitAnd<[]>>, !struct.struct<@Reg<[]>>
+      %3 = struct.readf %2[@"$super"] : <@Reg<[]>>, !struct.struct<@NondetReg<[]>>
+      %4 = struct.readf %3[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %5 = function.call @NondetBitReg::@compute(%4) : (!felt.felt) -> !struct.struct<@NondetBitReg<[]>>
+      struct.writef %self[@reg0] = %5 : <@NondetFakeTwitReg<[]>>, !struct.struct<@NondetBitReg<[]>>
+      %6 = struct.readf %self[@reg0] : <@NondetFakeTwitReg<[]>>, !struct.struct<@NondetBitReg<[]>>
       %felt_const_2 = felt.const  2
-      %7 = function.call @BitAnd::@compute(%arg0, %felt_const_2) : (!felt.felt, !felt.felt) -> !llzk.struct<@BitAnd<[]>>
-      llzk.writef %self[@"$temp_0"] = %7 : <@NondetFakeTwitReg<[]>>, !llzk.struct<@BitAnd<[]>>
-      %8 = llzk.readf %self[@"$temp_0"] : <@NondetFakeTwitReg<[]>>, !llzk.struct<@BitAnd<[]>>
+      %7 = function.call @BitAnd::@compute(%arg0, %felt_const_2) : (!felt.felt, !felt.felt) -> !struct.struct<@BitAnd<[]>>
+      struct.writef %self[@"$temp_0"] = %7 : <@NondetFakeTwitReg<[]>>, !struct.struct<@BitAnd<[]>>
+      %8 = struct.readf %self[@"$temp_0"] : <@NondetFakeTwitReg<[]>>, !struct.struct<@BitAnd<[]>>
       %felt_const_2_0 = felt.const  2
-      %9 = llzk.readf %8[@"$super"] : <@BitAnd<[]>>, !llzk.struct<@Reg<[]>>
-      %10 = llzk.readf %9[@"$super"] : <@Reg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %11 = llzk.readf %10[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      %12 = function.call @Div::@compute(%11, %felt_const_2_0) : (!felt.felt, !felt.felt) -> !llzk.struct<@Div<[]>>
-      llzk.writef %self[@"$temp_1"] = %12 : <@NondetFakeTwitReg<[]>>, !llzk.struct<@Div<[]>>
-      %13 = llzk.readf %self[@"$temp_1"] : <@NondetFakeTwitReg<[]>>, !llzk.struct<@Div<[]>>
-      %14 = llzk.readf %13[@"$super"] : <@Div<[]>>, !felt.felt
-      %15 = function.call @NondetBitReg::@compute(%14) : (!felt.felt) -> !llzk.struct<@NondetBitReg<[]>>
-      llzk.writef %self[@reg1] = %15 : <@NondetFakeTwitReg<[]>>, !llzk.struct<@NondetBitReg<[]>>
-      %16 = llzk.readf %self[@reg1] : <@NondetFakeTwitReg<[]>>, !llzk.struct<@NondetBitReg<[]>>
+      %9 = struct.readf %8[@"$super"] : <@BitAnd<[]>>, !struct.struct<@Reg<[]>>
+      %10 = struct.readf %9[@"$super"] : <@Reg<[]>>, !struct.struct<@NondetReg<[]>>
+      %11 = struct.readf %10[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %12 = function.call @Div::@compute(%11, %felt_const_2_0) : (!felt.felt, !felt.felt) -> !struct.struct<@Div<[]>>
+      struct.writef %self[@"$temp_1"] = %12 : <@NondetFakeTwitReg<[]>>, !struct.struct<@Div<[]>>
+      %13 = struct.readf %self[@"$temp_1"] : <@NondetFakeTwitReg<[]>>, !struct.struct<@Div<[]>>
+      %14 = struct.readf %13[@"$super"] : <@Div<[]>>, !felt.felt
+      %15 = function.call @NondetBitReg::@compute(%14) : (!felt.felt) -> !struct.struct<@NondetBitReg<[]>>
+      struct.writef %self[@reg1] = %15 : <@NondetFakeTwitReg<[]>>, !struct.struct<@NondetBitReg<[]>>
+      %16 = struct.readf %self[@reg1] : <@NondetFakeTwitReg<[]>>, !struct.struct<@NondetBitReg<[]>>
       %felt_const_2_1 = felt.const  2
-      %17 = llzk.readf %16[@"$super"] : <@NondetBitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %18 = llzk.readf %17[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %17 = struct.readf %16[@"$super"] : <@NondetBitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %18 = struct.readf %17[@"$super"] : <@NondetReg<[]>>, !felt.felt
       %19 = felt.mul %18, %felt_const_2_1 : !felt.felt, !felt.felt
-      %20 = llzk.readf %6[@"$super"] : <@NondetBitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %21 = llzk.readf %20[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %20 = struct.readf %6[@"$super"] : <@NondetBitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %21 = struct.readf %20[@"$super"] : <@NondetReg<[]>>, !felt.felt
       %22 = felt.add %19, %21 : !felt.felt, !felt.felt
-      llzk.writef %self[@"$super"] = %22 : <@NondetFakeTwitReg<[]>>, !felt.felt
-      function.return %self : !llzk.struct<@NondetFakeTwitReg<[]>>
+      struct.writef %self[@"$super"] = %22 : <@NondetFakeTwitReg<[]>>, !felt.felt
+      function.return %self : !struct.struct<@NondetFakeTwitReg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@NondetFakeTwitReg<[]>>, %arg1: !felt.felt) {
+    function.def @constrain(%arg0: !struct.struct<@NondetFakeTwitReg<[]>>, %arg1: !felt.felt) {
       %felt_const_1 = felt.const  1
-      %0 = llzk.readf %arg0[@"$temp"] : <@NondetFakeTwitReg<[]>>, !llzk.struct<@BitAnd<[]>>
-      function.call @BitAnd::@constrain(%0, %arg1, %felt_const_1) : (!llzk.struct<@BitAnd<[]>>, !felt.felt, !felt.felt) -> ()
-      %1 = llzk.readf %0[@"$super"] : <@BitAnd<[]>>, !llzk.struct<@Reg<[]>>
-      %2 = llzk.readf %1[@"$super"] : <@Reg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %3 = llzk.readf %2[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      %4 = llzk.readf %arg0[@reg0] : <@NondetFakeTwitReg<[]>>, !llzk.struct<@NondetBitReg<[]>>
-      function.call @NondetBitReg::@constrain(%4, %3) : (!llzk.struct<@NondetBitReg<[]>>, !felt.felt) -> ()
+      %0 = struct.readf %arg0[@"$temp"] : <@NondetFakeTwitReg<[]>>, !struct.struct<@BitAnd<[]>>
+      function.call @BitAnd::@constrain(%0, %arg1, %felt_const_1) : (!struct.struct<@BitAnd<[]>>, !felt.felt, !felt.felt) -> ()
+      %1 = struct.readf %0[@"$super"] : <@BitAnd<[]>>, !struct.struct<@Reg<[]>>
+      %2 = struct.readf %1[@"$super"] : <@Reg<[]>>, !struct.struct<@NondetReg<[]>>
+      %3 = struct.readf %2[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %4 = struct.readf %arg0[@reg0] : <@NondetFakeTwitReg<[]>>, !struct.struct<@NondetBitReg<[]>>
+      function.call @NondetBitReg::@constrain(%4, %3) : (!struct.struct<@NondetBitReg<[]>>, !felt.felt) -> ()
       %felt_const_2 = felt.const  2
-      %5 = llzk.readf %arg0[@"$temp_0"] : <@NondetFakeTwitReg<[]>>, !llzk.struct<@BitAnd<[]>>
-      function.call @BitAnd::@constrain(%5, %arg1, %felt_const_2) : (!llzk.struct<@BitAnd<[]>>, !felt.felt, !felt.felt) -> ()
+      %5 = struct.readf %arg0[@"$temp_0"] : <@NondetFakeTwitReg<[]>>, !struct.struct<@BitAnd<[]>>
+      function.call @BitAnd::@constrain(%5, %arg1, %felt_const_2) : (!struct.struct<@BitAnd<[]>>, !felt.felt, !felt.felt) -> ()
       %felt_const_2_0 = felt.const  2
-      %6 = llzk.readf %5[@"$super"] : <@BitAnd<[]>>, !llzk.struct<@Reg<[]>>
-      %7 = llzk.readf %6[@"$super"] : <@Reg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %8 = llzk.readf %7[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      %9 = llzk.readf %arg0[@"$temp_1"] : <@NondetFakeTwitReg<[]>>, !llzk.struct<@Div<[]>>
-      function.call @Div::@constrain(%9, %8, %felt_const_2_0) : (!llzk.struct<@Div<[]>>, !felt.felt, !felt.felt) -> ()
-      %10 = llzk.readf %9[@"$super"] : <@Div<[]>>, !felt.felt
-      %11 = llzk.readf %arg0[@reg1] : <@NondetFakeTwitReg<[]>>, !llzk.struct<@NondetBitReg<[]>>
-      function.call @NondetBitReg::@constrain(%11, %10) : (!llzk.struct<@NondetBitReg<[]>>, !felt.felt) -> ()
+      %6 = struct.readf %5[@"$super"] : <@BitAnd<[]>>, !struct.struct<@Reg<[]>>
+      %7 = struct.readf %6[@"$super"] : <@Reg<[]>>, !struct.struct<@NondetReg<[]>>
+      %8 = struct.readf %7[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %9 = struct.readf %arg0[@"$temp_1"] : <@NondetFakeTwitReg<[]>>, !struct.struct<@Div<[]>>
+      function.call @Div::@constrain(%9, %8, %felt_const_2_0) : (!struct.struct<@Div<[]>>, !felt.felt, !felt.felt) -> ()
+      %10 = struct.readf %9[@"$super"] : <@Div<[]>>, !felt.felt
+      %11 = struct.readf %arg0[@reg1] : <@NondetFakeTwitReg<[]>>, !struct.struct<@NondetBitReg<[]>>
+      function.call @NondetBitReg::@constrain(%11, %10) : (!struct.struct<@NondetBitReg<[]>>, !felt.felt) -> ()
       %felt_const_2_1 = felt.const  2
-      %12 = llzk.readf %11[@"$super"] : <@NondetBitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %13 = llzk.readf %12[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %12 = struct.readf %11[@"$super"] : <@NondetBitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %13 = struct.readf %12[@"$super"] : <@NondetReg<[]>>, !felt.felt
       %14 = felt.mul %13, %felt_const_2_1 : !felt.felt, !felt.felt
-      %15 = llzk.readf %4[@"$super"] : <@NondetBitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %16 = llzk.readf %15[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      %15 = struct.readf %4[@"$super"] : <@NondetBitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %16 = struct.readf %15[@"$super"] : <@NondetReg<[]>>, !felt.felt
       %17 = felt.add %14, %16 : !felt.felt, !felt.felt
       function.return
     }
   }
-  llzk.struct @TwitReg<[]> {
-    llzk.field @"$super" : !llzk.struct<@NondetTwitReg<[]>>
-    llzk.field @reg : !llzk.struct<@NondetTwitReg<[]>>
-    function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@TwitReg<[]>> {
-      %self = llzk.new_struct : <@TwitReg<[]>>
-      %0 = function.call @NondetTwitReg::@compute(%arg0) : (!felt.felt) -> !llzk.struct<@NondetTwitReg<[]>>
-      llzk.writef %self[@reg] = %0 : <@TwitReg<[]>>, !llzk.struct<@NondetTwitReg<[]>>
-      %1 = llzk.readf %self[@reg] : <@TwitReg<[]>>, !llzk.struct<@NondetTwitReg<[]>>
-      %2 = llzk.readf %1[@"$super"] : <@NondetTwitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %3 = llzk.readf %2[@"$super"] : <@NondetReg<[]>>, !felt.felt
-      llzk.writef %self[@"$super"] = %1 : <@TwitReg<[]>>, !llzk.struct<@NondetTwitReg<[]>>
-      function.return %self : !llzk.struct<@TwitReg<[]>>
+  struct.def @TwitReg<[]> {
+    struct.field @"$super" : !struct.struct<@NondetTwitReg<[]>>
+    struct.field @reg : !struct.struct<@NondetTwitReg<[]>>
+    function.def @compute(%arg0: !felt.felt) -> !struct.struct<@TwitReg<[]>> {
+      %self = struct.new : <@TwitReg<[]>>
+      %0 = function.call @NondetTwitReg::@compute(%arg0) : (!felt.felt) -> !struct.struct<@NondetTwitReg<[]>>
+      struct.writef %self[@reg] = %0 : <@TwitReg<[]>>, !struct.struct<@NondetTwitReg<[]>>
+      %1 = struct.readf %self[@reg] : <@TwitReg<[]>>, !struct.struct<@NondetTwitReg<[]>>
+      %2 = struct.readf %1[@"$super"] : <@NondetTwitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %3 = struct.readf %2[@"$super"] : <@NondetReg<[]>>, !felt.felt
+      struct.writef %self[@"$super"] = %1 : <@TwitReg<[]>>, !struct.struct<@NondetTwitReg<[]>>
+      function.return %self : !struct.struct<@TwitReg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@TwitReg<[]>>, %arg1: !felt.felt) {
-      %0 = llzk.readf %arg0[@reg] : <@TwitReg<[]>>, !llzk.struct<@NondetTwitReg<[]>>
-      function.call @NondetTwitReg::@constrain(%0, %arg1) : (!llzk.struct<@NondetTwitReg<[]>>, !felt.felt) -> ()
-      %1 = llzk.readf %0[@"$super"] : <@NondetTwitReg<[]>>, !llzk.struct<@NondetReg<[]>>
-      %2 = llzk.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
+    function.def @constrain(%arg0: !struct.struct<@TwitReg<[]>>, %arg1: !felt.felt) {
+      %0 = struct.readf %arg0[@reg] : <@TwitReg<[]>>, !struct.struct<@NondetTwitReg<[]>>
+      function.call @NondetTwitReg::@constrain(%0, %arg1) : (!struct.struct<@NondetTwitReg<[]>>, !felt.felt) -> ()
+      %1 = struct.readf %0[@"$super"] : <@NondetTwitReg<[]>>, !struct.struct<@NondetReg<[]>>
+      %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.felt
       llzk.emit_eq %arg1, %2 : !felt.felt, !felt.felt
       function.return
     }
   }
-  llzk.struct @FakeTwitReg<[]> {
-    llzk.field @"$super" : !llzk.struct<@NondetFakeTwitReg<[]>>
-    llzk.field @reg : !llzk.struct<@NondetFakeTwitReg<[]>>
-    function.def @compute(%arg0: !felt.felt) -> !llzk.struct<@FakeTwitReg<[]>> {
-      %self = llzk.new_struct : <@FakeTwitReg<[]>>
-      %0 = function.call @NondetFakeTwitReg::@compute(%arg0) : (!felt.felt) -> !llzk.struct<@NondetFakeTwitReg<[]>>
-      llzk.writef %self[@reg] = %0 : <@FakeTwitReg<[]>>, !llzk.struct<@NondetFakeTwitReg<[]>>
-      %1 = llzk.readf %self[@reg] : <@FakeTwitReg<[]>>, !llzk.struct<@NondetFakeTwitReg<[]>>
-      %2 = llzk.readf %1[@"$super"] : <@NondetFakeTwitReg<[]>>, !felt.felt
-      llzk.writef %self[@"$super"] = %1 : <@FakeTwitReg<[]>>, !llzk.struct<@NondetFakeTwitReg<[]>>
-      function.return %self : !llzk.struct<@FakeTwitReg<[]>>
+  struct.def @FakeTwitReg<[]> {
+    struct.field @"$super" : !struct.struct<@NondetFakeTwitReg<[]>>
+    struct.field @reg : !struct.struct<@NondetFakeTwitReg<[]>>
+    function.def @compute(%arg0: !felt.felt) -> !struct.struct<@FakeTwitReg<[]>> {
+      %self = struct.new : <@FakeTwitReg<[]>>
+      %0 = function.call @NondetFakeTwitReg::@compute(%arg0) : (!felt.felt) -> !struct.struct<@NondetFakeTwitReg<[]>>
+      struct.writef %self[@reg] = %0 : <@FakeTwitReg<[]>>, !struct.struct<@NondetFakeTwitReg<[]>>
+      %1 = struct.readf %self[@reg] : <@FakeTwitReg<[]>>, !struct.struct<@NondetFakeTwitReg<[]>>
+      %2 = struct.readf %1[@"$super"] : <@NondetFakeTwitReg<[]>>, !felt.felt
+      struct.writef %self[@"$super"] = %1 : <@FakeTwitReg<[]>>, !struct.struct<@NondetFakeTwitReg<[]>>
+      function.return %self : !struct.struct<@FakeTwitReg<[]>>
     }
-    function.def @constrain(%arg0: !llzk.struct<@FakeTwitReg<[]>>, %arg1: !felt.felt) {
-      %0 = llzk.readf %arg0[@reg] : <@FakeTwitReg<[]>>, !llzk.struct<@NondetFakeTwitReg<[]>>
-      function.call @NondetFakeTwitReg::@constrain(%0, %arg1) : (!llzk.struct<@NondetFakeTwitReg<[]>>, !felt.felt) -> ()
-      %1 = llzk.readf %0[@"$super"] : <@NondetFakeTwitReg<[]>>, !felt.felt
+    function.def @constrain(%arg0: !struct.struct<@FakeTwitReg<[]>>, %arg1: !felt.felt) {
+      %0 = struct.readf %arg0[@reg] : <@FakeTwitReg<[]>>, !struct.struct<@NondetFakeTwitReg<[]>>
+      function.call @NondetFakeTwitReg::@constrain(%0, %arg1) : (!struct.struct<@NondetFakeTwitReg<[]>>, !felt.felt) -> ()
+      %1 = struct.readf %0[@"$super"] : <@NondetFakeTwitReg<[]>>, !felt.felt
       llzk.emit_eq %arg1, %1 : !felt.felt, !felt.felt
       function.return
     }

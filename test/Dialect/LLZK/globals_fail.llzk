@@ -23,25 +23,25 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
-  llzk.global @g : !llzk.struct<@Component01<[affine_map<(i)->(i)>]>>
-  llzk.struct @Component01<[@N]> {
-    function.def @compute() -> !llzk.struct<@Component01<[@N]>> {
-      %self = llzk.new_struct : !llzk.struct<@Component01<[@N]>>
-      function.return %self : !llzk.struct<@Component01<[@N]>>
+  llzk.global @g : !struct.struct<@Component01<[affine_map<(i)->(i)>]>>
+  struct.def @Component01<[@N]> {
+    function.def @compute() -> !struct.struct<@Component01<[@N]>> {
+      %self = struct.new : !struct.struct<@Component01<[@N]>>
+      function.return %self : !struct.struct<@Component01<[@N]>>
     }
-    function.def @constrain(%self: !llzk.struct<@Component01<[@N]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@Component01<[@N]>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'llzk.global' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
-  llzk.global @g : !llzk.struct<@Component01<[@any_symbol_here_is_illegal]>>
-  llzk.struct @Component01<[@N]> {
-    function.def @compute() -> !llzk.struct<@Component01<[@N]>> {
-      %self = llzk.new_struct : !llzk.struct<@Component01<[@N]>>
-      function.return %self : !llzk.struct<@Component01<[@N]>>
+  llzk.global @g : !struct.struct<@Component01<[@any_symbol_here_is_illegal]>>
+  struct.def @Component01<[@N]> {
+    function.def @compute() -> !struct.struct<@Component01<[@N]>> {
+      %self = struct.new : !struct.struct<@Component01<[@N]>>
+      function.return %self : !struct.struct<@Component01<[@N]>>
     }
-    function.def @constrain(%self: !llzk.struct<@Component01<[@N]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@Component01<[@N]>>) { function.return }
   }
 }
 // -----
@@ -150,14 +150,14 @@ module attributes {veridise.lang = "llzk"} {
 // TEST: GlobalReadOp with unknown symbol name
 module attributes {veridise.lang = "llzk"} {
   llzk.global @g : !string.string = "Hello"
-  llzk.struct @Component02 {
-    function.def @compute() -> !llzk.struct<@Component02> {
+  struct.def @Component02 {
+    function.def @compute() -> !struct.struct<@Component02> {
       // expected-error@+1 {{'llzk.readg' op references unknown symbol "@unknown"}}
       %t = llzk.readg @unknown : !string.string
-      %self = llzk.new_struct : !llzk.struct<@Component02>
-      function.return %self : !llzk.struct<@Component02>
+      %self = struct.new : !struct.struct<@Component02>
+      function.return %self : !struct.struct<@Component02>
     }
-    function.def @constrain(%self: !llzk.struct<@Component02>) { function.return }
+    function.def @constrain(%self: !struct.struct<@Component02>) { function.return }
   }
 }
 // -----
@@ -165,14 +165,14 @@ module attributes {veridise.lang = "llzk"} {
 // TEST: GlobalReadOp with type that does not match the GlobalDefOp
 module attributes {veridise.lang = "llzk"} {
   llzk.global @g : !felt.felt = 6546
-  llzk.struct @Component03 {
-    function.def @compute() -> !llzk.struct<@Component03> {
+  struct.def @Component03 {
+    function.def @compute() -> !struct.struct<@Component03> {
       // expected-error@+1 {{'llzk.readg' op has wrong type; expected '!felt.felt', got '!string.string'}}
       %t = llzk.readg @g : !string.string
-      %self = llzk.new_struct : !llzk.struct<@Component03>
-      function.return %self : !llzk.struct<@Component03>
+      %self = struct.new : !struct.struct<@Component03>
+      function.return %self : !struct.struct<@Component03>
     }
-    function.def @constrain(%self: !llzk.struct<@Component03>) { function.return }
+    function.def @constrain(%self: !struct.struct<@Component03>) { function.return }
   }
 }
 // -----
@@ -180,15 +180,15 @@ module attributes {veridise.lang = "llzk"} {
 // TEST: GlobalWriteOp with unknown symbol name
 module attributes {veridise.lang = "llzk"} {
   llzk.global @g : !felt.felt = 125
-  llzk.struct @Component04 {
-    function.def @compute() -> !llzk.struct<@Component04> {
+  struct.def @Component04 {
+    function.def @compute() -> !struct.struct<@Component04> {
       %c = felt.const 99999
       // expected-error@+1 {{'llzk.writeg' op references unknown symbol "@unknown"}}
       llzk.writeg @unknown = %c : !felt.felt
-      %self = llzk.new_struct : !llzk.struct<@Component04>
-      function.return %self : !llzk.struct<@Component04>
+      %self = struct.new : !struct.struct<@Component04>
+      function.return %self : !struct.struct<@Component04>
     }
-    function.def @constrain(%self: !llzk.struct<@Component04>) { function.return }
+    function.def @constrain(%self: !struct.struct<@Component04>) { function.return }
   }
 }
 // -----
@@ -196,15 +196,15 @@ module attributes {veridise.lang = "llzk"} {
 // TEST: GlobalWriteOp with type that does not match the GlobalDefOp
 module attributes {veridise.lang = "llzk"} {
   llzk.global @g : index = 125
-  llzk.struct @Component05 {
-    function.def @compute() -> !llzk.struct<@Component05> {
+  struct.def @Component05 {
+    function.def @compute() -> !struct.struct<@Component05> {
       %c = felt.const 99999
       // expected-error@+1 {{'llzk.writeg' op has wrong type; expected 'index', got '!felt.felt'}}
       llzk.writeg @g = %c : !felt.felt
-      %self = llzk.new_struct : !llzk.struct<@Component05>
-      function.return %self : !llzk.struct<@Component05>
+      %self = struct.new : !struct.struct<@Component05>
+      function.return %self : !struct.struct<@Component05>
     }
-    function.def @constrain(%self: !llzk.struct<@Component05>) { function.return }
+    function.def @constrain(%self: !struct.struct<@Component05>) { function.return }
   }
 }
 // -----
@@ -212,15 +212,15 @@ module attributes {veridise.lang = "llzk"} {
 // TEST: GlobalWriteOp with type that does not Value
 module attributes {veridise.lang = "llzk"} {
   llzk.global @g : !felt.felt = 125
-  llzk.struct @Component06 {
-    function.def @compute() -> !llzk.struct<@Component06> {
+  struct.def @Component06 {
+    function.def @compute() -> !struct.struct<@Component06> {
       %c = arith.constant true // expected-note {{prior use here}}
       // expected-error@+1 {{use of value '%c' expects different type than prior uses: '!felt.felt' vs 'i1'}}
       llzk.writeg @g = %c : !felt.felt
-      %self = llzk.new_struct : !llzk.struct<@Component06>
-      function.return %self : !llzk.struct<@Component06>
+      %self = struct.new : !struct.struct<@Component06>
+      function.return %self : !struct.struct<@Component06>
     }
-    function.def @constrain(%self: !llzk.struct<@Component06>) { function.return }
+    function.def @constrain(%self: !struct.struct<@Component06>) { function.return }
   }
 }
 // -----
@@ -228,15 +228,15 @@ module attributes {veridise.lang = "llzk"} {
 // TEST: GlobalWriteOp targeting a "const" GlobalDefOp
 module attributes {veridise.lang = "llzk"} {
   llzk.global const @t : i1 = true
-  llzk.struct @Component07 {
-    function.def @compute() -> !llzk.struct<@Component07> {
+  struct.def @Component07 {
+    function.def @compute() -> !struct.struct<@Component07> {
       %c = arith.constant false
       // expected-error@+1 {{'llzk.writeg' op cannot target 'llzk.global' marked as 'const'}}
       llzk.writeg @t = %c : i1
-      %self = llzk.new_struct : !llzk.struct<@Component07>
-      function.return %self : !llzk.struct<@Component07>
+      %self = struct.new : !struct.struct<@Component07>
+      function.return %self : !struct.struct<@Component07>
     }
-    function.def @constrain(%self: !llzk.struct<@Component07>) { function.return }
+    function.def @constrain(%self: !struct.struct<@Component07>) { function.return }
   }
 }
 // -----
@@ -244,13 +244,13 @@ module attributes {veridise.lang = "llzk"} {
 // TEST: Struct parameter conflicts with a global name
 module attributes {veridise.lang = "llzk"} {
   llzk.global const @N : index = 3 // expected-note {{symbol already defined here}}
-  // expected-error@+1 {{'llzk.struct' op parameter name "@N" conflicts with an existing symbol}}
-  llzk.struct @Component08<[@N]> {
-    function.def @compute() -> !llzk.struct<@Component08<[@N]>> {
-      %self = llzk.new_struct : !llzk.struct<@Component08<[@N]>>
-      function.return %self : !llzk.struct<@Component08<[@N]>>
+  // expected-error@+1 {{'struct.def' op parameter name "@N" conflicts with an existing symbol}}
+  struct.def @Component08<[@N]> {
+    function.def @compute() -> !struct.struct<@Component08<[@N]>> {
+      %self = struct.new : !struct.struct<@Component08<[@N]>>
+      function.return %self : !struct.struct<@Component08<[@N]>>
     }
-    function.def @constrain(%self: !llzk.struct<@Component08<[@N]>>) { function.return }
+    function.def @constrain(%self: !struct.struct<@Component08<[@N]>>) { function.return }
   }
 }
 // -----
@@ -258,12 +258,12 @@ module attributes {veridise.lang = "llzk"} {
 // TEST: `writeg` cannot be used in a "constrain" function
 module attributes {veridise.lang = "llzk"} {
   llzk.global @t : i1 = true
-  llzk.struct @Component09 {
-    function.def @compute() -> !llzk.struct<@Component09> {
-      %self = llzk.new_struct : !llzk.struct<@Component09>
-      function.return %self : !llzk.struct<@Component09>
+  struct.def @Component09 {
+    function.def @compute() -> !struct.struct<@Component09> {
+      %self = struct.new : !struct.struct<@Component09>
+      function.return %self : !struct.struct<@Component09>
     }
-    function.def @constrain(%self: !llzk.struct<@Component09>) {
+    function.def @constrain(%self: !struct.struct<@Component09>) {
       %c = arith.constant false
       // expected-error@+1 {{'llzk.writeg' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
       llzk.writeg @t = %c : i1

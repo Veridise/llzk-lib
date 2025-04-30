@@ -3,15 +3,15 @@
 module attributes {veridise.lang = "llzk"} {
   include.from "Inputs/header_8.llzk" as @libB
 
-  llzk.struct @StructB {
-    llzk.field @x : !llzk.struct<@libB::@libC::@StructC>
-    function.def @compute() -> !llzk.struct<@StructB> {
-      %self = llzk.new_struct : !llzk.struct<@StructB>
-      %0 = function.call @libB::@libC::@StructC::@compute() : () -> (!llzk.struct<@libB::@libC::@StructC>)
-      llzk.writef %self[@x] = %0 : !llzk.struct<@StructB>, !llzk.struct<@libB::@libC::@StructC>
-      function.return %self : !llzk.struct<@StructB>
+  struct.def @StructB {
+    struct.field @x : !struct.struct<@libB::@libC::@StructC>
+    function.def @compute() -> !struct.struct<@StructB> {
+      %self = struct.new : !struct.struct<@StructB>
+      %0 = function.call @libB::@libC::@StructC::@compute() : () -> (!struct.struct<@libB::@libC::@StructC>)
+      struct.writef %self[@x] = %0 : !struct.struct<@StructB>, !struct.struct<@libB::@libC::@StructC>
+      function.return %self : !struct.struct<@StructB>
     }
-    function.def @constrain(%self: !llzk.struct<@StructB>) {
+    function.def @constrain(%self: !struct.struct<@StructB>) {
       function.return
     }
   }

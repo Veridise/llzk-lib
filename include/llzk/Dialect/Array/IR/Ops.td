@@ -314,8 +314,8 @@ def LLZK_ExtractArrayOp
     ```llzk
     scf.for %iv = %lb to %up step %step {
       %p = array.extract %in[%iv] : !array.array<@N,2 x !felt.felt>
-      %c = array.read %a[%iv] : !array.array<@N x !llzk.struct<@SubC>>, !llzk.struct<@SubC>
-      function.call @SubC::@constrain(%c, %p) : (!llzk.struct<@SubC>, !array.array<2 x !felt.felt>) -> ()
+      %c = array.read %a[%iv] : !array.array<@N x !struct.struct<@SubC>>, !struct.struct<@SubC>
+      function.call @SubC::@constrain(%c, %p) : (!struct.struct<@SubC>, !array.array<2 x !felt.felt>) -> ()
     }
     ```
   }];

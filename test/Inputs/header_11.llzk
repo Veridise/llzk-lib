@@ -1,30 +1,30 @@
 // Imported via `call_with_affinemap_fail.llzk`
 
 module attributes {veridise.lang = "llzk"} {
-  llzk.struct @D0 {
-    function.def @compute() -> !llzk.struct<@D0> {
-      %self = llzk.new_struct : !llzk.struct<@D0>
-      function.return %self: !llzk.struct<@D0>
+  struct.def @D0 {
+    function.def @compute() -> !struct.struct<@D0> {
+      %self = struct.new : !struct.struct<@D0>
+      function.return %self: !struct.struct<@D0>
     }
-    function.def @constrain(%self: !llzk.struct<@D0>) {
+    function.def @constrain(%self: !struct.struct<@D0>) {
       function.return
     }
   }
-  llzk.struct @D1<[@M]> {
-    function.def @compute() -> !llzk.struct<@D1<[@M]>> {
-      %self = llzk.new_struct : !llzk.struct<@D1<[@M]>>
-      function.return %self: !llzk.struct<@D1<[@M]>>
+  struct.def @D1<[@M]> {
+    function.def @compute() -> !struct.struct<@D1<[@M]>> {
+      %self = struct.new : !struct.struct<@D1<[@M]>>
+      function.return %self: !struct.struct<@D1<[@M]>>
     }
-    function.def @constrain(%self: !llzk.struct<@D1<[@M]>>) {
+    function.def @constrain(%self: !struct.struct<@D1<[@M]>>) {
       function.return
     }
   }
-  llzk.struct @D2<[@M, @N]> {
-    function.def @compute() -> !llzk.struct<@D2<[@M, @N]>> {
-      %self = llzk.new_struct : !llzk.struct<@D2<[@M, @N]>>
-      function.return %self: !llzk.struct<@D2<[@M, @N]>>
+  struct.def @D2<[@M, @N]> {
+    function.def @compute() -> !struct.struct<@D2<[@M, @N]>> {
+      %self = struct.new : !struct.struct<@D2<[@M, @N]>>
+      function.return %self: !struct.struct<@D2<[@M, @N]>>
     }
-    function.def @constrain(%self: !llzk.struct<@D2<[@M, @N]>>) {
+    function.def @constrain(%self: !struct.struct<@D2<[@M, @N]>>) {
       function.return
     }
   }

@@ -15,6 +15,7 @@
 namespace llzk {
 
 using namespace mlir;
+using namespace component;
 using namespace function;
 
 OwningOpRef<ModuleOp> createLLZKModule(MLIRContext *context, Location loc) {

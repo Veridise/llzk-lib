@@ -13,6 +13,7 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
+#include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/StreamHelper.h"
@@ -29,9 +30,11 @@
 
 #include <cassert>
 
+using namespace mlir;
+
 namespace llzk {
 
-using namespace mlir;
+using namespace component;
 using namespace array;
 using namespace felt;
 using namespace string;

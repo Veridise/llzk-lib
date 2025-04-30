@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
@@ -32,6 +33,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace llzk;
+using namespace llzk::component;
 
 #define DEBUG_TYPE "llzk-unused-declaration-elim"
 

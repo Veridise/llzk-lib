@@ -11,6 +11,7 @@
 
 #include "llzk/Dialect/Function/IR/Attrs.h"
 #include "llzk/Dialect/Shared/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -24,10 +25,6 @@
 #include <mlir/Interfaces/CallInterfaces.h>
 #include <mlir/Interfaces/ControlFlowInterfaces.h>
 #include <mlir/Interfaces/FunctionInterfaces.h>
-
-namespace llzk {
-class StructType;
-}
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES

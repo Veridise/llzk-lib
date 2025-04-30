@@ -19,6 +19,7 @@ using namespace mlir;
 namespace llzk {
 
 using namespace array;
+using namespace component;
 
 /* Field */
 

@@ -12,6 +12,7 @@ add_subdirectory(Function)
 add_subdirectory(Include)
 add_subdirectory(LLZK)
 add_subdirectory(String)
+add_subdirectory(Struct)
 
 # Registration of dialects
 add_library(LLZKDialectRegistration)

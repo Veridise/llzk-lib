@@ -12,9 +12,10 @@
 
 #include "OpTestBase.h"
 
-using namespace llzk;
-using namespace llzk::function;
 using namespace mlir;
+using namespace llzk;
+using namespace llzk::component;
+using namespace llzk::function;
 
 //===------------------------------------------------------------------===//
 // CallOp::build(..., TypeRange, SymbolRefAttr, ValueRange = {})
@@ -173,7 +174,7 @@ TEST_F(OpTests, testCallWithAffine_Good) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+  ); // !struct.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
@@ -200,7 +201,7 @@ TEST_F(OpTests, testCallWithAffine_WrongStructNameInResultType) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structA->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructA<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+  ); // !struct.struct<@StructA<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
@@ -214,8 +215,8 @@ TEST_F(OpTests, testCallWithAffine_WrongStructNameInResultType) {
         assert(verify(op, true));
       },
       "error: 'function.call' op result type mismatch: expected type "
-      "'!llzk.struct<@StructB<\\[@T0, @T1\\]>>', but found "
-      "'!llzk.struct<@StructA<\\[affine_map<\\(d0\\) -> \\(d0\\)>, affine_map<\\(d0\\) -> "
+      "'!struct.struct<@StructB<\\[@T0, @T1\\]>>', but found "
+      "'!struct.struct<@StructA<\\[affine_map<\\(d0\\) -> \\(d0\\)>, affine_map<\\(d0\\) -> "
       "\\(d0\\)>\\]>>' for result number 0"
   );
 }
@@ -235,7 +236,7 @@ TEST_F(OpTests, testCallWithAffine_TooFewMapsInResultType) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m})
-  ); // !llzk.struct<@StructB<[#m]>>
+  ); // !struct.struct<@StructB<[#m]>>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
@@ -248,7 +249,7 @@ TEST_F(OpTests, testCallWithAffine_TooFewMapsInResultType) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.struct' type has 1 parameters but \"StructB\" expects 2"
+      "error: 'struct.struct' type has 1 parameters but \"StructB\" expects 2"
   );
 }
 
@@ -267,7 +268,7 @@ TEST_F(OpTests, testCallWithAffine_TooManyMapsInResultType) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m, m})
-  ); // !llzk.struct<@StructB<[#m,#m,#m]>>
+  ); // !struct.struct<@StructB<[#m,#m,#m]>>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
@@ -280,7 +281,7 @@ TEST_F(OpTests, testCallWithAffine_TooManyMapsInResultType) {
         assert(verify(mod.get()));
         assert(verify(op, true));
       },
-      "error: 'llzk.struct' type has 3 parameters but \"StructB\" expects 2"
+      "error: 'struct.struct' type has 3 parameters but \"StructB\" expects 2"
   );
 }
 
@@ -299,7 +300,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountLessThanDimSizeCount) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+  ); // !struct.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
@@ -331,7 +332,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountMoreThanDimSizeCount) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+  ); // !struct.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
@@ -363,7 +364,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+  ); // !struct.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
@@ -394,7 +395,7 @@ TEST_F(OpTests, testCallWithAffine_DimSizeCount0) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+  ); // !struct.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
@@ -426,7 +427,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0DimSizeCount0) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+  ); // !struct.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {affineStructType}, funcComputeB->getFullyQualifiedName(),
@@ -457,7 +458,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeLessThanDimSize) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[#m,#m]>>
+  ); // !struct.struct<@StructB<[#m,#m]>>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   CallOp op = bldr.create<CallOp>(
@@ -489,7 +490,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeMoreThanDimSize) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[#m,#m]>>
+  ); // !struct.struct<@StructB<[#m,#m]>>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
@@ -522,7 +523,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountAndDimSizeCountMoreThanType) {
   AffineMapAttr m = AffineMapAttr::get(bldr.getDimIdentityMap()); // (d0) -> (d0)
   StructType affineStructType = StructType::get(
       structB->getFullyQualifiedName(), bldr.getArrayAttr({m, m})
-  ); // !llzk.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
+  ); // !struct.struct<@StructB<[affine_map<(d0)->(d0)>, affine_map<(d0)->(d0)>]>>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 2);
   auto v2 = bldr.create<arith::ConstantIndexOp>(loc, 4);
@@ -548,17 +549,17 @@ TEST_F(OpTests, test_calleeIs_withStructCompute) {
   ModuleBuilder llzkBldr = newStructExample();
   llzkBldr.insertComputeCall(structNameA, structNameB);
   // module attributes {veridise.lang = "llzk"} {
-  //   llzk.struct @StructB {
-  //     function.def @constrain(%arg0: !llzk.struct<@StructB>) {
+  //   struct.def @StructB {
+  //     function.def @constrain(%arg0: !struct.struct<@StructB>) {
   //     }
-  //     function.def @compute() -> !llzk.struct<@StructB> {
+  //     function.def @compute() -> !struct.struct<@StructB> {
   //     }
   //   }
-  //   llzk.struct @StructA {
-  //     function.def @constrain(%arg0: !llzk.struct<@StructA>) {
+  //   struct.def @StructA {
+  //     function.def @constrain(%arg0: !struct.struct<@StructA>) {
   //     }
-  //     function.def @compute() -> !llzk.struct<@StructA> {
-  //       %0 = call @StructB::@compute() : () -> !llzk.struct<@StructB>
+  //     function.def @compute() -> !struct.struct<@StructA> {
+  //       %0 = call @StructB::@compute() : () -> !struct.struct<@StructB>
   //     }
   //   }
   // }
@@ -581,19 +582,19 @@ TEST_F(OpTests, test_calleeIs_withStructConstrain) {
   ModuleBuilder llzkBldr = newStructExample();
   llzkBldr.insertConstrainCall(structNameA, structNameB);
   // module attributes {veridise.lang = "llzk"} {
-  //   llzk.struct @StructB {
-  //     function.def @constrain(%arg0: !llzk.struct<@StructB>) {
+  //   struct.def @StructB {
+  //     function.def @constrain(%arg0: !struct.struct<@StructB>) {
   //     }
-  //     function.def @compute() -> !llzk.struct<@StructB> {
+  //     function.def @compute() -> !struct.struct<@StructB> {
   //     }
   //   }
-  //   llzk.struct @StructA {
-  //     field @StructB1 : !llzk.struct<@StructB>
-  //     function.def @constrain(%arg0: !llzk.struct<@StructA>) {
-  //       %0 = readf %arg0[@StructB1] : <@StructA>, !llzk.struct<@StructB>
-  //       call @StructB::@constrain(%0) : (!llzk.struct<@StructB>) -> ()
+  //   struct.def @StructA {
+  //     field @StructB1 : !struct.struct<@StructB>
+  //     function.def @constrain(%arg0: !struct.struct<@StructA>) {
+  //       %0 = readf %arg0[@StructB1] : <@StructA>, !struct.struct<@StructB>
+  //       call @StructB::@constrain(%0) : (!struct.struct<@StructB>) -> ()
   //     }
-  //     function.def @compute() -> !llzk.struct<@StructA> {
+  //     function.def @compute() -> !struct.struct<@StructA> {
   //     }
   //   }
   // }

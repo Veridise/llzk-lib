@@ -33,10 +33,12 @@
 namespace llzk {
 
 // Forward declarations
+namespace component {
 class StructType;
+} // namespace component
 namespace array {
 class ArrayType;
-}
+} // namespace array
 
 /// Note: If any symbol refs in an input Type/Attribute use any of the special characters that this
 /// class generates, they are not escaped. That means these string representations are not safe to
@@ -115,7 +117,7 @@ inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type
 bool isSignalType(mlir::Type type);
 
 /// Return `true` iff the given StructType is referencing the `COMPONENT_NAME_SIGNAL` struct.
-bool isSignalType(StructType sType);
+bool isSignalType(component::StructType sType);
 
 /// @brief Return `true` iff the given type contains an AffineMapAttr.
 bool hasAffineMapAttr(mlir::Type type);
@@ -186,8 +188,8 @@ bool arrayTypesUnify(
 /// Return `true` iff the two StructType instances are equivalent or could be equivalent after full
 /// instantiation of struct parameters.
 bool structTypesUnify(
-    StructType lhs, StructType rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
-    UnificationMap *unifications = nullptr
+    component::StructType lhs, component::StructType rhs,
+    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
@@ -223,8 +225,8 @@ inline bool singletonTypeListsUnify(
 ///
 /// The types `i1`, `index`, `felt.felt`, and `string.string` are concrete whereas `llzk.tvar` is
 /// not (because it may be substituted with any type during struct instantiation). When considering
-/// the attributes with `array.array` and `llzk.struct` types, we define IntegerAttr and TypeAttr as
-/// concrete, AffineMapAttr as less concrete than those, and SymbolRefAttr as least concrete.
+/// the attributes with `array.array` and `struct.struct` types, we define IntegerAttr and TypeAttr
+/// as concrete, AffineMapAttr as less concrete than those, and SymbolRefAttr as least concrete.
 bool isMoreConcreteUnification(
     mlir::Type oldTy, mlir::Type newTy,
     llvm::function_ref<bool(mlir::Type oldTy, mlir::Type newTy)> knownOldToNew = nullptr

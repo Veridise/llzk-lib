@@ -21,11 +21,6 @@
 
 namespace llzk {
 
-class StructDefOp;
-namespace function {
-class FuncDefOp;
-}
-
 /// Get the operation name, like "llzk.emit_op" for the given OpType.
 /// This function can be used when the compiler would complain about
 /// incomplete types if `OpType::getOperationName()` were called directly.
@@ -40,39 +35,6 @@ template <typename OpType> mlir::FailureOr<OpType> getParentOfType(mlir::Operati
   } else {
     return mlir::failure();
   }
-}
-
-/// Return true iff the given Operation is nested somewhere within a StructDefOp.
-bool isInStruct(mlir::Operation *op);
-
-/// If the given Operation is nested somewhere within a StructDefOp, return a success result
-/// containing that StructDefOp. Otherwise emit an error and return a failure result.
-mlir::FailureOr<StructDefOp> verifyInStruct(mlir::Operation *op);
-
-/// Only valid/implemented for StructDefOp. Sets the proper AllowConstraintAttrs on the functions
-/// defined within the StructDefOp.
-template <typename TypeClass>
-class SetFuncAllowAttrs : public mlir::OpTrait::TraitBase<TypeClass, SetFuncAllowAttrs> {
-public:
-  static mlir::LogicalResult verifyTrait(mlir::Operation *op);
-};
-
-/// Return true iff the given Operation is contained within a FuncDefOp with the given name that is
-/// itself contained within a StructDefOp.
-bool isInStructFunctionNamed(mlir::Operation *op, char const *funcName);
-
-/// Checks if the given Operation is contained within a FuncDefOp with the given name that is itself
-/// contained within a StructDefOp, producing an error if not.
-template <char const *FuncName, unsigned PrefixLen>
-mlir::LogicalResult verifyInStructFunctionNamed(
-    mlir::Operation *op, llvm::function_ref<llvm::SmallString<PrefixLen>()> prefix
-) {
-  return isInStructFunctionNamed(op, FuncName)
-             ? mlir::success()
-             : op->emitOpError(prefix())
-                   << "only valid within a '" << getOperationName<function::FuncDefOp>()
-                   << "' named \"@" << FuncName << "\" within a '"
-                   << getOperationName<StructDefOp>() << "' definition";
 }
 
 /// Produces errors if there is an inconsistency in the various attributes/values that are used to

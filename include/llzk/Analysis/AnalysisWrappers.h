@@ -23,6 +23,7 @@
 #pragma once
 
 #include "llzk/Analysis/DenseAnalysis.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -44,7 +45,7 @@ public:
   /// analysis with the current StructDefOp and its parent ModuleOp.
   /// @param op The presumed StructDefOp.
   StructAnalysis(mlir::Operation *op) {
-    structDefOp = mlir::dyn_cast<StructDefOp>(op);
+    structDefOp = mlir::dyn_cast<component::StructDefOp>(op);
     if (!structDefOp) {
       auto error_message = "StructAnalysis expects provided op to be a StructDefOp!";
       op->emitError(error_message);
@@ -88,14 +89,14 @@ protected:
   mlir::ModuleOp getModule() const { return modOp; }
 
   /// @brief Get the current `StructDefOp` that is under analysis.
-  StructDefOp getStruct() const { return structDefOp; }
+  component::StructDefOp getStruct() const { return structDefOp; }
 
   /// @brief Initialize the final `Result` object.
   void setResult(Result &&r) { res = std::make_unique<Result>(r); }
 
 private:
   mlir::ModuleOp modOp;
-  StructDefOp structDefOp;
+  component::StructDefOp structDefOp;
   std::unique_ptr<Result> res;
 };
 
@@ -118,8 +119,9 @@ template <typename Result, typename Context, StructAnalysisType<Result, Context>
 class ModuleAnalysis {
   /// @brief A map of this module's structs to the result of the `StructAnalysis` on that struct.
   /// The `ResultMap` is implemented as an ordered map to control sorting order for iteration.
-  using ResultMap =
-      std::map<StructDefOp, std::reference_wrapper<const Result>, OpLocationLess<StructDefOp>>;
+  using ResultMap = std::map<
+      component::StructDefOp, std::reference_wrapper<const Result>,
+      OpLocationLess<component::StructDefOp>>;
 
 public:
   /// @brief Asserts that the analysis is being run on a `ModuleOp`.
@@ -141,10 +143,10 @@ public:
   virtual void runAnalysis(mlir::AnalysisManager &am) { constructChildAnalyses(am); }
 
   /// @brief Checks if `op` has a result contained in the current result map.
-  bool hasResult(StructDefOp op) const { return results.find(op) != results.end(); }
+  bool hasResult(component::StructDefOp op) const { return results.find(op) != results.end(); }
 
   /// @brief Asserts that `op` has a result and returns it.
-  const Result &getResult(StructDefOp op) const {
+  const Result &getResult(component::StructDefOp op) const {
     ensureResultCreated(op);
     return results.at(op).get();
   }
@@ -180,16 +182,16 @@ protected:
     ensure(res.succeeded(), "solver failed to run on module!");
 
     auto ctx = getContext();
-    modOp.walk([this, &solver, &am, &ctx](StructDefOp s) mutable {
+    modOp.walk([this, &solver, &am, &ctx](component::StructDefOp s) mutable {
       auto &childAnalysis = am.getChildAnalysis<StructAnalysisTy>(s);
       if (mlir::failed(childAnalysis.runAnalysis(solver, am, ctx))) {
         auto error_message = "StructAnalysis failed to run for " + mlir::Twine(s.getName());
         s->emitError(error_message);
         llvm::report_fatal_error(error_message);
       }
-      results.insert(
-          std::make_pair(StructDefOp(s), std::reference_wrapper(childAnalysis.getResult()))
-      );
+      results.insert(std::make_pair(
+          component::StructDefOp(s), std::reference_wrapper(childAnalysis.getResult())
+      ));
     });
   }
 
@@ -199,7 +201,7 @@ private:
 
   /// @brief Ensures that the given struct has a result.
   /// @param op The struct to ensure has a result.
-  void ensureResultCreated(StructDefOp op) const {
+  void ensureResultCreated(component::StructDefOp op) const {
     ensure(hasResult(op), "Result does not exist for StructDefOp " + mlir::Twine(op.getName()));
   }
 };

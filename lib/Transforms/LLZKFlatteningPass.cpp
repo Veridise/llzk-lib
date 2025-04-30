@@ -17,6 +17,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/Debug.h"
@@ -56,6 +57,7 @@ namespace llzk {
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
+using namespace llzk::component;
 using namespace llzk::felt;
 using namespace llzk::function;
 
@@ -351,8 +353,8 @@ newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionT
 ConversionTarget newBaseTarget(MLIRContext *ctx) {
   ConversionTarget target(*ctx);
   target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, felt::FeltDialect, include::IncludeDialect,
-      function::FunctionDialect, arith::ArithDialect, scf::SCFDialect>();
+      LLZKDialect, array::ArrayDialect, component::StructDialect, felt::FeltDialect,
+      function::FunctionDialect, include::IncludeDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   return target;
 }
@@ -609,8 +611,8 @@ class StructCloner {
             diag.attachNote(opLoc) << "see current operation: " << *op;
           }
           diag.attachNote(UnknownLoc::get(getContext()))
-              << "when instantiating " << StructDefOp::getOperationName() << " parameter \"" << sym
-              << "\" for this call";
+              << "when instantiating '" << StructDefOp::getOperationName() << "' parameter \""
+              << sym << "\" for this call";
           diagnostics.push_back(std::move(diag));
         }
         replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, origResTy);
@@ -1137,6 +1139,7 @@ public:
     }
     LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldTypeFromWrite] replaced " << op);
     DictionaryAttr attrs = op->getDiscardableAttrDictionary();
+    // TODO: is the problem caused by replacing this op and losing the attribute?
     FieldDefOp newOp = replaceOpWithNewOp<FieldDefOp>(rewriter, op, op.getSymName(), newType);
     newOp->setDiscardableAttrs(attrs);
     LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');

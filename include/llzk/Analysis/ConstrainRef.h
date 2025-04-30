@@ -11,6 +11,7 @@
 
 #include "llzk/Analysis/AbstractLatticeValue.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/Hash.h"
@@ -32,16 +33,18 @@ class ConstrainRefIndex {
   using IndexRange = std::pair<mlir::APInt, mlir::APInt>;
 
 public:
-  explicit ConstrainRefIndex(SymbolLookupResult<FieldDefOp> f) : index(f) {}
+  explicit ConstrainRefIndex(SymbolLookupResult<component::FieldDefOp> f) : index(f) {}
   explicit ConstrainRefIndex(mlir::APInt i) : index(i) {}
   explicit ConstrainRefIndex(int64_t i) : index(toAPInt(i)) {}
   ConstrainRefIndex(mlir::APInt low, mlir::APInt high) : index(IndexRange {low, high}) {}
   explicit ConstrainRefIndex(IndexRange r) : index(r) {}
 
-  bool isField() const { return std::holds_alternative<SymbolLookupResult<FieldDefOp>>(index); }
-  FieldDefOp getField() const {
+  bool isField() const {
+    return std::holds_alternative<SymbolLookupResult<component::FieldDefOp>>(index);
+  }
+  component::FieldDefOp getField() const {
     ensure(isField(), "ConstrainRefIndex: field requested but not contained");
-    return std::get<SymbolLookupResult<FieldDefOp>>(index).get();
+    return std::get<SymbolLookupResult<component::FieldDefOp>>(index).get();
   }
 
   bool isIndex() const { return std::holds_alternative<mlir::APInt>(index); }
@@ -73,7 +76,7 @@ public:
         auto r = c.getIndexRange();
         return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
       } else {
-        return OpHash<FieldDefOp> {}(c.getField());
+        return OpHash<component::FieldDefOp> {}(c.getField());
       }
     }
   };
@@ -86,7 +89,7 @@ private:
   /// 2. An index into an array
   /// 3. A half-open range of indices into an array, for when we're unsure about a specifc index
   /// Likely, this will be from [0, size) at this point.
-  std::variant<SymbolLookupResult<FieldDefOp>, mlir::APInt, IndexRange> index;
+  std::variant<SymbolLookupResult<component::FieldDefOp>, mlir::APInt, IndexRange> index;
 };
 
 static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefIndex &rhs) {
@@ -120,8 +123,9 @@ class ConstrainRef {
   /// This produces refs for composite types (e.g., full structs and full arrays)
   /// as well as individual fields and constants.
   static std::vector<ConstrainRef> getAllConstrainRefs(
-      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, SymbolLookupResult<StructDefOp> s,
-      mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields
+      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod,
+      SymbolLookupResult<component::StructDefOp> s, mlir::BlockArgument blockArg,
+      std::vector<ConstrainRefIndex> fields
   );
 
   /// Produce all possible ConstraintRefs that are present starting from the given BlockArgument.
@@ -131,7 +135,7 @@ class ConstrainRef {
 
 public:
   /// Produce all possible ConstraintRefs that are present from the struct's constrain function.
-  static std::vector<ConstrainRef> getAllConstrainRefs(StructDefOp structDef);
+  static std::vector<ConstrainRef> getAllConstrainRefs(component::StructDefOp structDef);
 
   explicit ConstrainRef(mlir::BlockArgument b)
       : blockArg(b), fieldRefs(), constantVal(std::nullopt) {}

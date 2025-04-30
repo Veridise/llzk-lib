@@ -35,11 +35,11 @@ class LLZK_Function_Op<string mnemonic, list<Trait> traits = []>
 //===----------------------------------------------------------------------===//
 
 def FuncDefOp
-    : LLZK_Function_Op<
-          "def", [ParentOneOf<["::mlir::ModuleOp", "::llzk::StructDefOp"]>,
-                  DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
-                  AutomaticAllocationScope, FunctionOpInterface,
-                  IsolatedFromAbove]> {
+    : LLZK_Function_Op<"def", [ParentOneOf<["::mlir::ModuleOp",
+                                            "::llzk::component::StructDefOp"]>,
+                               DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                               AffineScope, AutomaticAllocationScope,
+                               FunctionOpInterface, IsolatedFromAbove]> {
   // NOTE: Cannot have SymbolTable trait because that would cause global
   // functions without a body to produce "Operations with a 'SymbolTable' must
   // have exactly one block"
@@ -63,7 +63,7 @@ def FuncDefOp
     ```llzk
     // External function definitions.
     function.def private @abort()
-    function.def private @scribble(!array.array<5 x !felt.felt>, !llzk.struct<@Hello>) -> i1
+    function.def private @scribble(!array.array<5 x !felt.felt>, !struct.struct<@Hello>) -> i1
 
     // A function that returns its argument twice:
     function.def @count(%x: !felt.felt) -> (!felt.felt, !felt.felt) {
@@ -71,7 +71,7 @@ def FuncDefOp
     }
 
     // Function definition within a component
-    llzk.struct @NonZero {
+    struct.def @NonZero {
       function.def @compute(%a: !felt.felt) { return }
       function.def @constrain(%a: !felt.felt) { return }
     }
@@ -189,7 +189,7 @@ def FuncDefOp
     inline bool nameIsConstrain() { return FUNC_NAME_CONSTRAIN == getSymName(); }
 
     /// Return `true` iff the function is within a StructDefOp
-    bool isInStruct() { return ::llzk::isInStruct(*this); }
+    bool isInStruct() { return ::llzk::component::isInStruct(*this); }
 
     /// Return `true` iff the function is within a StructDefOp and named `FUNC_NAME_COMPUTE`.
     inline bool isStructCompute() { return isInStruct() && nameIsCompute(); }
@@ -198,7 +198,7 @@ def FuncDefOp
     inline bool isStructConstrain() { return isInStruct() && nameIsConstrain(); }
 
     /// Assuming the name is `FUNC_NAME_COMPUTE`, return the single StructType result.
-    ::llzk::StructType getSingleResultTypeOfCompute();
+    ::llzk::component::StructType getSingleResultTypeOfCompute();
   }];
 
   let hasCustomAssemblyFormat = 1;
@@ -260,12 +260,12 @@ def CallOp : LLZK_Function_Op<
     Example:
     ```llzk
     // Call a global function defined in the root module.
-    function.call @do_stuff(%0) : (!llzk.struct<@Bob>) -> ()
+    function.call @do_stuff(%0) : (!struct.struct<@Bob>) -> ()
     %1, %2 = function.call @split(%x) : (index) -> (index, index)
 
     // Call a function within a component
-    %2 = function.call @OtherStruct::@compute(%3, %4) : (index, index) -> !llzk.struct<@OtherStruct>
-    function.call @OtherStruct::@constrain(%5, %6) : (!llzk.struct<@OtherStruct>, !felt.felt) -> ()
+    %2 = function.call @OtherStruct::@compute(%3, %4) : (index, index) -> !struct.struct<@OtherStruct>
+    function.call @OtherStruct::@constrain(%5, %6) : (!struct.struct<@OtherStruct>, !felt.felt) -> ()
     ```
 
     When the return StructType of a `compute()` function uses AffineMapAttr to
@@ -276,7 +276,7 @@ def CallOp : LLZK_Function_Op<
     Examples:
     ```llzk
     #M = affine_map<(i)[] -> (5*i+1)>
-    %r = function.call @A::@compute(%x){(%i)} : (!felt.felt) -> !llzk.struct<@A<[#M]>>
+    %r = function.call @A::@compute(%x){(%i)} : (!felt.felt) -> !struct.struct<@A<[#M]>>
     ```
   }];
 
@@ -349,7 +349,7 @@ def CallOp : LLZK_Function_Op<
     bool calleeIsStructConstrain();
 
     /// Assuming the callee is `FUNC_NAME_COMPUTE`, return the single StructType result.
-    ::llzk::StructType getSingleResultTypeOfCompute();
+    ::llzk::component::StructType getSingleResultTypeOfCompute();
   }];
 
   let assemblyFormat = [{
