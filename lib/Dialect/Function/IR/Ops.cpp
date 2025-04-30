@@ -235,14 +235,6 @@ LogicalResult FuncDefOp::verify() {
   return success();
 }
 
-LogicalResult FuncDefOp::verifyRegions() {
-  if (hasAllowConstraintAttr()) {
-    // Check: When constraints are allowed, casts on Signals are not allowed.
-    return success(); // TODO-IAN: cast check
-  }
-  return success();
-}
-
 namespace {
 
 LogicalResult

@@ -210,7 +210,6 @@ def FuncDefOp
 
   let hasCustomAssemblyFormat = 1;
   let hasVerifier = 1;
-  let hasRegionVerifier = 1;
 }
 
 //===----------------------------------------------------------------------===//

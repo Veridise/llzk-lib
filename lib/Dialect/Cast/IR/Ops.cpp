@@ -36,6 +36,11 @@ namespace llzk::cast {
 //===------------------------------------------------------------------===//
 
 // TODO-IAN: Remove this once the check is added to the FuncDefOp region verifier.
+// COM-TIM: Casting a !Signal is a witness gen operation. So, if there is a !Signal cast, then the
+// function must have `hasAllowWitnessAttr()==true`. That verification should still live here rather
+// than moving to the other location we has considered. You just need to slightly change the
+// implementation below.
+//
 // LogicalResult FeltToIndexOp::verify() {
 //   if (auto parentOr = getParentOfType<FuncDefOp>(*this);
 //       succeeded(parentOr) && parentOr->isStructConstrain()) {
