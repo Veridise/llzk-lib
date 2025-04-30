@@ -413,9 +413,11 @@ LogicalResult StructDefOp::verifyRegions() {
     }
   }
 
-  // ASSERT: The `InitAllowConstraintsAttrs` trait on StructDefOp set the attributes correctly.
-  assert(foundConstrain->hasAllowConstraintsAttr());
-  assert(!foundCompute->hasAllowConstraintsAttr());
+  // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly.
+  assert(foundConstrain->hasAllowConstraintAttr());
+  assert(!foundCompute->hasAllowConstraintAttr());
+  assert(!foundConstrain->hasAllowWitnessAttr());
+  assert(foundCompute->hasAllowWitnessAttr());
 
   // Verify parameter types are valid. Skip the first parameter of the "constrain" function; it is
   // already checked via verifyFuncTypeConstrain() in Function/IR/Ops.cpp.
@@ -551,7 +553,7 @@ void FieldDefOp::build(
 
 void FieldDefOp::setPublicAttr(bool newValue) {
   if (newValue) {
-    getOperation()->setAttr(PublicAttr::name, PublicAttr::get(getContext()));
+    getOperation()->setAttr(PublicAttr::name, UnitAttr::get(getContext()));
   } else {
     getOperation()->removeAttr(PublicAttr::name);
   }

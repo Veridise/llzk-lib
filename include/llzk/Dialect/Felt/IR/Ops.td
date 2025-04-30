@@ -13,13 +13,13 @@
 include "llzk/Dialect/Felt/IR/Dialect.td"
 include "llzk/Dialect/Felt/IR/Types.td"
 include "llzk/Dialect/Felt/IR/Attrs.td"
+include "llzk/Dialect/Function/IR/OpTraits.td"
 include "llzk/Dialect/LLZK/IR/OpsBase.td"
-include "mlir/IR/OpAsmInterface.td"
-include "llzk/Util/OpHelper.td"
 
+include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
-include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/IR/SymbolInterfaces.td"
+include "mlir/Interfaces/SideEffectInterfaces.td"
 
 //===------------------------------------------------------------------===//
 // Op Classes
@@ -42,8 +42,8 @@ class Felt_UnaryOpBase<string mnemonic, Type resultType,
 
 def LLZK_FeltConstantOp
     : Felt_Op<"const", [ConstantLike, Pure,
-                            DeclareOpInterfaceMethods<
-                                OpAsmOpInterface, ["getAsmResultNames"]>]> {
+                        DeclareOpInterfaceMethods<
+                            OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "field element constant";
   let description = [{
     This operation produces a felt-typed SSA value holding an integer constant.
@@ -63,8 +63,8 @@ def LLZK_FeltConstantOp
 
 def LLZK_FeltNonDetOp
     : Felt_Op<"nondet", [ConstantLike, Pure,
-                             DeclareOpInterfaceMethods<
-                                 OpAsmOpInterface, ["getAsmResultNames"]>]> {
+                         DeclareOpInterfaceMethods<
+                             OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "uninitialized field element";
   let description = [{
     This operation produces a felt-typed SSA value without a specified value.
@@ -116,40 +116,40 @@ def LLZK_NegFeltOp : Felt_UnaryOpBase<"neg", LLZK_FeltType> {
   let description = [{}];
 }
 
-def LLZK_InvFeltOp : Felt_UnaryOpBase<"inv", LLZK_FeltType, [ComputeOnly]> {
+def LLZK_InvFeltOp : Felt_UnaryOpBase<"inv", LLZK_FeltType, [WitnessGen]> {
   let summary = "inverse operator for field elements";
   let description = [{}];
 }
 
 def LLZK_AndFeltOp
-    : Felt_BinaryOpBase<"bit_and", LLZK_FeltType, [ComputeOnly, Commutative]> {
+    : Felt_BinaryOpBase<"bit_and", LLZK_FeltType, [WitnessGen, Commutative]> {
   let summary = "bitwise AND operator for field elements";
   let description = [{}];
 }
 
 def LLZK_OrFeltOp
-    : Felt_BinaryOpBase<"bit_or", LLZK_FeltType, [ComputeOnly, Commutative]> {
+    : Felt_BinaryOpBase<"bit_or", LLZK_FeltType, [WitnessGen, Commutative]> {
   let summary = "bitwise OR operator for field elements";
   let description = [{}];
 }
 
 def LLZK_XorFeltOp
-    : Felt_BinaryOpBase<"bit_xor", LLZK_FeltType, [ComputeOnly, Commutative]> {
+    : Felt_BinaryOpBase<"bit_xor", LLZK_FeltType, [WitnessGen, Commutative]> {
   let summary = "bitwise XOR operator for field elements";
   let description = [{}];
 }
 
-def LLZK_NotFeltOp : Felt_UnaryOpBase<"bit_not", LLZK_FeltType, [ComputeOnly]> {
+def LLZK_NotFeltOp : Felt_UnaryOpBase<"bit_not", LLZK_FeltType, [WitnessGen]> {
   let summary = "bit flip operator for field elements";
   let description = [{}];
 }
 
-def LLZK_ShlFeltOp : Felt_BinaryOpBase<"shl", LLZK_FeltType, [ComputeOnly]> {
+def LLZK_ShlFeltOp : Felt_BinaryOpBase<"shl", LLZK_FeltType, [WitnessGen]> {
   let summary = "left shift operator for field elements";
   let description = [{}];
 }
 
-def LLZK_ShrFeltOp : Felt_BinaryOpBase<"shr", LLZK_FeltType, [ComputeOnly]> {
+def LLZK_ShrFeltOp : Felt_BinaryOpBase<"shr", LLZK_FeltType, [WitnessGen]> {
   let summary = "right shift operator for field elements";
   let description = [{}];
 }

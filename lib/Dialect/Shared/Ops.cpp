@@ -1,4 +1,4 @@
-//===-- OpHelper.cpp --------------------------------------------*- C++ -*-===//
+//===-- Ops.cpp -------------------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -9,7 +9,7 @@
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Util/OpHelper.h"
+#include "llzk/Dialect/Shared/Ops.h"
 
 using namespace mlir;
 
@@ -41,18 +41,16 @@ bool isInStructFunctionNamed(Operation *op, char const *funcName) {
   return false;
 }
 
-template <typename TypeClass> LogicalResult InStruct<TypeClass>::verifyTrait(Operation *op) {
-  return verifyInStruct(op);
-}
-
 // Again, only valid/implemented for StructDefOp
-template <> LogicalResult InitAllowConstraintsAttrs<StructDefOp>::verifyTrait(Operation *structOp) {
+template <> LogicalResult SetFuncAllowAttrs<StructDefOp>::verifyTrait(Operation *structOp) {
   assert(llvm::isa<StructDefOp>(structOp));
   llvm::cast<StructDefOp>(structOp).getBody().walk([](FuncDefOp funcDef) {
     if (funcDef.nameIsConstrain()) {
-      funcDef.setAllowConstraintsAttr();
+      funcDef.setAllowConstraintAttr();
+      funcDef.setAllowWitnessAttr(false);
     } else if (funcDef.nameIsCompute()) {
-      funcDef.setAllowConstraintsAttr(false);
+      funcDef.setAllowConstraintAttr(false);
+      funcDef.setAllowWitnessAttr();
     }
   });
   return success();

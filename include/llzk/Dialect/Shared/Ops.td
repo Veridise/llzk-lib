@@ -1,4 +1,4 @@
-//===-- OpHelper.td ----------------------------------------*- tablegen -*-===//
+//===-- Ops.td - Custom Trait classes for ops --------------*- tablegen -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_OP_HELPER
-#define LLZK_OP_HELPER
+#ifndef LLZK_SHARED_OP_HELPER
+#define LLZK_SHARED_OP_HELPER
 
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
@@ -127,7 +127,7 @@ class ArrayTypeElemsUnifyWithResultCustomInfer<string arrayArg>
 //===------------------------------------------------------------------===//
 
 class NaryOpBase<Dialect dialect, string mnemonic, string defaultTypeBuilder,
-                      list<Trait> traits = []> : Op<dialect, mnemonic, traits> {
+                 list<Trait> traits = []> : Op<dialect, mnemonic, traits> {
   let extraClassDeclaration = [{
     static ::mlir::ParseResult parseInferredOrParsedType(
         ::mlir::OpAsmParser &parser, ::mlir::Type &opType, bool isFirst
@@ -156,4 +156,4 @@ class NaryOpBase<Dialect dialect, string mnemonic, string defaultTypeBuilder,
   }];
 }
 
-#endif // LLZK_OP_HELPER
+#endif // LLZK_SHARED_OP_HELPER

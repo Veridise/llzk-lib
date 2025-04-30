@@ -174,7 +174,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    function.def @compute(
 // CHECK-SAME:                  %[[V_0:[0-9a-zA-Z_\.]+]]: !array.array<@A x i1>,
 // CHECK-SAME:                  %[[V_1:[0-9a-zA-Z_\.]+]]: !array.array<@B x i1>
-// CHECK-SAME:                  ) -> !llzk.struct<@UnificationInDims<[@A, @B]>> {
+// CHECK-SAME:                  ) -> !llzk.struct<@UnificationInDims<[@A, @B]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = new_struct : <@UnificationInDims<[@A, @B]>>
 // CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x i1>
 // CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
@@ -186,7 +186,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    function.def @constrain(
 // CHECK-SAME:                    %[[V_6:[0-9a-zA-Z_\.]+]]: !llzk.struct<@UnificationInDims<[@A, @B]>>,
 // CHECK-SAME:                    %[[V_7:[0-9a-zA-Z_\.]+]]: !array.array<@A x i1>,
-// CHECK-SAME:                    %[[V_8:[0-9a-zA-Z_\.]+]]: !array.array<@B x i1>) attributes {function.allow_constraints = #function.allow_constraints} {
+// CHECK-SAME:                    %[[V_8:[0-9a-zA-Z_\.]+]]: !array.array<@B x i1>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -210,7 +210,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    function.def @compute(
 // CHECK-SAME:                  %[[V_0:[0-9a-zA-Z_\.]+]]: !array.array<3 x !llzk.tvar<@A>>,
 // CHECK-SAME:                  %[[V_1:[0-9a-zA-Z_\.]+]]: !array.array<3 x !llzk.tvar<@B>>
-// CHECK-SAME:                  ) -> !llzk.struct<@UnificationInTypes<[@A, @B]>> {
+// CHECK-SAME:                  ) -> !llzk.struct<@UnificationInTypes<[@A, @B]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = new_struct : <@UnificationInTypes<[@A, @B]>>
 // CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x i1>
 // CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
@@ -222,7 +222,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    function.def @constrain(
 // CHECK-SAME:                    %[[V_6:[0-9a-zA-Z_\.]+]]: !llzk.struct<@UnificationInTypes<[@A, @B]>>,
 // CHECK-SAME:                    %[[V_7:[0-9a-zA-Z_\.]+]]: !array.array<3 x !llzk.tvar<@A>>,
-// CHECK-SAME:                    %[[V_8:[0-9a-zA-Z_\.]+]]: !array.array<3 x !llzk.tvar<@B>>) attributes {function.allow_constraints = #function.allow_constraints} {
+// CHECK-SAME:                    %[[V_8:[0-9a-zA-Z_\.]+]]: !array.array<3 x !llzk.tvar<@B>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

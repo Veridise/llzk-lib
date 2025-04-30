@@ -35,7 +35,7 @@ namespace llzk::cast {
 // FeltToIndexOp
 //===------------------------------------------------------------------===//
 
-// TODO: Remove this once the check is added to the FuncDefOp region verifier.
+// TODO-IAN: Remove this once the check is added to the FuncDefOp region verifier.
 // LogicalResult FeltToIndexOp::verify() {
 //   if (auto parentOr = getParentOfType<FuncDefOp>(*this);
 //       succeeded(parentOr) && parentOr->isStructConstrain()) {

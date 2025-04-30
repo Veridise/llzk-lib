@@ -4,6 +4,7 @@ set(LLZK_DEP_DIALECT_LIBS
     PARENT_SCOPE)
 
 # All dialects
+add_subdirectory(Shared)
 add_subdirectory(Array)
 add_subdirectory(Cast)
 add_subdirectory(Felt)

@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_ATTRS
-#define LLZK_ATTRS
+#ifndef LLZK_FUNCTION_ATTRS
+#define LLZK_FUNCTION_ATTRS
 
 include "llzk/Dialect/Function/IR/Dialect.td"
 
@@ -20,12 +20,22 @@ class LLZK_Function_Attr<string name, string attrMnemonic,
   let mnemonic = attrMnemonic;
 }
 
-def LLZK_AllowConstraintsAttr
-    : LLZK_Function_Attr<"AllowConstraints", "allow_constraints"> {
-  let summary = "Marks functions that can emit constraints.";
+def LLZK_AllowConstraintAttr
+    : LLZK_Function_Attr<"AllowConstraint", "allow_constraint"> {
+  let summary = "Marks functions to allow `ConstraintGen` ops";
   let description = [{
-    A unit attribute for a function definition to indicate that emit constraint ops are allowed within its body.
+    A unit attribute that can be attached to a `FuncDefOp` to indicate that ops
+    marked with `ConstraintGen` (ex: emit ops) are allowed within its body.
   }];
 }
 
-#endif // LLZK_ATTRS
+def LLZK_AllowWitnessAttr
+    : LLZK_Function_Attr<"AllowWitness", "allow_witness"> {
+  let summary = "Marks functions to allow `WitnessGen` ops";
+  let description = [{
+    A unit attribute that can be attached to a `FuncDefOp` to indicate that ops
+    marked with `WitnessGen` (i.e. boolean and bitwise ops) are allowed within its body.
+  }];
+}
+
+#endif // LLZK_FUNCTION_ATTRS

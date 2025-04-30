@@ -10,8 +10,8 @@
 #pragma once
 
 #include "llzk/Dialect/Function/IR/Attrs.h"
+#include "llzk/Dialect/Shared/Ops.h"
 #include "llzk/Util/Constants.h"
-#include "llzk/Util/OpHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Bytecode/BytecodeOpInterface.h>

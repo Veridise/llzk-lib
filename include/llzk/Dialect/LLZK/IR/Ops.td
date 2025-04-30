@@ -10,17 +10,18 @@
 #ifndef LLZK_OPS
 #define LLZK_OPS
 
+include "llzk/Dialect/LLZK/IR/Attrs.td"
+include "llzk/Dialect/LLZK/IR/Types.td"
+include "llzk/Dialect/LLZK/IR/OpsBase.td"
+include "llzk/Dialect/Array/IR/Types.td"
+include "llzk/Dialect/Function/IR/OpTraits.td"
+
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/RegionKindInterface.td"
 include "mlir/IR/SymbolInterfaces.td"
-
-include "llzk/Dialect/LLZK/IR/Attrs.td"
-include "llzk/Dialect/LLZK/IR/Types.td"
-include "llzk/Dialect/LLZK/IR/OpsBase.td"
-include "llzk/Dialect/Array/IR/Types.td"
 
 //===------------------------------------------------------------------===//
 // Basic constructs
@@ -137,9 +138,7 @@ def LLZK_GlobalReadOp : LLZK_GlobalRefOp<"readg"> {
   }];
 }
 
-def LLZK_GlobalWriteOp
-    : LLZK_GlobalRefOp<
-          "writeg", [InStructFunctionNamed<"::llzk::FUNC_NAME_COMPUTE">]> {
+def LLZK_GlobalWriteOp : LLZK_GlobalRefOp<"writeg", [WitnessGen]> {
   let summary = "write value to a global";
   let description = [{
     This operation writes a value to a named global.
@@ -160,7 +159,7 @@ def LLZK_GlobalWriteOp
 def LLZK_StructDefOp
     : LLZK_Op<"struct", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
                          IsolatedFromAbove, GraphRegionNoTerminator,
-                         OpAsmOpInterface, InitAllowConstraintsAttrs,
+                         OpAsmOpInterface, SetFuncAllowAttrs,
                          DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "circuit component definition";
   let description = [{
@@ -259,24 +258,6 @@ def LLZK_StructDefOp
   }];
 
   let hasRegionVerifier = 1;
-}
-
-def LLZK_ConstReadOp
-    : LLZK_Op<
-          "read_const", [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-  let summary = "read value of a struct parameter";
-  let description = [{
-    This operation reads the value from the named constant parameter of
-    the struct/component in which this op appears. The op itself puts
-    some restriction on the type of this value, but leaves it to a later
-    type-checking pass to ensure the struct parameters are instantiated
-    with types matching the uses of the parameter within the struct.
-  }];
-
-  let arguments = (ins FlatSymbolRefAttr:$const_name);
-  let results = (outs ConstReadType:$val);
-
-  let assemblyFormat = [{ $const_name `:` type($val) attr-dict }];
 }
 
 def LLZK_FieldDefOp
@@ -381,7 +362,7 @@ def LLZK_FieldReadOp
   let hasVerifier = 1;
 }
 
-def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef", [ComputeOnly]> {
+def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef", [WitnessGen]> {
   let summary = "write value to a struct field";
   let description = [{
     This operation writes a value to a named field in a struct/component.
@@ -397,7 +378,7 @@ def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef", [ComputeOnly]> {
 }
 
 def LLZK_CreateStructOp
-    : LLZK_Op<"new_struct", [ComputeOnly,
+    : LLZK_Op<"new_struct", [WitnessGen,
                              DeclareOpInterfaceMethods<
                                  OpAsmOpInterface, ["getAsmResultNames"]>,
                              DeclareOpInterfaceMethods<SymbolUserOpInterface>,
@@ -418,14 +399,31 @@ def LLZK_CreateStructOp
   let assemblyFormat = [{ `:` type($result) attr-dict }];
 }
 
+def LLZK_ConstReadOp
+    : LLZK_Op<
+          "read_const", [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+  let summary = "read value of a struct parameter";
+  let description = [{
+    This operation reads the value from the named constant parameter of
+    the struct/component in which this op appears. The op itself puts
+    some restriction on the type of this value, but leaves it to a later
+    type-checking pass to ensure the struct parameters are instantiated
+    with types matching the uses of the parameter within the struct.
+  }];
+
+  let arguments = (ins FlatSymbolRefAttr:$const_name);
+  let results = (outs ConstReadType:$val);
+
+  let assemblyFormat = [{ $const_name `:` type($val) attr-dict }];
+}
+
 //===------------------------------------------------------------------===//
 // Constraint emit operations
 //===------------------------------------------------------------------===//
 
 class LLZK_EmitOp<string mnemonic, list<Trait> traits = []>
     : LLZK_Op<mnemonic,
-              traits#[ConstraintOpInterface,
-                      InStructFunctionNamed<"::llzk::FUNC_NAME_CONSTRAIN">,
+              traits#[ConstraintOpInterface, ConstraintGen,
                       DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
 
   let assemblyFormat = [{
@@ -532,7 +530,7 @@ def LLZK_CmpOp : LLZK_Op<"cmp", [Pure]> {
 // Boolean operators
 //===------------------------------------------------------------------===//
 
-def LLZK_AndBoolOp : LLZK_BinaryOpBase<"and", I1, [ComputeOnly, Commutative]> {
+def LLZK_AndBoolOp : LLZK_BinaryOpBase<"and", I1, [WitnessGen, Commutative]> {
   let summary = "logical AND operator";
   let description = [{
     This operation computes the logical AND (i.e. conjunction) of two `i1` (i.e. boolean)
@@ -540,7 +538,7 @@ def LLZK_AndBoolOp : LLZK_BinaryOpBase<"and", I1, [ComputeOnly, Commutative]> {
   }];
 }
 
-def LLZK_OrBoolOp : LLZK_BinaryOpBase<"or", I1, [ComputeOnly, Commutative]> {
+def LLZK_OrBoolOp : LLZK_BinaryOpBase<"or", I1, [WitnessGen, Commutative]> {
   let summary = "logical OR operator";
   let description = [{
     This operation computes the logical OR (i.e. disjunction) of two `i1` (i.e. boolean)
@@ -548,7 +546,7 @@ def LLZK_OrBoolOp : LLZK_BinaryOpBase<"or", I1, [ComputeOnly, Commutative]> {
   }];
 }
 
-def LLZK_XorBoolOp : LLZK_BinaryOpBase<"xor", I1, [ComputeOnly, Commutative]> {
+def LLZK_XorBoolOp : LLZK_BinaryOpBase<"xor", I1, [WitnessGen, Commutative]> {
   let summary = "logical XOR operator";
   let description = [{
     This operation computes the logical XOR (i.e. exclusive disjunction) of two `i1` (i.e. boolean)
@@ -556,7 +554,7 @@ def LLZK_XorBoolOp : LLZK_BinaryOpBase<"xor", I1, [ComputeOnly, Commutative]> {
   }];
 }
 
-def LLZK_NotBoolOp : LLZK_UnaryOpBase<"not", I1, [ComputeOnly]> {
+def LLZK_NotBoolOp : LLZK_UnaryOpBase<"not", I1, [WitnessGen]> {
   let summary = "logical NOT operator";
   let description = [{
     This operation computes the logical NOT (i.e. negation) of an `i1` (i.e. boolean)

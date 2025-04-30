@@ -120,7 +120,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !llzk.struct<@constrain_calls_compute>) {
-      // expected-error@+1 {{'function.call' op targeting "@compute" only valid within a 'function.def' named "@compute" within a 'llzk.struct' definition}}
+      // expected-error@+1 {{'function.call' op targeting "@compute" only valid within a 'function.def' with 'function.allow_witness' attribute}}
       function.call @constrain_calls_compute::@compute() : () -> !llzk.struct<@constrain_calls_compute>
       function.return
     }
@@ -144,7 +144,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @globalFunc() {
-    // expected-error@+1 {{'function.call' op targeting "@compute" only valid within a 'function.def' named "@compute" within a 'llzk.struct' definition}}
+    // expected-error@+1 {{'function.call' op targeting "@compute" only valid within a 'function.def' with 'function.allow_witness' attribute}}
     function.call @global_calls_compute::@compute() : () -> !llzk.struct<@global_calls_compute>
     function.return
   }
@@ -186,7 +186,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !felt.felt) {
-      // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+      // expected-error@+1 {{'felt.inv' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
       %c = felt.inv %a
       function.return
     }
@@ -201,7 +201,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !llzk.struct<@inv_in_constrain>, %a: !felt.felt) {
-      // expected-error@+1 {{'llzk.inv' op is ComputeOnly so it cannot be used within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+      // expected-error@+1 {{'felt.inv' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
       %c = felt.inv %a
       function.return
     }
@@ -621,7 +621,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// TODO: re-enable these tests after updating the verifyRegions method of FuncDefOp
+// TODO-IAN: re-enable these tests after updating the verifyRegions method of FuncDefOp
 // -----
 
 // XFAIL: *

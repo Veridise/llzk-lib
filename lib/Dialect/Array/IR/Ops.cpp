@@ -32,9 +32,9 @@
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Array/IR/Ops.cpp.inc"
 
-namespace llzk::array {
-
 using namespace mlir;
+
+namespace llzk::array {
 
 //===------------------------------------------------------------------===//
 // CreateArrayOp

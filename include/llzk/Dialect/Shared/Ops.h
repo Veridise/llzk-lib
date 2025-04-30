@@ -1,4 +1,4 @@
-//===-- OpHelper.h ----------------------------------------------*- C++ -*-===//
+//===-- Ops.h ---------------------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -49,19 +49,10 @@ bool isInStruct(mlir::Operation *op);
 /// containing that StructDefOp. Otherwise emit an error and return a failure result.
 mlir::FailureOr<StructDefOp> verifyInStruct(mlir::Operation *op);
 
-/// This class provides a verifier for ops that are expected to have
-/// an ancestor llzk::StructDefOp.
-template <typename TypeClass>
-class InStruct : public mlir::OpTrait::TraitBase<TypeClass, InStruct> {
-public:
-  static mlir::LogicalResult verifyTrait(mlir::Operation *op);
-};
-
-/// Only valid/implemented for StructDefOp. Sets the proper AllowConstraintsAttrs on the functions
+/// Only valid/implemented for StructDefOp. Sets the proper AllowConstraintAttrs on the functions
 /// defined within the StructDefOp.
 template <typename TypeClass>
-class InitAllowConstraintsAttrs
-    : public mlir::OpTrait::TraitBase<TypeClass, InitAllowConstraintsAttrs> {
+class SetFuncAllowAttrs : public mlir::OpTrait::TraitBase<TypeClass, SetFuncAllowAttrs> {
 public:
   static mlir::LogicalResult verifyTrait(mlir::Operation *op);
 };
@@ -83,17 +74,6 @@ mlir::LogicalResult verifyInStructFunctionNamed(
                    << "' named \"@" << FuncName << "\" within a '"
                    << getOperationName<StructDefOp>() << "' definition";
 }
-
-/// This class provides a verifier for ops that are expecting to have an ancestor FuncDefOp with the
-/// given name.
-template <char const *FuncName> struct InStructFunctionNamed {
-  template <typename TypeClass> class Impl : public mlir::OpTrait::TraitBase<TypeClass, Impl> {
-  public:
-    static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
-      return verifyInStructFunctionNamed<FuncName, 0>(op, [] { return llvm::SmallString<0>(); });
-    }
-  };
-};
 
 /// Produces errors if there is an inconsistency in the various attributes/values that are used to
 /// support affine map instantiation in the Op marked with this Trait.
@@ -131,24 +111,6 @@ template <int OperandSegmentIndex> struct VerifySizesForMultiAffineOps {
       }
     }
   };
-};
-
-/// This class provides a verifier for ops that cannot appear within a "constrain" function.
-template <typename TypeClass>
-class ComputeOnly : public mlir::OpTrait::TraitBase<TypeClass, ComputeOnly> {
-public:
-  static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
-    return !isInStructFunctionNamed(op, FUNC_NAME_CONSTRAIN)
-               ? mlir::success()
-               : op->emitOpError(
-                 ) << "is ComputeOnly so it cannot be used within a '"
-                   << "function.def" // TODO: refactor the computeonly attribute to avoid this issue
-                   //  << getOperationName<function::FuncDefOp>()
-                   << "' named \"@" << FUNC_NAME_CONSTRAIN << "\" within a '"
-                   << "llzk.struct"
-                   //  << getOperationName<StructDefOp>()
-                   << "' definition";
-  }
 };
 
 template <unsigned N>

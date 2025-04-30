@@ -217,13 +217,13 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'llzk.new_struct' op only valid within a 'llzk.struct' ancestor}}
+  // expected-error@+1 {{'llzk.new_struct' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
   %0 = llzk.new_struct : !llzk.struct<@SomeComponent>
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   llzk.struct @ComponentW {
-    // expected-error@+1 {{'llzk.new_struct' op invalid operation in 'llzk.struct'; only 'llzk.field' and 'function.def' operations are permitted}}
+    // expected-error@+1 {{'llzk.new_struct' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
     llzk.new_struct : !llzk.struct<@ComponentW>
 
     function.def @compute() -> !llzk.struct<@ComponentW> {
@@ -261,7 +261,7 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !llzk.struct<@ComponentY>
     }
     function.def @constrain(%self: !llzk.struct<@ComponentY>)  {
-      // expected-error@+1 {{'llzk.new_struct' op is ComputeOnly so it cannot be used within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+      // expected-error@+1 {{'llzk.new_struct' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
       %0 = llzk.new_struct : !llzk.struct<@ComponentY>
       function.return
     }

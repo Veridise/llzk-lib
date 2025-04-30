@@ -15,8 +15,9 @@
 #ifndef LLZK_FUNC_OPS
 #define LLZK_FUNC_OPS
 
-include "llzk/Dialect/LLZK/IR/OpsBase.td"
 include "llzk/Dialect/Function/IR/Dialect.td"
+include "llzk/Dialect/Shared/Types.td"
+include "llzk/Dialect/Shared/Ops.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/SymbolInterfaces.td"
@@ -105,6 +106,7 @@ def FuncDefOp
       "::mlir::FunctionType":$type,
       CArg<"::llvm::ArrayRef<::mlir::NamedAttribute>", "{}">:$attrs,
       CArg<"::llvm::ArrayRef<::mlir::DictionaryAttr>", "{}">:$argAttrs)>];
+
   let extraClassDeclaration = [{
     static FuncDefOp create(::mlir::Location location, ::llvm::StringRef name, ::mlir::FunctionType type,
                          ::llvm::ArrayRef<::mlir::NamedAttribute> attrs = {});
@@ -130,13 +132,21 @@ def FuncDefOp
     /// compatible.
     void cloneInto(FuncDefOp dest, ::mlir::IRMapping &mapper);
 
-    /// Return `true` iff the function def has the `allow_constraints` attribute.
-    inline bool hasAllowConstraintsAttr() {
-      return getOperation()->hasAttr(llzk::function::AllowConstraintsAttr::name);
+    /// Return `true` iff the function def has the `allow_constraint` attribute.
+    inline bool hasAllowConstraintAttr() {
+      return getOperation()->hasAttr(llzk::function::AllowConstraintAttr::name);
     }
 
-    /// Add (resp. remove) the `allow_constraints` attribute to (resp. from) the function def.
-    void setAllowConstraintsAttr(bool newValue = true);
+    /// Add (resp. remove) the `allow_constraint` attribute to (resp. from) the function def.
+    void setAllowConstraintAttr(bool newValue = true);
+
+    /// Return `true` iff the function def has the `allow_witness` attribute.
+    inline bool hasAllowWitnessAttr() {
+      return getOperation()->hasAttr(llzk::function::AllowWitnessAttr::name);
+    }
+
+    /// Add (resp. remove) the `allow_witness` attribute to (resp. from) the function def.
+    void setAllowWitnessAttr(bool newValue = true);
 
     /// Return `true` iff the argument at the given index has `pub` attribute.
     bool hasArgPublicAttr(unsigned index);

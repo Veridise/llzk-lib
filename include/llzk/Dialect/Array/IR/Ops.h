@@ -11,11 +11,12 @@
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Dialect/Array/IR/Types.h"
-#include "llzk/Dialect/LLZK/IR/Types.h"
-#include "llzk/Util/OpHelper.h"
+#include "llzk/Dialect/Shared/Ops.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Location.h>
+#include <mlir/Interfaces/InferTypeOpInterface.h>
 
 // Include TableGen'd declarations
 #include "llzk/Dialect/Array/IR/OpInterfaces.h.inc"

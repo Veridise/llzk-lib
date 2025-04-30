@@ -17,12 +17,12 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // CHECK-LABEL: llzk.struct @ComponentA {
-// CHECK-NEXT:     function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !llzk.struct<@ComponentA> {
+// CHECK-NEXT:     function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !llzk.struct<@ComponentA> attributes {function.allow_witness} {
 // CHECK-NEXT:       %[[VAL_1:.*]] = new_struct : <@ComponentA>
 // CHECK-NEXT:       %[[VAL_2:.*]] = felt.const 1
 // CHECK-NEXT:       function.return %[[VAL_1]] : !llzk.struct<@ComponentA>
 // CHECK-NEXT:     }
-// CHECK-NEXT:     function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@ComponentA>, %[[VAL_4:.*]]: !felt.felt) attributes {function.allow_constraints = #function.allow_constraints} {
+// CHECK-NEXT:     function.def @constrain(%[[VAL_3:.*]]: !llzk.struct<@ComponentA>, %[[VAL_4:.*]]: !felt.felt) attributes {function.allow_constraint} {
 // CHECK-NEXT:       function.return
 // CHECK-NEXT:     }
 // CHECK-NEXT:   }

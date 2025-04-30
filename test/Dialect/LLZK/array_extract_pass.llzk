@@ -107,12 +107,12 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL: llzk.struct @Component01 {
 //CHECK-NEXT:    field @f : !array.array<2 x !felt.felt>
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.array<2 x !felt.felt>) -> !llzk.struct<@Component01> {
+//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.array<2 x !felt.felt>) -> !llzk.struct<@Component01> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Component01>
 //CHECK-NEXT:      writef %[[SELF]][@f] = %[[A0]] : <@Component01>, !array.array<2 x !felt.felt>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@Component01>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<2 x !felt.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
+//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component01>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<2 x !felt.felt>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@f] : <@Component01>, !array.array<2 x !felt.felt>
 //CHECK-NEXT:      emit_eq %[[A1]], %[[T0]] : !array.array<2 x !felt.felt>, !array.array<2 x !felt.felt>
 //CHECK-NEXT:      function.return
@@ -120,7 +120,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 //CHECK-LABEL: llzk.struct @Component02<[@N]> {
 //CHECK-NEXT:    field @g : !array.array<@N x !llzk.struct<@Component01>>
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.array<@N,2 x !felt.felt>) -> !llzk.struct<@Component02<[@N]>> {
+//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.array<@N,2 x !felt.felt>) -> !llzk.struct<@Component02<[@N]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = new_struct : <@Component02<[@N]>>
 //CHECK-NEXT:      %array = array.new  : <@N x !llzk.struct<@Component01>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
@@ -134,7 +134,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      writef %[[SELF]][@g] = %array : <@Component02<[@N]>>, !array.array<@N x !llzk.struct<@Component01>>
 //CHECK-NEXT:      function.return %[[SELF]] : !llzk.struct<@Component02<[@N]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component02<[@N]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<@N,2 x !felt.felt>) attributes {function.allow_constraints = #function.allow_constraints} {
+//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !llzk.struct<@Component02<[@N]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<@N,2 x !felt.felt>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = readf %[[SELF]][@g] : <@Component02<[@N]>>, !array.array<@N x !llzk.struct<@Component01>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = read_const @N : index

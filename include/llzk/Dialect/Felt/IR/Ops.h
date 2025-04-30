@@ -12,7 +12,7 @@
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
-#include "llzk/Util/OpHelper.h"
+#include "llzk/Dialect/Function/IR/OpTraits.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Location.h>

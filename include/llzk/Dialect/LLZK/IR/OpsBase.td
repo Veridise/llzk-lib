@@ -12,7 +12,7 @@
 
 include "llzk/Dialect/LLZK/IR/Types.td"
 include "llzk/Dialect/LLZK/IR/OpInterfaces.td"
-include "llzk/Util/OpHelper.td"
+include "llzk/Dialect/Shared/Ops.td"
 
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
@@ -24,28 +24,9 @@ include "mlir/IR/SymbolInterfaces.td"
 //===----------------------------------------------------------------------===//
 
 /// Only valid/implemented for StructDefOp. Sets the proper
-/// AllowConstraintsAttrs on the functions defined within the StructDefOp.
-def InitAllowConstraintsAttrs : NativeOpTrait<"InitAllowConstraintsAttrs">,
-                                StructuralOpTrait {
-  string cppNamespace = "::llzk";
-}
-
-/// Verifies that an Op marked with this Trait cannot be used within a
-/// "constrain()" function. However, this does not restrict it from being used
-/// within a free function since those can be called by a "compute()" function.
-/// If an Op must only be used within the immediate body of a "compute()"
-/// function, then `InStructFunctionNamed<"::llzk::FUNC_NAME_COMPUTE">` should
-/// be used instead.
-def ComputeOnly : NativeOpTrait<"ComputeOnly">, StructuralOpTrait {
-  string cppNamespace = "::llzk";
-}
-
-def InStruct : NativeOpTrait<"InStruct">, StructuralOpTrait {
-  string cppNamespace = "::llzk";
-}
-
-class InStructFunctionNamed<string name>
-    : ParamNativeOpTrait<"InStructFunctionNamed", name>, StructuralOpTrait {
+/// `AllowConstraintAttr` and `AllowWitnessAttr` on the functions defined within
+/// the StructDefOp.
+def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
   string cppNamespace = "::llzk";
 }
 
@@ -55,10 +36,10 @@ class InStructFunctionNamed<string name>
 
 // Note: `resultType.builderCall` must not be empty
 class BinaryOpBase<Dialect dialect, string mnemonic, Type resultType,
-                        list<Trait> traits = []>
+                   list<Trait> traits = []>
     : NaryOpBase<dialect, mnemonic, resultType.builderCall,
-                      traits#[Pure, TypeUnifyWithResult<"lhs">,
-                              TypeUnifyWithResult<"rhs">]> {
+                 traits#[Pure, TypeUnifyWithResult<"lhs">,
+                         TypeUnifyWithResult<"rhs">]> {
 
   let arguments = (ins VarTypeOr<resultType>:$lhs, VarTypeOr<resultType>:$rhs);
   let results = (outs resultType:$result);
@@ -73,9 +54,9 @@ class BinaryOpBase<Dialect dialect, string mnemonic, Type resultType,
 
 // Note: `resultType.builderCall` must not be empty
 class UnaryOpBase<Dialect dialect, string mnemonic, Type resultType,
-                       list<Trait> traits = []>
+                  list<Trait> traits = []>
     : NaryOpBase<dialect, mnemonic, resultType.builderCall,
-                      traits#[Pure, TypeUnifyWithResult<"operand">]> {
+                 traits#[Pure, TypeUnifyWithResult<"operand">]> {
 
   let arguments = (ins VarTypeOr<resultType>:$operand);
   let results = (outs resultType:$result);
@@ -86,7 +67,6 @@ class UnaryOpBase<Dialect dialect, string mnemonic, Type resultType,
       attr-dict
   }];
 }
-
 
 class LLZK_Op<string mnemonic, list<Trait> traits = []>
     : Op<LLZKDialect, mnemonic, traits>;

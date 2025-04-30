@@ -78,78 +78,78 @@ function.def @f_neg(%a: !felt.felt) -> !felt.felt {
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_inv(%a: !felt.felt) -> !felt.felt {
+function.def @f_inv(%a: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
   %c = felt.inv %a
   function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_inv
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.inv %[[A0]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_and(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+function.def @f_bit_and(%a: !felt.felt, %b: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
   %c = felt.bit_and %a, %b
   function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_bit_and
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_and %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_or(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+function.def @f_bit_or(%a: !felt.felt, %b: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
   %c = felt.bit_or %a, %b
   function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_bit_or
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_or %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_xor(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+function.def @f_bit_xor(%a: !felt.felt, %b: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
   %c = felt.bit_xor %a, %b
   function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_bit_xor
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_xor %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_not(%a: !felt.felt) -> !felt.felt {
+function.def @f_bit_not(%a: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
   %c = felt.bit_not %a
   function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_bit_not
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_not %[[A0]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_shl(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+function.def @f_shl(%a: !felt.felt, %b: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
   %c = felt.shl %a, %b
   function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_shl
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.shl %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_shr(%a: !felt.felt, %b: !felt.felt) -> !felt.felt {
+function.def @f_shr(%a: !felt.felt, %b: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
   %c = felt.shr %a, %b
   function.return %c: !felt.felt
 }
 //CHECK-LABEL:  function.def @f_shr
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !felt.felt attributes {function.allow_witness} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.shr %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.felt
 //CHECK-NEXT:   }

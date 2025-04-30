@@ -265,7 +265,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !llzk.struct<@Component09>) {
       %c = arith.constant false
-      // expected-error@+1 {{'llzk.writeg' op only valid within a 'function.def' named "@compute" within a 'llzk.struct' definition}}
+      // expected-error@+1 {{'llzk.writeg' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
       llzk.writeg @t = %c : i1
       function.return
     }
@@ -278,7 +278,7 @@ module attributes {veridise.lang = "llzk"} {
   llzk.global @g : !felt.felt
   function.def @test() {
     %c = felt.const 99999
-    // expected-error@+1 {{'llzk.writeg' op only valid within a 'function.def' named "@compute" within a 'llzk.struct' definition}}
+    // expected-error@+1 {{'llzk.writeg' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
     llzk.writeg @g = %c : !felt.felt
     function.return
   }

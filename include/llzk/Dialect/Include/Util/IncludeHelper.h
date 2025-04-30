@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/Ops.h"
-
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/OwningOpRef.h>
 #include <mlir/Support/LLVM.h>

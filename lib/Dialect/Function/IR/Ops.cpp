@@ -13,7 +13,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/OpInterfaces.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -183,11 +182,19 @@ FuncDefOp FuncDefOp::clone() {
   return clone(mapper);
 }
 
-void FuncDefOp::setAllowConstraintsAttr(bool newValue) {
+void FuncDefOp::setAllowConstraintAttr(bool newValue) {
   if (newValue) {
-    getOperation()->setAttr(AllowConstraintsAttr::name, AllowConstraintsAttr::get(getContext()));
+    getOperation()->setAttr(AllowConstraintAttr::name, UnitAttr::get(getContext()));
   } else {
-    getOperation()->removeAttr(AllowConstraintsAttr::name);
+    getOperation()->removeAttr(AllowConstraintAttr::name);
+  }
+}
+
+void FuncDefOp::setAllowWitnessAttr(bool newValue) {
+  if (newValue) {
+    getOperation()->setAttr(AllowWitnessAttr::name, UnitAttr::get(getContext()));
+  } else {
+    getOperation()->removeAttr(AllowWitnessAttr::name);
   }
 }
 
@@ -229,14 +236,9 @@ LogicalResult FuncDefOp::verify() {
 }
 
 LogicalResult FuncDefOp::verifyRegions() {
-  if (hasAllowConstraintsAttr()) {
+  if (hasAllowConstraintAttr()) {
     // Check: When constraints are allowed, casts on Signals are not allowed.
-    return success(); // TODO: Ian's cast check
-  } else {
-    // Check: When constraints are NOT allowed, ensure there are no constraints.
-    if (containsConstraintOp(getOperation())) {
-      return emitError("TODO: FuncDefOp::verifyRegions");
-    }
+    return success(); // TODO-IAN: cast check
   }
   return success();
 }

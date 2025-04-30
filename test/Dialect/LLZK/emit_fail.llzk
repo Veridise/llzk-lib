@@ -362,7 +362,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
     %a = felt.const 7653
     %b = felt.const 34572
-    // expected-error@+1 {{'llzk.emit_eq' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+    // expected-error@+1 {{'llzk.emit_eq' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
     llzk.emit_eq %a, %b : !felt.felt
 }
 // -----
@@ -372,7 +372,7 @@ module attributes {veridise.lang = "llzk"} {
     %a = arith.constant 433 : index
     %b = arith.constant 535 : index
     %z = array.new %a, %b: !array.array<2 x index>
-    // expected-error@+1 {{'llzk.emit_in' op only valid within a 'function.def' named "@constrain" within a 'llzk.struct' definition}}
+    // expected-error@+1 {{'llzk.emit_in' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
     llzk.emit_in %z, %a : !array.array<2 x index>
 }
 // -----

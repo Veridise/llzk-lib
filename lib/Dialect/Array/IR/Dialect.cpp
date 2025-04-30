@@ -48,8 +48,5 @@ auto llzk::array::ArrayDialect::initialize() -> void {
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/Array/IR/Types.cpp.inc"
   >();
-
-  addAttributes<>();
   // clang-format on
-  // addInterfaces<LLZKDialectBytecodeInterface>();
 }
