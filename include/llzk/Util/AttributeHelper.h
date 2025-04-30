@@ -44,4 +44,9 @@ inline std::string stringWithoutType(mlir::Attribute a) {
   return output;
 }
 
+void printAttrs(
+    mlir::AsmPrinter &printer, mlir::ArrayRef<mlir::Attribute> attrs,
+    const mlir::StringRef &separator
+);
+
 } // namespace llzk

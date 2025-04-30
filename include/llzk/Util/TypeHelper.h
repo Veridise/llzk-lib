@@ -267,9 +267,6 @@ mlir::LogicalResult verifyArrayType(
     EmitErrorFn emitError, mlir::Type elementType, mlir::ArrayRef<mlir::Attribute> dimensionSizes
 );
 
-mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
-void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);
-
 mlir::ParseResult parseStructParams(mlir::AsmParser &parser, mlir::ArrayAttr &value);
 void printStructParams(mlir::AsmPrinter &printer, mlir::ArrayAttr value);
 

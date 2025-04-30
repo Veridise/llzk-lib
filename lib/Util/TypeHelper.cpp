@@ -754,39 +754,6 @@ verifyArrayType(EmitErrorFn emitError, Type elementType, ArrayRef<Attribute> dim
   return success(AllowedTypes().isValidArrayTypeImpl(elementType, dimensionSizes, emitError));
 }
 
-ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
-  auto parseResult = FieldParser<SmallVector<Attribute>>::parse(parser);
-  if (failed(parseResult)) {
-    return parser.emitError(parser.getCurrentLocation(), "failed to parse array dimensions");
-  }
-  value = forceIntAttrTypes(*parseResult);
-  return success();
-}
-
-namespace {
-
-// Adapted from AsmPrinter::printStrippedAttrOrType(), but without printing type.
-void printAttrs(AsmPrinter &printer, ArrayRef<Attribute> attrs, const StringRef &separator) {
-  llvm::interleave(attrs, printer.getStream(), [&printer](Attribute a) {
-    if (succeeded(printer.printAlias(a))) {
-      return;
-    }
-    raw_ostream &os = printer.getStream();
-    uint64_t posPrior = os.tell();
-    printer.printAttributeWithoutType(a);
-    // Fallback to printing with prefix if the above failed to write anything to the output stream.
-    if (posPrior == os.tell()) {
-      printer << a;
-    }
-  }, separator);
-}
-
-} // namespace
-
-void printAttrVec(AsmPrinter &printer, ArrayRef<Attribute> value) {
-  printAttrs(printer, value, ",");
-}
-
 ParseResult parseStructParams(AsmParser &parser, ArrayAttr &value) {
   auto parseResult = FieldParser<ArrayAttr>::parse(parser);
   if (failed(parseResult)) {

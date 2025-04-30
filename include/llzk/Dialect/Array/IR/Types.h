@@ -59,4 +59,7 @@ void printDerivedShape(
     llvm::ArrayRef<mlir::Attribute> dimensionSizes
 );
 
+mlir::ParseResult parseAttrVec(mlir::AsmParser &parser, llvm::SmallVector<mlir::Attribute> &value);
+void printAttrVec(mlir::AsmPrinter &printer, llvm::ArrayRef<mlir::Attribute> value);
+
 } // namespace llzk::array
