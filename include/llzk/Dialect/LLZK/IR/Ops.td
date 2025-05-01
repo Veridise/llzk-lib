@@ -32,8 +32,4 @@ class LLZK_UnaryOpBase<string mnemonic, Type resultType,
                        list<Trait> traits = []>
     : UnaryOpBase<LLZKDialect, mnemonic, resultType, traits>;
 
-class LLZK_Op<string mnemonic, list<Trait> traits = []>
-    : Op<LLZKDialect, mnemonic, traits>;
-
-
 #endif // LLZK_OPS

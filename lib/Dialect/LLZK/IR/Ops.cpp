@@ -34,9 +34,3 @@
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/LLZK/IR/Ops.cpp.inc"
-
-using namespace mlir;
-
-namespace llzk {
-
-} // namespace llzk

@@ -29,25 +29,24 @@ class Boolean_Op<string mnemonic, list<Trait> traits = []>
     : Op<BoolDialect, mnemonic, traits>;
 
 class Boolean_BinaryOpBase<string mnemonic, Type resultType,
-                        list<Trait> traits = []>
+                           list<Trait> traits = []>
     : BinaryOpBase<BoolDialect, mnemonic, resultType, traits>;
 
 class Boolean_UnaryOpBase<string mnemonic, Type resultType,
-                       list<Trait> traits = []>
+                          list<Trait> traits = []>
     : UnaryOpBase<BoolDialect, mnemonic, resultType, traits>;
 
 //===------------------------------------------------------------------===//
 // Constants
 //===------------------------------------------------------------------===//
 
-
-
 //===------------------------------------------------------------------===//
 // Operators
 //===------------------------------------------------------------------===//
 
 def LLZK_AssertOp
-    : Boolean_Op<"assert", [DeclareOpInterfaceMethods<MemoryEffectsOpInterface>]> {
+    : Boolean_Op<
+          "assert", [DeclareOpInterfaceMethods<MemoryEffectsOpInterface>]> {
   let summary = "assertion operation";
   let description = [{
     This operation asserts that a given boolean value is true. Assertions are checked
@@ -122,7 +121,8 @@ def LLZK_CmpOp : Boolean_Op<"cmp", [Pure]> {
 // Boolean operators
 //===------------------------------------------------------------------===//
 
-def LLZK_AndBoolOp : Boolean_BinaryOpBase<"and", I1, [WitnessGen, Commutative]> {
+def LLZK_AndBoolOp
+    : Boolean_BinaryOpBase<"and", I1, [WitnessGen, Commutative]> {
   let summary = "logical AND operator";
   let description = [{
     This operation computes the logical AND (i.e. conjunction) of two `i1` (i.e. boolean)
@@ -138,7 +138,8 @@ def LLZK_OrBoolOp : Boolean_BinaryOpBase<"or", I1, [WitnessGen, Commutative]> {
   }];
 }
 
-def LLZK_XorBoolOp : Boolean_BinaryOpBase<"xor", I1, [WitnessGen, Commutative]> {
+def LLZK_XorBoolOp
+    : Boolean_BinaryOpBase<"xor", I1, [WitnessGen, Commutative]> {
   let summary = "logical XOR operator";
   let description = [{
     This operation computes the logical XOR (i.e. exclusive disjunction) of two `i1` (i.e. boolean)
