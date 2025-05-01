@@ -959,7 +959,7 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
                  .Case<AddFeltOp>([&](AddFeltOp _) { return add(smtSolver, lhs, rhs); })
                  .Case<SubFeltOp>([&](SubFeltOp _) { return sub(smtSolver, lhs, rhs); })
                  .Case<MulFeltOp>([&](MulFeltOp _) { return mul(smtSolver, lhs, rhs); })
-                 .Case<DivFeltOp>([&](DivFeltOp op) { return div(smtSolver, op, lhs, rhs); })
+                 .Case<DivFeltOp>([&](DivFeltOp divOp) { return div(smtSolver, divOp, lhs, rhs); })
                  .Case<ModFeltOp>([&](ModFeltOp _) { return mod(smtSolver, lhs, rhs); })
                  .Case<CmpOp>([&](CmpOp cmpOp) {
     return cmp(smtSolver, cmpOp, lhs, rhs);

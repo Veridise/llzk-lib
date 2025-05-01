@@ -102,7 +102,9 @@ LogicalResult CreateArrayOp::verify() {
 
   // Collect the array dimensions that are defined via AffineMapAttr
   SmallVector<AffineMapAttr> mapAttrs;
-  for (Attribute a : llvm::cast<ArrayType>(retTy).getDimensionSizes()) {
+  // Extend the lifetime of the temporary to suppress warnings.
+  ArrayType arrTy = llvm::cast<ArrayType>(retTy);
+  for (Attribute a : arrTy.getDimensionSizes()) {
     if (AffineMapAttr m = dyn_cast<AffineMapAttr>(a)) {
       mapAttrs.push_back(m);
     }

@@ -370,7 +370,9 @@ static bool defaultLegalityCheck(const TypeConverter &tyConv, Operation *op) {
     return false;
   }
   // Check type attributes
-  for (NamedAttribute n : op->getAttrDictionary().getValue()) {
+  // Extend lifetime of temporary to suppress warnings.
+  DictionaryAttr dictAttr = op->getAttrDictionary();
+  for (NamedAttribute n : dictAttr.getValue()) {
     if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(n.getValue())) {
       Type t = tyAttr.getValue();
       if (FunctionType funcTy = llvm::dyn_cast<FunctionType>(t)) {
