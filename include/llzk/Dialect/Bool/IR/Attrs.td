@@ -13,14 +13,14 @@
 include "llzk/Dialect/Bool/IR/Dialect.td"
 include "llzk/Dialect/Bool/IR/Enums.td"
 
-class LLZK_EnumAttr<EnumAttrInfo enum, string name, string enumMnemonic,
-                    list<Trait> traits = []>
+class BoolDialectEnumAttr<EnumAttrInfo enum, string name, string enumMnemonic,
+                          list<Trait> traits = []>
     : EnumAttr<BoolDialect, enum, name, traits> {
   let mnemonic = enumMnemonic;
 }
 
 def LLZK_CmpPredicateAttr
-    : LLZK_EnumAttr<LLZK_FeltCmpPredicate, "cmp_predicate", "cmp"> {
+    : BoolDialectEnumAttr<LLZK_FeltCmpPredicate, "cmp_predicate", "cmp"> {
   let assemblyFormat = [{ $value }];
 }
 
