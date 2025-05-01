@@ -63,7 +63,7 @@ def FuncDefOp
     ```llzk
     // External function definitions.
     function.def private @abort()
-    function.def private @scribble(!array.array<5 x !felt.felt>, !struct.struct<@Hello>) -> i1
+    function.def private @scribble(!array.type<5 x !felt.felt>, !struct.type<@Hello>) -> i1
 
     // A function that returns its argument twice:
     function.def @count(%x: !felt.felt) -> (!felt.felt, !felt.felt) {
@@ -260,12 +260,12 @@ def CallOp : FunctionDialectOp<
     Example:
     ```llzk
     // Call a global function defined in the root module.
-    function.call @do_stuff(%0) : (!struct.struct<@Bob>) -> ()
+    function.call @do_stuff(%0) : (!struct.type<@Bob>) -> ()
     %1, %2 = function.call @split(%x) : (index) -> (index, index)
 
     // Call a function within a component
-    %2 = function.call @OtherStruct::@compute(%3, %4) : (index, index) -> !struct.struct<@OtherStruct>
-    function.call @OtherStruct::@constrain(%5, %6) : (!struct.struct<@OtherStruct>, !felt.felt) -> ()
+    %2 = function.call @OtherStruct::@compute(%3, %4) : (index, index) -> !struct.type<@OtherStruct>
+    function.call @OtherStruct::@constrain(%5, %6) : (!struct.type<@OtherStruct>, !felt.felt) -> ()
     ```
 
     When the return StructType of a `compute()` function uses AffineMapAttr to
@@ -276,7 +276,7 @@ def CallOp : FunctionDialectOp<
     Examples:
     ```llzk
     #M = affine_map<(i)[] -> (5*i+1)>
-    %r = function.call @A::@compute(%x){(%i)} : (!felt.felt) -> !struct.struct<@A<[#M]>>
+    %r = function.call @A::@compute(%x){(%i)} : (!felt.felt) -> !struct.type<@A<[#M]>>
     ```
   }];
 

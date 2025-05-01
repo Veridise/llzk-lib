@@ -2,19 +2,19 @@
 
 #id = affine_map<(i)->(i)>
 #IdxToLen = affine_map<(i)->(5*i+1)>
-!ToFelt = !struct.struct<@ToFelt<[#id]>>
+!ToFelt = !struct.type<@ToFelt<[#id]>>
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @VarArray<[@N, @T]> {
-    struct.field @val: !array.array<@N x !poly.tvar<@T>>
+    struct.field @val: !array.type<@N x !poly.tvar<@T>>
 
-    function.def @compute(%inp: !array.array<@N x !poly.tvar<@T>>) -> !struct.struct<@VarArray<[@N, @T]>> {
-      %self = struct.new : !struct.struct<@VarArray<[@N, @T]>>
-      struct.writef %self[@val] = %inp : !struct.struct<@VarArray<[@N, @T]>>, !array.array<@N x !poly.tvar<@T>>
-      function.return %self : !struct.struct<@VarArray<[@N, @T]>>
+    function.def @compute(%inp: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> {
+      %self = struct.new : !struct.type<@VarArray<[@N, @T]>>
+      struct.writef %self[@val] = %inp : !struct.type<@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
+      function.return %self : !struct.type<@VarArray<[@N, @T]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@VarArray<[@N, @T]>>, %inp: !array.array<@N x !poly.tvar<@T>>) {
+    function.def @constrain(%self: !struct.type<@VarArray<[@N, @T]>>, %inp: !array.type<@N x !poly.tvar<@T>>) {
       function.return
     }
   }
@@ -22,36 +22,36 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ToFelt<[@A]> {
     struct.field @out: !felt.felt {llzk.pub}
 
-    function.def @compute() -> !struct.struct<@ToFelt<[@A]>> {
-      %self = struct.new : !struct.struct<@ToFelt<[@A]>>
+    function.def @compute() -> !struct.type<@ToFelt<[@A]>> {
+      %self = struct.new : !struct.type<@ToFelt<[@A]>>
       %constA = poly.read_const @A : !felt.felt
-      struct.writef %self[@out] = %constA : !struct.struct<@ToFelt<[@A]>>, !felt.felt
-      function.return %self: !struct.struct<@ToFelt<[@A]>>
+      struct.writef %self[@out] = %constA : !struct.type<@ToFelt<[@A]>>, !felt.felt
+      function.return %self: !struct.type<@ToFelt<[@A]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@ToFelt<[@A]>>) {
+    function.def @constrain(%self: !struct.type<@ToFelt<[@A]>>) {
       function.return
     }
   }
 
   struct.def @ComponentB {
-    function.def @compute(%a: index) -> !struct.struct<@ComponentB> {
-      %self = struct.new : !struct.struct<@ComponentB>
+    function.def @compute(%a: index) -> !struct.type<@ComponentB> {
+      %self = struct.new : !struct.type<@ComponentB>
       // In real code, this should be loop induction variable
       %n = arith.constant 2 : index
       // The array length is a function of 'i' and it contains non-homogeneous structs
-      //    !ToFelt = !struct.struct<@ToFelt<[#id]>>
-      %arr = array.new{(%n)} : !array.array<#IdxToLen x !ToFelt>
+      //    !ToFelt = !struct.type<@ToFelt<[#id]>>
+      %arr = array.new{(%n)} : !array.type<#IdxToLen x !ToFelt>
       // Real code would probably have a loop here j= 0..n that assigns values to the array
       //
       // Creates a VarArray with length as a function of 'n' and non-homogeneous element type
       %wsi = function.call @VarArray::@compute(%arr){(%n)}
-        : (!array.array<#IdxToLen x !ToFelt>) -> !struct.struct<@VarArray<[#IdxToLen, !ToFelt]>>
+        : (!array.type<#IdxToLen x !ToFelt>) -> !struct.type<@VarArray<[#IdxToLen, !ToFelt]>>
       //
-      function.return %self : !struct.struct<@ComponentB>
+      function.return %self : !struct.type<@ComponentB>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentB>, %a: index) {
+    function.def @constrain(%self: !struct.type<@ComponentB>, %a: index) {
       function.return
     }
   }
@@ -60,40 +60,40 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
 //
 // CHECK-LABEL: struct.def @VarArray<[@N, @T]> {
-// CHECK-NEXT:    struct.field @val : !array.array<@N x !poly.tvar<@T>>
-// CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !poly.tvar<@T>>) -> !struct.struct<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @val : !array.type<@N x !poly.tvar<@T>>
+// CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@VarArray<[@N, @T]>>
-// CHECK-NEXT:      struct.writef %[[V_1]][@val] = %[[V_0]] : <@VarArray<[@N, @T]>>, !array.array<@N x !poly.tvar<@T>>
-// CHECK-NEXT:      function.return %[[V_1]] : !struct.struct<@VarArray<[@N, @T]>>
+// CHECK-NEXT:      struct.writef %[[V_1]][@val] = %[[V_0]] : <@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
+// CHECK-NEXT:      function.return %[[V_1]] : !struct.type<@VarArray<[@N, @T]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !struct.struct<@VarArray<[@N, @T]>>, %[[V_3:[0-9a-zA-Z_\.]+]]: !array.array<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !struct.type<@VarArray<[@N, @T]>>, %[[V_3:[0-9a-zA-Z_\.]+]]: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @ToFelt<[@A]> {
 // CHECK-NEXT:    struct.field @out : !felt.felt {llzk.pub}
-// CHECK-NEXT:    function.def @compute() -> !struct.struct<@ToFelt<[@A]>> attributes {function.allow_witness} {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@ToFelt<[@A]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_0:[0-9a-zA-Z_\.]+]] = struct.new : <@ToFelt<[@A]>>
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.felt
 // CHECK-NEXT:      struct.writef %[[V_0]][@out] = %[[V_1]] : <@ToFelt<[@A]>>, !felt.felt
-// CHECK-NEXT:      function.return %[[V_0]] : !struct.struct<@ToFelt<[@A]>>
+// CHECK-NEXT:      function.return %[[V_0]] : !struct.type<@ToFelt<[@A]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !struct.struct<@ToFelt<[@A]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt<[@A]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @ComponentB {
-// CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.struct<@ComponentB> attributes {function.allow_witness} {
+// CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@ComponentB> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = array.new{(%[[V_2]])} : <#[[$M1]] x !struct.struct<@ToFelt<[#[[$M0]]]>>>
+// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = array.new{(%[[V_2]])} : <#[[$M1]] x !struct.type<@ToFelt<[#[[$M0]]]>>>
 // CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = function.call @VarArray::@compute(%[[V_3]]) {(%[[V_2]])}
-// CHECK-SAME:        : (!array.array<#[[$M1]] x !struct.struct<@ToFelt<[#[[$M0]]]>>>) -> !struct.struct<@VarArray<[#[[$M1]], !struct.struct<@ToFelt<[#[[$M0]]]>>]>>
-// CHECK-NEXT:      function.return %[[V_1]] : !struct.struct<@ComponentB>
+// CHECK-SAME:        : (!array.type<#[[$M1]] x !struct.type<@ToFelt<[#[[$M0]]]>>>) -> !struct.type<@VarArray<[#[[$M1]], !struct.type<@ToFelt<[#[[$M0]]]>>]>>
+// CHECK-NEXT:      function.return %[[V_1]] : !struct.type<@ComponentB>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V_5:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComponentB>, %[[V_6:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V_5:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentB>, %[[V_6:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

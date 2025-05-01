@@ -24,7 +24,7 @@ def LLZK_ArrayType
     : TypeDef<ArrayDialect, "Array",
               [ShapedTypeInterface,
                DeclareTypeInterfaceMethods<DestructurableTypeInterface>]> {
-  let mnemonic = "array";
+  let mnemonic = "type";
   let summary = "n-dimensional array";
   let description = [{
     Array type with a ranked shape and homogeneous element type.
@@ -35,10 +35,10 @@ def LLZK_ArrayType
 
     ```llzk
     // Example array of 5 by 2 elements of `Felt` type.
-    !array.array<5,2 x !felt.felt>
+    !array.type<5,2 x !felt.felt>
 
     // Example array using a struct parameter for one dimension.
-    !array.array<5,@A x index>
+    !array.type<5,@A x index>
     ```
   }];
 

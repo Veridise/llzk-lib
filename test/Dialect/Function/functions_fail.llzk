@@ -51,7 +51,7 @@ module { // expected-note {{unnamed 'builtin.module' here}}
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
-  function.def @constrain(%p: !struct.struct<@WasNotDefined>) {
+  function.def @constrain(%p: !struct.type<@WasNotDefined>) {
     function.return
   }
 }
@@ -59,7 +59,7 @@ module attributes {veridise.lang = "llzk"} {
 module { // expected-note {{unnamed 'builtin.module' here}}
   // expected-error@+2 {{'function.def' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
   // expected-error@+1 {{could not find 'struct.def' named "@MissingComponent"}}
-  function.def @constrain(%p: !struct.struct<@MissingComponent>) {
+  function.def @constrain(%p: !struct.type<@MissingComponent>) {
     function.return
   }
 }
@@ -67,7 +67,7 @@ module { // expected-note {{unnamed 'builtin.module' here}}
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
-  function.def @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !struct.struct<@WasNotDefined>) {
+  function.def @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !struct.type<@WasNotDefined>) {
     function.return
   }
 }
@@ -75,13 +75,13 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
-  function.def private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> !struct.struct<@WasNotDefined>
+  function.def private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> !struct.type<@WasNotDefined>
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
-  function.def private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> (!felt.felt, i1, !struct.struct<@WasNotDefined>)
+  function.def private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> (!felt.felt, i1, !struct.type<@WasNotDefined>)
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
@@ -93,7 +93,7 @@ module attributes {veridise.lang = "llzk"} {
   // expected-error@+3 {{could not find 'struct.def' named "@C"}}
   // expected-error@+2 {{'function.def' op references unknown symbol "@D"}}
   // expected-error@+1 {{could not find 'struct.def' named "@D"}}
-  function.def private @f(%1: !struct.struct<@A>, %7: !struct.struct<@B>) -> (!struct.struct<@C>, !struct.struct<@D>)
+  function.def private @f(%1: !struct.type<@A>, %7: !struct.type<@B>) -> (!struct.type<@C>, !struct.type<@D>)
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
@@ -144,42 +144,42 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1 {
-    function.def @compute() -> !struct.struct<@ComponentA1> { // expected-note {{callee defined here}}
-      %self = struct.new : !struct.struct<@ComponentA1>
-      function.return %self : !struct.struct<@ComponentA1>
+    function.def @compute() -> !struct.type<@ComponentA1> { // expected-note {{callee defined here}}
+      %self = struct.new : !struct.type<@ComponentA1>
+      function.return %self : !struct.type<@ComponentA1>
     }
-    function.def @constrain(%self: !struct.struct<@ComponentA1>) { function.return }
+    function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
   }
 
   struct.def @ComponentA2 {
-    function.def @compute(%0: !felt.felt) -> !struct.struct<@ComponentA2> {
-      %self = struct.new : !struct.struct<@ComponentA2>
+    function.def @compute(%0: !felt.felt) -> !struct.type<@ComponentA2> {
+      %self = struct.new : !struct.type<@ComponentA2>
       // expected-error@+1 {{'function.call' op incorrect number of operands for callee, expected 0}}
-      %x = function.call @ComponentA1::@compute(%0) : (!felt.felt) -> (!struct.struct<@ComponentA1>)
-      function.return %self : !struct.struct<@ComponentA2>
+      %x = function.call @ComponentA1::@compute(%0) : (!felt.felt) -> (!struct.type<@ComponentA1>)
+      function.return %self : !struct.type<@ComponentA2>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentA2>) { function.return }
+    function.def @constrain(%self: !struct.type<@ComponentA2>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB1 {
-    function.def @compute() -> !struct.struct<@ComponentB1> {
-      %self = struct.new : !struct.struct<@ComponentB1>
-      function.return %self : !struct.struct<@ComponentB1>
+    function.def @compute() -> !struct.type<@ComponentB1> {
+      %self = struct.new : !struct.type<@ComponentB1>
+      function.return %self : !struct.type<@ComponentB1>
     }
-    function.def @constrain(%self: !struct.struct<@ComponentB1>) { function.return }
+    function.def @constrain(%self: !struct.type<@ComponentB1>) { function.return }
   }
 
   struct.def @ComponentB2 {
-    function.def @compute(%0: !struct.struct<@ComponentB1>) -> !struct.struct<@ComponentB2> {
-      %self = struct.new : !struct.struct<@ComponentB2>
-      function.return %self : !struct.struct<@ComponentB2>
+    function.def @compute(%0: !struct.type<@ComponentB1>) -> !struct.type<@ComponentB2> {
+      %self = struct.new : !struct.type<@ComponentB2>
+      function.return %self : !struct.type<@ComponentB2>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentB2>, %0: !felt.felt) {
-      // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!struct.struct<@ComponentB1>', but found '!felt.felt' for operand number 0}}
+    function.def @constrain(%self: !struct.type<@ComponentB2>, %0: !felt.felt) {
+      // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!struct.type<@ComponentB1>', but found '!felt.felt' for operand number 0}}
       function.call @ComponentB1::@constrain(%0) : (!felt.felt) -> ()
       function.return
     }

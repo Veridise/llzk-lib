@@ -1,58 +1,58 @@
 // RUN: llzk-opt %s -split-input-file -verify-diagnostics
 
-function.def @arr_constant_index() -> !array.array<3 x index> {
+function.def @arr_constant_index() -> !array.type<3 x index> {
   %a = arith.constant 45 : index
   %b = arith.constant 214 : index // expected-note {{prior use here}}
   %c = arith.constant 2 : index
-  %r = array.new %a, %b, %c : !array.array<3 x index>
-  // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.array<3 x index>' vs 'index'}}
-  array.write %b[%c] = %b : !array.array<3 x index>, index
-  function.return %r: !array.array<3 x index>
+  %r = array.new %a, %b, %c : !array.type<3 x index>
+  // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<3 x index>' vs 'index'}}
+  array.write %b[%c] = %b : !array.type<3 x index>, index
+  function.return %r: !array.type<3 x index>
 }
 // -----
 
-function.def @arr_mix_index(%a: index, %b: index) -> !array.array<4 x index> {
+function.def @arr_mix_index(%a: index, %b: index) -> !array.type<4 x index> {
   %c = arith.constant 324 : index
   %d = arith.constant 999 : index
   %i = arith.constant 0 : index
-  %r = array.new %a, %b, %c, %d: !array.array<4 x index> // expected-note {{prior use here}}
-  // expected-error@+1 {{use of value '%r' expects different type than prior uses: 'index' vs '!array.array<4 x index>'}}
-  array.write %r[%r] = %b : !array.array<4 x index>, index
-  function.return %r: !array.array<4 x index>
+  %r = array.new %a, %b, %c, %d: !array.type<4 x index> // expected-note {{prior use here}}
+  // expected-error@+1 {{use of value '%r' expects different type than prior uses: 'index' vs '!array.type<4 x index>'}}
+  array.write %r[%r] = %b : !array.type<4 x index>, index
+  function.return %r: !array.type<4 x index>
 }
 // -----
 
-function.def @arr_mix_index(%a: index, %b: index) -> !array.array<4 x index> {
+function.def @arr_mix_index(%a: index, %b: index) -> !array.type<4 x index> {
   %c = arith.constant 324 : index
   %d = arith.constant 999 : index
   %i = arith.constant 0 : index
   %f = felt.const 6744573456376 // expected-note {{prior use here}}
-  %r = array.new %a, %b, %c, %d: !array.array<4 x index>
+  %r = array.new %a, %b, %c, %d: !array.type<4 x index>
   // expected-error@+1 {{use of value '%f' expects different type than prior uses: 'index' vs '!felt.felt'}}
-  array.write %r[%f] = %b : !array.array<4 x index>, index
-  function.return %r: !array.array<4 x index>
+  array.write %r[%f] = %b : !array.type<4 x index>, index
+  function.return %r: !array.type<4 x index>
 }
 // -----
 
-function.def @arr_mix_index(%a: !felt.felt, %b: !felt.felt) -> !array.array<4 x !felt.felt> {
+function.def @arr_mix_index(%a: !felt.felt, %b: !felt.felt) -> !array.type<4 x !felt.felt> {
   %c = felt.const 324
   %d = felt.const 999
   %i = arith.constant 0 : index
   %v = arith.constant 5751 : index // expected-note {{prior use here}}
-  %r = array.new %a, %b, %c, %d: !array.array<4 x !felt.felt>
+  %r = array.new %a, %b, %c, %d: !array.type<4 x !felt.felt>
   // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!felt.felt' vs 'index'}}
-  array.write %r[%i] = %v : !array.array<4 x !felt.felt>, !felt.felt
-  function.return %r: !array.array<4 x !felt.felt>
+  array.write %r[%i] = %v : !array.type<4 x !felt.felt>, !felt.felt
+  function.return %r: !array.type<4 x !felt.felt>
 }
 // -----
 
-function.def @arr_wrong_array_elem_type(%a: !felt.felt) -> !array.array<1 x !felt.felt> {
+function.def @arr_wrong_array_elem_type(%a: !felt.felt) -> !array.type<1 x !felt.felt> {
   %i = arith.constant 0 : index
   %v = arith.constant 632 : index
-  %r = array.new %a: !array.array<1 x !felt.felt>
+  %r = array.new %a: !array.type<1 x !felt.felt>
   // expected-error@+1 {{'array.write' op failed to verify that rvalue type matches with arr_ref element type}}
-  array.write %r[%i] = %v : !array.array<1 x !felt.felt>, index
-  function.return %r: !array.array<1 x !felt.felt>
+  array.write %r[%i] = %v : !array.type<1 x !felt.felt>, index
+  function.return %r: !array.type<1 x !felt.felt>
 }
 
 // -----
@@ -61,9 +61,9 @@ function.def @write_too_few_indices() {
   %0 = arith.constant 0 : index
   %1 = arith.constant 1 : index
 
-  %r = array.new : !array.array<2,4,3 x index>
+  %r = array.new : !array.type<2,4,3 x index>
   // expected-error@+1 {{'array.write' op has insufficient indexed dimensions: expected 3 but found 2}}
-  array.write %r[%1,%0] = %0 : !array.array<2,4,3 x index>, index
+  array.write %r[%1,%0] = %0 : !array.type<2,4,3 x index>, index
 }
 
 // -----
@@ -72,7 +72,7 @@ function.def @write_too_many_indices() {
   %0 = arith.constant 0 : index
   %1 = arith.constant 1 : index
 
-  %r = array.new : !array.array<2,4,3 x index>
+  %r = array.new : !array.type<2,4,3 x index>
   // expected-error@+1 {{'array.write' op has too many indexed dimensions: expected 3 but found 4}}
-  array.write %r[%1,%0,%1,%0] = %0 : !array.array<2,4,3 x index>, index
+  array.write %r[%1,%0,%1,%0] = %0 : !array.type<2,4,3 x index>, index
 }

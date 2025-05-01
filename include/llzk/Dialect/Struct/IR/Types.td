@@ -24,7 +24,7 @@ class StructDialectType<string name, string typeMnemonic,
   let mnemonic = typeMnemonic;
 }
 
-def LLZK_StructType : StructDialectType<"Struct", "struct"> {
+def LLZK_StructType : StructDialectType<"Struct", "type"> {
   let summary = "circuit component";
   let description = [{}];
 

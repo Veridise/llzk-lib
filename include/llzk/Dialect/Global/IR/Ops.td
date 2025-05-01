@@ -36,7 +36,7 @@ def LLZK_GlobalDefOp
     global.def @b : i1 = false
 
     // Uninitialized global variable.
-    global.def @a : !array.array<2,2 x i1>
+    global.def @a : !array.type<2,2 x i1>
     ```
   }];
 

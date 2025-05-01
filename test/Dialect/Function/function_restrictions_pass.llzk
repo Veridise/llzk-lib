@@ -2,12 +2,12 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @emiteq_in_loop {
-    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.struct<@emiteq_in_loop> {
-      %self = struct.new : !struct.struct<@emiteq_in_loop>
-      function.return %self : !struct.struct<@emiteq_in_loop>
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.type<@emiteq_in_loop> {
+      %self = struct.new : !struct.type<@emiteq_in_loop>
+      function.return %self : !struct.type<@emiteq_in_loop>
     }
 
-    function.def @constrain(%self: !struct.struct<@emiteq_in_loop>, %a: !felt.felt, %b: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@emiteq_in_loop>, %a: !felt.felt, %b: !felt.felt) {
       %lb = arith.constant 0 : index
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
@@ -19,11 +19,11 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL:  struct.def @emiteq_in_loop {
-//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@emiteq_in_loop> attributes {function.allow_witness} {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@emiteq_in_loop> attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@emiteq_in_loop>
-//CHECK-NEXT:       function.return %[[SELF]] : !struct.struct<@emiteq_in_loop>
+//CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@emiteq_in_loop>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.struct<@emiteq_in_loop>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@emiteq_in_loop>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 //CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
@@ -37,12 +37,12 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @emiteq_in_deep_branches {
-    function.def @compute(%a: i1, %b: i1, %c: i1, %x: !felt.felt, %y: !felt.felt) -> !struct.struct<@emiteq_in_deep_branches> {
-      %self = struct.new : !struct.struct<@emiteq_in_deep_branches>
-      function.return %self : !struct.struct<@emiteq_in_deep_branches>
+    function.def @compute(%a: i1, %b: i1, %c: i1, %x: !felt.felt, %y: !felt.felt) -> !struct.type<@emiteq_in_deep_branches> {
+      %self = struct.new : !struct.type<@emiteq_in_deep_branches>
+      function.return %self : !struct.type<@emiteq_in_deep_branches>
     }
 
-    function.def @constrain(%self: !struct.struct<@emiteq_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: !felt.felt, %y: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@emiteq_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: !felt.felt, %y: !felt.felt) {
       scf.if %a {
         scf.if %b {
           scf.if %c {
@@ -56,11 +56,11 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL:  struct.def @emiteq_in_deep_branches {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1, %[[A3:[0-9a-zA-Z_\.]+]]: !felt.felt,
-//CHECK-SAME:      %[[A4:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@emiteq_in_deep_branches>  attributes {function.allow_witness} {
+//CHECK-SAME:      %[[A4:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@emiteq_in_deep_branches>  attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@emiteq_in_deep_branches>
-//CHECK-NEXT:       function.return %[[SELF]] : !struct.struct<@emiteq_in_deep_branches>
+//CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@emiteq_in_deep_branches>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.struct<@emiteq_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1,
+//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@emiteq_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1,
 //CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: i1, %[[A3:[0-9a-zA-Z_\.]+]]: i1, %[[A4:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A5:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:       scf.if %[[A1]] {
 //CHECK-NEXT:         scf.if %[[A2]] {
@@ -76,17 +76,17 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @emitin_in_loop {
-    function.def @compute(%a: !felt.felt, %b: !array.array<5 x !felt.felt>) -> !struct.struct<@emitin_in_loop> {
-      %self = struct.new : !struct.struct<@emitin_in_loop>
-      function.return %self : !struct.struct<@emitin_in_loop>
+    function.def @compute(%a: !felt.felt, %b: !array.type<5 x !felt.felt>) -> !struct.type<@emitin_in_loop> {
+      %self = struct.new : !struct.type<@emitin_in_loop>
+      function.return %self : !struct.type<@emitin_in_loop>
     }
 
-    function.def @constrain(%self: !struct.struct<@emitin_in_loop>, %a: !felt.felt, %b: !array.array<5 x !felt.felt>) {
+    function.def @constrain(%self: !struct.type<@emitin_in_loop>, %a: !felt.felt, %b: !array.type<5 x !felt.felt>) {
       %lb = arith.constant 0 : index
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        constrain.in %b, %a : !array.array<5 x !felt.felt>
+        constrain.in %b, %a : !array.type<5 x !felt.felt>
       }
       function.return
     }
@@ -94,12 +94,12 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL:  struct.def @emitin_in_loop {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt,
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<5 x !felt.felt>) -> !struct.struct<@emitin_in_loop>  attributes {function.allow_witness} {
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.felt>) -> !struct.type<@emitin_in_loop>  attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@emitin_in_loop>
-//CHECK-NEXT:       function.return %[[SELF]] : !struct.struct<@emitin_in_loop>
+//CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@emitin_in_loop>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.struct<@emitin_in_loop>,
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !array.array<5 x !felt.felt>) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@emitin_in_loop>,
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.felt>) attributes {function.allow_constraint} {
 //CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 //CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
@@ -113,16 +113,16 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @emitin_in_deep_branches {
-    function.def @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !array.array<5 x index>) -> !struct.struct<@emitin_in_deep_branches> {
-      %self = struct.new : !struct.struct<@emitin_in_deep_branches>
-      function.return %self : !struct.struct<@emitin_in_deep_branches>
+    function.def @compute(%a: i1, %b: i1, %c: i1, %x: index, %y: !array.type<5 x index>) -> !struct.type<@emitin_in_deep_branches> {
+      %self = struct.new : !struct.type<@emitin_in_deep_branches>
+      function.return %self : !struct.type<@emitin_in_deep_branches>
     }
 
-    function.def @constrain(%self: !struct.struct<@emitin_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !array.array<5 x index>) {
+    function.def @constrain(%self: !struct.type<@emitin_in_deep_branches>, %a: i1, %b: i1, %c: i1, %x: index, %y: !array.type<5 x index>) {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            constrain.in %y, %x : !array.array<5 x index>
+            constrain.in %y, %x : !array.type<5 x index>
           }
         }
       }
@@ -132,12 +132,12 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL:  struct.def @emitin_in_deep_branches {
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
-//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: index, %[[A4:[0-9a-zA-Z_\.]+]]: !array.array<5 x index>) -> !struct.struct<@emitin_in_deep_branches>  attributes {function.allow_witness} {
+//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: index, %[[A4:[0-9a-zA-Z_\.]+]]: !array.type<5 x index>) -> !struct.type<@emitin_in_deep_branches>  attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@emitin_in_deep_branches>
-//CHECK-NEXT:       function.return %[[SELF]] : !struct.struct<@emitin_in_deep_branches>
+//CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@emitin_in_deep_branches>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.struct<@emitin_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
-//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: i1, %[[A4:[0-9a-zA-Z_\.]+]]: index, %[[A5:[0-9a-zA-Z_\.]+]]: !array.array<5 x index>) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@emitin_in_deep_branches>, %[[A1:[0-9a-zA-Z_\.]+]]: i1, %[[A2:[0-9a-zA-Z_\.]+]]: i1,
+//CHECK-SAME:      %[[A3:[0-9a-zA-Z_\.]+]]: i1, %[[A4:[0-9a-zA-Z_\.]+]]: index, %[[A5:[0-9a-zA-Z_\.]+]]: !array.type<5 x index>) attributes {function.allow_constraint} {
 //CHECK-NEXT:       scf.if %[[A1]] {
 //CHECK-NEXT:         scf.if %[[A2]] {
 //CHECK-NEXT:           scf.if %[[A3]] {
@@ -165,14 +165,14 @@ module attributes {veridise.lang = "llzk"} {
     function.return %1, %2 : i1, i1
   }
   struct.def @Test {
-    function.def @compute(%a: i1) -> !struct.struct<@Test> {
+    function.def @compute(%a: i1) -> !struct.type<@Test> {
       %1 = function.call @compute(%a) : (i1) -> i1
       %2 = function.call @constrain(%a) : (i1) -> i1
-      %self = struct.new : !struct.struct<@Test>
-      function.return %self : !struct.struct<@Test>
+      %self = struct.new : !struct.type<@Test>
+      function.return %self : !struct.type<@Test>
     }
 
-    function.def @constrain(%self: !struct.struct<@Test>, %a: i1) {
+    function.def @constrain(%self: !struct.type<@Test>, %a: i1) {
       %1 = function.call @compute(%a) : (i1) -> i1
       %2 = function.call @constrain(%a) : (i1) -> i1
       function.return
@@ -192,13 +192,13 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       function.return %0, %1 : i1, i1
 //CHECK-NEXT:     }
 //CHECK-NEXT:     struct.def @Test {
-//CHECK-NEXT:       function.def @compute(%arg0: i1) -> !struct.struct<@Test> attributes {function.allow_witness} {
+//CHECK-NEXT:       function.def @compute(%arg0: i1) -> !struct.type<@Test> attributes {function.allow_witness} {
 //CHECK-NEXT:         %0 = function.call @compute(%arg0) : (i1) -> i1
 //CHECK-NEXT:         %1 = function.call @constrain(%arg0) : (i1) -> i1
 //CHECK-NEXT:         %self = struct.new : <@Test>
-//CHECK-NEXT:         function.return %self : !struct.struct<@Test>
+//CHECK-NEXT:         function.return %self : !struct.type<@Test>
 //CHECK-NEXT:       }
-//CHECK-NEXT:       function.def @constrain(%arg0: !struct.struct<@Test>, %arg1: i1) attributes {function.allow_constraint} {
+//CHECK-NEXT:       function.def @constrain(%arg0: !struct.type<@Test>, %arg1: i1) attributes {function.allow_constraint} {
 //CHECK-NEXT:         %0 = function.call @compute(%arg1) : (i1) -> i1
 //CHECK-NEXT:         %1 = function.call @constrain(%arg1) : (i1) -> i1
 //CHECK-NEXT:         function.return
@@ -209,25 +209,25 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @inv_in_compute {
-    function.def @compute(%a: !felt.felt) -> !struct.struct<@inv_in_compute> {
-      %self = struct.new : !struct.struct<@inv_in_compute>
+    function.def @compute(%a: !felt.felt) -> !struct.type<@inv_in_compute> {
+      %self = struct.new : !struct.type<@inv_in_compute>
       %c = felt.inv %a
-      function.return %self : !struct.struct<@inv_in_compute>
+      function.return %self : !struct.type<@inv_in_compute>
     }
 
-    function.def @constrain(%self: !struct.struct<@inv_in_compute>, %a: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@inv_in_compute>, %a: !felt.felt) {
       function.return
     }
   }
 }
 //CHECK-LABEL:  module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     struct.def @inv_in_compute {
-//CHECK-NEXT:       function.def @compute(%arg0: !felt.felt) -> !struct.struct<@inv_in_compute> attributes {function.allow_witness} {
+//CHECK-NEXT:       function.def @compute(%arg0: !felt.felt) -> !struct.type<@inv_in_compute> attributes {function.allow_witness} {
 //CHECK-NEXT:         %self = struct.new : <@inv_in_compute>
 //CHECK-NEXT:         %0 = felt.inv %arg0
-//CHECK-NEXT:         function.return %self : !struct.struct<@inv_in_compute>
+//CHECK-NEXT:         function.return %self : !struct.type<@inv_in_compute>
 //CHECK-NEXT:       }
-//CHECK-NEXT:       function.def @constrain(%arg0: !struct.struct<@inv_in_compute>, %arg1: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:       function.def @constrain(%arg0: !struct.type<@inv_in_compute>, %arg1: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:         function.return
 //CHECK-NEXT:       }
 //CHECK-NEXT:     }
@@ -240,24 +240,24 @@ module attributes {veridise.lang = "llzk"} {
     function.def @global_fun() -> () { function.return }
   }
   struct.def @verifyStructTargetMatch_is_not_too_restrictive {
-    function.def @compute() -> !struct.struct<@verifyStructTargetMatch_is_not_too_restrictive> {
-      %self = struct.new : !struct.struct<@verifyStructTargetMatch_is_not_too_restrictive>
+    function.def @compute() -> !struct.type<@verifyStructTargetMatch_is_not_too_restrictive> {
+      %self = struct.new : !struct.type<@verifyStructTargetMatch_is_not_too_restrictive>
       function.call @S::@global_fun() : () -> ()
-      function.return %self : !struct.struct<@verifyStructTargetMatch_is_not_too_restrictive>
+      function.return %self : !struct.type<@verifyStructTargetMatch_is_not_too_restrictive>
     }
 
-    function.def @constrain(%self: !struct.struct<@verifyStructTargetMatch_is_not_too_restrictive>) {
+    function.def @constrain(%self: !struct.type<@verifyStructTargetMatch_is_not_too_restrictive>) {
       function.return
     }
   }
 }
 //CHECK-LABEL: struct.def @verifyStructTargetMatch_is_not_too_restrictive {
-//CHECK-NEXT:    function.def @compute() -> !struct.struct<@verifyStructTargetMatch_is_not_too_restrictive> attributes {function.allow_witness} {
+//CHECK-NEXT:    function.def @compute() -> !struct.type<@verifyStructTargetMatch_is_not_too_restrictive> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[VAL_0:.*]] = struct.new : <@verifyStructTargetMatch_is_not_too_restrictive>
 //CHECK-NEXT:      function.call @S::@global_fun() : () -> ()
-//CHECK-NEXT:      function.return %[[VAL_0]] : !struct.struct<@verifyStructTargetMatch_is_not_too_restrictive>
+//CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@verifyStructTargetMatch_is_not_too_restrictive>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.struct<@verifyStructTargetMatch_is_not_too_restrictive>) attributes {function.allow_constraint} {
+//CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@verifyStructTargetMatch_is_not_too_restrictive>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
@@ -268,12 +268,12 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // function.def @global_fun() -> () { function.return }
   struct.def @unknown_call_target<[@S]> {
-    function.def @compute() -> !struct.struct<@unknown_call_target<[@S]>> {
-      %self = struct.new : !struct.struct<@unknown_call_target<[@S]>>
-      function.return %self : !struct.struct<@unknown_call_target<[@S]>>
+    function.def @compute() -> !struct.type<@unknown_call_target<[@S]>> {
+      %self = struct.new : !struct.type<@unknown_call_target<[@S]>>
+      function.return %self : !struct.type<@unknown_call_target<[@S]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@unknown_call_target<[@S]>>) {
+    function.def @constrain(%self: !struct.type<@unknown_call_target<[@S]>>) {
       function.call @S::@global_fun() : () -> ()
       function.return
     }
@@ -282,11 +282,11 @@ module attributes {veridise.lang = "llzk"} {
 
 //CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   struct.def @unknown_call_target<[@S]> {
-//CHECK-NEXT:     function.def @compute() -> !struct.struct<@unknown_call_target<[@S]>> attributes {function.allow_witness} {
+//CHECK-NEXT:     function.def @compute() -> !struct.type<@unknown_call_target<[@S]>> attributes {function.allow_witness} {
 //CHECK-NEXT:       %self = struct.new : <@unknown_call_target<[@S]>>
-//CHECK-NEXT:       function.return %self : !struct.struct<@unknown_call_target<[@S]>>
+//CHECK-NEXT:       function.return %self : !struct.type<@unknown_call_target<[@S]>>
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%arg0: !struct.struct<@unknown_call_target<[@S]>>) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%arg0: !struct.type<@unknown_call_target<[@S]>>) attributes {function.allow_constraint} {
 //CHECK-NEXT:       function.call @S::@global_fun() : () -> ()
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }

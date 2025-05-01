@@ -2,81 +2,81 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA {
-    function.def @constrain(%self: !struct.struct<@ComponentA>, %a: !felt.felt, %b: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@ComponentA>, %a: !felt.felt, %b: !felt.felt) {
       constrain.eq %a, %b : !felt.felt
       function.return
     }
 
-    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.struct<@ComponentA> {
-      %self = struct.new : !struct.struct<@ComponentA>
-      function.return %self : !struct.struct<@ComponentA>
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.type<@ComponentA> {
+      %self = struct.new : !struct.type<@ComponentA>
+      function.return %self : !struct.type<@ComponentA>
     }
   }
 }
 //CHECK-LABEL:  struct.def @ComponentA {
-//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComponentA>,
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA>,
 //CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:       constrain.eq %[[A0]], %[[A1]] : !felt.felt, !felt.felt
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt,
-//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@ComponentA>  attributes {function.allow_witness} {
+//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@ComponentA>  attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA>
-//CHECK-NEXT:       function.return %[[SELF]] : !struct.struct<@ComponentA>
+//CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentA>
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB {
-    function.def @constrain(%self: !struct.struct<@ComponentB>, %a: !felt.felt, %b: !array.array<5 x !felt.felt>) {
-      constrain.in %b, %a : !array.array<5 x !felt.felt>
+    function.def @constrain(%self: !struct.type<@ComponentB>, %a: !felt.felt, %b: !array.type<5 x !felt.felt>) {
+      constrain.in %b, %a : !array.type<5 x !felt.felt>
       function.return
     }
 
-    function.def @compute(%a: !felt.felt, %b: !array.array<5 x !felt.felt>) -> !struct.struct<@ComponentB> {
-      %self = struct.new : !struct.struct<@ComponentB>
-      function.return %self : !struct.struct<@ComponentB>
+    function.def @compute(%a: !felt.felt, %b: !array.type<5 x !felt.felt>) -> !struct.type<@ComponentB> {
+      %self = struct.new : !struct.type<@ComponentB>
+      function.return %self : !struct.type<@ComponentB>
     }
   }
 }
 //CHECK-LABEL:  struct.def @ComponentB {
-//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComponentB>,
-//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<5 x !felt.felt>) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentB>,
+//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.felt>) attributes {function.allow_constraint} {
 //CHECK-NEXT:       constrain.in %[[A1]], %[[A0]] : <5 x !felt.felt>, !felt.felt
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt,
-//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<5 x !felt.felt>) -> !struct.struct<@ComponentB>  attributes {function.allow_witness} {
+//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.felt>) -> !struct.type<@ComponentB>  attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB>
-//CHECK-NEXT:       function.return %[[SELF]] : !struct.struct<@ComponentB>
+//CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentB>
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentC {
-    function.def @constrain(%self: !struct.struct<@ComponentC>, %a: index, %b: !array.array<89 x index>) {
-      constrain.in %b, %a : !array.array<89 x index>
+    function.def @constrain(%self: !struct.type<@ComponentC>, %a: index, %b: !array.type<89 x index>) {
+      constrain.in %b, %a : !array.type<89 x index>
       function.return
     }
 
-    function.def @compute(%a: index, %b: !array.array<89 x index>) -> !struct.struct<@ComponentC> {
-      %self = struct.new : !struct.struct<@ComponentC>
-      function.return %self : !struct.struct<@ComponentC>
+    function.def @compute(%a: index, %b: !array.type<89 x index>) -> !struct.type<@ComponentC> {
+      %self = struct.new : !struct.type<@ComponentC>
+      function.return %self : !struct.type<@ComponentC>
     }
   }
 }
 //CHECK-LABEL:  struct.def @ComponentC {
-//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComponentC>,
-//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<89 x index>) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentC>,
+//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<89 x index>) attributes {function.allow_constraint} {
 //CHECK-NEXT:       constrain.in %[[A1]], %[[A0]] : <89 x index>, index
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: index,
-//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<89 x index>) -> !struct.struct<@ComponentC>  attributes {function.allow_witness} {
+//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<89 x index>) -> !struct.type<@ComponentC>  attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentC>
-//CHECK-NEXT:       function.return %[[SELF]] : !struct.struct<@ComponentC>
+//CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentC>
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
@@ -84,71 +84,71 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentD {
-    function.def @constrain(%self: !struct.struct<@ComponentD>, %b: !array.array<89 x !struct.struct<@ComponentD>>) {
-      constrain.in %b, %self : !array.array<89 x !struct.struct<@ComponentD>>
+    function.def @constrain(%self: !struct.type<@ComponentD>, %b: !array.type<89 x !struct.type<@ComponentD>>) {
+      constrain.in %b, %self : !array.type<89 x !struct.type<@ComponentD>>
       function.return
     }
 
-    function.def @compute(%b: !array.array<89 x !struct.struct<@ComponentD>>) -> !struct.struct<@ComponentD> {
-      %self = struct.new : !struct.struct<@ComponentD>
-      function.return %self : !struct.struct<@ComponentD>
+    function.def @compute(%b: !array.type<89 x !struct.type<@ComponentD>>) -> !struct.type<@ComponentD> {
+      %self = struct.new : !struct.type<@ComponentD>
+      function.return %self : !struct.type<@ComponentD>
     }
   }
 }
 //CHECK-LABEL:  struct.def @ComponentD {
-//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComponentD>,
-//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<89 x !struct.struct<@ComponentD>>) attributes {function.allow_constraint} {
-//CHECK-NEXT:       constrain.in %[[A1]], %[[A0]] : <89 x !struct.struct<@ComponentD>>, !struct.struct<@ComponentD>
+//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentD>,
+//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<89 x !struct.type<@ComponentD>>) attributes {function.allow_constraint} {
+//CHECK-NEXT:       constrain.in %[[A1]], %[[A0]] : <89 x !struct.type<@ComponentD>>, !struct.type<@ComponentD>
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @compute(%[[A1:[0-9a-zA-Z_\.]+]]: !array.array<89 x !struct.struct<@ComponentD>>) -> !struct.struct<@ComponentD> attributes {function.allow_witness} {
+//CHECK-NEXT:     function.def @compute(%[[A1:[0-9a-zA-Z_\.]+]]: !array.type<89 x !struct.type<@ComponentD>>) -> !struct.type<@ComponentD> attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentD>
-//CHECK-NEXT:       function.return %[[SELF]] : !struct.struct<@ComponentD>
+//CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentD>
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentE {
-    function.def @constrain(%self: !struct.struct<@ComponentE>, %a: index, %b: !array.array<89,2 x index>) {
-      constrain.in %b, %a : !array.array<89,2 x index>
+    function.def @constrain(%self: !struct.type<@ComponentE>, %a: index, %b: !array.type<89,2 x index>) {
+      constrain.in %b, %a : !array.type<89,2 x index>
       function.return
     }
 
-    function.def @compute(%a: index, %b: !array.array<89,2 x index>) -> !struct.struct<@ComponentE> {
-      %self = struct.new : !struct.struct<@ComponentE>
-      function.return %self : !struct.struct<@ComponentE>
+    function.def @compute(%a: index, %b: !array.type<89,2 x index>) -> !struct.type<@ComponentE> {
+      %self = struct.new : !struct.type<@ComponentE>
+      function.return %self : !struct.type<@ComponentE>
     }
   }
 }
 //CHECK-LABEL:  struct.def @ComponentE {
-//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComponentE>,
-//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<89,2 x index>) attributes {function.allow_constraint} {
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentE>,
+//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: index, %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<89,2 x index>) attributes {function.allow_constraint} {
 //CHECK-NEXT:       constrain.in %[[A1]], %[[A0]] : <89,2 x index>, index
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: index,
-//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<89,2 x index>) -> !struct.struct<@ComponentE>  attributes {function.allow_witness} {
+//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<89,2 x index>) -> !struct.type<@ComponentE>  attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentE>
-//CHECK-NEXT:       function.return %[[SELF]] : !struct.struct<@ComponentE>
+//CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentE>
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 
 // -----
 
-!Signal = !struct.struct<@Signal>
+!Signal = !struct.type<@Signal>
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @Signal {
     struct.field @reg : !felt.felt {llzk.pub}
 
-    function.def @compute(%v: !felt.felt) -> !struct.struct<@Signal> {
-      %self = struct.new : !struct.struct<@Signal>
-      struct.writef %self[@reg] = %v : !struct.struct<@Signal>, !felt.felt
-      function.return %self : !struct.struct<@Signal>
+    function.def @compute(%v: !felt.felt) -> !struct.type<@Signal> {
+      %self = struct.new : !struct.type<@Signal>
+      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.felt
+      function.return %self : !struct.type<@Signal>
     }
 
-    function.def @constrain(%self: !struct.struct<@Signal>, %v: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.felt) {
       function.return
     }
   }
@@ -156,13 +156,13 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Component00 {
     struct.field @f : !Signal
 
-    function.def @compute(%0: !Signal) -> !struct.struct<@Component00> {
-      %self = struct.new : !struct.struct<@Component00>
-      struct.writef %self[@f] = %0 : !struct.struct<@Component00>, !Signal
-      function.return %self : !struct.struct<@Component00>
+    function.def @compute(%0: !Signal) -> !struct.type<@Component00> {
+      %self = struct.new : !struct.type<@Component00>
+      struct.writef %self[@f] = %0 : !struct.type<@Component00>, !Signal
+      function.return %self : !struct.type<@Component00>
     }
-    function.def @constrain(%self: !struct.struct<@Component00>, %0: !Signal) {
-      %b = struct.readf %self[@f] : !struct.struct<@Component00>, !Signal
+    function.def @constrain(%self: !struct.type<@Component00>, %0: !Signal) {
+      %b = struct.readf %self[@f] : !struct.type<@Component00>, !Signal
       // Signal is the only struct allowed for emit equal
       constrain.eq %b, %0 : !Signal
       function.return
@@ -170,17 +170,17 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component01 {
-    struct.field @f : !array.array<2 x !Signal>
+    struct.field @f : !array.type<2 x !Signal>
 
-    function.def @compute(%0: !array.array<2 x !Signal>) -> !struct.struct<@Component01> {
-      %self = struct.new : !struct.struct<@Component01>
-      struct.writef %self[@f] = %0 : !struct.struct<@Component01>, !array.array<2 x !Signal>
-      function.return %self : !struct.struct<@Component01>
+    function.def @compute(%0: !array.type<2 x !Signal>) -> !struct.type<@Component01> {
+      %self = struct.new : !struct.type<@Component01>
+      struct.writef %self[@f] = %0 : !struct.type<@Component01>, !array.type<2 x !Signal>
+      function.return %self : !struct.type<@Component01>
     }
-    function.def @constrain(%self: !struct.struct<@Component01>, %0: !array.array<2 x !Signal>) {
-      %b = struct.readf %self[@f] : !struct.struct<@Component01>, !array.array<2 x !Signal>
+    function.def @constrain(%self: !struct.type<@Component01>, %0: !array.type<2 x !Signal>) {
+      %b = struct.readf %self[@f] : !struct.type<@Component01>, !array.type<2 x !Signal>
       // Signal is the only struct allowed for emit equal
-      constrain.eq %b, %0 : !array.array<2 x !Signal>
+      constrain.eq %b, %0 : !array.type<2 x !Signal>
       function.return
     }
   }
@@ -188,40 +188,40 @@ module attributes {veridise.lang = "llzk"} {
 
 // CHECK-LABEL:   struct.def @Signal {
 // CHECK-NEXT:      struct.field @reg : !felt.felt {llzk.pub}
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !struct.struct<@Signal> attributes {function.allow_witness} {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !struct.type<@Signal> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_1:.*]] = struct.new : <@Signal>
 // CHECK-NEXT:        struct.writef %[[VAL_1]][@reg] = %[[VAL_0]] : <@Signal>, !felt.felt
-// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.struct<@Signal>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Signal>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.struct<@Signal>, %[[VAL_3:.*]]: !felt.felt) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.type<@Signal>, %[[VAL_3:.*]]: !felt.felt) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 
 // CHECK-LABEL:   struct.def @Component00 {
-// CHECK-NEXT:      struct.field @f : !struct.struct<@Signal>
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:.*]]: !struct.struct<@Signal>) -> !struct.struct<@Component00> attributes {function.allow_witness} {
+// CHECK-NEXT:      struct.field @f : !struct.type<@Signal>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:.*]]: !struct.type<@Signal>) -> !struct.type<@Component00> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_1:.*]] = struct.new : <@Component00>
-// CHECK-NEXT:        struct.writef %[[VAL_1]][@f] = %[[VAL_0]] : <@Component00>, !struct.struct<@Signal>
-// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.struct<@Component00>
+// CHECK-NEXT:        struct.writef %[[VAL_1]][@f] = %[[VAL_0]] : <@Component00>, !struct.type<@Signal>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Component00>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.struct<@Component00>, %[[VAL_3:.*]]: !struct.struct<@Signal>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_4:.*]] = struct.readf %[[VAL_2]][@f] : <@Component00>, !struct.struct<@Signal>
-// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !struct.struct<@Signal>, !struct.struct<@Signal>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.type<@Component00>, %[[VAL_3:.*]]: !struct.type<@Signal>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:.*]] = struct.readf %[[VAL_2]][@f] : <@Component00>, !struct.type<@Signal>
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !struct.type<@Signal>, !struct.type<@Signal>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 
 // CHECK-LABEL:   struct.def @Component01 {
-// CHECK-NEXT:      struct.field @f : !array.array<2 x !struct.struct<@Signal>>
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:.*]]: !array.array<2 x !struct.struct<@Signal>>) -> !struct.struct<@Component01> attributes {function.allow_witness} {
+// CHECK-NEXT:      struct.field @f : !array.type<2 x !struct.type<@Signal>>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:.*]]: !array.type<2 x !struct.type<@Signal>>) -> !struct.type<@Component01> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_1:.*]] = struct.new : <@Component01>
-// CHECK-NEXT:        struct.writef %[[VAL_1]][@f] = %[[VAL_0]] : <@Component01>, !array.array<2 x !struct.struct<@Signal>>
-// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.struct<@Component01>
+// CHECK-NEXT:        struct.writef %[[VAL_1]][@f] = %[[VAL_0]] : <@Component01>, !array.type<2 x !struct.type<@Signal>>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Component01>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.struct<@Component01>, %[[VAL_3:.*]]: !array.array<2 x !struct.struct<@Signal>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_4:.*]] = struct.readf %[[VAL_2]][@f] : <@Component01>, !array.array<2 x !struct.struct<@Signal>>
-// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !array.array<2 x !struct.struct<@Signal>>, !array.array<2 x !struct.struct<@Signal>>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.type<@Component01>, %[[VAL_3:.*]]: !array.type<2 x !struct.type<@Signal>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:.*]] = struct.readf %[[VAL_2]][@f] : <@Component01>, !array.type<2 x !struct.type<@Signal>>
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !array.type<2 x !struct.type<@Signal>>, !array.type<2 x !struct.type<@Signal>>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

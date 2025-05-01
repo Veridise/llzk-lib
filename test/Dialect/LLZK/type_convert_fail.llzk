@@ -10,9 +10,9 @@ function.def @string_to_index(
 // -----
 
 function.def @array_to_index(
-    %a: !array.array<2 x !felt.felt> // expected-note {{prior use here}}
+    %a: !array.type<2 x !felt.felt> // expected-note {{prior use here}}
   ) -> index {
-  // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs '!array.array<2 x !felt.felt>'}}
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs '!array.type<2 x !felt.felt>'}}
   %b = cast.toindex %a
   function.return %b: index
 }
@@ -38,16 +38,16 @@ function.def @i1_to_index(
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @C1 {
-    function.def @compute() -> !struct.struct<@C1> {
-      %self = struct.new : !struct.struct<@C1>
-      function.return %self : !struct.struct<@C1>
+    function.def @compute() -> !struct.type<@C1> {
+      %self = struct.new : !struct.type<@C1>
+      function.return %self : !struct.type<@C1>
     }
-    function.def @constrain(%self: !struct.struct<@C1>) { function.return }
+    function.def @constrain(%self: !struct.type<@C1>) { function.return }
   }
   function.def @struct_to_index(
-        %a: !struct.struct<@C1> // expected-note {{prior use here}}
+        %a: !struct.type<@C1> // expected-note {{prior use here}}
     ) -> index {
-    // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs '!struct.struct<@C1>'}}
+    // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs '!struct.type<@C1>'}}
     %b = cast.toindex %a
     function.return %b: index
   }
@@ -61,24 +61,24 @@ function.def @string_to_felt(%a: !string.string) -> !felt.felt {
 }
 // -----
 
-function.def @array_to_felt(%a: !array.array<7 x i1>) -> !felt.felt {
-  // expected-error@+1 {{'cast.tofelt' op operand #0 must be 1-bit signless integer or index, but got '!array.array<7 x i1>'}}
-  %b = cast.tofelt %a : !array.array<7 x i1>
+function.def @array_to_felt(%a: !array.type<7 x i1>) -> !felt.felt {
+  // expected-error@+1 {{'cast.tofelt' op operand #0 must be 1-bit signless integer or index, but got '!array.type<7 x i1>'}}
+  %b = cast.tofelt %a : !array.type<7 x i1>
   function.return %b: !felt.felt
 }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @C2 {
-    function.def @compute() -> !struct.struct<@C2> {
-      %self = struct.new : !struct.struct<@C2>
-      function.return %self : !struct.struct<@C2>
+    function.def @compute() -> !struct.type<@C2> {
+      %self = struct.new : !struct.type<@C2>
+      function.return %self : !struct.type<@C2>
     }
-    function.def @constrain(%self: !struct.struct<@C2>) { function.return }
+    function.def @constrain(%self: !struct.type<@C2>) { function.return }
   }
-  function.def @struct_to_felt(%a: !struct.struct<@C2>) -> !felt.felt {
-    // expected-error@+1 {{'cast.tofelt' op operand #0 must be 1-bit signless integer or index, but got '!struct.struct<@C2>'}}
-    %b = cast.tofelt %a : !struct.struct<@C2>
+  function.def @struct_to_felt(%a: !struct.type<@C2>) -> !felt.felt {
+    // expected-error@+1 {{'cast.tofelt' op operand #0 must be 1-bit signless integer or index, but got '!struct.type<@C2>'}}
+    %b = cast.tofelt %a : !struct.type<@C2>
     function.return %b: !felt.felt
   }
 }

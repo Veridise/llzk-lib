@@ -5,22 +5,22 @@ module attributes {veridise.lang = "llzk"} {
     // expected-note@+1 {{field defined here}}
     struct.field @f1 : !felt.felt
 
-    function.def @constrain(%self: !struct.struct<@ComponentA1>) { function.return }
-    function.def @compute() -> !struct.struct<@ComponentA1> {
-      %self = struct.new : !struct.struct<@ComponentA1>
-      function.return %self : !struct.struct<@ComponentA1>
+    function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
+    function.def @compute() -> !struct.type<@ComponentA1> {
+      %self = struct.new : !struct.type<@ComponentA1>
+      function.return %self : !struct.type<@ComponentA1>
     }
   }
 
   struct.def @ComponentA2 {
-    function.def @compute(%p: !struct.struct<@ComponentA1>) -> !struct.struct<@ComponentA2> {
-      %self = struct.new : !struct.struct<@ComponentA2>
+    function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> {
+      %self = struct.new : !struct.type<@ComponentA2>
       // expected-error@+1 {{'struct.readf' op cannot read with table offset from a field that is not a column}}
-      %r = struct.readf %p[@f1] : !struct.struct<@ComponentA1>, !felt.felt {tableOffset = -1 : index}
-      function.return %self : !struct.struct<@ComponentA2>
+      %r = struct.readf %p[@f1] : !struct.type<@ComponentA1>, !felt.felt {tableOffset = -1 : index}
+      function.return %self : !struct.type<@ComponentA2>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentA2>, %p: !struct.struct<@ComponentA1>) {
+    function.def @constrain(%self: !struct.type<@ComponentA2>, %p: !struct.type<@ComponentA1>) {
       function.return
     }
   }
@@ -32,12 +32,12 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
     // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!string.string'}}
     struct.field @f1 : !string.string {column}
-    function.def @compute() -> !struct.struct<@ComponentA2> {
-      %self = struct.new : !struct.struct<@ComponentA2>
-      function.return %self : !struct.struct<@ComponentA2>
+    function.def @compute() -> !struct.type<@ComponentA2> {
+      %self = struct.new : !struct.type<@ComponentA2>
+      function.return %self : !struct.type<@ComponentA2>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentA2>) {
+    function.def @constrain(%self: !struct.type<@ComponentA2>) {
       function.return
     }
   }
@@ -49,12 +49,12 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
     // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type 'index'}}
     struct.field @f1 : index {column}
-    function.def @compute() -> !struct.struct<@ComponentA2> {
-      %self = struct.new : !struct.struct<@ComponentA2>
-      function.return %self : !struct.struct<@ComponentA2>
+    function.def @compute() -> !struct.type<@ComponentA2> {
+      %self = struct.new : !struct.type<@ComponentA2>
+      function.return %self : !struct.type<@ComponentA2>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentA2>) {
+    function.def @constrain(%self: !struct.type<@ComponentA2>) {
       function.return
     }
   }
@@ -66,12 +66,12 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
     // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type 'i1'}}
     struct.field @f1 : i1 {column}
-    function.def @compute() -> !struct.struct<@ComponentA2> {
-      %self = struct.new : !struct.struct<@ComponentA2>
-      function.return %self : !struct.struct<@ComponentA2>
+    function.def @compute() -> !struct.type<@ComponentA2> {
+      %self = struct.new : !struct.type<@ComponentA2>
+      function.return %self : !struct.type<@ComponentA2>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentA2>) {
+    function.def @constrain(%self: !struct.type<@ComponentA2>) {
       function.return
     }
   }
@@ -81,14 +81,14 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
-    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!array.array<2 x !string.string>'}}
-    struct.field @f1 : !array.array<2 x !string.string> {column}
-    function.def @compute() -> !struct.struct<@ComponentA2> {
-      %self = struct.new : !struct.struct<@ComponentA2>
-      function.return %self : !struct.struct<@ComponentA2>
+    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!array.type<2 x !string.string>'}}
+    struct.field @f1 : !array.type<2 x !string.string> {column}
+    function.def @compute() -> !struct.type<@ComponentA2> {
+      %self = struct.new : !struct.type<@ComponentA2>
+      function.return %self : !struct.type<@ComponentA2>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentA2>) {
+    function.def @constrain(%self: !struct.type<@ComponentA2>) {
       function.return
     }
   }
@@ -98,14 +98,14 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
-    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!array.array<2 x index>'}}
-    struct.field @f1 : !array.array<2 x index> {column}
-    function.def @compute() -> !struct.struct<@ComponentA2> {
-      %self = struct.new : !struct.struct<@ComponentA2>
-      function.return %self : !struct.struct<@ComponentA2>
+    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!array.type<2 x index>'}}
+    struct.field @f1 : !array.type<2 x index> {column}
+    function.def @compute() -> !struct.type<@ComponentA2> {
+      %self = struct.new : !struct.type<@ComponentA2>
+      function.return %self : !struct.type<@ComponentA2>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentA2>) {
+    function.def @constrain(%self: !struct.type<@ComponentA2>) {
       function.return
     }
   }
@@ -118,22 +118,22 @@ module attributes {veridise.lang = "llzk"} {
     // Even if the struct's field is of felt type, it is not marked as a column.
     struct.field @f1 : !felt.felt
 
-    function.def @constrain(%self: !struct.struct<@ComponentA1>) { function.return }
-    function.def @compute() -> !struct.struct<@ComponentA1> {
-      %self = struct.new : !struct.struct<@ComponentA1>
-      function.return %self : !struct.struct<@ComponentA1>
+    function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
+    function.def @compute() -> !struct.type<@ComponentA1> {
+      %self = struct.new : !struct.type<@ComponentA1>
+      function.return %self : !struct.type<@ComponentA1>
     }
   }
 
   struct.def @ComponentA2 {
-    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!struct.struct<@ComponentA1>'}}
-    struct.field @c1 : !struct.struct<@ComponentA1> {column}
-    function.def @compute() -> !struct.struct<@ComponentA2> {
-      %self = struct.new : !struct.struct<@ComponentA2>
-      function.return %self : !struct.struct<@ComponentA2>
+    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!struct.type<@ComponentA1>'}}
+    struct.field @c1 : !struct.type<@ComponentA1> {column}
+    function.def @compute() -> !struct.type<@ComponentA2> {
+      %self = struct.new : !struct.type<@ComponentA2>
+      function.return %self : !struct.type<@ComponentA2>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentA2>) {
+    function.def @constrain(%self: !struct.type<@ComponentA2>) {
       function.return
     }
   }

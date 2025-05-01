@@ -2,71 +2,71 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Hello {
-    function.def @compute() -> !struct.struct<@Hello> {
-      %self = struct.new : !struct.struct<@Hello>
-      function.return %self : !struct.struct<@Hello>
+    function.def @compute() -> !struct.type<@Hello> {
+      %self = struct.new : !struct.type<@Hello>
+      function.return %self : !struct.type<@Hello>
     }
-    function.def @constrain(%self: !struct.struct<@Hello>) { function.return }
+    function.def @constrain(%self: !struct.type<@Hello>) { function.return }
   }
-  function.def private @a(!array.array<5 x !felt.felt>, !struct.struct<@Hello>)
+  function.def private @a(!array.type<5 x !felt.felt>, !struct.type<@Hello>)
 }
-//CHECK-LABEL:  function.def private @a(!array.array<5 x !felt.felt>, !struct.struct<@Hello>)
+//CHECK-LABEL:  function.def private @a(!array.type<5 x !felt.felt>, !struct.type<@Hello>)
 // -----
 
-function.def private @b(!array.array<3,2,1 x !felt.felt>)
-//CHECK-LABEL:  function.def private @b(!array.array<3,2,1 x !felt.felt>)
+function.def private @b(!array.type<3,2,1 x !felt.felt>)
+//CHECK-LABEL:  function.def private @b(!array.type<3,2,1 x !felt.felt>)
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Bob {
-    function.def @compute() -> !struct.struct<@Bob> {
-      %self = struct.new : !struct.struct<@Bob>
-      function.return %self : !struct.struct<@Bob>
+    function.def @compute() -> !struct.type<@Bob> {
+      %self = struct.new : !struct.type<@Bob>
+      function.return %self : !struct.type<@Bob>
     }
-    function.def @constrain(%self: !struct.struct<@Bob>) { function.return }
+    function.def @constrain(%self: !struct.type<@Bob>) { function.return }
   }
-  function.def private @c(%x: !array.array<5 x !struct.struct<@Bob>>) -> !array.array<5 x !struct.struct<@Bob>>
+  function.def private @c(%x: !array.type<5 x !struct.type<@Bob>>) -> !array.type<5 x !struct.type<@Bob>>
 }
-//CHECK-LABEL:  function.def private @c(!array.array<5 x !struct.struct<@Bob>>) -> !array.array<5 x !struct.struct<@Bob>>
+//CHECK-LABEL:  function.def private @c(!array.type<5 x !struct.type<@Bob>>) -> !array.type<5 x !struct.type<@Bob>>
 // -----
 
-function.def private @d(%x: !array.array<54 x index>) -> index
-//CHECK-LABEL:  function.def private @d(!array.array<54 x index>) -> index
+function.def private @d(%x: !array.type<54 x index>) -> index
+//CHECK-LABEL:  function.def private @d(!array.type<54 x index>) -> index
 // -----
 
 function.def private @f(!felt.felt) -> i1
 //CHECK-LABEL:  function.def private @f(!felt.felt) -> i1
 // -----
 
-function.def private @g(%x: !array.array<2,3,2 x index>)
-//CHECK-LABEL:  function.def private @g(!array.array<2,3,2 x index>)
+function.def private @g(%x: !array.type<2,3,2 x index>)
+//CHECK-LABEL:  function.def private @g(!array.type<2,3,2 x index>)
 // -----
 
 function.def private @h(%x: !string.string)
 //CHECK-LABEL:  function.def private @h(!string.string)
 // -----
 
-function.def private @i(%x: !array.array<4 x !string.string>)
-//CHECK-LABEL:  function.def private @i(!array.array<4 x !string.string>)
+function.def private @i(%x: !array.type<4 x !string.string>)
+//CHECK-LABEL:  function.def private @i(!array.type<4 x !string.string>)
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @CJ {
     struct.field @s : !string.string
-    function.def @compute() -> !struct.struct<@CJ> {
-      %self = struct.new : !struct.struct<@CJ>
-      function.return %self : !struct.struct<@CJ>
+    function.def @compute() -> !struct.type<@CJ> {
+      %self = struct.new : !struct.type<@CJ>
+      function.return %self : !struct.type<@CJ>
     }
-    function.def @constrain(%self: !struct.struct<@CJ>) { function.return }
+    function.def @constrain(%self: !struct.type<@CJ>) { function.return }
   }
 }
 //CHECK-LABEL: struct.def @CJ {
 //CHECK-NEXT:    struct.field @s : !string.string
-//CHECK-NEXT:    function.def @compute() -> !struct.struct<@CJ> attributes {function.allow_witness} {
+//CHECK-NEXT:    function.def @compute() -> !struct.type<@CJ> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@CJ>
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.struct<@CJ>
+//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@CJ>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@CJ>) attributes {function.allow_constraint} {
+//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@CJ>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }

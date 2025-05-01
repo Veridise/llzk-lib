@@ -2,29 +2,29 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @D0 {
-    function.def @compute() -> !struct.struct<@D0> {
-      %self = struct.new : !struct.struct<@D0>
-      function.return %self: !struct.struct<@D0>
+    function.def @compute() -> !struct.type<@D0> {
+      %self = struct.new : !struct.type<@D0>
+      function.return %self: !struct.type<@D0>
     }
-    function.def @constrain(%self: !struct.struct<@D0>) {
+    function.def @constrain(%self: !struct.type<@D0>) {
       function.return
     }
   }
   struct.def @D1<[@M]> {
-    function.def @compute() -> !struct.struct<@D1<[@M]>> {
-      %self = struct.new : !struct.struct<@D1<[@M]>>
-      function.return %self: !struct.struct<@D1<[@M]>>
+    function.def @compute() -> !struct.type<@D1<[@M]>> {
+      %self = struct.new : !struct.type<@D1<[@M]>>
+      function.return %self: !struct.type<@D1<[@M]>>
     }
-    function.def @constrain(%self: !struct.struct<@D1<[@M]>>) {
+    function.def @constrain(%self: !struct.type<@D1<[@M]>>) {
       function.return
     }
   }
   struct.def @D2<[@M, @N]> {
-    function.def @compute() -> !struct.struct<@D2<[@M, @N]>> {
-      %self = struct.new : !struct.struct<@D2<[@M, @N]>>
-      function.return %self: !struct.struct<@D2<[@M, @N]>>
+    function.def @compute() -> !struct.type<@D2<[@M, @N]>> {
+      %self = struct.new : !struct.type<@D2<[@M, @N]>>
+      function.return %self: !struct.type<@D2<[@M, @N]>>
     }
-    function.def @constrain(%self: !struct.struct<@D2<[@M, @N]>>) {
+    function.def @constrain(%self: !struct.type<@D2<[@M, @N]>>) {
       function.return
     }
   }

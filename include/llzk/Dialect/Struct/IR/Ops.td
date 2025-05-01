@@ -56,16 +56,16 @@ def LLZK_StructDefOp
 
       ```llzk
       struct.def @ComponentA {
-        field @f1 : !array.array<5 x index>
+        field @f1 : !array.type<5 x index>
         field @f2 : !felt.felt {llzk.pub}
 
-        function.def @compute(%p: !felt.felt) -> !struct.struct<@ComponentA> {
-          %self = struct.new : !struct.struct<@ComponentA>
+        function.def @compute(%p: !felt.felt) -> !struct.type<@ComponentA> {
+          %self = struct.new : !struct.type<@ComponentA>
           // initialize all fields of `%self` here
-          return %self : !struct.struct<@ComponentA>
+          return %self : !struct.type<@ComponentA>
         }
 
-        function.def @constrain(%self: !struct.struct<@ComponentA>, %p: !felt.felt) {
+        function.def @constrain(%self: !struct.type<@ComponentA>, %p: !felt.felt) {
           // emit constraints here
           return
         }
@@ -283,7 +283,7 @@ def LLZK_CreateStructOp
     Example:
 
     ```llzk
-    %self = struct.new : !struct.struct<@Reg>
+    %self = struct.new : !struct.type<@Reg>
     ```
   }];
 

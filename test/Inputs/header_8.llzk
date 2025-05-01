@@ -3,11 +3,11 @@
 module attributes {veridise.lang = "llzk"} {
   module @libC {
     struct.def @StructC {
-      function.def @compute() -> !struct.struct<@libC::@StructC> {
-        %self = struct.new : !struct.struct<@libC::@StructC>
-        function.return %self : !struct.struct<@libC::@StructC>
+      function.def @compute() -> !struct.type<@libC::@StructC> {
+        %self = struct.new : !struct.type<@libC::@StructC>
+        function.return %self : !struct.type<@libC::@StructC>
       }
-      function.def @constrain(%self: !struct.struct<@libC::@StructC>) {
+      function.def @constrain(%self: !struct.type<@libC::@StructC>) {
         function.return
       }
     }

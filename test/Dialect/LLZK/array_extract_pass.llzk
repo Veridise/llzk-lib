@@ -1,16 +1,16 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-function.def @constant_index() -> !array.array<2 x index> {
+function.def @constant_index() -> !array.type<2 x index> {
   %a = arith.constant 45 : index
   %b = arith.constant 214 : index
   %c = arith.constant 2 : index
   %d = arith.constant 52 : index
-  %r = array.new %a, %b, %c, %d : !array.array<2,2 x index>
+  %r = array.new %a, %b, %c, %d : !array.type<2,2 x index>
   %i = arith.constant 1 : index
-  %s = array.extract %r[%i] : !array.array<2,2 x index>
-  function.return %s: !array.array<2 x index>
+  %s = array.extract %r[%i] : !array.type<2,2 x index>
+  function.return %s: !array.type<2 x index>
 }
-//CHECK-LABEL: function.def @constant_index() -> !array.array<2 x index> {
+//CHECK-LABEL: function.def @constant_index() -> !array.type<2 x index> {
 //CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 45 : index
 //CHECK-NEXT:    %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 214 : index
 //CHECK-NEXT:    %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
@@ -18,131 +18,131 @@ function.def @constant_index() -> !array.array<2 x index> {
 //CHECK-NEXT:    %[[T5:[0-9a-zA-Z_\.]+]] = array.new %[[T1]], %[[T2]], %[[T3]], %[[T4]] : <2,2 x index>
 //CHECK-NEXT:    %[[T6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:    %[[T7:[0-9a-zA-Z_\.]+]] = array.extract %[[T5]][%[[T6]]] : <2,2 x index>
-//CHECK-NEXT:    function.return %[[T7]] : !array.array<2 x index>
+//CHECK-NEXT:    function.return %[[T7]] : !array.type<2 x index>
 //CHECK-NEXT:  }
 // -----
 
-function.def @empty_index() -> !array.array<2,2 x index> {
+function.def @empty_index() -> !array.type<2,2 x index> {
   %a = arith.constant 45 : index
   %b = arith.constant 214 : index
   %c = arith.constant 2 : index
   %d = arith.constant 52 : index
-  %r = array.new %a, %b, %c, %d : !array.array<2,2 x index>
-  %s = array.extract %r[] : !array.array<2,2 x index>
-  function.return %s: !array.array<2,2 x index>
+  %r = array.new %a, %b, %c, %d : !array.type<2,2 x index>
+  %s = array.extract %r[] : !array.type<2,2 x index>
+  function.return %s: !array.type<2,2 x index>
 }
-//CHECK-LABEL: function.def @empty_index() -> !array.array<2,2 x index> {
+//CHECK-LABEL: function.def @empty_index() -> !array.type<2,2 x index> {
 //CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = arith.constant 45 : index
 //CHECK-NEXT:    %[[T2:[0-9a-zA-Z_\.]+]] = arith.constant 214 : index
 //CHECK-NEXT:    %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 //CHECK-NEXT:    %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 52 : index
 //CHECK-NEXT:    %[[T5:[0-9a-zA-Z_\.]+]] = array.new %[[T1]], %[[T2]], %[[T3]], %[[T4]] : <2,2 x index>
 //CHECK-NEXT:    %[[T7:[0-9a-zA-Z_\.]+]] = array.extract %[[T5]][] : <2,2 x index>
-//CHECK-NEXT:    function.return %[[T7]] : !array.array<2,2 x index>
+//CHECK-NEXT:    function.return %[[T7]] : !array.type<2,2 x index>
 //CHECK-NEXT:  }
 // -----
 
-function.def @trival() -> !array.array<0 x index> {
-  %r = array.new : !array.array<0 x index>
-  %s = array.extract %r[] : !array.array<0 x index>
-  function.return %s: !array.array<0 x index>
+function.def @trival() -> !array.type<0 x index> {
+  %r = array.new : !array.type<0 x index>
+  %s = array.extract %r[] : !array.type<0 x index>
+  function.return %s: !array.type<0 x index>
 }
-//CHECK-LABEL: function.def @trival() -> !array.array<0 x index> {
+//CHECK-LABEL: function.def @trival() -> !array.type<0 x index> {
 //CHECK-NEXT:    %[[T5:[0-9a-zA-Z_\.]+]] = array.new : <0 x index>
 //CHECK-NEXT:    %[[T7:[0-9a-zA-Z_\.]+]] = array.extract %[[T5]][] : <0 x index>
-//CHECK-NEXT:    function.return %[[T7]] : !array.array<0 x index>
+//CHECK-NEXT:    function.return %[[T7]] : !array.type<0 x index>
 //CHECK-NEXT:  }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component01 {
-    struct.field @f : !array.array<2 x !felt.felt>
+    struct.field @f : !array.type<2 x !felt.felt>
 
-    function.def @compute(%0: !array.array<2 x !felt.felt>) -> !struct.struct<@Component01> {
-      %self = struct.new : !struct.struct<@Component01>
-      struct.writef %self[@f] = %0 : !struct.struct<@Component01>, !array.array<2 x !felt.felt>
-      function.return %self : !struct.struct<@Component01>
+    function.def @compute(%0: !array.type<2 x !felt.felt>) -> !struct.type<@Component01> {
+      %self = struct.new : !struct.type<@Component01>
+      struct.writef %self[@f] = %0 : !struct.type<@Component01>, !array.type<2 x !felt.felt>
+      function.return %self : !struct.type<@Component01>
     }
-    function.def @constrain(%self: !struct.struct<@Component01>, %0: !array.array<2 x !felt.felt>) {
-      %b = struct.readf %self[@f] : !struct.struct<@Component01>, !array.array<2 x !felt.felt>
-      constrain.eq %0, %b : !array.array<2 x !felt.felt>
+    function.def @constrain(%self: !struct.type<@Component01>, %0: !array.type<2 x !felt.felt>) {
+      %b = struct.readf %self[@f] : !struct.type<@Component01>, !array.type<2 x !felt.felt>
+      constrain.eq %0, %b : !array.type<2 x !felt.felt>
       function.return
     }
   }
 
   struct.def @Component02<[@N]> {
-    struct.field @g : !array.array<@N x !struct.struct<@Component01>>
+    struct.field @g : !array.type<@N x !struct.type<@Component01>>
 
-    function.def @compute(%in: !array.array<@N,2 x !felt.felt>) -> !struct.struct<@Component02<[@N]>> {
-      %self = struct.new : !struct.struct<@Component02<[@N]>>
-      %a = array.new : !array.array<@N x !struct.struct<@Component01>>
+    function.def @compute(%in: !array.type<@N,2 x !felt.felt>) -> !struct.type<@Component02<[@N]>> {
+      %self = struct.new : !struct.type<@Component02<[@N]>>
+      %a = array.new : !array.type<@N x !struct.type<@Component01>>
 
       %lb = arith.constant 0 : index
       %up = poly.read_const @N : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        %p = array.extract %in[%iv] : !array.array<@N,2 x !felt.felt>
-        %c = function.call @Component01::@compute(%p) : (!array.array<2 x !felt.felt>) -> !struct.struct<@Component01>
-        array.write %a[%iv] = %c : !array.array<@N x !struct.struct<@Component01>>, !struct.struct<@Component01>
+        %p = array.extract %in[%iv] : !array.type<@N,2 x !felt.felt>
+        %c = function.call @Component01::@compute(%p) : (!array.type<2 x !felt.felt>) -> !struct.type<@Component01>
+        array.write %a[%iv] = %c : !array.type<@N x !struct.type<@Component01>>, !struct.type<@Component01>
       }
 
-      struct.writef %self[@g] = %a : !struct.struct<@Component02<[@N]>>, !array.array<@N x !struct.struct<@Component01>>
-      function.return %self : !struct.struct<@Component02<[@N]>>
+      struct.writef %self[@g] = %a : !struct.type<@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
+      function.return %self : !struct.type<@Component02<[@N]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@Component02<[@N]>>, %in: !array.array<@N,2 x !felt.felt>) {
-      %a = struct.readf %self[@g] : !struct.struct<@Component02<[@N]>>, !array.array<@N x !struct.struct<@Component01>>
+    function.def @constrain(%self: !struct.type<@Component02<[@N]>>, %in: !array.type<@N,2 x !felt.felt>) {
+      %a = struct.readf %self[@g] : !struct.type<@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
 
       %lb = arith.constant 0 : index
       %up = poly.read_const @N : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        %p = array.extract %in[%iv] : !array.array<@N,2 x !felt.felt>
-        %c = array.read %a[%iv] : !array.array<@N x !struct.struct<@Component01>>, !struct.struct<@Component01>
-        function.call @Component01::@constrain(%c, %p) : (!struct.struct<@Component01>, !array.array<2 x !felt.felt>) -> ()
+        %p = array.extract %in[%iv] : !array.type<@N,2 x !felt.felt>
+        %c = array.read %a[%iv] : !array.type<@N x !struct.type<@Component01>>, !struct.type<@Component01>
+        function.call @Component01::@constrain(%c, %p) : (!struct.type<@Component01>, !array.type<2 x !felt.felt>) -> ()
       }
       function.return
     }
   }
 }
 //CHECK-LABEL: struct.def @Component01 {
-//CHECK-NEXT:    struct.field @f : !array.array<2 x !felt.felt>
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.array<2 x !felt.felt>) -> !struct.struct<@Component01> attributes {function.allow_witness} {
+//CHECK-NEXT:    struct.field @f : !array.type<2 x !felt.felt>
+//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.felt>) -> !struct.type<@Component01> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component01>
-//CHECK-NEXT:      struct.writef %[[SELF]][@f] = %[[A0]] : <@Component01>, !array.array<2 x !felt.felt>
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.struct<@Component01>
+//CHECK-NEXT:      struct.writef %[[SELF]][@f] = %[[A0]] : <@Component01>, !array.type<2 x !felt.felt>
+//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@Component01>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@Component01>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<2 x !felt.felt>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@f] : <@Component01>, !array.array<2 x !felt.felt>
-//CHECK-NEXT:      constrain.eq %[[A1]], %[[T0]] : !array.array<2 x !felt.felt>, !array.array<2 x !felt.felt>
+//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@Component01>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.felt>) attributes {function.allow_constraint} {
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@f] : <@Component01>, !array.type<2 x !felt.felt>
+//CHECK-NEXT:      constrain.eq %[[A1]], %[[T0]] : !array.type<2 x !felt.felt>, !array.type<2 x !felt.felt>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: struct.def @Component02<[@N]> {
-//CHECK-NEXT:    struct.field @g : !array.array<@N x !struct.struct<@Component01>>
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.array<@N,2 x !felt.felt>) -> !struct.struct<@Component02<[@N]>> attributes {function.allow_witness} {
+//CHECK-NEXT:    struct.field @g : !array.type<@N x !struct.type<@Component01>>
+//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<@N,2 x !felt.felt>) -> !struct.type<@Component02<[@N]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02<[@N]>>
-//CHECK-NEXT:      %array = array.new  : <@N x !struct.struct<@Component01>>
+//CHECK-NEXT:      %array = array.new  : <@N x !struct.type<@Component01>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:      scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[T3]] to %[[T0]] step %[[T4]] {
 //CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = array.extract %[[A0]][%[[IV]]] : <@N,2 x !felt.felt>
-//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[T1]]) : (!array.array<2 x !felt.felt>) -> !struct.struct<@Component01>
-//CHECK-NEXT:        array.write %array[%[[IV]]] = %[[T2]] : <@N x !struct.struct<@Component01>>, !struct.struct<@Component01>
+//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[T1]]) : (!array.type<2 x !felt.felt>) -> !struct.type<@Component01>
+//CHECK-NEXT:        array.write %array[%[[IV]]] = %[[T2]] : <@N x !struct.type<@Component01>>, !struct.type<@Component01>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      struct.writef %[[SELF]][@g] = %array : <@Component02<[@N]>>, !array.array<@N x !struct.struct<@Component01>>
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.struct<@Component02<[@N]>>
+//CHECK-NEXT:      struct.writef %[[SELF]][@g] = %array : <@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
+//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@Component02<[@N]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@Component02<[@N]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<@N,2 x !felt.felt>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@g] : <@Component02<[@N]>>, !array.array<@N x !struct.struct<@Component01>>
+//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@Component02<[@N]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<@N,2 x !felt.felt>) attributes {function.allow_constraint} {
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@g] : <@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:      scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[T3]] to %[[T1]] step %[[T4]] {
 //CHECK-NEXT:        %[[T5:[0-9a-zA-Z_\.]+]] = array.extract %[[A1]][%[[IV]]] : <@N,2 x !felt.felt>
-//CHECK-NEXT:        %[[T6:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[IV]]] : <@N x !struct.struct<@Component01>>, !struct.struct<@Component01>
-//CHECK-NEXT:        function.call @Component01::@constrain(%[[T6]], %[[T5]]) : (!struct.struct<@Component01>, !array.array<2 x !felt.felt>) -> ()
+//CHECK-NEXT:        %[[T6:[0-9a-zA-Z_\.]+]] = array.read %[[T0]][%[[IV]]] : <@N x !struct.type<@Component01>>, !struct.type<@Component01>
+//CHECK-NEXT:        function.call @Component01::@constrain(%[[T6]], %[[T5]]) : (!struct.type<@Component01>, !array.type<2 x !felt.felt>) -> ()
 //CHECK-NEXT:      }
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }

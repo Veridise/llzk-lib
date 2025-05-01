@@ -13,15 +13,15 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Component01<[@T]> {
     function.def @compute(
           %c: !poly.tvar<@T> // expected-note {{prior use here}}
-        ) -> !struct.struct<@Component01<[@T]>> {
-      %self = struct.new : !struct.struct<@Component01<[@T]>>
+        ) -> !struct.type<@Component01<[@T]>> {
+      %self = struct.new : !struct.type<@Component01<[@T]>>
       // I doubt there's any reason to support type variable used as the assert condition.
       // expected-error@+1 {{use of value '%c' expects different type than prior uses: 'i1' vs '!poly.tvar<@T>'}}
       bool.assert %c
-      function.return %self : !struct.struct<@Component01<[@T]>>
+      function.return %self : !struct.type<@Component01<[@T]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@Component01<[@T]>>, %c: !poly.tvar<@T>) {
+    function.def @constrain(%self: !struct.type<@Component01<[@T]>>, %c: !poly.tvar<@T>) {
       function.return
     }
   }

@@ -3,16 +3,16 @@
 // Test: [constrain.in] type annotation does not match type of parameter 2 in size
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent01 {
-    function.def @compute() -> !struct.struct<@TestComponent01> {
-      %self = struct.new : !struct.struct<@TestComponent01>
-      function.return %self : !struct.struct<@TestComponent01>
+    function.def @compute() -> !struct.type<@TestComponent01> {
+      %self = struct.new : !struct.type<@TestComponent01>
+      function.return %self : !struct.type<@TestComponent01>
     }
     function.def @constrain(
           %a: !felt.felt,
-          %b: !array.array<5 x !felt.felt> // expected-note {{prior use here}}
+          %b: !array.type<5 x !felt.felt> // expected-note {{prior use here}}
           ) {
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.array<6 x !felt.felt>' vs '!array.array<5 x !felt.felt>'}}
-      constrain.in %b, %a : !array.array<6 x !felt.felt>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<6 x !felt.felt>' vs '!array.type<5 x !felt.felt>'}}
+      constrain.in %b, %a : !array.type<6 x !felt.felt>
       function.return
     }
   }
@@ -22,16 +22,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.in] type annotation does not match type of parameter 2 in element type
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent02 {
-    function.def @compute() -> !struct.struct<@TestComponent02> {
-      %self = struct.new : !struct.struct<@TestComponent02>
-      function.return %self : !struct.struct<@TestComponent02>
+    function.def @compute() -> !struct.type<@TestComponent02> {
+      %self = struct.new : !struct.type<@TestComponent02>
+      function.return %self : !struct.type<@TestComponent02>
     }
     function.def @constrain(
           %a: index,
-          %b: !array.array<5 x !felt.felt> // expected-note {{prior use here}}
+          %b: !array.type<5 x !felt.felt> // expected-note {{prior use here}}
           ) {
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.array<5 x index>' vs '!array.array<5 x !felt.felt>'}}
-      constrain.in %b, %a : !array.array<5 x index>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<5 x index>' vs '!array.type<5 x !felt.felt>'}}
+      constrain.in %b, %a : !array.type<5 x index>
       function.return
     }
   }
@@ -41,16 +41,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.in] type of parameter 1 does not match array element type of annotation
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent03 {
-    function.def @compute() -> !struct.struct<@TestComponent03> {
-      %self = struct.new : !struct.struct<@TestComponent03>
-      function.return %self : !struct.struct<@TestComponent03>
+    function.def @compute() -> !struct.type<@TestComponent03> {
+      %self = struct.new : !struct.type<@TestComponent03>
+      function.return %self : !struct.type<@TestComponent03>
     }
     function.def @constrain(
           %a: index, // expected-note {{prior use here}}
-          %b: !array.array<5 x !felt.felt>
+          %b: !array.type<5 x !felt.felt>
           ) {
       // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs 'index'}}
-      constrain.in %b, %a : !array.array<5 x !felt.felt>
+      constrain.in %b, %a : !array.type<5 x !felt.felt>
       function.return
     }
   }
@@ -60,9 +60,9 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.in] type annotation is not an array type
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent04 {
-    function.def @compute() -> !struct.struct<@TestComponent04> {
-      %self = struct.new : !struct.struct<@TestComponent04>
-      function.return %self : !struct.struct<@TestComponent04>
+    function.def @compute() -> !struct.type<@TestComponent04> {
+      %self = struct.new : !struct.type<@TestComponent04>
+      function.return %self : !struct.type<@TestComponent04>
     }
     function.def @constrain(%a: !felt.felt, %b: !felt.felt) {
       // expected-error@+1 {{custom op 'constrain.in' invalid kind of Type specified}}
@@ -76,16 +76,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.in] type of parameter 2 is not an array
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent05 {
-    function.def @compute() -> !struct.struct<@TestComponent05> {
-      %self = struct.new : !struct.struct<@TestComponent05>
-      function.return %self : !struct.struct<@TestComponent05>
+    function.def @compute() -> !struct.type<@TestComponent05> {
+      %self = struct.new : !struct.type<@TestComponent05>
+      function.return %self : !struct.type<@TestComponent05>
     }
     function.def @constrain(
           %a: !felt.felt,
           %b: !felt.felt  // expected-note {{prior use here}}
           ) {
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.array<5 x !felt.felt>' vs '!felt.felt'}}
-      constrain.in %b, %a : !array.array<5 x !felt.felt>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<5 x !felt.felt>' vs '!felt.felt'}}
+      constrain.in %b, %a : !array.type<5 x !felt.felt>
       function.return
     }
   }
@@ -95,16 +95,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.in] type of parameter 1 does not match array element type of parameter 2
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent06 {
-    function.def @compute() -> !struct.struct<@TestComponent06> {
-      %self = struct.new : !struct.struct<@TestComponent06>
-      function.return %self : !struct.struct<@TestComponent06>
+    function.def @compute() -> !struct.type<@TestComponent06> {
+      %self = struct.new : !struct.type<@TestComponent06>
+      function.return %self : !struct.type<@TestComponent06>
     }
     function.def @constrain(
           %a: index, // expected-note {{prior use here}}
-          %b: !array.array<5 x !felt.felt>
+          %b: !array.type<5 x !felt.felt>
           ) {
       // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs 'index'}}
-      constrain.in %b, %a : !array.array<5 x !felt.felt>
+      constrain.in %b, %a : !array.type<5 x !felt.felt>
       function.return
     }
   }
@@ -114,15 +114,15 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] lhs has invalid type
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent07 {
-    function.def @compute() -> !struct.struct<@TestComponent07> {
-      %self = struct.new : !struct.struct<@TestComponent07>
-      function.return %self : !struct.struct<@TestComponent07>
+    function.def @compute() -> !struct.type<@TestComponent07> {
+      %self = struct.new : !struct.type<@TestComponent07>
+      function.return %self : !struct.type<@TestComponent07>
     }
     function.def @constrain(
-          %a: !struct.struct<@TestComponent07>, // expected-note {{prior use here}}
+          %a: !struct.type<@TestComponent07>, // expected-note {{prior use here}}
           %b: !felt.felt
           ) {
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs '!struct.struct<@TestComponent07>'}}
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs '!struct.type<@TestComponent07>'}}
       constrain.eq %a, %b : !felt.felt
       function.return
     }
@@ -133,15 +133,15 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] rhs has invalid type
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent08 {
-    function.def @compute() -> !struct.struct<@TestComponent08> {
-      %self = struct.new : !struct.struct<@TestComponent08>
-      function.return %self : !struct.struct<@TestComponent08>
+    function.def @compute() -> !struct.type<@TestComponent08> {
+      %self = struct.new : !struct.type<@TestComponent08>
+      function.return %self : !struct.type<@TestComponent08>
     }
     function.def @constrain(
           %a: index,
-          %b: !struct.struct<@TestComponent08> // expected-note {{prior use here}}
+          %b: !struct.type<@TestComponent08> // expected-note {{prior use here}}
           ) {
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'index' vs '!struct.struct<@TestComponent08>'}}
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'index' vs '!struct.type<@TestComponent08>'}}
       constrain.eq %a, %b : index
       function.return
     }
@@ -152,9 +152,9 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] lhs type does not match the given type
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent09 {
-    function.def @compute() -> !struct.struct<@TestComponent09> {
-      %self = struct.new : !struct.struct<@TestComponent09>
-      function.return %self : !struct.struct<@TestComponent09>
+    function.def @compute() -> !struct.type<@TestComponent09> {
+      %self = struct.new : !struct.type<@TestComponent09>
+      function.return %self : !struct.type<@TestComponent09>
     }
     function.def @constrain(
           %a: !felt.felt, // expected-note {{prior use here}}
@@ -171,9 +171,9 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] rhs type does not match the given type
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent10 {
-    function.def @compute() -> !struct.struct<@TestComponent10> {
-      %self = struct.new : !struct.struct<@TestComponent10>
-      function.return %self : !struct.struct<@TestComponent10>
+    function.def @compute() -> !struct.type<@TestComponent10> {
+      %self = struct.new : !struct.type<@TestComponent10>
+      function.return %self : !struct.type<@TestComponent10>
     }
     function.def @constrain(
           %a: index,
@@ -190,16 +190,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] both sides have invalid (although the same) type
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent11 {
-    function.def @compute() -> !struct.struct<@TestComponent11> {
-      %self = struct.new : !struct.struct<@TestComponent11>
-      function.return %self : !struct.struct<@TestComponent11>
+    function.def @compute() -> !struct.type<@TestComponent11> {
+      %self = struct.new : !struct.type<@TestComponent11>
+      function.return %self : !struct.type<@TestComponent11>
     }
     function.def @constrain(
-          %a: !struct.struct<@TestComponent11>,
-          %b: !struct.struct<@TestComponent11>
+          %a: !struct.type<@TestComponent11>,
+          %b: !struct.type<@TestComponent11>
           ) {
-      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!struct.struct<@TestComponent11>'}}
-      constrain.eq %a, %b : !struct.struct<@TestComponent11>
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!struct.type<@TestComponent11>'}}
+      constrain.eq %a, %b : !struct.type<@TestComponent11>
       function.return
     }
   }
@@ -209,16 +209,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] both sides have invalid (although the same) type
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent12 {
-    function.def @compute() -> !struct.struct<@TestComponent12> {
-      %self = struct.new : !struct.struct<@TestComponent12>
-      function.return %self : !struct.struct<@TestComponent12>
+    function.def @compute() -> !struct.type<@TestComponent12> {
+      %self = struct.new : !struct.type<@TestComponent12>
+      function.return %self : !struct.type<@TestComponent12>
     }
     function.def @constrain(
-          %a: !array.array<3 x !struct.struct<@TestComponent12>>,
-          %b: !array.array<3 x !struct.struct<@TestComponent12>>
+          %a: !array.type<3 x !struct.type<@TestComponent12>>,
+          %b: !array.type<3 x !struct.type<@TestComponent12>>
           ) {
-      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.array<3 x !struct.struct<@TestComponent12>>'}}
-      constrain.eq %a, %b : !array.array<3 x !struct.struct<@TestComponent12>>
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.type<3 x !struct.type<@TestComponent12>>'}}
+      constrain.eq %a, %b : !array.type<3 x !struct.type<@TestComponent12>>
       function.return
     }
   }
@@ -228,16 +228,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] both sides have invalid (although the same) type
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent13 {
-    function.def @compute() -> !struct.struct<@TestComponent13> {
-      %self = struct.new : !struct.struct<@TestComponent13>
-      function.return %self : !struct.struct<@TestComponent13>
+    function.def @compute() -> !struct.type<@TestComponent13> {
+      %self = struct.new : !struct.type<@TestComponent13>
+      function.return %self : !struct.type<@TestComponent13>
     }
     function.def @constrain(
-          %a: !array.array<3,2 x !struct.struct<@TestComponent13>>,
-          %b: !array.array<3,2 x !struct.struct<@TestComponent13>>
+          %a: !array.type<3,2 x !struct.type<@TestComponent13>>,
+          %b: !array.type<3,2 x !struct.type<@TestComponent13>>
           ) {
-      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.array<3,2 x !struct.struct<@TestComponent13>>'}}
-      constrain.eq %a, %b : !array.array<3,2 x !struct.struct<@TestComponent13>>
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.type<3,2 x !struct.type<@TestComponent13>>'}}
+      constrain.eq %a, %b : !array.type<3,2 x !struct.type<@TestComponent13>>
       function.return
     }
   }
@@ -247,16 +247,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] lhs array size does not match the type given
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent14 {
-    function.def @compute() -> !struct.struct<@TestComponent14> {
-      %self = struct.new : !struct.struct<@TestComponent14>
-      function.return %self : !struct.struct<@TestComponent14>
+    function.def @compute() -> !struct.type<@TestComponent14> {
+      %self = struct.new : !struct.type<@TestComponent14>
+      function.return %self : !struct.type<@TestComponent14>
     }
     function.def @constrain(
-          %a: !array.array<9 x index>, // expected-note {{prior use here}}
-          %b: !array.array<3 x index>
+          %a: !array.type<9 x index>, // expected-note {{prior use here}}
+          %b: !array.type<3 x index>
           ) {
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<3 x index>' vs '!array.array<9 x index>'}}
-      constrain.eq %a, %b : !array.array<3 x index>
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<9 x index>'}}
+      constrain.eq %a, %b : !array.type<3 x index>
       function.return
     }
   }
@@ -266,16 +266,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] rhs array size does not match the type given
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent15 {
-    function.def @compute() -> !struct.struct<@TestComponent15> {
-      %self = struct.new : !struct.struct<@TestComponent15>
-      function.return %self : !struct.struct<@TestComponent15>
+    function.def @compute() -> !struct.type<@TestComponent15> {
+      %self = struct.new : !struct.type<@TestComponent15>
+      function.return %self : !struct.type<@TestComponent15>
     }
     function.def @constrain(
-          %a: !array.array<3 x index>,
-          %b: !array.array<9 x index> // expected-note {{prior use here}}
+          %a: !array.type<3 x index>,
+          %b: !array.type<9 x index> // expected-note {{prior use here}}
           ) {
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.array<3 x index>' vs '!array.array<9 x index>'}}
-      constrain.eq %a, %b : !array.array<3 x index>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<9 x index>'}}
+      constrain.eq %a, %b : !array.type<3 x index>
       function.return
     }
   }
@@ -285,16 +285,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] neither array size matches the type given
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent16 {
-    function.def @compute() -> !struct.struct<@TestComponent16> {
-      %self = struct.new : !struct.struct<@TestComponent16>
-      function.return %self : !struct.struct<@TestComponent16>
+    function.def @compute() -> !struct.type<@TestComponent16> {
+      %self = struct.new : !struct.type<@TestComponent16>
+      function.return %self : !struct.type<@TestComponent16>
     }
     function.def @constrain(
-          %a: !array.array<9 x index>, // expected-note {{prior use here}}
-          %b: !array.array<9 x index>
+          %a: !array.type<9 x index>, // expected-note {{prior use here}}
+          %b: !array.type<9 x index>
           ) {
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<3 x index>' vs '!array.array<9 x index>'}}
-      constrain.eq %a, %b : !array.array<3 x index>
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<9 x index>'}}
+      constrain.eq %a, %b : !array.type<3 x index>
       function.return
     }
   }
@@ -304,16 +304,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] lhs array size does not match the type given
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent17 {
-    function.def @compute() -> !struct.struct<@TestComponent17> {
-      %self = struct.new : !struct.struct<@TestComponent17>
-      function.return %self : !struct.struct<@TestComponent17>
+    function.def @compute() -> !struct.type<@TestComponent17> {
+      %self = struct.new : !struct.type<@TestComponent17>
+      function.return %self : !struct.type<@TestComponent17>
     }
     function.def @constrain(
-          %a: !array.array<3 x !felt.felt>, // expected-note {{prior use here}}
-          %b: !array.array<3 x index>
+          %a: !array.type<3 x !felt.felt>, // expected-note {{prior use here}}
+          %b: !array.type<3 x index>
           ) {
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<3 x index>' vs '!array.array<3 x !felt.felt>'}}
-      constrain.eq %a, %b : !array.array<3 x index>
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<3 x !felt.felt>'}}
+      constrain.eq %a, %b : !array.type<3 x index>
       function.return
     }
   }
@@ -323,16 +323,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] rhs array size does not match the type given
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent18 {
-    function.def @compute() -> !struct.struct<@TestComponent18> {
-      %self = struct.new : !struct.struct<@TestComponent18>
-      function.return %self : !struct.struct<@TestComponent18>
+    function.def @compute() -> !struct.type<@TestComponent18> {
+      %self = struct.new : !struct.type<@TestComponent18>
+      function.return %self : !struct.type<@TestComponent18>
     }
     function.def @constrain(
-          %a: !array.array<3 x index>,
-          %b: !array.array<3 x !felt.felt> // expected-note {{prior use here}}
+          %a: !array.type<3 x index>,
+          %b: !array.type<3 x !felt.felt> // expected-note {{prior use here}}
           ) {
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.array<3 x index>' vs '!array.array<3 x !felt.felt>'}}
-      constrain.eq %a, %b : !array.array<3 x index>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<3 x !felt.felt>'}}
+      constrain.eq %a, %b : !array.type<3 x index>
       function.return
     }
   }
@@ -342,16 +342,16 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] neither array size matches the type given
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestComponent19 {
-    function.def @compute() -> !struct.struct<@TestComponent19> {
-      %self = struct.new : !struct.struct<@TestComponent19>
-      function.return %self : !struct.struct<@TestComponent19>
+    function.def @compute() -> !struct.type<@TestComponent19> {
+      %self = struct.new : !struct.type<@TestComponent19>
+      function.return %self : !struct.type<@TestComponent19>
     }
     function.def @constrain(
-          %a: !array.array<3 x !felt.felt>, // expected-note {{prior use here}}
-          %b: !array.array<3 x !felt.felt>
+          %a: !array.type<3 x !felt.felt>, // expected-note {{prior use here}}
+          %b: !array.type<3 x !felt.felt>
           ) {
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.array<3 x index>' vs '!array.array<3 x !felt.felt>'}}
-      constrain.eq %a, %b : !array.array<3 x index>
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<3 x !felt.felt>'}}
+      constrain.eq %a, %b : !array.type<3 x index>
       function.return
     }
   }
@@ -371,24 +371,24 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
     %a = arith.constant 433 : index
     %b = arith.constant 535 : index
-    %z = array.new %a, %b: !array.array<2 x index>
+    %z = array.new %a, %b: !array.type<2 x index>
     // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
-    constrain.in %z, %a : !array.array<2 x index>
+    constrain.in %z, %a : !array.type<2 x index>
 }
 // -----
 
 // Test: [constrain.eq] attempt to assign to an SSA value but it has no result
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component20 {
-    function.def @constrain(%a: !felt.felt, %b: !array.array<5 x !felt.felt>) {
+    function.def @constrain(%a: !felt.felt, %b: !array.type<5 x !felt.felt>) {
       // expected-error@+1 {{cannot name an operation with no results}}
-      %c = constrain.in %b, %a : !array.array<5 x !felt.felt>
+      %c = constrain.in %b, %a : !array.type<5 x !felt.felt>
       function.return
     }
 
-    function.def @compute() -> !struct.struct<@Component20> {
-      %self = struct.new : !struct.struct<@Component20>
-      function.return %self : !struct.struct<@Component20>
+    function.def @compute() -> !struct.type<@Component20> {
+      %self = struct.new : !struct.type<@Component20>
+      function.return %self : !struct.type<@Component20>
     }
   }
 }
@@ -403,9 +403,9 @@ module attributes {veridise.lang = "llzk"} {
       function.return
     }
 
-    function.def @compute() -> !struct.struct<@Component21> {
-      %self = struct.new : !struct.struct<@Component21>
-      function.return %self : !struct.struct<@Component21>
+    function.def @compute() -> !struct.type<@Component21> {
+      %self = struct.new : !struct.type<@Component21>
+      function.return %self : !struct.type<@Component21>
     }
   }
 }
@@ -420,9 +420,9 @@ module attributes {veridise.lang = "llzk"} {
       function.return
     }
 
-    function.def @compute() -> !struct.struct<@Component22> {
-      %self = struct.new : !struct.struct<@Component22>
-      function.return %self : !struct.struct<@Component22>
+    function.def @compute() -> !struct.type<@Component22> {
+      %self = struct.new : !struct.type<@Component22>
+      function.return %self : !struct.type<@Component22>
     }
   }
 }
@@ -431,15 +431,15 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.in] RHS and LHS element types do not unify
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component23 {
-    function.def @constrain(%a: !array.array<4 x !felt.felt>, %b: index) {
+    function.def @constrain(%a: !array.type<4 x !felt.felt>, %b: index) {
       // expected-error@+1 {{'constrain.in' op failed to verify that rhs type matches with lhs element type}}
-      constrain.in %a, %b : !array.array<4 x !felt.felt>, index
+      constrain.in %a, %b : !array.type<4 x !felt.felt>, index
       function.return
     }
 
-    function.def @compute() -> !struct.struct<@Component23> {
-      %self = struct.new : !struct.struct<@Component23>
-      function.return %self : !struct.struct<@Component23>
+    function.def @compute() -> !struct.type<@Component23> {
+      %self = struct.new : !struct.type<@Component23>
+      function.return %self : !struct.type<@Component23>
     }
   }
 }
@@ -448,9 +448,9 @@ module attributes {veridise.lang = "llzk"} {
 // Test: cannot use string type with [constrain.eq] op
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component24 {
-    function.def @compute(%a: !string.string, %b: !string.string) -> !struct.struct<@Component24> {
-      %self = struct.new : !struct.struct<@Component24>
-      function.return %self : !struct.struct<@Component24>
+    function.def @compute(%a: !string.string, %b: !string.string) -> !struct.type<@Component24> {
+      %self = struct.new : !struct.type<@Component24>
+      function.return %self : !struct.type<@Component24>
     }
     function.def @constrain(%a: !string.string, %b: !string.string) {
       // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!string.string'}}
@@ -464,13 +464,13 @@ module attributes {veridise.lang = "llzk"} {
 // Test: cannot use string type with [constrain.eq] op (at depth)
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component25 {
-    function.def @compute(%a: !array.array<2 x !string.string>, %b: !array.array<2 x !string.string>) -> !struct.struct<@Component25> {
-      %self = struct.new : !struct.struct<@Component25>
-      function.return %self : !struct.struct<@Component25>
+    function.def @compute(%a: !array.type<2 x !string.string>, %b: !array.type<2 x !string.string>) -> !struct.type<@Component25> {
+      %self = struct.new : !struct.type<@Component25>
+      function.return %self : !struct.type<@Component25>
     }
-    function.def @constrain(%self: !struct.struct<@Component25>, %a: !array.array<2 x !string.string>, %b: !array.array<2 x !string.string>) {
-      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.array<2 x !string.string>'}}
-      constrain.eq %a, %b : !array.array<2 x !string.string>
+    function.def @constrain(%self: !struct.type<@Component25>, %a: !array.type<2 x !string.string>, %b: !array.type<2 x !string.string>) {
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.type<2 x !string.string>'}}
+      constrain.eq %a, %b : !array.type<2 x !string.string>
       function.return
     }
   }

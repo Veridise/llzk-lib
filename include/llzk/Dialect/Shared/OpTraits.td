@@ -28,7 +28,7 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 // the list of operands is split into logical pieces for the operand components.
 //
 // For example, suppose the `CreateArrayOp` is used to create an array with type
-//    `!array.array<affine_map<(d0)->(d0)>,affine_map<(d0)[s0]->(d0+s0)> x i1>`
+//    `!array.type<affine_map<(d0)->(d0)>,affine_map<(d0)[s0]->(d0+s0)> x i1>`
 //
 // 1) `CreateArrayOp` requires the `AttrSizedOperandSegments` trait because it
 // defines two variadic arguments: `$elements` and `$mapOperands` (in that

@@ -2,20 +2,20 @@
 
 #IdxToLen = affine_map<(i)->(2*i)>
 #Values = affine_map<(i,j)->(5*j+i)>
-!ToFelt = !struct.struct<@ToFelt<[#Values]>>
-!HeterArr = !struct.struct<@VarArray<[#IdxToLen, !ToFelt]>>
+!ToFelt = !struct.type<@ToFelt<[#Values]>>
+!HeterArr = !struct.type<@VarArray<[#IdxToLen, !ToFelt]>>
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @VarArray<[@N, @T]> {
-    struct.field @val: !array.array<@N x !poly.tvar<@T>>
+    struct.field @val: !array.type<@N x !poly.tvar<@T>>
 
-    function.def @compute(%inp: !array.array<@N x !poly.tvar<@T>>) -> !struct.struct<@VarArray<[@N, @T]>> {
-      %self = struct.new : !struct.struct<@VarArray<[@N, @T]>>
-      struct.writef %self[@val] = %inp : !struct.struct<@VarArray<[@N, @T]>>, !array.array<@N x !poly.tvar<@T>>
-      function.return %self : !struct.struct<@VarArray<[@N, @T]>>
+    function.def @compute(%inp: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> {
+      %self = struct.new : !struct.type<@VarArray<[@N, @T]>>
+      struct.writef %self[@val] = %inp : !struct.type<@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
+      function.return %self : !struct.type<@VarArray<[@N, @T]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@VarArray<[@N, @T]>>, %inp: !array.array<@N x !poly.tvar<@T>>) {
+    function.def @constrain(%self: !struct.type<@VarArray<[@N, @T]>>, %inp: !array.type<@N x !poly.tvar<@T>>) {
       function.return
     }
   }
@@ -23,14 +23,14 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ToFelt<[@A]> {
     struct.field @out: !felt.felt {llzk.pub}
 
-    function.def @compute() -> !struct.struct<@ToFelt<[@A]>> {
-      %self = struct.new : !struct.struct<@ToFelt<[@A]>>
+    function.def @compute() -> !struct.type<@ToFelt<[@A]>> {
+      %self = struct.new : !struct.type<@ToFelt<[@A]>>
       %constA = poly.read_const @A : !felt.felt
-      struct.writef %self[@out] = %constA : !struct.struct<@ToFelt<[@A]>>, !felt.felt
-      function.return %self: !struct.struct<@ToFelt<[@A]>>
+      struct.writef %self[@out] = %constA : !struct.type<@ToFelt<[@A]>>, !felt.felt
+      function.return %self: !struct.type<@ToFelt<[@A]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@ToFelt<[@A]>>) {
+    function.def @constrain(%self: !struct.type<@ToFelt<[@A]>>) {
       function.return
     }
   }
@@ -38,10 +38,10 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @TestLoopWithAffineArrayStruct<[@N]> {
     // The `pub` here is intended to test that attributes are copied by
     //  UpdateFieldTypeFromWrite when creating a new FieldDefOp.
-    struct.field @arrs: !array.array<@N x !HeterArr> {llzk.pub}
+    struct.field @arrs: !array.type<@N x !HeterArr> {llzk.pub}
 
-    function.def @compute() -> !struct.struct<@TestLoopWithAffineArrayStruct<[@N]>> {
-      %arrs_temp = array.new : !array.array<@N x !HeterArr>
+    function.def @compute() -> !struct.type<@TestLoopWithAffineArrayStruct<[@N]>> {
+      %arrs_temp = array.new : !array.type<@N x !HeterArr>
 
       %0 = arith.constant 0 : index
       %1 = arith.constant 1 : index
@@ -49,93 +49,93 @@ module attributes {veridise.lang = "llzk"} {
       %step = arith.constant 1 : index
       scf.for %i = %1 to %n step %step { // range: [1,N)
         // The array length is a function of 'i' and it contains non-homogeneous structs
-        //    !ToFelt = !struct.struct<@ToFelt<[#Values]>>
-        %arr = array.new{(%i)} : !array.array<#IdxToLen x !ToFelt>
+        //    !ToFelt = !struct.type<@ToFelt<[#Values]>>
+        %arr = array.new{(%i)} : !array.type<#IdxToLen x !ToFelt>
         scf.for %j = %0 to %i step %step { // range: [0,i)
           %v = function.call @ToFelt::@compute(){(%i, %j)} : () -> !ToFelt
-          array.write %arr[%j] = %v : !array.array<#IdxToLen x !ToFelt>, !ToFelt
+          array.write %arr[%j] = %v : !array.type<#IdxToLen x !ToFelt>, !ToFelt
         }
         // Create a VarArray with length as a function of 'i' and non-homogeneous element type
-        %va = function.call @VarArray::@compute(%arr){(%i)} : (!array.array<#IdxToLen x !ToFelt>) -> !HeterArr
-        array.write %arrs_temp[%i] = %va : !array.array<@N x !HeterArr>, !HeterArr
+        %va = function.call @VarArray::@compute(%arr){(%i)} : (!array.type<#IdxToLen x !ToFelt>) -> !HeterArr
+        array.write %arrs_temp[%i] = %va : !array.type<@N x !HeterArr>, !HeterArr
       }
       //
-      %self = struct.new : !struct.struct<@TestLoopWithAffineArrayStruct<[@N]>>
+      %self = struct.new : !struct.type<@TestLoopWithAffineArrayStruct<[@N]>>
       struct.writef %self[@arrs] = %arrs_temp
-            : !struct.struct<@TestLoopWithAffineArrayStruct<[@N]>>, !array.array<@N x !HeterArr>
-      function.return %self : !struct.struct<@TestLoopWithAffineArrayStruct<[@N]>>
+            : !struct.type<@TestLoopWithAffineArrayStruct<[@N]>>, !array.type<@N x !HeterArr>
+      function.return %self : !struct.type<@TestLoopWithAffineArrayStruct<[@N]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@TestLoopWithAffineArrayStruct<[@N]>>) {
+    function.def @constrain(%self: !struct.type<@TestLoopWithAffineArrayStruct<[@N]>>) {
       function.return
     }
   }
 
   struct.def @Main {
-    function.def @compute() -> !struct.struct<@Main> {
-      %self = struct.new : !struct.struct<@Main>
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
       %x = function.call @TestLoopWithAffineArrayStruct::@compute()
-            : () -> !struct.struct<@TestLoopWithAffineArrayStruct<[2]>>
-      function.return %self: !struct.struct<@Main>
+            : () -> !struct.type<@TestLoopWithAffineArrayStruct<[2]>>
+      function.return %self: !struct.type<@Main>
     }
 
-    function.def @constrain(%self: !struct.struct<@Main>) {
+    function.def @constrain(%self: !struct.type<@Main>) {
       function.return
     }
   }
 }
 // CHECK-LABEL: struct.def @"VarArray_2_!s<@ToFelt_1>" {
-// CHECK-NEXT:    struct.field @val : !array.array<2 x !struct.struct<@ToFelt_1>>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<2 x !struct.struct<@ToFelt_1>>) -> !struct.struct<@"VarArray_2_!s<@ToFelt_1>"> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @val : !array.type<2 x !struct.type<@ToFelt_1>>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !struct.type<@ToFelt_1>>) -> !struct.type<@"VarArray_2_!s<@ToFelt_1>"> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@"VarArray_2_!s<@ToFelt_1>">
-// CHECK-NEXT:      struct.writef %[[V1]][@val] = %[[V0]] : <@"VarArray_2_!s<@ToFelt_1>">, !array.array<2 x !struct.struct<@ToFelt_1>>
-// CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:      struct.writef %[[V1]][@val] = %[[V0]] : <@"VarArray_2_!s<@ToFelt_1>">, !array.type<2 x !struct.type<@ToFelt_1>>
+// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@"VarArray_2_!s<@ToFelt_1>">
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.struct<@"VarArray_2_!s<@ToFelt_1>">, %[[V3:[0-9a-zA-Z_\.]+]]: !array.array<2 x !struct.struct<@ToFelt_1>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@"VarArray_2_!s<@ToFelt_1>">, %[[V3:[0-9a-zA-Z_\.]+]]: !array.type<2 x !struct.type<@ToFelt_1>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: struct.def @ToFelt_1 {
 // CHECK-NEXT:    struct.field @out : !felt.felt {llzk.pub}
-// CHECK-NEXT:    function.def @compute() -> !struct.struct<@ToFelt_1> attributes {function.allow_witness} {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@ToFelt_1> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 1
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@ToFelt_1>
 // CHECK-NEXT:      struct.writef %[[V1]][@out] = %[[V0]] : <@ToFelt_1>, !felt.felt
-// CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@ToFelt_1>
+// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@ToFelt_1>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.struct<@ToFelt_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt_1>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: struct.def @TestLoopWithAffineArrayStruct_2 {
-// CHECK-NEXT:    struct.field @arrs : !array.array<2 x !struct.struct<@"VarArray_2_!s<@ToFelt_1>">> {llzk.pub}
-// CHECK-NEXT:    function.def @compute() -> !struct.struct<@TestLoopWithAffineArrayStruct_2> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @arrs : !array.type<2 x !struct.type<@"VarArray_2_!s<@ToFelt_1>">> {llzk.pub}
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@TestLoopWithAffineArrayStruct_2> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !struct.struct<@"VarArray_2_!s<@ToFelt_1>">>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !struct.struct<@ToFelt_1>>
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @ToFelt_1::@compute() : () -> !struct.struct<@ToFelt_1>
-// CHECK-NEXT:      array.write %[[V3]]{{\[}}%[[V1]]] = %[[V4]] : <2 x !struct.struct<@ToFelt_1>>, !struct.struct<@ToFelt_1>
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = function.call @"VarArray_2_!s<@ToFelt_1>"::@compute(%[[V3]]) : (!array.array<2 x !struct.struct<@ToFelt_1>>) -> !struct.struct<@"VarArray_2_!s<@ToFelt_1>">
-// CHECK-NEXT:      array.write %[[V2]]{{\[}}%[[V0]]] = %[[V5]] : <2 x !struct.struct<@"VarArray_2_!s<@ToFelt_1>">>, !struct.struct<@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !struct.type<@"VarArray_2_!s<@ToFelt_1>">>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !struct.type<@ToFelt_1>>
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @ToFelt_1::@compute() : () -> !struct.type<@ToFelt_1>
+// CHECK-NEXT:      array.write %[[V3]]{{\[}}%[[V1]]] = %[[V4]] : <2 x !struct.type<@ToFelt_1>>, !struct.type<@ToFelt_1>
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = function.call @"VarArray_2_!s<@ToFelt_1>"::@compute(%[[V3]]) : (!array.type<2 x !struct.type<@ToFelt_1>>) -> !struct.type<@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:      array.write %[[V2]]{{\[}}%[[V0]]] = %[[V5]] : <2 x !struct.type<@"VarArray_2_!s<@ToFelt_1>">>, !struct.type<@"VarArray_2_!s<@ToFelt_1>">
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.new : <@TestLoopWithAffineArrayStruct_2>
-// CHECK-NEXT:      struct.writef %[[V6]][@arrs] = %[[V2]] : <@TestLoopWithAffineArrayStruct_2>, !array.array<2 x !struct.struct<@"VarArray_2_!s<@ToFelt_1>">>
-// CHECK-NEXT:      function.return %[[V6]] : !struct.struct<@TestLoopWithAffineArrayStruct_2>
+// CHECK-NEXT:      struct.writef %[[V6]][@arrs] = %[[V2]] : <@TestLoopWithAffineArrayStruct_2>, !array.type<2 x !struct.type<@"VarArray_2_!s<@ToFelt_1>">>
+// CHECK-NEXT:      function.return %[[V6]] : !struct.type<@TestLoopWithAffineArrayStruct_2>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.struct<@TestLoopWithAffineArrayStruct_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@TestLoopWithAffineArrayStruct_2>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    function.def @compute() -> !struct.struct<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @TestLoopWithAffineArrayStruct_2::@compute() : () -> !struct.struct<@TestLoopWithAffineArrayStruct_2>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.struct<@Main>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @TestLoopWithAffineArrayStruct_2::@compute() : () -> !struct.type<@TestLoopWithAffineArrayStruct_2>
+// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.struct<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

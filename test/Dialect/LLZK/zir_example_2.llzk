@@ -8,12 +8,12 @@ module attributes {veridise.lang = "llzk"} {
   // Since Zir functions can generate constraints but LLZK functions cannot,
   //  the AssertBit function must be translated as a struct.
   struct.def @AssertBit {
-    function.def @compute(%val: !felt.felt) -> !struct.struct<@AssertBit> {
-      %self = struct.new : !struct.struct<@AssertBit>
-      function.return %self: !struct.struct<@AssertBit>
+    function.def @compute(%val: !felt.felt) -> !struct.type<@AssertBit> {
+      %self = struct.new : !struct.type<@AssertBit>
+      function.return %self: !struct.type<@AssertBit>
     }
 
-    function.def @constrain(%self: !struct.struct<@AssertBit>, %val: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@AssertBit>, %val: !felt.felt) {
       %const_1 = felt.const 1
       %t02 = felt.sub %const_1, %val
       %t03 = felt.mul %t02, %val
@@ -24,29 +24,29 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @NondetBitReg {
-    struct.field @ab: !struct.struct<@AssertBit>
+    struct.field @ab: !struct.type<@AssertBit>
     struct.field @reg: !felt.felt
     // The `synthetic_return` is added here for clarity and a more strictly one-to-one
     // translation but it would also be valid to just put the `pub` modifier on `addr`.
     // ZIR frontend should mark function.return value with `pub`
     struct.field @synthetic_return: !felt.felt {llzk.pub}
 
-    function.def @compute(%val: !felt.felt) -> !struct.struct<@NondetBitReg> {
-      %self = struct.new : !struct.struct<@NondetBitReg>
-      struct.writef %self[@reg] = %val : !struct.struct<@NondetBitReg>, !felt.felt
-      %t02 = function.call @AssertBit::@compute(%val) : (!felt.felt) -> (!struct.struct<@AssertBit>)
-      struct.writef %self[@ab] = %t02 : !struct.struct<@NondetBitReg>, !struct.struct<@AssertBit>
-      struct.writef %self[@synthetic_return] = %val : !struct.struct<@NondetBitReg>, !felt.felt
-      function.return %self: !struct.struct<@NondetBitReg>
+    function.def @compute(%val: !felt.felt) -> !struct.type<@NondetBitReg> {
+      %self = struct.new : !struct.type<@NondetBitReg>
+      struct.writef %self[@reg] = %val : !struct.type<@NondetBitReg>, !felt.felt
+      %t02 = function.call @AssertBit::@compute(%val) : (!felt.felt) -> (!struct.type<@AssertBit>)
+      struct.writef %self[@ab] = %t02 : !struct.type<@NondetBitReg>, !struct.type<@AssertBit>
+      struct.writef %self[@synthetic_return] = %val : !struct.type<@NondetBitReg>, !felt.felt
+      function.return %self: !struct.type<@NondetBitReg>
     }
 
-    function.def @constrain(%self: !struct.struct<@NondetBitReg>, %val: !felt.felt) {
-      %t02 = struct.readf %self[@ab] : !struct.struct<@NondetBitReg>, !struct.struct<@AssertBit>
-      %t03 = struct.readf %self[@reg] : !struct.struct<@NondetBitReg>, !felt.felt
-      function.call @AssertBit::@constrain(%t02, %t03) : (!struct.struct<@AssertBit>, !felt.felt) -> ()
+    function.def @constrain(%self: !struct.type<@NondetBitReg>, %val: !felt.felt) {
+      %t02 = struct.readf %self[@ab] : !struct.type<@NondetBitReg>, !struct.type<@AssertBit>
+      %t03 = struct.readf %self[@reg] : !struct.type<@NondetBitReg>, !felt.felt
+      function.call @AssertBit::@constrain(%t02, %t03) : (!struct.type<@AssertBit>, !felt.felt) -> ()
       // Must always constrain the synthetic function.return value in case
       // it's used in a constraint by an outer component.
-      %t04 = struct.readf %self[@synthetic_return] : !struct.struct<@NondetBitReg>, !felt.felt
+      %t04 = struct.readf %self[@synthetic_return] : !struct.type<@NondetBitReg>, !felt.felt
       constrain.eq %t04, %t03 : !felt.felt
       function.return
     }
@@ -56,110 +56,110 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @count: !felt.felt
     struct.field @val: !felt.felt
 
-    function.def @compute(%count: !felt.felt, %val: !felt.felt) -> !struct.struct<@ArgU16> {
-      %self = struct.new : !struct.struct<@ArgU16>
-      struct.writef %self[@count] = %count : !struct.struct<@ArgU16>, !felt.felt
-      struct.writef %self[@val] = %val : !struct.struct<@ArgU16>, !felt.felt
+    function.def @compute(%count: !felt.felt, %val: !felt.felt) -> !struct.type<@ArgU16> {
+      %self = struct.new : !struct.type<@ArgU16>
+      struct.writef %self[@count] = %count : !struct.type<@ArgU16>, !felt.felt
+      struct.writef %self[@val] = %val : !struct.type<@ArgU16>, !felt.felt
       %const_16 = felt.const 16
       function.call @LookupDelta(%const_16, %val, %count) : (!felt.felt, !felt.felt, !felt.felt) -> ()
-      function.return %self: !struct.struct<@ArgU16>
+      function.return %self: !struct.type<@ArgU16>
     }
 
-    function.def @constrain(%self: !struct.struct<@ArgU16>, %count: !felt.felt, %val: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@ArgU16>, %count: !felt.felt, %val: !felt.felt) {
       function.return
     }
   }
 
   struct.def @NondetU16Reg {
-    struct.field @arg: !struct.struct<@ArgU16>
+    struct.field @arg: !struct.type<@ArgU16>
     // ZIR frontend should mark function.return value with `pub`
     struct.field @synthetic_return : !felt.felt {llzk.pub}
 
-    function.def @compute(%val: !felt.felt) -> !struct.struct<@NondetU16Reg> {
-      %self = struct.new : !struct.struct<@NondetU16Reg>
+    function.def @compute(%val: !felt.felt) -> !struct.type<@NondetU16Reg> {
+      %self = struct.new : !struct.type<@NondetU16Reg>
       %const_1 = felt.const 1
-      %t02 = function.call @ArgU16::@compute(%const_1, %val) : (!felt.felt, !felt.felt) ->(!struct.struct<@ArgU16>)
-      struct.writef %self[@arg] = %t02 : !struct.struct<@NondetU16Reg>, !struct.struct<@ArgU16>
-      %t03 = struct.readf %t02[@val] : !struct.struct<@ArgU16>, !felt.felt
-      struct.writef %self[@synthetic_return] = %t03 : !struct.struct<@NondetU16Reg>, !felt.felt
-      function.return %self: !struct.struct<@NondetU16Reg>
+      %t02 = function.call @ArgU16::@compute(%const_1, %val) : (!felt.felt, !felt.felt) ->(!struct.type<@ArgU16>)
+      struct.writef %self[@arg] = %t02 : !struct.type<@NondetU16Reg>, !struct.type<@ArgU16>
+      %t03 = struct.readf %t02[@val] : !struct.type<@ArgU16>, !felt.felt
+      struct.writef %self[@synthetic_return] = %t03 : !struct.type<@NondetU16Reg>, !felt.felt
+      function.return %self: !struct.type<@NondetU16Reg>
     }
 
-    function.def @constrain(%self: !struct.struct<@NondetU16Reg>, %val: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@NondetU16Reg>, %val: !felt.felt) {
       %const_1 = felt.const 1
-      %t02 = struct.readf %self[@arg] : !struct.struct<@NondetU16Reg>, !struct.struct<@ArgU16>
-      function.call @ArgU16::@constrain(%t02, %const_1, %val) : (!struct.struct<@ArgU16>, !felt.felt, !felt.felt) ->()
-      %t03 = struct.readf %t02[@count] : !struct.struct<@ArgU16>, !felt.felt
+      %t02 = struct.readf %self[@arg] : !struct.type<@NondetU16Reg>, !struct.type<@ArgU16>
+      function.call @ArgU16::@constrain(%t02, %const_1, %val) : (!struct.type<@ArgU16>, !felt.felt, !felt.felt) ->()
+      %t03 = struct.readf %t02[@count] : !struct.type<@ArgU16>, !felt.felt
       constrain.eq %const_1, %t03 : !felt.felt
       // Must always constrain the synthetic function.return value in case
       // it's used in a constraint by an outer component.
-      %t04 = struct.readf %t02[@val] : !struct.struct<@ArgU16>, !felt.felt
-      %t05 = struct.readf %self[@synthetic_return] : !struct.struct<@NondetU16Reg>, !felt.felt
+      %t04 = struct.readf %t02[@val] : !struct.type<@ArgU16>, !felt.felt
+      %t05 = struct.readf %self[@synthetic_return] : !struct.type<@NondetU16Reg>, !felt.felt
       constrain.eq %t05, %t04 : !felt.felt
       function.return
     }
   }
 
   struct.def @U16Reg {
-    struct.field @ret: !struct.struct<@NondetU16Reg>
+    struct.field @ret: !struct.type<@NondetU16Reg>
     // ZIR frontend should mark function.return value with `pub`
     struct.field @synthetic_return : !felt.felt {llzk.pub}
 
-    function.def @compute(%val: !felt.felt) -> !struct.struct<@U16Reg> {
-      %self = struct.new : !struct.struct<@U16Reg>
-      %ret = function.call @NondetU16Reg::@compute(%val) : (!felt.felt) -> (!struct.struct<@NondetU16Reg>)
-      struct.writef %self[@ret] = %ret : !struct.struct<@U16Reg>, !struct.struct<@NondetU16Reg>
-      struct.writef %self[@synthetic_return] = %val : !struct.struct<@U16Reg>, !felt.felt
-      function.return %self: !struct.struct<@U16Reg>
+    function.def @compute(%val: !felt.felt) -> !struct.type<@U16Reg> {
+      %self = struct.new : !struct.type<@U16Reg>
+      %ret = function.call @NondetU16Reg::@compute(%val) : (!felt.felt) -> (!struct.type<@NondetU16Reg>)
+      struct.writef %self[@ret] = %ret : !struct.type<@U16Reg>, !struct.type<@NondetU16Reg>
+      struct.writef %self[@synthetic_return] = %val : !struct.type<@U16Reg>, !felt.felt
+      function.return %self: !struct.type<@U16Reg>
     }
 
-    function.def @constrain(%self: !struct.struct<@U16Reg>, %val: !felt.felt) {
-      %ret = struct.readf %self[@ret] : !struct.struct<@U16Reg>, !struct.struct<@NondetU16Reg>
-      function.call @NondetU16Reg::@constrain(%ret, %val) : (!struct.struct<@NondetU16Reg>, !felt.felt) -> ()
-      %t02 = struct.readf %ret[@synthetic_return] : !struct.struct<@NondetU16Reg>, !felt.felt
+    function.def @constrain(%self: !struct.type<@U16Reg>, %val: !felt.felt) {
+      %ret = struct.readf %self[@ret] : !struct.type<@U16Reg>, !struct.type<@NondetU16Reg>
+      function.call @NondetU16Reg::@constrain(%ret, %val) : (!struct.type<@NondetU16Reg>, !felt.felt) -> ()
+      %t02 = struct.readf %ret[@synthetic_return] : !struct.type<@NondetU16Reg>, !felt.felt
       constrain.eq %t02, %val : !felt.felt
       // Must always constrain the synthetic function.return value in case
       // it's used in a constraint by an outer component.
-      %t03 = struct.readf %self[@synthetic_return] : !struct.struct<@U16Reg>, !felt.felt
+      %t03 = struct.readf %self[@synthetic_return] : !struct.type<@U16Reg>, !felt.felt
       constrain.eq %t03, %val : !felt.felt
       function.return
     }
   }
 
   struct.def @AddrDecomposeBits {
-    struct.field @low0: !struct.struct<@NondetBitReg>
-    struct.field @low1: !struct.struct<@NondetBitReg>
+    struct.field @low0: !struct.type<@NondetBitReg>
+    struct.field @low1: !struct.type<@NondetBitReg>
     struct.field @low2: !felt.felt
-    struct.field @upperDiff: !struct.struct<@U16Reg>
-    struct.field @med14: !struct.struct<@NondetU16Reg>
+    struct.field @upperDiff: !struct.type<@U16Reg>
+    struct.field @med14: !struct.type<@NondetU16Reg>
     struct.field @addr: !felt.felt
     // The `synthetic_return` is added here for clarity and a more strictly one-to-one
     // translation but it would also be valid to just put the `pub` modifier on `addr`.
     // ZIR frontend should mark function.return value with `pub`
     struct.field @synthetic_return: !felt.felt {llzk.pub}
 
-    function.def @compute(%x: !struct.struct<@std::@risc0::@ValU32>, %mode: !felt.felt) -> !struct.struct<@AddrDecomposeBits> {
-      %self = struct.new : !struct.struct<@AddrDecomposeBits>
+    function.def @compute(%x: !struct.type<@std::@risc0::@ValU32>, %mode: !felt.felt) -> !struct.type<@AddrDecomposeBits> {
+      %self = struct.new : !struct.type<@AddrDecomposeBits>
       // low0 := NondetBitReg.compute(x.low & 0x1);
-      %t01 = struct.readf %x[@low] : !struct.struct<@std::@risc0::@ValU32>, !felt.felt
+      %t01 = struct.readf %x[@low] : !struct.type<@std::@risc0::@ValU32>, !felt.felt
       %const_0x1 = felt.const 0x1
       %t02 = felt.bit_and %t01, %const_0x1
-      %low0 = function.call @NondetBitReg::@compute(%t02) : (!felt.felt) -> !struct.struct<@NondetBitReg>
-      struct.writef %self[@low0] = %low0 : !struct.struct<@AddrDecomposeBits>, !struct.struct<@NondetBitReg>
+      %low0 = function.call @NondetBitReg::@compute(%t02) : (!felt.felt) -> !struct.type<@NondetBitReg>
+      struct.writef %self[@low0] = %low0 : !struct.type<@AddrDecomposeBits>, !struct.type<@NondetBitReg>
       // low1 := NondetBitReg.compute((x.low & 0x2) / 2);
-      %t03 = struct.readf %x[@low] : !struct.struct<@std::@risc0::@ValU32>, !felt.felt
+      %t03 = struct.readf %x[@low] : !struct.type<@std::@risc0::@ValU32>, !felt.felt
       %const_0x2 = felt.const 0x2
       %t04 = felt.bit_and %t03, %const_0x2
       %const_2 = felt.const 2
       %t05 = felt.div %t04, %const_2
-      %low1 = function.call @NondetBitReg::@compute(%t05) : (!felt.felt) -> !struct.struct<@NondetBitReg>
-      struct.writef %self[@low1] = %low1 : !struct.struct<@AddrDecomposeBits>, !struct.struct<@NondetBitReg>
+      %low1 = function.call @NondetBitReg::@compute(%t05) : (!felt.felt) -> !struct.type<@NondetBitReg>
+      struct.writef %self[@low1] = %low1 : !struct.type<@AddrDecomposeBits>, !struct.type<@NondetBitReg>
       // low2 := low1.synthetic_return * 2 + low0.synthetic_return;
-      %t06 = struct.readf %low1[@synthetic_return] : !struct.struct<@NondetBitReg>, !felt.felt
+      %t06 = struct.readf %low1[@synthetic_return] : !struct.type<@NondetBitReg>, !felt.felt
       %t07 = felt.mul %t06, %const_2
-      %t08 = struct.readf %low0[@synthetic_return] : !struct.struct<@NondetBitReg>, !felt.felt
+      %t08 = struct.readf %low0[@synthetic_return] : !struct.type<@NondetBitReg>, !felt.felt
       %low2 = felt.add %t07, %t08
-      struct.writef %self[@low2] = %low2 : !struct.struct<@AddrDecomposeBits>, !felt.felt
+      struct.writef %self[@low2] = %low2 : !struct.type<@AddrDecomposeBits>, !felt.felt
       // upperDiff := U16Reg.compute(mode * 0xffff + (1 - mode) * 0xbfff - x.high);
       %const_0xffff = felt.const 0xffff
       %t09 = felt.mul %mode, %const_0xffff   // mode * 0xffff
@@ -168,45 +168,45 @@ module attributes {veridise.lang = "llzk"} {
       %const_0xbfff = felt.const 0xbfff
       %t11 = felt.mul %t10, %const_0xbfff    // (1 - mode) * 0xbfff
       %t12 = felt.add %t11, %t09             // mode * 0xffff + (1 - mode) * 0xbfff
-      %t13 = struct.readf %x[@high] : !struct.struct<@std::@risc0::@ValU32>, !felt.felt
+      %t13 = struct.readf %x[@high] : !struct.type<@std::@risc0::@ValU32>, !felt.felt
       %t14 = felt.sub %t12, %t13             // mode * 0xffff + (1 - mode) * 0xbfff - x.high
-      %upperDiff = function.call @U16Reg::@compute(%t14) : (!felt.felt) -> !struct.struct<@U16Reg>
-      struct.writef %self[@upperDiff] = %upperDiff : !struct.struct<@AddrDecomposeBits>, !struct.struct<@U16Reg>
+      %upperDiff = function.call @U16Reg::@compute(%t14) : (!felt.felt) -> !struct.type<@U16Reg>
+      struct.writef %self[@upperDiff] = %upperDiff : !struct.type<@AddrDecomposeBits>, !struct.type<@U16Reg>
       // med14 := NondetU16Reg.compute((x.low - low2) / 4);
-      %t15 = struct.readf %x[@low] : !struct.struct<@std::@risc0::@ValU32>, !felt.felt
+      %t15 = struct.readf %x[@low] : !struct.type<@std::@risc0::@ValU32>, !felt.felt
       %t16 = felt.sub %t15, %low2            // (x.low - low2)
       %const_4 = felt.const 4
       %t17 = felt.div %t16, %const_4         // (x.low - low2) / 4
-      %med14 = function.call @NondetU16Reg::@compute(%t17) : (!felt.felt) -> !struct.struct<@NondetU16Reg>
-      struct.writef %self[@med14] = %med14 : !struct.struct<@AddrDecomposeBits>, !struct.struct<@NondetU16Reg>
+      %med14 = function.call @NondetU16Reg::@compute(%t17) : (!felt.felt) -> !struct.type<@NondetU16Reg>
+      struct.writef %self[@med14] = %med14 : !struct.type<@AddrDecomposeBits>, !struct.type<@NondetU16Reg>
       // addr := 0x4000 * x.high + med14.synthetic_return;
       %const_0x4000 = felt.const 0x4000
-      %t18 = struct.readf %x[@high] : !struct.struct<@std::@risc0::@ValU32>, !felt.felt
+      %t18 = struct.readf %x[@high] : !struct.type<@std::@risc0::@ValU32>, !felt.felt
       %t19 = felt.mul %const_0x4000, %t18    // 0x4000 * x.high
-      %t20 = struct.readf %med14[@synthetic_return] : !struct.struct<@NondetU16Reg>, !felt.felt
+      %t20 = struct.readf %med14[@synthetic_return] : !struct.type<@NondetU16Reg>, !felt.felt
       %addr = felt.add %t19, %t20            // 0x4000 * x.high + med14.synthetic_return
-      struct.writef %self[@addr] = %addr : !struct.struct<@AddrDecomposeBits>, !felt.felt
+      struct.writef %self[@addr] = %addr : !struct.type<@AddrDecomposeBits>, !felt.felt
       // synthetic_return := addr;
-      struct.writef %self[@synthetic_return] = %addr : !struct.struct<@AddrDecomposeBits>, !felt.felt
+      struct.writef %self[@synthetic_return] = %addr : !struct.type<@AddrDecomposeBits>, !felt.felt
       //
-      function.return %self: !struct.struct<@AddrDecomposeBits>
+      function.return %self: !struct.type<@AddrDecomposeBits>
     }
 
-    function.def @constrain(%self: !struct.struct<@AddrDecomposeBits>, %x: !struct.struct<@std::@risc0::@ValU32>, %mode: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@AddrDecomposeBits>, %x: !struct.type<@std::@risc0::@ValU32>, %mode: !felt.felt) {
       // low0.constrain(nondetFelt());
       %t01 = felt.nondet
-      %low0 = struct.readf %self[@low0] : !struct.struct<@AddrDecomposeBits>, !struct.struct<@NondetBitReg>
-      function.call @NondetBitReg::@constrain(%low0, %t01) : (!struct.struct<@NondetBitReg>, !felt.felt) -> ()
+      %low0 = struct.readf %self[@low0] : !struct.type<@AddrDecomposeBits>, !struct.type<@NondetBitReg>
+      function.call @NondetBitReg::@constrain(%low0, %t01) : (!struct.type<@NondetBitReg>, !felt.felt) -> ()
       // low1.constrain(nondetFelt());
       %t03 = felt.nondet
-      %low1 = struct.readf %self[@low1] : !struct.struct<@AddrDecomposeBits>, !struct.struct<@NondetBitReg>
-      function.call @NondetBitReg::@constrain(%low1, %t03) : (!struct.struct<@NondetBitReg>, !felt.felt) -> ()
+      %low1 = struct.readf %self[@low1] : !struct.type<@AddrDecomposeBits>, !struct.type<@NondetBitReg>
+      function.call @NondetBitReg::@constrain(%low1, %t03) : (!struct.type<@NondetBitReg>, !felt.felt) -> ()
       // emit low2 = low1.synthetic_return * 2 + low0.synthetic_return;
-      %t05 = struct.readf %self[@low2] : !struct.struct<@AddrDecomposeBits>, !felt.felt
-      %t06 = struct.readf %low1[@synthetic_return] : !struct.struct<@NondetBitReg>, !felt.felt
+      %t05 = struct.readf %self[@low2] : !struct.type<@AddrDecomposeBits>, !felt.felt
+      %t06 = struct.readf %low1[@synthetic_return] : !struct.type<@NondetBitReg>, !felt.felt
       %const_2 = felt.const 2
       %t07 = felt.mul %t06, %const_2         // low1.synthetic_return * 2
-      %t08 = struct.readf %low0[@synthetic_return] : !struct.struct<@NondetBitReg>, !felt.felt
+      %t08 = struct.readf %low0[@synthetic_return] : !struct.type<@NondetBitReg>, !felt.felt
       %t04 = felt.add %t07, %t08             // low1.synthetic_return * 2 + low0.synthetic_return
       constrain.eq %t05, %t04 : !felt.felt
       // upperDiff.constrain(mode * 0xffff + (1 - mode) * 0xbfff - x.high);
@@ -217,38 +217,38 @@ module attributes {veridise.lang = "llzk"} {
       %const_0xbfff = felt.const 0xbfff
       %t11 = felt.mul %t10, %const_0xbfff    // (1 - mode) * 0xbfff
       %t12 = felt.add %t11, %t09             // mode * 0xffff + (1 - mode) * 0xbfff
-      %t13 = struct.readf %x[@high] : !struct.struct<@std::@risc0::@ValU32>, !felt.felt
+      %t13 = struct.readf %x[@high] : !struct.type<@std::@risc0::@ValU32>, !felt.felt
       %t14 = felt.sub %t12, %t13             // mode * 0xffff + (1 - mode) * 0xbfff - x.high
-      %upperDiff = struct.readf %self[@upperDiff] : !struct.struct<@AddrDecomposeBits>, !struct.struct<@U16Reg>
-      function.call @U16Reg::@constrain(%upperDiff, %t14) : (!struct.struct<@U16Reg>, !felt.felt) -> ()
+      %upperDiff = struct.readf %self[@upperDiff] : !struct.type<@AddrDecomposeBits>, !struct.type<@U16Reg>
+      function.call @U16Reg::@constrain(%upperDiff, %t14) : (!struct.type<@U16Reg>, !felt.felt) -> ()
       // med14.constrain((x.low - low2) / 4);
-      %t15 = struct.readf %x[@low] : !struct.struct<@std::@risc0::@ValU32>, !felt.felt
-      %t18 = struct.readf %self[@low2] : !struct.struct<@AddrDecomposeBits>, !felt.felt
+      %t15 = struct.readf %x[@low] : !struct.type<@std::@risc0::@ValU32>, !felt.felt
+      %t18 = struct.readf %self[@low2] : !struct.type<@AddrDecomposeBits>, !felt.felt
       %t16 = felt.sub %t15, %t18             // (x.low - low2)
       %const_4 = felt.const 4
       %t17 = felt.div %t16, %const_4         // (x.low - low2) / 4
-      %med14 = struct.readf %self[@med14] : !struct.struct<@AddrDecomposeBits>, !struct.struct<@NondetU16Reg>
-      function.call @NondetU16Reg::@constrain(%med14, %t17) : (!struct.struct<@NondetU16Reg>, !felt.felt) -> ()
+      %med14 = struct.readf %self[@med14] : !struct.type<@AddrDecomposeBits>, !struct.type<@NondetU16Reg>
+      function.call @NondetU16Reg::@constrain(%med14, %t17) : (!struct.type<@NondetU16Reg>, !felt.felt) -> ()
       // emit med14.synthetic_return * 4 + low2 = x.low;
-      %t19 = struct.readf %med14[@synthetic_return] : !struct.struct<@NondetU16Reg>, !felt.felt
+      %t19 = struct.readf %med14[@synthetic_return] : !struct.type<@NondetU16Reg>, !felt.felt
       %t20 = felt.mul %t19, %const_4         // med14.synthetic_return * 4
-      %t21 = struct.readf %self[@low2] : !struct.struct<@AddrDecomposeBits>, !felt.felt
+      %t21 = struct.readf %self[@low2] : !struct.type<@AddrDecomposeBits>, !felt.felt
       %t22 = felt.add %t20, %t21             // med14.synthetic_return * 4 + low2
-      %t23 = struct.readf %x[@low] : !struct.struct<@std::@risc0::@ValU32>, !felt.felt
+      %t23 = struct.readf %x[@low] : !struct.type<@std::@risc0::@ValU32>, !felt.felt
       constrain.eq %t22, %t23 : !felt.felt
       // emit addr = 0x4000 * x.high + med14.synthetic_return;
-      %t24 = struct.readf %self[@addr] : !struct.struct<@AddrDecomposeBits>, !felt.felt
+      %t24 = struct.readf %self[@addr] : !struct.type<@AddrDecomposeBits>, !felt.felt
       %const_0x4000 = felt.const 0x4000
-      %t25 = struct.readf %x[@high] : !struct.struct<@std::@risc0::@ValU32>, !felt.felt
+      %t25 = struct.readf %x[@high] : !struct.type<@std::@risc0::@ValU32>, !felt.felt
       %t26 = felt.mul %const_0x4000, %t25    // 0x4000 * x.high
-      %t27 = struct.readf %med14[@synthetic_return] : !struct.struct<@NondetU16Reg>, !felt.felt
+      %t27 = struct.readf %med14[@synthetic_return] : !struct.type<@NondetU16Reg>, !felt.felt
       %t28 = felt.add %t26, %t27             // 0x4000 * x.high + med14.synthetic_return
       constrain.eq %t24, %t28 : !felt.felt
       // Must always constrain the synthetic function.return value in case
       // it's used in a constraint by an outer component.
       // emit synthetic_return = addr;
-      %t30 = struct.readf %self[@synthetic_return] : !struct.struct<@AddrDecomposeBits>, !felt.felt
-      %t31 = struct.readf %self[@addr] : !struct.struct<@AddrDecomposeBits>, !felt.felt
+      %t30 = struct.readf %self[@synthetic_return] : !struct.type<@AddrDecomposeBits>, !felt.felt
+      %t31 = struct.readf %self[@addr] : !struct.type<@AddrDecomposeBits>, !felt.felt
       constrain.eq %t30, %t31 : !felt.felt
       function.return
     }
@@ -257,11 +257,11 @@ module attributes {veridise.lang = "llzk"} {
 
 //CHECK-LABEL:   function.def private @LookupDelta(!felt.felt, !felt.felt, !felt.felt)
 //CHECK-LABEL:   struct.def @AssertBit {
-//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@AssertBit> attributes {function.allow_witness} {
+//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@AssertBit> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@AssertBit>
-//CHECK-NEXT:        function.return %[[SELF]] : !struct.struct<@AssertBit>
+//CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@AssertBit>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@AssertBit>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@AssertBit>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = felt.const 1
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = felt.sub %[[C1]], %[[A1]]
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = felt.mul %[[T00]], %[[A1]]
@@ -271,21 +271,21 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   struct.def @NondetBitReg {
-//CHECK-NEXT:      struct.field @ab : !struct.struct<@AssertBit>
+//CHECK-NEXT:      struct.field @ab : !struct.type<@AssertBit>
 //CHECK-NEXT:      struct.field @reg : !felt.felt
 //CHECK-NEXT:      struct.field @synthetic_return : !felt.felt {llzk.pub}
-//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@NondetBitReg> attributes {function.allow_witness} {
+//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@NondetBitReg> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@NondetBitReg>
 //CHECK-NEXT:        struct.writef %[[SELF]][@reg] = %[[A0]] : <@NondetBitReg>, !felt.felt
-//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = function.call @AssertBit::@compute(%[[A0:[0-9a-zA-Z_\.]+]]) : (!felt.felt) -> !struct.struct<@AssertBit>
-//CHECK-NEXT:        struct.writef %[[SELF]][@ab] = %[[T00]] : <@NondetBitReg>, !struct.struct<@AssertBit>
+//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = function.call @AssertBit::@compute(%[[A0:[0-9a-zA-Z_\.]+]]) : (!felt.felt) -> !struct.type<@AssertBit>
+//CHECK-NEXT:        struct.writef %[[SELF]][@ab] = %[[T00]] : <@NondetBitReg>, !struct.type<@AssertBit>
 //CHECK-NEXT:        struct.writef %[[SELF]][@synthetic_return] = %[[A0]] : <@NondetBitReg>, !felt.felt
-//CHECK-NEXT:        function.return %[[SELF]] : !struct.struct<@NondetBitReg>
+//CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@NondetBitReg>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@NondetBitReg>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@ab] : <@NondetBitReg>, !struct.struct<@AssertBit>
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@NondetBitReg>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@ab] : <@NondetBitReg>, !struct.type<@AssertBit>
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@reg] : <@NondetBitReg>, !felt.felt
-//CHECK-NEXT:        function.call @AssertBit::@constrain(%[[T00]], %[[T01]]) : (!struct.struct<@AssertBit>, !felt.felt) -> ()
+//CHECK-NEXT:        function.call @AssertBit::@constrain(%[[T00]], %[[T01]]) : (!struct.type<@AssertBit>, !felt.felt) -> ()
 //CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@synthetic_return] : <@NondetBitReg>, !felt.felt
 //CHECK-NEXT:        constrain.eq %[[T02]], %[[T01]] : !felt.felt, !felt.felt
 //CHECK-NEXT:        function.return
@@ -294,35 +294,35 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:   struct.def @ArgU16 {
 //CHECK-NEXT:      struct.field @count : !felt.felt
 //CHECK-NEXT:      struct.field @val : !felt.felt
-//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@ArgU16> attributes {function.allow_witness} {
+//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@ArgU16> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ArgU16>
 //CHECK-NEXT:        struct.writef %[[SELF]][@count] = %[[A0]] : <@ArgU16>, !felt.felt
 //CHECK-NEXT:        struct.writef %[[SELF]][@val] = %[[A1]] : <@ArgU16>, !felt.felt
 //CHECK-NEXT:        %[[C16:[0-9a-zA-Z_\.]+]] = felt.const 16
 //CHECK-NEXT:        function.call @LookupDelta(%[[C16]], %[[A1]], %[[A0]]) : (!felt.felt, !felt.felt, !felt.felt) -> ()
-//CHECK-NEXT:        function.return %[[SELF]] : !struct.struct<@ArgU16>
+//CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@ArgU16>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@ArgU16>,
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ArgU16>,
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   struct.def @NondetU16Reg {
-//CHECK-NEXT:      struct.field @arg : !struct.struct<@ArgU16>
+//CHECK-NEXT:      struct.field @arg : !struct.type<@ArgU16>
 //CHECK-NEXT:      struct.field @synthetic_return : !felt.felt {llzk.pub}
-//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@NondetU16Reg> attributes {function.allow_witness} {
+//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@NondetU16Reg> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@NondetU16Reg>
 //CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = felt.const 1
-//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = function.call @ArgU16::@compute(%[[C1]], %[[A0]]) : (!felt.felt, !felt.felt) -> !struct.struct<@ArgU16>
-//CHECK-NEXT:        struct.writef %[[SELF]][@arg] = %[[T00]] : <@NondetU16Reg>, !struct.struct<@ArgU16>
+//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = function.call @ArgU16::@compute(%[[C1]], %[[A0]]) : (!felt.felt, !felt.felt) -> !struct.type<@ArgU16>
+//CHECK-NEXT:        struct.writef %[[SELF]][@arg] = %[[T00]] : <@NondetU16Reg>, !struct.type<@ArgU16>
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = struct.readf %[[T00]][@val] : <@ArgU16>, !felt.felt
 //CHECK-NEXT:        struct.writef %[[SELF]][@synthetic_return] = %[[T01]] : <@NondetU16Reg>, !felt.felt
-//CHECK-NEXT:        function.return %[[SELF]] : !struct.struct<@NondetU16Reg>
+//CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@NondetU16Reg>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@NondetU16Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@NondetU16Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = felt.const 1
-//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@arg] : <@NondetU16Reg>, !struct.struct<@ArgU16>
-//CHECK-NEXT:        function.call @ArgU16::@constrain(%[[T00]], %[[C1]], %[[A1]]) : (!struct.struct<@ArgU16>, !felt.felt, !felt.felt) -> ()
+//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@arg] : <@NondetU16Reg>, !struct.type<@ArgU16>
+//CHECK-NEXT:        function.call @ArgU16::@constrain(%[[T00]], %[[C1]], %[[A1]]) : (!struct.type<@ArgU16>, !felt.felt, !felt.felt) -> ()
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = struct.readf %[[T00]][@count] : <@ArgU16>, !felt.felt
 //CHECK-NEXT:        constrain.eq %[[C1]], %[[T01]] : !felt.felt, !felt.felt
 //CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = struct.readf %[[T00]][@val] : <@ArgU16>, !felt.felt
@@ -332,18 +332,18 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   struct.def @U16Reg {
-//CHECK-NEXT:      struct.field @ret : !struct.struct<@NondetU16Reg>
+//CHECK-NEXT:      struct.field @ret : !struct.type<@NondetU16Reg>
 //CHECK-NEXT:      struct.field @synthetic_return : !felt.felt {llzk.pub}
-//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@U16Reg> attributes {function.allow_witness} {
+//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@U16Reg> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@U16Reg>
-//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = function.call @NondetU16Reg::@compute(%[[A0:[0-9a-zA-Z_\.]+]]) : (!felt.felt) -> !struct.struct<@NondetU16Reg>
-//CHECK-NEXT:        struct.writef %[[SELF]][@ret] = %[[T00]] : <@U16Reg>, !struct.struct<@NondetU16Reg>
+//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = function.call @NondetU16Reg::@compute(%[[A0:[0-9a-zA-Z_\.]+]]) : (!felt.felt) -> !struct.type<@NondetU16Reg>
+//CHECK-NEXT:        struct.writef %[[SELF]][@ret] = %[[T00]] : <@U16Reg>, !struct.type<@NondetU16Reg>
 //CHECK-NEXT:        struct.writef %[[SELF]][@synthetic_return] = %[[A0]] : <@U16Reg>, !felt.felt
-//CHECK-NEXT:        function.return %[[SELF]] : !struct.struct<@U16Reg>
+//CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@U16Reg>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@U16Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@ret] : <@U16Reg>, !struct.struct<@NondetU16Reg>
-//CHECK-NEXT:        function.call @NondetU16Reg::@constrain(%[[T00]], %[[A1]]) : (!struct.struct<@NondetU16Reg>, !felt.felt) -> ()
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@U16Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@ret] : <@U16Reg>, !struct.type<@NondetU16Reg>
+//CHECK-NEXT:        function.call @NondetU16Reg::@constrain(%[[T00]], %[[A1]]) : (!struct.type<@NondetU16Reg>, !felt.felt) -> ()
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = struct.readf %[[T00]][@synthetic_return] : <@NondetU16Reg>, !felt.felt
 //CHECK-NEXT:        constrain.eq %[[T01]], %[[A1]] : !felt.felt, !felt.felt
 //CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@synthetic_return] : <@U16Reg>, !felt.felt
@@ -352,28 +352,28 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   struct.def @AddrDecomposeBits {
-//CHECK-NEXT:      struct.field @low0 : !struct.struct<@NondetBitReg>
-//CHECK-NEXT:      struct.field @low1 : !struct.struct<@NondetBitReg>
+//CHECK-NEXT:      struct.field @low0 : !struct.type<@NondetBitReg>
+//CHECK-NEXT:      struct.field @low1 : !struct.type<@NondetBitReg>
 //CHECK-NEXT:      struct.field @low2 : !felt.felt
-//CHECK-NEXT:      struct.field @upperDiff : !struct.struct<@U16Reg>
-//CHECK-NEXT:      struct.field @med14 : !struct.struct<@NondetU16Reg>
+//CHECK-NEXT:      struct.field @upperDiff : !struct.type<@U16Reg>
+//CHECK-NEXT:      struct.field @med14 : !struct.type<@NondetU16Reg>
 //CHECK-NEXT:      struct.field @addr : !felt.felt
 //CHECK-NEXT:      struct.field @synthetic_return : !felt.felt {llzk.pub}
-//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.struct<@std::@risc0::@ValU32>,
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@AddrDecomposeBits>  attributes {function.allow_witness} {
+//CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@std::@risc0::@ValU32>,
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@AddrDecomposeBits>  attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@AddrDecomposeBits>
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = struct.readf %[[A0]][@low] : <@std::@risc0::@ValU32>, !felt.felt
 //CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = felt.const 1
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = felt.bit_and %[[T00]], %[[C1]]
-//CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = function.call @NondetBitReg::@compute(%[[T01]]) : (!felt.felt) -> !struct.struct<@NondetBitReg>
-//CHECK-NEXT:        struct.writef %[[SELF]][@low0] = %[[T02]] : <@AddrDecomposeBits>, !struct.struct<@NondetBitReg>
+//CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = function.call @NondetBitReg::@compute(%[[T01]]) : (!felt.felt) -> !struct.type<@NondetBitReg>
+//CHECK-NEXT:        struct.writef %[[SELF]][@low0] = %[[T02]] : <@AddrDecomposeBits>, !struct.type<@NondetBitReg>
 //CHECK-NEXT:        %[[T03:[0-9a-zA-Z_\.]+]] = struct.readf %[[A0]][@low] : <@std::@risc0::@ValU32>, !felt.felt
 //CHECK-NEXT:        %[[C2:[0-9a-zA-Z_\.]+]] = felt.const 2
 //CHECK-NEXT:        %[[T04:[0-9a-zA-Z_\.]+]] = felt.bit_and %[[T03]], %[[C2]]
 //CHECK-NEXT:        %[[C2_0:[0-9a-zA-Z_\.]+]] = felt.const 2
 //CHECK-NEXT:        %[[T05:[0-9a-zA-Z_\.]+]] = felt.div %[[T04]], %[[C2_0]]
-//CHECK-NEXT:        %[[T06:[0-9a-zA-Z_\.]+]] = function.call @NondetBitReg::@compute(%[[T05]]) : (!felt.felt) -> !struct.struct<@NondetBitReg>
-//CHECK-NEXT:        struct.writef %[[SELF]][@low1] = %[[T06]] : <@AddrDecomposeBits>, !struct.struct<@NondetBitReg>
+//CHECK-NEXT:        %[[T06:[0-9a-zA-Z_\.]+]] = function.call @NondetBitReg::@compute(%[[T05]]) : (!felt.felt) -> !struct.type<@NondetBitReg>
+//CHECK-NEXT:        struct.writef %[[SELF]][@low1] = %[[T06]] : <@AddrDecomposeBits>, !struct.type<@NondetBitReg>
 //CHECK-NEXT:        %[[T07:[0-9a-zA-Z_\.]+]] = struct.readf %[[T06]][@synthetic_return] : <@NondetBitReg>, !felt.felt
 //CHECK-NEXT:        %[[T08:[0-9a-zA-Z_\.]+]] = felt.mul %[[T07]], %[[C2_0]]
 //CHECK-NEXT:        %[[T09:[0-9a-zA-Z_\.]+]] = struct.readf %[[T02]][@synthetic_return] : <@NondetBitReg>, !felt.felt
@@ -388,14 +388,14 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T14:[0-9a-zA-Z_\.]+]] = felt.add %[[T13]], %[[T11]]
 //CHECK-NEXT:        %[[T15:[0-9a-zA-Z_\.]+]] = struct.readf %[[A0]][@high] : <@std::@risc0::@ValU32>, !felt.felt
 //CHECK-NEXT:        %[[T16:[0-9a-zA-Z_\.]+]] = felt.sub %[[T14]], %[[T15]]
-//CHECK-NEXT:        %[[T17:[0-9a-zA-Z_\.]+]] = function.call @U16Reg::@compute(%[[T16]]) : (!felt.felt) -> !struct.struct<@U16Reg>
-//CHECK-NEXT:        struct.writef %[[SELF]][@upperDiff] = %[[T17]] : <@AddrDecomposeBits>, !struct.struct<@U16Reg>
+//CHECK-NEXT:        %[[T17:[0-9a-zA-Z_\.]+]] = function.call @U16Reg::@compute(%[[T16]]) : (!felt.felt) -> !struct.type<@U16Reg>
+//CHECK-NEXT:        struct.writef %[[SELF]][@upperDiff] = %[[T17]] : <@AddrDecomposeBits>, !struct.type<@U16Reg>
 //CHECK-NEXT:        %[[T18:[0-9a-zA-Z_\.]+]] = struct.readf %[[A0]][@low] : <@std::@risc0::@ValU32>, !felt.felt
 //CHECK-NEXT:        %[[T19:[0-9a-zA-Z_\.]+]] = felt.sub %[[T18]], %[[T10]]
 //CHECK-NEXT:        %[[C4:[0-9a-zA-Z_\.]+]] = felt.const 4
 //CHECK-NEXT:        %[[T20:[0-9a-zA-Z_\.]+]] = felt.div %[[T19]], %[[C4]]
-//CHECK-NEXT:        %[[T21:[0-9a-zA-Z_\.]+]] = function.call @NondetU16Reg::@compute(%[[T20]]) : (!felt.felt) -> !struct.struct<@NondetU16Reg>
-//CHECK-NEXT:        struct.writef %[[SELF]][@med14] = %[[T21]] : <@AddrDecomposeBits>, !struct.struct<@NondetU16Reg>
+//CHECK-NEXT:        %[[T21:[0-9a-zA-Z_\.]+]] = function.call @NondetU16Reg::@compute(%[[T20]]) : (!felt.felt) -> !struct.type<@NondetU16Reg>
+//CHECK-NEXT:        struct.writef %[[SELF]][@med14] = %[[T21]] : <@AddrDecomposeBits>, !struct.type<@NondetU16Reg>
 //CHECK-NEXT:        %[[C16384:[0-9a-zA-Z_\.]+]] = felt.const 16384
 //CHECK-NEXT:        %[[T22:[0-9a-zA-Z_\.]+]] = struct.readf %[[A0]][@high] : <@std::@risc0::@ValU32>, !felt.felt
 //CHECK-NEXT:        %[[T23:[0-9a-zA-Z_\.]+]] = felt.mul %[[C16384]], %[[T22]]
@@ -403,16 +403,16 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T25:[0-9a-zA-Z_\.]+]] = felt.add %[[T23]], %[[T24]]
 //CHECK-NEXT:        struct.writef %[[SELF]][@addr] = %[[T25]] : <@AddrDecomposeBits>, !felt.felt
 //CHECK-NEXT:        struct.writef %[[SELF]][@synthetic_return] = %[[T25]] : <@AddrDecomposeBits>, !felt.felt
-//CHECK-NEXT:        function.return %[[SELF]] : !struct.struct<@AddrDecomposeBits>
+//CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@AddrDecomposeBits>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@AddrDecomposeBits>,
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !struct.struct<@std::@risc0::@ValU32>, %[[A2:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@AddrDecomposeBits>,
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !struct.type<@std::@risc0::@ValU32>, %[[A2:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:        %[[TN0:[0-9a-zA-Z_\.]+]] = felt.nondet
-//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@low0] : <@AddrDecomposeBits>, !struct.struct<@NondetBitReg>
-//CHECK-NEXT:        function.call @NondetBitReg::@constrain(%[[T00]], %[[TN0]]) : (!struct.struct<@NondetBitReg>, !felt.felt) -> ()
+//CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@low0] : <@AddrDecomposeBits>, !struct.type<@NondetBitReg>
+//CHECK-NEXT:        function.call @NondetBitReg::@constrain(%[[T00]], %[[TN0]]) : (!struct.type<@NondetBitReg>, !felt.felt) -> ()
 //CHECK-NEXT:        %[[TN1:[0-9a-zA-Z_\.]+]] = felt.nondet
-//CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@low1] : <@AddrDecomposeBits>, !struct.struct<@NondetBitReg>
-//CHECK-NEXT:        function.call @NondetBitReg::@constrain(%[[T01]], %[[TN1]]) : (!struct.struct<@NondetBitReg>, !felt.felt) -> ()
+//CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@low1] : <@AddrDecomposeBits>, !struct.type<@NondetBitReg>
+//CHECK-NEXT:        function.call @NondetBitReg::@constrain(%[[T01]], %[[TN1]]) : (!struct.type<@NondetBitReg>, !felt.felt) -> ()
 //CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@low2] : <@AddrDecomposeBits>, !felt.felt
 //CHECK-NEXT:        %[[T03:[0-9a-zA-Z_\.]+]] = struct.readf %[[T01]][@synthetic_return] : <@NondetBitReg>, !felt.felt
 //CHECK-NEXT:        %[[C2:[0-9a-zA-Z_\.]+]] = felt.const 2
@@ -429,15 +429,15 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T10:[0-9a-zA-Z_\.]+]] = felt.add %[[T09]], %[[T07]]
 //CHECK-NEXT:        %[[T11:[0-9a-zA-Z_\.]+]] = struct.readf %[[A1]][@high] : <@std::@risc0::@ValU32>, !felt.felt
 //CHECK-NEXT:        %[[T12:[0-9a-zA-Z_\.]+]] = felt.sub %[[T10]], %[[T11]]
-//CHECK-NEXT:        %[[T13:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@upperDiff] : <@AddrDecomposeBits>, !struct.struct<@U16Reg>
-//CHECK-NEXT:        function.call @U16Reg::@constrain(%[[T13]], %[[T12]]) : (!struct.struct<@U16Reg>, !felt.felt) -> ()
+//CHECK-NEXT:        %[[T13:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@upperDiff] : <@AddrDecomposeBits>, !struct.type<@U16Reg>
+//CHECK-NEXT:        function.call @U16Reg::@constrain(%[[T13]], %[[T12]]) : (!struct.type<@U16Reg>, !felt.felt) -> ()
 //CHECK-NEXT:        %[[T14:[0-9a-zA-Z_\.]+]] = struct.readf %[[A1]][@low] : <@std::@risc0::@ValU32>, !felt.felt
 //CHECK-NEXT:        %[[T15:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@low2] : <@AddrDecomposeBits>, !felt.felt
 //CHECK-NEXT:        %[[T16:[0-9a-zA-Z_\.]+]] = felt.sub %[[T14]], %[[T15]]
 //CHECK-NEXT:        %[[C4:[0-9a-zA-Z_\.]+]] = felt.const 4
 //CHECK-NEXT:        %[[T17:[0-9a-zA-Z_\.]+]] = felt.div %[[T16]], %[[C4]]
-//CHECK-NEXT:        %[[T18:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@med14] : <@AddrDecomposeBits>, !struct.struct<@NondetU16Reg>
-//CHECK-NEXT:        function.call @NondetU16Reg::@constrain(%[[T18]], %[[T17]]) : (!struct.struct<@NondetU16Reg>, !felt.felt) -> ()
+//CHECK-NEXT:        %[[T18:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@med14] : <@AddrDecomposeBits>, !struct.type<@NondetU16Reg>
+//CHECK-NEXT:        function.call @NondetU16Reg::@constrain(%[[T18]], %[[T17]]) : (!struct.type<@NondetU16Reg>, !felt.felt) -> ()
 //CHECK-NEXT:        %[[T19:[0-9a-zA-Z_\.]+]] = struct.readf %[[T18]][@synthetic_return] : <@NondetU16Reg>, !felt.felt
 //CHECK-NEXT:        %[[T20:[0-9a-zA-Z_\.]+]] = felt.mul %[[T19]], %[[C4]]
 //CHECK-NEXT:        %[[T21:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@low2] : <@AddrDecomposeBits>, !felt.felt

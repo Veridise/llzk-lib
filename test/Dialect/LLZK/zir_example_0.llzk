@@ -7,14 +7,14 @@ module attributes {veridise.lang = "llzk"} {
       struct.field @low : !felt.felt
       struct.field @high : !felt.felt
 
-      function.def @compute(%low: !felt.felt, %high: !felt.felt) -> !struct.struct<@risc0::@ValU32> {
-        %self = struct.new : !struct.struct<@risc0::@ValU32>
-        struct.writef %self[@low] = %low : !struct.struct<@risc0::@ValU32>, !felt.felt
-        struct.writef %self[@high] = %high : !struct.struct<@risc0::@ValU32>, !felt.felt
-        function.return %self : !struct.struct<@risc0::@ValU32>
+      function.def @compute(%low: !felt.felt, %high: !felt.felt) -> !struct.type<@risc0::@ValU32> {
+        %self = struct.new : !struct.type<@risc0::@ValU32>
+        struct.writef %self[@low] = %low : !struct.type<@risc0::@ValU32>, !felt.felt
+        struct.writef %self[@high] = %high : !struct.type<@risc0::@ValU32>, !felt.felt
+        function.return %self : !struct.type<@risc0::@ValU32>
       }
 
-      function.def @constrain(%self: !struct.struct<@risc0::@ValU32>, %low: !felt.felt, %high: !felt.felt) {
+      function.def @constrain(%self: !struct.type<@risc0::@ValU32>, %low: !felt.felt, %high: !felt.felt) {
         function.return
       }
     }
@@ -23,14 +23,14 @@ module attributes {veridise.lang = "llzk"} {
       // ZIR frontend should mark function.return value with `pub`
       struct.field @reg : !felt.felt {llzk.pub}
 
-      function.def @compute(%v: !felt.felt) -> !struct.struct<@risc0::@Reg> {
-        %self = struct.new : !struct.struct<@risc0::@Reg>
-        struct.writef %self[@reg] = %v : !struct.struct<@risc0::@Reg>, !felt.felt
-        function.return %self : !struct.struct<@risc0::@Reg>
+      function.def @compute(%v: !felt.felt) -> !struct.type<@risc0::@Reg> {
+        %self = struct.new : !struct.type<@risc0::@Reg>
+        struct.writef %self[@reg] = %v : !struct.type<@risc0::@Reg>, !felt.felt
+        function.return %self : !struct.type<@risc0::@Reg>
       }
 
-      function.def @constrain(%self: !struct.struct<@risc0::@Reg>, %v: !felt.felt) {
-        %0 = struct.readf %self[@reg] : !struct.struct<@risc0::@Reg>, !felt.felt
+      function.def @constrain(%self: !struct.type<@risc0::@Reg>, %v: !felt.felt) {
+        %0 = struct.readf %self[@reg] : !struct.type<@risc0::@Reg>, !felt.felt
         constrain.eq %v, %0 : !felt.felt
         function.return
       }
@@ -41,26 +41,26 @@ module attributes {veridise.lang = "llzk"} {
       // ZIR frontend should mark function.return value with `pub`
       struct.field @synthetic_return : !felt.felt {llzk.pub}
 
-      function.def @compute(%lhs: !felt.felt, %rhs: !felt.felt) -> !struct.struct<@risc0::@Div> {
-        %self = struct.new : !struct.struct<@risc0::@Div>
+      function.def @compute(%lhs: !felt.felt, %rhs: !felt.felt) -> !struct.type<@risc0::@Div> {
+        %self = struct.new : !struct.type<@risc0::@Div>
         // res_inv := inv(rhs);
         %res_inv = felt.inv %rhs
-        struct.writef %self[@reciprocal] = %res_inv : !struct.struct<@risc0::@Div>, !felt.felt
+        struct.writef %self[@reciprocal] = %res_inv : !struct.type<@risc0::@Div>, !felt.felt
         // self.synthetic_return := res_inv * lhs;
         %res_mul = felt.mul %res_inv, %lhs
-        struct.writef %self[@synthetic_return] = %res_mul : !struct.struct<@risc0::@Div>, !felt.felt
+        struct.writef %self[@synthetic_return] = %res_mul : !struct.type<@risc0::@Div>, !felt.felt
         //
-        function.return %self : !struct.struct<@risc0::@Div>
+        function.return %self : !struct.type<@risc0::@Div>
       }
 
-      function.def @constrain(%self: !struct.struct<@risc0::@Div>, %lhs: !felt.felt, %rhs: !felt.felt) {
+      function.def @constrain(%self: !struct.type<@risc0::@Div>, %lhs: !felt.felt, %rhs: !felt.felt) {
         // emit self.reciprocal * rhs = 1;
-        %res_inv = struct.readf %self[@reciprocal] : !struct.struct<@risc0::@Div>, !felt.felt
+        %res_inv = struct.readf %self[@reciprocal] : !struct.type<@risc0::@Div>, !felt.felt
         %res_mul_1 = felt.mul %res_inv, %rhs
         %const_1 = felt.const 1
         constrain.eq %res_mul_1, %const_1 : !felt.felt
         // emit self.synthetic_return = self.reciprocal * lhs;
-        %res_self = struct.readf %self[@synthetic_return] : !struct.struct<@risc0::@Div>, !felt.felt
+        %res_self = struct.readf %self[@synthetic_return] : !struct.type<@risc0::@Div>, !felt.felt
         %res_mul_2 = felt.mul %res_inv, %lhs
         constrain.eq %res_self, %res_mul_2 : !felt.felt
         //
@@ -75,25 +75,25 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      struct.def @ValU32 {
 //CHECK-NEXT:        struct.field @low : !felt.felt
 //CHECK-NEXT:        struct.field @high : !felt.felt
-//CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@risc0::@ValU32> attributes {function.allow_witness} {
+//CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@risc0::@ValU32> attributes {function.allow_witness} {
 //CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@ValU32>
 //CHECK-NEXT:          struct.writef %[[SELF]][@low] = %[[A0]] : <@risc0::@ValU32>, !felt.felt
 //CHECK-NEXT:          struct.writef %[[SELF]][@high] = %[[A1]] : <@risc0::@ValU32>, !felt.felt
-//CHECK-NEXT:          function.return %[[SELF]] : !struct.struct<@risc0::@ValU32>
+//CHECK-NEXT:          function.return %[[SELF]] : !struct.type<@risc0::@ValU32>
 //CHECK-NEXT:        }
-//CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@risc0::@ValU32>,
+//CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@risc0::@ValU32>,
 //CHECK-SAME:        %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:          function.return
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
 //CHECK-NEXT:      struct.def @Reg {
 //CHECK-NEXT:        struct.field @reg : !felt.felt {llzk.pub}
-//CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@risc0::@Reg> attributes {function.allow_witness} {
+//CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@risc0::@Reg> attributes {function.allow_witness} {
 //CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@Reg>
 //CHECK-NEXT:          struct.writef %[[SELF]][@reg] = %[[A0]] : <@risc0::@Reg>, !felt.felt
-//CHECK-NEXT:          function.return %[[SELF]] : !struct.struct<@risc0::@Reg>
+//CHECK-NEXT:          function.return %[[SELF]] : !struct.type<@risc0::@Reg>
 //CHECK-NEXT:        }
-//CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@risc0::@Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
+//CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@risc0::@Reg>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@reg] : <@risc0::@Reg>, !felt.felt
 //CHECK-NEXT:          constrain.eq %[[A1]], %[[T0]] : !felt.felt, !felt.felt
 //CHECK-NEXT:          function.return
@@ -102,15 +102,15 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      struct.def @Div {
 //CHECK-NEXT:        struct.field @reciprocal : !felt.felt
 //CHECK-NEXT:        struct.field @synthetic_return : !felt.felt {llzk.pub}
-//CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@risc0::@Div> attributes {function.allow_witness} {
+//CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@risc0::@Div> attributes {function.allow_witness} {
 //CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@Div>
 //CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = felt.inv %[[A1]]
 //CHECK-NEXT:          struct.writef %[[SELF]][@reciprocal] = %[[T0]] : <@risc0::@Div>, !felt.felt
 //CHECK-NEXT:          %[[T1:[0-9a-zA-Z_\.]+]] = felt.mul %[[T0]], %[[A0]]
 //CHECK-NEXT:          struct.writef %[[SELF]][@synthetic_return] = %[[T1]] : <@risc0::@Div>, !felt.felt
-//CHECK-NEXT:          function.return %[[SELF]] : !struct.struct<@risc0::@Div>
+//CHECK-NEXT:          function.return %[[SELF]] : !struct.type<@risc0::@Div>
 //CHECK-NEXT:        }
-//CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@risc0::@Div>,
+//CHECK-NEXT:        function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@risc0::@Div>,
 //CHECK-SAME:        %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A2:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 //CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@reciprocal] : <@risc0::@Div>, !felt.felt
 //CHECK-NEXT:          %[[T1:[0-9a-zA-Z_\.]+]] = felt.mul %[[T0]], %[[A2]]

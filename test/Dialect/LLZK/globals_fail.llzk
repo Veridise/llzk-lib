@@ -13,35 +13,35 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
-  global.def @g : !array.array<@b x i1>
+  global.def @g : !array.type<@b x i1>
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
-  global.def @g : !array.array<affine_map<(i)->(i)> x i1>
+  global.def @g : !array.type<affine_map<(i)->(i)> x i1>
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
-  global.def @g : !struct.struct<@Component01<[affine_map<(i)->(i)>]>>
+  global.def @g : !struct.type<@Component01<[affine_map<(i)->(i)>]>>
   struct.def @Component01<[@N]> {
-    function.def @compute() -> !struct.struct<@Component01<[@N]>> {
-      %self = struct.new : !struct.struct<@Component01<[@N]>>
-      function.return %self : !struct.struct<@Component01<[@N]>>
+    function.def @compute() -> !struct.type<@Component01<[@N]>> {
+      %self = struct.new : !struct.type<@Component01<[@N]>>
+      function.return %self : !struct.type<@Component01<[@N]>>
     }
-    function.def @constrain(%self: !struct.struct<@Component01<[@N]>>) { function.return }
+    function.def @constrain(%self: !struct.type<@Component01<[@N]>>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
-  global.def @g : !struct.struct<@Component01<[@any_symbol_here_is_illegal]>>
+  global.def @g : !struct.type<@Component01<[@any_symbol_here_is_illegal]>>
   struct.def @Component01<[@N]> {
-    function.def @compute() -> !struct.struct<@Component01<[@N]>> {
-      %self = struct.new : !struct.struct<@Component01<[@N]>>
-      function.return %self : !struct.struct<@Component01<[@N]>>
+    function.def @compute() -> !struct.type<@Component01<[@N]>> {
+      %self = struct.new : !struct.type<@Component01<[@N]>>
+      function.return %self : !struct.type<@Component01<[@N]>>
     }
-    function.def @constrain(%self: !struct.struct<@Component01<[@N]>>) { function.return }
+    function.def @constrain(%self: !struct.type<@Component01<[@N]>>) { function.return }
   }
 }
 // -----
@@ -101,34 +101,34 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'global.def' op with type '!array.array<2 x !string.string>' expected builtin.array attribute value but found builtin.string}}
-  global.def const @g : !array.array<2 x !string.string> = "a string and something else"
+  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.string>' expected builtin.array attribute value but found builtin.string}}
+  global.def const @g : !array.type<2 x !string.string> = "a string and something else"
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'global.def' op with type '!array.array<2 x !string.string>' expected builtin.array attribute value to contain 2 elements but found 0}}
-  global.def const @g : !array.array<2 x !string.string> = []
+  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.string>' expected builtin.array attribute value to contain 2 elements but found 0}}
+  global.def const @g : !array.type<2 x !string.string> = []
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'global.def' op with type '!array.array<2 x !string.string>' expected builtin.string array element but found builtin.integer}}
-  global.def const @g : !array.array<2 x !string.string> = [7, 8]
+  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.string>' expected builtin.string array element but found builtin.integer}}
+  global.def const @g : !array.type<2 x !string.string> = [7, 8]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'global.def' op with type '!array.array<2 x !string.string>' expected builtin.array attribute value to contain 2 elements but found 3}}
-  global.def const @g : !array.array<2 x !string.string> = ["too", "many", "strings"]
+  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.string>' expected builtin.array attribute value to contain 2 elements but found 3}}
+  global.def const @g : !array.type<2 x !string.string> = ["too", "many", "strings"]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+2 {{'global.def' op with type '!array.array<4 x !string.string>' expected builtin.string array element but found builtin.integer}}
-  // expected-error@+1 {{'global.def' op with type '!array.array<4 x !string.string>' expected builtin.string array element but found builtin.affine_map}}
-  global.def const @g : !array.array<4 x !string.string> = ["a string and something else", false, affine_map<(i)->(i)>, -100]
+  // expected-error@+2 {{'global.def' op with type '!array.type<4 x !string.string>' expected builtin.string array element but found builtin.integer}}
+  // expected-error@+1 {{'global.def' op with type '!array.type<4 x !string.string>' expected builtin.string array element but found builtin.affine_map}}
+  global.def const @g : !array.type<4 x !string.string> = ["a string and something else", false, affine_map<(i)->(i)>, -100]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'global.def' op with type '!array.array<2,2,1,2 x !felt.felt>' expected builtin.array attribute value to contain 8 elements but found 4}}
-  global.def const @g : !array.array<2,2,1,2 x !felt.felt> = [6, 12134, 45523, 15623]
+  // expected-error@+1 {{'global.def' op with type '!array.type<2,2,1,2 x !felt.felt>' expected builtin.array attribute value to contain 8 elements but found 4}}
+  global.def const @g : !array.type<2,2,1,2 x !felt.felt> = [6, 12134, 45523, 15623]
 }
 // -----
 
@@ -151,13 +151,13 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   global.def @g : !string.string = "Hello"
   struct.def @Component02 {
-    function.def @compute() -> !struct.struct<@Component02> {
+    function.def @compute() -> !struct.type<@Component02> {
       // expected-error@+1 {{'global.read' op references unknown symbol "@unknown"}}
       %t = global.read @unknown : !string.string
-      %self = struct.new : !struct.struct<@Component02>
-      function.return %self : !struct.struct<@Component02>
+      %self = struct.new : !struct.type<@Component02>
+      function.return %self : !struct.type<@Component02>
     }
-    function.def @constrain(%self: !struct.struct<@Component02>) { function.return }
+    function.def @constrain(%self: !struct.type<@Component02>) { function.return }
   }
 }
 // -----
@@ -166,13 +166,13 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   global.def @g : !felt.felt = 6546
   struct.def @Component03 {
-    function.def @compute() -> !struct.struct<@Component03> {
+    function.def @compute() -> !struct.type<@Component03> {
       // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.felt', got '!string.string'}}
       %t = global.read @g : !string.string
-      %self = struct.new : !struct.struct<@Component03>
-      function.return %self : !struct.struct<@Component03>
+      %self = struct.new : !struct.type<@Component03>
+      function.return %self : !struct.type<@Component03>
     }
-    function.def @constrain(%self: !struct.struct<@Component03>) { function.return }
+    function.def @constrain(%self: !struct.type<@Component03>) { function.return }
   }
 }
 // -----
@@ -181,14 +181,14 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   global.def @g : !felt.felt = 125
   struct.def @Component04 {
-    function.def @compute() -> !struct.struct<@Component04> {
+    function.def @compute() -> !struct.type<@Component04> {
       %c = felt.const 99999
       // expected-error@+1 {{'global.write' op references unknown symbol "@unknown"}}
       global.write @unknown = %c : !felt.felt
-      %self = struct.new : !struct.struct<@Component04>
-      function.return %self : !struct.struct<@Component04>
+      %self = struct.new : !struct.type<@Component04>
+      function.return %self : !struct.type<@Component04>
     }
-    function.def @constrain(%self: !struct.struct<@Component04>) { function.return }
+    function.def @constrain(%self: !struct.type<@Component04>) { function.return }
   }
 }
 // -----
@@ -197,14 +197,14 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   global.def @g : index = 125
   struct.def @Component05 {
-    function.def @compute() -> !struct.struct<@Component05> {
+    function.def @compute() -> !struct.type<@Component05> {
       %c = felt.const 99999
       // expected-error@+1 {{'global.write' op has wrong type; expected 'index', got '!felt.felt'}}
       global.write @g = %c : !felt.felt
-      %self = struct.new : !struct.struct<@Component05>
-      function.return %self : !struct.struct<@Component05>
+      %self = struct.new : !struct.type<@Component05>
+      function.return %self : !struct.type<@Component05>
     }
-    function.def @constrain(%self: !struct.struct<@Component05>) { function.return }
+    function.def @constrain(%self: !struct.type<@Component05>) { function.return }
   }
 }
 // -----
@@ -213,14 +213,14 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   global.def @g : !felt.felt = 125
   struct.def @Component06 {
-    function.def @compute() -> !struct.struct<@Component06> {
+    function.def @compute() -> !struct.type<@Component06> {
       %c = arith.constant true // expected-note {{prior use here}}
       // expected-error@+1 {{use of value '%c' expects different type than prior uses: '!felt.felt' vs 'i1'}}
       global.write @g = %c : !felt.felt
-      %self = struct.new : !struct.struct<@Component06>
-      function.return %self : !struct.struct<@Component06>
+      %self = struct.new : !struct.type<@Component06>
+      function.return %self : !struct.type<@Component06>
     }
-    function.def @constrain(%self: !struct.struct<@Component06>) { function.return }
+    function.def @constrain(%self: !struct.type<@Component06>) { function.return }
   }
 }
 // -----
@@ -229,14 +229,14 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   global.def const @t : i1 = true
   struct.def @Component07 {
-    function.def @compute() -> !struct.struct<@Component07> {
+    function.def @compute() -> !struct.type<@Component07> {
       %c = arith.constant false
       // expected-error@+1 {{'global.write' op cannot target 'global.def' marked as 'const'}}
       global.write @t = %c : i1
-      %self = struct.new : !struct.struct<@Component07>
-      function.return %self : !struct.struct<@Component07>
+      %self = struct.new : !struct.type<@Component07>
+      function.return %self : !struct.type<@Component07>
     }
-    function.def @constrain(%self: !struct.struct<@Component07>) { function.return }
+    function.def @constrain(%self: !struct.type<@Component07>) { function.return }
   }
 }
 // -----
@@ -246,11 +246,11 @@ module attributes {veridise.lang = "llzk"} {
   global.def const @N : index = 3 // expected-note {{symbol already defined here}}
   // expected-error@+1 {{'struct.def' op parameter name "@N" conflicts with an existing symbol}}
   struct.def @Component08<[@N]> {
-    function.def @compute() -> !struct.struct<@Component08<[@N]>> {
-      %self = struct.new : !struct.struct<@Component08<[@N]>>
-      function.return %self : !struct.struct<@Component08<[@N]>>
+    function.def @compute() -> !struct.type<@Component08<[@N]>> {
+      %self = struct.new : !struct.type<@Component08<[@N]>>
+      function.return %self : !struct.type<@Component08<[@N]>>
     }
-    function.def @constrain(%self: !struct.struct<@Component08<[@N]>>) { function.return }
+    function.def @constrain(%self: !struct.type<@Component08<[@N]>>) { function.return }
   }
 }
 // -----
@@ -259,11 +259,11 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   global.def @t : i1 = true
   struct.def @Component09 {
-    function.def @compute() -> !struct.struct<@Component09> {
-      %self = struct.new : !struct.struct<@Component09>
-      function.return %self : !struct.struct<@Component09>
+    function.def @compute() -> !struct.type<@Component09> {
+      %self = struct.new : !struct.type<@Component09>
+      function.return %self : !struct.type<@Component09>
     }
-    function.def @constrain(%self: !struct.struct<@Component09>) {
+    function.def @constrain(%self: !struct.type<@Component09>) {
       %c = arith.constant false
       // expected-error@+1 {{'global.write' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
       global.write @t = %c : i1

@@ -30,9 +30,9 @@ function.def @f_sub(
 
 function.def @f_add(
     %a: !felt.felt,
-    %b: !array.array<5 x i1>
+    %b: !array.type<5 x i1>
 ) -> !felt.felt {
-  // expected-error@+1 {{'felt.add' op operand #1 must be finite field element or type variable, but got '!array.array<5 x i1>'}}
-  %c = felt.add %a, %b : !felt.felt, !array.array<5 x i1>
+  // expected-error@+1 {{'felt.add' op operand #1 must be finite field element or type variable, but got '!array.type<5 x i1>'}}
+  %c = felt.add %a, %b : !felt.felt, !array.type<5 x i1>
   function.return %c: !felt.felt
 }

@@ -2,12 +2,12 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @NoConstraints {
-    function.def @compute(%a: !felt.felt) -> !struct.struct<@NoConstraints> {
-      %self = struct.new : !struct.struct<@NoConstraints>
-      function.return %self : !struct.struct<@NoConstraints>
+    function.def @compute(%a: !felt.felt) -> !struct.type<@NoConstraints> {
+      %self = struct.new : !struct.type<@NoConstraints>
+      function.return %self : !struct.type<@NoConstraints>
     }
 
-    function.def @constrain(%self: !struct.struct<@NoConstraints>, %a: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@NoConstraints>, %a: !felt.felt) {
       function.return
     }
   }
@@ -27,15 +27,15 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Adder {
     struct.field @sum : !felt.felt {llzk.pub}
 
-    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.struct<@Adder> {
-      %self = struct.new : !struct.struct<@Adder>
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.type<@Adder> {
+      %self = struct.new : !struct.type<@Adder>
       %sum = function.call @global_add(%a, %b) : (!felt.felt, !felt.felt) -> (!felt.felt)
-      struct.writef %self[@sum] = %sum : !struct.struct<@Adder>, !felt.felt
-      function.return %self : !struct.struct<@Adder>
+      struct.writef %self[@sum] = %sum : !struct.type<@Adder>, !felt.felt
+      function.return %self : !struct.type<@Adder>
     }
 
-    function.def @constrain(%self: !struct.struct<@Adder>, %a: !felt.felt, %b: !felt.felt) {
-      %sum = struct.readf %self[@sum] : !struct.struct<@Adder>, !felt.felt
+    function.def @constrain(%self: !struct.type<@Adder>, %a: !felt.felt, %b: !felt.felt) {
+      %sum = struct.readf %self[@sum] : !struct.type<@Adder>, !felt.felt
       %c = function.call @global_add(%a, %b) : (!felt.felt, !felt.felt) -> (!felt.felt)
       constrain.eq %sum, %c : !felt.felt
       function.return
@@ -59,15 +59,15 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Adder2 {
     struct.field @sum : !felt.felt {llzk.pub}
 
-    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.struct<@Adder2> {
-      %self = struct.new : !struct.struct<@Adder2>
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.type<@Adder2> {
+      %self = struct.new : !struct.type<@Adder2>
       %sum = function.call @global_add(%a, %b) : (!felt.felt, !felt.felt) -> (!felt.felt)
-      struct.writef %self[@sum] = %sum : !struct.struct<@Adder2>, !felt.felt
-      function.return %self : !struct.struct<@Adder2>
+      struct.writef %self[@sum] = %sum : !struct.type<@Adder2>, !felt.felt
+      function.return %self : !struct.type<@Adder2>
     }
 
-    function.def @constrain(%self: !struct.struct<@Adder2>, %a: !felt.felt, %b: !felt.felt) {
-      %sum = struct.readf %self[@sum] : !struct.struct<@Adder2>, !felt.felt
+    function.def @constrain(%self: !struct.type<@Adder2>, %a: !felt.felt, %b: !felt.felt) {
+      %sum = struct.readf %self[@sum] : !struct.type<@Adder2>, !felt.felt
       %c = function.call @global_add(%a, %b) : (!felt.felt, !felt.felt) -> (!felt.felt)
       %d = felt.add %c, %c
       constrain.eq %sum, %d : !felt.felt
@@ -84,14 +84,14 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB {
-    function.def @constrain(%self: !struct.struct<@ComponentB>, %a: !felt.felt, %b: !array.array<5 x !felt.felt>) {
-      constrain.in %b, %a : !array.array<5 x !felt.felt>
+    function.def @constrain(%self: !struct.type<@ComponentB>, %a: !felt.felt, %b: !array.type<5 x !felt.felt>) {
+      constrain.in %b, %a : !array.type<5 x !felt.felt>
       function.return
     }
 
-    function.def @compute(%a: !felt.felt, %b: !array.array<5 x !felt.felt>) -> !struct.struct<@ComponentB> {
-      %self = struct.new : !struct.struct<@ComponentB>
-      function.return %self : !struct.struct<@ComponentB>
+    function.def @compute(%a: !felt.felt, %b: !array.type<5 x !felt.felt>) -> !struct.type<@ComponentB> {
+      %self = struct.new : !struct.type<@ComponentB>
+      function.return %self : !struct.type<@ComponentB>
     }
   }
 }
@@ -105,12 +105,12 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
 
   struct.def @EnsureZero {
-    function.def @compute(%a: !felt.felt) -> !struct.struct<@EnsureZero> {
-      %self = struct.new : !struct.struct<@EnsureZero>
-      function.return %self : !struct.struct<@EnsureZero>
+    function.def @compute(%a: !felt.felt) -> !struct.type<@EnsureZero> {
+      %self = struct.new : !struct.type<@EnsureZero>
+      function.return %self : !struct.type<@EnsureZero>
     }
 
-    function.def @constrain(%self: !struct.struct<@EnsureZero>, %a: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@EnsureZero>, %a: !felt.felt) {
       %zero = felt.const 0
       constrain.eq %a, %zero : !felt.felt
       function.return
@@ -118,14 +118,14 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @EnsureBothZero {
-    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.struct<@EnsureBothZero> {
-      %self = struct.new : !struct.struct<@EnsureBothZero>
-      function.return %self : !struct.struct<@EnsureBothZero>
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.type<@EnsureBothZero> {
+      %self = struct.new : !struct.type<@EnsureBothZero>
+      function.return %self : !struct.type<@EnsureBothZero>
     }
 
     // NOTE: This test case demonstrates where this analysis is currently overly conservative,
     // as it does not determine that %a and %b must be precisely equal to 0.
-    function.def @constrain(%self: !struct.struct<@EnsureBothZero>, %a: !felt.felt, %b: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@EnsureBothZero>, %a: !felt.felt, %b: !felt.felt) {
       %zero = felt.const 0
       constrain.eq %a, %b : !felt.felt
       constrain.eq %a, %zero : !felt.felt
@@ -149,34 +149,34 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Passthrough {
     struct.field @out : !felt.felt {llzk.pub}
 
-    function.def @compute(%in: !felt.felt) -> !struct.struct<@Passthrough> {
-      %self = struct.new : !struct.struct<@Passthrough>
-      struct.writef %self[@out] = %in : !struct.struct<@Passthrough>, !felt.felt
-      function.return %self : !struct.struct<@Passthrough>
+    function.def @compute(%in: !felt.felt) -> !struct.type<@Passthrough> {
+      %self = struct.new : !struct.type<@Passthrough>
+      struct.writef %self[@out] = %in : !struct.type<@Passthrough>, !felt.felt
+      function.return %self : !struct.type<@Passthrough>
     }
 
-    function.def @constrain(%self: !struct.struct<@Passthrough>, %in: !felt.felt) {
-      %out = struct.readf %self[@out] : !struct.struct<@Passthrough>, !felt.felt
+    function.def @constrain(%self: !struct.type<@Passthrough>, %in: !felt.felt) {
+      %out = struct.readf %self[@out] : !struct.type<@Passthrough>, !felt.felt
       constrain.eq %in, %out : !felt.felt
       function.return
     }
   }
 
   struct.def @EnsureIsZero {
-    struct.field @p : !struct.struct<@Passthrough>
+    struct.field @p : !struct.type<@Passthrough>
 
-    function.def @compute(%in: !felt.felt) -> !struct.struct<@EnsureIsZero> {
-      %self = struct.new : !struct.struct<@EnsureIsZero>
-      %p_0 = function.call @Passthrough::@compute(%in) : (!felt.felt) -> (!struct.struct<@Passthrough>)
-      struct.writef %self[@p] = %p_0 : !struct.struct<@EnsureIsZero>, !struct.struct<@Passthrough>
-      function.return %self : !struct.struct<@EnsureIsZero>
+    function.def @compute(%in: !felt.felt) -> !struct.type<@EnsureIsZero> {
+      %self = struct.new : !struct.type<@EnsureIsZero>
+      %p_0 = function.call @Passthrough::@compute(%in) : (!felt.felt) -> (!struct.type<@Passthrough>)
+      struct.writef %self[@p] = %p_0 : !struct.type<@EnsureIsZero>, !struct.type<@Passthrough>
+      function.return %self : !struct.type<@EnsureIsZero>
     }
 
-    function.def @constrain(%self: !struct.struct<@EnsureIsZero>, %in: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@EnsureIsZero>, %in: !felt.felt) {
       %zero = felt.const 0
-      %p_0 = struct.readf %self[@p] : !struct.struct<@EnsureIsZero>, !struct.struct<@Passthrough>
-      function.call @Passthrough::@constrain(%p_0, %zero) : (!struct.struct<@Passthrough>, !felt.felt) -> ()
-      %out = struct.readf %p_0[@out] : !struct.struct<@Passthrough>, !felt.felt
+      %p_0 = struct.readf %self[@p] : !struct.type<@EnsureIsZero>, !struct.type<@Passthrough>
+      function.call @Passthrough::@constrain(%p_0, %zero) : (!struct.type<@Passthrough>, !felt.felt) -> ()
+      %out = struct.readf %p_0[@out] : !struct.type<@Passthrough>, !felt.felt
       constrain.eq %in, %out : !felt.felt
       function.return
     }
@@ -195,17 +195,17 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ArrayCheck {
-    function.def @constrain(%self: !struct.struct<@ArrayCheck>, %in: !array.array<5 x !felt.felt>) {
+    function.def @constrain(%self: !struct.type<@ArrayCheck>, %in: !array.type<5 x !felt.felt>) {
       %fval = felt.const 7
       %idx = arith.constant 3 : index
-      %elem = array.read %in[%idx] : !array.array<5 x !felt.felt>, !felt.felt
+      %elem = array.read %in[%idx] : !array.type<5 x !felt.felt>, !felt.felt
       constrain.eq %elem, %fval : !felt.felt
       function.return
     }
 
-    function.def @compute(%in: !array.array<5 x !felt.felt>) -> !struct.struct<@ArrayCheck> {
-      %self = struct.new : !struct.struct<@ArrayCheck>
-      function.return %self : !struct.struct<@ArrayCheck>
+    function.def @compute(%in: !array.type<5 x !felt.felt>) -> !struct.type<@ArrayCheck> {
+      %self = struct.new : !struct.type<@ArrayCheck>
+      function.return %self : !struct.type<@ArrayCheck>
     }
   }
 }
@@ -218,21 +218,21 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ArrayForCheck {
-    function.def @constrain(%self: !struct.struct<@ArrayForCheck>, %in: !array.array<5 x !felt.felt>) {
+    function.def @constrain(%self: !struct.type<@ArrayForCheck>, %in: !array.type<5 x !felt.felt>) {
       %lb = arith.constant 0 : index
       %up = arith.constant 5 : index
       %step = arith.constant 1 : index
       %fval = felt.const 7
       scf.for %iv = %lb to %up step %step {
-        %elem = array.read %in[%iv] : !array.array<5 x !felt.felt>, !felt.felt
+        %elem = array.read %in[%iv] : !array.type<5 x !felt.felt>, !felt.felt
         constrain.eq %elem, %fval : !felt.felt
       }
       function.return
     }
 
-    function.def @compute(%in: !array.array<5 x !felt.felt>) -> !struct.struct<@ArrayForCheck> {
-      %self = struct.new : !struct.struct<@ArrayForCheck>
-      function.return %self : !struct.struct<@ArrayForCheck>
+    function.def @compute(%in: !array.type<5 x !felt.felt>) -> !struct.type<@ArrayForCheck> {
+      %self = struct.new : !struct.type<@ArrayForCheck>
+      function.return %self : !struct.type<@ArrayForCheck>
     }
   }
 }
@@ -246,12 +246,12 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
 
   struct.def @ConstConstraints {
-    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.struct<@ConstConstraints> {
-      %self = struct.new : !struct.struct<@ConstConstraints>
-      function.return %self : !struct.struct<@ConstConstraints>
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.type<@ConstConstraints> {
+      %self = struct.new : !struct.type<@ConstConstraints>
+      function.return %self : !struct.type<@ConstConstraints>
     }
 
-    function.def @constrain(%self: !struct.struct<@ConstConstraints>, %a: !felt.felt, %b: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@ConstConstraints>, %a: !felt.felt, %b: !felt.felt) {
       %c = felt.const 1
       constrain.eq %a, %c : !felt.felt
       constrain.eq %b, %c : !felt.felt
@@ -270,18 +270,18 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // Constrains arr[0] === @A and arr[2] === @B, leaving arr[1] unconstrained
   struct.def @ArrayConstrain<[@A, @B]> {
-    function.def @compute(%arr: !array.array<3 x !felt.felt>) -> !struct.struct<@ArrayConstrain<[@A, @B]>> {
-      %self = struct.new : !struct.struct<@ArrayConstrain<[@A, @B]>>
-      function.return %self : !struct.struct<@ArrayConstrain<[@A, @B]>>
+    function.def @compute(%arr: !array.type<3 x !felt.felt>) -> !struct.type<@ArrayConstrain<[@A, @B]>> {
+      %self = struct.new : !struct.type<@ArrayConstrain<[@A, @B]>>
+      function.return %self : !struct.type<@ArrayConstrain<[@A, @B]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@ArrayConstrain<[@A, @B]>>, %arr: !array.array<3 x !felt.felt>) {
+    function.def @constrain(%self: !struct.type<@ArrayConstrain<[@A, @B]>>, %arr: !array.type<3 x !felt.felt>) {
       %const0 = poly.read_const @A : !felt.felt
       %const2 = poly.read_const @B : !felt.felt
       %0 = arith.constant 0 : index
       %2 = arith.constant 2 : index
-      %elem0 = array.read %arr[%0] : !array.array<3 x !felt.felt>, !felt.felt
-      %elem2 = array.read %arr[%2] : !array.array<3 x !felt.felt>, !felt.felt
+      %elem0 = array.read %arr[%0] : !array.type<3 x !felt.felt>, !felt.felt
+      %elem2 = array.read %arr[%2] : !array.type<3 x !felt.felt>, !felt.felt
       constrain.eq %elem0, %const0 : !felt.felt
       constrain.eq %elem2, %const2 : !felt.felt
       function.return
@@ -289,25 +289,25 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @MatrixConstrain {
-    struct.field @check0 : !struct.struct<@ArrayConstrain<[7, 11]>>
-    struct.field @check1 : !struct.struct<@ArrayConstrain<[13, 17]>>
+    struct.field @check0 : !struct.type<@ArrayConstrain<[7, 11]>>
+    struct.field @check1 : !struct.type<@ArrayConstrain<[13, 17]>>
 
-    function.def @compute(%mat: !array.array<2,3 x !felt.felt>) -> !struct.struct<@MatrixConstrain> {
-      %self = struct.new : !struct.struct<@MatrixConstrain>
-      function.return %self : !struct.struct<@MatrixConstrain>
+    function.def @compute(%mat: !array.type<2,3 x !felt.felt>) -> !struct.type<@MatrixConstrain> {
+      %self = struct.new : !struct.type<@MatrixConstrain>
+      function.return %self : !struct.type<@MatrixConstrain>
     }
 
-    function.def @constrain(%self: !struct.struct<@MatrixConstrain>, %mat: !array.array<2,3 x !felt.felt>) {
+    function.def @constrain(%self: !struct.type<@MatrixConstrain>, %mat: !array.type<2,3 x !felt.felt>) {
       // split into two arrays and constrain each
-      %check0 = struct.readf %self[@check0] : !struct.struct<@MatrixConstrain>, !struct.struct<@ArrayConstrain<[7, 11]>>
+      %check0 = struct.readf %self[@check0] : !struct.type<@MatrixConstrain>, !struct.type<@ArrayConstrain<[7, 11]>>
       %0 = arith.constant 0 : index
-      %arr0 = array.extract %mat[%0] : !array.array<2,3 x !felt.felt>
-      function.call @ArrayConstrain::@constrain(%check0, %arr0) : (!struct.struct<@ArrayConstrain<[7, 11]>>, !array.array<3 x !felt.felt>) -> ()
+      %arr0 = array.extract %mat[%0] : !array.type<2,3 x !felt.felt>
+      function.call @ArrayConstrain::@constrain(%check0, %arr0) : (!struct.type<@ArrayConstrain<[7, 11]>>, !array.type<3 x !felt.felt>) -> ()
 
-      %check1 = struct.readf %self[@check1] : !struct.struct<@MatrixConstrain>, !struct.struct<@ArrayConstrain<[13, 17]>>
+      %check1 = struct.readf %self[@check1] : !struct.type<@MatrixConstrain>, !struct.type<@ArrayConstrain<[13, 17]>>
       %1 = arith.constant 1 : index
-      %arr1 = array.extract %mat[%1] : !array.array<2,3 x !felt.felt>
-      function.call @ArrayConstrain::@constrain(%check1, %arr1) : (!struct.struct<@ArrayConstrain<[13, 17]>>, !array.array<3 x !felt.felt>) -> ()
+      %arr1 = array.extract %mat[%1] : !array.type<2,3 x !felt.felt>
+      function.call @ArrayConstrain::@constrain(%check1, %arr1) : (!struct.type<@ArrayConstrain<[13, 17]>>, !array.type<3 x !felt.felt>) -> ()
       function.return
     }
   }
@@ -331,22 +331,22 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // Constrains arr[1] === 7, leaving other indices unconstrained
   struct.def @ArrayConstrain {
-    function.def @compute(%arr: !array.array<3 x !felt.felt>) -> !struct.struct<@ArrayConstrain> {
-      %self = struct.new : !struct.struct<@ArrayConstrain>
-      function.return %self : !struct.struct<@ArrayConstrain>
+    function.def @compute(%arr: !array.type<3 x !felt.felt>) -> !struct.type<@ArrayConstrain> {
+      %self = struct.new : !struct.type<@ArrayConstrain>
+      function.return %self : !struct.type<@ArrayConstrain>
     }
 
-    function.def @constrain(%self: !struct.struct<@ArrayConstrain>, %arr: !array.array<3 x !felt.felt>) {
+    function.def @constrain(%self: !struct.type<@ArrayConstrain>, %arr: !array.type<3 x !felt.felt>) {
       %const = felt.const 7
       %1 = arith.constant 1 : index
-      %elem = array.read %arr[%1] : !array.array<3 x !felt.felt>, !felt.felt
+      %elem = array.read %arr[%1] : !array.type<3 x !felt.felt>, !felt.felt
       constrain.eq %elem, %const : !felt.felt
       function.return
     }
   }
 
   struct.def @MatrixConstrain {
-    struct.field @check : !struct.struct<@ArrayConstrain>
+    struct.field @check : !struct.type<@ArrayConstrain>
 
     struct.field @a : !felt.felt
     struct.field @b : !felt.felt
@@ -355,25 +355,25 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @e : !felt.felt
     struct.field @f : !felt.felt
 
-    function.def @compute() -> !struct.struct<@MatrixConstrain> {
-      %self = struct.new : !struct.struct<@MatrixConstrain>
-      function.return %self : !struct.struct<@MatrixConstrain>
+    function.def @compute() -> !struct.type<@MatrixConstrain> {
+      %self = struct.new : !struct.type<@MatrixConstrain>
+      function.return %self : !struct.type<@MatrixConstrain>
     }
 
-    function.def @constrain(%self: !struct.struct<@MatrixConstrain>) {
-      %a = struct.readf %self[@a] : !struct.struct<@MatrixConstrain>, !felt.felt
-      %b = struct.readf %self[@b] : !struct.struct<@MatrixConstrain>, !felt.felt
-      %c = struct.readf %self[@c] : !struct.struct<@MatrixConstrain>, !felt.felt
-      %d = struct.readf %self[@d] : !struct.struct<@MatrixConstrain>, !felt.felt
-      %e = struct.readf %self[@e] : !struct.struct<@MatrixConstrain>, !felt.felt
-      %f = struct.readf %self[@f] : !struct.struct<@MatrixConstrain>, !felt.felt
+    function.def @constrain(%self: !struct.type<@MatrixConstrain>) {
+      %a = struct.readf %self[@a] : !struct.type<@MatrixConstrain>, !felt.felt
+      %b = struct.readf %self[@b] : !struct.type<@MatrixConstrain>, !felt.felt
+      %c = struct.readf %self[@c] : !struct.type<@MatrixConstrain>, !felt.felt
+      %d = struct.readf %self[@d] : !struct.type<@MatrixConstrain>, !felt.felt
+      %e = struct.readf %self[@e] : !struct.type<@MatrixConstrain>, !felt.felt
+      %f = struct.readf %self[@f] : !struct.type<@MatrixConstrain>, !felt.felt
 
-      %mat = array.new %a, %b, %c, %d, %e, %f : !array.array<2,3 x !felt.felt>
+      %mat = array.new %a, %b, %c, %d, %e, %f : !array.type<2,3 x !felt.felt>
 
-      %check = struct.readf %self[@check] : !struct.struct<@MatrixConstrain>, !struct.struct<@ArrayConstrain>
+      %check = struct.readf %self[@check] : !struct.type<@MatrixConstrain>, !struct.type<@ArrayConstrain>
       %0 = arith.constant 0 : index
-      %arr = array.extract %mat[%0] : !array.array<2,3 x !felt.felt>
-      function.call @ArrayConstrain::@constrain(%check, %arr) : (!struct.struct<@ArrayConstrain>, !array.array<3 x !felt.felt>) -> ()
+      %arr = array.extract %mat[%0] : !array.type<2,3 x !felt.felt>
+      function.call @ArrayConstrain::@constrain(%check, %arr) : (!struct.type<@ArrayConstrain>, !array.type<3 x !felt.felt>) -> ()
 
       function.return
     }
@@ -391,15 +391,15 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @UnknownArrayConstrain<[@N]> {
-    function.def @compute(%arr: !array.array<@N x !felt.felt>) -> !struct.struct<@UnknownArrayConstrain<[@N]>> {
-      %self = struct.new : !struct.struct<@UnknownArrayConstrain<[@N]>>
-      function.return %self : !struct.struct<@UnknownArrayConstrain<[@N]>>
+    function.def @compute(%arr: !array.type<@N x !felt.felt>) -> !struct.type<@UnknownArrayConstrain<[@N]>> {
+      %self = struct.new : !struct.type<@UnknownArrayConstrain<[@N]>>
+      function.return %self : !struct.type<@UnknownArrayConstrain<[@N]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@UnknownArrayConstrain<[@N]>>, %arr: !array.array<@N x !felt.felt>) {
+    function.def @constrain(%self: !struct.type<@UnknownArrayConstrain<[@N]>>, %arr: !array.type<@N x !felt.felt>) {
       %const = felt.const 7
       %1 = arith.constant 1 : index
-      %elem = array.read %arr[%1] : !array.array<@N x !felt.felt>, !felt.felt
+      %elem = array.read %arr[%1] : !array.type<@N x !felt.felt>, !felt.felt
       constrain.eq %elem, %const : !felt.felt
       function.return
     }
@@ -414,33 +414,33 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @UnknownArrayConstrain<[@N]> {
-    function.def @compute(%arr: !array.array<@N x !felt.felt>) -> !struct.struct<@UnknownArrayConstrain<[@N]>> {
-      %self = struct.new : !struct.struct<@UnknownArrayConstrain<[@N]>>
-      function.return %self : !struct.struct<@UnknownArrayConstrain<[@N]>>
+    function.def @compute(%arr: !array.type<@N x !felt.felt>) -> !struct.type<@UnknownArrayConstrain<[@N]>> {
+      %self = struct.new : !struct.type<@UnknownArrayConstrain<[@N]>>
+      function.return %self : !struct.type<@UnknownArrayConstrain<[@N]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@UnknownArrayConstrain<[@N]>>, %arr: !array.array<@N x !felt.felt>) {
+    function.def @constrain(%self: !struct.type<@UnknownArrayConstrain<[@N]>>, %arr: !array.type<@N x !felt.felt>) {
       %const = felt.const 7
       %1 = arith.constant 1 : index
-      %elem = array.read %arr[%1] : !array.array<@N x !felt.felt>, !felt.felt
+      %elem = array.read %arr[%1] : !array.type<@N x !felt.felt>, !felt.felt
       constrain.eq %elem, %const : !felt.felt
       function.return
     }
   }
 
   struct.def @UnknownMatrixConstrain<[@M, @N]> {
-    struct.field @check : !struct.struct<@UnknownArrayConstrain<[@N]>>
+    struct.field @check : !struct.type<@UnknownArrayConstrain<[@N]>>
 
-    function.def @compute(%mat: !array.array<@M,@N x !felt.felt>) -> !struct.struct<@UnknownMatrixConstrain<[@M, @N]>> {
-      %self = struct.new : !struct.struct<@UnknownMatrixConstrain<[@M, @N]>>
-      function.return %self : !struct.struct<@UnknownMatrixConstrain<[@M, @N]>>
+    function.def @compute(%mat: !array.type<@M,@N x !felt.felt>) -> !struct.type<@UnknownMatrixConstrain<[@M, @N]>> {
+      %self = struct.new : !struct.type<@UnknownMatrixConstrain<[@M, @N]>>
+      function.return %self : !struct.type<@UnknownMatrixConstrain<[@M, @N]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@UnknownMatrixConstrain<[@M, @N]>>, %mat: !array.array<@M,@N x !felt.felt>) {
-      %check = struct.readf %self[@check] : !struct.struct<@UnknownMatrixConstrain<[@M, @N]>>, !struct.struct<@UnknownArrayConstrain<[@N]>>
+    function.def @constrain(%self: !struct.type<@UnknownMatrixConstrain<[@M, @N]>>, %mat: !array.type<@M,@N x !felt.felt>) {
+      %check = struct.readf %self[@check] : !struct.type<@UnknownMatrixConstrain<[@M, @N]>>, !struct.type<@UnknownArrayConstrain<[@N]>>
       %0 = arith.constant 0 : index
-      %arr = array.extract %mat[%0] : !array.array<@M,@N x !felt.felt>
-      function.call @UnknownArrayConstrain::@constrain(%check, %arr) : (!struct.struct<@UnknownArrayConstrain<[@N]>>, !array.array<@N x !felt.felt>) -> ()
+      %arr = array.extract %mat[%0] : !array.type<@M,@N x !felt.felt>
+      function.call @UnknownArrayConstrain::@constrain(%check, %arr) : (!struct.type<@UnknownArrayConstrain<[@N]>>, !array.type<@N x !felt.felt>) -> ()
       function.return
     }
   }
@@ -646,13 +646,13 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ExternAdder {
     struct.field @sum : !felt.felt {llzk.pub}
 
-    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.struct<@ExternAdder> {
-      %self = struct.new : !struct.struct<@ExternAdder>
-      function.return %self : !struct.struct<@ExternAdder>
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.type<@ExternAdder> {
+      %self = struct.new : !struct.type<@ExternAdder>
+      function.return %self : !struct.type<@ExternAdder>
     }
 
-    function.def @constrain(%self: !struct.struct<@ExternAdder>, %a: !felt.felt, %b: !felt.felt) {
-      %sum = struct.readf %self[@sum] : !struct.struct<@ExternAdder>, !felt.felt
+    function.def @constrain(%self: !struct.type<@ExternAdder>, %a: !felt.felt, %b: !felt.felt) {
+      %sum = struct.readf %self[@sum] : !struct.type<@ExternAdder>, !felt.felt
       %c = function.call @extern_add(%a, %b) : (!felt.felt, !felt.felt) -> (!felt.felt)
       // We make no assumptions about what %c could be, so this constraint is
       // effectively `%sum === {}`, so the CDG will be empty.
@@ -678,15 +678,15 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Adder2 {
     struct.field @sum : !felt.felt {llzk.pub}
 
-    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.struct<@Adder2> {
-      %self = struct.new : !struct.struct<@Adder2>
+    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.type<@Adder2> {
+      %self = struct.new : !struct.type<@Adder2>
       %sum = function.call @global_add(%a, %b) : (!felt.felt, !felt.felt) -> (!felt.felt)
-      struct.writef %self[@sum] = %sum : !struct.struct<@Adder2>, !felt.felt
-      function.return %self : !struct.struct<@Adder2>
+      struct.writef %self[@sum] = %sum : !struct.type<@Adder2>, !felt.felt
+      function.return %self : !struct.type<@Adder2>
     }
 
-    function.def @constrain(%self: !struct.struct<@Adder2>, %a: !felt.felt, %b: !felt.felt) {
-      %sum = struct.readf %self[@sum] : !struct.struct<@Adder2>, !felt.felt
+    function.def @constrain(%self: !struct.type<@Adder2>, %a: !felt.felt, %b: !felt.felt) {
+      %sum = struct.readf %self[@sum] : !struct.type<@Adder2>, !felt.felt
       %c = function.call @global_add(%a, %b) : (!felt.felt, !felt.felt) -> (!felt.felt)
       %d = felt.add %c, %c
       function.call @irrelevant() : () -> () // testing to see that this doesn't erase the prior values
@@ -703,19 +703,19 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test that allowing Signals to constrain.eq doesn't break the constraint analysis
-!Signal = !struct.struct<@Signal>
+!Signal = !struct.type<@Signal>
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @Signal {
     struct.field @reg : !felt.felt {llzk.pub}
 
-    function.def @compute(%v: !felt.felt) -> !struct.struct<@Signal> {
-      %self = struct.new : !struct.struct<@Signal>
-      struct.writef %self[@reg] = %v : !struct.struct<@Signal>, !felt.felt
-      function.return %self : !struct.struct<@Signal>
+    function.def @compute(%v: !felt.felt) -> !struct.type<@Signal> {
+      %self = struct.new : !struct.type<@Signal>
+      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.felt
+      function.return %self : !struct.type<@Signal>
     }
 
-    function.def @constrain(%self: !struct.struct<@Signal>, %v: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.felt) {
       function.return
     }
   }
@@ -723,13 +723,13 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Component00 {
     struct.field @f : !Signal
 
-    function.def @compute(%0: !Signal) -> !struct.struct<@Component00> {
-      %self = struct.new : !struct.struct<@Component00>
-      struct.writef %self[@f] = %0 : !struct.struct<@Component00>, !Signal
-      function.return %self : !struct.struct<@Component00>
+    function.def @compute(%0: !Signal) -> !struct.type<@Component00> {
+      %self = struct.new : !struct.type<@Component00>
+      struct.writef %self[@f] = %0 : !struct.type<@Component00>, !Signal
+      function.return %self : !struct.type<@Component00>
     }
-    function.def @constrain(%self: !struct.struct<@Component00>, %0: !Signal) {
-      %b = struct.readf %self[@f] : !struct.struct<@Component00>, !Signal
+    function.def @constrain(%self: !struct.type<@Component00>, %0: !Signal) {
+      %b = struct.readf %self[@f] : !struct.type<@Component00>, !Signal
       // Signal is the only struct allowed for emit equal
       constrain.eq %b, %0 : !Signal
       function.return
@@ -737,17 +737,17 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component01 {
-    struct.field @f : !array.array<2 x !Signal>
+    struct.field @f : !array.type<2 x !Signal>
 
-    function.def @compute(%0: !array.array<2 x !Signal>) -> !struct.struct<@Component01> {
-      %self = struct.new : !struct.struct<@Component01>
-      struct.writef %self[@f] = %0 : !struct.struct<@Component01>, !array.array<2 x !Signal>
-      function.return %self : !struct.struct<@Component01>
+    function.def @compute(%0: !array.type<2 x !Signal>) -> !struct.type<@Component01> {
+      %self = struct.new : !struct.type<@Component01>
+      struct.writef %self[@f] = %0 : !struct.type<@Component01>, !array.type<2 x !Signal>
+      function.return %self : !struct.type<@Component01>
     }
-    function.def @constrain(%self: !struct.struct<@Component01>, %0: !array.array<2 x !Signal>) {
-      %b = struct.readf %self[@f] : !struct.struct<@Component01>, !array.array<2 x !Signal>
+    function.def @constrain(%self: !struct.type<@Component01>, %0: !array.type<2 x !Signal>) {
+      %b = struct.readf %self[@f] : !struct.type<@Component01>, !array.type<2 x !Signal>
       // Signal is the only struct allowed for emit equal
-      constrain.eq %b, %0 : !array.array<2 x !Signal>
+      constrain.eq %b, %0 : !array.type<2 x !Signal>
       function.return
     }
   }

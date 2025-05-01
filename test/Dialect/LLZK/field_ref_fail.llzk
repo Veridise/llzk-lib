@@ -2,15 +2,15 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB {
-    function.def @compute() -> !struct.struct<@ComponentB> {
-      %self = struct.new : !struct.struct<@ComponentB>
-      function.return %self : !struct.struct<@ComponentB>
+    function.def @compute() -> !struct.type<@ComponentB> {
+      %self = struct.new : !struct.type<@ComponentB>
+      function.return %self : !struct.type<@ComponentB>
     }
 
-    function.def @constrain(%p: !struct.struct<@ComponentB>) {
+    function.def @constrain(%p: !struct.type<@ComponentB>) {
       // expected-error@+2 {{'struct.readf' op references unknown symbol "@f2"}}
       // expected-error@+1 {{could not find 'struct.field' named "@f2" in "@ComponentB"}}
-      %0 = struct.readf %p[@f2] : !struct.struct<@ComponentB>, !felt.felt
+      %0 = struct.readf %p[@f2] : !struct.type<@ComponentB>, !felt.felt
       function.return
     }
   }
@@ -20,14 +20,14 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentC {
     struct.field @f2 : index
 
-    function.def @compute() -> !struct.struct<@ComponentC> {
-      %self = struct.new : !struct.struct<@ComponentC>
-      function.return %self : !struct.struct<@ComponentC>
+    function.def @compute() -> !struct.type<@ComponentC> {
+      %self = struct.new : !struct.type<@ComponentC>
+      function.return %self : !struct.type<@ComponentC>
     }
 
-    function.def @constrain(%p: !struct.struct<@ComponentC>) {
+    function.def @constrain(%p: !struct.type<@ComponentC>) {
       // expected-error@+1 {{'struct.readf' op has wrong type; expected 'index', got '!felt.felt}}
-      %0 = struct.readf %p[@f2] : !struct.struct<@ComponentC>, !felt.felt
+      %0 = struct.readf %p[@f2] : !struct.type<@ComponentC>, !felt.felt
       function.return
     }
   }
@@ -37,14 +37,14 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentD {
     struct.field @f2 : index
 
-    function.def @compute() -> !struct.struct<@ComponentD> {
-      %self = struct.new : !struct.struct<@ComponentD>
-      function.return %self : !struct.struct<@ComponentD>
+    function.def @compute() -> !struct.type<@ComponentD> {
+      %self = struct.new : !struct.type<@ComponentD>
+      function.return %self : !struct.type<@ComponentD>
     }
 
-    function.def @constrain(%p: !struct.struct<@ComponentD>) { // expected-note {{prior use here}}
-      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!struct.struct<@WrongComponent>' vs '!struct.struct<@ComponentD>'}}
-      %0 = struct.readf %p[@f2] : !struct.struct<@WrongComponent>, index
+    function.def @constrain(%p: !struct.type<@ComponentD>) { // expected-note {{prior use here}}
+      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!struct.type<@WrongComponent>' vs '!struct.type<@ComponentD>'}}
+      %0 = struct.readf %p[@f2] : !struct.type<@WrongComponent>, index
       function.return
     }
   }
@@ -54,14 +54,14 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentF {
     struct.field @f2 : index
 
-    function.def @compute() -> !struct.struct<@ComponentF> {
-      %self = struct.new : !struct.struct<@ComponentF>
-      function.return %self : !struct.struct<@ComponentF>
+    function.def @compute() -> !struct.type<@ComponentF> {
+      %self = struct.new : !struct.type<@ComponentF>
+      function.return %self : !struct.type<@ComponentF>
     }
 
-    function.def @constrain(%p: !struct.struct<@WrongComponent>) { // expected-note {{prior use here}}
-      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!struct.struct<@ComponentF>' vs '!struct.struct<@WrongComponent>'}}
-      %0 = struct.readf %p[@f2] : !struct.struct<@ComponentF>, index
+    function.def @constrain(%p: !struct.type<@WrongComponent>) { // expected-note {{prior use here}}
+      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!struct.type<@ComponentF>' vs '!struct.type<@WrongComponent>'}}
+      %0 = struct.readf %p[@f2] : !struct.type<@ComponentF>, index
       function.return
     }
   }
@@ -69,15 +69,15 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentH {
-    function.def @compute(%0: !felt.felt) -> !struct.struct<@ComponentH> {
-      %self = struct.new : !struct.struct<@ComponentH>
+    function.def @compute(%0: !felt.felt) -> !struct.type<@ComponentH> {
+      %self = struct.new : !struct.type<@ComponentH>
       // expected-error@+2 {{'struct.writef' op references unknown symbol "@f2"}}
       // expected-error@+1 {{could not find 'struct.field' named "@f2" in "@ComponentH"}}
-      struct.writef %self[@f2] = %0 : !struct.struct<@ComponentH>, !felt.felt
-      function.return %self : !struct.struct<@ComponentH>
+      struct.writef %self[@f2] = %0 : !struct.type<@ComponentH>, !felt.felt
+      function.return %self : !struct.type<@ComponentH>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentH>, %0: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@ComponentH>, %0: !felt.felt) {
       function.return
     }
   }
@@ -87,14 +87,14 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentJ {
     struct.field @f2 : index
 
-    function.def @compute(%0: !felt.felt) -> !struct.struct<@ComponentJ> {
-      %self = struct.new : !struct.struct<@ComponentJ>
+    function.def @compute(%0: !felt.felt) -> !struct.type<@ComponentJ> {
+      %self = struct.new : !struct.type<@ComponentJ>
       // expected-error@+1 {{'struct.writef' op has wrong type; expected 'index', got '!felt.felt}}
-      struct.writef %self[@f2] = %0 : !struct.struct<@ComponentJ>, !felt.felt
-      function.return %self : !struct.struct<@ComponentJ>
+      struct.writef %self[@f2] = %0 : !struct.type<@ComponentJ>, !felt.felt
+      function.return %self : !struct.type<@ComponentJ>
     }
 
-    function.def @constrain(%self: !struct.struct<@ComponentJ>, %0: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@ComponentJ>, %0: !felt.felt) {
       function.return
     }
   }
@@ -104,14 +104,14 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentK {
     struct.field @f2 : index
 
-    function.def @compute() -> !struct.struct<@ComponentK> {
-      %self = struct.new : !struct.struct<@ComponentK>
-      function.return %self : !struct.struct<@ComponentK>
+    function.def @compute() -> !struct.type<@ComponentK> {
+      %self = struct.new : !struct.type<@ComponentK>
+      function.return %self : !struct.type<@ComponentK>
     }
 
-    function.def @constrain(%p: !struct.struct<@ComponentK>, %0: !felt.felt) { // expected-note {{prior use here}}
-      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!struct.struct<@WrongComponent>' vs '!struct.struct<@ComponentK>'}}
-      struct.writef %p[@f2] = %0 : !struct.struct<@WrongComponent>, index
+    function.def @constrain(%p: !struct.type<@ComponentK>, %0: !felt.felt) { // expected-note {{prior use here}}
+      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!struct.type<@WrongComponent>' vs '!struct.type<@ComponentK>'}}
+      struct.writef %p[@f2] = %0 : !struct.type<@WrongComponent>, index
       function.return
     }
   }
@@ -121,14 +121,14 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentL {
     struct.field @f2 : index
 
-    function.def @compute() -> !struct.struct<@ComponentL> {
-      %self = struct.new : !struct.struct<@ComponentL>
-      function.return %self : !struct.struct<@ComponentL>
+    function.def @compute() -> !struct.type<@ComponentL> {
+      %self = struct.new : !struct.type<@ComponentL>
+      function.return %self : !struct.type<@ComponentL>
     }
 
-    function.def @constrain(%p: !struct.struct<@WrongComponent>, %0: !felt.felt) { // expected-note {{prior use here}}
-      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!struct.struct<@ComponentL>' vs '!struct.struct<@WrongComponent>'}}
-      struct.writef %p[@f2] = %0 : !struct.struct<@ComponentL>, index
+    function.def @constrain(%p: !struct.type<@WrongComponent>, %0: !felt.felt) { // expected-note {{prior use here}}
+      // expected-error@+1 {{use of value '%p' expects different type than prior uses: '!struct.type<@ComponentL>' vs '!struct.type<@WrongComponent>'}}
+      struct.writef %p[@f2] = %0 : !struct.type<@ComponentL>, index
       function.return
     }
   }
@@ -136,16 +136,16 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentM {
-    struct.field @f2 : !array.array<2 x index>
+    struct.field @f2 : !array.type<2 x index>
 
-    function.def @compute() -> !struct.struct<@ComponentM> {
-      %self = struct.new : !struct.struct<@ComponentM>
-      function.return %self : !struct.struct<@ComponentM>
+    function.def @compute() -> !struct.type<@ComponentM> {
+      %self = struct.new : !struct.type<@ComponentM>
+      function.return %self : !struct.type<@ComponentM>
     }
 
-    function.def @constrain(%p: !struct.struct<@ComponentM>, %0: !array.array<7 x index>) { // expected-note {{prior use here}}
-      // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!array.array<2 x index>' vs '!array.array<7 x index>'}}
-      struct.writef %p[@f2] = %0 : !struct.struct<@ComponentM>, !array.array<2 x index>
+    function.def @constrain(%p: !struct.type<@ComponentM>, %0: !array.type<7 x index>) { // expected-note {{prior use here}}
+      // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!array.type<2 x index>' vs '!array.type<7 x index>'}}
+      struct.writef %p[@f2] = %0 : !struct.type<@ComponentM>, !array.type<2 x index>
       function.return
     }
   }
@@ -154,20 +154,20 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @WrongComponent { // expected-note {{uses this type instead}}
     struct.field @f : !felt.felt
-    function.def @compute() -> !struct.struct<@WrongComponent> {
-      %self = struct.new : !struct.struct<@WrongComponent>
-      function.return %self : !struct.struct<@WrongComponent>
+    function.def @compute() -> !struct.type<@WrongComponent> {
+      %self = struct.new : !struct.type<@WrongComponent>
+      function.return %self : !struct.type<@WrongComponent>
     }
-    function.def @constrain(%self: !struct.struct<@WrongComponent>)  { function.return }
+    function.def @constrain(%self: !struct.type<@WrongComponent>)  { function.return }
   }
 
   struct.def @ComponentN {
-    function.def @compute(%0: !struct.struct<@WrongComponent>, %1: !felt.felt) -> !struct.struct<@ComponentN> {
-      %self = struct.new : !struct.struct<@ComponentN>
+    function.def @compute(%0: !struct.type<@WrongComponent>, %1: !felt.felt) -> !struct.type<@ComponentN> {
+      %self = struct.new : !struct.type<@ComponentN>
       // expected-error@+1 {{'struct.writef' op must use type of its ancestor 'struct.def' "@ComponentN" as base value type}}
-      struct.writef %0[@f] = %1 : !struct.struct<@WrongComponent>, !felt.felt
-      function.return %self : !struct.struct<@ComponentN>
+      struct.writef %0[@f] = %1 : !struct.type<@WrongComponent>, !felt.felt
+      function.return %self : !struct.type<@ComponentN>
     }
-    function.def @constrain(%self: !struct.struct<@ComponentN>, %0: !struct.struct<@WrongComponent>, %1: !felt.felt)  { function.return }
+    function.def @constrain(%self: !struct.type<@ComponentN>, %0: !struct.type<@WrongComponent>, %1: !felt.felt)  { function.return }
   }
 }

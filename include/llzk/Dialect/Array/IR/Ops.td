@@ -118,13 +118,13 @@ def LLZK_CreateArrayOp
 
     Examples:
     ```llzk
-    %0 = array.new %a, %b, %c : !array.array<3 x !felt.felt>
+    %0 = array.new %a, %b, %c : !array.type<3 x !felt.felt>
 
     // Create an array from the given values using the specified shape
-    %1 = array.new %a, %b, %c, %d : !array.array<2,2 x !felt.felt>
+    %1 = array.new %a, %b, %c, %d : !array.type<2,2 x !felt.felt>
 
     // Create an uninitialized array
-    %2 = array.new : !array.array<3,2 x !felt.felt>
+    %2 = array.new : !array.type<3,2 x !felt.felt>
     ```
 
     The values used to construct the array must have type that exactly matches
@@ -160,14 +160,14 @@ def LLZK_CreateArrayOp
     ```llzk
     // Create an uninitialized array with dimension size defined by AffineMap
     #IdxToLen = affine_map<(i) -> (5*i+1)>
-    %3 = array.new {(%i)} : !array.array<#IdxToLen x index>
+    %3 = array.new {(%i)} : !array.type<#IdxToLen x index>
 
     // Create an uninitialized array with multiple dimensions defined by
     //  AffineMap. The list of instantiation parameters are assigned to
     //  the AffineMap dimensions left-to-right.
     #M1 = affine_map<(i)[c] -> (c+i)>
     #M3 = affine_map<(m,n) -> (5*m+n)>
-    %4 = array.new{(%i)[%c], (%m,%n)} : !array.array<#M1,2,#M3 x i1>
+    %4 = array.new{(%i)[%c], (%m,%n)} : !array.type<#M1,2,#M3 x i1>
     ```
   }];
 
@@ -231,9 +231,9 @@ def LLZK_ReadArrayOp
     Example of 1-dimensional array:
     ```llzk
     %i = arith.constant 0 : index
-    %0 = array.new %a, %b, %c : !array.array<3 x !felt.felt>
+    %0 = array.new %a, %b, %c : !array.type<3 x !felt.felt>
     // %1 is now equal to %a
-    %1 = array.read %0[%i] : !array.array<3 x !felt.felt>, !felt.felt
+    %1 = array.read %0[%i] : !array.type<3 x !felt.felt>, !felt.felt
     ```
 
     Example of 3-dimensional array:
@@ -241,9 +241,9 @@ def LLZK_ReadArrayOp
     %i = arith.constant 0 : index
     %j = arith.constant 1 : index
     %k = arith.constant 4 : index
-    %0 = array.new ... : !array.array<3,10,15 x !felt.felt>
+    %0 = array.new ... : !array.type<3,10,15 x !felt.felt>
     // %1 is now equal to %a
-    %1 = array.read %0[%i, %j, %k] : !array.array<3,10,15 x !felt.felt>, !felt.felt
+    %1 = array.read %0[%i, %j, %k] : !array.type<3,10,15 x !felt.felt>, !felt.felt
     ```
   }];
 
@@ -268,9 +268,9 @@ def LLZK_WriteArrayOp
     ```llzk
     %i = arith.constant 0 : index
     %0 = felt.const 42
-    %1 = array.new %a, %b, %c : !array.array<3 x !felt.felt>
+    %1 = array.new %a, %b, %c : !array.type<3 x !felt.felt>
     // The array now is [%0, %b, %c]
-    array.write %1[%i] = %0 : !array.array<3 x !felt.felt>, !felt.felt
+    array.write %1[%i] = %0 : !array.type<3 x !felt.felt>, !felt.felt
     ```
 
     Example of 2-dimensional array:
@@ -278,9 +278,9 @@ def LLZK_WriteArrayOp
     %i = arith.constant 0 : index
     %j = arith.constant 0 : index
     %0 = felt.const 42
-    %1 = array.new %a, %b, %c, %d : !array.array<2,2 x !felt.felt>
+    %1 = array.new %a, %b, %c, %d : !array.type<2,2 x !felt.felt>
     // The array now is [[%0, %b], [%c, %d]]
-    array.write %1[%i, %j] = %0 : !array.array<2,2 x !felt.felt>, !felt.felt
+    array.write %1[%i, %j] = %0 : !array.type<2,2 x !felt.felt>, !felt.felt
     ```
   }];
 
@@ -306,16 +306,16 @@ def LLZK_ExtractArrayOp
     Extracting a 1-D array from 3-D array by selecting the index of 2 dimensions:
     ```llzk
     %i = arith.constant 1 : index
-    %0 = array.new ... : !array.array<3,10,15 x !felt.felt>
-    %1 = array.extract %0[%i,%i] : !array.array<3,10,15 x !felt.felt>, !array.array<15 x !felt.felt>
+    %0 = array.new ... : !array.type<3,10,15 x !felt.felt>
+    %1 = array.extract %0[%i,%i] : !array.type<3,10,15 x !felt.felt>, !array.type<15 x !felt.felt>
     ```
 
     Extracting 1-D arrays for subcomponents:
     ```llzk
     scf.for %iv = %lb to %up step %step {
-      %p = array.extract %in[%iv] : !array.array<@N,2 x !felt.felt>
-      %c = array.read %a[%iv] : !array.array<@N x !struct.struct<@SubC>>, !struct.struct<@SubC>
-      function.call @SubC::@constrain(%c, %p) : (!struct.struct<@SubC>, !array.array<2 x !felt.felt>) -> ()
+      %p = array.extract %in[%iv] : !array.type<@N,2 x !felt.felt>
+      %c = array.read %a[%iv] : !array.type<@N x !struct.type<@SubC>>, !struct.type<@SubC>
+      function.call @SubC::@constrain(%c, %p) : (!struct.type<@SubC>, !array.type<2 x !felt.felt>) -> ()
     }
     ```
   }];
@@ -339,15 +339,15 @@ def LLZK_InsertArrayOp : RangedArrayAccessOp<"insert", false> {
 
     Inserting 1-D arrays into a 2-D array:
     ```llzk
-    %c = array.new : !array.array<2,3 x index>
+    %c = array.new : !array.type<2,3 x index>
     // Array %c is uninitialized [[?, ?, ?], [?, ?, ?]]
     %0 = arith.constant 0 : index
-    %a = array.new %r, %s, %t : !array.array<3 x index>
-    array.insert %c[%0] = %a : !array.array<2,3 x index>, !array.array<3 x index>
+    %a = array.new %r, %s, %t : !array.type<3 x index>
+    array.insert %c[%0] = %a : !array.type<2,3 x index>, !array.type<3 x index>
     // Array %c is now [[%r, %s, %t], [?, ?, ?]]
     %1 = arith.constant 1 : index
-    %b = array.new %x, %y, %z : !array.array<3 x index>
-    array.insert %c[%1] = %b : !array.array<2,3 x index>, !array.array<3 x index>
+    %b = array.new %x, %y, %z : !array.type<3 x index>
+    array.insert %c[%1] = %b : !array.type<2,3 x index>, !array.type<3 x index>
     // Array %c is now [[%r, %s, %t], [%x, %y, %z]]
     ```
   }];
@@ -371,11 +371,11 @@ def LLZK_ArrayLengthOp
 
     Example:
     ```llzk
-    %a = array.new : !array.array<2,3 x !felt.felt>
+    %a = array.new : !array.type<2,3 x !felt.felt>
     %0 = arith.constant 0 : index
-    %x = array.len %a, %0 : !array.array<2,3 x !felt.felt> // result is 2
+    %x = array.len %a, %0 : !array.type<2,3 x !felt.felt> // result is 2
     %1 = arith.constant 1 : index
-    %y = array.len %a, %1 : !array.array<2,3 x !felt.felt> // result is 3
+    %y = array.len %a, %1 : !array.type<2,3 x !felt.felt> // result is 3
     ```
   }];
 
