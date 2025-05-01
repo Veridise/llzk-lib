@@ -15,7 +15,6 @@
 #include "llzk/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"

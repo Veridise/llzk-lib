@@ -9,13 +9,9 @@
 
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Util/SymbolLookup.h"
 
-#include <mlir/IR/BuiltinOps.h>
 #include <mlir/Interfaces/CallInterfaces.h>
-
-#include <llvm/Support/Casting.h>
 
 #include <ranges>
 

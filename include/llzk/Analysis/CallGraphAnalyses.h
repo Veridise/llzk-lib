@@ -11,19 +11,13 @@
 
 #include "llzk/Analysis/CallGraph.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/Ops.h"
 
-#include <mlir/Analysis/CallGraph.h>
 #include <mlir/Pass/AnalysisManager.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/STLExtras.h>
-
-#include <memory>
-#include <utility>
-#include <vector>
 
 namespace llvm {
 

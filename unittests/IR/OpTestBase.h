@@ -10,7 +10,6 @@
 #pragma once
 
 #include "llzk/Dialect/Array/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
 
 #include <gtest/gtest.h>

@@ -9,9 +9,6 @@
 
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/Ops.h"
-
-#include <mlir/IR/Location.h>
 #include <mlir/IR/Operation.h>
 
 #include <concepts>

@@ -17,12 +17,10 @@
 
 #include "llzk/Util/Constants.h"
 
-#include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/OwningOpRef.h>
 
 #include <llvm/ADT/StringRef.h>
-#include <llvm/Support/Casting.h>
 
 #include <vector>
 

@@ -23,7 +23,7 @@ protected:
   MLIRContext ctx;
   Location loc;
 
-  SymbolHelperTests() : ctx(), loc(llzk::getUnknownLoc(&ctx)) {}
+  SymbolHelperTests() : ctx(), loc(getUnknownLoc(&ctx)) {}
 
   SymbolRefAttr newExample(unsigned numNestedRefs = 0) {
     llvm::SmallVector<FlatSymbolRefAttr> nestedRefs;

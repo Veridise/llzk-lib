@@ -8,19 +8,16 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Config/Config.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
-#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Util/AttributeHelper.h"
 
 #include <mlir/Bytecode/BytecodeImplementation.h>
 #include <mlir/IR/DialectImplementation.h>
 #include <mlir/Support/LLVM.h>
-
-#include <compare>
-#include <string>
 
 // TableGen'd implementation files
 #include "llzk/Dialect/LLZK/IR/Dialect.cpp.inc"

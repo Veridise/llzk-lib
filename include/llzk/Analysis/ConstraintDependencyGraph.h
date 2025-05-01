@@ -12,18 +12,10 @@
 #include "llzk/Analysis/AnalysisWrappers.h"
 #include "llzk/Analysis/ConstrainRef.h"
 #include "llzk/Analysis/ConstrainRefLattice.h"
-#include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Util/Compare.h"
-#include "llzk/Util/ErrorHelper.h"
-#include "llzk/Util/Hash.h"
 
-#include <mlir/Analysis/DataFlowFramework.h>
 #include <mlir/Pass/AnalysisManager.h>
 
 #include <llvm/ADT/EquivalenceClasses.h>
-
-#include <map>
-#include <memory>
 
 namespace mlir {
 

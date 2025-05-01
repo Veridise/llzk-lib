@@ -14,7 +14,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 
 #include <mlir/IR/BuiltinOps.h>

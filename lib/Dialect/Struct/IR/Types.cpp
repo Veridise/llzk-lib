@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
-#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/AttributeHelper.h"
