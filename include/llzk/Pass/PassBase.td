@@ -24,6 +24,7 @@ class LLZKPass<string passArg, string operation = "::mlir::ModuleOp">
       "llzk::include::IncludeDialect",
       "llzk::function::FunctionDialect",
       "llzk::string::StringDialect",
+      "llzk::polymorphic::PolymorphicDialect",
       "mlir::arith::ArithDialect",
       "mlir::scf::SCFDialect"
       // clang-format on

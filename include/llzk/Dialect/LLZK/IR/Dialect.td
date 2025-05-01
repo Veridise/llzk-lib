@@ -25,7 +25,6 @@ def LLZKDialect : Dialect {
   let dependentDialects = ["::mlir::scf::SCFDialect",
                            "::llzk::felt::FeltDialect"];
 
-  let useDefaultTypePrinterParser = true;
   let useDefaultAttributePrinterParser = true;
 }
 

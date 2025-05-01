@@ -68,8 +68,8 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @"$temp" : !struct.struct<@Div<[]>>
     function.def @compute(%arg0: !array.array<@Aff$0 x !felt.felt>) -> !struct.struct<@Foo<[@N, @P, @Aff$0]>> {
       %self = struct.new : !struct.struct<@Foo<[@N, @P, @Aff$0]>>
-      %0 = llzk.read_const @N : !felt.felt
-      %1 = llzk.read_const @P : !felt.felt
+      %0 = poly.read_const @N : !felt.felt
+      %1 = poly.read_const @P : !felt.felt
       %2 = function.call @Div::@compute(%0, %1) : (!felt.felt, !felt.felt) -> !struct.struct<@Div<[]>>
       struct.writef %self[@"$temp"] = %2 : !struct.struct<@Foo<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
       %3 = struct.readf %self[@"$temp"] : !struct.struct<@Foo<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
@@ -80,8 +80,8 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.struct<@Foo<[@N, @P, @Aff$0]>>
     }
     function.def @constrain(%arg0: !struct.struct<@Foo<[@N, @P, @Aff$0]>>, %arg1: !array.array<@Aff$0 x !felt.felt>) {
-      %0 = llzk.read_const @N : !felt.felt
-      %1 = llzk.read_const @P : !felt.felt
+      %0 = poly.read_const @N : !felt.felt
+      %1 = poly.read_const @P : !felt.felt
       %2 = struct.readf %arg0[@"$temp"] : !struct.struct<@Foo<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
       function.call @Div::@constrain(%2, %0, %1) : (!struct.struct<@Div<[]>>, !felt.felt, !felt.felt) -> ()
       %3 = struct.readf %arg0[@"$temp_0"] : !struct.struct<@Foo<[@N, @P, @Aff$0]>>, !struct.struct<@Component<[]>>
@@ -97,14 +97,14 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @"$temp" : !struct.struct<@Div<[]>>
     function.def @compute(%arg0: !array.array<@Aff$0 x !felt.felt>) -> !struct.struct<@Bar<[@N, @P, @Aff$0]>> {
       %self = struct.new : !struct.struct<@Bar<[@N, @P, @Aff$0]>>
-      %0 = llzk.read_const @N : !felt.felt
-      %1 = llzk.read_const @P : !felt.felt
+      %0 = poly.read_const @N : !felt.felt
+      %1 = poly.read_const @P : !felt.felt
       %2 = function.call @Div::@compute(%0, %1) : (!felt.felt, !felt.felt) -> !struct.struct<@Div<[]>>
       struct.writef %self[@"$temp"] = %2 : !struct.struct<@Bar<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
       %3 = struct.readf %self[@"$temp"] : !struct.struct<@Bar<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
-      %4 = llzk.read_const @N : !felt.felt
+      %4 = poly.read_const @N : !felt.felt
       %5 = cast.toindex %4
-      %6 = llzk.read_const @P : !felt.felt
+      %6 = poly.read_const @P : !felt.felt
       %7 = cast.toindex %6
       %8 = function.call @Foo::@compute(%arg0) {()[%5, %7]} : (!array.array<@Aff$0 x !felt.felt>) -> !struct.struct<@Foo<[@N, @P, #map]>>
       struct.writef %self[@"$temp_0"] = %8 : !struct.struct<@Bar<[@N, @P, @Aff$0]>>, !struct.struct<@Foo<[@N, @P, #map]>>
@@ -116,8 +116,8 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.struct<@Bar<[@N, @P, @Aff$0]>>
     }
     function.def @constrain(%arg0: !struct.struct<@Bar<[@N, @P, @Aff$0]>>, %arg1: !array.array<@Aff$0 x !felt.felt>) {
-      %0 = llzk.read_const @N : !felt.felt
-      %1 = llzk.read_const @P : !felt.felt
+      %0 = poly.read_const @N : !felt.felt
+      %1 = poly.read_const @P : !felt.felt
       %2 = struct.readf %arg0[@"$temp"] : !struct.struct<@Bar<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
       function.call @Div::@constrain(%2, %0, %1) : (!struct.struct<@Div<[]>>, !felt.felt, !felt.felt) -> ()
       %3 = struct.readf %arg0[@"$temp_0"] : !struct.struct<@Bar<[@N, @P, @Aff$0]>>, !struct.struct<@Foo<[@N, @P, #map]>>
@@ -184,8 +184,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    struct.field @"$temp" : !struct.struct<@Div<[]>>
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<@Aff$0 x !felt.felt>) -> !struct.struct<@Foo<[@N, @P, @Aff$0]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Foo<[@N, @P, @Aff$0]>>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = llzk.read_const @N : !felt.felt
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = llzk.read_const @P : !felt.felt
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.felt
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.felt
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @Div::@compute(%[[V2]], %[[V3]]) : (!felt.felt, !felt.felt) -> !struct.struct<@Div<[]>>
 // CHECK-NEXT:      struct.writef %[[V1]][@"$temp"] = %[[V4]] : <@Foo<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readf %[[V1]][@"$temp"] : <@Foo<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
@@ -196,8 +196,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@Foo<[@N, @P, @Aff$0]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !struct.struct<@Foo<[@N, @P, @Aff$0]>>, %[[V9:[0-9a-zA-Z_\.]+]]: !array.array<@Aff$0 x !felt.felt>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = llzk.read_const @N : !felt.felt
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = llzk.read_const @P : !felt.felt
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.felt
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.felt
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readf %[[V8]][@"$temp"] : <@Foo<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
 // CHECK-NEXT:      function.call @Div::@constrain(%[[V12]], %[[V10]], %[[V11]]) : (!struct.struct<@Div<[]>>, !felt.felt, !felt.felt) -> ()
 // CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readf %[[V8]][@"$temp_0"] : <@Foo<[@N, @P, @Aff$0]>>, !struct.struct<@Component<[]>>
@@ -213,14 +213,14 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    struct.field @"$temp" : !struct.struct<@Div<[]>>
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<@Aff$0 x !felt.felt>) -> !struct.struct<@Bar<[@N, @P, @Aff$0]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Bar<[@N, @P, @Aff$0]>>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = llzk.read_const @N : !felt.felt
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = llzk.read_const @P : !felt.felt
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.felt
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.felt
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @Div::@compute(%[[V2]], %[[V3]]) : (!felt.felt, !felt.felt) -> !struct.struct<@Div<[]>>
 // CHECK-NEXT:      struct.writef %[[V1]][@"$temp"] = %[[V4]] : <@Bar<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readf %[[V1]][@"$temp"] : <@Bar<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = llzk.read_const @N : !felt.felt
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.felt
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = cast.toindex %[[V6]]
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = llzk.read_const @P : !felt.felt
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.felt
 // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = cast.toindex %[[V8]]
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = function.call @Foo::@compute(%[[V0]]) {(){{\[}}%[[V7]], %[[V9]]]} : (!array.array<@Aff$0 x !felt.felt>) -> !struct.struct<@Foo<[@N, @P, #[[$M0]]]>>
 // CHECK-NEXT:      struct.writef %[[V1]][@"$temp_0"] = %[[V10]] : <@Bar<[@N, @P, @Aff$0]>>, !struct.struct<@Foo<[@N, @P, #[[$M0]]]>>
@@ -232,8 +232,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@Bar<[@N, @P, @Aff$0]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V14:[0-9a-zA-Z_\.]+]]: !struct.struct<@Bar<[@N, @P, @Aff$0]>>, %[[V15:[0-9a-zA-Z_\.]+]]: !array.array<@Aff$0 x !felt.felt>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = llzk.read_const @N : !felt.felt
-// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = llzk.read_const @P : !felt.felt
+// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.felt
+// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.felt
 // CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = struct.readf %[[V14]][@"$temp"] : <@Bar<[@N, @P, @Aff$0]>>, !struct.struct<@Div<[]>>
 // CHECK-NEXT:      function.call @Div::@constrain(%[[V18]], %[[V16]], %[[V17]]) : (!struct.struct<@Div<[]>>, !felt.felt, !felt.felt) -> ()
 // CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = struct.readf %[[V14]][@"$temp_0"] : <@Bar<[@N, @P, @Aff$0]>>, !struct.struct<@Foo<[@N, @P, #[[$M0]]]>>

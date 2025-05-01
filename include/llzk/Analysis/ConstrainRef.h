@@ -11,6 +11,7 @@
 
 #include "llzk/Analysis/AbstractLatticeValue.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/ErrorHelper.h"
@@ -144,7 +145,8 @@ public:
   explicit ConstrainRef(felt::FeltConstantOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
   explicit ConstrainRef(mlir::arith::ConstantIndexOp c)
       : blockArg(nullptr), fieldRefs(), constantVal(c) {}
-  explicit ConstrainRef(ConstReadOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
+  explicit ConstrainRef(polymorphic::ConstReadOp c)
+      : blockArg(nullptr), fieldRefs(), constantVal(c) {}
 
   mlir::Type getType() const;
 
@@ -156,14 +158,15 @@ public:
            std::holds_alternative<mlir::arith::ConstantIndexOp>(*constantVal);
   }
   bool isTemplateConstant() const {
-    return constantVal.has_value() && std::holds_alternative<ConstReadOp>(*constantVal);
+    return constantVal.has_value() &&
+           std::holds_alternative<polymorphic::ConstReadOp>(*constantVal);
   }
   bool isConstant() const { return constantVal.has_value(); }
 
   bool isFeltVal() const { return mlir::isa<felt::FeltType>(getType()); }
   bool isIndexVal() const { return mlir::isa<mlir::IndexType>(getType()); }
   bool isIntegerVal() const { return mlir::isa<mlir::IntegerType>(getType()); }
-  bool isTypeVarVal() const { return mlir::isa<TypeVarType>(getType()); }
+  bool isTypeVarVal() const { return mlir::isa<polymorphic::TypeVarType>(getType()); }
   bool isScalar() const {
     return isConstant() || isFeltVal() || isIndexVal() || isIntegerVal() || isTypeVarVal();
   }
@@ -262,7 +265,7 @@ private:
   std::vector<ConstrainRefIndex> fieldRefs;
   // using mutable to reduce constant casts for certain get* functions.
   mutable std::optional<
-      std::variant<felt::FeltConstantOp, mlir::arith::ConstantIndexOp, ConstReadOp>>
+      std::variant<felt::FeltConstantOp, mlir::arith::ConstantIndexOp, polymorphic::ConstReadOp>>
       constantVal;
 };
 

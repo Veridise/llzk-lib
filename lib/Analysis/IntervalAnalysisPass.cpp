@@ -15,7 +15,6 @@
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <llvm/ADT/SmallVector.h>

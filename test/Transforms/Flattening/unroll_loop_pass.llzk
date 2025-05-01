@@ -253,7 +253,7 @@ module attributes {veridise.lang = "llzk"} {
       %a = array.new : !array.array<@N x !struct.struct<@Component01>>
 
       %lb = arith.constant 0 : index
-      %up = llzk.read_const @N : index
+      %up = poly.read_const @N : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         %p = array.extract %in[%iv] : !array.array<@N,2 x !Signal>
@@ -269,7 +269,7 @@ module attributes {veridise.lang = "llzk"} {
       %a = struct.readf %self[@g] : !struct.struct<@Component02<[@N]>>, !array.array<@N x !struct.struct<@Component01>>
 
       %lb = arith.constant 0 : index
-      %up = llzk.read_const @N : index
+      %up = poly.read_const @N : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         %p = array.extract %in[%iv] : !array.array<@N,2 x !Signal>

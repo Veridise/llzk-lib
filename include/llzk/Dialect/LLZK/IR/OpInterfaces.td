@@ -10,7 +10,7 @@
 #ifndef LLZK_OP_INTERFACES
 #define LLZK_OP_INTERFACES
 
-include "llzk/Dialect/LLZK/IR/Types.td"
+include "mlir/IR/Interfaces.td"
 
 def GlobalRefOpInterface : OpInterface<"GlobalRefOpInterface"> {
   let description = [{

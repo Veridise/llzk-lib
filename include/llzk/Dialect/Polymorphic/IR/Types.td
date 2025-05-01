@@ -7,25 +7,21 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_TYPES
-#define LLZK_TYPES
+#ifndef LLZK_TEMPLATE_TYPES
+#define LLZK_TEMPLATE_TYPES
 
-include "llzk/Dialect/LLZK/IR/Dialect.td"
 include "llzk/Dialect/Shared/Types.td"
-include "llzk/Dialect/Felt/IR/Types.td"
+include "llzk/Dialect/Polymorphic/IR/Dialect.td"
 
-include "mlir/IR/AttrTypeBase.td"
-include "mlir/IR/BuiltinTypes.td"
-include "mlir/Interfaces/MemorySlotInterfaces.td"
-
-class LLZK_Type<string name, string typeMnemonic, list<Trait> traits = []>
-    : TypeDef<LLZKDialect, name, traits> {
+class PolymorphicDialectType<string name, string typeMnemonic,
+                             list<Trait> traits = []>
+    : TypeDef<PolymorphicDialect, name, traits> {
   let mnemonic = typeMnemonic;
 }
 
 def TypeVarSummary { string r = "type variable"; }
 
-def LLZK_TypeVarType : LLZK_Type<"TypeVar", "tvar"> {
+def TypeVarType : PolymorphicDialectType<"TypeVar", "tvar"> {
   let summary = TypeVarSummary.r;
   let description = [{
     This type serves as a placeholder for a type that is instantiated
@@ -38,7 +34,7 @@ def LLZK_TypeVarType : LLZK_Type<"TypeVar", "tvar"> {
 
     ```llzk
     struct.def @A<[@Ty]> {
-      field @x : !array.array<2 x !llzk.tvar<@Ty>>
+      field @x : !array.array<2 x !poly.tvar<@Ty>>
       ...
     }
     ```
@@ -61,8 +57,8 @@ def LLZK_TypeVarType : LLZK_Type<"TypeVar", "tvar"> {
 
 // Type constraint matching only the given Type or TypeVarType.
 class VarTypeOr<Type allowedConcreteType, string text = TypeVarSummary.r>
-    : Type<CPred<"::llvm::isa<llzk::TypeVarType,"#allowedConcreteType
-                     .cppClassName#">($_self)">,
+    : Type<CPred<"::llvm::isa<llzk::polymorphic::"
+                 "TypeVarType,"#allowedConcreteType.cppClassName#">($_self)">,
            allowedConcreteType.summary#" or "#text, "::mlir::Type">;
 
-#endif // LLZK_TYPES
+#endif // LLZK_TEMPLATE_TYPES

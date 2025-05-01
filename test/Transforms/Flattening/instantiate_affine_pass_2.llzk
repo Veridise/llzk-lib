@@ -10,15 +10,15 @@
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @VarArray<[@N, @T]> {
-    struct.field @val: !array.array<@N x !llzk.tvar<@T>>
+    struct.field @val: !array.array<@N x !poly.tvar<@T>>
 
-    function.def @compute(%inp: !array.array<@N x !llzk.tvar<@T>>) -> !struct.struct<@VarArray<[@N, @T]>> {
+    function.def @compute(%inp: !array.array<@N x !poly.tvar<@T>>) -> !struct.struct<@VarArray<[@N, @T]>> {
       %self = struct.new : !struct.struct<@VarArray<[@N, @T]>>
-      struct.writef %self[@val] = %inp : !struct.struct<@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
+      struct.writef %self[@val] = %inp : !struct.struct<@VarArray<[@N, @T]>>, !array.array<@N x !poly.tvar<@T>>
       function.return %self : !struct.struct<@VarArray<[@N, @T]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@VarArray<[@N, @T]>>, %inp: !array.array<@N x !llzk.tvar<@T>>) {
+    function.def @constrain(%self: !struct.struct<@VarArray<[@N, @T]>>, %inp: !array.array<@N x !poly.tvar<@T>>) {
       function.return
     }
   }
@@ -28,7 +28,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @compute() -> !struct.struct<@ToFelt<[@A]>> {
       %self = struct.new : !struct.struct<@ToFelt<[@A]>>
-      %constA = llzk.read_const @A : !felt.felt
+      %constA = poly.read_const @A : !felt.felt
       struct.writef %self[@out] = %constA : !struct.struct<@ToFelt<[@A]>>, !felt.felt
       function.return %self: !struct.struct<@ToFelt<[@A]>>
     }
@@ -63,13 +63,13 @@ module attributes {veridise.lang = "llzk"} {
 
 // CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
 // CHECK-LABEL: struct.def @VarArray<[@N, @T]> {
-// CHECK-NEXT:    struct.field @val : !array.array<@N x !llzk.tvar<@T>>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.tvar<@T>>) -> !struct.struct<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @val : !array.array<@N x !poly.tvar<@T>>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !poly.tvar<@T>>) -> !struct.struct<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@VarArray<[@N, @T]>>
-// CHECK-NEXT:      struct.writef %[[V1]][@val] = %[[V0]] : <@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
+// CHECK-NEXT:      struct.writef %[[V1]][@val] = %[[V0]] : <@VarArray<[@N, @T]>>, !array.array<@N x !poly.tvar<@T>>
 // CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@VarArray<[@N, @T]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.struct<@VarArray<[@N, @T]>>, %[[V3:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.tvar<@T>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.struct<@VarArray<[@N, @T]>>, %[[V3:[0-9a-zA-Z_\.]+]]: !array.array<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -78,7 +78,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    struct.field @out : !felt.felt {llzk.pub}
 // CHECK-NEXT:    function.def @compute() -> !struct.struct<@ToFelt<[@A]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@ToFelt<[@A]>>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = llzk.read_const @A : !felt.felt
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.felt
 // CHECK-NEXT:      struct.writef %[[V0]][@out] = %[[V1]] : <@ToFelt<[@A]>>, !felt.felt
 // CHECK-NEXT:      function.return %[[V0]] : !struct.struct<@ToFelt<[@A]>>
 // CHECK-NEXT:    }

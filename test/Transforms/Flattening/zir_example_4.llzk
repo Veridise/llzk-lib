@@ -25,7 +25,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @A<[@N]> {
     function.def @compute() -> !struct.struct<@A<[@N]>> {
       %self = struct.new : !struct.struct<@A<[@N]>>
-      %0 = llzk.read_const @N : index
+      %0 = poly.read_const @N : index
       %c2 = arith.constant 2 : index
       %array = array.new{()[%0, %c2]} : !array.array<#map x !felt.felt>
       %1 = function.call @S::@compute(%array) {()[%0, %c2]} : (!array.array<#map x !felt.felt>) -> !struct.struct<@S<[#map, @N, 2]>>

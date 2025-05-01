@@ -61,7 +61,7 @@ module attributes {veridise.lang = "llzk"} {
       //
       %0 = felt.const 0
       %lb = arith.constant 0 : index
-      %ub = llzk.read_const @A : index
+      %ub = poly.read_const @A : index
       %step = arith.constant 1 : index
       %sum = scf.for %i = %lb to %ub step %step
           iter_args(%cur_sum = %0) -> !felt.felt {
@@ -90,15 +90,15 @@ module attributes {veridise.lang = "llzk"} {
   // and can't be created via `array.new` outside the loop where the loop induction
   // variable does not yet exist.
   struct.def @VarArray<[@N, @T]> {
-    struct.field @val: !array.array<@N x !llzk.tvar<@T>>
+    struct.field @val: !array.array<@N x !poly.tvar<@T>>
 
-    function.def @compute(%inp: !array.array<@N x !llzk.tvar<@T>>) -> !struct.struct<@VarArray<[@N, @T]>> {
+    function.def @compute(%inp: !array.array<@N x !poly.tvar<@T>>) -> !struct.struct<@VarArray<[@N, @T]>> {
       %self = struct.new : !struct.struct<@VarArray<[@N, @T]>>
-      struct.writef %self[@val] = %inp : !struct.struct<@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
+      struct.writef %self[@val] = %inp : !struct.struct<@VarArray<[@N, @T]>>, !array.array<@N x !poly.tvar<@T>>
       function.return %self : !struct.struct<@VarArray<[@N, @T]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@VarArray<[@N, @T]>>, %inp: !array.array<@N x !llzk.tvar<@T>>) {
+    function.def @constrain(%self: !struct.struct<@VarArray<[@N, @T]>>, %inp: !array.array<@N x !poly.tvar<@T>>) {
       function.return
     }
   }
@@ -112,7 +112,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = struct.new : !struct.struct<@ComputeValue<[@P]>>
       //
       %lb = arith.constant 0 : index
-      %ub = llzk.read_const @P : index
+      %ub = poly.read_const @P : index
       %step = arith.constant 1 : index
       // for(i = 0; i < @P; i++) {
       //   len := 5*i+1;
@@ -130,7 +130,7 @@ module attributes {veridise.lang = "llzk"} {
         //
         %arr = array.new{(%i)} : !array.array<#IdxToLen x !Signal> // lengths are {1, 6, 11, ... 5*P+1}
         %inpi_unwrap = struct.readf %inpi[@reg] : !Signal, !felt.felt
-        %len = llzk.applymap(%i) #IdxToLen
+        %len = poly.applymap(%i) #IdxToLen
         scf.for %k = %lb to %len step %step {
           %t0 = cast.tofelt %k : index
           %t1 = felt.mul %inpi_unwrap, %t0
@@ -160,7 +160,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.struct<@ComputeValue<[@P]>>, %inp: !array.array<@P x !Signal>) {
       %lb = arith.constant 0 : index
-      %ub = llzk.read_const @P : index
+      %ub = poly.read_const @P : index
       %step = arith.constant 1 : index
       // for(i = 0; i < @P; i++) {
       //   ws[i].constrain(arrs[i]);
@@ -230,7 +230,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@GetSum<[@A]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = felt.const 0
 // CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = llzk.read_const @A : index
+// CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
 // CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V_6:[0-9a-zA-Z_\.]+]] = scf.for %[[V_7:[0-9a-zA-Z_\.]+]] = %[[V_3]] to %[[V_4]] step %[[V_5]] iter_args(%[[V_8:[0-9a-zA-Z_\.]+]] = %[[V_2]]) -> (!felt.felt) {
 // CHECK-NEXT:        %[[V_9:[0-9a-zA-Z_\.]+]] = array.read %[[V_0]]{{\[}}%[[V_7]]] : <@A x !struct.struct<@Signal>>, !struct.struct<@Signal>
@@ -253,13 +253,13 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @VarArray<[@N, @T]> {
-// CHECK-NEXT:    struct.field @val : !array.array<@N x !llzk.tvar<@T>>
-// CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.tvar<@T>>) -> !struct.struct<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @val : !array.array<@N x !poly.tvar<@T>>
+// CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !poly.tvar<@T>>) -> !struct.struct<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@VarArray<[@N, @T]>>
-// CHECK-NEXT:      struct.writef %[[V_1]][@val] = %[[V_0]] : <@VarArray<[@N, @T]>>, !array.array<@N x !llzk.tvar<@T>>
+// CHECK-NEXT:      struct.writef %[[V_1]][@val] = %[[V_0]] : <@VarArray<[@N, @T]>>, !array.array<@N x !poly.tvar<@T>>
 // CHECK-NEXT:      function.return %[[V_1]] : !struct.struct<@VarArray<[@N, @T]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !struct.struct<@VarArray<[@N, @T]>>, %[[V_3:[0-9a-zA-Z_\.]+]]: !array.array<@N x !llzk.tvar<@T>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V_2:[0-9a-zA-Z_\.]+]]: !struct.struct<@VarArray<[@N, @T]>>, %[[V_3:[0-9a-zA-Z_\.]+]]: !array.array<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -271,7 +271,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.array<@P x !struct.struct<@Signal>>) -> !struct.struct<@ComputeValue<[@P]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComputeValue<[@P]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = llzk.read_const @P : index
+// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = poly.read_const @P : index
 // CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = array.new  : <@P x !struct.struct<@GetSum<[#[[$M0]]]>>>
 // CHECK-NEXT:      %[[V_6:[0-9a-zA-Z_\.]+]] = array.new  : <@P x !struct.struct<@VarArray<[#[[$M0]], !struct.struct<@Signal>]>>>
@@ -279,7 +279,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        %[[V_8:[0-9a-zA-Z_\.]+]] = array.read %[[V_0]]{{\[}}%[[V_7]]] : <@P x !struct.struct<@Signal>>, !struct.struct<@Signal>
 // CHECK-NEXT:        %[[V_9:[0-9a-zA-Z_\.]+]] = array.new{(%[[V_7]])} : <#[[$M0]] x !struct.struct<@Signal>>
 // CHECK-NEXT:        %[[V_10:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_8]][@reg] : <@Signal>, !felt.felt
-// CHECK-NEXT:        %[[V_11:[0-9a-zA-Z_\.]+]] = llzk.applymap (%[[V_7]]) #[[$M0]]
+// CHECK-NEXT:        %[[V_11:[0-9a-zA-Z_\.]+]] = poly.applymap (%[[V_7]]) #[[$M0]]
 // CHECK-NEXT:        scf.for %[[V_12:[0-9a-zA-Z_\.]+]] = %[[V_2]] to %[[V_11]] step %[[V_4]] {
 // CHECK-NEXT:          %[[V_13:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[V_12]] : index
 // CHECK-NEXT:          %[[V_14:[0-9a-zA-Z_\.]+]] = felt.mul %[[V_10]], %[[V_13]] : !felt.felt, !felt.felt
@@ -304,7 +304,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V_22:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComputeValue<[@P]>>, %[[V_23:[0-9a-zA-Z_\.]+]]: !array.array<@P x !struct.struct<@Signal>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V_24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V_25:[0-9a-zA-Z_\.]+]] = llzk.read_const @P : index
+// CHECK-NEXT:      %[[V_25:[0-9a-zA-Z_\.]+]] = poly.read_const @P : index
 // CHECK-NEXT:      %[[V_26:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V_27:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_22]][@ws] : <@ComputeValue<[@P]>>, !array.array<@P x !struct.struct<@GetSum<[#[[$M0]]]>>>
 // CHECK-NEXT:      %[[V_28:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_22]][@arrs] : <@ComputeValue<[@P]>>, !array.array<@P x !struct.struct<@VarArray<[#[[$M0]], !struct.struct<@Signal>]>>>

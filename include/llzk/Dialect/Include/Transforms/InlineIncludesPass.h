@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Pass/PassBase.h"
 
 namespace llzk::include {

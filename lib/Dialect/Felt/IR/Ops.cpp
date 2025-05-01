@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Felt/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/Attributes.h>
@@ -24,9 +24,9 @@
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Felt/IR/Ops.cpp.inc"
 
-namespace llzk::felt {
-
 using namespace mlir;
+
+namespace llzk::felt {
 
 //===------------------------------------------------------------------===//
 // FeltConstantOp

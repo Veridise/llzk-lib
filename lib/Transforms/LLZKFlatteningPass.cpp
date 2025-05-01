@@ -18,6 +18,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/AttributeHelper.h"
@@ -62,6 +63,7 @@ using namespace llzk::component;
 using namespace llzk::constrain;
 using namespace llzk::felt;
 using namespace llzk::function;
+using namespace llzk::polymorphic;
 
 #define DEBUG_TYPE "llzk-flatten"
 
@@ -356,8 +358,8 @@ ConversionTarget newBaseTarget(MLIRContext *ctx) {
   ConversionTarget target(*ctx);
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, component::StructDialect, constrain::ConstrainDialect,
-      felt::FeltDialect, function::FunctionDialect, include::IncludeDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+      felt::FeltDialect, function::FunctionDialect, include::IncludeDialect,
+      polymorphic::PolymorphicDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   return target;
 }
@@ -1514,6 +1516,14 @@ LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
   RewritePatternSet patterns(ctx);
   patterns.add<EraseOpPattern<StructDefOp>>(ctx);
   ConversionTarget target = newBaseTarget(ctx);
+  // TODO: Here are some thoughts from LLZK planning:
+  // - Flattening could remove all structs that are not instantiated and the backend would have to
+  //   not run flattening if it wants to keep any templated structs.
+  // - Alternatively, flattening could define different conversion targets at runtime based on
+  //   config flags to indicate if some should be flattened and others should not. This could be a
+  //   flag that indicates allow/restrict globally or based on some struct criteria, like names.
+  //
+  // target.addIllegalDialect<polymorphic::PolymorphicDialect>();
   target.addDynamicallyLegalOp<StructDefOp>(std::bind_front(isLegalStruct, false));
   if (failed(applyFullConversion(modOp, target, std::move(patterns)))) {
     return failure();

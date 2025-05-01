@@ -78,7 +78,7 @@ module attributes {veridise.lang = "llzk"} {
       %a = array.new : !array.array<@N x !struct.struct<@Component01>>
 
       %lb = arith.constant 0 : index
-      %up = llzk.read_const @N : index
+      %up = poly.read_const @N : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         %p = array.extract %in[%iv] : !array.array<@N,2 x !felt.felt>
@@ -94,7 +94,7 @@ module attributes {veridise.lang = "llzk"} {
       %a = struct.readf %self[@g] : !struct.struct<@Component02<[@N]>>, !array.array<@N x !struct.struct<@Component01>>
 
       %lb = arith.constant 0 : index
-      %up = llzk.read_const @N : index
+      %up = poly.read_const @N : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
         %p = array.extract %in[%iv] : !array.array<@N,2 x !felt.felt>
@@ -124,7 +124,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02<[@N]>>
 //CHECK-NEXT:      %array = array.new  : <@N x !struct.struct<@Component01>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = llzk.read_const @N : index
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:      scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[T3]] to %[[T0]] step %[[T4]] {
 //CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = array.extract %[[A0]][%[[IV]]] : <@N,2 x !felt.felt>
@@ -137,7 +137,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.struct<@Component02<[@N]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.array<@N,2 x !felt.felt>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@g] : <@Component02<[@N]>>, !array.array<@N x !struct.struct<@Component01>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = llzk.read_const @N : index
+//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 //CHECK-NEXT:      scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[T3]] to %[[T1]] step %[[T4]] {
 //CHECK-NEXT:        %[[T5:[0-9a-zA-Z_\.]+]] = array.extract %[[A1]][%[[IV]]] : <@N,2 x !felt.felt>

@@ -9,7 +9,11 @@
 
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Util/SymbolLookup.h"
+
+// forward-declare ops
+#define GET_OP_FWD_DEFINES
+#include "llzk/Dialect/LLZK/IR/Ops.h.inc"
 
 // Include TableGen'd declarations
 #include "llzk/Dialect/LLZK/IR/OpInterfaces.h.inc"

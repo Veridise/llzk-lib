@@ -11,6 +11,7 @@
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 
 #include <mlir/Dialect/Utils/IndexingUtils.h>

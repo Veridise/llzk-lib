@@ -2,7 +2,7 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1<[@T]> {
-    struct.field @f1 : !llzk.tvar<@T> {column}
+    struct.field @f1 : !poly.tvar<@T> {column}
 
     function.def @constrain(%self: !struct.struct<@ComponentA1<[@T]>>) { function.return }
     function.def @compute() -> !struct.struct<@ComponentA1<[@T]>> {
@@ -185,7 +185,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1<[@T]> {
-    struct.field @f1 : !llzk.tvar<@T> {column}
+    struct.field @f1 : !poly.tvar<@T> {column}
 
     function.def @constrain(%self: !struct.struct<@ComponentA1<[@T]>>) { function.return }
     function.def @compute() -> !struct.struct<@ComponentA1<[@T]>> {
@@ -197,7 +197,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2<[@N, @T]> {
     function.def @compute(%p: !struct.struct<@ComponentA1<[@T]>>) -> !struct.struct<@ComponentA2<[@N, @T]>> {
       %self = struct.new : !struct.struct<@ComponentA2<[@N, @T]>>
-      %r = struct.readf %p[@f1] : !struct.struct<@ComponentA1<[@T]>>, !llzk.tvar<@T> {tableOffset = @N}
+      %r = struct.readf %p[@f1] : !struct.struct<@ComponentA1<[@T]>>, !poly.tvar<@T> {tableOffset = @N}
       function.return %self : !struct.struct<@ComponentA2<[@N, @T]>>
     }
 

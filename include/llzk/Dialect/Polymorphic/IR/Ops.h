@@ -9,15 +9,13 @@
 
 #pragma once
 
-#include "llzk/Dialect/Array/IR/Types.h"
-#include "llzk/Dialect/Constrain/IR/Dialect.h"
-#include "llzk/Dialect/Constrain/IR/OpInterfaces.h"
-#include "llzk/Dialect/Felt/IR/Types.h"
-#include "llzk/Dialect/Function/IR/OpTraits.h"
+#include "llzk/Dialect/Polymorphic/IR/Dialect.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
 
+#include <mlir/Dialect/Affine/IR/AffineValueMap.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Location.h>
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
-#include "llzk/Dialect/Constrain/IR/Ops.h.inc"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h.inc"

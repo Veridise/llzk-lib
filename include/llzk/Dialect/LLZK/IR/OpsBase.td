@@ -10,12 +10,9 @@
 #ifndef LLZK_OPS_BASE
 #define LLZK_OPS_BASE
 
-include "llzk/Dialect/LLZK/IR/Types.td"
-include "llzk/Dialect/LLZK/IR/OpInterfaces.td"
 include "llzk/Dialect/Shared/Ops.td"
+include "llzk/Dialect/Polymorphic/IR/Types.td"
 
-include "mlir/Interfaces/InferTypeOpInterface.td"
-include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
@@ -56,30 +53,5 @@ class UnaryOpBase<Dialect dialect, string mnemonic, Type resultType,
       attr-dict
   }];
 }
-
-class LLZK_Op<string mnemonic, list<Trait> traits = []>
-    : Op<LLZKDialect, mnemonic, traits>;
-
-class LLZK_GlobalRefOp<string mnemonic, list<Trait> traits = []>
-    : LLZK_Op<mnemonic,
-              traits#[DeclareOpInterfaceMethods<GlobalRefOpInterface>,
-                      DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-  let extraClassDeclaration = [{
-    /// Gets the definition for the `global` referenced in this op.
-    inline ::mlir::FailureOr<SymbolLookupResult<GlobalDefOp>> getGlobalDefOp(::mlir::SymbolTableCollection &tables) {
-      return ::llvm::cast<GlobalRefOpInterface>(getOperation()).getGlobalDefOp(tables);
-    }
-  }];
-}
-
-// Note: `resultType.builderCall` must not be empty
-class LLZK_BinaryOpBase<string mnemonic, Type resultType,
-                        list<Trait> traits = []>
-    : BinaryOpBase<LLZKDialect, mnemonic, resultType, traits>;
-
-// Note: `resultType.builderCall` must not be empty
-class LLZK_UnaryOpBase<string mnemonic, Type resultType,
-                       list<Trait> traits = []>
-    : UnaryOpBase<LLZKDialect, mnemonic, resultType, traits>;
 
 #endif // LLZK_OPS_BASE

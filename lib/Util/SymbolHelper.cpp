@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 
@@ -25,12 +26,14 @@
 
 #define DEBUG_TYPE "llzk-symbol-helpers"
 
+using namespace mlir;
+
 namespace llzk {
 
-using namespace mlir;
 using namespace array;
 using namespace component;
 using namespace function;
+using namespace polymorphic;
 
 namespace {
 

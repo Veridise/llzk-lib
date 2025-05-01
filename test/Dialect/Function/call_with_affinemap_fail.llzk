@@ -123,15 +123,15 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @CallUnknownConstrainWithMapInit<[@S]> {
-    function.def @compute(%0: !llzk.tvar<@S>) -> !struct.struct<@CallUnknownConstrainWithMapInit<[@S]>> {
+    function.def @compute(%0: !poly.tvar<@S>) -> !struct.struct<@CallUnknownConstrainWithMapInit<[@S]>> {
       %self = struct.new : !struct.struct<@CallUnknownConstrainWithMapInit<[@S]>>
       function.return %self : !struct.struct<@CallUnknownConstrainWithMapInit<[@S]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@CallUnknownConstrainWithMapInit<[@S]>>, %0: !llzk.tvar<@S>) {
+    function.def @constrain(%self: !struct.struct<@CallUnknownConstrainWithMapInit<[@S]>>, %0: !poly.tvar<@S>) {
       %i = arith.constant 28 : index
       // expected-error@+1 {{'function.call' op can only have affine map instantiations when targeting a "@compute" function}}
-      function.call @S::@constrain(%0){ (%i) } : (!llzk.tvar<@S>) -> ()
+      function.call @S::@constrain(%0){ (%i) } : (!poly.tvar<@S>) -> ()
       function.return
     }
   }

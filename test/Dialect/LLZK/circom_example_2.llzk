@@ -34,14 +34,14 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @compute(%inp: !felt.felt) -> !struct.struct<@GetWeight<[@A]>> {
       %self = struct.new : !struct.struct<@GetWeight<[@A]>>
-      %constA = llzk.read_const @A : !felt.felt
+      %constA = poly.read_const @A : !felt.felt
       %inpA = felt.mul %constA, %inp
       struct.writef %self[@out] = %inpA : !struct.struct<@GetWeight<[@A]>>, !felt.felt
       function.return %self: !struct.struct<@GetWeight<[@A]>>
     }
 
     function.def @constrain(%self: !struct.struct<@GetWeight<[@A]>>, %inp: !felt.felt) {
-      %constA = llzk.read_const @A : !felt.felt
+      %constA = poly.read_const @A : !felt.felt
       %inpA = felt.mul %constA, %inp
       %out = struct.readf %self[@out] : !struct.struct<@GetWeight<[@A]>>, !felt.felt
       constrain.eq %out, %inpA : !felt.felt
@@ -57,7 +57,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = struct.new : !struct.struct<@ComputeValue<[@P]>>
       //
       %lb = arith.constant 0 : index
-      %up = llzk.read_const @P : index
+      %up = poly.read_const @P : index
       %step = arith.constant 1 : index
       // for(i = 0; i < @P; i++) {
       //   ws[i] := GetWeight<5*i>.compute(inp[i]);
@@ -85,7 +85,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.struct<@ComputeValue<[@P]>>, %inp: !array.array<@P x !felt.felt>) {
       %lb = arith.constant 0 : index
-      %up = llzk.read_const @P : index
+      %up = poly.read_const @P : index
       %step = arith.constant 1 : index
       // for(i = 0; i < @P; i++) {
       //   ws[i].constrain(inp[i]);
@@ -118,13 +118,13 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    struct.field @out : !felt.felt {llzk.pub}
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@GetWeight<[@A]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@GetWeight<[@A]>>
-// CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = llzk.read_const @A : !felt.felt
+// CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.felt
 // CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = felt.mul %[[V_2]], %[[V_0]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      struct.writef %[[V_1]][@out] = %[[V_3]] : <@GetWeight<[@A]>>, !felt.felt
 // CHECK-NEXT:      function.return %[[V_1]] : !struct.struct<@GetWeight<[@A]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V_4:[0-9a-zA-Z_\.]+]]: !struct.struct<@GetWeight<[@A]>>, %[[V_5:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V_6:[0-9a-zA-Z_\.]+]] = llzk.read_const @A : !felt.felt
+// CHECK-NEXT:      %[[V_6:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.felt
 // CHECK-NEXT:      %[[V_7:[0-9a-zA-Z_\.]+]] = felt.mul %[[V_6]], %[[V_5]] : !felt.felt, !felt.felt
 // CHECK-NEXT:      %[[V_8:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_4]][@out] : <@GetWeight<[@A]>>, !felt.felt
 // CHECK-NEXT:      constrain.eq %[[V_8]], %[[V_7]] : !felt.felt, !felt.felt
@@ -138,7 +138,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.array<@P x !felt.felt>) -> !struct.struct<@ComputeValue<[@P]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComputeValue<[@P]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = llzk.read_const @P : index
+// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = poly.read_const @P : index
 // CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = array.new  : <@P x !struct.struct<@GetWeight<[#[[$ATTR_0]]]>>>
 // CHECK-NEXT:      scf.for %[[V_6:[0-9a-zA-Z_\.]+]] = %[[V_2]] to %[[V_3]] step %[[V_4]] {
@@ -158,7 +158,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V_13:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComputeValue<[@P]>>, %[[V_14:[0-9a-zA-Z_\.]+]]: !array.array<@P x !felt.felt>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V_15:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V_16:[0-9a-zA-Z_\.]+]] = llzk.read_const @P : index
+// CHECK-NEXT:      %[[V_16:[0-9a-zA-Z_\.]+]] = poly.read_const @P : index
 // CHECK-NEXT:      %[[V_17:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V_18:[0-9a-zA-Z_\.]+]] = struct.readf %[[V_13]][@ws] : <@ComputeValue<[@P]>>, !array.array<@P x !struct.struct<@GetWeight<[#[[$ATTR_0]]]>>>
 // CHECK-NEXT:      scf.for %[[V_19:[0-9a-zA-Z_\.]+]] = %[[V_15]] to %[[V_16]] step %[[V_17]] {

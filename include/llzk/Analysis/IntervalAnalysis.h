@@ -18,6 +18,7 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Compare.h"
 
@@ -688,12 +689,12 @@ private:
     return mlir::isa<IntToFeltOp, FeltToIndexOp>(op);
   }
 
-  bool isApplyMapOp(mlir::Operation *op) const { return mlir::isa<ApplyMapOp>(op); }
+  bool isApplyMapOp(mlir::Operation *op) const { return mlir::isa<polymorphic::ApplyMapOp>(op); }
 
   bool isAssertOp(mlir::Operation *op) const { return mlir::isa<AssertOp>(op); }
 
   bool isReadOp(mlir::Operation *op) const {
-    return mlir::isa<component::FieldReadOp, ConstReadOp, array::ReadArrayOp>(op);
+    return mlir::isa<component::FieldReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);
   }
 
   bool isWriteOp(mlir::Operation *op) const {

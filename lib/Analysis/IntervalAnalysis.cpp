@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/IntervalAnalysis.h"
-#include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Debug.h"
 

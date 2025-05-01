@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/Types.h"
-
 // Include TableGen'd declarations
 #include "llzk/Dialect/Constrain/IR/OpInterfaces.h.inc"
 

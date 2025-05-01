@@ -40,7 +40,7 @@ module attributes {veridise.lang = "llzk"} {
       !array.array<2 x !struct.struct<@A<[
         !struct.struct<@A<[
           !array.array<2 x !struct.struct<@A<[
-            !struct.struct<@A<[!llzk.tvar<@Unknown>]>>
+            !struct.struct<@A<[!poly.tvar<@Unknown>]>>
           ]>>>
         ]>>
       ]>>>
@@ -79,7 +79,7 @@ module attributes {veridise.lang = "llzk"} {
       !struct.struct<@A<[
         !array.array<2 x !struct.struct<@A<[
           !array.array<2 x !struct.struct<@A<[
-            !struct.struct<@A<[!llzk.tvar<@Unknown>]>>
+            !struct.struct<@A<[!poly.tvar<@Unknown>]>>
           ]>>>
         ]>>>
       ]>>
@@ -218,7 +218,7 @@ module attributes {veridise.lang = "llzk"} {
   function.def private @id(%a: !felt.felt) -> !felt.felt
   function.def @callop_unknown_in_return_type(%a: !felt.felt) {
     // expected-error@+1 {{'function.call' op references unknown symbol "@Unknown"}}
-    %sum = function.call @id(%a) : (!felt.felt) -> (!llzk.tvar<@Unknown>)
+    %sum = function.call @id(%a) : (!felt.felt) -> (!poly.tvar<@Unknown>)
     function.return
   }
 }
@@ -227,8 +227,8 @@ module attributes {veridise.lang = "llzk"} {
   function.def private @id(%a: !felt.felt) -> !felt.felt
   function.def @callop_unknown_in_return_type(%a: !felt.felt) { // expected-note {{prior use here}}
     // See NOTE on line 4.
-    // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!felt.felt'}}
-    %sum = function.call @id(%a) : (!llzk.tvar<@Unknown>) -> (!felt.felt)
+    // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!poly.tvar<@Unknown>' vs '!felt.felt'}}
+    %sum = function.call @id(%a) : (!poly.tvar<@Unknown>) -> (!felt.felt)
     function.return
   }
 }
@@ -285,7 +285,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @FieldDefOpWithUnknownTypeVar {
     // expected-error@+1 {{'struct.field' op references unknown symbol "@Unknown"}}
-    struct.field @ret: !llzk.tvar<@Unknown>
+    struct.field @ret: !poly.tvar<@Unknown>
     function.def @compute() -> !struct.struct<@FieldDefOpWithUnknownTypeVar> {
       %self = struct.new : !struct.struct<@FieldDefOpWithUnknownTypeVar>
       function.return %self : !struct.struct<@FieldDefOpWithUnknownTypeVar>
@@ -301,8 +301,8 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.struct<@ConstReadWithUnknown<[@T]>>
     }
     function.def @constrain(%self: !struct.struct<@ConstReadWithUnknown<[@T]>>) {
-      // expected-error@+1 {{'llzk.read_const' op references unknown symbol "@Unknown"}}
-      %0 = llzk.read_const @T : !llzk.tvar<@Unknown>
+      // expected-error@+1 {{'poly.read_const' op references unknown symbol "@Unknown"}}
+      %0 = poly.read_const @T : !poly.tvar<@Unknown>
       function.return
     }
   }
@@ -333,7 +333,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.struct<@FieldReadWithUnknownInResultTypeVar>) {
       // expected-error@+1 {{'struct.readf' op references unknown symbol "@Unknown"}}
-      %0 = struct.readf %self[@f] : !struct.struct<@FieldReadWithUnknownInResultTypeVar>, !llzk.tvar<@Unknown>
+      %0 = struct.readf %self[@f] : !struct.struct<@FieldReadWithUnknownInResultTypeVar>, !poly.tvar<@Unknown>
       function.return
     }
   }
@@ -372,14 +372,14 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @FieldWriteWithUnknownInRHSTypeVar<[@A]> {
-    struct.field @f: !llzk.tvar<@A>
+    struct.field @f: !poly.tvar<@A>
     function.def @compute(
-      %0: !llzk.tvar<@A> // expected-note {{prior use here}}
+      %0: !poly.tvar<@A> // expected-note {{prior use here}}
     ) -> !struct.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>> {
       %self = struct.new : !struct.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>
       // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!llzk.tvar<@A>'}}
-      struct.writef %self[@f] = %0 : !struct.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>, !llzk.tvar<@Unknown>
+      // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!poly.tvar<@Unknown>' vs '!poly.tvar<@A>'}}
+      struct.writef %self[@f] = %0 : !struct.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>, !poly.tvar<@Unknown>
       function.return %self : !struct.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>
     }
     function.def @constrain(%self: !struct.struct<@FieldWriteWithUnknownInRHSTypeVar<[@A]>>) {
@@ -429,22 +429,22 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   function.def @ReadArrayOp_unknown_result_tvar(%arr: !array.array<5 x !felt.felt>, %k: index) {
     // expected-error@+1 {{'array.read' op references unknown symbol "@Unknown"}}
-    %v = array.read %arr[%k] : !array.array<5 x !felt.felt>, !llzk.tvar<@Unknown>
+    %v = array.read %arr[%k] : !array.array<5 x !felt.felt>, !poly.tvar<@Unknown>
     function.return
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @ReadArrayOpWithUnknownInResultTypeArrElem<[@T]> {
-    function.def @compute(%arr: !array.array<5 x !llzk.tvar<@T>>) -> !struct.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
+    function.def @compute(%arr: !array.array<5 x !poly.tvar<@T>>) -> !struct.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
       %self = struct.new : !struct.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>
       function.return %self : !struct.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>
     }
-    function.def @constrain(%self: !struct.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>, %arr: !array.array<5 x !llzk.tvar<@T>>) {
+    function.def @constrain(%self: !struct.struct<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>, %arr: !array.array<5 x !poly.tvar<@T>>) {
       %k = arith.constant 0 : index
       // expected-error@+2 {{'array.read' op references unknown symbol "@Unknown"}}
       // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
-      %v = array.read %arr[%k] : !array.array<5 x !llzk.tvar<@T>>, !struct.struct<@Unknown>
+      %v = array.read %arr[%k] : !array.array<5 x !poly.tvar<@T>>, !struct.struct<@Unknown>
       function.return
     }
   }
@@ -470,26 +470,26 @@ module attributes {veridise.lang = "llzk"} {
       %v: !felt.felt // expected-note {{prior use here}}
   ) {
     // See NOTE on line 4.
-    // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!felt.felt'}}
-    array.write %arr[%k] = %v : !array.array<5 x !felt.felt>, !llzk.tvar<@Unknown>
+    // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!poly.tvar<@Unknown>' vs '!felt.felt'}}
+    array.write %arr[%k] = %v : !array.array<5 x !felt.felt>, !poly.tvar<@Unknown>
     function.return
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @WriteArrayOpWithUnknownInResultTypeArrElem<[@T]> {
-    function.def @compute(%arr: !array.array<5 x !llzk.tvar<@T>>,
+    function.def @compute(%arr: !array.array<5 x !poly.tvar<@T>>,
       %v: !struct.struct<@T> // expected-note {{prior use here}}
     ) -> !struct.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
       %self = struct.new : !struct.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>
       %k = arith.constant 0 : index
       // See NOTE on line 4.
       // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!struct.struct<@Unknown>' vs '!struct.struct<@T>'}}
-      array.write %arr[%k] = %v : !array.array<5 x !llzk.tvar<@T>>, !struct.struct<@Unknown>
+      array.write %arr[%k] = %v : !array.array<5 x !poly.tvar<@T>>, !struct.struct<@Unknown>
       function.return %self : !struct.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>
     }
     function.def @constrain(%self: !struct.struct<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>,
-        %arr: !array.array<5 x !llzk.tvar<@T>>,
+        %arr: !array.array<5 x !poly.tvar<@T>>,
         %v: !struct.struct<@T>
     ) {
       %k = arith.constant 0 : index
@@ -503,8 +503,8 @@ module attributes {veridise.lang = "llzk"} {
       %r: !array.array<2,2 x i1> // expected-note {{prior use here}}
   ) {
     // See NOTE on line 4.
-    // expected-error@+1 {{use of value '%r' expects different type than prior uses: '!array.array<2,2 x !llzk.tvar<@Unknown>>' vs '!array.array<2,2 x i1>'}}
-    %s = array.extract %r[] : !array.array<2,2 x !llzk.tvar<@Unknown>>
+    // expected-error@+1 {{use of value '%r' expects different type than prior uses: '!array.array<2,2 x !poly.tvar<@Unknown>>' vs '!array.array<2,2 x i1>'}}
+    %s = array.extract %r[] : !array.array<2,2 x !poly.tvar<@Unknown>>
     function.return
   }
 }
@@ -581,8 +581,8 @@ module attributes {veridise.lang = "llzk"} {
       %a = array.new : !array.array<5 x !felt.felt>
       %b = felt.const 3 // expected-note {{prior use here}}
       // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!llzk.tvar<@Unknown>' vs '!felt.felt'}}
-      constrain.in %a, %b : !array.array<5 x !felt.felt>, !llzk.tvar<@Unknown>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!poly.tvar<@Unknown>' vs '!felt.felt'}}
+      constrain.in %a, %b : !array.array<5 x !felt.felt>, !poly.tvar<@Unknown>
       function.return
     }
 

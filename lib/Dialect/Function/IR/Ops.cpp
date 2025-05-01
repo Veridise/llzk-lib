@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/AttributeHelper.h"
@@ -30,6 +31,7 @@
 
 using namespace mlir;
 using namespace llzk::component;
+using namespace llzk::polymorphic;
 
 namespace llzk::function {
 

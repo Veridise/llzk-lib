@@ -12,7 +12,6 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/Types.h"
 #include "llzk/Util/AttributeHelper.h"
 
 #include <mlir/Bytecode/BytecodeImplementation.h>
@@ -134,8 +133,6 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
 };
 
 // Need a complete declaration of storage classes for below
-#define GET_TYPEDEF_CLASSES
-#include "llzk/Dialect/LLZK/IR/Types.cpp.inc"
 #define GET_ATTRDEF_CLASSES
 #include "llzk/Dialect/LLZK/IR/Attrs.cpp.inc"
 
@@ -148,11 +145,6 @@ auto llzk::LLZKDialect::initialize() -> void {
   addOperations<
     #define GET_OP_LIST
     #include "llzk/Dialect/LLZK/IR/Ops.cpp.inc"
-  >();
-
-  addTypes<
-    #define GET_TYPEDEF_LIST
-    #include "llzk/Dialect/LLZK/IR/Types.cpp.inc"
   >();
 
   addAttributes<

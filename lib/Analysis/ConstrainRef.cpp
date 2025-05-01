@@ -23,6 +23,7 @@ namespace llzk {
 using namespace array;
 using namespace component;
 using namespace felt;
+using namespace polymorphic;
 using namespace string;
 
 /* ConstrainRefIndex */

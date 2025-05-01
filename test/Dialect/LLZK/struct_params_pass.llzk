@@ -255,7 +255,7 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.struct<@ComponentE1<[@A]>>
     }
     function.def @constrain(%self: !struct.struct<@ComponentE1<[@A]>>, %0: !felt.felt) {
-      %1 = llzk.read_const @A : !felt.felt
+      %1 = poly.read_const @A : !felt.felt
       constrain.eq %0, %1 : !felt.felt
       function.return
     }
@@ -268,7 +268,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        function.return %[[SELF]] : !struct.struct<@ComponentE1<[@A]>>
 //CHECK-NEXT:      }
 //CHECK-NEXT:      function.def @constrain(%arg0: !struct.struct<@ComponentE1<[@A]>>, %arg1: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = llzk.read_const @A : !felt.felt
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.felt
 //CHECK-NEXT:        constrain.eq %arg1, %[[T0]] : !felt.felt, !felt.felt
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
@@ -388,18 +388,18 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Bar<[@T]> {
-    struct.field @t : !llzk.tvar<@T>
+    struct.field @t : !poly.tvar<@T>
 
     function.def @compute(%x: !felt.felt) -> !struct.struct<@Bar<[@T]>> {
       %self = struct.new : !struct.struct<@Bar<[@T]>>
       // This restricts the parameter @T to be a !struct.struct<?> type.
-      %1 = function.call @T::@compute(%x) : (!felt.felt) -> !llzk.tvar<@T>
-      struct.writef %self[@t] = %1 : !struct.struct<@Bar<[@T]>>, !llzk.tvar<@T>
+      %1 = function.call @T::@compute(%x) : (!felt.felt) -> !poly.tvar<@T>
+      struct.writef %self[@t] = %1 : !struct.struct<@Bar<[@T]>>, !poly.tvar<@T>
       function.return %self : !struct.struct<@Bar<[@T]>>
     }
     function.def @constrain(%self: !struct.struct<@Bar<[@T]>>, %x: !felt.felt) {
-      %1 = struct.readf %self[@t] : !struct.struct<@Bar<[@T]>>, !llzk.tvar<@T>
-      function.call @T::@constrain(%1, %x) : (!llzk.tvar<@T>, !felt.felt) -> ()
+      %1 = struct.readf %self[@t] : !struct.struct<@Bar<[@T]>>, !poly.tvar<@T>
+      function.call @T::@constrain(%1, %x) : (!poly.tvar<@T>, !felt.felt) -> ()
       function.return
     }
   }
@@ -453,16 +453,16 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:    struct.def @Bar<[@T]> {
-//CHECK-NEXT:      struct.field @t : !llzk.tvar<@T>
+//CHECK-NEXT:      struct.field @t : !poly.tvar<@T>
 //CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.struct<@Bar<[@T]>> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Bar<[@T]>>
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = function.call @T::@compute(%[[A0]]) : (!felt.felt) -> !llzk.tvar<@T>
-//CHECK-NEXT:        struct.writef %[[SELF]][@t] = %[[T0]] : <@Bar<[@T]>>, !llzk.tvar<@T>
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = function.call @T::@compute(%[[A0]]) : (!felt.felt) -> !poly.tvar<@T>
+//CHECK-NEXT:        struct.writef %[[SELF]][@t] = %[[T0]] : <@Bar<[@T]>>, !poly.tvar<@T>
 //CHECK-NEXT:        function.return %[[SELF]] : !struct.struct<@Bar<[@T]>>
 //CHECK-NEXT:      }
 //CHECK-NEXT:      function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.struct<@Bar<[@T]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[A0]][@t] : <@Bar<[@T]>>, !llzk.tvar<@T>
-//CHECK-NEXT:        function.call @T::@constrain(%[[T0]], %[[A1]]) : (!llzk.tvar<@T>, !felt.felt) -> ()
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[A0]][@t] : <@Bar<[@T]>>, !poly.tvar<@T>
+//CHECK-NEXT:        function.call @T::@constrain(%[[T0]], %[[A1]]) : (!poly.tvar<@T>, !felt.felt) -> ()
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }

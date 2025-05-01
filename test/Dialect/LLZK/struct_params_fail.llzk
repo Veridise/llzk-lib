@@ -430,8 +430,8 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @bad(%0: !felt.felt) {
-    // expected-error@+1 {{'llzk.read_const' op only valid within a 'struct.def' ancestor}}
-    %1 = llzk.read_const @X : !felt.felt
+    // expected-error@+1 {{'poly.read_const' op only valid within a 'struct.def' ancestor}}
+    %1 = poly.read_const @X : !felt.felt
     function.return
   }
 }
@@ -443,8 +443,8 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.struct<@ComponentV<[@A]>>
     }
     function.def @constrain(%self: !struct.struct<@ComponentV<[@A]>>, %0: !felt.felt) {
-      // expected-error@+1 {{'llzk.read_const' op references unknown symbol "@X"}}
-      %1 = llzk.read_const @X : !felt.felt
+      // expected-error@+1 {{'poly.read_const' op references unknown symbol "@X"}}
+      %1 = poly.read_const @X : !felt.felt
       constrain.eq %0, %1 : !felt.felt
       function.return
     }
@@ -481,8 +481,8 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.struct<@ReadConstBadTypeA<[@T]>>
     }
     function.def @constrain(%self: !struct.struct<@ReadConstBadTypeA<[@T]>>) {
-      // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!array.array<54 x index>'}}
-      %0 = llzk.read_const @T : !array.array<54 x index>
+      // expected-error@+1 {{'poly.read_const' op result #0 must be integral, felt, or typevar type, but got '!array.array<54 x index>'}}
+      %0 = poly.read_const @T : !array.array<54 x index>
       function.return
     }
   }
@@ -495,8 +495,8 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.struct<@ReadConstBadTypeB<[@T]>>
     }
     function.def @constrain(%self: !struct.struct<@ReadConstBadTypeB<[@T]>>) {
-      // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!struct.struct<@ReadConstBadTypeB<[@T]>>'}}
-      %0 = llzk.read_const @T : !struct.struct<@ReadConstBadTypeB<[@T]>>
+      // expected-error@+1 {{'poly.read_const' op result #0 must be integral, felt, or typevar type, but got '!struct.struct<@ReadConstBadTypeB<[@T]>>'}}
+      %0 = poly.read_const @T : !struct.struct<@ReadConstBadTypeB<[@T]>>
       function.return
     }
   }
@@ -509,8 +509,8 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.struct<@ReadConstBadTypeC<[@T]>>
     }
     function.def @constrain(%self: !struct.struct<@ReadConstBadTypeC<[@T]>>) {
-      // expected-error@+1 {{'llzk.read_const' op result #0 must be integral, felt, or typevar type, but got '!string.string'}}
-      %0 = llzk.read_const @T : !string.string
+      // expected-error@+1 {{'poly.read_const' op result #0 must be integral, felt, or typevar type, but got '!string.string'}}
+      %0 = poly.read_const @T : !string.string
       function.return
     }
   }

@@ -1,38 +1,38 @@
 // RUN: llzk-opt %s -split-input-file -verify-diagnostics
 
 function.def @produces_0() -> index {
-  // expected-error@+1 {{'llzk.applymap' op must produce exactly one value}}
-  %x = llzk.applymap() affine_map<() -> ()>
+  // expected-error@+1 {{'poly.applymap' op must produce exactly one value}}
+  %x = poly.applymap() affine_map<() -> ()>
   function.return %x : index
 }
 // -----
 #mapB = affine_map<()[] -> (22, 34)>
 function.def @produces_too_many() -> index {
-  // expected-error@+1 {{'llzk.applymap' op must produce exactly one value}}
-  %x = llzk.applymap() #mapB
+  // expected-error@+1 {{'poly.applymap' op must produce exactly one value}}
+  %x = poly.applymap() #mapB
   function.return %x : index
 }
 // -----
 function.def @no_dim_brackets(%a: index) -> index {
   // expected-error@+1 {{expected '(' in operand list}}
-  %x = llzk.applymap[%a] affine_map<()[s] -> (s)>
+  %x = poly.applymap[%a] affine_map<()[s] -> (s)>
   function.return %x : index
 }
 // -----
 function.def @has_dim_expected_sym(%a: index) -> index {
   // expected-error@+1 {{dimension operand count must equal affine map dimension count}}
-  %x = llzk.applymap(%a) affine_map<()[s] -> (s)>
+  %x = poly.applymap(%a) affine_map<()[s] -> (s)>
   function.return %x : index
 }
 // -----
 function.def @has_sym_expected_dim(%a: index) -> index {
   // expected-error@+1 {{dimension operand count must equal affine map dimension count}}
-  %x = llzk.applymap()[%a] affine_map<(s)[] -> (s)>
+  %x = poly.applymap()[%a] affine_map<(s)[] -> (s)>
   function.return %x : index
 }
 // -----
 function.def @has_sym_expected_none(%a: index) -> index {
-  // expected-error@+1 {{'llzk.applymap' op operand count must equal affine map dimension+symbol count}}
-  %x = llzk.applymap(%a)[%a] affine_map<(s)[] -> (s)>
+  // expected-error@+1 {{'poly.applymap' op operand count must equal affine map dimension+symbol count}}
+  %x = poly.applymap(%a)[%a] affine_map<(s)[] -> (s)>
   function.return %x : index
 }

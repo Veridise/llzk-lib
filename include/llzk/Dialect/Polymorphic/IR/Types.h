@@ -9,32 +9,17 @@
 
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/Dialect.h"
-#include "llzk/Util/ErrorHelper.h"
-#include "llzk/Util/SymbolLookup.h" // IWYU pragma: keep
-#include "llzk/Util/TypeHelper.h"
+#include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinTypes.h>
-#include <mlir/IR/Diagnostics.h>
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/Operation.h>
-#include <mlir/IR/SymbolTable.h>
-#include <mlir/IR/Types.h>
-#include <mlir/Interfaces/MemorySlotInterfaces.h>
-
-#include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/DenseMap.h>
-#include <llvm/ADT/STLFunctionalExtras.h>
-#include <llvm/ADT/StringRef.h>
-#include <llvm/ADT/TypeSwitch.h>
-
-#include <vector>
 
 // forward-declare ops
 #define GET_OP_FWD_DEFINES
-#include "llzk/Dialect/LLZK/IR/Ops.h.inc"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h.inc"
 
 // Include TableGen'd declarations
 #define GET_TYPEDEF_CLASSES
-#include "llzk/Dialect/LLZK/IR/Types.h.inc"
+#include "llzk/Dialect/Polymorphic/IR/Types.h.inc"

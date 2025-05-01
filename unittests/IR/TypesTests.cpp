@@ -9,7 +9,7 @@
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
 
 #include <gtest/gtest.h>
 
@@ -20,6 +20,7 @@ using namespace mlir;
 using namespace llzk::array;
 using namespace llzk::component;
 using namespace llzk::felt;
+using namespace llzk::polymorphic;
 
 class TypeTests : public LLZKTest {
 protected:

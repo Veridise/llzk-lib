@@ -30,8 +30,8 @@ module attributes {veridise.lang = "llzk"} {
       %self = struct.new : !struct.struct<@Unpack<[@N, @P, @Aff]>>
       struct.writef %self[@g] = %arg0 : !struct.struct<@Unpack<[@N, @P, @Aff]>>, !array.array<@Aff x !felt.felt>
 
-      %n = llzk.read_const @N : index
-      %p = llzk.read_const @P : index
+      %n = poly.read_const @N : index
+      %p = poly.read_const @P : index
       %0 = function.call @Bar::@compute() {()[%n,%p]} : () -> !struct.struct<@Bar<[#mapAdd]>>
       struct.writef %self[@f] = %0 : !struct.struct<@Unpack<[@N, @P, @Aff]>>, !struct.struct<@Bar<[#mapAdd]>>
 

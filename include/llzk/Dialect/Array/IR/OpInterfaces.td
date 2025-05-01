@@ -10,9 +10,11 @@
 #ifndef LLZK_ARRAY_OP_INTERFACES
 #define LLZK_ARRAY_OP_INTERFACES
 
+include "llzk/Dialect/Array/IR/Types.td"
+
+include "mlir/IR/Interfaces.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/Interfaces/MemorySlotInterfaces.td"
-include "llzk/Dialect/Array/IR/Types.td"
 
 def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
   let description = [{

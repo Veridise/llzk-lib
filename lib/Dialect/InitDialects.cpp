@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 
@@ -35,6 +36,7 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       llzk::function::FunctionDialect,
       llzk::include::IncludeDialect,
       llzk::string::StringDialect,
+      llzk::polymorphic::PolymorphicDialect,
       mlir::arith::ArithDialect,
       mlir::scf::SCFDialect
       // clang-format on

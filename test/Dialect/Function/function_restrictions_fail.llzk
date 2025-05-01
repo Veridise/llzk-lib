@@ -306,7 +306,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @compute() -> !struct.struct<@call_target_compute_multiple_ret<[@S]>> {
       %self = struct.new : !struct.struct<@call_target_compute_multiple_ret<[@S]>>
       // expected-error@+1 {{'function.call' op target "@compute" must have exactly one return type}}
-      function.call @S::@compute() : () -> (!llzk.tvar<@S>, i1)
+      function.call @S::@compute() : () -> (!poly.tvar<@S>, i1)
       function.return %self : !struct.struct<@call_target_compute_multiple_ret<[@S]>>
     }
 
@@ -332,14 +332,14 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @call_target_constrain_with_ret<[@S]> {
-    function.def @compute(%0: !llzk.tvar<@S>) -> !struct.struct<@call_target_constrain_with_ret<[@S]>> {
+    function.def @compute(%0: !poly.tvar<@S>) -> !struct.struct<@call_target_constrain_with_ret<[@S]>> {
       %self = struct.new : !struct.struct<@call_target_constrain_with_ret<[@S]>>
       function.return %self : !struct.struct<@call_target_constrain_with_ret<[@S]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@call_target_constrain_with_ret<[@S]>>, %0: !llzk.tvar<@S>) {
+    function.def @constrain(%self: !struct.struct<@call_target_constrain_with_ret<[@S]>>, %0: !poly.tvar<@S>) {
       // expected-error@+1 {{'function.call' op target "@constrain" must have no return type}}
-      function.call @S::@constrain(%0) : (!llzk.tvar<@S>) -> (!llzk.tvar<@S>, i1)
+      function.call @S::@constrain(%0) : (!poly.tvar<@S>) -> (!poly.tvar<@S>, i1)
       function.return
     }
   }
@@ -363,7 +363,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @call_target_compute_wrong_type_ret<[@S,@T]> {
     function.def @compute() -> !struct.struct<@call_target_compute_wrong_type_ret<[@S,@T]>> {
       %self = struct.new : !struct.struct<@call_target_compute_wrong_type_ret<[@S,@T]>>
-      // expected-error@+1 {{'function.call' op target "@compute" expected return type '!llzk.tvar<@S>' but found 'i1'}}
+      // expected-error@+1 {{'function.call' op target "@compute" expected return type '!poly.tvar<@S>' but found 'i1'}}
       function.call @S::@compute() : () -> i1
       function.return %self : !struct.struct<@call_target_compute_wrong_type_ret<[@S,@T]>>
     }
@@ -378,8 +378,8 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @call_target_compute_wrong_tvar_param_ret<[@S,@T]> {
     function.def @compute() -> !struct.struct<@call_target_compute_wrong_tvar_param_ret<[@S,@T]>> {
       %self = struct.new : !struct.struct<@call_target_compute_wrong_tvar_param_ret<[@S,@T]>>
-      // expected-error@+1 {{'function.call' op target "@compute" expected return type '!llzk.tvar<@S>' but found '!llzk.tvar<@T>'}}
-      function.call @S::@compute() : () -> !llzk.tvar<@T>
+      // expected-error@+1 {{'function.call' op target "@compute" expected return type '!poly.tvar<@S>' but found '!poly.tvar<@T>'}}
+      function.call @S::@compute() : () -> !poly.tvar<@T>
       function.return %self : !struct.struct<@call_target_compute_wrong_tvar_param_ret<[@S,@T]>>
     }
 
@@ -520,7 +520,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.struct<@call_target_constrain_without_self_non_struct<[@S]>>) {
       %0 = felt.const 1
-      // expected-error@+1 {{'function.call' op target "@constrain" expected first input type '!llzk.tvar<@S>' but found '!felt.felt'}}
+      // expected-error@+1 {{'function.call' op target "@constrain" expected first input type '!poly.tvar<@S>' but found '!felt.felt'}}
       function.call @S::@constrain(%0) : (!felt.felt) -> ()
       function.return
     }
@@ -551,14 +551,14 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @call_target_constrain_without_self_wrong_tvar_param<[@S,@T]> {
-    function.def @compute(%0: !llzk.tvar<@T>) -> !struct.struct<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>> {
+    function.def @compute(%0: !poly.tvar<@T>) -> !struct.struct<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>> {
       %self = struct.new : !struct.struct<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>
       function.return %self : !struct.struct<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>
     }
 
-    function.def @constrain(%self: !struct.struct<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>, %0: !llzk.tvar<@T>) {
-      // expected-error@+1 {{'function.call' op target "@constrain" expected first input type '!llzk.tvar<@S>' but found '!llzk.tvar<@T>}}
-      function.call @S::@constrain(%0) : (!llzk.tvar<@T>) -> ()
+    function.def @constrain(%self: !struct.struct<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>, %0: !poly.tvar<@T>) {
+      // expected-error@+1 {{'function.call' op target "@constrain" expected first input type '!poly.tvar<@S>' but found '!poly.tvar<@T>}}
+      function.call @S::@constrain(%0) : (!poly.tvar<@T>) -> ()
       function.return
     }
   }

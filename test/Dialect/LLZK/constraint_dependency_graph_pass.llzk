@@ -276,8 +276,8 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !struct.struct<@ArrayConstrain<[@A, @B]>>, %arr: !array.array<3 x !felt.felt>) {
-      %const0 = llzk.read_const @A : !felt.felt
-      %const2 = llzk.read_const @B : !felt.felt
+      %const0 = poly.read_const @A : !felt.felt
+      %const2 = poly.read_const @B : !felt.felt
       %0 = arith.constant 0 : index
       %2 = arith.constant 2 : index
       %elem0 = array.read %arr[%0] : !array.array<3 x !felt.felt>, !felt.felt

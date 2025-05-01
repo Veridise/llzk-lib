@@ -12,10 +12,6 @@ set(LLVM_TARGET_DEFINITIONS "Enums.td")
 mlir_tablegen(Enums.h.inc -gen-enum-decls)
 mlir_tablegen(Enums.cpp.inc -gen-enum-defs)
 
-set(LLVM_TARGET_DEFINITIONS "Types.td")
-mlir_tablegen(Types.h.inc -gen-typedef-decls -typedefs-dialect=llzk)
-mlir_tablegen(Types.cpp.inc -gen-typedef-defs -typedefs-dialect=llzk)
-
 set(LLVM_TARGET_DEFINITIONS "OpInterfaces.td")
 mlir_tablegen(OpInterfaces.h.inc --gen-op-interface-decls)
 mlir_tablegen(OpInterfaces.cpp.inc --gen-op-interface-defs)
