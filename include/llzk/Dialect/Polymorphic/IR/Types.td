@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_TEMPLATE_TYPES
-#define LLZK_TEMPLATE_TYPES
+#ifndef LLZK_POLYMORPHIC_TYPES
+#define LLZK_POLYMORPHIC_TYPES
 
 include "llzk/Dialect/Shared/Types.td"
 include "llzk/Dialect/Polymorphic/IR/Dialect.td"
@@ -61,4 +61,4 @@ class VarTypeOr<Type allowedConcreteType, string text = TypeVarSummary.r>
                  "TypeVarType,"#allowedConcreteType.cppClassName#">($_self)">,
            allowedConcreteType.summary#" or "#text, "::mlir::Type">;
 
-#endif // LLZK_TEMPLATE_TYPES
+#endif // LLZK_POLYMORPHIC_TYPES

@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_COMPONENT_OPS
-#define LLZK_COMPONENT_OPS
+#ifndef LLZK_STRUCT_OPS
+#define LLZK_STRUCT_OPS
 
 include "llzk/Dialect/Function/IR/OpTraits.td"
 include "llzk/Dialect/Struct/IR/Types.td"
@@ -179,7 +179,7 @@ def LLZK_FieldDefOp
   }];
 }
 
-class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
+class FieldRefOpBase<string mnemonic, list<Trait> traits = []>
     : StructDialectOp<
           mnemonic, traits#[DeclareOpInterfaceMethods<FieldRefOpInterface>,
                             DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
@@ -199,7 +199,7 @@ class LLZK_FieldRefOp<string mnemonic, list<Trait> traits = []>
 }
 
 def LLZK_FieldReadOp
-    : LLZK_FieldRefOp<"readf", [VerifySizesForMultiAffineOps<1>]> {
+    : FieldRefOpBase<"readf", [VerifySizesForMultiAffineOps<1>]> {
   let summary = "read value of a struct field";
   let description = [{
     This operation reads the value of a named field in a struct/component.
@@ -255,7 +255,7 @@ def LLZK_FieldReadOp
   let hasVerifier = 1;
 }
 
-def LLZK_FieldWriteOp : LLZK_FieldRefOp<"writef", [WitnessGen]> {
+def LLZK_FieldWriteOp : FieldRefOpBase<"writef", [WitnessGen]> {
   let summary = "write value to a struct field";
   let description = [{
     This operation writes a value to a named field in a struct/component.
@@ -292,4 +292,4 @@ def LLZK_CreateStructOp
   let assemblyFormat = [{ `:` type($result) attr-dict }];
 }
 
-#endif // LLZK_COMPONENT_OPS
+#endif // LLZK_STRUCT_OPS

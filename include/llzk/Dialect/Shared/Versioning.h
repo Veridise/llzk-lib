@@ -51,8 +51,8 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
 
   /// @brief Read the version of this dialect from the provided reader and return it as
   /// a `unique_ptr` to a dialect version object (or nullptr on failure).
-  std::unique_ptr<mlir::DialectVersion>
-  readVersion(mlir::DialectBytecodeReader &reader) const override {
+  std::unique_ptr<mlir::DialectVersion> readVersion(mlir::DialectBytecodeReader &reader
+  ) const override {
     auto versionOr = LLZKDialectVersion::read(reader);
     if (mlir::failed(versionOr)) {
       return nullptr;

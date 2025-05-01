@@ -65,7 +65,7 @@ def LLZK_GlobalDefOp
   }];
 }
 
-class LLZK_GlobalRefOp<string mnemonic, list<Trait> traits = []>
+class GlobalRefOpBase<string mnemonic, list<Trait> traits = []>
     : GlobalDialectOp<
           mnemonic, traits#[DeclareOpInterfaceMethods<GlobalRefOpInterface>,
                             DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
@@ -77,7 +77,7 @@ class LLZK_GlobalRefOp<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-def LLZK_GlobalReadOp : LLZK_GlobalRefOp<"read"> {
+def LLZK_GlobalReadOp : GlobalRefOpBase<"read"> {
   let summary = "read value of a global";
   let description = [{
     This operation reads the value of a named global.
@@ -91,7 +91,7 @@ def LLZK_GlobalReadOp : LLZK_GlobalRefOp<"read"> {
   }];
 }
 
-def LLZK_GlobalWriteOp : LLZK_GlobalRefOp<"write", [WitnessGen]> {
+def LLZK_GlobalWriteOp : GlobalRefOpBase<"write", [WitnessGen]> {
   let summary = "write value to a global";
   let description = [{
     This operation writes a value to a named global.

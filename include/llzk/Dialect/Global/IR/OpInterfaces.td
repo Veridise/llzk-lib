@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_OP_INTERFACES
-#define LLZK_OP_INTERFACES
+#ifndef LLZK_GLOBAL_OP_INTERFACES
+#define LLZK_GLOBAL_OP_INTERFACES
 
 include "mlir/IR/Interfaces.td"
 
@@ -34,4 +34,4 @@ def GlobalRefOpInterface : OpInterface<"GlobalRefOpInterface"> {
   }];
 }
 
-#endif // LLZK_OP_INTERFACES
+#endif // LLZK_GLOBAL_OP_INTERFACES

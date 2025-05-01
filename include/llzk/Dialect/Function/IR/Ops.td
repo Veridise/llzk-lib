@@ -27,7 +27,7 @@ include "mlir/Interfaces/FunctionInterfaces.td"
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-class LLZK_Function_Op<string mnemonic, list<Trait> traits = []>
+class FunctionDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<FunctionDialect, mnemonic, traits>;
 
 //===----------------------------------------------------------------------===//
@@ -35,11 +35,11 @@ class LLZK_Function_Op<string mnemonic, list<Trait> traits = []>
 //===----------------------------------------------------------------------===//
 
 def FuncDefOp
-    : LLZK_Function_Op<"def", [ParentOneOf<["::mlir::ModuleOp",
-                                            "::llzk::component::StructDefOp"]>,
-                               DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                               AffineScope, AutomaticAllocationScope,
-                               FunctionOpInterface, IsolatedFromAbove]> {
+    : FunctionDialectOp<
+          "def",
+          [ParentOneOf<["::mlir::ModuleOp", "::llzk::component::StructDefOp"]>,
+           DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
+           AutomaticAllocationScope, FunctionOpInterface, IsolatedFromAbove]> {
   // NOTE: Cannot have SymbolTable trait because that would cause global
   // functions without a body to produce "Operations with a 'SymbolTable' must
   // have exactly one block"
@@ -210,9 +210,9 @@ def FuncDefOp
 //===----------------------------------------------------------------------===//
 
 def ReturnOp
-    : LLZK_Function_Op<"return", [HasParent<"::llzk::function::FuncDefOp">,
-                                  Pure, MemRefsNormalizable, ReturnLike,
-                                  Terminator]> {
+    : FunctionDialectOp<"return", [HasParent<"::llzk::function::FuncDefOp">,
+                                   Pure, MemRefsNormalizable, ReturnLike,
+                                   Terminator]> {
   let summary = "Function return operation";
   let description = [{
     The `function.return` operation represents a return operation within a function.
@@ -244,7 +244,7 @@ def ReturnOp
 // CallOp
 //===----------------------------------------------------------------------===//
 
-def CallOp : LLZK_Function_Op<
+def CallOp : FunctionDialectOp<
                  "call", [MemRefsNormalizable, AttrSizedOperandSegments,
                           VerifySizesForMultiAffineOps<1>,
                           DeclareOpInterfaceMethods<CallOpInterface>,

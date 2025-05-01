@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_COMPONENT_OP_INTERFACES
-#define LLZK_COMPONENT_OP_INTERFACES
+#ifndef LLZK_STRUCT_OP_INTERFACES
+#define LLZK_STRUCT_OP_INTERFACES
 
 include "llzk/Dialect/Struct/IR/Types.td"
 
@@ -52,4 +52,4 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
   }];
 }
 
-#endif // LLZK_COMPONENT_OP_INTERFACES
+#endif // LLZK_STRUCT_OP_INTERFACES

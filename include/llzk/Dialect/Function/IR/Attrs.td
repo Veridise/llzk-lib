@@ -14,14 +14,14 @@ include "llzk/Dialect/Function/IR/Dialect.td"
 
 include "mlir/IR/AttrTypeBase.td"
 
-class LLZK_Function_Attr<string name, string attrMnemonic,
-                         list<Trait> traits = []>
+class FunctionDialectAttr<string name, string attrMnemonic,
+                          list<Trait> traits = []>
     : AttrDef<FunctionDialect, name, traits> {
   let mnemonic = attrMnemonic;
 }
 
 def LLZK_AllowConstraintAttr
-    : LLZK_Function_Attr<"AllowConstraint", "allow_constraint"> {
+    : FunctionDialectAttr<"AllowConstraint", "allow_constraint"> {
   let summary = "Marks functions to allow `ConstraintGen` ops";
   let description = [{
     A unit attribute that can be attached to a `FuncDefOp` to indicate that ops
@@ -30,7 +30,7 @@ def LLZK_AllowConstraintAttr
 }
 
 def LLZK_AllowWitnessAttr
-    : LLZK_Function_Attr<"AllowWitness", "allow_witness"> {
+    : FunctionDialectAttr<"AllowWitness", "allow_witness"> {
   let summary = "Marks functions to allow `WitnessGen` ops";
   let description = [{
     A unit attribute that can be attached to a `FuncDefOp` to indicate that ops

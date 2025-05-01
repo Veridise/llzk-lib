@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_TEMPLATE_OPS
-#define LLZK_TEMPLATE_OPS
+#ifndef LLZK_POLYMORPHIC_OPS
+#define LLZK_POLYMORPHIC_OPS
 
 include "llzk/Dialect/Polymorphic/IR/Dialect.td"
 include "llzk/Dialect/Polymorphic/IR/Types.td"
@@ -150,4 +150,4 @@ def LLZK_ApplyMapOp : PolymorphicDialectOp<"applymap", [Pure]> {
   }];
 }
 
-#endif // LLZK_TEMPLATE_OPS
+#endif // LLZK_POLYMORPHIC_OPS

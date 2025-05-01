@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_INCLUDE_INLINE_INCLUDES_PASS_TD
-#define LLZK_INCLUDE_INLINE_INCLUDES_PASS_TD
+#ifndef LLZK_INCLUDE_INLINE_PASS_TD
+#define LLZK_INCLUDE_INLINE_PASS_TD
 
 include "llzk/Pass/PassBase.td"
 
@@ -17,4 +17,4 @@ def InlineIncludesPass : LLZKPass<"llzk-inline-includes"> {
   let constructor = "llzk::include::createInlineIncludesPass()";
 }
 
-#endif // LLZK_INCLUDE_INLINE_INCLUDES_PASS_TD
+#endif // LLZK_INCLUDE_INLINE_PASS_TD

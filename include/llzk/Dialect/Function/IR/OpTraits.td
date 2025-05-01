@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_FUNCTION_INTERFACE
-#define LLZK_FUNCTION_INTERFACE
+#ifndef LLZK_FUNCTION_TRAITS
+#define LLZK_FUNCTION_TRAITS
 
 include "mlir/IR/OpBase.td"
 
@@ -24,4 +24,4 @@ def ConstraintGen : NativeOpTrait<"ConstraintGen">, StructuralOpTrait {
   string cppNamespace = "::llzk::function";
 }
 
-#endif // LLZK_FUNCTION_INTERFACE
+#endif // LLZK_FUNCTION_TRAITS

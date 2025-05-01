@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_COMPONENT_TYPES
-#define LLZK_COMPONENT_TYPES
+#ifndef LLZK_STRUCT_TYPES
+#define LLZK_STRUCT_TYPES
 
 include "llzk/Dialect/Shared/Types.td"
 include "llzk/Dialect/Struct/IR/Dialect.td"
@@ -18,12 +18,13 @@ include "mlir/IR/BuiltinTypes.td"
 include "mlir/Interfaces/MemorySlotInterfaces.td"
 include "mlir/IR/BuiltinTypeInterfaces.td"
 
-class LLZK_Type<string name, string typeMnemonic, list<Trait> traits = []>
+class StructDialectType<string name, string typeMnemonic,
+                        list<Trait> traits = []>
     : TypeDef<StructDialect, name, traits> {
   let mnemonic = typeMnemonic;
 }
 
-def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
+def LLZK_StructType : StructDialectType<"Struct", "struct"> {
   let summary = "circuit component";
   let description = [{}];
 
@@ -78,4 +79,4 @@ def LLZK_StructType : LLZK_Type<"Struct", "struct"> {
   }];
 }
 
-#endif // LLZK_COMPONENT_TYPES
+#endif // LLZK_STRUCT_TYPES

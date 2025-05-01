@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_COMPONENT_DIALECT
-#define LLZK_COMPONENT_DIALECT
+#ifndef LLZK_STRUCT_DIALECT
+#define LLZK_STRUCT_DIALECT
 
 include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
@@ -24,4 +24,4 @@ def StructDialect : Dialect {
   let useDefaultTypePrinterParser = true;
 }
 
-#endif // LLZK_COMPONENT_DIALECT
+#endif // LLZK_STRUCT_DIALECT

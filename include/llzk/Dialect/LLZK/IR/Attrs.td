@@ -17,12 +17,12 @@ include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinAttributeInterfaces.td"
 include "mlir/IR/EnumAttr.td"
 
-class LLZK_Attr<string name, string attrMnemonic, list<Trait> traits = []>
+class LLZKDialectAttr<string name, string attrMnemonic, list<Trait> traits = []>
     : AttrDef<LLZKDialect, name, traits> {
   let mnemonic = attrMnemonic;
 }
 
-def LLZK_PubModifierAttr : LLZK_Attr<"Public", "pub"> {
+def LLZK_PublicAttr : LLZKDialectAttr<"Public", "pub"> {
   let summary = "A unit attribute to mark a type as public";
   let description = [{
     Examples:
@@ -35,7 +35,7 @@ def LLZK_PubModifierAttr : LLZK_Attr<"Public", "pub"> {
   }];
 }
 
-def LLZK_LoopBounds : LLZK_Attr<"LoopBounds", "loopbounds"> {
+def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
   let summary = "Annotation with the bounds of a loop";
   let description = [{
     This attribute holds information useful for the analysis of loops.
