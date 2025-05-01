@@ -29,7 +29,7 @@ template <typename OpType> inline llvm::StringLiteral getOperationName() {
 }
 
 /// Return the closest surrounding parent operation that is of type 'OpType'.
-template <typename OpType> mlir::FailureOr<OpType> getParentOfType(mlir::Operation *op) {
+template <typename OpType> inline mlir::FailureOr<OpType> getParentOfType(mlir::Operation *op) {
   if (OpType p = op->getParentOfType<OpType>()) {
     return p;
   } else {

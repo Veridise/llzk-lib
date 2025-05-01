@@ -11,7 +11,7 @@
 
 #include "llzk/Dialect/Function/IR/OpTraits.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
-#include "llzk/Dialect/Shared/Ops.h"
+#include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
 #include <mlir/IR/OpDefinition.h>

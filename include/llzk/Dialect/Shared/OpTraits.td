@@ -10,6 +10,8 @@
 #ifndef LLZK_SHARED_OP_HELPER
 #define LLZK_SHARED_OP_HELPER
 
+// TODO: these are all traits!
+
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
@@ -121,39 +123,5 @@ class ArrayElemTypeUnifyWithResult<string arrayArg>
 class ArrayTypeElemsUnifyWithResultCustomInfer<string arrayArg>
     : TraitList<[ArrayElemTypeUnifyWithResult<arrayArg>,
                  InferTypeOpAdaptorWithIsCompatible]>;
-
-//===------------------------------------------------------------------===//
-// Op Classes
-//===------------------------------------------------------------------===//
-
-class NaryOpBase<Dialect dialect, string mnemonic, string defaultTypeBuilder,
-                 list<Trait> traits = []> : Op<dialect, mnemonic, traits> {
-  let extraClassDeclaration = [{
-    static ::mlir::ParseResult parseInferredOrParsedType(
-        ::mlir::OpAsmParser &parser, ::mlir::Type &opType, bool isFirst
-    ) {
-      if (mlir::succeeded(isFirst ? parser.parseOptionalColon() : parser.parseOptionalComma())) {
-        // If there is a comma, parse the `opType`
-        mlir::Type type;
-        if (parser.parseCustomTypeWithFallback(type)) {
-          return mlir::failure();
-        }
-        opType = type;
-      } else {
-        // Otherwise, build the default type
-        opType =
-        }]#!subst("$_builder", "parser.getBuilder()", defaultTypeBuilder)#[{;
-      }
-      return mlir::success();
-    }
-
-    static void printInferredOrParsedType(::mlir::OpAsmPrinter &printer,
-        ::mlir::Operation *op, ::mlir::Type opType, bool isFirst
-    ) {
-      printer << (isFirst ? " : " : ", ");
-      printer.printStrippedAttrOrType(opType);
-    }
-  }];
-}
 
 #endif // LLZK_SHARED_OP_HELPER

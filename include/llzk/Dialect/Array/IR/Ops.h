@@ -11,7 +11,7 @@
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Dialect/Array/IR/Types.h"
-#include "llzk/Dialect/Shared/Ops.h"
+#include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>

@@ -10,16 +10,15 @@
 #ifndef LLZK_CONSTRAIN_OPS
 #define LLZK_CONSTRAIN_OPS
 
-include "llzk/Dialect/Shared/Types.td"
-include "llzk/Dialect/Shared/Ops.td"
+include "llzk/Dialect/Array/IR/Types.td"
 include "llzk/Dialect/Constrain/IR/Dialect.td"
 include "llzk/Dialect/Constrain/IR/OpInterfaces.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
+include "llzk/Dialect/Shared/Types.td"
+include "llzk/Dialect/Shared/OpTraits.td"
 
-include "llzk/Dialect/Array/IR/Types.td"
-
-include "mlir/IR/OpBase.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
+include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
 //===------------------------------------------------------------------===//

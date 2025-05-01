@@ -16,10 +16,10 @@
 #define LLZK_STRUCT_OPS
 
 include "llzk/Dialect/Function/IR/OpTraits.td"
-include "llzk/Dialect/Struct/IR/Types.td"
 include "llzk/Dialect/Struct/IR/Dialect.td"
 include "llzk/Dialect/Struct/IR/OpInterfaces.td"
-include "llzk/Dialect/Shared/Ops.td"
+include "llzk/Dialect/Struct/IR/Types.td"
+include "llzk/Dialect/Shared/OpTraits.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/RegionKindInterface.td"

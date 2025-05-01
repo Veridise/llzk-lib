@@ -10,15 +10,38 @@
 #ifndef LLZK_OPS_BASE
 #define LLZK_OPS_BASE
 
-include "llzk/Dialect/Shared/Ops.td"
+include "llzk/Dialect/Shared/OpTraits.td"
 include "llzk/Dialect/Polymorphic/IR/Types.td"
 
-include "mlir/IR/OpBase.td"
-include "mlir/IR/SymbolInterfaces.td"
+class NaryOpBase<Dialect dialect, string mnemonic, string defaultTypeBuilder,
+                 list<Trait> traits = []> : Op<dialect, mnemonic, traits> {
+  let extraClassDeclaration = [{
+    static ::mlir::ParseResult parseInferredOrParsedType(
+        ::mlir::OpAsmParser &parser, ::mlir::Type &opType, bool isFirst
+    ) {
+      if (mlir::succeeded(isFirst ? parser.parseOptionalColon() : parser.parseOptionalComma())) {
+        // If there is a comma, parse the `opType`
+        mlir::Type type;
+        if (parser.parseCustomTypeWithFallback(type)) {
+          return mlir::failure();
+        }
+        opType = type;
+      } else {
+        // Otherwise, build the default type
+        opType =
+        }]#!subst("$_builder", "parser.getBuilder()", defaultTypeBuilder)#[{;
+      }
+      return mlir::success();
+    }
 
-//===----------------------------------------------------------------------===//
-// Base Op classes
-//===----------------------------------------------------------------------===//
+    static void printInferredOrParsedType(::mlir::OpAsmPrinter &printer,
+        ::mlir::Operation *op, ::mlir::Type opType, bool isFirst
+    ) {
+      printer << (isFirst ? " : " : ", ");
+      printer.printStrippedAttrOrType(opType);
+    }
+  }];
+}
 
 // Note: `resultType.builderCall` must not be empty
 class BinaryOpBase<Dialect dialect, string mnemonic, Type resultType,
