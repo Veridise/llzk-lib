@@ -777,7 +777,7 @@ module attributes {veridise.lang = "llzk"} {
       // expected-note@+1 {{Signal struct value is read here}}
       %reg = struct.readf %s[@reg] : !Signal, !felt.felt
       %f0 = felt.const 0
-      %b = llzk.cmp eq(%reg, %f0)
+      %b = bool.cmp eq(%reg, %f0)
       %t = scf.if %b -> !felt.felt {
         scf.yield %f0 : !felt.felt
       } else {

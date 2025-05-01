@@ -227,7 +227,7 @@ module attributes {veridise.lang = "llzk"} {
       %o = felt.const 1
       struct.writef %self[@zero] = %z : !struct.struct<@IsZero>, !felt.felt
       struct.writef %self[@one] = %o : !struct.struct<@IsZero>, !felt.felt
-      %b = llzk.cmp eq(%a, %z)
+      %b = bool.cmp eq(%a, %z)
       %0 = scf.if %b -> !felt.felt {
         %z1 = struct.readf %self[@zero] : !struct.struct<@IsZero>, !felt.felt
         scf.yield %z1 : !felt.felt
@@ -265,7 +265,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[VAL_3:.*]] = felt.const  1
 // CHECK-NEXT:      struct.writef %[[VAL_1]][@zero] = %[[VAL_2]] : <@IsZero>, !felt.felt
 // CHECK-NEXT:      struct.writef %[[VAL_1]][@one] = %[[VAL_3]] : <@IsZero>, !felt.felt
-// CHECK-NEXT:      %[[VAL_4:.*]] = llzk.cmp eq(%[[VAL_0]], %[[VAL_2]])
+// CHECK-NEXT:      %[[VAL_4:.*]] = bool.cmp eq(%[[VAL_0]], %[[VAL_2]])
 // CHECK-NEXT:      %[[VAL_5:.*]] = scf.if %[[VAL_4]] -> (!felt.felt) {
 // CHECK-NEXT:        scf.yield %[[VAL_2]] : !felt.felt
 // CHECK-NEXT:      } else {

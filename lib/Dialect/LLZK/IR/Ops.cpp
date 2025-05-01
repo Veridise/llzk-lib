@@ -39,17 +39,4 @@ using namespace mlir;
 
 namespace llzk {
 
-//===------------------------------------------------------------------===//
-// AssertOp
-//===------------------------------------------------------------------===//
-
-// This side effect models "program termination".
-// Based on
-// https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97
-void AssertOp::getEffects(
-    SmallVectorImpl<SideEffects::EffectInstance<MemoryEffects::Effect>> &effects
-) {
-  effects.emplace_back(MemoryEffects::Write::get());
-}
-
 } // namespace llzk

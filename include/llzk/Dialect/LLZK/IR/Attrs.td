@@ -23,17 +23,6 @@ class LLZK_Attr<string name, string attrMnemonic, list<Trait> traits = []>
   let mnemonic = attrMnemonic;
 }
 
-class LLZK_EnumAttr<EnumAttrInfo enum, string name, string enumMnemonic,
-                    list<Trait> traits = []>
-    : EnumAttr<LLZKDialect, enum, name, traits> {
-  let mnemonic = enumMnemonic;
-}
-
-def LLZK_CmpPredicateAttr
-    : LLZK_EnumAttr<LLZK_FeltCmpPredicate, "cmp_predicate", "cmp"> {
-  let assemblyFormat = [{ $value }];
-}
-
 def LLZK_PubModifierAttr : LLZK_Attr<"Public", "pub"> {
   let summary = "A unit attribute to mark a type as public";
   let description = [{

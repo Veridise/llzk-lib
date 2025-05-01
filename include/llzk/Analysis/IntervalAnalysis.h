@@ -14,6 +14,7 @@
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
@@ -499,7 +500,8 @@ public:
   mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  cmp(llvm::SMTSolverRef solver, boolean::CmpOp op, const ExpressionValue &lhs,
+      const ExpressionValue &rhs);
 
   /// @brief Computes a solver expression based on the operation, but computes a fallback
   /// interval (which is just Entire, or unknown). Used for currently unsupported compute-only
@@ -663,7 +665,7 @@ private:
     return mlir::isa<
         felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::ModFeltOp,
         felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp, felt::XorFeltOp,
-        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, CmpOp>(op);
+        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp>(op);
   }
 
   ExpressionValue
@@ -681,7 +683,9 @@ private:
   applyInterval(mlir::Operation *originalOp, Lattice *after, mlir::Value val, Interval newInterval);
 
   bool isBoolOp(mlir::Operation *op) const {
-    return mlir::isa<AndBoolOp, OrBoolOp, XorBoolOp, NotBoolOp>(op);
+    return mlir::isa<boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(
+        op
+    );
   }
 
   bool isConversionOp(mlir::Operation *op) const {
@@ -690,7 +694,7 @@ private:
 
   bool isApplyMapOp(mlir::Operation *op) const { return mlir::isa<polymorphic::ApplyMapOp>(op); }
 
-  bool isAssertOp(mlir::Operation *op) const { return mlir::isa<AssertOp>(op); }
+  bool isAssertOp(mlir::Operation *op) const { return mlir::isa<boolean::AssertOp>(op); }
 
   bool isReadOp(mlir::Operation *op) const {
     return mlir::isa<component::FieldReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);

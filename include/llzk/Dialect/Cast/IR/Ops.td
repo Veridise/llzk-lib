@@ -26,7 +26,7 @@ def LLZK_IntToFeltOp : Op<CastDialect, "tofelt", [Pure]> {
     Example:
 
     ```llzk
-    %0 = llzk.cmp lt(%a, %b)
+    %0 = bool.cmp lt(%a, %b)
     %1 = cast.tofelt %0 : i1
     ```
   }];

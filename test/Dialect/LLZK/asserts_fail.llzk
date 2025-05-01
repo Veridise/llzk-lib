@@ -4,7 +4,7 @@ function.def @wrong_arg_type(
       %c: !felt.felt // expected-note {{prior use here}}
     ) -> !felt.felt {
   // expected-error@+1 {{use of value '%c' expects different type than prior uses: 'i1' vs '!felt.felt'}}
-  llzk.assert %c
+  bool.assert %c
   function.return %c : !felt.felt
 }
 // -----
@@ -17,7 +17,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = struct.new : !struct.struct<@Component01<[@T]>>
       // I doubt there's any reason to support type variable used as the assert condition.
       // expected-error@+1 {{use of value '%c' expects different type than prior uses: 'i1' vs '!poly.tvar<@T>'}}
-      llzk.assert %c
+      bool.assert %c
       function.return %self : !struct.struct<@Component01<[@T]>>
     }
 

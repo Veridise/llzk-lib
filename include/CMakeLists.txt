@@ -22,6 +22,7 @@ install(
 add_subdirectory(llzk/Analysis)
 add_subdirectory(llzk/Config)
 add_subdirectory(llzk/Dialect/Array/IR)
+add_subdirectory(llzk/Dialect/Bool/IR)
 add_subdirectory(llzk/Dialect/Cast/IR)
 add_subdirectory(llzk/Dialect/Constrain/IR)
 add_subdirectory(llzk/Dialect/Felt/IR)

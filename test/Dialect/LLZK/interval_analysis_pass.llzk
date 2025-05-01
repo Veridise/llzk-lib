@@ -33,10 +33,10 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.struct<@CmpConstraint>, %a: !felt.felt, %b: !felt.felt) {
       %x = felt.const 1
       %y = felt.const 2
-      %cmpA = llzk.cmp gt(%a, %x)
-      llzk.assert %cmpA
-      %cmpB = llzk.cmp le(%b, %y)
-      llzk.assert %cmpB
+      %cmpA = bool.cmp gt(%a, %x)
+      bool.assert %cmpA
+      %cmpB = bool.cmp le(%b, %y)
+      bool.assert %cmpB
       function.return
     }
   }
@@ -63,10 +63,10 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.struct<@FieldRangeConstraint>, %a: !felt.felt, %b: !felt.felt) {
       %x = felt.const 1
       %y = felt.const 2
-      %cmpA = llzk.cmp gt(%a, %x)
-      llzk.assert %cmpA
-      %cmpB = llzk.cmp le(%b, %y)
-      llzk.assert %cmpB
+      %cmpA = bool.cmp gt(%a, %x)
+      bool.assert %cmpA
+      %cmpB = bool.cmp le(%b, %y)
+      bool.assert %cmpB
       %foo = struct.readf %self[@foo] : !struct.struct<@FieldRangeConstraint>, !felt.felt
       constrain.eq %foo, %x : !felt.felt
       %bar = struct.readf %self[@bar] : !struct.struct<@FieldRangeConstraint>, !felt.felt
@@ -97,14 +97,14 @@ module attributes {veridise.lang = "llzk"} {
       %5 = felt.const 5
       %7 = felt.const 7
       %11 = felt.const 11
-      %cmp1 = llzk.cmp ge(%a, %5)
-      llzk.assert %cmp1
-      %cmp2 = llzk.cmp le(%a, %7)
-      llzk.assert %cmp2
-      %cmp3 = llzk.cmp gt(%b, %7)
-      llzk.assert %cmp3
-      %cmp4 = llzk.cmp le(%b, %11)
-      llzk.assert %cmp4
+      %cmp1 = bool.cmp ge(%a, %5)
+      bool.assert %cmp1
+      %cmp2 = bool.cmp le(%a, %7)
+      bool.assert %cmp2
+      %cmp3 = bool.cmp gt(%b, %7)
+      bool.assert %cmp3
+      %cmp4 = bool.cmp le(%b, %11)
+      bool.assert %cmp4
 
       %mul = felt.mul %a, %5
       %sub = felt.sub %mul, %5
@@ -114,8 +114,8 @@ module attributes {veridise.lang = "llzk"} {
       %final = felt.add %mul, %neg
 
       %0 = felt.const 0
-      %notzero = llzk.cmp ne(%final, %0)
-      llzk.assert %notzero
+      %notzero = bool.cmp ne(%final, %0)
+      bool.assert %notzero
 
       function.return
     }
@@ -150,14 +150,14 @@ module attributes {veridise.lang = "llzk"} {
       %a = array.read %arr[%i0] : !array.array<3 x !felt.felt>, !felt.felt
       %b = array.read %arr[%i1] : !array.array<3 x !felt.felt>, !felt.felt
       %c = array.read %arr[%i2] : !array.array<3 x !felt.felt>, !felt.felt
-      %cmp1 = llzk.cmp ge(%a, %5)
-      llzk.assert %cmp1
-      %cmp2 = llzk.cmp le(%a, %7)
-      llzk.assert %cmp2
-      %cmp3 = llzk.cmp ge(%b, %7)
-      llzk.assert %cmp3
-      %cmp4 = llzk.cmp le(%b, %11)
-      llzk.assert %cmp4
+      %cmp1 = bool.cmp ge(%a, %5)
+      bool.assert %cmp1
+      %cmp2 = bool.cmp le(%a, %7)
+      bool.assert %cmp2
+      %cmp3 = bool.cmp ge(%b, %7)
+      bool.assert %cmp3
+      %cmp4 = bool.cmp le(%b, %11)
+      bool.assert %cmp4
 
       constrain.eq %c, %a : !felt.felt
 
@@ -224,10 +224,10 @@ module attributes {veridise.lang = "llzk"} {
       %b0 = struct.readf %self[@b0] : !struct.struct<@ByteDecompCorrect>, !felt.felt
       %b1 = struct.readf %self[@b1] : !struct.struct<@ByteDecompCorrect>, !felt.felt
       %256 = felt.const 256
-      %b0_is_byte = llzk.cmp lt(%b0, %256)
-      %b1_is_byte = llzk.cmp lt(%b1, %256)
-      llzk.assert %b0_is_byte
-      llzk.assert %b1_is_byte
+      %b0_is_byte = bool.cmp lt(%b0, %256)
+      %b1_is_byte = bool.cmp lt(%b1, %256)
+      bool.assert %b0_is_byte
+      bool.assert %b1_is_byte
       %b1_mul = felt.mul %b1, %256
       %reconstructed = felt.add %b1_mul, %b0
       constrain.eq %reconstructed, %u16 : !felt.felt
@@ -272,8 +272,8 @@ module attributes {veridise.lang = "llzk"} {
       %b1 = struct.readf %self[@b1] : !struct.struct<@ByteDecompPartial>, !felt.felt
       %256 = felt.const 256
       %u16upper = felt.mul %256, %256
-      %is_u16 = llzk.cmp lt(%u16, %u16upper)
-      llzk.assert %is_u16
+      %is_u16 = bool.cmp lt(%u16, %u16upper)
+      bool.assert %is_u16
       %b1_mul = felt.mul %b1, %256
       %reconstructed = felt.add %b1_mul, %b0
       // u16 is constrained to be 16 bites, but b0 and b1 aren't guaranteed to

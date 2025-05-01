@@ -1,45 +1,45 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
 function.def @f_and(%a: i1, %b: i1) -> i1 attributes {function.allow_witness} {
-  %c = llzk.and %a, %b
+  %c = bool.and %a, %b
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_and
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.and %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.and %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
 function.def @f_or(%a: i1, %b: i1) -> i1 attributes {function.allow_witness} {
-  %c = llzk.or %a, %b
+  %c = bool.or %a, %b
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_or
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.or %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.or %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
 function.def @f_xor(%a: i1, %b: i1) -> i1 attributes {function.allow_witness} {
-  %c = llzk.xor %a, %b
+  %c = bool.xor %a, %b
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_xor
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.xor %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.xor %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
 function.def @f_not(%a: i1) -> i1 attributes {function.allow_witness} {
-  %c = llzk.not %a
+  %c = bool.not %a
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_not
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = llzk.not %[[A0]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.not %[[A0]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
@@ -54,10 +54,10 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.struct<@ComponentA>, %a: !F, %b: !F, %c: !F, %d: !F, %e: !F, %f: !F) {
       %0 = arith.constant 1 : i1
-      %1 = llzk.cmp eq(%e, %f)
-      %2 = llzk.cmp lt(%c, %d)
+      %1 = bool.cmp eq(%e, %f)
+      %2 = bool.cmp lt(%c, %d)
       %3 = arith.andi %1, %2 : i1
-      %4 = llzk.cmp eq(%a, %b)
+      %4 = bool.cmp eq(%a, %b)
       %5 = arith.ori %3, %4 : i1
       constrain.eq %5, %0 : i1
       function.return
@@ -74,10 +74,10 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.struct<@ComponentA>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V9:[0-9a-zA-Z_\.]+]]: !felt.felt,
 // CHECK-SAME:      %[[V10:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V11:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V13:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
 // CHECK-NEXT:        %[[V14:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:        %[[V15:[0-9a-zA-Z_\.]+]] = llzk.cmp eq(%[[V12]], %[[V13]])
-// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = llzk.cmp lt(%[[V10]], %[[V11]])
+// CHECK-NEXT:        %[[V15:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[V12]], %[[V13]])
+// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[V10]], %[[V11]])
 // CHECK-NEXT:        %[[V17:[0-9a-zA-Z_\.]+]] = arith.andi %[[V15]], %[[V16]] : i1
-// CHECK-NEXT:        %[[V18:[0-9a-zA-Z_\.]+]] = llzk.cmp eq(%[[V8]], %[[V9]])
+// CHECK-NEXT:        %[[V18:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[V8]], %[[V9]])
 // CHECK-NEXT:        %[[V19:[0-9a-zA-Z_\.]+]] = arith.ori %[[V17]], %[[V18]] : i1
 // CHECK-NEXT:        constrain.eq %[[V19]], %[[V14]] : i1, i1
 // CHECK-NEXT:        function.return

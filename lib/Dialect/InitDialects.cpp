@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
+#include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
@@ -31,6 +32,7 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       // clang-format off
       llzk::LLZKDialect,
       llzk::array::ArrayDialect,
+      llzk::boolean::BoolDialect,
       llzk::cast::CastDialect,
       llzk::component::StructDialect,
       llzk::constrain::ConstrainDialect,

@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/CallGraphAnalyses.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
@@ -37,6 +38,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace llzk;
+using namespace llzk::boolean;
 using namespace llzk::component;
 using namespace llzk::constrain;
 using namespace llzk::function;

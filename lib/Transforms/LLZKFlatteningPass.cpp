@@ -357,9 +357,10 @@ newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionT
 ConversionTarget newBaseTarget(MLIRContext *ctx) {
   ConversionTarget target(*ctx);
   target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, component::StructDialect, constrain::ConstrainDialect,
-      felt::FeltDialect, function::FunctionDialect, global::GlobalDialect, include::IncludeDialect,
-      polymorphic::PolymorphicDialect, arith::ArithDialect, scf::SCFDialect>();
+      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, component::StructDialect,
+      constrain::ConstrainDialect, felt::FeltDialect, function::FunctionDialect,
+      global::GlobalDialect, include::IncludeDialect, polymorphic::PolymorphicDialect,
+      arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   return target;
 }

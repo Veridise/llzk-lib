@@ -47,17 +47,17 @@ module attributes {veridise.lang = "llzk"} {
       %c3 = arith.constant 3 : index
       %3 = array.read %arg0[%c3] : <4 x !felt.felt>, !felt.felt
       %felt_const_0 = felt.const  0
-      %4 = llzk.cmp eq(%0, %felt_const_0)
+      %4 = bool.cmp eq(%0, %felt_const_0)
       %felt_const_0_0 = felt.const  0
-      %5 = llzk.cmp eq(%1, %felt_const_0_0)
+      %5 = bool.cmp eq(%1, %felt_const_0_0)
       %felt_const_0_1 = felt.const  0
-      %6 = llzk.cmp eq(%2, %felt_const_0_1)
+      %6 = bool.cmp eq(%2, %felt_const_0_1)
       %felt_const_0_2 = felt.const  0
-      %7 = llzk.cmp eq(%3, %felt_const_0_2)
-      %8 = llzk.and %4, %5 : i1, i1
-      %9 = llzk.and %8, %6 : i1, i1
-      %10 = llzk.and %9, %7 : i1, i1
-      llzk.assert %10, "failed assertion: extended field element is not equal to zero"
+      %7 = bool.cmp eq(%3, %felt_const_0_2)
+      %8 = bool.and %4, %5 : i1, i1
+      %9 = bool.and %8, %6 : i1, i1
+      %10 = bool.and %9, %7 : i1, i1
+      bool.assert %10, "failed assertion: extended field element is not equal to zero"
       %11 = function.call @Component::@compute() : () -> !struct.struct<@Component<[]>>
       struct.writef %self[@"$super"] = %11 : <@EqzExt<[]>>, !struct.struct<@Component<[]>>
       function.return %self : !struct.struct<@EqzExt<[]>>

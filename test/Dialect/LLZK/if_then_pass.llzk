@@ -11,7 +11,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @compute(%a: !felt.felt) -> !struct.struct<@IsZero> {
       %self = struct.new : !struct.struct<@IsZero>
       %z = felt.const 0
-      %b = llzk.cmp eq(%a, %z)
+      %b = bool.cmp eq(%a, %z)
       %0 = scf.if %b -> !felt.felt {
         scf.yield %z : !felt.felt
       } else {
@@ -39,7 +39,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.felt) -> !struct.struct<@IsZero> attributes {function.allow_witness} {
 // CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = struct.new : <@IsZero>
 // CHECK-NEXT:       %[[Z:[0-9a-zA-Z_.]+]] = felt.const 0
-// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = llzk.cmp eq(%[[A0]], %[[Z]])
+// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = bool.cmp eq(%[[A0]], %[[Z]])
 // CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = scf.if %[[T0]] -> (!felt.felt) {
 // CHECK-NEXT:         scf.yield %[[Z]] : !felt.felt
 // CHECK-NEXT:       } else {
@@ -70,7 +70,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.struct<@C> {
       %self = struct.new : !struct.struct<@C>
       %z = felt.const 0
-      %0 = llzk.cmp ne(%a, %z)
+      %0 = bool.cmp ne(%a, %z)
       scf.if %0 {
         struct.writef %self[@data] = %b : !struct.struct<@C>, !felt.felt
       }
@@ -88,7 +88,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_.]+]]: !felt.felt) -> !struct.struct<@C> attributes {function.allow_witness} {
 // CHECK-NEXT:     %[[SELF:[0-9a-zA-Z_.]+]] = struct.new : <@C>
 // CHECK-NEXT:     %[[T0:[0-9a-zA-Z_.]+]] = felt.const 0
-// CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.]+]] = llzk.cmp ne(%[[A0]], %[[T0]])
+// CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.]+]] = bool.cmp ne(%[[A0]], %[[T0]])
 // CHECK-NEXT:     scf.if %[[T1]] {
 // CHECK-NEXT:       struct.writef %[[SELF]][@data] = %[[A1]] : <@C>, !felt.felt
 // CHECK-NEXT:     }

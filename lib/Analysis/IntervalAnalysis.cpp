@@ -18,6 +18,7 @@ using namespace mlir;
 namespace llzk {
 
 using namespace array;
+using namespace boolean;
 using namespace component;
 using namespace constrain;
 using namespace felt;

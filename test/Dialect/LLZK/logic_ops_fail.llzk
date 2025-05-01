@@ -5,14 +5,14 @@ function.def @f_and(
     %b: !felt.felt
 ) -> i1 {
   // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'i1' vs '!felt.felt'}}
-  %c = llzk.and %a, %b
+  %c = bool.and %a, %b
   function.return %c: i1
 }
 // -----
 
 function.def @f_or(%a: !felt.felt, %b: !felt.felt) -> i1 attributes {function.allow_witness} {
-  // expected-error@+1 {{'llzk.or' op operand #0 must be 1-bit signless integer or type variable, but got '!felt.felt'}}
-  %c = llzk.or %a, %b : !felt.felt, !felt.felt
+  // expected-error@+1 {{'bool.or' op operand #0 must be 1-bit signless integer or type variable, but got '!felt.felt'}}
+  %c = bool.or %a, %b : !felt.felt, !felt.felt
   function.return %c: i1
 }
 // -----
@@ -21,13 +21,13 @@ function.def @f_not1(
     %a: !array.array<4 x !felt.felt> // expected-note {{prior use here}}
 ) -> i1 {
   // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'i1' vs '!array.array<4 x !felt.felt>'}}
-  %c = llzk.not %a
+  %c = bool.not %a
   function.return %c: i1
 }
 // -----
 
 function.def @f_not2(%a: !array.array<4 x !felt.felt>) -> i1 attributes {function.allow_witness} {
-  // expected-error@+1 {{'llzk.not' op operand #0 must be 1-bit signless integer or type variable, but got '!array.array<4 x !felt.felt>'}}
-  %c = llzk.not %a : !array.array<4 x !felt.felt>
+  // expected-error@+1 {{'bool.not' op operand #0 must be 1-bit signless integer or type variable, but got '!array.array<4 x !felt.felt>'}}
+  %c = bool.not %a : !array.array<4 x !felt.felt>
   function.return %c: i1
 }

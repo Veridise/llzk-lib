@@ -17,6 +17,7 @@ class LLZKPass<string passArg, string operation = "::mlir::ModuleOp">
   let dependentDialects = [
       // clang-format off
       "llzk::LLZKDialect",
+      "llzk::boolean::BoolDialect",
       "llzk::array::ArrayDialect",
       "llzk::component::StructDialect",
       "llzk::constrain::ConstrainDialect",
