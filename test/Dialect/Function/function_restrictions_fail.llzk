@@ -185,6 +185,39 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
+  struct.def @unknown_call_target<[@S]> {
+    function.def @compute() -> !struct.struct<@unknown_call_target<[@S]>> {
+      %self = struct.new : !struct.struct<@unknown_call_target<[@S]>>
+      function.return %self : !struct.struct<@unknown_call_target<[@S]>>
+    }
+
+    function.def @constrain(%self: !struct.struct<@unknown_call_target<[@S]>>) {
+      // expected-error@+2 {{'function.call' op target '@S::@compute' has 'function.allow_witness' attribute, which is not specified by the caller '@constrain'}}
+      // expected-error@+1 {{'function.call' op target "@compute" must have exactly one return type}}
+      function.call @S::@compute() : () -> ()
+      function.return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  struct.def @unknown_call_target<[@S]> {
+    function.def @compute() -> !struct.struct<@unknown_call_target<[@S]>> {
+      %self = struct.new : !struct.struct<@unknown_call_target<[@S]>>
+      // expected-error@+3 {{'function.call' op target "@constrain" must have no return type}}
+      // expected-error@+2 {{'function.call' op target "@constrain" must have at least one input type}}
+      // expected-error@+1 {{'function.call' op target '@S::@constrain' has 'function.allow_constraint' attribute, which is not specified by the caller '@compute'}}
+      %wrong = function.call @S::@constrain() : () -> (!felt.felt)
+      function.return %self : !struct.struct<@unknown_call_target<[@S]>>
+    }
+
+    function.def @constrain(%self: !struct.struct<@unknown_call_target<[@S]>>) {
+      function.return
+    }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
   function.def @globalFuncPermissive() attributes {function.allow_constraint, function.allow_witness} {
     function.return
   }

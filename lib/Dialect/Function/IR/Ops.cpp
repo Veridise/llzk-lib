@@ -414,7 +414,7 @@ protected:
         aggregateRes = callOp->emitOpError()
                        << "target '@" << target.getName() << "' has '" << attrName
                        << "' attribute, which is not specified by the caller '@" << caller.getName()
-                       << "'";
+                       << '\'';
       };
 
       if (target.hasAllowConstraintAttr() && !caller.hasAllowConstraintAttr()) {
@@ -547,9 +547,25 @@ struct UnknownTargetVerifier : public CallOpVerifier {
       : CallOpVerifier(c, callee.getLeafReference().getValue()), calleeAttr(callee) {}
 
   LogicalResult verifyTargetAttributes() override {
-    // Since the target is unknown, the attributes of the target are unknown,
-    // so we just return success here, since there's nothing to check.
-    return success();
+    // Based on the precondition of this verifier, the target must be either a
+    // struct compute or constrain function.
+    LogicalResult aggregateRes = success();
+    if (FuncDefOp caller = (*callOp)->getParentOfType<FuncDefOp>()) {
+      auto emitAttrErr = [&](StringLiteral attrName) {
+        aggregateRes = callOp->emitOpError()
+                       << "target '" << calleeAttr << "' has '" << attrName
+                       << "' attribute, which is not specified by the caller '@" << caller.getName()
+                       << '\'';
+      };
+
+      if (tgtKind == CalleeKind::Constrain && !caller.hasAllowConstraintAttr()) {
+        emitAttrErr(AllowConstraintAttr::name);
+      }
+      if (tgtKind == CalleeKind::Compute && !caller.hasAllowWitnessAttr()) {
+        emitAttrErr(AllowWitnessAttr::name);
+      }
+    }
+    return aggregateRes;
   }
 
   LogicalResult verifyInputs() override {
