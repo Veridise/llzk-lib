@@ -19,5 +19,6 @@
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
+#include "llzk/Dialect/Undef/IR/Dialect.h"
 
 #include <mlir/Pass/Pass.h>

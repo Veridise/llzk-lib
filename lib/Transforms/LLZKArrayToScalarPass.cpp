@@ -709,7 +709,7 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, component::StructDialect, constrain::ConstrainDialect,
       felt::FeltDialect, function::FunctionDialect, global::GlobalDialect, include::IncludeDialect,
-      arith::ArithDialect, scf::SCFDialect>();
+      undef::UndefDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<CreateArrayOp>(SplitInitFromCreateArrayOp::legal);
   target.addDynamicallyLegalOp<InsertArrayOp>(SplitInsertArrayOp::legal);

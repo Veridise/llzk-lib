@@ -16,6 +16,7 @@ add_subdirectory(LLZK)
 add_subdirectory(Polymorphic)
 add_subdirectory(String)
 add_subdirectory(Struct)
+add_subdirectory(Undef)
 
 # Registration of dialects
 add_library(LLZKDialectRegistration)

@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/Undef/IR/Ops.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -177,7 +178,7 @@ SmallVector<MemorySlot> CreateArrayOp::getPromotableSlots() {
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
 Value CreateArrayOp::getDefaultValue(const MemorySlot &slot, RewriterBase &rewriter) {
-  return rewriter.create<UndefOp>(getLoc(), slot.elemType);
+  return rewriter.create<undef::UndefOp>(getLoc(), slot.elemType);
 }
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass

@@ -39,26 +39,6 @@ class LLZK_Op<string mnemonic, list<Trait> traits = []>
 // Basic constructs
 //===------------------------------------------------------------------===//
 
-def LLZK_UndefOp : LLZK_Op<"undef", [Pure]> {
-  let summary = "Creates an undefined value of the specified type.";
-  let description = [{
-    This operation has no operands or attributes. It represents an undefined
-    value of the specified LLZK IR dialect type. This op can be introduced by
-    the `llzk-array-to-scalar` pass if there is a read from an array index
-    that was not dominated by an earlier write to that same index.
-
-    Example:
-
-    ```llzk
-    %0 = llzk.undef : !felt.felt
-    ```
-  }];
-  let results = (outs AnyLLZKType:$res);
-  let assemblyFormat = [{
-    `:` type($res) attr-dict
-  }];
-}
-
 def LLZK_AssertOp
     : LLZK_Op<"assert", [DeclareOpInterfaceMethods<MemoryEffectsOpInterface>]> {
   let summary = "assertion operation";
