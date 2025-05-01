@@ -37,11 +37,6 @@ using namespace llzk;
 
 auto LLZKDialect::initialize() -> void {
   // clang-format off
-  addOperations<
-    #define GET_OP_LIST
-    #include "llzk/Dialect/LLZK/IR/Ops.cpp.inc"
-  >();
-
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/LLZK/IR/Attrs.cpp.inc"

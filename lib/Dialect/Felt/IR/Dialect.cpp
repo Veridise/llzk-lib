@@ -56,5 +56,4 @@ auto llzk::felt::FeltDialect::initialize() -> void {
     #include "llzk/Dialect/Felt/IR/Attrs.cpp.inc"
   >();
   // clang-format on
-  // addInterfaces<LLZKDialectBytecodeInterface>();
 }

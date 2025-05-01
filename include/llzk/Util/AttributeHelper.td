@@ -11,7 +11,6 @@
 #define LLZK_ATTRIBUTE_HELPER
 
 include "mlir/IR/AttrTypeBase.td"
-include "mlir/IR/BuiltinAttributeInterfaces.td"
 
 // APInts that allows comparison involving different bitwidths.
 class APIntParameter<string desc = "">

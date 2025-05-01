@@ -13,8 +13,6 @@
 include "llzk/Dialect/Bool/IR/Dialect.td"
 include "llzk/Dialect/Bool/IR/Enums.td"
 
-include "mlir/IR/AttrTypeBase.td"
-
 class LLZK_EnumAttr<EnumAttrInfo enum, string name, string enumMnemonic,
                     list<Trait> traits = []>
     : EnumAttr<BoolDialect, enum, name, traits> {

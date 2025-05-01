@@ -46,8 +46,5 @@ auto llzk::string::StringDialect::initialize() -> void {
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/String/IR/Types.cpp.inc"
   >();
-
-  addAttributes<>();
   // clang-format on
-  // addInterfaces<LLZKDialectBytecodeInterface>();
 }

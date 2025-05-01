@@ -44,12 +44,9 @@ auto llzk::boolean::BoolDialect::initialize() -> void {
     #include "llzk/Dialect/Bool/IR/Ops.cpp.inc"
   >();
 
-  addTypes<>();
-
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/Bool/IR/Attrs.cpp.inc"
   >();
   // clang-format on
-  // addInterfaces<LLZKDialectBytecodeInterface>();
 }

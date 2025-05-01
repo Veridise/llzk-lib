@@ -30,7 +30,3 @@
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
-
-// Include TableGen'd declarations
-#define GET_OP_CLASSES
-#include "llzk/Dialect/LLZK/IR/Ops.h.inc"
