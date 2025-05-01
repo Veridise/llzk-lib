@@ -55,7 +55,7 @@ public:
     } else if (auto constVal = dyn_cast_if_present<FeltConstantOp>(v.getDefiningOp())) {
       identifier = constVal.getValue().getValue();
     } else if (auto constIdxVal = dyn_cast_if_present<arith::ConstantIndexOp>(v.getDefiningOp())) {
-      identifier = cast<IntegerAttr>(constIdxVal.getValue()).getValue();
+      identifier = llvm::cast<IntegerAttr>(constIdxVal.getValue()).getValue();
     } else {
       identifier = v;
     }

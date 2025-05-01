@@ -9,7 +9,6 @@
 
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/BuilderHelper.h"
 
 #include <mlir/Dialect/Utils/IndexingUtils.h>

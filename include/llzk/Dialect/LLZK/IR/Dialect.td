@@ -20,7 +20,7 @@ def LLZKDialect : Dialect {
     This dialect contains types and operations for zero knowledge languages.
   }];
 
-  let cppNamespace = "llzk";
+  let cppNamespace = "::llzk";
 
   let dependentDialects = ["::mlir::scf::SCFDialect",
                            "::llzk::felt::FeltDialect"];

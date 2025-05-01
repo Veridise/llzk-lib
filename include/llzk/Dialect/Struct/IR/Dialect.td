@@ -10,7 +10,6 @@
 #ifndef LLZK_STRUCT_DIALECT
 #define LLZK_STRUCT_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def StructDialect : Dialect {

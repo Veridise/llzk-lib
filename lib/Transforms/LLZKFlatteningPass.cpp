@@ -1163,7 +1163,7 @@ public:
 
   LogicalResult matchAndRewrite(Operation *op, PatternRewriter &rewriter) const override {
     SmallVector<Type, 1> inferredResultTypes;
-    InferTypeOpInterface retTypeFn = cast<InferTypeOpInterface>(op);
+    InferTypeOpInterface retTypeFn = llvm::cast<InferTypeOpInterface>(op);
     LogicalResult result = retTypeFn.inferReturnTypes(
         op->getContext(), op->getLoc(), op->getOperands(), op->getRawDictionaryAttrs(),
         op->getPropertiesStorage(), op->getRegions(), inferredResultTypes

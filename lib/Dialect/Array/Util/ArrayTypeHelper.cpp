@@ -23,9 +23,9 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/STLFunctionalExtras.h>
 
-using namespace llzk::array;
-using namespace llzk;
 using namespace mlir;
+using namespace llzk;
+using namespace llzk::array;
 
 ArrayIndexGen::ArrayIndexGen(ArrayType t)
     : shape(t.getShape()), linearSize(t.getNumElements()), strides(mlir::computeStrides(shape)) {}

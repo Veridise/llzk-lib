@@ -213,7 +213,8 @@ void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
         }
 
         visitCallControlFlowTransfer(
-            cast<CallOpInterface>(callsite), CallControlFlowAction::EnterCallee, *before, after
+            llvm::cast<CallOpInterface>(callsite), CallControlFlowAction::EnterCallee, *before,
+            after
         );
       }
       return;

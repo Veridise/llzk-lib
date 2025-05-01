@@ -10,7 +10,6 @@
 #ifndef LLZK_STRING_DIALECT
 #define LLZK_STRING_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def StringDialect : Dialect {

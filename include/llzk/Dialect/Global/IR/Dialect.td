@@ -10,7 +10,6 @@
 #ifndef LLZK_GLOBAL_DIALECT
 #define LLZK_GLOBAL_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def GlobalDialect : Dialect {

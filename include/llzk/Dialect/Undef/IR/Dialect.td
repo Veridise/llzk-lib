@@ -10,7 +10,6 @@
 #ifndef LLZK_UNDEF_DIALECT
 #define LLZK_UNDEF_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def UndefDialect : Dialect {

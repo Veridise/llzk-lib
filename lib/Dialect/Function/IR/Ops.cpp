@@ -138,7 +138,7 @@ void FuncDefOp::cloneInto(FuncDefOp dest, IRMapping &mapper) {
 /// those mappings to the mapper.
 FuncDefOp FuncDefOp::clone(IRMapping &mapper) {
   // Create the new function.
-  FuncDefOp newFunc = cast<FuncDefOp>(getOperation()->cloneWithoutRegions());
+  FuncDefOp newFunc = llvm::cast<FuncDefOp>(getOperation()->cloneWithoutRegions());
 
   // If the function has a body, then the user might be deleting arguments to
   // the function by specifying them in the mapper. If so, we don't add the
@@ -316,7 +316,7 @@ StructType FuncDefOp::getSingleResultTypeOfCompute() {
 //===----------------------------------------------------------------------===//
 
 LogicalResult ReturnOp::verify() {
-  auto function = cast<FuncDefOp>((*this)->getParentOp());
+  auto function = llvm::cast<FuncDefOp>((*this)->getParentOp());
 
   // The operand number and types must match the function signature.
   const auto results = function.getFunctionType().getResults();

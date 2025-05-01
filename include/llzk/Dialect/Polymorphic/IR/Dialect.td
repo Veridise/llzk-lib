@@ -10,7 +10,6 @@
 #ifndef LLZK_POLYMORPHIC_DIALECT
 #define LLZK_POLYMORPHIC_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def PolymorphicDialect : Dialect {

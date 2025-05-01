@@ -10,7 +10,6 @@
 #ifndef LLZK_ARRAY_DIALECT
 #define LLZK_ARRAY_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def ArrayDialect : Dialect {

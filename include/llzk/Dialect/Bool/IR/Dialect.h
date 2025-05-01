@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include "llzk/Dialect/Felt/IR/Ops.h"
-
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Location.h>
 

@@ -10,7 +10,6 @@
 #ifndef LLZK_CAST_DIALECT
 #define LLZK_CAST_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def CastDialect : Dialect {

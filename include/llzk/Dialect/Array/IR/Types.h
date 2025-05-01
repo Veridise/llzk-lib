@@ -11,7 +11,7 @@
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Util/ErrorHelper.h"
-#include "llzk/Util/SymbolLookup.h" // IWYU pragma: keep
+#include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinTypes.h>

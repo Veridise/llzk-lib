@@ -10,7 +10,6 @@
 #ifndef LLZK_BOOLEAN_DIALECT
 #define LLZK_BOOLEAN_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def BoolDialect : Dialect {

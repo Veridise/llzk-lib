@@ -10,7 +10,6 @@
 #ifndef LLZK_FELT_DIALECT
 #define LLZK_FELT_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def FeltDialect : Dialect {

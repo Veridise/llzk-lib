@@ -10,7 +10,6 @@
 #ifndef LLZK_CONSTRAIN_DIALECT
 #define LLZK_CONSTRAIN_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def ConstrainDialect : Dialect {

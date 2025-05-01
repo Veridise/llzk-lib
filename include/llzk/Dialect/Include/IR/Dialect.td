@@ -10,7 +10,6 @@
 #ifndef LLZK_INCLUDE_DIALECT
 #define LLZK_INCLUDE_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def IncludeDialect : Dialect {

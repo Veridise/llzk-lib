@@ -10,7 +10,6 @@
 #ifndef LLZK_FUNCTION_DIALECT
 #define LLZK_FUNCTION_DIALECT
 
-include "mlir/IR/BuiltinDialect.td"
 include "mlir/IR/DialectBase.td"
 
 def FunctionDialect : Dialect {
