@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/Enums.h"
-
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributeInterfaces.h>
 

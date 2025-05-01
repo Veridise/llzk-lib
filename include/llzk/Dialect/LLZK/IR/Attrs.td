@@ -11,7 +11,6 @@
 #define LLZK_ATTRS
 
 include "llzk/Dialect/LLZK/IR/Dialect.td"
-include "llzk/Dialect/LLZK/IR/Enums.td"
 include "llzk/Util/AttributeHelper.td"
 
 include "mlir/IR/AttrTypeBase.td"
