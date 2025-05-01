@@ -16,7 +16,7 @@ def GlobalRefOpInterface : OpInterface<"GlobalRefOpInterface"> {
   let description = [{
     Common interface for operations that read or write from a global.
   }];
-  let cppNamespace = "::llzk";
+  let cppNamespace = "::llzk::global";
 
   let methods = [
       // Requires implementors to have a '$val' argument.

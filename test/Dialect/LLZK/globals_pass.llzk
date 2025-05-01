@@ -2,20 +2,20 @@
 
 // TEST: uninitialized globals
 module attributes {veridise.lang = "llzk"} {
-  llzk.global @s : !string.string
-  llzk.global @i : index
-  llzk.global @b : i1
-  llzk.global @f : !felt.felt
+  global.def @s : !string.string
+  global.def @i : index
+  global.def @b : i1
+  global.def @f : !felt.felt
 
-  llzk.global @ax : !array.array<3 x !string.string>
-  llzk.global @ab : !array.array<2,2 x i1>
-  llzk.global @af : !array.array<6,5,3 x !felt.felt>
-  llzk.global @ai : !array.array<3,3 x index>
+  global.def @ax : !array.array<3 x !string.string>
+  global.def @ab : !array.array<2,2 x i1>
+  global.def @af : !array.array<6,5,3 x !felt.felt>
+  global.def @ai : !array.array<3,3 x index>
 
-  llzk.global @c : !struct.struct<@Component01B>
-  llzk.global @c2s : !struct.struct<@Component01A<[!string.string]>>
-  llzk.global @c2i : !struct.struct<@Component01A<[23423]>>
-  llzk.global @c2a : !struct.struct<@Component01A<[!array.array<2,2 x i1>]>>
+  global.def @c : !struct.struct<@Component01B>
+  global.def @c2s : !struct.struct<@Component01A<[!string.string]>>
+  global.def @c2i : !struct.struct<@Component01A<[23423]>>
+  global.def @c2a : !struct.struct<@Component01A<[!array.array<2,2 x i1>]>>
 
   struct.def @Component01A<[@Z]> {
     function.def @compute() -> !struct.struct<@Component01A<[@Z]>> {
@@ -32,65 +32,65 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.struct<@Component01B>) { function.return }
   }
 }
-// CHECK-DAG: llzk.global @s : !string.string
-// CHECK-DAG: llzk.global @i : index
-// CHECK-DAG: llzk.global @b : i1
-// CHECK-DAG: llzk.global @f : !felt.felt
-// CHECK-DAG: llzk.global @ax : !array.array<3 x !string.string>
-// CHECK-DAG: llzk.global @ab : !array.array<2,2 x i1>
-// CHECK-DAG: llzk.global @af : !array.array<6,5,3 x !felt.felt>
-// CHECK-DAG: llzk.global @ai : !array.array<3,3 x index>
-// CHECK-DAG: llzk.global @c2s : !struct.struct<@Component01A<[!string.string]>>
-// CHECK-DAG: llzk.global @c2i : !struct.struct<@Component01A<[23423]>>
-// CHECK-DAG: llzk.global @c2a : !struct.struct<@Component01A<[!array.array<2,2 x i1>]>>
+// CHECK-DAG: global.def @s : !string.string
+// CHECK-DAG: global.def @i : index
+// CHECK-DAG: global.def @b : i1
+// CHECK-DAG: global.def @f : !felt.felt
+// CHECK-DAG: global.def @ax : !array.array<3 x !string.string>
+// CHECK-DAG: global.def @ab : !array.array<2,2 x i1>
+// CHECK-DAG: global.def @af : !array.array<6,5,3 x !felt.felt>
+// CHECK-DAG: global.def @ai : !array.array<3,3 x index>
+// CHECK-DAG: global.def @c2s : !struct.struct<@Component01A<[!string.string]>>
+// CHECK-DAG: global.def @c2i : !struct.struct<@Component01A<[23423]>>
+// CHECK-DAG: global.def @c2a : !struct.struct<@Component01A<[!array.array<2,2 x i1>]>>
 // -----
 
 // TEST: initialized globals
 module attributes {veridise.lang = "llzk"} {
-  llzk.global const @s : !string.string = "Hello World!"
-  llzk.global @i : index = 1
+  global.def const @s : !string.string = "Hello World!"
+  global.def @i : index = 1
 
-  llzk.global const @bf : i1 = false
-  llzk.global const @t : i1 = true
-  llzk.global @b0 : i1 = 0
-  llzk.global const @b1 : i1 = 1
+  global.def const @bf : i1 = false
+  global.def const @t : i1 = true
+  global.def @b0 : i1 = 0
+  global.def const @b1 : i1 = 1
 
-  llzk.global @f : !felt.felt = 35
+  global.def @f : !felt.felt = 35
 
-  llzk.global @a1i : !array.array<1 x index> = [2]
-  llzk.global @a2s : !array.array<2 x !string.string> = ["hello", "world"]
-  llzk.global @a4b : !array.array<2,2 x i1> = [0,1,1,0]
-  llzk.global @a4f : !array.array<2,1,1,2 x !felt.felt> = [6, 12134, 45523, 15623]
+  global.def @a1i : !array.array<1 x index> = [2]
+  global.def @a2s : !array.array<2 x !string.string> = ["hello", "world"]
+  global.def @a4b : !array.array<2,2 x i1> = [0,1,1,0]
+  global.def @a4f : !array.array<2,1,1,2 x !felt.felt> = [6, 12134, 45523, 15623]
 }
-// CHECK-DAG: llzk.global const @s : !string.string = "Hello World!"
-// CHECK-DAG: llzk.global @i : index = 1
-// CHECK-DAG: llzk.global const @bf : i1 = false
-// CHECK-DAG: llzk.global const @t : i1 = true
-// CHECK-DAG: llzk.global @b0 : i1 = false
-// CHECK-DAG: llzk.global const @b1 : i1 = true
-// CHECK-DAG: llzk.global @f : !felt.felt = 35
-// CHECK-DAG: llzk.global @a1i : !array.array<1 x index> = [2]
-// CHECK-DAG: llzk.global @a2s : !array.array<2 x !string.string> = ["hello", "world"]
-// CHECK-DAG: llzk.global @a4b : !array.array<2,2 x i1> = [0, 1, 1, 0]
-// CHECK-DAG: llzk.global @a4f : !array.array<2,1,1,2 x !felt.felt> = [6, 12134, 45523, 15623]
+// CHECK-DAG: global.def const @s : !string.string = "Hello World!"
+// CHECK-DAG: global.def @i : index = 1
+// CHECK-DAG: global.def const @bf : i1 = false
+// CHECK-DAG: global.def const @t : i1 = true
+// CHECK-DAG: global.def @b0 : i1 = false
+// CHECK-DAG: global.def const @b1 : i1 = true
+// CHECK-DAG: global.def @f : !felt.felt = 35
+// CHECK-DAG: global.def @a1i : !array.array<1 x index> = [2]
+// CHECK-DAG: global.def @a2s : !array.array<2 x !string.string> = ["hello", "world"]
+// CHECK-DAG: global.def @a4b : !array.array<2,2 x i1> = [0, 1, 1, 0]
+// CHECK-DAG: global.def @a4f : !array.array<2,1,1,2 x !felt.felt> = [6, 12134, 45523, 15623]
 // -----
 
 // TEST: GlobalReadOp in "compute()"
 module attributes {veridise.lang = "llzk"} {
-  llzk.global const @g : !felt.felt = 23452
+  global.def const @g : !felt.felt = 23452
   struct.def @Component02 {
     function.def @compute() -> !struct.struct<@Component02> {
-      %t = llzk.readg @g : !felt.felt
+      %t = global.read @g : !felt.felt
       %self = struct.new : !struct.struct<@Component02>
       function.return %self : !struct.struct<@Component02>
     }
     function.def @constrain(%self: !struct.struct<@Component02>) { function.return }
   }
 }
-// CHECK-LABEL: llzk.global const @g : !felt.felt = 23452
+// CHECK-LABEL: global.def const @g : !felt.felt = 23452
 // CHECK-LABEL: struct.def @Component02 {
 // CHECK-NEXT:    function.def @compute() -> !struct.struct<@Component02> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = llzk.readg @g : !felt.felt
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.felt
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02>
 // CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@Component02>
 // CHECK-NEXT:    }
@@ -102,26 +102,26 @@ module attributes {veridise.lang = "llzk"} {
 
 // TEST: GlobalReadOp in "constrain()"
 module attributes {veridise.lang = "llzk"} {
-  llzk.global const @g : i1 = false
+  global.def const @g : i1 = false
   struct.def @Component03 {
     function.def @compute() -> !struct.struct<@Component03> {
       %self = struct.new : !struct.struct<@Component03>
       function.return %self : !struct.struct<@Component03>
     }
     function.def @constrain(%self: !struct.struct<@Component03>) {
-      %t = llzk.readg @g : i1
+      %t = global.read @g : i1
       function.return
     }
   }
 }
-// CHECK-LABEL: llzk.global const @g : i1 = false
+// CHECK-LABEL: global.def const @g : i1 = false
 // CHECK-LABEL: struct.def @Component03 {
 // CHECK-NEXT:    function.def @compute() -> !struct.struct<@Component03> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component03>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.struct<@Component03>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.struct<@Component03>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = llzk.readg @g : i1
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = global.read @g : i1
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -129,37 +129,37 @@ module attributes {veridise.lang = "llzk"} {
 
 // TEST: GlobalReadOp in free function
 module attributes {veridise.lang = "llzk"} {
-  llzk.global const @g : !string.string = "Hello"
+  global.def const @g : !string.string = "Hello"
   function.def @test() -> !string.string {
-    %t = llzk.readg @g : !string.string
+    %t = global.read @g : !string.string
     function.return %t : !string.string
   }
 }
-// CHECK-LABEL: llzk.global const @g : !string.string = "Hello"
+// CHECK-LABEL: global.def const @g : !string.string = "Hello"
 // CHECK-LABEL: function.def @test() -> !string.string {
-// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = llzk.readg @g : !string.string
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = global.read @g : !string.string
 // CHECK-NEXT:    function.return %[[V0]] : !string.string
 // CHECK-NEXT:  }
 // -----
 
 // TEST: GlobalWriteOp (can only be within "compute()")
 module attributes {veridise.lang = "llzk"} {
-  llzk.global @g : !felt.felt = 125
+  global.def @g : !felt.felt = 125
   struct.def @Component04 {
     function.def @compute() -> !struct.struct<@Component04> {
       %c = felt.const 99999
-      llzk.writeg @g = %c : !felt.felt
+      global.write @g = %c : !felt.felt
       %self = struct.new : !struct.struct<@Component04>
       function.return %self : !struct.struct<@Component04>
     }
     function.def @constrain(%self: !struct.struct<@Component04>) { function.return }
   }
 }
-// CHECK-LABEL: llzk.global @g : !felt.felt = 125
+// CHECK-LABEL: global.def @g : !felt.felt = 125
 // CHECK-LABEL: struct.def @Component04 {
 // CHECK-NEXT:    function.def @compute() -> !struct.struct<@Component04> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 99999
-// CHECK-NEXT:      llzk.writeg @g = %[[V0]] : !felt.felt
+// CHECK-NEXT:      global.write @g = %[[V0]] : !felt.felt
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component04>
 // CHECK-NEXT:      function.return %[[V1]] : !struct.struct<@Component04>
 // CHECK-NEXT:    }
@@ -171,7 +171,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // TEST: Using a global value as a type parameter
 module attributes {veridise.lang = "llzk"} {
-  llzk.global const @N : index = 3
+  global.def const @N : index = 3
 
   function.def @b(%x: !array.array<@N x !felt.felt>) {
     function.return
@@ -195,7 +195,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
-// CHECK-NEXT:    llzk.global const @N : index = 3
+// CHECK-NEXT:    global.def const @N : index = 3
 // CHECK-NEXT:    function.def @b(%[[V0:[0-9a-zA-Z_\.]+]]: !array.array<@N x !felt.felt>) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -223,7 +223,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // TEST: Read and write involving a struct-type global
 module attributes {veridise.lang = "llzk"} {
-  llzk.global @gvar : !struct.struct<@Component06<[4]>>
+  global.def @gvar : !struct.struct<@Component06<[4]>>
 
   struct.def @Component06<[@Z]> {
     function.def @compute() -> !struct.struct<@Component06<[@Z]>> {
@@ -236,17 +236,17 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Main {
     function.def @compute() -> !struct.struct<@Main> {
       %s = function.call @Component06::@compute() : () -> !struct.struct<@Component06<[4]>>
-      llzk.writeg @gvar = %s : !struct.struct<@Component06<[4]>>
+      global.write @gvar = %s : !struct.struct<@Component06<[4]>>
       %self = struct.new : !struct.struct<@Main>
       function.return %self : !struct.struct<@Main>
     }
     function.def @constrain(%self: !struct.struct<@Main>) {
-      %s = llzk.readg @gvar : !struct.struct<@Component06<[4]>>
+      %s = global.read @gvar : !struct.struct<@Component06<[4]>>
       function.return
     }
   }
 }
-// CHECK-LABEL:   llzk.global @gvar : !struct.struct<@Component06<[4]>>
+// CHECK-LABEL:   global.def @gvar : !struct.struct<@Component06<[4]>>
 //
 // CHECK-LABEL:   struct.def @Component06<[@Z]> {
 // CHECK-NEXT:      function.def @compute() -> !struct.struct<@Component06<[@Z]>> attributes {function.allow_witness} {
@@ -261,12 +261,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL:   struct.def @Main {
 // CHECK-NEXT:      function.def @compute() -> !struct.struct<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = function.call @Component06::@compute() : () -> !struct.struct<@Component06<[4]>>
-// CHECK-NEXT:        llzk.writeg @gvar = %[[V0]] : !struct.struct<@Component06<[4]>>
+// CHECK-NEXT:        global.write @gvar = %[[V0]] : !struct.struct<@Component06<[4]>>
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[V1]] : !struct.struct<@Main>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.struct<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = llzk.readg @gvar : !struct.struct<@Component06<[4]>>
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = global.read @gvar : !struct.struct<@Component06<[4]>>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

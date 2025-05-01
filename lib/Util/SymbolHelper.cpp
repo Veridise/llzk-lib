@@ -14,6 +14,7 @@
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -33,6 +34,7 @@ namespace llzk {
 using namespace array;
 using namespace component;
 using namespace function;
+using namespace global;
 using namespace polymorphic;
 
 namespace {

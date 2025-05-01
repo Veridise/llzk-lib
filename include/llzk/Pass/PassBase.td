@@ -21,6 +21,7 @@ class LLZKPass<string passArg, string operation = "::mlir::ModuleOp">
       "llzk::component::StructDialect",
       "llzk::constrain::ConstrainDialect",
       "llzk::felt::FeltDialect",
+      "llzk::global::GlobalDialect",
       "llzk::include::IncludeDialect",
       "llzk::function::FunctionDialect",
       "llzk::string::StringDialect",

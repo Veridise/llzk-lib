@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
+#include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
@@ -34,6 +35,7 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       llzk::constrain::ConstrainDialect,
       llzk::felt::FeltDialect,
       llzk::function::FunctionDialect,
+      llzk::global::GlobalDialect,
       llzk::include::IncludeDialect,
       llzk::string::StringDialect,
       llzk::polymorphic::PolymorphicDialect,

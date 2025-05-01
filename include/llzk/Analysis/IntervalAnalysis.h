@@ -18,6 +18,7 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Compare.h"
@@ -33,10 +34,6 @@
 #include <mutex>
 
 namespace llzk {
-
-using namespace cast;
-using namespace constrain;
-using namespace felt;
 
 /* Field */
 
@@ -495,7 +492,7 @@ public:
   mul(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  div(llvm::SMTSolverRef solver, DivFeltOp op, const ExpressionValue &lhs,
+  div(llvm::SMTSolverRef solver, felt::DivFeltOp op, const ExpressionValue &lhs,
       const ExpressionValue &rhs);
 
   friend ExpressionValue
@@ -648,7 +645,8 @@ private:
   llvm::SMTExprRef createFeltSymbol(const char *name) const;
 
   bool isConstOp(mlir::Operation *op) const {
-    return mlir::isa<FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
+    return mlir::isa<
+        felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
   }
 
   llvm::APSInt getConst(mlir::Operation *op) const;
@@ -663,8 +661,9 @@ private:
 
   bool isArithmeticOp(mlir::Operation *op) const {
     return mlir::isa<
-        AddFeltOp, SubFeltOp, MulFeltOp, DivFeltOp, ModFeltOp, NegFeltOp, InvFeltOp, AndFeltOp,
-        OrFeltOp, XorFeltOp, NotFeltOp, ShlFeltOp, ShrFeltOp, CmpOp>(op);
+        felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::ModFeltOp,
+        felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp, felt::XorFeltOp,
+        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, CmpOp>(op);
   }
 
   ExpressionValue
@@ -686,7 +685,7 @@ private:
   }
 
   bool isConversionOp(mlir::Operation *op) const {
-    return mlir::isa<IntToFeltOp, FeltToIndexOp>(op);
+    return mlir::isa<cast::IntToFeltOp, cast::FeltToIndexOp>(op);
   }
 
   bool isApplyMapOp(mlir::Operation *op) const { return mlir::isa<polymorphic::ApplyMapOp>(op); }
@@ -704,7 +703,7 @@ private:
   bool isArrayLengthOp(mlir::Operation *op) const { return mlir::isa<array::ArrayLengthOp>(op); }
 
   bool isEmitOp(mlir::Operation *op) const {
-    return mlir::isa<EmitEqualityOp, EmitContainmentOp>(op);
+    return mlir::isa<constrain::EmitEqualityOp, constrain::EmitContainmentOp>(op);
   }
 
   bool isCreateOp(mlir::Operation *op) const {
@@ -715,7 +714,7 @@ private:
 
   bool isDefinitionOp(mlir::Operation *op) const {
     return mlir::isa<
-        component::StructDefOp, function::FuncDefOp, component::FieldDefOp, GlobalDefOp,
+        component::StructDefOp, function::FuncDefOp, component::FieldDefOp, global::GlobalDefOp,
         mlir::ModuleOp>(op);
   }
 
