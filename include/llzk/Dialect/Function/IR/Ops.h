@@ -15,13 +15,7 @@
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
 
-#include <mlir/Bytecode/BytecodeOpInterface.h>
-#include <mlir/IR/BuiltinAttributes.h>
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/OpDefinition.h>
 #include <mlir/IR/OpImplementation.h>
-#include <mlir/IR/OperationSupport.h>
-#include <mlir/IR/SymbolTable.h>
 #include <mlir/Interfaces/CallInterfaces.h>
 #include <mlir/Interfaces/ControlFlowInterfaces.h>
 #include <mlir/Interfaces/FunctionInterfaces.h>

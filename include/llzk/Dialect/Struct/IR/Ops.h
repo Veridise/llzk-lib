@@ -14,8 +14,6 @@
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
-#include <mlir/IR/OpDefinition.h>
-
 namespace llzk {
 
 namespace component {

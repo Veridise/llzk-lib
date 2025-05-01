@@ -20,7 +20,6 @@
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Analysis/DataFlowFramework.h>
 #include <mlir/IR/Block.h>
-#include <mlir/IR/OpDefinition.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/Region.h>
 #include <mlir/Interfaces/CallInterfaces.h>
@@ -31,7 +30,6 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/Casting.h>
 
-#include <cassert>
 #include <optional>
 
 using namespace mlir;
