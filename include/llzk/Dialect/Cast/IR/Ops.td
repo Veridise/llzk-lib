@@ -52,6 +52,8 @@ def LLZK_FeltToIndexOp : Op<CastDialect, "toindex", [Pure]> {
   let arguments = (ins LLZK_FeltType:$value);
   let results = (outs Index:$result);
   let assemblyFormat = [{ $value attr-dict }];
+
+  let hasVerifier = 1;
 }
 
 #endif // LLZK_CAST_OPS

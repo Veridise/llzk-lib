@@ -382,7 +382,7 @@ struct CallOpVerifier {
     // Rather than immediately returning on failure, we check all verifier steps and aggregate to
     // provide as many errors are possible in a single verifier run.
     LogicalResult aggregateResult = success();
-    if (failed(verifyStructTarget())) {
+    if (failed(verifyTargetAttributes())) {
       aggregateResult = failure();
     }
     if (failed(verifyInputs())) {
@@ -401,31 +401,30 @@ protected:
   CallOp *callOp;
   CalleeKind tgtKind;
 
-  virtual LogicalResult verifyStructTarget() = 0;
+  virtual LogicalResult verifyTargetAttributes() = 0;
   virtual LogicalResult verifyInputs() = 0;
   virtual LogicalResult verifyOutputs() = 0;
   virtual LogicalResult verifyAffineMapParams() = 0;
 
-  /// Ensure compute/constrain functions are only called by a like-named struct function.
-  LogicalResult verifyStructTargetMatch() {
-    switch (tgtKind) {
-    case CalleeKind::Compute:
-      return verifyInStructFunctionNamed<FUNC_NAME_COMPUTE, 32>(*callOp, [] {
-        return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_COMPUTE, "\" "});
-      });
-    case CalleeKind::Constrain:
-      return verifyInStructFunctionNamed<FUNC_NAME_CONSTRAIN, 32>(*callOp, [] {
-        return llvm::SmallString<32>({"targeting \"@", FUNC_NAME_CONSTRAIN, "\" "});
-      });
-    default:
-      // Precondition: the target function is within a struct so only above names are valid
-      // Note: This error can occur in the unknown case but in the known case, the symbol lookup
-      // would actually fail before this step is reached.
-      return callOp->emitOpError().append(
-          "targeting a struct must call \"@", FUNC_NAME_COMPUTE, "\" or \"@", FUNC_NAME_CONSTRAIN,
-          "\" only"
-      );
+  /// Ensure that if the target allows witness/constraint ops, the caller does as well.
+  LogicalResult verifyTargetAttributesMatch(FuncDefOp target) {
+    LogicalResult aggregateRes = success();
+    if (FuncDefOp caller = (*callOp)->getParentOfType<FuncDefOp>()) {
+      auto emitAttrErr = [&](StringLiteral attrName) {
+        aggregateRes = callOp->emitOpError()
+                       << "target '@" << target.getName() << "' has '" << attrName
+                       << "' attribute, which is not specified by the caller '@" << caller.getName()
+                       << "'";
+      };
+
+      if (target.hasAllowConstraintAttr() && !caller.hasAllowConstraintAttr()) {
+        emitAttrErr(AllowConstraintAttr::name);
+      }
+      if (target.hasAllowWitnessAttr() && !caller.hasAllowWitnessAttr()) {
+        emitAttrErr(AllowWitnessAttr::name);
+      }
     }
+    return aggregateRes;
   }
 
   LogicalResult verifyNoAffineMapInstantiations() {
@@ -448,14 +447,8 @@ struct KnownTargetVerifier : public CallOpVerifier {
       : CallOpVerifier(c, tgtRes.get().getSymName()), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
         includeSymNames(tgtRes.getIncludeSymNames()) {}
 
-  LogicalResult verifyStructTarget() override {
-    if (isInStruct(tgt.getOperation())) {
-      // When the target is within a struct, check restrictions on the name.
-      return CallOpVerifier::verifyStructTargetMatch();
-    } else {
-      // No target name restrictions when the target is a global function.
-      return success();
-    }
+  LogicalResult verifyTargetAttributes() override {
+    return CallOpVerifier::verifyTargetAttributesMatch(tgt);
   }
 
   LogicalResult verifyInputs() override {
@@ -553,10 +546,10 @@ struct UnknownTargetVerifier : public CallOpVerifier {
   UnknownTargetVerifier(CallOp *c, SymbolRefAttr callee)
       : CallOpVerifier(c, callee.getLeafReference().getValue()), calleeAttr(callee) {}
 
-  LogicalResult verifyStructTarget() override {
-    // Since the target is known to be within a struct, just check restrictions on the name. It can
-    // be `compute` or `constrain`, nothing else
-    return CallOpVerifier::verifyStructTargetMatch();
+  LogicalResult verifyTargetAttributes() override {
+    // Since the target is unknown, the attributes of the target are unknown,
+    // so we just return success here, since there's nothing to check.
+    return success();
   }
 
   LogicalResult verifyInputs() override {

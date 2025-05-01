@@ -3,7 +3,7 @@
 module attributes {veridise.lang = "llzk"} {
   struct.def @emiteq_in_compute {
     function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.struct<@emiteq_in_compute> {
-      // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
+      // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
       constrain.eq %a, %b : !felt.felt
       %self = struct.new : !struct.struct<@emiteq_in_compute>
       function.return %self : !struct.struct<@emiteq_in_compute>
@@ -20,9 +20,8 @@ module attributes {veridise.lang = "llzk"} {
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
+        // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
         constrain.eq %a, %b : !felt.felt
-        // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' named "@constrain" within a 'struct.struct' definition}}
         constrain.eq %a, %b : !felt.felt
       }
       %self = struct.new : !struct.struct<@emiteq_in_compute_in_loop>
@@ -39,9 +38,8 @@ module attributes {veridise.lang = "llzk"} {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
+            // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
             constrain.eq %x, %y : !felt.felt
-            // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' named "@constrain" within a 'struct.struct' definition}}
             constrain.eq %x, %y : !felt.felt
           }
         }
@@ -57,15 +55,9 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @emitin_in_compute {
     function.def @compute(%a: !felt.felt, %b: !array.array<5 x !felt.felt>) -> !struct.struct<@emitin_in_compute> {
-      // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
+      // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
       constrain.in %b, %a : !array.array<5 x !felt.felt>
       %self = struct.new : !struct.struct<@emitin_in_compute>
-      function.return %self : !struct.struct<@emitin_in_compute>
-  struct.struct @emitin_in_compute {
-    function.def @compute(%a: !felt.felt, %b: !array.array<5 x !felt.felt>) -> !struct.struct<@emitin_in_compute> {
-      // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'struct.struct' definition}}
-      constrain.in %b, %a : !array.array<5 x !felt.felt>
-      %self = llzk.new_struct : !struct.struct<@emitin_in_compute>
       function.return %self : !struct.struct<@emitin_in_compute>
     }
 
@@ -80,9 +72,8 @@ module attributes {veridise.lang = "llzk"} {
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
+        // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
         constrain.in %b, %a : !array.array<5 x !felt.felt>
-        // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'struct.struct' definition}}
         constrain.in %b, %a : !array.array<5 x !felt.felt>
       }
       %self = struct.new : !struct.struct<@emitin_in_compute_in_loop>
@@ -99,9 +90,8 @@ module attributes {veridise.lang = "llzk"} {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
+            // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
             constrain.in %y, %x : !array.array<5 x index>
-            // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'struct.struct' definition}}
             constrain.in %y, %x : !array.array<5 x index>
           }
         }
@@ -115,17 +105,15 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 function.def @constrain(%a: !felt.felt, %b: !felt.felt) {
-  // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
+  // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
   constrain.eq %a, %b : !felt.felt
-  // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' named "@constrain" within a 'struct.struct' definition}}
   constrain.eq %a, %b : !felt.felt
   function.return
 }
 // -----
 function.def @constrain(%x: index, %y: !array.array<5 x index>) {
-  // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
+  // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
   constrain.in %y, %x : !array.array<5 x index>
-  // expected-error@+1 {{'constrain.in' op only valid within a 'function.def' named "@constrain" within a 'struct.struct' definition}}
   constrain.in %y, %x : !array.array<5 x index>
   function.return
 }
@@ -138,7 +126,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !struct.struct<@constrain_calls_compute>) {
-      // expected-error@+1 {{'function.call' op targeting "@compute" only valid within a 'function.def' with 'function.allow_witness' attribute}}
+      // expected-error@+1 {{'function.call' op target '@compute' has 'function.allow_witness' attribute, which is not specified by the caller '@constrain'}}
       function.call @constrain_calls_compute::@compute() : () -> !struct.struct<@constrain_calls_compute>
       function.return
     }
@@ -149,7 +137,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @compute_calls_constrain {
     function.def @compute() -> !struct.struct<@compute_calls_constrain> {
       %self = struct.new : !struct.struct<@compute_calls_constrain>
-      // expected-error@+1 {{'function.call' op targeting "@constrain" only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
+      // expected-error@+1 {{'function.call' op target '@constrain' has 'function.allow_constraint' attribute, which is not specified by the caller '@compute'}}
       function.call @compute_calls_constrain::@constrain(%self) : (!struct.struct<@compute_calls_constrain>) -> ()
       function.return %self : !struct.struct<@compute_calls_constrain>
     }
@@ -162,7 +150,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @globalFunc() {
-    // expected-error@+1 {{'function.call' op targeting "@compute" only valid within a 'function.def' with 'function.allow_witness' attribute}}
+    // expected-error@+1 {{'function.call' op target '@compute' has 'function.allow_witness' attribute, which is not specified by the caller '@globalFunc'}}
     function.call @global_calls_compute::@compute() : () -> !struct.struct<@global_calls_compute>
     function.return
   }
@@ -180,7 +168,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @globalFunc(%0: !struct.struct<@global_calls_constrain>) {
-    // expected-error@+1 {{'function.call' op targeting "@constrain" only valid within a 'function.def' named "@constrain" within a 'struct.def' definition}}
+    // expected-error@+1 {{'function.call' op target '@constrain' has 'function.allow_constraint' attribute, which is not specified by the caller '@globalFunc'}}
     function.call @global_calls_constrain::@constrain(%0) : (!struct.struct<@global_calls_constrain>) -> ()
     function.return
   }
@@ -193,6 +181,18 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.struct<@global_calls_constrain>) {
       function.return
     }
+  }
+}
+// -----
+module attributes {veridise.lang = "llzk"} {
+  function.def @globalFuncPermissive() attributes {function.allow_constraint, function.allow_witness} {
+    function.return
+  }
+  function.def @globalFuncRestrictive() {
+    // expected-error@+2 {{'function.call' op target '@globalFuncPermissive' has 'function.allow_constraint' attribute, which is not specified by the caller '@globalFuncRestrictive'}}
+    // expected-error@+1 {{'function.call' op target '@globalFuncPermissive' has 'function.allow_witness' attribute, which is not specified by the caller '@globalFuncRestrictive'}}
+    function.call @globalFuncPermissive() : () -> ()
+    function.return
   }
 }
 // -----
@@ -572,22 +572,6 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-// -----
-module attributes {veridise.lang = "llzk"} {
-  // function.def @global_fun() -> () { function.return }
-  struct.def @unknown_call_target_invalid_function_name<[@S]> {
-    function.def @compute() -> !struct.struct<@unknown_call_target_invalid_function_name<[@S]>> {
-      %self = struct.new : !struct.struct<@unknown_call_target_invalid_function_name<[@S]>>
-      function.return %self : !struct.struct<@unknown_call_target_invalid_function_name<[@S]>>
-    }
-
-    function.def @constrain(%self: !struct.struct<@unknown_call_target_invalid_function_name<[@S]>>) {
-      // expected-error@+1 {{'function.call' op targeting a struct must call "@compute" or "@constrain" only}}
-      function.call @S::@global_fun() : () -> ()
-      function.return
-    }
-  }
-}
 
 // -----
 
@@ -639,10 +623,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// TODO-IAN: re-enable these tests after updating the verifyRegions method of FuncDefOp
 // -----
-
-// XFAIL: *
 
 !Signal = !struct.struct<@Signal>
 module attributes {veridise.lang = "llzk"} {
@@ -677,10 +658,8 @@ module attributes {veridise.lang = "llzk"} {
       // expected-note@+1 {{Signal struct value is read here}}
       %reg = struct.readf %s[@reg] : !Signal, !felt.felt
       // Illegal signal to index conversion in constrain
-      // expected-error@+1 {{'cast.toindex' op input is derived from a Signal struct, which is illegal in struct constrain function}}
+      // expected-error@+1 {{'cast.toindex' op input is derived from a Signal struct, which is only valid within a 'function.def' with 'function.allow_constraint' attribute}}
       %idx = cast.toindex %reg
-      %f = struct.readf %self[@idx] : !struct.struct<@BadSignalIndex>, index
-      constrain.eq %f, %idx : index
       %f = struct.readf %self[@idx] : !struct.struct<@BadSignalIndex>, index
       constrain.eq %f, %idx : index
       function.return
@@ -689,8 +668,6 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // -----
-
-// XFAIL: *
 
 !Signal = !struct.struct<@Signal>
 module attributes {veridise.lang = "llzk"} {
@@ -730,7 +707,7 @@ module attributes {veridise.lang = "llzk"} {
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        // expected-error@+1 {{'cast.toindex' op input is derived from a Signal struct, which is illegal in struct constrain function}}
+        // expected-error@+1 {{'cast.toindex' op input is derived from a Signal struct, which is only valid within a 'function.def' with 'function.allow_constraint' attribute}}
         %1 = cast.toindex %res
       }
       function.return
@@ -739,8 +716,6 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // -----
-
-// XFAIL: *
 
 !Signal = !struct.struct<@Signal>
 module attributes {veridise.lang = "llzk"} {
@@ -776,7 +751,7 @@ module attributes {veridise.lang = "llzk"} {
         %f1 = felt.const 1
         scf.yield %f1 : !felt.felt
       }
-      // expected-error@+1 {{'cast.toindex' op input is derived from a Signal struct, which is illegal in struct constrain function}}
+      // expected-error@+1 {{'cast.toindex' op input is derived from a Signal struct, which is only valid within a 'function.def' with 'function.allow_constraint' attribute}}
       %1 = cast.toindex %t
       function.return
     }
