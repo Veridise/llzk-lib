@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/Builders.h"
+#include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 

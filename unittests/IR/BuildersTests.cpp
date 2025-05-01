@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/Builders.h"
+#include "llzk/Dialect/Shared/Builders.h"
 
 #include <gtest/gtest.h>
 

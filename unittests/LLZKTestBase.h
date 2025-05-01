@@ -11,7 +11,7 @@
 #pragma once
 
 #include "llzk/Dialect/InitDialects.h"
-#include "llzk/Dialect/LLZK/IR/Builders.h"
+#include "llzk/Dialect/Shared/Builders.h"
 
 #include <mlir/IR/Location.h>
 #include <mlir/IR/MLIRContext.h>

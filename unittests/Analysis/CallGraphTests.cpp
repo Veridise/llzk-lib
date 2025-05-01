@@ -8,8 +8,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/CallGraphAnalyses.h"
-#include "llzk/Dialect/LLZK/IR/Builders.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>

@@ -12,7 +12,7 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
-#include "llzk/Dialect/Shared/Versioning.h"
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Util/AttributeHelper.h"
 
 #include <mlir/Bytecode/BytecodeImplementation.h>

@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/Builders.h"
+#include "llzk/Dialect/Shared/Builders.h"
 
 #include "OpTestBase.h"
 

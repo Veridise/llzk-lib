@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
-#include "llzk/Dialect/LLZK/IR/Builders.h"
+#include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Util/Debug.h"
 
