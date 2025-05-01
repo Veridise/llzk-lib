@@ -14,7 +14,7 @@ include "llzk/Dialect/Bool/IR/Dialect.td"
 include "llzk/Dialect/Bool/IR/Attrs.td"
 include "llzk/Dialect/Felt/IR/Types.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
-include "llzk/Dialect/LLZK/IR/OpsBase.td"
+include "llzk/Dialect/Shared/OpsBase.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"

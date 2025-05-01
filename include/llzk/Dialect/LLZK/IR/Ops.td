@@ -11,7 +11,7 @@
 #define LLZK_OPS
 
 include "llzk/Dialect/LLZK/IR/Attrs.td"
-include "llzk/Dialect/LLZK/IR/OpsBase.td"
+include "llzk/Dialect/Shared/OpsBase.td"
 include "llzk/Dialect/Array/IR/Types.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
 include "llzk/Dialect/Felt/IR/Types.td"
