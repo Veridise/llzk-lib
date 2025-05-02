@@ -14,7 +14,7 @@ include "mlir/IR/DialectBase.td"
 
 def UndefDialect : Dialect {
   let name = "undef";
-  let summary = "LLZK Undefined value support operations.";
+  let summary = "LLZK undefined value support operations.";
 
   let cppNamespace = "::llzk::undef";
 }

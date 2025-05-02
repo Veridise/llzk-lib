@@ -16,10 +16,8 @@
 
 #include <llvm/ADT/SmallVector.h>
 
-namespace llzk {
-
 /// Group together all implementation related to AffineMap type parameters.
-namespace affineMapHelpers {
+namespace llzk::affineMapHelpers {
 
 /// Parses dimension and symbol list for an AffineMap instantiation.
 mlir::ParseResult parseDimAndSymbolList(
@@ -158,6 +156,4 @@ inline typename OpType::Properties &buildInstantiationAttrsEmptyNoSegments(
   return props;
 }
 
-} // namespace affineMapHelpers
-
-} // namespace llzk
+} // namespace llzk::affineMapHelpers

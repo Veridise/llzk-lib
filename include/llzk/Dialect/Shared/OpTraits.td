@@ -1,4 +1,4 @@
-//===-- Ops.td - Custom Trait classes for ops --------------*- tablegen -*-===//
+//===-- OpTraits.td - Custom Trait classes for ops ---------*- tablegen -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -9,8 +9,6 @@
 
 #ifndef LLZK_SHARED_OP_HELPER
 #define LLZK_SHARED_OP_HELPER
-
-// TODO: these are all traits!
 
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
