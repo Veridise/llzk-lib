@@ -448,13 +448,13 @@ module attributes {veridise.lang = "llzk"} {
 // Test: cannot use string type with [constrain.eq] op
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component24 {
-    function.def @compute(%a: !string.string, %b: !string.string) -> !struct.type<@Component24> {
+    function.def @compute(%a: !string.type, %b: !string.type) -> !struct.type<@Component24> {
       %self = struct.new : !struct.type<@Component24>
       function.return %self : !struct.type<@Component24>
     }
-    function.def @constrain(%a: !string.string, %b: !string.string) {
-      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!string.string'}}
-      constrain.eq %a, %b : !string.string
+    function.def @constrain(%a: !string.type, %b: !string.type) {
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!string.type'}}
+      constrain.eq %a, %b : !string.type
       function.return
     }
   }
@@ -464,13 +464,13 @@ module attributes {veridise.lang = "llzk"} {
 // Test: cannot use string type with [constrain.eq] op (at depth)
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component25 {
-    function.def @compute(%a: !array.type<2 x !string.string>, %b: !array.type<2 x !string.string>) -> !struct.type<@Component25> {
+    function.def @compute(%a: !array.type<2 x !string.type>, %b: !array.type<2 x !string.type>) -> !struct.type<@Component25> {
       %self = struct.new : !struct.type<@Component25>
       function.return %self : !struct.type<@Component25>
     }
-    function.def @constrain(%self: !struct.type<@Component25>, %a: !array.type<2 x !string.string>, %b: !array.type<2 x !string.string>) {
-      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.type<2 x !string.string>'}}
-      constrain.eq %a, %b : !array.type<2 x !string.string>
+    function.def @constrain(%self: !struct.type<@Component25>, %a: !array.type<2 x !string.type>, %b: !array.type<2 x !string.type>) {
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.type<2 x !string.type>'}}
+      constrain.eq %a, %b : !array.type<2 x !string.type>
       function.return
     }
   }

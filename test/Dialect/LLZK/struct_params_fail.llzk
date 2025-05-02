@@ -509,8 +509,8 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.type<@ReadConstBadTypeC<[@T]>>
     }
     function.def @constrain(%self: !struct.type<@ReadConstBadTypeC<[@T]>>) {
-      // expected-error@+1 {{'poly.read_const' op result #0 must be integral, felt, or typevar type, but got '!string.string'}}
-      %0 = poly.read_const @T : !string.string
+      // expected-error@+1 {{'poly.read_const' op result #0 must be integral, felt, or typevar type, but got '!string.type'}}
+      %0 = poly.read_const @T : !string.type
       function.return
     }
   }

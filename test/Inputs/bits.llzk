@@ -178,18 +178,18 @@ module attributes {veridise.lang = "llzk"} {
   }
   struct.def @Log<[]> {
     struct.field @"$super" : !struct.type<@Component<[]>>
-    function.def @compute(%arg0: !string.string, %arg1: !array.type<-9223372036854775808 x !felt.type>) -> !struct.type<@Log<[]>> {
+    function.def @compute(%arg0: !string.type, %arg1: !array.type<-9223372036854775808 x !felt.type>) -> !struct.type<@Log<[]>> {
       %self = struct.new : <@Log<[]>>
-      %0 = function.call @Log$$extern(%arg0, %arg1) : (!string.string, !array.type<-9223372036854775808 x !felt.type>) -> !struct.type<@Component<[]>>
+      %0 = function.call @Log$$extern(%arg0, %arg1) : (!string.type, !array.type<-9223372036854775808 x !felt.type>) -> !struct.type<@Component<[]>>
       struct.writef %self[@"$super"] = %0 : <@Log<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Log<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Log<[]>>, %arg1: !string.string, %arg2: !array.type<-9223372036854775808 x !felt.type>) {
-      %0 = function.call @Log$$extern(%arg1, %arg2) : (!string.string, !array.type<-9223372036854775808 x !felt.type>) -> !struct.type<@Component<[]>>
+    function.def @constrain(%arg0: !struct.type<@Log<[]>>, %arg1: !string.type, %arg2: !array.type<-9223372036854775808 x !felt.type>) {
+      %0 = function.call @Log$$extern(%arg1, %arg2) : (!string.type, !array.type<-9223372036854775808 x !felt.type>) -> !struct.type<@Component<[]>>
       function.return
     }
   }
-  function.def private @Log$$extern(!string.string, !array.type<-9223372036854775808 x !felt.type>) -> !struct.type<@Component<[]>> attributes {extern}
+  function.def private @Log$$extern(!string.type, !array.type<-9223372036854775808 x !felt.type>) -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @Abort<[]> {
     struct.field @"$super" : !struct.type<@Component<[]>>
     function.def @compute() -> !struct.type<@Abort<[]>> {
@@ -206,18 +206,18 @@ module attributes {veridise.lang = "llzk"} {
   function.def private @Abort$$extern() -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @Assert<[]> {
     struct.field @"$super" : !struct.type<@Component<[]>>
-    function.def @compute(%arg0: !felt.type, %arg1: !string.string) -> !struct.type<@Assert<[]>> {
+    function.def @compute(%arg0: !felt.type, %arg1: !string.type) -> !struct.type<@Assert<[]>> {
       %self = struct.new : <@Assert<[]>>
-      %0 = function.call @Assert$$extern(%arg0, %arg1) : (!felt.type, !string.string) -> !struct.type<@Component<[]>>
+      %0 = function.call @Assert$$extern(%arg0, %arg1) : (!felt.type, !string.type) -> !struct.type<@Component<[]>>
       struct.writef %self[@"$super"] = %0 : <@Assert<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Assert<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Assert<[]>>, %arg1: !felt.type, %arg2: !string.string) {
-      %0 = function.call @Assert$$extern(%arg1, %arg2) : (!felt.type, !string.string) -> !struct.type<@Component<[]>>
+    function.def @constrain(%arg0: !struct.type<@Assert<[]>>, %arg1: !felt.type, %arg2: !string.type) {
+      %0 = function.call @Assert$$extern(%arg1, %arg2) : (!felt.type, !string.type) -> !struct.type<@Component<[]>>
       function.return
     }
   }
-  function.def private @Assert$$extern(!felt.type, !string.string) -> !struct.type<@Component<[]>> attributes {extern}
+  function.def private @Assert$$extern(!felt.type, !string.type) -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @AssertBit<[]> {
     struct.field @"$super" : !struct.type<@Component<[]>>
     struct.field @"$temp" : !struct.type<@Component<[]>>

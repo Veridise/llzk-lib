@@ -42,17 +42,17 @@ function.def private @g(%x: !array.type<2,3,2 x index>)
 //CHECK-LABEL:  function.def private @g(!array.type<2,3,2 x index>)
 // -----
 
-function.def private @h(%x: !string.string)
-//CHECK-LABEL:  function.def private @h(!string.string)
+function.def private @h(%x: !string.type)
+//CHECK-LABEL:  function.def private @h(!string.type)
 // -----
 
-function.def private @i(%x: !array.type<4 x !string.string>)
-//CHECK-LABEL:  function.def private @i(!array.type<4 x !string.string>)
+function.def private @i(%x: !array.type<4 x !string.type>)
+//CHECK-LABEL:  function.def private @i(!array.type<4 x !string.type>)
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @CJ {
-    struct.field @s : !string.string
+    struct.field @s : !string.type
     function.def @compute() -> !struct.type<@CJ> {
       %self = struct.new : !struct.type<@CJ>
       function.return %self : !struct.type<@CJ>
@@ -61,7 +61,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @CJ {
-//CHECK-NEXT:    struct.field @s : !string.string
+//CHECK-NEXT:    struct.field @s : !string.type
 //CHECK-NEXT:    function.def @compute() -> !struct.type<@CJ> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@CJ>
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@CJ>

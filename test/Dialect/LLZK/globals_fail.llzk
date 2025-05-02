@@ -97,33 +97,33 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{integer literal not valid for specified type}}
-  global.def const @g : !string.string = 65723456
+  global.def const @g : !string.type = 65723456
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.string>' expected builtin.array attribute value but found builtin.string}}
-  global.def const @g : !array.type<2 x !string.string> = "a string and something else"
+  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.type>' expected builtin.array attribute value but found builtin.string}}
+  global.def const @g : !array.type<2 x !string.type> = "a string and something else"
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.string>' expected builtin.array attribute value to contain 2 elements but found 0}}
-  global.def const @g : !array.type<2 x !string.string> = []
+  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.type>' expected builtin.array attribute value to contain 2 elements but found 0}}
+  global.def const @g : !array.type<2 x !string.type> = []
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.string>' expected builtin.string array element but found builtin.integer}}
-  global.def const @g : !array.type<2 x !string.string> = [7, 8]
+  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.type>' expected builtin.string array element but found builtin.integer}}
+  global.def const @g : !array.type<2 x !string.type> = [7, 8]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.string>' expected builtin.array attribute value to contain 2 elements but found 3}}
-  global.def const @g : !array.type<2 x !string.string> = ["too", "many", "strings"]
+  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.type>' expected builtin.array attribute value to contain 2 elements but found 3}}
+  global.def const @g : !array.type<2 x !string.type> = ["too", "many", "strings"]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+2 {{'global.def' op with type '!array.type<4 x !string.string>' expected builtin.string array element but found builtin.integer}}
-  // expected-error@+1 {{'global.def' op with type '!array.type<4 x !string.string>' expected builtin.string array element but found builtin.affine_map}}
-  global.def const @g : !array.type<4 x !string.string> = ["a string and something else", false, affine_map<(i)->(i)>, -100]
+  // expected-error@+2 {{'global.def' op with type '!array.type<4 x !string.type>' expected builtin.string array element but found builtin.integer}}
+  // expected-error@+1 {{'global.def' op with type '!array.type<4 x !string.type>' expected builtin.string array element but found builtin.affine_map}}
+  global.def const @g : !array.type<4 x !string.type> = ["a string and something else", false, affine_map<(i)->(i)>, -100]
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
@@ -143,17 +143,17 @@ module attributes {veridise.lang = "llzk"} {
 // TEST: global with "const" not initialized
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'global.def' op marked as 'const' must be assigned a value}}
-  global.def const @g : !string.string
+  global.def const @g : !string.type
 }
 // -----
 
 // TEST: GlobalReadOp with unknown symbol name
 module attributes {veridise.lang = "llzk"} {
-  global.def @g : !string.string = "Hello"
+  global.def @g : !string.type = "Hello"
   struct.def @Component02 {
     function.def @compute() -> !struct.type<@Component02> {
       // expected-error@+1 {{'global.read' op references unknown symbol "@unknown"}}
-      %t = global.read @unknown : !string.string
+      %t = global.read @unknown : !string.type
       %self = struct.new : !struct.type<@Component02>
       function.return %self : !struct.type<@Component02>
     }
@@ -167,8 +167,8 @@ module attributes {veridise.lang = "llzk"} {
   global.def @g : !felt.type = 6546
   struct.def @Component03 {
     function.def @compute() -> !struct.type<@Component03> {
-      // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.type', got '!string.string'}}
-      %t = global.read @g : !string.string
+      // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.type', got '!string.type'}}
+      %t = global.read @g : !string.type
       %self = struct.new : !struct.type<@Component03>
       function.return %self : !struct.type<@Component03>
     }

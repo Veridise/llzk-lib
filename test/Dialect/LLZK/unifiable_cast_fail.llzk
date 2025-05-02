@@ -37,8 +37,8 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Tester<[@S0, @S1]> {
     function.def @compute(%2: !felt.type) -> !struct.type<@Tester<[@S0, @S1]>> {
       %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type '!felt.type' and output type '!string.string' are not unifiable}}
-      %r2 = poly.unifiable_cast %2 : (!felt.type) -> !string.string
+      // expected-error@+1 {{'poly.unifiable_cast' op input type '!felt.type' and output type '!string.type' are not unifiable}}
+      %r2 = poly.unifiable_cast %2 : (!felt.type) -> !string.type
       function.return %self : !struct.type<@Tester<[@S0, @S1]>>
     }
     function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %2: !felt.type) {
@@ -184,8 +184,8 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Tester<[@S0, @S1]> {
     function.def @compute(%18: !struct.type<@T3<[1, 1, @S0, 1, !struct.type<@T2<[1]>>]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
       %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@T3<[1, 1, @S0, 1, !struct.type<@T2<[1]>>]>>' and output type '!struct.type<@T3<[!string.string, affine_map<()[s0, s1] -> (s0 + s1)>, 1, @S0, !struct.type<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>]>>' are not unifiable}}
-      %19 = poly.unifiable_cast %18 : (!struct.type<@T3<[1, 1, @S0, 1, !struct.type<@T2<[1]>>]>>) -> !struct.type<@T3<[!string.string, #map1, 1, @S0, !struct.type<@T2<[#map1]>>]>>
+      // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@T3<[1, 1, @S0, 1, !struct.type<@T2<[1]>>]>>' and output type '!struct.type<@T3<[!string.type, affine_map<()[s0, s1] -> (s0 + s1)>, 1, @S0, !struct.type<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>]>>' are not unifiable}}
+      %19 = poly.unifiable_cast %18 : (!struct.type<@T3<[1, 1, @S0, 1, !struct.type<@T2<[1]>>]>>) -> !struct.type<@T3<[!string.type, #map1, 1, @S0, !struct.type<@T2<[#map1]>>]>>
       function.return %self : !struct.type<@Tester<[@S0, @S1]>>
     }
     function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %18: !struct.type<@T3<[1, 1, @S0, 1, !struct.type<@T2<[1]>>]>>) {

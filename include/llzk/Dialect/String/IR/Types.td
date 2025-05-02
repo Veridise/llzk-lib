@@ -18,7 +18,7 @@ include "mlir/Interfaces/MemorySlotInterfaces.td"
 include "mlir/IR/BuiltinTypeInterfaces.td"
 
 def LLZK_String : TypeDef<StringDialect, "String", []> {
-  let mnemonic = "string";
+  let mnemonic = "type";
   let summary = "string type";
 }
 
