@@ -224,23 +224,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.type<@Component01>, %0: !array.type<2 x !Signal>) {
       %b = struct.readf %self[@f] : !struct.type<@Component01>, !array.type<2 x !Signal>
-
-      %lb = arith.constant 0 : index
-      %up = arith.constant 2 : index
-      %step = arith.constant 1 : index
-      scf.for %i = %lb to %up step %step {
-        %i0 = array.read %0[%i] : !array.type<2 x !Signal>, !Signal
-        %i0val = struct.readf %i0[@reg] : !Signal, !felt.type
-        %ib = array.read %b[%i] : !array.type<2 x !Signal>, !Signal
-        %ibval = struct.readf %ib[@reg] : !Signal, !felt.type
-        constrain.eq %i0val, %ibval : !felt.type
-      }
-      //TODO: It would be better to allow the line below instead of needing the loop above.
-      //  However, `constrain.eq` is restricted to not allow StructType. Maybe we could add an
-      //  explicit case for the struct named COMPONENT_NAME_SIGNAL and define the semantics
-      //  of `constrain.eq` to "look through" the struct to the `felt` field.
-      //
-      // constrain.eq %b, %0 : !array.type<2 x !Signal>
+      constrain.eq %b, %0 : !array.type<2 x !Signal>
       function.return
     }
   }
@@ -317,19 +301,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component01>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component01>, %[[V3:[0-9a-zA-Z_\.]+]]: !array.type<2 x !struct.type<@Signal>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.readf %[[V2]][@f] : <@Component01>, !array.type<2 x !struct.type<@Signal>>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = array.read %[[V3]]{{\[}}%[[V5]]] : <2 x !struct.type<@Signal>>, !struct.type<@Signal>
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@reg] : <@Signal>, !felt.type
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V5]]] : <2 x !struct.type<@Signal>>, !struct.type<@Signal>
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = struct.readf %[[V9]][@reg] : <@Signal>, !felt.type
-// CHECK-NEXT:      constrain.eq %[[V8]], %[[V10]] : !felt.type, !felt.type
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V3]]{{\[}}%[[V4]]] : <2 x !struct.type<@Signal>>, !struct.type<@Signal>
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readf %[[V11]][@reg] : <@Signal>, !felt.type
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V4]]] : <2 x !struct.type<@Signal>>, !struct.type<@Signal>
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.readf %[[V13]][@reg] : <@Signal>, !felt.type
-// CHECK-NEXT:      constrain.eq %[[V12]], %[[V14]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V4:.*]] = struct.readf %[[V2]][@f] : <@Component01>, !array.type<2 x !struct.type<@Signal>>
+// CHECK-NEXT:      constrain.eq %[[V4]], %[[V3]] : !array.type<2 x !struct.type<@Signal>>, !array.type<2 x !struct.type<@Signal>>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
