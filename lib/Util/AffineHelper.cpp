@@ -11,11 +11,9 @@
 
 #include <numeric>
 
-namespace llzk {
-
 using namespace mlir;
 
-namespace affineMapHelpers {
+namespace llzk::affineMapHelpers {
 
 namespace {
 
@@ -226,6 +224,4 @@ LogicalResult verifyAffineMapInstantiations(
   return aggregateResult;
 }
 
-} // namespace affineMapHelpers
-
-} // namespace llzk
+} // namespace llzk::affineMapHelpers
