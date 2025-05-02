@@ -21,7 +21,7 @@
 
 namespace llzk {
 
-/// Get the operation name, like "llzk.emit_op" for the given OpType.
+/// Get the operation name, like "constrain.eq" for the given OpType.
 /// This function can be used when the compiler would complain about
 /// incomplete types if `OpType::getOperationName()` were called directly.
 template <typename OpType> inline llvm::StringLiteral getOperationName() {
