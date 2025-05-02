@@ -1,0 +1,16 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+function.def private @b(!array.type<3,2,1 x !felt.type>)
+//CHECK-LABEL:  function.def private @b(!array.type<3,2,1 x !felt.type>)
+// -----
+
+function.def private @d(%x: !array.type<54 x index>) -> index
+//CHECK-LABEL:  function.def private @d(!array.type<54 x index>) -> index
+// -----
+
+function.def private @g(%x: !array.type<2,3,2 x index>)
+//CHECK-LABEL:  function.def private @g(!array.type<2,3,2 x index>)
+// -----
+
+function.def private @i(%x: !array.type<4 x !string.type>)
+//CHECK-LABEL:  function.def private @i(!array.type<4 x !string.type>)

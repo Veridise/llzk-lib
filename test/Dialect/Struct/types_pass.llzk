@@ -13,10 +13,6 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL:  function.def private @a(!array.type<5 x !felt.type>, !struct.type<@Hello>)
 // -----
 
-function.def private @b(!array.type<3,2,1 x !felt.type>)
-//CHECK-LABEL:  function.def private @b(!array.type<3,2,1 x !felt.type>)
-// -----
-
 module attributes {veridise.lang = "llzk"} {
   struct.def @Bob {
     function.def @compute() -> !struct.type<@Bob> {
@@ -28,26 +24,6 @@ module attributes {veridise.lang = "llzk"} {
   function.def private @c(%x: !array.type<5 x !struct.type<@Bob>>) -> !array.type<5 x !struct.type<@Bob>>
 }
 //CHECK-LABEL:  function.def private @c(!array.type<5 x !struct.type<@Bob>>) -> !array.type<5 x !struct.type<@Bob>>
-// -----
-
-function.def private @d(%x: !array.type<54 x index>) -> index
-//CHECK-LABEL:  function.def private @d(!array.type<54 x index>) -> index
-// -----
-
-function.def private @f(!felt.type) -> i1
-//CHECK-LABEL:  function.def private @f(!felt.type) -> i1
-// -----
-
-function.def private @g(%x: !array.type<2,3,2 x index>)
-//CHECK-LABEL:  function.def private @g(!array.type<2,3,2 x index>)
-// -----
-
-function.def private @h(%x: !string.type)
-//CHECK-LABEL:  function.def private @h(!string.type)
-// -----
-
-function.def private @i(%x: !array.type<4 x !string.type>)
-//CHECK-LABEL:  function.def private @i(!array.type<4 x !string.type>)
 // -----
 
 module attributes {veridise.lang = "llzk"} {
