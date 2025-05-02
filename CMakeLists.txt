@@ -227,7 +227,7 @@ if(Doxygen_FOUND)
     "${CMAKE_CURRENT_BINARY_DIR}/include/*/*.md"
     # We ignore the passes because we aggregate the documentation in doc/2_tools.md under `llzk-opt`
     "${LLZK_MLIR_DOC_OUTPUT_DIR}/passes/*.md"
-    # We ignore the dialects because we aggregate the ducmnetaiton in doc/7_dialects.md
+    # We ignore the dialects because we aggregate the documentation in doc/7_dialects.md
     "${LLZK_MLIR_DOC_OUTPUT_DIR}/dialect/*.md"
     # Ignore the filter script
     "${CMAKE_CURRENT_SOURCE_DIR}/doc/filter.py"
