@@ -25,23 +25,58 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 // Op Classes
 //===------------------------------------------------------------------===//
 
-class Boolean_Op<string mnemonic, list<Trait> traits = []>
+class BoolDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<BoolDialect, mnemonic, traits>;
 
-class Boolean_BinaryOpBase<string mnemonic, Type resultType,
-                           list<Trait> traits = []>
+class BoolBinaryOpBase<string mnemonic, Type resultType,
+                       list<Trait> traits = []>
     : BinaryOpBase<BoolDialect, mnemonic, resultType, traits>;
 
-class Boolean_UnaryOpBase<string mnemonic, Type resultType,
-                          list<Trait> traits = []>
+class BoolUnaryOpBase<string mnemonic, Type resultType, list<Trait> traits = []>
     : UnaryOpBase<BoolDialect, mnemonic, resultType, traits>;
 
 //===------------------------------------------------------------------===//
-// Operators
+// Boolean operators
+//===------------------------------------------------------------------===//
+
+def LLZK_AndBoolOp : BoolBinaryOpBase<"and", I1, [WitnessGen, Commutative]> {
+  let summary = "logical AND operator";
+  let description = [{
+    This operation computes the logical AND (i.e. conjunction) of two `i1` (i.e. boolean)
+    values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+  }];
+}
+
+def LLZK_OrBoolOp : BoolBinaryOpBase<"or", I1, [WitnessGen, Commutative]> {
+  let summary = "logical OR operator";
+  let description = [{
+    This operation computes the logical OR (i.e. disjunction) of two `i1` (i.e. boolean)
+    values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+  }];
+}
+
+def LLZK_XorBoolOp : BoolBinaryOpBase<"xor", I1, [WitnessGen, Commutative]> {
+  let summary = "logical XOR operator";
+  let description = [{
+    This operation computes the logical XOR (i.e. exclusive disjunction) of two `i1` (i.e. boolean)
+    values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+  }];
+}
+
+def LLZK_NotBoolOp : BoolUnaryOpBase<"not", I1, [WitnessGen]> {
+  let summary = "logical NOT operator";
+  let description = [{
+    This operation computes the logical NOT (i.e. negation) of an `i1` (i.e. boolean)
+    value as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+  }];
+}
+
+//===------------------------------------------------------------------===//
+// Other operators
 //===------------------------------------------------------------------===//
 
 def LLZK_AssertOp
-    : Boolean_Op<
+    : BoolDialectOp<
           "assert", [DeclareOpInterfaceMethods<MemoryEffectsOpInterface>]> {
   let summary = "assertion operation";
   let description = [{
@@ -69,12 +104,8 @@ def LLZK_AssertOp
   let assemblyFormat = [{ $condition (`,` $msg^)? attr-dict }];
 }
 
-//===------------------------------------------------------------------===//
-// Field element operators
-//===------------------------------------------------------------------===//
-
 // Match format of Index comparisons (for now)
-def LLZK_CmpOp : Boolean_Op<"cmp", [Pure]> {
+def LLZK_CmpOp : BoolDialectOp<"cmp", [Pure]> {
   let summary = "compare field element values";
   let description = [{
     This operation takes two field element values and compares them according to the
@@ -111,44 +142,6 @@ def LLZK_CmpOp : Boolean_Op<"cmp", [Pure]> {
       LLZK_FeltType:$rhs);
   let results = (outs I1:$result);
   let assemblyFormat = [{ `` $predicate `(` $lhs `,` $rhs `)` attr-dict }];
-}
-
-//===------------------------------------------------------------------===//
-// Boolean operators
-//===------------------------------------------------------------------===//
-
-def LLZK_AndBoolOp
-    : Boolean_BinaryOpBase<"and", I1, [WitnessGen, Commutative]> {
-  let summary = "logical AND operator";
-  let description = [{
-    This operation computes the logical AND (i.e. conjunction) of two `i1` (i.e. boolean)
-    values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
-  }];
-}
-
-def LLZK_OrBoolOp : Boolean_BinaryOpBase<"or", I1, [WitnessGen, Commutative]> {
-  let summary = "logical OR operator";
-  let description = [{
-    This operation computes the logical OR (i.e. disjunction) of two `i1` (i.e. boolean)
-    values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
-  }];
-}
-
-def LLZK_XorBoolOp
-    : Boolean_BinaryOpBase<"xor", I1, [WitnessGen, Commutative]> {
-  let summary = "logical XOR operator";
-  let description = [{
-    This operation computes the logical XOR (i.e. exclusive disjunction) of two `i1` (i.e. boolean)
-    values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
-  }];
-}
-
-def LLZK_NotBoolOp : Boolean_UnaryOpBase<"not", I1, [WitnessGen]> {
-  let summary = "logical NOT operator";
-  let description = [{
-    This operation computes the logical NOT (i.e. negation) of an `i1` (i.e. boolean)
-    value as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
-  }];
 }
 
 #endif // LLZK_BOOLEAN_OPS
