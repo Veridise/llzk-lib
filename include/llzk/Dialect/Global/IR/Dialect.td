@@ -17,8 +17,6 @@ def GlobalDialect : Dialect {
   let summary = "LLZK support for global values, defined outside of structs.";
 
   let cppNamespace = "::llzk::global";
-
-  let dependentDialects = ["::mlir::BuiltinDialect"];
 }
 
 #endif // LLZK_GLOBAL_DIALECT

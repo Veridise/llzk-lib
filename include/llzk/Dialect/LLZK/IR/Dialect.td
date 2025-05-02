@@ -22,9 +22,6 @@ def LLZKDialect : Dialect {
 
   let cppNamespace = "::llzk";
 
-  let dependentDialects = ["::mlir::scf::SCFDialect",
-                           "::llzk::felt::FeltDialect"];
-
   let useDefaultAttributePrinterParser = true;
 }
 

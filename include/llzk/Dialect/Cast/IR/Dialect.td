@@ -18,9 +18,7 @@ def CastDialect : Dialect {
 
   let cppNamespace = "::llzk::cast";
 
-  let dependentDialects = ["::mlir::BuiltinDialect", "::llzk::LLZKDialect",
-                           "::llzk::function::FunctionDialect",
-                           "::llzk::component::StructDialect"];
+  let dependentDialects = ["::llzk::felt::FeltDialect"];
 }
 
 #endif // LLZK_CAST_DIALECT

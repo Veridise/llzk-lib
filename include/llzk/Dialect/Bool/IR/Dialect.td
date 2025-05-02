@@ -18,10 +18,6 @@ def BoolDialect : Dialect {
 
   let cppNamespace = "::llzk::boolean";
 
-  let dependentDialects = ["::mlir::BuiltinDialect",
-                           "::llzk::felt::FeltDialect",
-                           "::llzk::function::FunctionDialect"];
-
   let useDefaultAttributePrinterParser = true;
 }
 

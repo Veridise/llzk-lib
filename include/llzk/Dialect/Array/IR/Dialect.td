@@ -18,8 +18,6 @@ def ArrayDialect : Dialect {
 
   let cppNamespace = "::llzk::array";
 
-  let dependentDialects = ["::mlir::BuiltinDialect"];
-
   let useDefaultTypePrinterParser = true;
 }
 

@@ -17,8 +17,6 @@ def IncludeDialect : Dialect {
   let summary = "LLZK include operations.";
 
   let cppNamespace = "::llzk::include";
-
-  let dependentDialects = ["::mlir::BuiltinDialect"];
 }
 
 #endif // LLZK_INCLUDE_DIALECT

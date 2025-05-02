@@ -17,8 +17,6 @@ def UndefDialect : Dialect {
   let summary = "LLZK Undefined value support operations.";
 
   let cppNamespace = "::llzk::undef";
-
-  let dependentDialects = ["::mlir::BuiltinDialect"];
 }
 
 #endif // LLZK_UNDEF_DIALECT

@@ -18,8 +18,6 @@ def StructDialect : Dialect {
 
   let cppNamespace = "::llzk::component";
 
-  let dependentDialects = ["::mlir::BuiltinDialect"];
-
   let useDefaultTypePrinterParser = true;
 }
 

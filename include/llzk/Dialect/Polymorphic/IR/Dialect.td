@@ -19,9 +19,6 @@ def PolymorphicDialect : Dialect {
 
   let cppNamespace = "::llzk::polymorphic";
 
-  let dependentDialects = ["::mlir::BuiltinDialect",
-                           "llzk::component::StructDialect"];
-
   let useDefaultTypePrinterParser = true;
 }
 

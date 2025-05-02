@@ -18,8 +18,6 @@ def FeltDialect : Dialect {
 
   let cppNamespace = "::llzk::felt";
 
-  let dependentDialects = ["::mlir::BuiltinDialect"];
-
   let useDefaultTypePrinterParser = true;
   let useDefaultAttributePrinterParser = true;
 }
