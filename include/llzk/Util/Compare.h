@@ -30,8 +30,8 @@ template <OpComparable Op> mlir::FailureOr<bool> isLocationLess(const Op &l, con
   Op &lhs = const_cast<Op &>(l);
   Op &rhs = const_cast<Op &>(r);
   // Try sorting by location first, then name.
-  auto lhsLoc = lhs.getOperation()->getLoc().template dyn_cast<mlir::FileLineColLoc>();
-  auto rhsLoc = rhs.getOperation()->getLoc().template dyn_cast<mlir::FileLineColLoc>();
+  auto lhsLoc = llvm::dyn_cast<mlir::FileLineColLoc>(lhs.getOperation()->getLoc());
+  auto rhsLoc = llvm::dyn_cast<mlir::FileLineColLoc>(rhs.getOperation()->getLoc());
   if (lhsLoc && rhsLoc) {
     auto filenameCmp = lhsLoc.getFilename().compare(rhsLoc.getFilename());
     return filenameCmp < 0 || (filenameCmp == 0 && lhsLoc.getLine() < rhsLoc.getLine()) ||

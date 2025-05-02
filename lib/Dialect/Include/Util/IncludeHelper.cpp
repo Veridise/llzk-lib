@@ -152,7 +152,7 @@ public:
           .attachNote(incOp.getLoc())
           .append("from file included here");
     }
-    return cast<ModuleOp>(op);
+    return llvm::cast<ModuleOp>(op);
   }
 
   Block *getDest() { return dest; }

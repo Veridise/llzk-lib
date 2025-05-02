@@ -39,7 +39,7 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
                       /*methodBody=*/[{
         mlir::Type t = $_op.getComponent().getType();
         assert(t.isa<StructType>());
-        return t.template cast<StructType>();
+        return llvm::cast<StructType>(t);
       }]>,
       InterfaceMethod<
           [{Return `true` if the op is a read, `false` if it's a write.}],
