@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
@@ -37,4 +38,5 @@ auto llzk::component::StructDialect::initialize() -> void {
     #include "llzk/Dialect/Struct/IR/Types.cpp.inc"
   >();
   // clang-format on
+  addInterfaces<LLZKDialectBytecodeInterface<StructDialect>>();
 }

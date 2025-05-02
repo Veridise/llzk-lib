@@ -10,6 +10,7 @@
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 
 #include <mlir/IR/DialectImplementation.h>
 
@@ -38,4 +39,5 @@ auto llzk::boolean::BoolDialect::initialize() -> void {
     #include "llzk/Dialect/Bool/IR/Attrs.cpp.inc"
   >();
   // clang-format on
+  addInterfaces<LLZKDialectBytecodeInterface<BoolDialect>>();
 }

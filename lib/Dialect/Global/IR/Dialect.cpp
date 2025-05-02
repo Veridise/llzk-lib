@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Global/IR/Dialect.cpp.inc"
@@ -24,4 +25,5 @@ auto llzk::global::GlobalDialect::initialize() -> void {
     #include "llzk/Dialect/Global/IR/Ops.cpp.inc"
   >();
   // clang-format on
+  addInterfaces<LLZKDialectBytecodeInterface<GlobalDialect>>();
 }

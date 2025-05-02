@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Cast/IR/Dialect.cpp.inc"
@@ -24,4 +25,5 @@ auto llzk::cast::CastDialect::initialize() -> void {
     #include "llzk/Dialect/Cast/IR/Ops.cpp.inc"
   >();
   // clang-format on
+  addInterfaces<LLZKDialectBytecodeInterface<CastDialect>>();
 }

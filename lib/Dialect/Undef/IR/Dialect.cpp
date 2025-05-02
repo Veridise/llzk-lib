@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/Undef/IR/Dialect.h"
 #include "llzk/Dialect/Undef/IR/Ops.h"
 
@@ -24,4 +25,5 @@ auto llzk::undef::UndefDialect::initialize() -> void {
     #include "llzk/Dialect/Undef/IR/Ops.cpp.inc"
   >();
   // clang-format on
+  addInterfaces<LLZKDialectBytecodeInterface<UndefDialect>>();
 }

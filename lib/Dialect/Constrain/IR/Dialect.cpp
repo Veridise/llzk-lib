@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Constrain/IR/Dialect.cpp.inc"
@@ -24,4 +25,5 @@ auto llzk::constrain::ConstrainDialect::initialize() -> void {
     #include "llzk/Dialect/Constrain/IR/Ops.cpp.inc"
   >();
   // clang-format on
+  addInterfaces<LLZKDialectBytecodeInterface<ConstrainDialect>>();
 }

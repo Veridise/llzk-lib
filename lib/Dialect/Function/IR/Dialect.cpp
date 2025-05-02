@@ -10,6 +10,7 @@
 #include "llzk/Dialect/Function/IR/Attrs.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 
 #include <mlir/IR/DialectImplementation.h>
 
@@ -38,4 +39,5 @@ auto llzk::function::FunctionDialect::initialize() -> void {
     #include "llzk/Dialect/Function/IR/Attrs.cpp.inc"
   >();
   // clang-format on
+  addInterfaces<LLZKDialectBytecodeInterface<FunctionDialect>>();
 }

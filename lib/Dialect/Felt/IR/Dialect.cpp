@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 
 #include <mlir/IR/DialectImplementation.h>
 
@@ -46,4 +47,5 @@ auto llzk::felt::FeltDialect::initialize() -> void {
     #include "llzk/Dialect/Felt/IR/Attrs.cpp.inc"
   >();
   // clang-format on
+  addInterfaces<LLZKDialectBytecodeInterface<FeltDialect>>();
 }
