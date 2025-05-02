@@ -1,4 +1,4 @@
-//===-- Dialect.cpp - Include dialect implementation ------------*- C++ -*-===//
+//===-- Dialect.cpp - Cast dialect implementation ---------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.

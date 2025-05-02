@@ -11,15 +11,6 @@
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Util/TypeHelper.h"
 
-#include <mlir/IR/Attributes.h>
-#include <mlir/IR/Builders.h>
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/Diagnostics.h>
-#include <mlir/IR/OwningOpRef.h>
-#include <mlir/IR/SymbolTable.h>
-#include <mlir/IR/ValueRange.h>
-#include <mlir/Support/LogicalResult.h>
-
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Bool/IR/Ops.cpp.inc"
@@ -32,8 +23,7 @@ namespace llzk::boolean {
 // AssertOp
 //===------------------------------------------------------------------===//
 
-// This side effect models "program termination".
-// Based on
+// This side effect models "program termination". Based on
 // https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97
 void AssertOp::getEffects(
     SmallVectorImpl<SideEffects::EffectInstance<MemoryEffects::Effect>> &effects

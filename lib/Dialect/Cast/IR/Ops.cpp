@@ -11,18 +11,6 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/BuilderHelper.h"
 
-#include <mlir/Dialect/Utils/IndexingUtils.h>
-#include <mlir/IR/Attributes.h>
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/Diagnostics.h>
-#include <mlir/IR/OwningOpRef.h>
-#include <mlir/IR/SymbolTable.h>
-#include <mlir/IR/ValueRange.h>
-#include <mlir/Support/LogicalResult.h>
-
-#include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/Twine.h>
-
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Cast/IR/Ops.cpp.inc"

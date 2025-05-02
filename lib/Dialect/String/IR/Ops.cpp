@@ -9,14 +9,7 @@
 
 #include "llzk/Dialect/String/IR/Ops.h"
 
-#include <mlir/IR/Attributes.h>
 #include <mlir/IR/Builders.h>
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/Diagnostics.h>
-#include <mlir/IR/OwningOpRef.h>
-#include <mlir/IR/SymbolTable.h>
-#include <mlir/IR/ValueRange.h>
-#include <mlir/Support/LogicalResult.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES

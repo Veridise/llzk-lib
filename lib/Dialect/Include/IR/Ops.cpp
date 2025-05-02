@@ -10,23 +10,12 @@
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Util/BuilderHelper.h"
 
-#include <mlir/Dialect/Utils/IndexingUtils.h>
-#include <mlir/IR/Attributes.h>
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/Diagnostics.h>
-#include <mlir/IR/OwningOpRef.h>
-#include <mlir/IR/SymbolTable.h>
-#include <mlir/IR/ValueRange.h>
-#include <mlir/Support/LogicalResult.h>
-
-#include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/Twine.h>
-
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Include/IR/Ops.cpp.inc"
 
 using namespace mlir;
+using namespace llvm;
 
 namespace llzk::include {
 
@@ -34,7 +23,7 @@ namespace llzk::include {
 // IncludeOp (see IncludeHelper.cpp for other functions)
 //===------------------------------------------------------------------===//
 
-IncludeOp IncludeOp::create(Location loc, llvm::StringRef name, llvm::StringRef path) {
+IncludeOp IncludeOp::create(Location loc, StringRef name, StringRef path) {
   return delegate_to_build<IncludeOp>(loc, name, path);
 }
 
