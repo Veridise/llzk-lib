@@ -19,13 +19,14 @@ include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
-class Array_Op<string mnemonic, list<Trait> traits = []>
+class ArrayDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<ArrayDialect, mnemonic, traits>;
 
-class ArrayAccessOp<string mnemonic, list<Trait> traits = []>
-    : Array_Op<mnemonic,
-               traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                       DeclareOpInterfaceMethods<ArrayAccessOpInterface>]> {
+class ArrayAccessOpBase<string mnemonic, list<Trait> traits = []>
+    : ArrayDialectOp<
+          mnemonic,
+          traits#[DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                  DeclareOpInterfaceMethods<ArrayAccessOpInterface>]> {
   let extraClassDeclaration = [{
     /// Gets the type of the referenced base array.
     inline ::llzk::array::ArrayType getArrRefType() {
@@ -36,7 +37,7 @@ class ArrayAccessOp<string mnemonic, list<Trait> traits = []>
 
 // isRead: read(1) vs write(0) ops
 class ScalarArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
-    : ArrayAccessOp<
+    : ArrayAccessOpBase<
           mnemonic,
           traits#[DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
                   DeclareOpInterfaceMethods<PromotableMemOpInterface>]> {
@@ -86,7 +87,7 @@ class ScalarArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
 
 // isRead: read(1) vs write(0) ops
 class RangedArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
-    : ArrayAccessOp<mnemonic, traits> {
+    : ArrayAccessOpBase<mnemonic, traits> {
   let extraClassDefinition = [{
     /// Return `true` if the op is a read, `false` if it's a write.
     bool $cppClass::isRead() {
@@ -100,7 +101,7 @@ class RangedArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
 //===------------------------------------------------------------------===//
 
 def LLZK_CreateArrayOp
-    : Array_Op<
+    : ArrayDialectOp<
           "new",
           [Pure, AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
            DeclareOpInterfaceMethods<SymbolUserOpInterface>,
@@ -363,8 +364,9 @@ def LLZK_InsertArrayOp : RangedArrayAccessOp<"insert", false> {
 }
 
 def LLZK_ArrayLengthOp
-    : Array_Op<"len", [Pure, DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                       DeclareOpInterfaceMethods<ArrayRefOpInterface>]> {
+    : ArrayDialectOp<"len", [Pure,
+                             DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                             DeclareOpInterfaceMethods<ArrayRefOpInterface>]> {
   let summary = "return the length of an array";
   let description = [{
     This operation returns the size of the specified dimension of an array.
