@@ -11,9 +11,9 @@
 
 #include "llzk/Analysis/AbstractLatticeValue.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/Hash.h"
 

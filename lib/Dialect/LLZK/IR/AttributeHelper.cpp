@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 
 using namespace mlir;
 

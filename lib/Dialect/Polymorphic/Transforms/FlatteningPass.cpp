@@ -16,11 +16,11 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 

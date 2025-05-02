@@ -11,7 +11,7 @@
 #define LLZK_FELT_ATTRS
 
 include "llzk/Dialect/Felt/IR/Dialect.td"
-include "llzk/Util/AttributeHelper.td"
+include "llzk/Dialect/LLZK/IR/AttributeHelper.td"
 
 include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinAttributeInterfaces.td"

@@ -10,7 +10,7 @@
 #pragma once
 
 #include "llzk/Dialect/Array/IR/Types.h"
-#include "llzk/Util/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/Builders.h>

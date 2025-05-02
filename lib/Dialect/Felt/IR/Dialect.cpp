@@ -11,7 +11,7 @@
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
-#include "llzk/Util/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 
 #include <mlir/IR/DialectImplementation.h>
 

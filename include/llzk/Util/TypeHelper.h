@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "llzk/Util/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 
 #include <mlir/IR/OpImplementation.h>

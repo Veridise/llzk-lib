@@ -9,10 +9,10 @@
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
-#include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 

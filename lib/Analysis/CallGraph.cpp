@@ -14,7 +14,7 @@
 
 #include "llzk/Analysis/CallGraph.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Util/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Analysis/CallGraph.h>
