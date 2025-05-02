@@ -594,8 +594,9 @@ public:
 
   LogicalResult match(FieldRefOpType op) const override { return failure(ImplClass::legal(op)); }
 
-  void rewrite(FieldRefOpType op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
-      const override {
+  void rewrite(
+      FieldRefOpType op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     StructType tgtStructTy = llvm::cast<FieldRefOpInterface>(op.getOperation()).getStructType();
     assert(tgtStructTy);
     auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
