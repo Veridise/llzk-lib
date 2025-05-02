@@ -12,7 +12,7 @@ set(LLVM_TARGET_DEFINITIONS "Ops.td")
 mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=poly)
 mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=poly)
 
-llzk_add_mlir_doc(PolymorphicOpsDocGen PolymorphicDialect.md -gen-dialect-doc -dialect=poly)
+llzk_add_mlir_doc(PolymorphicOpsDocGen dialect/PolymorphicDialect.md -gen-dialect-doc -dialect=poly)
 
 add_public_tablegen_target(PolymorphicDialectIncGen)
 add_dependencies(mlir-headers PolymorphicDialectIncGen)

@@ -16,7 +16,7 @@ set(LLVM_TARGET_DEFINITIONS "Ops.td")
 mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=bool)
 mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=bool)
 
-llzk_add_mlir_doc(BooleanOpsDocGen BoolDialect.md -gen-dialect-doc -dialect=bool)
+llzk_add_mlir_doc(BooleanOpsDocGen dialect/BoolDialect.md -gen-dialect-doc -dialect=bool)
 
 add_public_tablegen_target(BoolDialectIncGen)
 add_dependencies(mlir-headers BoolDialectIncGen)

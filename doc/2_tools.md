@@ -1,6 +1,6 @@
 # Tool Guides {#tools}
 
-\tableofcontents
+\tableofcontents{HTML:3}
 
 # llzk-opt {#llzk-opt}
 
@@ -21,9 +21,17 @@ available in `mlir-opt` are not available in `llzk-opt`.
 
 \include{doc,raise=1} build/doc/mlir/passes/AnalysisPasses.md
 
-### Transformation Passes
+### General Transformation Passes
 
 \include{doc,raise=1} build/doc/mlir/passes/LLZKTransformationPasses.md
+
+### 'array' Dialect Transformation Passes
+
+\include{doc,raise=1} build/doc/mlir/passes/array/TransformationPasses.md
+
+### 'polymorphic' Dialect Transformation Passes
+
+\include{doc,raise=1} build/doc/mlir/passes/polymorphic/TransformationPasses.md
 
 ### Validation Passes
 

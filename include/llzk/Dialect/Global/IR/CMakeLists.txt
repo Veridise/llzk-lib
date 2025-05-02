@@ -12,7 +12,7 @@ set(LLVM_TARGET_DEFINITIONS "Ops.td")
 mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=global)
 mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=global)
 
-llzk_add_mlir_doc(GlobalOpsDocGen GlobalDialect.md -gen-dialect-doc -dialect=global)
+llzk_add_mlir_doc(GlobalOpsDocGen dialect/GlobalDialect.md -gen-dialect-doc -dialect=global)
 
 add_public_tablegen_target(GlobalDialectIncGen)
 add_dependencies(mlir-headers GlobalDialectIncGen)

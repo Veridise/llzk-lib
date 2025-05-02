@@ -8,7 +8,7 @@ set(LLVM_TARGET_DEFINITIONS "Ops.td")
 mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=undef)
 mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=undef)
 
-llzk_add_mlir_doc(UndefOpsDocGen UndefDialect.md -gen-dialect-doc -dialect=undef)
+llzk_add_mlir_doc(UndefOpsDocGen dialect/UndefDialect.md -gen-dialect-doc -dialect=undef)
 
 add_public_tablegen_target(UndefDialectIncGen)
 add_dependencies(mlir-headers UndefDialectIncGen)

@@ -16,7 +16,7 @@ set(LLVM_TARGET_DEFINITIONS "Ops.td")
 mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=struct)
 mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=struct)
 
-llzk_add_mlir_doc(StructOpsDocGen StructDialect.md -gen-dialect-doc -dialect=struct)
+llzk_add_mlir_doc(StructOpsDocGen dialect/StructDialect.md -gen-dialect-doc -dialect=struct)
 
 add_public_tablegen_target(StructDialectIncGen)
 add_dependencies(mlir-headers StructDialectIncGen)

@@ -8,7 +8,7 @@ set(LLVM_TARGET_DEFINITIONS "Attrs.td")
 mlir_tablegen(Attrs.h.inc -gen-attrdef-decls -attrdefs-dialect=llzk)
 mlir_tablegen(Attrs.cpp.inc -gen-attrdef-defs -attrdefs-dialect=llzk)
 
-llzk_add_mlir_doc(LLZKOpsDocGen Dialect.md -gen-dialect-doc -dialect=llzk)
+llzk_add_mlir_doc(LLZKOpsDocGen dialect/LLZKDialect.md -gen-dialect-doc -dialect=llzk)
 
 add_public_tablegen_target(LLZKDialectIncGen)
 add_dependencies(mlir-headers LLZKDialectIncGen)

@@ -16,7 +16,7 @@ set(LLVM_TARGET_DEFINITIONS "OpInterfaces.td")
 mlir_tablegen(OpInterfaces.h.inc --gen-op-interface-decls)
 mlir_tablegen(OpInterfaces.cpp.inc --gen-op-interface-defs)
 
-llzk_add_mlir_doc(ArrayOpsDocGen ArrayDialect.md -gen-dialect-doc -dialect=array)
+llzk_add_mlir_doc(ArrayOpsDocGen dialect/ArrayDialect.md -gen-dialect-doc -dialect=array)
 
 add_public_tablegen_target(ArrayDialectIncGen)
 add_dependencies(mlir-headers ArrayDialectIncGen)

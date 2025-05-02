@@ -1,9 +1,14 @@
 # What is LLZK? {#overview}
 
+\tableofcontents
+
 LLZK is an open-source Intermediate Representation (IR) for Zero Knowledge (ZK)
 circuit languages.
 The LLZK project provides a flexible framework, inspired by LLVM, designed to
 unify diverse ZK front-end languages and backend ZK architectures.
+From an implementation perspective, the LLZK IR is a composition of multiple
+[MLIR *dialects*][mlir-dialects] that represent different features that may be present
+in the source ZK language.
 
 You can read more about the motivation and design of the project [on our blog][llzk-post].
 
@@ -26,7 +31,7 @@ Frontends are currently not contained within the LLZK repository, but are rather
 maintained in separate repositories, using LLZK-lib as a dependency.
 
 Veridise currently maintains the following frontends:
-- [Zirgen](https://github.com/Veridise/zir-to-zkir)
+- [Zirgen](https://github.com/Veridise/zirgen-to-llzk)
 <!-- TODO: Update this link to a doxygen site at some point. -->
 
 For information on how to create a new frontend, please refer to the \ref translation-guidelines.
@@ -41,9 +46,14 @@ LLZK provides three types of passes:
 User documentation about how to use these passes is provided in \ref tools.
 
 Developer documentation can be found:
-- In the Analysis directories ([include](\ref include/llzk/Dialect/LLZK/Analysis), [lib](\ref lib/Dialect/LLZK/Analysis))
-- In the Transforms directories ([include](\ref include/llzk/Dialect/LLZK/Transforms), [lib](\ref lib/Dialect/LLZK/Transforms))
-- In the Validators directories ([include](\ref include/llzk/Dialect/LLZK/Validators), [lib](\ref lib/Dialect/LLZK/Validators))
+- In the Analysis directories:
+    - General, multi-dialect analyses: \ref include/llzk/Analysis, \ref lib/Analysis
+- In the Transforms directories:
+    - General, multi-dialect transforms: \ref include/llzk/Transforms, \ref lib/Transforms
+    - `array` transforms: \ref include/llzk/Dialect/Array/Transforms, \ref lib/Dialect/Array/Transforms
+    - `polymorphic` transforms: \ref include/llzk/Dialect/Polymorphic/Transforms, \ref lib/Dialect/Polymorphic/Transforms
+- In the Validators directories
+    - General, multi-dialect validators: \ref include/llzk/Validators, \ref lib/Validators
 
 ### Backends {#backends}
 
@@ -61,3 +71,4 @@ Veridise also plans to release several analysis backends based on prior tooling 
 [llzk-post]: https://medium.com/veridise/veridise-secures-ethereum-foundation-grant-to-develop-llzk-a-new-intermediate-representation-ir-224c0e71f4d5
 [picus-v2]: https://docs.veridise.com/picus-v2/
 [zk-vanguard]: https://docs.veridise.com/zkvanguard/
+[mlir-dialects]: https://mlir.llvm.org/docs/DefiningDialects/

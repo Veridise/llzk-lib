@@ -16,7 +16,7 @@ set(LLVM_TARGET_DEFINITIONS "Ops.td")
 mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=felt)
 mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=felt)
 
-llzk_add_mlir_doc(FeltOpsDocGen FeltDialect.md -gen-dialect-doc -dialect=felt)
+llzk_add_mlir_doc(FeltOpsDocGen dialect/FeltDialect.md -gen-dialect-doc -dialect=felt)
 
 add_public_tablegen_target(FeltDialectIncGen)
 add_dependencies(mlir-headers FeltDialectIncGen)

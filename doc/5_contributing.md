@@ -1,8 +1,8 @@
 # Contribution Guide {#contribution-guide}
 
-\note This contribution guide is adapted from the example guide provided [by GitHub](https://github.com/github/docs/blob/278ce65fe7e7cb7e8432e9f032f94c7fe46c379e/.github/CONTRIBUTING.md). We will continue to refine the information here as needed.
-
 \tableofcontents
+
+\note This contribution guide is adapted from the example guide provided [by GitHub](https://github.com/github/docs/blob/278ce65fe7e7cb7e8432e9f032f94c7fe46c379e/.github/CONTRIBUTING.md). We will continue to refine the information here as needed.
 
 Thank you for investing your time in contributing to the LLZK project!
 

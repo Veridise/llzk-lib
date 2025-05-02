@@ -12,7 +12,7 @@ set(LLVM_TARGET_DEFINITIONS "Ops.td")
 mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=string)
 mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=string)
 
-llzk_add_mlir_doc(StringOpsDocGen StringDialect.md -gen-dialect-doc -dialect=string)
+llzk_add_mlir_doc(StringOpsDocGen dialect/StringDialect.md -gen-dialect-doc -dialect=string)
 
 add_public_tablegen_target(StringDialectIncGen)
 add_dependencies(mlir-headers StringDialectIncGen)

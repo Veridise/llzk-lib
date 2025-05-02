@@ -12,7 +12,7 @@ set(LLVM_TARGET_DEFINITIONS "Ops.td")
 mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=function)
 mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=function)
 
-llzk_add_mlir_doc(FunctionOpsDocGen FunctionDialect.md -gen-dialect-doc -dialect=function)
+llzk_add_mlir_doc(FunctionOpsDocGen dialect/FunctionDialect.md -gen-dialect-doc -dialect=function)
 
 add_public_tablegen_target(FunctionDialectIncGen)
 add_dependencies(mlir-headers FunctionDialectIncGen)
