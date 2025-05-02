@@ -105,7 +105,8 @@ module attributes {veridise.lang = "llzk"} {
                   %8: !array.type<2,2 x !felt.type>, %9: !array.type<2,@S0 x !felt.type>,
                   %10: !array.type<2,7 x !felt.type>, %11: !string.type, %12: !poly.tvar<@S1>,
                   %18: !struct.type<@T3<[1, 7, @S0, 1, !struct.type<@T2<[1]>>]>>,
-                  %20: !array.type<1, 7, @S0, 1 x !struct.type<@T2<[1]>>>) -> !struct.type<@Tester<[@S0, @S1]>> {
+                  %20: !array.type<1, 7, @S0, 1 x !struct.type<@T2<[1]>>>,
+                  %22: !array.type<? x !felt.type>) -> !struct.type<@Tester<[@S0, @S1]>> {
       %self = struct.new : <@Tester<[@S0, @S1]>>
       // Tests for equality
       %r0 = poly.unifiable_cast %0 : (index) -> index
@@ -126,6 +127,8 @@ module attributes {veridise.lang = "llzk"} {
       // Test that if structs have the same name they unify if their params unify
       %19 = poly.unifiable_cast %18 : (!struct.type<@T3<[1, 7, @S0, 1, !struct.type<@T2<[1]>>]>>) -> !struct.type<@T3<[#map1, #map1, 1, @S0, !struct.type<@T2<[#map2]>>]>>
       %21 = poly.unifiable_cast %20 : (!array.type<1, 7, @S0, 1 x !struct.type<@T2<[1]>>>) -> !array.type<#map1, #map1, 1, @S0 x !struct.type<@T2<[#map2]>>>
+      %23 = poly.unifiable_cast %22 : (!array.type<? x !felt.type>) -> !array.type<1 x !felt.type>
+      %24 = poly.unifiable_cast %23 : (!array.type<1 x !felt.type>) -> !array.type<? x !felt.type>
       function.return %self : !struct.type<@Tester<[@S0, @S1]>>
     }
     function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %0: index, %1: i1, %2: !felt.type, %3: !struct.type<@T1<[]>>,
@@ -134,7 +137,8 @@ module attributes {veridise.lang = "llzk"} {
                   %8: !array.type<2,2 x !felt.type>, %9: !array.type<2,@S0 x !felt.type>,
                   %10: !array.type<2,7 x !felt.type>, %11: !string.type, %12: !poly.tvar<@S1>,
                   %18: !struct.type<@T3<[1, 7, @S0, 1, !struct.type<@T2<[1]>>]>>,
-                  %20: !array.type<1, 7, @S0, 1 x !struct.type<@T2<[1]>>>) {
+                  %20: !array.type<1, 7, @S0, 1 x !struct.type<@T2<[1]>>>,
+                  %22: !array.type<? x !felt.type>) {
       function.return
     }
   }
@@ -158,6 +162,7 @@ module attributes {veridise.lang = "llzk"} {
 //  CHECK-SAME:                  %[[A12:[0-9a-zA-Z_\.]+]]: !poly.tvar<@S1>,
 //  CHECK-SAME:                  %[[A13:[0-9a-zA-Z_\.]+]]: !struct.type<@T3<[1, 7, @S0, 1, !struct.type<@T2<[1]>>]>>,
 //  CHECK-SAME:                  %[[A14:[0-9a-zA-Z_\.]+]]: !array.type<1,7,@S0,1 x !struct.type<@T2<[1]>>>
+//  CHECK-SAME:                  %[[A15:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>
 //  CHECK-SAME:    ) -> !struct.type<@Tester<[@S0, @S1]>> attributes {function.allow_witness} {
 //  CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Tester<[@S0, @S1]>>
 //  CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A0]] : (index) -> index
@@ -176,6 +181,8 @@ module attributes {veridise.lang = "llzk"} {
 //  CHECK-NEXT:      %[[T13:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A2]] : (!felt.type) -> !poly.tvar<@S1>
 //  CHECK-NEXT:      %[[T14:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A13]] : (!struct.type<@T3<[1, 7, @S0, 1, !struct.type<@T2<[1]>>]>>) -> !struct.type<@T3<[#map, #map, 1, @S0, !struct.type<@T2<[#map1]>>]>>
 //  CHECK-NEXT:      %[[T15:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A14]] : (!array.type<1,7,@S0,1 x !struct.type<@T2<[1]>>>) -> !array.type<#map,#map,1,@S0 x !struct.type<@T2<[#map1]>>>
+//  CHECK-NEXT:      %[[T16:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A15]] : (!array.type<? x !felt.type>) -> !array.type<1 x !felt.type>
+//  CHECK-NEXT:      %[[T17:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[T16]] : (!array.type<1 x !felt.type>) -> !array.type<? x !felt.type>
 //  CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@Tester<[@S0, @S1]>>
 //  CHECK-NEXT:    }
 // CHECK-LABEL:    function.def @constrain(
@@ -195,6 +202,7 @@ module attributes {veridise.lang = "llzk"} {
 //  CHECK-SAME:                    %[[A12:[0-9a-zA-Z_\.]+]]: !poly.tvar<@S1>,
 //  CHECK-SAME:                    %[[A13:[0-9a-zA-Z_\.]+]]: !struct.type<@T3<[1, 7, @S0, 1, !struct.type<@T2<[1]>>]>>,
 //  CHECK-SAME:                    %[[A14:[0-9a-zA-Z_\.]+]]: !array.type<1,7,@S0,1 x !struct.type<@T2<[1]>>>
+//  CHECK-SAME:                    %[[A15:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>
 //  CHECK-SAME:    ) attributes {function.allow_constraint} {
 //  CHECK-NEXT:      function.return
 //  CHECK-NEXT:    }

@@ -13,6 +13,36 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Tester<[@S0, @S1]> {
+    function.def @compute(%0: !array.type<1 x !felt.type>) -> !struct.type<@Tester<[@S0, @S1]>> {
+      %self = struct.new : <@Tester<[@S0, @S1]>>
+      // expected-error@+1 {{'poly.unifiable_cast' op input type '!array.type<1 x !felt.type>' and output type '!array.type<2 x !felt.type>' are not unifiable}}
+      %r0 = poly.unifiable_cast %0 : (!array.type<1 x !felt.type>) -> !array.type<2 x !felt.type>
+      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
+    }
+    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %0: index) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Tester<[@S0, @S1]> {
+    function.def @compute(%0: index) -> !struct.type<@Tester<[@S0, @S1]>> {
+      %self = struct.new : <@Tester<[@S0, @S1]>>
+      // expected-error@+1 {{'poly.unifiable_cast' op input type 'index' and output type '!felt.type' are not unifiable}}
+      %r0 = poly.unifiable_cast %0 : (index) -> !felt.type
+      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
+    }
+    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %0: index) {
+      function.return
+    }
+  }
+}
 
 // -----
 

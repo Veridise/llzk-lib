@@ -424,7 +424,10 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
   if (TypeAttr tyAttr = dyn_cast<TypeAttr>(a)) {
     return isConcreteType(tyAttr.getValue(), AllowStructParams);
   }
-  return llvm::isa<IntegerAttr>(a);
+  if (IntegerAttr intAttr = dyn_cast<IntegerAttr>(a)) {
+    return !isDynamic(intAttr);
+  }
+  return false;
 }
 
 namespace Step1_InstantiateStructs {

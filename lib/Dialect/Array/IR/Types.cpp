@@ -144,11 +144,23 @@ Type ArrayType::getTypeAtIndex(Attribute index) const {
 }
 
 ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
-  auto parseResult = FieldParser<SmallVector<Attribute>>::parse(parser);
-  if (failed(parseResult)) {
+  SmallVector<Attribute> attrs;
+  auto parseElement = [&]() -> ParseResult {
+    auto qResult = parser.parseOptionalQuestion();
+    if (succeeded(qResult)) {
+      auto &builder = parser.getBuilder();
+      value.push_back(builder.getIntegerAttr(builder.getIndexType(), ShapedType::kDynamic));
+      return qResult;
+    }
+    auto attrParseResult = FieldParser<Attribute>::parse(parser);
+    if (succeeded(attrParseResult)) {
+      value.push_back(forceIntAttrType(*attrParseResult));
+    }
+    return ParseResult(attrParseResult);
+  };
+  if (failed(parser.parseCommaSeparatedList(AsmParser::Delimiter::None, parseElement))) {
     return parser.emitError(parser.getCurrentLocation(), "failed to parse array dimensions");
   }
-  value = forceIntAttrTypes(*parseResult);
   return success();
 }
 
@@ -157,6 +169,12 @@ namespace {
 // Adapted from AsmPrinter::printStrippedAttrOrType(), but without printing type.
 void printAttrs(AsmPrinter &printer, ArrayRef<Attribute> attrs, const StringRef &separator) {
   llvm::interleave(attrs, printer.getStream(), [&printer](Attribute a) {
+    if (auto intAttr = mlir::dyn_cast_if_present<IntegerAttr>(a)) {
+      if (isDynamic(intAttr)) {
+        printer.getStream() << "?";
+        return;
+      }
+    }
     if (succeeded(printer.printAlias(a))) {
       return;
     }

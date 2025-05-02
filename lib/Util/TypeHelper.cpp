@@ -466,6 +466,9 @@ namespace {
 /// key indicates which input expression the `AffineMapAttr` is from. Additionally, if a conflict is
 /// found (i.e. multiple occurances of a specific `AffineMapAttr` on the same side map to different
 /// `IntegerAttr` from the other side), the mapped value will be `nullptr`.
+///
+/// This map is for tracking replacement of `AffineMapAttr` with integer constant values to
+/// determine if a type unification is due to a concrete integer instantiation of `AffineMapAttr`.
 using AffineInstantiations = DenseMap<std::pair<AffineMapAttr, Side>, IntegerAttr>;
 
 struct UnifierImpl {
@@ -480,12 +483,15 @@ struct UnifierImpl {
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
         overrideSuccess(nullptr) {}
 
-  bool typeParamsUnify(const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams) {
+  bool typeParamsUnify(
+      const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams,
+      bool unifyDynamicSize = false
+  ) {
+    auto pred = [this, unifyDynamicSize](auto lhsAttr, auto rhsAttr) {
+      return paramAttrUnify(lhsAttr, rhsAttr, unifyDynamicSize);
+    };
     return (lhsParams.size() == rhsParams.size()) &&
-           std::equal(
-               lhsParams.begin(), lhsParams.end(), rhsParams.begin(),
-               std::bind_front(&UnifierImpl::paramAttrUnify, this)
-           );
+           std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), pred);
   }
 
   UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
@@ -500,9 +506,11 @@ struct UnifierImpl {
 
   /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
   /// are equivalent or could be equivalent after full instantiation of struct parameters.
-  bool typeParamsUnify(const ArrayAttr &lhsParams, const ArrayAttr &rhsParams) {
+  bool typeParamsUnify(
+      const ArrayAttr &lhsParams, const ArrayAttr &rhsParams, bool unifyDynamicSize = false
+  ) {
     if (lhsParams && rhsParams) {
-      return typeParamsUnify(lhsParams.getValue(), rhsParams.getValue());
+      return typeParamsUnify(lhsParams.getValue(), rhsParams.getValue(), unifyDynamicSize);
     }
     // When one or the other is null, they're only equivalent if both are null
     return !lhsParams && !rhsParams;
@@ -514,7 +522,9 @@ struct UnifierImpl {
       return false;
     }
     // Check if the dimension size attributes unify between the LHS and RHS
-    return typeParamsUnify(lhs.getDimensionSizes(), rhs.getDimensionSizes());
+    return typeParamsUnify(
+        lhs.getDimensionSizes(), rhs.getDimensionSizes(), /*unifyDynamicSize=*/true
+    );
   }
 
   bool structTypesUnify(StructType lhs, StructType rhs) {
@@ -573,29 +583,34 @@ private:
 
   void track(Side side, AffineMapAttr affineAttr, IntegerAttr intAttr) {
     if (affineToIntTracker) {
+      assert(!isDynamic(intAttr));
       track(*affineToIntTracker, side, affineAttr, intAttr);
     }
   }
 
-  bool paramAttrUnify(Attribute lhsAttr, Attribute rhsAttr) {
+  bool paramAttrUnify(Attribute lhsAttr, Attribute rhsAttr, bool unifyDynamicSize = false) {
     assertValidAttrForParamOfType(lhsAttr);
     assertValidAttrForParamOfType(rhsAttr);
     // Straightforward equality check.
     if (lhsAttr == rhsAttr) {
       return true;
     }
-    // AffineMapAttr can unify with IntegerAttr because struct parameter instantiation will result
-    // in conversion of AffineMapAttr to IntegerAttr.
+    // AffineMapAttr can unify with IntegerAttr (other than kDynamic) because struct parameter
+    // instantiation will result in conversion of AffineMapAttr to IntegerAttr.
     if (AffineMapAttr lhsAffine = lhsAttr.dyn_cast<AffineMapAttr>()) {
       if (IntegerAttr rhsInt = rhsAttr.dyn_cast<IntegerAttr>()) {
-        track(Side::LHS, lhsAffine, rhsInt);
-        return true;
+        if (!isDynamic(rhsInt)) {
+          track(Side::LHS, lhsAffine, rhsInt);
+          return true;
+        }
       }
     }
     if (AffineMapAttr rhsAffine = rhsAttr.dyn_cast<AffineMapAttr>()) {
       if (IntegerAttr lhsInt = lhsAttr.dyn_cast<IntegerAttr>()) {
-        track(Side::RHS, rhsAffine, lhsInt);
-        return true;
+        if (!isDynamic(lhsInt)) {
+          track(Side::RHS, rhsAffine, lhsInt);
+          return true;
+        }
       }
     }
     // If either side is a SymbolRefAttr, assume they unify because either flattening or a pass with
@@ -607,6 +622,28 @@ private:
     if (SymbolRefAttr rhsSymRef = rhsAttr.dyn_cast<SymbolRefAttr>()) {
       track(Side::RHS, rhsSymRef, lhsAttr);
       return true;
+    }
+    // If either side is ShapedType::kDynamic then, similarly to Symbols, assume they unify.
+    auto dyn_cast_if_dynamic = [](Attribute attr) -> IntegerAttr {
+      if (auto intAttr = attr.dyn_cast<IntegerAttr>()) {
+        if (isDynamic(intAttr)) {
+          return intAttr;
+        }
+      }
+      return nullptr;
+    };
+    auto isa_const = [](Attribute attr) {
+      return mlir::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(attr);
+    };
+    if (auto lhsIntAttr = dyn_cast_if_dynamic(lhsAttr)) {
+      if (isa_const(rhsAttr)) {
+        return true;
+      }
+    }
+    if (auto rhsIntAttr = dyn_cast_if_dynamic(rhsAttr)) {
+      if (isa_const(lhsAttr)) {
+        return true;
+      }
     }
     // If both are type refs, check for unification of the types.
     if (TypeAttr lhsTy = lhsAttr.dyn_cast<TypeAttr>()) {
