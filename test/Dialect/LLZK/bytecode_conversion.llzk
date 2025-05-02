@@ -4,25 +4,25 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA {
-    function.def @compute(%a: !felt.felt) -> !struct.type<@ComponentA> {
+    function.def @compute(%a: !felt.type) -> !struct.type<@ComponentA> {
       %self = struct.new : !struct.type<@ComponentA>
       %1 = felt.const     1 // extra spaces are intentional
       function.return %self : !struct.type<@ComponentA>
     }
 
-    function.def @constrain(%self: !struct.type<@ComponentA>, %a: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@ComponentA>, %a: !felt.type) {
       function.return
     }
   }
 }
 
 // CHECK-LABEL: struct.def @ComponentA {
-// CHECK-NEXT:     function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !struct.type<@ComponentA> attributes {function.allow_witness} {
+// CHECK-NEXT:     function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@ComponentA> attributes {function.allow_witness} {
 // CHECK-NEXT:       %[[VAL_1:.*]] = struct.new : <@ComponentA>
 // CHECK-NEXT:       %[[VAL_2:.*]] = felt.const 1
 // CHECK-NEXT:       function.return %[[VAL_1]] : !struct.type<@ComponentA>
 // CHECK-NEXT:     }
-// CHECK-NEXT:     function.def @constrain(%[[VAL_3:.*]]: !struct.type<@ComponentA>, %[[VAL_4:.*]]: !felt.felt) attributes {function.allow_constraint} {
+// CHECK-NEXT:     function.def @constrain(%[[VAL_3:.*]]: !struct.type<@ComponentA>, %[[VAL_4:.*]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:       function.return
 // CHECK-NEXT:     }
 // CHECK-NEXT:   }

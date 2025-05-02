@@ -18,10 +18,10 @@ function.def @should_use_array.write(%elem: !string.string) {
   function.return
 }
 // -----
-function.def @insufficient_indices_none(%0: !felt.felt, %1: !felt.felt, %z: !array.type<2 x !felt.felt>) {
-  %r = array.new : !array.type<4,2 x !felt.felt>
+function.def @insufficient_indices_none(%0: !felt.type, %1: !felt.type, %z: !array.type<2 x !felt.type>) {
+  %r = array.new : !array.type<4,2 x !felt.type>
   // expected-error@+1 {{'array.insert' op has insufficient indexed dimensions: expected 1 but found 0}}
-  array.insert %r[] = %z : !array.type<4,2 x !felt.felt>, !array.type<2 x !felt.felt>
+  array.insert %r[] = %z : !array.type<4,2 x !felt.type>, !array.type<2 x !felt.type>
   function.return
 }
 // -----
@@ -48,17 +48,17 @@ function.def @excess_indices(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i1) {
 }
 // -----
 function.def @incorrect_elem_type(%z: !array.type<2 x index>) {
-  %r = array.new : !array.type<44,2 x !felt.felt>
+  %r = array.new : !array.type<44,2 x !felt.type>
   %0 = arith.constant 0 : index
-  // expected-error@+1 {{'array.insert' op incorrect array element type; expected: '!felt.felt', found: 'index'}}
-  array.insert %r[%0] = %z : !array.type<44,2 x !felt.felt>, !array.type<2 x index>
+  // expected-error@+1 {{'array.insert' op incorrect array element type; expected: '!felt.type', found: 'index'}}
+  array.insert %r[%0] = %z : !array.type<44,2 x !felt.type>, !array.type<2 x index>
   function.return
 }
 // -----
-function.def @dimensions_not_unify(%z: !array.type<5 x !felt.felt>) {
-  %r = array.new : !array.type<44,2 x !felt.felt>
+function.def @dimensions_not_unify(%z: !array.type<5 x !felt.type>) {
+  %r = array.new : !array.type<44,2 x !felt.type>
   %0 = arith.constant 0 : index
   // expected-error@+1 {{'array.insert' op cannot unify array dimensions [2] with [5]}}
-  array.insert %r[%0] = %z : !array.type<44,2 x !felt.felt>, !array.type<5 x !felt.felt>
+  array.insert %r[%0] = %z : !array.type<44,2 x !felt.type>, !array.type<5 x !felt.type>
   function.return
 }

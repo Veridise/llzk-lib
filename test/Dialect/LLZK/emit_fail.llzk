@@ -8,11 +8,11 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.type<@TestComponent01>
     }
     function.def @constrain(
-          %a: !felt.felt,
-          %b: !array.type<5 x !felt.felt> // expected-note {{prior use here}}
+          %a: !felt.type,
+          %b: !array.type<5 x !felt.type> // expected-note {{prior use here}}
           ) {
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<6 x !felt.felt>' vs '!array.type<5 x !felt.felt>'}}
-      constrain.in %b, %a : !array.type<6 x !felt.felt>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<6 x !felt.type>' vs '!array.type<5 x !felt.type>'}}
+      constrain.in %b, %a : !array.type<6 x !felt.type>
       function.return
     }
   }
@@ -28,9 +28,9 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(
           %a: index,
-          %b: !array.type<5 x !felt.felt> // expected-note {{prior use here}}
+          %b: !array.type<5 x !felt.type> // expected-note {{prior use here}}
           ) {
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<5 x index>' vs '!array.type<5 x !felt.felt>'}}
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<5 x index>' vs '!array.type<5 x !felt.type>'}}
       constrain.in %b, %a : !array.type<5 x index>
       function.return
     }
@@ -47,10 +47,10 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(
           %a: index, // expected-note {{prior use here}}
-          %b: !array.type<5 x !felt.felt>
+          %b: !array.type<5 x !felt.type>
           ) {
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs 'index'}}
-      constrain.in %b, %a : !array.type<5 x !felt.felt>
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.type' vs 'index'}}
+      constrain.in %b, %a : !array.type<5 x !felt.type>
       function.return
     }
   }
@@ -64,9 +64,9 @@ module attributes {veridise.lang = "llzk"} {
       %self = struct.new : !struct.type<@TestComponent04>
       function.return %self : !struct.type<@TestComponent04>
     }
-    function.def @constrain(%a: !felt.felt, %b: !felt.felt) {
+    function.def @constrain(%a: !felt.type, %b: !felt.type) {
       // expected-error@+1 {{custom op 'constrain.in' invalid kind of Type specified}}
-      constrain.in %b, %a : !felt.felt
+      constrain.in %b, %a : !felt.type
       function.return
     }
   }
@@ -81,11 +81,11 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.type<@TestComponent05>
     }
     function.def @constrain(
-          %a: !felt.felt,
-          %b: !felt.felt  // expected-note {{prior use here}}
+          %a: !felt.type,
+          %b: !felt.type  // expected-note {{prior use here}}
           ) {
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<5 x !felt.felt>' vs '!felt.felt'}}
-      constrain.in %b, %a : !array.type<5 x !felt.felt>
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<5 x !felt.type>' vs '!felt.type'}}
+      constrain.in %b, %a : !array.type<5 x !felt.type>
       function.return
     }
   }
@@ -101,10 +101,10 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(
           %a: index, // expected-note {{prior use here}}
-          %b: !array.type<5 x !felt.felt>
+          %b: !array.type<5 x !felt.type>
           ) {
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs 'index'}}
-      constrain.in %b, %a : !array.type<5 x !felt.felt>
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.type' vs 'index'}}
+      constrain.in %b, %a : !array.type<5 x !felt.type>
       function.return
     }
   }
@@ -120,10 +120,10 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(
           %a: !struct.type<@TestComponent07>, // expected-note {{prior use here}}
-          %b: !felt.felt
+          %b: !felt.type
           ) {
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.felt' vs '!struct.type<@TestComponent07>'}}
-      constrain.eq %a, %b : !felt.felt
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.type' vs '!struct.type<@TestComponent07>'}}
+      constrain.eq %a, %b : !felt.type
       function.return
     }
   }
@@ -157,10 +157,10 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.type<@TestComponent09>
     }
     function.def @constrain(
-          %a: !felt.felt, // expected-note {{prior use here}}
+          %a: !felt.type, // expected-note {{prior use here}}
           %b: index
           ) {
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!felt.felt'}}
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!felt.type'}}
       constrain.eq %a, %b : index
       function.return
     }
@@ -177,9 +177,9 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(
           %a: index,
-          %b: !felt.felt // expected-note {{prior use here}}
+          %b: !felt.type // expected-note {{prior use here}}
           ) {
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'index' vs '!felt.felt'}}
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'index' vs '!felt.type'}}
       constrain.eq %a, %b : index
       function.return
     }
@@ -309,10 +309,10 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.type<@TestComponent17>
     }
     function.def @constrain(
-          %a: !array.type<3 x !felt.felt>, // expected-note {{prior use here}}
+          %a: !array.type<3 x !felt.type>, // expected-note {{prior use here}}
           %b: !array.type<3 x index>
           ) {
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<3 x !felt.felt>'}}
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<3 x !felt.type>'}}
       constrain.eq %a, %b : !array.type<3 x index>
       function.return
     }
@@ -329,9 +329,9 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(
           %a: !array.type<3 x index>,
-          %b: !array.type<3 x !felt.felt> // expected-note {{prior use here}}
+          %b: !array.type<3 x !felt.type> // expected-note {{prior use here}}
           ) {
-      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<3 x !felt.felt>'}}
+      // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<3 x !felt.type>'}}
       constrain.eq %a, %b : !array.type<3 x index>
       function.return
     }
@@ -347,10 +347,10 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.type<@TestComponent19>
     }
     function.def @constrain(
-          %a: !array.type<3 x !felt.felt>, // expected-note {{prior use here}}
-          %b: !array.type<3 x !felt.felt>
+          %a: !array.type<3 x !felt.type>, // expected-note {{prior use here}}
+          %b: !array.type<3 x !felt.type>
           ) {
-      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<3 x !felt.felt>'}}
+      // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.type<3 x index>' vs '!array.type<3 x !felt.type>'}}
       constrain.eq %a, %b : !array.type<3 x index>
       function.return
     }
@@ -363,7 +363,7 @@ module attributes {veridise.lang = "llzk"} {
     %a = felt.const 7653
     %b = felt.const 34572
     // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
-    constrain.eq %a, %b : !felt.felt
+    constrain.eq %a, %b : !felt.type
 }
 // -----
 
@@ -380,9 +380,9 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] attempt to assign to an SSA value but it has no result
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component20 {
-    function.def @constrain(%a: !felt.felt, %b: !array.type<5 x !felt.felt>) {
+    function.def @constrain(%a: !felt.type, %b: !array.type<5 x !felt.type>) {
       // expected-error@+1 {{cannot name an operation with no results}}
-      %c = constrain.in %b, %a : !array.type<5 x !felt.felt>
+      %c = constrain.in %b, %a : !array.type<5 x !felt.type>
       function.return
     }
 
@@ -397,9 +397,9 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] attempt to assign to an SSA value but it has no result
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component21 {
-    function.def @constrain(%a: !felt.felt, %b: !felt.felt) {
+    function.def @constrain(%a: !felt.type, %b: !felt.type) {
       // expected-error@+1 {{cannot name an operation with no results}}
-      %c = constrain.eq %a, %b : !felt.felt
+      %c = constrain.eq %a, %b : !felt.type
       function.return
     }
 
@@ -414,9 +414,9 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.eq] LHS and RHS types do not unify
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component22 {
-    function.def @constrain(%a: !felt.felt, %b: index) {
+    function.def @constrain(%a: !felt.type, %b: index) {
       // expected-error@+1 {{'constrain.eq' op failed to verify that rhs type matches with lhs type}}
-      constrain.eq %a, %b : !felt.felt, index
+      constrain.eq %a, %b : !felt.type, index
       function.return
     }
 
@@ -431,9 +431,9 @@ module attributes {veridise.lang = "llzk"} {
 // Test: [constrain.in] RHS and LHS element types do not unify
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component23 {
-    function.def @constrain(%a: !array.type<4 x !felt.felt>, %b: index) {
+    function.def @constrain(%a: !array.type<4 x !felt.type>, %b: index) {
       // expected-error@+1 {{'constrain.in' op failed to verify that rhs type matches with lhs element type}}
-      constrain.in %a, %b : !array.type<4 x !felt.felt>, index
+      constrain.in %a, %b : !array.type<4 x !felt.type>, index
       function.return
     }
 

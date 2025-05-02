@@ -1,38 +1,38 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
 function.def @f_neg(
-    %a: !felt.felt // expected-note {{prior use here}}
-) -> !felt.felt {
-  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!felt.felt'}}
+    %a: !felt.type // expected-note {{prior use here}}
+) -> !felt.type {
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!felt.type'}}
   %c = felt.neg %a : index
-  function.return %c: !felt.felt
+  function.return %c: !felt.type
 }
 // -----
 
 function.def @f_inv(
     %a: index
-) -> !felt.felt attributes {function.allow_witness} {
+) -> !felt.type attributes {function.allow_witness} {
   // expected-error@+1 {{'felt.inv' op operand #0 must be finite field element or type variable, but got 'index'}}
   %c = felt.inv %a : index
-  function.return %c: !felt.felt
+  function.return %c: !felt.type
 }
 // -----
 
 function.def @f_sub(
-    %a: !felt.felt,
-    %b: !felt.felt // expected-note {{prior use here}}
-) -> !felt.felt {
-  // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'i1' vs '!felt.felt'}}
-  %c = felt.sub %a, %b : !felt.felt, i1
-  function.return %c: !felt.felt
+    %a: !felt.type,
+    %b: !felt.type // expected-note {{prior use here}}
+) -> !felt.type {
+  // expected-error@+1 {{use of value '%b' expects different type than prior uses: 'i1' vs '!felt.type'}}
+  %c = felt.sub %a, %b : !felt.type, i1
+  function.return %c: !felt.type
 }
 // -----
 
 function.def @f_add(
-    %a: !felt.felt,
+    %a: !felt.type,
     %b: !array.type<5 x i1>
-) -> !felt.felt {
+) -> !felt.type {
   // expected-error@+1 {{'felt.add' op operand #1 must be finite field element or type variable, but got '!array.type<5 x i1>'}}
-  %c = felt.add %a, %b : !felt.felt, !array.type<5 x i1>
-  function.return %c: !felt.felt
+  %c = felt.add %a, %b : !felt.type, !array.type<5 x i1>
+  function.return %c: !felt.type
 }

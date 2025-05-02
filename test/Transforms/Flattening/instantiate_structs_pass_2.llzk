@@ -36,7 +36,7 @@ module attributes {veridise.lang = "llzk"} {
 
   struct.def @Component08C {
     struct.field @f3 : !struct.type<@Component08B<[7]>>
-    struct.field @f4 : !struct.type<@Component08B<[!felt.felt]>>
+    struct.field @f4 : !struct.type<@Component08B<[!felt.type]>>
     struct.field @f5 : !struct.type<@Component08B<[7]>>
     struct.field @f6 : !struct.type<@Component08B<[5]>>
 
@@ -46,8 +46,8 @@ module attributes {veridise.lang = "llzk"} {
       %1 = function.call @Component08B::@compute() : () -> (!struct.type<@Component08B<[7]>>)
       struct.writef %self[@f3] = %1 : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
 
-      %2 = function.call @Component08B::@compute() : () -> (!struct.type<@Component08B<[!felt.felt]>>)
-      struct.writef %self[@f4] = %2 : !struct.type<@Component08C>, !struct.type<@Component08B<[!felt.felt]>>
+      %2 = function.call @Component08B::@compute() : () -> (!struct.type<@Component08B<[!felt.type]>>)
+      struct.writef %self[@f4] = %2 : !struct.type<@Component08C>, !struct.type<@Component08B<[!felt.type]>>
 
       %3 = function.call @Component08B::@compute() : () -> (!struct.type<@Component08B<[7]>>)
       struct.writef %self[@f5] = %3 : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
@@ -62,8 +62,8 @@ module attributes {veridise.lang = "llzk"} {
       %1 = struct.readf %self[@f3] : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
       function.call @Component08B::@constrain(%1) : (!struct.type<@Component08B<[7]>>) -> ()
 
-      %2 = struct.readf %self[@f4] : !struct.type<@Component08C>, !struct.type<@Component08B<[!felt.felt]>>
-      function.call @Component08B::@constrain(%2) : (!struct.type<@Component08B<[!felt.felt]>>) -> ()
+      %2 = struct.readf %self[@f4] : !struct.type<@Component08C>, !struct.type<@Component08B<[!felt.type]>>
+      function.call @Component08B::@constrain(%2) : (!struct.type<@Component08B<[!felt.type]>>) -> ()
 
       %3 = struct.readf %self[@f5] : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
       function.call @Component08B::@constrain(%3) : (!struct.type<@Component08B<[7]>>) -> ()

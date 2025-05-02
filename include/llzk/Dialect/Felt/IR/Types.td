@@ -18,7 +18,7 @@ include "mlir/IR/BuiltinTypeInterfaces.td"
 include "mlir/Interfaces/MemorySlotInterfaces.td"
 
 def LLZK_FeltType : TypeDef<FeltDialect, "Felt"> {
-  let mnemonic = "felt";
+  let mnemonic = "type";
   let summary = "finite field element";
   let description = [{}];
 

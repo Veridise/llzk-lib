@@ -28,18 +28,18 @@ function.def @arr_mix_index(%a: index, %b: index) -> index {
   %i = arith.constant 0 : index
   %f = felt.const 6744573456376 // expected-note {{prior use here}}
   %r = array.new %a, %b, %c, %d: !array.type<4 x index>
-  // expected-error@+1 {{use of value '%f' expects different type than prior uses: 'index' vs '!felt.felt'}}
+  // expected-error@+1 {{use of value '%f' expects different type than prior uses: 'index' vs '!felt.type'}}
   %v = array.read %r[%f] : !array.type<4 x index>, index
   function.return %v: index
 }
 // -----
 
-function.def @arr_wrong_array_elem_type(%a: !felt.felt) -> !array.type<1 x !felt.felt> {
+function.def @arr_wrong_array_elem_type(%a: !felt.type) -> !array.type<1 x !felt.type> {
   %i = arith.constant 0 : index
-  %r = array.new %a: !array.type<1 x !felt.felt>
+  %r = array.new %a: !array.type<1 x !felt.type>
   // expected-error@+1 {{'array.read' op failed to verify that result type matches with arr_ref element type}}
-  %v = array.read %r[%i] : !array.type<1 x !felt.felt>, index
-  function.return %r: !array.type<1 x !felt.felt>
+  %v = array.read %r[%i] : !array.type<1 x !felt.type>, index
+  function.return %r: !array.type<1 x !felt.type>
 }
 
 // -----

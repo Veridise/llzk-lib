@@ -27,7 +27,7 @@ def LLZK_UndefOp : Op<UndefDialect, "undef", [Pure]> {
     Example:
 
     ```llzk
-    %0 = undef.undef : !felt.felt
+    %0 = undef.undef : !felt.type
     ```
   }];
   let results = (outs AnyLLZKType:$res);

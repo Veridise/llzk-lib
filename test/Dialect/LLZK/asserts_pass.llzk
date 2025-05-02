@@ -2,16 +2,16 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component01<[@C]> {
-    function.def @compute(%a: !felt.felt) -> !struct.type<@Component01<[@C]>> {
+    function.def @compute(%a: !felt.type) -> !struct.type<@Component01<[@C]>> {
       %self = struct.new : !struct.type<@Component01<[@C]>>
-      %b = poly.read_const @C : !felt.felt
+      %b = poly.read_const @C : !felt.type
       %c = bool.cmp gt(%a, %b)
       bool.assert %c
       function.return %self : !struct.type<@Component01<[@C]>>
     }
 
-    function.def @constrain(%self: !struct.type<@Component01<[@C]>>, %a: !felt.felt) {
-      %b = poly.read_const @C : !felt.felt
+    function.def @constrain(%self: !struct.type<@Component01<[@C]>>, %a: !felt.type) {
+      %b = poly.read_const @C : !felt.type
       %c = bool.cmp gt(%a, %b)
       bool.assert %c
       function.return
@@ -19,15 +19,15 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @Component01<[@C]> {
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@Component01<[@C]>> attributes {function.allow_witness} {
+//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Component01<[@C]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component01<[@C]>>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.felt
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.type
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[A0]], %[[T0]])
 //CHECK-NEXT:      bool.assert %[[T1]]
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@Component01<[@C]>>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@Component01<[@C]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.felt
+//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@Component01<[@C]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.type
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[A1]], %[[T0]])
 //CHECK-NEXT:      bool.assert %[[T1]]
 //CHECK-NEXT:      function.return
@@ -35,13 +35,13 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-function.def @test_in_global_func(%a: !felt.felt, %b: !felt.felt) -> i1 {
+function.def @test_in_global_func(%a: !felt.type, %b: !felt.type) -> i1 {
   %c = bool.cmp gt(%a, %b)
   bool.assert %c
   function.return %c : i1
 }
 //CHECK-LABEL: function.def @test_in_global_func
-//CHECK-SAME:  (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.felt) -> i1 {
+//CHECK-SAME:  (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> i1 {
 //CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[A0]], %[[A1]])
 //CHECK-NEXT:    bool.assert %[[T0]]
 //CHECK-NEXT:    function.return %[[T0]] : i1

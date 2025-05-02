@@ -429,23 +429,23 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  function.def @bad(%0: !felt.felt) {
+  function.def @bad(%0: !felt.type) {
     // expected-error@+1 {{'poly.read_const' op only valid within a 'struct.def' ancestor}}
-    %1 = poly.read_const @X : !felt.felt
+    %1 = poly.read_const @X : !felt.type
     function.return
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentV<[@A]> { // expected-note {{must reference a parameter of this struct}}
-    function.def @compute(%0: !felt.felt) -> !struct.type<@ComponentV<[@A]>> {
+    function.def @compute(%0: !felt.type) -> !struct.type<@ComponentV<[@A]>> {
       %self = struct.new : !struct.type<@ComponentV<[@A]>>
       function.return %self : !struct.type<@ComponentV<[@A]>>
     }
-    function.def @constrain(%self: !struct.type<@ComponentV<[@A]>>, %0: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@ComponentV<[@A]>>, %0: !felt.type) {
       // expected-error@+1 {{'poly.read_const' op references unknown symbol "@X"}}
-      %1 = poly.read_const @X : !felt.felt
-      constrain.eq %0, %1 : !felt.felt
+      %1 = poly.read_const @X : !felt.type
+      constrain.eq %0, %1 : !felt.type
       function.return
     }
   }

@@ -1,27 +1,27 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
 function.def @array_len_test() -> index {
-  %a = array.new : !array.type<2,3 x !felt.felt>
+  %a = array.new : !array.type<2,3 x !felt.type>
   %0 = arith.constant 0 : index
-  %x = array.len %a, %0 : !array.type<2,3 x !felt.felt> // result is 2
+  %x = array.len %a, %0 : !array.type<2,3 x !felt.type> // result is 2
   function.return %x: index
 }
 //CHECK-LABEL: function.def @array_len_test() -> index {
-//CHECK-NEXT:    %[[A:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x !felt.felt>
+//CHECK-NEXT:    %[[A:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x !felt.type>
 //CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-//CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = array.len %[[A]], %[[T0]] : <2,3 x !felt.felt>
+//CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = array.len %[[A]], %[[T0]] : <2,3 x !felt.type>
 //CHECK-NEXT:    function.return %[[T1]] : index
 //CHECK-NEXT:  }
 // -----
 
 function.def @array_len_test_unknown_idx_value(%0: index) -> index {
-  %a = array.new : !array.type<2,3 x !felt.felt>
-  %x = array.len %a, %0 : !array.type<2,3 x !felt.felt>
+  %a = array.new : !array.type<2,3 x !felt.type>
+  %x = array.len %a, %0 : !array.type<2,3 x !felt.type>
   function.return %x: index
 }
 //CHECK-LABEL: function.def @array_len_test
 //CHECK-SAME:  (%[[A0:[0-9a-zA-Z_\.]+]]: index) -> index {
-//CHECK-NEXT:    %[[A:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x !felt.felt>
-//CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = array.len %[[A]], %[[A0]] : <2,3 x !felt.felt>
+//CHECK-NEXT:    %[[A:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x !felt.type>
+//CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = array.len %[[A]], %[[A0]] : <2,3 x !felt.type>
 //CHECK-NEXT:    function.return %[[T1]] : index
 //CHECK-NEXT:  }

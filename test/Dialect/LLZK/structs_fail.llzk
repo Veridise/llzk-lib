@@ -8,17 +8,17 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  function.def @identity(%x: !felt.felt) -> !felt.felt {
+  function.def @identity(%x: !felt.type) -> !felt.type {
     // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
     struct.def @ComponentA {}
-    function.return %x: !felt.felt
+    function.return %x: !felt.type
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB<[@B, @D, @C]> {
     // expected-error@+1 {{'struct.def' op must define only "@compute" and "@constrain" functions; found "@invalidname"}}
-    function.def @invalidname(%a: !felt.felt, %b: !felt.felt) {
+    function.def @invalidname(%a: !felt.type, %b: !felt.type) {
       function.return
     }
   }
@@ -27,7 +27,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentE<[@B, @D, @C]> {
     // expected-note@+1 {{see existing symbol definition here}}
-    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.type<@ComponentE<[@B, @D, @C]>> {
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentE<[@B, @D, @C]>> {
       %self = struct.new : !struct.type<@ComponentE<[@B, @D, @C]>>
       function.return %self : !struct.type<@ComponentE<[@B, @D, @C]>>
     }
@@ -42,7 +42,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'struct.def' op must define exactly one 'constrain' function}}
   struct.def @ComponentF<[@B, @D, @C]> {
-    function.def @compute(%a: !felt.felt, %b: !felt.felt) -> !struct.type<@ComponentF<[@B, @D, @C]>> {
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentF<[@B, @D, @C]>> {
       %self = struct.new : !struct.type<@ComponentF<[@B, @D, @C]>>
       function.return %self : !struct.type<@ComponentF<[@B, @D, @C]>>
     }
@@ -63,9 +63,9 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentH {
-    struct.field @f2 : !felt.felt // expected-note {{see existing symbol definition here}}
+    struct.field @f2 : !felt.type // expected-note {{see existing symbol definition here}}
     // expected-error@+1 {{redefinition of symbol named 'f2'}}
-    struct.field @f2 : !felt.felt
+    struct.field @f2 : !felt.type
 
     function.def @compute() -> !struct.type<@ComponentH> {
       %self = struct.new : !struct.type<@ComponentH>
@@ -323,15 +323,15 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @Signal {
-    struct.field @reg : !felt.felt {llzk.pub}
+    struct.field @reg : !felt.type {llzk.pub}
 
-    function.def @compute(%v: !felt.felt) -> !struct.type<@Signal> {
+    function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
-      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.felt
+      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.type
       function.return %self : !struct.type<@Signal>
     }
 
-    function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.type) {
       function.return
     }
   }
@@ -349,15 +349,15 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @Signal {
-    struct.field @reg : !felt.felt {llzk.pub}
+    struct.field @reg : !felt.type {llzk.pub}
 
-    function.def @compute(%v: !felt.felt) -> !struct.type<@Signal> {
+    function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
-      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.felt
+      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.type
       function.return %self : !struct.type<@Signal>
     }
 
-    function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.type) {
       function.return
     }
   }

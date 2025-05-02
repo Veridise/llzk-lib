@@ -28,9 +28,9 @@ def LLZK_PublicAttr : LLZKDialectAttr<"Public", "pub"> {
     Examples:
 
     ```llzk
-    struct.field @field_name : !felt.felt {llzk.pub}
+    struct.field @field_name : !felt.type {llzk.pub}
 
-    function.def @func_name(%0: !felt.felt {llzk.pub})
+    function.def @func_name(%0: !felt.type {llzk.pub})
     ```
   }];
 }

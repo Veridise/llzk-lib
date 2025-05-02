@@ -119,13 +119,13 @@ def LLZK_CreateArrayOp
 
     Examples:
     ```llzk
-    %0 = array.new %a, %b, %c : !array.type<3 x !felt.felt>
+    %0 = array.new %a, %b, %c : !array.type<3 x !felt.type>
 
     // Create an array from the given values using the specified shape
-    %1 = array.new %a, %b, %c, %d : !array.type<2,2 x !felt.felt>
+    %1 = array.new %a, %b, %c, %d : !array.type<2,2 x !felt.type>
 
     // Create an uninitialized array
-    %2 = array.new : !array.type<3,2 x !felt.felt>
+    %2 = array.new : !array.type<3,2 x !felt.type>
     ```
 
     The values used to construct the array must have type that exactly matches
@@ -232,9 +232,9 @@ def LLZK_ReadArrayOp
     Example of 1-dimensional array:
     ```llzk
     %i = arith.constant 0 : index
-    %0 = array.new %a, %b, %c : !array.type<3 x !felt.felt>
+    %0 = array.new %a, %b, %c : !array.type<3 x !felt.type>
     // %1 is now equal to %a
-    %1 = array.read %0[%i] : !array.type<3 x !felt.felt>, !felt.felt
+    %1 = array.read %0[%i] : !array.type<3 x !felt.type>, !felt.type
     ```
 
     Example of 3-dimensional array:
@@ -242,9 +242,9 @@ def LLZK_ReadArrayOp
     %i = arith.constant 0 : index
     %j = arith.constant 1 : index
     %k = arith.constant 4 : index
-    %0 = array.new ... : !array.type<3,10,15 x !felt.felt>
+    %0 = array.new ... : !array.type<3,10,15 x !felt.type>
     // %1 is now equal to %a
-    %1 = array.read %0[%i, %j, %k] : !array.type<3,10,15 x !felt.felt>, !felt.felt
+    %1 = array.read %0[%i, %j, %k] : !array.type<3,10,15 x !felt.type>, !felt.type
     ```
   }];
 
@@ -269,9 +269,9 @@ def LLZK_WriteArrayOp
     ```llzk
     %i = arith.constant 0 : index
     %0 = felt.const 42
-    %1 = array.new %a, %b, %c : !array.type<3 x !felt.felt>
+    %1 = array.new %a, %b, %c : !array.type<3 x !felt.type>
     // The array now is [%0, %b, %c]
-    array.write %1[%i] = %0 : !array.type<3 x !felt.felt>, !felt.felt
+    array.write %1[%i] = %0 : !array.type<3 x !felt.type>, !felt.type
     ```
 
     Example of 2-dimensional array:
@@ -279,9 +279,9 @@ def LLZK_WriteArrayOp
     %i = arith.constant 0 : index
     %j = arith.constant 0 : index
     %0 = felt.const 42
-    %1 = array.new %a, %b, %c, %d : !array.type<2,2 x !felt.felt>
+    %1 = array.new %a, %b, %c, %d : !array.type<2,2 x !felt.type>
     // The array now is [[%0, %b], [%c, %d]]
-    array.write %1[%i, %j] = %0 : !array.type<2,2 x !felt.felt>, !felt.felt
+    array.write %1[%i, %j] = %0 : !array.type<2,2 x !felt.type>, !felt.type
     ```
   }];
 
@@ -307,16 +307,16 @@ def LLZK_ExtractArrayOp
     Extracting a 1-D array from 3-D array by selecting the index of 2 dimensions:
     ```llzk
     %i = arith.constant 1 : index
-    %0 = array.new ... : !array.type<3,10,15 x !felt.felt>
-    %1 = array.extract %0[%i,%i] : !array.type<3,10,15 x !felt.felt>, !array.type<15 x !felt.felt>
+    %0 = array.new ... : !array.type<3,10,15 x !felt.type>
+    %1 = array.extract %0[%i,%i] : !array.type<3,10,15 x !felt.type>, !array.type<15 x !felt.type>
     ```
 
     Extracting 1-D arrays for subcomponents:
     ```llzk
     scf.for %iv = %lb to %up step %step {
-      %p = array.extract %in[%iv] : !array.type<@N,2 x !felt.felt>
+      %p = array.extract %in[%iv] : !array.type<@N,2 x !felt.type>
       %c = array.read %a[%iv] : !array.type<@N x !struct.type<@SubC>>, !struct.type<@SubC>
-      function.call @SubC::@constrain(%c, %p) : (!struct.type<@SubC>, !array.type<2 x !felt.felt>) -> ()
+      function.call @SubC::@constrain(%c, %p) : (!struct.type<@SubC>, !array.type<2 x !felt.type>) -> ()
     }
     ```
   }];
@@ -373,11 +373,11 @@ def LLZK_ArrayLengthOp
 
     Example:
     ```llzk
-    %a = array.new : !array.type<2,3 x !felt.felt>
+    %a = array.new : !array.type<2,3 x !felt.type>
     %0 = arith.constant 0 : index
-    %x = array.len %a, %0 : !array.type<2,3 x !felt.felt> // result is 2
+    %x = array.len %a, %0 : !array.type<2,3 x !felt.type> // result is 2
     %1 = arith.constant 1 : index
-    %y = array.len %a, %1 : !array.type<2,3 x !felt.felt> // result is 3
+    %y = array.len %a, %1 : !array.type<2,3 x !felt.type> // result is 3
     ```
   }];
 

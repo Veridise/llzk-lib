@@ -52,27 +52,27 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component {
-    struct.field @f : !felt.felt
+    struct.field @f : !felt.type
 
-    function.def @compute(%arg : !felt.felt) -> !struct.type<@Component> {
+    function.def @compute(%arg : !felt.type) -> !struct.type<@Component> {
       %self = struct.new : !struct.type<@Component>
-      struct.writef %self[@f] = %arg: !struct.type<@Component>, !felt.felt
+      struct.writef %self[@f] = %arg: !struct.type<@Component>, !felt.type
       // redundant write
-      struct.writef %self[@f] = %arg: !struct.type<@Component>, !felt.felt
+      struct.writef %self[@f] = %arg: !struct.type<@Component>, !felt.type
       function.return %self : !struct.type<@Component>
     }
-    function.def @constrain(%self: !struct.type<@Component>, %arg : !felt.felt) { function.return }
+    function.def @constrain(%self: !struct.type<@Component>, %arg : !felt.type) { function.return }
   }
 }
 
 // CHECK-LABEL: struct.def @Component {
-// CHECK-NEXT:    struct.field @f : !felt.felt
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !struct.type<@Component> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @f : !felt.type
+// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@Component> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_1:.*]] = struct.new : <@Component>
-// CHECK-NEXT:      struct.writef %[[VAL_1]][@f] = %[[VAL_0]] : <@Component>, !felt.felt
+// CHECK-NEXT:      struct.writef %[[VAL_1]][@f] = %[[VAL_0]] : <@Component>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@Component>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !struct.type<@Component>, %[[VAL_3:.*]]: !felt.felt) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !struct.type<@Component>, %[[VAL_3:.*]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -81,32 +81,32 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component {
-    struct.field @arr : !array.type<3 x !felt.felt>
+    struct.field @arr : !array.type<3 x !felt.type>
 
-    function.def @compute(%arg : !felt.felt) -> !struct.type<@Component> {
+    function.def @compute(%arg : !felt.type) -> !struct.type<@Component> {
       %self = struct.new : !struct.type<@Component>
-      %arr = struct.readf %self[@arr] : !struct.type<@Component>, !array.type<3 x !felt.felt>
+      %arr = struct.readf %self[@arr] : !struct.type<@Component>, !array.type<3 x !felt.type>
       %idx = arith.constant 1 : index
-      array.write %arr[%idx] = %arg : !array.type<3 x !felt.felt>, !felt.felt
-      %newarr = array.new %arg, %arg, %arg : !array.type<3 x !felt.felt> // ends up being unused after removing the below ops, can also be removed
-      %elem = array.read %newarr[%idx] : !array.type<3 x !felt.felt>, !felt.felt // this is just %arg, redundant
-      array.write %arr[%idx] = %elem : !array.type<3 x !felt.felt>, !felt.felt // redundant write, this idx is already %arg
+      array.write %arr[%idx] = %arg : !array.type<3 x !felt.type>, !felt.type
+      %newarr = array.new %arg, %arg, %arg : !array.type<3 x !felt.type> // ends up being unused after removing the below ops, can also be removed
+      %elem = array.read %newarr[%idx] : !array.type<3 x !felt.type>, !felt.type // this is just %arg, redundant
+      array.write %arr[%idx] = %elem : !array.type<3 x !felt.type>, !felt.type // redundant write, this idx is already %arg
       function.return %self : !struct.type<@Component>
     }
-    function.def @constrain(%self: !struct.type<@Component>, %arg : !felt.felt) { function.return }
+    function.def @constrain(%self: !struct.type<@Component>, %arg : !felt.type) { function.return }
   }
 }
 
 // CHECK-LABEL: struct.def @Component {
-// CHECK-NEXT:    struct.field @arr : !array.type<3 x !felt.felt>
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !struct.type<@Component> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @arr : !array.type<3 x !felt.type>
+// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@Component> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_1:.*]] = struct.new : <@Component>
-// CHECK-NEXT:      %[[VAL_2:.*]] = struct.readf %[[VAL_1]][@arr] : <@Component>, !array.type<3 x !felt.felt>
+// CHECK-NEXT:      %[[VAL_2:.*]] = struct.readf %[[VAL_1]][@arr] : <@Component>, !array.type<3 x !felt.type>
 // CHECK-NEXT:      %[[VAL_3:.*]] = arith.constant 1 : index
-// CHECK-NEXT:      array.write %[[VAL_2]]{{\[}}%[[VAL_3]]] = %[[VAL_0]] : <3 x !felt.felt>, !felt.felt
+// CHECK-NEXT:      array.write %[[VAL_2]]{{\[}}%[[VAL_3]]] = %[[VAL_0]] : <3 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@Component>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_4:.*]]: !struct.type<@Component>, %[[VAL_5:.*]]: !felt.felt) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_4:.*]]: !struct.type<@Component>, %[[VAL_5:.*]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -115,56 +115,56 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component {
-    struct.field @matrix : !array.type<7,3 x !felt.felt>
+    struct.field @matrix : !array.type<7,3 x !felt.type>
 
-    function.def @compute(%inputArr : !array.type<3 x !felt.felt>) -> !struct.type<@Component> {
+    function.def @compute(%inputArr : !array.type<3 x !felt.type>) -> !struct.type<@Component> {
       %self = struct.new : !struct.type<@Component>
-      %mat = struct.readf %self[@matrix] : !struct.type<@Component>, !array.type<7,3 x !felt.felt>
+      %mat = struct.readf %self[@matrix] : !struct.type<@Component>, !array.type<7,3 x !felt.type>
       %idx1 = arith.constant 1 : index
       %idx4 = arith.constant 4 : index
-      array.insert %mat[%idx1] = %inputArr : !array.type<7,3 x !felt.felt>, !array.type<3 x !felt.felt>
-      %arr1 = array.extract %mat[%idx1] : !array.type<7,3 x !felt.felt> // redundant, replace with %inputArr
-      array.insert %mat[%idx4] = %arr1 : !array.type<7,3 x !felt.felt>, !array.type<3 x !felt.felt> // replace %arr1 with %inputArr
-      array.insert %mat[%idx1] = %arr1 : !array.type<7,3 x !felt.felt>, !array.type<3 x !felt.felt> // redundant
+      array.insert %mat[%idx1] = %inputArr : !array.type<7,3 x !felt.type>, !array.type<3 x !felt.type>
+      %arr1 = array.extract %mat[%idx1] : !array.type<7,3 x !felt.type> // redundant, replace with %inputArr
+      array.insert %mat[%idx4] = %arr1 : !array.type<7,3 x !felt.type>, !array.type<3 x !felt.type> // replace %arr1 with %inputArr
+      array.insert %mat[%idx1] = %arr1 : !array.type<7,3 x !felt.type>, !array.type<3 x !felt.type> // redundant
       function.return %self : !struct.type<@Component>
     }
-    function.def @constrain(%self: !struct.type<@Component>, %inputArr : !array.type<3 x !felt.felt>) {
-      %mat = struct.readf %self[@matrix] : !struct.type<@Component>, !array.type<7,3 x !felt.felt>
+    function.def @constrain(%self: !struct.type<@Component>, %inputArr : !array.type<3 x !felt.type>) {
+      %mat = struct.readf %self[@matrix] : !struct.type<@Component>, !array.type<7,3 x !felt.type>
       %i = arith.constant 2 : index
       %j = arith.constant 3 : index
       %k = arith.constant 3 : index // redundant constant
-      %arr_i = array.extract %mat[%i] : !array.type<7,3 x !felt.felt>
-      %arr_j = array.extract %mat[%j] : !array.type<7,3 x !felt.felt>
-      %arr_k = array.extract %mat[%k] : !array.type<7,3 x !felt.felt> // redundant extract
-      constrain.eq %arr_i, %arr_j : !array.type<3 x !felt.felt>
-      constrain.eq %arr_j, %arr_k : !array.type<3 x !felt.felt> // this constraint is redundant, but will not be removed in this pass
-      constrain.eq %arr_k, %arr_i : !array.type<3 x !felt.felt> // same with above
+      %arr_i = array.extract %mat[%i] : !array.type<7,3 x !felt.type>
+      %arr_j = array.extract %mat[%j] : !array.type<7,3 x !felt.type>
+      %arr_k = array.extract %mat[%k] : !array.type<7,3 x !felt.type> // redundant extract
+      constrain.eq %arr_i, %arr_j : !array.type<3 x !felt.type>
+      constrain.eq %arr_j, %arr_k : !array.type<3 x !felt.type> // this constraint is redundant, but will not be removed in this pass
+      constrain.eq %arr_k, %arr_i : !array.type<3 x !felt.type> // same with above
       function.return
     }
   }
 }
 
 // CHECK-LABEL: struct.def @Component {
-// CHECK-NEXT:    struct.field @matrix : !array.type<7,3 x !felt.felt>
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<3 x !felt.felt>) -> !struct.type<@Component> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @matrix : !array.type<7,3 x !felt.type>
+// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<3 x !felt.type>) -> !struct.type<@Component> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_1:.*]] = struct.new : <@Component>
-// CHECK-NEXT:      %[[VAL_2:.*]] = struct.readf %[[VAL_1]][@matrix] : <@Component>, !array.type<7,3 x !felt.felt>
+// CHECK-NEXT:      %[[VAL_2:.*]] = struct.readf %[[VAL_1]][@matrix] : <@Component>, !array.type<7,3 x !felt.type>
 // CHECK-NEXT:      %[[VAL_3:.*]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[VAL_4:.*]] = arith.constant 4 : index
-// CHECK-NEXT:      array.insert %[[VAL_2]]{{\[}}%[[VAL_3]]] = %[[VAL_0]] : <7,3 x !felt.felt>, <3 x !felt.felt>
-// CHECK-NEXT:      array.insert %[[VAL_2]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <7,3 x !felt.felt>, <3 x !felt.felt>
+// CHECK-NEXT:      array.insert %[[VAL_2]]{{\[}}%[[VAL_3]]] = %[[VAL_0]] : <7,3 x !felt.type>, <3 x !felt.type>
+// CHECK-NEXT:      array.insert %[[VAL_2]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <7,3 x !felt.type>, <3 x !felt.type>
 // CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@Component>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_5:.*]]: !struct.type<@Component>, %[[VAL_6:.*]]: !array.type<3 x !felt.felt>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_7:.*]] = struct.readf %[[VAL_5]][@matrix] : <@Component>, !array.type<7,3 x !felt.felt>
+// CHECK-NEXT:    function.def @constrain(%[[VAL_5:.*]]: !struct.type<@Component>, %[[VAL_6:.*]]: !array.type<3 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_7:.*]] = struct.readf %[[VAL_5]][@matrix] : <@Component>, !array.type<7,3 x !felt.type>
 // CHECK-NEXT:      %[[VAL_8:.*]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[VAL_9:.*]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[VAL_10:.*]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[VAL_11:.*]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_8]]] : <7,3 x !felt.felt>
-// CHECK-NEXT:      %[[VAL_12:.*]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_9]]] : <7,3 x !felt.felt>
-// CHECK-NEXT:      constrain.eq %[[VAL_11]], %[[VAL_12]] : !array.type<3 x !felt.felt>, !array.type<3 x !felt.felt>
-// CHECK-NEXT:      constrain.eq %[[VAL_12]], %[[VAL_12]] : !array.type<3 x !felt.felt>, !array.type<3 x !felt.felt>
-// CHECK-NEXT:      constrain.eq %[[VAL_12]], %[[VAL_11]] : !array.type<3 x !felt.felt>, !array.type<3 x !felt.felt>
+// CHECK-NEXT:      %[[VAL_11:.*]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_8]]] : <7,3 x !felt.type>
+// CHECK-NEXT:      %[[VAL_12:.*]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_9]]] : <7,3 x !felt.type>
+// CHECK-NEXT:      constrain.eq %[[VAL_11]], %[[VAL_12]] : !array.type<3 x !felt.type>, !array.type<3 x !felt.type>
+// CHECK-NEXT:      constrain.eq %[[VAL_12]], %[[VAL_12]] : !array.type<3 x !felt.type>, !array.type<3 x !felt.type>
+// CHECK-NEXT:      constrain.eq %[[VAL_12]], %[[VAL_11]] : !array.type<3 x !felt.type>, !array.type<3 x !felt.type>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -173,41 +173,41 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component {
-    struct.field @arr : !array.type<3 x !felt.felt>
+    struct.field @arr : !array.type<3 x !felt.type>
 
-    function.def @compute(%arg : !felt.felt, %inputIdx : index) -> !struct.type<@Component> {
+    function.def @compute(%arg : !felt.type, %inputIdx : index) -> !struct.type<@Component> {
       %self = struct.new : !struct.type<@Component>
-      %arr = struct.readf %self[@arr] : !struct.type<@Component>, !array.type<3 x !felt.felt>
+      %arr = struct.readf %self[@arr] : !struct.type<@Component>, !array.type<3 x !felt.type>
       %idx = arith.constant 1 : index
       %idx2 = arith.constant 2 : index
-      array.write %arr[%idx] = %arg : !array.type<3 x !felt.felt>, !felt.felt
-      array.write %arr[%inputIdx] = %arg : !array.type<3 x !felt.felt>, !felt.felt
+      array.write %arr[%idx] = %arg : !array.type<3 x !felt.type>, !felt.type
+      array.write %arr[%inputIdx] = %arg : !array.type<3 x !felt.type>, !felt.type
       // this read is necessary in the case that %inputIdx == %idx
-      %elem1 = array.read %arr[%idx] : !array.type<3 x !felt.felt>, !felt.felt
-      %elem2 = array.read %arr[%inputIdx] : !array.type<3 x !felt.felt>, !felt.felt
-      array.write %arr[%idx] = %elem2 : !array.type<3 x !felt.felt>, !felt.felt
-      array.write %arr[%idx2] = %elem1 : !array.type<3 x !felt.felt>, !felt.felt
+      %elem1 = array.read %arr[%idx] : !array.type<3 x !felt.type>, !felt.type
+      %elem2 = array.read %arr[%inputIdx] : !array.type<3 x !felt.type>, !felt.type
+      array.write %arr[%idx] = %elem2 : !array.type<3 x !felt.type>, !felt.type
+      array.write %arr[%idx2] = %elem1 : !array.type<3 x !felt.type>, !felt.type
       function.return %self : !struct.type<@Component>
     }
-    function.def @constrain(%self: !struct.type<@Component>, %arg : !felt.felt, %inputIdx : index) { function.return }
+    function.def @constrain(%self: !struct.type<@Component>, %arg : !felt.type, %inputIdx : index) { function.return }
   }
 }
 
 // CHECK-LABEL: struct.def @Component {
-// CHECK-NEXT:    struct.field @arr : !array.type<3 x !felt.felt>
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !felt.felt, %[[VAL_1:.*]]: index) -> !struct.type<@Component> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @arr : !array.type<3 x !felt.type>
+// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: index) -> !struct.type<@Component> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_2:.*]] = struct.new : <@Component>
-// CHECK-NEXT:      %[[VAL_3:.*]] = struct.readf %[[VAL_2]][@arr] : <@Component>, !array.type<3 x !felt.felt>
+// CHECK-NEXT:      %[[VAL_3:.*]] = struct.readf %[[VAL_2]][@arr] : <@Component>, !array.type<3 x !felt.type>
 // CHECK-NEXT:      %[[VAL_4:.*]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[VAL_5:.*]] = arith.constant 2 : index
-// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <3 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_1]]] = %[[VAL_0]] : <3 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      %[[VAL_6:.*]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]]] : <3 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <3 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_6]] : <3 x !felt.felt>, !felt.felt
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <3 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_1]]] = %[[VAL_0]] : <3 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_6:.*]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]]] : <3 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <3 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_6]] : <3 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_2]] : !struct.type<@Component>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_7:.*]]: !struct.type<@Component>, %[[VAL_8:.*]]: !felt.felt, %[[VAL_9:.*]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_7:.*]]: !struct.type<@Component>, %[[VAL_8:.*]]: !felt.type, %[[VAL_9:.*]]: index) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -217,74 +217,74 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // A modified version of IsZero that includes some redundancy
   struct.def @IsZero {
-    struct.field @bit : !felt.felt
-    struct.field @zero : !felt.felt
-    struct.field @one : !felt.felt
+    struct.field @bit : !felt.type
+    struct.field @zero : !felt.type
+    struct.field @one : !felt.type
 
-    function.def @compute(%a: !felt.felt) -> !struct.type<@IsZero> {
+    function.def @compute(%a: !felt.type) -> !struct.type<@IsZero> {
       %self = struct.new : !struct.type<@IsZero>
       %z = felt.const 0
       %o = felt.const 1
-      struct.writef %self[@zero] = %z : !struct.type<@IsZero>, !felt.felt
-      struct.writef %self[@one] = %o : !struct.type<@IsZero>, !felt.felt
+      struct.writef %self[@zero] = %z : !struct.type<@IsZero>, !felt.type
+      struct.writef %self[@one] = %o : !struct.type<@IsZero>, !felt.type
       %b = bool.cmp eq(%a, %z)
-      %0 = scf.if %b -> !felt.felt {
-        %z1 = struct.readf %self[@zero] : !struct.type<@IsZero>, !felt.felt
-        scf.yield %z1 : !felt.felt
+      %0 = scf.if %b -> !felt.type {
+        %z1 = struct.readf %self[@zero] : !struct.type<@IsZero>, !felt.type
+        scf.yield %z1 : !felt.type
       } else {
-        %o1 = struct.readf %self[@one] : !struct.type<@IsZero>, !felt.felt
-        scf.yield %o1 : !felt.felt
+        %o1 = struct.readf %self[@one] : !struct.type<@IsZero>, !felt.type
+        scf.yield %o1 : !felt.type
       }
-      struct.writef %self[@bit] = %0 : !struct.type<@IsZero>, !felt.felt
+      struct.writef %self[@bit] = %0 : !struct.type<@IsZero>, !felt.type
       function.return %self : !struct.type<@IsZero>
     }
 
-    function.def @constrain(%self : !struct.type<@IsZero>, %a: !felt.felt) {
-      %0 = struct.readf %self[@bit] : !struct.type<@IsZero>, !felt.felt
+    function.def @constrain(%self : !struct.type<@IsZero>, %a: !felt.type) {
+      %0 = struct.readf %self[@bit] : !struct.type<@IsZero>, !felt.type
       %1 = felt.const 1
       %2 = felt.sub %0, %1
       %3 = felt.mul %0, %2
       %4 = felt.const 0
-      constrain.eq %3, %4 : !felt.felt
-      %z1 = struct.readf %self[@zero] : !struct.type<@IsZero>, !felt.felt
-      %o1 = struct.readf %self[@one] : !struct.type<@IsZero>, !felt.felt
-      constrain.eq %z1, %4 : !felt.felt
-      constrain.eq %o1, %1 : !felt.felt
+      constrain.eq %3, %4 : !felt.type
+      %z1 = struct.readf %self[@zero] : !struct.type<@IsZero>, !felt.type
+      %o1 = struct.readf %self[@one] : !struct.type<@IsZero>, !felt.type
+      constrain.eq %z1, %4 : !felt.type
+      constrain.eq %o1, %1 : !felt.type
       function.return
     }
   }
 }
 
 // CHECK-LABEL: struct.def @IsZero {
-// CHECK-NEXT:    struct.field @bit : !felt.felt
-// CHECK-NEXT:    struct.field @zero : !felt.felt
-// CHECK-NEXT:    struct.field @one : !felt.felt
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !felt.felt) -> !struct.type<@IsZero> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @bit : !felt.type
+// CHECK-NEXT:    struct.field @zero : !felt.type
+// CHECK-NEXT:    struct.field @one : !felt.type
+// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@IsZero> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_1:.*]] = struct.new : <@IsZero>
 // CHECK-NEXT:      %[[VAL_2:.*]] = felt.const  0
 // CHECK-NEXT:      %[[VAL_3:.*]] = felt.const  1
-// CHECK-NEXT:      struct.writef %[[VAL_1]][@zero] = %[[VAL_2]] : <@IsZero>, !felt.felt
-// CHECK-NEXT:      struct.writef %[[VAL_1]][@one] = %[[VAL_3]] : <@IsZero>, !felt.felt
+// CHECK-NEXT:      struct.writef %[[VAL_1]][@zero] = %[[VAL_2]] : <@IsZero>, !felt.type
+// CHECK-NEXT:      struct.writef %[[VAL_1]][@one] = %[[VAL_3]] : <@IsZero>, !felt.type
 // CHECK-NEXT:      %[[VAL_4:.*]] = bool.cmp eq(%[[VAL_0]], %[[VAL_2]])
-// CHECK-NEXT:      %[[VAL_5:.*]] = scf.if %[[VAL_4]] -> (!felt.felt) {
-// CHECK-NEXT:        scf.yield %[[VAL_2]] : !felt.felt
+// CHECK-NEXT:      %[[VAL_5:.*]] = scf.if %[[VAL_4]] -> (!felt.type) {
+// CHECK-NEXT:        scf.yield %[[VAL_2]] : !felt.type
 // CHECK-NEXT:      } else {
-// CHECK-NEXT:        scf.yield %[[VAL_3]] : !felt.felt
+// CHECK-NEXT:        scf.yield %[[VAL_3]] : !felt.type
 // CHECK-NEXT:      }
-// CHECK-NEXT:      struct.writef %[[VAL_1]][@bit] = %[[VAL_5]] : <@IsZero>, !felt.felt
+// CHECK-NEXT:      struct.writef %[[VAL_1]][@bit] = %[[VAL_5]] : <@IsZero>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@IsZero>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_6:.*]]: !struct.type<@IsZero>, %[[VAL_7:.*]]: !felt.felt) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_8:.*]] = struct.readf %[[VAL_6]][@bit] : <@IsZero>, !felt.felt
+// CHECK-NEXT:    function.def @constrain(%[[VAL_6:.*]]: !struct.type<@IsZero>, %[[VAL_7:.*]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_8:.*]] = struct.readf %[[VAL_6]][@bit] : <@IsZero>, !felt.type
 // CHECK-NEXT:      %[[VAL_9:.*]] = felt.const  1
-// CHECK-NEXT:      %[[VAL_10:.*]] = felt.sub %[[VAL_8]], %[[VAL_9]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[VAL_11:.*]] = felt.mul %[[VAL_8]], %[[VAL_10]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      %[[VAL_10:.*]] = felt.sub %[[VAL_8]], %[[VAL_9]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[VAL_11:.*]] = felt.mul %[[VAL_8]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK-NEXT:      %[[VAL_12:.*]] = felt.const  0
-// CHECK-NEXT:      constrain.eq %[[VAL_11]], %[[VAL_12]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[VAL_13:.*]] = struct.readf %[[VAL_6]][@zero] : <@IsZero>, !felt.felt
-// CHECK-NEXT:      %[[VAL_14:.*]] = struct.readf %[[VAL_6]][@one] : <@IsZero>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[VAL_13]], %[[VAL_12]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[VAL_14]], %[[VAL_9]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[VAL_11]], %[[VAL_12]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[VAL_13:.*]] = struct.readf %[[VAL_6]][@zero] : <@IsZero>, !felt.type
+// CHECK-NEXT:      %[[VAL_14:.*]] = struct.readf %[[VAL_6]][@one] : <@IsZero>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_13]], %[[VAL_12]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_14]], %[[VAL_9]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -293,46 +293,46 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component {
-    struct.field @matrix : !array.type<7,3 x !felt.felt>
+    struct.field @matrix : !array.type<7,3 x !felt.type>
 
-    function.def @compute(%inputArr : !array.type<3 x !felt.felt>, %cond : i1) -> !struct.type<@Component> {
+    function.def @compute(%inputArr : !array.type<3 x !felt.type>, %cond : i1) -> !struct.type<@Component> {
       %self = struct.new : !struct.type<@Component>
-      %mat = struct.readf %self[@matrix] : !struct.type<@Component>, !array.type<7,3 x !felt.felt>
+      %mat = struct.readf %self[@matrix] : !struct.type<@Component>, !array.type<7,3 x !felt.type>
       %idx1 = arith.constant 1 : index
       %idx4 = arith.constant 4 : index
 
       scf.if %cond {
-        array.insert %mat[%idx1] = %inputArr : !array.type<7,3 x !felt.felt>, !array.type<3 x !felt.felt>
+        array.insert %mat[%idx1] = %inputArr : !array.type<7,3 x !felt.type>, !array.type<3 x !felt.type>
       } else {
-        %arr1 = array.extract %mat[%idx1] : !array.type<7,3 x !felt.felt> // This load is necessary, as the value is unknown in this branch
-        array.insert %mat[%idx4] = %arr1 : !array.type<7,3 x !felt.felt>, !array.type<3 x !felt.felt>
-        array.insert %mat[%idx1] = %arr1 : !array.type<7,3 x !felt.felt>, !array.type<3 x !felt.felt> // this store is still unnecessary
+        %arr1 = array.extract %mat[%idx1] : !array.type<7,3 x !felt.type> // This load is necessary, as the value is unknown in this branch
+        array.insert %mat[%idx4] = %arr1 : !array.type<7,3 x !felt.type>, !array.type<3 x !felt.type>
+        array.insert %mat[%idx1] = %arr1 : !array.type<7,3 x !felt.type>, !array.type<3 x !felt.type> // this store is still unnecessary
       }
 
       function.return %self : !struct.type<@Component>
     }
-    function.def @constrain(%self: !struct.type<@Component>, %inputArr : !array.type<3 x !felt.felt>, %cond : i1) {
+    function.def @constrain(%self: !struct.type<@Component>, %inputArr : !array.type<3 x !felt.type>, %cond : i1) {
       function.return
     }
   }
 }
 
 // CHECK-LABEL: struct.def @Component {
-// CHECK-NEXT:    struct.field @matrix : !array.type<7,3 x !felt.felt>
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<3 x !felt.felt>, %[[VAL_1:.*]]: i1) -> !struct.type<@Component> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @matrix : !array.type<7,3 x !felt.type>
+// CHECK-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<3 x !felt.type>, %[[VAL_1:.*]]: i1) -> !struct.type<@Component> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_2:.*]] = struct.new : <@Component>
-// CHECK-NEXT:      %[[VAL_3:.*]] = struct.readf %[[VAL_2]][@matrix] : <@Component>, !array.type<7,3 x !felt.felt>
+// CHECK-NEXT:      %[[VAL_3:.*]] = struct.readf %[[VAL_2]][@matrix] : <@Component>, !array.type<7,3 x !felt.type>
 // CHECK-NEXT:      %[[VAL_4:.*]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[VAL_5:.*]] = arith.constant 4 : index
 // CHECK-NEXT:      scf.if %[[VAL_1]] {
-// CHECK-NEXT:        array.insert %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <7,3 x !felt.felt>, <3 x !felt.felt>
+// CHECK-NEXT:        array.insert %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <7,3 x !felt.type>, <3 x !felt.type>
 // CHECK-NEXT:      } else {
-// CHECK-NEXT:        %[[VAL_6:.*]] = array.extract %[[VAL_3]]{{\[}}%[[VAL_4]]] : <7,3 x !felt.felt>
-// CHECK-NEXT:        array.insert %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_6]] : <7,3 x !felt.felt>, <3 x !felt.felt>
+// CHECK-NEXT:        %[[VAL_6:.*]] = array.extract %[[VAL_3]]{{\[}}%[[VAL_4]]] : <7,3 x !felt.type>
+// CHECK-NEXT:        array.insert %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_6]] : <7,3 x !felt.type>, <3 x !felt.type>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_2]] : !struct.type<@Component>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_7:.*]]: !struct.type<@Component>, %[[VAL_8:.*]]: !array.type<3 x !felt.felt>, %[[VAL_9:.*]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_7:.*]]: !struct.type<@Component>, %[[VAL_8:.*]]: !array.type<3 x !felt.type>, %[[VAL_9:.*]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

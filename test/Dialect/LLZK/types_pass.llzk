@@ -8,13 +8,13 @@ module attributes {veridise.lang = "llzk"} {
     }
     function.def @constrain(%self: !struct.type<@Hello>) { function.return }
   }
-  function.def private @a(!array.type<5 x !felt.felt>, !struct.type<@Hello>)
+  function.def private @a(!array.type<5 x !felt.type>, !struct.type<@Hello>)
 }
-//CHECK-LABEL:  function.def private @a(!array.type<5 x !felt.felt>, !struct.type<@Hello>)
+//CHECK-LABEL:  function.def private @a(!array.type<5 x !felt.type>, !struct.type<@Hello>)
 // -----
 
-function.def private @b(!array.type<3,2,1 x !felt.felt>)
-//CHECK-LABEL:  function.def private @b(!array.type<3,2,1 x !felt.felt>)
+function.def private @b(!array.type<3,2,1 x !felt.type>)
+//CHECK-LABEL:  function.def private @b(!array.type<3,2,1 x !felt.type>)
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -34,8 +34,8 @@ function.def private @d(%x: !array.type<54 x index>) -> index
 //CHECK-LABEL:  function.def private @d(!array.type<54 x index>) -> index
 // -----
 
-function.def private @f(!felt.felt) -> i1
-//CHECK-LABEL:  function.def private @f(!felt.felt) -> i1
+function.def private @f(!felt.type) -> i1
+//CHECK-LABEL:  function.def private @f(!felt.type) -> i1
 // -----
 
 function.def private @g(%x: !array.type<2,3,2 x index>)

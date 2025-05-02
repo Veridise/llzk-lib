@@ -2,45 +2,45 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @SingleLoop {
-    function.def @constrain(%self: !struct.type<@SingleLoop>, %in: !array.type<5 x !felt.felt>) {
+    function.def @constrain(%self: !struct.type<@SingleLoop>, %in: !array.type<5 x !felt.type>) {
       %lb = arith.constant 0 : index
       %up = arith.constant 5 : index
       %step = arith.constant 1 : index
       %fval = felt.const 7
       scf.for %iv = %lb to %up step %step {
-        %elem = array.read %in[%iv] : !array.type<5 x !felt.felt>, !felt.felt
-        constrain.eq %elem, %fval : !felt.felt
+        %elem = array.read %in[%iv] : !array.type<5 x !felt.type>, !felt.type
+        constrain.eq %elem, %fval : !felt.type
       }
       function.return
     }
 
-    function.def @compute(%in: !array.type<5 x !felt.felt>) -> !struct.type<@SingleLoop> {
+    function.def @compute(%in: !array.type<5 x !felt.type>) -> !struct.type<@SingleLoop> {
       %self = struct.new : !struct.type<@SingleLoop>
       function.return %self : !struct.type<@SingleLoop>
     }
   }
 }
 // CHECK-LABEL: struct.def @SingleLoop {
-// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@SingleLoop>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.felt>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@SingleLoop>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.type>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = felt.const 7
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]]] : <5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V8]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]]] : <5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V9]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]]] : <5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V10]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]]] : <5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V11]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]]] : <5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V12]], %[[V7]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]]] : <5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V8]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]]] : <5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V9]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]]] : <5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V10]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]]] : <5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V11]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]]] : <5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V12]], %[[V7]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @compute(%[[V13:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.felt>) -> !struct.type<@SingleLoop> attributes {function.allow_witness} {
+// CHECK-NEXT:    function.def @compute(%[[V13:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.type>) -> !struct.type<@SingleLoop> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.new : <@SingleLoop>
 // CHECK-NEXT:      function.return %[[V14]] : !struct.type<@SingleLoop>
 // CHECK-NEXT:    }
@@ -49,87 +49,87 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @NestedLoopEasy {
-    function.def @constrain(%self: !struct.type<@NestedLoopEasy>, %in: !array.type<5,5 x !felt.felt>) {
+    function.def @constrain(%self: !struct.type<@NestedLoopEasy>, %in: !array.type<5,5 x !felt.type>) {
       %lb = arith.constant 0 : index
       %up = arith.constant 5 : index
       %step = arith.constant 1 : index
       %fval = felt.const 7
       scf.for %i = %lb to %up step %step {
         scf.for %j = %lb to %up step %step {
-          %elem = array.read %in[%i,%j] : !array.type<5,5 x !felt.felt>, !felt.felt
-          constrain.eq %elem, %fval : !felt.felt
+          %elem = array.read %in[%i,%j] : !array.type<5,5 x !felt.type>, !felt.type
+          constrain.eq %elem, %fval : !felt.type
         }
       }
       function.return
     }
 
-    function.def @compute(%in: !array.type<5,5 x !felt.felt>) -> !struct.type<@NestedLoopEasy> {
+    function.def @compute(%in: !array.type<5,5 x !felt.type>) -> !struct.type<@NestedLoopEasy> {
       %self = struct.new : !struct.type<@NestedLoopEasy>
       function.return %self : !struct.type<@NestedLoopEasy>
     }
   }
 }
 // CHECK-LABEL: struct.def @NestedLoopEasy {
-// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@NestedLoopEasy>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x !felt.felt>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@NestedLoopEasy>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x !felt.type>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = felt.const 7
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V5]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V8]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V6]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V9]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V4]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V10]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V3]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V11]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V2]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V12]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V5]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V13]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V6]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V14]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V4]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V15]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V3]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V16]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V2]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V17]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V5]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V18]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V6]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V19]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V20:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V4]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V20]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V21:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V3]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V21]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V22:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V2]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V22]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V23:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V5]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V23]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V24:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V6]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V24]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V25:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V4]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V25]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V26:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V3]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V26]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V27:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V2]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V27]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V28:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V5]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V28]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V29:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V6]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V29]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V30:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V4]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V30]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V31:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V3]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V31]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V32:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V2]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V32]], %[[V7]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V5]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V8]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V6]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V9]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V4]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V10]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V3]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V11]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V5]], %[[V2]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V12]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V5]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V13]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V6]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V14]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V4]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V15]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V3]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V16]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V2]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V17]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V5]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V18]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V6]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V19]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V20:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V4]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V20]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V21:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V3]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V21]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V22:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V2]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V22]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V23:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V5]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V23]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V24:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V6]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V24]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V25:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V4]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V25]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V26:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V3]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V26]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V27:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V2]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V27]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V28:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V5]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V28]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V29:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V6]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V29]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V30:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V4]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V30]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V31:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V3]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V31]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V32:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V2]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V32]], %[[V7]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @compute(%[[V33:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x !felt.felt>) -> !struct.type<@NestedLoopEasy> attributes {function.allow_witness} {
+// CHECK-NEXT:    function.def @compute(%[[V33:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x !felt.type>) -> !struct.type<@NestedLoopEasy> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V34:[0-9a-zA-Z_\.]+]] = struct.new : <@NestedLoopEasy>
 // CHECK-NEXT:      function.return %[[V34]] : !struct.type<@NestedLoopEasy>
 // CHECK-NEXT:    }
@@ -139,57 +139,57 @@ module attributes {veridise.lang = "llzk"} {
 // Inner loop range depends on outer loop. Requires erasing 0-count loops.
 module attributes {veridise.lang = "llzk"} {
   struct.def @NestedLoopHard {
-    function.def @constrain(%self: !struct.type<@NestedLoopHard>, %in: !array.type<5,5 x !felt.felt>) {
+    function.def @constrain(%self: !struct.type<@NestedLoopHard>, %in: !array.type<5,5 x !felt.type>) {
       %lb = arith.constant 0 : index
       %up = arith.constant 5 : index
       %step = arith.constant 1 : index
       %fval = felt.const 7
       scf.for %i = %lb to %up step %step {
         scf.for %j = %lb to %i step %step {
-          %elem = array.read %in[%i,%j] : !array.type<5,5 x !felt.felt>, !felt.felt
-          constrain.eq %elem, %fval : !felt.felt
+          %elem = array.read %in[%i,%j] : !array.type<5,5 x !felt.type>, !felt.type
+          constrain.eq %elem, %fval : !felt.type
         }
       }
       function.return
     }
 
-    function.def @compute(%in: !array.type<5,5 x !felt.felt>) -> !struct.type<@NestedLoopHard> {
+    function.def @compute(%in: !array.type<5,5 x !felt.type>) -> !struct.type<@NestedLoopHard> {
       %self = struct.new : !struct.type<@NestedLoopHard>
       function.return %self : !struct.type<@NestedLoopHard>
     }
   }
 }
 // CHECK-LABEL: struct.def @NestedLoopHard {
-// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@NestedLoopHard>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x !felt.felt>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@NestedLoopHard>, %[[V1:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x !felt.type>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = felt.const 7
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V5]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V8]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V5]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V9]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V6]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V10]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V5]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V11]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V6]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V12]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V4]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V13]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V5]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V14]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V6]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V15]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V4]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V16]], %[[V7]] : !felt.felt, !felt.felt
-// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V3]]] : <5,5 x !felt.felt>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V17]], %[[V7]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V6]], %[[V5]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V8]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V5]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V9]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V4]], %[[V6]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V10]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V5]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V11]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V6]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V12]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V3]], %[[V4]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V13]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V5]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V14]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V6]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V15]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V4]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V16]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = array.read %[[V1]]{{\[}}%[[V2]], %[[V3]]] : <5,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V17]], %[[V7]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @compute(%[[V18:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x !felt.felt>) -> !struct.type<@NestedLoopHard> attributes {function.allow_witness} {
+// CHECK-NEXT:    function.def @compute(%[[V18:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x !felt.type>) -> !struct.type<@NestedLoopHard> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = struct.new : <@NestedLoopHard>
 // CHECK-NEXT:      function.return %[[V19]] : !struct.type<@NestedLoopHard>
 // CHECK-NEXT:    }
@@ -201,15 +201,15 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @Signal {
-    struct.field @reg : !felt.felt {llzk.pub}
+    struct.field @reg : !felt.type {llzk.pub}
 
-    function.def @compute(%v: !felt.felt) -> !struct.type<@Signal> {
+    function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
-      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.felt
+      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.type
       function.return %self : !struct.type<@Signal>
     }
 
-    function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.felt) {
+    function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.type) {
       function.return
     }
   }
@@ -230,10 +230,10 @@ module attributes {veridise.lang = "llzk"} {
       %step = arith.constant 1 : index
       scf.for %i = %lb to %up step %step {
         %i0 = array.read %0[%i] : !array.type<2 x !Signal>, !Signal
-        %i0val = struct.readf %i0[@reg] : !Signal, !felt.felt
+        %i0val = struct.readf %i0[@reg] : !Signal, !felt.type
         %ib = array.read %b[%i] : !array.type<2 x !Signal>, !Signal
-        %ibval = struct.readf %ib[@reg] : !Signal, !felt.felt
-        constrain.eq %i0val, %ibval : !felt.felt
+        %ibval = struct.readf %ib[@reg] : !Signal, !felt.type
+        constrain.eq %i0val, %ibval : !felt.type
       }
       //TODO: It would be better to allow the line below instead of needing the loop above.
       //  However, `constrain.eq` is restricted to not allow StructType. Maybe we could add an
@@ -298,13 +298,13 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL: struct.def @Signal {
-// CHECK-NEXT:    struct.field @reg : !felt.felt {llzk.pub}
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@Signal> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.field @reg : !felt.type {llzk.pub}
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Signal> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Signal>
-// CHECK-NEXT:      struct.writef %[[V1]][@reg] = %[[V0]] : <@Signal>, !felt.felt
+// CHECK-NEXT:      struct.writef %[[V1]][@reg] = %[[V0]] : <@Signal>, !felt.type
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Signal>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Signal>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Signal>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -321,15 +321,15 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.readf %[[V2]][@f] : <@Component01>, !array.type<2 x !struct.type<@Signal>>
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = array.read %[[V3]]{{\[}}%[[V5]]] : <2 x !struct.type<@Signal>>, !struct.type<@Signal>
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@reg] : <@Signal>, !felt.felt
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@reg] : <@Signal>, !felt.type
 // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V5]]] : <2 x !struct.type<@Signal>>, !struct.type<@Signal>
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = struct.readf %[[V9]][@reg] : <@Signal>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V8]], %[[V10]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = struct.readf %[[V9]][@reg] : <@Signal>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V8]], %[[V10]] : !felt.type, !felt.type
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.read %[[V3]]{{\[}}%[[V4]]] : <2 x !struct.type<@Signal>>, !struct.type<@Signal>
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readf %[[V11]][@reg] : <@Signal>, !felt.felt
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readf %[[V11]][@reg] : <@Signal>, !felt.type
 // CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = array.read %[[V6]]{{\[}}%[[V4]]] : <2 x !struct.type<@Signal>>, !struct.type<@Signal>
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.readf %[[V13]][@reg] : <@Signal>, !felt.felt
-// CHECK-NEXT:      constrain.eq %[[V12]], %[[V14]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.readf %[[V13]][@reg] : <@Signal>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V12]], %[[V14]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

@@ -21,12 +21,12 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ToFelt<[@A]> {
-    struct.field @out: !felt.felt {llzk.pub}
+    struct.field @out: !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@ToFelt<[@A]>> {
       %self = struct.new : !struct.type<@ToFelt<[@A]>>
-      %constA = poly.read_const @A : !felt.felt
-      struct.writef %self[@out] = %constA : !struct.type<@ToFelt<[@A]>>, !felt.felt
+      %constA = poly.read_const @A : !felt.type
+      struct.writef %self[@out] = %constA : !struct.type<@ToFelt<[@A]>>, !felt.type
       function.return %self: !struct.type<@ToFelt<[@A]>>
     }
 
@@ -97,11 +97,11 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 
 // CHECK-LABEL: struct.def @ToFelt_1 {
-// CHECK-NEXT:    struct.field @out : !felt.felt {llzk.pub}
+// CHECK-NEXT:    struct.field @out : !felt.type {llzk.pub}
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@ToFelt_1> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 1
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@ToFelt_1>
-// CHECK-NEXT:      struct.writef %[[V1]][@out] = %[[V0]] : <@ToFelt_1>, !felt.felt
+// CHECK-NEXT:      struct.writef %[[V1]][@out] = %[[V0]] : <@ToFelt_1>, !felt.type
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@ToFelt_1>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt_1>) attributes {function.allow_constraint} {

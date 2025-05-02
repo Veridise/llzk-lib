@@ -44,7 +44,7 @@ function.def @f_not(%a: i1) -> i1 attributes {function.allow_witness} {
 //CHECK-NEXT:   }
 // -----
 
-!F = !felt.felt
+!F = !felt.type
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA {
     function.def @compute(%a: !F, %b: !F, %c: !F, %d: !F, %e: !F, %f: !F) -> !struct.type<@ComponentA> {
@@ -66,13 +66,13 @@ module attributes {veridise.lang = "llzk"} {
 }
 // CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    struct.def @ComponentA {
-// CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V2:[0-9a-zA-Z_\.]+]]: !felt.felt,
-// CHECK-SAME:      %[[V3:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V4:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V5:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@ComponentA>  attributes {function.allow_witness} {
+// CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V2:[0-9a-zA-Z_\.]+]]: !felt.type,
+// CHECK-SAME:      %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V5:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@ComponentA>  attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA>
 // CHECK-NEXT:        function.return %[[V6]] : !struct.type<@ComponentA>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V9:[0-9a-zA-Z_\.]+]]: !felt.felt,
-// CHECK-SAME:      %[[V10:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V11:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.felt, %[[V13:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V9:[0-9a-zA-Z_\.]+]]: !felt.type,
+// CHECK-SAME:      %[[V10:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V11:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V13:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:        %[[V14:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:        %[[V15:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[V12]], %[[V13]])
 // CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[V10]], %[[V11]])

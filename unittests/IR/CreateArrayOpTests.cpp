@@ -256,6 +256,6 @@ TEST_F(OpTests, testMapOpInit_WrongTypeForMapOperands) {
       bldr.create<CreateArrayOp>(loc, arrTy, ArrayRef {ValueRange {v1}}, ArrayRef<int32_t> {1});
   EXPECT_DEATH(
       { assert(verify(op)); },
-      "error: 'array.new' op operand #0 must be variadic of index, but got '!felt.felt'"
+      "error: 'array.new' op operand #0 must be variadic of index, but got '!felt.type'"
   );
 }

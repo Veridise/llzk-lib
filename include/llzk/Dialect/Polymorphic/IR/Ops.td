@@ -54,8 +54,8 @@ def LLZK_UnifiableCastOp : PolymorphicDialectOp<"unifiable_cast", [Pure]> {
 
     Example:
     ```llzk
-    %0 = some_other_op : !array.type<@N x !felt.felt>
-    %1 = unifiable_cast %0 : (!array.type<@N x @felt.felt>) -> !array.type<affine_map<()[s0, s1] -> (s0 + s1)> x !felt.felt>
+    %0 = some_other_op : !array.type<@N x !felt.type>
+    %1 = unifiable_cast %0 : (!array.type<@N x @felt.type>) -> !array.type<affine_map<()[s0, s1] -> (s0 + s1)> x !felt.type>
     ```
   }];
 

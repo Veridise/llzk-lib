@@ -124,7 +124,7 @@ LogicalResult ensureAttrTypeMatch(
     }
   } else if (llvm::isa<FeltType>(type)) {
     if (!llvm::isa<FeltConstAttr, IntegerAttr>(valAttr)) {
-      return reportMismatch(errFn, rootType, aspect, "felt.felt", valAttr);
+      return reportMismatch(errFn, rootType, aspect, "felt.type", valAttr);
     }
   } else if (llvm::isa<StringType>(type)) {
     if (!llvm::isa<StringAttr>(valAttr)) {

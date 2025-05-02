@@ -3,26 +3,26 @@
 function.def @constant_scalar_mismatch() {
   %a = felt.const 6744573456376
   %b = arith.constant 2 : index // expected-note {{prior use here}}
-  // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!felt.felt' vs 'index'}}
-  %r = array.new %a, %b : !array.type<2 x !felt.felt>
+  // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!felt.type' vs 'index'}}
+  %r = array.new %a, %b : !array.type<2 x !felt.type>
 }
 
 // -----
 
 function.def @param_scalar_mismatch(
-      %a: !felt.felt,
-      %b: !felt.felt,
+      %a: !felt.type,
+      %b: !felt.type,
       %c: index // expected-note {{prior use here}}
       ) {
-  // expected-error@+1 {{use of value '%c' expects different type than prior uses: '!felt.felt' vs 'index'}}
-  %r = array.new %a, %b, %c: !array.type<3 x !felt.felt>
+  // expected-error@+1 {{use of value '%c' expects different type than prior uses: '!felt.type' vs 'index'}}
+  %r = array.new %a, %b, %c: !array.type<3 x !felt.type>
 }
 
 // -----
 
 function.def @mismatch_to_type_attr(
       %a: !array.type<3 x index>, // expected-note {{prior use here}}
-      %b: !felt.felt
+      %b: !felt.type
       ) {
   %c = arith.constant 324 : index
   // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs '!array.type<3 x index>'}}
@@ -35,7 +35,7 @@ function.def @mismatch_to_type_attr_size() {
   %a = felt.const 6744573456376
   %b = felt.const 381928390103509
   // expected-error@+1 {{custom op 'array.new' 2 operands present, but expected 3}}
-  %r = array.new %a, %b : !array.type<3 x !felt.felt>
+  %r = array.new %a, %b : !array.type<3 x !felt.type>
 }
 
 // -----

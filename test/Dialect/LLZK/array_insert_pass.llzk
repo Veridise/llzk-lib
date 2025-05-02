@@ -40,18 +40,18 @@ function.def @constant_index() {
 // CHECK-NEXT:  }
 // -----
 
-function.def @empty_index(%0: !felt.felt, %1: !felt.felt, %z: !array.type<84,22,67 x !felt.felt>) {
-  %r = array.new : !array.type<84,22,67 x !felt.felt>
-  array.insert %r[] = %z : !array.type<84,22,67 x !felt.felt>, !array.type<84,22,67 x !felt.felt>
+function.def @empty_index(%0: !felt.type, %1: !felt.type, %z: !array.type<84,22,67 x !felt.type>) {
+  %r = array.new : !array.type<84,22,67 x !felt.type>
+  array.insert %r[] = %z : !array.type<84,22,67 x !felt.type>, !array.type<84,22,67 x !felt.type>
   // %r is completely overwritten with contents of %z
   function.return
 }
 // CHECK-LABEL: function.def @empty_index(
-// CHECK-SAME:                         %[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.felt,
-// CHECK-SAME:                         %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.felt,
-// CHECK-SAME:                         %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<84,22,67 x !felt.felt>) {
-// CHECK-NEXT:    %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <84,22,67 x !felt.felt>
-// CHECK-NEXT:    array.insert %[[VAL_3]][] = %[[VAL_2]] : <84,22,67 x !felt.felt>, <84,22,67 x !felt.felt>
+// CHECK-SAME:                         %[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type,
+// CHECK-SAME:                         %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type,
+// CHECK-SAME:                         %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<84,22,67 x !felt.type>) {
+// CHECK-NEXT:    %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <84,22,67 x !felt.type>
+// CHECK-NEXT:    array.insert %[[VAL_3]][] = %[[VAL_2]] : <84,22,67 x !felt.type>, <84,22,67 x !felt.type>
 // CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
 // -----
@@ -229,36 +229,36 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 #map = affine_map<(i)[] -> (i)>
-function.def @dimensions_unify_affine_with_int_A(%z: !array.type<#map x !felt.felt>) {
-  %r = array.new : !array.type<44,2 x !felt.felt>
+function.def @dimensions_unify_affine_with_int_A(%z: !array.type<#map x !felt.type>) {
+  %r = array.new : !array.type<44,2 x !felt.type>
   %0 = arith.constant 0 : index
   // expected-error@+1 {{'array.insert' op cannot unify array dimensions [2] with [affine_map<(d0) -> (d0)>]}}
-  array.insert %r[%0] = %z : !array.type<44,2 x !felt.felt>, !array.type<#map x !felt.felt>
+  array.insert %r[%0] = %z : !array.type<44,2 x !felt.type>, !array.type<#map x !felt.type>
   function.return
 }
 // CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
 // CHECK-LABEL: function.def @dimensions_unify_affine_with_int_A(
-// CHECK-SAME:              %[[V0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M0]] x !felt.felt>) {
-// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = array.new  : <44,2 x !felt.felt>
+// CHECK-SAME:              %[[V0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M0]] x !felt.type>) {
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = array.new  : <44,2 x !felt.type>
 // CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    array.insert %[[V1]]{{\[}}%[[V2]]] = %[[V0]] : <44,2 x !felt.felt>, <#[[$M0]] x !felt.felt>
+// CHECK-NEXT:    array.insert %[[V1]]{{\[}}%[[V2]]] = %[[V0]] : <44,2 x !felt.type>, <#[[$M0]] x !felt.type>
 // CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
 // -----
 
 #map = affine_map<()[j] -> (j)>
-function.def @dimensions_unify_affine_with_int_B(%z: !array.type<#map x !felt.felt>) {
-  %r = array.new : !array.type<44,2 x !felt.felt>
+function.def @dimensions_unify_affine_with_int_B(%z: !array.type<#map x !felt.type>) {
+  %r = array.new : !array.type<44,2 x !felt.type>
   %0 = arith.constant 0 : index
   // expected-error@+1 {{'array.insert' op cannot unify array dimensions [2] with [affine_map<()[s0] -> (s0)>]}}
-  array.insert %r[%0] = %z : !array.type<44,2 x !felt.felt>, !array.type<#map x !felt.felt>
+  array.insert %r[%0] = %z : !array.type<44,2 x !felt.type>, !array.type<#map x !felt.type>
   function.return
 }
 // CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: function.def @dimensions_unify_affine_with_int_B(
-// CHECK-SAME:              %[[V0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M0]] x !felt.felt>) {
-// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = array.new  : <44,2 x !felt.felt>
+// CHECK-SAME:              %[[V0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M0]] x !felt.type>) {
+// CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = array.new  : <44,2 x !felt.type>
 // CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    array.insert %[[V1]]{{\[}}%[[V2]]] = %[[V0]] : <44,2 x !felt.felt>, <#[[$M0]] x !felt.felt>
+// CHECK-NEXT:    array.insert %[[V1]]{{\[}}%[[V2]]] = %[[V0]] : <44,2 x !felt.type>, <#[[$M0]] x !felt.type>
 // CHECK-NEXT:    function.return
 // CHECK-NEXT:  }

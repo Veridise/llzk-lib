@@ -50,7 +50,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{custom op 'global.def' expected integer value}}
   // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`}}
-  global.def const @g : !felt.felt = unparseable
+  global.def const @g : !felt.type = unparseable
 }
 // -----
 
@@ -65,7 +65,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{custom op 'global.def' expected integer value}}
   // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`}}
-  global.def const @g : !felt.felt = "Hello"
+  global.def const @g : !felt.type = "Hello"
 }
 // -----
 
@@ -127,8 +127,8 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'global.def' op with type '!array.type<2,2,1,2 x !felt.felt>' expected builtin.array attribute value to contain 8 elements but found 4}}
-  global.def const @g : !array.type<2,2,1,2 x !felt.felt> = [6, 12134, 45523, 15623]
+  // expected-error@+1 {{'global.def' op with type '!array.type<2,2,1,2 x !felt.type>' expected builtin.array attribute value to contain 8 elements but found 4}}
+  global.def const @g : !array.type<2,2,1,2 x !felt.type> = [6, 12134, 45523, 15623]
 }
 // -----
 
@@ -136,7 +136,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{custom op 'global.def' expected integer value}}
   // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`}}
-  global.def const @g : !felt.felt = "Hello"
+  global.def const @g : !felt.type = "Hello"
 }
 // -----
 
@@ -164,10 +164,10 @@ module attributes {veridise.lang = "llzk"} {
 
 // TEST: GlobalReadOp with type that does not match the GlobalDefOp
 module attributes {veridise.lang = "llzk"} {
-  global.def @g : !felt.felt = 6546
+  global.def @g : !felt.type = 6546
   struct.def @Component03 {
     function.def @compute() -> !struct.type<@Component03> {
-      // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.felt', got '!string.string'}}
+      // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.type', got '!string.string'}}
       %t = global.read @g : !string.string
       %self = struct.new : !struct.type<@Component03>
       function.return %self : !struct.type<@Component03>
@@ -179,12 +179,12 @@ module attributes {veridise.lang = "llzk"} {
 
 // TEST: GlobalWriteOp with unknown symbol name
 module attributes {veridise.lang = "llzk"} {
-  global.def @g : !felt.felt = 125
+  global.def @g : !felt.type = 125
   struct.def @Component04 {
     function.def @compute() -> !struct.type<@Component04> {
       %c = felt.const 99999
       // expected-error@+1 {{'global.write' op references unknown symbol "@unknown"}}
-      global.write @unknown = %c : !felt.felt
+      global.write @unknown = %c : !felt.type
       %self = struct.new : !struct.type<@Component04>
       function.return %self : !struct.type<@Component04>
     }
@@ -199,8 +199,8 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Component05 {
     function.def @compute() -> !struct.type<@Component05> {
       %c = felt.const 99999
-      // expected-error@+1 {{'global.write' op has wrong type; expected 'index', got '!felt.felt'}}
-      global.write @g = %c : !felt.felt
+      // expected-error@+1 {{'global.write' op has wrong type; expected 'index', got '!felt.type'}}
+      global.write @g = %c : !felt.type
       %self = struct.new : !struct.type<@Component05>
       function.return %self : !struct.type<@Component05>
     }
@@ -211,12 +211,12 @@ module attributes {veridise.lang = "llzk"} {
 
 // TEST: GlobalWriteOp with type that does not Value
 module attributes {veridise.lang = "llzk"} {
-  global.def @g : !felt.felt = 125
+  global.def @g : !felt.type = 125
   struct.def @Component06 {
     function.def @compute() -> !struct.type<@Component06> {
       %c = arith.constant true // expected-note {{prior use here}}
-      // expected-error@+1 {{use of value '%c' expects different type than prior uses: '!felt.felt' vs 'i1'}}
-      global.write @g = %c : !felt.felt
+      // expected-error@+1 {{use of value '%c' expects different type than prior uses: '!felt.type' vs 'i1'}}
+      global.write @g = %c : !felt.type
       %self = struct.new : !struct.type<@Component06>
       function.return %self : !struct.type<@Component06>
     }
@@ -275,11 +275,11 @@ module attributes {veridise.lang = "llzk"} {
 
 // TEST: `writeg` cannot be used in a free function
 module attributes {veridise.lang = "llzk"} {
-  global.def @g : !felt.felt
+  global.def @g : !felt.type
   function.def @test() {
     %c = felt.const 99999
     // expected-error@+1 {{'global.write' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
-    global.write @g = %c : !felt.felt
+    global.write @g = %c : !felt.type
     function.return
   }
 }

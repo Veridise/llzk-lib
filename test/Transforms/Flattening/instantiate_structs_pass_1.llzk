@@ -175,26 +175,26 @@ module attributes {veridise.lang = "llzk"} {
 // No change because there is no compute function.call that instantiates all of the parameters
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component02<[@A]> {
-    function.def @compute(%0: !felt.felt) -> !struct.type<@Component02<[@A]>> {
+    function.def @compute(%0: !felt.type) -> !struct.type<@Component02<[@A]>> {
       %self = struct.new : !struct.type<@Component02<[@A]>>
       function.return %self : !struct.type<@Component02<[@A]>>
     }
-    function.def @constrain(%self: !struct.type<@Component02<[@A]>>, %0: !felt.felt) {
-      %1 = poly.read_const @A : !felt.felt
-      constrain.eq %0, %1 : !felt.felt
+    function.def @constrain(%self: !struct.type<@Component02<[@A]>>, %0: !felt.type) {
+      %1 = poly.read_const @A : !felt.type
+      constrain.eq %0, %1 : !felt.type
       function.return
     }
   }
 }
 //CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    struct.def @Component02<[@A]> {
-//CHECK-NEXT:      function.def @compute(%arg0: !felt.felt) -> !struct.type<@Component02<[@A]>> attributes {function.allow_witness} {
+//CHECK-NEXT:      function.def @compute(%arg0: !felt.type) -> !struct.type<@Component02<[@A]>> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02<[@A]>>
 //CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@Component02<[@A]>>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%arg0: !struct.type<@Component02<[@A]>>, %arg1: !felt.felt) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.felt
-//CHECK-NEXT:        constrain.eq %arg1, %[[T0]] : !felt.felt, !felt.felt
+//CHECK-NEXT:      function.def @constrain(%arg0: !struct.type<@Component02<[@A]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.type
+//CHECK-NEXT:        constrain.eq %arg1, %[[T0]] : !felt.type, !felt.type
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
@@ -909,13 +909,13 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @TestReadConstAsFelt<[@A]> {
-    function.def @compute(%0: !felt.felt) -> !struct.type<@TestReadConstAsFelt<[@A]>> {
+    function.def @compute(%0: !felt.type) -> !struct.type<@TestReadConstAsFelt<[@A]>> {
       %self = struct.new : !struct.type<@TestReadConstAsFelt<[@A]>>
       function.return %self : !struct.type<@TestReadConstAsFelt<[@A]>>
     }
-    function.def @constrain(%self: !struct.type<@TestReadConstAsFelt<[@A]>>, %0: !felt.felt) {
-      %1 = poly.read_const @A : !felt.felt
-      constrain.eq %0, %1 : !felt.felt
+    function.def @constrain(%self: !struct.type<@TestReadConstAsFelt<[@A]>>, %0: !felt.type) {
+      %1 = poly.read_const @A : !felt.type
+      constrain.eq %0, %1 : !felt.type
       function.return
     }
   }
@@ -925,26 +925,26 @@ module attributes {veridise.lang = "llzk"} {
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %0 = felt.const 45
-      %1 = function.call @TestReadConstAsFelt::@compute(%0) : (!felt.felt) -> !struct.type<@TestReadConstAsFelt<[45]>>
+      %1 = function.call @TestReadConstAsFelt::@compute(%0) : (!felt.type) -> !struct.type<@TestReadConstAsFelt<[45]>>
       struct.writef %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TestReadConstAsFelt<[45]>>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
       %0 = felt.const 45
       %1 = struct.readf %self[@sub] : !struct.type<@Main>, !struct.type<@TestReadConstAsFelt<[45]>>
-      function.call @TestReadConstAsFelt::@constrain(%1, %0) : (!struct.type<@TestReadConstAsFelt<[45]>>, !felt.felt) -> ()
+      function.call @TestReadConstAsFelt::@constrain(%1, %0) : (!struct.type<@TestReadConstAsFelt<[45]>>, !felt.type) -> ()
       function.return
     }
   }
 }
 // CHECK-LABEL: struct.def @TestReadConstAsFelt_45 {
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.felt) -> !struct.type<@TestReadConstAsFelt_45> attributes {function.allow_witness} {
+// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TestReadConstAsFelt_45> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TestReadConstAsFelt_45>
 // CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@TestReadConstAsFelt_45>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TestReadConstAsFelt_45>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.felt) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TestReadConstAsFelt_45>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const 45
-// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : !felt.felt, !felt.felt
+// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -954,14 +954,14 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const 45
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TestReadConstAsFelt_45::@compute(%[[VAL_1]]) : (!felt.felt) -> !struct.type<@TestReadConstAsFelt_45>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TestReadConstAsFelt_45::@compute(%[[VAL_1]]) : (!felt.type) -> !struct.type<@TestReadConstAsFelt_45>
 // CHECK-NEXT:      struct.writef %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !struct.type<@TestReadConstAsFelt_45>
 // CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const 45
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_3]][@sub] : <@Main>, !struct.type<@TestReadConstAsFelt_45>
-// CHECK-NEXT:      function.call @TestReadConstAsFelt_45::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!struct.type<@TestReadConstAsFelt_45>, !felt.felt) -> ()
+// CHECK-NEXT:      function.call @TestReadConstAsFelt_45::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!struct.type<@TestReadConstAsFelt_45>, !felt.type) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

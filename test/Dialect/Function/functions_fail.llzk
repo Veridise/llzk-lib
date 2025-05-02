@@ -81,7 +81,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
-  function.def private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> (!felt.felt, i1, !struct.type<@WasNotDefined>)
+  function.def private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> (!felt.type, i1, !struct.type<@WasNotDefined>)
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
@@ -100,9 +100,9 @@ module attributes {veridise.lang = "llzk"} {
   function.def @identity(%x: index) -> (index) { // expected-note {{callee defined here}}
     function.return %x : index
   }
-  function.def @user(%x: !felt.felt) -> (index) {
+  function.def @user(%x: !felt.type) -> (index) {
     // expected-error@+1 {{'function.call' op incorrect number of operands for callee, expected 1}}
-    %1 = function.call @identity(%x, %x) : (!felt.felt, !felt.felt) -> (index)
+    %1 = function.call @identity(%x, %x) : (!felt.type, !felt.type) -> (index)
     function.return %1 : index
   }
 }
@@ -111,9 +111,9 @@ module attributes {veridise.lang = "llzk"} {
   function.def @identity(%x: index) -> (index) {
     function.return %x : index
   }
-  function.def @user(%x: !felt.felt) -> (index) {
-    // expected-error@+1 {{'function.call' op operand type mismatch: expected type 'index', but found '!felt.felt' for operand number 0}}
-    %1 = function.call @identity(%x) : (!felt.felt) -> (index)
+  function.def @user(%x: !felt.type) -> (index) {
+    // expected-error@+1 {{'function.call' op operand type mismatch: expected type 'index', but found '!felt.type' for operand number 0}}
+    %1 = function.call @identity(%x) : (!felt.type) -> (index)
     function.return %1: index
   }
 }
@@ -152,10 +152,10 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentA2 {
-    function.def @compute(%0: !felt.felt) -> !struct.type<@ComponentA2> {
+    function.def @compute(%0: !felt.type) -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
       // expected-error@+1 {{'function.call' op incorrect number of operands for callee, expected 0}}
-      %x = function.call @ComponentA1::@compute(%0) : (!felt.felt) -> (!struct.type<@ComponentA1>)
+      %x = function.call @ComponentA1::@compute(%0) : (!felt.type) -> (!struct.type<@ComponentA1>)
       function.return %self : !struct.type<@ComponentA2>
     }
 
@@ -178,9 +178,9 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.type<@ComponentB2>
     }
 
-    function.def @constrain(%self: !struct.type<@ComponentB2>, %0: !felt.felt) {
-      // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!struct.type<@ComponentB1>', but found '!felt.felt' for operand number 0}}
-      function.call @ComponentB1::@constrain(%0) : (!felt.felt) -> ()
+    function.def @constrain(%self: !struct.type<@ComponentB2>, %0: !felt.type) {
+      // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!struct.type<@ComponentB1>', but found '!felt.type' for operand number 0}}
+      function.call @ComponentB1::@constrain(%0) : (!felt.type) -> ()
       function.return
     }
   }
