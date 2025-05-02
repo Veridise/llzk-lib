@@ -125,7 +125,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  include.from "Dialect/LLZK/zir_example_0.llzk" as @std
+  include.from "FrontendLang/Zirgen/zir_example_0.llzk" as @std
 
   struct.def @C1 {
     struct.field @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
