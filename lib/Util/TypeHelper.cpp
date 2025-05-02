@@ -26,10 +26,6 @@ using namespace felt;
 using namespace polymorphic;
 using namespace string;
 
-//===------------------------------------------------------------------===//
-// Helpers
-//===------------------------------------------------------------------===//
-
 void ShortTypeStringifier::appendSymName(StringRef str) {
   if (str.empty()) {
     ss << '?';
@@ -792,10 +788,6 @@ void printStructParams(AsmPrinter &printer, ArrayAttr value) {
   printAttrs(printer, value.getValue(), ", ");
   printer << ']';
 }
-
-//===------------------------------------------------------------------===//
-// Additional Helpers
-//===------------------------------------------------------------------===//
 
 void assertValidAttrForParamOfType(Attribute attr) {
   // Must be the union of valid attribute types within ArrayType, StructType, and TypeVarType.
