@@ -10,7 +10,6 @@
 #pragma once
 
 #include <mlir/IR/Attributes.h>
-#include <mlir/IR/BuiltinAttributeInterfaces.h>
 
 // Include TableGen'd declarations
 #define GET_ATTRDEF_CLASSES

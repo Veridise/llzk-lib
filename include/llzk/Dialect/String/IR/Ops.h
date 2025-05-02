@@ -12,9 +12,6 @@
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Types.h"
 
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/Location.h>
-
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
 #include "llzk/Dialect/String/IR/Ops.h.inc"

@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/DialectImplementation.h>
 
 #include <llvm/ADT/APInt.h>

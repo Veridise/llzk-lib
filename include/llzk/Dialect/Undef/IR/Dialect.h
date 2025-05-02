@@ -10,7 +10,6 @@
 #pragma once
 
 #include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/Location.h>
 
 // Include TableGen'd declarations
 #include "llzk/Dialect/Undef/IR/Dialect.h.inc"

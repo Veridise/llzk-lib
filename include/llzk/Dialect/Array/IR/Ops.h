@@ -14,8 +14,6 @@
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Util/TypeHelper.h"
 
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/Location.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 
 // Include TableGen'd declarations

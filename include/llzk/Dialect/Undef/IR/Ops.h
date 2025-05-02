@@ -11,8 +11,6 @@
 
 #include "llzk/Dialect/Undef/IR/Dialect.h"
 
-#include <mlir/IR/BuiltinOps.h>
-
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Undef/IR/Ops.h.inc"

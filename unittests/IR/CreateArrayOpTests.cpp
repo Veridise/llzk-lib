@@ -12,12 +12,14 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
+
 #include "OpTestBase.h"
 
+using namespace mlir;
+using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::felt;
-using namespace llzk;
-using namespace mlir;
 
 //===------------------------------------------------------------------===//
 // CreateArrayOp::build(..., ArrayType, ValueRange)

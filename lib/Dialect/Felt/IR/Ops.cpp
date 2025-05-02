@@ -20,6 +20,8 @@
 #include <mlir/IR/ValueRange.h>
 #include <mlir/Support/LogicalResult.h>
 
+#include <llvm/ADT/SmallString.h>
+
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Felt/IR/Ops.cpp.inc"

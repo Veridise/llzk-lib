@@ -8,26 +8,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Types.h"
-#include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/AttributeHelper.h"
-#include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
-
-#include <mlir/IR/BuiltinAttributes.h>
-#include <mlir/IR/BuiltinTypeInterfaces.h>
-#include <mlir/IR/DialectImplementation.h>
-#include <mlir/IR/SymbolTable.h>
-#include <mlir/Support/LogicalResult.h>
-
-#include <llvm/ADT/STLExtras.h>
-#include <llvm/ADT/SmallVector.h>
-
-#include <cassert>
 
 using namespace mlir;
 

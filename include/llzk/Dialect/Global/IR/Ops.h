@@ -13,9 +13,6 @@
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Util/SymbolLookup.h"
 
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/OpImplementation.h>
-
 // forward-declare ops
 #define GET_OP_FWD_DEFINES
 #include "llzk/Dialect/Global/IR/Ops.h.inc"

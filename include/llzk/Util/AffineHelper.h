@@ -10,7 +10,6 @@
 #pragma once
 
 #include <mlir/IR/Builders.h>
-#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/ValueRange.h>

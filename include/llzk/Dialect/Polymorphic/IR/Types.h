@@ -11,11 +11,6 @@
 
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 
-#include <mlir/IR/Attributes.h>
-#include <mlir/IR/BuiltinTypes.h>
-#include <mlir/IR/OpImplementation.h>
-#include <mlir/IR/Operation.h>
-
 // forward-declare ops
 #define GET_OP_FWD_DEFINES
 #include "llzk/Dialect/Polymorphic/IR/Ops.h.inc"

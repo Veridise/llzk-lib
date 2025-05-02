@@ -13,6 +13,7 @@
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinOps.h>

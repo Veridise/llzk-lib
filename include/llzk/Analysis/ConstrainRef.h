@@ -18,6 +18,7 @@
 #include "llzk/Util/Hash.h"
 
 #include <mlir/Analysis/DataFlowFramework.h>
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Pass/AnalysisManager.h>
 
 #include <llvm/ADT/EquivalenceClasses.h>

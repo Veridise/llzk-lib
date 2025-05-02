@@ -10,30 +10,11 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
-#include "llzk/Util/AttributeHelper.h"
-#include "llzk/Util/ErrorHelper.h"
-#include "llzk/Util/StreamHelper.h"
-#include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
-
-#include <mlir/IR/BuiltinAttributes.h>
-#include <mlir/IR/BuiltinTypeInterfaces.h>
-#include <mlir/IR/DialectImplementation.h>
-#include <mlir/IR/SymbolTable.h>
-#include <mlir/Support/LogicalResult.h>
-
-#include <llvm/ADT/STLExtras.h>
-#include <llvm/ADT/SmallVector.h>
-
-#include <cassert>
-
-namespace llzk::array {
 
 using namespace mlir;
 
-//===------------------------------------------------------------------===//
-// ArrayType
-//===------------------------------------------------------------------===//
+namespace llzk::array {
 
 LogicalResult computeDimsFromShape(
     MLIRContext *ctx, ArrayRef<int64_t> shape, SmallVector<Attribute> &dimensionSizes

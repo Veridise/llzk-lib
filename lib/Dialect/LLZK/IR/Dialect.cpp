@@ -19,6 +19,8 @@
 #include <mlir/IR/DialectImplementation.h>
 #include <mlir/Support/LLVM.h>
 
+#include <llvm/ADT/TypeSwitch.h>
+
 // TableGen'd implementation files
 #include "llzk/Dialect/LLZK/IR/Dialect.cpp.inc"
 

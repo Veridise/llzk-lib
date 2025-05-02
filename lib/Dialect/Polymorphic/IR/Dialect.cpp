@@ -7,14 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
-#include "llzk/Dialect/Struct/IR/Dialect.h"
 
 #include <mlir/IR/Builders.h>
-#include <mlir/IR/BuiltinDialect.h>
 #include <mlir/IR/DialectImplementation.h>
 
 #include <llvm/ADT/TypeSwitch.h>

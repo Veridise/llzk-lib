@@ -10,8 +10,6 @@
 #include "llzk/Dialect/Undef/IR/Dialect.h"
 #include "llzk/Dialect/Undef/IR/Ops.h"
 
-#include <mlir/IR/BuiltinDialect.h>
-
 // TableGen'd implementation files
 #include "llzk/Dialect/Undef/IR/Dialect.cpp.inc"
 

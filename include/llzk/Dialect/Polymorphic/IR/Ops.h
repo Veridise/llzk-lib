@@ -13,8 +13,6 @@
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 
 #include <mlir/Dialect/Affine/IR/AffineValueMap.h>
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/Location.h>
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES

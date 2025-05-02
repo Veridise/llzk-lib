@@ -1,14 +1,26 @@
-#pragma once
+//===-- APIntHelper.h ------------------------------------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file
 /// This file defines helpers for manipulating APInts/APSInts for large numbers
 /// and operations over those numbers that may require bit width changes.
 /// NOTE: MLIR 19/20 introduces a dynamic version of APInt that manages bitwidths
 /// automatically. When we upgrade LLZK to a newer version of MLIR, we can remove
 /// these utilities in favor of that.
+//
+//===----------------------------------------------------------------------===//
+
+#pragma once
 
 #include <llvm/ADT/APSInt.h>
 
 #include <algorithm>
-#include <compare>
 #include <initializer_list>
 
 namespace llzk {

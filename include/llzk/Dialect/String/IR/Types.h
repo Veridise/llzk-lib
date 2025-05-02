@@ -11,17 +11,6 @@
 
 #include "llzk/Dialect/String/IR/Dialect.h"
 
-#include <mlir/IR/Attributes.h>
-#include <mlir/IR/BuiltinTypes.h>
-#include <mlir/IR/OpImplementation.h>
-#include <mlir/IR/Operation.h>
-
-#include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/DenseMap.h>
-#include <llvm/ADT/STLFunctionalExtras.h>
-#include <llvm/ADT/StringRef.h>
-#include <llvm/ADT/TypeSwitch.h>
-
 // forward-declare ops
 #define GET_OP_FWD_DEFINES
 #include "llzk/Dialect/String/IR/Ops.h.inc"
