@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 
 #include <mlir/IR/OpImplementation.h>
@@ -147,9 +146,7 @@ template <> struct DenseMapInfo<llzk::Side> {
 
 namespace llzk {
 
-inline bool isDynamic(mlir::IntegerAttr intAttr) {
-  return mlir::ShapedType::isDynamic(fromAPInt(intAttr.getValue()));
-}
+bool isDynamic(mlir::IntegerAttr intAttr);
 
 /// Optional result from type unifications. Maps `SymbolRefAttr` appearing in one type to the
 /// associated `Attribute` from the other type at the same nested position. The `Side` enum in the
@@ -263,8 +260,5 @@ verifyArrayDimSizes(EmitErrorFn emitError, mlir::ArrayRef<mlir::Attribute> dimen
 mlir::LogicalResult verifyArrayType(
     EmitErrorFn emitError, mlir::Type elementType, mlir::ArrayRef<mlir::Attribute> dimensionSizes
 );
-
-mlir::ParseResult parseStructParams(mlir::AsmParser &parser, mlir::ArrayAttr &value);
-void printStructParams(mlir::AsmPrinter &printer, mlir::ArrayAttr value);
 
 } // namespace llzk

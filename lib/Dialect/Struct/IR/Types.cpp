@@ -7,12 +7,29 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
 using namespace mlir;
 
 namespace llzk::component {
+
+ParseResult parseStructParams(AsmParser &parser, ArrayAttr &value) {
+  auto parseResult = FieldParser<ArrayAttr>::parse(parser);
+  if (failed(parseResult)) {
+    return parser.emitError(parser.getCurrentLocation(), "failed to parse struct parameters");
+  }
+  SmallVector<Attribute> own = forceIntAttrTypes(parseResult->getValue());
+  value = parser.getBuilder().getArrayAttr(own);
+  return success();
+}
+
+void printStructParams(AsmPrinter &printer, ArrayAttr value) {
+  printer << '[';
+  printAttrs(printer, value.getValue(), ", ");
+  printer << ']';
+}
 
 LogicalResult StructType::verify(EmitErrorFn emitError, SymbolRefAttr nameRef, ArrayAttr params) {
   return verifyStructTypeParams(emitError, params);

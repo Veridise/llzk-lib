@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Util/TypeHelper.h"
 
 using namespace mlir;
 
@@ -16,6 +17,12 @@ namespace llzk {
 // Adapted from AsmPrinter::printStrippedAttrOrType(), but without printing type.
 void printAttrs(AsmPrinter &printer, ArrayRef<Attribute> attrs, const StringRef &separator) {
   llvm::interleave(attrs, printer.getStream(), [&printer](Attribute a) {
+    if (auto intAttr = mlir::dyn_cast_if_present<IntegerAttr>(a)) {
+      if (isDynamic(intAttr)) {
+        printer.getStream() << "?";
+        return;
+      }
+    }
     if (succeeded(printer.printAlias(a))) {
       return;
     }

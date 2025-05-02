@@ -455,6 +455,8 @@ bool hasAffineMapAttr(Type type) {
   return encountered;
 }
 
+bool isDynamic(IntegerAttr intAttr) { return ShapedType::isDynamic(fromAPInt(intAttr.getValue())); }
+
 namespace {
 
 /// Optional result from type unifications. Maps `AffineMapAttr` appearing in one type to the
@@ -772,21 +774,6 @@ LogicalResult verifyArrayDimSizes(EmitErrorFn emitError, ArrayRef<Attribute> dim
 LogicalResult
 verifyArrayType(EmitErrorFn emitError, Type elementType, ArrayRef<Attribute> dimensionSizes) {
   return success(AllowedTypes().isValidArrayTypeImpl(elementType, dimensionSizes, emitError));
-}
-
-ParseResult parseStructParams(AsmParser &parser, ArrayAttr &value) {
-  auto parseResult = FieldParser<ArrayAttr>::parse(parser);
-  if (failed(parseResult)) {
-    return parser.emitError(parser.getCurrentLocation(), "failed to parse struct parameters");
-  }
-  SmallVector<Attribute> own = forceIntAttrTypes(parseResult->getValue());
-  value = parser.getBuilder().getArrayAttr(own);
-  return success();
-}
-void printStructParams(AsmPrinter &printer, ArrayAttr value) {
-  printer << '[';
-  printAttrs(printer, value.getValue(), ", ");
-  printer << ']';
 }
 
 void assertValidAttrForParamOfType(Attribute attr) {
