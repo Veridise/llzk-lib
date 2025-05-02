@@ -232,7 +232,6 @@ if(Doxygen_FOUND)
     # Ignore the filter script
     "${CMAKE_CURRENT_SOURCE_DIR}/doc/filter.py"
   )
-  set(DOXYGEN_FILTER_PATTERNS "*.html=python3 ${CMAKE_CURRENT_SOURCE_DIR}/doc/filter.py")
   set(DOXYGEN_USE_MDFILE_AS_MAINPAGE
       ${CMAKE_CURRENT_SOURCE_DIR}/doc/index.md)
   set(DOXYGEN_FILE_PATTERNS
