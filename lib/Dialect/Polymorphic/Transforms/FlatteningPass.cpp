@@ -19,7 +19,7 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Util/AttributeHelper.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -50,10 +50,10 @@
 #include <llvm/Support/Debug.h>
 
 // Include the generated base pass class definitions.
-namespace llzk {
+namespace llzk::polymorphic {
 #define GEN_PASS_DEF_FLATTENINGPASS
-#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
-} // namespace llzk
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
+} // namespace llzk::polymorphic
 
 using namespace mlir;
 using namespace llzk;
@@ -1544,7 +1544,7 @@ LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
 
 } // namespace Step4_Cleanup
 
-class FlatteningPass : public llzk::impl::FlatteningPassBase<FlatteningPass> {
+class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass> {
 
   static constexpr unsigned LIMIT = 1000;
 
@@ -1613,4 +1613,4 @@ class FlatteningPass : public llzk::impl::FlatteningPassBase<FlatteningPass> {
 
 } // namespace
 
-std::unique_ptr<Pass> llzk::createFlatteningPass() { return std::make_unique<FlatteningPass>(); };
+std::unique_ptr<Pass> llzk::polymorphic::createFlatteningPass() { return std::make_unique<FlatteningPass>(); };

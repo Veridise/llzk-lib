@@ -52,26 +52,4 @@ def UnusedDeclarationEliminationPass
   ];
 }
 
-def FlatteningPass : LLZKPass<"llzk-flatten"> {
-  let summary = "Flatten structs and unroll loops";
-  let description = [{
-    Performs the following transformations:
-    - Instantiate `affine_map` parameters of StructType and ArrayType
-      to constant values using the arguments at the instantiation site
-    - Replace parameterized structs with flattened (i.e. no parameter)
-      versions of those structs based on requested return type at calls
-      to `compute()` functions and unroll loops
-    - Unroll loops
-  }];
-  let constructor = "llzk::createFlatteningPass()";
-}
-
-def ArrayToScalarPass : LLZKPass<"llzk-array-to-scalar"> {
-  let summary = "Replace arrays with scalar values";
-  let description = [{
-    Replace known-shape arrays with the proper number of scalar values
-  }];
-  let constructor = "llzk::createArrayToScalarPass()";
-}
-
 #endif // LLZK_TRANSFORMATION_PASSES_TD

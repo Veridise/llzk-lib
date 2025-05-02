@@ -1,4 +1,4 @@
-//===-- LLZKArrayToScalarPass.cpp -------------------------------*- C++ -*-===//
+//===-- ArrayToScalarPass.cpp -----------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -53,12 +53,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
-#include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
@@ -68,10 +68,10 @@
 #include <llvm/Support/Debug.h>
 
 // Include the generated base pass class definitions.
-namespace llzk {
+namespace llzk::array {
 #define GEN_PASS_DEF_ARRAYTOSCALARPASS
-#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
-} // namespace llzk
+#include "llzk/Dialect/Array/Transforms/TransformationPasses.h.inc"
+} // namespace llzk::array
 
 using namespace mlir;
 using namespace llzk;
@@ -352,8 +352,9 @@ public:
 
   LogicalResult match(ExtractArrayOp op) const override { return failure(legal(op)); }
 
-  void rewrite(ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
-      const override {
+  void rewrite(
+      ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     ArrayType at = splittableArray(op.getResult().getType());
     // Generate `CreateArrayOp` in place of the current op.
     auto newArray = rewriter.replaceOpWithNewOp<CreateArrayOp>(op, at);
@@ -740,7 +741,7 @@ LogicalResult splitArrayCreateInit(ModuleOp modOp) {
   return step2(modOp, symTables, fieldRepMap);
 }
 
-class ArrayToScalarPass : public llzk::impl::ArrayToScalarPassBase<ArrayToScalarPass> {
+class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayToScalarPass> {
   void runOnOperation() override {
     ModuleOp module = getOperation();
     // Separate array initialization from creation by removing the initalization list from
@@ -765,6 +766,6 @@ class ArrayToScalarPass : public llzk::impl::ArrayToScalarPassBase<ArrayToScalar
 
 } // namespace
 
-std::unique_ptr<Pass> llzk::createArrayToScalarPass() {
+std::unique_ptr<Pass> llzk::array::createArrayToScalarPass() {
   return std::make_unique<ArrayToScalarPass>();
 };

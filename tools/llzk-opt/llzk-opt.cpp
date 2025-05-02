@@ -16,6 +16,8 @@
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Config/Config.h"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
+#include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Dialect/InitDialects.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
@@ -54,7 +56,9 @@ int main(int argc, char **argv) {
   llzk::registerAllDialects(registry);
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
+  llzk::array::registerTransformationPasses();
   llzk::include::registerTransformationPasses();
+  llzk::polymorphic::registerTransformationPasses();
   llzk::registerTransformationPassPipelines();
   llzk::registerValidationPasses();
 
