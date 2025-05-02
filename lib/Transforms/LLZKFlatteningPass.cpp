@@ -1149,7 +1149,6 @@ public:
     }
     LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldTypeFromWrite] replaced " << op);
     DictionaryAttr attrs = op->getDiscardableAttrDictionary();
-    // TODO: is the problem caused by replacing this op and losing the attribute?
     FieldDefOp newOp = replaceOpWithNewOp<FieldDefOp>(rewriter, op, op.getSymName(), newType);
     newOp->setDiscardableAttrs(attrs);
     LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');

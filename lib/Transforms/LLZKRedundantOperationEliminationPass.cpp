@@ -20,6 +20,7 @@
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Dominance.h>
 
@@ -88,13 +89,10 @@ public:
     if (lhs.op->getName() != rhs.op->getName()) {
       return false;
     }
-    // TODO-IAN: Refactor this after we have registered all new subdialects.
-    // uninterested in operating over non llzk/arith ops
+
+    // uninterested in operating over control-flow ops
     auto dialectName = lhs.op->getDialect()->getNamespace();
-    if (dialectName != LLZKDialect::getDialectNamespace() &&
-        dialectName != StructDialect::getDialectNamespace() &&
-        dialectName != ConstrainDialect::getDialectNamespace() &&
-        dialectName != arith::ArithDialect::getDialectNamespace()) {
+    if (dialectName == scf::SCFDialect::getDialectNamespace()) {
       return false;
     }
 
