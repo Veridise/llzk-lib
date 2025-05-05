@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -20,6 +21,7 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -356,10 +358,11 @@ newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionT
 ConversionTarget newBaseTarget(MLIRContext *ctx) {
   ConversionTarget target(*ctx);
   target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, component::StructDialect,
-      constrain::ConstrainDialect, felt::FeltDialect, function::FunctionDialect,
-      global::GlobalDialect, include::IncludeDialect, polymorphic::PolymorphicDialect,
-      arith::ArithDialect, scf::SCFDialect>();
+      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, cast::CastDialect,
+      component::StructDialect, constrain::ConstrainDialect, felt::FeltDialect,
+      function::FunctionDialect, global::GlobalDialect, include::IncludeDialect,
+      polymorphic::PolymorphicDialect, string::StringDialect, arith::ArithDialect, scf::SCFDialect>(
+  );
   target.addLegalOp<ModuleOp>();
   return target;
 }
