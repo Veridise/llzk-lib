@@ -1610,12 +1610,14 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       });
     } while (tracker.isModified());
 
-    // Remove the parameterized StructDefOp that were instantiated.
-    if (failed(Step4_Cleanup::run(modOp, tracker))) {
-      llvm::errs() << DEBUG_TYPE
-                   << " failed while removing parameterized structs that were replaced with "
-                      "instantiated versions\n";
-      signalPassFailure();
+    if (!this->getPassState().irAndPassFailed.getInt()) {
+      // Remove the parameterized StructDefOp that were instantiated.
+      if (failed(Step4_Cleanup::run(modOp, tracker))) {
+        llvm::errs() << DEBUG_TYPE
+                     << " failed while removing parameterized structs that were replaced with "
+                        "instantiated versions\n";
+        signalPassFailure();
+      }
     }
 
     // Dump the current IR if the pass failed
