@@ -458,6 +458,8 @@ class StructCloner {
       addConversion([](Type inputTy) { return inputTy; });
 
       addConversion([this](StructType inputTy) {
+        LLVM_DEBUG(llvm::dbgs() << "[MappedTypeConverter] convert " << inputTy << '\n');
+
         // Check for replacement of the full type
         if (inputTy == this->origTy) {
           return this->newTy;
@@ -744,15 +746,23 @@ public:
       : tracker_(tracker), rootMod(root), symTables() {}
 
   FailureOr<StructType> createInstantiatedClone(StructType orig) {
+    LLVM_DEBUG(llvm::dbgs() << "[createInstantiatedClone] orig " << orig << '\n');
     if (ArrayAttr params = orig.getParams()) {
       // If all parameters are concrete values (Integer or Type), then replace with a
       // no-parameter StructType referencing the de-parameterized struct.
-      if (llvm::all_of(params, isConcreteAttr<>)) {
+      if (llvm::all_of(params.getValue(), isConcreteAttr<>)) {
         FailureOr<StructType> res = genClone(orig, params.getValue());
+        LLVM_DEBUG(llvm::dbgs() << "[createInstantiatedClone]   genClone -> " << res << '\n');
         if (succeeded(res)) {
           return res.value();
+        } else {
+          LLVM_DEBUG(llvm::dbgs() << "[createInstantiatedClone]   skip: genClone() failed \n");
         }
+      } else {
+        LLVM_DEBUG(llvm::dbgs() << "[createInstantiatedClone]   skip: non-concrete param(s) \n");
       }
+    } else {
+      LLVM_DEBUG(llvm::dbgs() << "[createInstantiatedClone]   skip: nullptr for params \n");
     }
     return failure();
   }
@@ -774,7 +784,8 @@ public:
         return opt.value();
       }
 
-      // Otherwise, try to create a clone of the struct with instantiated params
+      // Otherwise, try to create a clone of the struct with instantiated params. If that can't be
+      // done, return the original type to indicate that it's still legal (for this step at least).
       FailureOr<StructType> cloneRes = cloner.createInstantiatedClone(inputTy);
       if (failed(cloneRes)) {
         return inputTy;
@@ -800,11 +811,17 @@ public:
 
   LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
       const override {
+    LLVM_DEBUG(llvm::dbgs() << "[CallStructFuncPattern] CallOp: " << op << '\n');
+
     // Convert the result types of the CallOp
     SmallVector<Type> newResultTypes;
     if (failed(getTypeConverter()->convertTypes(op.getResultTypes(), newResultTypes))) {
       return op->emitError("Could not convert Op result types.");
     }
+    LLVM_DEBUG({
+      llvm::dbgs() << "[CallStructFuncPattern]   newResultTypes: "
+                   << debug::toStringList(newResultTypes) << '\n';
+    });
 
     // Update the callee to reflect the new struct target if necessary. These checks are based on
     // `CallOp::calleeIsStructC*()` but the types must not come from the CallOp in this case.
@@ -812,12 +829,14 @@ public:
     SymbolRefAttr calleeAttr = op.getCalleeAttr();
     if (op.calleeIsStructCompute()) {
       if (StructType newStTy = getIfSingleton<StructType>(newResultTypes)) {
+        LLVM_DEBUG(llvm::dbgs() << "[CallStructFuncPattern]   newStTy: " << newStTy << '\n');
         assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated");
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
         tracker_.reportDelayedDiagnostics(newStTy, op);
       }
     } else if (op.calleeIsStructConstrain()) {
       if (StructType newStTy = getAtIndex<StructType>(adapter.getArgOperands().getTypes(), 0)) {
+        LLVM_DEBUG(llvm::dbgs() << "[CallStructFuncPattern]   newStTy: " << newStTy << '\n');
         assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated");
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
       }
@@ -1290,11 +1309,9 @@ public:
       // this pattern only applies when the callee is "compute()" within a struct
       return failure();
     }
+    LLVM_DEBUG(llvm::dbgs() << "[InstantiateAtCallOpCompute] target: " << op.getCallee() << '\n');
     StructType oldRetTy = op.getSingleResultTypeOfCompute();
-    LLVM_DEBUG({
-      llvm::dbgs() << "[InstantiateAtCallOpCompute] target: " << op.getCallee() << '\n';
-      llvm::dbgs() << "[InstantiateAtCallOpCompute]   oldRetTy: " << oldRetTy << '\n';
-    });
+    LLVM_DEBUG(llvm::dbgs() << "[InstantiateAtCallOpCompute]   oldRetTy: " << oldRetTy << '\n');
     ArrayAttr params = oldRetTy.getParams();
     if (isNullOrEmpty(params)) {
       // nothing to do if the StructType is not parameterized
