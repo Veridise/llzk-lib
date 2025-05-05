@@ -14,11 +14,7 @@ include "mlir/IR/DialectBase.td"
 
 def LLZKDialect : Dialect {
   let name = "llzk";
-  let summary =
-      "Veridise's intermediate representation for zero knowledge languages.";
-  let description = [{
-    This dialect contains types and operations for zero knowledge languages.
-  }];
+  let summary = "Common LLZK attributes.";
 
   let cppNamespace = "::llzk";
 

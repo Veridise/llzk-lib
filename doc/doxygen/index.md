@@ -8,7 +8,7 @@ User Documentation:
 - \ref tools "Tool Guides"
 
 Advanced Documentation:
-- \ref build/doc/mlir/Dialect.md "LLZK Dialect Language Reference"
+- \ref dialects "LLZK Dialect Language Reference"
 
 How to Contribute:
 - First, read our \ref code-of-conduct "Code of Conduct".

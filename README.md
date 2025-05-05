@@ -1,20 +1,23 @@
 # llzk-lib
 
-Veridise's intermediate representation for zero knowledge languages.
+An MLIR intermediate representation for Zero Knowledge (ZK) Circuit languages.
 
 For our full documentation, please refer to our GitHub pages site (coming soon).
 For quick reference, refer to the below links.
 
-> [!NOTE]
+> [!WARNING]
 > The docs contain Doxygen-specific content that will not render properly on
 > GitHub. Some links may be broken and some content may render improperly.
 
 Quick Documentation:
-- [Project Overview](doc/0_overview.md)
-- [Setup and Development Tips](doc/1_setup.md)
-- [Tool Guides](doc/2_tools.md)
-- [LLZK Syntax](doc/3_syntax.md)
+- [Project Overview](doc/doxygen/0_overview.md)
+- [Setup and Development Tips](doc/doxygen/1_setup.md)
+- [Tool Guides](doc/doxygen/2_tools.md)
+
+Advanced Documentation:
+- [LLZK Syntax](doc/doxygen/3_syntax.md)
+- [LLZK Dialect Language Reference](doc/doxygen/7_dialects.md)
 
 How to Contribute:
-- [Code of Conduct](doc/4_code_of_conduct.md)
-- [Contribution Guide](doc/5_contributing.md)
+- [Code of Conduct](doc/doxygen/4_code_of_conduct.md)
+- [Contribution Guide](doc/doxygen/5_contributing.md)

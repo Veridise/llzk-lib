@@ -21,7 +21,7 @@ If you spot a problem, encounter a bug, or want to request a new feature, [searc
 #### Solve an issue
 
 Scan through our [existing issues](https://github.com/Veridise/llzk-lib/issues) to find one that interests you.
-You can narrow down the search using `labels` as filters. See "[Label reference](https://docs.github.com/en/contributing/collaborating-on-github-docs/label-reference)" for more information. As a general rule, we don’t assign issues to anyone. If you find an issue to work on, you are welcome to open a PR with a fix.
+You can narrow down the search using `labels` as filters. See ["Label reference"](https://docs.github.com/en/contributing/collaborating-on-github-docs/label-reference) for more information. As a general rule, we don’t assign issues to anyone. If you find an issue to work on, you are welcome to open a PR with a fix.
 
 ### Make Changes
 
@@ -33,7 +33,7 @@ You can narrow down the search using `labels` as filters. See "[Label reference]
 - Using the command line:
   - [Fork the repo](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo#fork-an-example-repository) so that you can make your changes without affecting the original project until you're ready to merge them.
 
-2. Install or update LLZK development dependencies. For more information, see [the development guide](doc/setup.md).
+2. Install or update LLZK development dependencies. For more information, see \ref setup "the development guide"
 
 3. Create a working branch and start with your changes!
 
@@ -41,7 +41,7 @@ You can narrow down the search using `labels` as filters. See "[Label reference]
 
 Commit the changes once you are happy with them.
 Remember that all code must pass a format check before it can be merged, so consider running clang format
-before pushing your commits. For more information, see [the development workflow section](doc/setup.md#dev-workflow).
+before pushing your commits. For more information, see \ref dev-workflow "the development workflow section".
 
 ### Pull Request
 
@@ -65,5 +65,5 @@ Once your PR is merged, your contributions will be publicly available in the [LL
 <div class="section_buttons">
 | Previous          |                              Next |
 |:------------------|----------------------------------:|
-| \ref tools | [Dialect Documentation](build/doc/mlir/Dialect.md) |
+| \ref tools | \ref dialects |
 </div>

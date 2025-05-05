@@ -209,8 +209,8 @@ if(Doxygen_FOUND)
   set(DOXYGEN_HTML_EXTRA_FILES
     "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-darkmode-toggle.js"
     "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-paragraph-link.js")
-  set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/doc/header.html")
-  set(DOXYGEN_HTML_FOOTER "${CMAKE_CURRENT_SOURCE_DIR}/doc/footer.html")
+  set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/header.html")
+  set(DOXYGEN_HTML_FOOTER "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/footer.html")
   set(DOXYGEN_GENERATE_TREEVIEW YES)
   set(DOXYGEN_DISABLE_INDEX NO)
   set(DOXYGEN_FULL_SIDEBAR NO)
@@ -225,15 +225,13 @@ if(Doxygen_FOUND)
   set(DOXYGEN_INCLUDE_PATH "${CMAKE_CURRENT_BINARY_DIR}/include/")
   set(DOXYGEN_EXCLUDE_PATTERNS
     "${CMAKE_CURRENT_BINARY_DIR}/include/*/*.md"
-    # We ignore the passes because we aggregate the documentation in doc/2_tools.md under `llzk-opt`
+    # We ignore the passes because we aggregate the documentation in doc/doxygen/2_tools.md under `llzk-opt`
     "${LLZK_MLIR_DOC_OUTPUT_DIR}/passes/*.md"
-    # We ignore the dialects because we aggregate the documentation in doc/7_dialects.md
+    # We ignore the dialects because we aggregate the documentation in doc/doxygen/7_dialects.md
     "${LLZK_MLIR_DOC_OUTPUT_DIR}/dialect/*.md"
-    # Ignore the filter script
-    "${CMAKE_CURRENT_SOURCE_DIR}/doc/filter.py"
   )
   set(DOXYGEN_USE_MDFILE_AS_MAINPAGE
-      ${CMAKE_CURRENT_SOURCE_DIR}/doc/index.md)
+      ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/index.md)
   set(DOXYGEN_FILE_PATTERNS
       *.cpp
       *.cpp.inc
@@ -253,7 +251,7 @@ if(Doxygen_FOUND)
   # The order that docs are added affects the sorting in the navigation bar.
   doxygen_add_docs(
     doxygen
-    "${CMAKE_CURRENT_SOURCE_DIR}/doc/"
+    "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/"
     "${CMAKE_CURRENT_BINARY_DIR}/include/"
