@@ -1,0 +1,38 @@
+var namespacellzk_1_1boolean =
+[
+    [ "detail", "namespacellzk_1_1boolean_1_1detail.html", "namespacellzk_1_1boolean_1_1detail" ],
+    [ "AndBoolOp", "classllzk_1_1boolean_1_1_and_bool_op.html", "classllzk_1_1boolean_1_1_and_bool_op" ],
+    [ "AndBoolOpAdaptor", "classllzk_1_1boolean_1_1_and_bool_op_adaptor.html", "classllzk_1_1boolean_1_1_and_bool_op_adaptor" ],
+    [ "AndBoolOpGenericAdaptor", "classllzk_1_1boolean_1_1_and_bool_op_generic_adaptor.html", "classllzk_1_1boolean_1_1_and_bool_op_generic_adaptor" ],
+    [ "AssertOp", "classllzk_1_1boolean_1_1_assert_op.html", "classllzk_1_1boolean_1_1_assert_op" ],
+    [ "AssertOpAdaptor", "classllzk_1_1boolean_1_1_assert_op_adaptor.html", "classllzk_1_1boolean_1_1_assert_op_adaptor" ],
+    [ "AssertOpGenericAdaptor", "classllzk_1_1boolean_1_1_assert_op_generic_adaptor.html", "classllzk_1_1boolean_1_1_assert_op_generic_adaptor" ],
+    [ "BoolDialect", "classllzk_1_1boolean_1_1_bool_dialect.html", "classllzk_1_1boolean_1_1_bool_dialect" ],
+    [ "CmpOp", "classllzk_1_1boolean_1_1_cmp_op.html", "classllzk_1_1boolean_1_1_cmp_op" ],
+    [ "CmpOpAdaptor", "classllzk_1_1boolean_1_1_cmp_op_adaptor.html", "classllzk_1_1boolean_1_1_cmp_op_adaptor" ],
+    [ "CmpOpGenericAdaptor", "classllzk_1_1boolean_1_1_cmp_op_generic_adaptor.html", "classllzk_1_1boolean_1_1_cmp_op_generic_adaptor" ],
+    [ "NotBoolOp", "classllzk_1_1boolean_1_1_not_bool_op.html", "classllzk_1_1boolean_1_1_not_bool_op" ],
+    [ "NotBoolOpAdaptor", "classllzk_1_1boolean_1_1_not_bool_op_adaptor.html", "classllzk_1_1boolean_1_1_not_bool_op_adaptor" ],
+    [ "NotBoolOpGenericAdaptor", "classllzk_1_1boolean_1_1_not_bool_op_generic_adaptor.html", "classllzk_1_1boolean_1_1_not_bool_op_generic_adaptor" ],
+    [ "OrBoolOp", "classllzk_1_1boolean_1_1_or_bool_op.html", "classllzk_1_1boolean_1_1_or_bool_op" ],
+    [ "OrBoolOpAdaptor", "classllzk_1_1boolean_1_1_or_bool_op_adaptor.html", "classllzk_1_1boolean_1_1_or_bool_op_adaptor" ],
+    [ "OrBoolOpGenericAdaptor", "classllzk_1_1boolean_1_1_or_bool_op_generic_adaptor.html", "classllzk_1_1boolean_1_1_or_bool_op_generic_adaptor" ],
+    [ "XorBoolOp", "classllzk_1_1boolean_1_1_xor_bool_op.html", "classllzk_1_1boolean_1_1_xor_bool_op" ],
+    [ "XorBoolOpAdaptor", "classllzk_1_1boolean_1_1_xor_bool_op_adaptor.html", "classllzk_1_1boolean_1_1_xor_bool_op_adaptor" ],
+    [ "XorBoolOpGenericAdaptor", "classllzk_1_1boolean_1_1_xor_bool_op_generic_adaptor.html", "classllzk_1_1boolean_1_1_xor_bool_op_generic_adaptor" ],
+    [ "FeltCmpPredicate", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37", [
+      [ "EQ", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37a2dcbad7477fd40561e8b8198f173bd47", null ],
+      [ "NE", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37adc33066c3993e0d50896e533fd692ce0", null ],
+      [ "LT", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37ac562607189d77eb9dfb707464c1e7b0b", null ],
+      [ "LE", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37acfe6055d2e0503be378bb63449ec7ba6", null ],
+      [ "GT", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37acd6a9bd2a175104eed40f0d33a8b4020", null ],
+      [ "GE", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37af803729628adf4199f224c2a225038e9", null ]
+    ] ],
+    [ "getMaxEnumValForFeltCmpPredicate", "namespacellzk_1_1boolean.html#ad4cba17dc8c37746f8d293f81c79bbdd", null ],
+    [ "stringifyEnum", "namespacellzk_1_1boolean.html#a40050f1e934e705612fc8951359c1260", null ],
+    [ "stringifyFeltCmpPredicate", "namespacellzk_1_1boolean.html#ab40b742f364c045b94bed16badb84ebf", null ],
+    [ "symbolizeEnum", "namespacellzk_1_1boolean.html#a18163ecc0ef14f8969b6b3eb8c7b3a91", null ],
+    [ "symbolizeEnum< FeltCmpPredicate >", "namespacellzk_1_1boolean.html#acc8dc868f96cb91673383cf88ff6b70b", null ],
+    [ "symbolizeFeltCmpPredicate", "namespacellzk_1_1boolean.html#ac96529383ece3db5f9f0cc7d3d4ea800", null ],
+    [ "symbolizeFeltCmpPredicate", "namespacellzk_1_1boolean.html#a99df70a206ac42c35ed46e6c26bd6527", null ]
+];
