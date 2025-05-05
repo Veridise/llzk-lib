@@ -11,6 +11,7 @@ From an implementation perspective, the LLZK IR is a composition of multiple
 in the source ZK language.
 
 You can read more about the motivation and design of the project [on our blog][llzk-post].
+You can also view [our Ethereum Foundation grant proposal][proposal] that helped fund this project.
 
 ## Project Overview
 
@@ -72,3 +73,4 @@ Veridise also plans to release several analysis backends based on prior tooling 
 [picus-v2]: https://docs.veridise.com/picus-v2/
 [zk-vanguard]: https://docs.veridise.com/zkvanguard/
 [mlir-dialects]: https://mlir.llvm.org/docs/DefiningDialects/
+[proposal]: https://drive.google.com/file/d/1tAIjAPJX5cGZT_ASFf7A2OiZaEgeWUx8/view?usp=sharing
