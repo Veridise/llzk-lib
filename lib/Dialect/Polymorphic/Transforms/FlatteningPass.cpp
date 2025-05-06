@@ -1464,6 +1464,32 @@ private:
   }
 };
 
+/// Update the type of FieldReadOp result based on updated types from FieldDefOp.
+class UpdateFieldReadOp final : public OpRewritePattern<FieldReadOp> {
+  ConversionTracker &tracker_;
+
+public:
+  UpdateFieldReadOp(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx), tracker_(tracker) {}
+
+  LogicalResult matchAndRewrite(FieldReadOp op, PatternRewriter &rewriter) const override {
+    SymbolTableCollection tables;
+    auto def = op.getFieldDefOp(tables);
+    if (failed(def)) {
+      return failure();
+    }
+    Type oldResultType = op.getVal().getType();
+    Type newResultType = def->get().getType();
+    if (oldResultType == newResultType ||
+        !tracker_.isLegalConversion(oldResultType, newResultType, "UpdateFieldReadOp")) {
+      return failure();
+    }
+    rewriter.modifyOpInPlace(op, [&op, &newResultType]() { op.getVal().setType(newResultType); });
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldReadOp] updated result type of " << op << '\n');
+    return success();
+  }
+};
+
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
@@ -1475,7 +1501,8 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       UpdateFuncTypeFromReturn,
       UpdateGlobalCallOpTypes,
       InstantiateAtCallOpCompute,
-      UpdateArrayElemFromWrite
+      UpdateArrayElemFromWrite,
+      UpdateFieldReadOp
       // clang-format on
       >(ctx, tracker);
 
