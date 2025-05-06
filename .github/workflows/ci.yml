@@ -31,4 +31,4 @@ jobs:
       - name: Build and check install
         run: nix --print-build-logs build '.#checks.x86_64-linux.llzkInstallCheck'
       - name: Build docs
-        run: nix --print-build-logs build '.#docs'
+        run: nix --option sandbox false --print-build-logs build '.#docs'
