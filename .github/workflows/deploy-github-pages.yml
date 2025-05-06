@@ -1,23 +1,34 @@
-name: CI
+name: Deploy GitHub Pages
 on:
-  push:
-    branches: [ main ]
-  pull_request:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version to prepare documentation for. Unset version will update 'latest' version."
+        required: false
+        type: string
+        default: ''
 
 jobs:
-  build:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+  deploy-gh-pages:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Check out repository code
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      - name: Checkout github pages branch
+        uses: actions/checkout@v4
+        with:
+          path: gh-pages
+          ref: gh-pages
+
       # v37.1.0
       - uses: cachix/install-nix-action@d1ca217b388ee87b2507a9a93bf01368bde7cec2
         with:
           install_url: https://releases.nixos.org/nix/nix-2.23.3/install
           github_access_token: "${{ secrets.GITHUB_TOKEN }}"
+
       - name: Set Git credentials
         run: |
           git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
@@ -28,7 +39,17 @@ jobs:
         with:
           name: veridise-public
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
-      - name: Build and check install
-        run: nix --print-build-logs build '.#checks.x86_64-linux.llzkInstallCheck'
-      - name: Build docs
+
+      - name: Build documentation
         run: nix --print-build-logs build '.#docs'
+
+      - name: Move built documentation to latest
+        if: ${{ inputs.version == '' }}
+        run: mv result/html/* gh-pages
+
+      - name: Move documentation to version folder
+        if: ${{ inputs.version != '' }}
+        run: |
+          mkdir gh-pages/${{ inputs.version }}
+          mv result/html/* gh-pages/${{ inputs.version }}
+
