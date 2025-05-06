@@ -49,7 +49,9 @@ jobs:
 
       - name: Move documentation to version folder
         if: ${{ inputs.version != '' }}
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
-          mkdir gh-pages/${{ inputs.version }}
-          mv result/html/* gh-pages/${{ inputs.version }}
+          mkdir gh-pages/"$VERSION"
+          mv result/html/* gh-pages/"$VERSION"
 
