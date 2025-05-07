@@ -12,6 +12,11 @@
 
 include "llzk/Pass/PassBase.td"
 
+def EmptyParamListRemovalPass : LLZKPass<"llzk-drop-empty-params"> {
+  let summary = "Remove empty struct parameter lists";
+  let constructor = "llzk::polymorphic::createEmptyParamListRemoval()";
+}
+
 def FlatteningPass : LLZKPass<"llzk-flatten"> {
   let summary = "Flatten structs and unroll loops";
   let description = [{

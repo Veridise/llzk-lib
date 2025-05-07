@@ -30,7 +30,6 @@
 #include <mlir/Dialect/Affine/LoopUtils.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
-#include <mlir/Dialect/SCF/Transforms/Patterns.h>
 #include <mlir/Dialect/SCF/Utils/Utils.h>
 #include <mlir/Dialect/Utils/StaticValueUtils.h>
 #include <mlir/IR/Attributes.h>
@@ -38,6 +37,7 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
+#include <mlir/Pass/PassManager.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -57,6 +57,10 @@ namespace llzk::polymorphic {
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
 } // namespace llzk::polymorphic
 
+#include "SharedImpl.h"
+
+#define DEBUG_TYPE "llzk-flatten"
+
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
@@ -65,8 +69,7 @@ using namespace llzk::constrain;
 using namespace llzk::felt;
 using namespace llzk::function;
 using namespace llzk::polymorphic;
-
-#define DEBUG_TYPE "llzk-flatten"
+using namespace llzk::polymorphic::detail;
 
 namespace {
 
@@ -230,199 +233,6 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
   return failure(result.failed() || failureListener.hadFailure);
 }
 
-/// Wrapper for PatternRewriter.replaceOpWithNewOp() that automatically copies discardable
-/// attributes (i.e. attributes other than those specifically defined as part of the Op in ODS).
-template <typename OpTy, typename Rewriter, typename... Args>
-inline OpTy replaceOpWithNewOp(Rewriter &rewriter, Operation *op, Args &&...args) {
-  DictionaryAttr attrs = op->getDiscardableAttrDictionary();
-  OpTy newOp = rewriter.template replaceOpWithNewOp<OpTy>(op, std::forward<Args>(args)...);
-  newOp->setDiscardableAttrs(attrs);
-  return newOp;
-}
-
-/// Lists all Op classes that may contain a StructType in their results or attributes.
-static struct {
-  /// Subset that define the general builder function:
-  /// `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)`
-  const std::tuple<
-      FieldDefOp, FieldWriteOp, FieldReadOp, CreateStructOp, FuncDefOp, ReturnOp, InsertArrayOp,
-      ExtractArrayOp, ReadArrayOp, WriteArrayOp, EmitContainmentOp>
-      WithGeneralBuilder {};
-  /// Subset that do NOT define the general builder function. These cannot use
-  /// `GeneralTypeReplacePattern` and must have a `OpConversionPattern` defined if
-  /// they need to be converted.
-  const std::tuple<CallOp, CreateArrayOp> NoGeneralBuilder {};
-} OpClassesWithStructTypes;
-
-// NOTE: This pattern will produce a compile error if `OpTy` does not define the general
-// `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)` function
-// because that function is required by the `replaceOpWithNewOp()` call.
-template <typename OpTy> class GeneralTypeReplacePattern : public OpConversionPattern<OpTy> {
-public:
-  using OpConversionPattern<OpTy>::OpConversionPattern;
-
-  LogicalResult matchAndRewrite(OpTy op, OpTy::Adaptor adaptor, ConversionPatternRewriter &rewriter)
-      const override {
-    const TypeConverter *converter = OpConversionPattern<OpTy>::getTypeConverter();
-    assert(converter);
-    // Convert result types
-    SmallVector<Type> newResultTypes;
-    if (failed(converter->convertTypes(op->getResultTypes(), newResultTypes))) {
-      return op->emitError("Could not convert Op result types.");
-    }
-    // ASSERT: 'adaptor.getAttributes()' is empty or subset of 'op->getAttrDictionary()' so the
-    // former can be ignored without losing anything.
-    assert(
-        adaptor.getAttributes().empty() ||
-        llvm::all_of(
-            adaptor.getAttributes(),
-            [d = op->getAttrDictionary()](NamedAttribute a) { return d.contains(a.getName()); }
-        )
-    );
-    // Convert any TypeAttr in the attribute list.
-    SmallVector<NamedAttribute> newAttrs(op->getAttrDictionary().getValue());
-    for (NamedAttribute &n : newAttrs) {
-      if (TypeAttr t = llvm::dyn_cast<TypeAttr>(n.getValue())) {
-        if (Type newType = converter->convertType(t.getValue())) {
-          n.setValue(TypeAttr::get(newType));
-        } else {
-          return op->emitError().append("Could not convert type in attribute: ", t);
-        }
-      }
-    }
-    // Build a new Op in place of the current one
-    replaceOpWithNewOp<OpTy>(
-        rewriter, op, TypeRange(newResultTypes), adaptor.getOperands(), ArrayRef(newAttrs)
-    );
-    return success();
-  }
-};
-
-class CreateArrayOpTypeReplacePattern : public OpConversionPattern<CreateArrayOp> {
-public:
-  using OpConversionPattern<CreateArrayOp>::OpConversionPattern;
-
-  LogicalResult match(CreateArrayOp op) const override {
-    if (Type newType = getTypeConverter()->convertType(op.getType())) {
-      return success();
-    } else {
-      return op->emitError("Could not convert Op result type.");
-    }
-  }
-
-  void
-  rewrite(CreateArrayOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter) const override {
-    Type newType = getTypeConverter()->convertType(op.getType());
-    assert(llvm::isa<ArrayType>(newType) && "CreateArrayOp must produce ArrayType result");
-    DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();
-    if (isNullOrEmpty(numDimsPerMap)) {
-      replaceOpWithNewOp<CreateArrayOp>(
-          rewriter, op, llvm::cast<ArrayType>(newType), adapter.getElements()
-      );
-    } else {
-      replaceOpWithNewOp<CreateArrayOp>(
-          rewriter, op, llvm::cast<ArrayType>(newType), adapter.getMapOperands(), numDimsPerMap
-      );
-    }
-  }
-};
-
-template <typename I, typename NextOpType, typename... OtherOpTypes>
-inline void applyToMoreTypes(I inserter) {
-  std::apply(inserter, std::tuple<NextOpType, OtherOpTypes...> {});
-}
-template <typename I> inline void applyToMoreTypes(I inserter) {}
-
-/// Return a new `RewritePatternSet` that includes a `GeneralTypeReplacePattern` for all of
-/// `OpClassesWithStructTypes.WithGeneralBuilder` and `AdditionalOpTypes`.
-/// Note: `GeneralTypeReplacePattern` uses the default benefit (1) so additional patterns with a
-/// higher priority can be added for any of the Ops already included and that will take precedence.
-template <typename... AdditionalOpTypes>
-RewritePatternSet
-newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionTarget &target) {
-  RewritePatternSet patterns(ctx);
-  auto inserter = [&](auto... opClasses) {
-    patterns.add<GeneralTypeReplacePattern<decltype(opClasses)>...>(tyConv, ctx);
-  };
-  std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
-  applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
-  // Special case for CreateArrayOp since GeneralTypeReplacePattern does not work
-  patterns.add<CreateArrayOpTypeReplacePattern>(tyConv, ctx);
-  // Add builtin FunctionType converter
-  populateFunctionOpInterfaceTypeConversionPattern<FuncDefOp>(patterns, tyConv);
-  scf::populateSCFStructuralTypeConversionsAndLegality(tyConv, patterns, target);
-  return patterns;
-}
-
-/// Return a new `ConversionTarget` allowing all LLZK-required dialects.
-ConversionTarget newBaseTarget(MLIRContext *ctx) {
-  ConversionTarget target(*ctx);
-  target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, cast::CastDialect,
-      component::StructDialect, constrain::ConstrainDialect, felt::FeltDialect,
-      function::FunctionDialect, global::GlobalDialect, include::IncludeDialect,
-      polymorphic::PolymorphicDialect, string::StringDialect, arith::ArithDialect, scf::SCFDialect>(
-  );
-  target.addLegalOp<ModuleOp>();
-  return target;
-}
-
-static bool defaultLegalityCheck(const TypeConverter &tyConv, Operation *op) {
-  // Check operand types and result types
-  if (!tyConv.isLegal(op)) {
-    return false;
-  }
-  // Check type attributes
-  // Extend lifetime of temporary to suppress warnings.
-  DictionaryAttr dictAttr = op->getAttrDictionary();
-  for (NamedAttribute n : dictAttr.getValue()) {
-    if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(n.getValue())) {
-      Type t = tyAttr.getValue();
-      if (FunctionType funcTy = llvm::dyn_cast<FunctionType>(t)) {
-        if (!tyConv.isSignatureLegal(funcTy)) {
-          return false;
-        }
-      } else {
-        if (!tyConv.isLegal(t)) {
-          return false;
-        }
-      }
-    }
-  }
-  return true;
-}
-
-// Default to true if the check is not for that particular operation type.
-template <typename Check> bool runCheck(Operation *op, Check check) {
-  if (auto specificOp =
-          mlir::dyn_cast_if_present<typename llvm::function_traits<Check>::template arg_t<0>>(op)) {
-    return check(specificOp);
-  }
-  return true;
-}
-
-/// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
-/// based on the given `TypeConverter` for Ops listed in both fields of `OpClassesWithStructTypes`
-/// and in `AdditionalOpTypes`.
-/// Additional legality checks can be included for certain ops that will run along with the default
-/// check. For an op to be considered legal all checks (default plus additional checks if any) must
-/// return true.
-///
-template <typename... AdditionalOpTypes, typename... AdditionalChecks>
-ConversionTarget
-newConverterDefinedTarget(TypeConverter &tyConv, MLIRContext *ctx, AdditionalChecks &&...checks) {
-  ConversionTarget target = newBaseTarget(ctx);
-  auto inserter = [&](auto... opClasses) {
-    target.addDynamicallyLegalOp<decltype(opClasses)...>([&tyConv, &checks...](Operation *op) {
-      return defaultLegalityCheck(tyConv, op) && (runCheck<AdditionalChecks>(op, checks) && ...);
-    });
-  };
-  std::apply(inserter, OpClassesWithStructTypes.NoGeneralBuilder);
-  std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
-  applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
-  return target;
-}
-
 template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
   if (TypeAttr tyAttr = dyn_cast<TypeAttr>(a)) {
     return isConcreteType(tyAttr.getValue(), AllowStructParams);
@@ -507,27 +317,6 @@ class StructCloner {
         }
         return inputTy;
       });
-    }
-  };
-
-  class ClonedStructCallOpPattern : public OpConversionPattern<CallOp> {
-  public:
-    ClonedStructCallOpPattern(TypeConverter &converter, MLIRContext *ctx)
-        // future proof: use higher priority than GeneralTypeReplacePattern
-        : OpConversionPattern<CallOp>(converter, ctx, 2) {}
-
-    LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
-        const override {
-      // Convert the result types of the CallOp
-      SmallVector<Type> newResultTypes;
-      if (failed(getTypeConverter()->convertTypes(op.getResultTypes(), newResultTypes))) {
-        return op->emitError("Could not convert Op result types.");
-      }
-      replaceOpWithNewOp<CallOp>(
-          rewriter, op, newResultTypes, op.getCalleeAttr(), adapter.getMapOperands(),
-          op.getNumDimsPerMapAttr(), adapter.getArgOperands()
-      );
-      return success();
     }
   };
 
@@ -733,7 +522,6 @@ class StructCloner {
     target.addIllegalOp<ConstReadOp>();
 
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
-    patterns.add<ClonedStructCallOpPattern>(tyConv, ctx);
     patterns.add<ClonedStructConstReadOpPattern>(
         tyConv, ctx, nameToValueMap, tracker_.delayedDiagnosticSet(newRemoteType)
     );
@@ -1595,8 +1383,15 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
 
   static constexpr unsigned LIMIT = 1000;
 
-  void runOnOperation() override {
-    ModuleOp modOp = getOperation();
+  inline LogicalResult runOn(ModuleOp modOp) {
+    {
+      // Preliminary step: remove empty parameter lists from structs
+      OpPassManager nestedPM(ModuleOp::getOperationName());
+      nestedPM.addPass(createEmptyParamListRemoval());
+      if (failed(runPipeline(nestedPM, modOp))) {
+        return failure();
+      }
+    }
 
     ConversionTracker tracker;
     unsigned loopCount = 0;
@@ -1604,8 +1399,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       ++loopCount;
       if (loopCount > LIMIT) {
         llvm::errs() << DEBUG_TYPE << " exceeded the limit of " << LIMIT << " iterations!\n";
-        signalPassFailure();
-        break;
+        return failure();
       }
       tracker.resetModifiedFlag();
 
@@ -1614,22 +1408,19 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       // Create the necessary instantiated/flattened struct in the same location as the original.
       if (failed(Step1_InstantiateStructs::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while replacing concrete-parameter struct types\n";
-        signalPassFailure();
-        break;
+        return failure();
       }
 
       // Unroll loops with known iterations.
       if (failed(Step2_Unroll::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while unrolling loops\n";
-        signalPassFailure();
-        break;
+        return failure();
       }
 
       // Instantiate affine_map parameters of StructType and ArrayType.
       if (failed(Step3_InstantiateAffineMaps::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating `affine_map` parameters\n";
-        signalPassFailure();
-        break;
+        return failure();
       }
 
       LLVM_DEBUG(if (tracker.isModified()) {
@@ -1640,23 +1431,29 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       });
     } while (tracker.isModified());
 
-    if (!this->getPassState().irAndPassFailed.getInt()) {
-      // Remove the parameterized StructDefOp that were instantiated.
-      if (failed(Step4_Cleanup::run(modOp, tracker))) {
-        llvm::errs() << DEBUG_TYPE
-                     << " failed while removing parameterized structs that were replaced with "
-                        "instantiated versions\n";
-        signalPassFailure();
-      }
+    // Remove the parameterized StructDefOp that were instantiated.
+    if (failed(Step4_Cleanup::run(modOp, tracker))) {
+      llvm::errs() << DEBUG_TYPE
+                   << " failed while removing parameterized structs that were replaced with "
+                      "instantiated versions\n";
+      return failure();
     }
 
-    // Dump the current IR if the pass failed
-    LLVM_DEBUG(if (this->getPassState().irAndPassFailed.getInt()) {
-      llvm::dbgs() << "=====================================================================\n";
-      llvm::dbgs() << " Dumping module after failure of pass " << DEBUG_TYPE << " \n";
-      modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
-      llvm::dbgs() << "=====================================================================\n";
-    });
+    return success();
+  }
+
+  void runOnOperation() override {
+    ModuleOp modOp = getOperation();
+    if (failed(runOn(modOp))) {
+      LLVM_DEBUG({
+        // If the pass failed, dump the current IR.
+        llvm::dbgs() << "=====================================================================\n";
+        llvm::dbgs() << " Dumping module after failure of pass " << DEBUG_TYPE << " \n";
+        modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
+        llvm::dbgs() << "=====================================================================\n";
+      });
+      signalPassFailure();
+    }
   }
 };
 
