@@ -5,7 +5,7 @@ TODO: Update this specification (https://veridise.atlassian.net/browse/LLZK-240)
 Based on: https://www.notion.so/veridise/ZK-IR-Design-5d4e6b675c9142e9b1583bdca3c8c8a6
 -->
 
-\warning This documentation is out of date and will be updated shortly.
+\todo This documentation is out of date and will be updated shortly.
 
 \tableofcontents
 
