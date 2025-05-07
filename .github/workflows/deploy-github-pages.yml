@@ -3,10 +3,10 @@ on:
   workflow_call:
     inputs:
       version:
-        description: "Version to prepare documentation for. Unset version will update 'latest' version."
+        description: "Version to prepare documentation for. Unset version will update 'main' version."
         required: false
         type: string
-        default: ''
+        default: 'main'
 
 jobs:
   construct-gh-pages:
@@ -43,17 +43,14 @@ jobs:
       - name: Build documentation
         run: nix --print-build-logs build '.#docs'
 
-      - name: Move built documentation to latest
-        if: ${{ inputs.version == '' }}
-        run: mv result/html/* gh-pages
-
-      - name: Move documentation to version folder
+      - name: Add or replace documentation in version-specific folder
         if: ${{ inputs.version != '' }}
         env:
-          VERSION: ${{ inputs.version }}
+          DEST: 'gh-pages/${{ inputs.version }}'
         run: |
-          mkdir gh-pages/"$VERSION"
-          mv result/html/* gh-pages/"$VERSION"
+          rm -rf "$DEST"
+          mkdir "$DEST"
+          mv result/html/* "$DEST"
 
       - name: Upload new artifact
         id: upload
