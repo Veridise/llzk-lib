@@ -599,6 +599,13 @@ private:
       }
       assert(symRef);
       assert(attr);
+      // If 'attr' is a SymbolRefAttr, map in both directions for the correctness of
+      // `isMoreConcreteUnification()` which relies on RHS check while other external
+      // checks on the UnificationMap may do LHS checks, and in the case of both being
+      // SymbolRefAttr, unification in either direction is possible.
+      if (SymbolRefAttr otherSymAttr = dyn_cast<SymbolRefAttr>(attr)) {
+        track(*unifications, reverse(side), otherSymAttr, symRef);
+      }
       track(*unifications, side, symRef, attr);
     }
   }

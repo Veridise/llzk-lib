@@ -1186,7 +1186,7 @@ private:
     assert(!isNullOrEmpty(targetResTyParams)); // same cardinality as `in.paramsOfStructTy`
     assert(in.paramsOfStructTy.size() == targetResTyParams.size()); // verifier ensures this
 
-    if (llvm::all_of(in.paramsOfStructTy, [](Attribute a) { return isConcreteAttr<>(a); })) {
+    if (llvm::all_of(in.paramsOfStructTy, isConcreteAttr<>)) {
       // Nothing can change if everything is already concrete
       return failure();
     }
