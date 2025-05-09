@@ -26,7 +26,8 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
       // Requires implementors to have a '$component' argument.
       InterfaceMethod<
           [{Gets the SSA value with the target component from the FieldRefOp.}],
-          "::mlir::Value", "getComponent", (ins)>,
+          "::mlir::TypedValue<::llzk::component::StructType>", "getComponent",
+          (ins)>,
       // Requires implementors to have a '$field_name' argument.
       InterfaceMethod<
           [{Gets the field name attribute value from the FieldRefOp.}],
@@ -34,13 +35,10 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
       InterfaceMethod<[{Gets the field name attribute from the FieldRefOp.}],
                       "::mlir::FlatSymbolRefAttr", "getFieldNameAttr", (ins)>,
       // Requires the '$component' argument type to be LLZK_StructType.
-      InterfaceMethod<[{Gets the struct type of the target component.}],
-                      "::llzk::component::StructType", "getStructType", (ins),
-                      /*methodBody=*/[{
-        mlir::Type t = $_op.getComponent().getType();
-        assert(t.isa<StructType>());
-        return llvm::cast<StructType>(t);
-      }]>,
+      InterfaceMethod<
+          [{Gets the struct type of the target component.}],
+          "::llzk::component::StructType", "getStructType", (ins),
+          /*methodBody=*/[{ return $_op.getComponent().getType(); }]>,
       InterfaceMethod<
           [{Return `true` if the op is a read, `false` if it's a write.}],
           "bool", "isRead", (ins)>,
