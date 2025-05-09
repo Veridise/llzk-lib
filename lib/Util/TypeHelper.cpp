@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/TypeHelper.h"
 
 using namespace mlir;
 

@@ -259,6 +259,11 @@ class StructCloner {
     StructType newTy;
     const DenseMap<Attribute, Attribute> &paramNameToValue;
 
+    inline Attribute convertIfPossible(Attribute a) const {
+      auto res = this->paramNameToValue.find(a);
+      return (res != this->paramNameToValue.end()) ? res->second : a;
+    }
+
   public:
     MappedTypeConverter(
         StructType originalType, StructType newType,
@@ -281,8 +286,11 @@ class StructCloner {
         if (ArrayAttr inputTyParams = inputTy.getParams()) {
           SmallVector<Attribute> updated;
           for (Attribute a : inputTyParams) {
-            auto res = this->paramNameToValue.find(a);
-            updated.push_back((res != this->paramNameToValue.end()) ? res->second : a);
+            if (TypeAttr ta = dyn_cast<TypeAttr>(a)) {
+              updated.push_back(TypeAttr::get(this->convertType(ta.getValue())));
+            } else {
+              updated.push_back(convertIfPossible(a));
+            }
           }
           return StructType::get(
               inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated)
@@ -298,8 +306,7 @@ class StructCloner {
         if (!dimSizes.empty()) {
           SmallVector<Attribute> updated;
           for (Attribute a : dimSizes) {
-            auto res = this->paramNameToValue.find(a);
-            updated.push_back((res != this->paramNameToValue.end()) ? res->second : a);
+            updated.push_back(convertIfPossible(a));
           }
           return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
         }
@@ -309,10 +316,13 @@ class StructCloner {
 
       addConversion([this](TypeVarType inputTy) -> Type {
         // Check for replacement of parameter symbol name with a concrete type
-        auto res = this->paramNameToValue.find(inputTy.getNameRef());
-        if (res != this->paramNameToValue.end()) {
-          if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(res->second)) {
-            return tyAttr.getValue();
+        if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
+          Type convertedType = tyAttr.getValue();
+          // Use the new type unless it contains a TypeVarType because a TypeVarType from a
+          // different struct references a parameter name from that other struct, not from the
+          // current struct so the reference would be invalid.
+          if (isConcreteType(convertedType)) {
+            return convertedType;
           }
         }
         return inputTy;
