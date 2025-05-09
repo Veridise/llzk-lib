@@ -129,6 +129,18 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Side &v
   }
   return os;
 }
+
+inline Side reverse(Side in) {
+  switch (in) {
+  case Side::LHS:
+    return Side::RHS;
+  case Side::RHS:
+    return Side::LHS;
+  default:
+    return in;
+  }
+}
+
 } // namespace llzk
 
 namespace llvm {

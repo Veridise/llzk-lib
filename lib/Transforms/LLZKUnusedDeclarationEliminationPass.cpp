@@ -39,13 +39,9 @@ using namespace llzk::component;
 namespace {
 
 /// @brief Get the fully-qualified field symbol.
-/// @tparam FieldUserOp Either a FieldReadOp or a FieldWriteOp
-template <typename FieldUserOp> SymbolRefAttr getFullFieldSymbol(FieldUserOp op) {
-  FlatSymbolRefAttr fieldSym = op.getFieldNameAttr();
-  auto structType = dyn_cast<StructType>(op.getComponent().getType());
-  ensure(structType != nullptr, "given op type must operate on a struct type");
-  SymbolRefAttr structSym = structType.getNameRef(); // this is fully qualified
-  return appendLeaf(structSym, fieldSym);
+SymbolRefAttr getFullFieldSymbol(FieldRefOpInterface op) {
+  SymbolRefAttr structSym = op.getStructType().getNameRef(); // this is fully qualified
+  return appendLeaf(structSym, op.getFieldNameAttr());
 }
 
 class UnusedDeclarationEliminationPass

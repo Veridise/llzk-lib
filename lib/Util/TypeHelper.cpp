@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/TypeHelper.h"
 
 using namespace mlir;
 
@@ -545,11 +546,11 @@ struct UnifierImpl {
     }
     // A type variable can be any type, thus it unifies with anything.
     if (TypeVarType lhsTvar = llvm::dyn_cast<TypeVarType>(lhs)) {
-      track(Side::LHS, lhsTvar.getNameRef(), TypeAttr::get(rhs));
+      track(Side::LHS, lhsTvar.getNameRef(), rhs);
       return true;
     }
     if (TypeVarType rhsTvar = llvm::dyn_cast<TypeVarType>(rhs)) {
-      track(Side::RHS, rhsTvar.getNameRef(), TypeAttr::get(lhs));
+      track(Side::RHS, rhsTvar.getNameRef(), lhs);
       return true;
     }
     if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
@@ -566,21 +567,54 @@ private:
   inline void track(Tracker &tracker, Side side, Key keyHead, Val val) {
     auto key = std::make_pair(keyHead, side);
     auto it = tracker.find(key);
-    if (it != tracker.end()) {
-      it->second = nullptr;
-    } else {
+    if (it == tracker.end()) {
       tracker.try_emplace(key, val);
+    } else if (it->getSecond() != val) {
+      it->second = nullptr;
+    }
+  }
+
+  void track(Side side, SymbolRefAttr symRef, Type ty) {
+    if (unifications) {
+      Attribute attr;
+      if (TypeVarType tvar = dyn_cast<TypeVarType>(ty)) {
+        // If 'ty' is TypeVarType<@S>, just map to @S directly.
+        attr = tvar.getNameRef();
+      } else {
+        // Otherwise wrap as a TypeAttr.
+        attr = TypeAttr::get(ty);
+      }
+      assert(symRef);
+      assert(attr);
+      track(*unifications, side, symRef, attr);
     }
   }
 
   void track(Side side, SymbolRefAttr symRef, Attribute attr) {
     if (unifications) {
+      // If 'attr' is TypeAttr<TypeVarType<@S>>, just map to @S directly.
+      if (TypeAttr tyAttr = dyn_cast<TypeAttr>(attr)) {
+        if (TypeVarType tvar = dyn_cast<TypeVarType>(tyAttr.getValue())) {
+          attr = tvar.getNameRef();
+        }
+      }
+      assert(symRef);
+      assert(attr);
+      // If 'attr' is a SymbolRefAttr, map in both directions for the correctness of
+      // `isMoreConcreteUnification()` which relies on RHS check while other external
+      // checks on the UnificationMap may do LHS checks, and in the case of both being
+      // SymbolRefAttr, unification in either direction is possible.
+      if (SymbolRefAttr otherSymAttr = dyn_cast<SymbolRefAttr>(attr)) {
+        track(*unifications, reverse(side), otherSymAttr, symRef);
+      }
       track(*unifications, side, symRef, attr);
     }
   }
 
   void track(Side side, AffineMapAttr affineAttr, IntegerAttr intAttr) {
     if (affineToIntTracker) {
+      assert(affineAttr);
+      assert(intAttr);
       assert(!isDynamic(intAttr));
       track(*affineToIntTracker, side, affineAttr, intAttr);
     }
