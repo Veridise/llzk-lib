@@ -932,20 +932,31 @@ public:
             newType = writeToType;
             newTypeLoc = writeOp.getLoc();
           } else if (writeToType != newType) {
-            // If a new type has already been discovered from another FieldWriteOp and the current
-            // FieldWriteOp writes a different type, fail the conversion. There should only be one
-            // write for each field of a struct but do not rely on that assumption.
-            return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
-              diag.append(
-                  "Cannot update type of '", FieldDefOp::getOperationName(),
-                  "' because there are multiple '", FieldWriteOp::getOperationName(),
-                  "' with different value types"
-              );
-              if (newTypeLoc) {
-                diag.attachNote(*newTypeLoc).append("type written here is ", newType);
+            // Typically, there will only be one write for each field of a struct but do not rely on
+            // that assumption. If multiple writes with a different types A and B are found where
+            // A->B is a legal conversion (i.e. more concrete unification), then it is safe to use
+            // type B with the assumption that the write with type A will be updated by another
+            // pattern to also use type B.
+            if (!tracker_.isLegalConversion(writeToType, newType, "UpdateFieldTypeFromWrite")) {
+              if (tracker_.isLegalConversion(newType, writeToType, "UpdateFieldTypeFromWrite")) {
+                // 'writeToType' is the more concrete type
+                newType = writeToType;
+                newTypeLoc = writeOp.getLoc();
+              } else {
+                // Give an error if the types are incompatible.
+                return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+                  diag.append(
+                      "Cannot update type of '", FieldDefOp::getOperationName(),
+                      "' because there are multiple '", FieldWriteOp::getOperationName(),
+                      "' with different value types"
+                  );
+                  if (newTypeLoc) {
+                    diag.attachNote(*newTypeLoc).append("type written here is ", newType);
+                  }
+                  diag.attachNote(writeOp.getLoc()).append("type written here is ", writeToType);
+                });
               }
-              diag.attachNote(writeOp.getLoc()).append("type written here is ", writeToType);
-            });
+            }
           }
         }
       }
