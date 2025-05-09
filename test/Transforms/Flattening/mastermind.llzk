@@ -2845,7 +2845,6 @@ module attributes {veridise.lang = "llzk"} {
   }
   struct.def @Zip<[@Lhs, @Rhs, @N]> {
     struct.field @"$super" : !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
-    struct.field @"$temp" : !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
     struct.field @"$array" : !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
     function.def @compute(%arg0: !array.type<@N x !poly.tvar<@Lhs>>, %arg1: !array.type<@N x !poly.tvar<@Rhs>>) -> !struct.type<@Zip<[@Lhs, @Rhs, @N]>> attributes {function.allow_witness} {
       %c0 = arith.constant 0 : index
@@ -2869,12 +2868,7 @@ module attributes {veridise.lang = "llzk"} {
         %9 = cast.toindex %6
         %10 = array.read %arg1[%9] : <@N x !poly.tvar<@Rhs>>, !poly.tvar<@Rhs>
         %11 = function.call @Pair::@compute(%8, %10) : (!poly.tvar<@Lhs>, !poly.tvar<@Rhs>) -> !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>
-        %12 = struct.readf %self[@"$temp"] : <@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
-        array.write %12[%arg2] = %11 : <#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>, !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>
-        struct.writef %self[@"$temp"] = %12 : <@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
-        %13 = struct.readf %self[@"$temp"] : <@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
-        %14 = array.read %13[%arg2] : <#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>, !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>
-        array.write %array_0[%arg2] = %14 : <#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>, !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>
+        array.write %array_0[%arg2] = %11 : <#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>, !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>
       } {original_op = "map"}
       struct.writef %self[@"$array"] = %array_0 : <@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
       %5 = struct.readf %self[@"$array"] : <@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
@@ -2901,8 +2895,7 @@ module attributes {veridise.lang = "llzk"} {
         %8 = array.read %arg1[%7] : <@N x !poly.tvar<@Lhs>>, !poly.tvar<@Lhs>
         %9 = cast.toindex %6
         %10 = array.read %arg2[%9] : <@N x !poly.tvar<@Rhs>>, !poly.tvar<@Rhs>
-        %11 = struct.readf %arg0[@"$temp"] : <@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
-        %12 = struct.readf %arg0[@"$temp"] : <@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
+        %12 = struct.readf %arg0[@"$array"] : <@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
         %13 = array.read %12[%arg3] : <#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>, !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>
         function.call @Pair::@constrain(%13, %8, %10) : (!struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>, !poly.tvar<@Lhs>, !poly.tvar<@Rhs>) -> ()
         array.write %array_0[%arg3] = %13 : <#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>, !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>
@@ -2926,6 +2919,10 @@ module attributes {veridise.lang = "llzk"} {
       %1 = struct.readf %self[@"$temp"] : <@AssertArrsEq<[@T, @N]>>, !struct.type<@Zip<[!poly.tvar<@T>, !poly.tvar<@T>, @N]>>
       %2 = struct.readf %1[@"$super"] : <@Zip<[!poly.tvar<@T>, !poly.tvar<@T>, @N]>>, !array.type<#map x !struct.type<@Pair<[!poly.tvar<@T>, !poly.tvar<@T>]>>>
       %3 = poly.read_const @N : index
+      %missing1 = array.new{()[%3]} : !array.type<#map x !struct.type<@EnsureEq<[!poly.tvar<@T>]>>>
+      struct.writef %self[@"$temp_0"] = %missing1 : <@AssertArrsEq<[@T, @N]>>, !array.type<#map x !struct.type<@EnsureEq<[!poly.tvar<@T>]>>>
+      %missing2 = array.new{()[%3]} : !array.type<#map x !struct.type<@Component<[]>>>
+      struct.writef %self[@"$temp_1"] = %missing2 : <@AssertArrsEq<[@T, @N]>>, !array.type<#map x !struct.type<@Component<[]>>>
       %array = array.new{()[%3]} : <#map x !struct.type<@Component<[]>>>
       %4 = array.len %2, %c0 : <#map x !struct.type<@Pair<[!poly.tvar<@T>, !poly.tvar<@T>]>>>
       scf.for %arg2 = %c0 to %4 step %c1 {
