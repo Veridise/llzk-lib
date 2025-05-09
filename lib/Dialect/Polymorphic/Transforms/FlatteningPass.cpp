@@ -917,6 +917,54 @@ public:
   }
 };
 
+namespace {
+
+LogicalResult updateArrayElemFromArrAccessOp(
+    ArrayAccessOpInterface op, Type scalarElemTy, ConversionTracker &tracker,
+    PatternRewriter &rewriter
+) {
+  ArrayType oldArrType = op.getArrRefType();
+  if (oldArrType.getElementType() == scalarElemTy) {
+    return failure(); // no change needed
+  }
+  ArrayType newArrType = oldArrType.cloneWith(scalarElemTy);
+  if (oldArrType == newArrType ||
+      !tracker.isLegalConversion(oldArrType, newArrType, "updateArrayElemFromArrAccessOp")) {
+    return failure();
+  }
+  rewriter.modifyOpInPlace(op, [&op, &newArrType]() { op.getArrRef().setType(newArrType); });
+  LLVM_DEBUG(
+      llvm::dbgs() << "[updateArrayElemFromArrAccessOp] updated base array type in " << op << '\n'
+  );
+  return success();
+}
+
+} // namespace
+
+class UpdateArrayElemFromArrWrite final : public OpRewritePattern<WriteArrayOp> {
+  ConversionTracker &tracker_;
+
+public:
+  UpdateArrayElemFromArrWrite(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx), tracker_(tracker) {}
+
+  LogicalResult matchAndRewrite(WriteArrayOp op, PatternRewriter &rewriter) const override {
+    return updateArrayElemFromArrAccessOp(op, op.getRvalue().getType(), tracker_, rewriter);
+  }
+};
+
+class UpdateArrayElemFromArrRead final : public OpRewritePattern<ReadArrayOp> {
+  ConversionTracker &tracker_;
+
+public:
+  UpdateArrayElemFromArrRead(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx), tracker_(tracker) {}
+
+  LogicalResult matchAndRewrite(ReadArrayOp op, PatternRewriter &rewriter) const override {
+    return updateArrayElemFromArrAccessOp(op, op.getResult().getType(), tracker_, rewriter);
+  }
+};
+
 /// Update the type of FieldDefOp instances by checking the updated types from FieldWriteOp.
 class UpdateFieldTypeFromWrite final : public OpRewritePattern<FieldDefOp> {
   ConversionTracker &tracker_;
@@ -1275,29 +1323,54 @@ private:
   }
 };
 
+namespace {
+
+LogicalResult updateFieldRefValFromFieldDef(
+    FieldRefOpInterface op, ConversionTracker &tracker, PatternRewriter &rewriter
+) {
+  SymbolTableCollection tables;
+  auto def = op.getFieldDefOp(tables);
+  if (failed(def)) {
+    return failure();
+  }
+  Type oldResultType = op.getVal().getType();
+  Type newResultType = def->get().getType();
+  if (oldResultType == newResultType ||
+      !tracker.isLegalConversion(oldResultType, newResultType, "updateFieldRefValFromFieldDef")) {
+    return failure();
+  }
+  rewriter.modifyOpInPlace(op, [&op, &newResultType]() { op.getVal().setType(newResultType); });
+  LLVM_DEBUG(
+      llvm::dbgs() << "[updateFieldRefValFromFieldDef] updated value type in " << op << '\n'
+  );
+  return success();
+}
+
+} // namespace
+
 /// Update the type of FieldReadOp result based on updated types from FieldDefOp.
-class UpdateFieldReadOp final : public OpRewritePattern<FieldReadOp> {
+class UpdateFieldReadValFromDef final : public OpRewritePattern<FieldReadOp> {
   ConversionTracker &tracker_;
 
 public:
-  UpdateFieldReadOp(MLIRContext *ctx, ConversionTracker &tracker)
+  UpdateFieldReadValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(FieldReadOp op, PatternRewriter &rewriter) const override {
-    SymbolTableCollection tables;
-    auto def = op.getFieldDefOp(tables);
-    if (failed(def)) {
-      return failure();
-    }
-    Type oldResultType = op.getVal().getType();
-    Type newResultType = def->get().getType();
-    if (oldResultType == newResultType ||
-        !tracker_.isLegalConversion(oldResultType, newResultType, "UpdateFieldReadOp")) {
-      return failure();
-    }
-    rewriter.modifyOpInPlace(op, [&op, &newResultType]() { op.getVal().setType(newResultType); });
-    LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldReadOp] updated result type of " << op << '\n');
-    return success();
+    return updateFieldRefValFromFieldDef(op, tracker_, rewriter);
+  }
+};
+
+/// Update the type of FieldWriteOp value based on updated types from FieldDefOp.
+class UpdateFieldWriteValFromDef final : public OpRewritePattern<FieldWriteOp> {
+  ConversionTracker &tracker_;
+
+public:
+  UpdateFieldWriteValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx), tracker_(tracker) {}
+
+  LogicalResult matchAndRewrite(FieldWriteOp op, PatternRewriter &rewriter) const override {
+    return updateFieldRefValFromFieldDef(op, tracker_, rewriter);
   }
 };
 
@@ -1313,7 +1386,10 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       UpdateGlobalCallOpTypes,
       InstantiateAtCallOpCompute,
       UpdateNewArrayElemFromWrite,
-      UpdateFieldReadOp
+      UpdateArrayElemFromArrRead,
+      UpdateArrayElemFromArrWrite,
+      UpdateFieldReadValFromDef,
+      UpdateFieldWriteValFromDef
       // clang-format on
       >(ctx, tracker);
 
@@ -1441,6 +1517,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       }
 
       // Instantiate affine_map parameters of StructType and ArrayType.
+      // Propagate updated types using the semantics of various ops.
       if (failed(Step3_InstantiateAffineMaps::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating `affine_map` parameters\n";
         return failure();
