@@ -863,11 +863,11 @@ public:
 };
 
 /// Update the array element type by looking at the values stored into it from uses.
-class UpdateArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
+class UpdateNewArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
   ConversionTracker &tracker_;
 
 public:
-  UpdateArrayElemFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
+  UpdateNewArrayElemFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
@@ -891,7 +891,7 @@ public:
         if (newResultElemType && newResultElemType != writeRValueType) {
           LLVM_DEBUG(
               llvm::dbgs()
-              << "[UpdateArrayElemFromWrite] multiple possible element types for CreateArrayOp "
+              << "[UpdateNewArrayElemFromWrite] multiple possible element types for CreateArrayOp "
               << newResultElemType << " vs " << writeRValueType << '\n'
           );
           return failure();
@@ -904,13 +904,15 @@ public:
       return failure();
     }
     if (!tracker_.isLegalConversion(
-            oldResultElemType, newResultElemType, "UpdateArrayElemFromWrite"
+            oldResultElemType, newResultElemType, "UpdateNewArrayElemFromWrite"
         )) {
       return failure();
     }
     ArrayType newType = createResultType.cloneWith(newResultElemType);
     rewriter.modifyOpInPlace(op, [&createResult, &newType]() { createResult.setType(newType); });
-    LLVM_DEBUG(llvm::dbgs() << "[UpdateArrayElemFromWrite] updated result type of " << op << '\n');
+    LLVM_DEBUG(
+        llvm::dbgs() << "[UpdateNewArrayElemFromWrite] updated result type of " << op << '\n'
+    );
     return success();
   }
 };
@@ -1310,7 +1312,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       UpdateFuncTypeFromReturn,
       UpdateGlobalCallOpTypes,
       InstantiateAtCallOpCompute,
-      UpdateArrayElemFromWrite,
+      UpdateNewArrayElemFromWrite,
       UpdateFieldReadOp
       // clang-format on
       >(ctx, tracker);
