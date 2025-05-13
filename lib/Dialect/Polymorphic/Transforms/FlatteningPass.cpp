@@ -709,16 +709,6 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step3_InstantiateAffineMaps {
 
-SmallVector<std::unique_ptr<Region>> moveRegions(Operation *op) {
-  SmallVector<std::unique_ptr<Region>> newRegions;
-  for (Region &region : op->getRegions()) {
-    auto newRegion = std::make_unique<Region>();
-    newRegion->takeBody(region);
-    newRegions.push_back(std::move(newRegion));
-  }
-  return newRegions;
-}
-
 // Adapted from `mlir::getConstantIntValues()` but that one failed in CI for an unknown reason. This
 // version uses a basic loop instead of llvm::map_to_vector().
 std::optional<SmallVector<int64_t>> getConstantIntValues(ArrayRef<OpFoldResult> ofrs) {
@@ -829,7 +819,7 @@ class InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp> 
 
 public:
   InstantiateAtCreateArrayOp(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx, 9), tracker_(tracker) {}
+      : OpRewritePattern(ctx), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     ArrayType oldResultType = op.getType();
@@ -861,6 +851,186 @@ public:
     return success();
   }
 };
+
+/// Instantiate parameterized StructType resulting from CallOp targeting "compute()" functions.
+class InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
+  ConversionTracker &tracker_;
+
+public:
+  InstantiateAtCallOpCompute(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx), tracker_(tracker) {}
+
+  LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
+    if (!op.calleeIsStructCompute()) {
+      // this pattern only applies when the callee is "compute()" within a struct
+      return failure();
+    }
+    LLVM_DEBUG(llvm::dbgs() << "[InstantiateAtCallOpCompute] target: " << op.getCallee() << '\n');
+    StructType oldRetTy = op.getSingleResultTypeOfCompute();
+    LLVM_DEBUG(llvm::dbgs() << "[InstantiateAtCallOpCompute]   oldRetTy: " << oldRetTy << '\n');
+    ArrayAttr params = oldRetTy.getParams();
+    if (isNullOrEmpty(params)) {
+      // nothing to do if the StructType is not parameterized
+      return failure();
+    }
+
+    AffineMapFolder::Output out;
+    AffineMapFolder::Input in = {
+        op.getMapOperands(),
+        op.getNumDimsPerMapAttr(),
+        params.getValue(),
+    };
+    if (!in.mapOpGroups.empty()) {
+      // If there are affine map operands, attempt to fold them to a constant.
+      if (failed(AffineMapFolder::fold(rewriter, in, out, op, "struct parameter"))) {
+        return failure();
+      }
+      LLVM_DEBUG({
+        llvm::dbgs() << "[InstantiateAtCallOpCompute]   folded affine_map in result type params\n";
+      });
+    } else {
+      // If there are no affine map operands, attempt to refine the result type of the CallOp using
+      // the function argument types and the type of the target function.
+      auto callArgTypes = op.getArgOperands().getTypes();
+      if (callArgTypes.empty()) {
+        // no refinement posible if no function arguments
+        return failure();
+      }
+      SymbolTableCollection tables;
+      auto lookupRes = lookupTopLevelSymbol<FuncDefOp>(tables, op.getCalleeAttr(), op);
+      if (failed(lookupRes)) {
+        return failure();
+      }
+      if (failed(instantiateViaTargetType(in, out, callArgTypes, lookupRes->get()))) {
+        return failure();
+      }
+      LLVM_DEBUG({
+        llvm::dbgs() << "[InstantiateAtCallOpCompute]   propagated instantiations via symrefs in "
+                        "result type params: "
+                     << debug::toStringList(out.paramsOfStructTy) << '\n';
+      });
+    }
+
+    StructType newRetTy = StructType::get(oldRetTy.getNameRef(), out.paramsOfStructTy);
+    if (newRetTy == oldRetTy) {
+      // nothing changed
+      return failure();
+    }
+    // The `newRetTy` is computed via instantiateViaTargetType() which can only preserve the
+    // original Attribute or convert to a concrete attribute via the unification process. Thus, if
+    // the conversion here is illegal it means there is a type conflict within the LLZK code that
+    // prevents instantiation of the struct with the requested type.
+    if (!tracker_.isLegalConversion(oldRetTy, newRetTy, "InstantiateAtCallOpCompute")) {
+      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+        diag.append(
+            "result type mismatch: due to struct instantiation, expected type ", newRetTy,
+            ", but found ", oldRetTy
+        );
+      });
+    }
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateAtCallOpCompute] instantiating " << oldRetTy << " as "
+                     << newRetTy << " in \"" << op << "\"\n"
+    );
+    replaceOpWithNewOp<CallOp>(
+        rewriter, op, TypeRange {newRetTy}, op.getCallee(),
+        AffineMapFolder::getConvertedMapOpGroups(out), out.dimsPerGroup, op.getArgOperands()
+    );
+    return success();
+  }
+
+private:
+  /// Use the type of the target function to propagate instantation knowledge from the function
+  /// argument types to the function return type in the CallOp.
+  inline LogicalResult instantiateViaTargetType(
+      const AffineMapFolder::Input &in, AffineMapFolder::Output &out,
+      OperandRange::type_range callArgTypes, FuncDefOp targetFunc
+  ) const {
+    assert(targetFunc.isStructCompute()); // since `op.calleeIsStructCompute()`
+    ArrayAttr targetResTyParams = targetFunc.getSingleResultTypeOfCompute().getParams();
+    assert(!isNullOrEmpty(targetResTyParams)); // same cardinality as `in.paramsOfStructTy`
+    assert(in.paramsOfStructTy.size() == targetResTyParams.size()); // verifier ensures this
+
+    if (llvm::all_of(in.paramsOfStructTy, isConcreteAttr<>)) {
+      // Nothing can change if everything is already concrete
+      return failure();
+    }
+
+    LLVM_DEBUG({
+      llvm::dbgs() << '[' << __FUNCTION__ << ']'
+                   << " call arg types: " << debug::toStringList(callArgTypes) << '\n';
+      llvm::dbgs() << '[' << __FUNCTION__ << ']' << " target func arg types: "
+                   << debug::toStringList(targetFunc.getArgumentTypes()) << '\n';
+      llvm::dbgs() << '[' << __FUNCTION__ << ']'
+                   << " struct params @ call: " << debug::toStringList(in.paramsOfStructTy) << '\n';
+      llvm::dbgs() << '[' << __FUNCTION__ << ']'
+                   << " target struct params: " << debug::toStringList(targetResTyParams) << '\n';
+    });
+
+    UnificationMap unifications;
+    bool unifies = typeListsUnify(targetFunc.getArgumentTypes(), callArgTypes, {}, &unifications);
+    assert(unifies && "should have been checked by verifiers");
+
+    LLVM_DEBUG({
+      llvm::dbgs() << '[' << __FUNCTION__ << ']'
+                   << " unifications of arg types: " << debug::toStringList(unifications) << '\n';
+    });
+
+    // Check for LHS SymRef (i.e. from the target function) that have RHS concrete Attributes (i.e.
+    // from the call argument types) without any struct parameters (because the type with concrete
+    // struct parameters will be used to instantiate the target struct rather than the fully
+    // flattened struct type resulting in type mismatch of the callee to target) and perform those
+    // replacements in the `targetFunc` return type to produce the new result type for the CallOp.
+    SmallVector<Attribute> newReturnStructParams = llvm::map_to_vector(
+        llvm::zip_equal(targetResTyParams.getValue(), in.paramsOfStructTy),
+        [&unifications](std::tuple<Attribute, Attribute> p) {
+      Attribute fromCall = std::get<1>(p);
+      // Preserve attributes that are already concrete at the call site. Otherwise attempt to lookup
+      // non-parameterized concrete unification for the target struct parameter symbol.
+      if (!isConcreteAttr<>(fromCall)) {
+        Attribute fromTgt = std::get<0>(p);
+        LLVM_DEBUG({
+          llvm::dbgs() << "[instantiateViaTargetType]   fromCall = " << fromCall << '\n';
+          llvm::dbgs() << "[instantiateViaTargetType]   fromTgt = " << fromTgt << '\n';
+        });
+        assert(llvm::isa<SymbolRefAttr>(fromTgt));
+        auto it = unifications.find(std::make_pair(llvm::cast<SymbolRefAttr>(fromTgt), Side::LHS));
+        if (it != unifications.end()) {
+          Attribute unifiedAttr = it->second;
+          LLVM_DEBUG({
+            llvm::dbgs() << "[instantiateViaTargetType]   unifiedAttr = " << unifiedAttr << '\n';
+          });
+          if (unifiedAttr && isConcreteAttr<false>(unifiedAttr)) {
+            return unifiedAttr;
+          }
+        }
+      }
+      return fromCall;
+    }
+    );
+
+    out.paramsOfStructTy = newReturnStructParams;
+    assert(out.paramsOfStructTy.size() == in.paramsOfStructTy.size() && "post-condition");
+    assert(out.mapOpGroups.empty() && "post-condition");
+    assert(out.dimsPerGroup.empty() && "post-condition");
+    return success();
+  }
+};
+
+LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
+  MLIRContext *ctx = modOp.getContext();
+  RewritePatternSet patterns(ctx);
+  patterns.add<
+      InstantiateAtCreateArrayOp, // CreateArrayOp
+      InstantiateAtCallOpCompute  // CallOp, targeting struct "compute()"
+      >(ctx, tracker);
+
+  return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
+}
+
+} // namespace Step3_InstantiateAffineMaps
+
+namespace Step4_PropagateTypes {
 
 /// Update the array element type by looking at the values stored into it from uses.
 class UpdateNewArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
@@ -1037,6 +1207,20 @@ public:
   }
 };
 
+namespace {
+
+SmallVector<std::unique_ptr<Region>> moveRegions(Operation *op) {
+  SmallVector<std::unique_ptr<Region>> newRegions;
+  for (Region &region : op->getRegions()) {
+    auto newRegion = std::make_unique<Region>();
+    newRegion->takeBody(region);
+    newRegions.push_back(std::move(newRegion));
+  }
+  return newRegions;
+}
+
+} // namespace
+
 /// Updates the result type in Ops with the InferTypeOpAdaptor trait including ReadArrayOp,
 /// ExtractArrayOp, etc.
 class UpdateInferredResultTypes final : public OpTraitRewritePattern<OpTrait::InferTypeOpAdaptor> {
@@ -1158,171 +1342,6 @@ public:
   }
 };
 
-/// Instantiate parameterized StructType resulting from CallOp targeting "compute()" functions.
-class InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
-  ConversionTracker &tracker_;
-
-public:
-  InstantiateAtCallOpCompute(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx, 9), tracker_(tracker) {}
-
-  LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
-    if (!op.calleeIsStructCompute()) {
-      // this pattern only applies when the callee is "compute()" within a struct
-      return failure();
-    }
-    LLVM_DEBUG(llvm::dbgs() << "[InstantiateAtCallOpCompute] target: " << op.getCallee() << '\n');
-    StructType oldRetTy = op.getSingleResultTypeOfCompute();
-    LLVM_DEBUG(llvm::dbgs() << "[InstantiateAtCallOpCompute]   oldRetTy: " << oldRetTy << '\n');
-    ArrayAttr params = oldRetTy.getParams();
-    if (isNullOrEmpty(params)) {
-      // nothing to do if the StructType is not parameterized
-      return failure();
-    }
-
-    AffineMapFolder::Output out;
-    AffineMapFolder::Input in = {
-        op.getMapOperands(),
-        op.getNumDimsPerMapAttr(),
-        params.getValue(),
-    };
-    if (!in.mapOpGroups.empty()) {
-      // If there are affine map operands, attempt to fold them to a constant.
-      if (failed(AffineMapFolder::fold(rewriter, in, out, op, "struct parameter"))) {
-        return failure();
-      }
-      LLVM_DEBUG({
-        llvm::dbgs() << "[InstantiateAtCallOpCompute]   folded affine_map in result type params\n";
-      });
-    } else {
-      // If there are no affine map operands, attempt to refine the result type of the CallOp using
-      // the function argument types and the type of the target function.
-      auto callArgTypes = op.getArgOperands().getTypes();
-      if (callArgTypes.empty()) {
-        // no refinement posible if no function arguments
-        return failure();
-      }
-      SymbolTableCollection tables;
-      auto lookupRes = lookupTopLevelSymbol<FuncDefOp>(tables, op.getCalleeAttr(), op);
-      if (failed(lookupRes)) {
-        return failure();
-      }
-      if (failed(instantiateViaTargetType(in, out, callArgTypes, lookupRes->get()))) {
-        return failure();
-      }
-      LLVM_DEBUG({
-        llvm::dbgs() << "[InstantiateAtCallOpCompute]   propagated instantiations via symrefs in "
-                        "result type params: "
-                     << debug::toStringList(out.paramsOfStructTy) << '\n';
-      });
-    }
-
-    StructType newRetTy = StructType::get(oldRetTy.getNameRef(), out.paramsOfStructTy);
-    if (newRetTy == oldRetTy) {
-      // nothing changed
-      return failure();
-    }
-    // The `newRetTy` is computed via instantiateViaTargetType() which can only preserve the
-    // original Attribute or convert to a concrete attribute via the unification process. Thus, if
-    // the conversion here is illegal it means there is a type conflict within the LLZK code that
-    // prevents instantiation of the struct with the requested type.
-    if (!tracker_.isLegalConversion(oldRetTy, newRetTy, "InstantiateAtCallOpCompute")) {
-      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
-        diag.append(
-            "result type mismatch: due to struct instantiation, expected type ", newRetTy,
-            ", but found ", oldRetTy
-        );
-      });
-    }
-    LLVM_DEBUG(
-        llvm::dbgs() << "[InstantiateAtCallOpCompute] instantiating " << oldRetTy << " as "
-                     << newRetTy << " in \"" << op << "\"\n"
-    );
-    replaceOpWithNewOp<CallOp>(
-        rewriter, op, TypeRange {newRetTy}, op.getCallee(),
-        AffineMapFolder::getConvertedMapOpGroups(out), out.dimsPerGroup, op.getArgOperands()
-    );
-    return success();
-  }
-
-private:
-  /// Use the type of the target function to propagate instantation knowledge from the function
-  /// argument types to the function return type in the CallOp.
-  inline LogicalResult instantiateViaTargetType(
-      const AffineMapFolder::Input &in, AffineMapFolder::Output &out,
-      OperandRange::type_range callArgTypes, FuncDefOp targetFunc
-  ) const {
-    assert(targetFunc.isStructCompute()); // since `op.calleeIsStructCompute()`
-    ArrayAttr targetResTyParams = targetFunc.getSingleResultTypeOfCompute().getParams();
-    assert(!isNullOrEmpty(targetResTyParams)); // same cardinality as `in.paramsOfStructTy`
-    assert(in.paramsOfStructTy.size() == targetResTyParams.size()); // verifier ensures this
-
-    if (llvm::all_of(in.paramsOfStructTy, isConcreteAttr<>)) {
-      // Nothing can change if everything is already concrete
-      return failure();
-    }
-
-    LLVM_DEBUG({
-      llvm::dbgs() << '[' << __FUNCTION__ << ']'
-                   << " call arg types: " << debug::toStringList(callArgTypes) << '\n';
-      llvm::dbgs() << '[' << __FUNCTION__ << ']' << " target func arg types: "
-                   << debug::toStringList(targetFunc.getArgumentTypes()) << '\n';
-      llvm::dbgs() << '[' << __FUNCTION__ << ']'
-                   << " struct params @ call: " << debug::toStringList(in.paramsOfStructTy) << '\n';
-      llvm::dbgs() << '[' << __FUNCTION__ << ']'
-                   << " target struct params: " << debug::toStringList(targetResTyParams) << '\n';
-    });
-
-    UnificationMap unifications;
-    bool unifies = typeListsUnify(targetFunc.getArgumentTypes(), callArgTypes, {}, &unifications);
-    assert(unifies && "should have been checked by verifiers");
-
-    LLVM_DEBUG({
-      llvm::dbgs() << '[' << __FUNCTION__ << ']'
-                   << " unifications of arg types: " << debug::toStringList(unifications) << '\n';
-    });
-
-    // Check for LHS SymRef (i.e. from the target function) that have RHS concrete Attributes (i.e.
-    // from the call argument types) without any struct parameters (because the type with concrete
-    // struct parameters will be used to instantiate the target struct rather than the fully
-    // flattened struct type resulting in type mismatch of the callee to target) and perform those
-    // replacements in the `targetFunc` return type to produce the new result type for the CallOp.
-    SmallVector<Attribute> newReturnStructParams = llvm::map_to_vector(
-        llvm::zip_equal(targetResTyParams.getValue(), in.paramsOfStructTy),
-        [&unifications](std::tuple<Attribute, Attribute> p) {
-      Attribute fromCall = std::get<1>(p);
-      // Preserve attributes that are already concrete at the call site. Otherwise attempt to lookup
-      // non-parameterized concrete unification for the target struct parameter symbol.
-      if (!isConcreteAttr<>(fromCall)) {
-        Attribute fromTgt = std::get<0>(p);
-        LLVM_DEBUG({
-          llvm::dbgs() << "[instantiateViaTargetType]   fromCall = " << fromCall << '\n';
-          llvm::dbgs() << "[instantiateViaTargetType]   fromTgt = " << fromTgt << '\n';
-        });
-        assert(llvm::isa<SymbolRefAttr>(fromTgt));
-        auto it = unifications.find(std::make_pair(llvm::cast<SymbolRefAttr>(fromTgt), Side::LHS));
-        if (it != unifications.end()) {
-          Attribute unifiedAttr = it->second;
-          LLVM_DEBUG({
-            llvm::dbgs() << "[instantiateViaTargetType]   unifiedAttr = " << unifiedAttr << '\n';
-          });
-          if (unifiedAttr && isConcreteAttr<false>(unifiedAttr)) {
-            return unifiedAttr;
-          }
-        }
-      }
-      return fromCall;
-    }
-    );
-
-    out.paramsOfStructTy = newReturnStructParams;
-    assert(out.paramsOfStructTy.size() == in.paramsOfStructTy.size() && "post-condition");
-    assert(out.mapOpGroups.empty() && "post-condition");
-    assert(out.dimsPerGroup.empty() && "post-condition");
-    return success();
-  }
-};
-
 namespace {
 
 LogicalResult updateFieldRefValFromFieldDef(
@@ -1378,10 +1397,6 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
   patterns.add<
-      // These have the highest benefit because they are the impetus of instantiating types.
-      //  benefit = 9
-      InstantiateAtCreateArrayOp, // CreateArrayOp
-      InstantiateAtCallOpCompute, // CallOp, targeting struct "compute()"
       // Benefit of this one must be higher than rules that would propagate the type in the opposite
       // direction (ex: `UpdateArrayElemFromArrRead`) else the greedy conversion would not converge.
       //  benefit = 6
@@ -1399,10 +1414,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
+} // namespace Step4_PropagateTypes
 
-} // namespace Step3_InstantiateAffineMaps
-
-namespace Step4_Cleanup {
+namespace Step5_Cleanup {
 
 template <typename OpTy> class EraseOpPattern : public OpConversionPattern<OpTy> {
 public:
@@ -1480,7 +1494,7 @@ LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
   return success();
 }
 
-} // namespace Step4_Cleanup
+} // namespace Step5_Cleanup
 
 class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass> {
 
@@ -1521,9 +1535,14 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       }
 
       // Instantiate affine_map parameters of StructType and ArrayType.
-      // Propagate updated types using the semantics of various ops.
       if (failed(Step3_InstantiateAffineMaps::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating `affine_map` parameters\n";
+        return failure();
+      }
+
+      // Propagate updated types using the semantics of various ops.
+      if (failed(Step4_PropagateTypes::run(modOp, tracker))) {
+        llvm::errs() << DEBUG_TYPE << " failed while propagating instantiated types\n";
         return failure();
       }
 
@@ -1536,7 +1555,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     } while (tracker.isModified());
 
     // Remove the parameterized StructDefOp that were instantiated.
-    if (failed(Step4_Cleanup::run(modOp, tracker))) {
+    if (failed(Step5_Cleanup::run(modOp, tracker))) {
       llvm::errs() << DEBUG_TYPE
                    << " failed while removing parameterized structs that were replaced with "
                       "instantiated versions\n";
