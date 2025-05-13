@@ -226,8 +226,8 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
   bool currStepModified = false;
   MatchFailureListener failureListener;
   LogicalResult result = applyPatternsAndFoldGreedily(
-      modOp->getRegion(0), std::move(patterns), GreedyRewriteConfig {.listener = &failureListener},
-      &currStepModified
+      modOp->getRegion(0), std::move(patterns),
+      GreedyRewriteConfig {.maxIterations = 20, .listener = &failureListener}, &currStepModified
   );
   tracker.updateModifiedFlag(currStepModified);
   return failure(result.failed() || failureListener.hadFailure);
@@ -823,13 +823,13 @@ struct AffineMapFolder {
   }
 };
 
-/// Instantiate parameterized ArrayType resulting from CreateArrayOp.
+/// At CreateArrayOp, instantiate ArrayType parameterized with affine_map dimension size(s)
 class InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp> {
   ConversionTracker &tracker_;
 
 public:
   InstantiateAtCreateArrayOp(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), tracker_(tracker) {}
+      : OpRewritePattern(ctx, 9), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     ArrayType oldResultType = op.getType();
@@ -868,7 +868,7 @@ class UpdateNewArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp>
 
 public:
   UpdateNewArrayElemFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), tracker_(tracker) {}
+      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     Value createResult = op.getResult();
@@ -946,7 +946,7 @@ class UpdateArrayElemFromArrWrite final : public OpRewritePattern<WriteArrayOp> 
 
 public:
   UpdateArrayElemFromArrWrite(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), tracker_(tracker) {}
+      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(WriteArrayOp op, PatternRewriter &rewriter) const override {
     return updateArrayElemFromArrAccessOp(op, op.getRvalue().getType(), tracker_, rewriter);
@@ -958,7 +958,7 @@ class UpdateArrayElemFromArrRead final : public OpRewritePattern<ReadArrayOp> {
 
 public:
   UpdateArrayElemFromArrRead(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), tracker_(tracker) {}
+      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(ReadArrayOp op, PatternRewriter &rewriter) const override {
     return updateArrayElemFromArrAccessOp(op, op.getResult().getType(), tracker_, rewriter);
@@ -966,12 +966,12 @@ public:
 };
 
 /// Update the type of FieldDefOp instances by checking the updated types from FieldWriteOp.
-class UpdateFieldTypeFromWrite final : public OpRewritePattern<FieldDefOp> {
+class UpdateFieldDefTypeFromWrite final : public OpRewritePattern<FieldDefOp> {
   ConversionTracker &tracker_;
 
 public:
-  UpdateFieldTypeFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), tracker_(tracker) {}
+  UpdateFieldDefTypeFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(FieldDefOp op, PatternRewriter &rewriter) const override {
     // Find all uses of the field symbol name within its parent struct.
@@ -986,7 +986,7 @@ public:
       for (SymbolTable::SymbolUse symUse : fieldUsers.value()) {
         if (FieldWriteOp writeOp = llvm::dyn_cast<FieldWriteOp>(symUse.getUser())) {
           Type writeToType = writeOp.getVal().getType();
-          LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldTypeFromWrite] checking " << writeOp << '\n');
+          LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldDefTypeFromWrite] checking " << writeOp << '\n');
           if (!newType) {
             // If a new type has not yet been discovered, store the new type.
             newType = writeToType;
@@ -997,8 +997,8 @@ public:
             // A->B is a legal conversion (i.e. more concrete unification), then it is safe to use
             // type B with the assumption that the write with type A will be updated by another
             // pattern to also use type B.
-            if (!tracker_.isLegalConversion(writeToType, newType, "UpdateFieldTypeFromWrite")) {
-              if (tracker_.isLegalConversion(newType, writeToType, "UpdateFieldTypeFromWrite")) {
+            if (!tracker_.isLegalConversion(writeToType, newType, "UpdateFieldDefTypeFromWrite")) {
+              if (tracker_.isLegalConversion(newType, writeToType, "UpdateFieldDefTypeFromWrite")) {
                 // 'writeToType' is the more concrete type
                 newType = writeToType;
                 newTypeLoc = writeOp.getLoc();
@@ -1025,10 +1025,10 @@ public:
       // nothing changed
       return failure();
     }
-    if (!tracker_.isLegalConversion(op.getType(), newType, "UpdateFieldTypeFromWrite")) {
+    if (!tracker_.isLegalConversion(op.getType(), newType, "UpdateFieldDefTypeFromWrite")) {
       return failure();
     }
-    LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldTypeFromWrite] replaced " << op);
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldDefTypeFromWrite] replaced " << op);
     DictionaryAttr attrs = op->getDiscardableAttrDictionary();
     FieldDefOp newOp = replaceOpWithNewOp<FieldDefOp>(rewriter, op, op.getSymName(), newType);
     newOp->setDiscardableAttrs(attrs);
@@ -1044,7 +1044,7 @@ class UpdateInferredResultTypes final : public OpTraitRewritePattern<OpTrait::In
 
 public:
   UpdateInferredResultTypes(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpTraitRewritePattern(ctx), tracker_(tracker) {}
+      : OpTraitRewritePattern(ctx, 6), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(Operation *op, PatternRewriter &rewriter) const override {
     SmallVector<Type, 1> inferredResultTypes;
@@ -1085,7 +1085,7 @@ class UpdateFuncTypeFromReturn final : public OpRewritePattern<FuncDefOp> {
 
 public:
   UpdateFuncTypeFromReturn(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), tracker_(tracker) {}
+      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(FuncDefOp op, PatternRewriter &rewriter) const override {
     Region &body = op.getFunctionBody();
@@ -1127,7 +1127,7 @@ class UpdateGlobalCallOpTypes final : public OpRewritePattern<CallOp> {
 
 public:
   UpdateGlobalCallOpTypes(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), tracker_(tracker) {}
+      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     SymbolTableCollection tables;
@@ -1164,7 +1164,7 @@ class InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
 
 public:
   InstantiateAtCallOpCompute(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), tracker_(tracker) {}
+      : OpRewritePattern(ctx, 9), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     if (!op.calleeIsStructCompute()) {
@@ -1354,7 +1354,7 @@ class UpdateFieldReadValFromDef final : public OpRewritePattern<FieldReadOp> {
 
 public:
   UpdateFieldReadValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), tracker_(tracker) {}
+      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(FieldReadOp op, PatternRewriter &rewriter) const override {
     return updateFieldRefValFromFieldDef(op, tracker_, rewriter);
@@ -1367,7 +1367,7 @@ class UpdateFieldWriteValFromDef final : public OpRewritePattern<FieldWriteOp> {
 
 public:
   UpdateFieldWriteValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
-      : OpRewritePattern(ctx), tracker_(tracker) {}
+      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(FieldWriteOp op, PatternRewriter &rewriter) const override {
     return updateFieldRefValFromFieldDef(op, tracker_, rewriter);
@@ -1378,19 +1378,23 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
   patterns.add<
-      // clang-format off
-      InstantiateAtCreateArrayOp,
-      UpdateFieldTypeFromWrite,
-      UpdateInferredResultTypes,
-      UpdateFuncTypeFromReturn,
-      UpdateGlobalCallOpTypes,
-      InstantiateAtCallOpCompute,
-      UpdateNewArrayElemFromWrite,
-      UpdateArrayElemFromArrRead,
-      UpdateArrayElemFromArrWrite,
-      UpdateFieldReadValFromDef,
-      UpdateFieldWriteValFromDef
-      // clang-format on
+      // These have the highest benefit because they are the impetus of instantiating types.
+      //  benefit = 9
+      InstantiateAtCreateArrayOp, // CreateArrayOp
+      InstantiateAtCallOpCompute, // CallOp, targeting struct "compute()"
+      // Benefit of this one must be higher than rules that would propagate the type in the opposite
+      // direction (ex: `UpdateArrayElemFromArrRead`) else the greedy conversion would not converge.
+      //  benefit = 6
+      UpdateInferredResultTypes, // OpTrait::InferTypeOpAdaptor (ReadArrayOp, ExtractArrayOp)
+      //  benefit = 3
+      UpdateGlobalCallOpTypes,     // CallOp, targeting non-struct functions
+      UpdateFuncTypeFromReturn,    // FuncDefOp
+      UpdateNewArrayElemFromWrite, // CreateArrayOp
+      UpdateArrayElemFromArrRead,  // ReadArrayOp
+      UpdateArrayElemFromArrWrite, // WriteArrayOp
+      UpdateFieldDefTypeFromWrite, // FieldDefOp
+      UpdateFieldReadValFromDef,   // FieldReadOp
+      UpdateFieldWriteValFromDef   // FieldWriteOp
       >(ctx, tracker);
 
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
