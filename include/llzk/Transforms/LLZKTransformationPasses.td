@@ -64,7 +64,7 @@ def PolyLoweringPass
     and llzk-duplicate-op-elim for maximum effect.
   }];
   let constructor = "llzk::createPolyLoweringPass()";
-  let options = [Option<"maxDegree", "lower-poly", "unsigned",
+  let options = [Option<"maxDegree", "max-degree", "unsigned",
                         /* default */ "2",
                         "Rewrite constraints to equisatisfiable system "
                         "where the maximum degree of any polynomial"
