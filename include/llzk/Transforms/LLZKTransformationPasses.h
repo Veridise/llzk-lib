@@ -23,6 +23,8 @@ std::unique_ptr<mlir::Pass> createUnusedDeclarationEliminationPass();
 
 std::unique_ptr<mlir::Pass> createArrayToScalarPass();
 
+std::unique_ptr<mlir::Pass> createPolyLoweringPass();
+
 void registerTransformationPassPipelines();
 
 #define GEN_PASS_REGISTRATION
