@@ -164,7 +164,6 @@ private:
       SmallVector<AuxAssignment> &auxAssignments
   ) {
     if (rewrites.count(val)) {
-      llvm::dbgs() << "rewrite found: " << val << " " << rewrites[val] << "\n";
       return rewrites[val];
     }
 
@@ -376,10 +375,9 @@ private:
 
     // Validate degree parameter
     if (maxDegree < 2) {
-        moduleOp.emitError() << "Invalid max degree: " << maxDegree
-                           << ". Must be >= 2.";
-        signalPassFailure();
-        return;
+      moduleOp.emitError() << "Invalid max degree: " << maxDegree << ". Must be >= 2.";
+      signalPassFailure();
+      return;
     }
 
     moduleOp.walk([&](StructDefOp structDef) {
@@ -404,14 +402,12 @@ private:
           Value loweredExpr = lowerExpression(
               lhsExpr, maxDegree, structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
           );
-          llvm::errs() << "lowered expr lhs: " << loweredExpr << "\n";
           constraintOp.setOperand(0, loweredExpr);
         }
         if (degreeRhs > maxDegree) {
           Value loweredExpr = lowerExpression(
               rhsExpr, maxDegree, structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
           );
-          llvm::errs() << "lowered expr rhs: " << loweredExpr << "\n";
           constraintOp.setOperand(1, loweredExpr);
         }
       });
