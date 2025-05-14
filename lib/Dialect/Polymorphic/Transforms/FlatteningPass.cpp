@@ -1198,11 +1198,8 @@ public:
     if (!tracker_.isLegalConversion(op.getType(), newType, "UpdateFieldDefTypeFromWrite")) {
       return failure();
     }
-    LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldDefTypeFromWrite] replaced " << op);
-    DictionaryAttr attrs = op->getDiscardableAttrDictionary();
-    FieldDefOp newOp = replaceOpWithNewOp<FieldDefOp>(rewriter, op, op.getSymName(), newType);
-    newOp->setDiscardableAttrs(attrs);
-    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
+    rewriter.modifyOpInPlace(op, [&op, &newType]() { op.setType(newType); });
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldDefTypeFromWrite] updated type of " << op << '\n');
     return success();
   }
 };
