@@ -1,5 +1,2 @@
-# This is a template that lists the available options when creating a changelog entry file
-# Edit according to your changes, before marking a PR as ready for review.
-
 added:
   - Add a pass to lower the degree of constraints to a configurable 'maxDegree'. This pass will be useful for different arithmetizations, especially R1CS where the max degree of any polynomial equation is 2.

@@ -38,6 +38,7 @@ namespace llzk {
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::felt;
+using namespace llzk::array;
 using namespace llzk::function;
 using namespace llzk::component;
 using namespace llzk::constrain;
@@ -57,7 +58,10 @@ private:
   unsigned auxCounter = 0;
 
   void collectStructDefs(ModuleOp modOp, SmallVectorImpl<StructDefOp> &structDefs) {
-    modOp.walk([&](StructDefOp structDef) { structDefs.push_back(structDef); });
+    modOp.walk([&](StructDefOp structDef) {
+      structDefs.push_back(structDef);
+      return WalkResult::skip();
+    });
   }
 
   void addAuxField(StructDefOp structDef, StringRef name) {
@@ -216,7 +220,6 @@ private:
       }
       // While their product exceeds maxDegree, factor out one side
       while (lhsDeg + rhsDeg > maxDegree) {
-        llvm::dbgs() << "lhsDeg: " << lhsDeg << " rhsDeg: " << rhsDeg << "\n";
         Value &toFactor = (lhsDeg >= rhsDeg) ? lhs : rhs;
 
         // Create auxiliary field for toFactor
@@ -244,7 +247,6 @@ private:
         // Recompute degrees
         lhsDeg = getDegree(lhs, degreeMemo);
         rhsDeg = getDegree(rhs, degreeMemo);
-        block.print(llvm::errs());
       }
 
       // Now lhs * rhs fits within degree bound
@@ -384,6 +386,15 @@ private:
       FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
       FuncDefOp computeFunc = structDef.getComputeFuncOp();
       if (!constrainFunc) {
+        moduleOp.emitError() << "Struct: " << structDef.getName()
+                             << " doesn't have a constrain func";
+        signalPassFailure();
+        return;
+      }
+
+      if (!computeFunc) {
+        moduleOp.emitError() << "Struct: " << structDef.getName() << " doesn't have a compute func";
+        signalPassFailure();
         return;
       }
 
@@ -391,7 +402,7 @@ private:
       DenseMap<Value, Value> rewrites;
       SmallVector<AuxAssignment> auxAssignments;
 
-      // Lower constraints
+      // Lower equality constraints
       constrainFunc.walk([&](EmitEqualityOp constraintOp) {
         Value lhsExpr = constraintOp.getOperand(0);
         Value rhsExpr = constraintOp.getOperand(1);
@@ -410,6 +421,15 @@ private:
           );
           constraintOp.setOperand(1, loweredExpr);
         }
+      });
+
+      // The pass doesn't currently support EmitContainmentOp as it depends on
+      // https://veridise.atlassian.net/browse/LLZK-245 being fixed Once this is fixed, the op
+      // should lower all the elements in the row being looked up
+      constrainFunc.walk([&](EmitContainmentOp containOp) {
+        moduleOp.emitError() << "EmitContainmentOp is unsupported for now in the lowering pass";
+        signalPassFailure();
+        return;
       });
 
       // Lower function call arguments
@@ -450,9 +470,6 @@ private:
         }
       });
 
-      if (!computeFunc) {
-        return;
-      }
       DenseMap<Value, Value> rebuildMemo;
       Block &computeBlock = computeFunc.getBody().front();
       OpBuilder builder(&computeBlock, computeBlock.getTerminator()->getIterator());
@@ -461,7 +478,6 @@ private:
       for (const auto &assign : auxAssignments) {
         Value rebuiltExpr =
             rebuildExprInCompute(assign.computedValue, computeFunc, builder, rebuildMemo);
-        llvm::dbgs() << "rebuilt expr: " << rebuiltExpr << "\n";
         builder.create<FieldWriteOp>(
             assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxFieldName),
             rebuiltExpr

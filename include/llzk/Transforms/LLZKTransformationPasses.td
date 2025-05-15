@@ -56,19 +56,16 @@ def PolyLoweringPass
     : LLZKPass<"llzk-poly-lowering-pass"> {
   let summary = "Lowers the degree of all polynomial equations to a specified maximum";
   let description = [{
-    Remove field and struct declarations that are unused within the current compilation
-    unit. Note that this pass may cause linking issues with external modules that
-    depend on any unused field and struct declarations from this compilation unit.
-
-    Pass should be run after llzk-duplicate-read-write-elim
-    and llzk-duplicate-op-elim for maximum effect.
+    Rewrite constraints to equisatisfiable system
+    where the maximum degree of any polynomial
+    is less than or equal to the specified degree. 
+   
   }];
   let constructor = "llzk::createPolyLoweringPass()";
   let options = [Option<"maxDegree", "max-degree", "unsigned",
                         /* default */ "2",
-                        "Rewrite constraints to equisatisfiable system "
-                        "where the maximum degree of any polynomial"
-                        "is less than or equal to the specified degree. ">,
+                        "Maximum degree of constraint polynomials "
+                        "(default 2, minimum 2)">,
   ];
 }
 
