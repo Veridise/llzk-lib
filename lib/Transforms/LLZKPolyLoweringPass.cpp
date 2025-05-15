@@ -38,7 +38,6 @@ namespace llzk {
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::felt;
-using namespace llzk::array;
 using namespace llzk::function;
 using namespace llzk::component;
 using namespace llzk::constrain;
