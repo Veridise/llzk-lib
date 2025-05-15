@@ -599,6 +599,10 @@ public:
       tracker_.recordInstantiation(inputTy, newTy);
       return newTy;
     });
+
+    addConversion([this](ArrayType inputTy) {
+      return inputTy.cloneWith(convertType(inputTy.getElementType()));
+    });
   }
 };
 
@@ -631,14 +635,18 @@ public:
     if (op.calleeIsStructCompute()) {
       if (StructType newStTy = getIfSingleton<StructType>(newResultTypes)) {
         LLVM_DEBUG(llvm::dbgs() << "[CallStructFuncPattern]   newStTy: " << newStTy << '\n');
-        assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated");
+        if (!isNullOrEmpty(newStTy.getParams())) {
+          return failure();
+        }
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
         tracker_.reportDelayedDiagnostics(newStTy, op);
       }
     } else if (op.calleeIsStructConstrain()) {
       if (StructType newStTy = getAtIndex<StructType>(adapter.getArgOperands().getTypes(), 0)) {
         LLVM_DEBUG(llvm::dbgs() << "[CallStructFuncPattern]   newStTy: " << newStTy << '\n');
-        assert(isNullOrEmpty(newStTy.getParams()) && "must be fully instantiated");
+        if (!isNullOrEmpty(newStTy.getParams())) {
+          return failure();
+        }
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
       }
     }
@@ -650,12 +658,35 @@ public:
   }
 };
 
+// This one ensures FieldDefOp types are converted even if there are no read/write to them.
+class FieldDefOpPattern : public OpConversionPattern<FieldDefOp> {
+public:
+  FieldDefOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &)
+      // future proof: use higher priority than GeneralTypeReplacePattern
+      : OpConversionPattern<FieldDefOp>(converter, ctx, 2) {}
+
+  LogicalResult matchAndRewrite(
+      FieldDefOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
+  ) const override {
+    LLVM_DEBUG(llvm::dbgs() << "[FieldDefOpPattern] FieldDefOp: " << op << '\n');
+
+    Type oldFieldType = op.getType();
+    Type newFieldType = getTypeConverter()->convertType(oldFieldType);
+    if (oldFieldType == newFieldType) {
+      // nothing changed
+      return failure();
+    }
+    rewriter.modifyOpInPlace(op, [&op, &newFieldType]() { op.setType(newFieldType); });
+    return success();
+  }
+};
+
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
   ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
-  patterns.add<CallStructFuncPattern>(tyConv, ctx, tracker);
+  patterns.add<CallStructFuncPattern, FieldDefOpPattern>(tyConv, ctx, tracker);
   return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
