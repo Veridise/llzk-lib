@@ -21,6 +21,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -230,10 +231,10 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
 
 /// Wrapper for PatternRewriter.replaceOpWithNewOp() that automatically copies discardable
 /// attributes (i.e. attributes other than those specifically defined as part of the Op in ODS).
-template <typename OpTy, typename Rewriter, typename... Args>
-inline OpTy replaceOpWithNewOp(Rewriter &rewriter, Operation *op, Args &&...args) {
+template <typename OpClass, typename Rewriter, typename... Args>
+inline OpClass replaceOpWithNewOp(Rewriter &rewriter, Operation *op, Args &&...args) {
   DictionaryAttr attrs = op->getDiscardableAttrDictionary();
-  OpTy newOp = rewriter.template replaceOpWithNewOp<OpTy>(op, std::forward<Args>(args)...);
+  OpClass newOp = rewriter.template replaceOpWithNewOp<OpClass>(op, std::forward<Args>(args)...);
   newOp->setDiscardableAttrs(attrs);
   return newOp;
 }
@@ -252,16 +253,17 @@ static struct {
   const std::tuple<CallOp, CreateArrayOp> NoGeneralBuilder {};
 } OpClassesWithStructTypes;
 
-// NOTE: This pattern will produce a compile error if `OpTy` does not define the general
+// NOTE: This pattern will produce a compile error if `OpClass` does not define the general
 // `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)` function
 // because that function is required by the `replaceOpWithNewOp()` call.
-template <typename OpTy> class GeneralTypeReplacePattern : public OpConversionPattern<OpTy> {
+template <typename OpClass> class GeneralTypeReplacePattern : public OpConversionPattern<OpClass> {
 public:
-  using OpConversionPattern<OpTy>::OpConversionPattern;
+  using OpConversionPattern<OpClass>::OpConversionPattern;
 
-  LogicalResult matchAndRewrite(OpTy op, OpTy::Adaptor adaptor, ConversionPatternRewriter &rewriter)
-      const override {
-    const TypeConverter *converter = OpConversionPattern<OpTy>::getTypeConverter();
+  LogicalResult matchAndRewrite(
+      OpClass op, OpClass::Adaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    const TypeConverter *converter = OpConversionPattern<OpClass>::getTypeConverter();
     assert(converter);
     // Convert result types
     SmallVector<Type> newResultTypes;
@@ -289,7 +291,7 @@ public:
       }
     }
     // Build a new Op in place of the current one
-    replaceOpWithNewOp<OpTy>(
+    replaceOpWithNewOp<OpClass>(
         rewriter, op, TypeRange(newResultTypes), adaptor.getOperands(), ArrayRef(newAttrs)
     );
     return success();
@@ -325,17 +327,17 @@ public:
   }
 };
 
-template <typename I, typename NextOpType, typename... OtherOpTypes>
+template <typename I, typename NextOpClass, typename... OtherOpClasses>
 inline void applyToMoreTypes(I inserter) {
-  std::apply(inserter, std::tuple<NextOpType, OtherOpTypes...> {});
+  std::apply(inserter, std::tuple<NextOpClass, OtherOpClasses...> {});
 }
 template <typename I> inline void applyToMoreTypes(I inserter) {}
 
 /// Return a new `RewritePatternSet` that includes a `GeneralTypeReplacePattern` for all of
-/// `OpClassesWithStructTypes.WithGeneralBuilder` and `AdditionalOpTypes`.
+/// `OpClassesWithStructTypes.WithGeneralBuilder` and `AdditionalOpClasses`.
 /// Note: `GeneralTypeReplacePattern` uses the default benefit (1) so additional patterns with a
 /// higher priority can be added for any of the Ops already included and that will take precedence.
-template <typename... AdditionalOpTypes>
+template <typename... AdditionalOpClasses>
 RewritePatternSet
 newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionTarget &target) {
   RewritePatternSet patterns(ctx);
@@ -343,7 +345,7 @@ newGeneralRewritePatternSet(TypeConverter &tyConv, MLIRContext *ctx, ConversionT
     patterns.add<GeneralTypeReplacePattern<decltype(opClasses)>...>(tyConv, ctx);
   };
   std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
-  applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
+  applyToMoreTypes<decltype(inserter), AdditionalOpClasses...>(inserter);
   // Special case for CreateArrayOp since GeneralTypeReplacePattern does not work
   patterns.add<CreateArrayOpTypeReplacePattern>(tyConv, ctx);
   // Add builtin FunctionType converter
@@ -400,12 +402,12 @@ template <typename Check> bool runCheck(Operation *op, Check check) {
 
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
 /// based on the given `TypeConverter` for Ops listed in both fields of `OpClassesWithStructTypes`
-/// and in `AdditionalOpTypes`.
+/// and in `AdditionalOpClasses`.
 /// Additional legality checks can be included for certain ops that will run along with the default
 /// check. For an op to be considered legal all checks (default plus additional checks if any) must
 /// return true.
 ///
-template <typename... AdditionalOpTypes, typename... AdditionalChecks>
+template <typename... AdditionalOpClasses, typename... AdditionalChecks>
 ConversionTarget
 newConverterDefinedTarget(TypeConverter &tyConv, MLIRContext *ctx, AdditionalChecks &&...checks) {
   ConversionTarget target = newBaseTarget(ctx);
@@ -416,7 +418,7 @@ newConverterDefinedTarget(TypeConverter &tyConv, MLIRContext *ctx, AdditionalChe
   };
   std::apply(inserter, OpClassesWithStructTypes.NoGeneralBuilder);
   std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
-  applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
+  applyToMoreTypes<decltype(inserter), AdditionalOpClasses...>(inserter);
   return target;
 }
 
@@ -843,13 +845,13 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step2_Unroll {
 
-// OpTy can be any LoopLikeOpInterface
 // TODO: not guaranteed to work with WhileOp, can try with our custom attributes though.
-template <typename OpTy> class LoopUnrollPattern : public OpRewritePattern<OpTy> {
+template <HasInterface<LoopLikeOpInterface> OpClass>
+class LoopUnrollPattern : public OpRewritePattern<OpClass> {
 public:
-  using OpRewritePattern<OpTy>::OpRewritePattern;
+  using OpRewritePattern<OpClass>::OpRewritePattern;
 
-  LogicalResult matchAndRewrite(OpTy loopOp, PatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(OpClass loopOp, PatternRewriter &rewriter) const override {
     if (auto maybeConstant = getConstantTripCount(loopOp)) {
       uint64_t tripCount = *maybeConstant;
       if (tripCount == 0) {
@@ -1466,12 +1468,12 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step4_Cleanup {
 
-template <typename OpTy> class EraseOpPattern : public OpConversionPattern<OpTy> {
+template <typename OpClass> class EraseOpPattern : public OpConversionPattern<OpClass> {
 public:
-  EraseOpPattern(MLIRContext *ctx) : OpConversionPattern<OpTy>(ctx) {}
+  EraseOpPattern(MLIRContext *ctx) : OpConversionPattern<OpClass>(ctx) {}
 
-  LogicalResult
-  matchAndRewrite(OpTy op, OpTy::Adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(OpClass op, OpClass::Adaptor, ConversionPatternRewriter &rewriter)
+      const override {
     rewriter.eraseOp(op);
     return success();
   }

@@ -14,10 +14,10 @@
 
 namespace llzk {
 
-template <typename OpType, typename... Args>
-inline OpType delegate_to_build(mlir::Location location, Args &&...args) {
+template <typename OpClass, typename... Args>
+inline OpClass delegate_to_build(mlir::Location location, Args &&...args) {
   mlir::OpBuilder builder(location->getContext());
-  return builder.create<OpType>(location, std::forward<Args>(args)...);
+  return builder.create<OpClass>(location, std::forward<Args>(args)...);
 }
 
 } // namespace llzk

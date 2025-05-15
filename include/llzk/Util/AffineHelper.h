@@ -80,8 +80,8 @@ mlir::LogicalResult verifyAffineMapInstantiations(
 ///
 /// Note: This function supports Ops with 2 ODS-defined operand segments with the second being the
 /// size of the `mapOperands` segment and the first provided by the `firstSegmentSize` parameter.
-template <typename OpType>
-inline typename OpType::Properties &buildInstantiationAttrs(
+template <typename OpClass>
+inline typename OpClass::Properties &buildInstantiationAttrs(
     mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState,
     mlir::ArrayRef<mlir::ValueRange> mapOperands, mlir::DenseI32ArrayAttr numDimsPerMap,
     int32_t firstSegmentSize = 0
@@ -95,7 +95,7 @@ inline typename OpType::Properties &buildInstantiationAttrs(
     rangeSegments.push_back(s);
     mapOpsSegmentSize += s;
   }
-  typename OpType::Properties &props = odsState.getOrAddProperties<typename OpType::Properties>();
+  typename OpClass::Properties &props = odsState.getOrAddProperties<typename OpClass::Properties>();
   props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr(rangeSegments));
   props.setOperandSegmentSizes({firstSegmentSize, mapOpsSegmentSize});
   if (numDimsPerMap) {
@@ -107,7 +107,7 @@ inline typename OpType::Properties &buildInstantiationAttrs(
 /// Utility for build() functions that initializes the `mapOpGroupSizes`, and
 /// `numDimsPerMap` attributes for an Op that performs affine map instantiations in the case were
 /// the op does not have two variadic sets of operands.
-template <typename OpType>
+template <typename OpClass>
 inline void buildInstantiationAttrsNoSegments(
     mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState,
     mlir::ArrayRef<mlir::ValueRange> mapOperands, mlir::DenseI32ArrayAttr numDimsPerMap
@@ -119,7 +119,7 @@ inline void buildInstantiationAttrsNoSegments(
     int32_t s = static_cast<int32_t>(r.size());
     rangeSegments.push_back(s);
   }
-  typename OpType::Properties &props = odsState.getOrAddProperties<typename OpType::Properties>();
+  typename OpClass::Properties &props = odsState.getOrAddProperties<typename OpClass::Properties>();
   props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr(rangeSegments));
   if (numDimsPerMap) {
     props.setNumDimsPerMap(numDimsPerMap);
@@ -129,11 +129,11 @@ inline void buildInstantiationAttrsNoSegments(
 /// Utility for build() functions that initializes the `operandSegmentSizes`, `mapOpGroupSizes`, and
 /// `numDimsPerMap` attributes for an Op that supports affine map instantiations but in the case
 /// where there are none.
-template <typename OpType>
-inline typename OpType::Properties &buildInstantiationAttrsEmpty(
+template <typename OpClass>
+inline typename OpClass::Properties &buildInstantiationAttrsEmpty(
     mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState, int32_t firstSegmentSize = 0
 ) {
-  typename OpType::Properties &props = odsState.getOrAddProperties<typename OpType::Properties>();
+  typename OpClass::Properties &props = odsState.getOrAddProperties<typename OpClass::Properties>();
   // `operandSegmentSizes` = [ firstSegmentSize, mapOperands.size ]
   props.setOperandSegmentSizes({firstSegmentSize, 0});
   // There are no affine map operands so initialize the related properties as empty arrays.
@@ -145,11 +145,11 @@ inline typename OpType::Properties &buildInstantiationAttrsEmpty(
 /// Utility for build() functions that initializes the `mapOpGroupSizes`, and
 /// `numDimsPerMap` attributes for an Op that supports affine map instantiations but in the case
 /// where there are none.
-template <typename OpType>
-inline typename OpType::Properties &buildInstantiationAttrsEmptyNoSegments(
+template <typename OpClass>
+inline typename OpClass::Properties &buildInstantiationAttrsEmptyNoSegments(
     mlir::OpBuilder &odsBuilder, mlir::OperationState &odsState
 ) {
-  typename OpType::Properties &props = odsState.getOrAddProperties<typename OpType::Properties>();
+  typename OpClass::Properties &props = odsState.getOrAddProperties<typename OpClass::Properties>();
   // There are no affine map operands so initialize the related properties as empty arrays.
   props.setMapOpGroupSizes(odsBuilder.getDenseI32ArrayAttr({}));
   props.setNumDimsPerMap(odsBuilder.getDenseI32ArrayAttr({}));
