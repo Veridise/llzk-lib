@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-flatten %s
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component1A<[]> {
