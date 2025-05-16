@@ -20,23 +20,13 @@
 
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.h.inc"
 
-#include "llzk-c/IR.h"
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DEFINE_C_API_STRUCT(name, storage)                                                         \
-  struct name {                                                                                    \
-    storage *ptr;                                                                                  \
-  };                                                                                               \
-  typedef struct name name
-
-DEFINE_C_API_STRUCT(LlzkIncludeOp, void);
-
-#undef DEFINE_C_API_STRUCT
-
-LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Include, include);
+MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Include, llzk__include);
 
 #ifdef __cplusplus
 }

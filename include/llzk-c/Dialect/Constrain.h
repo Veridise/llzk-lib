@@ -18,24 +18,13 @@
 #ifndef LLZK_C_DIALECT_CONSTRAIN_H
 #define LLZK_C_DIALECT_CONSTRAIN_H
 
-#include "llzk-c/IR.h"
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DEFINE_C_API_STRUCT(name, storage)                                                         \
-  struct name {                                                                                    \
-    storage *ptr;                                                                                  \
-  };                                                                                               \
-  typedef struct name name
-
-DEFINE_C_API_STRUCT(LlzkEmitEqualityOp, void);
-DEFINE_C_API_STRUCT(LlzkEmitContainmentOp, void);
-
-#undef DEFINE_C_API_STRUCT
-
-LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Constrain, constrain);
+MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Constrain, llzk__constrain);
 
 #ifdef __cplusplus
 }

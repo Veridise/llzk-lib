@@ -18,25 +18,13 @@
 #ifndef LLZK_C_DIALECT_GLOBAL_H
 #define LLZK_C_DIALECT_GLOBAL_H
 
-#include "llzk-c/IR.h"
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DEFINE_C_API_STRUCT(name, storage)                                                         \
-  struct name {                                                                                    \
-    storage *ptr;                                                                                  \
-  };                                                                                               \
-  typedef struct name name
-
-DEFINE_C_API_STRUCT(LlzkGLobalDefOp, void);
-DEFINE_C_API_STRUCT(LlzkGlobalReadOp, void);
-DEFINE_C_API_STRUCT(LlzkGlobalWriteOp, void);
-
-#undef DEFINE_C_API_STRUCT
-
-LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Global, global);
+MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Global, llzk__global);
 
 #ifdef __cplusplus
 }

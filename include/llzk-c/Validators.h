@@ -17,6 +17,4 @@
 
 #include "llzk/Validators/LLZKValidationPasses.capi.h.inc"
 
-#include "mlir-c/Support.h"
-
 #endif

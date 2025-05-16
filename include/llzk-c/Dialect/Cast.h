@@ -18,24 +18,13 @@
 #ifndef LLZK_C_DIALECT_CAST_H
 #define LLZK_C_DIALECT_CAST_H
 
-#include "llzk-c/IR.h"
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DEFINE_C_API_STRUCT(name, storage)                                                         \
-  struct name {                                                                                    \
-    storage *ptr;                                                                                  \
-  };                                                                                               \
-  typedef struct name name
-
-DEFINE_C_API_STRUCT(LlzkIntToFeltOp, void);
-DEFINE_C_API_STRUCT(LlzkFeltToIntOp, void);
-
-#undef DEFINE_C_API_STRUCT
-
-LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Cast, cast);
+MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Cast, llzk__cast);
 
 #ifdef __cplusplus
 }

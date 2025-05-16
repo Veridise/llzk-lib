@@ -17,6 +17,4 @@
 
 #include "llzk/Transforms/LLZKTransformationPasses.capi.h.inc"
 
-#include "mlir-c/Support.h"
-
 #endif

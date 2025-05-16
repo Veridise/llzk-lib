@@ -20,30 +20,33 @@
 
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.capi.h.inc"
 
-#include "llzk-c/IR.h"
+#include <stdint.h>
+
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DEFINE_C_API_STRUCT(name, storage)                                                         \
-  struct name {                                                                                    \
-    storage *ptr;                                                                                  \
-  };                                                                                               \
-  typedef struct name name
+MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Array, llzk__array);
 
-DEFINE_C_API_STRUCT(LlzkCreateArrayOp, void);
-DEFINE_C_API_STRUCT(LlzkReadArrayOp, void);
-DEFINE_C_API_STRUCT(LlzkWriteArrayOp, void);
-DEFINE_C_API_STRUCT(LlzkExtractArrayOp, void);
-DEFINE_C_API_STRUCT(LlzkInsertArrayOp, void);
-DEFINE_C_API_STRUCT(LlzkArrayLengthOp, void);
+/// Creates a llzk::array::ArrayType using a list of attributes as dimensions
+MLIR_CAPI_EXPORTED MlirType llzkArrayTypeGet(MlirType, intptr_t, MlirAttribute const *);
 
-DEFINE_C_API_STRUCT(LlzkArrayType, const void);
+/// Returns true of the type is a llzk::array::ArrayType.
+MLIR_CAPI_EXPORTED bool llzkTypeIsALlzkArrayType(MlirType);
 
-#undef DEFINE_C_API_STRUCT
+/// Creates a llzk::array::ArrayType using a list of numbers as dimensions
+MLIR_CAPI_EXPORTED MlirType llzkArrayTypeGetWithNumericDis(MlirType, intptr_t, int64_t const *);
 
-LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Array, array);
+/// Returns the element type of a llzk::array::ArrayType.
+MLIR_CAPI_EXPORTED MlirType llzkArrayTypeGetElementType(MlirType);
+
+/// Returns the number of dimensions of a llzk::array::ArrayType.
+MLIR_CAPI_EXPORTED intptr_t llzkArrayTypeGetNumDims(MlirType);
+
+/// Returns the n-th dimention of a llzk::array::ArrayType.
+MLIR_CAPI_EXPORTED MlirAttribute llzkArrayTypeGetDim(MlirType, intptr_t);
 
 #ifdef __cplusplus
 }

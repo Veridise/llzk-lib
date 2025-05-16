@@ -18,40 +18,16 @@
 #ifndef LLZK_C_DIALECT_FELT_H
 #define LLZK_C_DIALECT_FELT_H
 
-#include "llzk-c/IR.h"
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DEFINE_C_API_STRUCT(name, storage)                                                         \
-  struct name {                                                                                    \
-    storage *ptr;                                                                                  \
-  };                                                                                               \
-  typedef struct name name
+MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt);
 
-DEFINE_C_API_STRUCT(LLzkFeltConstantOp, void);
-DEFINE_C_API_STRUCT(LLzkFeltNonDetOp, void);
-DEFINE_C_API_STRUCT(LLzkAddFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkSubFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkMulFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkDivFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkModFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkNegFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkInvFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkAndFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkOrFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkXorFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkNotFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkShlFeltOp, void);
-DEFINE_C_API_STRUCT(LLzkShrFeltOp, void);
-
-DEFINE_C_API_STRUCT(LLzkFeltConstAttr, const void);
-DEFINE_C_API_STRUCT(LLzkFeltType, const void);
-
-#undef DEFINE_C_API_STRUCT
-
-LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, felt);
+/// Creates a llzk::felt::FeltType.
+MLIR_CAPI_EXPORTED MlirType llzkFeltTypeGet(MlirContext);
 
 #ifdef __cplusplus
 }

@@ -18,23 +18,16 @@
 #ifndef LLZK_C_DIALECT_LLZK_H
 #define LLZK_C_DIALECT_LLZK_H
 
-#include "llzk-c/IR.h"
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DEFINE_C_API_STRUCT(name, storage)                                                         \
-  struct name {                                                                                    \
-    storage *ptr;                                                                                  \
-  };                                                                                               \
-  typedef struct name name
+MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(LLZK, llzk);
 
-DEFINE_C_API_STRUCT(LlzkPublicAttr, const void);
-
-#undef DEFINE_C_API_STRUCT
-
-LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(LLZK, llzk);
+/// Creates a llzk::PublicAttr.
+MLIR_CAPI_EXPORTED MlirAttribute llzkPublicAttrGet(MlirContext);
 
 #ifdef __cplusplus
 }

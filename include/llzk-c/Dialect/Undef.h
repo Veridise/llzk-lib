@@ -18,23 +18,13 @@
 #ifndef LLZK_C_DIALECT_UNDEF_H
 #define LLZK_C_DIALECT_UNDEF_H
 
-#include "llzk-c/IR.h"
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DEFINE_C_API_STRUCT(name, storage)                                                         \
-  struct name {                                                                                    \
-    storage *ptr;                                                                                  \
-  };                                                                                               \
-  typedef struct name name
-
-DEFINE_C_API_STRUCT(LlzkUndefOp, void);
-
-#undef DEFINE_C_API_STRUCT
-
-LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Undef, undef);
+MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Undef, llzk__undef);
 
 #ifdef __cplusplus
 }

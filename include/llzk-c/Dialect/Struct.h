@@ -18,29 +18,16 @@
 #ifndef LLZK_C_DIALECT_STRUCT_H
 #define LLZK_C_DIALECT_STRUCT_H
 
-#include "llzk-c/IR.h"
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DEFINE_C_API_STRUCT(name, storage)                                                         \
-  struct name {                                                                                    \
-    storage *ptr;                                                                                  \
-  };                                                                                               \
-  typedef struct name name
+MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component);
 
-DEFINE_C_API_STRUCT(LlzkStructDefOp, void);
-DEFINE_C_API_STRUCT(LlzkFieldDefOp, void);
-DEFINE_C_API_STRUCT(LlzkFieldReadOp, void);
-DEFINE_C_API_STRUCT(LlzkFieldWriteOp, void);
-DEFINE_C_API_STRUCT(LlzkCreateStructOp, void);
-
-DEFINE_C_API_STRUCT(LlzkStructType, const void);
-
-#undef DEFINE_C_API_STRUCT
-
-LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Struct, component);
+/// Creates a llzk::component::StructType.
+MLIR_CAPI_EXPORTED MlirType llzkStructTypeGet(MlirContext);
 
 #ifdef __cplusplus
 }

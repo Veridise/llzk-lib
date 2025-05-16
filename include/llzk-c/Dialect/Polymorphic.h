@@ -20,27 +20,16 @@
 
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc"
 
-#include "llzk-c/IR.h"
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DEFINE_C_API_STRUCT(name, storage)                                                         \
-  struct name {                                                                                    \
-    storage *ptr;                                                                                  \
-  };                                                                                               \
-  typedef struct name name
+MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic);
 
-DEFINE_C_API_STRUCT(LlzkConstReadOp, void);
-DEFINE_C_API_STRUCT(LlzkUnifiableCastOp, void);
-DEFINE_C_API_STRUCT(LlzkApplyMapOp, void);
-
-DEFINE_C_API_STRUCT(LlzkTypeVarType, const void);
-
-#undef DEFINE_C_API_STRUCT
-
-LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, polymorphic);
+/// Creates a llzk::polymorphic::TypeVarType.
+MLIR_CAPI_EXPORTED MlirType llzkTypeVarTypeGet(MlirContext, MlirStringRef);
 
 #ifdef __cplusplus
 }

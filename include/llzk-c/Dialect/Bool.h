@@ -18,32 +18,13 @@
 #ifndef LLZK_C_DIALECT_BOOL_H
 #define LLZK_C_DIALECT_BOOL_H
 
-#include "llzk-c/IR.h"
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-enum Cmp { Cmp_EQ, Cmp_NE, Cmp_LT, Cmp_LE, Cmp_GT, Cmp_GE };
-
-#define DEFINE_C_API_STRUCT(name, storage)                                                         \
-  struct name {                                                                                    \
-    storage *ptr;                                                                                  \
-  };                                                                                               \
-  typedef struct name name
-
-DEFINE_C_API_STRUCT(LlzkAndBoolOp, void);
-DEFINE_C_API_STRUCT(LlzkOrBoolOp, void);
-DEFINE_C_API_STRUCT(LlzkXorBoolOp, void);
-DEFINE_C_API_STRUCT(LlzkNotBoolOp, void);
-DEFINE_C_API_STRUCT(LlzkAssertOp, void);
-DEFINE_C_API_STRUCT(LlzkCmpOp, void);
-
-DEFINE_C_API_STRUCT(LlzkCmpPredicateAttr, const void);
-
-#undef DEFINE_C_API_STRUCT
-
-LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Bool, bool);
+MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Bool, llzk__boolean);
 
 #ifdef __cplusplus
 }
