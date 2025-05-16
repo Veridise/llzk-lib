@@ -52,4 +52,21 @@ def UnusedDeclarationEliminationPass
   ];
 }
 
+def PolyLoweringPass
+    : LLZKPass<"llzk-poly-lowering-pass"> {
+  let summary = "Lowers the degree of all polynomial equations to a specified maximum";
+  let description = [{
+    Rewrite constraints to equisatisfiable system
+    where the maximum degree of any polynomial
+    is less than or equal to the specified degree. 
+   
+  }];
+  let constructor = "llzk::createPolyLoweringPass()";
+  let options = [Option<"maxDegree", "max-degree", "unsigned",
+                        /* default */ "2",
+                        "Maximum degree of constraint polynomials "
+                        "(default 2, minimum 2)">,
+  ];
+}
+
 #endif // LLZK_TRANSFORMATION_PASSES_TD
