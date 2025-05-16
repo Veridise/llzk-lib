@@ -20,7 +20,7 @@
 
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.h.inc"
 
-#include "mlir-c/IR.h"
+#include "llzk-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +36,7 @@ DEFINE_C_API_STRUCT(LlzkIncludeOp, void);
 
 #undef DEFINE_C_API_STRUCT
 
-MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Include, include);
+LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Include, include);
 
 #ifdef __cplusplus
 }

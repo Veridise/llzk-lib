@@ -20,7 +20,7 @@
 
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc"
 
-#include "mlir-c/IR.h"
+#include "llzk-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,7 +40,7 @@ DEFINE_C_API_STRUCT(LlzkTypeVarType, const void);
 
 #undef DEFINE_C_API_STRUCT
 
-MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, polymorphic);
+LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, polymorphic);
 
 #ifdef __cplusplus
 }

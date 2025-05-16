@@ -18,7 +18,7 @@
 #ifndef LLZK_C_DIALECT_CONSTRAIN_H
 #define LLZK_C_DIALECT_CONSTRAIN_H
 
-#include "mlir-c/IR.h"
+#include "llzk-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +35,7 @@ DEFINE_C_API_STRUCT(LlzkEmitContainmentOp, void);
 
 #undef DEFINE_C_API_STRUCT
 
-MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Constrain, constrain);
+LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Constrain, constrain);
 
 #ifdef __cplusplus
 }

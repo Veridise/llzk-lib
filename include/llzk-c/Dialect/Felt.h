@@ -18,7 +18,7 @@
 #ifndef LLZK_C_DIALECT_FELT_H
 #define LLZK_C_DIALECT_FELT_H
 
-#include "mlir-c/IR.h"
+#include "llzk-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +51,7 @@ DEFINE_C_API_STRUCT(LLzkFeltType, const void);
 
 #undef DEFINE_C_API_STRUCT
 
-MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, felt);
+LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, felt);
 
 #ifdef __cplusplus
 }

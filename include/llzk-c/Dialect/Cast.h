@@ -18,7 +18,7 @@
 #ifndef LLZK_C_DIALECT_CAST_H
 #define LLZK_C_DIALECT_CAST_H
 
-#include "mlir-c/IR.h"
+#include "llzk-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +35,7 @@ DEFINE_C_API_STRUCT(LlzkFeltToIntOp, void);
 
 #undef DEFINE_C_API_STRUCT
 
-MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Cast, cast);
+LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Cast, cast);
 
 #ifdef __cplusplus
 }

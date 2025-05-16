@@ -20,7 +20,7 @@
 
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.capi.h.inc"
 
-#include "mlir-c/IR.h"
+#include "llzk-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +43,7 @@ DEFINE_C_API_STRUCT(LlzkArrayType, const void);
 
 #undef DEFINE_C_API_STRUCT
 
-MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Array, array);
+LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Array, array);
 
 #ifdef __cplusplus
 }

@@ -18,7 +18,7 @@
 #ifndef LLZK_C_DIALECT_BOOL_H
 #define LLZK_C_DIALECT_BOOL_H
 
-#include "mlir-c/IR.h"
+#include "llzk-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +43,7 @@ DEFINE_C_API_STRUCT(LlzkCmpPredicateAttr, const void);
 
 #undef DEFINE_C_API_STRUCT
 
-MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Bool, bool);
+LLZK_DECLARE_CAPI_DIALECT_REGISTRATION(Bool, bool);
 
 #ifdef __cplusplus
 }
