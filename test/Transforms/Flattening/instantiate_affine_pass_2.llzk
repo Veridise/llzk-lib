@@ -62,14 +62,14 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
-// CHECK-LABEL: struct.def @VarArray<[@N, @T]> {
-// CHECK-NEXT:    struct.field @val : !array.type<@N x !poly.tvar<@T>>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@VarArray<[@N, @T]>>
-// CHECK-NEXT:      struct.writef %[[V1]][@val] = %[[V0]] : <@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
-// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@VarArray<[@N, @T]>>
+// CHECK-LABEL: struct.def @"VarArray_11_\1A"<[@T]> {
+// CHECK-NEXT:    struct.field @val : !array.type<11 x !poly.tvar<@T>>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<11 x !poly.tvar<@T>>) -> !struct.type<@"VarArray_11_\1A"<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@"VarArray_11_\1A"<[@T]>>
+// CHECK-NEXT:      struct.writef %[[V1]][@val] = %[[V0]] : <@"VarArray_11_\1A"<[@T]>>, !array.type<11 x !poly.tvar<@T>>
+// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@"VarArray_11_\1A"<[@T]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@VarArray<[@N, @T]>>, %[[V3:[0-9a-zA-Z_\.]+]]: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@"VarArray_11_\1A"<[@T]>>, %[[V3:[0-9a-zA-Z_\.]+]]: !array.type<11 x !poly.tvar<@T>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -91,7 +91,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@ComponentB> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = array.new  : <11 x !struct.type<@ToFelt<[#[[$M0]]]>>>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = function.call @VarArray::@compute(%[[V2]]) : (!array.type<11 x !struct.type<@ToFelt<[#[[$M0]]]>>>) -> !struct.type<@VarArray<[11, !struct.type<@ToFelt<[#[[$M0]]]>>]>>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = function.call @"VarArray_11_\1A"::@compute(%[[V2]]) : (!array.type<11 x !struct.type<@ToFelt<[#[[$M0]]]>>>) -> !struct.type<@"VarArray_11_\1A"<[!struct.type<@ToFelt<[#[[$M0]]]>>]>>
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@ComponentB>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentB>, %[[V5:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {

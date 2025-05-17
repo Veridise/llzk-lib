@@ -103,17 +103,22 @@ TEST_F(TypeTests, testStructTypeIsConcreteWithParams) {
 
 TEST_F(TypeTests, testShortString) {
   OpBuilder bldr(&ctx);
-  EXPECT_EQ("b", shortString(bldr.getIntegerType(1)));
-  EXPECT_EQ("i", shortString(bldr.getIndexType()));
-  EXPECT_EQ("!t<@A>", shortString(TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "A"))));
+  EXPECT_EQ("b", BuildShortTypeString::from(bldr.getIntegerType(1)));
+  EXPECT_EQ("i", BuildShortTypeString::from(bldr.getIndexType()));
   EXPECT_EQ(
-      "!a<b:4_235_123>",
-      shortString(ArrayType::get(bldr.getIntegerType(1), ArrayRef<int64_t> {4, 235, 123}))
+      "!t<@A>", BuildShortTypeString::from(TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "A")))
   );
-  EXPECT_EQ("!s<@S1>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1"))));
+  EXPECT_EQ(
+      "!a<b:4_235_123>", BuildShortTypeString::from(
+                             ArrayType::get(bldr.getIntegerType(1), ArrayRef<int64_t> {4, 235, 123})
+                         )
+  );
+  EXPECT_EQ(
+      "!s<@S1>", BuildShortTypeString::from(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1")))
+  );
   EXPECT_EQ(
       "!s<@S1_43>",
-      shortString(StructType::get(
+      BuildShortTypeString::from(StructType::get(
           FlatSymbolRefAttr::get(&ctx, "S1"),
           ArrayAttr::get(&ctx, ArrayRef<Attribute> {bldr.getIntegerAttr(bldr.getIndexType(), 43)})
       ))
@@ -133,23 +138,26 @@ TEST_F(TypeTests, testShortString) {
     );
     EXPECT_EQ(
         "!s<@Top_43_@ParamName_!a<f:3_5_1_5_7>_!s<@S1_43>_!m<(d0)->(d0)>>",
-        shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "Top"), params))
+        BuildShortTypeString::from(StructType::get(FlatSymbolRefAttr::get(&ctx, "Top"), params))
     );
   }
 
   // No protection/escaping of special characters in the original name
-  EXPECT_EQ("!s<@S1_!a<>>", shortString(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1_!a<>"))));
+  EXPECT_EQ(
+      "!s<@S1_!a<>>",
+      BuildShortTypeString::from(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1_!a<>")))
+  );
 
   // Empty string produces "?"
-  EXPECT_EQ("?", shortString(FlatSymbolRefAttr::get(&ctx, "")));
-  EXPECT_EQ("?", shortString(FlatSymbolRefAttr::get(&ctx, StringRef())));
+  EXPECT_EQ("?", BuildShortTypeString::from(FlatSymbolRefAttr::get(&ctx, "")));
+  EXPECT_EQ("?", BuildShortTypeString::from(FlatSymbolRefAttr::get(&ctx, StringRef())));
 
   {
     constexpr char withNull[] = {'a', 'b', '\0', 'c', 'd'};
     EXPECT_EQ(
         "5_@head_@ab_@Good_2",
         // clang-format off
-        shortString(ArrayAttr::get( &ctx, ArrayRef<Attribute> {
+        BuildShortTypeString::from(ArrayAttr::get(&ctx, ArrayRef<Attribute> {
           bldr.getIntegerAttr(bldr.getIndexType(), 5),
           FlatSymbolRefAttr::get(&ctx, "head\0_tail"),
           FlatSymbolRefAttr::get(&ctx, withNull),
@@ -159,4 +167,66 @@ TEST_F(TypeTests, testShortString) {
         // clang-format on
     );
   }
+}
+
+TEST_F(TypeTests, testShortStringWithPartials) {
+  auto symA = FlatSymbolRefAttr::get(&ctx, "A");
+  auto symB = FlatSymbolRefAttr::get(&ctx, "B");
+  auto symC = FlatSymbolRefAttr::get(&ctx, "C");
+  auto symD = FlatSymbolRefAttr::get(&ctx, "D");
+  auto symE = FlatSymbolRefAttr::get(&ctx, "E");
+  auto symF = FlatSymbolRefAttr::get(&ctx, "F");
+  auto symG = FlatSymbolRefAttr::get(&ctx, "G");
+  auto symH = FlatSymbolRefAttr::get(&ctx, "H");
+  auto symJ = FlatSymbolRefAttr::get(&ctx, "J");
+  auto symK = FlatSymbolRefAttr::get(&ctx, "K");
+
+  std::string v1 = BuildShortTypeString::from(
+      "prefix",
+      ArrayRef<Attribute> {
+          nullptr, symA, nullptr, nullptr, symB, nullptr, nullptr, nullptr, symC, nullptr
+      }
+  );
+  EXPECT_EQ("prefix_\x1A_@A_\x1A_\x1A_@B_\x1A_\x1A_\x1A_@C_\x1A", v1);
+
+  std::string v2 = BuildShortTypeString::from(
+      v1, ArrayRef<Attribute> {nullptr, nullptr, symD, nullptr, symE, symF, nullptr}
+  );
+  EXPECT_EQ("prefix_\x1A_@A_\x1A_@D_@B_\x1A_@E_@F_@C_\x1A", v2);
+
+  std::string v3 =
+      BuildShortTypeString::from(v2, ArrayRef<Attribute> {symG, nullptr, nullptr, symH});
+  EXPECT_EQ("prefix_@G_@A_\x1A_@D_@B_\x1A_@E_@F_@C_@H", v3);
+
+  std::string v4 = BuildShortTypeString::from(v3, ArrayRef<Attribute> {symJ, symK});
+  EXPECT_EQ("prefix_@G_@A_@J_@D_@B_@K_@E_@F_@C_@H", v4);
+}
+
+TEST_F(TypeTests, testShortStringWithPartials_withExtensions) {
+  auto symA = FlatSymbolRefAttr::get(&ctx, "A");
+  auto symB = FlatSymbolRefAttr::get(&ctx, "B");
+  auto symC = FlatSymbolRefAttr::get(&ctx, "C");
+  auto symD = FlatSymbolRefAttr::get(&ctx, "D");
+  auto symE = FlatSymbolRefAttr::get(&ctx, "E");
+  auto symF = FlatSymbolRefAttr::get(&ctx, "F");
+  auto symG = FlatSymbolRefAttr::get(&ctx, "G");
+  auto symH = FlatSymbolRefAttr::get(&ctx, "H");
+  auto symJ = FlatSymbolRefAttr::get(&ctx, "J");
+  auto symK = FlatSymbolRefAttr::get(&ctx, "K");
+
+  std::string v1 = BuildShortTypeString::from(
+      "prefix", ArrayRef<Attribute> {nullptr, symA, nullptr, nullptr, symB}
+  );
+  EXPECT_EQ("prefix_\x1A_@A_\x1A_\x1A_@B", v1);
+
+  std::string v2 =
+      BuildShortTypeString::from(v1, ArrayRef<Attribute> {nullptr, nullptr, symC, nullptr, symD});
+  EXPECT_EQ("prefix_\x1A_@A_\x1A_@C_@B_\x1A_@D", v2);
+
+  std::string v3 =
+      BuildShortTypeString::from(v2, ArrayRef<Attribute> {symE, nullptr, nullptr, symF});
+  EXPECT_EQ("prefix_@E_@A_\x1A_@C_@B_\x1A_@D_@F", v3);
+
+  std::string v4 = BuildShortTypeString::from(v3, ArrayRef<Attribute> {symG, symH, symJ, symK});
+  EXPECT_EQ("prefix_@E_@A_@G_@C_@B_@H_@D_@F_@J_@K", v4);
 }
