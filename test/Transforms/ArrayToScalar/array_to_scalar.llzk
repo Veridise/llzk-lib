@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
 
 module attributes {veridise.lang = "llzk"} {
   function.def @new_then_read() -> index {

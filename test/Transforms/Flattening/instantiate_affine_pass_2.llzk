@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 #id = affine_map<(i)->(i)>
 #IdxToLen = affine_map<(i)->(5*i+1)>
