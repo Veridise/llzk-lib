@@ -25,6 +25,7 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/Affine/IR/AffineOps.h>
 #include <mlir/Dialect/Affine/LoopUtils.h>
@@ -91,9 +92,7 @@ public:
   void updateModifiedFlag(bool currStepModified) { modified |= currStepModified; }
 
   void recordInstantiation(StructType oldType, StructType newType) {
-    // Assert invariant required by `structInstantiations`
-    assert(!isNullOrEmpty(oldType.getParams()));
-    assert(isNullOrEmpty(newType.getParams()));
+    assert(!isNullOrEmpty(oldType.getParams()) && "cannot instantiate with no params");
 
     auto forwardResult = structInstantiations.try_emplace(oldType, newType);
     if (forwardResult.second) {
@@ -483,60 +482,101 @@ class StructCloner {
     }
   };
 
-  static inline DenseMap<Attribute, Attribute>
-  buildNameToValueMap(ArrayAttr paramNames, ArrayRef<Attribute> paramInstantiations) {
-    // pre-conditions
-    assert(!isNullOrEmpty(paramNames));
-    assert(paramNames.size() == paramInstantiations.size());
-    // Map parameter names to instantiated values
-    DenseMap<Attribute, Attribute> ret;
-    for (size_t i = 0, e = paramNames.size(); i < e; ++i) {
-      ret[paramNames[i]] = paramInstantiations[i];
-    }
-    return ret;
-  }
-
   FailureOr<StructType> genClone(StructType typeAtCaller, ArrayRef<Attribute> typeAtCallerParams) {
     // Find the StructDefOp for the original StructType
     FailureOr<SymbolLookupResult<StructDefOp>> r = typeAtCaller.getDefinition(symTables, rootMod);
     if (failed(r)) {
+      LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   skip: cannot find StructDefOp \n");
       return failure(); // getDefinition() already emits a sufficient error message
     }
-    StructDefOp origStruct = r->get();
 
-    // Clone the original struct, apply the new name, and remove the parameters.
+    StructDefOp origStruct = r->get();
+    StructType typeAtDef = origStruct.getType();
+    MLIRContext *ctx = origStruct.getContext();
+
+    // Map of StructDefOp parameter name to concrete Attribute at the current instantiation site.
+    DenseMap<Attribute, Attribute> paramNameToConcrete;
+    // List of concrete Attributes from the struct instantiation with `nullptr` at any positions
+    // where the original attribute from the current instantiation site was not concrete. This is
+    // used for generating the new struct name. See `BuildShortTypeString::from()`.
+    SmallVector<Attribute> attrsForInstantiatedNameSuffix;
+    // Parameter list for the new StructDefOp containing the names that must be preserved because
+    // they were not assigned concrete values at the current instantiation site.
+    ArrayAttr reducedParamNameList = nullptr;
+    // Reduced from `typeAtCallerParams` to contain only the non-concrete Attributes.
+    ArrayAttr reducedCallerParams = nullptr;
+    {
+      ArrayAttr paramNames = typeAtDef.getParams();
+
+      // pre-conditions
+      assert(!isNullOrEmpty(paramNames));
+      assert(paramNames.size() == typeAtCallerParams.size());
+
+      SmallVector<Attribute> remainingNames;
+      SmallVector<Attribute> nonConcreteParams;
+      for (size_t i = 0, e = paramNames.size(); i < e; ++i) {
+        Attribute next = typeAtCallerParams[i];
+        if (isConcreteAttr<false>(next)) {
+          paramNameToConcrete[paramNames[i]] = next;
+          attrsForInstantiatedNameSuffix.push_back(next);
+        } else {
+          remainingNames.push_back(paramNames[i]);
+          nonConcreteParams.push_back(next);
+          attrsForInstantiatedNameSuffix.push_back(nullptr);
+        }
+      }
+      // post-conditions
+      assert(remainingNames.size() == nonConcreteParams.size());
+      assert(attrsForInstantiatedNameSuffix.size() == paramNames.size());
+      assert(remainingNames.size() + paramNameToConcrete.size() == paramNames.size());
+
+      if (paramNameToConcrete.empty()) {
+        LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   skip: no concrete params \n");
+        return failure();
+      }
+      if (!remainingNames.empty()) {
+        reducedParamNameList = ArrayAttr::get(ctx, remainingNames);
+        reducedCallerParams = ArrayAttr::get(ctx, nonConcreteParams);
+      }
+    }
+
+    // Clone the original struct, apply the new name, and set the parameter list of the new struct
+    // to contain only those that did not have concrete instantiated values.
     StructDefOp newStruct = origStruct.clone();
-    newStruct.setSymName(
-        typeAtCaller.getNameRef().getLeafReference().str() + "_" + shortString(typeAtCallerParams)
-    );
-    newStruct.setConstParamsAttr(ArrayAttr {});
+    newStruct.setConstParamsAttr(reducedParamNameList);
+    newStruct.setSymName(BuildShortTypeString::from(
+        typeAtCaller.getNameRef().getLeafReference().str(), attrsForInstantiatedNameSuffix
+    ));
 
     // Insert 'newStruct' into the parent ModuleOp of the original StructDefOp. Use the
     // `SymbolTable::insert()` function directly so that the name will be made unique.
     ModuleOp parentModule = llvm::cast<ModuleOp>(origStruct.getParentOp());
     symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(origStruct));
-    // Retrieve the new type AFTER inserting since the name may be appended to make it unique.
-    StructType newRemoteType = newStruct.getType();
+    // Retrieve the new type AFTER inserting since the name may be appended to make it unique and
+    // use the remaining non-concrete parameters from the original type.
+    StructType newRemoteType = newStruct.getType(reducedCallerParams);
+    LLVM_DEBUG({
+      llvm::dbgs() << "[StructCloner]   original def type: " << typeAtDef << '\n';
+      llvm::dbgs() << "[StructCloner]   cloned def type: " << newStruct.getType() << '\n';
+      llvm::dbgs() << "[StructCloner]   original remote type: " << typeAtCaller << '\n';
+      llvm::dbgs() << "[StructCloner]   cloned remote type: " << newRemoteType << '\n';
+    });
 
-    // Within the new struct, replace all references to the original struct's type (i.e. the
-    // locally-parameterized version) with the new flattened (i.e. no parameters) struct's type,
-    // and replace all uses of the struct parameters with the concrete values.
-    MLIRContext *ctx = rootMod.getContext();
-    StructType typeAtDef = origStruct.getType();
-    DenseMap<Attribute, Attribute> nameToValueMap =
-        buildNameToValueMap(typeAtDef.getParams(), typeAtCallerParams);
-    MappedTypeConverter tyConv(typeAtDef, newRemoteType, nameToValueMap);
+    // Within the new struct, replace all references to the original StructType (i.e. the
+    // locally-parameterized version) with the new locally-parameterized StructType,
+    // and replace all uses of the removed struct parameters with the concrete values.
+    MappedTypeConverter tyConv(typeAtDef, newStruct.getType(), paramNameToConcrete);
     ConversionTarget target =
         newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx, tableOffsetIsntSymbol);
-
     target.addIllegalOp<ConstReadOp>();
 
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
     patterns.add<ClonedStructConstReadOpPattern>(
-        tyConv, ctx, nameToValueMap, tracker_.delayedDiagnosticSet(newRemoteType)
+        tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newRemoteType)
     );
-    patterns.add<ClonedStructFieldReadOpPattern>(tyConv, ctx, nameToValueMap);
+    patterns.add<ClonedStructFieldReadOpPattern>(tyConv, ctx, paramNameToConcrete);
     if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
+      LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   instantiating body of struct failed \n");
       return failure();
     }
     return newRemoteType;
@@ -547,24 +587,11 @@ public:
       : tracker_(tracker), rootMod(root), symTables() {}
 
   FailureOr<StructType> createInstantiatedClone(StructType orig) {
-    LLVM_DEBUG(llvm::dbgs() << "[createInstantiatedClone] orig " << orig << '\n');
+    LLVM_DEBUG(llvm::dbgs() << "[StructCloner] orig: " << orig << '\n');
     if (ArrayAttr params = orig.getParams()) {
-      // If all parameters are concrete values (Integer or Type), then replace with a
-      // no-parameter StructType referencing the de-parameterized struct.
-      if (llvm::all_of(params.getValue(), isConcreteAttr<>)) {
-        FailureOr<StructType> res = genClone(orig, params.getValue());
-        LLVM_DEBUG(llvm::dbgs() << "[createInstantiatedClone]   genClone -> " << res << '\n');
-        if (succeeded(res)) {
-          return res.value();
-        } else {
-          LLVM_DEBUG(llvm::dbgs() << "[createInstantiatedClone]   skip: genClone() failed \n");
-        }
-      } else {
-        LLVM_DEBUG(llvm::dbgs() << "[createInstantiatedClone]   skip: non-concrete param(s) \n");
-      }
-    } else {
-      LLVM_DEBUG(llvm::dbgs() << "[createInstantiatedClone]   skip: nullptr for params \n");
+      return genClone(orig, params.getValue());
     }
+    LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   skip: nullptr for params \n");
     return failure();
   }
 };
@@ -635,25 +662,22 @@ public:
     if (op.calleeIsStructCompute()) {
       if (StructType newStTy = getIfSingleton<StructType>(newResultTypes)) {
         LLVM_DEBUG(llvm::dbgs() << "[CallStructFuncPattern]   newStTy: " << newStTy << '\n');
-        if (!isNullOrEmpty(newStTy.getParams())) {
-          return failure();
-        }
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
         tracker_.reportDelayedDiagnostics(newStTy, op);
       }
     } else if (op.calleeIsStructConstrain()) {
       if (StructType newStTy = getAtIndex<StructType>(adapter.getArgOperands().getTypes(), 0)) {
         LLVM_DEBUG(llvm::dbgs() << "[CallStructFuncPattern]   newStTy: " << newStTy << '\n');
-        if (!isNullOrEmpty(newStTy.getParams())) {
-          return failure();
-        }
         calleeAttr = appendLeaf(newStTy.getNameRef(), calleeAttr.getLeafReference());
       }
     }
-    replaceOpWithNewOp<CallOp>(
+
+    LLVM_DEBUG(llvm::dbgs() << "[CallStructFuncPattern] replaced " << op);
+    CallOp newOp = replaceOpWithNewOp<CallOp>(
         rewriter, op, newResultTypes, calleeAttr, adapter.getMapOperands(),
         op.getNumDimsPerMapAttr(), adapter.getArgOperands()
     );
+    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
     return success();
   }
 };
@@ -943,6 +967,7 @@ public:
     }
 
     StructType newRetTy = StructType::get(oldRetTy.getNameRef(), out.paramsOfStructTy);
+    LLVM_DEBUG(llvm::dbgs() << "[InstantiateAtCallOpCompute]   newRetTy: " << newRetTy << '\n');
     if (newRetTy == oldRetTy) {
       // nothing changed
       return failure();
@@ -959,14 +984,12 @@ public:
         );
       });
     }
-    LLVM_DEBUG(
-        llvm::dbgs() << "[InstantiateAtCallOpCompute] instantiating " << oldRetTy << " as "
-                     << newRetTy << " in \"" << op << "\"\n"
-    );
-    replaceOpWithNewOp<CallOp>(
+    LLVM_DEBUG(llvm::dbgs() << "[InstantiateAtCallOpCompute] replaced " << op);
+    CallOp newOp = replaceOpWithNewOp<CallOp>(
         rewriter, op, TypeRange {newRetTy}, op.getCallee(),
         AffineMapFolder::getConvertedMapOpGroups(out), out.dimsPerGroup, op.getArgOperands()
     );
+    LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
     return success();
   }
 

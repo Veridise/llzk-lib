@@ -33,31 +33,41 @@ class ArrayType;
 /// class generates, they are not escaped. That means these string representations are not safe to
 /// reverse back into a Type. It's only intended to produce a unique name for instantiated structs
 /// that may give some hint when debugging regarding the original struct name and the params used.
-class ShortTypeStringifier {
+class BuildShortTypeString {
+  static constexpr char PLACEHOLDER = '\x1A';
+
   std::string ret;
   llvm::raw_string_ostream ss;
 
-public:
-  ShortTypeStringifier() : ret(), ss(ret) {}
-  std::string str() const { return ret; }
-  ShortTypeStringifier &append(mlir::Type);
-  ShortTypeStringifier &append(mlir::ArrayRef<mlir::Attribute>);
+  BuildShortTypeString() : ret(), ss(ret) {}
+  BuildShortTypeString &append(mlir::Type);
+  BuildShortTypeString &append(mlir::ArrayRef<mlir::Attribute>);
+  BuildShortTypeString &append(mlir::Attribute);
 
-private:
-  void appendAnyAttr(mlir::Attribute);
   void appendSymRef(mlir::SymbolRefAttr);
   void appendSymName(mlir::StringRef);
+
+public:
+  /// Return a brief string representation of the given LLZK type.
+  static inline std::string from(mlir::Type type) {
+    return BuildShortTypeString().append(type).ret;
+  }
+
+  /// Return a brief string representation of the attribute list from a parameterized type.
+  /// Occurances of `nullptr` are represented with a `PLACEHOLDER` character.
+  static inline std::string from(mlir::ArrayRef<mlir::Attribute> attrs) {
+    return BuildShortTypeString().append(attrs).ret;
+  }
+
+  /// Take an existing name prefix/base that contains N>=0 `PLACEHOLDER` character(s) and the
+  /// Attribute list (size>=N) from a parameterized type. The first N elements in the list are
+  /// formatted and used to replace the `PLACEHOLDER` character(s) in the base string. The remaining
+  /// Attribute elements, if any, are formatted and appended to the end. Occurances of `nullptr` in
+  /// the Attribute list are formatted as the `PLACEHOLDER` character itself to allow for partial
+  /// instantiation of a parameterized type, preserving the location of attributes that were not
+  /// available in an earlier instantiation so they can be added by a later instantiation.
+  static std::string from(const std::string &base, mlir::ArrayRef<mlir::Attribute> attrs);
 };
-
-/// Return a brief string representation of the given LLZK type.
-static inline std::string shortString(mlir::Type type) {
-  return ShortTypeStringifier().append(type).str();
-}
-
-/// Return a brief string representation of the attribute list from a parameterized type.
-static inline std::string shortString(mlir::ArrayRef<mlir::Attribute> attrs) {
-  return ShortTypeStringifier().append(attrs).str();
-}
 
 // This function asserts that the given Attribute kind is legal within the LLZK types that can
 // contain Attribute parameters (i.e. ArrayType, StructType, and TypeVarType). This should be used
