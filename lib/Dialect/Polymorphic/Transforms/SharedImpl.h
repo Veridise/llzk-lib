@@ -77,9 +77,9 @@ static struct {
 
 } OpClassesWithStructTypes;
 
-template <typename I, typename NextOpType, typename... OtherOpTypes>
+template <typename I, typename NextOpClass, typename... OtherOpClasses>
 inline void applyToMoreTypes(I inserter) {
-  std::apply(inserter, std::tuple<NextOpType, OtherOpTypes...> {});
+  std::apply(inserter, std::tuple<NextOpClass, OtherOpClasses...> {});
 }
 template <typename I> inline void applyToMoreTypes(I inserter) {}
 
@@ -121,25 +121,26 @@ template <typename Check> inline bool runCheck(mlir::Operation *op, Check check)
 
 /// Wrapper for PatternRewriter.replaceOpWithNewOp() that automatically copies discardable
 /// attributes (i.e. attributes other than those specifically defined as part of the Op in ODS).
-template <typename OpTy, typename Rewriter, typename... Args>
-inline OpTy replaceOpWithNewOp(Rewriter &rewriter, mlir::Operation *op, Args &&...args) {
+template <typename OpClass, typename Rewriter, typename... Args>
+inline OpClass replaceOpWithNewOp(Rewriter &rewriter, mlir::Operation *op, Args &&...args) {
   mlir::DictionaryAttr attrs = op->getDiscardableAttrDictionary();
-  OpTy newOp = rewriter.template replaceOpWithNewOp<OpTy>(op, std::forward<Args>(args)...);
+  OpClass newOp = rewriter.template replaceOpWithNewOp<OpClass>(op, std::forward<Args>(args)...);
   newOp->setDiscardableAttrs(attrs);
   return newOp;
 }
 
-// NOTE: This pattern will produce a compile error if `OpTy` does not define the general
+// NOTE: This pattern will produce a compile error if `OpClass` does not define the general
 // `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)` function
 // because that function is required by the `replaceOpWithNewOp()` call.
-template <typename OpTy> class GeneralTypeReplacePattern : public mlir::OpConversionPattern<OpTy> {
+template <typename OpClass>
+class GeneralTypeReplacePattern : public mlir::OpConversionPattern<OpClass> {
 public:
-  using mlir::OpConversionPattern<OpTy>::OpConversionPattern;
+  using mlir::OpConversionPattern<OpClass>::OpConversionPattern;
 
   mlir::LogicalResult matchAndRewrite(
-      OpTy op, OpTy::Adaptor adaptor, mlir::ConversionPatternRewriter &rewriter
+      OpClass op, OpClass::Adaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override {
-    const mlir::TypeConverter *converter = mlir::OpConversionPattern<OpTy>::getTypeConverter();
+    const mlir::TypeConverter *converter = mlir::OpConversionPattern<OpClass>::getTypeConverter();
     assert(converter);
     // Convert result types
     mlir::SmallVector<mlir::Type> newResultTypes;
@@ -167,7 +168,7 @@ public:
       }
     }
     // Build a new Op in place of the current one
-    replaceOpWithNewOp<OpTy>(
+    replaceOpWithNewOp<OpClass>(
         rewriter, op, mlir::TypeRange(newResultTypes), adaptor.getOperands(),
         mlir::ArrayRef(newAttrs)
     );
@@ -175,7 +176,7 @@ public:
   }
 };
 
-class CreateArrayOpTypeReplacePattern
+class CreateArrayOpClassReplacePattern
     : public mlir::OpConversionPattern<llzk::array::CreateArrayOp> {
 public:
   using mlir::OpConversionPattern<llzk::array::CreateArrayOp>::OpConversionPattern;
@@ -209,7 +210,7 @@ public:
   }
 };
 
-class CallOpTypeReplacePattern : public mlir::OpConversionPattern<llzk::function::CallOp> {
+class CallOpClassReplacePattern : public mlir::OpConversionPattern<llzk::function::CallOp> {
 public:
   using mlir::OpConversionPattern<llzk::function::CallOp>::OpConversionPattern;
 
@@ -230,10 +231,10 @@ public:
 };
 
 /// Return a new `RewritePatternSet` that includes a `GeneralTypeReplacePattern` for all of
-/// `OpClassesWithStructTypes.WithGeneralBuilder` and `AdditionalOpTypes`.
+/// `OpClassesWithStructTypes.WithGeneralBuilder` and `AdditionalOpClasses`.
 /// Note: `GeneralTypeReplacePattern` uses the default benefit (1) so additional patterns with a
 /// higher priority can be added for any of the Ops already included and that will take precedence.
-template <typename... AdditionalOpTypes>
+template <typename... AdditionalOpClasses>
 mlir::RewritePatternSet newGeneralRewritePatternSet(
     mlir::TypeConverter &tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &target
 ) {
@@ -242,9 +243,9 @@ mlir::RewritePatternSet newGeneralRewritePatternSet(
     patterns.add<GeneralTypeReplacePattern<decltype(opClasses)>...>(tyConv, ctx);
   };
   std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
-  applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
+  applyToMoreTypes<decltype(inserter), AdditionalOpClasses...>(inserter);
   // Special cases for ops where GeneralTypeReplacePattern doesn't work
-  patterns.add<CreateArrayOpTypeReplacePattern, CallOpTypeReplacePattern>(tyConv, ctx);
+  patterns.add<CreateArrayOpClassReplacePattern, CallOpClassReplacePattern>(tyConv, ctx);
   // Add builtin FunctionType converter
   mlir::populateFunctionOpInterfaceTypeConversionPattern<llzk::function::FuncDefOp>(
       patterns, tyConv
@@ -258,11 +259,11 @@ mlir::ConversionTarget newBaseTarget(mlir::MLIRContext *ctx);
 
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
 /// based on the given `TypeConverter` for Ops listed in both fields of `OpClassesWithStructTypes`
-/// and in `AdditionalOpTypes`.
+/// and in `AdditionalOpClasses`.
 /// Additional legality checks can be included for certain ops that will run along with the default
 /// check. For an op to be considered legal all checks (default plus additional checks if any) must
 /// return true.
-template <typename... AdditionalOpTypes, typename... AdditionalChecks>
+template <typename... AdditionalOpClasses, typename... AdditionalChecks>
 mlir::ConversionTarget newConverterDefinedTarget(
     mlir::TypeConverter &tyConv, mlir::MLIRContext *ctx, AdditionalChecks &&...checks
 ) {
@@ -275,7 +276,7 @@ mlir::ConversionTarget newConverterDefinedTarget(
   };
   std::apply(inserter, OpClassesWithStructTypes.NoGeneralBuilder);
   std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
-  applyToMoreTypes<decltype(inserter), AdditionalOpTypes...>(inserter);
+  applyToMoreTypes<decltype(inserter), AdditionalOpClasses...>(inserter);
   return target;
 }
 
