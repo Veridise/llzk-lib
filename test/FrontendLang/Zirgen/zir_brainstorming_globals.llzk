@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 // This demonstrates one way that zirgen runtime checks for globals could be handled. Requires boilerplate
 // code to track if globals have been initialized and requires LLZK to have zero-initialization semantics.

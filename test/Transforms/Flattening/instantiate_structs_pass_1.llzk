@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 /// Test calling a global function named "compute"; should have no change
 module attributes {veridise.lang = "llzk"} {
