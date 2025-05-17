@@ -16,6 +16,7 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/Concepts.h"
 
 #include <mlir/IR/BuiltinOps.h>
 
@@ -35,6 +36,7 @@ namespace llzk {
 
 using namespace mlir;
 using namespace llzk;
+using namespace llzk::array;
 using namespace llzk::felt;
 using namespace llzk::function;
 using namespace llzk::component;
@@ -518,7 +520,7 @@ class RedundantReadAndWriteEliminationPass
 
     // Read a value from an array. This works on both readarr operations (which
     // return a scalar value) and extractarr operations (which return a subarry).
-    auto doArrayReadLike = [&]<typename OpTy>(OpTy readarr) {
+    auto doArrayReadLike = [&]<HasInterface<ArrayAccessOpInterface> OpClass>(OpClass readarr) {
       std::shared_ptr<ReferenceNode> currValTree = state.at(translate(readarr.getArrRef()));
 
       for (Value origIdx : readarr.getIndices()) {
@@ -554,7 +556,7 @@ class RedundantReadAndWriteEliminationPass
     // invalidate ajoining parts of the subtree, since it is possible that
     // the variable index aliases one of the other elements and may or may not
     // override that value.
-    auto doArrayWriteLike = [&]<typename OpTy>(OpTy writearr) {
+    auto doArrayWriteLike = [&]<HasInterface<ArrayAccessOpInterface> OpClass>(OpClass writearr) {
       std::shared_ptr<ReferenceNode> currValTree = state.at(translate(writearr.getArrRef()));
       Value newVal = translate(writearr.getRvalue());
       std::shared_ptr<ReferenceNode> valTree = tryGetValTree(newVal);
@@ -644,7 +646,7 @@ class RedundantReadAndWriteEliminationPass
       }
     }
     // array ops
-    else if (auto newArray = dyn_cast<array::CreateArrayOp>(op)) {
+    else if (auto newArray = dyn_cast<CreateArrayOp>(op)) {
       auto arrayVal = ReferenceNode::create(newArray, newArray);
       state[newArray] = arrayVal;
 
@@ -663,14 +665,14 @@ class RedundantReadAndWriteEliminationPass
       }
 
       readVals.push_back(newArray);
-    } else if (auto readarr = dyn_cast<array::ReadArrayOp>(op)) {
+    } else if (auto readarr = dyn_cast<ReadArrayOp>(op)) {
       doArrayReadLike(readarr);
-    } else if (auto writearr = dyn_cast<array::WriteArrayOp>(op)) {
+    } else if (auto writearr = dyn_cast<WriteArrayOp>(op)) {
       doArrayWriteLike(writearr);
-    } else if (auto extractarr = dyn_cast<array::ExtractArrayOp>(op)) {
+    } else if (auto extractarr = dyn_cast<ExtractArrayOp>(op)) {
       // Logic is essentially the same as readarr
       doArrayReadLike(extractarr);
-    } else if (auto insertarr = dyn_cast<array::InsertArrayOp>(op)) {
+    } else if (auto insertarr = dyn_cast<InsertArrayOp>(op)) {
       // Logic is essentially the same as writearr
       doArrayWriteLike(insertarr);
     }

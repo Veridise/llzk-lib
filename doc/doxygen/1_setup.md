@@ -134,10 +134,10 @@ you can run the following commands:
 * Run install target (requires `CMAKE_INSTALL_PREFIX` to be set):
   `cmake --build . --target install`
 * Run clang-format on C++ files:
-  `clang-format -i $(find include -name '*.h' -type f) $(find lib tools -name '*.cpp' -type f)`
+  ``clang-format -i $(find include -name '*.h' -type f) $(find lib tools -name '*.cpp' -type f)``
 * Run clang-format (version 19.1 or later) on tablegen files:
-  `clang-format-19 -i $(find include -name '*.td' -type f)`
-* Run clang-tidy: `clang-tidy -p build/compile_commands.json $(find lib -name '*.cpp' -type f)`
+  ``clang-format-19 -i $(find include -name '*.td' -type f)``
+* Run clang-tidy: ``clang-tidy -p build/compile_commands.json $(find lib -name '*.cpp' -type f)``
   * Note that due to bugs in clang-tidy, this may segfault if running on all files.
 
 The build configuration will automatically export `compile_commands.json`, so

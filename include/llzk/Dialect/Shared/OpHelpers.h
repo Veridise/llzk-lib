@@ -21,16 +21,16 @@
 
 namespace llzk {
 
-/// Get the operation name, like "constrain.eq" for the given OpType.
+/// Get the operation name, like "constrain.eq" for the given OpClass.
 /// This function can be used when the compiler would complain about
-/// incomplete types if `OpType::getOperationName()` were called directly.
-template <typename OpType> inline llvm::StringLiteral getOperationName() {
-  return OpType::getOperationName();
+/// incomplete types if `OpClass::getOperationName()` were called directly.
+template <typename OpClass> inline llvm::StringLiteral getOperationName() {
+  return OpClass::getOperationName();
 }
 
-/// Return the closest surrounding parent operation that is of type 'OpType'.
-template <typename OpType> inline mlir::FailureOr<OpType> getParentOfType(mlir::Operation *op) {
-  if (OpType p = op->getParentOfType<OpType>()) {
+/// Return the closest surrounding parent operation that is of type 'OpClass'.
+template <typename OpClass> inline mlir::FailureOr<OpClass> getParentOfType(mlir::Operation *op) {
+  if (OpClass p = op->getParentOfType<OpClass>()) {
     return p;
   } else {
     return mlir::failure();

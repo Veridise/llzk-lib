@@ -23,6 +23,7 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
@@ -718,13 +719,13 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step2_Unroll {
 
-// OpTy can be any LoopLikeOpInterface
 // TODO: not guaranteed to work with WhileOp, can try with our custom attributes though.
-template <typename OpTy> class LoopUnrollPattern : public OpRewritePattern<OpTy> {
+template <HasInterface<LoopLikeOpInterface> OpClass>
+class LoopUnrollPattern : public OpRewritePattern<OpClass> {
 public:
-  using OpRewritePattern<OpTy>::OpRewritePattern;
+  using OpRewritePattern<OpClass>::OpRewritePattern;
 
-  LogicalResult matchAndRewrite(OpTy loopOp, PatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(OpClass loopOp, PatternRewriter &rewriter) const override {
     if (auto maybeConstant = getConstantTripCount(loopOp)) {
       uint64_t tripCount = *maybeConstant;
       if (tripCount == 0) {
@@ -1469,12 +1470,12 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step5_Cleanup {
 
-template <typename OpTy> class EraseOpPattern : public OpConversionPattern<OpTy> {
+template <typename OpClass> class EraseOpPattern : public OpConversionPattern<OpClass> {
 public:
-  EraseOpPattern(MLIRContext *ctx) : OpConversionPattern<OpTy>(ctx) {}
+  EraseOpPattern(MLIRContext *ctx) : OpConversionPattern<OpClass>(ctx) {}
 
-  LogicalResult
-  matchAndRewrite(OpTy op, OpTy::Adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(OpClass op, OpClass::Adaptor, ConversionPatternRewriter &rewriter)
+      const override {
     rewriter.eraseOp(op);
     return success();
   }
