@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 // TEST: partial instantiation of '@Zip' in first round of flattening pass and then the loop in '@Main'
 //  unrolls allowing a subsequent round of the flattening pass loop to make complete instantiations.
