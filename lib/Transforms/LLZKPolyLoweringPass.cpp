@@ -55,11 +55,6 @@ struct AuxAssignment {
 class PolyLoweringPass : public llzk::impl::PolyLoweringPassBase<PolyLoweringPass> {
 public:
   void setMaxDegree(unsigned degree) {
-    if (degree < 2) {
-      llvm::errs() << "Invalid max degree: " << degree << ". Must be >= 2.";
-      signalPassFailure();
-      return;
-    }
     this->maxDegree = degree;
   }
 
@@ -366,7 +361,7 @@ private:
 
     // Validate degree parameter
     if (maxDegree < 2) {
-      moduleOp.emitError() << "Invalid max degree: " << maxDegree << ". Must be >= 2.";
+      moduleOp.emitError() << "Invalid max degree: " << maxDegree.getValue() << ". Must be >= 2.";
       signalPassFailure();
       return;
     }

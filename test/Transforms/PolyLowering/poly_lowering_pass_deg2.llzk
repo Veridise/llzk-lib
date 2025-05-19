@@ -222,4 +222,3 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:           struct.field @poly_split_1 : !felt.type
 // CHECK:           struct.field @poly_split_2 : !felt.type
 // CHECK:         }
-// -----
