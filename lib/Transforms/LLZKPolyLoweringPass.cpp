@@ -54,9 +54,7 @@ struct AuxAssignment {
 
 class PolyLoweringPass : public llzk::impl::PolyLoweringPassBase<PolyLoweringPass> {
 public:
-  void setMaxDegree(unsigned degree) {
-    this->maxDegree = degree;
-  }
+  void setMaxDegree(unsigned degree) { this->maxDegree = degree; }
 
 private:
   unsigned auxCounter = 0;
