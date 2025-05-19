@@ -41,7 +41,7 @@ jobs:
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: Build documentation
-        run: nix --print-build-logs build '.#docs'
+        run: nix  --option sandbox false --print-build-logs build '.#docs'
 
       - name: Add or replace documentation in version-specific folder
         if: ${{ inputs.version != '' }}
