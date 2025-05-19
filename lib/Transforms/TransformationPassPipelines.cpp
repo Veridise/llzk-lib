@@ -57,8 +57,7 @@ void registerTransformationPassPipelines() {
       "and definitions.",
       [](mlir::OpPassManager &pm, const FullPolyLoweringOptions &opts) {
     // 1. Degree lowering
-    auto polyPass = llzk::createPolyLoweringPass(opts.maxDegree);
-    pm.addPass(std::move(polyPass));
+    pm.addPass(llzk::createPolyLoweringPass(opts.maxDegree));
 
     // 2. Cleanup
     addRemoveUnnecessaryOpsAndDefsPipeline(pm);

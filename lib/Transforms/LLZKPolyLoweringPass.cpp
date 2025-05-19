@@ -43,7 +43,7 @@ using namespace llzk::component;
 using namespace llzk::constrain;
 
 #define DEBUG_TYPE "llzk-poly-lowering-pass"
-#define AUXILIARY_FIELD_PREFIX "__llzk_aux_field_"
+#define AUXILIARY_FIELD_PREFIX "__llzk_poly_lowering_pass_aux_field_"
 
 namespace {
 
@@ -360,8 +360,8 @@ private:
     structDef.walk([&](FieldDefOp fieldDefOp) {
       if (fieldDefOp.getName().starts_with(AUXILIARY_FIELD_PREFIX)) {
         fieldDefOp.emitError() << "Field name: \"" << fieldDefOp.getName()
-                               << "\" starts with prefix: " << AUXILIARY_FIELD_PREFIX
-                               << " which is reserved for lowering pass";
+                               << "\" starts with prefix: \"" << AUXILIARY_FIELD_PREFIX
+                               << "\" which is reserved for lowering pass";
         signalPassFailure();
         return;
       }
