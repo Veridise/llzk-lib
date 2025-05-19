@@ -24,12 +24,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:           function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@CmpConstraint> attributes {function.allow_witness} {
 // CHECK:             %[[VAL_2:.*]] = struct.new : <@CmpConstraint>
 // CHECK:             %[[VAL_3:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
-// CHECK:             struct.writef %[[VAL_2]][@poly_split_0] = %[[VAL_3]] : <@CmpConstraint>, !felt.type
+// CHECK:             struct.writef %[[VAL_2]][@__llzk_aux_field_0] = %[[VAL_3]] : <@CmpConstraint>, !felt.type
 // CHECK:             function.return %[[VAL_2]] : !struct.type<@CmpConstraint>
 // CHECK:           }
 // CHECK:           function.def @constrain(%[[VAL_4:.*]]: !struct.type<@CmpConstraint>, %[[VAL_5:.*]]: !felt.type, %[[VAL_6:.*]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK:             %[[VAL_7:.*]] = felt.mul %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_8:.*]] = struct.readf %[[VAL_4]][@poly_split_0] : <@CmpConstraint>, !felt.type
+// CHECK:             %[[VAL_8:.*]] = struct.readf %[[VAL_4]][@__llzk_aux_field_0] : <@CmpConstraint>, !felt.type
 // CHECK:             constrain.eq %[[VAL_8]], %[[VAL_7]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_9:.*]] = felt.mul %[[VAL_8]], %[[VAL_8]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_10:.*]] = felt.mul %[[VAL_8]], %[[VAL_5]] : !felt.type, !felt.type
@@ -37,7 +37,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @poly_split_0 : !felt.type
+// CHECK:           struct.field @__llzk_aux_field_0 : !felt.type
 // CHECK:         }
 // -----
 
@@ -83,12 +83,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:           function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@Mod2> attributes {function.allow_witness} {
 // CHECK:             %[[VAL_2:.*]] = struct.new : <@Mod2>
 // CHECK:             %[[VAL_3:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
-// CHECK:             struct.writef %[[VAL_2]][@poly_split_0] = %[[VAL_3]] : <@Mod2>, !felt.type
+// CHECK:             struct.writef %[[VAL_2]][@__llzk_aux_field_0] = %[[VAL_3]] : <@Mod2>, !felt.type
 // CHECK:             function.return %[[VAL_2]] : !struct.type<@Mod2>
 // CHECK:           }
 // CHECK:           function.def @constrain(%[[VAL_4:.*]]: !struct.type<@Mod2>, %[[VAL_5:.*]]: !felt.type, %[[VAL_6:.*]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK:             %[[VAL_7:.*]] = felt.mul %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_8:.*]] = struct.readf %[[VAL_4]][@poly_split_0] : <@Mod2>, !felt.type
+// CHECK:             %[[VAL_8:.*]] = struct.readf %[[VAL_4]][@__llzk_aux_field_0] : <@Mod2>, !felt.type
 // CHECK:             constrain.eq %[[VAL_8]], %[[VAL_7]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_9:.*]] = felt.mul %[[VAL_8]], %[[VAL_8]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_10:.*]] = felt.mul %[[VAL_8]], %[[VAL_5]] : !felt.type, !felt.type
@@ -96,7 +96,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @poly_split_0 : !felt.type
+// CHECK:           struct.field @__llzk_aux_field_0 : !felt.type
 // CHECK:         }
 
 // CHECK-LABEL:   struct.def @Mod1 {
@@ -104,12 +104,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:           function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@Mod1> attributes {function.allow_witness} {
 // CHECK:             %[[VAL_2:.*]] = struct.new : <@Mod1>
 // CHECK:             %[[VAL_3:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
-// CHECK:             struct.writef %[[VAL_2]][@poly_split_1] = %[[VAL_3]] : <@Mod1>, !felt.type
+// CHECK:             struct.writef %[[VAL_2]][@__llzk_aux_field_1] = %[[VAL_3]] : <@Mod1>, !felt.type
 // CHECK:             function.return %[[VAL_2]] : !struct.type<@Mod1>
 // CHECK:           }
 // CHECK:           function.def @constrain(%[[VAL_4:.*]]: !struct.type<@Mod1>, %[[VAL_5:.*]]: !felt.type, %[[VAL_6:.*]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK:             %[[VAL_7:.*]] = felt.mul %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_8:.*]] = struct.readf %[[VAL_4]][@poly_split_1] : <@Mod1>, !felt.type
+// CHECK:             %[[VAL_8:.*]] = struct.readf %[[VAL_4]][@__llzk_aux_field_1] : <@Mod1>, !felt.type
 // CHECK:             constrain.eq %[[VAL_8]], %[[VAL_7]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_9:.*]] = felt.mul %[[VAL_8]], %[[VAL_8]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_10:.*]] = felt.mul %[[VAL_8]], %[[VAL_5]] : !felt.type, !felt.type
@@ -117,7 +117,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             function.call @Mod2::@constrain(%[[VAL_11]], %[[VAL_9]], %[[VAL_10]]) : (!struct.type<@Mod2>, !felt.type, !felt.type) -> ()
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @poly_split_1 : !felt.type
+// CHECK:           struct.field @__llzk_aux_field_1 : !felt.type
 // CHECK:         }
 // -----
 
@@ -174,12 +174,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             %[[VAL_2:.*]] = struct.new : <@Mod2>
 // CHECK:             struct.writef %[[VAL_2]][@val] = %[[VAL_0]] : <@Mod2>, !felt.type
 // CHECK:             %[[VAL_3:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
-// CHECK:             struct.writef %[[VAL_2]][@poly_split_0] = %[[VAL_3]] : <@Mod2>, !felt.type
+// CHECK:             struct.writef %[[VAL_2]][@__llzk_aux_field_0] = %[[VAL_3]] : <@Mod2>, !felt.type
 // CHECK:             function.return %[[VAL_2]] : !struct.type<@Mod2>
 // CHECK:           }
 // CHECK:           function.def @constrain(%[[VAL_4:.*]]: !struct.type<@Mod2>, %[[VAL_5:.*]]: !felt.type, %[[VAL_6:.*]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK:             %[[VAL_7:.*]] = felt.mul %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_8:.*]] = struct.readf %[[VAL_4]][@poly_split_0] : <@Mod2>, !felt.type
+// CHECK:             %[[VAL_8:.*]] = struct.readf %[[VAL_4]][@__llzk_aux_field_0] : <@Mod2>, !felt.type
 // CHECK:             constrain.eq %[[VAL_8]], %[[VAL_7]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_9:.*]] = felt.mul %[[VAL_8]], %[[VAL_8]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_10:.*]] = felt.mul %[[VAL_8]], %[[VAL_5]] : !felt.type, !felt.type
@@ -187,7 +187,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @poly_split_0 : !felt.type
+// CHECK:           struct.field @__llzk_aux_field_0 : !felt.type
 // CHECK:         }
 
 // CHECK-LABEL:   struct.def @Mod1 {
@@ -197,14 +197,14 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             %[[VAL_2:.*]] = struct.new : <@Mod1>
 // CHECK:             %[[VAL_3:.*]] = struct.readf %[[VAL_2]][@val] : <@Mod1>, !felt.type
 // CHECK:             %[[VAL_4:.*]] = felt.mul %[[VAL_3]], %[[VAL_3]] : !felt.type, !felt.type
-// CHECK:             struct.writef %[[VAL_2]][@poly_split_1] = %[[VAL_4]] : <@Mod1>, !felt.type
+// CHECK:             struct.writef %[[VAL_2]][@__llzk_aux_field_1] = %[[VAL_4]] : <@Mod1>, !felt.type
 // CHECK:             %[[VAL_5:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
-// CHECK:             struct.writef %[[VAL_2]][@poly_split_2] = %[[VAL_5]] : <@Mod1>, !felt.type
+// CHECK:             struct.writef %[[VAL_2]][@__llzk_aux_field_2] = %[[VAL_5]] : <@Mod1>, !felt.type
 // CHECK:             function.return %[[VAL_2]] : !struct.type<@Mod1>
 // CHECK:           }
 // CHECK:           function.def @constrain(%[[VAL_6:.*]]: !struct.type<@Mod1>, %[[VAL_7:.*]]: !felt.type, %[[VAL_8:.*]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK:             %[[VAL_9:.*]] = felt.mul %[[VAL_7]], %[[VAL_8]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_10:.*]] = struct.readf %[[VAL_6]][@poly_split_2] : <@Mod1>, !felt.type
+// CHECK:             %[[VAL_10:.*]] = struct.readf %[[VAL_6]][@__llzk_aux_field_2] : <@Mod1>, !felt.type
 // CHECK:             constrain.eq %[[VAL_10]], %[[VAL_9]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_11:.*]] = felt.mul %[[VAL_10]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_12:.*]] = felt.mul %[[VAL_10]], %[[VAL_7]] : !felt.type, !felt.type
@@ -212,13 +212,13 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             function.call @Mod2::@constrain(%[[VAL_13]], %[[VAL_11]], %[[VAL_12]]) : (!struct.type<@Mod2>, !felt.type, !felt.type) -> ()
 // CHECK:             %[[VAL_14:.*]] = struct.readf %[[VAL_13]][@val] : <@Mod2>, !felt.type
 // CHECK:             %[[VAL_15:.*]] = felt.mul %[[VAL_14]], %[[VAL_14]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_16:.*]] = struct.readf %[[VAL_6]][@poly_split_1] : <@Mod1>, !felt.type
+// CHECK:             %[[VAL_16:.*]] = struct.readf %[[VAL_6]][@__llzk_aux_field_1] : <@Mod1>, !felt.type
 // CHECK:             constrain.eq %[[VAL_16]], %[[VAL_15]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_17:.*]] = felt.mul %[[VAL_16]], %[[VAL_16]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_18:.*]] = struct.readf %[[VAL_6]][@val] : <@Mod1>, !felt.type
 // CHECK:             constrain.eq %[[VAL_18]], %[[VAL_17]] : !felt.type, !felt.type
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @poly_split_1 : !felt.type
-// CHECK:           struct.field @poly_split_2 : !felt.type
+// CHECK:           struct.field @__llzk_aux_field_1 : !felt.type
+// CHECK:           struct.field @__llzk_aux_field_2 : !felt.type
 // CHECK:         }

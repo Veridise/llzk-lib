@@ -43,7 +43,7 @@ using namespace llzk::component;
 using namespace llzk::constrain;
 
 #define DEBUG_TYPE "llzk-poly-lowering-pass"
-#define AUXILIARY_FIELD_PREFIX "poly_split_"
+#define AUXILIARY_FIELD_PREFIX "__llzk_aux_field_"
 
 namespace {
 
@@ -354,6 +354,20 @@ private:
     llvm_unreachable("Unsupported op in rebuildExprInCompute");
   }
 
+  // Throw an error if the struct has a field that matches the prefix of the auxiliary fields
+  // we use in the pass. There **shouldn't** be a conflict but just in case let's throw the check.
+  void checkForAuxFieldConflicts(StructDefOp structDef) {
+    structDef.walk([&](FieldDefOp fieldDefOp) {
+      if (fieldDefOp.getName().starts_with(AUXILIARY_FIELD_PREFIX)) {
+        fieldDefOp.emitError() << "Field name: \"" << fieldDefOp.getName()
+                               << "\" starts with prefix: " << AUXILIARY_FIELD_PREFIX
+                               << " which is reserved for lowering pass";
+        signalPassFailure();
+        return;
+      }
+    });
+  }
+
   void runOnOperation() override {
     ModuleOp moduleOp = getOperation();
 
@@ -380,6 +394,8 @@ private:
         signalPassFailure();
         return;
       }
+
+      checkForAuxFieldConflicts(structDef);
 
       DenseMap<Value, unsigned> degreeMemo;
       DenseMap<Value, Value> rewrites;
