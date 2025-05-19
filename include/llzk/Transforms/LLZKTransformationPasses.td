@@ -56,11 +56,12 @@ def PolyLoweringPass
     : LLZKPass<"llzk-poly-lowering-pass"> {
   let summary = "Lowers the degree of all polynomial equations to a specified maximum";
   let description = [{
-    Rewrite constraints to equisatisfiable system
-    where the maximum degree of any polynomial
-    is less than or equal to the specified degree. 
-   
-  }];
+    Rewrites constraint expressions into an (observationally) equivalent system where the degree of every polynomial
+    is less than or equal to the specified maximum.
+
+    This pass is best used as part of the `-llzk-full-poly-lowering` pipeline, which includes
+    additional cleanup passes to ensure correctness and optimal performance.
+}];
   let constructor = "llzk::createPolyLoweringPass()";
   let options = [Option<"maxDegree", "max-degree", "unsigned",
                         /* default */ "2",

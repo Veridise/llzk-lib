@@ -1,4 +1,4 @@
-//===-- LLZKPolyLoweringPass.cpp ------------*- C++ -*-===//
+//===-- LLZKPolyLoweringPass.cpp --------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -53,11 +53,21 @@ struct AuxAssignment {
 };
 
 class PolyLoweringPass : public llzk::impl::PolyLoweringPassBase<PolyLoweringPass> {
+public:
+  void setMaxDegree(unsigned degree) {
+    if (degree < 2) {
+      llvm::errs() << "Invalid max degree: " << degree << ". Must be >= 2.";
+      signalPassFailure();
+      return;
+    }
+    this->maxDegree = degree;
+  }
+
 private:
   unsigned auxCounter = 0;
 
   void collectStructDefs(ModuleOp modOp, SmallVectorImpl<StructDefOp> &structDefs) {
-    modOp.walk([&](StructDefOp structDef) {
+    modOp.walk([&structDefs](StructDefOp structDef) {
       structDefs.push_back(structDef);
       return WalkResult::skip();
     });
@@ -107,25 +117,6 @@ private:
     }
 
     llvm_unreachable("Unhandled Felt SSA value in degree computation");
-  }
-
-  void addAuxConstraint(
-      FuncDefOp constrainFunc, Value highDegVal, StringRef auxFieldName, StructDefOp structDef
-  ) {
-    Block &block = constrainFunc.getBody().front();
-    OpBuilder builder(&block, block.begin());
-
-    // Write to struct field
-    Value selfVal = constrainFunc.getArgument(0); // %self
-    builder.create<FieldWriteOp>(
-        structDef.getLoc(), selfVal, builder.getStringAttr(auxFieldName), highDegVal
-    );
-
-    // Emit constraint: aux = highDegVal
-    auto auxVal = builder.create<FieldReadOp>(
-        structDef.getLoc(), highDegVal.getType(), selfVal, builder.getStringAttr(auxFieldName)
-    );
-    builder.create<EmitEqualityOp>(auxVal.getLoc(), auxVal, highDegVal);
   }
 
   /// Replaces all *subsequent uses* of `oldVal` with `newVal`, starting *after* `afterOp`.
@@ -188,7 +179,6 @@ private:
       unsigned lhsDeg = getDegree(lhs, degreeMemo);
       unsigned rhsDeg = getDegree(rhs, degreeMemo);
 
-      Block &block = constrainFunc.getBody().front();
       OpBuilder builder(mulOp.getOperation()->getBlock(), ++Block::iterator(mulOp));
       Value selfVal = constrainFunc.getArgument(0); // %self argument
       bool eraseMul = lhsDeg + rhsDeg > maxDegree;
@@ -385,14 +375,15 @@ private:
       FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
       FuncDefOp computeFunc = structDef.getComputeFuncOp();
       if (!constrainFunc) {
-        moduleOp.emitError() << "Struct: " << structDef.getName()
-                             << " doesn't have a constrain func";
+        structDef.emitOpError() << "\"" << structDef.getName() << "\" doesn't have a '"
+                                << FUNC_NAME_CONSTRAIN << "' function";
         signalPassFailure();
         return;
       }
 
       if (!computeFunc) {
-        moduleOp.emitError() << "Struct: " << structDef.getName() << " doesn't have a compute func";
+        structDef.emitOpError() << "\"" << structDef.getName() << "\" doesn't have a '"
+                                << FUNC_NAME_COMPUTE << "' function";
         signalPassFailure();
         return;
       }
@@ -403,22 +394,24 @@ private:
 
       // Lower equality constraints
       constrainFunc.walk([&](EmitEqualityOp constraintOp) {
-        Value lhsExpr = constraintOp.getOperand(0);
-        Value rhsExpr = constraintOp.getOperand(1);
-        unsigned degreeLhs = getDegree(lhsExpr, degreeMemo);
-        unsigned degreeRhs = getDegree(rhsExpr, degreeMemo);
+        auto &lhsOperand = constraintOp.getLhsMutable();
+        auto &rhsOperand = constraintOp.getRhsMutable();
+        unsigned degreeLhs = getDegree(lhsOperand.get(), degreeMemo);
+        unsigned degreeRhs = getDegree(rhsOperand.get(), degreeMemo);
 
         if (degreeLhs > maxDegree) {
           Value loweredExpr = lowerExpression(
-              lhsExpr, maxDegree, structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+              lhsOperand.get(), maxDegree, structDef, constrainFunc, degreeMemo, rewrites,
+              auxAssignments
           );
-          constraintOp.setOperand(0, loweredExpr);
+          lhsOperand.set(loweredExpr);
         }
         if (degreeRhs > maxDegree) {
           Value loweredExpr = lowerExpression(
-              rhsExpr, maxDegree, structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+              rhsOperand.get(), maxDegree, structDef, constrainFunc, degreeMemo, rewrites,
+              auxAssignments
           );
-          constraintOp.setOperand(1, loweredExpr);
+          rhsOperand.set(loweredExpr);
         }
       });
 
@@ -437,14 +430,14 @@ private:
           SmallVector<Value> newOperands = llvm::to_vector(callOp.getArgOperands());
           bool modified = false;
 
-          for (auto [idx, arg] : llvm::enumerate(newOperands)) {
+          for (Value &arg : newOperands) {
             unsigned deg = getDegree(arg, degreeMemo);
 
             if (deg > 1) {
               Value loweredArg = lowerExpression(
                   arg, maxDegree, structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
               );
-              newOperands[idx] = loweredArg;
+              arg = loweredArg;
               modified = true;
             }
           }
@@ -456,14 +449,10 @@ private:
               mapOperands.push_back(group);
             }
 
-            auto newCall = builder.create<CallOp>(
-                callOp.getLoc(), callOp.getResultTypes(), callOp.getCallee(),
-                mapOperands, // Correct type now: ArrayRef<ValueRange>
+            builder.create<CallOp>(
+                callOp.getLoc(), callOp.getResultTypes(), callOp.getCallee(), mapOperands,
                 callOp.getNumDimsPerMap(), newOperands
             );
-            if (callOp->getNumResults() > 0) {
-              callOp->replaceAllUsesWith(newCall.getOperation());
-            }
             callOp->erase();
           }
         }
@@ -490,3 +479,9 @@ private:
 std::unique_ptr<mlir::Pass> llzk::createPolyLoweringPass() {
   return std::make_unique<PolyLoweringPass>();
 };
+
+std::unique_ptr<mlir::Pass> llzk::createPolyLoweringPass(unsigned maxDegree) {
+  auto pass = std::make_unique<PolyLoweringPass>();
+  static_cast<PolyLoweringPass *>(pass.get())->setMaxDegree(maxDegree);
+  return pass;
+}
