@@ -357,7 +357,8 @@ class StructCloner {
     matchAndRewrite(Op op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
       auto res = this->paramNameToValue.find(getNameAttr(op));
       if (res == this->paramNameToValue.end()) {
-        return op->emitOpError("missing instantiation");
+        LLVM_DEBUG(llvm::dbgs() << "[StructCloner] no instantiation for " << op << '\n');
+        return failure();
       }
       llvm::TypeSwitch<Attribute, LogicalResult> TS(res->second);
       llvm::TypeSwitch<Attribute, LogicalResult> *ptr = &TS;
@@ -432,7 +433,7 @@ class StructCloner {
         replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, origResTy);
         return success();
       }
-      return LogicalResult(op->emitOpError().append("unexpected result type ", origResTy));
+      return op->emitOpError().append("unexpected result type ", origResTy);
     }
 
     LogicalResult handleRewrite(
@@ -569,7 +570,10 @@ class StructCloner {
     MappedTypeConverter tyConv(typeAtDef, newStruct.getType(), paramNameToConcrete);
     ConversionTarget target =
         newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx, tableOffsetIsntSymbol);
-    target.addIllegalOp<ConstReadOp>();
+    target.addDynamicallyLegalOp<ConstReadOp>([&paramNameToConcrete](ConstReadOp op) {
+      // Legal if it's not in the map of concrete attribute instantiations
+      return paramNameToConcrete.find(op.getConstNameAttr()) == paramNameToConcrete.end();
+    });
 
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
     patterns.add<ClonedStructConstReadOpPattern>(
