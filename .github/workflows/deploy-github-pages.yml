@@ -49,8 +49,9 @@ jobs:
           DEST: 'gh-pages/${{ inputs.version }}'
         run: |
           rm -rf "$DEST"
-          mkdir "$DEST"
-          mv result/html/* "$DEST"
+          mkdir -p "$DEST"
+          chmod +w "$DEST"
+          cp -r result/html/* "$DEST"
 
       - name: Upload new artifact
         id: upload
