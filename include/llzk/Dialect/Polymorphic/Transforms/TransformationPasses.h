@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPassEnums.h"
 #include "llzk/Pass/PassBase.h"
 
 namespace llzk::polymorphic {
