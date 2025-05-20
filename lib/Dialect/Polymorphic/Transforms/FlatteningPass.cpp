@@ -249,6 +249,8 @@ static inline bool tableOffsetIsntSymbol(FieldReadOp op) {
   return !mlir::isa_and_present<SymbolRefAttr>(op.getTableOffset().value_or(nullptr));
 }
 
+/// Implements cloning a `StructDefOp` for a specific instantiation site, using the concrete
+/// parameters from the instantiation to replace parameters from the original `StructDefOp`.
 class StructCloner {
   ConversionTracker &tracker_;
   ModuleOp rootMod;

@@ -1,5 +1,19 @@
 // RUN: llzk-opt -I %input_dir -llzk-inline-includes -llzk-flatten %s | FileCheck --enable-var-scope %s
 // XFAIL:*
+//
+// TODO: This will be handled at a later time. There's a larger issue that breaks the flattening pass
+// when `include` is used. The current approach to inlining included modules ends up making StructType
+// context-sensitive. For instance, you can create a type `!struct.type<@Main<[]>>` from the struct
+// defined in this file (let's call it A) but there could also be another `struct.def @Main<[]>` defined
+// within the included module (let's call that B). From the scope of this file, that struct type must be
+// prefixed with the included module alias, giving `!struct.type<@Mastermind:@Main<[]>>`. However,
+// from within the included module, B would still be referenced simply as `!struct.type<@Main<[]>>` and
+// that's identical to how we reference A from within this file. Thus, resolving the `struct.def` for a
+// StructType is dependent on the context where the StructType appears. This causes a problem in the
+// ParameterizedStructUseTypeConverter because TypeConverter is not context-sensitive. When it sees
+// `!struct.type<@Main<[]>>` there is no way to know if that is referring to A or B. The proposed solution
+// is to add another pass to the "Preliminary step" in FlatteningPass that will flatten nested modules so
+// that StructType lookups are no longer context-sensitive.
 
 module attributes {veridise.lang = "llzk"} {
   include.from "FrontendLang/Zirgen/mastermind.llzk" as @Mastermind
@@ -132,3 +146,51 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+
+// CHECK-LABEL: struct.def @Component {
+// CHECK-LABEL: struct.def @NondetReg {
+// CHECK-LABEL: struct.def @Reg {
+// CHECK-LABEL: struct.def @Log {
+// CHECK-LABEL: struct.def @Assert {
+// CHECK-LABEL: struct.def @AssertBit {
+// CHECK-LABEL: struct.def @NondetBitReg {
+// CHECK-LABEL: struct.def @BitAnd {
+// CHECK-LABEL: struct.def @OneHot_8 {
+// CHECK-LABEL: struct.def @M_INT_DIAG_HZN {
+// CHECK-LABEL: struct.def @MultiplyByMInt {
+// CHECK-LABEL: struct.def @INT_ROUND_CONSTANTS {
+// CHECK-LABEL: struct.def @SBox {
+// CHECK-LABEL: struct.def @DoIntRound {
+// CHECK-LABEL: struct.def @DoIntRounds {
+// CHECK-LABEL: struct.def @MultiplyByCirculant {
+// CHECK-LABEL: struct.def @ReduceVec4 {
+// CHECK-LABEL: struct.def @MultiplyByMExt {
+// CHECK-LABEL: struct.def @ExtRoundConstants {
+// CHECK-LABEL: struct.def @DoExtRound {
+// CHECK-LABEL: struct.def @AddConsts {
+// CHECK-LABEL: struct.def @MultBy {
+// CHECK-LABEL: struct.def @DoExtRoundByIdx {
+// CHECK-LABEL: struct.def @Pegs_4 {
+// CHECK-LABEL: struct.def @Nonce {
+// CHECK-LABEL: struct.def @IsZero {
+// CHECK-LABEL: struct.def @Eq {
+// CHECK-LABEL: struct.def @EnsureEq_f {
+// CHECK-LABEL: struct.def @MulReg {
+// CHECK-LABEL: struct.def @CheckBounds_6_4 {
+// CHECK-LABEL: struct.def @CodeHash {
+// CHECK-LABEL: struct.def @GenerateCodeHash_4 {
+// CHECK-LABEL: struct.def @SetCode_6_4 {
+// CHECK-LABEL: struct.def @Minimum {
+// CHECK-LABEL: struct.def @CountColors_4 {
+// CHECK-LABEL: struct.def @Guess {
+// CHECK-LABEL: struct.def @Pair_f_f {
+// CHECK-LABEL: struct.def @Zip_f_f_24 {
+// CHECK-LABEL: struct.def @Zip_f_f_4 {
+// CHECK-LABEL: struct.def @AssertArrsEq_f_24 {
+// CHECK-LABEL: struct.def @MakeGuess_6_4 {
+// CHECK-LABEL: struct.def @MakeGuessWithChecks_6_4 {
+// CHECK-LABEL: struct.def @block$ {
+// CHECK-LABEL: struct.def @block$_0_4 {
+// CHECK-LABEL: struct.def @block$_1 {
+// CHECK-LABEL: struct.def @block$_2 {
+// CHECK-LABEL: struct.def @Main {
