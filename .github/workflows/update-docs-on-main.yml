@@ -3,6 +3,7 @@ on:
   push:
     branches:
       main
+      "iangneal/gh-pages-fix" # temporary test override
 
 jobs:
   call-deploy-github-pages:
