@@ -1,11 +1,12 @@
-name: Update docs on main
+name: Update docs as a test
 on:
   push:
     branches:
-      main
+      "iangneal/gh-pages-fix"
 
 jobs:
   call-deploy-github-pages:
-    # No version specified for "latest" deployment
     uses: ./.github/workflows/deploy-github-pages.yml
     secrets: inherit
+    with:
+      version: test
