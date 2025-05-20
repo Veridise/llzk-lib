@@ -689,7 +689,7 @@ public:
   }
 };
 
-// This one ensures FieldDefOp types are converted even if there are no read/write to them.
+// This one ensures FieldDefOp types are converted even if there are no reads/writes to them.
 class FieldDefOpPattern : public OpConversionPattern<FieldDefOp> {
 public:
   FieldDefOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &)
