@@ -31,6 +31,15 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic);
 /// Creates a llzk::polymorphic::TypeVarType.
 MLIR_CAPI_EXPORTED MlirType llzkTypeVarTypeGet(MlirContext, MlirStringRef);
 
+/// Creates a llzk::polymorphic::TypeVarType from either a StringAttr or a FlatSymbolRefAttr.
+MLIR_CAPI_EXPORTED MlirType llzkTypeVarTypeGetFromAttr(MlirContext, MlirAttribute);
+
+/// Returns the var name of the TypeVarType as a StringRef.
+MLIR_CAPI_EXPORTED MlirStringRef llzkTypeVarTypeGetNameRef(MlirType);
+
+/// Returns the var name of the TypeVarType as a FlatSymbolRefAttr.
+MLIR_CAPI_EXPORTED MlirAttribute llzkTypeVarTypeGetName(MlirType);
+
 #ifdef __cplusplus
 }
 #endif

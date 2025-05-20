@@ -18,6 +18,8 @@
 #ifndef LLZK_C_DIALECT_STRUCT_H
 #define LLZK_C_DIALECT_STRUCT_H
 
+#include <stdint.h>
+
 #include "mlir-c/IR.h"
 
 #ifdef __cplusplus
@@ -27,7 +29,21 @@ extern "C" {
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component);
 
 /// Creates a llzk::component::StructType.
-MLIR_CAPI_EXPORTED MlirType llzkStructTypeGet(MlirContext);
+MLIR_CAPI_EXPORTED MlirType llzkStructTypeGet(MlirContext, MlirAttribute);
+
+/// Creates a llzk::component::StructType with an ArrayAttr as parameters.
+MLIR_CAPI_EXPORTED
+MlirType llzkStructTypeGetWithArrayAttr(MlirContext, MlirAttribute, MlirAttribute);
+
+/// Creates a llzk::component::StructType with an array of parameters.
+MLIR_CAPI_EXPORTED MlirType
+llzkStructTypeGetWithAttrs(MlirContext, MlirAttribute, intptr_t, MlirAttribute const *);
+
+/// Returns the fully qualified name of a llzk::component::StructType.
+MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetName(MlirType);
+
+/// Returns the parameter of a llzk::component::StructType as an ArrayAttr.
+MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetParams(MlirType);
 
 #ifdef __cplusplus
 }
