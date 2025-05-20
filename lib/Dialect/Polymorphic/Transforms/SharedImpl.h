@@ -64,7 +64,8 @@ static struct {
       llzk::global::GlobalDefOp,
       llzk::global::GlobalReadOp,
       llzk::global::GlobalWriteOp,
-      llzk::polymorphic::UnifiableCastOp
+      llzk::polymorphic::UnifiableCastOp,
+      llzk::polymorphic::ConstReadOp
       // clang-format on
       >
       WithGeneralBuilder {};

@@ -391,8 +391,9 @@ class StructCloner {
         const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue,
         SmallVector<Diagnostic> &instantiationDiagnostics
     )
-        // future proof: use higher priority than GeneralTypeReplacePattern
-        : super(converter, ctx, /*Benefit=*/2, paramNameToInstantiatedValue),
+        // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
+        // instead of the GeneralTypeReplacePattern<ConstReadOp> from newGeneralRewritePatternSet().
+        : super(converter, ctx, /*benefit=*/2, paramNameToInstantiatedValue),
           diagnostics(instantiationDiagnostics) {}
 
     Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
@@ -457,8 +458,9 @@ class StructCloner {
         TypeConverter &converter, MLIRContext *ctx,
         const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
     )
-        // future proof: use higher priority than GeneralTypeReplacePattern
-        : super(converter, ctx, /*Benefit=*/3, paramNameToInstantiatedValue) {}
+        // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
+        // instead of the GeneralTypeReplacePattern<FieldReadOp> from newGeneralRewritePatternSet().
+        : super(converter, ctx, /*benefit=*/2, paramNameToInstantiatedValue) {}
 
     Attribute getNameAttr(FieldReadOp op) const override {
       return op.getTableOffset().value_or(nullptr);
@@ -645,8 +647,9 @@ class CallStructFuncPattern : public OpConversionPattern<CallOp> {
 
 public:
   CallStructFuncPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &tracker)
-      // future proof: use higher priority than GeneralTypeReplacePattern
-      : OpConversionPattern<CallOp>(converter, ctx, 2), tracker_(tracker) {}
+      // Must use higher benefit than CallOpClassReplacePattern so this pattern will be applied
+      // instead of the CallOpClassReplacePattern from newGeneralRewritePatternSet().
+      : OpConversionPattern<CallOp>(converter, ctx, /*benefit=*/2), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
       const override {
@@ -693,8 +696,9 @@ public:
 class FieldDefOpPattern : public OpConversionPattern<FieldDefOp> {
 public:
   FieldDefOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &)
-      // future proof: use higher priority than GeneralTypeReplacePattern
-      : OpConversionPattern<FieldDefOp>(converter, ctx, 2) {}
+      // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
+      // instead of the GeneralTypeReplacePattern<FieldDefOp> from newGeneralRewritePatternSet().
+      : OpConversionPattern<FieldDefOp>(converter, ctx, /*benefit=*/2) {}
 
   LogicalResult matchAndRewrite(
       FieldDefOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
