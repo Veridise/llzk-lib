@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths-ignore:
-      - .github
-      - doc
+      - '.github/**'
+      - 'doc/**'
       - README.md
 
 jobs:
