@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths-ignore:
+      - .github
       - doc
       - README.md
 
