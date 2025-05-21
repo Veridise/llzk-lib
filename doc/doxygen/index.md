@@ -36,6 +36,6 @@ For specific release version documentation, refer to the below subsites:
 
 \todo Coming soon after release.
 
-
+[llzk-post]: https://medium.com/veridise/veridise-secures-ethereum-foundation-grant-to-develop-llzk-a-new-intermediate-representation-ir-224c0e71f4d5
 [mlir-dialects]: https://mlir.llvm.org/docs/DefiningDialects/
 [proposal]: https://drive.google.com/file/d/1tAIjAPJX5cGZT_ASFf7A2OiZaEgeWUx8/view?usp=sharing

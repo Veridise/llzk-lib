@@ -57,7 +57,5 @@ Veridise also plans to release several analysis backends based on prior tooling 
 | \ref mainpage | \ref setup |
 </div>
 
-
-[llzk-post]: https://medium.com/veridise/veridise-secures-ethereum-foundation-grant-to-develop-llzk-a-new-intermediate-representation-ir-224c0e71f4d5
 [picus-v2]: https://docs.veridise.com/picus-v2/
 [zk-vanguard]: https://docs.veridise.com/zkvanguard/
