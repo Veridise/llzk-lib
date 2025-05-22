@@ -1,0 +1,2 @@
+fixed:
+  - Fixed bug with analyses improperly sorting struct locations, causing map collisions
