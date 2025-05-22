@@ -26,6 +26,7 @@
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/Affine/IR/AffineOps.h>
@@ -1217,7 +1218,7 @@ public:
     // If the symbol is used by a FieldWriteOp with a different result type then change
     // the type of the FieldDefOp to match the FieldWriteOp result type.
     Type newType = nullptr;
-    if (auto fieldUsers = SymbolTable::getSymbolUses(op, parentRes.value())) {
+    if (auto fieldUsers = llzk::getSymbolUses(op, parentRes.value())) {
       std::optional<Location> newTypeLoc = std::nullopt;
       for (SymbolTable::SymbolUse symUse : fieldUsers.value()) {
         if (FieldWriteOp writeOp = llvm::dyn_cast<FieldWriteOp>(symUse.getUser())) {

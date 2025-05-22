@@ -18,6 +18,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
+#include "llzk/Util/SymbolTableLLZK.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Operation.h>
@@ -226,14 +227,14 @@ bool hasUsesWithin(Operation *symbol, Operation *from) {
   assert(symbol && "pre-condition");
   assert(from && "pre-condition");
   bool result = false;
-  SymbolTable::walkSymbolTables(from, false, [symbol, &result](Operation *symbolTableOp, bool) {
+  SymbolTable::walkSymbolTables(from, true, [symbol, &result](Operation *symbolTableOp, bool) {
     assert(symbolTableOp->hasTrait<OpTrait::SymbolTable>());
     bool hasUse = (symbol != symbolTableOp) &&
-                  !SymbolTable::symbolKnownUseEmpty(symbol, &symbolTableOp->getRegion(0));
+                  !llzk::symbolKnownUseEmpty(symbol, &symbolTableOp->getRegion(0));
     result |= hasUse;
     LLVM_DEBUG({
       if (hasUse) {
-        auto uses = SymbolTable::getSymbolUses(symbol, &symbolTableOp->getRegion(0));
+        auto uses = llzk::getSymbolUses(symbol, &symbolTableOp->getRegion(0));
         assert(uses.has_value()); // must be consistent with symbolKnownUseEmpty()
         llvm::dbgs() << "Found users of " << *symbol << "\n";
         for (SymbolTable::SymbolUse user : uses.value()) {

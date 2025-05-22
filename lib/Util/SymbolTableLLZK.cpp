@@ -129,14 +129,23 @@ static std::optional<WalkResult> walkSymbolTable(
 /// callback for each found use. The callbacks takes the use of the symbol.
 static WalkResult
 walkSymbolRefs(Operation *op, function_ref<WalkResult(SymbolTable::SymbolUse)> callback) {
-  return op->getAttrDictionary().walk<WalkOrder::PreOrder>([&](SymbolRefAttr symbolRef) {
+  auto walkFn = [&op, &callback](SymbolRefAttr symbolRef) {
     if (callback({op, symbolRef}).wasInterrupted()) {
       return WalkResult::interrupt();
     }
-
-    // Don't walk nested references.
-    return WalkResult::skip();
-  });
+    return WalkResult::skip(); // Don't walk nested references.
+  };
+  for (Type t : op->getOperandTypes()) {
+    if (t.walk<WalkOrder::PreOrder>(walkFn).wasInterrupted()) {
+      return WalkResult::interrupt();
+    }
+  }
+  for (Type t : op->getResultTypes()) {
+    if (t.walk<WalkOrder::PreOrder>(walkFn).wasInterrupted()) {
+      return WalkResult::interrupt();
+    }
+  }
+  return op->getAttrDictionary().walk<WalkOrder::PreOrder>(walkFn);
 }
 
 /// Walk all of the uses, for any symbol, that are nested within the given
