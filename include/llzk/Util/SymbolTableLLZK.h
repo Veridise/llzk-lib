@@ -1,0 +1,52 @@
+//===-- SymbolTableLLZK.h ------------------------------------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+// Adapted from the LLVM Project's mlir/include/mlir/IR/SymbolTable.h
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
+#pragma once
+
+#include <mlir/IR/SymbolTable.h>
+
+namespace llzk {
+
+/// Get an iterator range for all of the uses, for any symbol, that are nested
+/// within the given operation 'from'. This does not traverse into any nested
+/// symbol tables. This function returns std::nullopt if there are any unknown
+/// operations that may potentially be symbol tables.
+std::optional<mlir::SymbolTable::UseRange> getSymbolUses(mlir::Operation *from);
+std::optional<mlir::SymbolTable::UseRange> getSymbolUses(mlir::Region *from);
+
+/// Get all of the uses of the given symbol that are nested within the given
+/// operation 'from'. This does not traverse into any nested symbol tables.
+/// This function returns std::nullopt if there are any unknown operations
+/// that may potentially be symbol tables.
+std::optional<mlir::SymbolTable::UseRange>
+getSymbolUses(mlir::StringAttr symbol, mlir::Operation *from);
+std::optional<mlir::SymbolTable::UseRange>
+getSymbolUses(mlir::Operation *symbol, mlir::Operation *from);
+std::optional<mlir::SymbolTable::UseRange>
+getSymbolUses(mlir::StringAttr symbol, mlir::Region *from);
+std::optional<mlir::SymbolTable::UseRange>
+getSymbolUses(mlir::Operation *symbol, mlir::Region *from);
+
+/// Return if the given symbol is known to have no uses that are nested
+/// within the given operation 'from'. This does not traverse into any nested
+/// symbol tables. This function will also return false if there are any
+/// unknown operations that may potentially be symbol tables. This doesn't
+/// necessarily mean that there are no uses, we just can't conservatively
+/// prove it.
+bool symbolKnownUseEmpty(mlir::StringAttr symbol, mlir::Operation *from);
+bool symbolKnownUseEmpty(mlir::Operation *symbol, mlir::Operation *from);
+bool symbolKnownUseEmpty(mlir::StringAttr symbol, mlir::Region *from);
+bool symbolKnownUseEmpty(mlir::Operation *symbol, mlir::Region *from);
+
+} // namespace llzk
