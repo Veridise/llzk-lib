@@ -209,6 +209,8 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
+// Ensure we still report all structs if they're all at an unknown location
+#loc = loc(unknown)
 module attributes {veridise.lang = "llzk"} {
   // A correctly constrained byte decomposition checker for a 16 bit val.
   struct.def @ByteDecompCorrect {
@@ -233,7 +235,7 @@ module attributes {veridise.lang = "llzk"} {
       constrain.eq %reconstructed, %u16 : !felt.type
       function.return
     }
-  }
+  } loc(#loc)
 
   // An incorrectly constrained byte decomposition checker for a 16 bit val.
   struct.def @ByteDecompIncorrect {
@@ -255,7 +257,7 @@ module attributes {veridise.lang = "llzk"} {
       constrain.eq %reconstructed, %u16 : !felt.type
       function.return
     }
-  }
+  } loc(#loc)
 
   // Another improperly constrained byte decomposition checker for a 16 bit val.
   struct.def @ByteDecompPartial {
@@ -282,7 +284,7 @@ module attributes {veridise.lang = "llzk"} {
       constrain.eq %reconstructed, %u16 : !felt.type
       function.return
     }
-  }
+  } loc(#loc)
 }
 
 // CHECK-LABEL: @ByteDecompCorrect StructIntervals {

@@ -29,14 +29,20 @@ concept NamedOpComparable = requires(Op op) {
 template <OpComparable Op> mlir::FailureOr<bool> isLocationLess(const Op &l, const Op &r) {
   Op &lhs = const_cast<Op &>(l);
   Op &rhs = const_cast<Op &>(r);
-  // Try sorting by location first, then name.
-  auto lhsLoc = llvm::dyn_cast<mlir::FileLineColLoc>(lhs.getOperation()->getLoc());
-  auto rhsLoc = llvm::dyn_cast<mlir::FileLineColLoc>(rhs.getOperation()->getLoc());
-  if (lhsLoc && rhsLoc) {
-    auto filenameCmp = lhsLoc.getFilename().compare(rhsLoc.getFilename());
-    return filenameCmp < 0 || (filenameCmp == 0 && lhsLoc.getLine() < rhsLoc.getLine()) ||
-           (filenameCmp == 0 && lhsLoc.getLine() == rhsLoc.getLine() &&
-            lhsLoc.getColumn() < rhsLoc.getColumn());
+  mlir::Location lhsLoc = lhs.getOperation()->getLoc(), rhsLoc = rhs.getOperation()->getLoc();
+  auto unknownLoc = mlir::UnknownLoc::get(lhs.getOperation()->getContext());
+  // We cannot make judgments on unknown locations.
+  if (lhsLoc == unknownLoc || rhsLoc == unknownLoc) {
+    return mlir::failure();
+  }
+  // If we have full locations for both, then we can sort by file name, then line, then column.
+  auto lhsFileLoc = llvm::dyn_cast<mlir::FileLineColLoc>(lhsLoc);
+  auto rhsFileLoc = llvm::dyn_cast<mlir::FileLineColLoc>(rhsLoc);
+  if (lhsFileLoc && rhsFileLoc) {
+    auto filenameCmp = lhsFileLoc.getFilename().compare(rhsFileLoc.getFilename());
+    return filenameCmp < 0 || (filenameCmp == 0 && lhsFileLoc.getLine() < rhsFileLoc.getLine()) ||
+           (filenameCmp == 0 && lhsFileLoc.getLine() == rhsFileLoc.getLine() &&
+            lhsFileLoc.getColumn() < rhsFileLoc.getColumn());
   }
   return mlir::failure();
 }

@@ -121,7 +121,7 @@ class ModuleAnalysis {
   /// The `ResultMap` is implemented as an ordered map to control sorting order for iteration.
   using ResultMap = std::map<
       component::StructDefOp, std::reference_wrapper<const Result>,
-      OpLocationLess<component::StructDefOp>>;
+      NamedOpLocationLess<component::StructDefOp>>;
 
 public:
   /// @brief Asserts that the analysis is being run on a `ModuleOp`.
@@ -156,6 +156,8 @@ public:
   ResultMap::const_iterator cbegin() const { return results.cbegin(); }
   ResultMap::const_iterator cend() const { return results.cend(); }
 
+  const mlir::DataFlowSolver &getSolver() const { return solver; }
+
 protected:
   /// @brief Initialize the shared dataflow solver with any common analyses required
   /// by the contained struct analyses.
@@ -171,8 +173,6 @@ protected:
   /// in the `ModuleOp` that is being subjected to this analysis.
   /// @param am The module's analysis manager.
   void constructChildAnalyses(mlir::AnalysisManager &am) {
-    mlir::DataFlowConfig config;
-    mlir::DataFlowSolver solver(config);
     dataflow::markAllOpsAsLive(solver, modOp);
 
     // The analysis is run at the module level so that lattices are computed
@@ -182,22 +182,23 @@ protected:
     ensure(res.succeeded(), "solver failed to run on module!");
 
     auto ctx = getContext();
-    modOp.walk([this, &solver, &am, &ctx](component::StructDefOp s) mutable {
+    modOp.walk([this, &am, &ctx](component::StructDefOp s) mutable {
       auto &childAnalysis = am.getChildAnalysis<StructAnalysisTy>(s);
       if (mlir::failed(childAnalysis.runAnalysis(solver, am, ctx))) {
         auto error_message = "StructAnalysis failed to run for " + mlir::Twine(s.getName());
         s->emitError(error_message);
         llvm::report_fatal_error(error_message);
       }
-      results.insert(std::make_pair(
-          component::StructDefOp(s), std::reference_wrapper(childAnalysis.getResult())
-      ));
+      ensure(results.find(s) == results.end(), "struct location conflict");
+      results.insert(std::make_pair(s, std::reference_wrapper(childAnalysis.getResult())));
+      return mlir::WalkResult::skip();
     });
   }
 
 private:
   mlir::ModuleOp modOp;
   ResultMap results;
+  mlir::DataFlowSolver solver;
 
   /// @brief Ensures that the given struct has a result.
   /// @param op The struct to ensure has a result.
