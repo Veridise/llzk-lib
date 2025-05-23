@@ -84,6 +84,8 @@ inline mlir::SymbolRefAttr appendLeaf(mlir::SymbolRefAttr orig, const mlir::Twin
 /// given suffix.
 mlir::SymbolRefAttr appendLeafName(mlir::SymbolRefAttr orig, const mlir::Twine &newLeafSuffix);
 
+/// @brief Starting at the Operation `from`, find the nearest ancestor ModuleOp marked with
+/// LANG_ATTR_NAME from which symbol lookups are rooted.
 mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(component::StructDefOp &to);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(function::FuncDefOp &to);

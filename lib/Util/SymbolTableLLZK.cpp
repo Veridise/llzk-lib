@@ -453,3 +453,13 @@ bool llzk::symbolKnownUseEmpty(StringAttr symbol, Region *from) {
 bool llzk::symbolKnownUseEmpty(Operation *symbol, Region *from) {
   return symbolKnownUseEmptyImpl(symbol, from);
 }
+
+//===----------------------------------------------------------------------===//
+// llzk::getSymbolName
+
+StringAttr llzk::getSymbolName(SymbolOpInterface symbol) {
+  // `SymbolTable::getSymbolName(Operation*)` asserts if there is no name (ex: in the case of
+  // ModuleOp where the symbol name is optional) and there's no other way to check if the name
+  // exists so this fully involved retrieval method must be used.
+  return symbol.getOperation()->getAttrOfType<StringAttr>(SymbolTable::getSymbolAttrName());
+}
