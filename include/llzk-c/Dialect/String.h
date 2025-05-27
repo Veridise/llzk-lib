@@ -18,7 +18,8 @@
 #ifndef LLZK_C_DIALECT_STRING_H
 #define LLZK_C_DIALECT_STRING_H
 
-#include "mlir-c/IR.h"
+#include <llzk-c/Support.h>
+#include <mlir-c/IR.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +29,9 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(String, llzk__string);
 
 /// Creates a llzk::string::StringType.
 MLIR_CAPI_EXPORTED MlirType llzkStringTypeGet(MlirContext);
+
+/// Returns true if the type is a StringType.
+LLZK_DECLARE_TYPE_ISA(StringType);
 
 #ifdef __cplusplus
 }

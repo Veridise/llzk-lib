@@ -7,8 +7,19 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <llzk/Dialect/LLZK/IR/Attrs.h>
 #include <llzk/Dialect/LLZK/IR/Dialect.h>
 
 #include <mlir/CAPI/Registration.h>
 
+#include <llzk-c/Dialect/LLZK.h>
+
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(LLZK, llzk, llzk::LLZKDialect)
+
+MlirAttribute llzkPublicAttrGet(MlirContext ctx) {
+  return wrap(llzk::PublicAttr::get(unwrap(ctx)));
+}
+
+bool llzkAttributeIsAPublicAttr(MlirAttribute attr) {
+  return mlir::isa<llzk::PublicAttr>(unwrap(attr));
+}

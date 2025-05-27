@@ -18,7 +18,7 @@
 #ifndef LLZK_C_DIALECT_UNDEF_H
 #define LLZK_C_DIALECT_UNDEF_H
 
-#include "mlir-c/IR.h"
+#include <mlir-c/IR.h>
 
 #ifdef __cplusplus
 extern "C" {

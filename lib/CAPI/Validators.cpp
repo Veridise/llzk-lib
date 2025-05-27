@@ -7,7 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <llzk/Validators/LLZKValidationPasses.capi.h.inc>
 #include <llzk/Validators/LLZKValidationPasses.h>
+
+#include <mlir/CAPI/Pass.h>
+
+using namespace llzk;
+
+static void registerLLZKValidationPasses() { llzk::registerValidationPasses(); }
 
 // Impl
 #include "llzk/Validators/LLZKValidationPasses.capi.cpp.inc"

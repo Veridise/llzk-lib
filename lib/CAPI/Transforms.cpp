@@ -7,7 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <llzk/Transforms/LLZKTransformationPasses.capi.h.inc>
 #include <llzk/Transforms/LLZKTransformationPasses.h>
 
+#include <mlir/CAPI/Pass.h>
+
+static void registerLLZKTransformationPasses() { llzk::registerTransformationPasses(); }
+using namespace llzk;
 // Impl
 #include "llzk/Transforms/LLZKTransformationPasses.capi.cpp.inc"

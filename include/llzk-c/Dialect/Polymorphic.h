@@ -18,9 +18,14 @@
 #ifndef LLZK_C_DIALECT_POLYMORPHIC_H
 #define LLZK_C_DIALECT_POLYMORPHIC_H
 
-#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc"
+#include <llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc>
 
-#include "mlir-c/IR.h"
+#include <llzk-c/Support.h>
+#include <mlir-c/AffineExpr.h>
+#include <mlir-c/AffineMap.h>
+#include <mlir-c/IR.h>
+
+#include "mlir-c/Support.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,8 +33,15 @@ extern "C" {
 
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic);
 
+//===----------------------------------------------------------------------===//
+// TypeVarType
+//===----------------------------------------------------------------------===//
+
 /// Creates a llzk::polymorphic::TypeVarType.
 MLIR_CAPI_EXPORTED MlirType llzkTypeVarTypeGet(MlirContext, MlirStringRef);
+
+/// Returns true if the type is a TypeVarType.
+LLZK_DECLARE_TYPE_ISA(TypeVarType);
 
 /// Creates a llzk::polymorphic::TypeVarType from either a StringAttr or a FlatSymbolRefAttr.
 MLIR_CAPI_EXPORTED MlirType llzkTypeVarTypeGetFromAttr(MlirContext, MlirAttribute);
@@ -39,6 +51,31 @@ MLIR_CAPI_EXPORTED MlirStringRef llzkTypeVarTypeGetNameRef(MlirType);
 
 /// Returns the var name of the TypeVarType as a FlatSymbolRefAttr.
 MLIR_CAPI_EXPORTED MlirAttribute llzkTypeVarTypeGetName(MlirType);
+
+//===----------------------------------------------------------------------===//
+// ApplyMapOp
+//===----------------------------------------------------------------------===//
+
+/// Creates an ApplyMapOp with the given attribute that has to be of type AffineMapAttr.
+LLZK_DECLARE_OP_BUILD_METHOD(ApplyMapOp, , MlirAttribute, MlirValueRange);
+
+/// Creates an ApplyMapOp with the given affine map.
+LLZK_DECLARE_OP_BUILD_METHOD(ApplyMapOp, WithAffineMap, MlirAffineMap, MlirValueRange);
+
+/// Creates an ApplyMapOp with the given affine expression.
+LLZK_DECLARE_OP_BUILD_METHOD(ApplyMapOp, WithAffineExpr, MlirAffineExpr, MlirValueRange);
+
+/// Returns true if the op is an ApplyMapOp.
+LLZK_DECLARE_OP_ISA(ApplyMapOp);
+
+/// Returns the affine map associated with the op.
+MLIR_CAPI_EXPORTED MlirAffineMap llzkApplyMapOpGetAffineMap(MlirOperation);
+
+/// Returns the operands that correspond to dimensions in the affine map.
+MLIR_CAPI_EXPORTED MlirValueRange llzkApplyMapOpGetDimOperands(MlirOperation);
+
+/// Returns the operands that correspond to symbols in the affine map.
+MLIR_CAPI_EXPORTED MlirValueRange llzkApplyMapOpGetSymbolOperands(MlirOperation);
 
 #ifdef __cplusplus
 }

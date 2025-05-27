@@ -18,13 +18,26 @@
 #ifndef LLZK_C_DIALECT_GLOBAL_H
 #define LLZK_C_DIALECT_GLOBAL_H
 
-#include "mlir-c/IR.h"
+#include <llzk-c/Support.h>
+#include <mlir-c/IR.h>
+
+#include "mlir-c/Support.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Global, llzk__global);
+
+//===----------------------------------------------------------------------===//
+// GlobalDefOp
+//===----------------------------------------------------------------------===//
+
+/// Returns true if the op is a GlobalDefOp.
+LLZK_DECLARE_OP_ISA(GlobalDefOp);
+
+/// Returns true if the op defines a constant value.
+LLZK_DECLARE_OP_PREDICATE(GlobalDefOp, IsConstant);
 
 #ifdef __cplusplus
 }

@@ -18,7 +18,8 @@
 #ifndef LLZK_C_DIALECT_FELT_H
 #define LLZK_C_DIALECT_FELT_H
 
-#include "mlir-c/IR.h"
+#include <llzk-c/Support.h>
+#include <mlir-c/IR.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,8 +27,17 @@ extern "C" {
 
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt);
 
+/// Creates a llzk::felt::FeltConstAttr.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFeltConstAttrGet(MlirContext, int64_t);
+
+/// Returns true if the attribute is a FeltConstAttr.
+LLZK_DECLARE_ATTR_ISA(FeltConstAttr);
+
 /// Creates a llzk::felt::FeltType.
 MLIR_CAPI_EXPORTED MlirType llzkFeltTypeGet(MlirContext);
+
+/// Returns true if the type is a FeltType.
+LLZK_DECLARE_TYPE_ISA(FeltType);
 
 #ifdef __cplusplus
 }

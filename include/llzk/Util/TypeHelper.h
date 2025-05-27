@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "llzk/Util/ErrorHelper.h"
+#include <llzk/Util/ErrorHelper.h>
 
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/Operation.h>

@@ -20,9 +20,9 @@
 
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.capi.h.inc"
 
+#include <llzk-c/Support.h>
+#include <mlir-c/IR.h>
 #include <stdint.h>
-
-#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,14 +30,18 @@ extern "C" {
 
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Array, llzk__array);
 
+//===----------------------------------------------------------------------===//
+// ArrayType
+//===----------------------------------------------------------------------===//
+
 /// Creates a llzk::array::ArrayType using a list of attributes as dimensions
 MLIR_CAPI_EXPORTED MlirType llzkArrayTypeGet(MlirType, intptr_t, MlirAttribute const *);
 
 /// Returns true of the type is a llzk::array::ArrayType.
-MLIR_CAPI_EXPORTED bool llzkTypeIsALlzkArrayType(MlirType);
+LLZK_DECLARE_TYPE_ISA(ArrayType);
 
 /// Creates a llzk::array::ArrayType using a list of numbers as dimensions
-MLIR_CAPI_EXPORTED MlirType llzkArrayTypeGetWithNumericDis(MlirType, intptr_t, int64_t const *);
+MLIR_CAPI_EXPORTED MlirType llzkArrayTypeGetWithNumericDims(MlirType, intptr_t, int64_t const *);
 
 /// Returns the element type of a llzk::array::ArrayType.
 MLIR_CAPI_EXPORTED MlirType llzkArrayTypeGetElementType(MlirType);
@@ -47,6 +51,25 @@ MLIR_CAPI_EXPORTED intptr_t llzkArrayTypeGetNumDims(MlirType);
 
 /// Returns the n-th dimention of a llzk::array::ArrayType.
 MLIR_CAPI_EXPORTED MlirAttribute llzkArrayTypeGetDim(MlirType, intptr_t);
+
+//===----------------------------------------------------------------------===//
+// CreateArrayOp
+//===----------------------------------------------------------------------===//
+
+/// Creates a CreateArrayOp from a list of Values.
+LLZK_DECLARE_OP_BUILD_METHOD(CreateArrayOp, WithValues, MlirType, intptr_t, MlirValue const *);
+
+/// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
+/// The Attribute argument must be a DenseI32ArrayAttr.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    CreateArrayOp, WithMapOperands, MlirType, intptr_t, MlirValueRange const *, MlirAttribute
+);
+
+/// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    CreateArrayOp, WithMapOperandsAndDims, MlirType, intptr_t, MlirValueRange const *, intptr_t,
+    int32_t const *
+);
 
 #ifdef __cplusplus
 }

@@ -18,7 +18,8 @@
 #ifndef LLZK_C_DIALECT_LLZK_H
 #define LLZK_C_DIALECT_LLZK_H
 
-#include "mlir-c/IR.h"
+#include <llzk-c/Support.h>
+#include <mlir-c/IR.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +29,9 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(LLZK, llzk);
 
 /// Creates a llzk::PublicAttr.
 MLIR_CAPI_EXPORTED MlirAttribute llzkPublicAttrGet(MlirContext);
+
+/// Returns true if the attribute is a PublicAttr.
+LLZK_DECLARE_ATTR_ISA(PublicAttr);
 
 #ifdef __cplusplus
 }

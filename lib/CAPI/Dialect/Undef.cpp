@@ -11,4 +11,6 @@
 
 #include <mlir/CAPI/Registration.h>
 
+#include <llzk-c/Dialect/Undef.h>
+
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Undef, llzk__undef, llzk::undef::UndefDialect)

@@ -18,13 +18,30 @@
 #ifndef LLZK_C_DIALECT_BOOL_H
 #define LLZK_C_DIALECT_BOOL_H
 
-#include "mlir-c/IR.h"
+#include <llzk-c/Support.h>
+#include <mlir-c/IR.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Bool, llzk__boolean);
+
+enum LlzkCmp {
+  LlzkCmp_EQ = 0,
+  LlzkCmp_NE = 1,
+  LlzkCmp_LT = 2,
+  LlzkCmp_LE = 3,
+  LlzkCmp_GT = 4,
+  LlzkCmp_GE = 5
+};
+typedef enum LlzkCmp LlzkCmp;
+
+/// Returns a llzk::boolean::FeltCmpPredicateAttr attribute.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFeltCmpPredicateAttrGet(MlirContext, LlzkCmp);
+
+/// Returns true if the attribute is a FeltCmpPredicateAttr.
+LLZK_DECLARE_ATTR_ISA(FeltCmpPredicateAttr);
 
 #ifdef __cplusplus
 }

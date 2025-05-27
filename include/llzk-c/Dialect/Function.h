@@ -18,13 +18,154 @@
 #ifndef LLZK_C_DIALECT_FUNCTION_H
 #define LLZK_C_DIALECT_FUNCTION_H
 
-#include "mlir-c/IR.h"
+#include <llzk-c/Support.h>
+#include <mlir-c/IR.h>
+#include <mlir-c/Support.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Function, llzk__function);
+
+//===----------------------------------------------------------------------===//
+// FuncDefOp
+//===----------------------------------------------------------------------===//
+
+/// Creates a FuncDefOp with the given attributes and argument attributes. Each argument attribute
+/// has to be a DictionaryAttr.
+MLIR_CAPI_EXPORTED MlirOperation llzkFuncDefOpCreateWithAttrsAndArgAttrs(
+    MlirLocation, MlirStringRef, MlirType, intptr_t, MlirNamedAttribute const *, intptr_t,
+    MlirAttribute const *
+);
+
+/// Creates a FuncDefOp with the given attributes
+static inline MlirOperation llzkFuncDefOpCreateWithAttrs(
+    MlirLocation loc, MlirStringRef name, MlirType type, intptr_t nAttrs,
+    MlirNamedAttribute const *attrs
+) {
+  return llzkFuncDefOpCreateWithAttrsAndArgAttrs(loc, name, type, nAttrs, attrs, 0, NULL);
+}
+
+/// Creates a FuncDefOp
+static inline MlirOperation
+llzkFuncDefOpCreate(MlirLocation loc, MlirStringRef name, MlirType type) {
+  return llzkFuncDefOpCreateWithAttrs(loc, name, type, 0, NULL);
+}
+
+/// Creates a FuncDefOp with the given argument attributes. Each argument attribute has to be a
+/// DictionaryAttr.
+static inline MlirOperation llzkFuncDefOpCreateWithArgAttrs(
+    MlirLocation loc, MlirStringRef name, MlirType type, intptr_t nArgAttrs,
+    MlirAttribute const *argAttrs
+) {
+  return llzkFuncDefOpCreateWithAttrsAndArgAttrs(loc, name, type, 0, NULL, nArgAttrs, argAttrs);
+}
+
+/// Returns true if the operation is a FuncDefOp.
+LLZK_DECLARE_OP_ISA(FuncDefOp);
+
+/// Returns true if the FuncDefOp has the allow_constraint attribute.
+LLZK_DECLARE_OP_PREDICATE(FuncDefOp, HasAllowConstraintAttr);
+
+/// Sets the allow_constraint attribute in the FuncDefOp operation.
+MLIR_CAPI_EXPORTED void llzkFuncDefOpSetAllowConstraintAttr(MlirOperation, bool);
+
+/// Returns true if the FuncDefOp has the allow_witness attribute.
+LLZK_DECLARE_OP_PREDICATE(FuncDefOp, HasAllowWitnessAttr);
+
+/// Sets the allow_witness attribute in the FuncDefOp operation.
+MLIR_CAPI_EXPORTED void llzkFuncDefOpSetAllowWitnessAttr(MlirOperation, bool);
+
+/// Returns true if the `idx`-th argument has the Pub attribute.
+LLZK_DECLARE_NARY_OP_PREDICATE(FuncDefOp, HasArgIsPub, unsigned);
+
+/// Returns the fully qualified name of the function.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFuncDefOpGetFullyQualifiedName(MlirOperation);
+
+/// Returns true if the function's name is 'compute'.
+LLZK_DECLARE_OP_PREDICATE(FuncDefOp, NameIsCompute);
+
+/// Returns true if the function's name is 'constrain'.
+LLZK_DECLARE_OP_PREDICATE(FuncDefOp, NameIsConstrain);
+
+/// Returns true if the function's defined inside a struct.
+LLZK_DECLARE_OP_PREDICATE(FuncDefOp, IsInStruct);
+
+/// Returns true if the function is the struct's witness computation.
+LLZK_DECLARE_OP_PREDICATE(FuncDefOp, IsStructCompute);
+
+/// Returns true if the function is the struct's constrain definition.
+LLZK_DECLARE_OP_PREDICATE(FuncDefOp, IsStructConstrain);
+
+/// Assuming the function is the compute function returns its StructType result.
+MLIR_CAPI_EXPORTED MlirType llzkFuncDefOpGetSingleResultTypeOfCompute(MlirOperation);
+
+//===----------------------------------------------------------------------===//
+// CallOp
+//===----------------------------------------------------------------------===//
+
+/// Creates a CallOp.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    CallOp, , intptr_t numResults, MlirType const *results, MlirAttribute name,
+    intptr_t numOperands, MlirValue const *operands
+);
+
+/// Creates a CallOp that calls the given FuncDefOp.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    CallOp, ToCallee, MlirOperation callee, intptr_t numOperands, MlirValue const *operands
+);
+
+/// Creates a CallOp with affine map operands.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    CallOp, WithMapOperands, intptr_t numResults, MlirType const *results, MlirAttribute name,
+    intptr_t numMapOperands, MlirValueRange const *mapOperands, MlirAttribute numDimsPerMap,
+    intptr_t numArgOperands, MlirValue const *argOperands
+);
+
+/// Creates a CallOp with affine map operands.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    CallOp, WithMapOperandsAndDims, intptr_t numResults, MlirType const *results,
+    MlirAttribute name, intptr_t numMapOperands, MlirValueRange const *mapOperands,
+    intptr_t numDimsPermMapLength, int32_t const *numDimsPerMap, intptr_t numArgOperands,
+    MlirValue const *argOperands
+);
+
+/// Creates a CallOp with affine map operands to the given FuncDefOp.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    CallOp, ToCalleeWithMapOperands, MlirOperation callee, intptr_t numMapOperands,
+    MlirValueRange const *mapOperands, MlirAttribute numDimsPerMap, intptr_t numArgOperands,
+    MlirValue const *argOperands
+);
+
+/// Creates a CallOp with affine map operands to the given FuncDefOp.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    CallOp, ToCalleeWithMapOperandsAndDims, MlirOperation callee, intptr_t numMapOperands,
+    MlirValueRange const *mapOperands, intptr_t numDimsPermMapLength, int32_t const *numDimsPerMap,
+    intptr_t numArgOperands, MlirValue const *argOperands
+);
+
+/// Returns true if the operation is a CallOp.
+LLZK_DECLARE_OP_ISA(CallOp);
+
+/// Returns the FunctionType of the callee.
+MLIR_CAPI_EXPORTED MlirType llzkCallOpGetCalleeType(MlirOperation);
+
+/// Returns true if the callee is named 'compute'.
+LLZK_DECLARE_OP_PREDICATE(CallOp, CalleeIsCompute);
+
+/// Returns true if the callee is named 'constrain'.
+LLZK_DECLARE_OP_PREDICATE(CallOp, CalleeIsConstrain);
+
+/// Returns true if the callee is the witness computation of a struct.
+LLZK_DECLARE_OP_PREDICATE(CallOp, CalleeIsStructCompute);
+
+/// Returns true if the callee is the constraints definition of a struct.
+LLZK_DECLARE_OP_PREDICATE(CallOp, CalleeIsStructConstrain);
+
+/// Assuming the callee is the compute function returns its StructType result.
+MLIR_CAPI_EXPORTED MlirType llzkCallOpGetSingleResultTypeOfCompute(MlirOperation);
 
 #ifdef __cplusplus
 }

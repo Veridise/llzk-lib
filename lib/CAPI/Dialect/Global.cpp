@@ -8,7 +8,22 @@
 //===----------------------------------------------------------------------===//
 
 #include <llzk/Dialect/Global/IR/Dialect.h>
+#include <llzk/Dialect/Global/IR/Ops.h>
 
 #include <mlir/CAPI/Registration.h>
 
+#include <llzk-c/Dialect/Global.h>
+
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Global, llzk__global, llzk::global::GlobalDialect)
+
+//===----------------------------------------------------------------------===//
+// GlobalDefOp
+//===----------------------------------------------------------------------===//
+
+bool llzkOperationIsAGlobalDefOp(MlirOperation op) {
+  return mlir::isa<llzk::global::GlobalDefOp>(unwrap(op));
+}
+
+bool llzkGlobalDefOpGetIsConstant(MlirOperation op) {
+  return mlir::cast<llzk::global::GlobalDefOp>(unwrap(op)).isConstant();
+}
