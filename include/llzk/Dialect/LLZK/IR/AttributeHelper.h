@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "llzk/Util/StreamHelper.h"
+
 #include <mlir/IR/DialectImplementation.h>
 
 #include <llvm/ADT/APInt.h>
@@ -37,10 +39,7 @@ inline bool isNullOrEmpty(mlir::DictionaryAttr a) { return !a || a.empty(); }
 
 inline void appendWithoutType(mlir::raw_ostream &os, mlir::Attribute a) { a.print(os, true); }
 inline std::string stringWithoutType(mlir::Attribute a) {
-  std::string output;
-  llvm::raw_string_ostream oss(output);
-  appendWithoutType(oss, a);
-  return output;
+  return buildStringViaCallback(appendWithoutType, a);
 }
 
 void printAttrs(

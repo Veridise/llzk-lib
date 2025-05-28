@@ -204,11 +204,8 @@ public:
   }
 
   // Returns a comma-separated list formatted string of the names of `Types`
-  static std::string getNames() {
-    std::string output;
-    llvm::raw_string_ostream oss(output);
-    Appender<llvm::raw_string_ostream>::append(oss);
-    return output;
+  static inline std::string getNames() {
+    return buildStringViaCallback(Appender<llvm::raw_string_ostream>::append);
   }
 };
 

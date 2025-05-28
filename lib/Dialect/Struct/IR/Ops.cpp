@@ -12,6 +12,7 @@
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
+#include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/IRMapping.h>
@@ -145,20 +146,19 @@ StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
 }
 
 std::string StructDefOp::getHeaderString() {
-  std::string output;
-  llvm::raw_string_ostream oss(output);
-  FailureOr<SymbolRefAttr> pathToExpected = getPathFromRoot(*this);
-  if (succeeded(pathToExpected)) {
-    oss << pathToExpected.value();
-  } else {
-    // When there is a failure trying to get the resolved name of the struct,
-    //  just print its symbol name directly.
-    oss << "@" << this->getSymName();
-  }
-  if (auto attr = this->getConstParamsAttr()) {
-    oss << "<" << attr << ">";
-  }
-  return output;
+  return buildStringViaCallback([this](llvm::raw_ostream &ss) {
+    FailureOr<SymbolRefAttr> pathToExpected = getPathFromRoot(*this);
+    if (succeeded(pathToExpected)) {
+      ss << pathToExpected.value();
+    } else {
+      // When there is a failure trying to get the resolved name of the struct,
+      //  just print its symbol name directly.
+      ss << '@' << this->getSymName();
+    }
+    if (auto attr = this->getConstParamsAttr()) {
+      ss << '<' << attr << '>';
+    }
+  });
 }
 
 bool StructDefOp::hasParamNamed(StringAttr find) {
@@ -217,16 +217,16 @@ inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool a
     }
   }
 
-  std::string message;
-  llvm::raw_string_ostream ss(message);
-  ss << "\"@" << COMPONENT_NAME_MAIN << "\" component \"@" << inFunc.getSymName()
-     << "\" function parameters must be one of: {";
-  if (appendSelf) {
-    ss << "!" << StructType::name << "<@" << COMPONENT_NAME_MAIN << ">, ";
-  }
-  ss << "!" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL << ">, ";
-  ss << "!" << ArrayType::name << "<.. x !" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL
-     << ">>}";
+  std::string message = buildStringViaCallback([&inFunc, appendSelf](llvm::raw_ostream &ss) {
+    ss << "\"@" << COMPONENT_NAME_MAIN << "\" component \"@" << inFunc.getSymName()
+       << "\" function parameters must be one of: {";
+    if (appendSelf) {
+      ss << "!" << StructType::name << "<@" << COMPONENT_NAME_MAIN << ">, ";
+    }
+    ss << "!" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL << ">, ";
+    ss << "!" << ArrayType::name << "<.. x !" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL
+       << ">>}";
+  });
   return inFunc.emitError(message);
 }
 

@@ -10,6 +10,7 @@
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Debug.h"
+#include "llzk/Util/StreamHelper.h"
 
 #include <llvm/ADT/TypeSwitch.h>
 
@@ -613,10 +614,7 @@ fallbackUnaryOp(llvm::SMTSolverRef solver, Operation *op, const ExpressionValue 
     // The definition of an inverse X^-1 is Y s.t. XY % prime = 1.
     // To create this expression, we create a new symbol for Y and add the
     // XY % prime = 1 constraint to the solver.
-    std::string symName;
-    llvm::raw_string_ostream ss(symName);
-    ss << *op;
-
+    std::string symName = buildStringViaInsertionOp(*op);
     llvm::SMTExprRef invSym = field.createSymbol(solver, symName.c_str());
     llvm::SMTExprRef one = solver->mkBitvector(field.one(), field.bitWidth());
     llvm::SMTExprRef prime = solver->mkBitvector(field.prime(), field.bitWidth());
@@ -905,19 +903,11 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(const ConstrainRef 
 }
 
 llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const ConstrainRef &r) const {
-  std::string symbolName;
-  llvm::raw_string_ostream ss(symbolName);
-  r.print(ss);
-
-  return createFeltSymbol(symbolName.c_str());
+  return createFeltSymbol(buildStringViaPrint(r).c_str());
 }
 
-llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(Value val) const {
-  std::string symbolName;
-  llvm::raw_string_ostream ss(symbolName);
-  val.print(ss);
-
-  return createFeltSymbol(symbolName.c_str());
+llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(Value v) const {
+  return createFeltSymbol(buildStringViaPrint(v).c_str());
 }
 
 llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const char *name) const {

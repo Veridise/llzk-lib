@@ -9,6 +9,7 @@
 
 #include "llzk/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/Shared/Builders.h"
+#include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <gtest/gtest.h>
@@ -44,13 +45,9 @@ TEST_F(CallGraphTests, constructorTest) {
 TEST_F(CallGraphTests, printTest) {
   builder.insertFullStruct(structAName);
 
-  std::string s;
-  llvm::raw_string_ostream sstream(s);
-
   llzk::CallGraph cgraph(builder.getRootModule());
-  cgraph.print(sstream);
 
-  ASSERT_FALSE(sstream.str().empty());
+  ASSERT_FALSE(buildStringViaPrint(cgraph).empty());
 }
 
 TEST_F(CallGraphTests, numFnTest) {

@@ -35,4 +35,29 @@ public:
   ~filtered_raw_ostream() override { flush(); }
 };
 
+/// Generate a string by calling the given `appendFn` with an `llvm::raw_ostream &` as the
+/// first argument followed by the additional `Args` provided (if any).
+template <typename Func, typename... Args>
+inline std::string buildStringViaCallback(Func &&appendFn, Args &&...args) {
+  std::string output;
+  llvm::raw_string_ostream oss(output);
+  std::invoke(std::forward<Func>(appendFn), oss, std::forward<Args>(args)...);
+  return output;
+}
+
+/// Generate a string by calling `base.print(llvm::raw_ostream &)` on a stream backed by the
+/// returned string.
+template <typename T> inline std::string buildStringViaPrint(const T &base) {
+  return buildStringViaCallback([](llvm::raw_ostream &ss, const T &b) { b.print(ss); }, base);
+}
+
+/// Generate a string by using the insertion operator (<<) to append all args to a stream backed by
+/// the returned string.
+template <typename... Args> inline std::string buildStringViaInsertionOp(Args &&...args) {
+  std::string output;
+  llvm::raw_string_ostream oss(output);
+  (oss << ... << std::forward<Args>(args));
+  return output;
+}
+
 } // namespace llzk
