@@ -35,11 +35,11 @@ extern "C" {
 #define LLZK_DECLARE_PREDICATE(name, ...) MLIR_CAPI_EXPORTED bool llzk##name(__VA_ARGS__)
 
 #define LLZK_DECLARE_OP_PREDICATE(op, name)                                                        \
-  MLIR_CAPI_EXPORTED bool llzk##op##Get##name(MlirOperation)
+  MLIR_CAPI_EXPORTED bool llzk##op##Get##name(MlirOperation op)
 #define LLZK_DECLARE_NARY_OP_PREDICATE(op, name, ...)                                              \
-  MLIR_CAPI_EXPORTED bool llzk##op##Get##name(MlirOperation, __VA_ARGS__)
+  MLIR_CAPI_EXPORTED bool llzk##op##Get##name(MlirOperation op, __VA_ARGS__)
 
-#define LLZK_DECLARE_ISA(what, root) MLIR_CAPI_EXPORTED bool llzk##root##IsA##what(Mlir##root)
+#define LLZK_DECLARE_ISA(what, root) MLIR_CAPI_EXPORTED bool llzk##root##IsA##what(Mlir##root what)
 #define LLZK_DECLARE_TYPE_ISA(what) LLZK_DECLARE_ISA(what, Type)
 #define LLZK_DECLARE_OP_ISA(what) LLZK_DECLARE_ISA(what, Operation)
 #define LLZK_DECLARE_ATTR_ISA(what) LLZK_DECLARE_ISA(what, Attribute)

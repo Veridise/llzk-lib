@@ -65,43 +65,44 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetParams(MlirType);
 LLZK_DECLARE_OP_ISA(StructDefOp);
 
 /// Returns the associated StructType to this op using the const params defined by the op.
-MLIR_CAPI_EXPORTED MlirType llzkStructDefOpGetType(MlirOperation);
+MLIR_CAPI_EXPORTED MlirType llzkStructDefOpGetType(MlirOperation op);
 
 /// Returns the associated StructType to this op using the given const params instead of the
 /// parameters defined by the op. The const params are defined in the given attribute which has to
 /// be of type ArrayAttr.
-MLIR_CAPI_EXPORTED MlirType llzkStructDefOpGetTypeWithParams(MlirOperation, MlirAttribute);
+MLIR_CAPI_EXPORTED MlirType
+llzkStructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute params);
 
 /// Returns the operation that defines the field with the given name, if present.
-MLIR_CAPI_EXPORTED MlirOperation llzkStructDefOpGetFieldDef(MlirOperation, MlirStringRef);
+MLIR_CAPI_EXPORTED MlirOperation llzkStructDefOpGetFieldDef(MlirOperation op, MlirStringRef name);
 
 /// Fills the given array with the FieldDefOp operations inside this struct. The pointer to the
 /// operations must have been preallocated. See `llzkStructDefOpGetNumFieldDefs` for obtaining the
 /// required size of the array.
-MLIR_CAPI_EXPORTED void llzkStructDefOpGetFieldDefs(MlirOperation, MlirOperation *);
+MLIR_CAPI_EXPORTED void llzkStructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst);
 
 /// Returns the number of FieldDefOp operations defined in this struct.
-MLIR_CAPI_EXPORTED intptr_t llzkStructDefOpGetNumFieldDefs(MlirOperation);
+MLIR_CAPI_EXPORTED intptr_t llzkStructDefOpGetNumFieldDefs(MlirOperation op);
 
 /// Returns true if the struct has fields marked as columns.
-MlirLogicalResult llzkStructDefOpGetHasColumns(MlirOperation);
+MlirLogicalResult llzkStructDefOpGetHasColumns(MlirOperation op);
 
 /// Returns the FuncDefOp operation that defines the witness computation of the struct.
-MLIR_CAPI_EXPORTED MlirOperation llzkStructDefOpGetComputeFuncOp(MlirOperation);
+MLIR_CAPI_EXPORTED MlirOperation llzkStructDefOpGetComputeFuncOp(MlirOperation op);
 
 /// Returns the FuncDefOp operation that defines the constraints of the struct.
-MLIR_CAPI_EXPORTED MlirOperation llzkStructDefOpGetConstrainFuncOp(MlirOperation);
+MLIR_CAPI_EXPORTED MlirOperation llzkStructDefOpGetConstrainFuncOp(MlirOperation op);
 
 /// Returns the header string of the struct. The size of the string is written into the given size
 /// pointer. The caller is responsible of freeing the string and of providing an allocator.
 MLIR_CAPI_EXPORTED const char *
-llzkStructDefOpGetHeaderString(MlirOperation, intptr_t *, char *(*alloc_string)(size_t));
+llzkStructDefOpGetHeaderString(MlirOperation op, intptr_t *dstSize, char *(*alloc_string)(size_t));
 
 /// Returns true if the struct has a parameter that with the given name.
-LLZK_DECLARE_NARY_OP_PREDICATE(StructDefOp, HasParamName, MlirStringRef);
+LLZK_DECLARE_NARY_OP_PREDICATE(StructDefOp, HasParamName, MlirStringRef name);
 
 /// Returns a StringAttr with the fully qualified name of the struct.
-MLIR_CAPI_EXPORTED MlirAttribute llzkStructDefOpGetFullyQualifiedName(MlirOperation);
+MLIR_CAPI_EXPORTED MlirAttribute llzkStructDefOpGetFullyQualifiedName(MlirOperation op);
 
 /// Returns true if the struct is the main entry point of the circuit.
 LLZK_DECLARE_OP_PREDICATE(StructDefOp, IsMainComponent);
@@ -117,7 +118,7 @@ LLZK_DECLARE_OP_ISA(FieldDefOp);
 LLZK_DECLARE_OP_PREDICATE(FieldDefOp, HasPublicAttr);
 
 /// Sets the public attribute in the given field.
-MLIR_CAPI_EXPORTED void llzkFieldDefOpSetPublicAttr(MlirOperation, bool);
+MLIR_CAPI_EXPORTED void llzkFieldDefOpSetPublicAttr(MlirOperation op, bool value);
 
 //===----------------------------------------------------------------------===//
 // FieldReadOp

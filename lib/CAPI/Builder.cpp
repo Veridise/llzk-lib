@@ -7,8 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <llzk/CAPI/Builder.h>
+#include <llzk/CAPI/Support.h>
+
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
+#include <mlir/CAPI/Wrap.h>
 #include <mlir/IR/Builders.h>
 
 #include <llzk-c/Builder.h>
@@ -26,10 +30,7 @@ public:
 
   void notifyOperationInserted(Operation *op) final { opInsertedCb(wrap(op), userData); }
 
-  void notifyBlockCreated(Block *block) final {
-    blockInsertedCb(wrap(block), userData);
-    ;
-  }
+  void notifyBlockCreated(Block *block) final { blockInsertedCb(wrap(block), userData); }
 
 private:
   MlirNotifyOperationInserted opInsertedCb;
@@ -54,6 +55,29 @@ MlirOpBuilder mlirOpBuilderCreateWithListener(MlirContext ctx, MlirOpBuilderList
 
 void mlirOpBuilderDestroy(MlirOpBuilder builder) {
   delete reinterpret_cast<OpBuilderT *>(builder.ptr);
+}
+
+MlirContext mlirOpBuilderGetContext(MlirOpBuilder builder) {
+  return wrap(unwrap(builder)->getContext());
+}
+
+void mlirOpBuilderSetInsertionPointToStart(MlirOpBuilder builder, MlirBlock block) {
+  unwrap(builder)->setInsertionPointToStart(unwrap(block));
+}
+
+MlirOperation mlirOpBuilderGetInsertionPoint(MlirOpBuilder builder) {
+  auto it = unwrap(builder)->getInsertionPoint();
+  auto *blk = unwrap(builder)->getInsertionBlock();
+  if (!blk) {
+    return MlirOperation {nullptr};
+  }
+
+  return wrap(it != blk->end() ? &*it : nullptr);
+}
+
+/// Returns the current insertion block in the builder.
+MlirBlock mlirOpBuilderGetInsertionBlock(MlirOpBuilder builder) {
+  return wrap(unwrap(builder)->getInsertionBlock());
 }
 
 //===----------------------------------------------------------------------===//

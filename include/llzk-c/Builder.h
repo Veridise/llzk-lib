@@ -16,6 +16,7 @@
 #define LLZK_C_BUILDER_H
 
 #include "mlir-c/IR.h"
+#include "mlir-c/Support.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,6 +71,18 @@ DECLARE_OP_BUILDER_CREATE_FN(, MlirContext)
 
 /// Destroys the given builder.
 MLIR_CAPI_EXPORTED void mlirOpBuilderDestroy(MlirOpBuilder);
+
+/// Returns the context.
+MLIR_CAPI_EXPORTED MlirContext mlirOpBuilderGetContext(MlirOpBuilder);
+
+/// Sets the insertion point to the beginning of the given block.
+MLIR_CAPI_EXPORTED void mlirOpBuilderSetInsertionPointToStart(MlirOpBuilder, MlirBlock);
+
+/// Returns the current insertion point in the builder.
+MLIR_CAPI_EXPORTED MlirOperation mlirOpBuilderGetInsertionPoint(MlirOpBuilder);
+
+/// Returns the current insertion block in the builder.
+MLIR_CAPI_EXPORTED MlirBlock mlirOpBuilderGetInsertionBlock(MlirOpBuilder);
 
 //===----------------------------------------------------------------------===//
 // MlirOpBuilderListener
