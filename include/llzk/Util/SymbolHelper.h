@@ -87,12 +87,14 @@ mlir::SymbolRefAttr appendLeafName(mlir::SymbolRefAttr orig, const mlir::Twine &
 /// @brief Starting at the Operation `from`, find the nearest ancestor ModuleOp marked with
 /// LANG_ATTR_NAME from which symbol lookups are rooted.
 mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
+mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(mlir::SymbolOpInterface to);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(component::StructDefOp &to);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(function::FuncDefOp &to);
 
 /// @brief With include statements, there may be root modules nested within
 /// other root modules. This function resolves the topmost root module.
 mlir::FailureOr<mlir::ModuleOp> getTopRootModule(mlir::Operation *from);
+mlir::FailureOr<mlir::SymbolRefAttr> getPathFromTopRoot(mlir::SymbolOpInterface to);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromTopRoot(component::StructDefOp &to);
 mlir::FailureOr<mlir::SymbolRefAttr> getPathFromTopRoot(function::FuncDefOp &to);
 
