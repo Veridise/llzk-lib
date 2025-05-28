@@ -20,6 +20,8 @@
 #include <llvm/ADT/MapVector.h>
 #include <llvm/ADT/StringSet.h>
 
+#include "llvm/ADT/STLExtras.h"
+
 // TableGen'd implementation files
 #include "llzk/Dialect/Struct/IR/OpInterfaces.cpp.inc"
 
@@ -559,7 +561,8 @@ void FieldReadOp::build(
     OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr field,
     Attribute dist, ValueRange mapOperands, std::optional<int32_t> numDims
 ) {
-  assert(numDims.has_value() != mapOperands.empty());
+  // '!mapOperands.empty()' implies 'numDims.has_value()'
+  assert(mapOperands.empty() || numDims.has_value());
   state.addOperands(component);
   state.addTypes(resultType);
   if (numDims.has_value()) {
