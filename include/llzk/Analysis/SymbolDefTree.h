@@ -59,7 +59,7 @@ public:
   }
 };
 
-/// Builds a tree structure representing the symbol table strcuture. There is a node for each Symbol
+/// Builds a tree structure representing the symbol table structure. There is a node for each Symbol
 /// Operation and the parent is the SymbolTable that defines the Symbol.
 class SymbolDefTree {
   /// Maps Symbol operation to the (owned) SymbolDefTreeNode for that op
