@@ -745,10 +745,10 @@ private:
 struct IntervalAnalysisContext {
   IntervalDataFlowAnalysis *intervalDFA;
   llvm::SMTSolverRef smtSolver;
-  Field field;
+  std::reference_wrapper<const Field> field;
 
   llvm::SMTExprRef getSymbol(const ConstrainRef &r) { return intervalDFA->getOrCreateSymbol(r); }
-  const Field &getField() const { return field; }
+  const Field &getField() const { return field.get(); }
 };
 
 class StructIntervals {
@@ -859,7 +859,7 @@ protected:
 private:
   llvm::SMTSolverRef smtSolver;
   IntervalDataFlowAnalysis *intervalDFA;
-  std::optional<Field> field;
+  std::optional<std::reference_wrapper<const Field>> field;
 };
 
 } // namespace llzk

@@ -105,8 +105,6 @@ TEST_F(IntervalTests, Difference) {
   auto b = Interval::TypeA(f, f.felt(5), f.felt(11));
   auto c = Interval::TypeA(f, f.felt(5), f.felt(6));
 
-  llvm::errs() << a.intersect(b) << " => " << a.difference(b) << '\n';
   ASSERT_EQ(Interval::TypeA(f, f.felt(1), f.felt(4)), a.difference(b));
-  llvm::errs() << a.difference(c) << '\n';
   ASSERT_EQ(a, a.difference(c));
 }
