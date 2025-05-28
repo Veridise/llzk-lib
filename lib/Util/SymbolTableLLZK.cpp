@@ -126,7 +126,7 @@ static std::optional<WalkResult> walkSymbolTable(
 }
 
 /// Walk all of the symbol references within the given operation, invoking the provided
-/// callback for each found use. The callbacks takes the use of the symbol.
+/// `callback` for each found use. The `callback` takes the use of the symbol as input.
 static WalkResult
 walkSymbolRefs(Operation *op, function_ref<WalkResult(SymbolTable::SymbolUse)> callback) {
   auto walkFn = [&op, &callback](SymbolRefAttr symbolRef) {
@@ -155,12 +155,10 @@ static std::optional<WalkResult> walkSymbolUses(
     MutableArrayRef<Region> regions, function_ref<WalkResult(SymbolTable::SymbolUse)> callback
 ) {
   return walkSymbolTable(regions, [&](Operation *op) -> std::optional<WalkResult> {
-    // Check that this isn't a potentially unknown symbol
-    // table.
+    // Check that this isn't a potentially unknown symbol table.
     if (isPotentiallyUnknownSymbolTable(op)) {
       return std::nullopt;
     }
-
     return walkSymbolRefs(op, callback);
   });
 }
@@ -457,9 +455,9 @@ bool llzk::symbolKnownUseEmpty(Operation *symbol, Region *from) {
 //===----------------------------------------------------------------------===//
 // llzk::getSymbolName
 
-StringAttr llzk::getSymbolName(SymbolOpInterface symbol) {
+StringAttr llzk::getSymbolName(Operation *op) {
   // `SymbolTable::getSymbolName(Operation*)` asserts if there is no name (ex: in the case of
   // ModuleOp where the symbol name is optional) and there's no other way to check if the name
-  // exists so this fully involved retrieval method must be used.
-  return symbol.getOperation()->getAttrOfType<StringAttr>(SymbolTable::getSymbolAttrName());
+  // exists so this fully involved retrieval method must be used to return `nullptr` if no name.
+  return op->getAttrOfType<StringAttr>(SymbolTable::getSymbolAttrName());
 }

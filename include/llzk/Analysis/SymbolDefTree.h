@@ -90,7 +90,7 @@ class SymbolDefTree {
 
   /// Get or add a tree node for the given symbol def op. `parentNode` is the node containing the
   /// SymbolTable for the given symbol, or nullptr if there is no parent node.
-  SymbolDefTreeNode *getOrAddNode(mlir::SymbolOpInterface region, SymbolDefTreeNode *parentNode);
+  SymbolDefTreeNode *getOrAddNode(mlir::SymbolOpInterface symbolDef, SymbolDefTreeNode *parentNode);
 
   void buildTree(mlir::SymbolOpInterface symbolOp, SymbolDefTreeNode *parentNode);
 

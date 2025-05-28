@@ -68,8 +68,8 @@ SymbolDefTree::getOrAddNode(SymbolOpInterface symbolDef, SymbolDefTreeNode *pare
   return node.get();
 }
 
-const SymbolDefTreeNode *SymbolDefTree::lookupNode(SymbolOpInterface region) const {
-  const auto *it = nodes.find(region);
+const SymbolDefTreeNode *SymbolDefTree::lookupNode(SymbolOpInterface symbolDef) const {
+  const auto *it = nodes.find(symbolDef);
   return it == nodes.end() ? nullptr : it->second.get();
 }
 
