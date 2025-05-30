@@ -240,13 +240,7 @@ public:
   bool hasStoredValue() const { return storedValue != nullptr; }
 
   void print(raw_ostream &os, int indent = 0) const {
-    std::string tab = buildStringViaCallback([indent](llvm::raw_ostream &ss) {
-      for (int i = 0; i < indent; i++) {
-        ss << ' ';
-      }
-    });
-
-    os << tab << '[' << identifier;
+    os.indent(indent) << '[' << identifier;
     if (storedValue != nullptr) {
       os << " => " << storedValue;
     }
@@ -257,7 +251,7 @@ public:
         child->print(os, indent + 4);
         os << '\n';
       }
-      os << tab << '}';
+      os.indent(indent) << '}';
     }
   }
 

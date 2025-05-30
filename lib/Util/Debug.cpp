@@ -28,19 +28,15 @@ void dumpSymbolTableWalk(Operation *symbolTableOp) {
 }
 
 void dumpSymbolTable(llvm::raw_ostream &stream, SymbolTable &symTab, unsigned indent) {
-  for (unsigned i = 0; i < indent; ++i) {
-    stream << "  ";
-  }
-  stream << "Dumping SymbolTable [" << &symTab << "]: \n";
+  indent *= 2;
+  stream.indent(indent) << "Dumping SymbolTable [" << &symTab << "]: \n";
   auto *rawSymbolTablePtr = reinterpret_cast<char *>(&symTab);
   auto *privateFieldPtr =
       reinterpret_cast<llvm::DenseMap<Attribute, Operation *> *>(rawSymbolTablePtr + 8);
+  indent += 2;
   for (llvm::detail::DenseMapPair<Attribute, Operation *> &p : *privateFieldPtr) {
-    for (unsigned i = 0; i < indent; ++i) {
-      stream << "  ";
-    }
     Operation *op = p.second;
-    stream << "  " << p.first << " -> [" << op << "] " << op->getName() << '\n';
+    stream.indent(indent) << p.first << " -> [" << op << "] " << op->getName() << '\n';
   }
 }
 
