@@ -1,0 +1,255 @@
+// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-print-symbol-def-tree{stream=outs})' %s | FileCheck --enable-var-scope %s
+
+module attributes {veridise.lang = "llzk"} {
+  global.def @g : !struct.type<@HasUse>
+
+  struct.def @HasUse {
+    struct.field @f1 : i1
+    function.def @compute() -> !struct.type<@HasUse> {
+      %self = struct.new : !struct.type<@HasUse>
+      function.return %self : !struct.type<@HasUse>
+    }
+    function.def @constrain(%arg0: !struct.type<@HasUse>) {
+      function.return
+    }
+  }
+
+  struct.def @NoUse<[@T]> {
+    struct.field @f2 : !poly.tvar<@T>
+    function.def @compute() -> !struct.type<@NoUse<[@T]>> {
+      %self = struct.new : !struct.type<@NoUse<[@T]>>
+      function.return %self : !struct.type<@NoUse<[@T]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@NoUse<[@T]>>) {
+      function.return
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolDefTree ----
+//CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] 'builtin.module' without a name
+//CHECK-NEXT:  --- Children : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] 'global.def' named "g"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] 'struct.def' named "HasUse"
+//CHECK-NEXT:  --- Children : [0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R05]]] 'struct.field' named "f1"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R06]]] 'function.def' named "compute"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R07]]] 'function.def' named "constrain"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R04]]] 'struct.def' named "NoUse"
+//CHECK-NEXT:  --- Children : [0x[[R08:[0-9a-f]+]], 0x[[R09:[0-9a-f]+]], 0x[[R10:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R08]]] 'struct.field' named "f2"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R09]]] 'function.def' named "compute"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R10]]] 'function.def' named "constrain"
+//CHECK-NEXT:  --- Children : []
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  global.def @a : !struct.type<@StructsWithinNestedModule::@HasUse<[i1]>>
+  global.def @b : !felt.type
+
+  module @StructsWithinNestedModule {
+    struct.def @HasUse<[@T]> {
+      struct.field @f1 : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>> {
+        %self = struct.new : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
+        function.return %self : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>) {
+        function.return
+      }
+    }
+
+    struct.def @NoUse {
+      struct.field @f2 : i1
+      struct.field @f3 : !felt.type
+      function.def @compute() -> !struct.type<@StructsWithinNestedModule::@NoUse> {
+        %self = struct.new : !struct.type<@StructsWithinNestedModule::@NoUse>
+        function.return %self : !struct.type<@StructsWithinNestedModule::@NoUse>
+      }
+      function.def @constrain(%arg0: !struct.type<@StructsWithinNestedModule::@NoUse>) {
+        function.return
+      }
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolDefTree ----
+//CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] 'builtin.module' without a name
+//CHECK-NEXT:  --- Children : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] 'global.def' named "a"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] 'global.def' named "b"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R04]]] 'builtin.module' named "StructsWithinNestedModule"
+//CHECK-NEXT:  --- Children : [0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R05]]] 'struct.def' named "HasUse"
+//CHECK-NEXT:  --- Children : [0x[[R07:[0-9a-f]+]], 0x[[R08:[0-9a-f]+]], 0x[[R09:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R07]]] 'struct.field' named "f1"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R08]]] 'function.def' named "compute"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R09]]] 'function.def' named "constrain"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R06]]] 'struct.def' named "NoUse"
+//CHECK-NEXT:  --- Children : [0x[[R10:[0-9a-f]+]], 0x[[R11:[0-9a-f]+]], 0x[[R12:[0-9a-f]+]], 0x[[R13:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R10]]] 'struct.field' named "f2"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R11]]] 'struct.field' named "f3"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R12]]] 'function.def' named "compute"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R13]]] 'function.def' named "constrain"
+//CHECK-NEXT:  --- Children : []
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  module @GlobalsWithinNestedModule {
+    global.def @a : !struct.type<@HasUse<[!felt.type]>>
+    module @NestedAgain {
+      global.def @a : !struct.type<@HasUse<[!felt.type]>>
+      module @NestedEvenMore {
+        global.def @a : !struct.type<@HasUse<[!felt.type]>>
+      }
+      global.def @b : !struct.type<@HasUse<[i1]>>
+      module @SiblingNesting {
+        global.def @a : !struct.type<@HasUse<[!string.type]>>
+      }
+    }
+  }
+
+  struct.def @HasUse<[@T]> {
+    function.def @compute() -> !struct.type<@HasUse<[@T]>> {
+      %self = struct.new : !struct.type<@HasUse<[@T]>>
+      function.return %self : !struct.type<@HasUse<[@T]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@HasUse<[@T]>>) {
+      function.return
+    }
+  }
+
+  struct.def @NoUse {
+    function.def @compute() -> !struct.type<@NoUse> {
+      %self = struct.new : !struct.type<@NoUse>
+      function.return %self : !struct.type<@NoUse>
+    }
+    function.def @constrain(%arg0: !struct.type<@NoUse>) {
+      function.return
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolDefTree ----
+//CHECK-NEXT:  - Node : [0x[[R00:[0-9a-f]+]]] 'builtin.module' without a name
+//CHECK-NEXT:  --- Children : [0x[[R01:[0-9a-f]+]], 0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R01]]] 'builtin.module' named "GlobalsWithinNestedModule"
+//CHECK-NEXT:  --- Children : [0x[[R07:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R07]]] 'global.def' named "a"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R04]]] 'builtin.module' named "NestedAgain"
+//CHECK-NEXT:  --- Children : [0x[[R09:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]], 0x[[R11:[0-9a-f]+]], 0x[[R12:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R09]]] 'global.def' named "a"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R06]]] 'builtin.module' named "NestedEvenMore"
+//CHECK-NEXT:  --- Children : [0x[[R10:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R10]]] 'global.def' named "a"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R11]]] 'global.def' named "b"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R12]]] 'builtin.module' named "SiblingNesting"
+//CHECK-NEXT:  --- Children : [0x[[R13:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R13]]] 'global.def' named "a"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R02]]] 'struct.def' named "HasUse"
+//CHECK-NEXT:  --- Children : [0x[[R14:[0-9a-f]+]], 0x[[R15:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R14]]] 'function.def' named "compute"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R15]]] 'function.def' named "constrain"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] 'struct.def' named "NoUse"
+//CHECK-NEXT:  --- Children : [0x[[R16:[0-9a-f]+]], 0x[[R17:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R16]]] 'function.def' named "compute"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R17]]] 'function.def' named "constrain"
+//CHECK-NEXT:  --- Children : []
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  module @FreeFuncModule {
+    module @Level2A {
+      module @Level3 {
+        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@HasUse<[!felt.type]>>) -> !felt.type {
+          %b = felt.const 42
+          function.return %b: !felt.type
+        }
+      }
+    }
+    module @Level2B {
+      module @Level3 {
+        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@HasUse<[!felt.type]>>) -> !felt.type {
+          %b = felt.const 42
+          function.return %b: !felt.type
+        }
+      }
+    }
+  }
+
+  module @StructModule {
+    module @MoreNested {
+      struct.def @HasUse<[@T]> {
+        function.def @compute() -> !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>> {
+          %self = struct.new : !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>
+          function.return %self : !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>) {
+          function.return
+        }
+      }
+
+      struct.def @NoUse {
+        function.def @compute() -> !struct.type<@StructModule::@MoreNested::@NoUse> {
+          %self = struct.new : !struct.type<@StructModule::@MoreNested::@NoUse>
+          function.return %self : !struct.type<@StructModule::@MoreNested::@NoUse>
+        }
+        function.def @constrain(%arg0: !struct.type<@StructModule::@MoreNested::@NoUse>) {
+          function.return
+        }
+      }
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolDefTree ----
+//CHECK-NEXT:  - Node : [0x[[R00:[0-9a-f]+]]] 'builtin.module' without a name
+//CHECK-NEXT:  --- Children : [0x[[R01:[0-9a-f]+]], 0x[[R02:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R01]]] 'builtin.module' named "FreeFuncModule"
+//CHECK-NEXT:  --- Children : [0x[[R07:[0-9a-f]+]], 0x[[R09:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R07]]] 'builtin.module' named "Level2A"
+//CHECK-NEXT:  --- Children : [0x[[R03:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R03]]] 'builtin.module' named "Level3"
+//CHECK-NEXT:  --- Children : [0x[[R08:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R08]]] 'function.def' named "struct_param"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R09]]] 'builtin.module' named "Level2B"
+//CHECK-NEXT:  --- Children : [0x[[R10:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R10]]] 'builtin.module' named "Level3"
+//CHECK-NEXT:  --- Children : [0x[[R11:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R11]]] 'function.def' named "struct_param"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R02]]] 'builtin.module' named "StructModule"
+//CHECK-NEXT:  --- Children : [0x[[R12:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R12]]] 'builtin.module' named "MoreNested"
+//CHECK-NEXT:  --- Children : [0x[[R13:[0-9a-f]+]], 0x[[R14:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R13]]] 'struct.def' named "HasUse"
+//CHECK-NEXT:  --- Children : [0x[[R15:[0-9a-f]+]], 0x[[R16:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R15]]] 'function.def' named "compute"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R16]]] 'function.def' named "constrain"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R14]]] 'struct.def' named "NoUse"
+//CHECK-NEXT:  --- Children : [0x[[R17:[0-9a-f]+]], 0x[[R18:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R17]]] 'function.def' named "compute"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R18]]] 'function.def' named "constrain"
+//CHECK-NEXT:  --- Children : []

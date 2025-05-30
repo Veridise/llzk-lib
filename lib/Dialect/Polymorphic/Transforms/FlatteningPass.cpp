@@ -26,6 +26,7 @@
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/Affine/IR/AffineOps.h>
@@ -55,6 +56,7 @@
 
 // Include the generated base pass class definitions.
 namespace llzk::polymorphic {
+#define GEN_PASS_DECL_FLATTENINGPASS
 #define GEN_PASS_DEF_FLATTENINGPASS
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
 } // namespace llzk::polymorphic
@@ -1216,7 +1218,7 @@ public:
     // If the symbol is used by a FieldWriteOp with a different result type then change
     // the type of the FieldDefOp to match the FieldWriteOp result type.
     Type newType = nullptr;
-    if (auto fieldUsers = SymbolTable::getSymbolUses(op, parentRes.value())) {
+    if (auto fieldUsers = llzk::getSymbolUses(op, parentRes.value())) {
       std::optional<Location> newTypeLoc = std::nullopt;
       for (SymbolTable::SymbolUse symUse : fieldUsers.value()) {
         if (FieldWriteOp writeOp = llvm::dyn_cast<FieldWriteOp>(symUse.getUser())) {
@@ -1560,8 +1562,6 @@ LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
 
 class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass> {
 
-  static constexpr unsigned LIMIT = 1000;
-
   inline LogicalResult runOn(ModuleOp modOp) {
     {
       // Preliminary step: remove empty parameter lists from structs
@@ -1576,8 +1576,9 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     unsigned loopCount = 0;
     do {
       ++loopCount;
-      if (loopCount > LIMIT) {
-        llvm::errs() << DEBUG_TYPE << " exceeded the limit of " << LIMIT << " iterations!\n";
+      if (loopCount > iterationLimit) {
+        llvm::errs() << DEBUG_TYPE << " exceeded the limit of " << iterationLimit
+                     << " iterations!\n";
         return failure();
       }
       tracker.resetModifiedFlag();
@@ -1617,11 +1618,13 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     } while (tracker.isModified());
 
     // Remove the parameterized StructDefOp that were instantiated.
-    if (failed(Step5_Cleanup::run(modOp, tracker))) {
-      llvm::errs() << DEBUG_TYPE
-                   << " failed while removing parameterized structs that were replaced with "
-                      "instantiated versions\n";
-      return failure();
+    if (cleanupMode != StructCleanupMode::Disabled) {
+      if (failed(Step5_Cleanup::run(modOp, tracker))) {
+        llvm::errs() << DEBUG_TYPE
+                     << " failed while removing parameterized structs that were replaced with "
+                        "instantiated versions\n";
+        return failure();
+      }
     }
 
     return success();

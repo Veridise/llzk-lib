@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Analysis/AnalysisPassesEnums.h"
 #include "llzk/Pass/PassBase.h"
 
 namespace llzk {
@@ -20,6 +21,8 @@ std::unique_ptr<mlir::Pass> createCallGraphSCCsPrinterPass(llvm::raw_ostream &os
 std::unique_ptr<mlir::Pass> createConstraintDependencyGraphPrinterPass(llvm::raw_ostream &os);
 
 std::unique_ptr<mlir::Pass> createIntervalAnalysisPrinterPass(llvm::raw_ostream &os);
+
+std::unique_ptr<mlir::Pass> createSymbolDefTreePrinterPass();
 
 #define GEN_PASS_REGISTRATION
 #include "llzk/Analysis/AnalysisPasses.h.inc"
