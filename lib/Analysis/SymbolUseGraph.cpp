@@ -1,0 +1,180 @@
+//===-- SymbolUseGraph.cpp --------------------------------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+#include "llzk/Analysis/SymbolUseGraph.h"
+#include "llzk/Util/Constants.h"
+#include "llzk/Util/StreamHelper.h"
+#include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolTableLLZK.h"
+
+#include <mlir/IR/BuiltinOps.h>
+
+#include <llvm/ADT/SmallPtrSet.h>
+
+using namespace mlir;
+
+namespace llzk {
+
+//===----------------------------------------------------------------------===//
+// SymbolUseGraphNode
+//===----------------------------------------------------------------------===//
+
+void SymbolUseGraphNode::addSuccessor(SymbolUseGraphNode *node) {
+  if (this->successors.insert(node)) {
+    node->predecessors.insert(this);
+  }
+}
+
+void SymbolUseGraphNode::removeSuccessor(SymbolUseGraphNode *node) {
+  if (this->successors.remove(node)) {
+    node->predecessors.remove(this);
+  }
+}
+
+//===----------------------------------------------------------------------===//
+// SymbolUseGraph
+//===----------------------------------------------------------------------===//
+
+SymbolUseGraph::SymbolUseGraph(SymbolOpInterface root) {
+  assert(root->hasTrait<OpTrait::SymbolTable>());
+  buildTree(root);
+}
+
+SymbolUseGraphNode *SymbolUseGraph::getSymbolUserNode(const SymbolTable::SymbolUse &u) {
+  Operation *user = u.getUser();
+  assert(user);
+
+  Operation *userSymbol = user->hasTrait<SymbolOpInterface::Trait>()
+                              ? user
+                              : user->getParentWithTrait<SymbolOpInterface::Trait>();
+  // ASSERT: The root Op is ModuleOp which implements SymbolOpInterface. Thus, if no other
+  // intervening Symbol is found, that will be found.
+  assert(userSymbol);
+
+  ModuleOp foundRoot;
+  FailureOr<SymbolRefAttr> path =
+      llzk::getPathFromRoot(llvm::cast<SymbolOpInterface>(userSymbol), &foundRoot);
+  if (failed(path)) {
+    // This occurs if there is no root module with LANG_ATTR_NAME attribute or there is
+    // an unnamed module between the root module and the symbol.
+    userSymbol->emitError("Failed to add SymbolUseGraph edge for symbol '")
+        .append(u.getSymbolRef(), "' used within op: ", *user)
+        .report();
+    return nullptr;
+  }
+  return this->getOrAddNode(foundRoot, path.value(), nullptr);
+}
+
+void SymbolUseGraph::buildTree(SymbolOpInterface symbolOp) {
+  auto walkFn = [this](Operation *op, bool) {
+    assert(op->hasTrait<OpTrait::SymbolTable>());
+    FailureOr<ModuleOp> opRootModule = llzk::getRootModule(op);
+    if (failed(opRootModule)) {
+      return;
+    }
+
+    if (auto usesOpt = llzk::getSymbolUses(&op->getRegion(0))) {
+      // Create child node for each Symbol use, as successor the user Symbol op.
+      for (SymbolTable::SymbolUse u : usesOpt.value()) {
+        this->getOrAddNode(opRootModule.value(), u.getSymbolRef(), getSymbolUserNode(u));
+      }
+    }
+  };
+  SymbolTable::walkSymbolTables(symbolOp.getOperation(), true, walkFn);
+}
+
+SymbolUseGraphNode *SymbolUseGraph::getOrAddNode(
+    ModuleOp pathRoot, SymbolRefAttr path, SymbolUseGraphNode *predecessorNode
+) {
+  NodeMapKeyT key = std::make_pair(pathRoot, path);
+  std::unique_ptr<SymbolUseGraphNode> &nodeRef = nodes[key];
+  if (!nodeRef) {
+    nodeRef.reset(new SymbolUseGraphNode(pathRoot, path));
+    // When creating a new node, ensure it's attached to the tree, either as successor
+    // to the predecessor node (if given) else as successor to the root node.
+    if (predecessorNode) {
+      predecessorNode->addSuccessor(nodeRef.get());
+    } else {
+      root.addSuccessor(nodeRef.get());
+    }
+  } else if (predecessorNode) {
+    // When the node already exists and an additional predecessor node is given, add the node as a
+    // successor to the given predecessor node and detach from the 'root' (unless it's a self edge).
+    SymbolUseGraphNode *node = nodeRef.get();
+    predecessorNode->addSuccessor(node);
+    if (node != predecessorNode) {
+      root.removeSuccessor(node);
+    }
+  }
+  return nodeRef.get();
+}
+
+const SymbolUseGraphNode *SymbolUseGraph::lookupNode(ModuleOp pathRoot, SymbolRefAttr path) const {
+  NodeMapKeyT key = std::make_pair(pathRoot, path);
+  const auto *it = nodes.find(key);
+  return it == nodes.end() ? nullptr : it->second.get();
+}
+
+//===----------------------------------------------------------------------===//
+// Printing
+
+std::string SymbolUseGraphNode::toString() const { return buildStringViaPrint(*this); }
+
+void SymbolUseGraphNode::print(llvm::raw_ostream &os) const {
+  os << '\'' << symbolPath << "' with root module ";
+  FailureOr<SymbolRefAttr> unambiguousRoot = getPathFromTopRoot(symbolPathRoot);
+  if (succeeded(unambiguousRoot)) {
+    os << unambiguousRoot.value() << '\n';
+  } else {
+    os << "<<unknown path>>\n";
+  }
+}
+
+void SymbolUseGraph::print(llvm::raw_ostream &os) const {
+  const SymbolUseGraphNode *rootPtr = &this->root;
+
+  // Tracks nodes that have been printed to ensure they are only printed once.
+  SmallPtrSet<SymbolUseGraphNode *, 16> done;
+
+  std::function<void(SymbolUseGraphNode *)> printNode = [rootPtr, &printNode, &done,
+                                                         &os](SymbolUseGraphNode *node) {
+    // Skip if the node has been printed before
+    if (!done.insert(node).second) {
+      return;
+    }
+    // Print the current node
+    os << "// - Node : [" << node << "] ";
+    node->print(os);
+    // Print list of IDs for the predecessors (excluding root) and successors
+    os << "// --- Predecessors : [";
+    llvm::interleaveComma(
+        llvm::make_filter_range(
+            node->predecessors, [rootPtr](SymbolUseGraphNode *n) { return n != rootPtr; }
+        ),
+        os
+    );
+    os << "]\n";
+    os << "// --- Successors : [";
+    llvm::interleaveComma(node->successors, os);
+    os << "]\n";
+    // Recursively print the successors
+    for (SymbolUseGraphNode *c : node->successors) {
+      printNode(c);
+    }
+  };
+
+  os << "// ---- SymbolUseGraph ----\n";
+  for (SymbolUseGraphNode *r : rootPtr->successors) {
+    printNode(r);
+  }
+  os << "// -------------------\n";
+  assert(done.size() == this->size() && "All nodes were not printed!");
+}
+
+} // namespace llzk

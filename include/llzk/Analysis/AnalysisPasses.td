@@ -74,4 +74,10 @@ def SymbolDefTreePrinterPass : LLZKPass<"llzk-print-symbol-def-tree"> {
   let options = [OutputStreamOption];
 }
 
+def SymbolUseGraphPrinterPass : LLZKPass<"llzk-print-symbol-use-graph"> {
+  let summary = "Print symbol use graph.";
+  let constructor = "llzk::createSymbolUseGraphPrinterPass()";
+  let options = [OutputStreamOption];
+}
+
 #endif // LLZK_ANALYSIS_TD

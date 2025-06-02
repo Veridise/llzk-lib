@@ -24,6 +24,8 @@ std::unique_ptr<mlir::Pass> createIntervalAnalysisPrinterPass(llvm::raw_ostream 
 
 std::unique_ptr<mlir::Pass> createSymbolDefTreePrinterPass();
 
+std::unique_ptr<mlir::Pass> createSymbolUseGraphPrinterPass();
+
 #define GEN_PASS_REGISTRATION
 #include "llzk/Analysis/AnalysisPasses.h.inc"
 
