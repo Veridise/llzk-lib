@@ -14,6 +14,7 @@
 #include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/MapVector.h>
 #include <llvm/ADT/SetVector.h>
+#include <llvm/Support/DOTGraphTraits.h>
 
 namespace llzk {
 
@@ -21,7 +22,7 @@ class SymbolDefTreeNode {
   // The Symbol operation referenced by this node.
   mlir::SymbolOpInterface symbolDef;
 
-  /* Tree structure. The SymbolUseGraph owns the nodes so just pointers here. */
+  /* Tree structure. The SymbolDefTree owns the nodes so just pointers here. */
   SymbolDefTreeNode *parent;
   mlir::SetVector<SymbolDefTreeNode *> children;
 
@@ -57,6 +58,10 @@ public:
   inline llvm::iterator_range<child_iterator> childIter() const {
     return llvm::make_range(begin(), end());
   }
+
+  /// Print the node in a human readable format.
+  std::string toString() const;
+  void print(llvm::raw_ostream &os) const;
 };
 
 /// Builds a tree structure representing the symbol table structure. There is a node for each Symbol
@@ -144,11 +149,35 @@ struct GraphTraits<const llzk::SymbolDefTree *>
 
   /// nodes_iterator/begin/end - Allow iteration over all nodes in the graph.
   using nodes_iterator = llzk::SymbolDefTree::iterator;
-  static nodes_iterator nodes_begin(llzk::SymbolDefTree *g) { return g->begin(); }
-  static nodes_iterator nodes_end(llzk::SymbolDefTree *g) { return g->end(); }
+  static nodes_iterator nodes_begin(const llzk::SymbolDefTree *g) { return g->begin(); }
+  static nodes_iterator nodes_end(const llzk::SymbolDefTree *g) { return g->end(); }
 
   /// Return total number of nodes in the graph.
-  static unsigned size(llzk::SymbolDefTree *g) { return g->size(); }
+  static unsigned size(const llzk::SymbolDefTree *g) { return g->size(); }
+};
+
+// Provide graph traits for printing SymbolDefTree using dot graph printer.
+template <> struct DOTGraphTraits<const llzk::SymbolDefTreeNode *> : public DefaultDOTGraphTraits {
+
+  DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
+
+  std::string getNodeLabel(const llzk::SymbolDefTreeNode *n, const llzk::SymbolDefTreeNode *) {
+    return n->toString();
+  }
+};
+
+template <>
+struct DOTGraphTraits<const llzk::SymbolDefTree *>
+    : public DOTGraphTraits<const llzk::SymbolDefTreeNode *> {
+
+  DOTGraphTraits(bool isSimple = false)
+      : DOTGraphTraits<const llzk::SymbolDefTreeNode *>(isSimple) {}
+
+  static std::string getGraphName(const llzk::SymbolDefTree *) { return "Symbol Def Tree"; }
+
+  std::string getNodeLabel(const llzk::SymbolDefTreeNode *n, const llzk::SymbolDefTree *g) {
+    return DOTGraphTraits<const llzk::SymbolDefTreeNode *>::getNodeLabel(n, g->getRoot());
+  }
 };
 
 } // namespace llvm

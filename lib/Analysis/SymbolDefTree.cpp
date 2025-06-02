@@ -9,6 +9,7 @@
 
 #include "llzk/Analysis/SymbolDefTree.h"
 #include "llzk/Util/Constants.h"
+#include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 
 #include <mlir/IR/BuiltinOps.h>
@@ -76,16 +77,22 @@ const SymbolDefTreeNode *SymbolDefTree::lookupNode(SymbolOpInterface symbolDef) 
 //===----------------------------------------------------------------------===//
 // Printing
 
+std::string SymbolDefTreeNode::toString() const { return buildStringViaPrint(*this); }
+
+void SymbolDefTreeNode::print(llvm::raw_ostream &os) const {
+  os << '\'' << symbolDef->getName() << "' ";
+  if (StringAttr name = llzk::getSymbolName(symbolDef)) {
+    os << "named " << name << '\n';
+  } else {
+    os << "without a name\n";
+  }
+}
+
 void SymbolDefTree::print(llvm::raw_ostream &os) const {
   std::function<void(SymbolDefTreeNode *)> printNode = [&os, &printNode](SymbolDefTreeNode *node) {
     // Print the current node
-    SymbolOpInterface sym = node->symbolDef;
-    os << "// - Node : [" << node << "] '" << sym->getName() << "' ";
-    if (StringAttr name = llzk::getSymbolName(sym)) {
-      os << "named " << name << '\n';
-    } else {
-      os << "without a name\n";
-    }
+    os << "// - Node : [" << node << "] ";
+    node->print(os);
     // Print list of IDs for the children
     os << "// --- Children : [";
     llvm::interleaveComma(node->children, os);

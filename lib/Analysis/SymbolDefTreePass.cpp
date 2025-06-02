@@ -15,6 +15,8 @@
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Analysis/SymbolDefTree.h"
 
+#include <llvm/Support/GraphWriter.h>
+
 namespace llzk {
 
 #define GEN_PASS_DECL_SYMBOLDEFTREEPRINTERPASS
@@ -30,7 +32,13 @@ public:
 protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
-    getAnalysis<SymbolDefTree>().print(toStream(outputStream));
+
+    SymbolDefTree &a = getAnalysis<SymbolDefTree>();
+    a.print(toStream(outputStream));
+
+    const SymbolDefTree *b = &a;
+    std::string title = llvm::DOTGraphTraits<const llzk::SymbolDefTree *>::getGraphName(b);
+    llvm::WriteGraph(b, "SymbolDefTreePass", /*ShortNames*/ false, title);
   }
 };
 
