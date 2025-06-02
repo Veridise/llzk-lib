@@ -49,138 +49,148 @@ constexpr char UNNAMED_SYMBOL_INDICATOR[] = "<<unnamed symbol>>";
 
 enum RootSelector { CLOSEST, FURTHEST };
 
-/// Traverse ModuleOp ancestors of `from` and add their names to `path` until the (closest or
-/// furthest, based on RootSelector argument) ModuleOp with the `LANG_ATTR_NAME` attribute is
-/// reached. If a ModuleOp without a name is reached or a ModuleOp with the `LANG_ATTR_NAME`
-/// attribute is never found, produce an error (referencing the `origin` Operation). The name
-/// of the root module itself is not added to the path.
-///
-/// Returns the module containing the LANG_ATTR_NAME attribute.
-FailureOr<ModuleOp> collectPathToRoot(
-    Operation *from, Operation *origin, std::vector<FlatSymbolRefAttr> &path, RootSelector whichRoot
-) {
-  Operation *check = from;
-  ModuleOp currRoot = nullptr;
-  do {
-    if (ModuleOp m = llvm::dyn_cast_if_present<ModuleOp>(check)) {
-      // We need this attribute restriction because some stages of parsing have
-      //  an extra module wrapping the top-level module from the input file.
-      // This module, even if it has a name, does not contribute to path names.
-      if (m->hasAttr(LANG_ATTR_NAME)) {
-        if (whichRoot == RootSelector::CLOSEST) {
-          return m;
+class RootPathBuilder {
+  RootSelector whichRoot;
+  Operation *origin;
+  ModuleOp *foundRoot;
+
+public:
+  RootPathBuilder(RootSelector whichRoot, Operation *origin, ModuleOp *foundRoot)
+      : whichRoot(whichRoot), origin(origin), foundRoot(foundRoot) {}
+
+  /// Traverse ModuleOp ancestors of `from` and add their names to `path` until the (closest or
+  /// furthest, based on RootSelector argument) ModuleOp with the `LANG_ATTR_NAME` attribute is
+  /// reached. If a ModuleOp without a name is reached or a ModuleOp with the `LANG_ATTR_NAME`
+  /// attribute is never found, produce an error (referencing the `origin` Operation). The name
+  /// of the root module itself is not added to the path.
+  ///
+  /// Returns the module containing the LANG_ATTR_NAME attribute.
+  FailureOr<ModuleOp> collectPathToRoot(Operation *from, std::vector<FlatSymbolRefAttr> &path) {
+    Operation *check = from;
+    ModuleOp currRoot = nullptr;
+    do {
+      if (ModuleOp m = llvm::dyn_cast_if_present<ModuleOp>(check)) {
+        // We need this attribute restriction because some stages of parsing have
+        //  an extra module wrapping the top-level module from the input file.
+        // This module, even if it has a name, does not contribute to path names.
+        if (m->hasAttr(LANG_ATTR_NAME)) {
+          if (whichRoot == RootSelector::CLOSEST) {
+            return m;
+          }
+          currRoot = m;
         }
-        currRoot = m;
+        if (StringAttr modName = m.getSymNameAttr()) {
+          path.push_back(FlatSymbolRefAttr::get(modName));
+        } else if (!currRoot) {
+          return origin->emitOpError()
+              .append(
+                  "has ancestor '", ModuleOp::getOperationName(), "' without \"", LANG_ATTR_NAME,
+                  "\" attribute or a name"
+              )
+              .attachNote(m.getLoc())
+              .append("unnamed '", ModuleOp::getOperationName(), "' here");
+        }
       }
-      if (StringAttr modName = m.getSymNameAttr()) {
-        path.push_back(FlatSymbolRefAttr::get(modName));
-      } else if (!currRoot) {
-        return origin->emitOpError()
-            .append(
-                "has ancestor '", ModuleOp::getOperationName(), "' without \"", LANG_ATTR_NAME,
-                "\" attribute or a name"
-            )
-            .attachNote(m.getLoc())
-            .append("unnamed '", ModuleOp::getOperationName(), "' here");
-      }
+    } while ((check = check->getParentOp()));
+
+    if (whichRoot == RootSelector::FURTHEST && currRoot) {
+      return currRoot;
     }
-  } while ((check = check->getParentOp()));
 
-  if (whichRoot == RootSelector::FURTHEST && currRoot) {
-    return currRoot;
+    return origin->emitOpError().append(
+        "has no ancestor '", ModuleOp::getOperationName(), "' with \"", LANG_ATTR_NAME,
+        "\" attribute"
+    );
   }
 
-  return origin->emitOpError().append(
-      "has no ancestor '", ModuleOp::getOperationName(), "' with \"", LANG_ATTR_NAME, "\" attribute"
-  );
-}
+  /// Appends to the `path` argument via `collectPathToRoot()` starting from `position` and then
+  /// convert that path into a SymbolRefAttr.
+  FailureOr<SymbolRefAttr> buildPathFromRootToAnyOp(
+      Operation *position, std::vector<FlatSymbolRefAttr> &&path
 
-/// Appends to the `path` argument via `collectPathToRoot()` starting from `position` and then
-/// convert that path into a SymbolRefAttr.
-FailureOr<SymbolRefAttr> buildPathFromRootToAnyOp(
-    Operation *position, Operation *origin, std::vector<FlatSymbolRefAttr> &&path,
-    RootSelector whichRoot
-) {
-  // Collect the rest of the path to the root module
-  FailureOr<ModuleOp> rootMod = collectPathToRoot(position, origin, path, whichRoot);
-  if (failed(rootMod)) {
-    return failure();
+  ) {
+    // Collect the rest of the path to the root module
+    FailureOr<ModuleOp> rootMod = collectPathToRoot(position, path);
+    if (failed(rootMod)) {
+      return failure();
+    }
+    if (foundRoot) {
+      *foundRoot = rootMod.value();
+    }
+    // Special case for empty path (because asSymbolRefAttr() cannot handle it).
+    if (path.empty()) {
+      // ASSERT: This can only occur when the given `position` is the discovered root ModuleOp
+      // itself.
+      assert(position == rootMod.value().getOperation() && "empty path only at root itself");
+      return getFlatSymbolRefAttr(origin->getContext(), POSITION_IS_ROOT_INDICATOR);
+    }
+    //  Reverse the vector and convert it to a SymbolRefAttr
+    std::vector<FlatSymbolRefAttr> reversedVec(path.rbegin(), path.rend());
+    return asSymbolRefAttr(reversedVec);
   }
-  // Special case for empty path (because asSymbolRefAttr() cannot handle it).
-  if (path.empty()) {
-    // ASSERT: This can only occur when the given `position` is the discovered root ModuleOp itself.
-    assert(position == rootMod.value().getOperation() && "empty path only at root itself");
-    return getFlatSymbolRefAttr(origin->getContext(), POSITION_IS_ROOT_INDICATOR);
+
+  /// Appends the `path` via `collectPathToRoot()` starting from the given `StructDefOp` and then
+  /// convert that path into a SymbolRefAttr.
+  FailureOr<SymbolRefAttr>
+  buildPathFromRootToStruct(StructDefOp to, std::vector<FlatSymbolRefAttr> &&path) {
+    // Add the name of the struct (its name is not optional) and then delegate to helper
+    path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
+    return buildPathFromRootToAnyOp(to, std::move(path));
   }
-  //  Reverse the vector and convert it to a SymbolRefAttr
-  std::vector<FlatSymbolRefAttr> reversedVec(path.rbegin(), path.rend());
-  return asSymbolRefAttr(reversedVec);
-}
 
-/// Appends the `path` via `collectPathToRoot()` starting from the given `StructDefOp` and then
-/// convert that path into a SymbolRefAttr.
-FailureOr<SymbolRefAttr> buildPathFromRootToStruct(
-    StructDefOp to, Operation *origin, std::vector<FlatSymbolRefAttr> &&path, RootSelector whichRoot
-) {
-  // Add the name of the struct (its name is not optional) and then delegate to helper
-  path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
-  return buildPathFromRootToAnyOp(to, origin, std::move(path), whichRoot);
-}
-
-FailureOr<SymbolRefAttr> getPathFromRootToStruct(StructDefOp to, RootSelector whichRoot) {
-  std::vector<FlatSymbolRefAttr> path;
-  return buildPathFromRootToStruct(to, to, std::move(path), whichRoot);
-}
-
-FailureOr<SymbolRefAttr> getPathFromRootToFunc(FuncDefOp to, RootSelector whichRoot) {
-  std::vector<FlatSymbolRefAttr> path;
-  // Add the name of the function (its name is not optional)
-  path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
-
-  // Delegate based on the type of the parent op
-  Operation *current = to.getOperation();
-  Operation *parent = current->getParentOp();
-  if (StructDefOp parentStruct = llvm::dyn_cast_if_present<StructDefOp>(parent)) {
-    return buildPathFromRootToStruct(parentStruct, current, std::move(path), whichRoot);
-  } else if (ModuleOp parentMod = llvm::dyn_cast_if_present<ModuleOp>(parent)) {
-    return buildPathFromRootToAnyOp(parentMod, current, std::move(path), whichRoot);
-  } else {
-    // This is an error in the compiler itself. In current implementation,
-    //  FuncDefOp must have either StructDefOp or ModuleOp as its parent.
-    return current->emitError().append("orphaned '", FuncDefOp::getOperationName(), "'");
-  }
-}
-
-FailureOr<SymbolRefAttr> getPathFromRootToAnySymbol(SymbolOpInterface to, RootSelector whichRoot) {
-  return TypeSwitch<Operation *, FailureOr<SymbolRefAttr>>(to.getOperation())
-
-      // This more general function must check for the specific cases first.
-      .Case<FuncDefOp>([&whichRoot](FuncDefOp to) { return getPathFromRootToFunc(to, whichRoot); })
-      .Case<StructDefOp>([&whichRoot](StructDefOp to) {
-    return getPathFromRootToStruct(to, whichRoot);
-  })
-
-      // If it's a module, immediately delegate to `buildPathFromRootToAnyOp()` since
-      // it will already add the module name to the path.
-      .Case<ModuleOp>([&whichRoot](ModuleOp to) {
+  FailureOr<SymbolRefAttr> getPathFromRootToStruct(StructDefOp to) {
     std::vector<FlatSymbolRefAttr> path;
-    return buildPathFromRootToAnyOp(to, to, std::move(path), whichRoot);
-  })
+    return buildPathFromRootToStruct(to, std::move(path));
+  }
 
-      // For any other symbol, append the name of the symbol and then delegate to
-      // `buildPathFromRootToAnyOp()`.
-      .Default([&whichRoot, &to](Operation *_) {
+  FailureOr<SymbolRefAttr> getPathFromRootToFunc(FuncDefOp to) {
     std::vector<FlatSymbolRefAttr> path;
-    if (StringAttr name = llzk::getSymbolName(to)) {
-      path.push_back(FlatSymbolRefAttr::get(name));
+    // Add the name of the function (its name is not optional)
+    path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
+
+    // Delegate based on the type of the parent op
+    Operation *current = to.getOperation();
+    Operation *parent = current->getParentOp();
+    if (StructDefOp parentStruct = llvm::dyn_cast_if_present<StructDefOp>(parent)) {
+      return buildPathFromRootToStruct(parentStruct, std::move(path));
+    } else if (ModuleOp parentMod = llvm::dyn_cast_if_present<ModuleOp>(parent)) {
+      return buildPathFromRootToAnyOp(parentMod, std::move(path));
     } else {
-      // This can only happen if the symbol is optional. Add a placeholder name.
-      assert(to.isOptionalSymbol());
-      path.push_back(FlatSymbolRefAttr::get(to.getContext(), UNNAMED_SYMBOL_INDICATOR));
+      // This is an error in the compiler itself. In current implementation,
+      //  FuncDefOp must have either StructDefOp or ModuleOp as its parent.
+      return current->emitError().append("orphaned '", FuncDefOp::getOperationName(), "'");
     }
-    return buildPathFromRootToAnyOp(to, to, std::move(path), whichRoot);
-  });
-}
+  }
+
+  FailureOr<SymbolRefAttr> getPathFromRootToAnySymbol(SymbolOpInterface to) {
+    return TypeSwitch<Operation *, FailureOr<SymbolRefAttr>>(to.getOperation())
+
+        // This more general function must check for the specific cases first.
+        .Case<FuncDefOp>([this](FuncDefOp to) { return getPathFromRootToFunc(to); })
+        .Case<StructDefOp>([this](StructDefOp to) { return getPathFromRootToStruct(to); })
+
+        // If it's a module, immediately delegate to `buildPathFromRootToAnyOp()` since
+        // it will already add the module name to the path.
+        .Case<ModuleOp>([this](ModuleOp to) {
+      std::vector<FlatSymbolRefAttr> path;
+      return buildPathFromRootToAnyOp(to, std::move(path));
+    })
+
+        // For any other symbol, append the name of the symbol and then delegate to
+        // `buildPathFromRootToAnyOp()`.
+        .Default([this, &to](Operation *_) {
+      std::vector<FlatSymbolRefAttr> path;
+      if (StringAttr name = llzk::getSymbolName(to)) {
+        path.push_back(FlatSymbolRefAttr::get(name));
+      } else {
+        // This can only happen if the symbol is optional. Add a placeholder name.
+        assert(to.isOptionalSymbol());
+        path.push_back(FlatSymbolRefAttr::get(to.getContext(), UNNAMED_SYMBOL_INDICATOR));
+      }
+      return buildPathFromRootToAnyOp(to, std::move(path));
+    });
+  }
+};
 
 } // namespace
 
@@ -247,36 +257,36 @@ SymbolRefAttr appendLeafName(SymbolRefAttr orig, const Twine &newLeafSuffix) {
 
 FailureOr<ModuleOp> getRootModule(Operation *from) {
   std::vector<FlatSymbolRefAttr> path;
-  return collectPathToRoot(from, from, path, RootSelector::CLOSEST);
+  return RootPathBuilder(RootSelector::CLOSEST, from, nullptr).collectPathToRoot(from, path);
 }
 
-FailureOr<SymbolRefAttr> getPathFromRoot(SymbolOpInterface to) {
-  return getPathFromRootToAnySymbol(to, RootSelector::CLOSEST);
+FailureOr<SymbolRefAttr> getPathFromRoot(SymbolOpInterface to, ModuleOp *foundRoot) {
+  return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToAnySymbol(to);
 }
 
-FailureOr<SymbolRefAttr> getPathFromRoot(StructDefOp &to) {
-  return getPathFromRootToStruct(to, RootSelector::CLOSEST);
+FailureOr<SymbolRefAttr> getPathFromRoot(StructDefOp &to, ModuleOp *foundRoot) {
+  return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToStruct(to);
 }
 
-FailureOr<SymbolRefAttr> getPathFromRoot(FuncDefOp &to) {
-  return getPathFromRootToFunc(to, RootSelector::CLOSEST);
+FailureOr<SymbolRefAttr> getPathFromRoot(FuncDefOp &to, ModuleOp *foundRoot) {
+  return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToFunc(to);
 }
 
 FailureOr<ModuleOp> getTopRootModule(Operation *from) {
   std::vector<FlatSymbolRefAttr> path;
-  return collectPathToRoot(from, from, path, RootSelector::FURTHEST);
+  return RootPathBuilder(RootSelector::FURTHEST, from, nullptr).collectPathToRoot(from, path);
 }
 
-FailureOr<SymbolRefAttr> getPathFromTopRoot(SymbolOpInterface to) {
-  return getPathFromRootToAnySymbol(to, RootSelector::FURTHEST);
+FailureOr<SymbolRefAttr> getPathFromTopRoot(SymbolOpInterface to, ModuleOp *foundRoot) {
+  return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToAnySymbol(to);
 }
 
-FailureOr<SymbolRefAttr> getPathFromTopRoot(StructDefOp &to) {
-  return getPathFromRootToStruct(to, RootSelector::FURTHEST);
+FailureOr<SymbolRefAttr> getPathFromTopRoot(StructDefOp &to, ModuleOp *foundRoot) {
+  return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToStruct(to);
 }
 
-FailureOr<SymbolRefAttr> getPathFromTopRoot(FuncDefOp &to) {
-  return getPathFromRootToFunc(to, RootSelector::FURTHEST);
+FailureOr<SymbolRefAttr> getPathFromTopRoot(FuncDefOp &to, ModuleOp *foundRoot) {
+  return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToFunc(to);
 }
 
 bool hasUsesWithin(Operation *symbol, Operation *from) {
