@@ -15,8 +15,6 @@
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Analysis/SymbolUseGraph.h"
 
-#include <llvm/Support/GraphWriter.h>
-
 namespace llzk {
 
 #define GEN_PASS_DECL_SYMBOLUSEGRAPHPRINTERPASS
@@ -36,9 +34,7 @@ protected:
     SymbolUseGraph &a = getAnalysis<SymbolUseGraph>();
     a.print(toStream(outputStream));
 
-    const SymbolUseGraph *b = &a;
-    std::string title = llvm::DOTGraphTraits<const llzk::SymbolUseGraph *>::getGraphName(b);
-    llvm::WriteGraph(b, "SymbolUseGraphPass", /*ShortNames*/ false, title);
+    a.dumpToDotFile();
   }
 };
 

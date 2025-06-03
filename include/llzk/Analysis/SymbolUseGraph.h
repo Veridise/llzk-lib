@@ -37,7 +37,7 @@ class SymbolUseGraphNode {
     assert(path && "'path' cannot be nullptr");
   }
 
-  // Used only for creating the root node in the tree.
+  // Used only for creating the root node in the graph.
   SymbolUseGraphNode() : symbolPathRoot(nullptr), symbolPath(nullptr) {}
 
   /// Add a successor node.
@@ -92,13 +92,13 @@ class SymbolUseGraph {
   /// Maps Symbol operation to the (owned) SymbolUseGraphNode for that op
   using NodeMapT = llvm::MapVector<NodeMapKeyT, std::unique_ptr<SymbolUseGraphNode>>;
 
-  /// The set of nodes within the tree.
+  /// The set of nodes within the graph.
   NodeMapT nodes;
 
-  /// The singleton symbolic (i.e. no associated op) root node of the tree.
+  /// The singleton symbolic (i.e. no associated op) root node of the graph.
   SymbolUseGraphNode root;
 
-  /// An iterator over the internal tree nodes. Unwraps the map iterator to access the node.
+  /// An iterator over the internal graph nodes. Unwraps the map iterator to access the node.
   class NodeIterator final
       : public llvm::mapped_iterator<
             NodeMapT::const_iterator, SymbolUseGraphNode *(*)(const NodeMapT::value_type &)> {
@@ -115,7 +115,7 @@ class SymbolUseGraph {
           ) {}
   };
 
-  /// Get or add a tree node for the given symbol reference relative to the given root module.
+  /// Get or add a graph node for the given symbol reference relative to the given root ModuleOp.
   SymbolUseGraphNode *getOrAddNode(
       mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path, SymbolUseGraphNode *predecessorNode
   );
@@ -130,20 +130,23 @@ public:
   /// none exists.
   const SymbolUseGraphNode *lookupNode(mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path) const;
 
-  /// Returns the symbolic (i.e. no associated op) root node of the tree.
+  /// Returns the symbolic (i.e. no associated op) root node of the graph.
   const SymbolUseGraphNode *getRoot() const { return &root; }
 
-  /// Return total number of nodes in the tree.
+  /// Return total number of nodes in the graph.
   size_t size() const { return nodes.size(); }
 
-  /// An iterator over the nodes of the tree.
+  /// An iterator over the nodes of the graph.
   using iterator = NodeIterator;
   iterator begin() const { return nodes.begin(); }
   iterator end() const { return nodes.end(); }
 
-  /// Dump the tree in a human readable format.
+  /// Dump the graph in a human readable format.
   inline void dump() const { print(llvm::errs()); }
   void print(llvm::raw_ostream &os) const;
+
+  /// Dump the graph to file in dot graph format.
+  void dumpToDotFile(std::string filename = "") const;
 };
 
 } // namespace llzk

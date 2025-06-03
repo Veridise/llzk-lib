@@ -14,6 +14,8 @@
 
 #include <mlir/IR/BuiltinOps.h>
 
+#include <llvm/Support/GraphWriter.h>
+
 using namespace mlir;
 
 namespace llzk {
@@ -108,6 +110,11 @@ void SymbolDefTree::print(llvm::raw_ostream &os) const {
     printNode(r);
   }
   os << "// -------------------\n";
+}
+
+void SymbolDefTree::dumpToDotFile(std::string filename) const {
+  std::string title = llvm::DOTGraphTraits<const llzk::SymbolDefTree *>::getGraphName(this);
+  llvm::WriteGraph(this, "SymbolDefTree", /*ShortNames*/ false, title, filename);
 }
 
 } // namespace llzk

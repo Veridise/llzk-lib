@@ -123,6 +123,9 @@ public:
   /// Dump the tree in a human readable format.
   inline void dump() const { print(llvm::errs()); }
   void print(llvm::raw_ostream &os) const;
+
+  /// Dump the tree to file in dot graph format.
+  void dumpToDotFile(std::string filename = "") const;
 };
 
 } // namespace llzk

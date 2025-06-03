@@ -16,6 +16,7 @@
 #include <mlir/IR/BuiltinOps.h>
 
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/Support/GraphWriter.h>
 
 using namespace mlir;
 
@@ -96,7 +97,7 @@ SymbolUseGraphNode *SymbolUseGraph::getOrAddNode(
   std::unique_ptr<SymbolUseGraphNode> &nodeRef = nodes[key];
   if (!nodeRef) {
     nodeRef.reset(new SymbolUseGraphNode(pathRoot, path));
-    // When creating a new node, ensure it's attached to the tree, either as successor
+    // When creating a new node, ensure it's attached to the graph, either as successor
     // to the predecessor node (if given) else as successor to the root node.
     if (predecessorNode) {
       predecessorNode->addSuccessor(nodeRef.get());
@@ -175,6 +176,11 @@ void SymbolUseGraph::print(llvm::raw_ostream &os) const {
   }
   os << "// -------------------\n";
   assert(done.size() == this->size() && "All nodes were not printed!");
+}
+
+void SymbolUseGraph::dumpToDotFile(std::string filename) const {
+  std::string title = llvm::DOTGraphTraits<const llzk::SymbolUseGraph *>::getGraphName(this);
+  llvm::WriteGraph(this, "SymbolUseGraph", /*ShortNames*/ false, title, filename);
 }
 
 } // namespace llzk
