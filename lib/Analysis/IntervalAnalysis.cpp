@@ -924,7 +924,8 @@ llvm::APSInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   llvm::APInt fieldConst =
       TypeSwitch<Operation *, llvm::APInt>(op)
           .Case<FeltConstantOp>([&](FeltConstantOp feltConst) {
-    return feltConst.getValueAttr().getValue().zext(field.get().bitWidth());
+    llvm::APSInt constOpVal(feltConst.getValueAttr().getValue());
+    return field.get().reduce(constOpVal);
   })
           .Case<arith::ConstantIndexOp>([&](arith::ConstantIndexOp indexConst) {
     return llvm::APInt(field.get().bitWidth(), indexConst.value());
