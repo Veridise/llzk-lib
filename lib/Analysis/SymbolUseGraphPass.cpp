@@ -32,9 +32,10 @@ protected:
     markAllAnalysesPreserved();
 
     SymbolUseGraph &a = getAnalysis<SymbolUseGraph>();
+    if (saveDotGraph) {
+      a.dumpToDotFile();
+    }
     a.print(toStream(outputStream));
-
-    a.dumpToDotFile();
   }
 };
 

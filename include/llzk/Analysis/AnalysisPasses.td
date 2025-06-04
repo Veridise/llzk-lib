@@ -17,6 +17,7 @@ def OutputStreamDescription {
   string r = "Specifies the stream to which the pass prints.";
 }
 
+/// Enumeration of the output stream options in LLVM.
 def OutputStream : I32EnumAttr<"OutputStream", OutputStreamDescription.r,
                                [I32EnumAttrCase<"Outs", 1, "outs">,
                                 I32EnumAttrCase<"Errs", 2, "errs">,
@@ -26,6 +27,7 @@ def OutputStream : I32EnumAttr<"OutputStream", OutputStreamDescription.r,
   let genSpecializedAttr = 0;
 }
 
+/// Reusable pass Option for allowing a pass user to specify the output stream.
 def OutputStreamOption
     : Option<"outputStream", "stream", "::llzk::OutputStream",
              /* default */ "::llzk::OutputStream::Errs",
@@ -37,6 +39,16 @@ def OutputStreamOption
                 clEnumValN(::llzk::OutputStream::Dbgs, stringifyOutputStream(::llzk::OutputStream::Dbgs),
                            "Print pass output to 'llvm::dbgs()'")
           )}]>;
+
+/// Reusable pass Option allowing pass user to specify whether or not to dump
+/// the DOT graph to file.
+def SaveDotGraphOption
+    : Option<"saveDotGraph", "saveDot", "bool",
+             /* default */ "false", "Whether to dump the graph to DOT format.">;
+
+//===----------------------------------------------------------------------===//
+// Analysis Pass definitions
+//===----------------------------------------------------------------------===//
 
 def CallGraphPrinterPass : LLZKPass<"llzk-print-call-graph"> {
   let summary = "Print the LLZK module's call graph.";
@@ -71,13 +83,13 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
 def SymbolDefTreePrinterPass : LLZKPass<"llzk-print-symbol-def-tree"> {
   let summary = "Print symbol definition tree.";
   let constructor = "llzk::createSymbolDefTreePrinterPass()";
-  let options = [OutputStreamOption];
+  let options = [OutputStreamOption, SaveDotGraphOption];
 }
 
 def SymbolUseGraphPrinterPass : LLZKPass<"llzk-print-symbol-use-graph"> {
   let summary = "Print symbol use graph.";
   let constructor = "llzk::createSymbolUseGraphPrinterPass()";
-  let options = [OutputStreamOption];
+  let options = [OutputStreamOption, SaveDotGraphOption];
 }
 
 #endif // LLZK_ANALYSIS_TD

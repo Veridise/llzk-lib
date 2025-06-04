@@ -32,9 +32,10 @@ protected:
     markAllAnalysesPreserved();
 
     SymbolDefTree &a = getAnalysis<SymbolDefTree>();
+    if (saveDotGraph) {
+      a.dumpToDotFile();
+    }
     a.print(toStream(outputStream));
-
-    a.dumpToDotFile();
   }
 };
 
