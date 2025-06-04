@@ -507,7 +507,7 @@ namespace {
 /// Optional result from type unifications. Maps `AffineMapAttr` appearing in one type to the
 /// associated `IntegerAttr` from the other type at the same nested position. The `Side` enum in the
 /// key indicates which input expression the `AffineMapAttr` is from. Additionally, if a conflict is
-/// found (i.e. multiple occurances of a specific `AffineMapAttr` on the same side map to different
+/// found (i.e. multiple occurrences of a specific `AffineMapAttr` on the same side map to different
 /// `IntegerAttr` from the other side), the mapped value will be `nullptr`.
 ///
 /// This map is for tracking replacement of `AffineMapAttr` with integer constant values to

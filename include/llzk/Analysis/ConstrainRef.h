@@ -89,7 +89,7 @@ private:
   /// Either:
   /// 1. A field within a struct (as a SymbolLookupResult to be cautious of external module scopes)
   /// 2. An index into an array
-  /// 3. A half-open range of indices into an array, for when we're unsure about a specifc index
+  /// 3. A half-open range of indices into an array, for when we're unsure about a specific index
   /// Likely, this will be from [0, size) at this point.
   std::variant<SymbolLookupResult<component::FieldDefOp>, mlir::APInt, IndexRange> index;
 };

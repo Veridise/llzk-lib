@@ -1,4 +1,4 @@
-//===-- SymbolHelperTest.cpp - Unit tests for symbol utilites ---*- C++ -*-===//
+//===-- SymbolHelperTest.cpp - Unit tests for symbol utilities --*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.

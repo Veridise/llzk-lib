@@ -32,7 +32,7 @@ How to Contribute:
 ## Versions
 
 This site documents the current state of LLZK version \llzkVersion.
-For specific release version documentation, refer to the below subsites:
+For specific release version documentation, refer to the below sub-sites:
 
 \todo Coming soon after release.
 

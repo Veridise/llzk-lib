@@ -12,7 +12,7 @@ The LLZK project consists of three main components:
 
 The general workflow of using LLZK is therefore as follows:
 1. Translate the source language into LLZK using [a frontend tool](\ref frontends).
-2. Use the [llzk-opt tool](\ref llzk-opt) to perform any transformations using LLZK's [pass infrastucture](\ref pass-overview).
+2. Use the [llzk-opt tool](\ref llzk-opt) to perform any transformations using LLZK's [pass infrastructure](\ref pass-overview).
 3. Provide the transformed IR to a [backend](\ref backends) for further analysis or use.
 
 ### Frontends {#frontends}

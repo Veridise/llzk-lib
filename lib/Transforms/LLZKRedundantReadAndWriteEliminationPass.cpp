@@ -514,7 +514,7 @@ class RedundantReadAndWriteEliminationPass
     };
 
     // Read a value from an array. This works on both readarr operations (which
-    // return a scalar value) and extractarr operations (which return a subarry).
+    // return a scalar value) and extractarr operations (which return a subarray).
     auto doArrayReadLike = [&]<HasInterface<ArrayAccessOpInterface> OpClass>(OpClass readarr) {
       std::shared_ptr<ReferenceNode> currValTree = state.at(translate(readarr.getArrRef()));
 

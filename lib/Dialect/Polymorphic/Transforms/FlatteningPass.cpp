@@ -148,7 +148,7 @@ public:
       // Report. Based on InFlightDiagnostic::report().
       engine.emit(std::move(diag));
     }
-    // Emiting a Diagnostic consumes it (per DiagnosticEngine::emit) so remove them from the map.
+    // Emitting a Diagnostic consumes it (per DiagnosticEngine::emit) so remove them from the map.
     // Unfortunately, this means if the key StructType is the result of instantiation at multiple
     // `compute()` calls it will only be reported at one of those locations, not all.
     delayedDiagnostics.erase(newType);
@@ -424,7 +424,7 @@ class StructCloner {
         if (!attrValue.isOne()) {
           Location opLoc = op.getLoc();
           Diagnostic diag(opLoc, DiagnosticSeverity::Warning);
-          diag << "Interpretting non-zero value " << stringWithoutType(a) << " as true";
+          diag << "Interpreting non-zero value " << stringWithoutType(a) << " as true";
           if (getContext()->shouldPrintOpOnDiagnostic()) {
             diag.attachNote(opLoc) << "see current operation: " << *op;
           }
@@ -959,7 +959,7 @@ public:
       // the function argument types and the type of the target function.
       auto callArgTypes = op.getArgOperands().getTypes();
       if (callArgTypes.empty()) {
-        // no refinement posible if no function arguments
+        // no refinement possible if no function arguments
         return failure();
       }
       SymbolTableCollection tables;
@@ -1005,7 +1005,7 @@ public:
   }
 
 private:
-  /// Use the type of the target function to propagate instantation knowledge from the function
+  /// Use the type of the target function to propagate instantiation knowledge from the function
   /// argument types to the function return type in the CallOp.
   inline LogicalResult instantiateViaTargetType(
       const AffineMapFolder::Input &in, AffineMapFolder::Output &out,

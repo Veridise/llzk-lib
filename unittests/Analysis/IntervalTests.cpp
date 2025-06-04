@@ -71,7 +71,7 @@ TEST_F(IntervalTests, UnreducedIntervalWidth) {
 TEST_F(IntervalTests, Partitions) {
   UnreducedInterval a(0, 100), b(100, 200), c(101, 300), d(1, 0), s1(1, 10), s2(3, 7);
 
-  // Some basic overlaping intervals
+  // Some basic overlapping intervals
   AssertUnreducedIntervalEq(a, a.computeLTPart(b));
   AssertUnreducedIntervalEq(a, a.computeLEPart(b));
   AssertUnreducedIntervalEq(b, b.computeGEPart(a));
@@ -82,7 +82,7 @@ TEST_F(IntervalTests, Partitions) {
   AssertUnreducedIntervalEq(UnreducedInterval(4, 10), s1.computeGTPart(s2));
   AssertUnreducedIntervalEq(UnreducedInterval(3, 10), s1.computeGEPart(s2));
 
-  // Some non-overlaping intervals, should all be empty
+  // Some non-overlapping intervals, should all be empty
   ASSERT_TRUE(b.computeLTPart(a).reduce(f).isEmpty());
   ASSERT_TRUE(a.computeGTPart(b).reduce(f).isEmpty());
   ASSERT_TRUE(c.computeLEPart(a).reduce(f).isEmpty());

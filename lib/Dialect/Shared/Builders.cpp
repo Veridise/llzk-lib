@@ -90,7 +90,7 @@ ModuleBuilder::insertEmptyStruct(std::string_view structName, Location loc, int 
   ensureNoSuchStruct(structName);
 
   OpBuilder opBuilder(rootModule.getBody(), rootModule.getBody()->begin());
-  auto structNameAtrr = StringAttr::get(context, structName);
+  auto structNameAttr = StringAttr::get(context, structName);
   ArrayAttr structParams = nullptr;
   if (numStructParams >= 0) {
     SmallVector<Attribute> paramNames;
@@ -99,7 +99,7 @@ ModuleBuilder::insertEmptyStruct(std::string_view structName, Location loc, int 
     }
     structParams = opBuilder.getArrayAttr(paramNames);
   }
-  auto structDef = opBuilder.create<StructDefOp>(loc, structNameAtrr, structParams);
+  auto structDef = opBuilder.create<StructDefOp>(loc, structNameAttr, structParams);
   // populate the initial region
   auto &region = structDef.getRegion();
   (void)region.emplaceBlock();

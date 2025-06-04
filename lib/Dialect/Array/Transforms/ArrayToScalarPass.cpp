@@ -745,7 +745,7 @@ LogicalResult splitArrayCreateInit(ModuleOp modOp) {
 class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayToScalarPass> {
   void runOnOperation() override {
     ModuleOp module = getOperation();
-    // Separate array initialization from creation by removing the initalization list from
+    // Separate array initialization from creation by removing the initialization list from
     // CreateArrayOp and inserting the corresponding WriteArrayOp following it.
     if (failed(splitArrayCreateInit(module))) {
       signalPassFailure();
