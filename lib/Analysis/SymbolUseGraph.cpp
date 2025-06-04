@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/SymbolUseGraph.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -80,10 +81,32 @@ void SymbolUseGraph::buildTree(SymbolOpInterface symbolOp) {
       return;
     }
 
+    SymbolTableCollection tables;
     if (auto usesOpt = llzk::getSymbolUses(&op->getRegion(0))) {
       // Create child node for each Symbol use, as successor the user Symbol op.
       for (SymbolTable::SymbolUse u : usesOpt.value()) {
-        this->getOrAddNode(opRootModule.value(), u.getSymbolRef(), getSymbolUserNode(u));
+        SymbolRefAttr symRef = u.getSymbolRef();
+        // Pending [LLZK-272] only a heuristic approach is possible. Check for FlatSymbolRefAttr
+        // where the user is a FieldRefOpInterface or the user is located within a StructDefOp and
+        // append the StructDefOp path with the FlatSymbolRefAttr.
+        if (FlatSymbolRefAttr flatSymRef = llvm::dyn_cast<FlatSymbolRefAttr>(symRef)) {
+          Operation *user = u.getUser();
+          if (auto fref = llvm::dyn_cast<component::FieldRefOpInterface>(user)) {
+            symRef = llzk::appendLeaf(fref.getStructType().getNameRef(), flatSymRef);
+          } else if (auto userStruct = getSelfOrParentOfType<component::StructDefOp>(user)) {
+            StringAttr localName = flatSymRef.getAttr();
+            if (userStruct.hasParamNamed(localName) ||
+                tables.getSymbolTable(userStruct).lookup(localName)) {
+              // If 'flatSymRef' is defined in the SymbolTable for 'userStruct' then it's
+              // a local symbol so prepend the full path of the struct itself.
+              auto parentPath = llzk::getPathFromRoot(userStruct);
+              if (succeeded(parentPath)) {
+                symRef = llzk::appendLeaf(parentPath.value(), flatSymRef);
+              }
+            }
+          }
+        }
+        this->getOrAddNode(opRootModule.value(), symRef, getSymbolUserNode(u));
       }
     }
   };

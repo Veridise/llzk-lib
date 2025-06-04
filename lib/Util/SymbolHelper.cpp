@@ -143,6 +143,14 @@ public:
     return buildPathFromRootToStruct(to, std::move(path));
   }
 
+  FailureOr<SymbolRefAttr> getPathFromRootToField(FieldDefOp to) {
+    std::vector<FlatSymbolRefAttr> path;
+    // Add the name of the field (its name is not optional)
+    path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
+    // Delegate to the parent handler (must be StructDefOp per ODS)
+    return buildPathFromRootToStruct(llvm::cast<StructDefOp>(to.getParentOp()), std::move(path));
+  }
+
   FailureOr<SymbolRefAttr> getPathFromRootToFunc(FuncDefOp to) {
     std::vector<FlatSymbolRefAttr> path;
     // Add the name of the function (its name is not optional)
@@ -164,9 +172,9 @@ public:
 
   FailureOr<SymbolRefAttr> getPathFromRootToAnySymbol(SymbolOpInterface to) {
     return TypeSwitch<Operation *, FailureOr<SymbolRefAttr>>(to.getOperation())
-
         // This more general function must check for the specific cases first.
         .Case<FuncDefOp>([this](FuncDefOp to) { return getPathFromRootToFunc(to); })
+        .Case<FieldDefOp>([this](FieldDefOp to) { return getPathFromRootToField(to); })
         .Case<StructDefOp>([this](StructDefOp to) { return getPathFromRootToStruct(to); })
 
         // If it's a module, immediately delegate to `buildPathFromRootToAnyOp()` since
@@ -268,6 +276,10 @@ FailureOr<SymbolRefAttr> getPathFromRoot(StructDefOp &to, ModuleOp *foundRoot) {
   return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToStruct(to);
 }
 
+FailureOr<SymbolRefAttr> getPathFromRoot(FieldDefOp &to, ModuleOp *foundRoot) {
+  return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToField(to);
+}
+
 FailureOr<SymbolRefAttr> getPathFromRoot(FuncDefOp &to, ModuleOp *foundRoot) {
   return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToFunc(to);
 }
@@ -283,6 +295,10 @@ FailureOr<SymbolRefAttr> getPathFromTopRoot(SymbolOpInterface to, ModuleOp *foun
 
 FailureOr<SymbolRefAttr> getPathFromTopRoot(StructDefOp &to, ModuleOp *foundRoot) {
   return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToStruct(to);
+}
+
+FailureOr<SymbolRefAttr> getPathFromTopRoot(FieldDefOp &to, ModuleOp *foundRoot) {
+  return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToField(to);
 }
 
 FailureOr<SymbolRefAttr> getPathFromTopRoot(FuncDefOp &to, ModuleOp *foundRoot) {

@@ -20,6 +20,7 @@ namespace llzk {
 namespace component {
 class StructType;
 class StructDefOp;
+class FieldDefOp;
 } // namespace component
 
 namespace function {
@@ -92,6 +93,8 @@ getPathFromRoot(mlir::SymbolOpInterface to, mlir::ModuleOp *foundRoot = nullptr)
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(component::StructDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
+getPathFromRoot(component::FieldDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 
 /// @brief With include statements, there may be root modules nested within
@@ -101,6 +104,8 @@ mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromTopRoot(mlir::SymbolOpInterface to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromTopRoot(component::StructDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+mlir::FailureOr<mlir::SymbolRefAttr>
+getPathFromTopRoot(component::FieldDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromTopRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 
