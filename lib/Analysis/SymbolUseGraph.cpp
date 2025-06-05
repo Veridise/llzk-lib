@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/SymbolUseGraph.h"
+#include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/StreamHelper.h"
@@ -43,34 +44,37 @@ void SymbolUseGraphNode::removeSuccessor(SymbolUseGraphNode *node) {
 // SymbolUseGraph
 //===----------------------------------------------------------------------===//
 
+namespace {
+
+template <typename R>
+R getPathAndCall(SymbolOpInterface defOp, llvm::function_ref<R(ModuleOp, SymbolRefAttr)> callback) {
+  assert(defOp); // pre-condition
+
+  ModuleOp foundRoot;
+  FailureOr<SymbolRefAttr> path = llzk::getPathFromRoot(defOp, &foundRoot);
+  if (failed(path)) {
+    // This occurs if there is no root module with LANG_ATTR_NAME attribute
+    // or there is an unnamed module between the root module and the symbol.
+    auto diag = defOp.emitError("in SymbolUseGraph, failed to build symbol path");
+    diag.attachNote(defOp.getLoc()).append("for this SymbolOp");
+    diag.report();
+    return nullptr;
+  }
+  return callback(foundRoot, path.value());
+}
+
+} // namespace
+
 SymbolUseGraph::SymbolUseGraph(SymbolOpInterface root) {
   assert(root->hasTrait<OpTrait::SymbolTable>());
   buildTree(root);
 }
 
 SymbolUseGraphNode *SymbolUseGraph::getSymbolUserNode(const SymbolTable::SymbolUse &u) {
-  Operation *user = u.getUser();
-  assert(user);
-
-  Operation *userSymbol = user->hasTrait<SymbolOpInterface::Trait>()
-                              ? user
-                              : user->getParentWithTrait<SymbolOpInterface::Trait>();
-  // ASSERT: The root Op is ModuleOp which implements SymbolOpInterface. Thus, if no other
-  // intervening Symbol is found, that will be found.
-  assert(userSymbol);
-
-  ModuleOp foundRoot;
-  FailureOr<SymbolRefAttr> path =
-      llzk::getPathFromRoot(llvm::cast<SymbolOpInterface>(userSymbol), &foundRoot);
-  if (failed(path)) {
-    // This occurs if there is no root module with LANG_ATTR_NAME attribute or there is
-    // an unnamed module between the root module and the symbol.
-    userSymbol->emitError("Failed to add SymbolUseGraph edge for symbol '")
-        .append(u.getSymbolRef(), "' used within op: ", *user)
-        .report();
-    return nullptr;
-  }
-  return this->getOrAddNode(foundRoot, path.value(), nullptr);
+  SymbolOpInterface userSymbol = getSelfOrParentOfType<SymbolOpInterface>(u.getUser());
+  return getPathAndCall<SymbolUseGraphNode *>(userSymbol, [this](ModuleOp r, SymbolRefAttr p) {
+    return this->getOrAddNode(r, p, nullptr);
+  });
 }
 
 void SymbolUseGraph::buildTree(SymbolOpInterface symbolOp) {
@@ -143,6 +147,12 @@ const SymbolUseGraphNode *SymbolUseGraph::lookupNode(ModuleOp pathRoot, SymbolRe
   NodeMapKeyT key = std::make_pair(pathRoot, path);
   const auto *it = nodes.find(key);
   return it == nodes.end() ? nullptr : it->second.get();
+}
+
+const SymbolUseGraphNode *SymbolUseGraph::lookupNode(SymbolOpInterface symbolDef) const {
+  return getPathAndCall<const SymbolUseGraphNode *>(symbolDef, [this](ModuleOp r, SymbolRefAttr p) {
+    return this->lookupNode(r, p);
+  });
 }
 
 //===----------------------------------------------------------------------===//

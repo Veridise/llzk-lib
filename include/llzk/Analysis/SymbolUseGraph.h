@@ -50,16 +50,16 @@ class SymbolUseGraphNode {
   friend class SymbolUseGraph;
 
 public:
-  /// Returns the root ModuleOp for the path.
+  /// Return the root ModuleOp for the path.
   mlir::ModuleOp getSymbolPathRoot() const { return symbolPathRoot; }
 
   /// The symbol path+name relative to the closest root ModuleOp.
   mlir::SymbolRefAttr getSymbolPath() const { return symbolPath; }
 
-  /// Returns true if this node has any predecessors.
+  /// Return true if this node has any predecessors.
   bool hasPredecessor() const { return !predecessors.empty(); }
 
-  /// Returns true if this node has any successors.
+  /// Return true if this node has any successors.
   bool hasSuccessor() const { return !successors.empty(); }
 
   /// Iterator over predecessors/successors.
@@ -126,14 +126,16 @@ class SymbolUseGraph {
 public:
   SymbolUseGraph(mlir::SymbolOpInterface root);
 
-  /// Lookup the node for given symbol reference relative to the given root module, or nullptr if
-  /// none exists.
+  /// Return the existing node for the symbol reference relative to the given module, else nullptr.
   const SymbolUseGraphNode *lookupNode(mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path) const;
 
-  /// Returns the symbolic (i.e. no associated op) root node of the graph.
+  /// Return the existing node for the symbol definition op, else nullptr.
+  const SymbolUseGraphNode *lookupNode(mlir::SymbolOpInterface symbolDef) const;
+
+  /// Return the symbolic (i.e. no associated op) root node of the graph.
   const SymbolUseGraphNode *getRoot() const { return &root; }
 
-  /// Return total number of nodes in the graph.
+  /// Return the total number of nodes in the graph.
   size_t size() const { return nodes.size(); }
 
   /// An iterator over the nodes of the graph.
