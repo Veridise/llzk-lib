@@ -14,6 +14,8 @@
 
 #include <mlir/IR/BuiltinOps.h>
 
+#include <llvm/ADT/DepthFirstIterator.h>
+#include <llvm/ADT/SmallSet.h>
 #include <llvm/Support/GraphWriter.h>
 
 using namespace mlir;
@@ -38,9 +40,26 @@ void SymbolDefTreeNode::addChild(SymbolDefTreeNode *node) {
 // SymbolDefTree
 //===----------------------------------------------------------------------===//
 
+namespace {
+
+void assertProperBuild(SymbolOpInterface root, const SymbolDefTree *tree) {
+  // Collect all Symbols in the graph
+  llvm::SmallSet<SymbolOpInterface, 16> fromGraph;
+  for (const SymbolDefTreeNode *r : llvm::depth_first(tree)) {
+    if (SymbolOpInterface s = r->getOp()) {
+      fromGraph.insert(s);
+    }
+  }
+  // Ensure every symbol reachable from the 'root' is represented in the graph
+  root.walk([&fromGraph](SymbolOpInterface s) { assert(fromGraph.contains(s)); });
+}
+
+} // namespace
+
 SymbolDefTree::SymbolDefTree(SymbolOpInterface root) {
   assert(root->hasTrait<OpTrait::SymbolTable>());
   buildTree(root, /*parentNode=*/nullptr);
+  assertProperBuild(root, this);
 }
 
 void SymbolDefTree::buildTree(SymbolOpInterface symbolOp, SymbolDefTreeNode *parentNode) {

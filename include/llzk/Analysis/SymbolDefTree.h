@@ -38,6 +38,7 @@ class SymbolDefTreeNode {
 
 public:
   /// Returns the Symbol operation referenced by this node.
+  /// This will be 'nullptr' for the root node in the graph.
   mlir::SymbolOpInterface getOp() const { return symbolDef; }
 
   /// Returns true if this node is a root for symbol lookup. See `llzk::getRootModule()`.
