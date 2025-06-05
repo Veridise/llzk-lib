@@ -45,7 +45,11 @@ public:
   /// True iff the symbol was found.
   operator bool() const;
 
-  std::vector<llvm::StringRef> getIncludeSymNames() { return includeSymNameStack; }
+  /// Return the stack of symbol names from the IncludeOp that were traversed to load this result.
+  std::vector<llvm::StringRef> getIncludeSymNames() const { return includeSymNameStack; }
+
+  /// Return 'true' if at least one IncludeOp was traversed to load this result.
+  bool viaInclude() const { return !includeSymNameStack.empty(); }
 
   mlir::SymbolTableCollection *getSymbolTableCache() {
     if (managedResources) {
@@ -88,7 +92,11 @@ public:
 
   operator bool() const { return inner && llvm::isa<T>(*inner); }
 
-  std::vector<llvm::StringRef> getIncludeSymNames() { return inner.getIncludeSymNames(); }
+  /// Return the stack of symbol names from the IncludeOp that were traversed to load this result.
+  std::vector<llvm::StringRef> getIncludeSymNames() const { return inner.getIncludeSymNames(); }
+
+  /// Return 'true' if at least one IncludeOp was traversed to load this result.
+  bool viaInclude() const { return inner.viaInclude(); }
 
   bool operator==(const SymbolLookupResult<T> &rhs) const { return inner == rhs.inner; }
 
@@ -142,9 +150,9 @@ inline mlir::FailureOr<SymbolLookupResultUntyped> lookupTopLevelSymbol(
 template <typename T>
 inline mlir::FailureOr<SymbolLookupResult<T>> lookupSymbolIn(
     mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, Within &&lookupWithin,
-    mlir::Operation *origin
+    mlir::Operation *origin, bool reportMissing = true
 ) {
-  auto found = lookupSymbolIn(tables, symbol, std::move(lookupWithin), origin);
+  auto found = lookupSymbolIn(tables, symbol, std::move(lookupWithin), origin, reportMissing);
   if (mlir::failed(found)) {
     return mlir::failure(); // lookupSymbolIn() already emits a sufficient error message
   }
@@ -153,17 +161,22 @@ inline mlir::FailureOr<SymbolLookupResult<T>> lookupSymbolIn(
   // ... since the untyped result gets moved here into a typed result.
   SymbolLookupResult<T> ret(std::move(*found));
   if (!ret) {
-    return origin->emitError() << "symbol \"" << symbol << "\" references a '" << op->getName()
-                               << "' but expected a '" << T::getOperationName() << "'";
+    if (reportMissing) {
+      return origin->emitError() << "symbol \"" << symbol << "\" references a '" << op->getName()
+                                 << "' but expected a '" << T::getOperationName() << "'";
+    } else {
+      return mlir::failure();
+    }
   }
   return ret;
 }
 
 template <typename T>
 inline mlir::FailureOr<SymbolLookupResult<T>> lookupTopLevelSymbol(
-    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin
+    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin,
+    bool reportMissing = true
 ) {
-  return lookupSymbolIn<T>(tables, symbol, Within(), origin);
+  return lookupSymbolIn<T>(tables, symbol, Within(), origin, reportMissing);
 }
 
 } // namespace llzk

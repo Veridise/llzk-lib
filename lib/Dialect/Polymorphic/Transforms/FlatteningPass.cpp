@@ -12,6 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Analysis/SymbolDefTree.h"
+#include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
@@ -26,6 +28,7 @@
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/TypeHelper.h"
 
@@ -1577,6 +1580,27 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
   }
 
   inline LogicalResult runOn(ModuleOp modOp) {
+    // If the cleanup mode is set to remove anything not reachable from the "Main" struct, do an
+    // initial pass to remove things that are not reachable (as an optimization) because creating
+    // an instantiated version of a struct will not cause something to become reachable that was
+    // not already reachable in parameterized form.
+    if (cleanupMode == StructCleanupMode::MainAsRoot) {
+      SymbolTableCollection tables;
+      StructDefOp main = tables.getSymbolTable(modOp).lookup<StructDefOp>(COMPONENT_NAME_MAIN);
+      if (!main) {
+        // Emit warning if there is no "Main" because all structs may be removed (only structs that
+        // are reachable from a global def or free function will be preserved since those constructs
+        // are not candidate for removal in this pass).
+        modOp.emitWarning() << "using option '" << cleanupMode.getArgStr() << '='
+                            << stringifyStructCleanupMode(StructCleanupMode::MainAsRoot)
+                            << "' with no \"" << COMPONENT_NAME_MAIN
+                            << "\" struct may remove all structs!";
+      }
+      eraseUnreachableFrom(
+          tables, modOp, main ? ArrayRef<StructDefOp> {main} : ArrayRef<StructDefOp> {}
+      );
+    }
+
     {
       // Preliminary step: remove empty parameter lists from structs
       OpPassManager nestedPM(ModuleOp::getOperationName());
@@ -1642,6 +1666,88 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     }
 
     return success();
+  }
+
+  /// Erase all StructDefOp that are not reachable (via calls, types, or symbol usage) from one
+  /// of the StructDefOp given or from some global def or free functions (since this pass is not
+  /// concerned with removing either of those so any symbols reachable from them must not be
+  /// removed).
+  void eraseUnreachableFrom(
+      SymbolTableCollection &tables, ModuleOp rootMod, ArrayRef<StructDefOp> keep
+  ) {
+    // Initialize roots from the given StructDefOp instances
+    SetVector<SymbolOpInterface> roots;
+    for (StructDefOp s : keep) {
+      roots.insert(s);
+    }
+    // Add GlobalDefOp and "free functions" to the set of roots
+    rootMod.walk([&roots](Operation *op) {
+      if (global::GlobalDefOp gdef = llvm::dyn_cast<global::GlobalDefOp>(op)) {
+        roots.insert(gdef);
+      } else if (function::FuncDefOp fdef = llvm::dyn_cast<function::FuncDefOp>(op)) {
+        if (!fdef.isInStruct()) {
+          roots.insert(fdef);
+        }
+      }
+    });
+
+    // Use a SymbolDefTree to find all Symbol defs reachable from one of the root nodes. Then
+    // collect all Symbol uses reachable from those def nodes. These are the symbols that should be
+    // preserved. All other symbol defs should be removed.
+    const SymbolDefTree &defTree = getAnalysis<SymbolDefTree>();
+    const SymbolUseGraph &useGraph = getAnalysis<SymbolUseGraph>();
+    llvm::df_iterator_default_set<const SymbolUseGraphNode *> symbolsToKeep;
+    for (size_t i = 0; i < roots.size(); ++i) { // iterate for safe insertion
+      SymbolOpInterface keepRoot = roots[i];
+      LLVM_DEBUG({ llvm::dbgs() << "[EraseUnreachable] root: " << keepRoot << '\n'; });
+      const SymbolDefTreeNode *keepRootNode = defTree.lookupNode(keepRoot);
+      assert(keepRootNode && "every struct def must be in the def tree");
+      for (const SymbolDefTreeNode *reachableDefNode : llvm::depth_first(keepRootNode)) {
+        LLVM_DEBUG({
+          llvm::dbgs() << "[EraseUnreachable] can reach: " << reachableDefNode->getOp() << '\n';
+        });
+        if (SymbolOpInterface reachableDef = reachableDefNode->getOp()) {
+          // Get all symbol uses reachable from the current Symbol def node. There are no uses if
+          // the node is not in the graph.
+          if (const SymbolUseGraphNode *useGraphNodeForDef = useGraph.lookupNode(reachableDef)) {
+            for (const SymbolUseGraphNode *usedSymbolNode :
+                 depth_first_ext(useGraphNodeForDef, symbolsToKeep)) {
+              LLVM_DEBUG({
+                llvm::dbgs() << "[EraseUnreachable]   uses symbol: "
+                             << usedSymbolNode->getSymbolPath() << '\n';
+              });
+              // If `usedSymbolNode` references a StructDefOp, ensure its used as a root.
+              Operation *lookupRoot = usedSymbolNode->getSymbolPathRoot().getOperation();
+              auto lookupRes = lookupSymbolIn<StructDefOp>(
+                  tables, usedSymbolNode->getSymbolPath(), lookupRoot, lookupRoot, false
+              );
+              // If loaded via an IncludeOp it's not in the current AST anyway so ignore.
+              if (failed(lookupRes) || lookupRes->viaInclude()) {
+                continue;
+              }
+              bool insertRes = roots.insert(lookupRes->get());
+              LLVM_DEBUG({
+                if (insertRes) {
+                  llvm::dbgs() << "[EraseUnreachable]  found another root: " << lookupRes->get()
+                               << '\n';
+                }
+              });
+            }
+          }
+        }
+      }
+    }
+
+    rootMod.walk([&useGraph, &symbolsToKeep](StructDefOp op) {
+      const SymbolUseGraphNode *n = useGraph.lookupNode(op);
+      assert(n);
+      if (!symbolsToKeep.contains(n)) {
+        LLVM_DEBUG(llvm::dbgs() << "[EraseUnreachable] removing: " << op.getSymName() << '\n');
+        op.erase();
+      }
+
+      return WalkResult::skip(); // StructDefOp cannot be nested
+    });
   }
 };
 
