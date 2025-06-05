@@ -1562,6 +1562,20 @@ LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
 
 class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass> {
 
+  void runOnOperation() override {
+    ModuleOp modOp = getOperation();
+    if (failed(runOn(modOp))) {
+      LLVM_DEBUG({
+        // If the pass failed, dump the current IR.
+        llvm::dbgs() << "=====================================================================\n";
+        llvm::dbgs() << " Dumping module after failure of pass " << DEBUG_TYPE << " \n";
+        modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
+        llvm::dbgs() << "=====================================================================\n";
+      });
+      signalPassFailure();
+    }
+  }
+
   inline LogicalResult runOn(ModuleOp modOp) {
     {
       // Preliminary step: remove empty parameter lists from structs
@@ -1628,20 +1642,6 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     }
 
     return success();
-  }
-
-  void runOnOperation() override {
-    ModuleOp modOp = getOperation();
-    if (failed(runOn(modOp))) {
-      LLVM_DEBUG({
-        // If the pass failed, dump the current IR.
-        llvm::dbgs() << "=====================================================================\n";
-        llvm::dbgs() << " Dumping module after failure of pass " << DEBUG_TYPE << " \n";
-        modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
-        llvm::dbgs() << "=====================================================================\n";
-      });
-      signalPassFailure();
-    }
   }
 };
 
