@@ -1,0 +1,25 @@
+name: Unsync a given GitHub Issue from Jira
+
+on:
+  issues:
+    types: [unlabeled]
+
+jobs:
+  sync-issue:
+    if: secrets.JIRA_BASE_URL != '' && secrets.JIRA_USER_EMAIL != '' && secrets.JIRA_API_TOKEN != '' && github.event.label.name == 'sync-to-jira'
+    name: Sync GitHub Issue to Jira
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip" # caching pip dependencies
+
+      - name: Install python requirements
+        run: |
+          pip install --upgrade pip && pip install -r scripts/requirements.txt
+
+      - name: Run unlink script
+        run: |
+          python3 jira_driver.py --issue ${{github.event.issue.number}} unlink
