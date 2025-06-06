@@ -1,8 +1,4 @@
-// RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=main-as-root})' %s | FileCheck --enable-var-scope %s
-
-// TESTS: With "cleanup=main-as-root", if there is no "Main" struct all structs
-// are removed (except those that have a reference from a global def or from a
-// free function since those are not candidate for removal during this pass).
+// RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=concrete-as-root})' %s | FileCheck --enable-var-scope %s
 
 module attributes {veridise.lang = "llzk"} {
   global.def @g : !struct.type<@HasUseFromGlobal>
@@ -56,7 +52,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 
-  // removed
+  // removed (has no concrete instantiation)
   struct.def @NoUse<[@T]> {
     function.def @compute() -> !struct.type<@NoUse<[@T]>> {
       %self = struct.new : !struct.type<@NoUse<[@T]>>
@@ -78,7 +74,6 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NOT: struct.def @NoUse<[@T]> {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
 module attributes {veridise.lang = "llzk"} {
   global.def @g : !struct.type<@HasUse>
 
@@ -94,7 +89,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 
-  // removed
+  // removed (has no concrete instantiation)
   struct.def @NoUse<[@T]> {
     struct.field @f2 : !poly.tvar<@T>
     function.def @compute() -> !struct.type<@NoUse<[@T]>> {
@@ -113,7 +108,6 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NOT: struct.def @NoUse<[@T]> {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
 module attributes {veridise.lang = "llzk"} {
   global.def @a : !struct.type<@StructsWithinNestedModule::@HasUse<[i1]>>
 
@@ -130,7 +124,7 @@ module attributes {veridise.lang = "llzk"} {
       }
     }
 
-    // removed
+    // preserved
     struct.def @NoUse {
       struct.field @f2 : i1
       struct.field @f3 : !felt.type
@@ -146,14 +140,13 @@ module attributes {veridise.lang = "llzk"} {
 }
 // CHECK:       global.def @a
 // CHECK-LABEL: module @StructsWithinNestedModule
-// CHECK-NOT:   struct.def @NoUse {
 // CHECK-NOT:   struct.def @HasUse<[@T]> {
 // CHECK:       struct.def @HasUse_b {
-// CHECK-NOT:   struct.def @NoUse {
+// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK:       struct.def @NoUse {
 // CHECK-NOT:   struct.def @HasUse<[@T]> {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
 module attributes {veridise.lang = "llzk"} {
   module @GlobalWithinNestedModule {
     global.def @a : !struct.type<@HasUse<[!felt.type]>>
@@ -170,7 +163,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 
-  // removed
+  // preserved
   struct.def @NoUse {
     function.def @compute() -> !struct.type<@NoUse> {
       %self = struct.new : !struct.type<@NoUse>
@@ -181,17 +174,15 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-// CHECK-NOT: struct.def @NoUse {
 // CHECK-NOT: struct.def @HasUse<[@T]> {
 // CHECK:     global.def @a
-// CHECK-NOT: struct.def @NoUse {
 // CHECK-NOT: struct.def @HasUse<[@T]> {
 // CHECK:     struct.def @HasUse_f {
-// CHECK-NOT: struct.def @NoUse {
+// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK:     struct.def @NoUse {
 // CHECK-NOT: struct.def @HasUse<[@T]> {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
 module attributes {veridise.lang = "llzk"} {
   module @FreeFuncInModule {
     function.def @struct_param(%a: !struct.type<@DefsInDifferentModule::@HasUse<[!felt.type]>>) -> !felt.type {
@@ -212,7 +203,7 @@ module attributes {veridise.lang = "llzk"} {
       }
     }
 
-    // removed
+    // preserved
     struct.def @NoUse {
       function.def @compute() -> !struct.type<@DefsInDifferentModule::@NoUse> {
         %self = struct.new : !struct.type<@DefsInDifferentModule::@NoUse>
@@ -227,14 +218,13 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: module @FreeFuncInModule
 // CHECK:       function.def @struct_param
 // CHECK-LABEL: module @DefsInDifferentModule
-// CHECK-NOT:   struct.def @NoUse {
 // CHECK-NOT:   struct.def @HasUse<[@T]> {
 // CHECK:       struct.def @HasUse_f {
-// CHECK-NOT:   struct.def @NoUse {
+// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK:       struct.def @NoUse {
 // CHECK-NOT:   struct.def @HasUse<[@T]> {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
 module attributes {veridise.lang = "llzk"} {
   module @GlobalsWithinNestedModule {
     global.def @a : !struct.type<@HasUse<[!felt.type]>>
@@ -261,7 +251,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 
-  // removed
+  // preserved
   struct.def @NoUse {
     function.def @compute() -> !struct.type<@NoUse> {
       %self = struct.new : !struct.type<@NoUse>
@@ -272,20 +262,17 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-// CHECK-NOT: struct.def @NoUse {
 // CHECK-NOT: struct.def @HasUse<[@T]> {
 // CHECK:     struct.def @HasUse_f {
-// CHECK-NOT: struct.def @NoUse {
 // CHECK-NOT: struct.def @HasUse<[@T]> {
 // CHECK:     struct.def @HasUse_b {
-// CHECK-NOT: struct.def @NoUse {
 // CHECK-NOT: struct.def @HasUse<[@T]> {
 // CHECK:     struct.def @HasUse_s {
-// CHECK-NOT: struct.def @NoUse {
+// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK:     struct.def @NoUse {
 // CHECK-NOT: struct.def @HasUse<[@T]> {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
 module attributes {veridise.lang = "llzk"} {
   module @FreeFuncModule {
     module @Level2A {
@@ -319,7 +306,7 @@ module attributes {veridise.lang = "llzk"} {
         }
       }
 
-      // removed
+      // preserved
       struct.def @NoUse {
         function.def @compute() -> !struct.type<@StructModule::@MoreNested::@NoUse> {
           %self = struct.new : !struct.type<@StructModule::@MoreNested::@NoUse>
@@ -333,15 +320,19 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL: module @FreeFuncModule
+// CHECK-LABEL: module @Level2A
+// CHECK-LABEL: module @Level3
 // CHECK:       function.def @struct_param
+// CHECK-LABEL: module @Level2B
+// CHECK-LABEL: module @Level3
 // CHECK:       function.def @struct_param
 // CHECK-LABEL: module @StructModule
 // CHECK-LABEL: module @MoreNested
-// CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK-NOT:   struct.def @@HasUse<[@T]> {
 // CHECK:       struct.def @HasUse_f {
-// CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK-NOT:   struct.def @@HasUse<[@T]> {
+// CHECK:       struct.def @NoUse {
+// CHECK-NOT:   struct.def @@HasUse<[@T]> {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -449,7 +440,7 @@ module attributes {veridise.lang = "llzk"} {
 
   // Different module with the same inner names. To ensure full path names are used.
   module @M2 {
-    // removed
+    // preserved
     struct.def @S {
       struct.field @f : !struct.type<@M2::@T>
       function.def @compute() -> !struct.type<@M2::@S> {
@@ -464,7 +455,7 @@ module attributes {veridise.lang = "llzk"} {
       }
     }
 
-    // removed
+    // preserved
     struct.def @T {
       function.def @compute() -> !struct.type<@M2::@T> {
         %self = struct.new : !struct.type<@M2::@T>
@@ -484,8 +475,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:       function.def @free
 // CHECK:       struct.def @X {
 // CHECK-LABEL: module @M2
-// CHECK-NOT:   struct.def @S {
-// CHECK-NOT:   struct.def @T {
+// CHECK:       struct.def @S {
+// CHECK:       struct.def @T {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -524,7 +515,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 
-  // removed
+  // removed (has no concrete instantiation)
   struct.def @NoUse<[@T]> {
     function.def @compute() -> !struct.type<@NoUse<[@T]>> {
       %self = struct.new : !struct.type<@NoUse<[@T]>>
