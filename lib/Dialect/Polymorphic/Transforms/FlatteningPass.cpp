@@ -1585,20 +1585,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     // an instantiated version of a struct will not cause something to become reachable that was
     // not already reachable in parameterized form.
     if (cleanupMode == StructCleanupMode::MainAsRoot) {
-      SymbolTableCollection tables;
-      StructDefOp main = tables.getSymbolTable(modOp).lookup<StructDefOp>(COMPONENT_NAME_MAIN);
-      if (!main) {
-        // Emit warning if there is no "Main" because all structs may be removed (only structs that
-        // are reachable from a global def or free function will be preserved since those constructs
-        // are not candidate for removal in this pass).
-        modOp.emitWarning() << "using option '" << cleanupMode.getArgStr() << '='
-                            << stringifyStructCleanupMode(StructCleanupMode::MainAsRoot)
-                            << "' with no \"" << COMPONENT_NAME_MAIN
-                            << "\" struct may remove all structs!";
-      }
-      eraseUnreachableFrom(
-          tables, modOp, main ? ArrayRef<StructDefOp> {main} : ArrayRef<StructDefOp> {}
-      );
+      eraseUnreachableFromMainStruct(modOp, false);
     }
 
     {
@@ -1655,17 +1642,59 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       });
     } while (tracker.isModified());
 
-    // Remove the parameterized StructDefOp that were instantiated.
-    if (cleanupMode != StructCleanupMode::Disabled) {
+    // Perform cleanup according to the 'cleanupMode' option.
+    switch (cleanupMode) {
+    case StructCleanupMode::MainAsRoot:
+      eraseUnreachableFromMainStruct(modOp);
+      break;
+    case StructCleanupMode::ConcreteAsRoot:
+      eraseUnreachableFromConcreteStructs(modOp);
+      break;
+    case StructCleanupMode::Preimage:
       if (failed(Step5_Cleanup::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE
                      << " failed while removing parameterized structs that were replaced with "
                         "instantiated versions\n";
         return failure();
       }
+      break;
+    case StructCleanupMode::Disabled:
+      break;
     }
 
     return success();
+  }
+
+  void eraseUnreachableFromConcreteStructs(ModuleOp rootMod) {
+    SmallVector<StructDefOp> roots;
+    rootMod.walk([&roots](StructDefOp op) {
+      // Note: no need to check if the ConstParamsAttr is empty since `EmptyParamRemovalPass`
+      // ran earlier.
+      if (!op.hasConstParamsAttr()) {
+        roots.push_back(op);
+      }
+      return WalkResult::skip(); // StructDefOp cannot be nested
+    });
+
+    SymbolTableCollection tables;
+    eraseUnreachableFrom(rootMod, tables, roots);
+  }
+
+  void eraseUnreachableFromMainStruct(ModuleOp rootMod, bool emitWarning = true) {
+    SymbolTableCollection tables;
+    StructDefOp main = tables.getSymbolTable(rootMod).lookup<StructDefOp>(COMPONENT_NAME_MAIN);
+    if (emitWarning && !main) {
+      // Emit warning if there is no "Main" because all structs may be removed (only structs that
+      // are reachable from a global def or free function will be preserved since those constructs
+      // are not candidate for removal in this pass).
+      rootMod.emitWarning() << "using option '" << cleanupMode.getArgStr() << '='
+                            << stringifyStructCleanupMode(StructCleanupMode::MainAsRoot)
+                            << "' with no \"" << COMPONENT_NAME_MAIN
+                            << "\" struct may remove all structs!";
+    }
+    eraseUnreachableFrom(
+        rootMod, tables, main ? ArrayRef<StructDefOp> {main} : ArrayRef<StructDefOp> {}
+    );
   }
 
   /// Erase all StructDefOp that are not reachable (via calls, types, or symbol usage) from one
@@ -1673,7 +1702,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
   /// concerned with removing either of those so any symbols reachable from them must not be
   /// removed).
   void eraseUnreachableFrom(
-      SymbolTableCollection &tables, ModuleOp rootMod, ArrayRef<StructDefOp> keep
+      ModuleOp rootMod, SymbolTableCollection &tables, ArrayRef<StructDefOp> keep
   ) {
     // Initialize roots from the given StructDefOp instances
     SetVector<SymbolOpInterface> roots;
@@ -1692,8 +1721,8 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     });
 
     // Use a SymbolDefTree to find all Symbol defs reachable from one of the root nodes. Then
-    // collect all Symbol uses reachable from those def nodes. These are the symbols that should be
-    // preserved. All other symbol defs should be removed.
+    // collect all Symbol uses reachable from those def nodes. These are the symbols that should
+    // be preserved. All other symbol defs should be removed.
     const SymbolDefTree &defTree = getAnalysis<SymbolDefTree>();
     const SymbolUseGraph &useGraph = getAnalysis<SymbolUseGraph>();
     llvm::df_iterator_default_set<const SymbolUseGraphNode *> symbolsToKeep;
