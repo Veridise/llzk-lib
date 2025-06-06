@@ -52,9 +52,9 @@ def UnusedDeclarationEliminationPass
   ];
 }
 
-def PolyLoweringPass
-    : LLZKPass<"llzk-poly-lowering-pass"> {
-  let summary = "Lowers the degree of all polynomial equations to a specified maximum";
+def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
+  let summary =
+      "Lowers the degree of all polynomial equations to a specified maximum";
   let description = [{
     Rewrites constraint expressions into an (observationally) equivalent system where the degree of every polynomial
     is less than or equal to the specified maximum.
