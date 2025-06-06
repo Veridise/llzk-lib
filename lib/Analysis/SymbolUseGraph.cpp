@@ -70,6 +70,7 @@ SymbolUseGraph::SymbolUseGraph(SymbolOpInterface root) {
   buildTree(root);
 }
 
+/// Get (add if not present) the graph node for the "user" symbol def op.
 SymbolUseGraphNode *SymbolUseGraph::getSymbolUserNode(const SymbolTable::SymbolUse &u) {
   SymbolOpInterface userSymbol = getSelfOrParentOfType<SymbolOpInterface>(u.getUser());
   return getPathAndCall<SymbolUseGraphNode *>(userSymbol, [this](ModuleOp r, SymbolRefAttr p) {
@@ -89,6 +90,7 @@ void SymbolUseGraph::buildTree(SymbolOpInterface symbolOp) {
     if (auto usesOpt = llzk::getSymbolUses(&op->getRegion(0))) {
       // Create child node for each Symbol use, as successor the user Symbol op.
       for (SymbolTable::SymbolUse u : usesOpt.value()) {
+        bool isStructParam = false;
         SymbolRefAttr symRef = u.getSymbolRef();
         // Pending [LLZK-272] only a heuristic approach is possible. Check for FlatSymbolRefAttr
         // where the user is a FieldRefOpInterface or the user is located within a StructDefOp and
@@ -101,18 +103,18 @@ void SymbolUseGraph::buildTree(SymbolOpInterface symbolOp) {
             }
           } else if (auto userStruct = getSelfOrParentOfType<component::StructDefOp>(user)) {
             StringAttr localName = flatSymRef.getAttr();
-            if (userStruct.hasParamNamed(localName) ||
-                tables.getSymbolTable(userStruct).lookup(localName)) {
+            isStructParam = userStruct.hasParamNamed(localName);
+            if (isStructParam || tables.getSymbolTable(userStruct).lookup(localName)) {
               // If 'flatSymRef' is defined in the SymbolTable for 'userStruct' then it's
               // a local symbol so prepend the full path of the struct itself.
               auto parentPath = llzk::getPathFromRoot(userStruct);
-              if (succeeded(parentPath)) {
-                symRef = llzk::appendLeaf(parentPath.value(), flatSymRef);
-              }
+              assert(succeeded(parentPath));
+              symRef = llzk::appendLeaf(parentPath.value(), flatSymRef);
             }
           }
         }
-        this->getOrAddNode(opRootModule.value(), symRef, getSymbolUserNode(u));
+        auto node = this->getOrAddNode(opRootModule.value(), symRef, getSymbolUserNode(u));
+        node->isStructConstParam = isStructParam;
       }
     }
   };

@@ -24,6 +24,7 @@ namespace llzk {
 class SymbolUseGraphNode {
   mlir::ModuleOp symbolPathRoot;
   mlir::SymbolRefAttr symbolPath;
+  bool isStructConstParam;
 
   /* Tree structure. The SymbolUseGraph owns the nodes so just pointers here. */
   /// Predecessor: Symbol that uses the current Symbol with its defining Operation.
@@ -32,13 +33,13 @@ class SymbolUseGraphNode {
   mlir::SetVector<SymbolUseGraphNode *> successors;
 
   SymbolUseGraphNode(mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path)
-      : symbolPathRoot(pathRoot), symbolPath(path) {
+      : symbolPathRoot(pathRoot), symbolPath(path), isStructConstParam(false) {
     assert(pathRoot && "'pathRoot' cannot be nullptr");
     assert(path && "'path' cannot be nullptr");
   }
 
   // Used only for creating the root node in the graph.
-  SymbolUseGraphNode() : symbolPathRoot(nullptr), symbolPath(nullptr) {}
+  SymbolUseGraphNode() : symbolPathRoot(nullptr), symbolPath(nullptr), isStructConstParam(false) {}
 
   /// Add a successor node.
   void addSuccessor(SymbolUseGraphNode *node);
@@ -55,6 +56,9 @@ public:
 
   /// The symbol path+name relative to the closest root ModuleOp.
   mlir::SymbolRefAttr getSymbolPath() const { return symbolPath; }
+
+  /// Return `true` iff the symbol is a struct constant parameter name.
+  bool isStructParam() const { return isStructConstParam; }
 
   /// Return true if this node has any predecessors.
   bool hasPredecessor() const { return !predecessors.empty(); }

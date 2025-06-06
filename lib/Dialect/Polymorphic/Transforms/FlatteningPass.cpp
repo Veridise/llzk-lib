@@ -1585,7 +1585,9 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     // an instantiated version of a struct will not cause something to become reachable that was
     // not already reachable in parameterized form.
     if (cleanupMode == StructCleanupMode::MainAsRoot) {
-      eraseUnreachableFromMainStruct(modOp, false);
+      if (failed(eraseUnreachableFromMainStruct(modOp))) {
+        return failure();
+      }
     }
 
     {
@@ -1645,27 +1647,29 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     // Perform cleanup according to the 'cleanupMode' option.
     switch (cleanupMode) {
     case StructCleanupMode::MainAsRoot:
-      eraseUnreachableFromMainStruct(modOp);
-      break;
+      return eraseUnreachableFromMainStruct(modOp, false);
     case StructCleanupMode::ConcreteAsRoot:
-      eraseUnreachableFromConcreteStructs(modOp);
-      break;
+      return eraseUnreachableFromConcreteStructs(modOp);
     case StructCleanupMode::Preimage:
-      if (failed(Step5_Cleanup::run(modOp, tracker))) {
-        llvm::errs() << DEBUG_TYPE
-                     << " failed while removing parameterized structs that were replaced with "
-                        "instantiated versions\n";
-        return failure();
-      }
-      break;
+      return erasePreimageOfInstantiations(modOp, tracker);
     case StructCleanupMode::Disabled:
-      break;
+      return success();
     }
-
-    return success();
+    llvm_unreachable("switch cases cover all options");
   }
 
-  void eraseUnreachableFromConcreteStructs(ModuleOp rootMod) {
+  // Erase parameterized structs that were replaced with concrete instantiations.
+  LogicalResult erasePreimageOfInstantiations(ModuleOp rootMod, const ConversionTracker &tracker) {
+    LogicalResult res = Step5_Cleanup::run(rootMod, tracker);
+    if (failed(res)) {
+      llvm::errs() << DEBUG_TYPE
+                   << " failed while removing parameterized structs that were replaced with "
+                      "instantiated versions\n";
+    }
+    return res;
+  }
+
+  LogicalResult eraseUnreachableFromConcreteStructs(ModuleOp rootMod) {
     SmallVector<StructDefOp> roots;
     rootMod.walk([&roots](StructDefOp op) {
       // Note: no need to check if the ConstParamsAttr is empty since `EmptyParamRemovalPass`
@@ -1677,10 +1681,10 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     });
 
     SymbolTableCollection tables;
-    eraseUnreachableFrom(rootMod, tables, roots);
+    return eraseUnreachableFrom(rootMod, tables, roots);
   }
 
-  void eraseUnreachableFromMainStruct(ModuleOp rootMod, bool emitWarning = true) {
+  LogicalResult eraseUnreachableFromMainStruct(ModuleOp rootMod, bool emitWarning = true) {
     SymbolTableCollection tables;
     StructDefOp main = tables.getSymbolTable(rootMod).lookup<StructDefOp>(COMPONENT_NAME_MAIN);
     if (emitWarning && !main) {
@@ -1692,16 +1696,15 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
                             << "' with no \"" << COMPONENT_NAME_MAIN
                             << "\" struct may remove all structs!";
     }
-    eraseUnreachableFrom(
+    return eraseUnreachableFrom(
         rootMod, tables, main ? ArrayRef<StructDefOp> {main} : ArrayRef<StructDefOp> {}
     );
   }
 
-  /// Erase all StructDefOp that are not reachable (via calls, types, or symbol usage) from one
-  /// of the StructDefOp given or from some global def or free functions (since this pass is not
-  /// concerned with removing either of those so any symbols reachable from them must not be
-  /// removed).
-  void eraseUnreachableFrom(
+  /// Erase all StructDefOp that are not reachable (via calls, types, or symbol usage) from one of
+  /// the StructDefOp given or from some global def or free function (since this pass does not
+  /// remove either of those, any symbols reachable from them must not be removed).
+  LogicalResult eraseUnreachableFrom(
       ModuleOp rootMod, SymbolTableCollection &tables, ArrayRef<StructDefOp> keep
   ) {
     // Initialize roots from the given StructDefOp instances
@@ -1736,8 +1739,10 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
           llvm::dbgs() << "[EraseUnreachable] can reach: " << reachableDefNode->getOp() << '\n';
         });
         if (SymbolOpInterface reachableDef = reachableDefNode->getOp()) {
-          // Get all symbol uses reachable from the current Symbol def node. There are no uses if
-          // the node is not in the graph.
+          // Use 'depth_first_ext()' to get all symbol uses reachable from the current Symbol def
+          // node. There are no uses if the node is not in the graph. Within the loop that populates
+          // 'depth_first_ext()', also check if the symbol is a StructDefOp and ensure it is in
+          // 'roots' so the outer loop will ensure that all symbols reachable from it are preserved.
           if (const SymbolUseGraphNode *useGraphNodeForDef = useGraph.lookupNode(reachableDef)) {
             for (const SymbolUseGraphNode *usedSymbolNode :
                  depth_first_ext(useGraphNodeForDef, symbolsToKeep)) {
@@ -1745,22 +1750,36 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
                 llvm::dbgs() << "[EraseUnreachable]   uses symbol: "
                              << usedSymbolNode->getSymbolPath() << '\n';
               });
-              // If `usedSymbolNode` references a StructDefOp, ensure its used as a root.
-              Operation *lookupRoot = usedSymbolNode->getSymbolPathRoot().getOperation();
-              auto lookupRes = lookupSymbolIn<StructDefOp>(
-                  tables, usedSymbolNode->getSymbolPath(), lookupRoot, lookupRoot, false
-              );
-              // If loaded via an IncludeOp it's not in the current AST anyway so ignore.
-              if (failed(lookupRes) || lookupRes->viaInclude()) {
+              // Ignore struct/template parameter symbols (before doing the lookup below becuase it
+              // would fail anyway and then cause the "failed" case to be triggered unnecessarily).
+              if (usedSymbolNode->isStructParam()) {
                 continue;
               }
-              bool insertRes = roots.insert(lookupRes->get());
-              LLVM_DEBUG({
-                if (insertRes) {
-                  llvm::dbgs() << "[EraseUnreachable]  found another root: " << lookupRes->get()
-                               << '\n';
-                }
-              });
+              // If `usedSymbolNode` references a StructDefOp, ensure it's considered in the roots.
+              Operation *lookupFrom = usedSymbolNode->getSymbolPathRoot().getOperation();
+              auto lookupRes = lookupSymbolIn(
+                  tables, usedSymbolNode->getSymbolPath(), lookupFrom, lookupFrom, false
+              );
+              if (failed(lookupRes)) {
+                // This is likely an error in the use graph and not a case that should ever happen.
+                LLVM_DEBUG(useGraph.dumpToDotFile());
+                return lookupFrom->emitError().append(
+                    "Could not find symbol referenced in UseGraph: ",
+                    usedSymbolNode->getSymbolPath()
+                );
+              }
+              // If loaded via an IncludeOp it's not in the current AST anyway so ignore.
+              if (lookupRes->viaInclude()) {
+                continue;
+              }
+              if (StructDefOp asStruct = llvm::dyn_cast<StructDefOp>(lookupRes->get())) {
+                bool insertRes = roots.insert(asStruct);
+                LLVM_DEBUG({
+                  if (insertRes) {
+                    llvm::dbgs() << "[EraseUnreachable]  found another root: " << asStruct << '\n';
+                  }
+                });
+              }
             }
           }
         }
@@ -1777,6 +1796,8 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
 
       return WalkResult::skip(); // StructDefOp cannot be nested
     });
+
+    return success();
   }
 };
 
