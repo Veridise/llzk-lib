@@ -96,7 +96,9 @@ void SymbolUseGraph::buildTree(SymbolOpInterface symbolOp) {
         if (FlatSymbolRefAttr flatSymRef = llvm::dyn_cast<FlatSymbolRefAttr>(symRef)) {
           Operation *user = u.getUser();
           if (auto fref = llvm::dyn_cast<component::FieldRefOpInterface>(user)) {
-            symRef = llzk::appendLeaf(fref.getStructType().getNameRef(), flatSymRef);
+            if (flatSymRef == fref.getFieldNameAttr()) {
+              symRef = llzk::appendLeaf(fref.getStructType().getNameRef(), flatSymRef);
+            }
           } else if (auto userStruct = getSelfOrParentOfType<component::StructDefOp>(user)) {
             StringAttr localName = flatSymRef.getAttr();
             if (userStruct.hasParamNamed(localName) ||

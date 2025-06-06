@@ -502,7 +502,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL: ---- SymbolUseGraph ----
 //CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@Main::@compute' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : []
-//CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]], 0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R02]]] '@Main' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R07:[0-9a-f]+]]]
 //CHECK-NEXT:  --- Successors : []
@@ -521,15 +521,12 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R11]]] '@M1::@S::@f' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : [0x[[R08]], 0x[[R04]]]
 //CHECK-NEXT:  --- Successors : [0x[[R09]]]
-//CHECK-NEXT:  - Node : [0x[[R05]]] '@Main::@Main' with root module @"<<symbol lookup root>>"
-//CHECK-NEXT:  --- Predecessors : [0x[[R07]], 0x[[R01]]]
-//CHECK-NEXT:  --- Successors : []
 //CHECK-NEXT:  - Node : [0x[[R06]]] '@Main::@f' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : [0x[[R07]], 0x[[R01]]]
 //CHECK-NEXT:  --- Successors : [0x[[R03]]]
 //CHECK-NEXT:  - Node : [0x[[R07]]] '@Main::@constrain' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : []
-//CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R05]], 0x[[R03]], 0x[[R06]]]
+//CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R03]], 0x[[R06]]]
 //CHECK-NEXT:  - Node : [0x[[R08]]] '@M1::@S::@constrain' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R03]], 0x[[R09]], 0x[[R11]]]
