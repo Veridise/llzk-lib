@@ -88,7 +88,7 @@ void SymbolUseGraph::buildTree(SymbolOpInterface symbolOp) {
 
     SymbolTableCollection tables;
     if (auto usesOpt = llzk::getSymbolUses(&op->getRegion(0))) {
-      // Create child node for each Symbol use, as successor the user Symbol op.
+      // Create child node for each Symbol use, as successor of the user Symbol op.
       for (SymbolTable::SymbolUse u : usesOpt.value()) {
         bool isStructParam = false;
         SymbolRefAttr symRef = u.getSymbolRef();
@@ -97,10 +97,9 @@ void SymbolUseGraph::buildTree(SymbolOpInterface symbolOp) {
         // append the StructDefOp path with the FlatSymbolRefAttr.
         if (FlatSymbolRefAttr flatSymRef = llvm::dyn_cast<FlatSymbolRefAttr>(symRef)) {
           Operation *user = u.getUser();
-          if (auto fref = llvm::dyn_cast<component::FieldRefOpInterface>(user)) {
-            if (flatSymRef == fref.getFieldNameAttr()) {
-              symRef = llzk::appendLeaf(fref.getStructType().getNameRef(), flatSymRef);
-            }
+          if (auto fref = llvm::dyn_cast<component::FieldRefOpInterface>(user);
+              fref && fref.getFieldNameAttr() == flatSymRef) {
+            symRef = llzk::appendLeaf(fref.getStructType().getNameRef(), flatSymRef);
           } else if (auto userStruct = getSelfOrParentOfType<component::StructDefOp>(user)) {
             StringAttr localName = flatSymRef.getAttr();
             isStructParam = userStruct.hasParamNamed(localName);
@@ -165,7 +164,11 @@ const SymbolUseGraphNode *SymbolUseGraph::lookupNode(SymbolOpInterface symbolDef
 std::string SymbolUseGraphNode::toString() const { return buildStringViaPrint(*this); }
 
 void SymbolUseGraphNode::print(llvm::raw_ostream &os) const {
-  os << '\'' << symbolPath << "' with root module ";
+  os << '\'' << symbolPath << '\'';
+  if (isStructConstParam) {
+    os << " (struct param)";
+  }
+  os << " with root module ";
   FailureOr<SymbolRefAttr> unambiguousRoot = getPathFromTopRoot(symbolPathRoot);
   if (succeeded(unambiguousRoot)) {
     os << unambiguousRoot.value() << '\n';
