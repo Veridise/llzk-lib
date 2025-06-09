@@ -1,4 +1,4 @@
-//===-- Struct.h - C API for Struct dialect -------------------------*- C -*-===//
+//===-- Struct.h - C API for Struct dialect -----------------------*- C -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -10,7 +10,7 @@
 // This header declares the C interface for registering and accessing the
 // Struct dialect. A dialect should be registered with a context to make it
 // available to users of the context. These users must load the dialect
-// before using any of its attributes, operations or types. Parser and pass
+// before using any of its attributes, operations, or types. Parser and pass
 // manager can load registered dialects automatically.
 //
 //===----------------------------------------------------------------------===//
@@ -52,10 +52,10 @@ llzkStructTypeGetWithAttrs(MlirAttribute name, intptr_t numParams, MlirAttribute
 LLZK_DECLARE_TYPE_ISA(StructType);
 
 /// Returns the fully qualified name of a llzk::component::StructType.
-MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetName(MlirType);
+MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetName(MlirType type);
 
 /// Returns the parameter of a llzk::component::StructType as an ArrayAttr.
-MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetParams(MlirType);
+MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetParams(MlirType type);
 
 //===----------------------------------------------------------------------===//
 // StructDefOp
@@ -125,25 +125,29 @@ MLIR_CAPI_EXPORTED void llzkFieldDefOpSetPublicAttr(MlirOperation op, bool value
 //===----------------------------------------------------------------------===//
 
 /// Creates a FieldReadOp.
-LLZK_DECLARE_OP_BUILD_METHOD(FieldReadOp, , MlirType, MlirValue, MlirStringRef);
+LLZK_DECLARE_OP_BUILD_METHOD(
+    FieldReadOp, MlirType type, MlirValue component, MlirStringRef fieldName
+);
 
 /// Creates a FieldReadOp to a column offset by the given distance affine map. The values in the
 /// ValueRange are operands representing the arguments to the affine map. The integer value is the
 /// number of arguments in the map that are dimensions.
-LLZK_DECLARE_OP_BUILD_METHOD(
-    FieldReadOp, WithAffineMapDistance, MlirType, MlirValue, MlirStringRef, MlirAffineMap,
-    MlirValueRange, int32_t
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    FieldReadOp, WithAffineMapDistance, MlirType type, MlirValue component, MlirStringRef fieldName,
+    MlirAffineMap affineMap, MlirValueRange mapOperands, int32_t nDimensions
 );
 
 /// Creates a FieldReadOp to a column offset by the given distance defined by a name to a constant
 /// parameter in the struct.
-LLZK_DECLARE_OP_BUILD_METHOD(
-    FieldReadOp, WithConstParamDistance, MlirType, MlirValue, MlirStringRef, MlirStringRef
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    FieldReadOp, WithConstParamDistance, MlirType type, MlirValue component,
+    MlirStringRef fieldName, MlirStringRef paramName
 );
 
 /// Creates a FieldReadOp to a column offset by the given distance defined by an integer value.
-LLZK_DECLARE_OP_BUILD_METHOD(
-    FieldReadOp, WithLiteralDistance, MlirType, MlirValue, MlirStringRef, int64_t
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    FieldReadOp, WithLiteralDistance, MlirType type, MlirValue component, MlirStringRef fieldName,
+    int64_t distance
 );
 
 #ifdef __cplusplus

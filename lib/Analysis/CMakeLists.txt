@@ -1,6 +1,6 @@
 add_library(LLZKAnalysis)
 add_library(LLZK::LLZKAnalysis ALIAS LLZKAnalysis)
- 
+
 file(GLOB LLZKAnalysis_SOURCES "*.cpp")
 target_sources(LLZKAnalysis PRIVATE ${LLZKAnalysis_SOURCES})
 target_link_libraries(

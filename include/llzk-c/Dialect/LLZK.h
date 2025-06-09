@@ -1,4 +1,4 @@
-//===-- LLZK.h - C API for LLZK dialect -------------------------*- C -*-===//
+//===-- LLZK.h - C API for LLZK dialect ---------------------------*- C -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -10,7 +10,7 @@
 // This header declares the C interface for registering and accessing the
 // LLZK dialect. A dialect should be registered with a context to make it
 // available to users of the context. These users must load the dialect
-// before using any of its attributes, operations or types. Parser and pass
+// before using any of its attributes, operations, or types. Parser and pass
 // manager can load registered dialects automatically.
 //
 //===----------------------------------------------------------------------===//
@@ -28,7 +28,7 @@ extern "C" {
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(LLZK, llzk);
 
 /// Creates a llzk::PublicAttr.
-MLIR_CAPI_EXPORTED MlirAttribute llzkPublicAttrGet(MlirContext);
+MLIR_CAPI_EXPORTED MlirAttribute llzkPublicAttrGet(MlirContext context);
 
 /// Returns true if the attribute is a PublicAttr.
 LLZK_DECLARE_ATTR_ISA(PublicAttr);

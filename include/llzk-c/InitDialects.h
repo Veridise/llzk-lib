@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This header declares the registration  method for
+// This header declares the registration method for
 // all the llzk dialects.
 //
 //===----------------------------------------------------------------------===//
@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-MLIR_CAPI_EXPORTED void llzkRegisterAllDialects(MlirDialectRegistry);
+MLIR_CAPI_EXPORTED void llzkRegisterAllDialects(MlirDialectRegistry registry);
 
 #ifdef __cplusplus
 }

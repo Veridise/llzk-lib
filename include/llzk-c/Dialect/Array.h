@@ -10,7 +10,7 @@
 // This header declares the C interface for registering and accessing the
 // Array dialect. A dialect should be registered with a context to make it
 // available to users of the context. These users must load the dialect
-// before using any of its attributes, operations or types. Parser and pass
+// before using any of its attributes, operations, or types. Parser and pass
 // manager can load registered dialects automatically.
 //
 //===----------------------------------------------------------------------===//
@@ -34,41 +34,46 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Array, llzk__array);
 // ArrayType
 //===----------------------------------------------------------------------===//
 
-/// Creates a llzk::array::ArrayType using a list of attributes as dimensions
-MLIR_CAPI_EXPORTED MlirType llzkArrayTypeGet(MlirType, intptr_t, MlirAttribute const *);
+/// Creates an llzk::array::ArrayType using a list of attributes as dimensions.
+MLIR_CAPI_EXPORTED MlirType
+llzkArrayTypeGet(MlirType type, intptr_t nDims, MlirAttribute const *dims);
 
-/// Returns true of the type is a llzk::array::ArrayType.
+/// Returns true if the type is an llzk::array::ArrayType.
 LLZK_DECLARE_TYPE_ISA(ArrayType);
 
-/// Creates a llzk::array::ArrayType using a list of numbers as dimensions
-MLIR_CAPI_EXPORTED MlirType llzkArrayTypeGetWithNumericDims(MlirType, intptr_t, int64_t const *);
+/// Creates an llzk::array::ArrayType using a list of numbers as dimensions.
+MLIR_CAPI_EXPORTED MlirType
+llzkArrayTypeGetWithNumericDims(MlirType type, intptr_t nDims, int64_t const *dims);
 
-/// Returns the element type of a llzk::array::ArrayType.
-MLIR_CAPI_EXPORTED MlirType llzkArrayTypeGetElementType(MlirType);
+/// Returns the element type of an llzk::array::ArrayType.
+MLIR_CAPI_EXPORTED MlirType llzkArrayTypeGetElementType(MlirType type);
 
-/// Returns the number of dimensions of a llzk::array::ArrayType.
-MLIR_CAPI_EXPORTED intptr_t llzkArrayTypeGetNumDims(MlirType);
+/// Returns the number of dimensions of an llzk::array::ArrayType.
+MLIR_CAPI_EXPORTED intptr_t llzkArrayTypeGetNumDims(MlirType type);
 
-/// Returns the n-th dimention of a llzk::array::ArrayType.
-MLIR_CAPI_EXPORTED MlirAttribute llzkArrayTypeGetDim(MlirType, intptr_t);
+/// Returns the n-th dimention of an llzk::array::ArrayType.
+MLIR_CAPI_EXPORTED MlirAttribute llzkArrayTypeGetDim(MlirType type, intptr_t dim);
 
 //===----------------------------------------------------------------------===//
 // CreateArrayOp
 //===----------------------------------------------------------------------===//
 
 /// Creates a CreateArrayOp from a list of Values.
-LLZK_DECLARE_OP_BUILD_METHOD(CreateArrayOp, WithValues, MlirType, intptr_t, MlirValue const *);
-
-/// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
-/// The Attribute argument must be a DenseI32ArrayAttr.
-LLZK_DECLARE_OP_BUILD_METHOD(
-    CreateArrayOp, WithMapOperands, MlirType, intptr_t, MlirValueRange const *, MlirAttribute
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    CreateArrayOp, WithValues, MlirType arrType, intptr_t nValues, MlirValue const *values
 );
 
 /// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
-LLZK_DECLARE_OP_BUILD_METHOD(
-    CreateArrayOp, WithMapOperandsAndDims, MlirType, intptr_t, MlirValueRange const *, intptr_t,
-    int32_t const *
+/// The Attribute argument must be a DenseI32ArrayAttr.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    CreateArrayOp, WithMapOperands, MlirType arrType, intptr_t nMapOperands,
+    MlirValueRange const *mapOperands, MlirAttribute dimsPerMap
+);
+
+/// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    CreateArrayOp, WithMapOperandsAndDims, MlirType arrType, intptr_t nMapOperands,
+    MlirValueRange const *mapOperands, intptr_t nDimsPerMap, int32_t const *dimsPerMap
 );
 
 #ifdef __cplusplus

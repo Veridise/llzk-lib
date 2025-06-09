@@ -22,21 +22,13 @@
 
 #include "mlir/IR/ValueRange.h"
 
-#define LLZK_DEFINE_OP_BUILD_METHOD(op, name, ...)                                                 \
-  MlirOperation llzk##op##Build##name(MlirOpBuilder builder, MlirLocation location, __VA_ARGS__)
+#define LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(op, suffix, ...)                                        \
+  MlirOperation llzk##op##Build##suffix(MlirOpBuilder builder, MlirLocation location, __VA_ARGS__)
+#define LLZK_DEFINE_OP_BUILD_METHOD(op, ...) LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(op, , __VA_ARGS__)
 
 namespace mlir {
 template <typename To> auto unwrap_cast(auto &from) { return cast<To>(unwrap(from)); }
 } // namespace mlir
-
-static inline MlirValueRange wrap(mlir::ValueRange range) {
-  // TODO: We need to deallocate this somewhere...
-  auto *buffer = new MlirValue[range.size()];
-  for (size_t i = 0; i < range.size(); i++) {
-    buffer[i].ptr = wrap(range[i]).ptr;
-  }
-  return {.size = range.size(), .values = buffer};
-}
 
 constexpr int DEFAULT_ELTS = 5;
 

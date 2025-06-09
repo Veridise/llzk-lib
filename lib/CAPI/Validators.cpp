@@ -14,7 +14,7 @@
 
 using namespace llzk;
 
-static void registerLLZKValidationPasses() { llzk::registerValidationPasses(); }
+static void registerLLZKValidationPasses() { registerValidationPasses(); }
 
 // Impl
 #include "llzk/Validators/LLZKValidationPasses.capi.cpp.inc"

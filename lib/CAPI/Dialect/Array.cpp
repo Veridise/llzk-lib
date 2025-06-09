@@ -21,8 +21,6 @@
 #include <llzk-c/Dialect/Array.h>
 #include <mlir-c/Pass.h>
 
-#include "llvm/Support/Debug.h"
-
 using namespace mlir;
 using namespace llzk::array;
 using namespace llzk;
@@ -66,7 +64,7 @@ MlirAttribute llzkArrayTypeGetDim(MlirType type, intptr_t idx) {
 // CreateArrayOp
 //===----------------------------------------------------------------------===//
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     CreateArrayOp, WithValues, MlirType arrayType, intptr_t nValues, MlirValue const *values
 ) {
   SmallVector<Value> valueSto;
@@ -78,15 +76,11 @@ LLZK_DEFINE_OP_BUILD_METHOD(
   );
 }
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     CreateArrayOp, WithMapOperands, MlirType arrayType, intptr_t nMapOperands,
     MlirValueRange const *mapOperands, MlirAttribute numDimsPerMap
 ) {
   MapOperandsHelper<> mapOps(nMapOperands, mapOperands);
-  llvm::dbgs() << "arrayType is a ArrayType? " << mlir::isa<ArrayType>(unwrap(arrayType)) << "\n";
-  llvm::dbgs() << "numDimsPerMap is a DenseI32ArrayAttr? "
-               << mlir::isa<DenseI32ArrayAttr>(unwrap(numDimsPerMap)) << "\n";
-  llvm::dbgs() << "numDimsPerMap = " << unwrap(numDimsPerMap) << "\n";
   return wrap(
       create<CreateArrayOp>(
           builder, location, mlir::unwrap_cast<ArrayType>(arrayType), *mapOps,
@@ -96,7 +90,7 @@ LLZK_DEFINE_OP_BUILD_METHOD(
 }
 
 /// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     CreateArrayOp, WithMapOperandsAndDims, MlirType arrayType, intptr_t nMapOperands,
     MlirValueRange const *mapOperands, intptr_t nNumsDimsPerMap, int32_t const *numDimsPerMap
 ) {

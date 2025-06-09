@@ -13,12 +13,12 @@
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
 
+#include <llzk-c/Dialect/String.h>
+
 using namespace llzk::string;
 using namespace mlir;
 
-#include <llzk-c/Dialect/String.h>
-
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(String, llzk__string, llzk::string::StringDialect)
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(String, llzk__string, StringDialect)
 
 MlirType llzkStringTypeGet(MlirContext ctx) { return wrap(StringType::get(unwrap(ctx))); }
 

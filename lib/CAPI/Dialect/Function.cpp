@@ -61,81 +61,91 @@ MlirOperation llzkFuncDefOpCreateWithAttrsAndArgAttrs(
 
 bool llzkOperationIsAFuncDefOp(MlirOperation op) { return mlir::isa<FuncDefOp>(unwrap(op)); }
 
-#define OP(op) mlir::cast<FuncDefOp>(unwrap(op))
-
 bool llzkFuncDefOpGetHasAllowConstraintAttr(MlirOperation op) {
-  return OP(op).hasAllowConstraintAttr();
+  return mlir::unwrap_cast<FuncDefOp>(op).hasAllowConstraintAttr();
 }
 
 void llzkFuncDefOpSetAllowConstraintAttr(MlirOperation op, bool value) {
-  OP(op).setAllowConstraintAttr(value);
+  mlir::unwrap_cast<FuncDefOp>(op).setAllowConstraintAttr(value);
 }
 
-bool llzkFuncDefOpGetHasAllowWitnessAttr(MlirOperation op) { return OP(op).hasAllowWitnessAttr(); }
+bool llzkFuncDefOpGetHasAllowWitnessAttr(MlirOperation op) {
+  return mlir::unwrap_cast<FuncDefOp>(op).hasAllowWitnessAttr();
+}
 
 void llzkFuncDefOpSetAllowWitnessAttr(MlirOperation op, bool value) {
-  OP(op).setAllowWitnessAttr(value);
+  mlir::unwrap_cast<FuncDefOp>(op).setAllowWitnessAttr(value);
 }
 
 bool llzkFuncDefOpGetHasArgIsPub(MlirOperation op, unsigned argNo) {
-  return OP(op).hasArgPublicAttr(argNo);
+  return mlir::unwrap_cast<FuncDefOp>(op).hasArgPublicAttr(argNo);
 }
 
 MlirAttribute llzkFuncDefOpGetFullyQualifiedName(MlirOperation op) {
-  return wrap(OP(op).getFullyQualifiedName());
+  return wrap(mlir::unwrap_cast<FuncDefOp>(op).getFullyQualifiedName());
 }
 
-bool llzkFuncDefOpGetNameIsCompute(MlirOperation op) { return OP(op).nameIsCompute(); }
+bool llzkFuncDefOpGetNameIsCompute(MlirOperation op) {
+  return mlir::unwrap_cast<FuncDefOp>(op).nameIsCompute();
+}
 
-bool llzkFuncDefOpGetNameIsConstrain(MlirOperation op) { return OP(op).nameIsConstrain(); }
+bool llzkFuncDefOpGetNameIsConstrain(MlirOperation op) {
+  return mlir::unwrap_cast<FuncDefOp>(op).nameIsConstrain();
+}
 
-bool llzkFuncDefOpGetIsInStruct(MlirOperation op) { return OP(op).isInStruct(); }
+bool llzkFuncDefOpGetIsInStruct(MlirOperation op) {
+  return mlir::unwrap_cast<FuncDefOp>(op).isInStruct();
+}
 
-bool llzkFuncDefOpGetIsStructCompute(MlirOperation op) { return OP(op).isStructCompute(); }
+bool llzkFuncDefOpGetIsStructCompute(MlirOperation op) {
+  return mlir::unwrap_cast<FuncDefOp>(op).isStructCompute();
+}
 
-bool llzkFuncDefOpGetIsStructConstrain(MlirOperation op) { return OP(op).isStructConstrain(); }
+bool llzkFuncDefOpGetIsStructConstrain(MlirOperation op) {
+  return mlir::unwrap_cast<FuncDefOp>(op).isStructConstrain();
+}
 
 /// Assuming the function is the compute function returns its StructType result.
 MlirType llzkFuncDefOpGetSingleResultTypeOfCompute(MlirOperation op) {
-  return wrap(OP(op).getSingleResultTypeOfCompute());
+  return wrap(mlir::unwrap_cast<FuncDefOp>(op).getSingleResultTypeOfCompute());
 }
-
-#undef OP
 
 //===----------------------------------------------------------------------===//
 // CallOp
 //===----------------------------------------------------------------------===//
 
-static auto unwrap_callee(MlirOperation op) { return mlir::cast<FuncDefOp>(unwrap(op)); }
-static auto unwrap_dims(MlirAttribute attr) { return mlir::cast<DenseI32ArrayAttr>(unwrap(attr)); }
-static auto unwrap_name(MlirAttribute attr) { return mlir::cast<SymbolRefAttr>(unwrap(attr)); }
+static auto unwrapCallee(MlirOperation op) { return mlir::cast<FuncDefOp>(unwrap(op)); }
+
+static auto unwrapDims(MlirAttribute attr) { return mlir::cast<DenseI32ArrayAttr>(unwrap(attr)); }
+
+static auto unwrapName(MlirAttribute attr) { return mlir::cast<SymbolRefAttr>(unwrap(attr)); }
 
 LLZK_DEFINE_OP_BUILD_METHOD(
-    CallOp, , intptr_t numResults, MlirType const *results, MlirAttribute name,
-    intptr_t numOperands, MlirValue const *operands
+    CallOp, intptr_t numResults, MlirType const *results, MlirAttribute name, intptr_t numOperands,
+    MlirValue const *operands
 ) {
   SmallVector<Type> resultsSto;
   SmallVector<Value> operandsSto;
   return wrap(
       create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrap_name(name),
+          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
           unwrapList(numOperands, operands, operandsSto)
       )
   );
 }
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     CallOp, ToCallee, MlirOperation callee, intptr_t numOperands, MlirValue const *operands
 ) {
   SmallVector<Value> operandsSto;
   return wrap(
       create<CallOp>(
-          builder, location, unwrap_callee(callee), unwrapList(numOperands, operands, operandsSto)
+          builder, location, unwrapCallee(callee), unwrapList(numOperands, operands, operandsSto)
       )
   );
 }
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     CallOp, WithMapOperands, intptr_t numResults, MlirType const *results, MlirAttribute name,
     intptr_t numMapOperands, MlirValueRange const *mapOperands, MlirAttribute numDimsPerMap,
     intptr_t numArgOperands, MlirValue const *argOperands
@@ -145,14 +155,14 @@ LLZK_DEFINE_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
   return wrap(
       create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrap_name(name),
-          *mapOperandsHelper, unwrap_dims(numDimsPerMap),
+          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
+          *mapOperandsHelper, unwrapDims(numDimsPerMap),
           unwrapList(numArgOperands, argOperands, argOperandsSto)
       )
   );
 }
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     CallOp, WithMapOperandsAndDims, intptr_t numResults, MlirType const *results,
     MlirAttribute name, intptr_t numMapOperands, MlirValueRange const *mapOperands,
     intptr_t numDimsPermMapLength, int32_t const *numDimsPerMap, intptr_t numArgOperands,
@@ -163,14 +173,14 @@ LLZK_DEFINE_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
   return wrap(
       create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrap_name(name),
+          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
           *mapOperandsHelper, ArrayRef(numDimsPerMap, numDimsPermMapLength),
           unwrapList(numArgOperands, argOperands, argOperandsSto)
       )
   );
 }
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     CallOp, ToCalleeWithMapOperands, MlirOperation callee, intptr_t numMapOperands,
     MlirValueRange const *mapOperands, MlirAttribute numDimsPerMap, intptr_t numArgOperands,
     MlirValue const *argOperands
@@ -179,13 +189,13 @@ LLZK_DEFINE_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
   return wrap(
       create<CallOp>(
-          builder, location, unwrap_callee(callee), *mapOperandsHelper, unwrap_dims(numDimsPerMap),
+          builder, location, unwrapCallee(callee), *mapOperandsHelper, unwrapDims(numDimsPerMap),
           unwrapList(numArgOperands, argOperands, argOperandsSto)
       )
   );
 }
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     CallOp, ToCalleeWithMapOperandsAndDims, MlirOperation callee, intptr_t numMapOperands,
     MlirValueRange const *mapOperands, intptr_t numDimsPermMapLength, int32_t const *numDimsPerMap,
     intptr_t numArgOperands, MlirValue const *argOperands
@@ -194,7 +204,7 @@ LLZK_DEFINE_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
   return wrap(
       create<CallOp>(
-          builder, location, unwrap_callee(callee), *mapOperandsHelper,
+          builder, location, unwrapCallee(callee), *mapOperandsHelper,
           ArrayRef(numDimsPerMap, numDimsPermMapLength),
           unwrapList(numArgOperands, argOperands, argOperandsSto)
       )
@@ -203,22 +213,28 @@ LLZK_DEFINE_OP_BUILD_METHOD(
 
 bool llzkOperationIsACallOp(MlirOperation op) { return mlir::isa<CallOp>(unwrap(op)); }
 
-#define OP(op) mlir::cast<CallOp>(unwrap(op))
+MlirType llzkCallOpGetCalleeType(MlirOperation op) {
+  return wrap(mlir::unwrap_cast<CallOp>(op).getCalleeType());
+}
 
-MlirType llzkCallOpGetCalleeType(MlirOperation op) { return wrap(OP(op).getCalleeType()); }
+bool llzkCallOpGetCalleeIsCompute(MlirOperation op) {
+  return mlir::unwrap_cast<CallOp>(op).calleeIsCompute();
+}
 
-bool llzkCallOpGetCalleeIsCompute(MlirOperation op) { return OP(op).calleeIsCompute(); }
+bool llzkCallOpGetCalleeIsConstrain(MlirOperation op) {
+  return mlir::unwrap_cast<CallOp>(op).calleeIsConstrain();
+}
 
-bool llzkCallOpGetCalleeIsConstrain(MlirOperation op) { return OP(op).calleeIsConstrain(); }
-
-bool llzkCallOpGetCalleeIsStructCompute(MlirOperation op) { return OP(op).calleeIsStructCompute(); }
+bool llzkCallOpGetCalleeIsStructCompute(MlirOperation op) {
+  return mlir::unwrap_cast<CallOp>(op).calleeIsStructCompute();
+}
 
 bool llzkCallOpGetCalleeIsStructConstrain(MlirOperation op) {
-  return OP(op).calleeIsStructConstrain();
+  return mlir::unwrap_cast<CallOp>(op).calleeIsStructConstrain();
 }
 
 MlirType llzkCallOpGetSingleResultTypeOfCompute(MlirOperation op) {
-  return wrap(OP(op).getSingleResultTypeOfCompute());
+  return wrap(mlir::unwrap_cast<CallOp>(op).getSingleResultTypeOfCompute());
 }
 
 #undef OP

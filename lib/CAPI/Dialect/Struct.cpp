@@ -19,18 +19,18 @@
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Support.h>
 #include <mlir/CAPI/Wrap.h>
+#include <mlir/IR/BuiltinAttributes.h>
+
+#include <llvm/ADT/STLExtras.h>
 
 #include <llzk-c/Dialect/Struct.h>
-
-#include "llvm/ADT/STLExtras.h"
-#include "mlir-c/Support.h"
-#include "mlir/IR/BuiltinAttributes.h"
+#include <mlir-c/Support.h>
 
 using namespace llzk;
 using namespace mlir;
 using namespace llzk::component;
 
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component, llzk::component::StructDialect)
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component, StructDialect)
 
 //===----------------------------------------------------------------------===//
 // StructType
@@ -95,7 +95,7 @@ void llzkStructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst) {
 }
 
 intptr_t llzkStructDefOpGetNumFieldDefs(MlirOperation op) {
-  return mlir::cast<StructDefOp>(unwrap(op)).getFieldDefs().size();
+  return static_cast<intptr_t>(mlir::cast<StructDefOp>(unwrap(op)).getFieldDefs().size());
 }
 
 MlirLogicalResult llzkStructDefOpGetHasColumns(MlirOperation op) {
@@ -113,7 +113,7 @@ MlirOperation llzkStructDefOpGetConstrainFuncOp(MlirOperation op) {
 const char *
 llzkStructDefOpGetHeaderString(MlirOperation op, intptr_t *strSize, char *(*alloc_string)(size_t)) {
   auto header = mlir::cast<StructDefOp>(unwrap(op)).getHeaderString();
-  *strSize = header.size() + 1; // Plus one because it's a C string.
+  *strSize = static_cast<intptr_t>(header.size()) + 1; // Plus one because it's a C string.
   char *dst = alloc_string(*strSize);
   dst[header.size()] = 0;
   memcpy(dst, header.data(), header.size());
@@ -152,7 +152,7 @@ void llzkFieldDefOpSetPublicAttr(MlirOperation op, bool value) {
 //===----------------------------------------------------------------------===//
 
 LLZK_DEFINE_OP_BUILD_METHOD(
-    FieldReadOp, , MlirType fieldType, MlirValue component, MlirStringRef name
+    FieldReadOp, MlirType fieldType, MlirValue component, MlirStringRef name
 ) {
   return wrap(
       create<FieldReadOp>(
@@ -162,7 +162,7 @@ LLZK_DEFINE_OP_BUILD_METHOD(
   );
 }
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     FieldReadOp, WithAffineMapDistance, MlirType fieldType, MlirValue component, MlirStringRef name,
     MlirAffineMap map, MlirValueRange mapOperands, int32_t numDimsPerMap
 ) {
@@ -177,7 +177,7 @@ LLZK_DEFINE_OP_BUILD_METHOD(
   );
 }
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     FieldReadOp, WithConstParamDistance, MlirType fieldType, MlirValue component,
     MlirStringRef name, MlirStringRef symbol
 ) {
@@ -190,7 +190,7 @@ LLZK_DEFINE_OP_BUILD_METHOD(
   );
 }
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     FieldReadOp, WithLiteralDistance, MlirType fieldType, MlirValue component, MlirStringRef name,
     int64_t distance
 ) {

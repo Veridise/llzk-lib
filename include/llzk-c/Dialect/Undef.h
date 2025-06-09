@@ -10,7 +10,7 @@
 // This header declares the C interface for registering and accessing the
 // Undef dialect. A dialect should be registered with a context to make it
 // available to users of the context. These users must load the dialect
-// before using any of its attributes, operations or types. Parser and pass
+// before using any of its attributes, operations, or types. Parser and pass
 // manager can load registered dialects automatically.
 //
 //===----------------------------------------------------------------------===//

@@ -12,7 +12,9 @@
 
 #include <mlir/CAPI/Pass.h>
 
-static void registerLLZKTransformationPasses() { llzk::registerTransformationPasses(); }
 using namespace llzk;
+
+static void registerLLZKTransformationPasses() { registerTransformationPasses(); }
+
 // Impl
 #include "llzk/Transforms/LLZKTransformationPasses.capi.cpp.inc"

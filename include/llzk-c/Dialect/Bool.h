@@ -1,4 +1,4 @@
-//===-- Bool.h - C API for Bool dialect -------------------------*- C -*-===//
+//===-- Bool.h - C API for Bool dialect ---------------------------*- C -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -10,7 +10,7 @@
 // This header declares the C interface for registering and accessing the
 // Bool dialect. A dialect should be registered with a context to make it
 // available to users of the context. These users must load the dialect
-// before using any of its attributes, operations or types. Parser and pass
+// before using any of its attributes, operations, or types. Parser and pass
 // manager can load registered dialects automatically.
 //
 //===----------------------------------------------------------------------===//
@@ -38,7 +38,7 @@ enum LlzkCmp {
 typedef enum LlzkCmp LlzkCmp;
 
 /// Returns a llzk::boolean::FeltCmpPredicateAttr attribute.
-MLIR_CAPI_EXPORTED MlirAttribute llzkFeltCmpPredicateAttrGet(MlirContext, LlzkCmp);
+MLIR_CAPI_EXPORTED MlirAttribute llzkFeltCmpPredicateAttrGet(MlirContext context, LlzkCmp cmp);
 
 /// Returns true if the attribute is a FeltCmpPredicateAttr.
 LLZK_DECLARE_ATTR_ISA(FeltCmpPredicateAttr);

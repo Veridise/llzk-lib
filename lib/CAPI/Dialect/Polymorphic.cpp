@@ -54,7 +54,6 @@ bool llzkTypeIsATypeVarType(MlirType type) { return mlir::isa<TypeVarType>(unwra
 MlirType llzkTypeVarTypeGetFromAttr(MlirContext ctx, MlirAttribute attrWrapper) {
   auto attr = unwrap(attrWrapper);
   if (auto sym = mlir::dyn_cast<FlatSymbolRefAttr>(attr)) {
-
     return wrap(TypeVarType::get(sym));
   }
   return wrap(TypeVarType::get(FlatSymbolRefAttr::get(mlir::cast<StringAttr>(attr))));
@@ -72,7 +71,7 @@ MlirAttribute llzkTypeVarTypeGetName(MlirType type) {
 // ApplyMapOp
 //===----------------------------------------------------------------------===//
 
-LLZK_DEFINE_OP_BUILD_METHOD(ApplyMapOp, , MlirAttribute map, MlirValueRange mapOperands) {
+LLZK_DEFINE_OP_BUILD_METHOD(ApplyMapOp, MlirAttribute map, MlirValueRange mapOperands) {
   SmallVector<Value> mapOperandsSto;
   return wrap(
       create<ApplyMapOp>(
@@ -82,7 +81,7 @@ LLZK_DEFINE_OP_BUILD_METHOD(ApplyMapOp, , MlirAttribute map, MlirValueRange mapO
   );
 }
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     ApplyMapOp, WithAffineMap, MlirAffineMap map, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
@@ -94,7 +93,7 @@ LLZK_DEFINE_OP_BUILD_METHOD(
   );
 }
 
-LLZK_DEFINE_OP_BUILD_METHOD(
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     ApplyMapOp, WithAffineExpr, MlirAffineExpr expr, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
@@ -110,15 +109,43 @@ bool llzkOperationIsAApplyMapOp(MlirOperation op) { return mlir::isa<ApplyMapOp>
 
 /// Returns the affine map associated with the op.
 MlirAffineMap llzkApplyMapOpGetAffineMap(MlirOperation op) {
-  return wrap(mlir::cast<ApplyMapOp>(unwrap(op)).getAffineMap());
+  return wrap(mlir::unwrap_cast<ApplyMapOp>(op).getAffineMap());
 }
 
-/// Returns the operands that correspond to dimensions in the affine map.
-MlirValueRange llzkApplyMapOpGetDimOperands(MlirOperation op) {
-  return wrap(mlir::cast<ApplyMapOp>(unwrap(op)).getDimOperands());
+static ValueRange dimOperands(MlirOperation op) {
+  return mlir::unwrap_cast<ApplyMapOp>(op).getDimOperands();
 }
 
-/// Returns the operands that correspond to symbols in the affine map.
-MlirValueRange llzkApplyMapOpGetSymbolOperands(MlirOperation op) {
-  return wrap(mlir::cast<ApplyMapOp>(unwrap(op)).getSymbolOperands());
+static ValueRange symbolOperands(MlirOperation op) {
+  return mlir::unwrap_cast<ApplyMapOp>(op).getSymbolOperands();
+}
+
+static void copyValues(ValueRange in, MlirValue *out) {
+  for (auto [n, value] : llvm::enumerate(in)) {
+    out[0] = wrap(value);
+  }
+}
+
+/// Returns the number of operands that correspond to dimensions in the affine map.
+intptr_t llzkApplyMapOpGetNumDimOperands(MlirOperation op) {
+  return static_cast<intptr_t>(dimOperands(op).size());
+}
+
+/// Writes into the destination buffer the operands that correspond to dimensions in the affine map.
+/// The buffer needs to be preallocated first with the necessary amount and the caller is
+/// responsible of its lifetime. See `llzkApplyMapOpGetNumDimOperands`.
+void llzkApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst) {
+  copyValues(dimOperands(op), dst);
+}
+
+/// Returns the number of operands that correspond to symbols in the affine map.
+intptr_t llzkApplyMapOpGetNumSymbolOperands(MlirOperation op) {
+  return static_cast<intptr_t>(symbolOperands(op).size());
+}
+
+/// Writes into the destination buffer the operands that correspond to symbols in the affine map.
+/// The buffer needs to be preallocated first with the necessary amount and the caller is
+/// responsible of its lifetime. See `llzkApplyMapOpGetNumSymbolOperands`.
+void llzkApplyMapOpGetSymbolOperands(MlirOperation op, MlirValue *dst) {
+  copyValues(symbolOperands(op), dst);
 }

@@ -26,11 +26,13 @@ extern "C" {
 // Utility macros for function declarations.
 //===----------------------------------------------------------------------===//
 
-#define LLZK_BUILD_METHOD_NAME(op, name) llzk##op##Build##name
-#define LLZK_DECLARE_OP_BUILD_METHOD(op, name, ...)                                                \
-  MLIR_CAPI_EXPORTED MlirOperation LLZK_BUILD_METHOD_NAME(op, name)(                               \
+#define LLZK_BUILD_METHOD_NAME(op, suffix) llzk##op##Build##suffix
+#define LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(op, suffix, ...)                                       \
+  MLIR_CAPI_EXPORTED MlirOperation LLZK_BUILD_METHOD_NAME(op, suffix)(                             \
       MlirOpBuilder builder, MlirLocation location, __VA_ARGS__                                    \
   )
+// Used for when the build method is "general" and does not have a suffix at the end.
+#define LLZK_DECLARE_OP_BUILD_METHOD(op, ...) LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(op, , __VA_ARGS__)
 
 #define LLZK_DECLARE_PREDICATE(name, ...) MLIR_CAPI_EXPORTED bool llzk##name(__VA_ARGS__)
 

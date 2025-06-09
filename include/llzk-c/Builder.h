@@ -59,30 +59,32 @@ typedef void (*MlirNotifyBlockInserted)(MlirBlock, void *);
 // The API for OpBuilder is left barebones for now since we only need a reference that we can pass
 // to op build methods that we expose. More methods can be added as the need for them arises.
 
-#define DECLARE_OP_BUILDER_CREATE_FN(suffix, ...)                                                  \
+#define DECLARE_SUFFIX_OP_BUILDER_CREATE_FN(suffix, ...)                                           \
   MLIR_CAPI_EXPORTED MlirOpBuilder mlirOpBuilderCreate##suffix(__VA_ARGS__);                       \
   MLIR_CAPI_EXPORTED MlirOpBuilder mlirOpBuilderCreate##suffix##WithListener(                      \
       __VA_ARGS__, MlirOpBuilderListener                                                           \
   );
+#define DECLARE_OP_BUILDER_CREATE_FN(...) DECLARE_SUFFIX_OP_BUILDER_CREATE_FN(, __VA_ARGS__)
 
-DECLARE_OP_BUILDER_CREATE_FN(, MlirContext)
+DECLARE_OP_BUILDER_CREATE_FN(MlirContext context)
 
 #undef DECLARE_OP_BUILDER_CREATE_FN
 
 /// Destroys the given builder.
-MLIR_CAPI_EXPORTED void mlirOpBuilderDestroy(MlirOpBuilder);
+MLIR_CAPI_EXPORTED void mlirOpBuilderDestroy(MlirOpBuilder builder);
 
 /// Returns the context.
-MLIR_CAPI_EXPORTED MlirContext mlirOpBuilderGetContext(MlirOpBuilder);
+MLIR_CAPI_EXPORTED MlirContext mlirOpBuilderGetContext(MlirOpBuilder builder);
 
 /// Sets the insertion point to the beginning of the given block.
-MLIR_CAPI_EXPORTED void mlirOpBuilderSetInsertionPointToStart(MlirOpBuilder, MlirBlock);
+MLIR_CAPI_EXPORTED void
+mlirOpBuilderSetInsertionPointToStart(MlirOpBuilder builder, MlirBlock block);
 
 /// Returns the current insertion point in the builder.
-MLIR_CAPI_EXPORTED MlirOperation mlirOpBuilderGetInsertionPoint(MlirOpBuilder);
+MLIR_CAPI_EXPORTED MlirOperation mlirOpBuilderGetInsertionPoint(MlirOpBuilder builder);
 
 /// Returns the current insertion block in the builder.
-MLIR_CAPI_EXPORTED MlirBlock mlirOpBuilderGetInsertionBlock(MlirOpBuilder);
+MLIR_CAPI_EXPORTED MlirBlock mlirOpBuilderGetInsertionBlock(MlirOpBuilder builder);
 
 //===----------------------------------------------------------------------===//
 // MlirOpBuilderListener
@@ -90,11 +92,12 @@ MLIR_CAPI_EXPORTED MlirBlock mlirOpBuilderGetInsertionBlock(MlirOpBuilder);
 
 /// Creates a new mlir::OpBuilder::Listener. Takes one callback for each method of the Listener
 /// interface and a pointer to user defined data.
-MLIR_CAPI_EXPORTED MlirOpBuilderListener
-mlirOpBuilderListenerCreate(MlirNotifyOperationInserted, MlirNotifyBlockInserted, void *);
+MLIR_CAPI_EXPORTED MlirOpBuilderListener mlirOpBuilderListenerCreate(
+    MlirNotifyOperationInserted operationCb, MlirNotifyBlockInserted blockCb, void *userData
+);
 
 /// Destroys the given listener.
-MLIR_CAPI_EXPORTED void mlirOpBuilderListenerDestroy(MlirOpBuilderListener);
+MLIR_CAPI_EXPORTED void mlirOpBuilderListenerDestroy(MlirOpBuilderListener listener);
 
 #ifdef __cplusplus
 }

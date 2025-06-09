@@ -1,4 +1,4 @@
-//===-- Include.h - C API for Include dialect -------------------------*- C -*-===//
+//===-- Include.h - C API for Include dialect ---------------------*- C -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -10,7 +10,7 @@
 // This header declares the C interface for registering and accessing the
 // Include dialect. A dialect should be registered with a context to make it
 // available to users of the context. These users must load the dialect
-// before using any of its attributes, operations or types. Parser and pass
+// before using any of its attributes, operations, or types. Parser and pass
 // manager can load registered dialects automatically.
 //
 //===----------------------------------------------------------------------===//
@@ -21,8 +21,7 @@
 #include <llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.h.inc>
 
 #include <mlir-c/IR.h>
-
-#include "mlir-c/Support.h"
+#include <mlir-c/Support.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,9 +33,9 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Include, llzk__include);
 // IncludeOp
 //===----------------------------------------------------------------------===//
 
-/// Creates a IncludeOp pointing to another MLIR file.
+/// Creates an IncludeOp pointing to another MLIR file.
 MLIR_CAPI_EXPORTED MlirOperation
-llzkIncludeOpCreate(MlirLocation, MlirStringRef name, MlirStringRef path);
+llzkIncludeOpCreate(MlirLocation loc, MlirStringRef name, MlirStringRef path);
 
 #ifdef __cplusplus
 }

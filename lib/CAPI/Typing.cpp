@@ -73,11 +73,12 @@ bool llzkTypesUnify(
 }
 
 bool llzkIsMoreConcreteUnification(
-    MlirType oldTy, MlirType newTy, bool (*knownOldTow)(MlirType, MlirType, void *), void *userData
+    MlirType oldTy, MlirType newTy, bool (*knownOldToNew)(MlirType, MlirType, void *),
+    void *userData
 ) {
   return isMoreConcreteUnification(
-      unwrap(oldTy), unwrap(newTy), [knownOldTow, userData](auto lhs, auto rhs) {
-    return knownOldTow(wrap(lhs), wrap(rhs), userData);
+      unwrap(oldTy), unwrap(newTy), [knownOldToNew, userData](auto lhs, auto rhs) {
+    return knownOldToNew(wrap(lhs), wrap(rhs), userData);
   }
   );
 }

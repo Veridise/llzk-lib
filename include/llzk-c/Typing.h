@@ -86,7 +86,7 @@ MLIR_CAPI_EXPORTED bool llzkTypesUnify(
 /// the attributes with `array.type` and `struct.type` types, we define IntegerAttr and TypeAttr
 /// as concrete, AffineMapAttr as less concrete than those, and SymbolRefAttr as least concrete.
 MLIR_CAPI_EXPORTED bool llzkIsMoreConcreteUnification(
-    MlirType oldTy, MlirType newTy, bool (*knownOldTow)(MlirType, MlirType, void *), void *data
+    MlirType oldTy, MlirType newTy, bool (*knownOldToNew)(MlirType, MlirType, void *), void *data
 );
 
 /// Convert any IntegerAttr with a type other than IndexType to use IndexType.

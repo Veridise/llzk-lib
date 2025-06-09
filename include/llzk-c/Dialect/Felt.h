@@ -1,4 +1,4 @@
-//===-- Felt.h - C API for Felt dialect -------------------------*- C -*-===//
+//===-- Felt.h - C API for Felt dialect ---------------------------*- C -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -10,7 +10,7 @@
 // This header declares the C interface for registering and accessing the
 // Felt dialect. A dialect should be registered with a context to make it
 // available to users of the context. These users must load the dialect
-// before using any of its attributes, operations or types. Parser and pass
+// before using any of its attributes, operations, or types. Parser and pass
 // manager can load registered dialects automatically.
 //
 //===----------------------------------------------------------------------===//
@@ -28,13 +28,13 @@ extern "C" {
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt);
 
 /// Creates a llzk::felt::FeltConstAttr.
-MLIR_CAPI_EXPORTED MlirAttribute llzkFeltConstAttrGet(MlirContext, int64_t);
+MLIR_CAPI_EXPORTED MlirAttribute llzkFeltConstAttrGet(MlirContext context, int64_t value);
 
 /// Returns true if the attribute is a FeltConstAttr.
 LLZK_DECLARE_ATTR_ISA(FeltConstAttr);
 
 /// Creates a llzk::felt::FeltType.
-MLIR_CAPI_EXPORTED MlirType llzkFeltTypeGet(MlirContext);
+MLIR_CAPI_EXPORTED MlirType llzkFeltTypeGet(MlirContext context);
 
 /// Returns true if the type is a FeltType.
 LLZK_DECLARE_TYPE_ISA(FeltType);
