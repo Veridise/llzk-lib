@@ -35,6 +35,7 @@ class ConstrainRefIndex {
   using IndexRange = std::pair<mlir::APInt, mlir::APInt>;
 
 public:
+  explicit ConstrainRefIndex(component::FieldDefOp f) : index(f) {}
   explicit ConstrainRefIndex(SymbolLookupResult<component::FieldDefOp> f) : index(f) {}
   explicit ConstrainRefIndex(mlir::APInt i) : index(i) {}
   explicit ConstrainRefIndex(int64_t i) : index(toAPInt(i)) {}
@@ -42,10 +43,15 @@ public:
   explicit ConstrainRefIndex(IndexRange r) : index(r) {}
 
   bool isField() const {
-    return std::holds_alternative<SymbolLookupResult<component::FieldDefOp>>(index);
+    return std::holds_alternative<SymbolLookupResult<component::FieldDefOp>, component::FieldDefOp>(
+        index
+    );
   }
   component::FieldDefOp getField() const {
     ensure(isField(), "ConstrainRefIndex: field requested but not contained");
+    if (std::holds_alternative<component::FieldDefOp>(index)) {
+      return std::get<component::FieldDefOp>(index);
+    }
     return std::get<SymbolLookupResult<component::FieldDefOp>>(index).get();
   }
 
@@ -71,27 +77,21 @@ public:
   bool operator>(const ConstrainRefIndex &rhs) const { return rhs < *this; }
 
   struct Hash {
-    size_t operator()(const ConstrainRefIndex &c) const {
-      if (c.isIndex()) {
-        return llvm::hash_value(c.getIndex());
-      } else if (c.isIndexRange()) {
-        auto r = c.getIndexRange();
-        return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
-      } else {
-        return OpHash<component::FieldDefOp> {}(c.getField());
-      }
-    }
+    size_t operator()(const ConstrainRefIndex &c) const;
   };
 
-  size_t getHash() const { return Hash {}(*this); }
+  inline size_t getHash() const { return Hash {}(*this); }
 
 private:
   /// Either:
-  /// 1. A field within a struct (as a SymbolLookupResult to be cautious of external module scopes)
+  /// 1. A field within a struct (possibly as a SymbolLookupResult to be cautious of external module
+  /// scopes)
   /// 2. An index into an array
   /// 3. A half-open range of indices into an array, for when we're unsure about a specific index
   /// Likely, this will be from [0, size) at this point.
-  std::variant<SymbolLookupResult<component::FieldDefOp>, mlir::APInt, IndexRange> index;
+  std::variant<
+      component::FieldDefOp, SymbolLookupResult<component::FieldDefOp>, mlir::APInt, IndexRange>
+      index;
 };
 
 static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefIndex &rhs) {
@@ -136,8 +136,12 @@ class ConstrainRef {
   );
 
 public:
-  /// Produce all possible ConstraintRefs that are present from the struct's constrain function.
+  /// Produce all possible ConstrainRefs that are present from the struct's constrain function.
   static std::vector<ConstrainRef> getAllConstrainRefs(component::StructDefOp structDef);
+
+  /// Produce a ConstrainRef from a specific field in a struct.
+  static ConstrainRef
+  getConstrainRef(component::StructDefOp structDef, component::FieldDefOp fieldDef);
 
   explicit ConstrainRef(mlir::BlockArgument b)
       : blockArg(b), fieldRefs(), constantVal(std::nullopt) {}
