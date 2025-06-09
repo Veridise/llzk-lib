@@ -172,18 +172,20 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
 }
 
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
-    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, mlir::BlockArgument arg
+    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, mlir::BlockArgument arg,
+    std::vector<ConstrainRefIndex> fields
 ) {
-  auto ty = arg.getType();
+  ConstrainRef root(arg, fields);
+  auto ty = root.getType();
   std::vector<ConstrainRef> res;
   if (auto structTy = mlir::dyn_cast<StructType>(ty)) {
     // recurse over fields
-    res = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), arg);
+    res = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), arg, fields);
   } else if (auto arrayType = mlir::dyn_cast<ArrayType>(ty)) {
-    res = getAllConstrainRefs(tables, mod, arrayType, arg);
+    res = getAllConstrainRefs(tables, mod, arrayType, arg, fields);
   } else if (mlir::isa<FeltType, IndexType, StringType>(ty)) {
     // Scalar type
-    res.emplace_back(arg);
+    res.emplace_back(root);
   } else {
     std::string err;
     debug::Appender(err) << "unsupported type: " << ty;
@@ -211,18 +213,26 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDe
   return res;
 }
 
-ConstrainRef ConstrainRef::getConstrainRef(StructDefOp structDef, FieldDefOp fieldDef) {
+std::vector<ConstrainRef>
+ConstrainRef::getAllConstrainRefs(StructDefOp structDef, FieldDefOp fieldDef) {
+  std::vector<ConstrainRef> res;
   FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
   ensure(
       fieldDef->getParentOfType<StructDefOp>() == structDef,
       "Field" + mlir::Twine(fieldDef.getName()) + " is not a field of struct " +
           mlir::Twine(structDef.getName())
   );
+  FailureOr<ModuleOp> modOp = getRootModule(structDef);
+  ensure(
+      mlir::succeeded(modOp),
+      "could not lookup module from struct " + mlir::Twine(structDef.getName())
+  );
 
   // Get the self argument
   BlockArgument self = constrainFnOp.getBody().getArgument(0);
 
-  return ConstrainRef(self, {ConstrainRefIndex(fieldDef)});
+  mlir::SymbolTableCollection tables;
+  return getAllConstrainRefs(tables, modOp.value(), self, {ConstrainRefIndex(fieldDef)});
 }
 
 mlir::Type ConstrainRef::getType() const {

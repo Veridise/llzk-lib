@@ -131,17 +131,20 @@ class ConstrainRef {
   );
 
   /// Produce all possible ConstraintRefs that are present starting from the given BlockArgument.
+  /// Fields into that block argument may be optionally provided.
   static std::vector<ConstrainRef> getAllConstrainRefs(
-      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, mlir::BlockArgument arg
+      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, mlir::BlockArgument arg,
+      std::vector<ConstrainRefIndex> fields = {}
   );
 
 public:
   /// Produce all possible ConstrainRefs that are present from the struct's constrain function.
   static std::vector<ConstrainRef> getAllConstrainRefs(component::StructDefOp structDef);
 
-  /// Produce a ConstrainRef from a specific field in a struct.
-  static ConstrainRef
-  getConstrainRef(component::StructDefOp structDef, component::FieldDefOp fieldDef);
+  /// Produce all possible ConstrainRefs from a specific field in a struct.
+  /// May produce multiple if the given field is of an aggregate type.
+  static std::vector<ConstrainRef>
+  getAllConstrainRefs(component::StructDefOp structDef, component::FieldDefOp fieldDef);
 
   explicit ConstrainRef(mlir::BlockArgument b)
       : blockArg(b), fieldRefs(), constantVal(std::nullopt) {}
