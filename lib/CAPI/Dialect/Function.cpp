@@ -51,12 +51,10 @@ MlirOperation llzkFuncDefOpCreateWithAttrsAndArgAttrs(
       llvm::map_to_vector(unwrapList(numArgAttrs, argAttrs, argAttrsSto), [](auto attr) {
     return mlir::cast<DictionaryAttr>(attr);
   });
-  return wrap(
-      FuncDefOp::create(
-          unwrap(location), unwrap(name), mlir::cast<FunctionType>(unwrap(funcType)),
-          unwrapList(numAttrs, attrs, attrsSto), unwrappedArgAttrs
-      )
-  );
+  return wrap(FuncDefOp::create(
+      unwrap(location), unwrap(name), mlir::cast<FunctionType>(unwrap(funcType)),
+      unwrapList(numAttrs, attrs, attrsSto), unwrappedArgAttrs
+  ));
 }
 
 bool llzkOperationIsAFuncDefOp(MlirOperation op) { return mlir::isa<FuncDefOp>(unwrap(op)); }
@@ -126,23 +124,19 @@ LLZK_DEFINE_OP_BUILD_METHOD(
 ) {
   SmallVector<Type> resultsSto;
   SmallVector<Value> operandsSto;
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
-          unwrapList(numOperands, operands, operandsSto)
-      )
-  );
+  return wrap(create<CallOp>(
+      builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
+      unwrapList(numOperands, operands, operandsSto)
+  ));
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     CallOp, ToCallee, MlirOperation callee, intptr_t numOperands, MlirValue const *operands
 ) {
   SmallVector<Value> operandsSto;
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapCallee(callee), unwrapList(numOperands, operands, operandsSto)
-      )
-  );
+  return wrap(create<CallOp>(
+      builder, location, unwrapCallee(callee), unwrapList(numOperands, operands, operandsSto)
+  ));
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
@@ -153,13 +147,11 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   SmallVector<Type> resultsSto;
   SmallVector<Value> argOperandsSto;
   MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
-          *mapOperandsHelper, unwrapDims(numDimsPerMap),
-          unwrapList(numArgOperands, argOperands, argOperandsSto)
-      )
-  );
+  return wrap(create<CallOp>(
+      builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
+      *mapOperandsHelper, unwrapDims(numDimsPerMap),
+      unwrapList(numArgOperands, argOperands, argOperandsSto)
+  ));
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
@@ -171,13 +163,11 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   SmallVector<Type> resultsSto;
   SmallVector<Value> argOperandsSto;
   MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
-          *mapOperandsHelper, ArrayRef(numDimsPerMap, numDimsPermMapLength),
-          unwrapList(numArgOperands, argOperands, argOperandsSto)
-      )
-  );
+  return wrap(create<CallOp>(
+      builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
+      *mapOperandsHelper, ArrayRef(numDimsPerMap, numDimsPermMapLength),
+      unwrapList(numArgOperands, argOperands, argOperandsSto)
+  ));
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
@@ -187,12 +177,10 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 ) {
   SmallVector<Value> argOperandsSto;
   MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapCallee(callee), *mapOperandsHelper, unwrapDims(numDimsPerMap),
-          unwrapList(numArgOperands, argOperands, argOperandsSto)
-      )
-  );
+  return wrap(create<CallOp>(
+      builder, location, unwrapCallee(callee), *mapOperandsHelper, unwrapDims(numDimsPerMap),
+      unwrapList(numArgOperands, argOperands, argOperandsSto)
+  ));
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
@@ -202,13 +190,11 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 ) {
   SmallVector<Value> argOperandsSto;
   MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapCallee(callee), *mapOperandsHelper,
-          ArrayRef(numDimsPerMap, numDimsPermMapLength),
-          unwrapList(numArgOperands, argOperands, argOperandsSto)
-      )
-  );
+  return wrap(create<CallOp>(
+      builder, location, unwrapCallee(callee), *mapOperandsHelper,
+      ArrayRef(numDimsPerMap, numDimsPermMapLength),
+      unwrapList(numArgOperands, argOperands, argOperandsSto)
+  ));
 }
 
 bool llzkOperationIsACallOp(MlirOperation op) { return mlir::isa<CallOp>(unwrap(op)); }
