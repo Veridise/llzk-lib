@@ -219,7 +219,7 @@ ConstrainRef::getAllConstrainRefs(StructDefOp structDef, FieldDefOp fieldDef) {
   FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
   ensure(
       fieldDef->getParentOfType<StructDefOp>() == structDef,
-      "Field" + mlir::Twine(fieldDef.getName()) + " is not a field of struct " +
+      "Field " + mlir::Twine(fieldDef.getName()) + " is not a field of struct " +
           mlir::Twine(structDef.getName())
   );
   FailureOr<ModuleOp> modOp = getRootModule(structDef);
