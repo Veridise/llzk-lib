@@ -43,9 +43,8 @@ public:
   explicit ConstrainRefIndex(IndexRange r) : index(r) {}
 
   bool isField() const {
-    return std::holds_alternative<SymbolLookupResult<component::FieldDefOp>, component::FieldDefOp>(
-        index
-    );
+    return std::holds_alternative<SymbolLookupResult<component::FieldDefOp>>(index) ||
+           std::holds_alternative<component::FieldDefOp>(index);
   }
   component::FieldDefOp getField() const {
     ensure(isField(), "ConstrainRefIndex: field requested but not contained");
