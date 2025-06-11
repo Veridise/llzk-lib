@@ -1622,19 +1622,23 @@ struct FromEraseSet : public Base {
   }
 
   LogicalResult eraseUnusedStructs() {
-    // Collect the subset of 'tryToErase' that has no remaining uses...
+    // Collect the subset of 'tryToErase' that has no remaining uses.
     for (StructDefOp sd : tryToErase) {
       collectSafeToErase(sd);
     }
-    // ... and then erase the ones that are StructDefOp.
-    for (auto &[sym, safe] : visitedPlusSafetyResult) {
-      if (!safe) {
-        continue;
+    // The `visitedPlusSafetyResult` will contain FuncDefOp w/in the StructDefOp so just a single
+    // loop to `dyn_cast` and `erase()` will cause `use-after-free` errors w/in the `dyn_cast`.
+    // Instead, reduce the map to only those that should be erased and erase in a separate loop.
+    for (auto it = visitedPlusSafetyResult.begin(); it != visitedPlusSafetyResult.end();) {
+      if (it->second && llvm::isa<StructDefOp>(it->first.getOperation())) {
+        ++it;
+      } else {
+        visitedPlusSafetyResult.erase(it++);
       }
-      if (StructDefOp d = llvm::dyn_cast<StructDefOp>(sym.getOperation())) {
-        LLVM_DEBUG(llvm::dbgs() << "[EraseIfUnused] removing: " << d.getSymName() << '\n');
-        d.erase();
-      }
+    }
+    for (auto &[sym, _] : visitedPlusSafetyResult) {
+      LLVM_DEBUG(llvm::dbgs() << "[EraseIfUnused] removing: " << sym.getNameAttr() << '\n');
+      sym.erase();
     }
     return success();
   }
