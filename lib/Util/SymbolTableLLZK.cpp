@@ -19,7 +19,8 @@
 /// problem is that `walkSymbolRefs()` only searches `op->getAttrDictionary()`
 /// which does not include any Type instances used on the operand and result SSA
 /// values but in LLZK, the StructType can contain symbol references so they
-/// should be included in the results here.
+/// should be included in the results here. Only `walkSymbolRefs()` and
+/// `getSymbolName()` are functionally modified from their MLIR versions.
 ///
 /// An alternative solution that could be explored further is adding an
 /// additional kind of Attribute on all ops that ensures the operand and result
@@ -129,6 +130,7 @@ static std::optional<WalkResult> walkSymbolTable(
 /// `callback` for each found use. The `callback` takes the use of the symbol as input.
 static WalkResult
 walkSymbolRefs(Operation *op, function_ref<WalkResult(SymbolTable::SymbolUse)> callback) {
+  // This is modified for LLZK.
   auto walkFn = [&op, &callback](SymbolRefAttr symbolRef) {
     if (callback({op, symbolRef}).wasInterrupted()) {
       return WalkResult::interrupt();
@@ -456,6 +458,7 @@ bool llzk::symbolKnownUseEmpty(Operation *symbol, Region *from) {
 // llzk::getSymbolName
 
 StringAttr llzk::getSymbolName(Operation *op) {
+  // This is modified for LLZK.
   // `SymbolTable::getSymbolName(Operation*)` asserts if there is no name (ex: in the case of
   // ModuleOp where the symbol name is optional) and there's no other way to check if the name
   // exists so this fully involved retrieval method must be used to return `nullptr` if no name.
