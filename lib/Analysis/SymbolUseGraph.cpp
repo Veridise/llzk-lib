@@ -65,9 +65,9 @@ R getPathAndCall(SymbolOpInterface defOp, llvm::function_ref<R(ModuleOp, SymbolR
 
 } // namespace
 
-SymbolUseGraph::SymbolUseGraph(SymbolOpInterface root) {
-  assert(root->hasTrait<OpTrait::SymbolTable>());
-  buildTree(root);
+SymbolUseGraph::SymbolUseGraph(SymbolOpInterface rootSymbolOp) {
+  assert(rootSymbolOp->hasTrait<OpTrait::SymbolTable>());
+  buildTree(rootSymbolOp);
 }
 
 /// Get (add if not present) the graph node for the "user" symbol def op.

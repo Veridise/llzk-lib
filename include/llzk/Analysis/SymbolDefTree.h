@@ -33,6 +33,9 @@ class SymbolDefTreeNode {
   // Used only for creating the root node in the tree.
   SymbolDefTreeNode() : symbolDef(nullptr), parent(nullptr) {}
 
+  /// Add a child node, i.e. a Symbol defined in `this` SymbolTable.
+  void addChild(SymbolDefTreeNode *node);
+
   // Provide access to private members.
   friend class SymbolDefTree;
 
@@ -41,11 +44,8 @@ public:
   /// This will be 'nullptr' for the root node in the graph.
   mlir::SymbolOpInterface getOp() const { return symbolDef; }
 
-  /// Returns true if this node is a root for symbol lookup. See `llzk::getRootModule()`.
-  bool isLookupRoot() const;
-
-  /// Add a child node, i.e. a Symbol defined in `this` SymbolTable.
-  void addChild(SymbolDefTreeNode *node);
+  /// Returns the parent node in the tree. The root node will return `nullptr`.
+  const SymbolDefTreeNode *getParent() const { return parent; }
 
   /// Returns true if this node has any child edges.
   bool hasChildren() const { return !children.empty(); }

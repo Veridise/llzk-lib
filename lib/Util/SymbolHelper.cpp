@@ -305,29 +305,6 @@ FailureOr<SymbolRefAttr> getPathFromTopRoot(FuncDefOp &to, ModuleOp *foundRoot) 
   return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToFunc(to);
 }
 
-bool hasUsesWithin(Operation *symbol, Operation *from) {
-  assert(symbol && "pre-condition");
-  assert(from && "pre-condition");
-  bool result = false;
-  SymbolTable::walkSymbolTables(from, true, [symbol, &result](Operation *symbolTableOp, bool) {
-    assert(symbolTableOp->hasTrait<OpTrait::SymbolTable>());
-    bool hasUse = (symbol != symbolTableOp) &&
-                  !llzk::symbolKnownUseEmpty(symbol, &symbolTableOp->getRegion(0));
-    result |= hasUse;
-    LLVM_DEBUG({
-      if (hasUse) {
-        auto uses = llzk::getSymbolUses(symbol, &symbolTableOp->getRegion(0));
-        assert(uses.has_value()); // must be consistent with symbolKnownUseEmpty()
-        llvm::dbgs() << "Found users of " << *symbol << "\n";
-        for (SymbolTable::SymbolUse user : uses.value()) {
-          llvm::dbgs() << " * " << *user.getUser() << "\n";
-        }
-      }
-    });
-  });
-  return result;
-}
-
 LogicalResult verifyParamOfType(
     SymbolTableCollection &tables, SymbolRefAttr param, Type parameterizedType, Operation *origin
 ) {

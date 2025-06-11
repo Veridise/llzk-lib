@@ -38,8 +38,11 @@ class SymbolUseGraphNode {
     assert(path && "'path' cannot be nullptr");
   }
 
-  // Used only for creating the root node in the graph.
+  // Used only for creating the symbolic root node in the graph.
   SymbolUseGraphNode() : symbolPathRoot(nullptr), symbolPath(nullptr), isStructConstParam(false) {}
+  static bool isNotSymbolicRoot(const SymbolUseGraphNode *node) {
+    return node->symbolPath != nullptr;
+  }
 
   /// Add a successor node.
   void addSuccessor(SymbolUseGraphNode *node);
@@ -61,26 +64,44 @@ public:
   bool isStructParam() const { return isStructConstParam; }
 
   /// Return true if this node has any predecessors.
-  bool hasPredecessor() const { return !predecessors.empty(); }
+  bool hasPredecessor() const {
+    return llvm::find_if(predecessors, isNotSymbolicRoot) != predecessors.end();
+  }
+  size_t numPredecessor() const { return llvm::count_if(predecessors, isNotSymbolicRoot); }
 
   /// Return true if this node has any successors.
-  bool hasSuccessor() const { return !successors.empty(); }
+  bool hasSuccessor() const {
+    assert(
+        llvm::find_if_not(successors, isNotSymbolicRoot) == successors.end() &&
+        "symbolic root has no predecessors so it cannot appear in a successor list"
+    );
+    return !successors.empty();
+  }
+  size_t numSuccessor() const {
+    assert(
+        llvm::find_if_not(successors, isNotSymbolicRoot) == successors.end() &&
+        "symbolic root has no predecessors so it cannot appear in a successor list"
+    );
+    return successors.size();
+  }
 
   /// Iterator over predecessors/successors.
-  using iterator = mlir::SetVector<SymbolUseGraphNode *>::const_iterator;
-  iterator predecessors_begin() const { return predecessors.begin(); }
-  iterator predecessors_end() const { return predecessors.end(); }
-  iterator successors_begin() const { return successors.begin(); }
-  iterator successors_end() const { return successors.end(); }
+  using iterator = llvm::filter_iterator<
+      mlir::SetVector<SymbolUseGraphNode *>::const_iterator, bool (*)(const SymbolUseGraphNode *)>;
+
+  iterator predecessors_begin() const { return predecessorIter().begin(); }
+  iterator predecessors_end() const { return predecessorIter().end(); }
+  iterator successors_begin() const { return successorIter().begin(); }
+  iterator successors_end() const { return successorIter().end(); }
 
   /// Range over predecessor nodes.
   inline llvm::iterator_range<iterator> predecessorIter() const {
-    return llvm::make_range(predecessors_begin(), predecessors_end());
+    return llvm::make_filter_range(predecessors, isNotSymbolicRoot);
   }
 
   /// Range over successor nodes.
   inline llvm::iterator_range<iterator> successorIter() const {
-    return llvm::make_range(successors_begin(), successors_end());
+    return llvm::make_filter_range(successors, isNotSymbolicRoot);
   }
 
   /// Print the node in a human readable format.
@@ -99,7 +120,12 @@ class SymbolUseGraph {
   /// The set of nodes within the graph.
   NodeMapT nodes;
 
-  /// The singleton symbolic (i.e. no associated op) root node of the graph.
+  /// The singleton symbolic (i.e. no associated op) root node of the graph. Every newly created
+  /// SymbolUseGraphNode is initially a successor of this node until a real successor (if any) is
+  /// added.
+  // Implementation note: An actual SymbolUseGraphNode is used instead of a list of root nodes
+  // because the GraphTraits implementation requires a single root node. This node is not added to
+  // the 'nodes' set and should be transparent to users of this graph.
   SymbolUseGraphNode root;
 
   /// An iterator over the internal graph nodes. Unwraps the map iterator to access the node.
@@ -127,8 +153,11 @@ class SymbolUseGraph {
   SymbolUseGraphNode *getSymbolUserNode(const mlir::SymbolTable::SymbolUse &u);
   void buildTree(mlir::SymbolOpInterface symbolOp);
 
+  // Friend declaration for the specialization of GraphTraits
+  friend struct llvm::GraphTraits<const llzk::SymbolUseGraph *>;
+
 public:
-  SymbolUseGraph(mlir::SymbolOpInterface root);
+  SymbolUseGraph(mlir::SymbolOpInterface rootSymbolOp);
 
   /// Return the existing node for the symbol reference relative to the given module, else nullptr.
   const SymbolUseGraphNode *lookupNode(mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path) const;
@@ -136,16 +165,28 @@ public:
   /// Return the existing node for the symbol definition op, else nullptr.
   const SymbolUseGraphNode *lookupNode(mlir::SymbolOpInterface symbolDef) const;
 
-  /// Return the symbolic (i.e. no associated op) root node of the graph.
-  const SymbolUseGraphNode *getRoot() const { return &root; }
-
   /// Return the total number of nodes in the graph.
   size_t size() const { return nodes.size(); }
+
+  /// Iterator over the root nodes (i.e. nodes that have no predecessors).
+  using roots_iterator = SymbolUseGraphNode::iterator;
+  roots_iterator roots_begin() const { return root.successors_begin(); }
+  roots_iterator roots_end() const { return root.successors_end(); }
+
+  /// Range over root nodes (i.e. nodes that have no predecessors).
+  inline llvm::iterator_range<roots_iterator> rootsIter() const {
+    return llvm::make_range(roots_begin(), roots_end());
+  }
 
   /// An iterator over the nodes of the graph.
   using iterator = NodeIterator;
   iterator begin() const { return nodes.begin(); }
   iterator end() const { return nodes.end(); }
+
+  /// Range over all nodes in the graph.
+  inline llvm::iterator_range<iterator> nodesIter() const {
+    return llvm::make_range(begin(), end());
+  }
 
   /// Dump the graph in a human readable format.
   inline void dump() const { print(llvm::errs()); }
@@ -175,7 +216,7 @@ struct GraphTraits<const llzk::SymbolUseGraph *>
     : public GraphTraits<const llzk::SymbolUseGraphNode *> {
 
   /// The entry node into the graph is the external node.
-  static NodeRef getEntryNode(const llzk::SymbolUseGraph *g) { return g->getRoot(); }
+  static NodeRef getEntryNode(const llzk::SymbolUseGraph *g) { return &g->root; }
 
   /// nodes_iterator/begin/end - Allow iteration over all nodes in the graph.
   using nodes_iterator = llzk::SymbolUseGraph::iterator;
@@ -191,7 +232,7 @@ template <> struct DOTGraphTraits<const llzk::SymbolUseGraphNode *> : public Def
 
   DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
 
-  std::string getNodeLabel(const llzk::SymbolUseGraphNode *n, const llzk::SymbolUseGraphNode *) {
+  std::string getNodeLabel(const llzk::SymbolUseGraphNode *n, const llzk::SymbolUseGraph *) {
     return n->toString();
   }
 };
@@ -206,7 +247,7 @@ struct DOTGraphTraits<const llzk::SymbolUseGraph *>
   static std::string getGraphName(const llzk::SymbolUseGraph *) { return "Symbol Use Graph"; }
 
   std::string getNodeLabel(const llzk::SymbolUseGraphNode *n, const llzk::SymbolUseGraph *g) {
-    return DOTGraphTraits<const llzk::SymbolUseGraphNode *>::getNodeLabel(n, g->getRoot());
+    return DOTGraphTraits<const llzk::SymbolUseGraphNode *>::getNodeLabel(n, g);
   }
 };
 

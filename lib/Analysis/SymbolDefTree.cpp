@@ -26,10 +26,6 @@ namespace llzk {
 // SymbolDefTreeNode
 //===----------------------------------------------------------------------===//
 
-bool SymbolDefTreeNode::isLookupRoot() const {
-  return llvm::isa<ModuleOp>(symbolDef) && symbolDef->hasAttr(LANG_ATTR_NAME);
-}
-
 void SymbolDefTreeNode::addChild(SymbolDefTreeNode *node) {
   assert(!node->parent && "def cannot be in more than one symbol table");
   node->parent = this;
