@@ -1,4 +1,4 @@
-//===-- AnalysisPassesEnums.h -----------------------------------*- C++ -*-===//
+//===-- AnalysisPassEnums.h -----------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -18,7 +18,7 @@
 #include <optional>
 
 // Include TableGen'd declarations
-#include "llzk/Analysis/AnalysisPassesEnums.h.inc"
+#include "llzk/Analysis/AnalysisPassEnums.h.inc"
 
 namespace llzk {
 

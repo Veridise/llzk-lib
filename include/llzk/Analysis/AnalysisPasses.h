@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "llzk/Analysis/AnalysisPassesEnums.h"
+#include "llzk/Analysis/AnalysisPassEnums.h"
 #include "llzk/Pass/PassBase.h"
 
 namespace llzk {
