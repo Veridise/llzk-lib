@@ -70,4 +70,17 @@ def PolyLoweringPass
   ];
 }
 
+def R1CSLoweringPass
+    : LLZKPass<"llzk-r1cs-lowering-pass"> {
+  let summary = "Rewrites constraints to be compatible with R1CS constraints i.e a*b - c = 0";
+  let description = [{
+    Rewrites constraint expressions into an (observationally) equivalent system which is in a form that is amenable
+    to being translated into R1CS. For example, every constraint is of the form a*b - c = 0 where a, b, c are all linear.
+
+    This pass is best used as part of the `-llzk-full-r1cs-lowering` pipeline, which includes
+    a degree lowering pass, and clean up passes to ensure correctness and optimal performance.
+}];
+  let constructor = "llzk::createR1CSLoweringPass()";
+}
+
 #endif // LLZK_TRANSFORMATION_PASSES_TD
