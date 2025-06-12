@@ -1558,7 +1558,7 @@ struct FromKeepSet : public Base {
                 llvm::dbgs() << "[EraseUnreachable]   uses symbol: "
                              << usedSymbolNode->getSymbolPath() << '\n';
               });
-              // Ignore struct/template parameter symbols (before doing the lookup below becuase it
+              // Ignore struct/template parameter symbols (before doing the lookup below because it
               // would fail anyway and then cause the "failed" case to be triggered unnecessarily).
               if (usedSymbolNode->isStructParam()) {
                 continue;
