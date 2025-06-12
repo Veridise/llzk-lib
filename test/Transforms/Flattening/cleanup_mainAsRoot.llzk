@@ -1,8 +1,8 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=main-as-root})' %s | FileCheck --enable-var-scope %s
 
-// TESTS: With "cleanup=main-as-root", if there is no "Main" struct all structs
-// are removed (except those that have a reference from a global def or from a
-// free function since those are not candidate for removal during this pass).
+// TEST: With "cleanup=main-as-root", all structs reachable from the "Main" struct are preserved.
+// If there is no "Main" struct, all structs are removed (except those that have a reference from
+// a global def or from a free function since those are not subject to removal during this pass).
 
 module attributes {veridise.lang = "llzk"} {
   global.def @g : !struct.type<@HasUseFromGlobal>

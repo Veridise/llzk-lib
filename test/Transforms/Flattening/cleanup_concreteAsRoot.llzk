@@ -1,5 +1,10 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=concrete-as-root})' %s | FileCheck --enable-var-scope %s
 
+// TEST: With "cleanup=concrete-as-root", all structs without parameters are preserved. Structs
+// that are reachable from one of these "concrete" structs or reachable from a global def or
+// free function (since those are not subject to removal during this pass) are also preserved.
+// All other structs are removed.
+
 module attributes {veridise.lang = "llzk"} {
   global.def @g : !struct.type<@HasUseFromGlobal>
 
