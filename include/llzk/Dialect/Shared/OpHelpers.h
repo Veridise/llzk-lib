@@ -28,6 +28,19 @@ template <typename OpClass> inline llvm::StringLiteral getOperationName() {
   return OpClass::getOperationName();
 }
 
+/// Return the closest operation that is of type 'OpClass', either the op itself or an ancestor.
+template <typename OpClass> inline OpClass getSelfOrParentOfType(mlir::Operation *op) {
+  if (op) {
+    if (OpClass self = llvm::dyn_cast<OpClass>(op)) {
+      return self;
+    }
+    if (OpClass parent = op->getParentOfType<OpClass>()) {
+      return parent;
+    }
+  }
+  return {};
+}
+
 /// Return the closest surrounding parent operation that is of type 'OpClass'.
 template <typename OpClass> inline mlir::FailureOr<OpClass> getParentOfType(mlir::Operation *op) {
   if (OpClass p = op->getParentOfType<OpClass>()) {

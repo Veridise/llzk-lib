@@ -288,7 +288,7 @@ LogicalResult StructDefOp::verifyRegions() {
   // already checked via verifyFuncTypeConstrain() in Function/IR/Ops.cpp.
   ArrayRef<Type> computeParams = foundCompute->getFunctionType().getInputs();
   ArrayRef<Type> constrainParams = foundConstrain->getFunctionType().getInputs().drop_front();
-  if (COMPONENT_NAME_MAIN == this->getSymName()) {
+  if (this->isMainComponent()) {
     // Verify that the Struct has no parameters.
     if (!isNullOrEmpty(this->getConstParamsAttr())) {
       return this->emitError().append(

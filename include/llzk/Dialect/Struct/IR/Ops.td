@@ -113,6 +113,9 @@ def LLZK_StructDefOp
     /// Generate header string, in the same format as the assemblyFormat
     ::std::string getHeaderString();
 
+    /// Return `false` iff `getConstParamsAttr()` returns `nullptr`
+    bool hasConstParamsAttr() { return getProperties().const_params != nullptr; };
+
     /// Return `true` iff this StructDefOp has a parameter with the given name
     bool hasParamNamed(::mlir::StringAttr find);
     inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
