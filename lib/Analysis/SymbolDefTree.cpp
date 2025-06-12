@@ -93,6 +93,7 @@ const SymbolDefTreeNode *SymbolDefTree::lookupNode(SymbolOpInterface symbolDef) 
 
 //===----------------------------------------------------------------------===//
 // Printing
+//===----------------------------------------------------------------------===//
 
 std::string SymbolDefTreeNode::toString() const { return buildStringViaPrint(*this); }
 
