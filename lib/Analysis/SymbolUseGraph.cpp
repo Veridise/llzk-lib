@@ -160,6 +160,7 @@ const SymbolUseGraphNode *SymbolUseGraph::lookupNode(SymbolOpInterface symbolDef
 
 //===----------------------------------------------------------------------===//
 // Printing
+//===----------------------------------------------------------------------===//
 
 std::string SymbolUseGraphNode::toString() const { return buildStringViaPrint(*this); }
 
