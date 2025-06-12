@@ -147,40 +147,40 @@ template <> struct GraphTraits<const llzk::SymbolDefTreeNode *> {
 template <>
 struct GraphTraits<const llzk::SymbolDefTree *>
     : public GraphTraits<const llzk::SymbolDefTreeNode *> {
+  using GraphType = const llzk::SymbolDefTree *;
 
   /// The entry node into the graph is the external node.
-  static NodeRef getEntryNode(const llzk::SymbolDefTree *g) { return g->getRoot(); }
+  static NodeRef getEntryNode(GraphType g) { return g->getRoot(); }
 
   /// nodes_iterator/begin/end - Allow iteration over all nodes in the graph.
   using nodes_iterator = llzk::SymbolDefTree::iterator;
-  static nodes_iterator nodes_begin(const llzk::SymbolDefTree *g) { return g->begin(); }
-  static nodes_iterator nodes_end(const llzk::SymbolDefTree *g) { return g->end(); }
+  static nodes_iterator nodes_begin(GraphType g) { return g->begin(); }
+  static nodes_iterator nodes_end(GraphType g) { return g->end(); }
 
   /// Return total number of nodes in the graph.
-  static unsigned size(const llzk::SymbolDefTree *g) { return g->size(); }
+  static unsigned size(GraphType g) { return g->size(); }
 };
 
 // Provide graph traits for printing SymbolDefTree using dot graph printer.
 template <> struct DOTGraphTraits<const llzk::SymbolDefTreeNode *> : public DefaultDOTGraphTraits {
+  using NodeRef = const llzk::SymbolDefTreeNode *;
+  using GraphType = const llzk::SymbolDefTree *;
 
   DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
 
-  std::string getNodeLabel(const llzk::SymbolDefTreeNode *n, const llzk::SymbolDefTreeNode *) {
-    return n->toString();
-  }
+  std::string getNodeLabel(NodeRef n, GraphType) { return n->toString(); }
 };
 
 template <>
 struct DOTGraphTraits<const llzk::SymbolDefTree *>
     : public DOTGraphTraits<const llzk::SymbolDefTreeNode *> {
 
-  DOTGraphTraits(bool isSimple = false)
-      : DOTGraphTraits<const llzk::SymbolDefTreeNode *>(isSimple) {}
+  DOTGraphTraits(bool isSimple = false) : DOTGraphTraits<NodeRef>(isSimple) {}
 
-  static std::string getGraphName(const llzk::SymbolDefTree *) { return "Symbol Def Tree"; }
+  static std::string getGraphName(GraphType) { return "Symbol Def Tree"; }
 
-  std::string getNodeLabel(const llzk::SymbolDefTreeNode *n, const llzk::SymbolDefTree *g) {
-    return DOTGraphTraits<const llzk::SymbolDefTreeNode *>::getNodeLabel(n, g->getRoot());
+  std::string getNodeLabel(NodeRef n, GraphType g) {
+    return DOTGraphTraits<NodeRef>::getNodeLabel(n, g);
   }
 };
 

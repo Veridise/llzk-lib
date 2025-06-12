@@ -214,40 +214,40 @@ template <> struct GraphTraits<const llzk::SymbolUseGraphNode *> {
 template <>
 struct GraphTraits<const llzk::SymbolUseGraph *>
     : public GraphTraits<const llzk::SymbolUseGraphNode *> {
+  using GraphType = const llzk::SymbolUseGraph *;
 
   /// The entry node into the graph is the external node.
-  static NodeRef getEntryNode(const llzk::SymbolUseGraph *g) { return &g->root; }
+  static NodeRef getEntryNode(GraphType g) { return &g->root; }
 
   /// nodes_iterator/begin/end - Allow iteration over all nodes in the graph.
   using nodes_iterator = llzk::SymbolUseGraph::iterator;
-  static nodes_iterator nodes_begin(const llzk::SymbolUseGraph *g) { return g->begin(); }
-  static nodes_iterator nodes_end(const llzk::SymbolUseGraph *g) { return g->end(); }
+  static nodes_iterator nodes_begin(GraphType g) { return g->begin(); }
+  static nodes_iterator nodes_end(GraphType g) { return g->end(); }
 
   /// Return total number of nodes in the graph.
-  static unsigned size(const llzk::SymbolUseGraph *g) { return g->size(); }
+  static unsigned size(GraphType g) { return g->size(); }
 };
 
 // Provide graph traits for printing SymbolUseGraph using dot graph printer.
 template <> struct DOTGraphTraits<const llzk::SymbolUseGraphNode *> : public DefaultDOTGraphTraits {
+  using NodeRef = const llzk::SymbolUseGraphNode *;
+  using GraphType = const llzk::SymbolUseGraph *;
 
   DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
 
-  std::string getNodeLabel(const llzk::SymbolUseGraphNode *n, const llzk::SymbolUseGraph *) {
-    return n->toString();
-  }
+  std::string getNodeLabel(NodeRef n, GraphType) { return n->toString(); }
 };
 
 template <>
 struct DOTGraphTraits<const llzk::SymbolUseGraph *>
     : public DOTGraphTraits<const llzk::SymbolUseGraphNode *> {
 
-  DOTGraphTraits(bool isSimple = false)
-      : DOTGraphTraits<const llzk::SymbolUseGraphNode *>(isSimple) {}
+  DOTGraphTraits(bool isSimple = false) : DOTGraphTraits<NodeRef>(isSimple) {}
 
-  static std::string getGraphName(const llzk::SymbolUseGraph *) { return "Symbol Use Graph"; }
+  static std::string getGraphName(GraphType) { return "Symbol Use Graph"; }
 
-  std::string getNodeLabel(const llzk::SymbolUseGraphNode *n, const llzk::SymbolUseGraph *g) {
-    return DOTGraphTraits<const llzk::SymbolUseGraphNode *>::getNodeLabel(n, g);
+  std::string getNodeLabel(NodeRef n, GraphType g) {
+    return DOTGraphTraits<NodeRef>::getNodeLabel(n, g);
   }
 };
 
