@@ -214,7 +214,7 @@ void SymbolUseGraph::print(llvm::raw_ostream &os) const {
   for (SymbolUseGraphNode *r : rootPtr->successors) {
     printNode(r);
   }
-  os << "// -------------------\n";
+  os << "// ------------------------\n";
   assert(done.size() == this->size() && "All nodes were not printed!");
 }
 

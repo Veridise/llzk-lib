@@ -67,7 +67,7 @@ public:
   bool hasPredecessor() const {
     return llvm::find_if(predecessors, isNotSymbolicRoot) != predecessors.end();
   }
-  size_t numPredecessor() const { return llvm::count_if(predecessors, isNotSymbolicRoot); }
+  size_t numPredecessors() const { return llvm::count_if(predecessors, isNotSymbolicRoot); }
 
   /// Return true if this node has any successors.
   bool hasSuccessor() const {
@@ -77,7 +77,7 @@ public:
     );
     return !successors.empty();
   }
-  size_t numSuccessor() const {
+  size_t numSuccessors() const {
     assert(
         llvm::find_if_not(successors, isNotSymbolicRoot) == successors.end() &&
         "symbolic root has no predecessors so it cannot appear in a successor list"

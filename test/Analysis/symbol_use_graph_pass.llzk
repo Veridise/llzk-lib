@@ -53,7 +53,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R04]]] '@g' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R02]]]
-//CHECK-NEXT:  -----
+//CHECK-NEXT:  ------------------------
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -113,7 +113,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R06]]] '@a' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R05]]]
-//CHECK-NEXT:  -------------------
+//CHECK-NEXT:  ------------------------
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -188,7 +188,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R12]]] '@NoUse::@constrain' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R11]]]
-//CHECK-NEXT:  -------------------
+//CHECK-NEXT:  ------------------------
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -263,7 +263,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R09]]] '@StructModule::@MoreNested::@NoUse::@constrain' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R07]]]
-//CHECK-NEXT:  -------------------
+//CHECK-NEXT:  ------------------------
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -315,7 +315,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R05]]] '@Main::@constrain' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R08]], 0x[[R02]], 0x[[R07]]]
-//CHECK-NEXT:  -------------------
+//CHECK-NEXT:  ------------------------
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -407,7 +407,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R15]]] '@NoUse::@constrain' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R13]], 0x[[R14]]]
-//CHECK-NEXT:  -------------------
+//CHECK-NEXT:  ------------------------
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -572,7 +572,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R25]]] '@M2::@T::@constrain' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R21]]]
-//CHECK-NEXT:  -------------------
+//CHECK-NEXT:  ------------------------
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -627,4 +627,4 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R06]]] '@Component1A::@constrain' with root module @"<<symbol lookup root>>"
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R08]], 0x[[R09]], 0x[[R02]], 0x[[R05]]]
-//CHECK-NEXT:  -------------------
+//CHECK-NEXT:  ------------------------

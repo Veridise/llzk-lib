@@ -1485,11 +1485,11 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step5_Cleanup {
 
-class Base {
+class CleanupBase {
 public:
   SymbolTableCollection tables;
 
-  Base(ModuleOp root, const SymbolDefTree &symDefTree, const SymbolUseGraph &symUseGraph)
+  CleanupBase(ModuleOp root, const SymbolDefTree &symDefTree, const SymbolUseGraph &symUseGraph)
       : rootMod(root), defTree(symDefTree), useGraph(symUseGraph) {}
 
 protected:
@@ -1510,18 +1510,15 @@ protected:
   }
 };
 
-struct FromKeepSet : public Base {
-  using Base::Base;
+struct FromKeepSet : public CleanupBase {
+  using CleanupBase::CleanupBase;
 
   /// Erase all StructDefOp that are not reachable (via calls, types, or symbol usage) from one of
   /// the StructDefOp given or from some global def or free function (since this pass does not
   /// remove either of those, any symbols reachable from them must not be removed).
   LogicalResult eraseUnreachableFrom(ArrayRef<StructDefOp> keep) {
     // Initialize roots from the given StructDefOp instances
-    SetVector<SymbolOpInterface> roots;
-    for (StructDefOp s : keep) {
-      roots.insert(s);
-    }
+    SetVector<SymbolOpInterface> roots(keep.begin(), keep.end());
     // Add GlobalDefOp and "free functions" to the set of roots
     rootMod.walk([&roots](Operation *op) {
       if (global::GlobalDefOp gdef = llvm::dyn_cast<global::GlobalDefOp>(op)) {
@@ -1602,14 +1599,14 @@ struct FromKeepSet : public Base {
   }
 };
 
-struct FromEraseSet : public Base {
+struct FromEraseSet : public CleanupBase {
 
   /// Note: paths in `tryToErase` should be relative to `root` (which is likely the "top root")
   FromEraseSet(
       ModuleOp root, const SymbolDefTree &symDefTree, const SymbolUseGraph &symUseGraph,
       DenseSet<SymbolRefAttr> &&tryToErasePaths
   )
-      : Base(root, symDefTree, symUseGraph) {
+      : CleanupBase(root, symDefTree, symUseGraph) {
     // Convert the set of paths targeted for erasure into a set of the StructDefOp
     for (SymbolRefAttr path : tryToErasePaths) {
       Operation *lookupFrom = rootMod.getOperation();
@@ -1629,11 +1626,9 @@ struct FromEraseSet : public Base {
     // The `visitedPlusSafetyResult` will contain FuncDefOp w/in the StructDefOp so just a single
     // loop to `dyn_cast` and `erase()` will cause `use-after-free` errors w/in the `dyn_cast`.
     // Instead, reduce the map to only those that should be erased and erase in a separate loop.
-    for (auto it = visitedPlusSafetyResult.begin(); it != visitedPlusSafetyResult.end();) {
-      if (it->second && llvm::isa<StructDefOp>(it->first.getOperation())) {
-        ++it;
-      } else {
-        visitedPlusSafetyResult.erase(it++);
+    for (auto it = visitedPlusSafetyResult.begin(); it != visitedPlusSafetyResult.end(); ++it) {
+      if (!it->second || !llvm::isa<StructDefOp>(it->first.getOperation())) {
+        visitedPlusSafetyResult.erase(it);
       }
     }
     for (auto &[sym, _] : visitedPlusSafetyResult) {
@@ -1819,18 +1814,6 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
         llvm::errs() << DEBUG_TYPE << " failed while propagating instantiated types\n";
         return failure();
       }
-
-      if (false) { // TODO:TEMP
-        llvm::dbgs() << "=====================================================================\n";
-        llvm::dbgs() << " Dumping module between iterations of " << DEBUG_TYPE << " \n";
-        modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
-        llvm::dbgs() << "=====================================================================\n";
-      }
-      // TODO: It may be best to move some degree of cleanup within the loop to avoid doing stuff in
-      // structs that are going to be deleted anyway. But I have to be careful with that when using
-      // the ConcreteAsRoot option since everything is not yet made concrete. However,
-      // ConcreteAsRoot implies Preimage (right?) so I could, as long as mode is not Disabled,
-      // always do the Preimage cleanup within the loop.
 
       LLVM_DEBUG(if (tracker.isModified()) {
         llvm::dbgs() << "=====================================================================\n";

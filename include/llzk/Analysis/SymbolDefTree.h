@@ -49,6 +49,7 @@ public:
 
   /// Returns true if this node has any child edges.
   bool hasChildren() const { return !children.empty(); }
+  size_t numChildren() const { return children.size(); }
 
   /// Iterator over the children of this node.
   using child_iterator = mlir::SetVector<SymbolDefTreeNode *>::const_iterator;

@@ -124,7 +124,7 @@ void SymbolDefTree::print(llvm::raw_ostream &os) const {
   for (SymbolDefTreeNode *r : root.children) {
     printNode(r);
   }
-  os << "// -------------------\n";
+  os << "// -----------------------\n";
 }
 
 void SymbolDefTree::dumpToDotFile(std::string filename) const {

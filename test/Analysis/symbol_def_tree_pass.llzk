@@ -46,6 +46,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R10]]] 'function.def' named "constrain"
 //CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  -----------------------
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -104,6 +105,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R13]]] 'function.def' named "constrain"
 //CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  -----------------------
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -174,6 +176,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R17]]] 'function.def' named "constrain"
 //CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  -----------------------
 // -----
 
 module attributes {veridise.lang = "llzk"} {
@@ -253,3 +256,4 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R18]]] 'function.def' named "constrain"
 //CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  -----------------------
