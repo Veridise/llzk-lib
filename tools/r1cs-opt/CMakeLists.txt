@@ -23,5 +23,3 @@ target_link_libraries(r1cs-opt
   MLIRTransforms
   R1CSDialect  # <- Your dialect library
 )
-
-
