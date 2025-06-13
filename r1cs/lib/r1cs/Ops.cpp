@@ -15,46 +15,42 @@ using namespace r1cs;
 #define GET_OP_CLASSES
 #include "r1cs/Dialect/IR/Ops.cpp.inc"
 
+mlir::Block *CircuitOp::addEntryBlock() {
+  Region &body = getBody();
+  assert(body.empty() && "CircuitOp already has a block");
+  Block *block = new Block();
+  body.push_back(block);
+  return block;
+}
+
 mlir::ParseResult CircuitOp::parse(OpAsmParser &parser, OperationState &state) {
-  // Parse the circuit name.
+  // Parse the circuit name (symbol name).
   StringAttr nameAttr;
   if (parser.parseSymbolName(nameAttr, SymbolTable::getSymbolAttrName(), state.attributes)) {
     return failure();
   }
 
-  // Parse `inputs` keyword and input arguments with types.
-  if (parser.parseKeyword("inputs")) {
+  // Parse `inputs` keyword and argument list with types.
+  if (parser.parseKeyword("inputs") || parser.parseLParen()) {
     return failure();
   }
 
   SmallVector<OpAsmParser::Argument> inputArgs;
-  SmallVector<Type> inputTypes;
-  if (parser.parseArgumentList(inputArgs, AsmParser::Delimiter::None, /*allowType=*/true)) {
+  if (parser.parseArgumentList(inputArgs, AsmParser::Delimiter::None, /*allowType=*/true) ||
+      parser.parseRParen()) {
     return failure();
   }
 
-  for (auto &arg : inputArgs) {
-    inputTypes.push_back(arg.type);
-  }
+  // Just a marker keyword — outputs are defined inside the region via `r1cs.return`.
+  // We ignore the actual type list here since CircuitOp has no `outs`.
 
-  // Parse `outputs` keyword and result types.
-  if (parser.parseKeyword("outputs") || parser.parseColon()) {
+  // Parse region with block arguments.
+  Region *body = state.addRegion();
+  if (parser.parseRegion(*body, inputArgs)) {
     return failure();
   }
 
-  SmallVector<Type> resultTypes;
-  if (parser.parseTypeList(resultTypes)) {
-    return failure();
-  }
-  state.addTypes(resultTypes); // Add to result types of op
-
-  // Parse the region
-  Region *region = state.addRegion();
-  if (parser.parseRegion(*region, inputArgs, /*argTypes=*/ {})) {
-    return failure();
-  }
-
-  // Parse optional attributes
+  // Parse optional attributes.
   if (parser.parseOptionalAttrDictWithKeyword(state.attributes)) {
     return failure();
   }
@@ -63,23 +59,22 @@ mlir::ParseResult CircuitOp::parse(OpAsmParser &parser, OperationState &state) {
 }
 
 void CircuitOp::print(OpAsmPrinter &p) {
-  p << ' ' << getSymName(); // Symbol name
+  // Print the circuit symbol name.
+  p << ' ' << getSymName();
 
-  // Inputs
-  p << "\n  inputs ";
-  auto args = getBody().front().getArguments();
-  llvm::interleaveComma(args, p, [&](mlir::Value arg) { p << arg << " : " << arg.getType(); });
+  // Print inputs.
+  p << " inputs (";
+  llvm::interleaveComma(getBody().front().getArguments(), p, [&](mlir::Value arg) {
+    p << arg << " : " << arg.getType();
+  });
+  p << ")";
 
-  // Outputs
-  p << "\n  outputs : ";
-  llvm::interleaveComma(getResultTypes(), p);
-
-  // Region
+  // Print region (print block args = false, since we already printed above).
   p << ' ';
-  p.printRegion(getBody(), /*printEntryBlockArgs=*/false);
+  p.printRegion(getBody(), /*printEntryBlockArgs=*/false, /*printBlockTerminators=*/true);
 
-  // Attributes
+  // Print attributes, excluding sym_name.
   p.printOptionalAttrDictWithKeyword(
-      getOperation()->getAttrs(), {SymbolTable::getSymbolAttrName()}
+      getOperation()->getAttrs(), {mlir::SymbolTable::getSymbolAttrName()}
   );
 }
