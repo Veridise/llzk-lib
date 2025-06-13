@@ -194,7 +194,7 @@ public:
     ensure(isConstantIndex(), __FUNCTION__ + mlir::Twine(" requires a constant index!"));
     return toAPInt(std::get<mlir::arith::ConstantIndexOp>(*constantVal).value());
   }
-  mlir::APInt getConstantInt() const {
+  mlir::APInt getConstantValue() const {
     ensure(
         isConstantFelt() || isConstantIndex(),
         __FUNCTION__ + mlir::Twine(" requires a constant int type!")
