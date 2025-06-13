@@ -242,9 +242,12 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
 
   if (mlir::isa<ReadArrayOp>(op)) {
     ensure(newVals.isScalar(), "array read must produce a scalar value");
-  } else {
-    ensure(newVals.isArray(), "array extract must produce array value");
   }
+  // an extract operation may yield a "scalar" value if not all dimensions of
+  // the source array are instantiated; for example, if extracting an array from
+  // an input arg, the current value is a "scalar" with an array type, and extracting
+  // from that yields another single value with indices. For example: extracting [0][1]
+  // from { arg1 } yields { arg1[0][1] }.
 
   propagateIfChanged(after, after->setValue(res, newVals));
 }
