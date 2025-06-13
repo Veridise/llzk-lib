@@ -10,7 +10,7 @@
 #include "r1cs/Dialect/IR/Attrs.h"
 
 #include <mlir/IR/AttrTypeSubElements.h>
-#include <mlir/IR/Builders.h> // for mlir::Builder
+#include <mlir/IR/Builders.h>           // for mlir::Builder
 #include <mlir/Support/LLVM.h>          // for LLVM utilities
 #include <mlir/Support/LogicalResult.h> // for LogicalResult
 #include <mlir/Support/TypeID.h>        // for type IDs
