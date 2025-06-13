@@ -16,6 +16,7 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/IR/BuiltinOps.h>
@@ -66,14 +67,6 @@ private:
     });
   }
 
-  void addAuxField(StructDefOp structDef, StringRef name) {
-    OpBuilder builder(structDef);
-    builder.setInsertionPointToEnd(&structDef.getBody().front());
-    builder.create<FieldDefOp>(
-        structDef.getLoc(), builder.getStringAttr(name), builder.getType<FeltType>()
-    );
-  }
-
   // Recursively compute degree of FeltOps SSA values
   unsigned getDegree(Value val, DenseMap<Value, unsigned> &memo) {
     if (memo.count(val)) {
@@ -110,39 +103,6 @@ private:
     }
 
     llvm_unreachable("Unhandled Felt SSA value in degree computation");
-  }
-
-  /// Replaces all *subsequent uses* of `oldVal` with `newVal`, starting *after* `afterOp`.
-  ///
-  /// Specifically:
-  /// - Uses of `oldVal` in operations that come **after** `afterOp` in the same block are replaced.
-  /// - Uses in `afterOp` itself are **not replaced** (to avoid self-trivializing rewrites).
-  /// - Uses in other blocks are replaced (if applicable).
-  ///
-  /// Typical use case:
-  /// - You introduce an auxiliary value (e.g., via EmitEqualityOp) and want to replace
-  ///   all *later* uses of the original value while preserving the constraint itself.
-  ///
-  /// \param oldVal  The original value whose uses should be redirected.
-  /// \param newVal  The new value to replace subsequent uses with.
-  /// \param afterOp The operation after which uses of `oldVal` will be replaced.
-  void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp) {
-    assert(afterOp && "afterOp must be a valid Operation*");
-
-    for (auto &use : llvm::make_early_inc_range(oldVal.getUses())) {
-      Operation *user = use.getOwner();
-
-      // Skip uses that are:
-      // - Before afterOp in the same block.
-      // - Inside afterOp itself.
-      if ((user->getBlock() == afterOp->getBlock()) &&
-          (user->isBeforeInBlock(afterOp) || user == afterOp)) {
-        continue;
-      }
-
-      // Replace this use of oldVal with newVal.
-      use.set(newVal);
-    }
   }
 
   Value lowerExpression(
@@ -273,101 +233,6 @@ private:
     return retOp.getOperands().front();
   }
 
-  Value rebuildExprInCompute(
-      Value val, FuncDefOp computeFunc, OpBuilder &builder, DenseMap<Value, Value> &rebuildMemo
-  ) {
-    // Memoized already?
-    if (auto it = rebuildMemo.find(val); it != rebuildMemo.end()) {
-      return it->second;
-    }
-
-    // Case 1: BlockArgument from constrain() -> map to compute()
-    if (auto barg = val.dyn_cast<BlockArgument>()) {
-      unsigned index = barg.getArgNumber();                  // Argument index in constrain()
-      Value computeArg = computeFunc.getArgument(index - 1); // Corresponding compute() arg
-      rebuildMemo[val] = computeArg;
-      return computeArg;
-    }
-
-    // Case 2: FieldReadOp in constrain() -> replicate FieldReadOp in compute()
-    if (auto readOp = val.getDefiningOp<FieldReadOp>()) {
-      Value selfVal = getSelfValueFromCompute(computeFunc); // %self is always the return value
-      auto rebuiltRead = builder.create<FieldReadOp>(
-          readOp.getLoc(), readOp.getType(), selfVal, readOp.getFieldNameAttr().getAttr()
-      );
-      rebuildMemo[val] = rebuiltRead.getResult();
-      return rebuiltRead.getResult();
-    }
-
-    // Case 3: AddFeltOp
-    if (auto addOp = val.getDefiningOp<AddFeltOp>()) {
-      Value lhs = rebuildExprInCompute(addOp.getLhs(), computeFunc, builder, rebuildMemo);
-      Value rhs = rebuildExprInCompute(addOp.getRhs(), computeFunc, builder, rebuildMemo);
-      auto rebuiltAdd = builder.create<AddFeltOp>(addOp.getLoc(), addOp.getType(), lhs, rhs);
-      rebuildMemo[val] = rebuiltAdd.getResult();
-      return rebuiltAdd.getResult();
-    }
-
-    // Case 4: SubFeltOp
-    if (auto subOp = val.getDefiningOp<SubFeltOp>()) {
-      Value lhs = rebuildExprInCompute(subOp.getLhs(), computeFunc, builder, rebuildMemo);
-      Value rhs = rebuildExprInCompute(subOp.getRhs(), computeFunc, builder, rebuildMemo);
-      auto rebuiltSub = builder.create<SubFeltOp>(subOp.getLoc(), subOp.getType(), lhs, rhs);
-      rebuildMemo[val] = rebuiltSub.getResult();
-      return rebuiltSub.getResult();
-    }
-
-    // Case 5: MulFeltOp
-    if (auto mulOp = val.getDefiningOp<MulFeltOp>()) {
-      Value lhs = rebuildExprInCompute(mulOp.getLhs(), computeFunc, builder, rebuildMemo);
-      Value rhs = rebuildExprInCompute(mulOp.getRhs(), computeFunc, builder, rebuildMemo);
-      auto rebuiltMul = builder.create<MulFeltOp>(mulOp.getLoc(), mulOp.getType(), lhs, rhs);
-      rebuildMemo[val] = rebuiltMul.getResult();
-      return rebuiltMul.getResult();
-    }
-
-    // Case 6: NegFeltOp
-    if (auto negOp = val.getDefiningOp<NegFeltOp>()) {
-      Value inner = rebuildExprInCompute(negOp.getOperand(), computeFunc, builder, rebuildMemo);
-      auto rebuiltNeg = builder.create<NegFeltOp>(negOp.getLoc(), negOp.getType(), inner);
-      rebuildMemo[val] = rebuiltNeg.getResult();
-      return rebuiltNeg.getResult();
-    }
-
-    // Case 7: DivFeltOp
-    if (auto divOp = val.getDefiningOp<DivFeltOp>()) {
-      Value lhs = rebuildExprInCompute(divOp.getLhs(), computeFunc, builder, rebuildMemo);
-      Value rhs = rebuildExprInCompute(divOp.getRhs(), computeFunc, builder, rebuildMemo);
-      auto rebuiltDiv = builder.create<DivFeltOp>(divOp.getLoc(), divOp.getType(), lhs, rhs);
-      rebuildMemo[val] = rebuiltDiv.getResult();
-      return rebuiltDiv.getResult();
-    }
-
-    // Case 8: ConstFeltOp
-    if (auto constOp = val.getDefiningOp<FeltConstantOp>()) {
-      auto newConst = builder.create<FeltConstantOp>(constOp.getLoc(), constOp.getValue());
-      rebuildMemo[val] = newConst.getResult();
-      return newConst.getResult();
-    }
-
-    llvm::errs() << "Unhandled expression kind in rebuildExprInCompute: " << val << "\n";
-    llvm_unreachable("Unsupported op in rebuildExprInCompute");
-  }
-
-  // Throw an error if the struct has a field that matches the prefix of the auxiliary fields
-  // we use in the pass. There **shouldn't** be a conflict but just in case let's throw the check.
-  void checkForAuxFieldConflicts(StructDefOp structDef) {
-    structDef.walk([&](FieldDefOp fieldDefOp) {
-      if (fieldDefOp.getName().starts_with(AUXILIARY_FIELD_PREFIX)) {
-        fieldDefOp.emitError() << "Field name: \"" << fieldDefOp.getName()
-                               << "\" starts with prefix: \"" << AUXILIARY_FIELD_PREFIX
-                               << "\" which is reserved for lowering pass";
-        signalPassFailure();
-        return;
-      }
-    });
-  }
-
   void runOnOperation() override {
     ModuleOp moduleOp = getOperation();
 
@@ -395,7 +260,10 @@ private:
         return;
       }
 
-      checkForAuxFieldConflicts(structDef);
+      if (failed(checkForAuxFieldConflicts(structDef, AUXILIARY_FIELD_PREFIX))) {
+        signalPassFailure();
+        return;
+      }
 
       DenseMap<Value, unsigned> degreeMemo;
       DenseMap<Value, Value> rewrites;
