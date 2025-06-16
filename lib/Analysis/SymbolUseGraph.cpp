@@ -164,18 +164,30 @@ const SymbolUseGraphNode *SymbolUseGraph::lookupNode(SymbolOpInterface symbolDef
 
 std::string SymbolUseGraphNode::toString() const { return buildStringViaPrint(*this); }
 
+namespace {
+
+inline void safeAppendPathRoot(llvm::raw_ostream &os, ModuleOp root) {
+  if (root) {
+    FailureOr<SymbolRefAttr> unambiguousRoot = getPathFromTopRoot(root);
+    if (succeeded(unambiguousRoot)) {
+      os << unambiguousRoot.value() << '\n';
+    } else {
+      os << "<<unknown path>>\n";
+    }
+  } else {
+    os << "<<NULL MODULE>>\n";
+  }
+}
+
+} // namespace
+
 void SymbolUseGraphNode::print(llvm::raw_ostream &os) const {
   os << '\'' << symbolPath << '\'';
   if (isStructConstParam) {
     os << " (struct param)";
   }
   os << " with root module ";
-  FailureOr<SymbolRefAttr> unambiguousRoot = getPathFromTopRoot(symbolPathRoot);
-  if (succeeded(unambiguousRoot)) {
-    os << unambiguousRoot.value() << '\n';
-  } else {
-    os << "<<unknown path>>\n";
-  }
+  safeAppendPathRoot(os, symbolPathRoot);
 }
 
 void SymbolUseGraph::print(llvm::raw_ostream &os) const {
