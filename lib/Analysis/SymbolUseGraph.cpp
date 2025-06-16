@@ -40,6 +40,22 @@ void SymbolUseGraphNode::removeSuccessor(SymbolUseGraphNode *node) {
   }
 }
 
+FailureOr<SymbolLookupResultUntyped>
+SymbolUseGraphNode::lookupSymbol(SymbolTableCollection &tables, bool reportMissing) const {
+  if (!isRealNode()) {
+    return failure();
+  }
+  Operation *lookupFrom = getSymbolPathRoot().getOperation();
+  auto res = lookupSymbolIn(tables, getSymbolPath(), lookupFrom, lookupFrom, reportMissing);
+  if (succeeded(res) || !reportMissing) {
+    return res;
+  }
+  // This is likely an error in the use graph and not a case that should ever happen.
+  return lookupFrom->emitError().append(
+      "Could not find symbol referenced in UseGraph: ", getSymbolPath()
+  );
+}
+
 //===----------------------------------------------------------------------===//
 // SymbolUseGraph
 //===----------------------------------------------------------------------===//

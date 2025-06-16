@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "llzk/Util/SymbolLookup.h"
+
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
 
@@ -97,6 +99,9 @@ public:
   llvm::iterator_range<iterator> successorIter() const {
     return llvm::make_filter_range(successors, isRealNodeImpl);
   }
+
+  mlir::FailureOr<SymbolLookupResultUntyped>
+  lookupSymbol(mlir::SymbolTableCollection &tables, bool reportMissing = true) const;
 
   /// Print the node in a human readable format.
   std::string toString() const;

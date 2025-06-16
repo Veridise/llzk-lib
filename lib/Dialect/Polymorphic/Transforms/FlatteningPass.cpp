@@ -1496,18 +1496,6 @@ protected:
   ModuleOp rootMod;
   const SymbolDefTree &defTree;
   const SymbolUseGraph &useGraph;
-
-  inline FailureOr<SymbolLookupResultUntyped> lookupSym(const SymbolUseGraphNode *usedSymbolNode) {
-    Operation *lookupFrom = usedSymbolNode->getSymbolPathRoot().getOperation();
-    auto res = lookupSymbolIn(tables, usedSymbolNode->getSymbolPath(), lookupFrom, lookupFrom);
-    if (succeeded(res)) {
-      return res;
-    }
-    // This is likely an error in the use graph and not a case that should ever happen.
-    return lookupFrom->emitError().append(
-        "Could not find symbol referenced in UseGraph: ", usedSymbolNode->getSymbolPath()
-    );
-  }
 };
 
 struct FromKeepSet : public CleanupBase {
@@ -1561,7 +1549,7 @@ struct FromKeepSet : public CleanupBase {
                 continue;
               }
               // If `usedSymbolNode` references a StructDefOp, ensure it's considered in the roots.
-              auto lookupRes = lookupSym(usedSymbolNode);
+              auto lookupRes = usedSymbolNode->lookupSymbol(tables);
               if (failed(lookupRes)) {
                 LLVM_DEBUG(useGraph.dumpToDotFile());
                 return failure();
@@ -1724,7 +1712,7 @@ private:
       return fromCache->second;
     }
     // Otherwise, perform lookup and cache
-    auto lookupRes = lookupSym(node);
+    auto lookupRes = node->lookupSymbol(tables);
     assert(succeeded(lookupRes) && "graph contains node with invalid path");
     assert(lookupRes->get() != nullptr && "lookup must return an Operation");
     // If loaded via an IncludeOp it's not in the current AST anyway so ignore.
