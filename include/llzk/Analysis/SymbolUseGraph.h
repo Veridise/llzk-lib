@@ -41,8 +41,8 @@ class SymbolUseGraphNode {
   /// Used only for creating the artificial root/head and tail nodes in the graph.
   SymbolUseGraphNode() : symbolPathRoot(nullptr), symbolPath(nullptr), isStructConstParam(false) {}
 
-  /// Return 'false' iff the given node is an artificial node creates for the graph head/tail.
-  static bool isRealNode(const SymbolUseGraphNode *node) { return node->symbolPath != nullptr; }
+  /// Return 'false' iff the given node is an artificial node created for the graph head/tail.
+  static bool isRealNodeImpl(const SymbolUseGraphNode *node) { return node->symbolPath != nullptr; }
 
   /// Add a successor node.
   void addSuccessor(SymbolUseGraphNode *node);
@@ -54,6 +54,10 @@ class SymbolUseGraphNode {
   friend class SymbolUseGraph;
 
 public:
+  /// Return 'false' iff this node is an artificial node created for the graph head/tail.
+  /// This type of node should only be returned via the GraphTraits.
+  bool isRealNode() const { return isRealNodeImpl(this); }
+
   /// Return the root ModuleOp for the path.
   mlir::ModuleOp getSymbolPathRoot() const { return symbolPathRoot; }
 
@@ -65,13 +69,15 @@ public:
 
   /// Return true if this node has any predecessors.
   bool hasPredecessor() const {
-    return llvm::find_if(predecessors, isRealNode) != predecessors.end();
+    return llvm::find_if(predecessors, isRealNodeImpl) != predecessors.end();
   }
-  size_t numPredecessors() const { return llvm::count_if(predecessors, isRealNode); }
+  size_t numPredecessors() const { return llvm::count_if(predecessors, isRealNodeImpl); }
 
   /// Return true if this node has any successors.
-  bool hasSuccessor() const { return llvm::find_if(successors, isRealNode) != successors.end(); }
-  size_t numSuccessors() const { return llvm::count_if(successors, isRealNode); }
+  bool hasSuccessor() const {
+    return llvm::find_if(successors, isRealNodeImpl) != successors.end();
+  }
+  size_t numSuccessors() const { return llvm::count_if(successors, isRealNodeImpl); }
 
   /// Iterator over predecessors/successors.
   using iterator = llvm::filter_iterator<
@@ -84,12 +90,12 @@ public:
 
   /// Range over predecessor nodes.
   llvm::iterator_range<iterator> predecessorIter() const {
-    return llvm::make_filter_range(predecessors, isRealNode);
+    return llvm::make_filter_range(predecessors, isRealNodeImpl);
   }
 
   /// Range over successor nodes.
   llvm::iterator_range<iterator> successorIter() const {
-    return llvm::make_filter_range(successors, isRealNode);
+    return llvm::make_filter_range(successors, isRealNodeImpl);
   }
 
   /// Print the node in a human readable format.
