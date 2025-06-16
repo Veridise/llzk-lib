@@ -67,7 +67,7 @@ R getPathAndCall(SymbolOpInterface defOp, llvm::function_ref<R(ModuleOp, SymbolR
 
 SymbolUseGraph::SymbolUseGraph(SymbolOpInterface rootSymbolOp) {
   assert(rootSymbolOp->hasTrait<OpTrait::SymbolTable>());
-  buildTree(rootSymbolOp);
+  buildGraph(rootSymbolOp);
 }
 
 /// Get (add if not present) the graph node for the "user" symbol def op.
@@ -78,7 +78,7 @@ SymbolUseGraphNode *SymbolUseGraph::getSymbolUserNode(const SymbolTable::SymbolU
   });
 }
 
-void SymbolUseGraph::buildTree(SymbolOpInterface symbolOp) {
+void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
   auto walkFn = [this](Operation *op, bool) {
     assert(op->hasTrait<OpTrait::SymbolTable>());
     FailureOr<ModuleOp> opRootModule = llzk::getRootModule(op);

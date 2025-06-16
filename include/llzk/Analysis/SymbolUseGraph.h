@@ -151,7 +151,7 @@ class SymbolUseGraph {
   );
 
   SymbolUseGraphNode *getSymbolUserNode(const mlir::SymbolTable::SymbolUse &u);
-  void buildTree(mlir::SymbolOpInterface symbolOp);
+  void buildGraph(mlir::SymbolOpInterface symbolOp);
 
   // Friend declaration for the specialization of GraphTraits
   friend struct llvm::GraphTraits<const llzk::SymbolUseGraph *>;
@@ -216,7 +216,7 @@ struct GraphTraits<const llzk::SymbolUseGraph *>
     : public GraphTraits<const llzk::SymbolUseGraphNode *> {
   using GraphType = const llzk::SymbolUseGraph *;
 
-  /// The entry node into the graph is the external node.
+  /// The entry node into the graph is the root node.
   static NodeRef getEntryNode(GraphType g) { return &g->root; }
 
   /// nodes_iterator/begin/end - Allow iteration over all nodes in the graph.
