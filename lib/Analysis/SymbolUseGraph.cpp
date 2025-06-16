@@ -118,6 +118,13 @@ void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
     }
   };
   SymbolTable::walkSymbolTables(symbolOp.getOperation(), true, walkFn);
+
+  // Find all nodes with no successors and add the tail node as successor.
+  for (SymbolUseGraphNode *n : nodesIter()) {
+    if (!n->hasSuccessor()) {
+      n->addSuccessor(&tail);
+    }
+  }
 }
 
 SymbolUseGraphNode *SymbolUseGraph::getOrAddNode(
@@ -209,22 +216,22 @@ void SymbolUseGraph::print(llvm::raw_ostream &os) const {
     os << "// --- Predecessors : [";
     llvm::interleaveComma(
         llvm::make_filter_range(
-            node->predecessors, [rootPtr](SymbolUseGraphNode *n) { return n != rootPtr; }
+            node->predecessorIter(), [rootPtr](SymbolUseGraphNode *n) { return n != rootPtr; }
         ),
         os
     );
     os << "]\n";
     os << "// --- Successors : [";
-    llvm::interleaveComma(node->successors, os);
+    llvm::interleaveComma(node->successorIter(), os);
     os << "]\n";
     // Recursively print the successors
-    for (SymbolUseGraphNode *c : node->successors) {
+    for (SymbolUseGraphNode *c : node->successorIter()) {
       printNode(c);
     }
   };
 
   os << "// ---- SymbolUseGraph ----\n";
-  for (SymbolUseGraphNode *r : rootPtr->successors) {
+  for (SymbolUseGraphNode *r : rootPtr->successorIter()) {
     printNode(r);
   }
   os << "// ------------------------\n";
