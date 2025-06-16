@@ -135,6 +135,9 @@ void ConstrainRefAnalysis::visitOperation(
 
   // Propagate existing state.
   join(after, before);
+  // Add operand values, if not already added. Ensures that the default value
+  // of a ConstrainRef (the source of the ref) is visible in the lattice.
+  propagateIfChanged(after, after->setValues(operandVals));
 
   // We will now join the the operand refs based on the type of operand.
   if (auto fieldRead = mlir::dyn_cast<FieldReadOp>(op)) {
