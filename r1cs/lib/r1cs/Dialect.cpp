@@ -18,15 +18,16 @@
 // TableGen'd implementation files
 #include "r1cs/Dialect/IR/Dialect.cpp.inc"
 
-#define GET_TYPEDEF_CLASSES
-#include "r1cs/Dialect/IR/Types.cpp.inc"
 #define GET_ATTRDEF_CLASSES
 #include "r1cs/Dialect/IR/Attrs.cpp.inc"
+
+#define GET_TYPEDEF_CLASSES
+#include "r1cs/Dialect/IR/Types.cpp.inc"
 
 using namespace mlir;
 using namespace r1cs;
 
-auto R1CSDialect::initialize() -> void {
+void R1CSDialect::initialize() {
   addOperations<
 #define GET_OP_LIST
 #include "r1cs/Dialect/IR/Ops.cpp.inc"

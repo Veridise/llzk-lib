@@ -12,33 +12,35 @@ include "r1cs/Dialect/IR/Attrs.td"
 class R1CS_Op<string mnemonic, list<Trait> traits = []> :
     Op<R1CSDialect, mnemonic, traits>;
 
-def R1CS_CircuitOp : R1CS_Op<"circuit", [
+def R1CS_CircuitDefOp : R1CS_Op<"circuit", [
   Symbol, IsolatedFromAbove, SingleBlock, NoTerminator
 ]> {
-  let summary = "Circuit operation with named inputs and outputs";
+  let summary = "Defines an R1CS circuit with labeled inputs and constraints";
   let description = [{
-    This operation describes an R1CS circuit which specifies input, output, and intermediate signals
-    and consists of R1CS constraints. 
+    The `r1cs.circuit` operation defines a named circuit, with explicit inputs
+    and internally declared signals and constraints.
+
+    Signals defined with `r1cs.def` and marked `public` are considered outputs.
+
     Example:
 
-    ```r1cs
-      r1cs.circuit @example inputs (%a: !r1cs.signal, %b: !r1cs.signal, %c: !r1cs.signal) {
-        %d = r1cs.def 1 : !r1cs.signal
-        %a_l = r1cs.to_linear %a : !r1cs.signal to !r1cs.linear
-        %b_l = r1cs.to_linear %b : !r1cs.signal to !r1cs.linear
-        !r1cs.constrain %d, %b, %a : !r1cs.linear
-        r1cs.return %d, %a : !r1cs.signal, !r1cs.signal
-      }
+    ```mlir
+    r1cs.circuit @CmpConstraint inputs (%arg0: signal public, %arg1: signal, %arg2: signal){
+      %0 = r1cs.def 0 : signal public {isPublic}
+      %1 = r1cs.def 1 : signal {isPublic}
+      %2 = r1cs.def 2 : signal {isPublic}
+      %3 = r1cs.to_linear %arg1 : signal to !r1cs.linear
+      %4 = r1cs.to_linear %arg2 : signal to !r1cs.linear
+      %5 = r1cs.to_linear %1 : signal to !r1cs.linear
     ```
   }];
-
+  let hasCustomAssemblyFormat = 1;
   let arguments = (ins SymbolNameAttr:$sym_name);
   let regions = (region SizedRegion<1>:$body);
-
-  let hasCustomAssemblyFormat = 1;
+  
 
   let builders = [
-    OpBuilder<(ins "::llvm::StringRef":$name, "::mlir::TypeRange":$resultTypes)>
+    OpBuilder<(ins "::llvm::StringRef":$name)>
   ];
 
   let extraClassDeclaration = [{
@@ -46,27 +48,21 @@ def R1CS_CircuitOp : R1CS_Op<"circuit", [
   }];
 }
 
-def R1CS_ReturnOp : R1CS_Op<"return", [Terminator]> {
-  let summary = "Specifies output signals in circuit";
-  let arguments = (ins Variadic<R1CS_SignalType>:$results);
+def R1CS_SignalDefOp : R1CS_Op<"def", [Pure]> {
+  let summary = "Define a signal with label and optional public visibility";
   let description = [{
-      The `return` op returns a list of signal values that are supposed to be the output signals
-      of the circuit.
-      
-    }];
+    The `def` op creates a new signal associated with a numeric label.
 
-  let assemblyFormat = [{
-    $results `:` type($results) attr-dict
-  }];
-}
+    If the optional `public` keyword is present, the signal is treated as a public output
+    of the circuit. Otherwise, it is considered private/internal.
 
-def SignalDefOp : R1CS_Op<"def", [Pure]> {
-  let summary = "Define a signal and its label ID";
-  let description = [{
-      The `def` op creates a fresh signal. Unless the signal appears in the return statement, it is considered
-      private and intermediate.
+    Example:
+    ```
+      %0 = r1cs.def 0 : signal public {isPublic} // public signal
+      %1 = r1cs.def 1 : signal {isPublic} // private
+    ```
   }];
-  let arguments = (ins UI64Attr:$label);
+  let arguments = (ins UI32Attr:$label, OptionalAttr<UnitAttr>:$isPublic);
   let results = (outs R1CS_SignalType:$out);
   let assemblyFormat = [{
     $label `:` type($out) attr-dict
@@ -77,7 +73,7 @@ def R1CS_ToLinearOp : R1CS_Op<"to_linear", [Pure]> {
   let summary = "Casts a signal to a linear expression";
   let arguments = (ins R1CS_SignalType:$input);
   let results = (outs R1CS_LinearType:$output);
-  let assemblyFormat = "$input attr-dict `:` type($input) `to` type($output)";
+  let assemblyFormat = "$input `:` type($input) attr-dict `to` type($output)";
 }
 
 def R1CS_ConstOp : R1CS_Op<"const", [Pure]> {
@@ -108,14 +104,7 @@ def R1CS_NegOp : R1CS_Op<"neg", [Pure]> {
   let assemblyFormat = "$input attr-dict `:` type($neg)";
 }
 
-def R1CS_AssignOp : R1CS_Op<"assign", [Pure]> {
-  let summary = "Assign a linear expression to a new signal";
-  let arguments = (ins R1CS_LinearType:$input);
-  let results = (outs R1CS_SignalType:$out);
-  let assemblyFormat = "$input attr-dict `:` type($out)";
-}
-
-def R1CS_ConstrainOp : R1CS_Op<"constrain", [Pure]> {
+def R1CS_ConstrainOp : R1CS_Op<"constrain", []> {
   let summary = "Enforce a * b - c = 0 R1CS constraint";
   let arguments = (ins R1CS_LinearType:$a, R1CS_LinearType:$b, R1CS_LinearType:$c);
   let assemblyFormat = "$a `,` $b `,` $c attr-dict `:` type($a)";

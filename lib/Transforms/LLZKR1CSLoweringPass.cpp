@@ -18,6 +18,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/APIntHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 
@@ -28,6 +29,10 @@
 
 #include <deque>
 #include <memory>
+
+#include "r1cs/Dialect/IR/Attrs.h"
+#include "r1cs/Dialect/IR/Ops.h"
+#include "r1cs/Dialect/IR/Types.h"
 
 // Include the generated base pass class definitions.
 namespace llzk {
@@ -46,6 +51,170 @@ using namespace llzk::constrain;
 #define R1CS_AUXILIARY_FIELD_PREFIX "__llzk_r1cs_lowering_pass_aux_field_"
 
 namespace {
+
+/// A LinearCombination is a map from a Value (like a variable or FieldRead) to a felt constant.
+struct LinearCombination {
+  DenseMap<Value, APSInt> terms; // variable -> coeff
+  APSInt constant;
+
+  LinearCombination() : constant(APInt(1, 0), false) {}
+
+  void addTerm(Value v, APSInt coeff) {
+    if (coeff.isZero()) {
+      return;
+    }
+    auto it = terms.find(v);
+    if (it == terms.end()) {
+      terms[v] = coeff;
+    } else {
+      terms[v] += coeff;
+    }
+  }
+
+  void negate() {
+    for (auto &kv : terms) {
+      kv.second = -kv.second;
+    }
+    constant = -constant;
+  };
+
+  void addConstant(APSInt c) { constant += c; }
+
+  LinearCombination scaled(const APSInt &factor) const {
+    LinearCombination result;
+    if (factor.isZero()) {
+      return result;
+    }
+
+    for (const auto &kv : terms) {
+      result.terms[kv.first] = expandingMul(kv.second, factor);
+    }
+    result.constant = expandingMul(constant, factor);
+    return result;
+  }
+
+  LinearCombination add(const LinearCombination &other) const {
+    LinearCombination result(*this);
+
+    for (const auto &kv : other.terms) {
+      auto it = result.terms.find(kv.first);
+      if (it == result.terms.end()) {
+        result.terms[kv.first] = kv.second;
+      } else {
+        result.terms[kv.first] = expandingAdd(result.terms[kv.first], kv.second);
+      }
+    }
+    result.constant = expandingAdd(result.constant, other.constant);
+    return result;
+  }
+
+  LinearCombination negated() const {
+    return scaled(APSInt(APInt(constant.getBitWidth(), -1, true), false));
+  }
+
+  void print(raw_ostream &os) const {
+    bool first = true;
+    for (const auto &[val, coeff] : terms) {
+      if (!first) {
+        os << " + ";
+      }
+      first = false;
+      os << coeff << "*" << val;
+    }
+    if (!constant.isZero()) {
+      if (!first) {
+        os << " + ";
+      }
+      os << constant;
+    }
+    if (first && constant.isZero()) {
+      os << "0";
+    }
+  }
+};
+
+/// A struct representing a * b = c R1CS constraint
+struct R1CSConstraint {
+  LinearCombination a;
+  LinearCombination b;
+  LinearCombination c;
+
+  R1CSConstraint negated() const {
+    R1CSConstraint result(*this);
+    result.a = a.negated();
+    result.c = c.negated();
+    return result;
+  }
+
+  R1CSConstraint scaled(const APSInt &factor) const {
+    R1CSConstraint result(*this);
+    result.a = a.scaled(factor);
+    result.c = c.scaled(factor);
+    return result;
+  }
+
+  R1CSConstraint(const APSInt &constant) { c.constant = constant; }
+
+  R1CSConstraint() = default;
+
+  R1CSConstraint multiply(const R1CSConstraint &other) {
+    auto isDegZero = [](const R1CSConstraint &c) {
+      return c.a.terms.empty() && c.b.terms.empty() && c.c.terms.empty();
+    };
+
+    if (isDegZero(other)) {
+      return this->scaled(other.c.constant);
+    }
+    if (isDegZero(*this)) {
+      return other.scaled(other.c.constant);
+    }
+
+    auto isLinearOnly = [](const R1CSConstraint &c) {
+      return c.a.terms.empty() && c.b.terms.empty();
+    };
+
+    if (isLinearOnly(*this) && isLinearOnly(other)) {
+      R1CSConstraint result;
+      result.a = this->c;
+      result.b = other.c;
+
+      // We do NOT compute `c = a * b` because R1CS doesn't need it explicitly
+      // It suffices to enforce: a * b = c
+
+      return result;
+    }
+    llvm::errs() << "R1CSConstraint::multiply: Only supported for purely linear constraints.\n";
+    assert(false && "Invalid multiply: non-linear constraint(s) involved");
+  }
+
+  R1CSConstraint add(const R1CSConstraint &other) {
+    auto isLinearOnly = [](const R1CSConstraint &c) {
+      return c.a.terms.empty() && c.b.terms.empty();
+    };
+
+    if (isLinearOnly(*this)) {
+      R1CSConstraint result(other);
+      result.c = result.c.add(this->c);
+      return result;
+    }
+    if (isLinearOnly(other)) {
+      R1CSConstraint result(*this);
+      result.c = result.c.add(other.c);
+      return result;
+    }
+    llvm::errs() << "R1CSConstraint::add: Only supported for purely linear constraints.\n";
+    assert(false && "Invalid add: non-linear constraint(s) involved");
+  }
+
+  void print(raw_ostream &os) const {
+    os << "(";
+    a.print(os);
+    os << ") * (";
+    b.print(os);
+    os << ") = ";
+    c.print(os);
+  }
+};
 
 class R1CSLoweringPass : public llzk::impl::R1CSLoweringPassBase<R1CSLoweringPass> {
 private:
@@ -240,9 +409,212 @@ private:
     return rewrites[root];
   }
 
+  R1CSConstraint lowerPolyToR1CS(Value poly) {
+    // Worklist-based post-order traversal
+    SmallVector<Value, 16> worklist = {poly};
+    DenseMap<Value, R1CSConstraint> constraintMap;
+    DenseSet<Value> visited;
+    SmallVector<Value, 16> postorder;
+
+    getPostOrder(poly, postorder);
+
+    // 2. Bottom-up construction of R1CSConstraints
+    for (Value v : postorder) {
+      Operation *op = v.getDefiningOp();
+      if (!op || (dyn_cast<FieldReadOp>(op) != nullptr)) {
+        // Leaf (input variable or field read)
+        R1CSConstraint eq;
+        eq.c.addTerm(v, APSInt::get(1));
+        constraintMap[v] = eq;
+        continue;
+      }
+      if (auto add = dyn_cast<AddFeltOp>(op)) {
+        R1CSConstraint lhsC = constraintMap[add.getLhs()];
+        R1CSConstraint rhsC = constraintMap[add.getRhs()];
+        constraintMap[v] = lhsC.add(rhsC);
+      } else if (auto sub = dyn_cast<SubFeltOp>(op)) {
+        R1CSConstraint lhsC = constraintMap[sub.getLhs()];
+        R1CSConstraint rhsC = constraintMap[sub.getRhs()];
+        constraintMap[v] = lhsC.add(rhsC.negated());
+      } else if (auto mul = dyn_cast<MulFeltOp>(op)) {
+        R1CSConstraint lhsC = constraintMap[mul.getLhs()];
+        R1CSConstraint rhsC = constraintMap[mul.getRhs()];
+        constraintMap[v] = lhsC.multiply(rhsC);
+      } else if (auto neg = dyn_cast<NegFeltOp>(op)) {
+        R1CSConstraint inner = constraintMap[op->getOperand(0)];
+        constraintMap[v] = inner.negated();
+      } else if (auto cst = dyn_cast<FeltConstantOp>(op)) {
+        R1CSConstraint c(APSInt(cst.getValueAttr().getValue(), false));
+        constraintMap[v] = c;
+      } else {
+        llvm::errs() << "Unhandled op in R1CS lowering: " << *op << "\n";
+        assert(false && "unhandled op");
+      }
+    }
+
+    return constraintMap[poly];
+  }
+
+  R1CSConstraint
+  lowerEquationToR1CS(Value p, Value q, const DenseMap<Value, unsigned> &degreeMemo) {
+    R1CSConstraint pconst = lowerPolyToR1CS(p);
+    R1CSConstraint qconst = lowerPolyToR1CS(q);
+
+    auto getDeg = [&](Value v) -> unsigned {
+      auto it = degreeMemo.find(v);
+      assert(it != degreeMemo.end() && "Missing degree");
+      return it->second;
+    };
+    if (getDeg(p) == 2) {
+      return pconst.add(qconst.negated());
+    }
+    return qconst.add(pconst.negated());
+  }
+
+  Value emitLinearCombination(
+      LinearCombination lc, IRMapping &valueMap, DenseMap<StringRef, Value> &fieldMap,
+      OpBuilder &builder, Location loc
+  ) {
+    Value result = nullptr;
+
+    auto getMapping = [&valueMap, &fieldMap, this](const Value &v) {
+      if (!valueMap.contains(v)) {
+        Operation *op = v.getDefiningOp();
+        if (auto read = dyn_cast<FieldReadOp>(op)) {
+          auto fieldVal = fieldMap.find(read.getFieldName());
+          assert(fieldVal != fieldMap.end() && "Field read not associated with a value");
+          return fieldVal->second;
+        }
+        v.getDefiningOp()->emitError("Value not mapped in R1CS lowering");
+        signalPassFailure();
+      }
+      return valueMap.lookup(v);
+    };
+
+    auto linearTy = r1cs::LinearType::get(builder.getContext());
+
+    // Start with the constant, if present
+    if (!lc.constant.isZero()) {
+      result = builder.create<r1cs::ConstOp>(
+          loc, linearTy, r1cs::FeltAttr::get(builder.getContext(), lc.constant)
+      );
+    }
+
+    for (auto &[val, coeff] : lc.terms) {
+      Value mapped = getMapping(val);
+      // %tmp = r1cs.to_linear %mapped
+      // most of these will be removed with CSE passes
+      Value lin = builder.create<r1cs::ToLinearOp>(loc, linearTy, mapped);
+      // %scaled = r1cs.mul_const %lin, coeff
+      Value scaled = coeff == 1
+                         ? lin
+                         : builder.create<r1cs::MulConstOp>(
+                               loc, linearTy, lin, r1cs::FeltAttr::get(builder.getContext(), coeff)
+                           );
+
+      // Accumulate via r1cs.add
+      if (!result) {
+        result = scaled;
+      } else {
+        result = builder.create<r1cs::AddOp>(loc, linearTy, result, scaled);
+      }
+    }
+
+    if (!result) {
+      // Entire linear combination was zero
+      result = builder.create<r1cs::ConstOp>(
+          loc, r1cs::LinearType::get(builder.getContext()),
+          r1cs::FeltAttr::get(builder.getContext(), 0)
+      );
+    }
+
+    return result;
+  }
+
+  void buildAndEmitR1CS(
+      ModuleOp &moduleOp, StructDefOp &structDef, FuncDefOp &constrainFunc,
+      DenseMap<Value, unsigned> &degreeMemo
+  ) {
+    SmallVector<R1CSConstraint, 16> constraints;
+    constrainFunc.walk([&](EmitEqualityOp eqOp) {
+      OpBuilder builder(eqOp);
+      R1CSConstraint eq = lowerEquationToR1CS(eqOp.getLhs(), eqOp.getRhs(), degreeMemo);
+      constraints.push_back(eq);
+    });
+    moduleOp->setAttr("veridise.lang", StringAttr::get(moduleOp.getContext(), "r1cs"));
+    Block &entryBlock = constrainFunc.getBody().front();
+    IRMapping valueMap;
+    Location loc = structDef.getLoc();
+    OpBuilder topBuilder(moduleOp.getBodyRegion());
+
+    // Step 2: Validate struct fields are felt and prepare signal types for circuit result types
+    bool hasPublicSignals = false;
+    for (auto field : structDef.getFieldDefs()) {
+      if (!field.getType().isa<FeltType>()) {
+        field.emitError("Only felt fields are supported as output signals");
+        signalPassFailure();
+        return;
+      }
+      if (field.isPublic()) {
+        hasPublicSignals = true;
+      }
+    }
+
+    if (!hasPublicSignals) {
+      structDef.emitError("Struct should have at least one public output");
+    }
+
+    auto circuit = topBuilder.create<r1cs::CircuitDefOp>(loc, structDef.getSymName().str());
+    Block *circuitBlock = circuit.addEntryBlock();
+
+    OpBuilder bodyBuilder = OpBuilder::atBlockEnd(circuitBlock);
+
+    // Step 3: Validate that all parameters to the constrain function are felt types
+    for (auto [i, arg] : llvm::enumerate(llvm::drop_begin(entryBlock.getArguments(), 1))) {
+      if (!arg.getType().isa<FeltType>()) {
+        constrainFunc.emitOpError("All input arguments must be of felt type");
+        signalPassFailure();
+        return;
+      }
+      auto signalType =
+          r1cs::SignalType::get(moduleOp.getContext(), constrainFunc.hasArgPublicAttr(i + 1));
+      auto blockArg = circuitBlock->addArgument(signalType, loc);
+      valueMap.map(arg, blockArg);
+    }
+
+    // Step 4: For every struct field we a) create a signaldefop and b) add that signal to our
+    // outputs
+    DenseMap<StringRef, Value> fieldSignalMap;
+    uint32_t signalDefCntr = 0;
+    for (auto field : structDef.getFieldDefs()) {
+      auto defOp = bodyBuilder.create<r1cs::SignalDefOp>(
+          field.getLoc(), r1cs::SignalType::get(moduleOp.getContext(), field.hasPublicAttr()),
+          bodyBuilder.getUI32IntegerAttr(signalDefCntr),
+          mlir::UnitAttr::get(moduleOp.getContext()) // isPublic
+      );
+
+      signalDefCntr++;
+      fieldSignalMap.insert({field.getName(), defOp.getOut()});
+    }
+    DenseMap<std::tuple<Value, Value, StringRef>, Value> binaryOpCache;
+    // Step 5: Emit the R1CS constraints
+    for (const R1CSConstraint &constraint : constraints) {
+      Value aVal = emitLinearCombination(constraint.a, valueMap, fieldSignalMap, bodyBuilder, loc);
+      Value bVal = emitLinearCombination(constraint.b, valueMap, fieldSignalMap, bodyBuilder, loc);
+      Value cVal = emitLinearCombination(constraint.c, valueMap, fieldSignalMap, bodyBuilder, loc);
+      bodyBuilder.create<r1cs::ConstrainOp>(loc, aVal, bVal, cVal);
+    }
+  }
+
+  void getDependentDialects(mlir::DialectRegistry &registry) const override {
+    registry.insert<r1cs::R1CSDialect>();
+  }
+
   void runOnOperation() override {
     ModuleOp moduleOp = getOperation();
-
+    assert(
+        moduleOp->getContext()->getLoadedDialect<r1cs::R1CSDialect>() && "R1CS dialect not loaded"
+    );
     moduleOp.walk([&](StructDefOp structDef) {
       FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
       FuncDefOp computeFunc = structDef.getComputeFuncOp();
@@ -276,7 +648,7 @@ private:
         // If both sides are degree 2, isolate one side
         if (degLhs == 2 && degRhs == 2) {
           builder.setInsertionPoint(eqOp);
-          std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxAssignments.size());
+          std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxCounter++);
           addAuxField(structDef, auxName);
           Value self = constrainFunc.getArgument(0);
           Value aux = builder.create<FieldReadOp>(
@@ -304,6 +676,8 @@ private:
             assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxFieldName), expr
         );
       }
+      buildAndEmitR1CS(moduleOp, structDef, constrainFunc, degreeMemo);
+      structDef.erase();
     });
   }
 };

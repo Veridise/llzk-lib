@@ -10,10 +10,22 @@
 #include "r1cs/Dialect/IR/Types.h"
 
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/TypeSupport.h"
 
 using namespace mlir;
 using namespace r1cs;
 
-// For now, no extra logic — just compile the generated types.
-#define GET_TYPEDEF_CLASSES
-#include "r1cs/Dialect/IR/Types.cpp.inc"
+void SignalType::print(mlir::AsmPrinter &printer) const {
+  printer << "signal";
+  if (getIsPublic()) {
+    printer << " public";
+  }
+}
+
+mlir::Type SignalType::parse(mlir::AsmParser &parser) {
+  bool isPublic = false;
+  if (succeeded(parser.parseOptionalKeyword("public"))) {
+    isPublic = true;
+  }
+  return get(parser.getContext(), isPublic);
+}

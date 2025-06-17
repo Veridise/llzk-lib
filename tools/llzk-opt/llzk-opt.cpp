@@ -32,6 +32,8 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Signals.h>
 
+#include "r1cs/Dialect/IR/Dialect.h"
+#include "r1cs/InitAllDialects.h"
 #include "tools/config.h"
 
 static llvm::cl::list<std::string> IncludeDirs(
@@ -54,6 +56,13 @@ int main(int argc, char **argv) {
   // MLIR initialization
   mlir::DialectRegistry registry;
   llzk::registerAllDialects(registry);
+  r1cs::registerAllDialects(registry);
+
+  // Create context and *load* dialects
+  mlir::MLIRContext ctx;
+  ctx.appendDialectRegistry(registry);
+  ctx.loadDialect<r1cs::R1CSDialect>();
+
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
   llzk::array::registerTransformationPasses();

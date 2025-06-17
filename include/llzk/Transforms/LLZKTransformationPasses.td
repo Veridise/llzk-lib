@@ -71,7 +71,7 @@ def PolyLoweringPass
 }
 
 def R1CSLoweringPass
-    : LLZKPass<"llzk-r1cs-lowering-pass"> {
+    : LLZKPass<"llzk-r1cs-lowering"> {
   let summary = "Rewrites constraints to be compatible with R1CS constraints i.e a*b - c = 0";
   let description = [{
     Rewrites constraint expressions into an (observationally) equivalent system which is in a form that is amenable

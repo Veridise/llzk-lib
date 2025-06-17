@@ -20,3 +20,4 @@ add_mlir_dialect_library(R1CSDialect
 )
 
 add_dependencies(LLZKAllDialects R1CSDialect)
+install(TARGETS R1CSDialect EXPORT LLZKTargets)

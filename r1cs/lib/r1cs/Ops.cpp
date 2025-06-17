@@ -9,13 +9,76 @@
 
 #include "r1cs/Dialect/IR/Ops.h"
 
-using namespace mlir;
-using namespace r1cs;
+#include <mlir/IR/OpImplementation.h>
 
+// TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "r1cs/Dialect/IR/Ops.cpp.inc"
 
-mlir::Block *CircuitOp::addEntryBlock() {
+using namespace mlir;
+namespace r1cs {
+
+ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
+  StringAttr symName;
+  if (parser.parseSymbolName(symName, "sym_name", result.attributes)) {
+    return failure();
+  }
+
+  // Optional inputs (...)
+  SmallVector<OpAsmParser::Argument> args;
+  Type argType;
+  if (succeeded(parser.parseOptionalKeyword("inputs"))) {
+    if (parser.parseLParen()) {
+      return failure();
+    }
+
+    do {
+      OpAsmParser::Argument arg;
+      if (parser.parseArgument(arg) || parser.parseColonType(argType)) {
+        return failure();
+      }
+      arg.type = argType;
+      args.push_back(arg);
+    } while (succeeded(parser.parseOptionalComma()));
+
+    if (parser.parseRParen()) {
+      return failure();
+    }
+  }
+
+  // Parse optional attribute dict
+  if (parser.parseOptionalAttrDict(result.attributes)) {
+    return failure();
+  }
+
+  // Parse body region with those args
+  Region *body = result.addRegion();
+  return parser.parseRegion(*body, args);
+}
+
+void CircuitDefOp::print(mlir::OpAsmPrinter &p) {
+  p << " ";
+  p.printSymbolName(getSymName());
+
+  Block &entry = getBody().front();
+  if (!entry.empty()) {
+    p << " inputs (";
+    llvm::interleaveComma(entry.getArguments(), p, [&](BlockArgument arg) {
+      p << arg << ": ";
+      if (auto sigTy = arg.getType().dyn_cast<SignalType>()) {
+        sigTy.print(p);
+      } else {
+        p.printType(arg.getType()); // fallback for robustness
+      }
+    });
+    p << ")";
+  }
+
+  p.printOptionalAttrDict((*this)->getAttrs(), {"sym_name"});
+  p.printRegion(getBody(), /*printEntryBlockArgs=*/false);
+}
+
+mlir::Block *CircuitDefOp::addEntryBlock() {
   Region &body = getBody();
   assert(body.empty() && "CircuitOp already has a block");
   Block *block = new Block();
@@ -23,58 +86,8 @@ mlir::Block *CircuitOp::addEntryBlock() {
   return block;
 }
 
-mlir::ParseResult CircuitOp::parse(OpAsmParser &parser, OperationState &state) {
-  // Parse the circuit name (symbol name).
-  StringAttr nameAttr;
-  if (parser.parseSymbolName(nameAttr, SymbolTable::getSymbolAttrName(), state.attributes)) {
-    return failure();
-  }
-
-  // Parse `inputs` keyword and argument list with types.
-  if (parser.parseKeyword("inputs") || parser.parseLParen()) {
-    return failure();
-  }
-
-  SmallVector<OpAsmParser::Argument> inputArgs;
-  if (parser.parseArgumentList(inputArgs, AsmParser::Delimiter::None, /*allowType=*/true) ||
-      parser.parseRParen()) {
-    return failure();
-  }
-
-  // Just a marker keyword — outputs are defined inside the region via `r1cs.return`.
-  // We ignore the actual type list here since CircuitOp has no `outs`.
-
-  // Parse region with block arguments.
-  Region *body = state.addRegion();
-  if (parser.parseRegion(*body, inputArgs)) {
-    return failure();
-  }
-
-  // Parse optional attributes.
-  if (parser.parseOptionalAttrDictWithKeyword(state.attributes)) {
-    return failure();
-  }
-
-  return success();
+void CircuitDefOp::build(OpBuilder &builder, OperationState &state, llvm::StringRef name) {
+  state.addAttribute(SymbolTable::getSymbolAttrName(), builder.getStringAttr(name));
+  state.addRegion();
 }
-
-void CircuitOp::print(OpAsmPrinter &p) {
-  // Print the circuit symbol name.
-  p << ' ' << getSymName();
-
-  // Print inputs.
-  p << " inputs (";
-  llvm::interleaveComma(getBody().front().getArguments(), p, [&](mlir::Value arg) {
-    p << arg << " : " << arg.getType();
-  });
-  p << ")";
-
-  // Print region (print block args = false, since we already printed above).
-  p << ' ';
-  p.printRegion(getBody(), /*printEntryBlockArgs=*/false, /*printBlockTerminators=*/true);
-
-  // Print attributes, excluding sym_name.
-  p.printOptionalAttrDictWithKeyword(
-      getOperation()->getAttrs(), {mlir::SymbolTable::getSymbolAttrName()}
-  );
-}
+} // namespace r1cs
