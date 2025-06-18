@@ -66,7 +66,7 @@ void registerTransformationPassPipelines() {
   );
 
   PassPipelineRegistration<>(
-      "llzk-full-r1cs-lowering", "Lower all polynomial constraints to r1cs ",
+      "llzk-full-r1cs-lowering", "Lower all polynomial constraints to r1cs",
       [](OpPassManager &pm) {
     // 1. Degree lowering
     pm.addPass(llzk::createPolyLoweringPass(2));
@@ -77,8 +77,8 @@ void registerTransformationPassPipelines() {
     // 3. Convert to R1CS
     pm.addPass(llzk::createR1CSLoweringPass());
 
-    // 4. Run CSE to eliminate to_linear ops
-    pm.addPass(mlir::createCSEPass());
+    // // 4. Run CSE to eliminate to_linear ops
+    // pm.addPass(mlir::createCSEPass());
   }
   );
 }

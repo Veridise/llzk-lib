@@ -57,7 +57,7 @@ ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
 }
 
 void CircuitDefOp::print(mlir::OpAsmPrinter &p) {
-  p << " ";
+  p << ' ';
   p.printSymbolName(getSymName());
 
   Block &entry = getBody().front();
@@ -71,7 +71,7 @@ void CircuitDefOp::print(mlir::OpAsmPrinter &p) {
         p.printType(arg.getType()); // fallback for robustness
       }
     });
-    p << ")";
+    p << ')';
   }
 
   p.printOptionalAttrDict((*this)->getAttrs(), {"sym_name"});

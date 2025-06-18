@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "r1cs/Dialect/IR/Attrs.h"
+#include "r1cs/Dialect/IR/Dialect.h"
 
 #include <mlir/IR/AttrTypeSubElements.h>
 #include <mlir/IR/Builders.h>           // for mlir::Builder
@@ -16,8 +17,6 @@
 #include <mlir/Support/TypeID.h>        // for type IDs
 
 #include <llvm/ADT/TypeSwitch.h> // for llvm::TypeSwitch
-
-#include "r1cs/Dialect/IR/Dialect.h"
 
 using namespace r1cs;
 

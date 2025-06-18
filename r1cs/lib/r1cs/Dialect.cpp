@@ -1,4 +1,4 @@
-//===-- Ops.cpp - R1CS dialect implementation ---------------*- C++ -*-----===//
+//===-- Dialect.cpp - R1CS dialect implementation -----------*- C++ -*-----===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -8,12 +8,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "r1cs/Dialect/IR/Dialect.h"
-
-#include "mlir/IR/DialectImplementation.h"
-
-// These two lines are critical:
 #include "r1cs/Dialect/IR/Ops.h"
 #include "r1cs/Dialect/IR/Types.h"
+
+#include <mlir/IR/DialectImplementation.h>
 
 // TableGen'd implementation files
 #include "r1cs/Dialect/IR/Dialect.cpp.inc"
@@ -65,7 +63,6 @@ mlir::Attribute R1CSDialect::parseAttribute(DialectAsmParser &parser, mlir::Type
     }
 
     if (failed(parser.parseGreater())) {
-      llvm::outs() << value << "\n";
       return {};
     }
 
@@ -76,13 +73,13 @@ mlir::Attribute R1CSDialect::parseAttribute(DialectAsmParser &parser, mlir::Type
     return FeltAttr::get(parser.getContext(), intAttr);
   }
 
-  parser.emitError(loc, "unknown attribute mnemonic '") << attrMnemonic << "'";
+  (parser.emitError(loc, "unknown attribute mnemonic '") << attrMnemonic << '\'').report();
   return {};
 }
 
 void R1CSDialect::printAttribute(Attribute attr, DialectAsmPrinter &printer) const {
   if (auto feltAttr = attr.dyn_cast<FeltAttr>()) {
-    printer << "felt<" << feltAttr.getValue().getValue() << ">";
+    printer << "felt<" << feltAttr.getValue().getValue() << '>';
     return;
   }
   llvm_unreachable("Unknown r1cs attribute");

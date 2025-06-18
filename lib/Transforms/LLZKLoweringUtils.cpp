@@ -25,16 +25,21 @@ using namespace llzk::constrain;
 namespace llzk {
 
 Value getSelfValueFromCompute(FuncDefOp computeFunc) {
+  // Get the single block of the function body
   Region &body = computeFunc.getBody();
   assert(!body.empty() && "compute() function body is empty");
   Block &block = body.front();
+
+  // The terminator should be the return op
   Operation *terminator = block.getTerminator();
   assert(terminator && "compute() function has no terminator");
   auto retOp = dyn_cast<ReturnOp>(terminator);
   if (!retOp) {
-    llvm::errs() << "Expected ReturnOp but found: " << terminator->getName() << "\n";
+    llvm::errs() << "Expected '" << ReturnOp::getOperationName() << "' but found '"
+                 << terminator->getName() << "'\n";
     llvm_unreachable("compute() function must end with ReturnOp");
   }
+  // Return its operands as SmallVector<Value>
   return retOp.getOperands().front();
 }
 
@@ -92,7 +97,7 @@ Value rebuildExprInCompute(
     return memo[val] = builder.create<FeltConstantOp>(c.getLoc(), c.getValue());
   }
 
-  llvm::errs() << "Unhandled op in rebuildExprInCompute: " << val << "\n";
+  llvm::errs() << "Unhandled op in rebuildExprInCompute: " << val << '\n';
   llvm_unreachable("Unsupported op kind");
 }
 
@@ -101,29 +106,16 @@ LogicalResult checkForAuxFieldConflicts(StructDefOp structDef, StringRef prefix)
 
   structDef.walk([&](FieldDefOp fieldDefOp) {
     if (fieldDefOp.getName().starts_with(prefix)) {
-      fieldDefOp.emitError() << "Field name '" << fieldDefOp.getName()
-                             << "' conflicts with reserved prefix '" << prefix << "'";
+      (fieldDefOp.emitError() << "Field name '" << fieldDefOp.getName()
+                              << "' conflicts with reserved prefix '" << prefix << "'")
+          .report();
       conflictFound = true;
     }
   });
 
-  return conflictFound ? failure() : success();
+  return failure(conflictFound);
 }
 
-/// Replaces all *subsequent uses* of `oldVal` with `newVal`, starting *after* `afterOp`.
-///
-/// Specifically:
-/// - Uses of `oldVal` in operations that come **after** `afterOp` in the same block are replaced.
-/// - Uses in `afterOp` itself are **not replaced** (to avoid self-trivializing rewrites).
-/// - Uses in other blocks are replaced (if applicable).
-///
-/// Typical use case:
-/// - You introduce an auxiliary value (e.g., via EmitEqualityOp) and want to replace
-///   all *later* uses of the original value while preserving the constraint itself.
-///
-/// \param oldVal  The original value whose uses should be redirected.
-/// \param newVal  The new value to replace subsequent uses with.
-/// \param afterOp The operation after which uses of `oldVal` will be replaced.
 void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp) {
   assert(afterOp && "afterOp must be a valid Operation*");
 
@@ -156,16 +148,10 @@ unsigned getFeltDegree(Value val, DenseMap<Value, unsigned> &memo) {
     return it->second;
   }
 
-  if (val.isa<BlockArgument>()) {
-    return memo[val] = 1;
-  }
   if (isa<FeltConstantOp>(val.getDefiningOp())) {
     return memo[val] = 0;
   }
-  if (isa<FeltNonDetOp>(val.getDefiningOp())) {
-    return memo[val] = 1;
-  }
-  if (isa<FieldReadOp>(val.getDefiningOp())) {
+  if (isa<FeltNonDetOp, FieldReadOp>(val.getDefiningOp()) || isa<BlockArgument>(val)) {
     return memo[val] = 1;
   }
 
@@ -187,7 +173,7 @@ unsigned getFeltDegree(Value val, DenseMap<Value, unsigned> &memo) {
     return memo[val] = getFeltDegree(neg.getOperand(), memo);
   }
 
-  llvm::errs() << "Unhandled felt op in degree computation: " << val << "\n";
+  llvm::errs() << "Unhandled felt op in degree computation: " << val << '\n';
   llvm_unreachable("Unhandled op in getFeltDegree");
 }
 

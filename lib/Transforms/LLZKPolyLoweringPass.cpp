@@ -210,29 +210,6 @@ private:
     return val;
   }
 
-  Value getSelfValueFromCompute(FuncDefOp computeFunc) {
-    // Get the single block of the function body
-    Region &body = computeFunc.getBody();
-    assert(!body.empty() && "compute() function body is empty");
-
-    Block &block = body.front();
-
-    // The terminator should be the return op
-    Operation *terminator = block.getTerminator();
-    assert(terminator && "compute() function has no terminator");
-
-    // The return op should be of type ReturnOp
-    auto retOp = dyn_cast<ReturnOp>(terminator);
-    if (!retOp) {
-      llvm::errs() << "Expected ReturnOp as terminator in compute() but found: "
-                   << terminator->getName() << "\n";
-      llvm_unreachable("compute() function terminator is not a ReturnOp");
-    }
-
-    // Return its operands as SmallVector<Value>
-    return retOp.getOperands().front();
-  }
-
   void runOnOperation() override {
     ModuleOp moduleOp = getOperation();
 

@@ -1,4 +1,4 @@
-//===-- LLZKLoweringUtils.h -----------------------------------*- C++ -*-===//
+//===-- LLZKLoweringUtils.h -------------------------------------*- C++ -*-===//
 //
 // Shared utilities for lowering passes in the LLZK project.
 //

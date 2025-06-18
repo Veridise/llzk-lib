@@ -19,6 +19,9 @@
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/APIntHelper.h"
+#include "r1cs/Dialect/IR/Attrs.h"
+#include "r1cs/Dialect/IR/Ops.h"
+#include "r1cs/Dialect/IR/Types.h"
 
 #include <mlir/IR/BuiltinOps.h>
 
@@ -29,10 +32,6 @@
 
 #include <deque>
 #include <memory>
-
-#include "r1cs/Dialect/IR/Attrs.h"
-#include "r1cs/Dialect/IR/Ops.h"
-#include "r1cs/Dialect/IR/Types.h"
 
 // Include the generated base pass class definitions.
 namespace llzk {

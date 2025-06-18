@@ -8,9 +8,9 @@
 //===----------------------------------------------------------------------===//
 
 #pragma once
-#include <llvm/ADT/TypeSwitch.h>
-
 #include "r1cs/Dialect/IR/Dialect.h"
+
+#include <llvm/ADT/TypeSwitch.h>
 
 #define GET_TYPEDEF_CLASSES
 #include "r1cs/Dialect/IR/Types.h.inc"

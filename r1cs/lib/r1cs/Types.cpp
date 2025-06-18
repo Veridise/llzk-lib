@@ -9,8 +9,8 @@
 
 #include "r1cs/Dialect/IR/Types.h"
 
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/TypeSupport.h"
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/TypeSupport.h>
 
 using namespace mlir;
 using namespace r1cs;

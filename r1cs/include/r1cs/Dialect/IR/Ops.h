@@ -9,13 +9,10 @@
 
 #pragma once
 
-#include "mlir/IR/OpImplementation.h"
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/Dialect/IR/Types.h"
-// You can uncomment these when needed:
-// #include "llzk/Dialect/Shared/OpHelpers.h"
-// #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/IR/OpImplementation.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 
 // Include TableGen'd op interfaces (if defined)

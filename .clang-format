@@ -18,6 +18,8 @@ IncludeCategories:
   - Regex: '^("|<)llzk/.*("|>)$'  # LLZK headers
     Priority: 0                   # - Priority 0 forces LLZK headers to be grouped with the "main" header for a file,
                                   # see https://clang.llvm.org/docs/ClangFormatStyleOptions.html#includecategories
+  - Regex: '^("|<)r1cs/.*("|>)$'  # R1CS headers
+    Priority: 0
   - Regex: '^<mlir/.*>$'          # MLIR headers
     Priority: 1
   - Regex: '^<llvm/.*>$'          # LLVM headers

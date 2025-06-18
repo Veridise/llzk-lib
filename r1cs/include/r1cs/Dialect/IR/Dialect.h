@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include <mlir/IR/BuiltinOps.h>
-
-// Include TableGen'd declarations
 #include "r1cs/Dialect/IR/Attrs.h"
+// Include TableGen'd declarations
 #include "r1cs/Dialect/IR/Dialect.h.inc"
+
+#include <mlir/IR/BuiltinOps.h>

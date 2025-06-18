@@ -22,6 +22,8 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
+#include "r1cs/Dialect/IR/Dialect.h"
+#include "r1cs/InitAllDialects.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
@@ -32,8 +34,6 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Signals.h>
 
-#include "r1cs/Dialect/IR/Dialect.h"
-#include "r1cs/InitAllDialects.h"
 #include "tools/config.h"
 
 static llvm::cl::list<std::string> IncludeDirs(
