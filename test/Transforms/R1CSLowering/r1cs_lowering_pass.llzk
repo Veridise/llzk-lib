@@ -1,0 +1,98 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {veridise.lang = "llzk"} {
+  // lowers constraints to be at most degree 2 polynomials
+  struct.def @CmpConstraint {
+    struct.field @val: !felt.type {llzk.pub}
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type) -> !struct.type<@CmpConstraint> {
+      %self = struct.new : !struct.type<@CmpConstraint>
+      function.return %self : !struct.type<@CmpConstraint>
+    }
+
+    function.def @constrain(%self: !struct.type<@CmpConstraint>, %a: !felt.type {llzk.pub}, %b: !felt.type, %c: !felt.type) {
+      %z = felt.mul %a, %b
+      %0 = felt.mul %b, %c
+      %1 = felt.add %0, %z
+      %7 = struct.readf %self[@val] : !struct.type<@CmpConstraint>, !felt.type
+      constrain.eq %1, %z : !felt.type
+      %2 = felt.add %z, %b
+      constrain.eq %7, %2 : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   r1cs.circuit @CmpConstraint inputs (
+// CHECK-SAME:                                        %[[VAL_0:.*]]: signal public,
+// CHECK-SAME:                                        %[[VAL_1:.*]]: signal,
+// CHECK-SAME:                                        %[[VAL_2:.*]]: signal){
+// CHECK-DAG:           %[[VAL_3:.*]] = r1cs.def 0 : signal public {isPublic}
+// CHECK-DAG:           %[[VAL_4:.*]] = r1cs.def 1 : signal {isPublic}
+// CHECK-DAG:           %[[VAL_5:.*]] = r1cs.def 2 : signal {isPublic}
+// CHECK-DAG:           %[[VAL_6:.*]] = r1cs.to_linear %[[VAL_1]] : signal to !r1cs.linear
+// CHECK-DAG:           %[[VAL_7:.*]] = r1cs.to_linear %[[VAL_2]] : signal to !r1cs.linear
+// CHECK-DAG:           %[[VAL_8:.*]] = r1cs.to_linear %[[VAL_4]] : signal to !r1cs.linear
+// CHECK-DAG:           %[[VAL_9:.*]] = r1cs.mul_const %[[VAL_8]],  -1 : i64 : !r1cs.linear
+// CHECK-DAG:           r1cs.constrain %[[VAL_6]], %[[VAL_7]], %[[VAL_9]] : !r1cs.linear
+// CHECK-DAG:           %[[VAL_10:.*]] = r1cs.to_linear %[[VAL_0]] : signal public to !r1cs.linear
+// CHECK-DAG:           %[[VAL_11:.*]] = r1cs.to_linear %[[VAL_5]] : signal to !r1cs.linear
+// CHECK-DAG:           %[[VAL_12:.*]] = r1cs.mul_const %[[VAL_11]],  -1 : i64 : !r1cs.linear
+// NOTE: add's operands are wildcard matches because they can be swapped
+// CHECK-DAG:           %[[VAL_13:.*]] = r1cs.add %{{.*}}, %{{.*}} : !r1cs.linear
+// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_13]] : !r1cs.linear
+// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_12]] : !r1cs.linear
+// CHECK-DAG:           %[[VAL_14:.*]] = r1cs.to_linear %[[VAL_3]] : signal public to !r1cs.linear
+// CHECK-DAG:           %[[VAL_15:.*]] = r1cs.mul_const %[[VAL_14]],  -1 : i64 : !r1cs.linear
+// CHECK-DAG:           %[[VAL_16:.*]] = r1cs.add %{{.*}}, %{{.*}} : !r1cs.linear
+// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_16]] : !r1cs.linear
+// CHECK:         }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  // lowers constraints to be at most degree 2 polynomials
+  struct.def @CmpConstraint {
+    struct.field @val: !felt.type {llzk.pub}
+    function.def @compute(%a: !felt.type , %b: !felt.type, %c: !felt.type) -> !struct.type<@CmpConstraint> {
+      %self = struct.new : !struct.type<@CmpConstraint>
+      function.return %self : !struct.type<@CmpConstraint>
+    }
+
+    function.def @constrain(%self: !struct.type<@CmpConstraint>, %a: !felt.type {llzk.pub}, %b: !felt.type, %c: !felt.type) {
+      %z = felt.mul %a, %b
+      %0 = felt.mul %b, %c
+      %1 = felt.sub %0, %z
+      %2 = felt.neg %1
+      %7 = struct.readf %self[@val] : !struct.type<@CmpConstraint>, !felt.type
+      constrain.eq %2, %z : !felt.type
+      %3 = felt.sub %z, %b
+      constrain.eq %7, %3 : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   r1cs.circuit @CmpConstraint inputs (
+// CHECK-SAME:                                        %[[VAL_0:.*]]: signal public,
+// CHECK-SAME:                                        %[[VAL_1:.*]]: signal,
+// CHECK-SAME:                                        %[[VAL_2:.*]]: signal){
+// CHECK-DAG:       %[[VAL_3:.*]] = r1cs.def 0 : signal public {isPublic}
+// CHECK-DAG:       %[[VAL_4:.*]] = r1cs.def 1 : signal {isPublic}
+// CHECK-DAG:       %[[VAL_5:.*]] = r1cs.def 2 : signal {isPublic}
+// CHECK-DAG:       %[[VAL_6:.*]] = r1cs.to_linear %[[VAL_1]] : signal to !r1cs.linear
+// CHECK-DAG:       %[[VAL_7:.*]] = r1cs.to_linear %[[VAL_2]] : signal to !r1cs.linear
+// CHECK-DAG:       %[[VAL_8:.*]] = r1cs.to_linear %[[VAL_4]] : signal to !r1cs.linear
+// CHECK-DAG:       %[[VAL_9:.*]] = r1cs.mul_const %[[VAL_8]],  -1 : i64 : !r1cs.linear
+// CHECK-DAG:       r1cs.constrain %[[VAL_6]], %[[VAL_7]], %[[VAL_9]] : !r1cs.linear
+// CHECK-DAG:       %[[VAL_10:.*]] = r1cs.to_linear %[[VAL_0]] : signal public to !r1cs.linear
+// CHECK-DAG:       %[[VAL_11:.*]] = r1cs.to_linear %[[VAL_5]] : signal to !r1cs.linear
+// CHECK-DAG:       %[[VAL_12:.*]] = r1cs.mul_const %[[VAL_11]],  -1 : i64 : !r1cs.linear
+// NOTE: add's operands are wildcard matches because they can be swapped
+// CHECK-DAG:       %[[VAL_13:.*]] = r1cs.add %{{.*}}, %{{.*}} : !r1cs.linear 
+// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_13]] : !r1cs.linear
+// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_12]] : !r1cs.linear
+// CHECK-DAG:           %[[VAL_14:.*]] = r1cs.to_linear %[[VAL_3]] : signal public to !r1cs.linear
+// CHECK-DAG:           %[[VAL_15:.*]] = r1cs.mul_const %[[VAL_14]],  -1 : i64 : !r1cs.linear
+// CHECK-DAG:           %[[VAL_16:.*]] = r1cs.mul_const %[[VAL_6]],  -1 : i64 : !r1cs.linear
+// CHECK-DAG:           %[[VAL_17:.*]] = r1cs.add %{{.*}}, %{{.*}} : !r1cs.linear
+// CHECK-DAG:           r1cs.constrain %[[VAL_10]], %[[VAL_6]], %[[VAL_17]] : !r1cs.linear
+// CHECK:         }
