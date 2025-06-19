@@ -1,0 +1,76 @@
+name: Deploy GitHub Pages
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version to prepare documentation for. Unset version will update 'main' version."
+        required: false
+        type: string
+        default: 'main'
+
+jobs:
+  construct-gh-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout github pages branch
+        uses: actions/checkout@v4
+        with:
+          path: gh-pages
+          ref: gh-pages
+
+      # v37.1.0
+      - uses: cachix/install-nix-action@d1ca217b388ee87b2507a9a93bf01368bde7cec2
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.23.3/install
+          github_access_token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Set Git credentials
+        run: |
+          git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
+          git config --global 'url.https://ssh@github.com/'.insteadOf 'ssh://git@github.com/'
+          git config --global 'url.https://git@github.com/'.insteadOf 'git@github.com:'
+       # v16
+      - uses: cachix/cachix-action@0fc020193b5a1fa3ac4575aa3a7d3aa6a35435ad
+        with:
+          name: veridise-public
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+
+      - name: Build documentation
+        run: nix  --option sandbox false --print-build-logs build '.#docs'
+
+      - name: Add or replace documentation in version-specific folder
+        if: ${{ inputs.version != '' }}
+        env:
+          DEST: 'gh-pages/${{ inputs.version }}'
+        run: |
+          rm -rf "$DEST"
+          mkdir -p "$DEST"
+          chmod +w "$DEST"
+          cp -r result/html/* "$DEST"
+
+      - name: Upload new artifact
+        id: upload
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: gh-pages
+
+  deploy-gh-pages:
+    needs: construct-gh-pages
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

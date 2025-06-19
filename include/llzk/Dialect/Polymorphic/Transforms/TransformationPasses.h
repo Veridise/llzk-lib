@@ -9,10 +9,12 @@
 
 #pragma once
 
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPassEnums.h"
 #include "llzk/Pass/PassBase.h"
 
 namespace llzk::polymorphic {
 
+std::unique_ptr<mlir::Pass> createEmptyParamListRemoval();
 std::unique_ptr<mlir::Pass> createFlatteningPass();
 
 #define GEN_PASS_REGISTRATION

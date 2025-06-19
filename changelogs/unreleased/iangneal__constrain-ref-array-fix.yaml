@@ -1,0 +1,2 @@
+fixed:
+  - Fix constrain ref analysis for array read case

@@ -20,6 +20,7 @@ namespace llzk {
 namespace component {
 class StructType;
 class StructDefOp;
+class FieldDefOp;
 } // namespace component
 
 namespace function {
@@ -84,15 +85,29 @@ inline mlir::SymbolRefAttr appendLeaf(mlir::SymbolRefAttr orig, const mlir::Twin
 /// given suffix.
 mlir::SymbolRefAttr appendLeafName(mlir::SymbolRefAttr orig, const mlir::Twine &newLeafSuffix);
 
+/// @brief Starting at the Operation `from`, find the nearest ancestor ModuleOp marked with
+/// LANG_ATTR_NAME from which symbol lookups are rooted.
 mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
-mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(component::StructDefOp &to);
-mlir::FailureOr<mlir::SymbolRefAttr> getPathFromRoot(function::FuncDefOp &to);
+mlir::FailureOr<mlir::SymbolRefAttr>
+getPathFromRoot(mlir::SymbolOpInterface to, mlir::ModuleOp *foundRoot = nullptr);
+mlir::FailureOr<mlir::SymbolRefAttr>
+getPathFromRoot(component::StructDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+mlir::FailureOr<mlir::SymbolRefAttr>
+getPathFromRoot(component::FieldDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+mlir::FailureOr<mlir::SymbolRefAttr>
+getPathFromRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 
 /// @brief With include statements, there may be root modules nested within
 /// other root modules. This function resolves the topmost root module.
 mlir::FailureOr<mlir::ModuleOp> getTopRootModule(mlir::Operation *from);
-mlir::FailureOr<mlir::SymbolRefAttr> getPathFromTopRoot(component::StructDefOp &to);
-mlir::FailureOr<mlir::SymbolRefAttr> getPathFromTopRoot(function::FuncDefOp &to);
+mlir::FailureOr<mlir::SymbolRefAttr>
+getPathFromTopRoot(mlir::SymbolOpInterface to, mlir::ModuleOp *foundRoot = nullptr);
+mlir::FailureOr<mlir::SymbolRefAttr>
+getPathFromTopRoot(component::StructDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+mlir::FailureOr<mlir::SymbolRefAttr>
+getPathFromTopRoot(component::FieldDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+mlir::FailureOr<mlir::SymbolRefAttr>
+getPathFromTopRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 
 /// @brief Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers
 /// @tparam T the type of symbol being resolved (e.g., function::FuncDefOp)
@@ -126,9 +141,6 @@ inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterf
   mlir::SymbolTableCollection symbolTable;
   return resolveCallable<T>(symbolTable, call);
 }
-
-/// Equivalent to `SymbolTable::getSymbolUses(...).has_value()` but without fully computing uses.
-bool hasUsesWithin(mlir::Operation *symbol, mlir::Operation *from);
 
 /// Ensure that the given symbol (that is used as a parameter of the given type) can be resolved.
 mlir::LogicalResult verifyParamOfType(

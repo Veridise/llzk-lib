@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 /// Test calling a global function named "compute"; should have no change
 module attributes {veridise.lang = "llzk"} {
@@ -732,7 +732,7 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.type<@TestReadConstAsBool2<[@A]>>
     }
     function.def @constrain(%self: !struct.type<@TestReadConstAsBool2<[@A]>>, %0: i1) {
-      // expected-warning@+1 {{Interpretting non-zero value 2 as true}}
+      // expected-warning@+1 {{Interpreting non-zero value 2 as true}}
       %1 = poly.read_const @A : i1
       constrain.eq %0, %1 : i1
       function.return

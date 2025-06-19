@@ -22,6 +22,19 @@ using namespace mlir;
 
 namespace llzk {
 
+struct FullPolyLoweringOptions : public PassPipelineOptions<FullPolyLoweringOptions> {
+  Option<unsigned> maxDegree {
+      *this, "max-degree", llvm::cl::desc("Maximum polynomial degree (must be ≥ 2)"),
+      llvm::cl::init(2)
+  };
+};
+
+void addRemoveUnnecessaryOpsAndDefsPipeline(OpPassManager &pm) {
+  pm.addPass(llzk::createRedundantReadAndWriteEliminationPass());
+  pm.addPass(llzk::createRedundantOperationEliminationPass());
+  pm.addPass(llzk::createUnusedDeclarationEliminationPass());
+}
+
 void registerTransformationPassPipelines() {
   PassPipelineRegistration<>(
       "llzk-remove-unnecessary-ops",
@@ -35,10 +48,19 @@ void registerTransformationPassPipelines() {
   PassPipelineRegistration<>(
       "llzk-remove-unnecessary-ops-and-defs",
       "Remove unnecessary operations, field definitions, and struct definitions",
-      [](OpPassManager &pm) {
-    pm.addPass(createRedundantReadAndWriteEliminationPass());
-    pm.addPass(createRedundantOperationEliminationPass());
-    pm.addPass(createUnusedDeclarationEliminationPass());
+      [](OpPassManager &pm) { addRemoveUnnecessaryOpsAndDefsPipeline(pm); }
+  );
+
+  PassPipelineRegistration<FullPolyLoweringOptions>(
+      "llzk-full-poly-lowering",
+      "Lower all polynomial constraints to a given max degree, then remove unnecessary operations "
+      "and definitions.",
+      [](OpPassManager &pm, const FullPolyLoweringOptions &opts) {
+    // 1. Degree lowering
+    pm.addPass(llzk::createPolyLoweringPass(opts.maxDegree));
+
+    // 2. Cleanup
+    addRemoveUnnecessaryOpsAndDefsPipeline(pm);
   }
   );
 }

@@ -186,10 +186,10 @@ if(LLZK_ENABLE_BINDINGS_PYTHON)
 endif()
 
 # Documentation
-add_custom_target(doc)
 find_package(Doxygen OPTIONAL_COMPONENTS dot)
 if(Doxygen_FOUND)
-  message(STATUS "Doxygen found, enabling documentation...")
+  message(STATUS "Doxygen found, enabling documentation and `doc` target...")
+  add_custom_target(doc)
 
   # Fetch style document
   include(FetchContent)
@@ -249,6 +249,7 @@ if(Doxygen_FOUND)
   set(DOXYGEN_PREDEFINED GET_OP_CLASSES GET_TYPEDEF_CLASSES GET_ATTR_CLASSES)
   set(DOXYGEN_SOURCE_BROWSER YES)
   set(DOXYGEN_JAVADOC_AUTOBRIEF YES)
+  set(DOXYGEN_ALIASES "llzkVersion=${LLZK_VERSION}")
   # The order that docs are added affects the sorting in the navigation bar.
   doxygen_add_docs(
     doxygen

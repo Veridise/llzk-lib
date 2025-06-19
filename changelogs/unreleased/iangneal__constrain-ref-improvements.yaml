@@ -1,0 +1,2 @@
+added:
+  - Added convenience methods for dealing with `ConstrainRef` and `ConstrainRefIndex`

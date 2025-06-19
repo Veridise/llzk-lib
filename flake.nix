@@ -34,6 +34,20 @@
 
         llzk = final.callPackage ./nix/llzk.nix { clang = final.clang_18; };
 
+        llzkDocs = final.llzk.overrideAttrs(attrs: {
+          nativeBuildInputs = attrs.nativeBuildInputs ++ [
+            final.doxygen final.graphviz
+            final.git final.cacert
+          ];
+          buildPhase = ''
+            cmake --build . --target doc -j$NIX_BUILD_CORES
+          '';
+          installPhase = ''
+            cp -r ./doc $out
+          '';
+          doCheck = false;
+        });
+
         llzkWithPython = final.llzk.override {
           mlir = final.mlirWithPython;
         };
@@ -114,7 +128,7 @@
         devShellBase = pkgs: llzkEnv: {
           shell = llzkEnv.overrideAttrs (old: {
             nativeBuildInputs = old.nativeBuildInputs ++ (with pkgs; [
-              doxygen
+              doxygen graphviz
               git
 
               # clang-tidy and clang-format
@@ -179,6 +193,7 @@
           debugClang = pkgs.llzkDebugClang;
           debugClangCov = pkgs.llzkDebugClangCov;
           debugGCC = pkgs.llzkDebugGCC;
+          docs = pkgs.llzkDocs;
         };
 
         checks = flake-utils.lib.flattenTree {

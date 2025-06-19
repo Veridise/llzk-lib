@@ -25,7 +25,8 @@ def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
   let methods = [
       // Requires implementors to have a '$arr_ref' argument.
       InterfaceMethod<[{Gets the SSA Value for the referenced array.}],
-                      "::mlir::Value", "getArrRef", (ins)>,
+                      "::mlir::TypedValue<::llzk::array::ArrayType>",
+                      "getArrRef", (ins)>,
       InterfaceMethod<
           [{Gets the mutable operand slot holding the SSA Value for the referenced array.}],
           "::mlir::OpOperand &", "getArrRefMutable", (ins)>,
@@ -33,9 +34,7 @@ def ArrayRefOpInterface : OpInterface<"ArrayRefOpInterface"> {
 
   let extraClassDeclaration = [{
     /// Gets the type of the referenced array.
-    inline ::llzk::array::ArrayType getArrRefType() {
-      return ::llvm::cast<::llzk::array::ArrayType>(getArrRef().getType());
-    }
+    inline ::llzk::array::ArrayType getArrRefType() { return getArrRef().getType(); }
   }];
 }
 

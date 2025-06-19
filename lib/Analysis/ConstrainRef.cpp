@@ -23,6 +23,7 @@ namespace llzk {
 using namespace array;
 using namespace component;
 using namespace felt;
+using namespace function;
 using namespace polymorphic;
 using namespace string;
 
@@ -61,6 +62,17 @@ bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
   }
 
   return false;
+}
+
+size_t ConstrainRefIndex::Hash::operator()(const ConstrainRefIndex &c) const {
+  if (c.isIndex()) {
+    return llvm::hash_value(c.getIndex());
+  } else if (c.isIndexRange()) {
+    auto r = c.getIndexRange();
+    return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
+  } else {
+    return OpHash<component::FieldDefOp> {}(c.getField());
+  }
 }
 
 /* ConstrainRef */
@@ -160,18 +172,20 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
 }
 
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
-    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, mlir::BlockArgument arg
+    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, mlir::BlockArgument arg,
+    std::vector<ConstrainRefIndex> fields
 ) {
-  auto ty = arg.getType();
+  ConstrainRef root(arg, fields);
+  auto ty = root.getType();
   std::vector<ConstrainRef> res;
   if (auto structTy = mlir::dyn_cast<StructType>(ty)) {
     // recurse over fields
-    res = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), arg);
+    res = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), arg, fields);
   } else if (auto arrayType = mlir::dyn_cast<ArrayType>(ty)) {
-    res = getAllConstrainRefs(tables, mod, arrayType, arg);
+    res = getAllConstrainRefs(tables, mod, arrayType, arg, fields);
   } else if (mlir::isa<FeltType, IndexType, StringType>(ty)) {
     // Scalar type
-    res.emplace_back(arg);
+    res.emplace_back(root);
   } else {
     std::string err;
     debug::Appender(err) << "unsupported type: " << ty;
@@ -182,13 +196,10 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
 
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDef) {
   std::vector<ConstrainRef> res;
-  auto constrainFnOp = structDef.getConstrainFuncOp();
-  ensure(
-      constrainFnOp,
-      "malformed struct " + mlir::Twine(structDef.getName()) + " must define a constrain function"
-  );
+  // Must have a constrain function by definition.
+  FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
 
-  auto modOp = getRootModule(structDef);
+  FailureOr<ModuleOp> modOp = getRootModule(structDef);
   ensure(
       mlir::succeeded(modOp),
       "could not lookup module from struct " + mlir::Twine(structDef.getName())
@@ -200,6 +211,28 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDe
     res.insert(res.end(), argRes.begin(), argRes.end());
   }
   return res;
+}
+
+std::vector<ConstrainRef>
+ConstrainRef::getAllConstrainRefs(StructDefOp structDef, FieldDefOp fieldDef) {
+  std::vector<ConstrainRef> res;
+  FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
+  ensure(
+      fieldDef->getParentOfType<StructDefOp>() == structDef,
+      "Field " + mlir::Twine(fieldDef.getName()) + " is not a field of struct " +
+          mlir::Twine(structDef.getName())
+  );
+  FailureOr<ModuleOp> modOp = getRootModule(structDef);
+  ensure(
+      mlir::succeeded(modOp),
+      "could not lookup module from struct " + mlir::Twine(structDef.getName())
+  );
+
+  // Get the self argument
+  BlockArgument self = constrainFnOp.getBody().getArgument(0);
+
+  mlir::SymbolTableCollection tables;
+  return getAllConstrainRefs(tables, modOp.value(), self, {ConstrainRefIndex(fieldDef)});
 }
 
 mlir::Type ConstrainRef::getType() const {

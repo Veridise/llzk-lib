@@ -1,0 +1,4 @@
+added:
+  - A few helper functions for common scenarios of building a string
+changed:
+  - Refactor Debug.h to move most of the implementation to Debug.cpp

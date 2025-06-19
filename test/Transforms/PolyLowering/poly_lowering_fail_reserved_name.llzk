@@ -1,0 +1,22 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering="max-degree=2" -verify-diagnostics %s
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @CmpConstraint {
+    // expected-error@+1 {{Field name: "__llzk_poly_lowering_pass_aux_field_0" starts with prefix: "__llzk_poly_lowering_pass_aux_field_" which is reserved for lowering pass}}
+    struct.field @__llzk_poly_lowering_pass_aux_field_0 : !felt.type
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@CmpConstraint> {
+      %self = struct.new : !struct.type<@CmpConstraint>
+      function.return %self : !struct.type<@CmpConstraint>
+    }
+
+    function.def @constrain(%self: !struct.type<@CmpConstraint>, %a: !felt.type, %b: !felt.type) {
+      %z = felt.mul %a, %b
+      %0 = felt.mul %z, %z
+      %1 = felt.mul %z, %a
+      %2 = felt.mul %1, %1
+      constrain.eq %2, %z : !felt.type
+      constrain.eq %0, %1 : !felt.type
+      function.return
+    }
+  }
+}

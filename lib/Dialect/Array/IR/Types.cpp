@@ -46,9 +46,9 @@ LogicalResult computeShapeFromDims(
 
   // Convert the Attributes to int64_t
   for (Attribute a : dimensionSizes) {
-    if (auto p = a.dyn_cast<IntegerAttr>()) {
+    if (auto p = llvm::dyn_cast_if_present<IntegerAttr>(a)) {
       shape.push_back(fromAPInt(p.getValue()));
-    } else if (a.isa<SymbolRefAttr, AffineMapAttr>()) {
+    } else if (llvm::isa_and_present<SymbolRefAttr, AffineMapAttr>(a)) {
       // The ShapedTypeInterface uses 'kDynamic' for dimensions with non-static size.
       shape.push_back(ShapedType::kDynamic);
     } else {

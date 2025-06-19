@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/TypeHelper.h"
 
 using namespace mlir;
 
@@ -26,7 +27,7 @@ using namespace felt;
 using namespace polymorphic;
 using namespace string;
 
-void ShortTypeStringifier::appendSymName(StringRef str) {
+void BuildShortTypeString::appendSymName(StringRef str) {
   if (str.empty()) {
     ss << '?';
   } else {
@@ -34,7 +35,7 @@ void ShortTypeStringifier::appendSymName(StringRef str) {
   }
 }
 
-void ShortTypeStringifier::appendSymRef(SymbolRefAttr sa) {
+void BuildShortTypeString::appendSymRef(SymbolRefAttr sa) {
   appendSymName(sa.getRootReference().getValue());
   for (FlatSymbolRefAttr nestedRef : sa.getNestedReferences()) {
     ss << "::";
@@ -42,38 +43,8 @@ void ShortTypeStringifier::appendSymRef(SymbolRefAttr sa) {
   }
 }
 
-void ShortTypeStringifier::appendAnyAttr(Attribute a) {
-  // Adapted from AsmPrinter::Impl::printAttributeImpl()
-  if (llvm::isa<IntegerAttr>(a)) {
-    IntegerAttr ia = llvm::cast<IntegerAttr>(a);
-    Type ty = ia.getType();
-    bool isUnsigned = ty.isUnsignedInteger() || ty.isSignlessInteger(1);
-    ia.getValue().print(ss, !isUnsigned);
-  } else if (llvm::isa<SymbolRefAttr>(a)) {
-    appendSymRef(llvm::cast<SymbolRefAttr>(a));
-  } else if (llvm::isa<TypeAttr>(a)) {
-    append(llvm::cast<TypeAttr>(a).getValue());
-  } else if (llvm::isa<AffineMapAttr>(a)) {
-    ss << "!m<";
-    // Filter to remove spaces
-    filtered_raw_ostream fs(ss, [](char c) { return c == ' '; });
-    llvm::cast<AffineMapAttr>(a).getValue().print(fs);
-    fs.flush();
-    ss << '>';
-  } else if (llvm::isa<ArrayAttr>(a)) {
-    append(llvm::cast<ArrayAttr>(a).getValue());
-  } else {
-    // All valid/legal cases must be covered above
-    assertValidAttrForParamOfType(a);
-  }
-}
-
-ShortTypeStringifier &ShortTypeStringifier::append(ArrayRef<Attribute> attrs) {
-  llvm::interleave(attrs, ss, [this](Attribute a) { appendAnyAttr(a); }, "_");
-  return *this;
-}
-
-ShortTypeStringifier &ShortTypeStringifier::append(Type type) {
+BuildShortTypeString &BuildShortTypeString::append(Type type) {
+  size_t position = ret.size();
   // Cases must be consistent with isValidTypeImpl() below.
   if (type.isSignlessInteger(1)) {
     ss << 'b';
@@ -106,7 +77,84 @@ ShortTypeStringifier &ShortTypeStringifier::append(Type type) {
   } else {
     ss << "!INVALID";
   }
+  assert(
+      ret.find(PLACEHOLDER, position) == std::string::npos &&
+      "formatting a Type should not produce the 'PLACEHOLDER' char"
+  );
   return *this;
+}
+
+BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
+  // Special case for inserting the `PLACEHOLDER`
+  if (a == nullptr) {
+    ss << PLACEHOLDER;
+    return *this;
+  }
+
+  size_t position = ret.size();
+  // Adapted from AsmPrinter::Impl::printAttributeImpl()
+  if (llvm::isa<IntegerAttr>(a)) {
+    IntegerAttr ia = llvm::cast<IntegerAttr>(a);
+    Type ty = ia.getType();
+    bool isUnsigned = ty.isUnsignedInteger() || ty.isSignlessInteger(1);
+    ia.getValue().print(ss, !isUnsigned);
+  } else if (llvm::isa<SymbolRefAttr>(a)) {
+    appendSymRef(llvm::cast<SymbolRefAttr>(a));
+  } else if (llvm::isa<TypeAttr>(a)) {
+    append(llvm::cast<TypeAttr>(a).getValue());
+  } else if (llvm::isa<AffineMapAttr>(a)) {
+    ss << "!m<";
+    // Filter to remove spaces from the affine_map representation
+    filtered_raw_ostream fs(ss, [](char c) { return c == ' '; });
+    llvm::cast<AffineMapAttr>(a).getValue().print(fs);
+    fs.flush();
+    ss << '>';
+  } else if (llvm::isa<ArrayAttr>(a)) {
+    append(llvm::cast<ArrayAttr>(a).getValue());
+  } else {
+    // All valid/legal cases must be covered above
+    assertValidAttrForParamOfType(a);
+  }
+  assert(
+      ret.find(PLACEHOLDER, position) == std::string::npos &&
+      "formatting a non-null Attribute should not produce the 'PLACEHOLDER' char"
+  );
+  return *this;
+}
+
+BuildShortTypeString &BuildShortTypeString::append(ArrayRef<Attribute> attrs) {
+  llvm::interleave(attrs, ss, [this](Attribute a) { append(a); }, "_");
+  return *this;
+}
+
+std::string BuildShortTypeString::from(const std::string &base, ArrayRef<Attribute> attrs) {
+  BuildShortTypeString bldr;
+
+  bldr.ret.reserve(base.size() + attrs.size()); // reserve minimum space required
+
+  // First handle replacements of PLACEHOLDER
+  auto END = attrs.end();
+  auto IT = attrs.begin();
+  {
+    size_t start = 0;
+    for (size_t pos; (pos = base.find(PLACEHOLDER, start)) != std::string::npos; start = pos + 1) {
+      // Append original up to the PLACEHOLDER
+      bldr.ret.append(base, start, pos - start);
+      // Append the formatted Attribute
+      assert(IT != END && "must have an Attribute for every 'PLACEHOLDER' char");
+      bldr.append(*IT++);
+    }
+    // Append remaining suffix of the original
+    bldr.ret.append(base, start, base.size() - start);
+  }
+
+  // Append any remaining Attributes
+  if (IT != END) {
+    bldr.ss << '_';
+    bldr.append(ArrayRef(IT, END));
+  }
+
+  return bldr.ret;
 }
 
 namespace {
@@ -140,10 +188,10 @@ template <typename... Types> class TypeList {
 public:
   // Checks if the provided value is an instance of any of `Types`
   template <typename T> static inline bool matches(const T &value) {
-    return llvm::isa<Types...>(value);
+    return llvm::isa_and_present<Types...>(value);
   }
 
-  static void reportInvalid(EmitErrorFn emitError, StringRef foundName, const char *aspect) {
+  static void reportInvalid(EmitErrorFn emitError, const Twine &foundName, const char *aspect) {
     InFlightDiagnostic diag = emitError().append(aspect, " must be one of ");
     Appender<InFlightDiagnostic>::append(diag);
     diag.append(" but found '", foundName, "'").report();
@@ -151,16 +199,13 @@ public:
 
   static inline void reportInvalid(EmitErrorFn emitError, Attribute found, const char *aspect) {
     if (emitError) {
-      reportInvalid(emitError, found.getAbstractAttribute().getName(), aspect);
+      reportInvalid(emitError, found ? found.getAbstractAttribute().getName() : "nullptr", aspect);
     }
   }
 
   // Returns a comma-separated list formatted string of the names of `Types`
-  static std::string getNames() {
-    std::string output;
-    llvm::raw_string_ostream oss(output);
-    Appender<llvm::raw_string_ostream>::append(oss);
-    return output;
+  static inline std::string getNames() {
+    return buildStringViaCallback(Appender<llvm::raw_string_ostream>::append);
   }
 };
 
@@ -296,7 +341,7 @@ public:
       if (!ArrayDimensionTypes::matches(a)) {
         ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
         success = false;
-      } else if (no_var && !llvm::isa<IntegerAttr>(a)) {
+      } else if (no_var && !llvm::isa_and_present<IntegerAttr>(a)) {
         TypeList<IntegerAttr>::reportInvalid(emitError, a, "Concrete array dimension");
         success = false;
       } else if (failed(verifyAffineMapAttrType(emitError, a))) {
@@ -462,7 +507,7 @@ namespace {
 /// Optional result from type unifications. Maps `AffineMapAttr` appearing in one type to the
 /// associated `IntegerAttr` from the other type at the same nested position. The `Side` enum in the
 /// key indicates which input expression the `AffineMapAttr` is from. Additionally, if a conflict is
-/// found (i.e. multiple occurances of a specific `AffineMapAttr` on the same side map to different
+/// found (i.e. multiple occurrences of a specific `AffineMapAttr` on the same side map to different
 /// `IntegerAttr` from the other side), the mapped value will be `nullptr`.
 ///
 /// This map is for tracking replacement of `AffineMapAttr` with integer constant values to
@@ -545,11 +590,11 @@ struct UnifierImpl {
     }
     // A type variable can be any type, thus it unifies with anything.
     if (TypeVarType lhsTvar = llvm::dyn_cast<TypeVarType>(lhs)) {
-      track(Side::LHS, lhsTvar.getNameRef(), TypeAttr::get(rhs));
+      track(Side::LHS, lhsTvar.getNameRef(), rhs);
       return true;
     }
     if (TypeVarType rhsTvar = llvm::dyn_cast<TypeVarType>(rhs)) {
-      track(Side::RHS, rhsTvar.getNameRef(), TypeAttr::get(lhs));
+      track(Side::RHS, rhsTvar.getNameRef(), lhs);
       return true;
     }
     if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
@@ -566,21 +611,54 @@ private:
   inline void track(Tracker &tracker, Side side, Key keyHead, Val val) {
     auto key = std::make_pair(keyHead, side);
     auto it = tracker.find(key);
-    if (it != tracker.end()) {
-      it->second = nullptr;
-    } else {
+    if (it == tracker.end()) {
       tracker.try_emplace(key, val);
+    } else if (it->getSecond() != val) {
+      it->second = nullptr;
+    }
+  }
+
+  void track(Side side, SymbolRefAttr symRef, Type ty) {
+    if (unifications) {
+      Attribute attr;
+      if (TypeVarType tvar = dyn_cast<TypeVarType>(ty)) {
+        // If 'ty' is TypeVarType<@S>, just map to @S directly.
+        attr = tvar.getNameRef();
+      } else {
+        // Otherwise wrap as a TypeAttr.
+        attr = TypeAttr::get(ty);
+      }
+      assert(symRef);
+      assert(attr);
+      track(*unifications, side, symRef, attr);
     }
   }
 
   void track(Side side, SymbolRefAttr symRef, Attribute attr) {
     if (unifications) {
+      // If 'attr' is TypeAttr<TypeVarType<@S>>, just map to @S directly.
+      if (TypeAttr tyAttr = dyn_cast<TypeAttr>(attr)) {
+        if (TypeVarType tvar = dyn_cast<TypeVarType>(tyAttr.getValue())) {
+          attr = tvar.getNameRef();
+        }
+      }
+      assert(symRef);
+      assert(attr);
+      // If 'attr' is a SymbolRefAttr, map in both directions for the correctness of
+      // `isMoreConcreteUnification()` which relies on RHS check while other external
+      // checks on the UnificationMap may do LHS checks, and in the case of both being
+      // SymbolRefAttr, unification in either direction is possible.
+      if (SymbolRefAttr otherSymAttr = dyn_cast<SymbolRefAttr>(attr)) {
+        track(*unifications, reverse(side), otherSymAttr, symRef);
+      }
       track(*unifications, side, symRef, attr);
     }
   }
 
   void track(Side side, AffineMapAttr affineAttr, IntegerAttr intAttr) {
     if (affineToIntTracker) {
+      assert(affineAttr);
+      assert(intAttr);
       assert(!isDynamic(intAttr));
       track(*affineToIntTracker, side, affineAttr, intAttr);
     }
@@ -595,16 +673,16 @@ private:
     }
     // AffineMapAttr can unify with IntegerAttr (other than kDynamic) because struct parameter
     // instantiation will result in conversion of AffineMapAttr to IntegerAttr.
-    if (AffineMapAttr lhsAffine = lhsAttr.dyn_cast<AffineMapAttr>()) {
-      if (IntegerAttr rhsInt = rhsAttr.dyn_cast<IntegerAttr>()) {
+    if (AffineMapAttr lhsAffine = llvm::dyn_cast<AffineMapAttr>(lhsAttr)) {
+      if (IntegerAttr rhsInt = llvm::dyn_cast<IntegerAttr>(rhsAttr)) {
         if (!isDynamic(rhsInt)) {
           track(Side::LHS, lhsAffine, rhsInt);
           return true;
         }
       }
     }
-    if (AffineMapAttr rhsAffine = rhsAttr.dyn_cast<AffineMapAttr>()) {
-      if (IntegerAttr lhsInt = lhsAttr.dyn_cast<IntegerAttr>()) {
+    if (AffineMapAttr rhsAffine = llvm::dyn_cast<AffineMapAttr>(rhsAttr)) {
+      if (IntegerAttr lhsInt = llvm::dyn_cast<IntegerAttr>(lhsAttr)) {
         if (!isDynamic(lhsInt)) {
           track(Side::RHS, rhsAffine, lhsInt);
           return true;
@@ -613,17 +691,17 @@ private:
     }
     // If either side is a SymbolRefAttr, assume they unify because either flattening or a pass with
     // a more involved value analysis is required to check if they are actually the same value.
-    if (SymbolRefAttr lhsSymRef = lhsAttr.dyn_cast<SymbolRefAttr>()) {
+    if (SymbolRefAttr lhsSymRef = llvm::dyn_cast<SymbolRefAttr>(lhsAttr)) {
       track(Side::LHS, lhsSymRef, rhsAttr);
       return true;
     }
-    if (SymbolRefAttr rhsSymRef = rhsAttr.dyn_cast<SymbolRefAttr>()) {
+    if (SymbolRefAttr rhsSymRef = llvm::dyn_cast<SymbolRefAttr>(rhsAttr)) {
       track(Side::RHS, rhsSymRef, lhsAttr);
       return true;
     }
     // If either side is ShapedType::kDynamic then, similarly to Symbols, assume they unify.
     auto dyn_cast_if_dynamic = [](Attribute attr) -> IntegerAttr {
-      if (auto intAttr = attr.dyn_cast<IntegerAttr>()) {
+      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
         if (isDynamic(intAttr)) {
           return intAttr;
         }
@@ -631,7 +709,7 @@ private:
       return nullptr;
     };
     auto isa_const = [](Attribute attr) {
-      return mlir::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(attr);
+      return llvm::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(attr);
     };
     if (auto lhsIntAttr = dyn_cast_if_dynamic(lhsAttr)) {
       if (isa_const(rhsAttr)) {
@@ -644,8 +722,8 @@ private:
       }
     }
     // If both are type refs, check for unification of the types.
-    if (TypeAttr lhsTy = lhsAttr.dyn_cast<TypeAttr>()) {
-      if (TypeAttr rhsTy = rhsAttr.dyn_cast<TypeAttr>()) {
+    if (TypeAttr lhsTy = llvm::dyn_cast<TypeAttr>(lhsAttr)) {
+      if (TypeAttr rhsTy = llvm::dyn_cast<TypeAttr>(rhsAttr)) {
         return typesUnify(lhsTy.getValue(), rhsTy.getValue());
       }
     }
@@ -720,7 +798,7 @@ IntegerAttr forceIntType(IntegerAttr attr) {
 }
 
 Attribute forceIntAttrType(Attribute attr) {
-  if (IntegerAttr intAttr = dyn_cast<IntegerAttr>(attr)) {
+  if (IntegerAttr intAttr = llvm::dyn_cast_if_present<IntegerAttr>(attr)) {
     return forceIntType(intAttr);
   }
   return attr;
@@ -731,7 +809,7 @@ SmallVector<Attribute> forceIntAttrTypes(ArrayRef<Attribute> attrList) {
 }
 
 LogicalResult verifyIntAttrType(EmitErrorFn emitError, Attribute in) {
-  if (IntegerAttr intAttr = llvm::dyn_cast<IntegerAttr>(in)) {
+  if (IntegerAttr intAttr = llvm::dyn_cast_if_present<IntegerAttr>(in)) {
     Type attrTy = intAttr.getType();
     if (!AllowedTypes().onlyInt().isValidTypeImpl(attrTy)) {
       if (emitError) {
@@ -746,7 +824,7 @@ LogicalResult verifyIntAttrType(EmitErrorFn emitError, Attribute in) {
 }
 
 LogicalResult verifyAffineMapAttrType(EmitErrorFn emitError, Attribute in) {
-  if (AffineMapAttr affineAttr = llvm::dyn_cast<AffineMapAttr>(in)) {
+  if (AffineMapAttr affineAttr = llvm::dyn_cast_if_present<AffineMapAttr>(in)) {
     AffineMap map = affineAttr.getValue();
     if (map.getNumResults() != 1) {
       if (emitError) {

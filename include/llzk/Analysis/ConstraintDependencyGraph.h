@@ -73,7 +73,7 @@ private:
 
 /// @brief A dependency graph of constraints enforced by an LLZK struct.
 ///
-/// Mathmatically speaking, a constraint dependency graph (CDG) is a transitive closure
+/// Mathematically speaking, a constraint dependency graph (CDG) is a transitive closure
 /// of edges where there is an edge between signals `a` and `b`
 /// iff `a` and `b` appear in the same constraint.
 ///
@@ -132,7 +132,7 @@ public:
   /// This method looks for constraints to the value in the ref and constraints to any
   /// prefix of this value.
   /// For example, if ref is an array element (foo[2]), this looks for constraints on
-  /// foo[2] as well as foo, as arrays may be constrained in their entirity via constrain.in
+  /// foo[2] as well as foo, as arrays may be constrained in their entirety via constrain.in
   /// operations.
   /// @param ref
   /// @return The set of references that are connected to ref via constraints.

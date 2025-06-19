@@ -134,6 +134,13 @@ public:
 
   size_t size() const { return valMap.size(); }
 
+  const ValueMap &getMap() const { return valMap; }
+
+  ValueMap::iterator begin() { return valMap.begin(); }
+  ValueMap::iterator end() { return valMap.end(); }
+  ValueMap::const_iterator begin() const { return valMap.begin(); }
+  ValueMap::const_iterator end() const { return valMap.end(); }
+
   friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLattice &v);
 
 private:

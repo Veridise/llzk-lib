@@ -59,6 +59,7 @@
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Util/Concepts.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
@@ -547,27 +548,28 @@ public:
 
 /// Common implementation for handling `FieldWriteOp` and `FieldReadOp`.
 ///
-/// @tparam ImplClass       the concrete subclass
-/// @tparam FieldRefOpType  the concrete op class
-/// @tparam GenHeaderType   return type of `genHeader()`, used to pass data to `forIndex()`
-template <typename ImplClass, typename FieldRefOpType, typename GenHeaderType>
-class SplitArrayInFieldRefOp : public OpConversionPattern<FieldRefOpType> {
+/// @tparam ImplClass         the concrete subclass
+/// @tparam FieldRefOpClass   the concrete op class
+/// @tparam GenHeaderType     return type of `genHeader()`, used to pass data to `forIndex()`
+template <
+    typename ImplClass, HasInterface<FieldRefOpInterface> FieldRefOpClass, typename GenHeaderType>
+class SplitArrayInFieldRefOp : public OpConversionPattern<FieldRefOpClass> {
   SymbolTableCollection &tables;
   const FieldReplacementMap &repMapRef;
 
   // static check to ensure the functions are implemented in all subclasses
   inline static void ensureImplementedAtCompile() {
     static_assert(
-        sizeof(FieldRefOpType) == 0, "SplitArrayInFieldRefOp not implemented for requested type."
+        sizeof(FieldRefOpClass) == 0, "SplitArrayInFieldRefOp not implemented for requested type."
     );
   }
 
 protected:
-  using OpAdaptor = typename FieldRefOpType::Adaptor;
+  using OpAdaptor = typename FieldRefOpClass::Adaptor;
 
   /// Executed at the start of `rewrite()` to (optionally) generate anything that should be before
   /// the element-wise operations that will be added by `forIndex()`.
-  static GenHeaderType genHeader(FieldRefOpType, ConversionPatternRewriter &) {
+  static GenHeaderType genHeader(FieldRefOpClass, ConversionPatternRewriter &) {
     ensureImplementedAtCompile();
     assert(false && "unreachable");
   }
@@ -584,16 +586,16 @@ public:
   SplitArrayInFieldRefOp(
       MLIRContext *ctx, SymbolTableCollection &symTables, const FieldReplacementMap &fieldRepMap
   )
-      : OpConversionPattern<FieldRefOpType>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
+      : OpConversionPattern<FieldRefOpClass>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
 
-  static bool legal(FieldRefOpType) {
+  static bool legal(FieldRefOpClass) {
     ensureImplementedAtCompile();
     assert(false && "unreachable");
   }
 
-  LogicalResult match(FieldRefOpType op) const override { return failure(ImplClass::legal(op)); }
+  LogicalResult match(FieldRefOpClass op) const override { return failure(ImplClass::legal(op)); }
 
-  void rewrite(FieldRefOpType op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
+  void rewrite(FieldRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
       const override {
     StructType tgtStructTy = llvm::cast<FieldRefOpInterface>(op.getOperation()).getStructType();
     assert(tgtStructTy);
@@ -743,7 +745,7 @@ LogicalResult splitArrayCreateInit(ModuleOp modOp) {
 class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayToScalarPass> {
   void runOnOperation() override {
     ModuleOp module = getOperation();
-    // Separate array initialization from creation by removing the initalization list from
+    // Separate array initialization from creation by removing the initialization list from
     // CreateArrayOp and inserting the corresponding WriteArrayOp following it.
     if (failed(splitArrayCreateInit(module))) {
       signalPassFailure();

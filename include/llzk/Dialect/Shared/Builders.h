@@ -36,7 +36,7 @@ void addLangAttrForLLZKDialect(mlir::ModuleOp mod);
 
 /// @brief Builds out a LLZK-compliant module and provides utilities for populating
 /// that module. This class is designed to be used by front-ends looking to
-/// generate LLZK IR programatically and is also a useful unit testing facility.
+/// generate LLZK IR programmatically and is also a useful unit testing facility.
 /// TODO: this is a WIP, flesh this class out as needed.
 class ModuleBuilder {
 public:

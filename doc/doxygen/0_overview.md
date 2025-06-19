@@ -1,17 +1,6 @@
-# What is LLZK? {#overview}
+# Architecture {#overview}
 
 \tableofcontents
-
-LLZK is an open-source Intermediate Representation (IR) for Zero Knowledge (ZK)
-circuit languages.
-The LLZK project provides a flexible framework, inspired by LLVM, designed to
-unify diverse ZK front-end languages and backend ZK architectures.
-From an implementation perspective, the LLZK IR is a composition of multiple
-[MLIR *dialects*][mlir-dialects] that represent different features that may be present
-in the source ZK language.
-
-You can read more about the motivation and design of the project [on our blog][llzk-post].
-You can also view [our Ethereum Foundation grant proposal][proposal] that helped fund this project.
 
 ## Project Overview
 
@@ -23,7 +12,7 @@ The LLZK project consists of three main components:
 
 The general workflow of using LLZK is therefore as follows:
 1. Translate the source language into LLZK using [a frontend tool](\ref frontends).
-2. Use the [llzk-opt tool](\ref llzk-opt) to perform any transformations using LLZK's [pass infrastucture](\ref pass-overview).
+2. Use the [llzk-opt tool](\ref llzk-opt) to perform any transformations using LLZK's [pass infrastructure](\ref pass-overview).
 3. Provide the transformed IR to a [backend](\ref backends) for further analysis or use.
 
 ### Frontends {#frontends}
@@ -68,9 +57,5 @@ Veridise also plans to release several analysis backends based on prior tooling 
 | \ref mainpage | \ref setup |
 </div>
 
-
-[llzk-post]: https://medium.com/veridise/veridise-secures-ethereum-foundation-grant-to-develop-llzk-a-new-intermediate-representation-ir-224c0e71f4d5
 [picus-v2]: https://docs.veridise.com/picus-v2/
 [zk-vanguard]: https://docs.veridise.com/zkvanguard/
-[mlir-dialects]: https://mlir.llvm.org/docs/DefiningDialects/
-[proposal]: https://drive.google.com/file/d/1tAIjAPJX5cGZT_ASFf7A2OiZaEgeWUx8/view?usp=sharing
