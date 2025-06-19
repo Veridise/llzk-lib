@@ -9,6 +9,9 @@
 
 #pragma once
 
+#include <mlir/IR/Diagnostics.h>
+#include <mlir/IR/Operation.h>
+
 #include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/ADT/Twine.h>
 #include <llvm/Support/ErrorHandling.h>

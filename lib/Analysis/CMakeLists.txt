@@ -11,4 +11,5 @@ target_link_libraries(
 add_dependencies(LLZKAnalysis LLZKDialect LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKAnalysis)
 
+llzk_check_cxx_feature(LLZKAnalysis nontype_template_args)
 install(TARGETS LLZKAnalysis EXPORT LLZKTargets)
