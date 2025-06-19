@@ -7,12 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/Dialect/LLZK/IR/Attrs.h>
-#include <llzk/Dialect/LLZK/IR/Dialect.h>
+#include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
+
+#include "llzk-c/Dialect/LLZK.h"
 
 #include <mlir/CAPI/Registration.h>
-
-#include <llzk-c/Dialect/LLZK.h>
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(LLZK, llzk, llzk::LLZKDialect)
 

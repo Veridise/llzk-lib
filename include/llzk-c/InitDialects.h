@@ -8,14 +8,14 @@
 //===----------------------------------------------------------------------===//
 //
 // This header declares the registration method for
-// all the llzk dialects.
+// all LLZK dialects.
 //
 //===----------------------------------------------------------------------===//
 
 #ifndef LLZK_C_INITDIALECTS_H
 #define LLZK_C_INITDIALECTS_H
 
-#include "mlir-c/IR.h"
+#include <mlir-c/IR.h>
 
 #ifdef __cplusplus
 extern "C" {

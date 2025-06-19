@@ -18,9 +18,11 @@
 #ifndef LLZK_C_DIALECT_FUNCTION_H
 #define LLZK_C_DIALECT_FUNCTION_H
 
-#include <llzk-c/Support.h>
+#include "llzk-c/Support.h"
+
 #include <mlir-c/IR.h>
 #include <mlir-c/Support.h>
+
 #include <stdint.h>
 
 #ifdef __cplusplus

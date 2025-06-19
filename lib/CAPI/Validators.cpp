@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/Validators/LLZKValidationPasses.capi.h.inc>
-#include <llzk/Validators/LLZKValidationPasses.h>
+#include "llzk/Validators/LLZKValidationPasses.capi.h.inc"
+#include "llzk/Validators/LLZKValidationPasses.h"
 
 #include <mlir/CAPI/Pass.h>
 

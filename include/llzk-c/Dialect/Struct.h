@@ -18,10 +18,12 @@
 #ifndef LLZK_C_DIALECT_STRUCT_H
 #define LLZK_C_DIALECT_STRUCT_H
 
-#include <llzk-c/Support.h>
+#include "llzk-c/Support.h"
+
 #include <mlir-c/AffineMap.h>
 #include <mlir-c/IR.h>
 #include <mlir-c/Support.h>
+
 #include <stdint.h>
 
 #ifdef __cplusplus

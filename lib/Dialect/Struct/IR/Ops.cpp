@@ -18,9 +18,8 @@
 #include <mlir/IR/OpImplementation.h>
 
 #include <llvm/ADT/MapVector.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringSet.h>
-
-#include "llvm/ADT/STLExtras.h"
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Struct/IR/OpInterfaces.cpp.inc"

@@ -14,8 +14,10 @@
 #ifndef LLZK_C_IR_H
 #define LLZK_C_IR_H
 
-#include <llzk-c/Builder.h> // IWYU pragma: keep
-#include <mlir-c/IR.h>      // IWYU pragma: keep
+#include "llzk-c/Builder.h" // IWYU pragma: keep
+
+#include <mlir-c/IR.h> // IWYU pragma: keep
+
 #include <stdint.h>
 
 #ifdef __cplusplus

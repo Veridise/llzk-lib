@@ -18,7 +18,8 @@
 #ifndef LLZK_C_DIALECT_BOOL_H
 #define LLZK_C_DIALECT_BOOL_H
 
-#include <llzk-c/Support.h>
+#include "llzk-c/Support.h"
+
 #include <mlir-c/IR.h>
 
 #ifdef __cplusplus

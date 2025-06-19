@@ -15,8 +15,8 @@
 #ifndef LLZK_C_BUILDER_H
 #define LLZK_C_BUILDER_H
 
-#include "mlir-c/IR.h"
-#include "mlir-c/Support.h"
+#include <mlir-c/IR.h>
+#include <mlir-c/Support.h>
 
 #ifdef __cplusplus
 extern "C" {

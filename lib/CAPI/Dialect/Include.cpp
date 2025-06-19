@@ -7,15 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/Dialect/Include/IR/Dialect.h>
-#include <llzk/Dialect/Include/IR/Ops.h>
-#include <llzk/Dialect/Include/Transforms/InlineIncludesPass.h>
+#include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Dialect/Include/IR/Ops.h"
+#include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
+
+#include "llzk-c/Dialect/Include.h"
 
 #include <mlir/CAPI/Pass.h>
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
 
-#include <llzk-c/Dialect/Include.h>
 #include <mlir-c/Pass.h>
 
 static void registerLLZKIncludeTransformationPasses() {

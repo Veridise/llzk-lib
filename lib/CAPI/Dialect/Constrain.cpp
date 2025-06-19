@@ -7,10 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/Dialect/Constrain/IR/Dialect.h>
+#include "llzk/Dialect/Constrain/IR/Dialect.h"
+
+#include "llzk-c/Dialect/Constrain.h"
 
 #include <mlir/CAPI/Registration.h>
-
-#include <llzk-c/Dialect/Constrain.h>
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Constrain, llzk__constrain, llzk::constrain::ConstrainDialect)

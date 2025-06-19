@@ -7,13 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/Dialect/String/IR/Dialect.h>
-#include <llzk/Dialect/String/IR/Types.h>
+#include "llzk/Dialect/String/IR/Dialect.h"
+#include "llzk/Dialect/String/IR/Types.h"
+
+#include "llzk-c/Dialect/String.h"
 
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
-
-#include <llzk-c/Dialect/String.h>
 
 using namespace llzk::string;
 using namespace mlir;

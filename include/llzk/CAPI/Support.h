@@ -14,13 +14,13 @@
 
 #pragma once
 
+#include "llzk-c/Support.h"
+
 #include <mlir/CAPI/IR.h>
 #include <mlir/IR/OperationSupport.h>
+#include <mlir/IR/ValueRange.h>
 
-#include <llzk-c/Support.h>
 #include <mlir-c/IR.h>
-
-#include "mlir/IR/ValueRange.h"
 
 #define LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(op, suffix, ...)                                        \
   MlirOperation llzk##op##Build##suffix(MlirOpBuilder builder, MlirLocation location, __VA_ARGS__)

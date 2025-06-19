@@ -7,18 +7,19 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/CAPI/Builder.h>
-#include <llzk/CAPI/Support.h>
-#include <llzk/Dialect/Array/IR/Ops.h>
-#include <llzk/Dialect/Array/IR/Types.h>
-#include <llzk/Dialect/Array/Transforms/TransformationPasses.h>
+#include "llzk/CAPI/Builder.h"
+#include "llzk/CAPI/Support.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
+
+#include "llzk-c/Dialect/Array.h"
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Pass.h>
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
 
-#include <llzk-c/Dialect/Array.h>
 #include <mlir-c/Pass.h>
 
 using namespace mlir;
@@ -28,7 +29,7 @@ using namespace llzk;
 static void registerLLZKArrayTransformationPasses() { llzk::array::registerTransformationPasses(); }
 
 // Include impl for transformation passes
-#include <llzk/Dialect/Array/Transforms/TransformationPasses.capi.cpp.inc>
+#include "llzk/Dialect/Array/Transforms/TransformationPasses.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Array, llzk__array, ArrayDialect)
 

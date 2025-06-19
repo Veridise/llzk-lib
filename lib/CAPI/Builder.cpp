@@ -7,15 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/CAPI/Builder.h>
-#include <llzk/CAPI/Support.h>
+#include "llzk/CAPI/Builder.h"
+#include "llzk/CAPI/Support.h"
+
+#include "llzk-c/Builder.h"
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
 #include <mlir/CAPI/Wrap.h>
 #include <mlir/IR/Builders.h>
-
-#include <llzk-c/Builder.h>
 
 using namespace mlir;
 

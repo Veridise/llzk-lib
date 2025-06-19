@@ -7,10 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/Dialect/Cast/IR/Dialect.h>
+#include "llzk/Dialect/Cast/IR/Dialect.h"
+
+#include "llzk-c/Dialect/Cast.h"
 
 #include <mlir/CAPI/Registration.h>
-
-#include <llzk-c/Dialect/Cast.h>
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Cast, llzk__cast, llzk::cast::CastDialect)

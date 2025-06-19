@@ -7,12 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/Dialect/Global/IR/Dialect.h>
-#include <llzk/Dialect/Global/IR/Ops.h>
+#include "llzk/Dialect/Global/IR/Dialect.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
+
+#include "llzk-c/Dialect/Global.h"
 
 #include <mlir/CAPI/Registration.h>
-
-#include <llzk-c/Dialect/Global.h>
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Global, llzk__global, llzk::global::GlobalDialect)
 

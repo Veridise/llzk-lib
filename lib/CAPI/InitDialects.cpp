@@ -7,12 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/Dialect/InitDialects.h>
+#include "llzk/Dialect/InitDialects.h"
+
+#include "llzk-c/InitDialects.h"
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Wrap.h>
 
-#include <llzk-c/InitDialects.h>
 #include <mlir-c/IR.h>
 
 void llzkRegisterAllDialects(MlirDialectRegistry registry) {

@@ -20,8 +20,10 @@
 
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.capi.h.inc"
 
-#include <llzk-c/Support.h>
+#include "llzk-c/Support.h"
+
 #include <mlir-c/IR.h>
+
 #include <stdint.h>
 
 #ifdef __cplusplus

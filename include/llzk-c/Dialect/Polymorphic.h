@@ -18,9 +18,10 @@
 #ifndef LLZK_C_DIALECT_POLYMORPHIC_H
 #define LLZK_C_DIALECT_POLYMORPHIC_H
 
-#include <llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc>
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc"
 
-#include <llzk-c/Support.h>
+#include "llzk-c/Support.h"
+
 #include <mlir-c/AffineExpr.h>
 #include <mlir-c/AffineMap.h>
 #include <mlir-c/IR.h>

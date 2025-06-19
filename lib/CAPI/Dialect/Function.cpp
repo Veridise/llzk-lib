@@ -7,23 +7,24 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/CAPI/Builder.h>
-#include <llzk/CAPI/Support.h>
-#include <llzk/Dialect/Function/IR/Dialect.h>
-#include <llzk/Dialect/Function/IR/Ops.h>
+#include "llzk/CAPI/Builder.h"
+#include "llzk/CAPI/Support.h"
+#include "llzk/Dialect/Function/IR/Dialect.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
+
+#include "llzk-c/Dialect/Function.h"
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Pass.h>
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
+#include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinAttributes.h>
 
-#include <llzk-c/Dialect/Function.h>
+#include <mlir-c/IR.h>
 #include <mlir-c/Pass.h>
 
-#include "llvm/ADT/SmallVectorExtras.h"
-#include "mlir-c/IR.h"
-#include "mlir/IR/Attributes.h"
-#include "mlir/IR/BuiltinAttributes.h"
+#include <llvm/ADT/SmallVectorExtras.h>
 
 using namespace llzk::function;
 using namespace mlir;
@@ -222,5 +223,3 @@ bool llzkCallOpGetCalleeIsStructConstrain(MlirOperation op) {
 MlirType llzkCallOpGetSingleResultTypeOfCompute(MlirOperation op) {
   return wrap(mlir::unwrap_cast<CallOp>(op).getSingleResultTypeOfCompute());
 }
-
-#undef OP

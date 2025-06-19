@@ -21,8 +21,6 @@
 #include <llzk-c/Support.h>
 #include <mlir-c/IR.h>
 
-#include "mlir-c/Support.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/Util/Constants.h>
+#include "llzk/Util/Constants.h"
 
-#include <llzk-c/Constants.h>
+#include "llzk-c/Constants.h"
 
 const char *LLZK_COMPONENT_NAME_SIGNAL = llzk::COMPONENT_NAME_SIGNAL;
 const char *LLZK_COMPONENT_NAME_MAIN = llzk::COMPONENT_NAME_MAIN;

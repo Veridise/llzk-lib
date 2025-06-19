@@ -7,13 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/Util/TypeHelper.h>
+#include "llzk/Util/TypeHelper.h"
 
-#include <llzk-c/Typing.h>
+#include "llzk-c/Typing.h"
 
-#include "mlir/CAPI/IR.h"
-#include "mlir/CAPI/Support.h"
-#include "mlir/CAPI/Wrap.h"
+#include <mlir/CAPI/IR.h>
+#include <mlir/CAPI/Support.h>
+#include <mlir/CAPI/Wrap.h>
 
 using namespace llzk;
 using namespace mlir;

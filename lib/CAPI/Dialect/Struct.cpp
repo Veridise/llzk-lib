@@ -7,13 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/CAPI/Builder.h>
-#include <llzk/CAPI/Support.h>
-#include <llzk/Dialect/Function/IR/Ops.h>
-#include <llzk/Dialect/Struct/IR/Dialect.h>
-#include <llzk/Dialect/Struct/IR/Ops.h>
-#include <llzk/Dialect/Struct/IR/Types.h>
-#include <llzk/Util/TypeHelper.h>
+#include "llzk/CAPI/Builder.h"
+#include "llzk/CAPI/Support.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Dialect.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Types.h"
+#include "llzk/Util/TypeHelper.h"
+
+#include "llzk-c/Dialect/Struct.h"
 
 #include <mlir/CAPI/AffineMap.h>
 #include <mlir/CAPI/Registration.h>
@@ -21,10 +23,9 @@
 #include <mlir/CAPI/Wrap.h>
 #include <mlir/IR/BuiltinAttributes.h>
 
-#include <llvm/ADT/STLExtras.h>
-
-#include <llzk-c/Dialect/Struct.h>
 #include <mlir-c/Support.h>
+
+#include <llvm/ADT/STLExtras.h>
 
 using namespace llzk;
 using namespace mlir;

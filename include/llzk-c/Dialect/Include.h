@@ -18,7 +18,7 @@
 #ifndef LLZK_C_DIALECT_INCLUDE_H
 #define LLZK_C_DIALECT_INCLUDE_H
 
-#include <llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.h.inc>
+#include "llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.h.inc"
 
 #include <mlir-c/IR.h>
 #include <mlir-c/Support.h>

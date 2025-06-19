@@ -7,24 +7,24 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llzk/CAPI/Builder.h>
-#include <llzk/CAPI/Support.h>
-#include <llzk/Dialect/Polymorphic/IR/Dialect.h>
-#include <llzk/Dialect/Polymorphic/IR/Ops.h>
-#include <llzk/Dialect/Polymorphic/IR/Types.h>
-#include <llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h>
+#include "llzk/CAPI/Builder.h"
+#include "llzk/CAPI/Support.h"
+#include "llzk/Dialect/Polymorphic/IR/Dialect.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+
+#include "llzk-c/Dialect/Polymorphic.h"
 
 #include <mlir/CAPI/AffineExpr.h>
 #include <mlir/CAPI/AffineMap.h>
 #include <mlir/CAPI/Pass.h>
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/Support/LLVM.h>
 
-#include <llzk-c/Dialect/Polymorphic.h>
 #include <mlir-c/Pass.h>
-
-#include "mlir/IR/BuiltinAttributes.h"
-#include "mlir/Support/LLVM.h"
 
 static void registerLLZKPolymorphicTransformationPasses() {
   llzk::polymorphic::registerTransformationPasses();
@@ -116,7 +116,7 @@ static ValueRange symbolOperands(MlirOperation op) {
 
 static void copyValues(ValueRange in, MlirValue *out) {
   for (auto [n, value] : llvm::enumerate(in)) {
-    out[0] = wrap(value);
+    out[n] = wrap(value);
   }
 }
 
