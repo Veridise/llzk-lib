@@ -19,6 +19,7 @@
 #define LLZK_C_DIALECT_GLOBAL_H
 
 #include <llzk-c/Support.h>
+
 #include <mlir-c/IR.h>
 
 #ifdef __cplusplus
