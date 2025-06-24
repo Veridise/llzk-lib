@@ -50,13 +50,13 @@ constexpr char UNNAMED_SYMBOL_INDICATOR[] = "<<unnamed symbol>>";
 enum RootSelector { CLOSEST, FURTHEST };
 
 class RootPathBuilder {
-  RootSelector whichRoot;
-  Operation *origin;
-  ModuleOp *foundRoot;
+  RootSelector _whichRoot;
+  Operation *_origin;
+  ModuleOp *_foundRoot;
 
 public:
   RootPathBuilder(RootSelector whichRoot, Operation *origin, ModuleOp *foundRoot)
-      : whichRoot(whichRoot), origin(origin), foundRoot(foundRoot) {}
+      : _whichRoot(whichRoot), _origin(origin), _foundRoot(foundRoot) {}
 
   /// Traverse ModuleOp ancestors of `from` and add their names to `path` until the (closest or
   /// furthest, based on RootSelector argument) ModuleOp with the `LANG_ATTR_NAME` attribute is
@@ -74,7 +74,7 @@ public:
         //  an extra module wrapping the top-level module from the input file.
         // This module, even if it has a name, does not contribute to path names.
         if (m->hasAttr(LANG_ATTR_NAME)) {
-          if (whichRoot == RootSelector::CLOSEST) {
+          if (_whichRoot == RootSelector::CLOSEST) {
             return m;
           }
           currRoot = m;
@@ -82,7 +82,7 @@ public:
         if (StringAttr modName = m.getSymNameAttr()) {
           path.push_back(FlatSymbolRefAttr::get(modName));
         } else if (!currRoot) {
-          return origin->emitOpError()
+          return _origin->emitOpError()
               .append(
                   "has ancestor '", ModuleOp::getOperationName(), "' without \"", LANG_ATTR_NAME,
                   "\" attribute or a name"
@@ -93,11 +93,11 @@ public:
       }
     } while ((check = check->getParentOp()));
 
-    if (whichRoot == RootSelector::FURTHEST && currRoot) {
+    if (_whichRoot == RootSelector::FURTHEST && currRoot) {
       return currRoot;
     }
 
-    return origin->emitOpError().append(
+    return _origin->emitOpError().append(
         "has no ancestor '", ModuleOp::getOperationName(), "' with \"", LANG_ATTR_NAME,
         "\" attribute"
     );
@@ -114,15 +114,15 @@ public:
     if (failed(rootMod)) {
       return failure();
     }
-    if (foundRoot) {
-      *foundRoot = rootMod.value();
+    if (_foundRoot) {
+      *_foundRoot = rootMod.value();
     }
     // Special case for empty path (because asSymbolRefAttr() cannot handle it).
     if (path.empty()) {
       // ASSERT: This can only occur when the given `position` is the discovered root ModuleOp
       // itself.
       assert(position == rootMod.value().getOperation() && "empty path only at root itself");
-      return getFlatSymbolRefAttr(origin->getContext(), POSITION_IS_ROOT_INDICATOR);
+      return getFlatSymbolRefAttr(_origin->getContext(), POSITION_IS_ROOT_INDICATOR);
     }
     //  Reverse the vector and convert it to a SymbolRefAttr
     std::vector<FlatSymbolRefAttr> reversedVec(path.rbegin(), path.rend());
@@ -173,15 +173,15 @@ public:
   FailureOr<SymbolRefAttr> getPathFromRootToAnySymbol(SymbolOpInterface to) {
     return TypeSwitch<Operation *, FailureOr<SymbolRefAttr>>(to.getOperation())
         // This more general function must check for the specific cases first.
-        .Case<FuncDefOp>([this](FuncDefOp to) { return getPathFromRootToFunc(to); })
-        .Case<FieldDefOp>([this](FieldDefOp to) { return getPathFromRootToField(to); })
-        .Case<StructDefOp>([this](StructDefOp to) { return getPathFromRootToStruct(to); })
+        .Case<FuncDefOp>([this](FuncDefOp toOp) { return getPathFromRootToFunc(toOp); })
+        .Case<FieldDefOp>([this](FieldDefOp toOp) { return getPathFromRootToField(toOp); })
+        .Case<StructDefOp>([this](StructDefOp toOp) { return getPathFromRootToStruct(toOp); })
 
         // If it's a module, immediately delegate to `buildPathFromRootToAnyOp()` since
         // it will already add the module name to the path.
-        .Case<ModuleOp>([this](ModuleOp to) {
+        .Case<ModuleOp>([this](ModuleOp toOp) {
       std::vector<FlatSymbolRefAttr> path;
-      return buildPathFromRootToAnyOp(to, std::move(path));
+      return buildPathFromRootToAnyOp(toOp, std::move(path));
     })
 
         // For any other symbol, append the name of the symbol and then delegate to

@@ -52,10 +52,10 @@ void assertProperBuild(SymbolOpInterface root, const SymbolDefTree *tree) {
 
 } // namespace
 
-SymbolDefTree::SymbolDefTree(SymbolOpInterface root) {
-  assert(root->hasTrait<OpTrait::SymbolTable>());
-  buildTree(root, /*parentNode=*/nullptr);
-  assertProperBuild(root, this);
+SymbolDefTree::SymbolDefTree(SymbolOpInterface rootSymbol) {
+  assert(rootSymbol->hasTrait<OpTrait::SymbolTable>());
+  buildTree(rootSymbol, /*parentNode=*/nullptr);
+  assertProperBuild(rootSymbol, this);
 }
 
 void SymbolDefTree::buildTree(SymbolOpInterface symbolOp, SymbolDefTreeNode *parentNode) {
