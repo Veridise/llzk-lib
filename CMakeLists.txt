@@ -166,6 +166,9 @@ set(LLZK_MLIR_DOC_OUTPUT_DIR "${DOXYGEN_OUTPUT_DIRECTORY}/mlir")
 # We need the include dir so we can pass it to mlir-tblgen
 set(LLZK_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
+# We need the r1cs include dir so we can pass it to mlir-tblgen
+set(R1CS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/r1cs/include")
+
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LLZKMacros.cmake)
 
 # Create an empty list for the dialect libraries, to be populated in the lib
@@ -179,6 +182,7 @@ install(TARGETS LLZKAllDialects EXPORT LLZKTargets)
 
 add_subdirectory(include)
 add_subdirectory(lib)
+add_subdirectory(r1cs)
 add_subdirectory(tools)
 if(LLZK_ENABLE_BINDINGS_PYTHON)
   add_subdirectory(python)
