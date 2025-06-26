@@ -18,18 +18,20 @@ IncludeCategories:
   - Regex: '^("|<)llzk/.*("|>)$'   # LLZK headers
     Priority: 0                    # - Priority 0 forces LLZK headers to be grouped with the "main" header for a file,
                                    # see https://clang.llvm.org/docs/ClangFormatStyleOptions.html#includecategories
+  - Regex: '^("|<)r1cs/.*("|>)$'   # R1CS headers
+    Priority: 0                    # Needs to be set to 1 when we change priorities soon.
   - Regex: '^("|<)llzk-c/.*("|>)$' # LLZK C API headers 
-    Priority: 2                    # Set to priority 2 and onwards in preparation for putting LLZK headers in priority 1
+    Priority: 1                    # Set to priority 1 and onwards in preparation for putting LLZK headers in priority 1
   - Regex: '^<mlir/.*>$'           # MLIR headers
-    Priority: 3
+    Priority: 2
   - Regex: '^<mlir-c/.*>$'         # MLIR C API headers
-    Priority: 4
+    Priority: 3
   - Regex: '^<llvm/.*>$'           # LLVM headers
-    Priority: 5
+    Priority: 4
   - Regex: '^<.*(\.h)?>$'          # Standard library headers
-    Priority: 6
+    Priority: 5
   - Regex: '^.*$'                  # Everything else
-    Priority: 7
+    Priority: 6
 SortIncludes: true
 InsertNewlineAtEOF: true
 ---
