@@ -26,7 +26,7 @@ static void registerLLZKIncludeTransformationPasses() {
 using namespace llzk::include;
 
 // Include impl for transformation passes
-#include <llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.cpp.inc>
+#include "llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Include, llzk__include, llzk::include::IncludeDialect)
 

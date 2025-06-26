@@ -1,4 +1,4 @@
-//===-- Transforms.cpp - C impl for validation passes -------*- C++ -*-===//
+//===-- Validators.cpp - C impl for validation passes -----------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.

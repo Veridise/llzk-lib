@@ -35,7 +35,7 @@ using namespace llzk::polymorphic;
 using namespace mlir;
 
 // Include impl for transformation passes
-#include <llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.cpp.inc>
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(
     Polymorphic, llzk__polymorphic, llzk::polymorphic::PolymorphicDialect
