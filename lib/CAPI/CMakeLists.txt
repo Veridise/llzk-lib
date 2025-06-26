@@ -23,8 +23,18 @@ target_sources(LLZKCAPI PRIVATE
   Dialect/Struct.cpp 
   Dialect/Undef.cpp)
 target_link_libraries(
-  LLZKCAPI PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
-                     MLIRParser LLVMHeaders MLIRHeaders MLIRCAPIIR MLIRCAPIRegisterEverything)
+  LLZKCAPI PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} 
+  MLIRIR
+  MLIRParser 
+  LLVMHeaders 
+  MLIRHeaders 
+  MLIRCAPIIR 
+  MLIRCAPIRegisterEverything 
+  LLZK::DialectRegistration
+  LLZK::LLZKTransforms 
+  LLZK::LLZKValidators
+  LLZK::LLZKAnalysis 
+)
 add_dependencies(LLZKCAPI LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKCAPI)
 
