@@ -6,3 +6,9 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+
+#include "llzk-c/Dialect/Cast.h"
+
+#include "../CAPITestBase.h"
+
+TEST_F(CAPITest, mlir_get_dialect_handle_llzk_cast) { mlirGetDialectHandle__llzk__cast__(); }
