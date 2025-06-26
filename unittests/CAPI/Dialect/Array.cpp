@@ -124,6 +124,7 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
   for (auto op : ops) {
     mlirOperationDestroy(op);
   }
+  mlirOpBuilderDestroy(builder);
 }
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
@@ -142,6 +143,7 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
 
   EXPECT_TRUE(mlirOperationVerify(op));
   mlirOperationDestroy(op);
+  mlirOpBuilderDestroy(builder);
 }
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
@@ -157,4 +159,5 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
 
   EXPECT_TRUE(mlirOperationVerify(op));
   mlirOperationDestroy(op);
+  mlirOpBuilderDestroy(builder);
 }

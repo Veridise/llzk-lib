@@ -76,6 +76,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build) {
     EXPECT_NE(op.ptr, (void *)NULL);
     EXPECT_TRUE(mlirOperationVerify(op));
     mlirOperationDestroy(op);
+    mlirOpBuilderDestroy(builder);
   }
 }
 
@@ -95,6 +96,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_map) {
     EXPECT_NE(op.ptr, (void *)NULL);
     EXPECT_TRUE(mlirOperationVerify(op));
     mlirOperationDestroy(op);
+    mlirOpBuilderDestroy(builder);
   }
 }
 
@@ -113,6 +115,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_expr) {
     EXPECT_NE(op.ptr, (void *)NULL);
     EXPECT_TRUE(mlirOperationVerify(op));
     mlirOperationDestroy(op);
+    mlirOpBuilderDestroy(builder);
   }
 }
 
@@ -132,6 +135,7 @@ TEST_F(CAPITest, llzk_op_is_a_apply_map_op) {
     EXPECT_TRUE(mlirOperationVerify(op));
     EXPECT_TRUE(llzkOperationIsAApplyMapOp(op));
     mlirOperationDestroy(op);
+    mlirOpBuilderDestroy(builder);
   }
 }
 
@@ -153,6 +157,7 @@ TEST_F(CAPITest, llzk_apply_map_op_get_affine_map) {
     auto out_affine_map = llzkApplyMapOpGetAffineMap(op);
     EXPECT_TRUE(mlirAffineMapEqual(affine_map, out_affine_map));
     mlirOperationDestroy(op);
+    mlirOpBuilderDestroy(builder);
   }
 }
 
@@ -176,6 +181,7 @@ TEST_F(CAPITest, llzk_apply_map_op_get_dim_operands) {
     llzkApplyMapOpGetDimOperands(op, dims.data());
     EXPECT_EQ(dims.size(), 0);
     mlirOperationDestroy(op);
+    mlirOpBuilderDestroy(builder);
   }
 }
 
@@ -199,5 +205,6 @@ TEST_F(CAPITest, llzk_apply_map_op_get_symbol_operands) {
     llzkApplyMapOpGetSymbolOperands(op, syms.data());
     EXPECT_EQ(syms.size(), 0);
     mlirOperationDestroy(op);
+    mlirOpBuilderDestroy(builder);
   }
 }

@@ -285,6 +285,7 @@ TEST_F(StructDefTest, llzk_field_read_op_build) {
 
     mlirOperationDestroy(op);
     mlirOperationDestroy(_struct);
+    mlirOpBuilderDestroy(builder);
   }
 }
 
@@ -310,6 +311,7 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_affine_map_distance) {
 
     mlirOperationDestroy(op);
     mlirOperationDestroy(_struct);
+    mlirOpBuilderDestroy(builder);
   }
 }
 
@@ -328,6 +330,7 @@ TEST_F(StructDefTest, llzk_field_read_op_builder_with_const_param_distance) {
 
     mlirOperationDestroy(op);
     mlirOperationDestroy(_struct);
+    mlirOpBuilderDestroy(builder);
   }
 }
 
@@ -345,5 +348,6 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_literal_distance) {
 
     mlirOperationDestroy(op);
     mlirOperationDestroy(_struct);
+    mlirOpBuilderDestroy(builder);
   }
 }

@@ -185,6 +185,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build) {
   );
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
+  mlirOpBuilderDestroy(builder);
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_to_callee) {
@@ -195,6 +196,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee) {
   auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
+  mlirOpBuilderDestroy(builder);
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands) {
@@ -210,6 +212,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands) {
   );
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
+  mlirOpBuilderDestroy(builder);
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands_and_dims) {
@@ -224,6 +227,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands_and_dims) {
   );
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
+  mlirOpBuilderDestroy(builder);
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
@@ -238,6 +242,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
   );
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
+  mlirOpBuilderDestroy(builder);
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims) {
@@ -250,6 +255,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims)
   );
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
+  mlirOpBuilderDestroy(builder);
 }
 
 #define call_pred_test(name, func, expected)                                                       \
@@ -260,6 +266,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims)
     auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);      \
     EXPECT_EQ(func(call), expected);                                                               \
     mlirOperationDestroy(call);                                                                    \
+    mlirOpBuilderDestroy(builder);                                                                 \
   }
 
 call_pred_test(test_llzk_operation_is_a_call_op, llzkOperationIsACallOp, true);
@@ -276,6 +283,7 @@ TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
   EXPECT_TRUE(mlirTypeEqual(func_type, out_type));
 
   mlirOperationDestroy(call);
+  mlirOpBuilderDestroy(builder);
 }
 
 call_pred_test(test_llzk_call_op_get_callee_is_compute, llzkCallOpGetCalleeIsCompute, false);
@@ -300,4 +308,5 @@ TEST_F(FuncDialectTest, llzk_call_op_get_single_result_type_of_compute) {
   }
 
   mlirOperationDestroy(call);
+  mlirOpBuilderDestroy(builder);
 }
