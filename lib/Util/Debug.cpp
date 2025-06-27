@@ -24,7 +24,7 @@ void dumpSymbolTableWalk(Operation *symbolTableOp) {
         << op->getAttrOfType<StringAttr>(SymbolTable::getSymbolAttrName()) << '\n';
   };
   SymbolTable::walkSymbolTables(symbolTableOp, /*allSymUsesVisible=*/true, walkFn);
-  llvm::outs() << output;
+  llvm::dbgs() << output;
 }
 
 void dumpSymbolTable(llvm::raw_ostream &stream, SymbolTable &symTab, unsigned indent) {
@@ -42,7 +42,7 @@ void dumpSymbolTable(llvm::raw_ostream &stream, SymbolTable &symTab, unsigned in
 
 void dumpSymbolTable(SymbolTable &symTab) {
   // Buffer to a string then print to avoid multi-threaded mess
-  llvm::outs() << buildStringViaCallback([&symTab](llvm::raw_ostream &stream) {
+  llvm::dbgs() << buildStringViaCallback([&symTab](llvm::raw_ostream &stream) {
     dumpSymbolTable(stream, symTab);
   });
 }
@@ -63,7 +63,7 @@ void dumpSymbolTables(llvm::raw_ostream &stream, SymbolTableCollection &tables) 
 
 void dumpSymbolTables(SymbolTableCollection &tables) {
   // Buffer to a string then print to avoid multi-threaded mess
-  llvm::outs() << buildStringViaCallback([&tables](llvm::raw_ostream &stream) {
+  llvm::dbgs() << buildStringViaCallback([&tables](llvm::raw_ostream &stream) {
     dumpSymbolTables(stream, tables);
   });
 }
