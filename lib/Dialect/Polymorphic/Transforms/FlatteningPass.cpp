@@ -561,7 +561,7 @@ class StructCloner {
 
     // Insert 'newStruct' into the parent ModuleOp of the original StructDefOp. Use the
     // `SymbolTable::insert()` function directly so that the name will be made unique.
-    ModuleOp parentModule = llvm::cast<ModuleOp>(origStruct.getParentOp());
+    ModuleOp parentModule = origStruct.getParentOp<ModuleOp>(); // parent is ModuleOp per ODS
     symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(origStruct));
     // Retrieve the new type AFTER inserting since the name may be appended to make it unique and
     // use the remaining non-concrete parameters from the original type.

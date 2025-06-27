@@ -148,7 +148,7 @@ public:
     // Add the name of the field (its name is not optional)
     path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
     // Delegate to the parent handler (must be StructDefOp per ODS)
-    return buildPathFromRootToStruct(llvm::cast<StructDefOp>(to.getParentOp()), std::move(path));
+    return buildPathFromRootToStruct(to.getParentOp<StructDefOp>(), std::move(path));
   }
 
   FailureOr<SymbolRefAttr> getPathFromRootToFunc(FuncDefOp to) {
