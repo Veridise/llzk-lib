@@ -263,7 +263,7 @@ def LLZK_FieldWriteOp : FieldRefOpBase<"writef", [WitnessGen]> {
   let description = [{
     This operation writes a value to a named field in a struct/component.
   }];
-  let isRead = 1;
+  let isRead = 0;
 
   let arguments = (ins LLZK_StructType:$component,
       FlatSymbolRefAttr:$field_name, AnyLLZKType:$val);
