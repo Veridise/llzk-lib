@@ -14,6 +14,7 @@
 #include <llvm/ADT/SmallVector.h>
 
 #include "../CAPITestBase.h"
+
 TEST_F(CAPITest, mlir_get_dialect_handle_llzk_polymorphic) {
   { mlirGetDialectHandle__llzk__polymorphic__(); }
 }

@@ -9,7 +9,7 @@
 
 #include "llzk-c/Dialect/Function.h"
 
-#include <llzk-c/Support.h>
+#include "llzk-c/Support.h"
 
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
