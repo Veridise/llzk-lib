@@ -1,0 +1,2 @@
+fixed:
+  - FieldWriteOp.isRead() return value was incorrect
