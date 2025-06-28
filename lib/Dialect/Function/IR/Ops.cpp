@@ -19,6 +19,7 @@
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/OpImplementation.h>
@@ -695,6 +696,13 @@ bool CallOp::calleeIsStructConstrain() {
   return calleeIsStructFunctionImpl(FUNC_NAME_CONSTRAIN, getCallee(), [this]() {
     return getAtIndex<StructType>(this->getArgOperands().getTypes(), 0);
   });
+}
+
+FailureOr<SymbolLookupResult<FuncDefOp>> CallOp::getCalleeTarget(SymbolTableCollection &tables) {
+  Operation *thisOp = this->getOperation();
+  auto root = getRootModule(thisOp);
+  assert(succeeded(root));
+  return llzk::lookupSymbolIn<FuncDefOp>(tables, getCallee(), root->getOperation(), thisOp);
 }
 
 StructType CallOp::getSingleResultTypeOfCompute() {

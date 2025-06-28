@@ -1,0 +1,3 @@
+added:
+  - getCalleeTarget() on llzk::function::CallOp
+  - additional functions on FieldRefOpInterface

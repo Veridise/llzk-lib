@@ -348,6 +348,10 @@ def CallOp : FunctionDialectOp<
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` within a StructDefOp.
     bool calleeIsStructConstrain();
 
+    /// Resolve and return the target FuncDefOp for this CallOp.
+    ::mlir::FailureOr<::llzk::SymbolLookupResult<::llzk::function::FuncDefOp>>
+    getCalleeTarget(::mlir::SymbolTableCollection &tables);
+
     /// Assuming the callee is `FUNC_NAME_COMPUTE`, return the single StructType result.
     ::llzk::component::StructType getSingleResultTypeOfCompute();
   }];
