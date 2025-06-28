@@ -316,7 +316,7 @@ StructType FuncDefOp::getSingleResultTypeOfCompute() {
 //===----------------------------------------------------------------------===//
 
 LogicalResult ReturnOp::verify() {
-  auto function = llvm::cast<FuncDefOp>((*this)->getParentOp());
+  auto function = getParentOp<FuncDefOp>(); // parent is FuncDefOp per ODS
 
   // The operand number and types must match the function signature.
   const auto results = function.getFunctionType().getResults();
