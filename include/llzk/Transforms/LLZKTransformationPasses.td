@@ -85,7 +85,8 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
   let constructor = "llzk::createInlineStructsPass()";
   let options = [Option<"maxComplexity", "max-complexity", "unsigned",
                         /* default */ "0",
-                        "Maximum allowed constraint+multiplications in merged @constrain functions">,
+                        "Maximum allowed constraint+multiplications in merged "
+                        "@constrain functions">,
   ];
 }
 

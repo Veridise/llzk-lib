@@ -31,6 +31,8 @@ std::unique_ptr<mlir::Pass> createInlineStructsPass();
 
 void registerTransformationPassPipelines();
 
+void registerInliningExtensions(mlir::DialectRegistry &registry);
+
 #define GEN_PASS_REGISTRATION
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 
