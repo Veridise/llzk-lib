@@ -71,9 +71,9 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
 }
 
 def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
-  let summary = "Inlines nested structs (i.e. subcomponents).";
+  let summary = "Inlines nested structs (i.e., subcomponents).";
   let description = [{
-    This pass inlines nested structs (i.e. subcomponents) at struct-type fields and at calls to the
+    This pass inlines nested structs (i.e., subcomponents) at struct-type fields and at calls to the
     subcomponent compute/constrain functions. Inlining decisions are guided by the call graph of
     "constrain" functions.
     
@@ -85,7 +85,7 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
   let constructor = "llzk::createInlineStructsPass()";
   let options = [Option<"maxComplexity", "max-complexity", "unsigned",
                         /* default */ "0",
-                        "Maximum allowed constraint+multiplications ">,
+                        "Maximum allowed constraint+multiplications in merged @constrain functions">,
   ];
 }
 
