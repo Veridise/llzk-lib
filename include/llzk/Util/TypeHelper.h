@@ -70,7 +70,7 @@ public:
 };
 
 // This function asserts that the given Attribute kind is legal within the LLZK types that can
-// contain Attribute parameters (i.e. ArrayType, StructType, and TypeVarType). This should be used
+// contain Attribute parameters (i.e., ArrayType, StructType, and TypeVarType). This should be used
 // in any function that examines the attribute parameters within parameterized LLZK types to ensure
 // that the function handles all possible cases properly, especially if more legal attributes are
 // added in the future. Throw a fatal error if anything illegal is found, indicating that the caller
@@ -173,8 +173,8 @@ bool isDynamic(mlir::IntegerAttr intAttr);
 /// Optional result from type unifications. Maps `SymbolRefAttr` appearing in one type to the
 /// associated `Attribute` from the other type at the same nested position. The `Side` enum in the
 /// key indicates which input expression the `SymbolRefAttr` is from. Additionally, if a conflict is
-/// found (i.e. multiple Occurrences of a specific `SymbolRefAttr` on the same side map to different
-/// Attributes from the other side). The mapped value will be `nullptr`.
+/// found (i.e., multiple Occurrences of a specific `SymbolRefAttr` on the same side map to
+/// different Attributes from the other side). The mapped value will be `nullptr`.
 ///
 /// This map is used by the `llzk-flatten` pass to replace struct parameter `SymbolRefAttr` with
 /// static concrete values to produce the flattened versions of structs.

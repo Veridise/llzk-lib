@@ -187,7 +187,7 @@ CallOp newCallOpWithSplitResults(
       auto newArray = rewriter.create<CreateArrayOp>(loc, at);
       rewriter.replaceAllUsesWith(oldVal, newArray);
 
-      // For all indices in the ArrayType (i.e. the element count), write the next
+      // For all indices in the ArrayType (i.e., the element count), write the next
       // result from the new CallOp to the new array.
       std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
       assert(allIndices); // follows from legal() check
@@ -223,7 +223,7 @@ void processBlockArgs(Block &entryBlock, ConversionPatternRewriter &rewriter) {
       rewriter.replaceAllUsesWith(oldV, newArray);
       // Remove the argument from the block
       entryBlock.eraseArgument(i);
-      // For all indices in the ArrayType (i.e. the element count), generate a new block
+      // For all indices in the ArrayType (i.e., the element count), generate a new block
       // argument and a write of that argument to the new array.
       std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
       assert(allIndices); // follows from legal() check
@@ -279,9 +279,9 @@ void processInputOperands(
 namespace {
 
 enum Direction {
-  /// Copying a smaller array into a larger one, i.e. `InsertArrayOp`
+  /// Copying a smaller array into a larger one, i.e., `InsertArrayOp`
   SMALL_TO_LARGE,
-  /// Copying a larger array into a smaller one, i.e. `ExtractArrayOp`
+  /// Copying a larger array into a smaller one, i.e., `ExtractArrayOp`
   LARGE_TO_SMALL,
 };
 
@@ -299,7 +299,7 @@ inline void rewriteImpl(
   ArrayAttr indexAsAttr = op.indexOperandsToAttributeArray();
   assert(indexAsAttr); // follows from legal() check
 
-  // For all indices in the ArrayType (i.e. the element count), read from one array into the other
+  // For all indices in the ArrayType (i.e., the element count), read from one array into the other
   // (depending on direction flag).
   std::optional<SmallVector<ArrayAttr>> subIndices = smallType.getSubelementIndices();
   assert(subIndices); // follows from legal() check
@@ -486,7 +486,7 @@ public:
   }
 
   inline static bool legal(ArrayLengthOp op) {
-    // rewrite() can only work with constant dim size, i.e. must consider it legal otherwise
+    // rewrite() can only work with constant dim size, i.e., must consider it legal otherwise
     return !getDimSizeIfKnown(op.getDim(), op.getArrRefType()).has_value();
   }
 
@@ -754,7 +754,7 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
     OpPassManager nestedPM(ModuleOp::getOperationName());
     // Use SROA (Destructurable* interfaces) to split each array with linear size N into N arrays of
     // size 1. This is necessary because the mem2reg pass cannot deal with indexing and splitting up
-    // memory, i.e. it can only convert scalar memory access into SSA values.
+    // memory, i.e., it can only convert scalar memory access into SSA values.
     nestedPM.addPass(createSROA());
     // The mem2reg pass converts all of the size 1 array allocation and access into SSA values.
     nestedPM.addPass(createMem2Reg());

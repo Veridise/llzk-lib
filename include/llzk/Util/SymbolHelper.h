@@ -36,7 +36,7 @@ getFlatSymbolRefAttr(mlir::MLIRContext *context, const mlir::Twine &twine) {
   return mlir::FlatSymbolRefAttr::get(mlir::StringAttr::get(context, twine));
 }
 
-/// Build a SymbolRefAttr that prepends `tail` with `root`, i.e. `root::tail`.
+/// Build a SymbolRefAttr that prepends `tail` with `root`, i.e., `root::tail`.
 inline mlir::SymbolRefAttr asSymbolRefAttr(mlir::StringAttr root, mlir::SymbolRefAttr tail) {
   return mlir::SymbolRefAttr::get(root, getPieces(tail));
 }

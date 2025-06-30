@@ -1,5 +1,5 @@
 added:
-  - C API to give other languages potential access to LLZK APIs (i.e. via FFI)
+  - C API to give other languages potential access to LLZK APIs (i.e., via FFI)
   - Configuration:
       - Add sub sections
 changed:

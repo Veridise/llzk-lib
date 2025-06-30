@@ -34,7 +34,7 @@ def LLZK_AllowWitnessAttr
   let summary = "Marks functions to allow `WitnessGen` ops";
   let description = [{
     A unit attribute that can be attached to a `FuncDefOp` to indicate that ops
-    marked with `WitnessGen` (i.e. boolean and bitwise ops) are allowed within its body.
+    marked with `WitnessGen` (i.e., boolean and bitwise ops) are allowed within its body.
   }];
 }
 

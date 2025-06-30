@@ -51,7 +51,7 @@ public:
 
   template <typename InListType> std::optional<int64_t> linearize(InListType multiDimIndex) const;
 
-  // NOTE: If the 'multiDimIndex' is shorter than the array rank (i.e. number of dimensions), they
+  // NOTE: If the 'multiDimIndex' is shorter than the array rank (i.e., number of dimensions), they
   // indices are treated as the high-order/front dimensions of the array.
   template <typename InListType>
   std::optional<llvm::SmallVector<mlir::Attribute>> checkAndConvert(InListType multiDimIndex);

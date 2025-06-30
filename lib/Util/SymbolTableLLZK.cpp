@@ -322,7 +322,7 @@ static SmallVector<SymbolScope, 1> collectSymbolScopes(StringAttr symbol, Operat
 }
 
 /// Returns true if the given reference 'SubRef' is a sub reference of the
-/// reference 'ref', i.e. 'ref' is a further qualified reference.
+/// reference 'ref', i.e., 'ref' is a further qualified reference.
 static bool isReferencePrefixOf(SymbolRefAttr subRef, SymbolRefAttr ref) {
   if (ref == subRef) {
     return true;

@@ -83,12 +83,12 @@ namespace {
 class ConversionTracker {
   /// Tracks if some step performed a modification of the code such that another pass should be run.
   bool modified;
-  /// Maps original remote (i.e. use site) type to new remote type.
+  /// Maps original remote (i.e., use site) type to new remote type.
   /// Note: The keys are always parameterized StructType and the values are no-parameter StructType.
   DenseMap<StructType, StructType> structInstantiations;
   /// Contains the reverse of mappings in `structInstantiations` for use in legal conversion check.
   DenseMap<StructType, StructType> reverseInstantiations;
-  /// Maps new remote type (i.e. the values in 'structInstantiations') to a list of Diagnostic
+  /// Maps new remote type (i.e., the values in 'structInstantiations') to a list of Diagnostic
   /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
 
@@ -163,7 +163,7 @@ public:
     return delayedDiagnostics[newType];
   }
 
-  /// Check if the type conversion is legal, i.e. the new type unifies with and is more concrete
+  /// Check if the type conversion is legal, i.e., the new type unifies with and is more concrete
   /// than the old type with additional allowance for the results of struct flattening conversions.
   bool isLegalConversion(Type oldType, Type newType, const char *patName) const {
     std::function<bool(Type, Type)> checkInstantiations = [&](Type oTy, Type nTy) {
@@ -176,7 +176,7 @@ public:
         }
       }
       // Check if `nTy` is the result of a struct instantiation and if the pre-image of
-      // that instantiation (i.e. the parameterized version of the instantiated struct)
+      // that instantiation (i.e., the parameterized version of the instantiated struct)
       // is a more concrete unification of `oTy`.
       if (StructType newStructType = llvm::dyn_cast<StructType>(nTy)) {
         if (auto preImage = this->reverseInstantiations.lookup(newStructType)) {
@@ -210,7 +210,7 @@ public:
 };
 
 /// Patterns can use this listener and call notifyMatchFailure(..) for failures where the entire
-/// pass must fail, i.e. where instantiation would introduce an illegal type conversion.
+/// pass must fail, i.e., where instantiation would introduce an illegal type conversion.
 struct MatchFailureListener : public RewriterBase::Listener {
   bool hadFailure = false;
 
@@ -573,7 +573,7 @@ class StructCloner {
       llvm::dbgs() << "[StructCloner]   cloned remote type: " << newRemoteType << '\n';
     });
 
-    // Within the new struct, replace all references to the original StructType (i.e. the
+    // Within the new struct, replace all references to the original StructType (i.e., the
     // locally-parameterized version) with the new locally-parameterized StructType,
     // and replace all uses of the removed struct parameters with the concrete values.
     MappedTypeConverter tyConv(typeAtDef, newStruct.getType(), paramNameToConcrete);
@@ -823,7 +823,7 @@ struct AffineMapFolder {
     assert(in.mapOpGroups.size() <= in.paramsOfStructTy.size());
     assert(std::cmp_equal(in.mapOpGroups.size(), in.dimsPerGroup.size()));
 
-    size_t idx = 0; // index in `mapOpGroups`, i.e. the number of AffineMapAttr encountered
+    size_t idx = 0; // index in `mapOpGroups`, i.e., the number of AffineMapAttr encountered
     for (Attribute sizeAttr : in.paramsOfStructTy) {
       if (AffineMapAttr m = dyn_cast<AffineMapAttr>(sizeAttr)) {
         ValueRange currMapOps = in.mapOpGroups[idx++];
@@ -1046,7 +1046,7 @@ private:
                    << " unifications of arg types: " << debug::toStringList(unifications) << '\n';
     });
 
-    // Check for LHS SymRef (i.e. from the target function) that have RHS concrete Attributes (i.e.
+    // Check for LHS SymRef (i.e., from the target function) that have RHS concrete Attributes (i.e.
     // from the call argument types) without any struct parameters (because the type with concrete
     // struct parameters will be used to instantiate the target struct rather than the fully
     // flattened struct type resulting in type mismatch of the callee to target) and perform those
@@ -1234,7 +1234,7 @@ public:
           } else if (writeToType != newType) {
             // Typically, there will only be one write for each field of a struct but do not rely on
             // that assumption. If multiple writes with a different types A and B are found where
-            // A->B is a legal conversion (i.e. more concrete unification), then it is safe to use
+            // A->B is a legal conversion (i.e., more concrete unification), then it is safe to use
             // type B with the assumption that the write with type A will be updated by another
             // pattern to also use type B.
             if (!tracker_.isLegalConversion(writeToType, newType, "UpdateFieldDefTypeFromWrite")) {
@@ -1370,7 +1370,7 @@ public:
 };
 
 /// Update CallOp result type based on the updated return type from the target FuncDefOp.
-/// This only applies to global (i.e. non-struct) functions because the functions within structs
+/// This only applies to global (i.e., non-struct) functions because the functions within structs
 /// only return StructType or nothing and propagating those can result in bringing un-instantiated
 /// types from a templated struct into the current call which will give errors.
 class UpdateGlobalCallOpTypes final : public OpRewritePattern<CallOp> {
@@ -1687,7 +1687,7 @@ private:
     return true;
   }
 
-  /// A use graph node is safe if it has no predecessors (i.e. users) or all have safe SymbolOp.
+  /// A use graph node is safe if it has no predecessors (i.e., users) or all have safe SymbolOp.
   bool collectSafeToErase(const SymbolUseGraphNode *check) {
     assert(check); // pre-condition
     for (const SymbolUseGraphNode *p : check->predecessorIter()) {

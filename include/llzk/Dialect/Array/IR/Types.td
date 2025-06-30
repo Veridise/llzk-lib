@@ -101,8 +101,8 @@ def LLZK_ArrayType
     /// Return a list of all valid indices for this ArrayType.
     std::optional<::llvm::SmallVector<::mlir::ArrayAttr>> getSubelementIndices() const;
 
-    /// Returns if this type is ranked, i.e. it has a known number of dimensions.
-    /// LLZK arrays are always ranked, i.e. the number of dimensions is known.
+    /// Returns if this type is ranked, i.e., it has a known number of dimensions.
+    /// LLZK arrays are always ranked, i.e., the number of dimensions is known.
     /// Required by the ShapedTypeInterface interface.
     inline bool hasRank() const { return true; }
 

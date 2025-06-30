@@ -151,7 +151,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Global/Pure functions called compute and constrain must not have the restrictions
-//   applied, i.e. parameter and return type requirements and caller restrictions.
+//   applied, i.e., parameter and return type requirements and caller restrictions.
 module attributes {veridise.lang = "llzk"} {
   function.def @compute(%x: i1) -> i1 {
     function.return %x : i1

@@ -36,7 +36,7 @@ class FieldWriteValidatorPass
     StructDefOp structDef = getOperation();
     FuncDefOp computeFunc = structDef.getComputeFuncOp();
 
-    // Initialize map with all field names mapped to nullptr (i.e. no write found).
+    // Initialize map with all field names mapped to nullptr (i.e., no write found).
     llvm::StringMap<FieldWriteOp> fieldNameToWriteOp;
     for (FieldDefOp x : structDef.getFieldDefs()) {
       fieldNameToWriteOp[x.getSymName()] = nullptr;

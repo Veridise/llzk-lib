@@ -87,7 +87,7 @@ InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const
   );
 }
 
-/// Verifies that the given `actualType` matches the `StructDefOp` given (i.e. for the "self" type
+/// Verifies that the given `actualType` matches the `StructDefOp` given (i.e., for the "self" type
 /// parameter and return of the struct functions).
 LogicalResult checkSelfType(
     SymbolTableCollection &tables, StructDefOp &expectedStruct, Type actualType, Operation *origin,
@@ -409,7 +409,7 @@ static LogicalResult
 verifyFieldDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation *origin) {
   if (StructType fieldStructType = llvm::dyn_cast<StructType>(fieldType)) {
     // Special case for StructType verifies that the field type can resolve and that it is NOT the
-    // parent struct (i.e. struct fields cannot create circular references).
+    // parent struct (i.e., struct fields cannot create circular references).
     auto fieldTypeRes = verifyStructTypeResolution(tables, fieldStructType, origin);
     if (failed(fieldTypeRes)) {
       return failure(); // above already emits a sufficient error message

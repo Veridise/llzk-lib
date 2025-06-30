@@ -586,7 +586,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-// FieldDef and FieldRead w/ non-static shape (i.e. cannot be flattened to scalars)
+// FieldDef and FieldRead w/ non-static shape (i.e., cannot be flattened to scalars)
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB2<[@N]> {
     function.def @compute(%p: !struct.type<@ComponentB1<[@N]>>) -> !struct.type<@ComponentB2<[@N]>> {
@@ -633,7 +633,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-// Func and CallOp w/ non-static shape (i.e. cannot be flattened to scalars)
+// Func and CallOp w/ non-static shape (i.e., cannot be flattened to scalars)
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentC1<[@N]> {
     function.def @compute(%p: !array.type<@N x !felt.type>) -> !struct.type<@ComponentC1<[@N]>> {

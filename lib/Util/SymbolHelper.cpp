@@ -310,7 +310,7 @@ LogicalResult verifyParamOfType(
 ) {
   // Most often, StructType and ArrayType SymbolRefAttr parameters will be defined as parameters of
   // the StructDefOp that the current Operation is nested within. These are always flat references
-  // (i.e. contain no nested references).
+  // (i.e., contain no nested references).
   if (param.getNestedReferences().empty()) {
     FailureOr<StructDefOp> getParentRes = getParentOfType<StructDefOp>(origin);
     if (succeeded(getParentRes)) {
