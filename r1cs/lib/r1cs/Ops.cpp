@@ -11,6 +11,8 @@
 
 #include <mlir/IR/OpImplementation.h>
 
+#include <llvm/Support/Casting.h>
+
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "r1cs/Dialect/IR/Ops.cpp.inc"
@@ -82,14 +84,16 @@ void CircuitDefOp::print(OpAsmPrinter &p) {
 
   if (!entry.empty()) {
     p << " inputs (";
+    auto dictAttr = getArgAttrs().value_or(DictionaryAttr::get(getContext()));
     llvm::interleaveComma(entry.getArguments(), p, [&](BlockArgument arg) {
       p << arg << ": ";
       p.printType(arg.getType());
 
       if (hasAttrs) {
-        auto dictAttr = getArgAttrs().value_or(DictionaryAttr::get(getContext()));
         if (auto attr = dictAttr.get(std::to_string(arg.getArgNumber()))) {
-          p.printOptionalAttrDict(dictAttr.getValue());
+          p << " {";
+          p.printAttribute(attr);
+          p << "}";
         }
       }
     });
@@ -123,9 +127,9 @@ LogicalResult CircuitDefOp::verify() {
         return emitOpError() << "argument index " << index << " out of bounds (only " << numArgs
                              << " arguments)";
       }
-      if (!attr.getValue().isa<r1cs::PublicAttr>()) {
-        return emitOpError() << "invalid attribute for argument " << index
-                             << ": expected #r1cs.pub";
+      if (!llvm::isa<r1cs::PublicAttr>(attr.getValue())) {
+        return emitOpError() << "invalid attribute for argument " << index << ": expected "
+                             << PublicAttr::name;
       }
     }
   }

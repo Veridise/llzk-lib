@@ -440,7 +440,7 @@ private:
         R1CSConstraint c(APSInt(cst.getValueAttr().getValue(), false));
         constraintMap[v] = c;
       } else {
-        llvm::errs() << "Unhandled op in R1CS lowering: " << *op << "\n";
+        llvm::errs() << "Unhandled op in R1CS lowering: " << *op << '\n';
         llvm_unreachable("unhandled op");
       }
     }
