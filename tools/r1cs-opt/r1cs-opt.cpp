@@ -21,9 +21,5 @@ int main(int argc, char **argv) {
   r1cs::registerAllDialects(registry);
   mlir::MLIRContext context;
   context.appendDialectRegistry(registry);
-
-  // Force dialect loading so that custom types like SignalType get registered
-  context.loadAllAvailableDialects();
-
   return mlir::asMainReturnCode(mlir::MlirOptMain(argc, argv, "R1CS Optimizer\n", registry));
 }
