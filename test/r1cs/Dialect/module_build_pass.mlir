@@ -1,4 +1,4 @@
-// RUN: r1cs-opt %s | FileCheck %s
+// RUN: r1cs-opt %s  2>&1 | FileCheck --enable-var-scope %s
 
 module attributes {veridise.lang = "r1cs"} {
   r1cs.circuit @CmpConstraint inputs (%arg0: !r1cs.signal {pub = #r1cs.pub}, %arg1: !r1cs.signal, %arg2: !r1cs.signal) {
