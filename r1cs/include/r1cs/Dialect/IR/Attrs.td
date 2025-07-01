@@ -13,7 +13,6 @@
 include "mlir/IR/AttrTypeBase.td"
 include "r1cs/Dialect/IR/Dialect.td"
 
-
 def FeltAttr : AttrDef<R1CSDialect, "Felt"> {
   let summary = "Field element represented as an arbitrary precision integer";
   let cppClassName = "FeltAttr";
@@ -33,18 +32,15 @@ def FeltAttr : AttrDef<R1CSDialect, "Felt"> {
 }
 
 def PublicAttr : AttrDef<R1CSDialect, "Public"> {
-  let summary = "A unit attribute to mark a type as public";
+  let summary = "An attribute to mark a type as public";
   let mnemonic = "pub";
   let description = [{
     Examples:
 
    ```
-   TODO: Add example
+   %0 = r1cs.def 0 : !r1cs.signal {pub = #r1cs.pub}
     ```
   }];
 }
-
-def PublicArrayAttr : TypedArrayAttrBase<PublicAttr,
-                                           "array attribute of 'public' modifiers">; 
 
 #endif // R1CS_ATTRS
