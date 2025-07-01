@@ -33,7 +33,7 @@ def R1CS_CircuitDefOp : R1CS_Op<"circuit", [
     Example:
 
     ```mlir
-      r1cs.circuit @CmpConstraint inputs (%arg0: !r1cs.signal {"0" = #r1cs.pub}, %arg1: !r1cs.signal, %arg2: !r1cs.signal) {
+      r1cs.circuit @CmpConstraint inputs (%arg0: !r1cs.signal {#r1cs.pub}, %arg1: !r1cs.signal, %arg2: !r1cs.signal) {
         %0 = r1cs.def 0 : !r1cs.signal {pub = #r1cs.pub}
         %1 = r1cs.def 1 : !r1cs.signal
         %2 = r1cs.def 2 : !r1cs.signal
