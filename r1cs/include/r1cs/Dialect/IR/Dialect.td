@@ -17,14 +17,7 @@ def R1CSDialect : Dialect {
   let summary = "R1CS";
   let cppNamespace = "::r1cs";
   let usePropertiesForAttributes = 0;
-  let useDefaultTypePrinterParser = 1;
-  let useDefaultAttributePrinterParser = 0;
-
-  let extraClassDeclaration = [{
-    ::mlir::Attribute parseAttribute(::mlir::DialectAsmParser &parser,
-                                     ::mlir::Type type) const override;
-    void printAttribute(::mlir::Attribute attr,
-                        ::mlir::DialectAsmPrinter &printer) const override;
-  }];
+  let useDefaultTypePrinterParser = true;
+  let useDefaultAttributePrinterParser = true;
 }
 #endif

@@ -19,26 +19,39 @@ using namespace mlir;
 namespace r1cs {
 
 ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
+  // Parse symbol name
   StringAttr symName;
   if (parser.parseSymbolName(symName, "sym_name", result.attributes)) {
     return failure();
   }
 
-  // Optional inputs (...)
   SmallVector<OpAsmParser::Argument> args;
-  Type argType;
+  DenseMap<unsigned, Attribute> perArgAttrs;
+
   if (succeeded(parser.parseOptionalKeyword("inputs"))) {
     if (parser.parseLParen()) {
       return failure();
     }
 
+    unsigned idx = 0;
     do {
       OpAsmParser::Argument arg;
-      if (parser.parseArgument(arg) || parser.parseColonType(argType)) {
+      Type type;
+      if (parser.parseArgument(arg) || parser.parseColonType(type)) {
         return failure();
       }
-      arg.type = argType;
+      arg.type = type;
+
+      // Try to parse an optional `{...}` attr
+      NamedAttrList attrList;
+      if (succeeded(parser.parseOptionalAttrDict(attrList))) {
+        if (auto pubAttr = attrList.get("pub")) {
+          perArgAttrs[idx] = pubAttr;
+        }
+      }
+
       args.push_back(arg);
+      idx++;
     } while (succeeded(parser.parseOptionalComma()));
 
     if (parser.parseRParen()) {
@@ -46,35 +59,42 @@ ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
     }
   }
 
-  // Parse optional attribute dict
-  if (parser.parseOptionalAttrDict(result.attributes)) {
-    return failure();
+  // Later: attach DictionaryAttr mapping "0", "1", ... to parsed attr
+  NamedAttrList attrs;
+  for (auto [i, attr] : perArgAttrs) {
+    attrs.append(std::to_string(i), attr);
   }
 
-  // Parse body region with those args
+  if (!attrs.empty()) {
+    result.addAttribute("arg_attrs", DictionaryAttr::get(parser.getContext(), attrs));
+  }
+
   Region *body = result.addRegion();
   return parser.parseRegion(*body, args);
 }
 
-void CircuitDefOp::print(mlir::OpAsmPrinter &p) {
+void CircuitDefOp::print(OpAsmPrinter &p) {
   p << ' ';
   p.printSymbolName(getSymName());
 
   Block &entry = getBody().front();
+  bool hasAttrs = getArgAttrs().has_value();
+
   if (!entry.empty()) {
     p << " inputs (";
     llvm::interleaveComma(entry.getArguments(), p, [&](BlockArgument arg) {
       p << arg << ": ";
-      if (auto sigTy = arg.getType().dyn_cast<SignalType>()) {
-        sigTy.print(p);
-      } else {
-        p.printType(arg.getType()); // fallback for robustness
+      p.printType(arg.getType());
+
+      if (hasAttrs) {
+        auto dictAttr = getArgAttrs().value_or(DictionaryAttr::get(getContext()));
+        if (auto attr = dictAttr.get(std::to_string(arg.getArgNumber()))) {
+          p.printOptionalAttrDict(dictAttr.getValue());
+        }
       }
     });
-    p << ')';
+    p << ") ";
   }
-
-  p.printOptionalAttrDict((*this)->getAttrs(), {"sym_name"});
   p.printRegion(getBody(), /*printEntryBlockArgs=*/false);
 }
 
@@ -86,8 +106,53 @@ mlir::Block *CircuitDefOp::addEntryBlock() {
   return block;
 }
 
-void CircuitDefOp::build(OpBuilder &builder, OperationState &state, llvm::StringRef name) {
-  state.addAttribute(SymbolTable::getSymbolAttrName(), builder.getStringAttr(name));
-  state.addRegion();
+LogicalResult CircuitDefOp::verify() {
+
+  // === Step 1: Check that each arg_attrs key is a valid argument index ===
+  if (getArgAttrs().has_value()) {
+    DictionaryAttr dict = *getArgAttrs();
+    unsigned numArgs = getBody().front().getNumArguments();
+
+    for (auto attr : dict) {
+      unsigned index = 0;
+      if (attr.getName().strref().getAsInteger(10, index)) {
+        return emitOpError() << "invalid key '" << attr.getName()
+                             << "' in 'arg_attrs': expected integer index";
+      }
+      if (index >= numArgs) {
+        return emitOpError() << "argument index " << index << " out of bounds (only " << numArgs
+                             << " arguments)";
+      }
+      if (!attr.getValue().isa<r1cs::PublicAttr>()) {
+        return emitOpError() << "invalid attribute for argument " << index
+                             << ": expected #r1cs.pub";
+      }
+    }
+  }
+
+  // === Step 2: Check that signal labels are unique ===
+  DenseSet<uint64_t> seenLabels;
+  bool foundPublic = false;
+
+  for (auto &op : getBody().front()) {
+    if (auto def = dyn_cast<SignalDefOp>(op)) {
+      uint64_t label = def.getLabel();
+      if (!seenLabels.insert(label).second) {
+        return def.emitOpError() << "duplicate signal label: " << label;
+      }
+
+      if (def.getPub().has_value()) {
+        foundPublic = true;
+      }
+    }
+  }
+
+  // === Step 3: Require at least one public signal ===
+  if (!foundPublic) {
+    return emitOpError() << "at least one signal must be marked public";
+  }
+
+  return success();
 }
+
 } // namespace r1cs

@@ -18,9 +18,6 @@ class R1CS_Type<string name, string storage> : TypeDef<R1CSDialect, name> {
 
 def R1CS_SignalType : R1CS_Type<"Signal", "signal"> {
   let summary = "R1CS signal wire type";
-  let parameters = (ins "bool":$isPublic);
-
-  let hasCustomAssemblyFormat = 1;
 }
 
 def R1CS_LinearType : R1CS_Type<"Linear", "linear"> {

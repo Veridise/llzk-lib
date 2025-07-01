@@ -106,7 +106,7 @@ private:
   }
 
   Value lowerExpression(
-      Value val, unsigned maxDegree, StructDefOp structDef, FuncDefOp constrainFunc,
+      Value val, StructDefOp structDef, FuncDefOp constrainFunc,
       DenseMap<Value, unsigned> &degreeMemo, DenseMap<Value, Value> &rewrites,
       SmallVector<AuxAssignment> &auxAssignments
   ) {
@@ -123,10 +123,10 @@ private:
     if (auto mulOp = val.getDefiningOp<MulFeltOp>()) {
       // Recursively lower operands first
       Value lhs = lowerExpression(
-          mulOp.getLhs(), maxDegree, structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+          mulOp.getLhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
       );
       Value rhs = lowerExpression(
-          mulOp.getRhs(), maxDegree, structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+          mulOp.getRhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
       );
 
       unsigned lhsDeg = getDegree(lhs, degreeMemo);
@@ -215,7 +215,9 @@ private:
 
     // Validate degree parameter
     if (maxDegree < 2) {
-      moduleOp.emitError() << "Invalid max degree: " << maxDegree.getValue() << ". Must be >= 2.";
+      auto diag = moduleOp.emitError();
+      diag << "Invalid max degree: " << maxDegree.getValue() << ". Must be >= 2.";
+      diag.report();
       signalPassFailure();
       return;
     }
@@ -224,15 +226,19 @@ private:
       FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
       FuncDefOp computeFunc = structDef.getComputeFuncOp();
       if (!constrainFunc) {
-        structDef.emitOpError() << "\"" << structDef.getName() << "\" doesn't have a '"
-                                << FUNC_NAME_CONSTRAIN << "' function";
+        auto diag = structDef.emitOpError();
+        diag << "\"" << structDef.getName() << "\" doesn't have a '" << FUNC_NAME_CONSTRAIN
+             << "' function";
+        diag.report();
         signalPassFailure();
         return;
       }
 
       if (!computeFunc) {
-        structDef.emitOpError() << "\"" << structDef.getName() << "\" doesn't have a '"
-                                << FUNC_NAME_COMPUTE << "' function";
+        auto diag = structDef.emitOpError();
+        diag << "\"" << structDef.getName() << "\" doesn't have a '" << FUNC_NAME_COMPUTE
+             << "' function";
+        diag.report();
         signalPassFailure();
         return;
       }
@@ -255,15 +261,13 @@ private:
 
         if (degreeLhs > maxDegree) {
           Value loweredExpr = lowerExpression(
-              lhsOperand.get(), maxDegree, structDef, constrainFunc, degreeMemo, rewrites,
-              auxAssignments
+              lhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
           );
           lhsOperand.set(loweredExpr);
         }
         if (degreeRhs > maxDegree) {
           Value loweredExpr = lowerExpression(
-              rhsOperand.get(), maxDegree, structDef, constrainFunc, degreeMemo, rewrites,
-              auxAssignments
+              rhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
           );
           rhsOperand.set(loweredExpr);
         }
@@ -273,7 +277,9 @@ private:
       // https://veridise.atlassian.net/browse/LLZK-245 being fixed Once this is fixed, the op
       // should lower all the elements in the row being looked up
       constrainFunc.walk([&](EmitContainmentOp containOp) {
-        moduleOp.emitError() << "EmitContainmentOp is unsupported for now in the lowering pass";
+        auto diag = moduleOp.emitError();
+        diag << "EmitContainmentOp is unsupported for now in the lowering pass";
+        diag.report();
         signalPassFailure();
         return;
       });
@@ -289,7 +295,7 @@ private:
 
             if (deg > 1) {
               Value loweredArg = lowerExpression(
-                  arg, maxDegree, structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+                  arg, structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
               );
               arg = loweredArg;
               modified = true;

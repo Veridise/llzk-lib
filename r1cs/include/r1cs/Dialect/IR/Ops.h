@@ -12,6 +12,7 @@
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/Dialect/IR/Types.h"
 
+#include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 

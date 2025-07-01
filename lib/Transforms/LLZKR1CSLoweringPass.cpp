@@ -46,7 +46,7 @@ using namespace llzk::function;
 using namespace llzk::component;
 using namespace llzk::constrain;
 
-#define DEBUG_TYPE "llzk-r1cs-lowering-pass"
+#define DEBUG_TYPE "llzk-r1cs-lowering"
 #define R1CS_AUXILIARY_FIELD_PREFIX "__llzk_r1cs_lowering_pass_aux_field_"
 
 namespace {
@@ -62,8 +62,8 @@ struct LinearCombination {
     if (coeff.isZero()) {
       return;
     }
-    auto it = terms.find(v);
-    if (it == terms.end()) {
+
+    if (!terms.contains(v)) {
       terms[v] = coeff;
     } else {
       terms[v] += coeff;
@@ -96,8 +96,7 @@ struct LinearCombination {
     LinearCombination result(*this);
 
     for (const auto &kv : other.terms) {
-      auto it = result.terms.find(kv.first);
-      if (it == result.terms.end()) {
+      if (!result.terms.contains(kv.first)) {
         result.terms[kv.first] = kv.second;
       } else {
         result.terms[kv.first] = expandingAdd(result.terms[kv.first], kv.second);
@@ -156,9 +155,11 @@ struct R1CSConstraint {
 
   R1CSConstraint() = default;
 
+  inline bool isLinearOnly() const { return a.terms.empty() && b.terms.empty(); }
+
   R1CSConstraint multiply(const R1CSConstraint &other) {
-    auto isDegZero = [](const R1CSConstraint &c) {
-      return c.a.terms.empty() && c.b.terms.empty() && c.c.terms.empty();
+    auto isDegZero = [](const R1CSConstraint &constraint) {
+      return constraint.a.terms.empty() && constraint.b.terms.empty() && constraint.c.terms.empty();
     };
 
     if (isDegZero(other)) {
@@ -168,11 +169,7 @@ struct R1CSConstraint {
       return other.scaled(other.c.constant);
     }
 
-    auto isLinearOnly = [](const R1CSConstraint &c) {
-      return c.a.terms.empty() && c.b.terms.empty();
-    };
-
-    if (isLinearOnly(*this) && isLinearOnly(other)) {
+    if (isLinearOnly() && other.isLinearOnly()) {
       R1CSConstraint result;
       result.a = this->c;
       result.b = other.c;
@@ -183,30 +180,27 @@ struct R1CSConstraint {
       return result;
     }
     llvm::errs() << "R1CSConstraint::multiply: Only supported for purely linear constraints.\n";
-    assert(false && "Invalid multiply: non-linear constraint(s) involved");
+    llvm_unreachable("Invalid multiply: non-linear constraint(s) involved");
   }
 
   R1CSConstraint add(const R1CSConstraint &other) {
-    auto isLinearOnly = [](const R1CSConstraint &c) {
-      return c.a.terms.empty() && c.b.terms.empty();
-    };
 
-    if (isLinearOnly(*this)) {
+    if (isLinearOnly()) {
       R1CSConstraint result(other);
       result.c = result.c.add(this->c);
       return result;
     }
-    if (isLinearOnly(other)) {
+    if (other.isLinearOnly()) {
       R1CSConstraint result(*this);
       result.c = result.c.add(other.c);
       return result;
     }
     llvm::errs() << "R1CSConstraint::add: Only supported for purely linear constraints.\n";
-    assert(false && "Invalid add: non-linear constraint(s) involved");
+    llvm_unreachable("Invalid add: non-linear constraint(s) involved");
   }
 
   void print(raw_ostream &os) const {
-    os << "(";
+    os << '(';
     a.print(os);
     os << ") * (";
     b.print(os);
@@ -280,7 +274,7 @@ private:
       DenseMap<Value, unsigned> &degreeMemo, DenseMap<Value, Value> &rewrites,
       SmallVectorImpl<AuxAssignment> &auxAssignments, OpBuilder &builder
   ) {
-    if (rewrites.count(root)) {
+    if (rewrites.contains(root)) {
       return rewrites[root];
     }
 
@@ -290,7 +284,7 @@ private:
     // We perform a bottom up rewrite of the expressions. For any expression e := op(e_1, ...,
     // e_n) we first rewrite e_1, ..., e_n if necessary and then rewrite e based on op.
     for (Value val : postOrder) {
-      if (rewrites.count(val)) {
+      if (rewrites.contains(val)) {
         continue;
       }
 
@@ -318,7 +312,7 @@ private:
       }
 
       // Helper function for getting degree from memo map
-      auto getDeg = [&](Value v) -> unsigned {
+      auto getDeg = [&degreeMemo](Value v) -> unsigned {
         auto it = degreeMemo.find(v);
         assert(it != degreeMemo.end() && "Missing degree");
         return it->second;
@@ -401,7 +395,7 @@ private:
         continue;
       }
 
-      llvm::errs() << "Unhandled op in normalize ForR1CS: " << *op << "\n";
+      llvm::errs() << "Unhandled op in normalize ForR1CS: " << *op << '\n';
       signalPassFailure();
     }
 
@@ -417,7 +411,7 @@ private:
 
     getPostOrder(poly, postorder);
 
-    // 2. Bottom-up construction of R1CSConstraints
+    // Bottom-up construction of R1CSConstraints
     for (Value v : postorder) {
       Operation *op = v.getDefiningOp();
       if (!op || (dyn_cast<FieldReadOp>(op) != nullptr)) {
@@ -447,7 +441,7 @@ private:
         constraintMap[v] = c;
       } else {
         llvm::errs() << "Unhandled op in R1CS lowering: " << *op << "\n";
-        assert(false && "unhandled op");
+        llvm_unreachable("unhandled op");
       }
     }
 
@@ -459,12 +453,7 @@ private:
     R1CSConstraint pconst = lowerPolyToR1CS(p);
     R1CSConstraint qconst = lowerPolyToR1CS(q);
 
-    auto getDeg = [&](Value v) -> unsigned {
-      auto it = degreeMemo.find(v);
-      assert(it != degreeMemo.end() && "Missing degree");
-      return it->second;
-    };
-    if (getDeg(p) == 2) {
+    if (degreeMemo.at(p) == 2) {
       return pconst.add(qconst.negated());
     }
     return qconst.add(pconst.negated());
@@ -484,7 +473,7 @@ private:
           assert(fieldVal != fieldMap.end() && "Field read not associated with a value");
           return fieldVal->second;
         }
-        v.getDefiningOp()->emitError("Value not mapped in R1CS lowering");
+        v.getDefiningOp()->emitError("Value not mapped in R1CS lowering").report();
         signalPassFailure();
       }
       return valueMap.lookup(v);
@@ -546,11 +535,11 @@ private:
     Location loc = structDef.getLoc();
     OpBuilder topBuilder(moduleOp.getBodyRegion());
 
-    // Step 2: Validate struct fields are felt and prepare signal types for circuit result types
+    // Validate struct fields are felt and prepare signal types for circuit result types
     bool hasPublicSignals = false;
     for (auto field : structDef.getFieldDefs()) {
       if (!field.getType().isa<FeltType>()) {
-        field.emitError("Only felt fields are supported as output signals");
+        field.emitError("Only felt fields are supported as output signals").report();
         signalPassFailure();
         return;
       }
@@ -560,10 +549,21 @@ private:
     }
 
     if (!hasPublicSignals) {
-      structDef.emitError("Struct should have at least one public output");
+      structDef.emitError("Struct should have at least one public output").report();
     }
+    llvm::SmallVector<mlir::NamedAttribute> argAttrPairs;
 
-    auto circuit = topBuilder.create<r1cs::CircuitDefOp>(loc, structDef.getSymName().str());
+    for (auto [i, arg] : llvm::enumerate(llvm::drop_begin(entryBlock.getArguments(), 1))) {
+      if (constrainFunc.hasArgPublicAttr(i + 1)) {
+        auto key = topBuilder.getStringAttr(std::to_string(i));
+        auto value = r1cs::PublicAttr::get(moduleOp.getContext());
+        argAttrPairs.emplace_back(key, value);
+      }
+    }
+    auto dictAttr = topBuilder.getDictionaryAttr(argAttrPairs);
+    auto circuit =
+        topBuilder.create<r1cs::CircuitDefOp>(loc, structDef.getSymName().str(), dictAttr);
+
     Block *circuitBlock = circuit.addEntryBlock();
 
     OpBuilder bodyBuilder = OpBuilder::atBlockEnd(circuitBlock);
@@ -571,12 +571,11 @@ private:
     // Step 3: Validate that all parameters to the constrain function are felt types
     for (auto [i, arg] : llvm::enumerate(llvm::drop_begin(entryBlock.getArguments(), 1))) {
       if (!arg.getType().isa<FeltType>()) {
-        constrainFunc.emitOpError("All input arguments must be of felt type");
+        constrainFunc.emitOpError("All input arguments must be of felt type").report();
         signalPassFailure();
         return;
       }
-      auto signalType =
-          r1cs::SignalType::get(moduleOp.getContext(), constrainFunc.hasArgPublicAttr(i + 1));
+      auto signalType = r1cs::SignalType::get(moduleOp.getContext());
       auto blockArg = circuitBlock->addArgument(signalType, loc);
       valueMap.map(arg, blockArg);
     }
@@ -586,12 +585,14 @@ private:
     DenseMap<StringRef, Value> fieldSignalMap;
     uint32_t signalDefCntr = 0;
     for (auto field : structDef.getFieldDefs()) {
+      r1cs::PublicAttr pubAttr;
+      if (field.hasPublicAttr()) {
+        pubAttr = r1cs::PublicAttr::get(moduleOp.getContext());
+      }
       auto defOp = bodyBuilder.create<r1cs::SignalDefOp>(
-          field.getLoc(), r1cs::SignalType::get(moduleOp.getContext(), field.hasPublicAttr()),
-          bodyBuilder.getUI32IntegerAttr(signalDefCntr),
-          mlir::UnitAttr::get(moduleOp.getContext()) // isPublic
+          field.getLoc(), r1cs::SignalType::get(moduleOp.getContext()),
+          bodyBuilder.getUI32IntegerAttr(signalDefCntr), pubAttr
       );
-
       signalDefCntr++;
       fieldSignalMap.insert({field.getName(), defOp.getOut()});
     }
@@ -618,7 +619,7 @@ private:
       FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
       FuncDefOp computeFunc = structDef.getComputeFuncOp();
       if (!constrainFunc || !computeFunc) {
-        structDef.emitOpError("Missing compute or constrain function");
+        structDef.emitOpError("Missing compute or constrain function").report();
         signalPassFailure();
         return;
       }

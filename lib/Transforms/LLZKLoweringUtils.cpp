@@ -28,7 +28,7 @@ Value getSelfValueFromCompute(FuncDefOp computeFunc) {
   // Get the single block of the function body
   Region &body = computeFunc.getBody();
   assert(!body.empty() && "compute() function body is empty");
-  Block &block = body.front();
+  Block &block = body.back();
 
   // The terminator should be the return op
   Operation *terminator = block.getTerminator();
@@ -39,7 +39,6 @@ Value getSelfValueFromCompute(FuncDefOp computeFunc) {
                  << terminator->getName() << "'\n";
     llvm_unreachable("compute() function must end with ReturnOp");
   }
-  // Return its operands as SmallVector<Value>
   return retOp.getOperands().front();
 }
 
@@ -137,7 +136,7 @@ void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp) {
 
 void addAuxField(StructDefOp structDef, StringRef name) {
   OpBuilder builder(structDef);
-  builder.setInsertionPointToEnd(&structDef.getBody().front());
+  builder.setInsertionPointToEnd(&structDef.getBody().back());
   builder.create<FieldDefOp>(
       structDef.getLoc(), builder.getStringAttr(name), builder.getType<FeltType>()
   );

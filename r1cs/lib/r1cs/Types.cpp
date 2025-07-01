@@ -14,18 +14,3 @@
 
 using namespace mlir;
 using namespace r1cs;
-
-void SignalType::print(mlir::AsmPrinter &printer) const {
-  printer << "signal";
-  if (getIsPublic()) {
-    printer << " public";
-  }
-}
-
-mlir::Type SignalType::parse(mlir::AsmParser &parser) {
-  bool isPublic = false;
-  if (succeeded(parser.parseOptionalKeyword("public"))) {
-    isPublic = true;
-  }
-  return get(parser.getContext(), isPublic);
-}

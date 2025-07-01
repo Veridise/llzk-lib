@@ -77,7 +77,7 @@ void registerTransformationPassPipelines() {
     // 3. Convert to R1CS
     pm.addPass(llzk::createR1CSLoweringPass());
 
-    // // 4. Run CSE to eliminate to_linear ops
+    // 4. Run CSE to eliminate to_linear ops
     pm.addPass(mlir::createCSEPass());
   }
   );

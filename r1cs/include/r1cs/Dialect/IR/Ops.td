@@ -33,22 +33,18 @@ def R1CS_CircuitDefOp : R1CS_Op<"circuit", [
     Example:
 
     ```mlir
-    r1cs.circuit @CmpConstraint inputs (%arg0: signal public, %arg1: signal, %arg2: signal){
-      %0 = r1cs.def 0 : signal public {isPublic}
-      %1 = r1cs.def 1 : signal {isPublic}
-      %2 = r1cs.def 2 : signal {isPublic}
-      %3 = r1cs.to_linear %arg1 : signal to !r1cs.linear
-      %4 = r1cs.to_linear %arg2 : signal to !r1cs.linear
-      %5 = r1cs.to_linear %1 : signal to !r1cs.linear
+    
     ```
   }];
   let hasCustomAssemblyFormat = 1;
-  let arguments = (ins SymbolNameAttr:$sym_name);
+  let hasVerifier = 1;
+  let arguments = (ins SymbolNameAttr:$sym_name, OptionalAttr<DictionaryAttr>:$arg_attrs);
+
   let regions = (region SizedRegion<1>:$body);
   
 
   let builders = [
-    OpBuilder<(ins "::llvm::StringRef":$name)>
+    OpBuilder<(ins "::llvm::StringRef":$name)>,
   ];
 
   let extraClassDeclaration = [{
@@ -66,11 +62,11 @@ def R1CS_SignalDefOp : R1CS_Op<"def", [Pure]> {
 
     Example:
     ```
-      %0 = r1cs.def 0 : signal public {isPublic} // public signal
-      %1 = r1cs.def 1 : signal {isPublic} // private
+      %0 = r1cs.def 0 : !r1cs.signal {pub = #r1cs.public} // public signal
+      %1 = r1cs.def 1 : !r1cs.signal // private
     ```
   }];
-  let arguments = (ins UI32Attr:$label, OptionalAttr<UnitAttr>:$isPublic);
+  let arguments = (ins UI32Attr:$label, OptionalAttr<PublicAttr>:$pub);
   let results = (outs R1CS_SignalType:$out);
   let assemblyFormat = [{
     $label `:` type($out) attr-dict
