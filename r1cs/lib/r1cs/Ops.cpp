@@ -93,7 +93,7 @@ void CircuitDefOp::print(OpAsmPrinter &p) {
         if (auto attr = dictAttr.get(std::to_string(arg.getArgNumber()))) {
           p << " {";
           p.printAttribute(attr);
-          p << "}";
+          p << '}';
         }
       }
     });

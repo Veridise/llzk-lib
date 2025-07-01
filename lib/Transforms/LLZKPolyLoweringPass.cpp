@@ -69,8 +69,8 @@ private:
 
   // Recursively compute degree of FeltOps SSA values
   unsigned getDegree(Value val, DenseMap<Value, unsigned> &memo) {
-    if (memo.count(val)) {
-      return memo[val];
+    if (auto it = memo.find(val); it != memo.end()) {
+      return it->second;
     }
     // Handle function parameters (BlockArguments)
     if (val.isa<BlockArgument>()) {

@@ -106,7 +106,7 @@ LogicalResult checkForAuxFieldConflicts(StructDefOp structDef, StringRef prefix)
   structDef.walk([&](FieldDefOp fieldDefOp) {
     if (fieldDefOp.getName().starts_with(prefix)) {
       (fieldDefOp.emitError() << "Field name '" << fieldDefOp.getName()
-                              << "' conflicts with reserved prefix '" << prefix << "'")
+                              << "' conflicts with reserved prefix '" << prefix << '\'')
           .report();
       conflictFound = true;
     }

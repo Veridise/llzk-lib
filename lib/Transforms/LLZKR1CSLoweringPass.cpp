@@ -274,8 +274,8 @@ private:
       DenseMap<Value, unsigned> &degreeMemo, DenseMap<Value, Value> &rewrites,
       SmallVectorImpl<AuxAssignment> &auxAssignments, OpBuilder &builder
   ) {
-    if (rewrites.contains(root)) {
-      return rewrites[root];
+    if (auto it = rewrites.find(root); it != rewrites.end()) {
+      return it->second;
     }
 
     SmallVector<Value, 16> postOrder;

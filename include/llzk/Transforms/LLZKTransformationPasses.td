@@ -76,7 +76,7 @@ def R1CSLoweringPass
   let description = [{
     Transforms LLZK constraints into an equivalent set of R1CS constraints expressed in the r1cs dialect.
     This pass is best used as part of the `-llzk-full-r1cs-lowering` pipeline which includes
-    a degree lowering pass, and clean up passes to ensure correctness and performance.
+    a degree lowering pass and clean up passes to ensure correctness and performance.
   }];
   let constructor = "llzk::createR1CSLoweringPass()";
 }
