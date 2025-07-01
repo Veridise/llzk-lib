@@ -12,6 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Analysis/SymbolDefTree.h"
+#include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
@@ -26,6 +28,8 @@
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolLookup.h"
+#include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/Affine/IR/AffineOps.h>
@@ -55,6 +59,7 @@
 
 // Include the generated base pass class definitions.
 namespace llzk::polymorphic {
+#define GEN_PASS_DECL_FLATTENINGPASS
 #define GEN_PASS_DEF_FLATTENINGPASS
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
 } // namespace llzk::polymorphic
@@ -78,12 +83,12 @@ namespace {
 class ConversionTracker {
   /// Tracks if some step performed a modification of the code such that another pass should be run.
   bool modified;
-  /// Maps original remote (i.e. use site) type to new remote type.
+  /// Maps original remote (i.e., use site) type to new remote type.
   /// Note: The keys are always parameterized StructType and the values are no-parameter StructType.
   DenseMap<StructType, StructType> structInstantiations;
   /// Contains the reverse of mappings in `structInstantiations` for use in legal conversion check.
   DenseMap<StructType, StructType> reverseInstantiations;
-  /// Maps new remote type (i.e. the values in 'structInstantiations') to a list of Diagnostic
+  /// Maps new remote type (i.e., the values in 'structInstantiations') to a list of Diagnostic
   /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
 
@@ -158,7 +163,7 @@ public:
     return delayedDiagnostics[newType];
   }
 
-  /// Check if the type conversion is legal, i.e. the new type unifies with and is more concrete
+  /// Check if the type conversion is legal, i.e., the new type unifies with and is more concrete
   /// than the old type with additional allowance for the results of struct flattening conversions.
   bool isLegalConversion(Type oldType, Type newType, const char *patName) const {
     std::function<bool(Type, Type)> checkInstantiations = [&](Type oTy, Type nTy) {
@@ -171,7 +176,7 @@ public:
         }
       }
       // Check if `nTy` is the result of a struct instantiation and if the pre-image of
-      // that instantiation (i.e. the parameterized version of the instantiated struct)
+      // that instantiation (i.e., the parameterized version of the instantiated struct)
       // is a more concrete unification of `oTy`.
       if (StructType newStructType = llvm::dyn_cast<StructType>(nTy)) {
         if (auto preImage = this->reverseInstantiations.lookup(newStructType)) {
@@ -205,7 +210,7 @@ public:
 };
 
 /// Patterns can use this listener and call notifyMatchFailure(..) for failures where the entire
-/// pass must fail, i.e. where instantiation would introduce an illegal type conversion.
+/// pass must fail, i.e., where instantiation would introduce an illegal type conversion.
 struct MatchFailureListener : public RewriterBase::Listener {
   bool hadFailure = false;
 
@@ -246,7 +251,7 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
 namespace Step1_InstantiateStructs {
 
 static inline bool tableOffsetIsntSymbol(FieldReadOp op) {
-  return !mlir::isa_and_present<SymbolRefAttr>(op.getTableOffset().value_or(nullptr));
+  return !llvm::isa_and_present<SymbolRefAttr>(op.getTableOffset().value_or(nullptr));
 }
 
 /// Implements cloning a `StructDefOp` for a specific instantiation site, using the concrete
@@ -556,7 +561,7 @@ class StructCloner {
 
     // Insert 'newStruct' into the parent ModuleOp of the original StructDefOp. Use the
     // `SymbolTable::insert()` function directly so that the name will be made unique.
-    ModuleOp parentModule = llvm::cast<ModuleOp>(origStruct.getParentOp());
+    ModuleOp parentModule = origStruct.getParentOp<ModuleOp>(); // parent is ModuleOp per ODS
     symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(origStruct));
     // Retrieve the new type AFTER inserting since the name may be appended to make it unique and
     // use the remaining non-concrete parameters from the original type.
@@ -568,7 +573,7 @@ class StructCloner {
       llvm::dbgs() << "[StructCloner]   cloned remote type: " << newRemoteType << '\n';
     });
 
-    // Within the new struct, replace all references to the original StructType (i.e. the
+    // Within the new struct, replace all references to the original StructType (i.e., the
     // locally-parameterized version) with the new locally-parameterized StructType,
     // and replace all uses of the removed struct parameters with the concrete values.
     MappedTypeConverter tyConv(typeAtDef, newStruct.getType(), paramNameToConcrete);
@@ -818,7 +823,7 @@ struct AffineMapFolder {
     assert(in.mapOpGroups.size() <= in.paramsOfStructTy.size());
     assert(std::cmp_equal(in.mapOpGroups.size(), in.dimsPerGroup.size()));
 
-    size_t idx = 0; // index in `mapOpGroups`, i.e. the number of AffineMapAttr encountered
+    size_t idx = 0; // index in `mapOpGroups`, i.e., the number of AffineMapAttr encountered
     for (Attribute sizeAttr : in.paramsOfStructTy) {
       if (AffineMapAttr m = dyn_cast<AffineMapAttr>(sizeAttr)) {
         ValueRange currMapOps = in.mapOpGroups[idx++];
@@ -1041,7 +1046,7 @@ private:
                    << " unifications of arg types: " << debug::toStringList(unifications) << '\n';
     });
 
-    // Check for LHS SymRef (i.e. from the target function) that have RHS concrete Attributes (i.e.
+    // Check for LHS SymRef (i.e., from the target function) that have RHS concrete Attributes (i.e.
     // from the call argument types) without any struct parameters (because the type with concrete
     // struct parameters will be used to instantiate the target struct rather than the fully
     // flattened struct type resulting in type mismatch of the callee to target) and perform those
@@ -1216,7 +1221,7 @@ public:
     // If the symbol is used by a FieldWriteOp with a different result type then change
     // the type of the FieldDefOp to match the FieldWriteOp result type.
     Type newType = nullptr;
-    if (auto fieldUsers = SymbolTable::getSymbolUses(op, parentRes.value())) {
+    if (auto fieldUsers = llzk::getSymbolUses(op, parentRes.value())) {
       std::optional<Location> newTypeLoc = std::nullopt;
       for (SymbolTable::SymbolUse symUse : fieldUsers.value()) {
         if (FieldWriteOp writeOp = llvm::dyn_cast<FieldWriteOp>(symUse.getUser())) {
@@ -1229,7 +1234,7 @@ public:
           } else if (writeToType != newType) {
             // Typically, there will only be one write for each field of a struct but do not rely on
             // that assumption. If multiple writes with a different types A and B are found where
-            // A->B is a legal conversion (i.e. more concrete unification), then it is safe to use
+            // A->B is a legal conversion (i.e., more concrete unification), then it is safe to use
             // type B with the assumption that the write with type A will be updated by another
             // pattern to also use type B.
             if (!tracker_.isLegalConversion(writeToType, newType, "UpdateFieldDefTypeFromWrite")) {
@@ -1365,7 +1370,7 @@ public:
 };
 
 /// Update CallOp result type based on the updated return type from the target FuncDefOp.
-/// This only applies to global (i.e. non-struct) functions because the functions within structs
+/// This only applies to global (i.e., non-struct) functions because the functions within structs
 /// only return StructType or nothing and propagating those can result in bringing un-instantiated
 /// types from a templated struct into the current call which will give errors.
 class UpdateGlobalCallOpTypes final : public OpRewritePattern<CallOp> {
@@ -1480,89 +1485,278 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step5_Cleanup {
 
-template <typename OpClass> class EraseOpPattern : public OpConversionPattern<OpClass> {
+class CleanupBase {
 public:
-  EraseOpPattern(MLIRContext *ctx) : OpConversionPattern<OpClass>(ctx) {}
+  SymbolTableCollection tables;
 
-  LogicalResult matchAndRewrite(OpClass op, OpClass::Adaptor, ConversionPatternRewriter &rewriter)
-      const override {
-    rewriter.eraseOp(op);
+  CleanupBase(ModuleOp root, const SymbolDefTree &symDefTree, const SymbolUseGraph &symUseGraph)
+      : rootMod(root), defTree(symDefTree), useGraph(symUseGraph) {}
+
+protected:
+  ModuleOp rootMod;
+  const SymbolDefTree &defTree;
+  const SymbolUseGraph &useGraph;
+};
+
+struct FromKeepSet : public CleanupBase {
+  using CleanupBase::CleanupBase;
+
+  /// Erase all StructDefOp that are not reachable (via calls, types, or symbol usage) from one of
+  /// the StructDefOp given or from some global def or free function (since this pass does not
+  /// remove either of those, any symbols reachable from them must not be removed).
+  LogicalResult eraseUnreachableFrom(ArrayRef<StructDefOp> keep) {
+    // Initialize roots from the given StructDefOp instances
+    SetVector<SymbolOpInterface> roots(keep.begin(), keep.end());
+    // Add GlobalDefOp and "free functions" to the set of roots
+    rootMod.walk([&roots](Operation *op) {
+      if (global::GlobalDefOp gdef = llvm::dyn_cast<global::GlobalDefOp>(op)) {
+        roots.insert(gdef);
+      } else if (function::FuncDefOp fdef = llvm::dyn_cast<function::FuncDefOp>(op)) {
+        if (!fdef.isInStruct()) {
+          roots.insert(fdef);
+        }
+      }
+    });
+
+    // Use a SymbolDefTree to find all Symbol defs reachable from one of the root nodes. Then
+    // collect all Symbol uses reachable from those def nodes. These are the symbols that should
+    // be preserved. All other symbol defs should be removed.
+    llvm::df_iterator_default_set<const SymbolUseGraphNode *> symbolsToKeep;
+    for (size_t i = 0; i < roots.size(); ++i) { // iterate for safe insertion
+      SymbolOpInterface keepRoot = roots[i];
+      LLVM_DEBUG({ llvm::dbgs() << "[EraseUnreachable] root: " << keepRoot << '\n'; });
+      const SymbolDefTreeNode *keepRootNode = defTree.lookupNode(keepRoot);
+      assert(keepRootNode && "every struct def must be in the def tree");
+      for (const SymbolDefTreeNode *reachableDefNode : llvm::depth_first(keepRootNode)) {
+        LLVM_DEBUG({
+          llvm::dbgs() << "[EraseUnreachable] can reach: " << reachableDefNode->getOp() << '\n';
+        });
+        if (SymbolOpInterface reachableDef = reachableDefNode->getOp()) {
+          // Use 'depth_first_ext()' to get all symbol uses reachable from the current Symbol def
+          // node. There are no uses if the node is not in the graph. Within the loop that populates
+          // 'depth_first_ext()', also check if the symbol is a StructDefOp and ensure it is in
+          // 'roots' so the outer loop will ensure that all symbols reachable from it are preserved.
+          if (const SymbolUseGraphNode *useGraphNodeForDef = useGraph.lookupNode(reachableDef)) {
+            for (const SymbolUseGraphNode *usedSymbolNode :
+                 depth_first_ext(useGraphNodeForDef, symbolsToKeep)) {
+              LLVM_DEBUG({
+                llvm::dbgs() << "[EraseUnreachable]   uses symbol: "
+                             << usedSymbolNode->getSymbolPath() << '\n';
+              });
+              // Ignore struct/template parameter symbols (before doing the lookup below because it
+              // would fail anyway and then cause the "failed" case to be triggered unnecessarily).
+              if (usedSymbolNode->isStructParam()) {
+                continue;
+              }
+              // If `usedSymbolNode` references a StructDefOp, ensure it's considered in the roots.
+              auto lookupRes = usedSymbolNode->lookupSymbol(tables);
+              if (failed(lookupRes)) {
+                LLVM_DEBUG(useGraph.dumpToDotFile());
+                return failure();
+              }
+              //  If loaded via an IncludeOp it's not in the current AST anyway so ignore.
+              if (lookupRes->viaInclude()) {
+                continue;
+              }
+              if (StructDefOp asStruct = llvm::dyn_cast<StructDefOp>(lookupRes->get())) {
+                bool insertRes = roots.insert(asStruct);
+                LLVM_DEBUG({
+                  if (insertRes) {
+                    llvm::dbgs() << "[EraseUnreachable]  found another root: " << asStruct << '\n';
+                  }
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    rootMod.walk([this, &symbolsToKeep](StructDefOp op) {
+      const SymbolUseGraphNode *n = this->useGraph.lookupNode(op);
+      assert(n);
+      if (!symbolsToKeep.contains(n)) {
+        LLVM_DEBUG(llvm::dbgs() << "[EraseUnreachable] removing: " << op.getSymName() << '\n');
+        op.erase();
+      }
+
+      return WalkResult::skip(); // StructDefOp cannot be nested
+    });
+
     return success();
   }
 };
 
-LogicalResult run(ModuleOp modOp, const ConversionTracker &tracker) {
-  FailureOr<ModuleOp> topRoot = getTopRootModule(modOp);
-  if (failed(topRoot)) {
-    return failure();
+struct FromEraseSet : public CleanupBase {
+
+  /// Note: paths in `tryToErase` should be relative to `root` (which is likely the "top root")
+  FromEraseSet(
+      ModuleOp root, const SymbolDefTree &symDefTree, const SymbolUseGraph &symUseGraph,
+      DenseSet<SymbolRefAttr> &&tryToErasePaths
+  )
+      : CleanupBase(root, symDefTree, symUseGraph) {
+    // Convert the set of paths targeted for erasure into a set of the StructDefOp
+    for (SymbolRefAttr path : tryToErasePaths) {
+      Operation *lookupFrom = rootMod.getOperation();
+      auto res = lookupSymbolIn<StructDefOp>(tables, path, lookupFrom, lookupFrom);
+      assert(succeeded(res) && "inputs must be valid StructDefOp references");
+      if (!res->viaInclude()) { // do not remove if it's from another source file
+        tryToErase.insert(res->get());
+      }
+    }
   }
 
-  // Use a conversion to erase instantiated structs if they have no other references.
-  //
-  // TODO: There's a chance the "no other references" criteria will leave some behind when running
-  // only a single pass of this because they may reference each other. Maybe I can check if the
-  // references are only located within another struct in the list, but would have to do a deep
-  // deep lookup to ensure no references and avoid infinite loop back on self. The CallGraphAnalysis
-  // is not sufficient because it looks only at calls but there could be (although unlikely) a
-  // FieldDefOp referencing a struct type despite having no calls to that struct's functions.
-  //
-  // TODO: There's another scenario that leaves some behind. Once a StructDefOp is visited and
-  // considered legal, that decision cannot be reversed. Hence, StructDefOp that become illegal only
-  // after removing another one that uses it will not be removed. See
-  // test/Dialect/LLZK/instantiate_structs_affine_pass.llzk
-  // One idea is to use one of the `SymbolTable::getSymbolUses` functions starting from a struct
-  // listed in `instantiatedNames` to determine if it is reachable from some other struct that is
-  // NOT listed there and remove it if not. For efficiency, this reachability information can be
-  // pre-computed and or cached.
-  //
-  DenseSet<SymbolRefAttr> instantiatedNames = tracker.getInstantiatedStructNames();
-  auto isLegalStruct = [&](bool emitWarning, StructDefOp op) {
-    if (instantiatedNames.contains(op.getType().getNameRef())) {
-      if (!hasUsesWithin(op, *topRoot)) {
-        // Parameterized struct with no uses is illegal, i.e. should be removed.
+  LogicalResult eraseUnusedStructs() {
+    // Collect the subset of 'tryToErase' that has no remaining uses.
+    for (StructDefOp sd : tryToErase) {
+      collectSafeToErase(sd);
+    }
+    // The `visitedPlusSafetyResult` will contain FuncDefOp w/in the StructDefOp so just a single
+    // loop to `dyn_cast` and `erase()` will cause `use-after-free` errors w/in the `dyn_cast`.
+    // Instead, reduce the map to only those that should be erased and erase in a separate loop.
+    for (auto it = visitedPlusSafetyResult.begin(); it != visitedPlusSafetyResult.end(); ++it) {
+      if (!it->second || !llvm::isa<StructDefOp>(it->first.getOperation())) {
+        visitedPlusSafetyResult.erase(it);
+      }
+    }
+    for (auto &[sym, _] : visitedPlusSafetyResult) {
+      LLVM_DEBUG(llvm::dbgs() << "[EraseIfUnused] removing: " << sym.getNameAttr() << '\n');
+      sym.erase();
+    }
+    return success();
+  }
+
+  const DenseSet<StructDefOp> &getTryToEraseSet() const { return tryToErase; }
+
+private:
+  /// The initial set of structs that this should try to erase (if there are no other uses).
+  DenseSet<StructDefOp> tryToErase;
+  /// Track visited nodes to avoid cycles (for example, a struct has its functions as children in
+  /// the def graph but the opposite direction edges exist in the use graph) and map if they were
+  /// determined safe to remove or not.
+  DenseMap<SymbolOpInterface, bool> visitedPlusSafetyResult;
+  /// Cache results of 'lookup()' for performance.
+  DenseMap<const SymbolUseGraphNode *, SymbolOpInterface> lookupCache;
+
+  /// The main checks to determine if a SymbolOp (but especially a StructDefOp) is safe to erase
+  /// without leaving any dangling references to it.
+  bool collectSafeToErase(SymbolOpInterface check) {
+    assert(check); // pre-condition
+
+    // If previously visited, return the safety result.
+    auto visited = visitedPlusSafetyResult.find(check);
+    if (visited != visitedPlusSafetyResult.end()) {
+      return visited->second;
+    }
+
+    // If it's a StructDefOp that is not in `tryToErase` then it cannot be erased.
+    if (StructDefOp sd = llvm::dyn_cast<StructDefOp>(check.getOperation())) {
+      if (!tryToErase.contains(sd)) {
+        visitedPlusSafetyResult[check] = false;
         return false;
       }
-      if (emitWarning) {
-        op.emitWarning("Parameterized struct still has uses!").report();
+    }
+
+    // Otherwise, temporarily mark as safe b/c a node cannot keep itself live (and this prevents
+    // the recursion from getting stuck in an infinite loop).
+    visitedPlusSafetyResult[check] = true;
+
+    // Check if it's safe according to both the def tree and use graph.
+    // Note: every symbol must have a def node but module symbols may not have a use node.
+    if (collectSafeToErase(defTree.lookupNode(check))) {
+      auto useNode = useGraph.lookupNode(check);
+      assert(useNode || llvm::isa<ModuleOp>(check.getOperation()));
+      if (!useNode || collectSafeToErase(useNode)) {
+        return true;
+      }
+    }
+
+    // Otherwise, revert the safety decision and return it.
+    visitedPlusSafetyResult[check] = false;
+    return false;
+  }
+
+  /// A def tree node is safe if it has no parent or its parent's SymbolOp is safe.
+  bool collectSafeToErase(const SymbolDefTreeNode *check) {
+    assert(check); // pre-condition
+    if (const SymbolDefTreeNode *p = check->getParent()) {
+      if (SymbolOpInterface checkOp = p->getOp()) { // safe if parent is root
+        return collectSafeToErase(checkOp);
       }
     }
     return true;
-  };
-
-  // Perform the conversion, i.e. remove StructDefOp that were instantiated and are unused.
-  MLIRContext *ctx = modOp.getContext();
-  RewritePatternSet patterns(ctx);
-  patterns.add<EraseOpPattern<StructDefOp>>(ctx);
-  ConversionTarget target = newBaseTarget(ctx);
-  // TODO: Here are some thoughts from LLZK planning:
-  // - Flattening could remove all structs that are not instantiated and the backend would have to
-  //   not run flattening if it wants to keep any templated structs.
-  // - Alternatively, flattening could define different conversion targets at runtime based on
-  //   config flags to indicate if some should be flattened and others should not. This could be a
-  //   flag that indicates allow/restrict globally or based on some struct criteria, like names.
-  //
-  // target.addIllegalDialect<polymorphic::PolymorphicDialect>();
-  target.addDynamicallyLegalOp<StructDefOp>(std::bind_front(isLegalStruct, false));
-  if (failed(applyFullConversion(modOp, target, std::move(patterns)))) {
-    return failure();
   }
 
-  // Warn about any structs that were instantiated but still have uses elsewhere.
-  modOp->walk([&](StructDefOp op) {
-    isLegalStruct(true, op);
-    return WalkResult::skip(); // StructDefOp cannot be nested
-  });
+  /// A use graph node is safe if it has no predecessors (i.e., users) or all have safe SymbolOp.
+  bool collectSafeToErase(const SymbolUseGraphNode *check) {
+    assert(check); // pre-condition
+    for (const SymbolUseGraphNode *p : check->predecessorIter()) {
+      if (SymbolOpInterface checkOp = cachedLookup(p)) { // safe if via IncludeOp
+        if (!collectSafeToErase(checkOp)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 
-  return success();
-}
+  /// Find the SymbolOpInterface for the given graph node, utilizing a cache for repeat lookups.
+  /// Returns `nullptr` if the node is loaded via an IncludeOp. A symbol loaded from an included
+  /// file is not subject to removal by this pass. Further, it cannot serve as an anchor/root for a
+  /// symbol that is defined in the current file because it can neither define nor use such symbols.
+  SymbolOpInterface cachedLookup(const SymbolUseGraphNode *node) {
+    assert(node && "must provide a node"); // pre-condition
+    // Check for cached result
+    auto fromCache = lookupCache.find(node);
+    if (fromCache != lookupCache.end()) {
+      return fromCache->second;
+    }
+    // Otherwise, perform lookup and cache
+    auto lookupRes = node->lookupSymbol(tables);
+    assert(succeeded(lookupRes) && "graph contains node with invalid path");
+    assert(lookupRes->get() != nullptr && "lookup must return an Operation");
+    // If loaded via an IncludeOp it's not in the current AST anyway so ignore.
+    // NOTE: The SymbolUseGraph does contain nodes for struct parameters which cannot cast to
+    // SymbolOpInterface. However, those will always be leaf nodes in the SymbolUseGraph and
+    // therefore will not be traversed by this analysis so directly casting is fine.
+    SymbolOpInterface actualRes =
+        lookupRes->viaInclude() ? nullptr : llvm::cast<SymbolOpInterface>(lookupRes->get());
+    // Cache and return
+    lookupCache[node] = actualRes;
+    assert((!actualRes == lookupRes->viaInclude()) && "not found iff included"); // post-condition
+    return actualRes;
+  }
+};
 
 } // namespace Step5_Cleanup
 
 class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass> {
 
-  static constexpr unsigned LIMIT = 1000;
+  void runOnOperation() override {
+    ModuleOp modOp = getOperation();
+    if (failed(runOn(modOp))) {
+      LLVM_DEBUG({
+        // If the pass failed, dump the current IR.
+        llvm::dbgs() << "=====================================================================\n";
+        llvm::dbgs() << " Dumping module after failure of pass " << DEBUG_TYPE << " \n";
+        modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
+        llvm::dbgs() << "=====================================================================\n";
+      });
+      signalPassFailure();
+    }
+  }
 
   inline LogicalResult runOn(ModuleOp modOp) {
+    // If the cleanup mode is set to remove anything not reachable from the "Main" struct, do an
+    // initial pass to remove things that are not reachable (as an optimization) because creating
+    // an instantiated version of a struct will not cause something to become reachable that was
+    // not already reachable in parameterized form.
+    if (cleanupMode == StructCleanupMode::MainAsRoot) {
+      if (failed(eraseUnreachableFromMainStruct(modOp))) {
+        return failure();
+      }
+    }
+
     {
       // Preliminary step: remove empty parameter lists from structs
       OpPassManager nestedPM(ModuleOp::getOperationName());
@@ -1576,8 +1770,9 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     unsigned loopCount = 0;
     do {
       ++loopCount;
-      if (loopCount > LIMIT) {
-        llvm::errs() << DEBUG_TYPE << " exceeded the limit of " << LIMIT << " iterations!\n";
+      if (loopCount > iterationLimit) {
+        llvm::errs() << DEBUG_TYPE << " exceeded the limit of " << iterationLimit
+                     << " iterations!\n";
         return failure();
       }
       tracker.resetModifiedFlag();
@@ -1616,29 +1811,86 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       });
     } while (tracker.isModified());
 
-    // Remove the parameterized StructDefOp that were instantiated.
-    if (failed(Step5_Cleanup::run(modOp, tracker))) {
-      llvm::errs() << DEBUG_TYPE
-                   << " failed while removing parameterized structs that were replaced with "
-                      "instantiated versions\n";
-      return failure();
+    // Perform cleanup according to the 'cleanupMode' option.
+    switch (cleanupMode) {
+    case StructCleanupMode::MainAsRoot:
+      return eraseUnreachableFromMainStruct(modOp, false);
+    case StructCleanupMode::ConcreteAsRoot:
+      return eraseUnreachableFromConcreteStructs(modOp);
+    case StructCleanupMode::Preimage:
+      return erasePreimageOfInstantiations(modOp, tracker);
+    case StructCleanupMode::Disabled:
+      return success();
     }
-
-    return success();
+    llvm_unreachable("switch cases cover all options");
   }
 
-  void runOnOperation() override {
-    ModuleOp modOp = getOperation();
-    if (failed(runOn(modOp))) {
-      LLVM_DEBUG({
-        // If the pass failed, dump the current IR.
-        llvm::dbgs() << "=====================================================================\n";
-        llvm::dbgs() << " Dumping module after failure of pass " << DEBUG_TYPE << " \n";
-        modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
-        llvm::dbgs() << "=====================================================================\n";
+  // Erase parameterized structs that were replaced with concrete instantiations.
+  LogicalResult erasePreimageOfInstantiations(ModuleOp rootMod, const ConversionTracker &tracker) {
+    // TODO: The names from getInstantiatedStructNames() are NOT guaranteed to be paths from the
+    // "top root" and they also do not indicate a root module so there could be ambiguity. This is a
+    // broader problem in the FlatteningPass itself so let's just assume, for now, that these are
+    // paths from the "top root". See [LLZK-286].
+    Step5_Cleanup::FromEraseSet cleaner(
+        rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>(),
+        tracker.getInstantiatedStructNames()
+    );
+    LogicalResult res = cleaner.eraseUnusedStructs();
+    if (succeeded(res)) {
+      // Warn about any structs that were instantiated but still have uses elsewhere.
+      const SymbolUseGraph *useGraph = nullptr;
+      rootMod->walk([this, &cleaner, &useGraph](StructDefOp op) {
+        if (cleaner.getTryToEraseSet().contains(op)) {
+          // If needed, rebuild use graph to reflect deletions.
+          if (!useGraph) {
+            useGraph = &getAnalysis<SymbolUseGraph>();
+          }
+          // If the op has any users, report the warning.
+          if (useGraph->lookupNode(op)->hasPredecessor()) {
+            op.emitWarning("Parameterized struct still has uses!").report();
+          }
+        }
+        return WalkResult::skip(); // StructDefOp cannot be nested
       });
-      signalPassFailure();
     }
+    return res;
+  }
+
+  LogicalResult eraseUnreachableFromConcreteStructs(ModuleOp rootMod) {
+    SmallVector<StructDefOp> roots;
+    rootMod.walk([&roots](StructDefOp op) {
+      // Note: no need to check if the ConstParamsAttr is empty since `EmptyParamRemovalPass`
+      // ran earlier.
+      if (!op.hasConstParamsAttr()) {
+        roots.push_back(op);
+      }
+      return WalkResult::skip(); // StructDefOp cannot be nested
+    });
+
+    Step5_Cleanup::FromKeepSet cleaner(
+        rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>()
+    );
+    return cleaner.eraseUnreachableFrom(roots);
+  }
+
+  LogicalResult eraseUnreachableFromMainStruct(ModuleOp rootMod, bool emitWarning = true) {
+    Step5_Cleanup::FromKeepSet cleaner(
+        rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>()
+    );
+    StructDefOp main =
+        cleaner.tables.getSymbolTable(rootMod).lookup<StructDefOp>(COMPONENT_NAME_MAIN);
+    if (emitWarning && !main) {
+      // Emit warning if there is no "Main" because all structs may be removed (only structs that
+      // are reachable from a global def or free function will be preserved since those constructs
+      // are not candidate for removal in this pass).
+      rootMod.emitWarning() << "using option '" << cleanupMode.getArgStr() << '='
+                            << stringifyStructCleanupMode(StructCleanupMode::MainAsRoot)
+                            << "' with no \"" << COMPONENT_NAME_MAIN
+                            << "\" struct may remove all structs!";
+    }
+    return cleaner.eraseUnreachableFrom(
+        main ? ArrayRef<StructDefOp> {main} : ArrayRef<StructDefOp> {}
+    );
   }
 };
 

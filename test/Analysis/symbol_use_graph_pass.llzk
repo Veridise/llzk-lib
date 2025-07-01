@@ -1,0 +1,630 @@
+// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-print-symbol-use-graph{stream=outs})' %s | FileCheck --enable-var-scope %s
+
+module attributes {veridise.lang = "llzk"} {
+  global.def @g : !struct.type<@HasUse>
+
+  struct.def @HasUse {
+    struct.field @f1 : i1
+    function.def @compute() -> !struct.type<@HasUse> {
+      %self = struct.new : !struct.type<@HasUse>
+      function.return %self : !struct.type<@HasUse>
+    }
+    function.def @constrain(%arg0: !struct.type<@HasUse>) {
+      function.return
+    }
+  }
+
+  struct.def @NoUse<[@T]> {
+    struct.field @f2 : !poly.tvar<@T>
+    function.def @compute() -> !struct.type<@NoUse<[@T]>> {
+      %self = struct.new : !struct.type<@NoUse<[@T]>>
+      function.return %self : !struct.type<@NoUse<[@T]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@NoUse<[@T]>>) {
+      function.return
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolUseGraph ----
+//CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@HasUse::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] '@HasUse' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] '@HasUse::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R05:[0-9a-f]+]]] '@NoUse::@f2' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R09:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R09]]] '@NoUse::@T' (struct param) with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R05]], 0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]], 0x[[R08:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R06]]] '@NoUse::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R08]], 0x[[R09]]]
+//CHECK-NEXT:  - Node : [0x[[R08]]] '@NoUse' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R06]], 0x[[R07]]]
+//CHECK-NEXT:  --- Successors : [0x[[R09]]]
+//CHECK-NEXT:  - Node : [0x[[R07]]] '@NoUse::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R08]], 0x[[R09]]]
+//CHECK-NEXT:  - Node : [0x[[R04]]] '@g' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]]]
+//CHECK-NEXT:  ------------------------
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  global.def @a : !struct.type<@StructsWithinNestedModule::@HasUse<[i1]>>
+  global.def @b : !felt.type
+
+  module @StructsWithinNestedModule {
+    struct.def @HasUse<[@T]> {
+      struct.field @f1 : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>> {
+        %self = struct.new : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
+        function.return %self : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>) {
+        function.return
+      }
+    }
+
+    struct.def @NoUse {
+      struct.field @f2 : i1
+      struct.field @f3 : !felt.type
+      function.def @compute() -> !struct.type<@StructsWithinNestedModule::@NoUse> {
+        %self = struct.new : !struct.type<@StructsWithinNestedModule::@NoUse>
+        function.return %self : !struct.type<@StructsWithinNestedModule::@NoUse>
+      }
+      function.def @constrain(%arg0: !struct.type<@StructsWithinNestedModule::@NoUse>) {
+        function.return
+      }
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolUseGraph ----
+//CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@StructsWithinNestedModule::@HasUse::@f1' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] '@StructsWithinNestedModule::@HasUse::@T' (struct param) with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]], 0x[[R05:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] '@StructsWithinNestedModule::@HasUse::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R05]], 0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R05]]] '@StructsWithinNestedModule::@HasUse' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R03]], 0x[[R04]], 0x[[R06:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : [0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R04]]] '@StructsWithinNestedModule::@HasUse::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R05]], 0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R07:[0-9a-f]+]]] '@StructsWithinNestedModule::@NoUse::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R08:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R08]]] '@StructsWithinNestedModule::@NoUse' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R07]], 0x[[R09:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R09]]] '@StructsWithinNestedModule::@NoUse::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R08]]]
+//CHECK-NEXT:  - Node : [0x[[R06]]] '@a' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R05]]]
+//CHECK-NEXT:  ------------------------
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  module @GlobalsWithinNestedModule {
+    global.def @a : !struct.type<@HasUse<[!felt.type]>>
+    module @NestedAgain {
+      global.def @a : !struct.type<@HasUse<[!felt.type]>>
+      module @NestedEvenMore {
+        global.def @a : !struct.type<@HasUse<[!felt.type]>>
+      }
+      global.def @b : !struct.type<@HasUse<[i1]>>
+      module @SiblingNesting {
+        global.def @a : !struct.type<@HasUse<[!string.type]>>
+      }
+    }
+  }
+
+  struct.def @HasUse<[@T]> {
+    function.def @compute() -> !struct.type<@HasUse<[@T]>> {
+      %self = struct.new : !struct.type<@HasUse<[@T]>>
+      function.return %self : !struct.type<@HasUse<[@T]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@HasUse<[@T]>>) {
+      function.return
+    }
+  }
+
+  struct.def @NoUse {
+    function.def @compute() -> !struct.type<@NoUse> {
+      %self = struct.new : !struct.type<@NoUse>
+      function.return %self : !struct.type<@NoUse>
+    }
+    function.def @constrain(%arg0: !struct.type<@NoUse>) {
+      function.return
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolUseGraph ----
+//CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@GlobalsWithinNestedModule::@NestedAgain::@NestedEvenMore::@a' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] '@HasUse' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]], 0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]], 0x[[R08:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : [0x[[R09:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R09]]] '@HasUse::@T' (struct param) with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R07]], 0x[[R08]], 0x[[R02]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] '@GlobalsWithinNestedModule::@NestedAgain::@SiblingNesting::@a' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R04]]] '@GlobalsWithinNestedModule::@NestedAgain::@a' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R05]]] '@GlobalsWithinNestedModule::@NestedAgain::@b' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R06]]] '@GlobalsWithinNestedModule::@a' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R07]]] '@HasUse::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R09]]]
+//CHECK-NEXT:  - Node : [0x[[R08]]] '@HasUse::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R09]]]
+//CHECK-NEXT:  - Node : [0x[[R10:[0-9a-f]+]]] '@NoUse::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R11:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R11]]] '@NoUse' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R10]], 0x[[R12:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R12]]] '@NoUse::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R11]]]
+//CHECK-NEXT:  ------------------------
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  module @FreeFuncModule {
+    module @Level2A {
+      module @Level3 {
+        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@HasUse<[!felt.type]>>) -> !felt.type {
+          %b = felt.const 42
+          function.return %b: !felt.type
+        }
+      }
+    }
+    module @Level2B {
+      module @Level3 {
+        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@HasUse<[!felt.type]>>) -> !felt.type {
+          %b = felt.const 42
+          function.return %b: !felt.type
+        }
+      }
+    }
+  }
+
+  module @StructModule {
+    module @MoreNested {
+      struct.def @HasUse<[@T]> {
+        function.def @compute() -> !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>> {
+          %self = struct.new : !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>
+          function.return %self : !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>) {
+          function.return
+        }
+      }
+
+      struct.def @NoUse {
+        function.def @compute() -> !struct.type<@StructModule::@MoreNested::@NoUse> {
+          %self = struct.new : !struct.type<@StructModule::@MoreNested::@NoUse>
+          function.return %self : !struct.type<@StructModule::@MoreNested::@NoUse>
+        }
+        function.def @constrain(%arg0: !struct.type<@StructModule::@MoreNested::@NoUse>) {
+          function.return
+        }
+      }
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolUseGraph ----
+//CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@FreeFuncModule::@Level2A::@Level3::@struct_param' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] '@StructModule::@MoreNested::@HasUse' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]], 0x[[R05:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : [0x[[R06:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R06]]] '@StructModule::@MoreNested::@HasUse::@T' (struct param) with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R04]], 0x[[R05]], 0x[[R02]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] '@FreeFuncModule::@Level2B::@Level3::@struct_param' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R04]]] '@StructModule::@MoreNested::@HasUse::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R06]]]
+//CHECK-NEXT:  - Node : [0x[[R05]]] '@StructModule::@MoreNested::@HasUse::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R06]]]
+//CHECK-NEXT:  - Node : [0x[[R08:[0-9a-f]+]]] '@StructModule::@MoreNested::@NoUse::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R07:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R07]]] '@StructModule::@MoreNested::@NoUse' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R08]], 0x[[R09:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R09]]] '@StructModule::@MoreNested::@NoUse::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R07]]]
+//CHECK-NEXT:  ------------------------
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  global.def @gvar : !struct.type<@Component06<[4]>>
+
+  struct.def @Component06<[@Z]> {
+    function.def @compute() -> !struct.type<@Component06<[@Z]>> {
+      %self = struct.new : !struct.type<@Component06<[@Z]>>
+      function.return %self : !struct.type<@Component06<[@Z]>>
+    }
+    function.def @constrain(%self: !struct.type<@Component06<[@Z]>>) { function.return }
+  }
+
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %s = function.call @Component06::@compute() : () -> !struct.type<@Component06<[4]>>
+      global.write @gvar = %s : !struct.type<@Component06<[4]>>
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %s = global.read @gvar : !struct.type<@Component06<[4]>>
+      function.return
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolUseGraph ----
+//CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@Component06::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] '@Component06' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R04:[0-9a-f]+]], 0x[[R01]], 0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : [0x[[R03]]]
+//CHECK-NEXT:  - Node : [0x[[R03]]] '@Component06::@Z' (struct param) with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R04]], 0x[[R01]], 0x[[R02]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R06]]] '@Main::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R08:[0-9a-f]+]], 0x[[R02]], 0x[[R04]], 0x[[R07]]]
+//CHECK-NEXT:  - Node : [0x[[R08]]] '@Main' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R06]], 0x[[R05]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R04]]] '@Component06::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R06]]]
+//CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R03]]]
+//CHECK-NEXT:  - Node : [0x[[R07]]] '@gvar' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R05]], 0x[[R06]]]
+//CHECK-NEXT:  --- Successors : [0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R05]]] '@Main::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R08]], 0x[[R02]], 0x[[R07]]]
+//CHECK-NEXT:  ------------------------
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Main {
+    struct.field @f : !struct.type<@DirectUseFromMain>
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%arg0: !struct.type<@Main>) {
+      function.return
+    }
+  }
+
+  struct.def @DirectUseFromMain {
+    struct.field @f : !struct.type<@TransitiveUseFromMain>
+    function.def @compute() -> !struct.type<@DirectUseFromMain> {
+      %self = struct.new : !struct.type<@DirectUseFromMain>
+      function.return %self : !struct.type<@DirectUseFromMain>
+    }
+    function.def @constrain(%arg0: !struct.type<@DirectUseFromMain>) {
+      function.return
+    }
+  }
+
+  struct.def @TransitiveUseFromMain {
+    function.def @compute() -> !struct.type<@TransitiveUseFromMain> {
+      %self = struct.new : !struct.type<@TransitiveUseFromMain>
+      function.return %self : !struct.type<@TransitiveUseFromMain>
+    }
+    function.def @constrain(%arg0: !struct.type<@TransitiveUseFromMain>) {
+      function.return
+    }
+  }
+
+  struct.def @NoUse<[@T]> {
+    function.def @compute() -> !struct.type<@NoUse<[@T]>> {
+      %self = struct.new : !struct.type<@NoUse<[@T]>>
+      function.return %self : !struct.type<@NoUse<[@T]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@NoUse<[@T]>>) {
+      function.return
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolUseGraph ----
+//CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@Main::@f' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] '@DirectUseFromMain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R05:[0-9a-f]+]]] '@Main::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R06:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R06]]] '@Main' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R05]], 0x[[R07:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R07]]] '@Main::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R06]]]
+//CHECK-NEXT:  - Node : [0x[[R08:[0-9a-f]+]]] '@DirectUseFromMain::@f' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R09:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R09]]] '@TransitiveUseFromMain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R08]], 0x[[R10:[0-9a-f]+]], 0x[[R11:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] '@DirectUseFromMain::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R04]]] '@DirectUseFromMain::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]]]
+//CHECK-NEXT:  - Node : [0x[[R10]]] '@TransitiveUseFromMain::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R09]]]
+//CHECK-NEXT:  - Node : [0x[[R11]]] '@TransitiveUseFromMain::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R09]]]
+//CHECK-NEXT:  - Node : [0x[[R12:[0-9a-f]+]]] '@NoUse::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R13:[0-9a-f]+]], 0x[[R14:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R13]]] '@NoUse' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R12]], 0x[[R15:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : [0x[[R14]]]
+//CHECK-NEXT:  - Node : [0x[[R14]]] '@NoUse::@T' (struct param) with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R12]], 0x[[R15]], 0x[[R13]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R15]]] '@NoUse::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R13]], 0x[[R14]]]
+//CHECK-NEXT:  ------------------------
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Main {
+    struct.field @f : !struct.type<@M1::@S>
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %0 = function.call @M1::@S::@compute() : () -> !struct.type<@M1::@S>
+      struct.writef %self[@f] = %0 : !struct.type<@Main>, !struct.type<@M1::@S>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+       %0 = struct.readf %self[@f] : !struct.type<@Main>, !struct.type<@M1::@S>
+      function.return
+    }
+  }
+
+  module @M1 {
+    struct.def @S {
+      struct.field @f : !struct.type<@M1::@T>
+      function.def @compute() -> !struct.type<@M1::@S> {
+        %self = struct.new : !struct.type<@M1::@S>
+        %0 = function.call @M1::@T::@compute() : () -> !struct.type<@M1::@T>
+        struct.writef %self[@f] = %0 : !struct.type<@M1::@S>, !struct.type<@M1::@T>
+        function.return %self : !struct.type<@M1::@S>
+      }
+      function.def @constrain(%self: !struct.type<@M1::@S>) {
+        %0 = struct.readf %self[@f] : !struct.type<@M1::@S>, !struct.type<@M1::@T>
+        function.return
+      }
+    }
+
+    struct.def @T {
+      function.def @compute() -> !struct.type<@M1::@T> {
+        %self = struct.new : !struct.type<@M1::@T>
+        function.return %self : !struct.type<@M1::@T>
+      }
+      function.def @constrain(%arg0: !struct.type<@M1::@T>) {
+        %0 = function.call @M1::@free() : () -> index
+        function.return
+      }
+    }
+
+    global.def @gvar : !struct.type<@M1::@X>
+
+    function.def @free() -> index {
+      %0 = global.read @M1::@gvar : !struct.type<@M1::@X>
+      %1 = struct.readf %0[@f] : !struct.type<@M1::@X>, index
+      function.return %1: index
+    }
+
+    struct.def @X {
+      struct.field @f : index
+      function.def @compute(%a: index) -> !struct.type<@M1::@X> {
+        %self = struct.new : !struct.type<@M1::@X>
+        struct.writef %self[@f] = %a : !struct.type<@M1::@X>, index
+        function.return %self : !struct.type<@M1::@X>
+      }
+      function.def @constrain(%arg0: !struct.type<@M1::@X>, %a: index) {
+        function.return
+      }
+    }
+  }
+
+  // Different module with the same inner names. To ensure full path names are used.
+  module @M2 {
+    struct.def @S {
+      struct.field @f : !struct.type<@M2::@T>
+      function.def @compute() -> !struct.type<@M2::@S> {
+        %self = struct.new : !struct.type<@M2::@S>
+        %0 = function.call @M2::@T::@compute() : () -> !struct.type<@M2::@T>
+        struct.writef %self[@f] = %0 : !struct.type<@M2::@S>, !struct.type<@M2::@T>
+        function.return %self : !struct.type<@M2::@S>
+      }
+      function.def @constrain(%self: !struct.type<@M2::@S>) {
+        %0 = struct.readf %self[@f] : !struct.type<@M2::@S>, !struct.type<@M2::@T>
+        function.return
+      }
+    }
+
+    struct.def @T {
+      function.def @compute() -> !struct.type<@M2::@T> {
+        %self = struct.new : !struct.type<@M2::@T>
+        function.return %self : !struct.type<@M2::@T>
+      }
+      function.def @constrain(%arg0: !struct.type<@M2::@T>) {
+        function.return
+      }
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolUseGraph ----
+//CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@Main::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] '@Main' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R01]], 0x[[R07:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] '@M1::@S' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R06]], 0x[[R07]], 0x[[R01]], 0x[[R04]], 0x[[R08:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R04]]] '@M1::@S::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R01]]]
+//CHECK-NEXT:  --- Successors : [0x[[R03]], 0x[[R09:[0-9a-f]+]], 0x[[R10:[0-9a-f]+]], 0x[[R11:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R09]]] '@M1::@T' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R11]], 0x[[R08]], 0x[[R04]], 0x[[R10]], 0x[[R12:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R10]]] '@M1::@T::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R04]]]
+//CHECK-NEXT:  --- Successors : [0x[[R09]]]
+//CHECK-NEXT:  - Node : [0x[[R11]]] '@M1::@S::@f' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R08]], 0x[[R04]]]
+//CHECK-NEXT:  --- Successors : [0x[[R09]]]
+//CHECK-NEXT:  - Node : [0x[[R06]]] '@Main::@f' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R07]], 0x[[R01]]]
+//CHECK-NEXT:  --- Successors : [0x[[R03]]]
+//CHECK-NEXT:  - Node : [0x[[R07]]] '@Main::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R03]], 0x[[R06]]]
+//CHECK-NEXT:  - Node : [0x[[R08]]] '@M1::@S::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R03]], 0x[[R09]], 0x[[R11]]]
+//CHECK-NEXT:  - Node : [0x[[R12]]] '@M1::@T::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R09]], 0x[[R13:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R13]]] '@M1::@free' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R12]]]
+//CHECK-NEXT:  --- Successors : [0x[[R14:[0-9a-f]+]], 0x[[R15:[0-9a-f]+]], 0x[[R16:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R14]]] '@M1::@X' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R17:[0-9a-f]+]], 0x[[R18:[0-9a-f]+]], 0x[[R15]], 0x[[R13]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R15]]] '@M1::@gvar' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R13]]]
+//CHECK-NEXT:  --- Successors : [0x[[R14]]]
+//CHECK-NEXT:  - Node : [0x[[R16]]] '@M1::@X::@f' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R17]], 0x[[R13]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R17]]] '@M1::@X::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R14]], 0x[[R16]]]
+//CHECK-NEXT:  - Node : [0x[[R18]]] '@M1::@X::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R14]]]
+//CHECK-NEXT:  - Node : [0x[[R19:[0-9a-f]+]]] '@M2::@S::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R20:[0-9a-f]+]], 0x[[R21:[0-9a-f]+]], 0x[[R22:[0-9a-f]+]], 0x[[R23:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R20]]] '@M2::@S' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R19]], 0x[[R24:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R21]]] '@M2::@T' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R23]], 0x[[R24]], 0x[[R19]], 0x[[R22]], 0x[[R25:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R22]]] '@M2::@T::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R19]]]
+//CHECK-NEXT:  --- Successors : [0x[[R21]]]
+//CHECK-NEXT:  - Node : [0x[[R23]]] '@M2::@S::@f' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R24]], 0x[[R19]]]
+//CHECK-NEXT:  --- Successors : [0x[[R21]]]
+//CHECK-NEXT:  - Node : [0x[[R24]]] '@M2::@S::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R20]], 0x[[R21]], 0x[[R23]]]
+//CHECK-NEXT:  - Node : [0x[[R25]]] '@M2::@T::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R21]]]
+//CHECK-NEXT:  ------------------------
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Component1B<[@T]> {
+    function.def @compute() -> !struct.type<@Component1B<[@T]>> {
+      %self = struct.new : !struct.type<@Component1B<[@T]>>
+      function.return %self : !struct.type<@Component1B<[@T]>>
+    }
+    function.def @constrain(%self: !struct.type<@Component1B<[@T]>>) {
+      function.return
+    }
+  }
+  struct.def @Component1A<[@S]> {
+    struct.field @f : !struct.type<@Component1B<[@S]>>
+    function.def @compute() -> !struct.type<@Component1A<[@S]>> {
+      %self = struct.new : !struct.type<@Component1A<[@S]>>
+      %0 = function.call @Component1B::@compute() : () -> !struct.type<@Component1B<[@S]>>
+      struct.writef %self[@f] = %0 : !struct.type<@Component1A<[@S]>>, !struct.type<@Component1B<[@S]>>
+      function.return %self : !struct.type<@Component1A<[@S]>>
+    }
+    function.def @constrain(%self: !struct.type<@Component1A<[@S]>>) {
+      %0 = struct.readf %self[@f] : !struct.type<@Component1A<[@S]>>, !struct.type<@Component1B<[@S]>>
+      function.return
+    }
+  }
+}
+//CHECK-LABEL: ---- SymbolUseGraph ----
+//CHECK-NEXT:  - Node : [0x[[R01:[0-9a-f]+]]] '@Component1B::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] '@Component1B' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R04:[0-9a-f]+]], 0x[[R01]], 0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : [0x[[R03]]]
+//CHECK-NEXT:  - Node : [0x[[R03]]] '@Component1B::@T' (struct param) with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R04]], 0x[[R01]], 0x[[R02]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R07]]] '@Component1A::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R08:[0-9a-f]+]], 0x[[R09:[0-9a-f]+]], 0x[[R02]], 0x[[R04]], 0x[[R05]]]
+//CHECK-NEXT:  - Node : [0x[[R08]]] '@Component1A' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R07]], 0x[[R06]]]
+//CHECK-NEXT:  --- Successors : [0x[[R09]]]
+//CHECK-NEXT:  - Node : [0x[[R09]]] '@Component1A::@S' (struct param) with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R05]], 0x[[R07]], 0x[[R06]], 0x[[R08]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R04]]] '@Component1B::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R07]]]
+//CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R03]]]
+//CHECK-NEXT:  - Node : [0x[[R05]]] '@Component1A::@f' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : [0x[[R06]], 0x[[R07]]]
+//CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R09]]]
+//CHECK-NEXT:  - Node : [0x[[R06]]] '@Component1A::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R08]], 0x[[R09]], 0x[[R02]], 0x[[R05]]]
+//CHECK-NEXT:  ------------------------

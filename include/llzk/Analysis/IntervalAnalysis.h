@@ -593,6 +593,15 @@ public:
 
   mlir::FailureOr<Interval> findInterval(llvm::SMTExprRef expr) const;
 
+  size_t size() const { return valMap.size(); }
+
+  const ValueMap &getMap() const { return valMap; }
+
+  ValueMap::iterator begin() { return valMap.begin(); }
+  ValueMap::iterator end() { return valMap.end(); }
+  ValueMap::const_iterator begin() const { return valMap.begin(); }
+  ValueMap::const_iterator end() const { return valMap.end(); }
+
 private:
   ValueMap valMap;
   ConstraintSet constraints;

@@ -261,7 +261,7 @@ verifyFuncTypeCompute(FuncDefOp &origin, SymbolTableCollection &tables, StructDe
 LogicalResult
 verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
   FunctionType funcType = origin.getFunctionType();
-  // Must return '()' type, i.e. have no return types
+  // Must return '()' type, i.e., have no return types
   if (funcType.getResults().size() != 0) {
     return origin.emitOpError() << "\"@" << FUNC_NAME_CONSTRAIN << "\" must have no return type";
   }
@@ -316,7 +316,7 @@ StructType FuncDefOp::getSingleResultTypeOfCompute() {
 //===----------------------------------------------------------------------===//
 
 LogicalResult ReturnOp::verify() {
-  auto function = llvm::cast<FuncDefOp>((*this)->getParentOp());
+  auto function = getParentOp<FuncDefOp>(); // parent is FuncDefOp per ODS
 
   // The operand number and types must match the function signature.
   const auto results = function.getFunctionType().getResults();
@@ -673,9 +673,9 @@ bool calleeIsStructFunctionImpl(
 ) {
   if (callee.getLeafReference() == funcName) {
     if (StructType t = getType()) {
-      // If the name ref within the StructType matches the `callee` prefix (i.e. sans the function
+      // If the name ref within the StructType matches the `callee` prefix (i.e., sans the function
       // name itself), then the `callee` target must be within a StructDefOp because validation
-      // checks elsewhere ensure that every StructType references a StructDefOp (i.e. the `callee`
+      // checks elsewhere ensure that every StructType references a StructDefOp (i.e., the `callee`
       // function is not simply a global function nested within a ModuleOp)
       return t.getNameRef() == getPrefixAsSymbolRefAttr(callee);
     }

@@ -69,7 +69,14 @@ public:
   inline void dump() const { print(llvm::errs()); }
   void print(mlir::raw_ostream &os) const;
 
-  inline bool operator==(const ConstrainRefIndex &rhs) const { return index == rhs.index; }
+  inline bool operator==(const ConstrainRefIndex &rhs) const {
+    if (isField() && rhs.isField()) {
+      // We compare the underlying fields, since the field could be in a symbol
+      // lookup or not.
+      return getField() == rhs.getField();
+    }
+    return index == rhs.index;
+  }
 
   bool operator<(const ConstrainRefIndex &rhs) const;
 
@@ -194,7 +201,7 @@ public:
     ensure(isConstantIndex(), __FUNCTION__ + mlir::Twine(" requires a constant index!"));
     return toAPInt(std::get<mlir::arith::ConstantIndexOp>(*constantVal).value());
   }
-  mlir::APInt getConstantInt() const {
+  mlir::APInt getConstantValue() const {
     ensure(
         isConstantFelt() || isConstantIndex(),
         __FUNCTION__ + mlir::Twine(" requires a constant int type!")

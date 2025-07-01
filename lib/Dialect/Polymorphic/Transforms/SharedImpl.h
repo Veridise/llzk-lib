@@ -121,7 +121,7 @@ template <typename Check> inline bool runCheck(mlir::Operation *op, Check check)
 } // namespace
 
 /// Wrapper for PatternRewriter.replaceOpWithNewOp() that automatically copies discardable
-/// attributes (i.e. attributes other than those specifically defined as part of the Op in ODS).
+/// attributes (i.e., attributes other than those specifically defined as part of the Op in ODS).
 template <typename OpClass, typename Rewriter, typename... Args>
 inline OpClass replaceOpWithNewOp(Rewriter &rewriter, mlir::Operation *op, Args &&...args) {
   mlir::DictionaryAttr attrs = op->getDiscardableAttrDictionary();

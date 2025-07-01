@@ -103,14 +103,23 @@ ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices)
       newArrayDims.push_back(dim);
       chunkSz *= dim;
     }
-    auto extractedVal = ConstrainRefLatticeValue(newArrayDims);
-    for (auto chunkStart : currIdxs) {
-      for (size_t i = 0; i < chunkSz; i++) {
-        (void)extractedVal.getElemFlatIdx(i).update(getElemFlatIdx(chunkStart + i));
+    if (newArrayDims.empty()) {
+      // read case, where the return value is a scalar (single element)
+      ConstrainRefLatticeValue extractedVal;
+      for (auto idx : currIdxs) {
+        (void)extractedVal.update(getElemFlatIdx(idx));
       }
+      return {extractedVal, mlir::ChangeResult::Change};
+    } else {
+      // extract case, where the return value is an array of fewer dimensions.
+      ConstrainRefLatticeValue extractedVal(newArrayDims);
+      for (auto chunkStart : currIdxs) {
+        for (size_t i = 0; i < chunkSz; i++) {
+          (void)extractedVal.getElemFlatIdx(i).update(getElemFlatIdx(chunkStart + i));
+        }
+      }
+      return {extractedVal, mlir::ChangeResult::Change};
     }
-
-    return {extractedVal, mlir::ChangeResult::Change};
   } else {
     auto currVal = *this;
     auto res = mlir::ChangeResult::NoChange;
@@ -212,14 +221,15 @@ mlir::ChangeResult ConstrainRefLattice::setValues(const ValueMap &rhs) {
 
 ConstrainRefLatticeValue ConstrainRefLattice::getOrDefault(mlir::Value v) const {
   auto it = valMap.find(v);
-  if (it == valMap.end()) {
-    auto sourceRef = getSourceRef(v);
-    if (mlir::succeeded(sourceRef)) {
-      return ConstrainRefLatticeValue(sourceRef.value());
-    }
-    return ConstrainRefLatticeValue();
+  if (it != valMap.end()) {
+    return it->second;
   }
-  return it->second;
+
+  auto sourceRef = getSourceRef(v);
+  if (mlir::succeeded(sourceRef)) {
+    return ConstrainRefLatticeValue(sourceRef.value());
+  }
+  return ConstrainRefLatticeValue();
 }
 
 ConstrainRefLatticeValue ConstrainRefLattice::getReturnValue(unsigned i) const {

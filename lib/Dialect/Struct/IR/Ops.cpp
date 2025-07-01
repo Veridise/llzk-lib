@@ -19,6 +19,7 @@
 #include <mlir/IR/OpImplementation.h>
 
 #include <llvm/ADT/MapVector.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringSet.h>
 
 // TableGen'd implementation files
@@ -86,7 +87,7 @@ InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const
   );
 }
 
-/// Verifies that the given `actualType` matches the `StructDefOp` given (i.e. for the "self" type
+/// Verifies that the given `actualType` matches the `StructDefOp` given (i.e., for the "self" type
 /// parameter and return of the struct functions).
 LogicalResult checkSelfType(
     SymbolTableCollection &tables, StructDefOp &expectedStruct, Type actualType, Operation *origin,
@@ -288,7 +289,7 @@ LogicalResult StructDefOp::verifyRegions() {
   // already checked via verifyFuncTypeConstrain() in Function/IR/Ops.cpp.
   ArrayRef<Type> computeParams = foundCompute->getFunctionType().getInputs();
   ArrayRef<Type> constrainParams = foundConstrain->getFunctionType().getInputs().drop_front();
-  if (COMPONENT_NAME_MAIN == this->getSymName()) {
+  if (this->isMainComponent()) {
     // Verify that the Struct has no parameters.
     if (!isNullOrEmpty(this->getConstParamsAttr())) {
       return this->emitError().append(
@@ -408,7 +409,7 @@ static LogicalResult
 verifyFieldDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation *origin) {
   if (StructType fieldStructType = llvm::dyn_cast<StructType>(fieldType)) {
     // Special case for StructType verifies that the field type can resolve and that it is NOT the
-    // parent struct (i.e. struct fields cannot create circular references).
+    // parent struct (i.e., struct fields cannot create circular references).
     auto fieldTypeRes = verifyStructTypeResolution(tables, fieldStructType, origin);
     if (failed(fieldTypeRes)) {
       return failure(); // above already emits a sufficient error message
@@ -559,7 +560,8 @@ void FieldReadOp::build(
     OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr field,
     Attribute dist, ValueRange mapOperands, std::optional<int32_t> numDims
 ) {
-  assert(numDims.has_value() != mapOperands.empty());
+  // '!mapOperands.empty()' implies 'numDims.has_value()'
+  assert(mapOperands.empty() || numDims.has_value());
   state.addOperands(component);
   state.addTypes(resultType);
   if (numDims.has_value()) {
