@@ -135,12 +135,12 @@ LogicalResult CircuitDefOp::verify() {
   }
 
   // === Step 2: Check that signal labels are unique ===
-  DenseSet<uint64_t> seenLabels;
+  DenseSet<uint32_t> seenLabels;
   bool foundPublic = false;
 
   for (auto &op : getBody().front()) {
     if (auto def = dyn_cast<SignalDefOp>(op)) {
-      uint64_t label = def.getLabel();
+      uint32_t label = def.getLabel();
       if (!seenLabels.insert(label).second) {
         return def.emitOpError() << "duplicate signal label: " << label;
       }

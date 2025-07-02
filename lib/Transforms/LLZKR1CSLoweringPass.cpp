@@ -117,7 +117,7 @@ struct LinearCombination {
         os << " + ";
       }
       first = false;
-      os << coeff << "*" << val;
+      os << coeff << '*' << val;
     }
     if (!constant.isZero()) {
       if (!first) {
@@ -126,7 +126,7 @@ struct LinearCombination {
       os << constant;
     }
     if (first && constant.isZero()) {
-      os << "0";
+      os << '0';
     }
   }
 };
