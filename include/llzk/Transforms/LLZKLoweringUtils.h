@@ -35,7 +35,7 @@ mlir::Value rebuildExprInCompute(
 mlir::LogicalResult
 checkForAuxFieldConflicts(component::StructDefOp structDef, llvm::StringRef auxPrefix);
 
-void addAuxField(component::StructDefOp structDef, llvm::StringRef name);
+component::FieldDefOp addAuxField(component::StructDefOp structDef, llvm::StringRef name);
 
 unsigned getFeltDegree(mlir::Value val, llvm::DenseMap<mlir::Value, unsigned> &memo);
 

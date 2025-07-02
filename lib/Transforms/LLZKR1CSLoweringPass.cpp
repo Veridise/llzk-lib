@@ -331,10 +331,10 @@ private:
         if (degLhs == 2 && degRhs == 2) {
           builder.setInsertionPoint(op);
           std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxCounter++);
-          addAuxField(structDef, auxName);
+          FieldDefOp auxField = addAuxField(structDef, auxName);
           Value self = constrainFunc.getArgument(0);
           Value aux = builder.create<FieldReadOp>(
-              val.getLoc(), val.getType(), self, builder.getStringAttr(auxName)
+              val.getLoc(), val.getType(), self, auxField.getNameAttr()
           );
           auto eqOp = builder.create<EmitEqualityOp>(val.getLoc(), aux, lhs);
           auxAssignments.push_back({auxName, lhs});
@@ -649,10 +649,10 @@ private:
         if (degLhs == 2 && degRhs == 2) {
           builder.setInsertionPoint(eqOp);
           std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxCounter++);
-          addAuxField(structDef, auxName);
+          FieldDefOp auxField = addAuxField(structDef, auxName);
           Value self = constrainFunc.getArgument(0);
           Value aux = builder.create<FieldReadOp>(
-              eqOp.getLoc(), lhs.getType(), self, builder.getStringAttr(auxName)
+              eqOp.getLoc(), lhs.getType(), self, auxField.getNameAttr()
           );
           auto eqAux = builder.create<EmitEqualityOp>(eqOp.getLoc(), aux, lhs);
           auxAssignments.push_back({auxName, lhs});

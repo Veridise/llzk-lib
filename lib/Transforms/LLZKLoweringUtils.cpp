@@ -134,10 +134,10 @@ void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp) {
   }
 }
 
-void addAuxField(StructDefOp structDef, StringRef name) {
+FieldDefOp addAuxField(StructDefOp structDef, StringRef name) {
   OpBuilder builder(structDef);
   builder.setInsertionPointToEnd(&structDef.getBody().back());
-  builder.create<FieldDefOp>(
+  return builder.create<FieldDefOp>(
       structDef.getLoc(), builder.getStringAttr(name), builder.getType<FeltType>()
   );
 }
