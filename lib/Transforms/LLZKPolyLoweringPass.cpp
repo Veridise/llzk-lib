@@ -227,8 +227,8 @@ private:
       FuncDefOp computeFunc = structDef.getComputeFuncOp();
       if (!constrainFunc) {
         auto diag = structDef.emitOpError();
-        diag << '"' << structDef.getName() << "\" doesn't have a \"@", FUNC_NAME_CONSTRAIN,
-            "\" function";
+        diag << '"' << structDef.getName() << "\" doesn't have a \"@" << FUNC_NAME_CONSTRAIN
+             << "\" function";
         diag.report();
         signalPassFailure();
         return;
@@ -236,8 +236,8 @@ private:
 
       if (!computeFunc) {
         auto diag = structDef.emitOpError();
-        diag << '"' << structDef.getName() << "\" doesn't have a \"@", FUNC_NAME_COMPUTE,
-            "\" function";
+        diag << '"' << structDef.getName() << "\" doesn't have a \"@" << FUNC_NAME_COMPUTE
+             << "\" function";
         diag.report();
         signalPassFailure();
         return;
