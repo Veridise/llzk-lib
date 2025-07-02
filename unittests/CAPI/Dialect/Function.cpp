@@ -58,16 +58,17 @@ class FuncDialectTest : public CAPITest {
 
 protected:
   TestFuncDefOp test_function() {
-    auto in_types = llvm::SmallVector<MlirType>({mlirIndexTypeGet(ctx), mlirIndexTypeGet(ctx)});
-    auto in_attrs = empty_arg_attrs<2>(ctx);
-    auto out_types = llvm::SmallVector<MlirType>({mlirIndexTypeGet(ctx)});
+    auto in_types =
+        llvm::SmallVector<MlirType>({mlirIndexTypeGet(context), mlirIndexTypeGet(context)});
+    auto in_attrs = empty_arg_attrs<2>(context);
+    auto out_types = llvm::SmallVector<MlirType>({mlirIndexTypeGet(context)});
     const auto *name = "foo";
     return {
         .in_types = in_types,
         .out_types = out_types,
         .name = name,
         .op = create_func_def_op(
-            ctx, name, create_func_type(ctx, in_types, out_types),
+            context, name, create_func_type(context, in_types, out_types),
             llvm::ArrayRef<MlirNamedAttribute>(), in_attrs
         ),
     };
@@ -75,14 +76,14 @@ protected:
 
   TestFuncDefOp test_function0() {
     auto in_types = llvm::SmallVector<MlirType>();
-    auto out_types = llvm::SmallVector<MlirType>({mlirIndexTypeGet(ctx)});
+    auto out_types = llvm::SmallVector<MlirType>({mlirIndexTypeGet(context)});
     const auto *name = "bar";
     return {
         .in_types = in_types,
         .out_types = out_types,
         .name = name,
         .op = create_func_def_op(
-            ctx, name, create_func_type(ctx, in_types, out_types),
+            context, name, create_func_type(context, in_types, out_types),
             llvm::ArrayRef<MlirNamedAttribute>(), llvm::ArrayRef<MlirAttribute>()
         ),
     };
@@ -94,10 +95,11 @@ TEST_F(FuncDialectTest, mlir_get_dialect_handle_llzk_function) {
 }
 
 TEST_F(FuncDialectTest, llzk_func_def_op_create_with_attrs_and_arg_attrs) {
-  MlirType in_types[] = {mlirIndexTypeGet(ctx)};
-  auto in_attrs = empty_arg_attrs<1>(ctx);
+  MlirType in_types[] = {mlirIndexTypeGet(context)};
+  auto in_attrs = empty_arg_attrs<1>(context);
   auto op = create_func_def_op(
-      ctx, "foo", create_func_type(ctx, llvm::ArrayRef(in_types, 1), llvm::ArrayRef<MlirType>()),
+      context, "foo",
+      create_func_type(context, llvm::ArrayRef(in_types, 1), llvm::ArrayRef<MlirType>()),
       llvm::ArrayRef<MlirNamedAttribute>(), in_attrs
   );
   mlirOperationDestroy(op);
@@ -247,8 +249,8 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
 
 TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims) {
   auto f = test_function0();
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
+  auto builder = mlirOpBuilderCreate(context);
+  auto location = mlirLocationUnknownGet(context);
   auto call = llzkCallOpBuildToCalleeWithMapOperandsAndDims(
       builder, location, f.op, 0, (const MlirValueRange *)NULL, 0, (const int *)NULL, 0,
       (const MlirValue *)NULL
@@ -261,8 +263,8 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims)
 #define call_pred_test(name, func, expected)                                                       \
   TEST_F(FuncDialectTest, name) {                                                                  \
     auto f = test_function0();                                                                     \
-    auto builder = mlirOpBuilderCreate(ctx);                                                       \
-    auto location = mlirLocationUnknownGet(ctx);                                                   \
+    auto builder = mlirOpBuilderCreate(context);                                                   \
+    auto location = mlirLocationUnknownGet(context);                                               \
     auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);      \
     EXPECT_EQ(func(call), expected);                                                               \
     mlirOperationDestroy(call);                                                                    \
@@ -297,8 +299,8 @@ call_pred_test(
 
 TEST_F(FuncDialectTest, llzk_call_op_get_single_result_type_of_compute) {
   auto f = test_function0();
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
+  auto builder = mlirOpBuilderCreate(context);
+  auto location = mlirLocationUnknownGet(context);
   auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
 
   // We want to link the function to make sure it has been implemented but we don't want to

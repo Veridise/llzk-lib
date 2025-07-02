@@ -20,4 +20,5 @@ def R1CSDialect : Dialect {
   let useDefaultTypePrinterParser = true;
   let useDefaultAttributePrinterParser = true;
 }
+
 #endif

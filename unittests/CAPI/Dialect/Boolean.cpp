@@ -19,7 +19,7 @@ class CmpAttrTest : public CAPITest, public testing::WithParamInterface<LlzkCmp>
 
 TEST_P(CmpAttrTest, llzk_felt_cmp_predicate_attr_get) {
 
-  auto attr = llzkFeltCmpPredicateAttrGet(ctx, GetParam());
+  auto attr = llzkFeltCmpPredicateAttrGet(context, GetParam());
   EXPECT_NE(attr.ptr, (void *)NULL);
 }
 
@@ -29,11 +29,11 @@ INSTANTIATE_TEST_SUITE_P(
 );
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_cmp_predicate_attr_pass) {
-  auto attr = llzkFeltCmpPredicateAttrGet(ctx, LlzkCmp_EQ);
+  auto attr = llzkFeltCmpPredicateAttrGet(context, LlzkCmp_EQ);
   EXPECT_TRUE(llzkAttributeIsAFeltCmpPredicateAttr(attr));
 }
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_cmp_predicate_attr_fail) {
-  auto attr = mlirUnitAttrGet(ctx);
+  auto attr = mlirUnitAttrGet(context);
   EXPECT_TRUE(!llzkAttributeIsAFeltCmpPredicateAttr(attr));
 }

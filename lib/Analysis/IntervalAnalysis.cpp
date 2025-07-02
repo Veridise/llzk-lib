@@ -783,8 +783,8 @@ void IntervalDataFlowAnalysis::visitOperation(
   auto constrainRefLattice = dataflowSolver.lookupState<ConstrainRefLattice>(op);
   ensure(constrainRefLattice, "failed to get lattice");
 
-  for (auto &operand : op->getOpOperands()) {
-    auto val = operand.get();
+  for (OpOperand &operand : op->getOpOperands()) {
+    Value val = operand.get();
     // First, lookup the operand value in the before state.
     auto priorState = before.getValue(val);
     if (succeeded(priorState)) {

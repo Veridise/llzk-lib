@@ -19,7 +19,7 @@ static bool test_callback1(MlirType, MlirType, void *) { return true; }
 
 class TypingTest : public CAPITest {
 protected:
-  MlirType indexType() { return mlirIndexTypeGet(ctx); }
+  MlirType indexType() { return mlirIndexTypeGet(context); }
 };
 
 TEST_F(TypingTest, assert_valid_attr_for_param_of_type) {
@@ -67,8 +67,8 @@ TEST_F(TypingTest, type_params_unify_fail) {
 }
 
 TEST_F(TypingTest, array_attr_type_params_unify_empty) {
-  MlirAttribute lhs = mlirArrayAttrGet(ctx, 0, NULL);
-  MlirAttribute rhs = mlirArrayAttrGet(ctx, 0, NULL);
+  MlirAttribute lhs = mlirArrayAttrGet(context, 0, NULL);
+  MlirAttribute rhs = mlirArrayAttrGet(context, 0, NULL);
   EXPECT_TRUE(llzkArrayAttrTypeParamsUnify(lhs, rhs));
 }
 
@@ -100,7 +100,7 @@ TEST_F(TypingTest, is_more_concrete_unification) {
 }
 
 TEST_F(TypingTest, force_int_attr_type) {
-  auto in_attr = mlirIntegerAttrGet(mlirIntegerTypeGet(ctx, 64), 0);
+  auto in_attr = mlirIntegerAttrGet(mlirIntegerTypeGet(context, 64), 0);
   auto out_attr = llzkForceIntAttrType(in_attr);
   EXPECT_TRUE(!mlirAttributeEqual(in_attr, out_attr));
 }

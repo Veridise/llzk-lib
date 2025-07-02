@@ -129,7 +129,7 @@ void ConstrainRefAnalysis::visitOperation(
   LLVM_DEBUG(llvm::dbgs() << "ConstrainRefAnalysis::visitOperation: " << *op << '\n');
   // Collect the references that are made by the operands to `op`.
   ConstrainRefLattice::ValueMap operandVals;
-  for (auto &operand : op->getOpOperands()) {
+  for (mlir::OpOperand &operand : op->getOpOperands()) {
     operandVals[operand.get()] = before.getOrDefault(operand.get());
   }
 

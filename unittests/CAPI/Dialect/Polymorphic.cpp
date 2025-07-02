@@ -21,22 +21,22 @@ TEST_F(CAPITest, mlir_get_dialect_handle_llzk_polymorphic) {
 
 TEST_F(CAPITest, llzk_type_var_type_get) {
   {
-    auto t = llzkTypeVarTypeGet(ctx, mlirStringRefCreateFromCString("T"));
+    auto t = llzkTypeVarTypeGet(context, mlirStringRefCreateFromCString("T"));
     EXPECT_NE(t.ptr, (void *)NULL);
   }
 }
 
 TEST_F(CAPITest, llzk_type_is_a_type_var_type) {
   {
-    auto t = llzkTypeVarTypeGet(ctx, mlirStringRefCreateFromCString("T"));
+    auto t = llzkTypeVarTypeGet(context, mlirStringRefCreateFromCString("T"));
     EXPECT_TRUE(llzkTypeIsATypeVarType(t));
   }
 }
 
 TEST_F(CAPITest, llzk_type_var_type_get_from_attr) {
   {
-    auto s = mlirStringAttrGet(ctx, mlirStringRefCreateFromCString("T"));
-    auto t = llzkTypeVarTypeGetFromAttr(ctx, s);
+    auto s = mlirStringAttrGet(context, mlirStringRefCreateFromCString("T"));
+    auto t = llzkTypeVarTypeGetFromAttr(context, s);
     EXPECT_NE(t.ptr, (void *)NULL);
   }
 }
@@ -44,7 +44,7 @@ TEST_F(CAPITest, llzk_type_var_type_get_from_attr) {
 TEST_F(CAPITest, llzk_type_var_type_get_name_ref) {
   {
     auto s = mlirStringRefCreateFromCString("T");
-    auto t = llzkTypeVarTypeGet(ctx, s);
+    auto t = llzkTypeVarTypeGet(context, s);
     EXPECT_NE(t.ptr, (void *)NULL);
     EXPECT_TRUE(mlirStringRefEqual(s, llzkTypeVarTypeGetNameRef(t)));
   }
@@ -53,8 +53,8 @@ TEST_F(CAPITest, llzk_type_var_type_get_name_ref) {
 TEST_F(CAPITest, llzk_type_var_type_get_name) {
   {
     auto s = mlirStringRefCreateFromCString("T");
-    auto t = llzkTypeVarTypeGet(ctx, s);
-    auto sym = mlirFlatSymbolRefAttrGet(ctx, s);
+    auto t = llzkTypeVarTypeGet(context, s);
+    auto sym = mlirFlatSymbolRefAttrGet(context, s);
     EXPECT_NE(t.ptr, (void *)NULL);
     EXPECT_TRUE(mlirAttributeEqual(sym, llzkTypeVarTypeGetName(t)));
   }
@@ -62,10 +62,10 @@ TEST_F(CAPITest, llzk_type_var_type_get_name) {
 
 TEST_F(CAPITest, llzk_apply_map_op_build) {
   {
-    auto builder = mlirOpBuilderCreate(ctx);
-    auto location = mlirLocationUnknownGet(ctx);
-    llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(ctx, 1)});
-    auto affine_map = mlirAffineMapGet(ctx, 0, 0, exprs.size(), exprs.data());
+    auto builder = mlirOpBuilderCreate(context);
+    auto location = mlirLocationUnknownGet(context);
+    llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
+    auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
     auto affine_map_attr = mlirAffineMapAttrGet(affine_map);
     auto op = llzkApplyMapOpBuild(
         builder, location, affine_map_attr,
@@ -83,10 +83,10 @@ TEST_F(CAPITest, llzk_apply_map_op_build) {
 
 TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_map) {
   {
-    auto builder = mlirOpBuilderCreate(ctx);
-    auto location = mlirLocationUnknownGet(ctx);
-    llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(ctx, 1)});
-    auto affine_map = mlirAffineMapGet(ctx, 0, 0, exprs.size(), exprs.data());
+    auto builder = mlirOpBuilderCreate(context);
+    auto location = mlirLocationUnknownGet(context);
+    llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
+    auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
     auto op = llzkApplyMapOpBuildWithAffineMap(
         builder, location, affine_map,
         MlirValueRange {
@@ -103,9 +103,9 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_map) {
 
 TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_expr) {
   {
-    auto builder = mlirOpBuilderCreate(ctx);
-    auto location = mlirLocationUnknownGet(ctx);
-    auto expr = mlirAffineConstantExprGet(ctx, 1);
+    auto builder = mlirOpBuilderCreate(context);
+    auto location = mlirLocationUnknownGet(context);
+    auto expr = mlirAffineConstantExprGet(context, 1);
     auto op = llzkApplyMapOpBuildWithAffineExpr(
         builder, location, expr,
         MlirValueRange {
@@ -122,9 +122,9 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_expr) {
 
 TEST_F(CAPITest, llzk_op_is_a_apply_map_op) {
   {
-    auto builder = mlirOpBuilderCreate(ctx);
-    auto location = mlirLocationUnknownGet(ctx);
-    auto expr = mlirAffineConstantExprGet(ctx, 1);
+    auto builder = mlirOpBuilderCreate(context);
+    auto location = mlirLocationUnknownGet(context);
+    auto expr = mlirAffineConstantExprGet(context, 1);
     auto op = llzkApplyMapOpBuildWithAffineExpr(
         builder, location, expr,
         MlirValueRange {
@@ -142,10 +142,10 @@ TEST_F(CAPITest, llzk_op_is_a_apply_map_op) {
 
 TEST_F(CAPITest, llzk_apply_map_op_get_affine_map) {
   {
-    auto builder = mlirOpBuilderCreate(ctx);
-    auto location = mlirLocationUnknownGet(ctx);
-    llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(ctx, 1)});
-    auto affine_map = mlirAffineMapGet(ctx, 0, 0, exprs.size(), exprs.data());
+    auto builder = mlirOpBuilderCreate(context);
+    auto location = mlirLocationUnknownGet(context);
+    llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
+    auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
     auto op = llzkApplyMapOpBuildWithAffineMap(
         builder, location, affine_map,
         MlirValueRange {
@@ -164,10 +164,10 @@ TEST_F(CAPITest, llzk_apply_map_op_get_affine_map) {
 
 TEST_F(CAPITest, llzk_apply_map_op_get_dim_operands) {
   {
-    auto builder = mlirOpBuilderCreate(ctx);
-    auto location = mlirLocationUnknownGet(ctx);
-    llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(ctx, 1)});
-    auto affine_map = mlirAffineMapGet(ctx, 0, 0, exprs.size(), exprs.data());
+    auto builder = mlirOpBuilderCreate(context);
+    auto location = mlirLocationUnknownGet(context);
+    llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
+    auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
     auto op = llzkApplyMapOpBuildWithAffineMap(
         builder, location, affine_map,
         MlirValueRange {
@@ -188,10 +188,10 @@ TEST_F(CAPITest, llzk_apply_map_op_get_dim_operands) {
 
 TEST_F(CAPITest, llzk_apply_map_op_get_symbol_operands) {
   {
-    auto builder = mlirOpBuilderCreate(ctx);
-    auto location = mlirLocationUnknownGet(ctx);
-    llvm::SmallVector<MlirAffineExpr> exprs = {mlirAffineConstantExprGet(ctx, 1)};
-    auto affine_map = mlirAffineMapGet(ctx, 0, 0, exprs.size(), exprs.data());
+    auto builder = mlirOpBuilderCreate(context);
+    auto location = mlirLocationUnknownGet(context);
+    llvm::SmallVector<MlirAffineExpr> exprs = {mlirAffineConstantExprGet(context, 1)};
+    auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
     auto op = llzkApplyMapOpBuildWithAffineMap(
         builder, location, affine_map,
         MlirValueRange {
