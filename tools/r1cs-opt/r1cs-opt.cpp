@@ -27,11 +27,6 @@ int main(int argc, char **argv) {
                         " and include the crash backtrace, relevant LLZK files,"
                         " and associated run script(s).\n");
 
-  // TODO: TEMP: print args for debugging
-  for (int i = 0; i < argc; ++i) {
-    llvm::outs() << "argv[" << i << "] = " << argv[i] << '\n';
-  }
-
   mlir::DialectRegistry registry;
   r1cs::registerAllDialects(registry);
 
