@@ -414,7 +414,7 @@ private:
     // Bottom-up construction of R1CSConstraints
     for (Value v : postorder) {
       Operation *op = v.getDefiningOp();
-      if (!op || (dyn_cast<FieldReadOp>(op) != nullptr)) {
+      if (!op || llvm::isa<FieldReadOp>(op)) {
         // Leaf (input variable or field read)
         R1CSConstraint eq;
         eq.c.addTerm(v, APSInt::get(1));
