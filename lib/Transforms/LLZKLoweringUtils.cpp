@@ -103,7 +103,7 @@ Value rebuildExprInCompute(
 LogicalResult checkForAuxFieldConflicts(StructDefOp structDef, StringRef prefix) {
   bool conflictFound = false;
 
-  structDef.walk([&](FieldDefOp fieldDefOp) {
+  structDef.walk([&conflictFound, &prefix](FieldDefOp fieldDefOp) {
     if (fieldDefOp.getName().starts_with(prefix)) {
       (fieldDefOp.emitError() << "Field name '" << fieldDefOp.getName()
                               << "' conflicts with reserved prefix '" << prefix << '\'')

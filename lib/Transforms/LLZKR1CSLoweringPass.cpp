@@ -615,7 +615,7 @@ private:
     assert(
         moduleOp->getContext()->getLoadedDialect<r1cs::R1CSDialect>() && "R1CS dialect not loaded"
     );
-    moduleOp.walk([&](StructDefOp structDef) {
+    moduleOp.walk([this, &moduleOp](StructDefOp structDef) {
       FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
       FuncDefOp computeFunc = structDef.getComputeFuncOp();
       if (!constrainFunc || !computeFunc) {
