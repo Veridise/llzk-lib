@@ -91,5 +91,5 @@ int main(int argc, char **argv) {
 
   // Run 'mlir-opt'
   auto result = mlir::MlirOptMain(argc, argv, inputFilename, outputFilename, registry);
-  return asMainReturnCode(result);
+  return mlir::asMainReturnCode(result);
 }

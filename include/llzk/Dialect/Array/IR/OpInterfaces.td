@@ -73,12 +73,13 @@ def ArrayAccessOpInterface
     /// Required by companion interface DestructurableAccessorOpInterface / SROA pass
     bool canRewire(const ::mlir::DestructurableMemorySlot &slot,
             ::llvm::SmallPtrSetImpl<::mlir::Attribute> &usedIndices,
-            ::mlir::SmallVectorImpl<::mlir::MemorySlot> &mustBeSafelyUsed);
+            ::mlir::SmallVectorImpl<::mlir::MemorySlot> &mustBeSafelyUsed,
+            const ::mlir::DataLayout &dataLayout);
 
     /// Required by companion interface DestructurableAccessorOpInterface / SROA pass
     ::mlir::DeletionKind rewire(const ::mlir::DestructurableMemorySlot &slot,
             ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
-            ::mlir::RewriterBase &rewriter);
+            ::mlir::OpBuilder &builder, const ::mlir::DataLayout &dataLayout);
   }];
 }
 
