@@ -166,7 +166,7 @@ struct R1CSConstraint {
       return this->scaled(other.c.constant);
     }
     if (isDegZero(*this)) {
-      return other.scaled(other.c.constant);
+      return other.scaled(this->c.constant);
     }
 
     if (isLinearOnly() && other.isLinearOnly()) {
