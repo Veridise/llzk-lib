@@ -4,6 +4,7 @@ include_directories(
   ${R1CS_INCLUDE_DIR}
   ${CMAKE_BINARY_DIR}/r1cs/include
 )
+
 add_mlir_dialect_library(R1CSDialect
   Dialect.cpp
   Types.cpp
@@ -19,5 +20,4 @@ add_mlir_dialect_library(R1CSDialect
   R1CSDialectIncGen
 )
 
-add_dependencies(LLZKAllDialects R1CSDialect)
 install(TARGETS R1CSDialect EXPORT LLZKTargets)
