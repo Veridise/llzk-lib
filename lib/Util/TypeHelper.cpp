@@ -194,7 +194,7 @@ public:
   static void reportInvalid(EmitErrorFn emitError, const Twine &foundName, const char *aspect) {
     InFlightDiagnostic diag = emitError().append(aspect, " must be one of ");
     Appender<InFlightDiagnostic>::append(diag);
-    diag.append(" but found '", foundName, "'").report();
+    diag.append(" but found '", foundName, '\'').report();
   }
 
   static inline void reportInvalid(EmitErrorFn emitError, Attribute found, const char *aspect) {
@@ -373,8 +373,8 @@ public:
         if (succeeded(checkValidType(emitError, elementType))) {
           emitError()
               .append(
-                  "'", ArrayType::name, "' element type cannot be '",
-                  elementType.getAbstractType().getName(), "'"
+                  '\'', ArrayType::name, "' element type cannot be '",
+                  elementType.getAbstractType().getName(), '\''
               )
               .report();
         }
@@ -814,7 +814,7 @@ LogicalResult verifyIntAttrType(EmitErrorFn emitError, Attribute in) {
     if (!AllowedTypes().onlyInt().isValidTypeImpl(attrTy)) {
       if (emitError) {
         emitError()
-            .append("IntegerAttr must have type 'index' or 'i1' but found '", attrTy, "'")
+            .append("IntegerAttr must have type 'index' or 'i1' but found '", attrTy, '\'')
             .report();
       }
       return failure();

@@ -55,7 +55,7 @@ class FieldWriteValidatorPass
             write.emitWarning()
                 .append(
                     "found multiple writes to '", FieldDefOp::getOperationName(), "' named \"@",
-                    writeToFieldName, "\""
+                    writeToFieldName, '"'
                 )
                 .attachNote(earlierWrite.getLoc())
                 .append("earlier write here");
@@ -68,8 +68,8 @@ class FieldWriteValidatorPass
     for (auto &[a, b] : fieldNameToWriteOp) {
       if (!b) {
         computeFunc.emitWarning().append(
-            "'", FuncDefOp::getOperationName(), "' op \"@", FUNC_NAME_COMPUTE,
-            "\" missing write to '", FieldDefOp::getOperationName(), "' named \"@", a, "\""
+            '\'', FuncDefOp::getOperationName(), "' op \"@", FUNC_NAME_COMPUTE,
+            "\" missing write to '", FieldDefOp::getOperationName(), "' named \"@", a, '"'
         );
       }
     }

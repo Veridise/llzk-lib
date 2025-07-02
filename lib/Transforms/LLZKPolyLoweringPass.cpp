@@ -227,7 +227,7 @@ private:
       FuncDefOp computeFunc = structDef.getComputeFuncOp();
       if (!constrainFunc) {
         auto diag = structDef.emitOpError();
-        diag << "\"" << structDef.getName() << "\" doesn't have a '" << FUNC_NAME_CONSTRAIN
+        diag << '"' << structDef.getName() << "\" doesn't have a '" << FUNC_NAME_CONSTRAIN
              << "' function";
         diag.report();
         signalPassFailure();
@@ -236,7 +236,7 @@ private:
 
       if (!computeFunc) {
         auto diag = structDef.emitOpError();
-        diag << "\"" << structDef.getName() << "\" doesn't have a '" << FUNC_NAME_COMPUTE
+        diag << '"' << structDef.getName() << "\" doesn't have a '" << FUNC_NAME_COMPUTE
              << "' function";
         diag.report();
         signalPassFailure();

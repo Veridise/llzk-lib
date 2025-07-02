@@ -392,13 +392,13 @@ LogicalResult ExtractArrayOp::inferReturnTypes(
   auto compare = numToSkip <=> arrRefDimSizes.size();
   if (compare == 0) {
     return mlir::emitOptionalError(
-        location, "'", ExtractArrayOp::getOperationName(),
+        location, '\'', ExtractArrayOp::getOperationName(),
         "' op cannot select all dimensions of an array. Use '", ReadArrayOp::getOperationName(),
         "' instead."
     );
   } else if (compare > 0) {
     return mlir::emitOptionalError(
-        location, "'", ExtractArrayOp::getOperationName(),
+        location, '\'', ExtractArrayOp::getOperationName(),
         "' op cannot select more dimensions than exist in the source array"
     );
   }

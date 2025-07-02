@@ -166,7 +166,7 @@ public:
     } else {
       // This is an error in the compiler itself. In current implementation,
       //  FuncDefOp must have either StructDefOp or ModuleOp as its parent.
-      return current->emitError().append("orphaned '", FuncDefOp::getOperationName(), "'");
+      return current->emitError().append("orphaned '", FuncDefOp::getOperationName(), '\'');
     }
   }
 
@@ -367,7 +367,7 @@ verifyStructTypeResolution(SymbolTableCollection &tables, StructType ty, Operati
     return origin->emitError()
         .append(
             "Cannot unify parameters of type ", ty, " with parameters of '",
-            StructDefOp::getOperationName(), "' \"", defForType.getHeaderString(), "\""
+            StructDefOp::getOperationName(), "' \"", defForType.getHeaderString(), '"'
         )
         .attachNote(defForType.getLoc())
         .append("type parameters must unify with parameters defined here");

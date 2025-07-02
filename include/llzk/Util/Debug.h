@@ -59,7 +59,7 @@ void Appender::append(const mlir::MemorySlot &a) {
 void Appender::append(const mlir::DestructurableMemorySlot &a) {
   stream << "ptr: " << a.ptr << "; type: " << a.elemType << "; elementPtrs:\n";
   for (auto &p : a.elementPtrs) {
-    stream << "  ";
+    stream.indent(2);
     append(p);
     stream << '\n';
   }

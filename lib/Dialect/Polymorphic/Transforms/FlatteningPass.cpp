@@ -1738,7 +1738,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       LLVM_DEBUG({
         // If the pass failed, dump the current IR.
         llvm::dbgs() << "=====================================================================\n";
-        llvm::dbgs() << " Dumping module after failure of pass " << DEBUG_TYPE << " \n";
+        llvm::dbgs() << " Dumping module after failure of pass " << DEBUG_TYPE << '\n';
         modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
         llvm::dbgs() << "=====================================================================\n";
       });
@@ -1805,7 +1805,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
 
       LLVM_DEBUG(if (tracker.isModified()) {
         llvm::dbgs() << "=====================================================================\n";
-        llvm::dbgs() << " Dumping module between iterations of " << DEBUG_TYPE << " \n";
+        llvm::dbgs() << " Dumping module between iterations of " << DEBUG_TYPE << '\n';
         modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
         llvm::dbgs() << "=====================================================================\n";
       });

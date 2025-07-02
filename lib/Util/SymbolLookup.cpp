@@ -149,7 +149,7 @@ FailureOr<SymbolLookupResultUntyped> Within::lookup(
   }
   // Handle the case where it was not found
   if (reportMissing) {
-    return origin->emitOpError() << "references unknown symbol \"" << symbol << "\"";
+    return origin->emitOpError() << "references unknown symbol \"" << symbol << '"';
   } else {
     return failure();
   }

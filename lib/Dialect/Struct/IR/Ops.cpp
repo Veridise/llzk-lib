@@ -99,7 +99,7 @@ LogicalResult checkSelfType(
     if (failed(actualStructOpt)) {
       return origin->emitError().append(
           "could not find '", StructDefOp::getOperationName(), "' named \"",
-          actualStructType.getNameRef(), "\""
+          actualStructType.getNameRef(), '"'
       );
     }
     StructDefOp actualStruct = actualStructOpt.value().get();
@@ -121,7 +121,7 @@ LogicalResult checkSelfType(
       // Otherwise, generate an error stating the parent struct type must be used.
       return genCompareErr(expectedStruct, origin, aspect)
           .attachNote(actualStruct.getLoc())
-          .append("should be type of this '", StructDefOp::getOperationName(), "'");
+          .append("should be type of this '", StructDefOp::getOperationName(), '\'');
     }
   } else {
     return genCompareErr(expectedStruct, origin, aspect);
@@ -188,7 +188,7 @@ LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
       assert(llvm::isa<FlatSymbolRefAttr>(attr)); // per ODS
       StringRef name = llvm::cast<FlatSymbolRefAttr>(attr).getValue();
       if (!uniqNames.insert(name).second) {
-        return this->emitOpError().append("has more than one parameter named \"@", name, "\"");
+        return this->emitOpError().append("has more than one parameter named \"@", name, '"');
       }
     }
     // Ensure they do not conflict with existing symbols
@@ -258,14 +258,13 @@ LogicalResult StructDefOp::verifyRegions() {
           } else {
             // Must do a little more than a simple call to '?.emitOpError()' to
             // tag the error with correct location and correct op name.
-            return op.emitError() << "'" << getOperationName() << "' op " << "must define only \"@"
+            return op.emitError() << '\'' << getOperationName() << "' op " << "must define only \"@"
                                   << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
-                                  << "\" functions;" << " found \"@" << funcDef.getSymName()
-                                  << "\"";
+                                  << "\" functions;" << " found \"@" << funcDef.getSymName() << '"';
           }
         } else {
           return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
-                                  << "'; only '" << FieldDefOp::getOperationName() << "'"
+                                  << "'; only '" << FieldDefOp::getOperationName() << '\''
                                   << " and '" << FuncDefOp::getOperationName()
                                   << "' operations are permitted";
         }
@@ -465,7 +464,7 @@ getFieldDefOpImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables, Stru
   if (failed(res)) {
     return refOp->emitError() << "could not find '" << FieldDefOp::getOperationName()
                               << "' named \"@" << refOp.getFieldName() << "\" in \""
-                              << tyStruct.getNameRef() << "\"";
+                              << tyStruct.getNameRef() << '"';
   }
   return std::move(res.value());
 }

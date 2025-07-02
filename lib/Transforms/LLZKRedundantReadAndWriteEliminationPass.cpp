@@ -340,7 +340,7 @@ class RedundantReadAndWriteEliminationPass
       return;
     }
 
-    LLVM_DEBUG(llvm::dbgs() << "Running on " << fn.getName() << "\n");
+    LLVM_DEBUG(llvm::dbgs() << "Running on " << fn.getName() << '\n');
 
     // Maps redundant value -> necessary value.
     DenseMap<Value, Value> replacementMap;

@@ -163,7 +163,7 @@ inline mlir::FailureOr<SymbolLookupResult<T>> lookupSymbolIn(
   if (!ret) {
     if (reportMissing) {
       return origin->emitError() << "symbol \"" << symbol << "\" references a '" << op->getName()
-                                 << "' but expected a '" << T::getOperationName() << "'";
+                                 << "' but expected a '" << T::getOperationName() << '\'';
     } else {
       return mlir::failure();
     }

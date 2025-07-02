@@ -657,7 +657,7 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
   auto tgtOpt = lookupTopLevelSymbol<FuncDefOp>(tables, calleeAttr, *this);
   if (failed(tgtOpt)) {
     return this->emitError() << "expected '" << FuncDefOp::getOperationName() << "' named \""
-                             << calleeAttr << "\"";
+                             << calleeAttr << '"';
   }
   return KnownTargetVerifier(this, std::move(*tgtOpt)).verify();
 }
