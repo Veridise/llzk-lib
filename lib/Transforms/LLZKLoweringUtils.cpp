@@ -125,7 +125,7 @@ void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp) {
     // - Before afterOp in the same block.
     // - Inside afterOp itself.
     if ((user->getBlock() == afterOp->getBlock()) &&
-        (user->isBeforeInBlock(afterOp) || user == afterOp)) {
+        (user == afterOp || user->isBeforeInBlock(afterOp))) {
       continue;
     }
 
