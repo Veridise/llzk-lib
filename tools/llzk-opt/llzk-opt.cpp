@@ -58,10 +58,6 @@ int main(int argc, char **argv) {
   llzk::registerAllDialects(registry);
   r1cs::registerAllDialects(registry);
 
-  // Create context and *load* dialects
-  mlir::MLIRContext ctx;
-  ctx.appendDialectRegistry(registry);
-
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
   llzk::array::registerTransformationPasses();
