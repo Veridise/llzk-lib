@@ -145,7 +145,7 @@ DenseMap<Attribute, MemorySlot> CreateArrayOp::destructure(
     assert(indexAsArray && "expected ArrayAttr");
 
     Type destructAs = getType().getTypeAtIndex(indexAsArray);
-    assert(destructAs == slot.elementPtrs.lookup(indexAsArray));
+    assert(destructAs == slot.subelementTypes.lookup(indexAsArray));
 
     ArrayType destructAsArrayTy = llvm::dyn_cast<ArrayType>(destructAs);
     assert(destructAsArrayTy && "expected ArrayType");
