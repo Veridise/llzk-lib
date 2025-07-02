@@ -16,7 +16,6 @@ include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-
 class R1CS_Op<string mnemonic, list<Trait> traits = []> :
     Op<R1CSDialect, mnemonic, traits>;
 
@@ -86,7 +85,7 @@ def R1CS_ToLinearOp : R1CS_Op<"to_linear", [Pure]> {
   let summary = "Casts a signal to a linear expression";
   let arguments = (ins R1CS_SignalType:$input);
   let results = (outs R1CS_LinearType:$output);
-  let assemblyFormat = "$input `:` type($input) attr-dict `to` type($output)";
+  let assemblyFormat = "$input `:` type($input) `to` type($output) attr-dict ";
 }
 
 def R1CS_ConstOp : R1CS_Op<"const", [Pure]> {

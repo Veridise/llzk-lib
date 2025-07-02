@@ -14,7 +14,7 @@
 #include <mlir/IR/DialectImplementation.h>
 
 // need to include APSInt.h for Attrs.h.inc
-#include "llvm/ADT/APSInt.h"
+#include <llvm/ADT/APSInt.h>
 // Include TableGen'd declarations
 #define GET_ATTRDEF_CLASSES
 #include "r1cs/Dialect/IR/Attrs.h.inc"

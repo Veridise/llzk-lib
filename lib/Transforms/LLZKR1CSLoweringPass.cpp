@@ -529,7 +529,7 @@ private:
       R1CSConstraint eq = lowerEquationToR1CS(eqOp.getLhs(), eqOp.getRhs(), degreeMemo);
       constraints.push_back(eq);
     });
-    moduleOp->setAttr("veridise.lang", StringAttr::get(moduleOp.getContext(), "r1cs"));
+    moduleOp->setAttr(LANG_ATTR_NAME, StringAttr::get(moduleOp.getContext(), "r1cs"));
     Block &entryBlock = constrainFunc.getBody().front();
     IRMapping valueMap;
     Location loc = structDef.getLoc();
@@ -575,8 +575,7 @@ private:
         signalPassFailure();
         return;
       }
-      auto signalType = r1cs::SignalType::get(moduleOp.getContext());
-      auto blockArg = circuitBlock->addArgument(signalType, loc);
+      auto blockArg = circuitBlock->addArgument(bodyBuilder.getType<r1cs::SignalType>(), loc);
       valueMap.map(arg, blockArg);
     }
 
@@ -587,10 +586,10 @@ private:
     for (auto field : structDef.getFieldDefs()) {
       r1cs::PublicAttr pubAttr;
       if (field.hasPublicAttr()) {
-        pubAttr = r1cs::PublicAttr::get(moduleOp.getContext());
+        pubAttr = bodyBuilder.getAttr<r1cs::PublicAttr>();
       }
       auto defOp = bodyBuilder.create<r1cs::SignalDefOp>(
-          field.getLoc(), r1cs::SignalType::get(moduleOp.getContext()),
+          field.getLoc(), bodyBuilder.getType<r1cs::SignalType>(),
           bodyBuilder.getUI32IntegerAttr(signalDefCntr), pubAttr
       );
       signalDefCntr++;

@@ -18,7 +18,5 @@
 
 #include <llvm/ADT/TypeSwitch.h> // for llvm::TypeSwitch
 
-using namespace r1cs;
-
 #define GET_ATTRDEF_CLASSES
 #include "r1cs/Dialect/IR/Attrs.cpp.inc"

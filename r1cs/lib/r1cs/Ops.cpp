@@ -23,7 +23,7 @@ namespace r1cs {
 ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
   // Parse symbol name
   StringAttr symName;
-  if (parser.parseSymbolName(symName, "sym_name", result.attributes)) {
+  if (parser.parseSymbolName(symName, SymbolTable::getSymbolAttrName(), result.attributes)) {
     return failure();
   }
 
@@ -47,7 +47,7 @@ ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
       // Try to parse an optional `{...}` attr
       NamedAttrList attrList;
       if (succeeded(parser.parseOptionalAttrDict(attrList))) {
-        if (auto pubAttr = attrList.get("pub")) {
+        if (auto pubAttr = attrList.get(PublicAttr::getMnemonic())) {
           perArgAttrs[idx] = pubAttr;
         }
       }
@@ -61,16 +61,13 @@ ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
     }
   }
 
-  // Later: attach DictionaryAttr mapping "0", "1", ... to parsed attr
-  NamedAttrList attrs;
-  for (auto [i, attr] : perArgAttrs) {
-    attrs.append(std::to_string(i), attr);
-  }
-
-  if (!attrs.empty()) {
+  if (!perArgAttrs.empty()) {
+    NamedAttrList attrs;
+    for (auto [i, attr] : perArgAttrs) {
+      attrs.append(std::to_string(i), attr);
+    }
     result.addAttribute("arg_attrs", DictionaryAttr::get(parser.getContext(), attrs));
   }
-
   Region *body = result.addRegion();
   return parser.parseRegion(*body, args);
 }
