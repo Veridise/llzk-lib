@@ -72,13 +72,14 @@ build the rest of the dependencies and LLZK:
 # First, build LLVM + MLIR
 mkdir third-party
 pushd third-party
+export THIRD_PARTY="$PWD"
 
 # This is where llvm will be installed.
-export INSTALL_ROOT="$PWD/llvm-install-root"
+export INSTALL_ROOT="$THIRD_PARTY/llvm-install-root"
 mkdir "$INSTALL_ROOT"
 
 # Build LLVM (note that this will take a while, around 10 minutes on a Mac M1)
-git clone https://github.com/llvm/llvm-project.git -b llvmorg-18.1.8 --depth 1
+git clone https://github.com/llvm/llvm-project.git -b llvmorg-20.1.4 --depth 1
 pushd llvm-project
 mkdir build
 pushd build
@@ -106,7 +107,7 @@ popd # back to third-party
 popd # back to top level
 
 # Use an alias to avoid "prefixed in the source directory" CMake error.
-ln -sv $PWD/third-party/llvm-install-root ~/llvm-install-root-llzklib
+ln -sv $INSTALL_ROOT ~/llvm-install-root-llzklib
 export INSTALL_ROOT=~/llvm-install-root-llzklib
 
 # Generate LLZK build configuration.
@@ -116,7 +117,7 @@ cmake .. -GNinja \
   -DLLVM_ROOT="$INSTALL_ROOT" \
   -DLLVM_DIR="$INSTALL_ROOT"/lib/cmake/llvm \
   -DMLIR_DIR="$INSTALL_ROOT"/lib/cmake/mlir \
-  -DLLVM_EXTERNAL_LIT="$INSTALL_ROOT"/bin/lit \
+  -DLLVM_EXTERNAL_LIT="$THIRD_PARTY"/llvm-project/build/bin/llvm-lit \
   -DGTEST_ROOT="$INSTALL_ROOT" \
   -DLLZK_BUILD_DEVTOOLS=ON
 ```
@@ -133,10 +134,8 @@ you can run the following commands:
 * Generate API docs (in `doc/html`): `cmake --build . --target doc`
 * Run install target (requires `CMAKE_INSTALL_PREFIX` to be set):
   `cmake --build . --target install`
-* Run clang-format on C++ files:
-  ``clang-format -i $(find include -name '*.h' -type f) $(find lib tools -name '*.cpp' -type f)``
-* Run clang-format (version 19.1 or later) on tablegen files:
-  ``clang-format-19 -i $(find include -name '*.td' -type f)``
+* Run clang-format on C++ and tablegen files:
+  ``clang-format -i $(find include lib tools r1cs unittests -name '*.h' -o -name '*.cpp' -o -name '*.td' -type f)``
 * Run clang-tidy: ``clang-tidy -p build/compile_commands.json $(find lib -name '*.cpp' -type f)``
   * Note that due to bugs in clang-tidy, this may segfault if running on all files.
 
