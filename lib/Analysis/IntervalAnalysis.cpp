@@ -808,11 +808,8 @@ void IntervalDataFlowAnalysis::visitOperation(
       // If we can't compute the reference, then there must be some unsupported
       // op the reference analysis cannot handle. We emit a warning and return
       // early, since there's no meaningful computation we can do for this op.
-      std::string warning;
-      debug::Appender(warning
-      ) << "state of "
-        << val << " is empty; defining operation is unsupported by constrain ref analysis";
-      op->emitWarning(warning);
+      op->emitWarning() << "state of " << val
+                        << " is empty; defining operation is unsupported by constrain ref analysis";
       propagateIfChanged(after, changed);
       return;
     } else if (!refSet.isSingleValue()) {
@@ -935,7 +932,7 @@ llvm::APSInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   })
           .Case<arith::ConstantIntOp>([&](arith::ConstantIntOp intConst) {
     return llvm::APInt(field.get().bitWidth(), intConst.value());
-  }).Default([&](Operation *illegalOp) {
+  }).Default([](Operation *illegalOp) {
     std::string err;
     debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
     llvm::report_fatal_error(Twine(err));
