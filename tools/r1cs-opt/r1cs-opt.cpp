@@ -16,7 +16,17 @@
 #include <mlir/InitAllPasses.h>
 #include <mlir/Tools/mlir-opt/MlirOptMain.h>
 
+#include <llvm/Support/PrettyStackTrace.h>
+#include <llvm/Support/Signals.h>
+
+#include "tools/config.h"
+
 int main(int argc, char **argv) {
+  llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());
+  llvm::setBugReportMsg("PLEASE submit a bug report to " BUG_REPORT_URL
+                        " and include the crash backtrace, relevant LLZK files,"
+                        " and associated run script(s).\n");
+
   mlir::DialectRegistry registry;
   r1cs::registerAllDialects(registry);
 

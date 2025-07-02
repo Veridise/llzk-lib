@@ -32,6 +32,7 @@
 
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/CommandLine.h>
+#include <llvm/Support/PrettyStackTrace.h>
 #include <llvm/Support/Signals.h>
 
 #include "tools/config.h"
