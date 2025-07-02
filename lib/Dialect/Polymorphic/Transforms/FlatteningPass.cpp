@@ -216,13 +216,12 @@ struct MatchFailureListener : public RewriterBase::Listener {
 
   ~MatchFailureListener() override {}
 
-  LogicalResult
-  notifyMatchFailure(Location loc, function_ref<void(Diagnostic &)> reasonCallback) override {
+  void notifyMatchFailure(Location loc, function_ref<void(Diagnostic &)> reasonCallback) override {
     hadFailure = true;
 
     InFlightDiagnostic diag = emitError(loc);
     reasonCallback(*diag.getUnderlyingDiagnostic());
-    return diag; // implicitly calls `diag.report()`
+    diag.report();
   }
 };
 
