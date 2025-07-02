@@ -32,7 +32,7 @@ def R1CS_CircuitDefOp : R1CS_Op<"circuit", [
     Example:
 
     ```mlir
-      r1cs.circuit @CmpConstraint inputs (%arg0: !r1cs.signal {#r1cs.pub}, %arg1: !r1cs.signal, %arg2: !r1cs.signal) {
+    r1cs.circuit @CmpConstraint inputs (%arg0: !r1cs.signal {#r1cs.pub}, %arg1: !r1cs.signal, %arg2: !r1cs.signal) {
         %0 = r1cs.def 0 : !r1cs.signal {pub = #r1cs.pub}
         %1 = r1cs.def 1 : !r1cs.signal
         %2 = r1cs.def 2 : !r1cs.signal
@@ -85,7 +85,7 @@ def R1CS_ToLinearOp : R1CS_Op<"to_linear", [Pure]> {
   let summary = "Casts a signal to a linear expression";
   let arguments = (ins R1CS_SignalType:$input);
   let results = (outs R1CS_LinearType:$output);
-  let assemblyFormat = "$input `:` type($input) `to` type($output) attr-dict ";
+  let assemblyFormat = "$input `:` type($input) `to` type($output) attr-dict";
 }
 
 def R1CS_ConstOp : R1CS_Op<"const", [Pure]> {

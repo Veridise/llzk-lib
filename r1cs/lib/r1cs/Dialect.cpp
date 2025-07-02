@@ -22,7 +22,6 @@
 #define GET_TYPEDEF_CLASSES
 #include "r1cs/Dialect/IR/Types.cpp.inc"
 
-
 void r1cs::R1CSDialect::initialize() {
   addOperations<
 #define GET_OP_LIST
