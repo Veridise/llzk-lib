@@ -18,7 +18,7 @@ include "mlir/IR/BuiltinAttributeInterfaces.td"
 
 def LLZK_FeltConstAttr
     : AttrDef<FeltDialect, "FeltConst", [TypedAttrInterface]> {
-  let mnemonic = "felt.const";
+  let mnemonic = "const";
   let summary = "finite field element";
   let description = [{
     A felt attribute represents a finite field element.
