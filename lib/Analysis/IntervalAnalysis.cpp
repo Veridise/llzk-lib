@@ -881,14 +881,17 @@ void IntervalDataFlowAnalysis::visitOperation(
     // The reg value read from the signal type is equal to the value of the Signal
     // struct overall.
     changed |= after->setValue(readf.getVal(), operandVals[0].getScalarValue());
-  } else if (!isReadOp(op)          /* We do not need to explicitly handle read ops
-                      since they are resolved at the operand value step where constrain refs are
-                      queries (with the exception of the Signal struct, see above). */
-             && !isReturnOp(op)     /* We do not currently handle return ops as the analysis
-                 is currently limited to constrain functions, which return no value. */
-             && !isDefinitionOp(op) /* The analysis ignores definition ops. */
-             &&
-             !mlir::isa<CreateStructOp>(op) /* We do not need to analyze the creation of structs. */
+  } else if (
+      // We do not need to explicitly handle read ops since they are resolved at the operand value
+      // step where constrain refs are queries (with the exception of the Signal struct, see above).
+      !isReadOp(op)
+      // We do not currently handle return ops as the analysis is currently limited to constrain
+      // functions, which return no value.
+      && !isReturnOp(op)
+      // The analysis ignores definition ops.
+      && !isDefinitionOp(op)
+      // We do not need to analyze the creation of structs.
+      && !mlir::isa<CreateStructOp>(op)
   ) {
     op->emitWarning("unhandled operation, analysis may be incomplete");
   }
