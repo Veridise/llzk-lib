@@ -298,14 +298,14 @@ private:
       }
 
       // Case 1: Felt constant op. The degree is 0 and no rewrite is needed.
-      if (auto c = val.getDefiningOp<FeltConstantOp>()) {
+      if (auto c = llvm::dyn_cast<FeltConstantOp>(op)) {
         degreeMemo[val] = 0;
         rewrites[val] = val;
         continue;
       }
 
       // Case 2: Field read op. The degree is 1 and no rewrite needed.
-      if (auto fr = val.getDefiningOp<FieldReadOp>()) {
+      if (auto fr = llvm::dyn_cast<FieldReadOp>(op)) {
         degreeMemo[val] = 1;
         rewrites[val] = val;
         continue;
@@ -361,12 +361,12 @@ private:
         }
       };
 
-      if (auto add = dyn_cast<AddFeltOp>(op)) {
+      if (auto add = llvm::dyn_cast<AddFeltOp>(op)) {
         handleAddOrSub(add.getLhs(), add.getRhs(), /*isAdd=*/true);
         continue;
       }
 
-      if (auto sub = dyn_cast<SubFeltOp>(op)) {
+      if (auto sub = llvm::dyn_cast<SubFeltOp>(op)) {
         handleAddOrSub(sub.getLhs(), sub.getRhs(), /*isAdd=*/false);
         continue;
       }
@@ -374,7 +374,7 @@ private:
       // Case 4: lhs * rhs. Nothing further needs to be done assuming the degree lowering pass has
       // been run with maxDegree = 2. This is because both operands are normalized and at most one
       // operand can be quadratic.
-      if (auto mul = val.getDefiningOp<MulFeltOp>()) {
+      if (auto mul = llvm::dyn_cast<MulFeltOp>(op)) {
         Value lhs = rewrites[mul.getLhs()];
         Value rhs = rewrites[mul.getRhs()];
         unsigned degLhs = getDeg(lhs);
@@ -387,7 +387,7 @@ private:
 
       // Case 6: Neg. Similar to multiplication, nothing needs to be done since we are doing the
       // rewrite bottom up
-      if (auto neg = val.getDefiningOp<NegFeltOp>()) {
+      if (auto neg = llvm::dyn_cast<NegFeltOp>(op)) {
         Value inner = rewrites[neg.getOperand()];
         unsigned deg = getDeg(inner);
         degreeMemo[val] = deg;
@@ -473,7 +473,7 @@ private:
           assert(fieldVal != fieldMap.end() && "Field read not associated with a value");
           return fieldVal->second;
         }
-        v.getDefiningOp()->emitError("Value not mapped in R1CS lowering").report();
+        op->emitError("Value not mapped in R1CS lowering").report();
         signalPassFailure();
       }
       return valueMap.lookup(v);
