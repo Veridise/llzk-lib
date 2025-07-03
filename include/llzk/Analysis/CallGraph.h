@@ -82,8 +82,8 @@ public:
   private:
     Edge(CallGraphNode *src, CallGraphNode *target, Kind kind)
         : source(src), targetAndKind(target, kind) {}
-    Edge(CallGraphNode *src, llvm::PointerIntPair<CallGraphNode *, 2, Kind> targetAndKind)
-        : source(src), targetAndKind(targetAndKind) {}
+    Edge(CallGraphNode *src, llvm::PointerIntPair<CallGraphNode *, 2, Kind> tgtAndKind)
+        : source(src), targetAndKind(tgtAndKind) {}
 
     /// The source node of this edge.
     /// Note: added by LLZK.
@@ -143,7 +143,7 @@ private:
     static bool isEqual(const Edge &lhs, const Edge &rhs) { return lhs == rhs; }
   };
 
-  CallGraphNode(mlir::Region *callableRegion) : callableRegion(callableRegion) {}
+  CallGraphNode(mlir::Region *callable) : callableRegion(callable) {}
 
   /// Add an edge to 'node' with the given kind.
   void addEdge(CallGraphNode *node, Edge::Kind kind);

@@ -161,10 +161,12 @@ public:
   const mlir::DataFlowSolver &getSolver() const { return solver; }
 
 protected:
+  mlir::DataFlowSolver solver;
+
   /// @brief Initialize the shared dataflow solver with any common analyses required
   /// by the contained struct analyses.
   /// @param solver
-  virtual void initializeSolver(mlir::DataFlowSolver &solver) = 0;
+  virtual void initializeSolver() = 0;
 
   /// @brief Create and return a valid `Context` object. This function is called
   /// once by `constructChildAnalyses` and the resulting `Context` is passed to
@@ -179,7 +181,7 @@ protected:
 
     // The analysis is run at the module level so that lattices are computed
     // for global functions as well.
-    initializeSolver(solver);
+    initializeSolver();
     auto res = solver.initializeAndRun(modOp);
     ensure(res.succeeded(), "solver failed to run on module!");
 
@@ -200,7 +202,6 @@ protected:
 private:
   mlir::ModuleOp modOp;
   ResultMap results;
-  mlir::DataFlowSolver solver;
 
   /// @brief Ensures that the given struct has a result.
   /// @param op The struct to ensure has a result.

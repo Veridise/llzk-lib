@@ -33,7 +33,7 @@ using ManagedResources =
 class SymbolLookupResultUntyped {
 public:
   SymbolLookupResultUntyped() : op(nullptr) {}
-  SymbolLookupResultUntyped(mlir::Operation *op) : op(op) {}
+  SymbolLookupResultUntyped(mlir::Operation *opPtr) : op(opPtr) {}
 
   /// Access the internal operation.
   mlir::Operation *operator->();
@@ -80,7 +80,7 @@ private:
 
 template <typename T> class SymbolLookupResult {
 public:
-  SymbolLookupResult(SymbolLookupResultUntyped &&inner) : inner(std::move(inner)) {}
+  SymbolLookupResult(SymbolLookupResultUntyped &&innerRes) : inner(std::move(innerRes)) {}
 
   /// Access the internal operation as type T.
   /// Follows the behaviors of llvm::dyn_cast if the internal operation cannot cast to that type.

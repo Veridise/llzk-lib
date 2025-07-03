@@ -621,10 +621,10 @@ class IntervalDataFlowAnalysis
 
 public:
   explicit IntervalDataFlowAnalysis(
-      mlir::DataFlowSolver &solver, llvm::SMTSolverRef smt, const Field &f
+      mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f
   )
-      : Base::DenseForwardDataFlowAnalysis(solver), dataflowSolver(solver), smtSolver(smt),
-        field(f) {}
+      : Base::DenseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
+        smtSolver(smt), field(f) {}
 
   void visitCallControlFlowTransfer(
       mlir::CallOpInterface call, dataflow::CallControlFlowAction action, const Lattice &before,
@@ -640,7 +640,7 @@ public:
   llvm::SMTExprRef getOrCreateSymbol(const ConstrainRef &r);
 
 private:
-  mlir::DataFlowSolver &dataflowSolver;
+  mlir::DataFlowSolver &_dataflowSolver;
   llvm::SMTSolverRef smtSolver;
   SymbolMap refSymbols;
   std::reference_wrapper<const Field> field;
@@ -826,12 +826,11 @@ public:
       mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
       IntervalAnalysisContext &ctx
   ) override {
-    auto res =
-        StructIntervals::compute(getModule(), getStruct(), solver, moduleAnalysisManager, ctx);
-    if (mlir::failed(res)) {
+    auto r = StructIntervals::compute(getModule(), getStruct(), solver, moduleAnalysisManager, ctx);
+    if (mlir::failed(r)) {
       return mlir::failure();
     }
-    setResult(std::move(*res));
+    setResult(std::move(*r));
     return mlir::success();
   }
 };
@@ -849,7 +848,7 @@ public:
   void setField(const Field &f) { field = f; }
 
 protected:
-  void initializeSolver(mlir::DataFlowSolver &solver) override {
+  void initializeSolver() override {
     ensure(field.has_value(), "field not set, could not generate analysis context");
     (void)solver.load<ConstrainRefAnalysis>();
     auto smtSolverRef = smtSolver;

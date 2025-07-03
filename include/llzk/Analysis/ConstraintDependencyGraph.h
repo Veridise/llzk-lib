@@ -226,9 +226,7 @@ public:
   virtual ~ConstraintDependencyGraphModuleAnalysis() = default;
 
 protected:
-  void initializeSolver(mlir::DataFlowSolver &solver) override {
-    (void)solver.load<ConstrainRefAnalysis>();
-  }
+  void initializeSolver() override { (void)solver.load<ConstrainRefAnalysis>(); }
 
   NoContext getContext() override { return {}; }
 };
