@@ -18,7 +18,7 @@
 
 // Include TableGen'd op interfaces (if defined)
 #ifdef GET_OP_INTERFACE_DECLS
-#include "r1cs/include/r1cs/Dialect/IR/OpInterfaces.h.inc"
+#include "r1cs/Dialect/IR/OpInterfaces.h.inc"
 #endif
 
 // Include TableGen'd op classes

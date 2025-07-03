@@ -780,7 +780,7 @@ void IntervalDataFlowAnalysis::visitOperation(
 
   llvm::SmallVector<LatticeValue> operandVals;
 
-  auto constrainRefLattice = dataflowSolver.lookupState<ConstrainRefLattice>(op);
+  auto constrainRefLattice = _dataflowSolver.lookupState<ConstrainRefLattice>(op);
   ensure(constrainRefLattice, "failed to get lattice");
 
   for (OpOperand &operand : op->getOpOperands()) {

@@ -1,8 +1,9 @@
 add_library(LLZKDialectHeaders INTERFACE)
-target_include_directories(
-  LLZKDialectHeaders SYSTEM
+target_include_directories(LLZKDialectHeaders
   INTERFACE # headers in this folder's subdirectories
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+target_include_directories(LLZKDialectHeaders
+  SYSTEM INTERFACE
             # TableGen'd files
             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
             # We assume LLZK is installed as-is to include top level

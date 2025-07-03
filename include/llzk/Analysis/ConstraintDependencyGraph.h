@@ -152,8 +152,9 @@ public:
     structDef = other.structDef;
     signalSets = other.signalSets;
     constantSets = other.constantSets;
+    return *this;
   }
-  ~ConstraintDependencyGraph() = default;
+  virtual ~ConstraintDependencyGraph() = default;
 
 private:
   mlir::ModuleOp mod;
@@ -200,6 +201,7 @@ class ConstraintDependencyGraphStructAnalysis
     : public StructAnalysis<ConstraintDependencyGraph, NoContext> {
 public:
   using StructAnalysis::StructAnalysis;
+  virtual ~ConstraintDependencyGraphStructAnalysis() = default;
 
   mlir::LogicalResult runAnalysis(
       mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager, NoContext &_
@@ -221,11 +223,10 @@ class ConstraintDependencyGraphModuleAnalysis
 
 public:
   using ModuleAnalysis::ModuleAnalysis;
+  virtual ~ConstraintDependencyGraphModuleAnalysis() = default;
 
 protected:
-  void initializeSolver(mlir::DataFlowSolver &solver) override {
-    (void)solver.load<ConstrainRefAnalysis>();
-  }
+  void initializeSolver() override { (void)solver.load<ConstrainRefAnalysis>(); }
 
   NoContext getContext() override { return {}; }
 };

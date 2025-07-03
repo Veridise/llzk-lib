@@ -21,8 +21,7 @@ concept OpComparable = requires(Op op) {
 };
 
 template <typename Op>
-concept NamedOpComparable = requires(Op op) {
-  OpComparable<Op>;
+concept NamedOpComparable = OpComparable<Op> && requires(Op op) {
   { op.getName() } -> std::convertible_to<mlir::StringRef>;
 };
 
