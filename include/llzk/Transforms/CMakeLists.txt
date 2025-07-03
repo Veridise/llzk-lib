@@ -1,4 +1,4 @@
-include_directories(${MLIR_INCLUDE_DIRS} ${LLZK_INCLUDE_DIR} ${R1CS_INCLUDE_DIR} ${CMAKE_BINARY_DIR}/r1cs/include/)
+include_directories(${MLIR_INCLUDE_DIRS} ${LLZK_INCLUDE_DIR} ${R1CS_INCLUDE_DIR})
 
 set(LLVM_TARGET_DEFINITIONS "LLZKTransformationPasses.td")
 mlir_tablegen(LLZKTransformationPasses.h.inc -gen-pass-decls -name=Transformation)

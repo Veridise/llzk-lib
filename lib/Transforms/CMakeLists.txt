@@ -1,4 +1,4 @@
-include_directories(${R1CS_INCLUDE_DIR} ${CMAKE_BINARY_DIR}/r1cs/include/)
+include_directories(${R1CS_INCLUDE_DIR})
 add_library(LLZKTransforms)
 add_library(LLZK::LLZKTransforms ALIAS LLZKTransforms)
 

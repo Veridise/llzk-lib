@@ -3,7 +3,6 @@ include_directories(
   ${LLVM_INCLUDE_DIRS}
   ${MLIR_INCLUDE_DIRS}
   ${R1CS_INCLUDE_DIR}
-  ${CMAKE_BINARY_DIR}/r1cs/include
 )
 
 llzk_target_add_mlir_link_settings(r1cs-opt)

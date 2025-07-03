@@ -264,7 +264,7 @@ if(Doxygen_FOUND)
     "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     "${LLZK_MLIR_DOC_OUTPUT_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
-  add_dependencies(doxygen LLZKDialectHeaders mlir-doc)
+  add_dependencies(doxygen LLZKDialectHeaders R1CSDialectHeaders mlir-doc)
   add_dependencies(doc doxygen)
 endif()
 

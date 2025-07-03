@@ -1,4 +1,4 @@
-include_directories(${MLIR_INCLUDE_DIRS} ${R1CS_INCLUDE_DIR} ${CMAKE_BINARY_DIR}/r1cs/include/)
+include_directories(${MLIR_INCLUDE_DIRS} ${R1CS_INCLUDE_DIR})
 
 set(LLVM_TARGET_DEFINITIONS Dialect.td)
 mlir_tablegen(Dialect.h.inc -gen-dialect-decls -dialect=r1cs)
@@ -25,4 +25,4 @@ mlir_tablegen(Attrs.cpp.inc -gen-attrdef-defs -attrdefs-dialect=r1cs)
 
 add_public_tablegen_target(R1CSDialectIncGen)
 add_dependencies(mlir-headers R1CSDialectIncGen)
-add_dependencies(LLZKDialectHeaders R1CSDialectIncGen)
+add_dependencies(R1CSDialectHeaders R1CSDialectIncGen)
