@@ -820,6 +820,7 @@ class ModuleIntervalAnalysis;
 class StructIntervalAnalysis : public StructAnalysis<StructIntervals, IntervalAnalysisContext> {
 public:
   using StructAnalysis::StructAnalysis;
+  virtual ~StructIntervalAnalysis() = default;
 
   mlir::LogicalResult runAnalysis(
       mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
@@ -843,6 +844,7 @@ class ModuleIntervalAnalysis
 public:
   ModuleIntervalAnalysis(mlir::Operation *op)
       : ModuleAnalysis(op), smtSolver(llvm::CreateZ3Solver()), field(std::nullopt) {}
+  virtual ~ModuleIntervalAnalysis() = default;
 
   void setField(const Field &f) { field = f; }
 

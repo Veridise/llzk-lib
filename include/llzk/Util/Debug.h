@@ -105,7 +105,9 @@ template <Iterable InputIt> inline void Appender::append(const InputIt &collecti
 
 template <typename InputIt> void Appender::appendList(InputIt begin, InputIt end) {
   stream << '[';
-  llvm::interleave(begin, end, [this](const auto &n) { append(n); }, [this] { stream << ", "; });
+  llvm::interleave(begin, end, [this](const auto &n) { this->append(n); }, [this] {
+    this->stream << ", ";
+  });
   stream << ']';
 }
 

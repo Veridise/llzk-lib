@@ -59,6 +59,7 @@ public:
     }
     modOp = *maybeModOp;
   }
+  virtual ~StructAnalysis() = default;
 
   /// @brief Perform the analysis and construct the `Result` output.
   /// @param solver The pre-configured dataflow solver. This solver should already have
@@ -135,6 +136,7 @@ public:
       llvm::report_fatal_error(error_message);
     }
   }
+  virtual ~ModuleAnalysis() = default;
 
   /// @brief Run the `StructAnalysisTy` struct analysis on all child structs.
   /// @param am The module-level analysis manager that will be passed to
