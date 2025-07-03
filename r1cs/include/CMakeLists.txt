@@ -8,5 +8,6 @@ target_include_directories(R1CSDialectHeaders
             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
             # We assume LLZK is installed as-is to include top level
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+install(TARGETS R1CSDialectHeaders EXPORT LLZKTargets)
 
 add_subdirectory(r1cs/Dialect/IR/)

@@ -1,8 +1,3 @@
-include_directories(
-  ${R1CS_INCLUDE_DIR}
-  ${CMAKE_BINARY_DIR}/r1cs/include
-)
-
 add_mlir_dialect_library(R1CSDialect
   Dialect.cpp
   Types.cpp
@@ -15,6 +10,9 @@ add_mlir_dialect_library(R1CSDialect
   MLIRSupport
   LLVMHeaders
   MLIRHeaders
+
+  LINK_LIBS PUBLIC
+  R1CSDialectHeaders
 
   DEPENDS
   R1CSDialectIncGen
