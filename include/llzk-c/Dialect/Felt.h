@@ -31,6 +31,14 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt);
 /// Creates a llzk::felt::FeltConstAttr.
 MLIR_CAPI_EXPORTED MlirAttribute llzkFeltConstAttrGet(MlirContext context, int64_t value);
 
+/// Creates a llzk::felt::FeltConstAttr from a string representation.
+/// This function interprets the string str in the given radix. The interpretation stops when the
+/// first character that is not suitable for the radix is encountered, or the end of the string.
+/// Acceptable radix values are 2, 8, 10, 16, and 36. It is an error for the value implied by the
+/// string to require more bits than numBits.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkFeltConstAttrParseFromStr(MlirContext ctx, unsigned numBits, MlirStringRef str, uint8_t radix);
+
 /// Returns true if the attribute is a FeltConstAttr.
 LLZK_DECLARE_ATTR_ISA(FeltConstAttr);
 

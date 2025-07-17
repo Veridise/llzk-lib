@@ -17,12 +17,21 @@
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
 
+#include <mlir-c/Support.h>
+
 using namespace llzk::felt;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt, FeltDialect)
 
 MlirAttribute llzkFeltConstAttrGet(MlirContext ctx, int64_t value) {
   return wrap(FeltConstAttr::get(unwrap(ctx), llzk::toAPInt(value)));
+}
+
+MlirAttribute
+llzkFeltConstAttrParseFromStr(MlirContext ctx, unsigned numBits, MlirStringRef str, uint8_t radix) {
+  // Using the constructor of APInt directly since the helper does not support this use case
+  auto value = llvm::APInt(numBits, unwrap(str), radix);
+  return wrap(FeltConstAttr::get(unwrap(ctx), value));
 }
 
 bool llzkAttributeIsAFeltConstAttr(MlirAttribute attr) {
