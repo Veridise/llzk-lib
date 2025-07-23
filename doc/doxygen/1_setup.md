@@ -54,6 +54,7 @@ LLZK requires the following to be installed:
 * CMake 3.18 or newer
 * Ninja
 * Z3
+* Clang 16 or higher
 
 To optionally generate API documentation, you need:
 * Doxygen (tested on 1.10 and newer)
