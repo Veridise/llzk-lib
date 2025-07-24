@@ -11,6 +11,8 @@
 
 #include <llvm/ADT/Twine.h>
 
+#include <mutex>
+
 namespace llzk {
 
 Field::Field(std::string_view primeStr) : primeMod(llvm::APSInt(primeStr)) {
