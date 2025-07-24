@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/IntervalAnalysis.h"
+#include "llzk/Analysis/Matchers.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 
@@ -416,6 +417,15 @@ void IntervalDataFlowAnalysis::visitOperation(
     ExpressionValue lhsExpr = operandVals[0].getScalarValue();
     ExpressionValue rhsExpr = operandVals[1].getScalarValue();
 
+    // Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
+    // These patterns enforce that s is one of c0, ..., cN.
+    auto res = getGeneralizedDecompInterval(constrainRefLattice, lhsVal, rhsVal);
+    if (succeeded(res)) {
+      for (Value signalVal : res->first) {
+        changed |= applyInterval(emitEq, after, signalVal, res->second);
+      }
+    }
+
     ExpressionValue constraint = intersection(smtSolver, lhsExpr, rhsExpr);
     // Update the LHS and RHS to the same value, but restricted intervals
     // based on the constraints
@@ -731,6 +741,92 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
   // clang-format on
 
   return res;
+}
+
+FailureOr<std::pair<DenseSet<Value>, Interval>>
+IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
+    const ConstrainRefLattice *constrainRefLattice, Value lhs, Value rhs
+) {
+  auto isZeroConst = [this](Value v) {
+    Operation *op = v.getDefiningOp();
+    if (!op) {
+      return false;
+    }
+    if (!isConstOp(op)) {
+      return false;
+    }
+    llvm::APSInt c = getConst(op);
+    return c == field.get().zero();
+  };
+  bool lhsIsZero = isZeroConst(lhs), rhsIsZero = isZeroConst(rhs);
+  Value exprTree = nullptr;
+  if (lhsIsZero && !rhsIsZero) {
+    exprTree = rhs;
+  } else if (!lhsIsZero && rhsIsZero) {
+    exprTree = lhs;
+  } else {
+    return failure();
+  }
+
+  // We now explore the expression tree for multiplications of subtractions/signal values.
+  std::optional<ConstrainRef> signalRef = std::nullopt;
+  DenseSet<Value> signalVals;
+  SmallVector<APSInt> consts;
+  SmallVector<Value> frontier {exprTree};
+  while (!frontier.empty()) {
+    Value v = frontier.back();
+    frontier.pop_back();
+    Operation *op = v.getDefiningOp();
+
+    FeltConstantOp c;
+    Value signalVal;
+    auto handleRefValue = [&constrainRefLattice, &signalRef, &signalVal, &signalVals]() {
+      ConstrainRefLatticeValue refSet = constrainRefLattice->getOrDefault(signalVal);
+      if (!refSet.isScalar() || !refSet.isSingleValue()) {
+        return failure();
+      }
+      ConstrainRef r = refSet.getSingleValue();
+      if (signalRef.has_value() && signalRef.value() != r) {
+        return failure();
+      } else if (!signalRef.has_value()) {
+        signalRef = r;
+      }
+      signalVals.insert(signalVal);
+      return success();
+    };
+
+    auto subPattern = m_CommutativeOp<SubFeltOp>(m_RefValue(&signalVal), m_Constant(&c));
+    if (op && matchPattern(op, subPattern)) {
+      if (failed(handleRefValue())) {
+        return failure();
+      }
+      auto constInt = APSInt(c.getValueAttr().getValue());
+      consts.push_back(field.get().reduce(constInt));
+      continue;
+    } else if (m_RefValue(&signalVal).match(v)) {
+      if (failed(handleRefValue())) {
+        return failure();
+      }
+      consts.push_back(field.get().zero());
+      continue;
+    }
+
+    Value a, b;
+    auto mulPattern = m_CommutativeOp<MulFeltOp>(matchers::m_Any(&a), matchers::m_Any(&b));
+    if (op && matchPattern(op, mulPattern)) {
+      frontier.push_back(a);
+      frontier.push_back(b);
+      continue;
+    }
+
+    return failure();
+  }
+
+  // Now, we aggregate the Interval. If we have sparse values (e.g., 0, 2, 4),
+  // we will create a larger range of [0, 4], since we don't support multiple intervals.
+  std::sort(consts.begin(), consts.end());
+  Interval iv = Interval::TypeA(field.get(), consts.front(), consts.back());
+  return std::make_pair(std::move(signalVals), iv);
 }
 
 /* StructIntervals */

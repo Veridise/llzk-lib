@@ -305,6 +305,11 @@ private:
   mlir::ChangeResult
   applyInterval(mlir::Operation *originalOp, Lattice *after, mlir::Value val, Interval newInterval);
 
+  /// @brief Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
+  mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>> getGeneralizedDecompInterval(
+      const ConstrainRefLattice *constrainRefLattice, mlir::Value lhs, mlir::Value rhs
+  );
+
   bool isBoolOp(mlir::Operation *op) const {
     return mlir::isa<boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(
         op
