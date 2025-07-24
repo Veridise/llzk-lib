@@ -225,12 +225,9 @@ Interval Interval::join(const Interval &rhs) const {
 
 Interval Interval::intersect(const Interval &rhs) const {
   auto &lhs = *this;
-  llvm::errs() << __PRETTY_FUNCTION__ << " lhs, rhs " << lhs << ", " << rhs << '\n';
-  llvm::errs().indent(4) << lhs.getField().prime() << ", " << rhs.getField().prime() << '\n';
   ensure(
       lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
   );
-  llvm::errs().indent(4) << "begin trivial cases\n";
   // Trivial cases
   if (lhs.isEmpty() || rhs.isEmpty()) {
     return Interval::Empty(field.get());
@@ -244,7 +241,6 @@ Interval Interval::intersect(const Interval &rhs) const {
   if (lhs.isDegenerate() || rhs.isDegenerate()) {
     return lhs.toUnreduced().intersect(rhs.toUnreduced()).reduce(field.get());
   }
-  llvm::errs().indent(4) << "end trivial cases\n";
 
   // More complex cases
   if (areOneOf<
