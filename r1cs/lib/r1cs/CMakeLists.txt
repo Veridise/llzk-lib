@@ -1,22 +1,12 @@
-add_mlir_dialect_library(R1CSDialect
-  Dialect.cpp
-  Types.cpp
-  Ops.cpp
-  Attrs.cpp
-  Registration.cpp
+add_library(R1CSDialect)
 
-  LINK_LIBS PRIVATE
-  MLIRIR
-  MLIRSupport
-  LLVMHeaders
-  MLIRHeaders
-
-  LINK_LIBS PUBLIC
-  R1CSDialectHeaders
-
-  DEPENDS
-  R1CSDialectIncGen
-)
+file(GLOB_RECURSE R1CSDialect_SOURCES "*.cpp")
+target_sources(R1CSDialect PRIVATE ${R1CSDialect_SOURCES})
+target_link_libraries(
+  R1CSDialect PUBLIC R1CSDialectHeaders
+                     MLIRIR MLIRSupport
+                     LLVMHeaders MLIRHeaders)
+add_dependencies(R1CSDialect R1CSDialectIncGen)
 llzk_target_add_mlir_link_settings(R1CSDialect)
 
 install(TARGETS R1CSDialect EXPORT LLZKTargets)
