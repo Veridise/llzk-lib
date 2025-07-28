@@ -55,7 +55,8 @@
         llzkDebugClang = (final.llzk.override { stdenv = final.clangStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
           cmakeFlags = (attrs.cmakeFlags or []) ++ [
-            "-D_FORTIFY_SOURCE=0"
+            "-DCMAKE_C_FLAGS=-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
+            "-DCMAKE_CXX_FLAGS=-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
           ];
 
           postInstall = ''
@@ -107,7 +108,8 @@
         llzkDebugGCC = (final.llzk.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
           cmakeFlags = (attrs.cmakeFlags or []) ++ [
-            "-D_FORTIFY_SOURCE=0"
+            "-DCMAKE_C_FLAGS=-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
+            "-DCMAKE_CXX_FLAGS=-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
           ];
 
           postInstall = ''
