@@ -114,7 +114,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
     )
   endif()
 
-  add_compile_definitions(_FORTIFY_SOURCE=0)
   add_compile_options(-O0 -g)
 endif()
 
