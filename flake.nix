@@ -54,10 +54,7 @@
 
         llzkDebugClang = (final.llzk.override { stdenv = final.clangStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
-          cmakeFlags = (attrs.cmakeFlags or []) ++ [
-            "-DCMAKE_C_FLAGS=-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
-            "-DCMAKE_CXX_FLAGS=-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
-          ];
+          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
 
           postInstall = ''
             if [ -f test/report.xml ]; then
@@ -107,10 +104,7 @@
 
         llzkDebugGCC = (final.llzk.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
-          cmakeFlags = (attrs.cmakeFlags or []) ++ [
-            "-DCMAKE_C_FLAGS=-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
-            "-DCMAKE_CXX_FLAGS=-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
-          ];
+          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
 
           postInstall = ''
             if [ -f test/report.xml ]; then
