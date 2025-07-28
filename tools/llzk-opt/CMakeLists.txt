@@ -1,5 +1,5 @@
 add_executable(llzk-opt llzk-opt.cpp)
-target_link_libraries(llzk-opt PUBLIC ${LLZK_DEP_DIALECT_LIBS} MLIROptLib
+target_link_libraries(llzk-opt PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIROptLib
                       LLZK::DialectRegistration LLZK::LLZKAnalysis
                       LLZK::LLZKTransforms LLZK::LLZKUtil LLZK::LLZKValidators
                       LLZKDialectHeaders MLIRIR R1CSDialectHeaders)
