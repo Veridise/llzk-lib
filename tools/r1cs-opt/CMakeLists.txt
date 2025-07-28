@@ -13,5 +13,4 @@ target_link_libraries(r1cs-opt
   MLIRPass
   MLIRTransforms
   R1CSDialect
-  R1CSDialectHeaders
 )

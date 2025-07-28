@@ -10,6 +10,8 @@ add_mlir_dialect_library(R1CSDialect
   MLIRSupport
   LLVMHeaders
   MLIRHeaders
+
+  LINK_LIBS PUBLIC
   R1CSDialectHeaders
 
   DEPENDS
