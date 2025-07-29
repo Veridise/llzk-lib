@@ -108,7 +108,6 @@ public:
   /// Mapping of `destStruct` field that has `srcStruct` type to each FieldDefOp from `srcStruct` to
   /// the cloned version of that `srcStruct` field within `destStruct`.
   using DestFieldWithSrcStructType = FieldDefOp;
-  // using SrcStructField = FieldDefOp;
   using DestCloneOfSrcStructField = FieldDefOp;
   using SrcStructFieldToCloneInDest = DenseMap<StringAttr, DestCloneOfSrcStructField>;
   using DestToSrcToClonedSrcInDest =
@@ -160,7 +159,7 @@ protected:
       if (failed(inlineCallRes)) {
         return WalkResult::interrupt(); // use interrupt to signal failure
       }
-      srcFuncClone.erase();      // delete what's left after transfering the body elsewhere
+      srcFuncClone.erase();      // delete what's left after transferring the body elsewhere
       callOp.erase();            // delete the original CallOp
       return WalkResult::skip(); // Must skip because the CallOp was erased.
     });
@@ -404,13 +403,9 @@ public:
     );
 
     DestToSrcToClonedSrcInDest destToSrcToClone = cloneFields();
-    if (failed(handleConstrainCall(destToSrcToClone))) {
-      return failure();
-    }
-    if (failed(handleComputeCall(destToSrcToClone))) {
-      return failure();
-    }
-    if (failed(deleteFields(destToSrcToClone))) {
+    if (failed(handleConstrainCall(destToSrcToClone))
+        || failed(handleComputeCall(destToSrcToClone))
+        || failed(deleteFields(destToSrcToClone))) {
       return failure();
     }
     return handleRemainingStructValues();
