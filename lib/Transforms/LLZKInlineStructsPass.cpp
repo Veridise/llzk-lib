@@ -403,11 +403,13 @@ public:
     );
 
     DestToSrcToClonedSrcInDest destToSrcToClone = cloneFields();
+    // clang-format off
     if (failed(handleConstrainCall(destToSrcToClone))
         || failed(handleComputeCall(destToSrcToClone))
         || failed(deleteFields(destToSrcToClone))) {
       return failure();
     }
+    // clang-format on
     return handleRemainingStructValues();
   }
 };
