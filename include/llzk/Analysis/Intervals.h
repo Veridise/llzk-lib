@@ -172,7 +172,7 @@ private:
 ///     F     ]              [       F       ]           [      F
 /// <------------------------------------------------------------->
 ///
-///   D      ]  [           D            ]  [           D            ]
+///   D      ]  [           D            ]  [           D
 ///          E            ]  [            E              ]  [   E
 ///
 /// For the sake of simplicity, let's just not care about D and E, which covers at least
@@ -318,7 +318,7 @@ public:
 
   const Field &getField() const { return field.get(); }
 
-  llvm::APSInt width() const { return llvm::APSInt((b - a).abs().zext(field.get().bitWidth())); }
+  llvm::APSInt width() const;
 
   llvm::APSInt lhs() const { return a; }
   llvm::APSInt rhs() const { return b; }

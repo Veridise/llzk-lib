@@ -134,7 +134,7 @@ llvm::APSInt UnreducedInterval::width() const {
     // This would be reduced to an empty Interval, so the width is just zero.
     w = llvm::APSInt::getUnsigned(0);
   } else {
-    /// Since the range is inclusive, we add one to the difference to get the true width.
+    // Since the range is inclusive, we add one to the difference to get the true width.
     w = expandingSub(b, a)++;
   }
   ensure(safeGe(w, llvm::APSInt::getUnsigned(0)), "cannot have negative width");
@@ -396,6 +396,19 @@ Interval operator%(const Interval &lhs, const Interval &rhs) {
   );
   const auto &field = rhs.getField();
   return UnreducedInterval(field.zero(), rhs.b).reduce(field);
+}
+
+llvm::APSInt Interval::width() const {
+  switch (ty) {
+  case Type::Empty:
+    return field.get().zero();
+  case Type::Degenerate:
+    return field.get().one();
+  case Type::Entire:
+    return field.get().prime();
+  default:
+    return toUnreduced().width();
+  }
 }
 
 void Interval::print(mlir::raw_ostream &os) const {
