@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-flatten,llzk-inline-structs{max-complexity=2})' -verify-diagnostics %s | FileCheck %s
 
-// TESTS: full inlining is witin `maxComplexity` limit
+// TESTS: full inlining is within `maxComplexity` limit
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component1A {
     struct.field @f1 : !felt.type
@@ -373,7 +373,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // -----
 
-// TESTS: full inlining is witin `maxComplexity` limit (multiple calls from same struct)
+// TESTS: full inlining is within `maxComplexity` limit (multiple calls from same struct)
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component5B {
     struct.field @f1 : !felt.type
