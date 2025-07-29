@@ -13,7 +13,7 @@
 
 TEST_F(CAPITest, register_validation_passes_and_create) {
   mlirRegisterLLZKValidationPasses();
-  auto manager = mlirPassManagerCreate(ctx);
+  auto manager = mlirPassManagerCreate(context);
 
   auto pass = mlirCreateLLZKValidationFieldWriteValidatorPass();
   mlirPassManagerAddOwnedPass(manager, pass);
@@ -23,7 +23,7 @@ TEST_F(CAPITest, register_validation_passes_and_create) {
 
 TEST_F(CAPITest, register_validation_field_write_validator_pass_and_create) {
   mlirRegisterLLZKValidationFieldWriteValidatorPass();
-  auto manager = mlirPassManagerCreate(ctx);
+  auto manager = mlirPassManagerCreate(context);
 
   auto pass = mlirCreateLLZKValidationFieldWriteValidatorPass();
   mlirPassManagerAddOwnedPass(manager, pass);

@@ -33,7 +33,7 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure the named constant is a a parameter of the parent struct
   if (!getParentRes->hasParamNamed(this->getConstNameAttr())) {
     return this->emitOpError()
-        .append("references unknown symbol \"", this->getConstNameAttr(), "\"")
+        .append("references unknown symbol \"", this->getConstNameAttr(), '"')
         .attachNote(getParentRes->getLoc())
         .append("must reference a parameter of this struct");
   }

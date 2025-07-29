@@ -97,7 +97,7 @@ parseAttrDictWithWarnings(OpAsmParser &parser, NamedAttrList &extraAttrs, Operat
     return failure();
   }
   if (failed(state.name.verifyInherentAttrs(extraAttrs, [&]() {
-    return parser.emitError(loc) << "'" << state.name.getStringRef() << "' op ";
+    return parser.emitError(loc) << '\'' << state.name.getStringRef() << "' op ";
   }))) {
     return failure();
   }

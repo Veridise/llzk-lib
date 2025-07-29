@@ -84,7 +84,7 @@ digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 ## Special Constructs
 
 - `nondetFelt()`: can be used as the parameter of a `constrain()` function when the expression from the source language can be elided because it cannot be used as part of a constraint. For example, expressions containing bitwise operators cannot be part of a constraint.
-- A special element can be added to a `struct` to store the return value of a component (i.e. `synthetic_return` in the examples above).
+- A special element can be added to a `struct` to store the return value of a component (i.e., `synthetic_return` in the examples above).
 
 ## Semantic Rules
 
@@ -96,11 +96,11 @@ digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 
 ## Translation Guidelines {#translation-guidelines}
 
-- The modifier `pub` can be added before the type on `compute()` and `constrain()` parameters to denote which elements of the domain are public (default is private). Likewise, it can be used on struct fields to denote which fields are part of the co-domain (i.e. public outputs).
+- The modifier `pub` can be added before the type on `compute()` and `constrain()` parameters to denote which elements of the domain are public (default is private). Likewise, it can be used on struct fields to denote which fields are part of the co-domain (i.e., public outputs).
 - The frontend translation for each source language to ZK IR should be as simple as possible since this will be repeated effort for each source language. Any transformations or optimizations on the ZK IR should be done in a shared module run on the internal representation after translation.
 - Constant integer parameters on a `struct` can be used to avoid creating multiple versions of that `struct` in the IR. A later pass can flatten the IR if needed by the client analysis. This is even where multiple dialects of the IR could be used, with a flattened dialect disallowing these parameters.
 - If loop bounds are known, `scf.for` should be used to make loop bounds explicit. However, `scf.while` is available to handle the general case if that information is not available but this should not be used in the `constrain()` function.
-- Global functions (i.e. user-defined or helper functions, located outside of `struct` definitions) are pure. There is no global state and parameters are pass-by-value (i.e. a copy is created) so there is nothing external they can modify.
+- Global functions (i.e., user-defined or helper functions, located outside of `struct` definitions) are pure. There is no global state and parameters are pass-by-value (i.e., a copy is created) so there is nothing external they can modify.
 - Source line information should be handled via MLIR so frontend components must provide that information when building the MLIR AST.
 - Only the outermost module should have the `veridise.lang = "llzk"` attribute (because the presence of that attribute is used to determine the “root” symbol table for symbol resolution).
 - All inner modules must be named because their names are used to build the fully-qualified path names for symbol references.

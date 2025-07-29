@@ -213,7 +213,7 @@ void CallGraph::print(llvm::raw_ostream &os) const {
 
     auto *callableRegion = node->getCallableRegion();
     auto *parentOp = callableRegion->getParentOp();
-    os << "'" << callableRegion->getParentOp()->getName() << "' - Region #"
+    os << '\'' << callableRegion->getParentOp()->getName() << "' - Region #"
        << callableRegion->getRegionNumber();
     auto attrs = parentOp->getAttrDictionary();
     if (!isNullOrEmpty(attrs)) {
@@ -227,7 +227,7 @@ void CallGraph::print(llvm::raw_ostream &os) const {
     // Dump the header for this node.
     os << "// - Node : ";
     emitNodeName(node);
-    os << "\n";
+    os << '\n';
 
     // Emit each of the edges.
     for (auto &edge : *node) {
@@ -240,7 +240,7 @@ void CallGraph::print(llvm::raw_ostream &os) const {
 
       os << "-Edge : ";
       emitNodeName(edge.getTarget());
-      os << "\n";
+      os << '\n';
     }
     os << "//\n";
   }
@@ -252,9 +252,9 @@ void CallGraph::print(llvm::raw_ostream &os) const {
     for (auto &node : scc) {
       os << "// -- Node :";
       emitNodeName(node);
-      os << "\n";
+      os << '\n';
     }
-    os << "\n";
+    os << '\n';
   }
 
   os << "// -------------------\n";

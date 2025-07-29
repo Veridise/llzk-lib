@@ -35,7 +35,7 @@ LogicalResult computeShapeFromDims(
 
   // Ensure all Attributes are valid Attribute classes for ArrayType.
   // In the case where `emitError==null`, we mirror how the verification failure is handled by
-  // `*Type::get()` via `StorageUserBase` (i.e. use DefaultDiagnosticEmitFn and assert). See:
+  // `*Type::get()` via `StorageUserBase` (i.e., use DefaultDiagnosticEmitFn and assert). See:
   //  https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180
   auto errFunc = emitError ? llvm::unique_function<InFlightDiagnostic()>(emitError)
                            : mlir::detail::getDefaultDiagnosticEmitFn(ctx);

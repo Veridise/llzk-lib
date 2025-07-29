@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 /// This function asserts that the given Attribute kind is legal within the LLZK types that can
-/// contain Attribute parameters (i.e. ArrayType, StructType, and TypeVarType). This should be used
+/// contain Attribute parameters (i.e., ArrayType, StructType, and TypeVarType). This should be used
 /// in any function that examines the attribute parameters within parameterized LLZK types to ensure
 /// that the function handles all possible cases properly, especially if more legal attributes are
 /// added in the future. Throw a fatal error if anything illegal is found, indicating that the

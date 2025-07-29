@@ -151,7 +151,7 @@ def LLZK_CreateArrayOp
 
 
     In some cases, the length of an uninitialized array depends on the value
-    of the loop induction variable (i.e. each iteration creates an array with
+    of the loop induction variable (i.e., each iteration creates an array with
     a different size/shape). In that case, an AffineMapAttr can be used to
     specify the dimension size in the ArrayType and the optional instantiation
     parameter list of this operation must be used to instatiate all AffineMap

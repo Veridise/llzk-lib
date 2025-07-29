@@ -194,7 +194,7 @@ public:
   static void reportInvalid(EmitErrorFn emitError, const Twine &foundName, const char *aspect) {
     InFlightDiagnostic diag = emitError().append(aspect, " must be one of ");
     Appender<InFlightDiagnostic>::append(diag);
-    diag.append(" but found '", foundName, "'").report();
+    diag.append(" but found '", foundName, '\'').report();
   }
 
   static inline void reportInvalid(EmitErrorFn emitError, Attribute found, const char *aspect) {
@@ -327,7 +327,7 @@ public:
   bool isValidTypeImpl(Type type);
 
   bool areValidArrayDimSizes(ArrayRef<Attribute> dimensionSizes, EmitErrorFn emitError = nullptr) {
-    // In LLZK, the number of array dimensions must always be known, i.e. `hasRank()==true`
+    // In LLZK, the number of array dimensions must always be known, i.e., `hasRank()==true`
     if (dimensionSizes.empty()) {
       if (emitError) {
         emitError().append("array must have at least one dimension").report();
@@ -373,8 +373,8 @@ public:
         if (succeeded(checkValidType(emitError, elementType))) {
           emitError()
               .append(
-                  "'", ArrayType::name, "' element type cannot be '",
-                  elementType.getAbstractType().getName(), "'"
+                  '\'', ArrayType::name, "' element type cannot be '",
+                  elementType.getAbstractType().getName(), '\''
               )
               .report();
         }
@@ -485,7 +485,7 @@ bool isSignalType(Type type) {
 }
 
 bool isSignalType(StructType sType) {
-  // Only check the leaf part of the reference (i.e. just the struct name itself) to allow cases
+  // Only check the leaf part of the reference (i.e., just the struct name itself) to allow cases
   // where the `COMPONENT_NAME_SIGNAL` struct may be placed within some nesting of modules, as
   // happens when it's imported via an IncludeOp.
   return sType.getNameRef().getLeafReference() == COMPONENT_NAME_SIGNAL;
@@ -507,8 +507,8 @@ namespace {
 /// Optional result from type unifications. Maps `AffineMapAttr` appearing in one type to the
 /// associated `IntegerAttr` from the other type at the same nested position. The `Side` enum in the
 /// key indicates which input expression the `AffineMapAttr` is from. Additionally, if a conflict is
-/// found (i.e. multiple occurrences of a specific `AffineMapAttr` on the same side map to different
-/// `IntegerAttr` from the other side), the mapped value will be `nullptr`.
+/// found (i.e., multiple occurrences of a specific `AffineMapAttr` on the same side map to
+/// different `IntegerAttr` from the other side), the mapped value will be `nullptr`.
 ///
 /// This map is for tracking replacement of `AffineMapAttr` with integer constant values to
 /// determine if a type unification is due to a concrete integer instantiation of `AffineMapAttr`.
@@ -814,7 +814,7 @@ LogicalResult verifyIntAttrType(EmitErrorFn emitError, Attribute in) {
     if (!AllowedTypes().onlyInt().isValidTypeImpl(attrTy)) {
       if (emitError) {
         emitError()
-            .append("IntegerAttr must have type 'index' or 'i1' but found '", attrTy, "'")
+            .append("IntegerAttr must have type 'index' or 'i1' but found '", attrTy, '\'')
             .report();
       }
       return failure();

@@ -46,14 +46,14 @@ StructType::getDefinition(SymbolTableCollection &symbolTable, Operation *op) con
   auto res = lookupTopLevelSymbol<StructDefOp>(symbolTable, getNameRef(), op);
   if (failed(res) || !res.value()) {
     return op->emitError() << "could not find '" << StructDefOp::getOperationName() << "' named \""
-                           << getNameRef() << "\"";
+                           << getNameRef() << '"';
   }
   // If this StructType contains parameters, make sure they match the number from the StructDefOp.
   if (typeParams) {
     auto defParams = res.value().get().getConstParams();
     size_t numExpected = defParams ? defParams->size() : 0;
     if (typeParams.size() != numExpected) {
-      return op->emitError() << "'" << StructType::name << "' type has " << typeParams.size()
+      return op->emitError() << '\'' << StructType::name << "' type has " << typeParams.size()
                              << " parameters but \"" << res.value().get().getSymName()
                              << "\" expects " << numExpected;
     }

@@ -148,7 +148,7 @@ public:
     // Add the name of the field (its name is not optional)
     path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
     // Delegate to the parent handler (must be StructDefOp per ODS)
-    return buildPathFromRootToStruct(llvm::cast<StructDefOp>(to.getParentOp()), std::move(path));
+    return buildPathFromRootToStruct(to.getParentOp<StructDefOp>(), std::move(path));
   }
 
   FailureOr<SymbolRefAttr> getPathFromRootToFunc(FuncDefOp to) {
@@ -166,7 +166,7 @@ public:
     } else {
       // This is an error in the compiler itself. In current implementation,
       //  FuncDefOp must have either StructDefOp or ModuleOp as its parent.
-      return current->emitError().append("orphaned '", FuncDefOp::getOperationName(), "'");
+      return current->emitError().append("orphaned '", FuncDefOp::getOperationName(), '\'');
     }
   }
 
@@ -310,7 +310,7 @@ LogicalResult verifyParamOfType(
 ) {
   // Most often, StructType and ArrayType SymbolRefAttr parameters will be defined as parameters of
   // the StructDefOp that the current Operation is nested within. These are always flat references
-  // (i.e. contain no nested references).
+  // (i.e., contain no nested references).
   if (param.getNestedReferences().empty()) {
     FailureOr<StructDefOp> getParentRes = getParentOfType<StructDefOp>(origin);
     if (succeeded(getParentRes)) {
@@ -367,7 +367,7 @@ verifyStructTypeResolution(SymbolTableCollection &tables, StructType ty, Operati
     return origin->emitError()
         .append(
             "Cannot unify parameters of type ", ty, " with parameters of '",
-            StructDefOp::getOperationName(), "' \"", defForType.getHeaderString(), "\""
+            StructDefOp::getOperationName(), "' \"", defForType.getHeaderString(), '"'
         )
         .attachNote(defForType.getLoc())
         .append("type parameters must unify with parameters defined here");

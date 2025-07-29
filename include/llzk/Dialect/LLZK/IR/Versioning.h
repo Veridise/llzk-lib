@@ -35,7 +35,7 @@ struct LLZKDialectVersion : public mlir::DialectVersion {
 template <typename DialectTy>
 struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
 
-  LLZKDialectBytecodeInterface(mlir::Dialect *dialect) : mlir::BytecodeDialectInterface(dialect) {}
+  LLZKDialectBytecodeInterface(mlir::Dialect *dia) : mlir::BytecodeDialectInterface(dia) {}
 
   /// @brief Writes the current version of the LLZK-lib to the given writer.
   void writeVersion(mlir::DialectBytecodeWriter &writer) const override {

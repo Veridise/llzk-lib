@@ -52,28 +52,39 @@ struct Appender {
   template <typename Any> Appender &operator<<(const Any &v);
 };
 
+[[maybe_unused]]
 void Appender::append(const mlir::MemorySlot &a) {
   stream << "ptr: " << a.ptr << "; type: " << a.elemType;
 }
 
+[[maybe_unused]]
 void Appender::append(const mlir::DestructurableMemorySlot &a) {
   stream << "ptr: " << a.ptr << "; type: " << a.elemType << "; elementPtrs:\n";
   for (auto &p : a.elementPtrs) {
-    stream << "  ";
+    stream.indent(2);
     append(p);
     stream << '\n';
   }
 }
 
-void Appender::append(const mlir::OpOperand &a) { stream << a.get(); }
+[[maybe_unused]]
+void Appender::append(const mlir::OpOperand &a) {
+  stream << a.get();
+}
 
+[[maybe_unused]]
 void Appender::append(const mlir::NamedAttribute &a) {
   stream << a.getName() << '=' << a.getValue();
 }
 
-void Appender::append(const mlir::SymbolTable::SymbolUse &a) { stream << a.getUser()->getName(); }
+[[maybe_unused]]
+void Appender::append(const mlir::SymbolTable::SymbolUse &a) {
+  stream << a.getUser()->getName();
+}
 
-template <typename T> inline void Appender::append(const std::optional<T> &a) {
+template <typename T>
+[[maybe_unused]]
+inline void Appender::append(const std::optional<T> &a) {
   if (a.has_value()) {
     append(a.value());
   } else {
@@ -81,9 +92,15 @@ template <typename T> inline void Appender::append(const std::optional<T> &a) {
   }
 }
 
-template <typename Any> void Appender::append(const Any &value) { stream << value; }
+template <typename Any>
+[[maybe_unused]]
+void Appender::append(const Any &value) {
+  stream << value;
+}
 
-template <typename A, typename B> void Appender::append(const std::pair<A, B> &a) {
+template <typename A, typename B>
+[[maybe_unused]]
+void Appender::append(const std::pair<A, B> &a) {
   stream << '(';
   append(a.first);
   stream << ',';
@@ -91,7 +108,9 @@ template <typename A, typename B> void Appender::append(const std::pair<A, B> &a
   stream << ')';
 }
 
-template <typename A, typename B> void Appender::append(const llvm::detail::DenseMapPair<A, B> &a) {
+template <typename A, typename B>
+[[maybe_unused]]
+void Appender::append(const llvm::detail::DenseMapPair<A, B> &a) {
   stream << '(';
   append(a.first);
   stream << ',';
@@ -99,17 +118,25 @@ template <typename A, typename B> void Appender::append(const llvm::detail::Dens
   stream << ')';
 }
 
-template <Iterable InputIt> inline void Appender::append(const InputIt &collection) {
+template <Iterable InputIt>
+[[maybe_unused]]
+inline void Appender::append(const InputIt &collection) {
   appendList(std::begin(collection), std::end(collection));
 }
 
-template <typename InputIt> void Appender::appendList(InputIt begin, InputIt end) {
+template <typename InputIt>
+[[maybe_unused]]
+void Appender::appendList(InputIt begin, InputIt end) {
   stream << '[';
-  llvm::interleave(begin, end, [this](const auto &n) { append(n); }, [this] { stream << ", "; });
+  llvm::interleave(begin, end, [this](const auto &n) { this->append(n); }, [this] {
+    this->stream << ", ";
+  });
   stream << ']';
 }
 
-template <typename Any> Appender &Appender::operator<<(const Any &v) {
+template <typename Any>
+[[maybe_unused]]
+Appender &Appender::operator<<(const Any &v) {
   append(v);
   return *this;
 }
@@ -118,7 +145,9 @@ template <typename Any> Appender &Appender::operator<<(const Any &v) {
 
 /// Generate a comma-separated string representation by traversing elements from `begin` to `end`
 /// where the element type implements `operator<<`.
-template <typename InputIt> inline std::string toStringList(InputIt begin, InputIt end) {
+template <typename InputIt>
+[[maybe_unused]]
+inline std::string toStringList(InputIt begin, InputIt end) {
   std::string output;
   Appender(output).appendList(begin, end);
   return output;
@@ -126,11 +155,14 @@ template <typename InputIt> inline std::string toStringList(InputIt begin, Input
 
 /// Generate a comma-separated string representation by traversing elements from
 /// `collection.begin()` to `collection.end()` where the element type implements `operator<<`.
-template <typename InputIt> inline std::string toStringList(const InputIt &collection) {
+template <typename InputIt>
+[[maybe_unused]]
+inline std::string toStringList(const InputIt &collection) {
   return toStringList(collection.begin(), collection.end());
 }
 
 template <typename InputIt>
+[[maybe_unused]]
 inline std::string toStringList(const std::optional<InputIt> &optionalCollection) {
   if (optionalCollection.has_value()) {
     return toStringList(optionalCollection.value());
@@ -139,22 +171,30 @@ inline std::string toStringList(const std::optional<InputIt> &optionalCollection
   }
 }
 
-template <typename T> inline std::string toStringOne(const T &value) {
+template <typename T>
+[[maybe_unused]]
+inline std::string toStringOne(const T &value) {
   std::string output;
   Appender(output).append(value);
   return output;
 }
 
+[[maybe_unused]]
 void dumpSymbolTableWalk(mlir::Operation *symbolTableOp);
 
+[[maybe_unused]]
 void dumpSymbolTable(llvm::raw_ostream &stream, mlir::SymbolTable &symTab, unsigned indent = 0);
 
+[[maybe_unused]]
 void dumpSymbolTable(mlir::SymbolTable &symTab);
 
+[[maybe_unused]]
 void dumpSymbolTables(llvm::raw_ostream &stream, mlir::SymbolTableCollection &tables);
 
+[[maybe_unused]]
 void dumpSymbolTables(mlir::SymbolTableCollection &tables);
 
+[[maybe_unused]]
 void dumpToFile(mlir::Operation *op, llvm::StringRef filename);
 
 } // namespace debug

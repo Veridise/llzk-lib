@@ -46,7 +46,7 @@ inline FailureOr<OpenFile> openFile(EmitErrorFn emitError, const StringRef filen
 
   auto buffer = GlobalSourceMgr::get().openIncludeFile(filename, r.resolvedPath);
   if (!buffer) {
-    return emitError() << "could not find file \"" << filename << "\"";
+    return emitError() << "could not find file \"" << filename << '"';
   }
   r.buffer = std::move(*buffer);
   return std::move(r);
@@ -66,7 +66,7 @@ FailureOr<OwningOpRef<ModuleOp>> parseFile(const StringRef filename, Operation *
   if (res) {
     return res;
   } else {
-    return origin->emitOpError() << "could not parse file \"" << filename << "\"";
+    return origin->emitOpError() << "could not parse file \"" << filename << '"';
   }
 }
 
@@ -84,7 +84,7 @@ LogicalResult parseFile(const StringRef filename, Operation *origin, Block *cont
   if (succeeded(res)) {
     return res;
   } else {
-    return origin->emitOpError() << "could not parse file \"" << filename << "\"";
+    return origin->emitOpError() << "could not parse file \"" << filename << '"';
   }
 }
 

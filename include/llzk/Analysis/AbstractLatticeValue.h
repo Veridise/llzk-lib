@@ -26,16 +26,16 @@
 namespace llzk::dataflow {
 
 template <typename Val>
-concept ScalarLatticeValue = requires(Val lhs, Val rhs, mlir::raw_ostream &os) {
-  // Require a form of print function
-  { os << lhs } -> std::same_as<mlir::raw_ostream &>;
-  // Require comparability
-  { lhs == rhs } -> std::same_as<bool>;
-  // Require the ability to combine two scalar values
-  { lhs.join(rhs) } -> std::same_as<Val &>;
-  // Require default constructable
-  requires std::default_initializable<Val>;
-};
+concept ScalarLatticeValue =
+    // Require default constructable
+    std::default_initializable<Val> && requires(Val lhs, Val rhs, mlir::raw_ostream &os) {
+      // Require a form of print function
+      { os << lhs } -> std::same_as<mlir::raw_ostream &>;
+      // Require comparability
+      { lhs == rhs } -> std::same_as<bool>;
+      // Require the ability to combine two scalar values
+      { lhs.join(rhs) } -> std::same_as<Val &>;
+    };
 
 template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeValue {
   /// For arrays of values created by, e.g., the LLZK array.new op. A recursive

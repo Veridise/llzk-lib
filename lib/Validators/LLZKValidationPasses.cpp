@@ -36,7 +36,7 @@ class FieldWriteValidatorPass
     StructDefOp structDef = getOperation();
     FuncDefOp computeFunc = structDef.getComputeFuncOp();
 
-    // Initialize map with all field names mapped to nullptr (i.e. no write found).
+    // Initialize map with all field names mapped to nullptr (i.e., no write found).
     llvm::StringMap<FieldWriteOp> fieldNameToWriteOp;
     for (FieldDefOp x : structDef.getFieldDefs()) {
       fieldNameToWriteOp[x.getSymName()] = nullptr;
@@ -55,7 +55,7 @@ class FieldWriteValidatorPass
             write.emitWarning()
                 .append(
                     "found multiple writes to '", FieldDefOp::getOperationName(), "' named \"@",
-                    writeToFieldName, "\""
+                    writeToFieldName, '"'
                 )
                 .attachNote(earlierWrite.getLoc())
                 .append("earlier write here");
@@ -68,8 +68,8 @@ class FieldWriteValidatorPass
     for (auto &[a, b] : fieldNameToWriteOp) {
       if (!b) {
         computeFunc.emitWarning().append(
-            "'", FuncDefOp::getOperationName(), "' op \"@", FUNC_NAME_COMPUTE,
-            "\" missing write to '", FieldDefOp::getOperationName(), "' named \"@", a, "\""
+            '\'', FuncDefOp::getOperationName(), "' op \"@", FUNC_NAME_COMPUTE,
+            "\" missing write to '", FieldDefOp::getOperationName(), "' named \"@", a, '"'
         );
       }
     }

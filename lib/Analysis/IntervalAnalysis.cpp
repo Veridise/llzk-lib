@@ -780,11 +780,11 @@ void IntervalDataFlowAnalysis::visitOperation(
 
   llvm::SmallVector<LatticeValue> operandVals;
 
-  auto constrainRefLattice = dataflowSolver.lookupState<ConstrainRefLattice>(op);
+  auto constrainRefLattice = _dataflowSolver.lookupState<ConstrainRefLattice>(op);
   ensure(constrainRefLattice, "failed to get lattice");
 
-  for (auto &operand : op->getOpOperands()) {
-    auto val = operand.get();
+  for (OpOperand &operand : op->getOpOperands()) {
+    Value val = operand.get();
     // First, lookup the operand value in the before state.
     auto priorState = before.getValue(val);
     if (succeeded(priorState)) {
@@ -808,11 +808,8 @@ void IntervalDataFlowAnalysis::visitOperation(
       // If we can't compute the reference, then there must be some unsupported
       // op the reference analysis cannot handle. We emit a warning and return
       // early, since there's no meaningful computation we can do for this op.
-      std::string warning;
-      debug::Appender(warning
-      ) << "state of "
-        << val << " is empty; defining operation is unsupported by constrain ref analysis";
-      op->emitWarning(warning);
+      op->emitWarning() << "state of " << val
+                        << " is empty; defining operation is unsupported by constrain ref analysis";
       propagateIfChanged(after, changed);
       return;
     } else if (!refSet.isSingleValue()) {
@@ -881,14 +878,17 @@ void IntervalDataFlowAnalysis::visitOperation(
     // The reg value read from the signal type is equal to the value of the Signal
     // struct overall.
     changed |= after->setValue(readf.getVal(), operandVals[0].getScalarValue());
-  } else if (!isReadOp(op)          /* We do not need to explicitly handle read ops
-                      since they are resolved at the operand value step where constrain refs are
-                      queries (with the exception of the Signal struct, see above). */
-             && !isReturnOp(op)     /* We do not currently handle return ops as the analysis
-                 is currently limited to constrain functions, which return no value. */
-             && !isDefinitionOp(op) /* The analysis ignores definition ops. */
-             &&
-             !mlir::isa<CreateStructOp>(op) /* We do not need to analyze the creation of structs. */
+  } else if (
+      // We do not need to explicitly handle read ops since they are resolved at the operand value
+      // step where constrain refs are queries (with the exception of the Signal struct, see above).
+      !isReadOp(op)
+      // We do not currently handle return ops as the analysis is currently limited to constrain
+      // functions, which return no value.
+      && !isReturnOp(op)
+      // The analysis ignores definition ops.
+      && !isDefinitionOp(op)
+      // We do not need to analyze the creation of structs.
+      && !mlir::isa<CreateStructOp>(op)
   ) {
     op->emitWarning("unhandled operation, analysis may be incomplete");
   }
@@ -932,7 +932,7 @@ llvm::APSInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   })
           .Case<arith::ConstantIntOp>([&](arith::ConstantIntOp intConst) {
     return llvm::APInt(field.get().bitWidth(), intConst.value());
-  }).Default([&](Operation *illegalOp) {
+  }).Default([](Operation *illegalOp) {
     std::string err;
     debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
     llvm::report_fatal_error(Twine(err));

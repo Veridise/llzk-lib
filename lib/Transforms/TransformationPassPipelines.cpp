@@ -17,6 +17,7 @@
 
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
+#include <mlir/Transforms/Passes.h>
 
 using namespace mlir;
 
@@ -61,6 +62,23 @@ void registerTransformationPassPipelines() {
 
     // 2. Cleanup
     addRemoveUnnecessaryOpsAndDefsPipeline(pm);
+  }
+  );
+
+  PassPipelineRegistration<>(
+      "llzk-full-r1cs-lowering", "Lower all polynomial constraints to r1cs",
+      [](OpPassManager &pm) {
+    // 1. Degree lowering
+    pm.addPass(llzk::createPolyLoweringPass(2));
+
+    // 2. Cleanup
+    addRemoveUnnecessaryOpsAndDefsPipeline(pm);
+
+    // 3. Convert to R1CS
+    pm.addPass(llzk::createR1CSLoweringPass());
+
+    // 4. Run CSE to eliminate to_linear ops
+    pm.addPass(mlir::createCSEPass());
   }
   );
 }

@@ -32,7 +32,7 @@ def LLZK_GlobalDefOp
     // Global constant (denoted by "const" modifier) string.
     global.def const @s : !string.type = "Hello World!"
 
-    // Global variable (i.e. no "const" modifier) with initial value.
+    // Global variable (i.e., no "const" modifier) with initial value.
     global.def @b : i1 = false
 
     // Uninitialized global variable.

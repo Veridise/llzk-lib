@@ -56,7 +56,7 @@ static MlirOperation create_global_def_op(
 
 TEST_F(CAPITest, llzk_operation_is_a_global_def_op) {
   {
-    auto op = create_global_def_op(ctx, "G", false, mlirIndexTypeGet(ctx), std::nullopt);
+    auto op = create_global_def_op(context, "G", false, mlirIndexTypeGet(context), std::nullopt);
     EXPECT_NE(op.ptr, (void *)NULL);
     EXPECT_TRUE(llzkOperationIsAGlobalDefOp(op));
     mlirOperationDestroy(op);
@@ -65,7 +65,7 @@ TEST_F(CAPITest, llzk_operation_is_a_global_def_op) {
 
 TEST_F(CAPITest, llzk_global_def_op_get_is_constant_1) {
   {
-    auto op = create_global_def_op(ctx, "G", false, mlirIndexTypeGet(ctx), std::nullopt);
+    auto op = create_global_def_op(context, "G", false, mlirIndexTypeGet(context), std::nullopt);
     EXPECT_NE(op.ptr, (void *)NULL);
     EXPECT_TRUE(!llzkGlobalDefOpGetIsConstant(op));
     mlirOperationDestroy(op);
@@ -75,7 +75,8 @@ TEST_F(CAPITest, llzk_global_def_op_get_is_constant_1) {
 TEST_F(CAPITest, llzk_global_def_op_get_is_constant_2) {
   {
     auto op = create_global_def_op(
-        ctx, "G", true, mlirIndexTypeGet(ctx), mlirIntegerAttrGet(mlirIndexTypeGet(ctx), 1)
+        context, "G", true, mlirIndexTypeGet(context),
+        mlirIntegerAttrGet(mlirIndexTypeGet(context), 1)
     );
     EXPECT_NE(op.ptr, (void *)NULL);
     EXPECT_TRUE(llzkGlobalDefOpGetIsConstant(op));

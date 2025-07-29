@@ -119,7 +119,7 @@ class SymbolUseGraph {
   /// The set of nodes within the graph.
   NodeMapT nodes;
 
-  // The singleton artificial (i.e. no associated op) root/head and tail nodes of the graph. Every
+  // The singleton artificial (i.e., no associated op) root/head and tail nodes of the graph. Every
   // newly created SymbolUseGraphNode is initially a successor of the root node until a real
   // successor (if any) is added. Similarly, all leaf nodes in the graph have the tail as successor.
   //
@@ -170,12 +170,12 @@ public:
   /// Return the total number of nodes in the graph.
   size_t size() const { return nodes.size(); }
 
-  /// Iterator over the root nodes (i.e. nodes that have no predecessors).
+  /// Iterator over the root nodes (i.e., nodes that have no predecessors).
   using roots_iterator = SymbolUseGraphNode::iterator;
   roots_iterator roots_begin() const { return root.successors_begin(); }
   roots_iterator roots_end() const { return root.successors_end(); }
 
-  /// Range over root nodes (i.e. nodes that have no predecessors).
+  /// Range over root nodes (i.e., nodes that have no predecessors).
   inline llvm::iterator_range<roots_iterator> rootsIter() const {
     return llvm::make_range(roots_begin(), roots_end());
   }

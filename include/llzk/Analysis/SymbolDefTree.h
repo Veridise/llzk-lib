@@ -33,7 +33,7 @@ class SymbolDefTreeNode {
   // Used only for creating the root node in the tree.
   SymbolDefTreeNode() : symbolDef(nullptr), parent(nullptr) {}
 
-  /// Add a child node, i.e. a Symbol defined in `this` SymbolTable.
+  /// Add a child node, i.e., a Symbol defined in `this` SymbolTable.
   void addChild(SymbolDefTreeNode *node);
 
   // Provide access to private members.
@@ -75,7 +75,7 @@ class SymbolDefTree {
   /// The set of nodes within the tree.
   NodeMapT nodes;
 
-  /// The singleton symbolic (i.e. no associated op) root node of the tree.
+  /// The singleton symbolic (i.e., no associated op) root node of the tree.
   SymbolDefTreeNode root;
 
   /// An iterator over the internal tree nodes. Unwraps the map iterator to access the node.
@@ -107,7 +107,7 @@ public:
   /// Lookup the node for the given symbol Op, or nullptr if none exists.
   const SymbolDefTreeNode *lookupNode(mlir::SymbolOpInterface symbolOp) const;
 
-  /// Returns the symbolic (i.e. no associated op) root node of the tree.
+  /// Returns the symbolic (i.e., no associated op) root node of the tree.
   const SymbolDefTreeNode *getRoot() const { return &root; }
 
   /// Return total number of nodes in the tree.

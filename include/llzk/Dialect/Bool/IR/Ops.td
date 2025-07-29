@@ -42,7 +42,7 @@ class BoolUnaryOpBase<string mnemonic, Type resultType, list<Trait> traits = []>
 def LLZK_AndBoolOp : BoolBinaryOpBase<"and", I1, [WitnessGen, Commutative]> {
   let summary = "logical AND operator";
   let description = [{
-    This operation computes the logical AND (i.e. conjunction) of two `i1` (i.e. boolean)
+    This operation computes the logical AND (i.e., conjunction) of two `i1` (i.e., boolean)
     values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
   }];
 }
@@ -50,7 +50,7 @@ def LLZK_AndBoolOp : BoolBinaryOpBase<"and", I1, [WitnessGen, Commutative]> {
 def LLZK_OrBoolOp : BoolBinaryOpBase<"or", I1, [WitnessGen, Commutative]> {
   let summary = "logical OR operator";
   let description = [{
-    This operation computes the logical OR (i.e. disjunction) of two `i1` (i.e. boolean)
+    This operation computes the logical OR (i.e., disjunction) of two `i1` (i.e., boolean)
     values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
   }];
 }
@@ -58,7 +58,7 @@ def LLZK_OrBoolOp : BoolBinaryOpBase<"or", I1, [WitnessGen, Commutative]> {
 def LLZK_XorBoolOp : BoolBinaryOpBase<"xor", I1, [WitnessGen, Commutative]> {
   let summary = "logical XOR operator";
   let description = [{
-    This operation computes the logical XOR (i.e. exclusive disjunction) of two `i1` (i.e. boolean)
+    This operation computes the logical XOR (i.e., exclusive disjunction) of two `i1` (i.e., boolean)
     values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
   }];
 }
@@ -66,7 +66,7 @@ def LLZK_XorBoolOp : BoolBinaryOpBase<"xor", I1, [WitnessGen, Commutative]> {
 def LLZK_NotBoolOp : BoolUnaryOpBase<"not", I1, [WitnessGen]> {
   let summary = "logical NOT operator";
   let description = [{
-    This operation computes the logical NOT (i.e. negation) of an `i1` (i.e. boolean)
+    This operation computes the logical NOT (i.e., negation) of an `i1` (i.e., boolean)
     value as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
   }];
 }
@@ -84,7 +84,7 @@ def LLZK_AssertOp
     statically when possible. If the condition evaluates to `true`, the assertion is
     removed. If `false`, an error is reported. Otherwise, the assertion is preserved.
     All assertions that appear in `constrain()` functions must evaluate statically
-    (i.e. they cannot depend on inputs to the circuit) else an error is reported.
+    (i.e., they cannot depend on inputs to the circuit) else an error is reported.
 
     Assertion without message:
     ```llzk

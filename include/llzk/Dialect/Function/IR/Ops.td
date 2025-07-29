@@ -46,7 +46,7 @@ def FuncDefOp
   let summary = "An operation with a name containing a single `SSACFG` region";
   let description = [{
     Operations within the function cannot implicitly capture values defined
-    outside of the function, i.e. Functions are `IsolatedFromAbove`. All
+    outside of the function, i.e., Functions are `IsolatedFromAbove`. All
     external references must use function arguments or attributes that establish
     a symbolic connection (e.g. symbols referenced by name via a string
     attribute like SymbolRefAttr). An external function declaration (used when
@@ -177,7 +177,7 @@ def FuncDefOp
     //===------------------------------------------------------------------===//
 
     /// Return the full name for this function from the root module, including
-    /// all surrounding symbol table names (i.e. modules and structs).
+    /// all surrounding symbol table names (i.e., modules and structs).
     ::mlir::SymbolRefAttr getFullyQualifiedName();
 
     /// Return `true` iff the function name is `FUNC_NAME_COMPUTE` (if needed, a check
@@ -254,7 +254,7 @@ def CallOp : FunctionDialectOp<
     The `function.call` operation represents a call to another function. The operands
     and result types of the call must match the specified function type. The
     callee is encoded as a symbol reference attribute named "callee" which must
-    be the full path to the target function from the root module (i.e. the module
+    be the full path to the target function from the root module (i.e., the module
     containing the [llzk::LANG_ATTR_NAME] attribute).
 
     Example:

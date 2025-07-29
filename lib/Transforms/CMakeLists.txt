@@ -7,7 +7,9 @@ target_link_libraries(
   LLZKTransforms PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
                      MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
                      LLVMHeaders MLIRHeaders
-                     LLZKDialect)
+                  PRIVATE
+                     LLZKDialect
+                     R1CSDialect)
 add_dependencies(LLZKTransforms LLZKDialect LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKTransforms)
 

@@ -11,7 +11,9 @@ Tip: Following the manual setup steps through cloning the LLVM project in the
 
 # Nix Setup
 
-This repository is already configured with a Nix flakes environment.
+This repository is already configured with a Nix flakes environment. The flake
+was built using nix version 2.24.11 and may not be compatible with newer versions,
+so if you encounter issues, consider downgrading/upgrading to 2.24.
 
 To use the LLZK derivation to build and test the project, you can run `nix build`
 from the repository root (add `-L` if you want to print the logs while building).
@@ -52,6 +54,7 @@ LLZK requires the following to be installed:
 * CMake 3.18 or newer
 * Ninja
 * Z3
+* Clang 16 or higher (use the same compiler for both LLVM and LLZK repos)
 
 To optionally generate API documentation, you need:
 * Doxygen (tested on 1.10 and newer)
@@ -94,7 +97,9 @@ cmake ../llvm -GNinja -DCMAKE_BUILD_TYPE=Release \
   -DLLVM_ENABLE_RTTI=on \
   -DLLVM_ENABLE_EH=on \
   -DLLVM_ENABLE_ASSERTIONS=on \
+  -DLLVM_INSTALL_UTILS=on \
   -DLLVM_ENABLE_Z3_SOLVER=on
+
 # Note that using llvm dylib will cause llzk to be linked to the built LLVM
 # dylib; if you'd like llzk to be used independent of the build folder, you
 # should leave off the dylib settings.
@@ -108,6 +113,7 @@ popd # back to top level
 # Use an alias to avoid "prefixed in the source directory" CMake error.
 ln -sv $PWD/third-party/llvm-install-root ~/llvm-install-root-llzklib
 export INSTALL_ROOT=~/llvm-install-root-llzklib
+export LIT_PATH=$PWD/third-party/llvm-project/llvm/utils/lit/lit.py
 
 # Generate LLZK build configuration.
 # You can set BUILD_TESTING=off if you don't want to enable tests.
@@ -116,8 +122,7 @@ cmake .. -GNinja \
   -DLLVM_ROOT="$INSTALL_ROOT" \
   -DLLVM_DIR="$INSTALL_ROOT"/lib/cmake/llvm \
   -DMLIR_DIR="$INSTALL_ROOT"/lib/cmake/mlir \
-  -DLLVM_EXTERNAL_LIT="$INSTALL_ROOT"/bin/lit \
-  -DGTEST_ROOT="$INSTALL_ROOT" \
+  -DLLVM_EXTERNAL_LIT="$LIT_PATH" \
   -DLLZK_BUILD_DEVTOOLS=ON
 ```
 

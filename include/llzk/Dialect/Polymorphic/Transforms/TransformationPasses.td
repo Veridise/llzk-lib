@@ -48,7 +48,7 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
     Performs the following transformations:
     - Instantiate `affine_map` parameters of StructType and ArrayType
       to constant values using the arguments at the instantiation site
-    - Replace parameterized structs with flattened (i.e. no parameter)
+    - Replace parameterized structs with flattened (i.e., no parameter)
       versions of those structs based on requested return type at calls
       to `compute()` functions and unroll loops
     - Unroll loops

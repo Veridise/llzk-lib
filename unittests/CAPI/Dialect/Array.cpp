@@ -20,7 +20,7 @@
 
 class ArrayDialectTests : public CAPITest {
 protected:
-  MlirType indexType() { return mlirIndexTypeGet(ctx); }
+  MlirType indexType() { return mlirIndexTypeGet(context); }
 
   MlirType test_array(MlirType elt, llvm::ArrayRef<int64_t> dims) {
     return llzkArrayTypeGetWithNumericDims(elt, dims.size(), dims.data());
@@ -28,8 +28,8 @@ protected:
 
   llvm::SmallVector<MlirOperation> create_n_ops(int64_t n_ops, MlirType elt_type) {
     auto name = mlirStringRefCreateFromCString("arith.constant");
-    auto attr_name = mlirIdentifierGet(ctx, mlirStringRefCreateFromCString("value"));
-    auto location = mlirLocationUnknownGet(ctx);
+    auto attr_name = mlirIdentifierGet(context, mlirStringRefCreateFromCString("value"));
+    auto location = mlirLocationUnknownGet(context);
     llvm::SmallVector<MlirOperation> result;
     for (int64_t n = 0; n < n_ops; n++) {
 
@@ -102,7 +102,7 @@ TEST_F(ArrayDialectTests, array_type_get_dim) {
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
   int64_t dims[1] = {1};
-  auto elt_type = mlirIndexTypeGet(ctx);
+  auto elt_type = mlirIndexTypeGet(context);
   auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
   auto n_elements = 1;
   auto ops = create_n_ops(n_elements, elt_type);
@@ -110,8 +110,8 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
   for (auto op : ops) {
     values.push_back(mlirOperationGetResult(op, 0));
   }
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
+  auto builder = mlirOpBuilderCreate(context);
+  auto location = mlirLocationUnknownGet(context);
   auto create_array_op =
       llzkCreateArrayOpBuildWithValues(builder, location, test_type, values.size(), values.data());
   for (auto op : ops) {
@@ -131,12 +131,12 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
 
   int64_t dims[1] = {1};
 
-  auto elt_type = mlirIndexTypeGet(ctx);
+  auto elt_type = mlirIndexTypeGet(context);
   auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
 
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
-  auto dims_per_map = mlirDenseI32ArrayGet(ctx, 0, NULL);
+  auto builder = mlirOpBuilderCreate(context);
+  auto location = mlirLocationUnknownGet(context);
+  auto dims_per_map = mlirDenseI32ArrayGet(context, 0, NULL);
 
   auto op =
       llzkCreateArrayOpBuildWithMapOperands(builder, location, test_type, 0, NULL, dims_per_map);
@@ -148,11 +148,11 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
   int64_t dims[1] = {1};
-  auto elt_type = mlirIndexTypeGet(ctx);
+  auto elt_type = mlirIndexTypeGet(context);
   auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
 
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
+  auto builder = mlirOpBuilderCreate(context);
+  auto location = mlirLocationUnknownGet(context);
 
   auto op =
       llzkCreateArrayOpBuildWithMapOperandsAndDims(builder, location, test_type, 0, NULL, 0, NULL);

@@ -18,16 +18,16 @@
 
 class CAPITest : public ::testing::Test {
 protected:
-  MlirContext ctx;
+  MlirContext context;
 
-  CAPITest() : ctx(mlirContextCreate()) {
+  CAPITest() : context(mlirContextCreate()) {
     auto registry = mlirDialectRegistryCreate();
     mlirRegisterAllDialects(registry);
     llzkRegisterAllDialects(registry);
-    mlirContextAppendDialectRegistry(ctx, registry);
-    mlirContextLoadAllAvailableDialects(ctx);
+    mlirContextAppendDialectRegistry(context, registry);
+    mlirContextLoadAllAvailableDialects(context);
     mlirDialectRegistryDestroy(registry);
   }
 
-  ~CAPITest() override { mlirContextDestroy(ctx); }
+  ~CAPITest() override { mlirContextDestroy(context); }
 };

@@ -22,6 +22,8 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
+#include "r1cs/Dialect/IR/Dialect.h"
+#include "r1cs/InitAllDialects.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
@@ -30,6 +32,7 @@
 
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/CommandLine.h>
+#include <llvm/Support/PrettyStackTrace.h>
 #include <llvm/Support/Signals.h>
 
 #include "tools/config.h"
@@ -55,6 +58,8 @@ int main(int argc, char **argv) {
   mlir::DialectRegistry registry;
   llzk::registerAllDialects(registry);
   llzk::registerInliningExtensions(registry);
+  r1cs::registerAllDialects(registry);
+
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
   llzk::array::registerTransformationPasses();
@@ -74,7 +79,7 @@ int main(int argc, char **argv) {
     context.loadAllAvailableDialects();
     llvm::outs() << "All ops registered in LLZK IR: {\n";
     for (const auto &opName : context.getRegisteredOperations()) {
-      llvm::outs() << "  " << opName.getStringRef() << '\n';
+      llvm::outs().indent(2) << opName.getStringRef() << '\n';
     }
     llvm::outs() << "}\n";
     return EXIT_SUCCESS;
@@ -87,5 +92,5 @@ int main(int argc, char **argv) {
 
   // Run 'mlir-opt'
   auto result = mlir::MlirOptMain(argc, argv, inputFilename, outputFilename, registry);
-  return asMainReturnCode(result);
+  return mlir::asMainReturnCode(result);
 }

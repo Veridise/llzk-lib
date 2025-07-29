@@ -13,7 +13,7 @@
 
 TEST_F(CAPITest, RegisterTransformationPassesAndCreate) {
   mlirRegisterLLZKTransformationPasses();
-  auto manager = mlirPassManagerCreate(ctx);
+  auto manager = mlirPassManagerCreate(context);
 
   auto pass1 = mlirCreateLLZKTransformationRedundantOperationEliminationPass();
   auto pass2 = mlirCreateLLZKTransformationRedundantReadAndWriteEliminationPass();
@@ -27,7 +27,7 @@ TEST_F(CAPITest, RegisterTransformationPassesAndCreate) {
 
 TEST_F(CAPITest, RegisterRedundantOperationEliminationPassAndCreate) {
   mlirRegisterLLZKTransformationRedundantOperationEliminationPass();
-  auto manager = mlirPassManagerCreate(ctx);
+  auto manager = mlirPassManagerCreate(context);
 
   auto pass = mlirCreateLLZKTransformationRedundantOperationEliminationPass();
   mlirPassManagerAddOwnedPass(manager, pass);
@@ -37,7 +37,7 @@ TEST_F(CAPITest, RegisterRedundantOperationEliminationPassAndCreate) {
 
 TEST_F(CAPITest, RegisterRedudantReadAndWriteEliminationPassAndCreate) {
   mlirRegisterLLZKTransformationRedundantReadAndWriteEliminationPass();
-  auto manager = mlirPassManagerCreate(ctx);
+  auto manager = mlirPassManagerCreate(context);
 
   auto pass = mlirCreateLLZKTransformationRedundantReadAndWriteEliminationPass();
   mlirPassManagerAddOwnedPass(manager, pass);
@@ -47,7 +47,7 @@ TEST_F(CAPITest, RegisterRedudantReadAndWriteEliminationPassAndCreate) {
 
 TEST_F(CAPITest, RegisterUnuusedDeclarationEliminationPassAndCreate) {
   mlirRegisterLLZKTransformationUnusedDeclarationEliminationPass();
-  auto manager = mlirPassManagerCreate(ctx);
+  auto manager = mlirPassManagerCreate(context);
 
   auto pass = mlirCreateLLZKTransformationUnusedDeclarationEliminationPass();
   mlirPassManagerAddOwnedPass(manager, pass);
