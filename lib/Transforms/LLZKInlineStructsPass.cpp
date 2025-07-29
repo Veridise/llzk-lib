@@ -49,58 +49,14 @@ using namespace llzk::function;
 
 namespace {
 
-// TODO: this will be available in `llzk/Transforms/LLZKLoweringUtils.h` from R1CS PR.
-// TODO: I added the assert at the start though.
-// TODO: also changed `body.back()` but made that same comment in Shankara's open PR.
-Value getSelfValueFromComputeDef(FuncDefOp computeFunc) {
-  assert(computeFunc.nameIsCompute()); // skip inStruct check to allow dangling functions
-  // Get the single block of the function body
-  Region &body = computeFunc.getBody();
-  assert(!body.empty() && "compute() function body is empty");
-
-  Block &block = body.back();
-
-  // The terminator should be the return op
-  Operation *terminator = block.getTerminator();
-  assert(terminator && "compute() function has no terminator");
-
-  // The return op should be of type ReturnOp
-  auto retOp = dyn_cast<ReturnOp>(terminator);
-  if (!retOp) {
-    llvm::errs() << "Expected ReturnOp as terminator in compute() but found: "
-                 << terminator->getName() << "\n";
-    llvm_unreachable("compute() function terminator is not a ReturnOp");
-  }
-
-  return retOp.getOperands().front();
-}
-
-// TODO: this should move to `llzk/Transforms/LLZKLoweringUtils.h` after R1CS PR.
-Value getSelfValueFromConstrainDef(FuncDefOp constrainFunc) {
-  assert(constrainFunc.nameIsConstrain()); // skip inStruct check to allow dangling functions
-  return constrainFunc.getArguments().front();
-}
-
 Value getSelfValue(FuncDefOp f) {
   if (f.nameIsCompute()) {
-    return getSelfValueFromComputeDef(f);
+    return f.getSelfValueFromCompute();
   } else if (f.nameIsConstrain()) {
-    return getSelfValueFromConstrainDef(f);
+    return f.getSelfValueFromConstrain();
   } else {
     llvm_unreachable("expected \"compute\" or \"constrain\" function");
   }
-}
-
-// TODO: this should move to `llzk/Transforms/LLZKLoweringUtils.h` after R1CS PR.
-Value getSelfValueFromComputeCall(CallOp callToCompute) {
-  assert(callToCompute.calleeIsStructCompute());
-  return callToCompute.getResults().front();
-}
-
-// TODO: this should move to `llzk/Transforms/LLZKLoweringUtils.h` after R1CS PR.
-Value getSelfValueFromConstrainCall(CallOp callToConstrain) {
-  assert(callToConstrain.calleeIsStructConstrain());
-  return callToConstrain.getArgOperands().front();
 }
 
 class StructInlinerBase {
@@ -278,7 +234,7 @@ class StructInliner : public StructInlinerBase {
       // The typical pattern is to read a struct instance from a field and then call "constrain()"
       // on it. Get the Value passed as the "self" struct to the CallOp and determine which field it
       // was read from in the current struct (i.e., `destStruct`).
-      Value selfArgFromCall = getSelfValueFromConstrainCall(callOp);
+      Value selfArgFromCall = callOp.getSelfValueFromConstrain();
       FieldRefOpInterface selfFieldRefOp =
           llvm::dyn_cast_if_present<FieldReadOp>(selfArgFromCall.getDefiningOp());
       if (selfFieldRefOp && selfFieldRefOp.getComponent().getType() == destStruct->getType()) {
@@ -308,7 +264,7 @@ class StructInliner : public StructInlinerBase {
       // The typical pattern is to write the return value of "compute()" to a field in
       // the current struct (i.e., `destStruct`).
       FieldRefOpInterface selfFieldRefOp = nullptr;
-      Value selfArgFromCall = getSelfValueFromComputeCall(callOp);
+      Value selfArgFromCall = callOp.getSelfValueFromCompute();
       for (OpOperand &use : selfArgFromCall.getUses()) {
         if (auto writeOp = llvm::dyn_cast<FieldWriteOp>(use.getOwner())) {
           // ASSERT: FieldWriteOp are only allowed to write to the current struct.

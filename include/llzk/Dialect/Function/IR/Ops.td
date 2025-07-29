@@ -197,6 +197,14 @@ def FuncDefOp
     /// Return `true` iff the function is within a StructDefOp and named `FUNC_NAME_CONSTRAIN`.
     inline bool isStructConstrain() { return isInStruct() && nameIsConstrain(); }
 
+    /// Return the "self" value (i.e. the return value) from the function (which must be
+    /// named `FUNC_NAME_COMPUTE`).
+    ::mlir::Value getSelfValueFromCompute();
+
+    /// Return the "self" value (i.e. the first parameter) from the function (which must be
+    /// named `FUNC_NAME_CONSTRAIN`).
+    ::mlir::Value getSelfValueFromConstrain();
+
     /// Assuming the name is `FUNC_NAME_COMPUTE`, return the single StructType result.
     ::llzk::component::StructType getSingleResultTypeOfCompute();
   }];
@@ -347,6 +355,14 @@ def CallOp : FunctionDialectOp<
 
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` within a StructDefOp.
     bool calleeIsStructConstrain();
+
+    /// Return the "self" value (i.e. the return value) from the callee function (which must be
+    /// named `FUNC_NAME_COMPUTE`).
+    ::mlir::Value getSelfValueFromCompute();
+
+    /// Return the "self" value (i.e. the first parameter) from the callee function (which must be
+    /// named `FUNC_NAME_CONSTRAIN`).
+    ::mlir::Value getSelfValueFromConstrain();
 
     /// Resolve and return the target FuncDefOp for this CallOp.
     ::mlir::FailureOr<::llzk::SymbolLookupResult<::llzk::function::FuncDefOp>>

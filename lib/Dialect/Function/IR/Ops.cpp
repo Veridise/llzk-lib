@@ -307,6 +307,30 @@ SymbolRefAttr FuncDefOp::getFullyQualifiedName() {
   return res.value();
 }
 
+Value FuncDefOp::getSelfValueFromCompute() {
+  assert(nameIsCompute()); // skip inStruct check to allow dangling functions
+  // Get the single block of the function body
+  Region &body = getBody();
+  assert(!body.empty() && "compute() function body is empty");
+  Block &block = body.back();
+
+  // The terminator should be the return op
+  Operation *terminator = block.getTerminator();
+  assert(terminator && "compute() function has no terminator");
+  auto retOp = llvm::dyn_cast<ReturnOp>(terminator);
+  if (!retOp) {
+    llvm::errs() << "Expected '" << ReturnOp::getOperationName() << "' but found '"
+                 << terminator->getName() << "'\n";
+    llvm_unreachable("compute() function must end with ReturnOp");
+  }
+  return retOp.getOperands().front();
+}
+
+Value FuncDefOp::getSelfValueFromConstrain() {
+  assert(nameIsConstrain()); // skip inStruct check to allow dangling functions
+  return getArguments().front();
+}
+
 StructType FuncDefOp::getSingleResultTypeOfCompute() {
   assert(isStructCompute() && "violated implementation pre-condition");
   return getIfSingleton<StructType>(getResultTypes());
@@ -696,6 +720,16 @@ bool CallOp::calleeIsStructConstrain() {
   return calleeIsStructFunctionImpl(FUNC_NAME_CONSTRAIN, getCallee(), [this]() {
     return getAtIndex<StructType>(this->getArgOperands().getTypes(), 0);
   });
+}
+
+Value CallOp::getSelfValueFromCompute() {
+  assert(calleeIsStructCompute());
+  return getResults().front();
+}
+
+Value CallOp::getSelfValueFromConstrain() {
+  assert(calleeIsStructConstrain());
+  return getArgOperands().front();
 }
 
 FailureOr<SymbolLookupResult<FuncDefOp>> CallOp::getCalleeTarget(SymbolTableCollection &tables) {
