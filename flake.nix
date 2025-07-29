@@ -54,6 +54,7 @@
 
         llzkDebugClang = (final.llzk.override { stdenv = final.clangStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
+          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
 
           postInstall = ''
             if [ -f test/report.xml ]; then
@@ -103,6 +104,7 @@
 
         llzkDebugGCC = (final.llzk.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
           cmakeBuildType = "DebWithSans";
+          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
 
           postInstall = ''
             if [ -f test/report.xml ]; then

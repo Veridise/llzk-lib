@@ -50,7 +50,7 @@ message(STATUS "Using MLIR in: ${MLIR_DIR}")
 # Adds an INTERFACE library that only includes headers
 function(add_header_library _name _include_dirs _export_name)
   add_library(${_name} INTERFACE)
-  target_include_directories(${_name} INTERFACE ${_include_dirs})
+  target_include_directories(${_name} SYSTEM INTERFACE ${_include_dirs})
   install(TARGETS ${_name} EXPORT ${_export_name})
 endfunction()
 

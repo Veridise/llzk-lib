@@ -39,6 +39,7 @@ public:
   explicit ConstrainRefLatticeValue(ScalarTy s) : Base(s) {}
   explicit ConstrainRefLatticeValue(ConstrainRef r) : Base(ScalarTy {r}) {}
   ConstrainRefLatticeValue() : Base(ScalarTy {}) {}
+  virtual ~ConstrainRefLatticeValue() = default;
 
   // Create an empty array of the given shape.
   explicit ConstrainRefLatticeValue(mlir::ArrayRef<int64_t> shape) : Base(shape) {}
