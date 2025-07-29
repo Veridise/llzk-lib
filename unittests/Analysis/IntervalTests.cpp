@@ -80,6 +80,8 @@ TEST_F(IntervalTests, IntervalWidth) {
   AssertSafeEq(f.zero(), c.width());
 
   AssertSafeEq(Interval::Entire(f).width(), f.prime());
+  AssertSafeEq(Interval::Empty(f).width(), f.zero());
+  AssertSafeEq(Interval::Degenerate(f, f.felt(7)).width(), f.one());
 }
 
 TEST_F(IntervalTests, Partitions) {
