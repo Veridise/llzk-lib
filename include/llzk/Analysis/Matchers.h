@@ -54,13 +54,8 @@ struct RefValueCapture {
   mlir::Value *what;
   RefValueCapture(mlir::Value *capture) : what(capture) {}
 
-  static bool matches(mlir::Value v) {
-    return isa<mlir::BlockArgument>(v) ||
-           isa_and_present<component::FieldReadOp>(v.getDefiningOp());
-  }
-
   bool match(mlir::Value v) {
-    if (matches(v)) {
+    if (isa<mlir::BlockArgument>(v) || isa_and_present<component::FieldReadOp>(v.getDefiningOp())) {
       if (what) {
         *what = v;
       }
@@ -79,14 +74,10 @@ struct ConstantCapture {
   felt::FeltConstantOp *what;
   ConstantCapture(felt::FeltConstantOp *capture) : what(capture) {}
 
-  static bool matches(mlir::Value v) {
-    return isa_and_present<felt::FeltConstantOp>(v.getDefiningOp());
-  }
-
   bool match(mlir::Value v) {
-    if (matches(v)) {
+    if (auto match = dyn_cast_if_present<felt::FeltConstantOp>(v.getDefiningOp())) {
       if (what) {
-        *what = dyn_cast<felt::FeltConstantOp>(v.getDefiningOp());
+        *what = match;
       }
       return true;
     }
