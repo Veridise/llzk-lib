@@ -656,7 +656,61 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// TODO: ADD SPLIT
+// -----
+
+// TESTS: Result of a field read has use(s) other than parameter to constrain function.
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Component9A {
+    struct.field @f : !felt.type
+
+    function.def @compute() -> !struct.type<@Component9A> {
+      %self = struct.new : !struct.type<@Component9A>
+      %12 = felt.const 12
+      struct.writef %self[@f] = %12 : !struct.type<@Component9A>, !felt.type
+      function.return %self : !struct.type<@Component9A>
+    }
+
+    function.def @constrain(%self: !struct.type<@Component9A>) {
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.field @fa : !struct.type<@Component9A>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %a = function.call @Component9A::@compute() : () -> !struct.type<@Component9A>
+      struct.writef %self[@fa] = %a : !struct.type<@Main>, !struct.type<@Component9A>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %a = struct.readf %self[@fa] : !struct.type<@Main>, !struct.type<@Component9A>
+      function.call @Component9A::@constrain(%a) : (!struct.type<@Component9A>) -> ()
+      %b = struct.readf %a[@f] : !struct.type<@Component9A>, !felt.type
+      %12 = felt.const 12
+      constrain.eq %12, %b : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL:   struct.def @Main {
+// CHECK-NEXT:      struct.field @"fa:!s<@Component9A>+f" : !felt.type
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:        struct.writef %[[V0]][@"fa:!s<@Component9A>+f"] = %[[V1]] : <@Main>, !felt.type
+// CHECK-NEXT:        function.return %[[V0]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = struct.readf %[[V2]][@"fa:!s<@Component9A>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[V4]], %[[V3]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+
 
 // // TESTS: Passing struct as parameter
 // module attributes {veridise.lang = "llzk"} {
