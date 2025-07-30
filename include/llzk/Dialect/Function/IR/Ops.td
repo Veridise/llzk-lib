@@ -189,7 +189,7 @@ def FuncDefOp
     inline bool nameIsConstrain() { return FUNC_NAME_CONSTRAIN == getSymName(); }
 
     /// Return `true` iff the function is within a StructDefOp
-    bool isInStruct() { return ::llzk::component::isInStruct(*this); }
+    inline bool isInStruct() { return ::llzk::component::isInStruct(*this); }
 
     /// Return `true` iff the function is within a StructDefOp and named `FUNC_NAME_COMPUTE`.
     inline bool isStructCompute() { return isInStruct() && nameIsCompute(); }
