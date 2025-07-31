@@ -176,6 +176,9 @@ public:
   using LatticeValue = IntervalAnalysisLatticeValue;
   // Map mlir::Values to LatticeValues
   using ValueMap = mlir::DenseMap<mlir::Value, LatticeValue>;
+  // Map field references to LatticeValues. Used for field reads and writes.
+  // Structure is component value -> field attribute -> latticeValue
+  using FieldMap = mlir::DenseMap<mlir::Value, mlir::DenseMap<mlir::StringAttr, LatticeValue>>;
   // Expression to interval map for convenience.
   using ExpressionIntervals = mlir::DenseMap<llvm::SMTExprRef, Interval>;
   // Tracks all constraints and assignments in insertion order
@@ -193,8 +196,10 @@ public:
   void print(mlir::raw_ostream &os) const override;
 
   mlir::FailureOr<LatticeValue> getValue(mlir::Value v) const;
+  mlir::FailureOr<LatticeValue> getValue(mlir::Value v, mlir::StringAttr f) const;
 
   mlir::ChangeResult setValue(mlir::Value v, ExpressionValue e);
+  mlir::ChangeResult setValue(mlir::Value v, mlir::StringAttr f, ExpressionValue e);
 
   mlir::ChangeResult addSolverConstraint(ExpressionValue e);
 
@@ -218,6 +223,7 @@ public:
 
 private:
   ValueMap valMap;
+  FieldMap fieldMap;
   ConstraintSet constraints;
   ExpressionIntervals intervals;
 };
@@ -258,6 +264,7 @@ private:
   llvm::SMTSolverRef smtSolver;
   SymbolMap refSymbols;
   std::reference_wrapper<const Field> field;
+  mlir::SymbolTableCollection tables;
 
   void setToEntryState(Lattice *lattice) override {
     // initial state should be empty, so do nothing here
@@ -392,27 +399,33 @@ public:
   /// @return
   static mlir::FailureOr<StructIntervals> compute(
       mlir::ModuleOp mod, component::StructDefOp s, mlir::DataFlowSolver &solver,
-      mlir::AnalysisManager &am, IntervalAnalysisContext &ctx
+      IntervalAnalysisContext &ctx
   ) {
     StructIntervals si(mod, s);
-    if (si.computeIntervals(solver, am, ctx).failed()) {
+    if (si.computeIntervals(solver, ctx).failed()) {
       return mlir::failure();
     }
     return si;
   }
 
-  mlir::LogicalResult computeIntervals(
-      mlir::DataFlowSolver &solver, mlir::AnalysisManager &am, IntervalAnalysisContext &ctx
-  );
+  mlir::LogicalResult computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysisContext &ctx);
 
-  void print(mlir::raw_ostream &os, bool withConstraints = false) const;
+  void print(mlir::raw_ostream &os, bool withConstraints = false, bool printCompute = false) const;
 
-  const llvm::MapVector<ConstrainRef, Interval> &getIntervals() const {
+  const llvm::MapVector<ConstrainRef, Interval> &getConstrainIntervals() const {
     return constrainFieldRanges;
   }
 
-  const llvm::SetVector<ExpressionValue> getSolverConstraints() const {
+  const llvm::SetVector<ExpressionValue> getConstrainSolverConstraints() const {
     return constrainSolverConstraints;
+  }
+
+  const llvm::MapVector<ConstrainRef, Interval> &getComputeIntervals() const {
+    return computeFieldRanges;
+  }
+
+  const llvm::SetVector<ExpressionValue> getComputeSolverConstraints() const {
+    return computeSolverConstraints;
   }
 
   friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const StructIntervals &si) {
@@ -425,9 +438,9 @@ private:
   component::StructDefOp structDef;
   llvm::SMTSolverRef smtSolver;
   // llvm::MapVector keeps insertion order for consistent iteration
-  llvm::MapVector<ConstrainRef, Interval> constrainFieldRanges;
+  llvm::MapVector<ConstrainRef, Interval> constrainFieldRanges, computeFieldRanges;
   // llvm::SetVector for the same reasons as above
-  llvm::SetVector<ExpressionValue> constrainSolverConstraints;
+  llvm::SetVector<ExpressionValue> constrainSolverConstraints, computeSolverConstraints;
 
   StructIntervals(mlir::ModuleOp m, component::StructDefOp s) : mod(m), structDef(s) {}
 };
@@ -442,11 +455,10 @@ public:
   virtual ~StructIntervalAnalysis() = default;
 
   mlir::LogicalResult runAnalysis(
-      mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
-      IntervalAnalysisContext &ctx
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &_, IntervalAnalysisContext &ctx
   ) override {
-    auto r = StructIntervals::compute(getModule(), getStruct(), solver, moduleAnalysisManager, ctx);
-    if (mlir::failed(r)) {
+    auto res = StructIntervals::compute(getModule(), getStruct(), solver, ctx);
+    if (mlir::failed(res)) {
       return mlir::failure();
     }
     setResult(std::move(*r));
