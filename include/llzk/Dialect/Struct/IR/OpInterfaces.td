@@ -28,12 +28,21 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
           [{Gets the SSA value with the target component from the FieldRefOp.}],
           "::mlir::TypedValue<::llzk::component::StructType>", "getComponent",
           (ins)>,
+      InterfaceMethod<
+          [{Gets the SSA value with the target component from the FieldRefOp.}],
+          "::mlir::OpOperand &", "getComponentMutable", (ins)>,
       // Requires implementors to have a '$field_name' argument.
       InterfaceMethod<
           [{Gets the field name attribute value from the FieldRefOp.}],
           "::llvm::StringRef", "getFieldName", (ins)>,
       InterfaceMethod<[{Gets the field name attribute from the FieldRefOp.}],
                       "::mlir::FlatSymbolRefAttr", "getFieldNameAttr", (ins)>,
+      InterfaceMethod<
+          [{Sets the field name attribute value in the FieldRefOp.}], "void",
+          "setFieldName", (ins "::llvm::StringRef":$attrValue)>,
+      InterfaceMethod<[{Sets the field name attribute in the FieldRefOp.}],
+                      "void", "setFieldNameAttr",
+                      (ins "::mlir::FlatSymbolRefAttr":$attr)>,
       // Requires the '$component' argument type to be LLZK_StructType.
       InterfaceMethod<
           [{Gets the struct type of the target component.}],

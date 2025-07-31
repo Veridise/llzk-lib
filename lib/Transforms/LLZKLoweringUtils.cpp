@@ -24,24 +24,6 @@ using namespace llzk::constrain;
 
 namespace llzk {
 
-Value getSelfValueFromCompute(FuncDefOp computeFunc) {
-  // Get the single block of the function body
-  Region &body = computeFunc.getBody();
-  assert(!body.empty() && "compute() function body is empty");
-  Block &block = body.back();
-
-  // The terminator should be the return op
-  Operation *terminator = block.getTerminator();
-  assert(terminator && "compute() function has no terminator");
-  auto retOp = dyn_cast<ReturnOp>(terminator);
-  if (!retOp) {
-    llvm::errs() << "Expected '" << ReturnOp::getOperationName() << "' but found '"
-                 << terminator->getName() << "'\n";
-    llvm_unreachable("compute() function must end with ReturnOp");
-  }
-  return retOp.getOperands().front();
-}
-
 Value rebuildExprInCompute(
     Value val, FuncDefOp computeFunc, OpBuilder &builder, DenseMap<Value, Value> &memo
 ) {
@@ -56,7 +38,7 @@ Value rebuildExprInCompute(
   }
 
   if (auto readOp = val.getDefiningOp<FieldReadOp>()) {
-    Value self = getSelfValueFromCompute(computeFunc);
+    Value self = computeFunc.getSelfValueFromCompute();
     Value rebuilt = builder.create<FieldReadOp>(
         readOp.getLoc(), readOp.getType(), self, readOp.getFieldNameAttr().getAttr()
     );

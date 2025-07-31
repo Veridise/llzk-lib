@@ -70,6 +70,26 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
   ];
 }
 
+def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
+  let summary = "Inlines nested structs (i.e., subcomponents).";
+  let description = [{
+    This pass inlines nested structs (i.e., subcomponents) at struct-type fields and at calls to the
+    subcomponent compute/constrain functions. Inlining decisions are guided by the call graph of
+    "constrain" functions.
+    
+    The `max-complexity` parameter can be used to limit the complexity of the resulting structs such
+    that a potential inlining will not take place if doing so would push the sum of constraint and
+    multiplications in the combined struct over the limit. The default value `0` indicates no limits
+    which means all structs will be inlined into the Main struct.
+  }];
+  let constructor = "llzk::createInlineStructsPass()";
+  let options = [Option<"maxComplexity", "max-complexity", "unsigned",
+                        /* default */ "0",
+                        "Maximum allowed constraint+multiplications in merged "
+                        "@constrain functions">,
+  ];
+}
+
 def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
   let summary = "Rewrites constraints to be compatible with R1CS constraints "
                 "i.e a*b - c = 0";

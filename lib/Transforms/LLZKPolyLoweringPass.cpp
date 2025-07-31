@@ -133,7 +133,7 @@ private:
       unsigned rhsDeg = getDegree(rhs, degreeMemo);
 
       OpBuilder builder(mulOp.getOperation()->getBlock(), ++Block::iterator(mulOp));
-      Value selfVal = constrainFunc.getArgument(0); // %self argument
+      Value selfVal = constrainFunc.getSelfValueFromConstrain();
       bool eraseMul = lhsDeg + rhsDeg > maxDegree;
       // Optimization: If lhs == rhs, factor it only once
       if (lhs == rhs && eraseMul) {
@@ -321,7 +321,7 @@ private:
       DenseMap<Value, Value> rebuildMemo;
       Block &computeBlock = computeFunc.getBody().front();
       OpBuilder builder(&computeBlock, computeBlock.getTerminator()->getIterator());
-      Value selfVal = getSelfValueFromCompute(computeFunc);
+      Value selfVal = computeFunc.getSelfValueFromCompute();
 
       for (const auto &assign : auxAssignments) {
         Value rebuiltExpr =

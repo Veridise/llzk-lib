@@ -332,9 +332,9 @@ private:
           builder.setInsertionPoint(op);
           std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxCounter++);
           FieldDefOp auxField = addAuxField(structDef, auxName);
-          Value self = constrainFunc.getArgument(0);
           Value aux = builder.create<FieldReadOp>(
-              val.getLoc(), val.getType(), self, auxField.getNameAttr()
+              val.getLoc(), val.getType(), constrainFunc.getSelfValueFromConstrain(),
+              auxField.getNameAttr()
           );
           auto eqOp = builder.create<EmitEqualityOp>(val.getLoc(), aux, lhs);
           auxAssignments.push_back({auxName, lhs});
@@ -649,9 +649,9 @@ private:
           builder.setInsertionPoint(eqOp);
           std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxCounter++);
           FieldDefOp auxField = addAuxField(structDef, auxName);
-          Value self = constrainFunc.getArgument(0);
           Value aux = builder.create<FieldReadOp>(
-              eqOp.getLoc(), lhs.getType(), self, auxField.getNameAttr()
+              eqOp.getLoc(), lhs.getType(), constrainFunc.getSelfValueFromConstrain(),
+              auxField.getNameAttr()
           );
           auto eqAux = builder.create<EmitEqualityOp>(eqOp.getLoc(), aux, lhs);
           auxAssignments.push_back({auxName, lhs});
@@ -666,7 +666,7 @@ private:
 
       Block &computeBlock = computeFunc.getBody().front();
       OpBuilder builder(&computeBlock, computeBlock.getTerminator()->getIterator());
-      Value selfVal = getSelfValueFromCompute(computeFunc);
+      Value selfVal = computeFunc.getSelfValueFromCompute();
       DenseMap<Value, Value> rebuildMemo;
 
       for (const auto &assign : auxAssignments) {
