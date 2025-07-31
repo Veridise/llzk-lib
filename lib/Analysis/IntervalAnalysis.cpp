@@ -20,6 +20,7 @@ namespace llzk {
 
 using namespace array;
 using namespace boolean;
+using namespace cast;
 using namespace component;
 using namespace constrain;
 using namespace felt;
@@ -517,6 +518,9 @@ void IntervalDataFlowAnalysis::visitOperation(
     changed |= after->setValue(
         writef.getComponent(), writef.getFieldNameAttr().getAttr(), operandVals[1].getScalarValue()
     );
+  } else if (isa<IntToFeltOp, FeltToIndexOp>(op)) {
+    // Casts don't modify the intervals
+    changed |= after->setValue(op->getResult(0), operandVals[0].getScalarValue());
   } else if (
       // We do not need to explicitly handle read ops since they are resolved at the operand value
       // step where constrain refs are queries (with the exception of the Signal struct, see above).
