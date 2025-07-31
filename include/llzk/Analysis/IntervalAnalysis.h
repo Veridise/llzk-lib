@@ -117,6 +117,15 @@ public:
   cmp(llvm::SMTSolverRef solver, boolean::CmpOp op, const ExpressionValue &lhs,
       const ExpressionValue &rhs);
 
+  friend ExpressionValue
+  boolAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue
+  boolOr(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue
+  boolXor(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
   /// @brief Computes a solver expression based on the operation, but computes a fallback
   /// interval (which is just Entire, or unknown). Used for currently unsupported compute-only
   /// operations.
@@ -133,6 +142,8 @@ public:
   friend ExpressionValue neg(llvm::SMTSolverRef solver, const ExpressionValue &val);
 
   friend ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val);
+
+  friend ExpressionValue boolNot(llvm::SMTSolverRef solver, const ExpressionValue &val);
 
   friend ExpressionValue
   fallbackUnaryOp(llvm::SMTSolverRef solver, mlir::Operation *op, const ExpressionValue &val);
@@ -295,7 +306,8 @@ private:
     return mlir::isa<
         felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::ModFeltOp,
         felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp, felt::XorFeltOp,
-        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp>(op);
+        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp, boolean::AndBoolOp,
+        boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(op);
   }
 
   ExpressionValue

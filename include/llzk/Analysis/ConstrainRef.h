@@ -152,8 +152,7 @@ public:
   static std::vector<ConstrainRef>
   getAllConstrainRefs(component::StructDefOp structDef, component::FieldDefOp fieldDef);
 
-  explicit ConstrainRef(mlir::BlockArgument b)
-      : blockArg(b), fieldRefs(), constantVal(std::nullopt) {}
+  explicit ConstrainRef(mlir::BlockArgument b) : root(b), fieldRefs(), constantVal(std::nullopt) {}
   ConstrainRef(mlir::BlockArgument b, std::vector<ConstrainRefIndex> f)
       : blockArg(b), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
   explicit ConstrainRef(felt::FeltConstantOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
@@ -271,10 +270,15 @@ public:
 
 private:
   /**
-   * If the block arg is 0, then it refers to "self", meaning the signal is internal or an output
-   * (public means an output). Otherwise, it is an input, either public or private.
+   * BlockArgument:
+   * - If the block arg is 0, then it refers to "self", meaning the signal is internal or an output
+   * (public means an output).
+   * - Otherwise, it is an input, either public or private.
+   *
+   * CreateStructOp
+   * - For compute functions, the "self" argument is an allocation site.
    */
-  mlir::BlockArgument blockArg;
+  std::optional<mlir::BlockArgument, component::CreateStructOp> root;
 
   std::vector<ConstrainRefIndex> fieldRefs;
   // using mutable to reduce constant casts for certain get* functions.

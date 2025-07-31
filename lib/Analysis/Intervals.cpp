@@ -411,6 +411,74 @@ llvm::APSInt Interval::width() const {
   }
 }
 
+Interval boolAnd(const Interval &lhs, const Interval &rhs) {
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
+  ensure(lhs.isBoolean() && rhs.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = rhs.getField();
+
+  if (lhs.isBoolFalse() && rhs.isBoolFalse()) {
+    return Interval::False(field);
+  }
+  if (lhs.isBoolTrue() || rhs.isBoolTrue()) {
+    return Interval::True(field);
+  }
+
+  return Interval::Boolean(field);
+}
+
+Interval boolOr(const Interval &lhs, const Interval &rhs) {
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
+  ensure(lhs.isBoolean() && rhs.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = rhs.getField();
+
+  if (lhs.isBoolFalse() && rhs.isBoolFalse()) {
+    return Interval::False(field);
+  }
+  if (lhs.isBoolTrue() || rhs.isBoolTrue()) {
+    return Interval::True(field);
+  }
+
+  return Interval::Boolean(field);
+}
+
+Interval boolXor(const Interval &lhs, const Interval &rhs) {
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
+  ensure(lhs.isBoolean() && rhs.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = rhs.getField();
+
+  if (lhs.isBoolTrue() && rhs.isBoolTrue()) {
+    return Interval::False(field);
+  }
+  if (lhs.isBoolTrue() || rhs.isBoolTrue()) {
+    return Interval::True(field);
+  }
+  if (lhs.isBoolFalse() && rhs.isBoolFalse()) {
+    return Interval::False(field);
+  }
+
+  return Interval::Boolean(field);
+}
+
+Interval boolNot(const Interval &iv) {
+  ensure(iv.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = iv.getField();
+
+  if (iv.isBoolTrue()) {
+    return Interval::False(field);
+  }
+  if (iv.isBoolFalse()) {
+    return Interval::True(field);
+  }
+
+  return iv;
+}
+
 void Interval::print(mlir::raw_ostream &os) const {
   os << TypeName(ty);
   if (is<Type::Degenerate>()) {
