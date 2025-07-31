@@ -122,6 +122,33 @@ cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const Expre
   return res;
 }
 
+ExpressionValue
+boolAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = boolAnd(lhs.i, rhs.i);
+  res.expr = solver->mkAnd(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
+boolOr(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = boolOr(lhs.i, rhs.i);
+  res.expr = solver->mkOr(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
+boolXor(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = boolXor(lhs.i, rhs.i);
+  // There's no Xor, so we do (L || R) && !(L && R)
+  res.expr = solver->mkAnd(
+      solver->mkOr(lhs.expr, rhs.expr), solver->mkNot(solver->mkAnd(lhs.expr, rhs.expr))
+  );
+  return res;
+}
+
 ExpressionValue fallbackBinaryOp(
     llvm::SMTSolverRef solver, Operation *op, const ExpressionValue &lhs, const ExpressionValue &rhs
 ) {
@@ -153,15 +180,15 @@ ExpressionValue neg(llvm::SMTSolverRef solver, const ExpressionValue &val) {
 
 ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val) {
   ExpressionValue res;
-  const auto &f = val.getField();
-  if (val.i.isDegenerate()) {
-    if (val.i == Interval::Degenerate(f, f.zero())) {
-      res.i = Interval::Degenerate(f, f.one());
-    } else {
-      res.i = Interval::Degenerate(f, f.zero());
-    }
-  }
-  res.i = Interval::Boolean(f);
+  // TODO: reason about this slightly better
+  res.i = Interval::Entire(val.getField());
+  res.expr = solver->mkBVNot(val.expr);
+  return res;
+}
+
+ExpressionValue boolNot(llvm::SMTSolverRef solver, const ExpressionValue &val) {
+  ExpressionValue res;
+  res.i = boolNot(val.i);
   res.expr = solver->mkBVNot(val.expr);
   return res;
 }
@@ -561,8 +588,11 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
                  .Case<MulFeltOp>([&](MulFeltOp _) { return mul(smtSolver, lhs, rhs); })
                  .Case<DivFeltOp>([&](DivFeltOp divOp) { return div(smtSolver, divOp, lhs, rhs); })
                  .Case<ModFeltOp>([&](ModFeltOp _) { return mod(smtSolver, lhs, rhs); })
-                 .Case<CmpOp>([&](CmpOp cmpOp) {
-    return cmp(smtSolver, cmpOp, lhs, rhs);
+                 .Case<CmpOp>([&](CmpOp cmpOp) { return cmp(smtSolver, cmpOp, lhs, rhs); })
+                 .Case<AndBoolOp>([&](AndBoolOp _) { return boolAnd(smtSolver, lhs, rhs); })
+                 .Case<OrBoolOp>([&](OrBoolOp _) { return boolOr(smtSolver, lhs, rhs); })
+                 .Case<XorBoolOp>([&](XorBoolOp _) {
+    return boolXor(smtSolver, lhs, rhs);
   }).Default([&](Operation *unsupported) {
     unsupported->emitWarning(
         "unsupported binary arithmetic operation, defaulting to over-approximated intervals"
@@ -583,7 +613,7 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(Operation *op, const LatticeVal
 
   auto res = TypeSwitch<Operation *, ExpressionValue>(op)
                  .Case<NegFeltOp>([&](NegFeltOp _) { return neg(smtSolver, val); })
-                 .Case<NotFeltOp>([&](NotFeltOp _) {
+                 .Case<NotFeltOp, NotBoolOp>([&](Operation *_) {
     return notOp(smtSolver, val);
   }).Default([&](Operation *unsupported) {
     unsupported->emitWarning(
