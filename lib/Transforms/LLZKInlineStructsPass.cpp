@@ -60,6 +60,14 @@ Value getSelfValue(FuncDefOp f) {
   }
 }
 
+/// Cache various ops from the caller struct that should be erased but only after all callees are
+/// fully handled (to avoid "still has uses" errors).
+struct PendingErasure {
+  SmallVector<FieldRefOpInterface> fieldRefOps;
+  SmallVector<CreateStructOp> newStructOps;
+  SmallVector<FieldDefOp> fieldDefs;
+};
+
 class StructInlinerBase {
 public:
   /// Mapping of `destStruct` field that has `srcStruct` type to each FieldDefOp from `srcStruct` to
@@ -72,8 +80,10 @@ public:
 
 protected:
   SymbolTableCollection &tables;
+  PendingErasure &toDelete;
 
-  StructInlinerBase(SymbolTableCollection &symTables) : tables(symTables) {}
+  StructInlinerBase(SymbolTableCollection &symTables, PendingErasure &opsToDelete)
+      : tables(symTables), toDelete(opsToDelete) {}
 
   inline FieldDefOp getDef(FieldRefOpInterface fRef) const {
     auto r = fRef.getFieldDefOp(tables);
@@ -83,7 +93,8 @@ protected:
 
   LogicalResult doInlining(
       const DestToSrcToClonedSrcInDest &destToSrcToClone, FuncDefOp srcFunc, FuncDefOp destFunc,
-      llvm::function_ref<FieldRefOpInterface(CallOp)> getSelfRef
+      llvm::function_ref<FieldRefOpInterface(CallOp)> getSelfRef,
+      llvm::function_ref<void(FuncDefOp)> processCloneBeforeInlining = nullptr
   ) {
     InlinerInterface inliner(destFunc.getContext());
 
@@ -109,6 +120,9 @@ protected:
           FieldRefRewriter::cloneWithFieldRefUpdate(std::make_unique<FieldRefRewriter>(
               srcFunc, selfFieldRefOp.getComponent(), destToSrcToClone.at(getDef(selfFieldRefOp))
           ));
+      if (processCloneBeforeInlining) {
+        processCloneBeforeInlining(srcFuncClone);
+      }
 
       // Inline the cloned function in place of `callOp`
       LogicalResult inlineCallRes =
@@ -121,18 +135,29 @@ protected:
       return WalkResult::skip(); // Must skip because the CallOp was erased.
     };
 
+    auto fieldWriteHandler = [&](FieldWriteOp fWriteOp) {
+      // Check if the field ref op should be deleted in the end
+      if (destToSrcToClone.contains(getDef(fWriteOp))) {
+        toDelete.fieldRefOps.push_back(fWriteOp);
+      }
+      return WalkResult::advance();
+    };
+
     /// Replaces FieldReadOp where the base value of the read is the result of reading from a field
     /// in `destToSrcToClone` and the field referenced by this FieldReadOp has a mapping there,
     /// replace this FieldReadOp with a new FieldReadOp from the cloned field.
-    auto readHandler = [&](FieldReadOp fReadOp) {
+    auto fieldReadHandler = [&](FieldReadOp fReadOp) {
+      // Check if the field ref op should be deleted in the end
+      if (destToSrcToClone.contains(getDef(fReadOp))) {
+        toDelete.fieldRefOps.push_back(fReadOp);
+      }
+
       auto readThatDefinesBaseComponent =
           llvm::dyn_cast_if_present<FieldReadOp>(fReadOp.getComponent().getDefiningOp());
       if (!readThatDefinesBaseComponent) {
         return WalkResult::advance();
       }
-      auto defRes = readThatDefinesBaseComponent.getFieldDefOp(tables);
-      assert(succeeded(defRes));
-      auto srcToClone = destToSrcToClone.find(defRes->get());
+      auto srcToClone = destToSrcToClone.find(getDef(readThatDefinesBaseComponent));
       if (srcToClone == destToSrcToClone.end()) {
         return WalkResult::advance();
       }
@@ -156,7 +181,8 @@ protected:
     auto walkRes = destFunc.getBody().walk<WalkOrder::PreOrder>([&](Operation *op) {
       return TypeSwitch<Operation *, WalkResult>(op)
           .Case<CallOp>(callHandler)
-          .Case<FieldReadOp>(readHandler)
+          .Case<FieldWriteOp>(fieldWriteHandler)
+          .Case<FieldReadOp>(fieldReadHandler)
           .Default([](Operation *) { return WalkResult::advance(); });
     });
     return failure(walkRes.wasInterrupted());
@@ -244,8 +270,11 @@ class StructInliner : public StructInlinerBase {
           continue;
         }
         assert(unifications.empty() && "TODO: handle this!");
+        // Mark the original `destField` for deletion
+        toDelete.fieldDefs.push_back(destField);
+        // Clone each field from 'srcStruct' into 'destStruct'. Add an entry to `destToSrcToClone`
+        // even if there are no fields in `srcStruct` so its presence can be used as a marker.
         SrcStructFieldToCloneInDest &srcToClone = destToSrcToClone.getOrInsertDefault(destField);
-        // Clone each field from 'srcStruct' into 'destStruct'
         auto srcFields = srcStruct.getFieldDefs();
         if (srcFields.empty()) {
           continue;
@@ -323,73 +352,26 @@ class StructInliner : public StructInlinerBase {
       llvm::errs() << "[TODO] callOp = " << callOp << '\n';
       llvm::errs() << "[TODO] selfArgFromCall = " << selfArgFromCall << '\n';
       assert(false && "TODO: handle this!");
+    },
+        // Within the compute function, find `CreateStructOp` with `srcStruct` type and mark them
+        // for later deletion. The deletion must occur later because these values may still have
+        // uses until ALL callees of a function have been inlined.
+        [this](FuncDefOp func) {
+      StructType srcStructType = this->srcStruct.getType();
+      func.getBody().walk([&](CreateStructOp newStructOp) {
+        if (newStructOp.getType() == srcStructType) {
+          toDelete.newStructOps.push_back(newStructOp);
+        }
+      });
     }
     );
   }
 
-  /// Remove read/write ops from within `destStruct` functions that target replaced `destStruct`
-  /// fields and delete the replaced fields from `destStruct`.
-  LogicalResult deleteFields(DestToSrcToClonedSrcInDest &destToSrcToClone) {
-    if (!destToSrcToClone.empty()) {
-      // Remove read/write ops targeting the fields
-      auto eraser = [this, &destToSrcToClone](FieldRefOpInterface fRef) {
-        if (destToSrcToClone.contains(this->getDef(fRef))) {
-          fRef.erase();
-        }
-      };
-      destStruct.getComputeFuncOp().getBody().walk(eraser);
-      destStruct.getConstrainFuncOp().getBody().walk(eraser);
-      // Delete the fields themselves
-      for (auto &[f, _] : destToSrcToClone) {
-        // erase via SymbolTable so table itself is updated too
-        auto parentStruct = f.getParentOp<StructDefOp>(); // parent is StructDefOp per ODS
-        tables.getSymbolTable(parentStruct).erase(f);
-      }
-    }
-    return success();
-  }
-
-  // Implementation note: This pattern is split out from `cloneWithFieldRefUpdate()` because the
-  // result value from the `CreateStructOp` is used by the `ReturnOp` that is not removed until the
-  // actual inlining takes place.
-  class EraseExcessCreateStructOp final : public OpRewritePattern<CreateStructOp> {
-    StructType toDelete;
-
-  public:
-    EraseExcessCreateStructOp(MLIRContext *ctx, StructType newStructTypeToDelete)
-        : OpRewritePattern(ctx), toDelete(newStructTypeToDelete) {}
-
-    LogicalResult match(CreateStructOp op) const final { return success(op.getType() == toDelete); }
-    void rewrite(CreateStructOp op, PatternRewriter &rewriter) const final {
-      // TODO: Although unlikely, there can be uses of the `CreateStructOp` result besides the
-      // `FieldWriteOp` that were deleted by `deleteFields()`. In that case, the `eraseOp()` would
-      // fail with the assertion "expected 'op' to have no uses". One example that would cause this
-      // assertion failure is passing the struct instance returned by a "compute()" call into some
-      // other function that does not get inlined. In that case, additional transformations would
-      // be needed to modify the CallOp and the target FuncDefOp to accept all fields of `srcStruct`
-      // as individual parameters.
-      rewriter.eraseOp(op);
-    }
-  };
-
-  LogicalResult handleRemainingStructValues() {
-    if (false) { // TODO:TEMP
-      llvm::dbgs() << "[FINDME] After inlining " << srcStruct.getSymName() << ":\n";
-      destStruct.dump();
-    }
-
-    MLIRContext *ctx = destStruct.getContext();
-    RewritePatternSet patterns(ctx);
-    patterns.add<EraseExcessCreateStructOp>(ctx, srcStruct.getType());
-    // Just run on "compute()" function because `CreateStructOp` cannot be used in "constrain()"
-    walkAndApplyPatterns(destStruct.getComputeFuncOp(), std::move(patterns));
-
-    return success();
-  }
-
 public:
-  StructInliner(SymbolTableCollection &tables, StructDefOp from, StructDefOp into)
-      : StructInlinerBase(tables), srcStruct(from), destStruct(into) {}
+  StructInliner(
+      SymbolTableCollection &tables, PendingErasure &toDelete, StructDefOp from, StructDefOp into
+  )
+      : StructInlinerBase(tables, toDelete), srcStruct(from), destStruct(into) {}
 
   LogicalResult doInline() {
     LLVM_DEBUG(
@@ -398,14 +380,11 @@ public:
     );
 
     DestToSrcToClonedSrcInDest destToSrcToClone = cloneFields();
-    // clang-format off
-    if (failed(inlineConstrainCall(destToSrcToClone))
-        || failed(inlineComputeCall(destToSrcToClone))
-        || failed(deleteFields(destToSrcToClone))) {
+    if (failed(inlineConstrainCall(destToSrcToClone)) ||
+        failed(inlineComputeCall(destToSrcToClone))) {
       return failure();
     }
-    // clang-format on
-    return handleRemainingStructValues();
+    return success();
   }
 };
 
@@ -528,13 +507,36 @@ public:
     SymbolTableCollection tables;
     InliningPlan plan = makePlan(useGraph, tables);
     for (auto &[caller, callees] : plan) {
+      // Cache operations that should be deleted but must wait until all callees are processed
+      // to ensure that all uses of the values defined by these operations are replaced.
+      PendingErasure toDelete;
       for (StructDefOp toInline : callees) {
-        LogicalResult res = StructInliner(tables, toInline, caller).doInline();
-        if (failed(res)) {
+        if (failed(StructInliner(tables, toDelete, toInline, caller).doInline())) {
           llvm::errs() << "failure!" << '\n'; // TODO: message?
           signalPassFailure();
           return;
         }
+      }
+      // To avoid "still has uses" errors, must erase FieldRefOpInterface before erasing
+      // the CreateStructOp or FieldDefOp.
+      for (auto op : toDelete.fieldRefOps) {
+        op.erase();
+      }
+      for (auto op : toDelete.newStructOps) {
+        // TODO: Although unlikely, there can be uses of the `CreateStructOp` result besides the
+        // `FieldWriteOp` that were deleted above. In that case, the `erase()` would fail with the
+        // assertion "still has uses". One example that would cause this assertion failure is
+        // passing the struct instance returned by a "compute()" call into some other function that
+        // does not get inlined. In that case, additional transformations would be needed to modify
+        // the CallOp and the target FuncDefOp to accept all fields of `srcStruct` as individual
+        // parameters.
+        op.erase();
+      }
+      // Erase FieldDefOp via SymbolTable so table itself is updated too.
+      auto callerSymTab = tables.getSymbolTable(caller);
+      for (auto op : toDelete.fieldDefs) {
+        assert(op.getParentOp() == caller); // using correct SymbolTable
+        callerSymTab.erase(op);
       }
     }
   }
