@@ -20,9 +20,11 @@ namespace llzk {
 
 using namespace array;
 using namespace boolean;
+using namespace cast;
 using namespace component;
 using namespace constrain;
 using namespace felt;
+using namespace function;
 
 /* ExpressionValue */
 
@@ -121,6 +123,33 @@ cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const Expre
   return res;
 }
 
+ExpressionValue
+boolAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = boolAnd(lhs.i, rhs.i);
+  res.expr = solver->mkAnd(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
+boolOr(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = boolOr(lhs.i, rhs.i);
+  res.expr = solver->mkOr(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
+boolXor(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = boolXor(lhs.i, rhs.i);
+  // There's no Xor, so we do (L || R) && !(L && R)
+  res.expr = solver->mkAnd(
+      solver->mkOr(lhs.expr, rhs.expr), solver->mkNot(solver->mkAnd(lhs.expr, rhs.expr))
+  );
+  return res;
+}
+
 ExpressionValue fallbackBinaryOp(
     llvm::SMTSolverRef solver, Operation *op, const ExpressionValue &lhs, const ExpressionValue &rhs
 ) {
@@ -152,15 +181,15 @@ ExpressionValue neg(llvm::SMTSolverRef solver, const ExpressionValue &val) {
 
 ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val) {
   ExpressionValue res;
-  const auto &f = val.getField();
-  if (val.i.isDegenerate()) {
-    if (val.i == Interval::Degenerate(f, f.zero())) {
-      res.i = Interval::Degenerate(f, f.one());
-    } else {
-      res.i = Interval::Degenerate(f, f.zero());
-    }
-  }
-  res.i = Interval::Boolean(f);
+  // TODO: reason about this slightly better
+  res.i = Interval::Entire(val.getField());
+  res.expr = solver->mkBVNot(val.expr);
+  return res;
+}
+
+ExpressionValue boolNot(llvm::SMTSolverRef solver, const ExpressionValue &val) {
+  ExpressionValue res;
+  res.i = boolNot(val.i);
   res.expr = solver->mkBVNot(val.expr);
   return res;
 }
@@ -242,7 +271,11 @@ void IntervalAnalysisLattice::print(mlir::raw_ostream &os) const {
   }
   for (auto &[expr, interval] : intervals) {
     os << "\n    (intervals) ";
-    expr->print(os);
+    if (!expr) {
+      os << "<null expr>";
+    } else {
+      expr->print(os);
+    }
     os << " in " << interval;
   }
   if (!valMap.empty()) {
@@ -259,12 +292,35 @@ FailureOr<IntervalAnalysisLattice::LatticeValue> IntervalAnalysisLattice::getVal
   return it->second;
 }
 
+FailureOr<IntervalAnalysisLattice::LatticeValue>
+IntervalAnalysisLattice::getValue(Value v, StringAttr f) const {
+  auto it = fieldMap.find(v);
+  if (it == fieldMap.end()) {
+    return failure();
+  }
+  auto fit = it->second.find(f);
+  if (fit == it->second.end()) {
+    return failure();
+  }
+  return fit->second;
+}
+
 ChangeResult IntervalAnalysisLattice::setValue(Value v, ExpressionValue e) {
   LatticeValue val(e);
   if (valMap[v] == val) {
     return ChangeResult::NoChange;
   }
   valMap[v] = val;
+  intervals[e.getExpr()] = e.getInterval();
+  return ChangeResult::Change;
+}
+
+ChangeResult IntervalAnalysisLattice::setValue(Value v, StringAttr f, ExpressionValue e) {
+  LatticeValue val(e);
+  if (fieldMap[v][f] == val) {
+    return ChangeResult::NoChange;
+  }
+  fieldMap[v][f] = val;
   intervals[e.getExpr()] = e.getInterval();
   return ChangeResult::Change;
 }
@@ -348,7 +404,7 @@ void IntervalDataFlowAnalysis::visitOperation(
     Value val = operand.get();
     // First, lookup the operand value in the before state.
     auto priorState = before.getValue(val);
-    if (succeeded(priorState)) {
+    if (succeeded(priorState) && priorState->getScalarValue().getExpr() != nullptr) {
       operandVals.push_back(*priorState);
       continue;
     }
@@ -386,6 +442,9 @@ void IntervalDataFlowAnalysis::visitOperation(
     } else {
       auto ref = refSet.getSingleValue();
       ExpressionValue exprVal(field.get(), getOrCreateSymbol(ref));
+      if (succeeded(priorState)) {
+        exprVal = exprVal.withInterval(priorState->getScalarValue().getInterval());
+      }
       changed |= after->setValue(val, exprVal);
       operandVals.emplace_back(exprVal);
     }
@@ -443,11 +502,25 @@ void IntervalDataFlowAnalysis::visitOperation(
     // Also add the solver constraint that the expression must be true.
     auto assertExpr = operandVals[0].getScalarValue();
     changed |= after->addSolverConstraint(assertExpr);
-  } else if (auto readf = mlir::dyn_cast<FieldReadOp>(op);
-             readf && isSignalType(readf.getComponent().getType())) {
-    // The reg value read from the signal type is equal to the value of the Signal
-    // struct overall.
-    changed |= after->setValue(readf.getVal(), operandVals[0].getScalarValue());
+  } else if (auto readf = mlir::dyn_cast<FieldReadOp>(op)) {
+    if (isSignalType(readf.getComponent().getType())) {
+      // The reg value read from the signal type is equal to the value of the Signal
+      // struct overall.
+      changed |= after->setValue(readf.getVal(), operandVals[0].getScalarValue());
+    } else if (auto storedVal =
+                   before.getValue(readf.getComponent(), readf.getFieldNameAttr().getAttr());
+               succeeded(storedVal)) {
+      // The result value is the value previously written to this field.
+      changed |= after->setValue(readf.getVal(), storedVal->getScalarValue());
+    }
+  } else if (auto writef = mlir::dyn_cast<FieldWriteOp>(op)) {
+    // Update values stored in a field
+    changed |= after->setValue(
+        writef.getComponent(), writef.getFieldNameAttr().getAttr(), operandVals[1].getScalarValue()
+    );
+  } else if (isa<IntToFeltOp, FeltToIndexOp>(op)) {
+    // Casts don't modify the intervals
+    changed |= after->setValue(op->getResult(0), operandVals[0].getScalarValue());
   } else if (
       // We do not need to explicitly handle read ops since they are resolved at the operand value
       // step where constrain refs are queries (with the exception of the Signal struct, see above).
@@ -526,8 +599,11 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
                  .Case<MulFeltOp>([&](MulFeltOp _) { return mul(smtSolver, lhs, rhs); })
                  .Case<DivFeltOp>([&](DivFeltOp divOp) { return div(smtSolver, divOp, lhs, rhs); })
                  .Case<ModFeltOp>([&](ModFeltOp _) { return mod(smtSolver, lhs, rhs); })
-                 .Case<CmpOp>([&](CmpOp cmpOp) {
-    return cmp(smtSolver, cmpOp, lhs, rhs);
+                 .Case<CmpOp>([&](CmpOp cmpOp) { return cmp(smtSolver, cmpOp, lhs, rhs); })
+                 .Case<AndBoolOp>([&](AndBoolOp _) { return boolAnd(smtSolver, lhs, rhs); })
+                 .Case<OrBoolOp>([&](OrBoolOp _) { return boolOr(smtSolver, lhs, rhs); })
+                 .Case<XorBoolOp>([&](XorBoolOp _) {
+    return boolXor(smtSolver, lhs, rhs);
   }).Default([&](Operation *unsupported) {
     unsupported->emitWarning(
         "unsupported binary arithmetic operation, defaulting to over-approximated intervals"
@@ -548,7 +624,7 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(Operation *op, const LatticeVal
 
   auto res = TypeSwitch<Operation *, ExpressionValue>(op)
                  .Case<NegFeltOp>([&](NegFeltOp _) { return neg(smtSolver, val); })
-                 .Case<NotFeltOp>([&](NotFeltOp _) {
+                 .Case<NotFeltOp, NotBoolOp>([&](Operation *_) {
     return notOp(smtSolver, val);
   }).Default([&](Operation *unsupported) {
     unsupported->emitWarning(
@@ -584,6 +660,29 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
       valLattice = getOrCreate<Lattice>(valOp->getBlock());
     }
   } else if (auto blockArg = mlir::dyn_cast<BlockArgument>(val)) {
+    Operation *owningOp = blockArg.getOwner()->getParentOp();
+    // Apply the interval from the constrain function inputs to the compute function inputs
+    if (auto fnOp = dyn_cast<FuncDefOp>(owningOp); fnOp && fnOp.isStructConstrain() &&
+                                                   blockArg.getArgNumber() > 0 &&
+                                                   !newInterval.isEntire()) {
+      auto structOp = fnOp->getParentOfType<StructDefOp>();
+      FuncDefOp computeFn = structOp.getComputeFuncOp();
+      Operation *computeEntry = &computeFn.getRegion().front().front();
+      BlockArgument computeArg = computeFn.getArgument(blockArg.getArgNumber() - 1);
+      Lattice *computeEntryLattice = getOrCreate<Lattice>(computeEntry);
+      auto entryLatticeVal = computeEntryLattice->getValue(computeArg);
+      ExpressionValue newArgVal;
+      if (succeeded(entryLatticeVal)) {
+        newArgVal = entryLatticeVal->getScalarValue().withInterval(newInterval);
+      } else {
+        // We store the interval with an empty expression so that when the operation
+        // is visited, the expressions can be properly generated with an existing
+        // interval.
+        newArgVal = ExpressionValue(nullptr, newInterval);
+      }
+      ChangeResult computeRes = computeEntryLattice->setValue(computeArg, newArgVal);
+      propagateIfChanged(computeEntryLattice, computeRes);
+    }
     valLattice = getOrCreate<Lattice>(blockArg.getOwner());
   } else {
     valLattice = getOrCreate<Lattice>(val);
@@ -831,65 +930,106 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
 
 /* StructIntervals */
 
-LogicalResult StructIntervals::computeIntervals(
-    mlir::DataFlowSolver &solver, mlir::AnalysisManager &am, IntervalAnalysisContext &ctx
-) {
-  // Get the lattice at the end of the constrain function.
-  function::ReturnOp constrainEnd;
-  structDef.getConstrainFuncOp().walk([&constrainEnd](function::ReturnOp r) mutable {
-    constrainEnd = r;
-  });
+LogicalResult
+StructIntervals::computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysisContext &ctx) {
 
-  const IntervalAnalysisLattice *constrainLattice =
-      solver.lookupState<IntervalAnalysisLattice>(constrainEnd);
+  auto computeIntervalsImpl = [&solver, &ctx, this](
+                                  FuncDefOp fn,
+                                  llvm::MapVector<ConstrainRef, Interval> &fieldRanges,
+                                  llvm::SetVector<ExpressionValue> &solverConstraints
+                              ) {
+    // Get the lattice at the end of the function.
+    Operation *fnEnd = fn.getRegion().back().getTerminator();
 
-  constrainSolverConstraints = constrainLattice->getConstraints();
+    const IntervalAnalysisLattice *lattice = solver.lookupState<IntervalAnalysisLattice>(fnEnd);
 
-  for (const auto &ref : ConstrainRef::getAllConstrainRefs(structDef)) {
-    // We only want to compute intervals for field elements and not composite types,
-    // with the exception of the Signal struct.
-    if (!ref.isScalar() && !ref.isSignal()) {
-      continue;
+    solverConstraints = lattice->getConstraints();
+
+    for (const auto &ref : ConstrainRef::getAllConstrainRefs(structDef, fn)) {
+      // We only want to compute intervals for field elements and not composite types,
+      // with the exception of the Signal struct.
+      if (!ref.isScalar() && !ref.isSignal()) {
+        continue;
+      }
+      // We also don't want to show the interval for a Signal and its internal reg.
+      if (auto parentOr = ref.getParentPrefix(); succeeded(parentOr) && parentOr->isSignal()) {
+        continue;
+      }
+      auto symbol = ctx.getSymbol(ref);
+      auto intervalRes = lattice->findInterval(symbol);
+      if (succeeded(intervalRes)) {
+        fieldRanges[ref] = *intervalRes;
+      } else {
+        fieldRanges[ref] = Interval::Entire(ctx.field);
+      }
     }
-    // We also don't want to show the interval for a Signal and its internal reg.
-    if (auto parentOr = ref.getParentPrefix(); succeeded(parentOr) && parentOr->isSignal()) {
-      continue;
-    }
-    auto symbol = ctx.getSymbol(ref);
-    auto constrainInterval = constrainLattice->findInterval(symbol);
-    if (succeeded(constrainInterval)) {
-      constrainFieldRanges[ref] = *constrainInterval;
-    } else {
-      constrainFieldRanges[ref] = Interval::Entire(ctx.field);
-    }
-  }
+  };
+
+  computeIntervalsImpl(structDef.getComputeFuncOp(), computeFieldRanges, computeSolverConstraints);
+  computeIntervalsImpl(
+      structDef.getConstrainFuncOp(), constrainFieldRanges, constrainSolverConstraints
+  );
 
   return success();
 }
 
-void StructIntervals::print(mlir::raw_ostream &os, bool withConstraints) const {
+void StructIntervals::print(mlir::raw_ostream &os, bool withConstraints, bool printCompute) const {
+  auto writeIntervals =
+      [&os, &withConstraints](
+          const char *fnName, const llvm::MapVector<ConstrainRef, Interval> &fieldRanges,
+          const llvm::SetVector<ExpressionValue> &solverConstraints, bool printName
+      ) {
+    int indent = 4;
+    if (printName) {
+      os << '\n';
+      os.indent(indent) << fnName << " {";
+      indent += 4;
+    }
+
+    if (fieldRanges.empty()) {
+      os << "}\n";
+      return;
+    }
+
+    for (auto &[ref, interval] : fieldRanges) {
+      os << '\n';
+      os.indent(indent) << ref << " in " << interval;
+    }
+
+    if (withConstraints) {
+      os << "\n\n";
+      os.indent(indent) << "Solver Constraints { ";
+      if (solverConstraints.empty()) {
+        os << "}\n";
+      } else {
+        for (const auto &e : solverConstraints) {
+          os << '\n';
+          os.indent(indent + 4);
+          e.getExpr()->print(os);
+        }
+        os << '\n';
+        os.indent(indent) << '}';
+      }
+    }
+
+    if (printName) {
+      os << '\n';
+      os.indent(indent - 4) << '}';
+    }
+  };
+
   os << "StructIntervals { ";
-  if (constrainFieldRanges.empty()) {
+  if (constrainFieldRanges.empty() && (!printCompute || computeFieldRanges.empty())) {
     os << "}\n";
     return;
   }
 
-  for (auto &[ref, interval] : constrainFieldRanges) {
-    os << "\n    " << ref << " in " << interval;
+  if (printCompute) {
+    writeIntervals(FUNC_NAME_COMPUTE, computeFieldRanges, computeSolverConstraints, printCompute);
   }
-
-  if (withConstraints) {
-    os << "\n\n    Solver Constraints { ";
-    if (constrainSolverConstraints.empty()) {
-      os << "}\n";
-    } else {
-      for (const auto &e : constrainSolverConstraints) {
-        os << "\n        ";
-        e.getExpr()->print(os);
-      }
-      os << "\n    }";
-    }
-  }
+  writeIntervals(
+      FUNC_NAME_CONSTRAIN, constrainFieldRanges, constrainSolverConstraints, printCompute
+  );
 
   os << "\n}\n";
 }

@@ -77,6 +77,9 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
        Option<"printSolverConstraints", "print-solver-constraints", "bool",
               /* default */ "false",
               "Whether to output SMT solver constraints along with intervals.">,
+       Option<"printComputeIntervals", "print-compute-intervals", "bool",
+              /* default */ "false",
+              "Whether to print compute function intervals (default only prints constrain function intervals).">,
   ];
 }
 
