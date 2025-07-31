@@ -469,11 +469,11 @@ public:
   mlir::LogicalResult runAnalysis(
       mlir::DataFlowSolver &solver, mlir::AnalysisManager &_, IntervalAnalysisContext &ctx
   ) override {
-    auto res = StructIntervals::compute(getModule(), getStruct(), solver, ctx);
-    if (mlir::failed(res)) {
+    auto computeRes = StructIntervals::compute(getModule(), getStruct(), solver, ctx);
+    if (mlir::failed(computeRes)) {
       return mlir::failure();
     }
-    setResult(std::move(*r));
+    setResult(std::move(*computeRes));
     return mlir::success();
   }
 };
