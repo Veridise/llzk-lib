@@ -11,6 +11,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
+#include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -96,34 +97,30 @@ getStructDef(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, StructType
 }
 
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
-    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ArrayType arrayTy,
-    mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields = {}
+    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ArrayType arrayTy, ConstrainRef root
 ) {
   std::vector<ConstrainRef> res;
   // Add root item
-  res.emplace_back(blockArg, fields);
+  res.push_back(root);
 
   // Recurse into arrays by iterating over their elements
   int64_t maxSz = arrayTy.getDimSize(0);
   for (int64_t i = 0; i < maxSz; i++) {
     auto elemTy = arrayTy.getElementType();
 
-    std::vector<ConstrainRefIndex> subFields = fields;
-    subFields.emplace_back(i);
+    ConstrainRef childRef = root.createChild(ConstrainRefIndex(i));
 
     if (auto arrayElemTy = mlir::dyn_cast<ArrayType>(elemTy)) {
       // recurse
-      auto subRes = getAllConstrainRefs(tables, mod, arrayElemTy, blockArg, subFields);
+      auto subRes = getAllConstrainRefs(tables, mod, arrayElemTy, childRef);
       res.insert(res.end(), subRes.begin(), subRes.end());
     } else if (auto structTy = mlir::dyn_cast<StructType>(elemTy)) {
       // recurse into struct def
-      auto subRes = getAllConstrainRefs(
-          tables, mod, getStructDef(tables, mod, structTy), blockArg, subFields
-      );
+      auto subRes = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), childRef);
       res.insert(res.end(), subRes.begin(), subRes.end());
     } else {
       // scalar type
-      res.emplace_back(blockArg, subFields);
+      res.push_back(childRef);
     }
   }
 
@@ -132,15 +129,13 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
 
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
     mlir::SymbolTableCollection &tables, mlir::ModuleOp mod,
-    SymbolLookupResult<StructDefOp> structDefRes, mlir::BlockArgument blockArg,
-    std::vector<ConstrainRefIndex> fields = {}
+    SymbolLookupResult<StructDefOp> structDefRes, ConstrainRef root
 ) {
   std::vector<ConstrainRef> res;
   // Add root item
-  res.emplace_back(blockArg, fields);
+  res.emplace_back(root);
   // Recurse into struct types by iterating over all their field definitions
   for (auto f : structDefRes.get().getOps<FieldDefOp>()) {
-    std::vector<ConstrainRefIndex> subFields = fields;
     // We want to store the FieldDefOp, but without the possibility of accidentally dropping the
     // reference, so we need to re-lookup the symbol to create a SymbolLookupResult, which will
     // manage the external module containing the field defs, if needed.
@@ -152,19 +147,17 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
         std::move(structDefCopy), mod.getOperation()
     );
     ensure(mlir::succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp");
-    subFields.emplace_back(fieldLookup.value());
+    ConstrainRef childRef = root.createChild(ConstrainRefIndex(fieldLookup.value()));
     // Make a reference to the current field, regardless of if it is a composite
     // type or not.
-    res.emplace_back(blockArg, subFields);
+    res.push_back(childRef);
     if (auto structTy = mlir::dyn_cast<StructType>(f.getType())) {
       // Create refs for each field
-      auto subRes = getAllConstrainRefs(
-          tables, mod, getStructDef(tables, mod, structTy), blockArg, subFields
-      );
+      auto subRes = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), childRef);
       res.insert(res.end(), subRes.begin(), subRes.end());
     } else if (auto arrayTy = mlir::dyn_cast<ArrayType>(f.getType())) {
       // Create refs for each array element
-      auto subRes = getAllConstrainRefs(tables, mod, arrayTy, blockArg, subFields);
+      auto subRes = getAllConstrainRefs(tables, mod, arrayTy, childRef);
       res.insert(res.end(), subRes.begin(), subRes.end());
     }
   }
@@ -172,17 +165,15 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
 }
 
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
-    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, mlir::BlockArgument arg,
-    std::vector<ConstrainRefIndex> fields
+    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ConstrainRef root
 ) {
-  ConstrainRef root(arg, fields);
   auto ty = root.getType();
   std::vector<ConstrainRef> res;
   if (auto structTy = mlir::dyn_cast<StructType>(ty)) {
     // recurse over fields
-    res = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), arg, fields);
+    res = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), root);
   } else if (auto arrayType = mlir::dyn_cast<ArrayType>(ty)) {
-    res = getAllConstrainRefs(tables, mod, arrayType, arg, fields);
+    res = getAllConstrainRefs(tables, mod, arrayType, root);
   } else if (mlir::isa<FeltType, IndexType, StringType>(ty)) {
     // Scalar type
     res.emplace_back(root);
@@ -194,10 +185,12 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
   return res;
 }
 
-std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDef) {
+std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDef, FuncDefOp fnOp) {
   std::vector<ConstrainRef> res;
-  // Must have a constrain function by definition.
-  FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
+
+  ensure(
+      structDef == fnOp->getParentOfType<StructDefOp>(), "function must be within the given struct"
+  );
 
   FailureOr<ModuleOp> modOp = getRootModule(structDef);
   ensure(
@@ -206,10 +199,21 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDe
   );
 
   mlir::SymbolTableCollection tables;
-  for (auto a : constrainFnOp.getArguments()) {
-    auto argRes = getAllConstrainRefs(tables, modOp.value(), a);
+  for (auto a : fnOp.getArguments()) {
+    auto argRes = getAllConstrainRefs(tables, modOp.value(), ConstrainRef(a));
     res.insert(res.end(), argRes.begin(), argRes.end());
   }
+
+  // For compute functions, the "self" field is not arg0 like for constrain, but
+  // rather the struct value returned from the function.
+  if (fnOp.isStructCompute()) {
+    Value selfVal = getSelfValueFromCompute(fnOp);
+    auto createOp = dyn_cast_if_present<CreateStructOp>(selfVal.getDefiningOp());
+    ensure(createOp, "self value should originate from struct.new operation");
+    auto selfRes = getAllConstrainRefs(tables, modOp.value(), ConstrainRef(createOp));
+    res.insert(res.end(), selfRes.begin(), selfRes.end());
+  }
+
   return res;
 }
 
@@ -230,9 +234,10 @@ ConstrainRef::getAllConstrainRefs(StructDefOp structDef, FieldDefOp fieldDef) {
 
   // Get the self argument
   BlockArgument self = constrainFnOp.getBody().getArgument(0);
+  ConstrainRef fieldRef = ConstrainRef(self, {ConstrainRefIndex(fieldDef)});
 
   mlir::SymbolTableCollection tables;
-  return getAllConstrainRefs(tables, modOp.value(), self, {ConstrainRefIndex(fieldDef)});
+  return getAllConstrainRefs(tables, modOp.value(), fieldRef);
 }
 
 mlir::Type ConstrainRef::getType() const {
@@ -257,9 +262,9 @@ mlir::Type ConstrainRef::getType() const {
         array_derefs--;
       }
       return currTy;
-    } else {
-      return blockArg.getType();
     }
+
+    return isBlockArgument() ? getBlockArgument().getType() : getCreateStructOp().getType();
   }
 }
 
@@ -268,7 +273,7 @@ bool ConstrainRef::isValidPrefix(const ConstrainRef &prefix) const {
     return false;
   }
 
-  if (blockArg != prefix.blockArg || fieldRefs.size() < prefix.fieldRefs.size()) {
+  if (root != prefix.root || fieldRefs.size() < prefix.fieldRefs.size()) {
     return false;
   }
   for (size_t i = 0; i < prefix.fieldRefs.size(); i++) {
@@ -317,8 +322,13 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
     ensure(structDefOp, "struct template should have a struct parent");
     os << '@' << structDefOp.getName() << "<[@" << constRead.getConstName() << "]>";
   } else {
-    ensure(isBlockArgument(), "unhandled print case");
-    os << "%arg" << getInputNum();
+    if (isCreateStructOp()) {
+      os << "%self";
+    } else {
+      ensure(isBlockArgument(), "unhandled print case");
+      os << "%arg" << getInputNum();
+    }
+
     for (auto f : fieldRefs) {
       os << "[" << f << "]";
     }
@@ -326,8 +336,7 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
 }
 
 bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
-  return (blockArg == rhs.blockArg) && (fieldRefs == rhs.fieldRefs) &&
-         (constantVal == rhs.constantVal);
+  return (root == rhs.root) && (fieldRefs == rhs.fieldRefs) && (constantVal == rhs.constantVal);
 }
 
 // required for EquivalenceClasses usage
@@ -364,12 +373,26 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
     return lhsName.compare(rhsName) < 0;
   }
 
-  // both are not constants
-  ensure(isBlockArgument() && rhs.isBlockArgument(), "unhandled operator< case");
-  if (getInputNum() < rhs.getInputNum()) {
+  // Sort out the block argument vs struct.new cases
+  if (isBlockArgument() && rhs.isCreateStructOp()) {
     return true;
-  } else if (getInputNum() > rhs.getInputNum()) {
+  } else if (isCreateStructOp() && rhs.isBlockArgument()) {
     return false;
+  } else if (isBlockArgument() && rhs.isBlockArgument()) {
+    if (getInputNum() < rhs.getInputNum()) {
+      return true;
+    } else if (getInputNum() > rhs.getInputNum()) {
+      return false;
+    }
+  } else if (isCreateStructOp() && rhs.isCreateStructOp()) {
+    CreateStructOp lhsOp = getCreateStructOp(), rhsOp = rhs.getCreateStructOp();
+    if (lhsOp < rhsOp) {
+      return true;
+    } else if (lhsOp > rhsOp) {
+      return false;
+    }
+  } else {
+    llvm_unreachable("unhandled operator< case");
   }
 
   for (size_t i = 0; i < fieldRefs.size() && i < rhs.fieldRefs.size(); i++) {
@@ -391,9 +414,10 @@ size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
   } else if (val.isTemplateConstant()) {
     return OpHash<ConstReadOp> {}(std::get<ConstReadOp>(*val.constantVal));
   } else {
-    ensure(val.isBlockArgument(), "unhandled operator() case");
+    ensure(val.isBlockArgument() || val.isCreateStructOp(), "unhandled ConstrainRef hash case");
 
-    size_t hash = std::hash<unsigned> {}(val.getInputNum());
+    size_t hash = val.isBlockArgument() ? std::hash<unsigned> {}(val.getInputNum())
+                                        : OpHash<CreateStructOp> {}(val.getCreateStructOp());
     for (auto f : val.fieldRefs) {
       hash ^= f.getHash();
     }

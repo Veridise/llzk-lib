@@ -190,6 +190,8 @@ mlir::FailureOr<ConstrainRef> ConstrainRefLattice::getSourceRef(mlir::Value val)
       return ConstrainRef(constIdx);
     } else if (auto readConst = mlir::dyn_cast<ConstReadOp>(defOp)) {
       return ConstrainRef(readConst);
+    } else if (auto structNew = mlir::dyn_cast<CreateStructOp>(defOp)) {
+      return ConstrainRef(structNew);
     }
   }
   return mlir::failure();

@@ -117,35 +117,31 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Constra
 class ConstrainRef {
 
   /// Produce all possible ConstraintRefs that are present starting from the given
-  /// arrayField, originating from a given blockArg,
+  /// arrayField, originating from a given root,
   /// and partially-specified indices into that object (fields).
   /// This produces refs for composite types (e.g., full structs and full arrays)
   /// as well as individual fields and constants.
   static std::vector<ConstrainRef> getAllConstrainRefs(
       mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, array::ArrayType arrayTy,
-      mlir::BlockArgument blockArg, std::vector<ConstrainRefIndex> fields
+      ConstrainRef root
   );
 
   /// Produce all possible ConstraintRefs that are present starting from the given
-  /// BlockArgument and partially-specified indices into that object (fields).
-  /// This produces refs for composite types (e.g., full structs and full arrays)
+  /// root. This produces refs for composite types (e.g., full structs and full arrays)
   /// as well as individual fields and constants.
   static std::vector<ConstrainRef> getAllConstrainRefs(
       mlir::SymbolTableCollection &tables, mlir::ModuleOp mod,
-      SymbolLookupResult<component::StructDefOp> s, mlir::BlockArgument blockArg,
-      std::vector<ConstrainRefIndex> fields
+      SymbolLookupResult<component::StructDefOp> s, ConstrainRef root
   );
 
-  /// Produce all possible ConstraintRefs that are present starting from the given BlockArgument.
-  /// Fields into that block argument may be optionally provided.
-  static std::vector<ConstrainRef> getAllConstrainRefs(
-      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, mlir::BlockArgument arg,
-      std::vector<ConstrainRefIndex> fields = {}
-  );
+  /// Produce all possible ConstraintRefs that are present starting from the given root.
+  static std::vector<ConstrainRef>
+  getAllConstrainRefs(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ConstrainRef root);
 
 public:
-  /// Produce all possible ConstrainRefs that are present from the struct's constrain function.
-  static std::vector<ConstrainRef> getAllConstrainRefs(component::StructDefOp structDef);
+  /// Produce all possible ConstrainRefs that are present from given struct function.
+  static std::vector<ConstrainRef>
+  getAllConstrainRefs(component::StructDefOp structDef, function::FuncDefOp fnOp);
 
   /// Produce all possible ConstrainRefs from a specific field in a struct.
   /// May produce multiple if the given field is of an aggregate type.
@@ -154,12 +150,18 @@ public:
 
   explicit ConstrainRef(mlir::BlockArgument b) : root(b), fieldRefs(), constantVal(std::nullopt) {}
   ConstrainRef(mlir::BlockArgument b, std::vector<ConstrainRefIndex> f)
-      : blockArg(b), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
-  explicit ConstrainRef(felt::FeltConstantOp c) : blockArg(nullptr), fieldRefs(), constantVal(c) {}
+      : root(b), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
+
+  explicit ConstrainRef(component::CreateStructOp createOp)
+      : root(createOp), fieldRefs(), constantVal(std::nullopt) {}
+  ConstrainRef(component::CreateStructOp createOp, std::vector<ConstrainRefIndex> f)
+      : root(createOp), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
+
+  explicit ConstrainRef(felt::FeltConstantOp c) : root(std::nullopt), fieldRefs(), constantVal(c) {}
   explicit ConstrainRef(mlir::arith::ConstantIndexOp c)
-      : blockArg(nullptr), fieldRefs(), constantVal(c) {}
+      : root(std::nullopt), fieldRefs(), constantVal(c) {}
   explicit ConstrainRef(polymorphic::ConstReadOp c)
-      : blockArg(nullptr), fieldRefs(), constantVal(c) {}
+      : root(std::nullopt), fieldRefs(), constantVal(c) {}
 
   mlir::Type getType() const;
 
@@ -185,12 +187,22 @@ public:
   }
   bool isSignal() const { return isSignalType(getType()); }
 
-  bool isBlockArgument() const { return blockArg != nullptr; }
+  bool isBlockArgument() const {
+    return root.has_value() && std::holds_alternative<mlir::BlockArgument>(*root);
+  }
   mlir::BlockArgument getBlockArgument() const {
     ensure(isBlockArgument(), "is not a block argument");
-    return blockArg;
+    return std::get<mlir::BlockArgument>(*root);
   }
-  unsigned getInputNum() const { return blockArg.getArgNumber(); }
+  unsigned getInputNum() const { return getBlockArgument().getArgNumber(); }
+
+  bool isCreateStructOp() const {
+    return root.has_value() && std::holds_alternative<component::CreateStructOp>(*root);
+  }
+  component::CreateStructOp getCreateStructOp() const {
+    ensure(isCreateStructOp(), "is not a create struct op");
+    return std::get<component::CreateStructOp>(*root);
+  }
 
   mlir::APInt getConstantFeltValue() const {
     ensure(isConstantFelt(), __FUNCTION__ + mlir::Twine(" requires a constant felt!"));
@@ -278,7 +290,7 @@ private:
    * CreateStructOp
    * - For compute functions, the "self" argument is an allocation site.
    */
-  std::optional<mlir::BlockArgument, component::CreateStructOp> root;
+  std::optional<std::variant<mlir::BlockArgument, component::CreateStructOp>> root;
 
   std::vector<ConstrainRefIndex> fieldRefs;
   // using mutable to reduce constant casts for certain get* functions.
