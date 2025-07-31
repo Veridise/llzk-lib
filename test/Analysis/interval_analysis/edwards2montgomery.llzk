@@ -1,4 +1,5 @@
 // RUN: llzk-opt -I %S -llzk-print-interval-analysis="field=babybear" %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -I %S -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s 2>&1 | FileCheck %s --check-prefix CMP
 
 module attributes {veridise.lang = "llzk"} {
   module @globals {
@@ -335,3 +336,18 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     %arg0[@v][@$super] in Entire
 // CHECK-NEXT:     %arg0[@v][@reciprocal] in Entire
 // CHECK-NEXT: }
+
+// CMP-LABEL: @Div StructIntervals {
+// CMP-NEXT:     compute {
+// CMP-NEXT:         %arg0 in Entire
+// CMP-NEXT:         %arg1 in TypeC:[ 1, 2013265920 ]
+// CMP-NEXT:         %self[@$super] in Entire
+// CMP-NEXT:         %self[@reciprocal] in Entire
+// CMP-NEXT:     }
+// CMP-NEXT:     constrain {
+// CMP-NEXT:         %arg0[@$super] in Entire
+// CMP-NEXT:         %arg0[@reciprocal] in TypeC:[ 1, 2013265920 ]
+// CMP-NEXT:         %arg1 in Entire
+// CMP-NEXT:         %arg2 in TypeC:[ 1, 2013265920 ]
+// CMP-NEXT:     }
+// CMP-NEXT: }
