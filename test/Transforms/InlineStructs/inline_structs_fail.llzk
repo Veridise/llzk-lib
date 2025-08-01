@@ -1,0 +1,81 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -llzk-inline-structs -verify-diagnostics %s
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @ResultOfComputeUnused {
+    struct.field @f : !felt.type
+
+    function.def @compute() -> !struct.type<@ResultOfComputeUnused> {
+      %self = struct.new : !struct.type<@ResultOfComputeUnused>
+      %12 = felt.const 12
+      struct.writef %self[@f] = %12 : !struct.type<@ResultOfComputeUnused>, !felt.type
+      function.return %self : !struct.type<@ResultOfComputeUnused>
+    }
+
+    function.def @constrain(%self: !struct.type<@ResultOfComputeUnused>) {
+      %12 = felt.const 12
+      %c = struct.readf %self[@f] : !struct.type<@ResultOfComputeUnused>, !felt.type
+      constrain.eq %12, %c : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.field @fa : !struct.type<@ResultOfComputeUnused>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      // expected-error@+1 {{'function.call' op "@compute" result should be written to a field.}}
+      %a = function.call @ResultOfComputeUnused::@compute() : () -> !struct.type<@ResultOfComputeUnused>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %a = struct.readf %self[@fa] : !struct.type<@Main>, !struct.type<@ResultOfComputeUnused>
+      function.call @ResultOfComputeUnused::@constrain(%a) : (!struct.type<@ResultOfComputeUnused>) -> ()
+      function.return
+    }
+  }
+}
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @ResultOfComputeDoubleUse {
+    struct.field @f : !felt.type
+
+    function.def @compute() -> !struct.type<@ResultOfComputeDoubleUse> {
+      %self = struct.new : !struct.type<@ResultOfComputeDoubleUse>
+      %12 = felt.const 12
+      struct.writef %self[@f] = %12 : !struct.type<@ResultOfComputeDoubleUse>, !felt.type
+      function.return %self : !struct.type<@ResultOfComputeDoubleUse>
+    }
+
+    function.def @constrain(%self: !struct.type<@ResultOfComputeDoubleUse>) {
+      %12 = felt.const 12
+      %c = struct.readf %self[@f] : !struct.type<@ResultOfComputeDoubleUse>, !felt.type
+      constrain.eq %12, %c : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.field @fa : !struct.type<@ResultOfComputeDoubleUse>
+    struct.field @fb : !struct.type<@ResultOfComputeDoubleUse>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      // expected-error@+1 {{'function.call' op "@compute" result should not be written to more than one field.}}
+      %a = function.call @ResultOfComputeDoubleUse::@compute() : () -> !struct.type<@ResultOfComputeDoubleUse>
+      // expected-note@+1 {{written here}}
+      struct.writef %self[@fa] = %a : !struct.type<@Main>, !struct.type<@ResultOfComputeDoubleUse>
+      // expected-note@+1 {{written here}}
+      struct.writef %self[@fb] = %a : !struct.type<@Main>, !struct.type<@ResultOfComputeDoubleUse>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %a = struct.readf %self[@fa] : !struct.type<@Main>, !struct.type<@ResultOfComputeDoubleUse>
+      function.call @ResultOfComputeDoubleUse::@constrain(%a) : (!struct.type<@ResultOfComputeDoubleUse>) -> ()
+      function.return
+    }
+  }
+}
