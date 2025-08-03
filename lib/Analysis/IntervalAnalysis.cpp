@@ -581,7 +581,7 @@ llvm::APSInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
     llvm::report_fatal_error(Twine(err));
     return llvm::APInt();
   });
-  return llvm::APSInt(fieldConst);
+  return safeToSigned(fieldConst);
 }
 
 ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
@@ -688,13 +688,16 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
     valLattice = getOrCreate<Lattice>(val);
   }
   ensure(valLattice, "val should have a lattice");
-  if (valLattice != after) {
-    propagateIfChanged(valLattice, valLattice->setValue(val, newLatticeVal));
-  }
+  auto setNewVal = [&valLattice, &after, &val, &newLatticeVal, this]() {
+    if (valLattice != after) {
+      propagateIfChanged(valLattice, valLattice->setValue(val, newLatticeVal));
+    }
+  };
 
   // Now we descend into val's operands, if it has any.
   Operation *definingOp = val.getDefiningOp();
   if (!definingOp) {
+    setNewVal();
     return res;
   }
 
@@ -847,6 +850,9 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
             .Default([&](Operation *_) { return ChangeResult::NoChange; });
   // clang-format on
 
+  // Set the new val after recursion to avoid having recursive calls unset the value.
+  setNewVal();
+
   return res;
 }
 
@@ -863,7 +869,7 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
       return false;
     }
     llvm::APSInt c = getConst(op);
-    return c == field.get().zero();
+    return safeEq(c, field.get().zero());
   };
   bool lhsIsZero = isZeroConst(lhs), rhsIsZero = isZeroConst(rhs);
   Value exprTree = nullptr;

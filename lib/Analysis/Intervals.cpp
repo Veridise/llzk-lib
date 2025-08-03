@@ -359,6 +359,12 @@ Interval Interval::difference(const Interval &other) const {
 Interval Interval::operator-() const { return (-firstUnreduced()).reduce(field.get()); }
 
 Interval operator+(const Interval &lhs, const Interval &rhs) {
+  if (lhs.isEmpty()) {
+    return rhs;
+  }
+  if (rhs.isEmpty()) {
+    return lhs;
+  }
   ensure(lhs.field.get() == rhs.field.get(), "cannot add intervals in different fields");
   return (lhs.firstUnreduced() + rhs.firstUnreduced()).reduce(lhs.field.get());
 }
