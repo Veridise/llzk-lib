@@ -709,9 +709,8 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
   auto cmpCase = [&](CmpOp cmpOp) {
     // Cmp output range is [0, 1], so in order to do something, we must have newInterval
     // either "true" (1) or "false" (0)
-    Interval maxInterval = Interval::Boolean(f);
     ensure(
-        newInterval.intersect(maxInterval).isNotEmpty(),
+        newInterval.isBoolean(),
         "new interval for CmpOp outside of allowed boolean range or is empty"
     );
     if (!newInterval.isDegenerate()) {
@@ -764,10 +763,19 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
     if (eqCase()) {
       newLhsInterval = newRhsInterval = lhsInterval.intersect(rhsInterval);
     } else if (neCase()) {
+
       if (lhsInterval.isDegenerate() && rhsInterval.isDegenerate() && lhsInterval == rhsInterval) {
         // In this case, we know lhs and rhs cannot satisfy this assertion, so they have
         // an empty value range.
         newLhsInterval = newRhsInterval = Interval::Empty(f);
+      } else if (lhsInterval.isDegenerate()) {
+        // rhs must not overlap with lhs
+        newLhsInterval = lhsInterval;
+        newRhsInterval = rhsInterval.difference(lhsInterval);
+      } else if (rhsInterval.isDegenerate()) {
+        // lhs must not overlap with rhs
+        newLhsInterval = lhsInterval.difference(rhsInterval);
+        newRhsInterval = rhsInterval;
       } else {
         // Leave unchanged
         newLhsInterval = lhsInterval;

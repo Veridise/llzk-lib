@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/Field.h"
+#include "llzk/Util/APIntHelper.h"
 
 #include <llvm/ADT/Twine.h>
 
@@ -15,7 +16,10 @@
 
 namespace llzk {
 
-Field::Field(std::string_view primeStr) : primeMod(llvm::APSInt(primeStr)) {
+// We make the primeMod signed to allow for signed arithmetic, otherwise APSInt
+// throws an assertion failure if signedness does not match. This requires adding
+// an extra bit for the signed bit.
+Field::Field(std::string_view primeStr) : primeMod(safeToSigned(primeStr)) {
   halfPrime = (primeMod + felt(1)) / felt(2);
 }
 
@@ -46,6 +50,8 @@ void Field::initKnownFields(llvm::DenseMap<llvm::StringRef, Field> &knownFields)
 }
 
 llvm::APSInt Field::reduce(llvm::APSInt i) const {
+  // Force i to be signed since prime() is signed
+  i = safeToSigned(i);
   unsigned maxBits = std::max(i.getBitWidth(), bitWidth());
   llvm::APSInt m = (i.extend(maxBits) % prime().extend(maxBits)).trunc(bitWidth());
   if (m.isNegative()) {
@@ -54,8 +60,8 @@ llvm::APSInt Field::reduce(llvm::APSInt i) const {
   return m;
 }
 
-llvm::APSInt Field::reduce(unsigned i) const {
-  auto ap = llvm::APSInt(llvm::APInt(bitWidth(), i));
+llvm::APSInt Field::reduce(int i) const {
+  auto ap = llvm::APSInt(llvm::APInt(bitWidth(), i), /*isUnsigned=*/false);
   return reduce(ap);
 }
 
