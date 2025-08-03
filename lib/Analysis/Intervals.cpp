@@ -91,7 +91,12 @@ UnreducedInterval UnreducedInterval::computeGEPart(const UnreducedInterval &rhs)
   return UnreducedInterval(safeMax(a, rhs.a), b);
 }
 
-UnreducedInterval UnreducedInterval::operator-() const { return UnreducedInterval(-b, -a); }
+UnreducedInterval UnreducedInterval::operator-() const {
+  if (isEmpty()) {
+    return *this;
+  }
+  return UnreducedInterval(-b, -a);
+}
 
 UnreducedInterval operator+(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
   llvm::APSInt low = expandingAdd(lhs.a, rhs.a), high = expandingAdd(lhs.b, rhs.b);
@@ -147,7 +152,9 @@ bool UnreducedInterval::isEmpty() const { return safeEq(width(), llvm::APSInt::g
 
 UnreducedInterval Interval::toUnreduced() const {
   if (isEmpty()) {
-    return UnreducedInterval(field.get().zero(), field.get().zero());
+    // Since ranges are inclusive, empty is encoded as `[a, b]` where `a` > `b`.
+    // This matches the definition provided by UnreducedInterval::width().
+    return UnreducedInterval(field.get().one(), field.get().zero());
   }
   if (isEntire()) {
     return UnreducedInterval(field.get().zero(), field.get().maxVal());
@@ -407,7 +414,7 @@ llvm::APSInt Interval::width() const {
   case Type::Entire:
     return field.get().prime();
   default:
-    return toUnreduced().width();
+    return field.get().reduce(toUnreduced().width());
   }
 }
 

@@ -7,11 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Analysis/IntervalAnalysis.h"
+#include "llzk/Analysis/Intervals.h"
 #include "llzk/Util/Debug.h"
 
 #include <gtest/gtest.h>
 #include <string>
+
+#include "../LLZKTestUtils.h"
 
 using namespace llzk;
 
@@ -21,28 +23,12 @@ protected:
 
   IntervalTests() : f(Field::getField("babybear")) {}
 
-  template <typename T>
-  static testing::AssertionResult checkCond(const T &expected, const T &actual, bool cond) {
-    if (cond) {
-      return testing::AssertionSuccess();
-    }
-    std::string errMsg;
-    debug::Appender(errMsg) << "expected " << expected << ", actual is " << actual;
-    return testing::AssertionFailure() << errMsg;
-  }
-
-  /// Uses a bitwidth-safe comparison method to check if expected == actual
-  static testing::AssertionResult
-  checkSafeEq(const llvm::APSInt &expected, const llvm::APSInt &actual) {
-    return checkCond(expected, actual, safeEq(expected, actual));
-  }
-
-  inline static void AssertSafeEq(const llvm::APSInt &expected, const llvm::APSInt &actual) {
-    ASSERT_TRUE(checkSafeEq(expected, actual));
-  }
-
   inline static void
   AssertUnreducedIntervalEq(const UnreducedInterval &expected, const UnreducedInterval &actual) {
+    ASSERT_TRUE(checkCond(expected, actual, expected == actual));
+  }
+
+  inline static void AssertIntervalEq(const Interval &expected, const Interval &actual) {
     ASSERT_TRUE(checkCond(expected, actual, expected == actual));
   }
 };
@@ -123,4 +109,26 @@ TEST_F(IntervalTests, Difference) {
 
   ASSERT_EQ(Interval::TypeA(f, f.felt(1), f.felt(4)), a.difference(b));
   ASSERT_EQ(a, a.difference(c));
+}
+
+TEST_F(IntervalTests, UnreduceReduce) {
+  // unreducing and reducing should not be destructive
+  AssertIntervalEq(Interval::Entire(f), Interval::Entire(f).toUnreduced().reduce(f));
+  AssertIntervalEq(Interval::Empty(f), Interval::Empty(f).toUnreduced().reduce(f));
+  AssertIntervalEq(
+      Interval::Degenerate(f, f.felt(8)), Interval::Degenerate(f, f.felt(8)).toUnreduced().reduce(f)
+  );
+}
+
+TEST_F(IntervalTests, NegativeIdentities) {
+  // negative "entire" should still be "entire"
+  AssertIntervalEq(Interval::Entire(f), -Interval::Entire(f));
+
+  // negative "empty" should still be "empty"
+  AssertIntervalEq(Interval::Empty(f), -Interval::Empty(f));
+
+  // -1 should be max value when reduced (1 + (-1) % p == 1 + (p - 1) % p == p % p == 0)
+  auto maxValDegen = Interval::Degenerate(f, f.maxVal());
+  auto oneDegen = Interval::Degenerate(f, f.one());
+  AssertIntervalEq(maxValDegen, -oneDegen);
 }
