@@ -20,8 +20,10 @@ using namespace llzk;
 class IntervalTests : public testing::Test {
 protected:
   const Field &f;
+  const Interval empty, entire;
 
-  IntervalTests() : f(Field::getField("babybear")) {}
+  IntervalTests()
+      : f(Field::getField("babybear")), empty(Interval::Empty(f)), entire(Interval::Entire(f)) {}
 
   inline static void
   AssertUnreducedIntervalEq(const UnreducedInterval &expected, const UnreducedInterval &actual) {
@@ -118,6 +120,16 @@ TEST_F(IntervalTests, UnreduceReduce) {
   AssertIntervalEq(
       Interval::Degenerate(f, f.felt(8)), Interval::Degenerate(f, f.felt(8)).toUnreduced().reduce(f)
   );
+}
+
+TEST_F(IntervalTests, AdditiveIdentities) {
+  // Empty + Empty = Empty
+  AssertIntervalEq(empty, empty + empty);
+  // Entire + Entire = Entire
+  AssertIntervalEq(entire, entire + entire);
+  // Entire + Empty = Entire
+  AssertIntervalEq(entire, entire + empty);
+  AssertIntervalEq(entire, empty + entire);
 }
 
 TEST_F(IntervalTests, NegativeIdentities) {

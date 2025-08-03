@@ -13,21 +13,24 @@ namespace llzk {
 
 llvm::APSInt expandingAdd(llvm::APSInt lhs, llvm::APSInt rhs) {
   lhs = safeToSigned(lhs), rhs = safeToSigned(rhs);
-  unsigned requiredBits = std::max(lhs.getActiveBits(), rhs.getActiveBits()) + 1;
+  // +2: +1 for expansion, +1 to preserve the sign bit
+  unsigned requiredBits = std::max(lhs.getActiveBits(), rhs.getActiveBits()) + 2;
   unsigned newBitwidth = std::max({requiredBits, lhs.getBitWidth(), rhs.getBitWidth()});
   return lhs.extend(newBitwidth) + rhs.extend(newBitwidth);
 }
 
 llvm::APSInt expandingSub(llvm::APSInt lhs, llvm::APSInt rhs) {
   lhs = safeToSigned(lhs), rhs = safeToSigned(rhs);
-  unsigned requiredBits = std::max(lhs.getActiveBits(), rhs.getActiveBits()) + 1;
+  // +2: +1 for expansion, +1 to preserve the sign bit
+  unsigned requiredBits = std::max(lhs.getActiveBits(), rhs.getActiveBits()) + 2;
   unsigned newBitwidth = std::max({requiredBits, lhs.getBitWidth(), rhs.getBitWidth()});
   return lhs.extend(newBitwidth) - rhs.extend(newBitwidth);
 }
 
 llvm::APSInt expandingMul(llvm::APSInt lhs, llvm::APSInt rhs) {
   lhs = safeToSigned(lhs), rhs = safeToSigned(rhs);
-  unsigned requiredBits = lhs.getActiveBits() + rhs.getActiveBits();
+  // +1 to preserve the sign bit
+  unsigned requiredBits = lhs.getActiveBits() + rhs.getActiveBits() + 1;
   unsigned newBitwidth = std::max({requiredBits, lhs.getBitWidth(), rhs.getBitWidth()});
   return lhs.extend(newBitwidth) * rhs.extend(newBitwidth);
 }

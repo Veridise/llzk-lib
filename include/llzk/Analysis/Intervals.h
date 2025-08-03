@@ -356,7 +356,7 @@ public:
 private:
   Interval(Type t, const Field &f) : field(f), ty(t), a(f.zero()), b(f.zero()) {}
   Interval(Type t, const Field &f, llvm::APSInt lhs, llvm::APSInt rhs)
-      : field(f), ty(t), a(lhs.extend(f.bitWidth())), b(rhs.extend(f.bitWidth())) {}
+      : field(f), ty(t), a(f.reduce(lhs)), b(f.reduce(rhs)) {}
 
   std::reference_wrapper<const Field> field;
   Type ty;
