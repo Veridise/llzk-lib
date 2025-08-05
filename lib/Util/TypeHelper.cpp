@@ -17,6 +17,8 @@
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <llvm/ADT/TypeSwitch.h>
+
 using namespace mlir;
 
 namespace llzk {
@@ -26,6 +28,38 @@ using namespace component;
 using namespace felt;
 using namespace polymorphic;
 using namespace string;
+
+/// Template pattern for performing some operation by cases based on a given LLZK type. This
+/// pattern allows any missing cases in a new implementation to be reported by the compiler.
+template <typename Derived, typename ResultType> struct LLZKTypeSwitch {
+  inline ResultType match(Type type) {
+    return llvm::TypeSwitch<Type, ResultType>(type)
+        .template Case<IndexType>([this](auto t) {
+      return static_cast<Derived *>(this)->caseIndex(t);
+    })
+        .template Case<FeltType>([this](auto t) {
+      return static_cast<Derived *>(this)->caseFelt(t);
+    })
+        .template Case<StringType>([this](auto t) {
+      return static_cast<Derived *>(this)->caseString(t);
+    })
+        .template Case<TypeVarType>([this](auto t) {
+      return static_cast<Derived *>(this)->caseTypeVar(t);
+    })
+        .template Case<ArrayType>([this](auto t) {
+      return static_cast<Derived *>(this)->caseArray(t);
+    })
+        .template Case<StructType>([this](auto t) {
+      return static_cast<Derived *>(this)->caseStruct(t);
+    }).template Default([this](Type t) {
+      if (t.isSignlessInteger(1)) {
+        return static_cast<Derived *>(this)->caseBool(cast<IntegerType>(t));
+      } else {
+        return static_cast<Derived *>(this)->caseInvalid(t);
+      }
+    });
+  }
+};
 
 void BuildShortTypeString::appendSymName(StringRef str) {
   if (str.empty()) {
@@ -45,38 +79,40 @@ void BuildShortTypeString::appendSymRef(SymbolRefAttr sa) {
 
 BuildShortTypeString &BuildShortTypeString::append(Type type) {
   size_t position = ret.size();
-  // Cases must be consistent with isValidTypeImpl() below.
-  if (type.isSignlessInteger(1)) {
-    ss << 'b';
-  } else if (llvm::isa<IndexType>(type)) {
-    ss << 'i';
-  } else if (llvm::isa<FeltType>(type)) {
-    ss << 'f';
-  } else if (llvm::isa<StringType>(type)) {
-    ss << 's';
-  } else if (llvm::isa<TypeVarType>(type)) {
-    ss << "!t<";
-    appendSymName(llvm::cast<TypeVarType>(type).getRefName());
-    ss << '>';
-  } else if (llvm::isa<ArrayType>(type)) {
-    ArrayType at = llvm::cast<ArrayType>(type);
-    ss << "!a<";
-    append(at.getElementType());
-    ss << ':';
-    append(at.getDimensionSizes());
-    ss << '>';
-  } else if (llvm::isa<StructType>(type)) {
-    StructType st = llvm::cast<StructType>(type);
-    ss << "!s<";
-    appendSymRef(st.getNameRef());
-    if (ArrayAttr params = st.getParams()) {
-      ss << '_';
-      append(params.getValue());
+
+  struct Impl : LLZKTypeSwitch<Impl, void> {
+    BuildShortTypeString &outer;
+    Impl(BuildShortTypeString &outerRef) : outer(outerRef) {}
+
+    void caseInvalid(Type _) { outer.ss << "!INVALID"; }
+    void caseBool(IntegerType _) { outer.ss << 'b'; }
+    void caseIndex(IndexType _) { outer.ss << 'i'; }
+    void caseFelt(FeltType _) { outer.ss << 'f'; }
+    void caseString(StringType _) { outer.ss << 's'; }
+    void caseTypeVar(TypeVarType t) {
+      outer.ss << "!t<";
+      outer.appendSymName(llvm::cast<TypeVarType>(t).getRefName());
+      outer.ss << '>';
     }
-    ss << '>';
-  } else {
-    ss << "!INVALID";
-  }
+    void caseArray(ArrayType t) {
+      outer.ss << "!a<";
+      outer.append(t.getElementType());
+      outer.ss << ':';
+      outer.append(t.getDimensionSizes());
+      outer.ss << '>';
+    }
+    void caseStruct(StructType t) {
+      outer.ss << "!s<";
+      outer.appendSymRef(t.getNameRef());
+      if (ArrayAttr params = t.getParams()) {
+        outer.ss << '_';
+        outer.append(params.getValue());
+      }
+      outer.ss << '>';
+    }
+  };
+  Impl(*this).match(type);
+
   assert(
       ret.find(PLACEHOLDER, position) == std::string::npos &&
       "formatting a Type should not produce the 'PLACEHOLDER' char"
@@ -424,18 +460,6 @@ public:
 
     return success;
   }
-
-  // Note: The `no*` flags here refer to Types nested within a TypeAttr parameter.
-  bool isValidStructTypeImpl(Type type, bool allowSignalStruct, bool allowNonSignalStruct) {
-    if (!allowSignalStruct && !allowNonSignalStruct) {
-      return false;
-    }
-    if (StructType sType = llvm::dyn_cast<StructType>(type); sType && validColumns(sType)) {
-      return (allowSignalStruct && isSignalType(sType)) ||
-             (allowNonSignalStruct && areValidStructTypeParams(sType.getParams()));
-    }
-    return false;
-  }
 };
 
 bool AllowedTypes::isValidTypeImpl(Type type) {
@@ -444,10 +468,30 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
         no_array) &&
       "All types have been deactivated"
   );
-  return (!no_int && type.isSignlessInteger(1)) || (!no_int && llvm::isa<IndexType>(type)) ||
-         (!no_felt && llvm::isa<FeltType>(type)) || (!no_string && llvm::isa<StringType>(type)) ||
-         (!no_var && llvm::isa<TypeVarType>(type)) || (!no_array && isValidArrayTypeImpl(type)) ||
-         isValidStructTypeImpl(type, !no_signal_struct, !no_non_signal_struct);
+  struct Impl : LLZKTypeSwitch<Impl, bool> {
+    AllowedTypes &outer;
+    Impl(AllowedTypes &outerRef) : outer(outerRef) {}
+
+    bool caseBool(IntegerType t) { return !outer.no_int && t.isSignlessInteger(1); }
+    bool caseIndex(IndexType _) { return !outer.no_int; }
+    bool caseFelt(FeltType _) { return !outer.no_felt; }
+    bool caseString(StringType _) { return !outer.no_string; }
+    bool caseTypeVar(TypeVarType _) { return !outer.no_var; }
+    bool caseArray(ArrayType t) {
+      return !outer.no_array &&
+             outer.isValidArrayTypeImpl(t.getElementType(), t.getDimensionSizes());
+    }
+    bool caseStruct(StructType t) {
+      // Note: The `no*` flags here refer to Types nested within a TypeAttr parameter.
+      if ((outer.no_signal_struct && outer.no_non_signal_struct) || !outer.validColumns(t)) {
+        return false;
+      }
+      return (!outer.no_signal_struct && isSignalType(t)) ||
+             (!outer.no_non_signal_struct && outer.areValidStructTypeParams(t.getParams()));
+    }
+    bool caseInvalid(Type _) { return false; }
+  };
+  return Impl(*this).match(type);
 }
 
 } // namespace
@@ -501,6 +545,25 @@ bool hasAffineMapAttr(Type type) {
 }
 
 bool isDynamic(IntegerAttr intAttr) { return ShapedType::isDynamic(fromAPInt(intAttr.getValue())); }
+
+int64_t computeEmitEqCardinality(Type type) {
+  struct Impl : LLZKTypeSwitch<Impl, int64_t> {
+    int64_t caseBool(IntegerType _) { return 1; }
+    int64_t caseIndex(IndexType _) { return 1; }
+    int64_t caseFelt(FeltType _) { return 1; }
+    int64_t caseArray(ArrayType t) { return t.getNumElements(); }
+    int64_t caseStruct(StructType t) {
+      if (isSignalType(t)) {
+        return 1;
+      }
+      llvm_unreachable("not a valid EmitEq type");
+    }
+    int64_t caseString(StringType _) { llvm_unreachable("not a valid EmitEq type"); }
+    int64_t caseTypeVar(TypeVarType _) { llvm_unreachable("tvar has unknown cardinality"); }
+    int64_t caseInvalid(Type _) { llvm_unreachable("not a valid LLZK type"); }
+  };
+  return Impl().match(type);
+}
 
 namespace {
 

@@ -489,17 +489,21 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
   /// Maps caller struct to callees that should be inlined. The outer SmallVector preserves the
   /// ordering from the bottom-up traversal that builds the InliningPlan so performing inlining
   /// in the order given will not lose any or require doing any more than once.
-  // TODO: however, applying in the opposite direction would reduce making clones of clones of ...
-  // for the ops within the inlined struct functions, as they are inlined further up the tree. But
-  // would have to make sure it's done properly, and update some mappings in this plan as we go.
+  /// Note: Applying in the opposite direction would reduce making repeated clones of the ops within
+  /// the inlined struct functions (as they are inlined further and further up the tree) but that
+  /// would require updating some mapping in the plan along the way to ensure it's done properly.
   using InliningPlan = SmallVector<std::pair<StructDefOp, SmallVector<StructDefOp>>>;
 
-  static unsigned complexity(FuncDefOp f) {
-    unsigned complexity = 0;
+  static int64_t complexity(FuncDefOp f) {
+    int64_t complexity = 0;
     f.getBody().walk([&complexity](Operation *op) {
-      // TODO: `EmitEqualityOp` and `EmitContainmentOp` should probably increment based on
-      // dimension sizes in the operands rather than just +1 in all cases.
-      if (llvm::isa<constrain::EmitEqualityOp, constrain::EmitContainmentOp, felt::MulFeltOp>(op)) {
+      if (llvm::isa<felt::MulFeltOp>(op)) {
+        ++complexity;
+      } else if (auto ee = llvm::dyn_cast<constrain::EmitEqualityOp>(op)) {
+        complexity += computeEmitEqCardinality(ee.getLhs().getType());
+      } else if (auto ec = llvm::dyn_cast<constrain::EmitContainmentOp>(op)) {
+        // TODO: increment based on dimension sizes in the operands
+        // Pending update to implementation/semantics of EmitContainmentOp.
         ++complexity;
       }
     });
@@ -528,7 +532,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
   }
 
   /// Return 'true' iff the `maxComplexity` option is set and the given value exceeds it.
-  inline bool exceedsMaxComplexity(unsigned check) {
+  inline bool exceedsMaxComplexity(int64_t check) {
     return maxComplexity > 0 && check > maxComplexity;
   }
 
@@ -542,7 +546,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
         llvm::dbgs() << "Running InlineStructsPass with max complexity " << maxComplexity << '\n'
     );
     InliningPlan retVal;
-    DenseMap<const SymbolUseGraphNode *, unsigned> complexityMemo;
+    DenseMap<const SymbolUseGraphNode *, int64_t> complexityMemo;
 
     // NOTE: The assumption that the use graph has no cycles allows `complexityMemo` to only
     // store the result for relevant nodes and assume nodes without a mapped value are `0`. This
@@ -562,7 +566,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
       if (failed(currentFunc)) {
         continue;
       }
-      unsigned currentComplexity = complexity(currentFunc.value());
+      int64_t currentComplexity = complexity(currentFunc.value());
       // If the current complexity is already too high, store it and continue.
       if (exceedsMaxComplexity(currentComplexity)) {
         complexityMemo[currentNode] = currentComplexity;
@@ -577,8 +581,8 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
         if (memoResult == complexityMemo.end()) {
           continue; // inner loop
         }
-        unsigned sComplexity = memoResult->second;
-        unsigned potentialComplexity = currentComplexity + sComplexity;
+        int64_t sComplexity = memoResult->second;
+        int64_t potentialComplexity = currentComplexity + sComplexity;
         assert(potentialComplexity >= currentComplexity && "overflow");
         if (!exceedsMaxComplexity(potentialComplexity)) {
           currentComplexity = potentialComplexity;
@@ -619,13 +623,6 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
       op.erase();
     }
     for (auto op : toDelete.newStructOps) {
-      // TODO: Although unlikely, there can be uses of the `CreateStructOp` result besides the
-      // `FieldWriteOp` that were deleted above. In that case, the `erase()` would fail with the
-      // assertion "still has uses". One example that would cause this assertion failure is
-      // passing the struct instance returned by a "compute()" call into some other function that
-      // does not get inlined. In that case, additional transformations would be needed to modify
-      // the CallOp and the target FuncDefOp to accept all fields of `srcStruct` as individual
-      // parameters.
       op.erase();
     }
     // Erase FieldDefOp via SymbolTable so table itself is updated too.

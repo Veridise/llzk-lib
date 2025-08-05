@@ -83,7 +83,7 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
     which means all structs will be inlined into the Main struct.
   }];
   let constructor = "llzk::createInlineStructsPass()";
-  let options = [Option<"maxComplexity", "max-complexity", "unsigned",
+  let options = [Option<"maxComplexity", "max-complexity", "int64_t",
                         /* default */ "0",
                         "Maximum allowed constraint+multiplications in merged "
                         "@constrain functions">,
