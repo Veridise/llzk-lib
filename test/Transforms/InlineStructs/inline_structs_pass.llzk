@@ -855,59 +855,6 @@ module attributes {veridise.lang = "llzk"} {
 // }
 // TODO: CHECK
 // TODO: ADD SPLIT
-//
-// // TESTS: result of call to "@compute" used as param to a free function
-// // The param must be split and fields of the component passed individually.
-// // TODO (PENDING): This approach can work for free functions with an implementation in
-// // LLZK but those without have an external implementation so changing the parameters
-// // is not safe. However, free functions with an external implementation maybe shouldn't
-// // be allowed to pass component parameters because we define no semantics on memory
-// // layout so how would an external implementation even interpret the parameter?
-// // Free functions with a body could also be inlined, avoiding the need to split params.
-// module attributes {veridise.lang = "llzk"} {
-//   function.def private @temp(%0: !struct.type<@Component12A>)
-//
-//   struct.def @Component12A {
-//     struct.field @f1 : !felt.type
-//     struct.field @f2 : !felt.type
-//
-//     function.def @compute(%z: !felt.type) -> !struct.type<@Component12A> {
-//       %self = struct.new : !struct.type<@Component12A>
-//       struct.writef %self[@f1] = %z : !struct.type<@Component12A>, !felt.type
-//       struct.writef %self[@f2] = %z : !struct.type<@Component12A>, !felt.type
-//       function.return %self : !struct.type<@Component12A>
-//     }
-//
-//     function.def @constrain(%self: !struct.type<@Component12A>, %z: !felt.type) {
-//       %a = struct.readf %self[@f1] : !struct.type<@Component12A>, !felt.type
-//       constrain.eq %a, %z : !felt.type
-//       %b = struct.readf %self[@f2] : !struct.type<@Component12A>, !felt.type
-//       constrain.eq %b, %z : !felt.type
-//       function.return
-//     }
-//   }
-//
-//   struct.def @Main {
-//     struct.field @f2 : !struct.type<@Component12A>
-//
-//     function.def @compute() -> !struct.type<@Main> {
-//       %self = struct.new : !struct.type<@Main>
-//       %z = felt.const 42
-//       %q = function.call @Component12A::@compute(%z) : (!felt.type) -> !struct.type<@Component12A>
-//       struct.writef %self[@f2] = %q : !struct.type<@Main>, !struct.type<@Component12A>
-//       function.call @temp(%q) : (!struct.type<@Component12A>) -> ()
-//       function.return %self : !struct.type<@Main>
-//     }
-//
-//     function.def @constrain(%self: !struct.type<@Main>) {
-//       %z = felt.const 42
-//       %q = struct.readf %self[@f2] : !struct.type<@Main>, !struct.type<@Component12A>
-//       function.call @Component12A::@constrain(%q, %z) : (!struct.type<@Component12A>,!felt.type) -> ()
-//       function.return
-//     }
-//   }
-// }
-// TODO: CHECK
 
 
 // TODO: create tests for:

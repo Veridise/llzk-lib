@@ -623,6 +623,25 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
       op.erase();
     }
     for (auto op : toDelete.newStructOps) {
+      // Before erasing the op, check if there are any uses of the struct Value as a free function
+      // parameter. This is (currently) unsupported. Free functions with a body could either be
+      // inlined also or have struct parameter(s) split to pass each field value separately. Those
+      // without a body (i.e. external implementation) present a problem because LLZK does not
+      // define a memory layout for structs that the external implementation could reference.
+      if (!op.use_empty()) {
+        for (OpOperand &use : op->getUses()) {
+          if (auto c = llvm::dyn_cast<CallOp>(use.getOwner())) {
+            if (!c.calleeIsStructCompute() && !c.calleeIsStructConstrain()) {
+              return op
+                  .emitOpError(
+                      "passed as parameter to a free function is not supported by this pass."
+                  )
+                  .attachNote(c.getLoc())
+                  .append("used by this call");
+            }
+          }
+        }
+      }
       op.erase();
     }
     // Erase FieldDefOp via SymbolTable so table itself is updated too.
