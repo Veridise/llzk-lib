@@ -26,6 +26,8 @@
 
 #define DEBUG_TYPE "llzk-cdg"
 
+using namespace mlir;
+
 namespace llzk {
 
 using namespace array;
@@ -140,21 +142,25 @@ void ConstrainRefAnalysis::visitOperation(
   propagateIfChanged(after, after->setValues(operandVals));
 
   // We will now join the the operand refs based on the type of operand.
-  if (auto fieldRead = mlir::dyn_cast<FieldReadOp>(op)) {
-    // In the readf case, the operand is indexed into by the read's fielddefop.
-    assert(operandVals.size() == 1);
-    assert(fieldRead->getNumResults() == 1);
-
-    auto fieldOpRes = fieldRead.getFieldDefOp(tables);
+  if (auto fieldRefOp = mlir::dyn_cast<FieldRefOpInterface>(op)) {
+    // The operand is indexed into by the FieldDefOp.
+    auto fieldOpRes = fieldRefOp.getFieldDefOp(tables);
     ensure(mlir::succeeded(fieldOpRes), "could not find field read");
 
-    auto res = fieldRead->getResult(0);
-    const auto &ops = operandVals.at(fieldRead->getOpOperand(0).get());
+    ConstrainRefLattice::ValueTy res;
+    if (fieldRefOp.isRead()) {
+      res = fieldRefOp.getVal();
+    } else {
+      res = fieldRefOp;
+    }
+
+    const auto &ops = operandVals.at(fieldRefOp.getComponent());
     auto [fieldVals, _] = ops.referenceField(fieldOpRes.value());
 
     propagateIfChanged(after, after->setValue(res, fieldVals));
-  } else if (mlir::isa<ReadArrayOp>(op)) {
-    arraySubdivisionOpUpdate(op, operandVals, before, after);
+  } else if (auto arrayAccessOp = mlir::dyn_cast<ArrayAccessOpInterface>(op)) {
+    // Covers read/write/extract/insert array ops
+    arraySubdivisionOpUpdate(arrayAccessOp, operandVals, before, after);
   } else if (auto createArray = mlir::dyn_cast<CreateArrayOp>(op)) {
     // Create an array using the operand values, if they exist.
     // Currently, the new array must either be fully initialized or uninitialized.
@@ -171,8 +177,10 @@ void ConstrainRefAnalysis::visitOperation(
     auto res = createArray->getResult(0);
 
     propagateIfChanged(after, after->setValue(res, newArrayVal));
-  } else if (auto extractArray = mlir::dyn_cast<ExtractArrayOp>(op)) {
-    arraySubdivisionOpUpdate(op, operandVals, before, after);
+  } else if (auto structNewOp = mlir::dyn_cast<CreateStructOp>(op)) {
+    auto res = structNewOp.getResult();
+    auto newStructValue = before.getOrDefault(res);
+    propagateIfChanged(after, after->setValue(res, newStructValue));
   } else {
     // Standard union of operands into the results value.
     // TODO: Could perform constant computation/propagation here for, e.g., arithmetic
@@ -202,25 +210,27 @@ mlir::ChangeResult ConstrainRefAnalysis::fallbackOpUpdate(
 // operate very similarly: index into the first operand using a variable number
 // of provided indices.
 void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
-    mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
+    ArrayAccessOpInterface arrayAccessOp, const ConstrainRefLattice::ValueMap &operandVals,
     const ConstrainRefLattice &before, ConstrainRefLattice *after
 ) {
-  ensure(mlir::isa<ReadArrayOp, ExtractArrayOp>(op), "wrong type of op provided!");
-
   // We index the first operand by all remaining indices.
-  assert(op->getNumResults() == 1);
-  auto res = op->getResult(0);
+  ConstrainRefLattice::ValueTy res;
+  if (mlir::isa<ReadArrayOp, ExtractArrayOp>(arrayAccessOp)) {
+    res = arrayAccessOp->getResult(0);
+  } else {
+    res = arrayAccessOp;
+  }
 
-  auto array = op->getOperand(0);
+  auto array = arrayAccessOp.getArrRef();
   auto it = operandVals.find(array);
   ensure(it != operandVals.end(), "improperly constructed operandVals map");
   auto currVals = it->second;
 
   std::vector<ConstrainRefIndex> indices;
 
-  for (size_t i = 1; i < op->getNumOperands(); i++) {
-    auto currentOp = op->getOperand(i);
-    auto idxIt = operandVals.find(currentOp);
+  for (unsigned i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
+    auto idxOperand = arrayAccessOp.getIndices()[i];
+    auto idxIt = operandVals.find(idxOperand);
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
     auto &idxVals = idxIt->second;
 
@@ -235,7 +245,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
       // Otherwise, assume any range is valid.
       auto arrayType = mlir::dyn_cast<ArrayType>(array.getType());
       auto lower = mlir::APInt::getZero(64);
-      mlir::APInt upper(64, arrayType.getDimSize(i - 1));
+      mlir::APInt upper(64, arrayType.getDimSize(i));
       auto idxRange = ConstrainRefIndex(lower, upper);
       indices.push_back(idxRange);
     }
@@ -243,7 +253,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
 
   auto [newVals, _] = currVals.extract(indices);
 
-  if (mlir::isa<ReadArrayOp>(op)) {
+  if (mlir::isa<ReadArrayOp, WriteArrayOp>(arrayAccessOp)) {
     ensure(newVals.isScalar(), "array read must produce a scalar value");
   }
   // an extract operation may yield a "scalar" value if not all dimensions of

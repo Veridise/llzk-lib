@@ -164,7 +164,7 @@ UnreducedInterval Interval::toUnreduced() const {
 
 UnreducedInterval Interval::firstUnreduced() const {
   if (is<Type::TypeF>()) {
-    return UnreducedInterval(field.get().prime() - a, b);
+    return UnreducedInterval(a - field.get().prime(), b);
   }
   return toUnreduced();
 }
@@ -358,6 +358,10 @@ Interval Interval::difference(const Interval &other) const {
 
 Interval Interval::operator-() const { return (-firstUnreduced()).reduce(field.get()); }
 
+Interval Interval::operator~() const {
+  return Interval::Degenerate(field.get(), field.get().one()) - *this;
+}
+
 Interval operator+(const Interval &lhs, const Interval &rhs) {
   if (lhs.isEmpty()) {
     return rhs;
@@ -431,10 +435,10 @@ Interval boolAnd(const Interval &lhs, const Interval &rhs) {
   ensure(lhs.isBoolean() && rhs.isBoolean(), "operation only supported for boolean-type intervals");
   const auto &field = rhs.getField();
 
-  if (lhs.isBoolFalse() && rhs.isBoolFalse()) {
+  if (lhs.isBoolFalse() || rhs.isBoolFalse()) {
     return Interval::False(field);
   }
-  if (lhs.isBoolTrue() || rhs.isBoolTrue()) {
+  if (lhs.isBoolTrue() && rhs.isBoolTrue()) {
     return Interval::True(field);
   }
 

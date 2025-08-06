@@ -12,6 +12,7 @@
 #include "llzk/Analysis/AnalysisWrappers.h"
 #include "llzk/Analysis/ConstrainRef.h"
 #include "llzk/Analysis/ConstrainRefLattice.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 
 #include <mlir/Pass/AnalysisManager.h>
 
@@ -63,7 +64,7 @@ protected:
   // operate very similarly: index into the first operand using a variable number
   // of provided indices.
   void arraySubdivisionOpUpdate(
-      mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
+      array::ArrayAccessOpInterface op, const ConstrainRefLattice::ValueMap &operandVals,
       const ConstrainRefLattice &before, ConstrainRefLattice *after
   );
 
