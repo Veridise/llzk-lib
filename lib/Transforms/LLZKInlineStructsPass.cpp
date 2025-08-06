@@ -358,7 +358,7 @@ class StructInliner : public StructInlinerBase {
         if (!structTypesUnify(srcStructType, destFieldType, {}, &unifications)) {
           continue;
         }
-        assert(unifications.empty() && "TODO: handle this!");
+        assert(unifications.empty()); // `makePlan()` reports failure earlier
         // Mark the original `destField` for deletion
         toDelete.fieldDefs.push_back(destField);
         // Clone each field from 'srcStruct' into 'destStruct'. Add an entry to `destToSrcToClone`
@@ -541,7 +541,8 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
   /// option. Using a bottom-up traversal may give a better result than top-down because the latter
   /// could result in a chain of structs being inlined differently from different use sites. The
   /// resulting `InliningPlan` also preserves this bottom-up ordering to
-  inline InliningPlan makePlan(const SymbolUseGraph &useGraph, SymbolTableCollection &tables) {
+  inline FailureOr<InliningPlan>
+  makePlan(const SymbolUseGraph &useGraph, SymbolTableCollection &tables) {
     LLVM_DEBUG(
         llvm::dbgs() << "Running InlineStructsPass with max complexity " << maxComplexity << '\n'
     );
@@ -561,6 +562,15 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     for (const SymbolUseGraphNode *currentNode : llvm::post_order(&useGraph)) {
       if (!currentNode->isRealNode()) {
         continue;
+      }
+      if (currentNode->isStructParam()) {
+        // Try to get the location of the StructDefOp to report an error.
+        Operation *lookupFrom = currentNode->getSymbolPathRoot().getOperation();
+        auto prefix = getPrefixAsSymbolRefAttr(currentNode->getSymbolPath());
+        auto res = lookupSymbolIn<StructDefOp>(tables, prefix, lookupFrom, lookupFrom, false);
+        // If that lookup didn't work for some reason, report at the path root location.
+        Operation *reportLoc = succeeded(res) ? res->get() : lookupFrom;
+        return reportLoc->emitError("Cannot inline structs with parameters.");
       }
       FailureOr<FuncDefOp> currentFunc = getIfStructConstrain(currentNode, tables);
       if (failed(currentFunc)) {
@@ -660,8 +670,13 @@ public:
     LLVM_DEBUG(useGraph.dumpToDotFile());
 
     SymbolTableCollection tables;
-    InliningPlan plan = makePlan(useGraph, tables);
-    for (auto &[caller, callees] : plan) {
+    FailureOr<InliningPlan> plan = makePlan(useGraph, tables);
+    if (failed(plan)) {
+      signalPassFailure(); // error already printed w/in makePlan()
+      return;
+    }
+
+    for (auto &[caller, callees] : plan.value()) {
       // Cache operations that should be deleted but must wait until all callees are processed
       // to ensure that all uses of the values defined by these operations are replaced.
       PendingErasure toDelete;

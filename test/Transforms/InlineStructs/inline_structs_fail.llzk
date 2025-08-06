@@ -126,3 +126,32 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @ComponentY<[@A, @B]> {
+    function.def @compute() -> !struct.type<@ComponentY<[@A, @B]>> {
+      %self = struct.new : !struct.type<@ComponentY<[@A, @B]>>
+      function.return %self : !struct.type<@ComponentY<[@A, @B]>>
+    }
+    function.def @constrain(%self: !struct.type<@ComponentY<[@A, @B]>>) { function.return }
+  }
+
+  // expected-error@+1 {{Cannot inline structs with parameters.}}
+  struct.def @ComponentX<[@C]> {
+    struct.field @f2 : !struct.type<@ComponentY<[5, @C]>>
+
+    function.def @compute() -> !struct.type<@ComponentX<[@C]>> {
+      %self = struct.new : !struct.type<@ComponentX<[@C]>>
+      %x = function.call @ComponentY::@compute() : () -> (!struct.type<@ComponentY<[5, @C]>>)
+      struct.writef %self[@f2] = %x : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
+      function.return %self : !struct.type<@ComponentX<[@C]>>
+    }
+
+    function.def @constrain(%self: !struct.type<@ComponentX<[@C]>>) {
+      %b = struct.readf %self[@f2] : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
+      function.call @ComponentY::@constrain(%b) : (!struct.type<@ComponentY<[5, @C]>>) -> ()
+      function.return
+    }
+  }
+}

@@ -797,6 +797,3 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
-// TODO: create tests for:
-// - when inlining struct with template/constant parameters, must replace the parameters
