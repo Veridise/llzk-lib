@@ -797,65 +797,6 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// TODO: ADD SPLIT
-//
-// // TESTS: The @Signal struct must NOT be inlined
-// // TODO (PENDING): The @Signal struct may be removed, making this moot.
-// !Signal = !struct.type<@Signal>
-// module attributes {veridise.lang = "llzk"} {
-//   // pre-defined
-//   struct.def @Signal {
-//     struct.field @reg : !felt.type {llzk.pub}
-//
-//     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
-//       %self = struct.new : !struct.type<@Signal>
-//       struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.type
-//       function.return %self : !struct.type<@Signal>
-//     }
-//
-//     function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.type) {
-//       function.return
-//     }
-//   }
-//
-//   struct.def @Component11 {
-//     struct.field @f : !Signal
-//
-//     function.def @compute() -> !struct.type<@Component11> {
-//       %self = struct.new : !struct.type<@Component11>
-//       %6 = felt.const 6
-//       %s = function.call @Signal::@compute(%6) : (!felt.type) -> !Signal
-//       struct.writef %self[@f] = %s : !struct.type<@Component11>, !Signal
-//       function.return %self : !struct.type<@Component11>
-//     }
-//     function.def @constrain(%self: !struct.type<@Component11>) {
-//       %s = struct.readf %self[@f] : !struct.type<@Component11>, !Signal
-//       %6 = felt.const 6
-//       function.call @Signal::@constrain(%s,%6) : (!Signal,!felt.type) -> ()
-//       function.return
-//     }
-//   }
-//
-//   struct.def @Main {
-//     struct.field @f : !struct.type<@Component11>
-//
-//     function.def @compute() -> !struct.type<@Main> {
-//       %self = struct.new : !struct.type<@Main>
-//       %q = function.call @Component11::@compute() : () -> !struct.type<@Component11>
-//       struct.writef %self[@f] = %q : !struct.type<@Main>, !struct.type<@Component11>
-//       function.return %self : !struct.type<@Main>
-//     }
-//
-//     function.def @constrain(%self: !struct.type<@Main>) {
-//       %p = struct.readf %self[@f] : !struct.type<@Main>, !struct.type<@Component11>
-//       function.call @Component11::@constrain(%p) : (!struct.type<@Component11>) -> ()
-//       function.return
-//     }
-//   }
-// }
-// TODO: CHECK
-// TODO: ADD SPLIT
-
 
 // TODO: create tests for:
 // - when inlining struct with template/constant parameters, must replace the parameters
