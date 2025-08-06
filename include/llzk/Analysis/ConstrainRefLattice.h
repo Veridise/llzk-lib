@@ -14,6 +14,8 @@
 #include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Util/ErrorHelper.h"
 
+#include <llvm/ADT/PointerUnion.h>
+
 namespace llzk {
 
 class ConstrainRefLatticeValue;
@@ -87,7 +89,10 @@ protected:
 /// A lattice for use in dense analysis.
 class ConstrainRefLattice : public dataflow::AbstractDenseLattice {
 public:
-  using ValueMap = mlir::DenseMap<mlir::Value, ConstrainRefLatticeValue>;
+  // mlir::Value is used for read-like operations that create references in their results,
+  // mlir::Operation* is used for write-like operations that reference values as their destinations
+  using ValueTy = llvm::PointerUnion<mlir::Value, mlir::Operation *>;
+  using ValueMap = mlir::DenseMap<ValueTy, ConstrainRefLatticeValue>;
   using AbstractDenseLattice::AbstractDenseLattice;
 
   /* Static utilities */
@@ -121,15 +126,15 @@ public:
 
   mlir::ChangeResult setValues(const ValueMap &rhs);
 
-  mlir::ChangeResult setValue(mlir::Value v, const ConstrainRefLatticeValue &rhs) {
+  mlir::ChangeResult setValue(ValueTy v, const ConstrainRefLatticeValue &rhs) {
     return valMap[v].setValue(rhs);
   }
 
-  mlir::ChangeResult setValue(mlir::Value v, const ConstrainRef &ref) {
+  mlir::ChangeResult setValue(ValueTy v, const ConstrainRef &ref) {
     return valMap[v].setValue(ConstrainRefLatticeValue(ref));
   }
 
-  ConstrainRefLatticeValue getOrDefault(mlir::Value v) const;
+  ConstrainRefLatticeValue getOrDefault(ValueTy v) const;
 
   ConstrainRefLatticeValue getReturnValue(unsigned i) const;
 

@@ -156,13 +156,13 @@ ExpressionValue fallbackBinaryOp(
   ExpressionValue res;
   res.i = Interval::Entire(lhs.getField());
   res.expr = TypeSwitch<Operation *, llvm::SMTExprRef>(op)
-                 .Case<AndFeltOp>([&](AndFeltOp _) { return solver->mkBVAnd(lhs.expr, rhs.expr); })
-                 .Case<OrFeltOp>([&](OrFeltOp _) { return solver->mkBVOr(lhs.expr, rhs.expr); })
-                 .Case<XorFeltOp>([&](XorFeltOp _) { return solver->mkBVXor(lhs.expr, rhs.expr); })
-                 .Case<ShlFeltOp>([&](ShlFeltOp _) { return solver->mkBVShl(lhs.expr, rhs.expr); })
-                 .Case<ShrFeltOp>([&](ShrFeltOp _) {
+                 .Case<AndFeltOp>([&](auto _) { return solver->mkBVAnd(lhs.expr, rhs.expr); })
+                 .Case<OrFeltOp>([&](auto _) { return solver->mkBVOr(lhs.expr, rhs.expr); })
+                 .Case<XorFeltOp>([&](auto _) { return solver->mkBVXor(lhs.expr, rhs.expr); })
+                 .Case<ShlFeltOp>([&](auto _) { return solver->mkBVShl(lhs.expr, rhs.expr); })
+                 .Case<ShrFeltOp>([&](auto _) {
     return solver->mkBVLshr(lhs.expr, rhs.expr);
-  }).Default([&](Operation *unsupported) {
+  }).Default([&](auto *unsupported) {
     llvm::report_fatal_error(
         "no fallback provided for " + mlir::Twine(unsupported->getName().getStringRef())
     );
@@ -181,8 +181,7 @@ ExpressionValue neg(llvm::SMTSolverRef solver, const ExpressionValue &val) {
 
 ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val) {
   ExpressionValue res;
-  // TODO: reason about this slightly better
-  res.i = Interval::Entire(val.getField());
+  res.i = ~val.i;
   res.expr = solver->mkBVNot(val.expr);
   return res;
 }
@@ -594,17 +593,17 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
   ensure(rhs.getExpr(), "cannot perform arithmetic over null rhs smt expr");
 
   auto res = TypeSwitch<Operation *, ExpressionValue>(op)
-                 .Case<AddFeltOp>([&](AddFeltOp _) { return add(smtSolver, lhs, rhs); })
-                 .Case<SubFeltOp>([&](SubFeltOp _) { return sub(smtSolver, lhs, rhs); })
-                 .Case<MulFeltOp>([&](MulFeltOp _) { return mul(smtSolver, lhs, rhs); })
-                 .Case<DivFeltOp>([&](DivFeltOp divOp) { return div(smtSolver, divOp, lhs, rhs); })
-                 .Case<ModFeltOp>([&](ModFeltOp _) { return mod(smtSolver, lhs, rhs); })
-                 .Case<CmpOp>([&](CmpOp cmpOp) { return cmp(smtSolver, cmpOp, lhs, rhs); })
-                 .Case<AndBoolOp>([&](AndBoolOp _) { return boolAnd(smtSolver, lhs, rhs); })
-                 .Case<OrBoolOp>([&](OrBoolOp _) { return boolOr(smtSolver, lhs, rhs); })
-                 .Case<XorBoolOp>([&](XorBoolOp _) {
+                 .Case<AddFeltOp>([&](auto _) { return add(smtSolver, lhs, rhs); })
+                 .Case<SubFeltOp>([&](auto _) { return sub(smtSolver, lhs, rhs); })
+                 .Case<MulFeltOp>([&](auto _) { return mul(smtSolver, lhs, rhs); })
+                 .Case<DivFeltOp>([&](auto divOp) { return div(smtSolver, divOp, lhs, rhs); })
+                 .Case<ModFeltOp>([&](auto _) { return mod(smtSolver, lhs, rhs); })
+                 .Case<CmpOp>([&](auto cmpOp) { return cmp(smtSolver, cmpOp, lhs, rhs); })
+                 .Case<AndBoolOp>([&](auto _) { return boolAnd(smtSolver, lhs, rhs); })
+                 .Case<OrBoolOp>([&](auto _) { return boolOr(smtSolver, lhs, rhs); })
+                 .Case<XorBoolOp>([&](auto _) {
     return boolXor(smtSolver, lhs, rhs);
-  }).Default([&](Operation *unsupported) {
+  }).Default([&](auto *unsupported) {
     unsupported->emitWarning(
         "unsupported binary arithmetic operation, defaulting to over-approximated intervals"
     );
@@ -623,10 +622,10 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(Operation *op, const LatticeVal
   ensure(val.getExpr(), "cannot perform arithmetic over null smt expr");
 
   auto res = TypeSwitch<Operation *, ExpressionValue>(op)
-                 .Case<NegFeltOp>([&](NegFeltOp _) { return neg(smtSolver, val); })
+                 .Case<NegFeltOp>([&](auto _) { return neg(smtSolver, val); })
                  .Case<NotFeltOp, NotBoolOp>([&](Operation *_) {
     return notOp(smtSolver, val);
-  }).Default([&](Operation *unsupported) {
+  }).Default([&](auto *unsupported) {
     unsupported->emitWarning(
         "unsupported unary arithmetic operation, defaulting to over-approximated interval"
     );
@@ -844,10 +843,10 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
   // look ugly.
   // clang-format off
   res |= TypeSwitch<Operation *, ChangeResult>(definingOp)
-            .Case<CmpOp>([&](CmpOp op) { return cmpCase(op); })
-            .Case<MulFeltOp>([&](MulFeltOp op) { return mulCase(op); })
-            .Case<FieldReadOp>([&](FieldReadOp op){ return readfCase(op); })
-            .Default([&](Operation *_) { return ChangeResult::NoChange; });
+            .Case<CmpOp>([&](auto op) { return cmpCase(op); })
+            .Case<MulFeltOp>([&](auto op) { return mulCase(op); })
+            .Case<FieldReadOp>([&](auto op){ return readfCase(op); })
+            .Default([&](auto *_) { return ChangeResult::NoChange; });
   // clang-format on
 
   // Set the new val after recursion to avoid having recursive calls unset the value.

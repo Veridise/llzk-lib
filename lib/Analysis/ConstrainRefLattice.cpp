@@ -25,6 +25,8 @@
 
 #define DEBUG_TYPE "llzk-constrain-ref-lattice"
 
+using namespace mlir;
+
 namespace llzk {
 
 using namespace component;
@@ -201,7 +203,15 @@ void ConstrainRefLattice::print(mlir::raw_ostream &os) const {
   os << "ConstrainRefLattice { ";
   for (auto mit = valMap.begin(); mit != valMap.end();) {
     auto &[val, latticeVal] = *mit;
-    os << "\n    (" << val << ") => " << latticeVal;
+    os << "\n    (";
+    if (val.is<Value>()) {
+      os << val.get<Value>();
+    } else if (val.is<Operation *>()) {
+      os << *val.get<Operation *>();
+    } else {
+      llvm_unreachable("unhandled ValueTy print case");
+    }
+    os << ") => " << latticeVal;
     mit++;
     if (mit != valMap.end()) {
       os << ',';
@@ -221,15 +231,17 @@ mlir::ChangeResult ConstrainRefLattice::setValues(const ValueMap &rhs) {
   return res;
 }
 
-ConstrainRefLatticeValue ConstrainRefLattice::getOrDefault(mlir::Value v) const {
+ConstrainRefLatticeValue ConstrainRefLattice::getOrDefault(ConstrainRefLattice::ValueTy v) const {
   auto it = valMap.find(v);
   if (it != valMap.end()) {
     return it->second;
   }
 
-  auto sourceRef = getSourceRef(v);
-  if (mlir::succeeded(sourceRef)) {
-    return ConstrainRefLatticeValue(sourceRef.value());
+  if (v.is<Value>()) {
+    auto sourceRef = getSourceRef(v.get<Value>());
+    if (mlir::succeeded(sourceRef)) {
+      return ConstrainRefLatticeValue(sourceRef.value());
+    }
   }
   return ConstrainRefLatticeValue();
 }

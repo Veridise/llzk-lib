@@ -144,3 +144,11 @@ TEST_F(IntervalTests, NegativeIdentities) {
   auto oneDegen = Interval::Degenerate(f, f.one());
   AssertIntervalEq(maxValDegen, -oneDegen);
 }
+
+TEST_F(IntervalTests, BitwiseNot) {
+  auto one = Interval::Degenerate(f, f.one());
+  auto a = Interval::TypeA(f, f.zero(), f.felt(7));
+  auto notA = Interval::TypeF(f, f.prime() - f.felt(6), f.one());
+  AssertIntervalEq(~a, one - a);
+  AssertIntervalEq(notA, ~a);
+}

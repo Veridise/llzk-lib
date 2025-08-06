@@ -296,6 +296,7 @@ public:
   /* arithmetic ops */
 
   Interval operator-() const;
+  Interval operator~() const;
   friend Interval operator+(const Interval &lhs, const Interval &rhs);
   friend Interval operator-(const Interval &lhs, const Interval &rhs);
   friend Interval operator*(const Interval &lhs, const Interval &rhs);
