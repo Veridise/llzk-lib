@@ -89,7 +89,7 @@ public:
   // Enable copying by duplicating unique_ptrs and copying the contained values.
   AbstractLatticeValue &operator=(const AbstractLatticeValue &rhs) {
     copyArrayShape(rhs);
-    if (rhs.isScalar()) {
+    if (rhs.isScalar() || rhs.isDynamicArray()) {
       getValue() = rhs.getScalarValue();
     } else {
       // create an empty array of the same size
@@ -149,7 +149,7 @@ public:
   size_t getNumArrayDims() const { return getArrayShape().size(); }
 
   void print(mlir::raw_ostream &os) const {
-    if (isScalar()) {
+    if (isScalar() || isDynamicArray()) {
       os << getScalarValue();
     } else {
       os << "[ ";
@@ -231,7 +231,10 @@ protected:
     return arrShape.at(i);
   }
 
-  void copyArrayShape(const AbstractLatticeValue &rhs) { arrayShape = rhs.arrayShape; }
+  void copyArrayShape(const AbstractLatticeValue &rhs) {
+    arrayShape = rhs.arrayShape;
+    isDynamic = rhs.isDynamic;
+  }
 
   /// @brief Union this value with the given scalar.
   mlir::ChangeResult updateScalar(const ScalarTy &rhs) {
