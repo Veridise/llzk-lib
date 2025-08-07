@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
+#include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -46,13 +47,13 @@ bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
     return NamedOpLocationLess<FieldDefOp> {}(getField(), rhs.getField());
   }
   if (isIndex() && rhs.isIndex()) {
-    return getIndex().ult(rhs.getIndex());
+    return safeLt(APSInt(getIndex()), APSInt(rhs.getIndex()));
   }
   if (isIndexRange() && rhs.isIndexRange()) {
     auto l = getIndexRange(), r = rhs.getIndexRange();
-    auto ll = std::get<0>(l), lu = std::get<1>(l);
-    auto rl = std::get<0>(r), ru = std::get<1>(r);
-    return ll.ult(rl) || (ll == rl && lu.ult(ru));
+    auto ll = APSInt(std::get<0>(l)), lu = APSInt(std::get<1>(l));
+    auto rl = APSInt(std::get<0>(r)), ru = APSInt(std::get<1>(r));
+    return safeLt(ll, rl) || (safeEq(ll, rl) && safeLt(lu, ru));
   }
 
   if (isField()) {
