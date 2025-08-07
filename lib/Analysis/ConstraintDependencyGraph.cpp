@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/IR/Value.h>
@@ -166,15 +167,18 @@ void ConstrainRefAnalysis::visitOperation(
     // Currently, the new array must either be fully initialized or uninitialized.
 
     auto newArrayVal = ConstrainRefLatticeValue(createArray.getType().getShape());
-    // If the array is initialized, iterate through all operands and initialize the array value.
-    for (unsigned i = 0; i < createArray.getNumOperands(); i++) {
-      auto currentOp = createArray.getOperand(i);
-      auto &opVals = operandVals[currentOp];
-      (void)newArrayVal.getElemFlatIdx(i).setValue(opVals);
+    // If the array is statically initialized, iterate through all operands and initialize the array
+    // value.
+    if (!hasAffineMapAttr(createArray.getResult().getType())) {
+      const auto &elements = createArray.getElements();
+      for (unsigned i = 0; i < elements.size(); i++) {
+        auto currentOp = elements[i];
+        auto &opVals = operandVals[currentOp];
+        (void)newArrayVal.getElemFlatIdx(i).setValue(opVals);
+      }
     }
 
-    assert(createArray->getNumResults() == 1);
-    auto res = createArray->getResult(0);
+    auto res = createArray.getResult();
 
     propagateIfChanged(after, after->setValue(res, newArrayVal));
   } else if (auto structNewOp = mlir::dyn_cast<CreateStructOp>(op)) {

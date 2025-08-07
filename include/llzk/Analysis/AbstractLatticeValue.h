@@ -52,6 +52,7 @@ template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeVa
   static ArrayTy constructArrayTy(const mlir::ArrayRef<int64_t> &shape) {
     size_t totalElem = 1;
     for (auto dim : shape) {
+      ensure(dim != mlir::ShapedType::kDynamic, "Cannot pre-allocate dynamically-sized array");
       totalElem *= dim;
     }
     ArrayTy arr(totalElem);
@@ -61,11 +62,27 @@ template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeVa
     return arr;
   }
 
+  static bool isDynamicArray(const mlir::ArrayRef<int64_t> &shape) {
+    for (auto dim : shape) {
+      if (dim == mlir::ShapedType::kDynamic) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 public:
-  explicit AbstractLatticeValue(ScalarTy s) : value(s), arrayShape(std::nullopt) {}
+  explicit AbstractLatticeValue(ScalarTy s)
+      : value(s), arrayShape(std::nullopt), isDynamic(false) {}
   AbstractLatticeValue() : AbstractLatticeValue(ScalarTy()) {}
   explicit AbstractLatticeValue(const mlir::ArrayRef<int64_t> shape)
-      : value(constructArrayTy(shape)), arrayShape(shape) {}
+      : arrayShape(shape), isDynamic(isDynamicArray(shape)) {
+    if (isDynamic) {
+      value = ScalarTy();
+    } else {
+      value = constructArrayTy(shape);
+    }
+  }
 
   AbstractLatticeValue(const AbstractLatticeValue &rhs) { *this = rhs; }
 
@@ -90,6 +107,7 @@ public:
   bool isScalar() const { return std::holds_alternative<ScalarTy>(value); }
   bool isSingleValue() const { return isScalar() && getScalarValue().size() == 1; }
   bool isArray() const { return std::holds_alternative<ArrayTy>(value); }
+  bool isDynamicArray() const { return isDynamic; }
 
   const ScalarTy &getScalarValue() const {
     ensure(isScalar(), "not a scalar value");
@@ -102,25 +120,25 @@ public:
   }
 
   const ArrayTy &getArrayValue() const {
-    ensure(isArray(), "not an array value");
+    ensure(isArray() && !isDynamicArray(), "not a static array value");
     return std::get<ArrayTy>(value);
   }
 
   ArrayTy &getArrayValue() {
-    ensure(isArray(), "not an array value");
+    ensure(isArray() && !isDynamicArray(), "not a static array value");
     return std::get<ArrayTy>(value);
   }
 
   /// @brief Directly index into the flattened array using a single index.
   const Derived &getElemFlatIdx(unsigned i) const {
-    ensure(isArray(), "not an array value");
+    ensure(isArray() && !isDynamicArray(), "not a static array value");
     auto &arr = getArrayValue();
     ensure(i < arr.size(), "index out of range");
     return *arr.at(i);
   }
 
   Derived &getElemFlatIdx(unsigned i) {
-    ensure(isArray(), "not an array value");
+    ensure(isArray() && !isDynamicArray(), "not a static array value");
     auto &arr = getArrayValue();
     ensure(i < arr.size(), "index out of range");
     return *arr.at(i);
@@ -252,6 +270,7 @@ protected:
 private:
   std::variant<ScalarTy, ArrayTy> value;
   std::optional<std::vector<int64_t>> arrayShape;
+  bool isDynamic;
 };
 
 template <typename Derived, ScalarLatticeValue ScalarTy>
