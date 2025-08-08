@@ -91,7 +91,12 @@ UnreducedInterval UnreducedInterval::computeGEPart(const UnreducedInterval &rhs)
   return UnreducedInterval(safeMax(a, rhs.a), b);
 }
 
-UnreducedInterval UnreducedInterval::operator-() const { return UnreducedInterval(-b, -a); }
+UnreducedInterval UnreducedInterval::operator-() const {
+  if (isEmpty()) {
+    return *this;
+  }
+  return UnreducedInterval(-b, -a);
+}
 
 UnreducedInterval operator+(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
   llvm::APSInt low = expandingAdd(lhs.a, rhs.a), high = expandingAdd(lhs.b, rhs.b);
@@ -147,7 +152,9 @@ bool UnreducedInterval::isEmpty() const { return safeEq(width(), llvm::APSInt::g
 
 UnreducedInterval Interval::toUnreduced() const {
   if (isEmpty()) {
-    return UnreducedInterval(field.get().zero(), field.get().zero());
+    // Since ranges are inclusive, empty is encoded as `[a, b]` where `a` > `b`.
+    // This matches the definition provided by UnreducedInterval::width().
+    return UnreducedInterval(field.get().one(), field.get().zero());
   }
   if (isEntire()) {
     return UnreducedInterval(field.get().zero(), field.get().maxVal());
@@ -157,7 +164,7 @@ UnreducedInterval Interval::toUnreduced() const {
 
 UnreducedInterval Interval::firstUnreduced() const {
   if (is<Type::TypeF>()) {
-    return UnreducedInterval(field.get().prime() - a, b);
+    return UnreducedInterval(a - field.get().prime(), b);
   }
   return toUnreduced();
 }
@@ -351,7 +358,17 @@ Interval Interval::difference(const Interval &other) const {
 
 Interval Interval::operator-() const { return (-firstUnreduced()).reduce(field.get()); }
 
+Interval Interval::operator~() const {
+  return Interval::Degenerate(field.get(), field.get().one()) - *this;
+}
+
 Interval operator+(const Interval &lhs, const Interval &rhs) {
+  if (lhs.isEmpty()) {
+    return rhs;
+  }
+  if (rhs.isEmpty()) {
+    return lhs;
+  }
   ensure(lhs.field.get() == rhs.field.get(), "cannot add intervals in different fields");
   return (lhs.firstUnreduced() + rhs.firstUnreduced()).reduce(lhs.field.get());
 }
@@ -407,8 +424,76 @@ llvm::APSInt Interval::width() const {
   case Type::Entire:
     return field.get().prime();
   default:
-    return toUnreduced().width();
+    return field.get().reduce(toUnreduced().width());
   }
+}
+
+Interval boolAnd(const Interval &lhs, const Interval &rhs) {
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
+  ensure(lhs.isBoolean() && rhs.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = rhs.getField();
+
+  if (lhs.isBoolFalse() || rhs.isBoolFalse()) {
+    return Interval::False(field);
+  }
+  if (lhs.isBoolTrue() && rhs.isBoolTrue()) {
+    return Interval::True(field);
+  }
+
+  return Interval::Boolean(field);
+}
+
+Interval boolOr(const Interval &lhs, const Interval &rhs) {
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
+  ensure(lhs.isBoolean() && rhs.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = rhs.getField();
+
+  if (lhs.isBoolFalse() && rhs.isBoolFalse()) {
+    return Interval::False(field);
+  }
+  if (lhs.isBoolTrue() || rhs.isBoolTrue()) {
+    return Interval::True(field);
+  }
+
+  return Interval::Boolean(field);
+}
+
+Interval boolXor(const Interval &lhs, const Interval &rhs) {
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
+  ensure(lhs.isBoolean() && rhs.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = rhs.getField();
+
+  if (lhs.isBoolTrue() && rhs.isBoolTrue()) {
+    return Interval::False(field);
+  }
+  if (lhs.isBoolTrue() || rhs.isBoolTrue()) {
+    return Interval::True(field);
+  }
+  if (lhs.isBoolFalse() && rhs.isBoolFalse()) {
+    return Interval::False(field);
+  }
+
+  return Interval::Boolean(field);
+}
+
+Interval boolNot(const Interval &iv) {
+  ensure(iv.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = iv.getField();
+
+  if (iv.isBoolTrue()) {
+    return Interval::False(field);
+  }
+  if (iv.isBoolFalse()) {
+    return Interval::True(field);
+  }
+
+  return iv;
 }
 
 void Interval::print(mlir::raw_ostream &os) const {

@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/IR/Value.h>
@@ -25,6 +26,8 @@
 #include <unordered_set>
 
 #define DEBUG_TYPE "llzk-cdg"
+
+using namespace mlir;
 
 namespace llzk {
 
@@ -140,39 +143,48 @@ void ConstrainRefAnalysis::visitOperation(
   propagateIfChanged(after, after->setValues(operandVals));
 
   // We will now join the the operand refs based on the type of operand.
-  if (auto fieldRead = mlir::dyn_cast<FieldReadOp>(op)) {
-    // In the readf case, the operand is indexed into by the read's fielddefop.
-    assert(operandVals.size() == 1);
-    assert(fieldRead->getNumResults() == 1);
-
-    auto fieldOpRes = fieldRead.getFieldDefOp(tables);
+  if (auto fieldRefOp = mlir::dyn_cast<FieldRefOpInterface>(op)) {
+    // The operand is indexed into by the FieldDefOp.
+    auto fieldOpRes = fieldRefOp.getFieldDefOp(tables);
     ensure(mlir::succeeded(fieldOpRes), "could not find field read");
 
-    auto res = fieldRead->getResult(0);
-    const auto &ops = operandVals.at(fieldRead->getOpOperand(0).get());
+    ConstrainRefLattice::ValueTy res;
+    if (fieldRefOp.isRead()) {
+      res = fieldRefOp.getVal();
+    } else {
+      res = fieldRefOp;
+    }
+
+    const auto &ops = operandVals.at(fieldRefOp.getComponent());
     auto [fieldVals, _] = ops.referenceField(fieldOpRes.value());
 
     propagateIfChanged(after, after->setValue(res, fieldVals));
-  } else if (mlir::isa<ReadArrayOp>(op)) {
-    arraySubdivisionOpUpdate(op, operandVals, before, after);
+  } else if (auto arrayAccessOp = mlir::dyn_cast<ArrayAccessOpInterface>(op)) {
+    // Covers read/write/extract/insert array ops
+    arraySubdivisionOpUpdate(arrayAccessOp, operandVals, before, after);
   } else if (auto createArray = mlir::dyn_cast<CreateArrayOp>(op)) {
     // Create an array using the operand values, if they exist.
     // Currently, the new array must either be fully initialized or uninitialized.
 
     auto newArrayVal = ConstrainRefLatticeValue(createArray.getType().getShape());
-    // If the array is initialized, iterate through all operands and initialize the array value.
-    for (unsigned i = 0; i < createArray.getNumOperands(); i++) {
-      auto currentOp = createArray.getOperand(i);
-      auto &opVals = operandVals[currentOp];
-      (void)newArrayVal.getElemFlatIdx(i).setValue(opVals);
+    // If the array is statically initialized, iterate through all operands and initialize the array
+    // value.
+    if (!hasAffineMapAttr(createArray.getResult().getType())) {
+      const auto &elements = createArray.getElements();
+      for (unsigned i = 0; i < elements.size(); i++) {
+        auto currentOp = elements[i];
+        auto &opVals = operandVals[currentOp];
+        (void)newArrayVal.getElemFlatIdx(i).setValue(opVals);
+      }
     }
 
-    assert(createArray->getNumResults() == 1);
-    auto res = createArray->getResult(0);
+    auto res = createArray.getResult();
 
     propagateIfChanged(after, after->setValue(res, newArrayVal));
-  } else if (auto extractArray = mlir::dyn_cast<ExtractArrayOp>(op)) {
-    arraySubdivisionOpUpdate(op, operandVals, before, after);
+  } else if (auto structNewOp = mlir::dyn_cast<CreateStructOp>(op)) {
+    auto res = structNewOp.getResult();
+    auto newStructValue = before.getOrDefault(res);
+    propagateIfChanged(after, after->setValue(res, newStructValue));
   } else {
     // Standard union of operands into the results value.
     // TODO: Could perform constant computation/propagation here for, e.g., arithmetic
@@ -202,25 +214,27 @@ mlir::ChangeResult ConstrainRefAnalysis::fallbackOpUpdate(
 // operate very similarly: index into the first operand using a variable number
 // of provided indices.
 void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
-    mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
+    ArrayAccessOpInterface arrayAccessOp, const ConstrainRefLattice::ValueMap &operandVals,
     const ConstrainRefLattice &before, ConstrainRefLattice *after
 ) {
-  ensure(mlir::isa<ReadArrayOp, ExtractArrayOp>(op), "wrong type of op provided!");
-
   // We index the first operand by all remaining indices.
-  assert(op->getNumResults() == 1);
-  auto res = op->getResult(0);
+  ConstrainRefLattice::ValueTy res;
+  if (mlir::isa<ReadArrayOp, ExtractArrayOp>(arrayAccessOp)) {
+    res = arrayAccessOp->getResult(0);
+  } else {
+    res = arrayAccessOp;
+  }
 
-  auto array = op->getOperand(0);
+  auto array = arrayAccessOp.getArrRef();
   auto it = operandVals.find(array);
   ensure(it != operandVals.end(), "improperly constructed operandVals map");
   auto currVals = it->second;
 
   std::vector<ConstrainRefIndex> indices;
 
-  for (size_t i = 1; i < op->getNumOperands(); i++) {
-    auto currentOp = op->getOperand(i);
-    auto idxIt = operandVals.find(currentOp);
+  for (unsigned i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
+    auto idxOperand = arrayAccessOp.getIndices()[i];
+    auto idxIt = operandVals.find(idxOperand);
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
     auto &idxVals = idxIt->second;
 
@@ -235,7 +249,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
       // Otherwise, assume any range is valid.
       auto arrayType = mlir::dyn_cast<ArrayType>(array.getType());
       auto lower = mlir::APInt::getZero(64);
-      mlir::APInt upper(64, arrayType.getDimSize(i - 1));
+      mlir::APInt upper(64, arrayType.getDimSize(i));
       auto idxRange = ConstrainRefIndex(lower, upper);
       indices.push_back(idxRange);
     }
@@ -243,7 +257,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
 
   auto [newVals, _] = currVals.extract(indices);
 
-  if (mlir::isa<ReadArrayOp>(op)) {
+  if (mlir::isa<ReadArrayOp, WriteArrayOp>(arrayAccessOp)) {
     ensure(newVals.isScalar(), "array read must produce a scalar value");
   }
   // an extract operation may yield a "scalar" value if not all dimensions of
@@ -258,9 +272,10 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
 /* ConstraintDependencyGraph */
 
 mlir::FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
-    mlir::ModuleOp m, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
+    mlir::ModuleOp m, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am,
+    bool runIntraprocedural
 ) {
-  ConstraintDependencyGraph cdg(m, s);
+  ConstraintDependencyGraph cdg(m, s, runIntraprocedural);
   if (cdg.computeConstraints(solver, am).failed()) {
     return mlir::failure();
   }
@@ -357,7 +372,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
    * the call. We just need to see what constraints are generated here, and
    * add them to the transitive closures.
    */
-  constrainFnOp.walk([this, &solver, &am](CallOp fnCall) mutable {
+  auto fnCallWalker = [this, &solver, &am](CallOp fnCall) mutable {
     auto res = resolveCallable<FuncDefOp>(tables, fnCall);
     ensure(mlir::succeeded(res), "could not resolve constrain call");
 
@@ -382,7 +397,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
         am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);
     if (!childAnalysis.constructed()) {
       ensure(
-          mlir::succeeded(childAnalysis.runAnalysis(solver, am)),
+          mlir::succeeded(childAnalysis.runAnalysis(solver, am, /* runIntraprocedural */ false)),
           "could not construct CDG for child struct"
       );
     }
@@ -404,7 +419,10 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     for (auto &[ref, constSet] : translatedCDG.constantSets) {
       constantSets[ref].insert(constSet.begin(), constSet.end());
     }
-  });
+  };
+  if (!runIntraprocedural) {
+    constrainFnOp.walk(fnCallWalker);
+  }
 
   return mlir::success();
 }
@@ -547,10 +565,12 @@ ConstrainRefSet ConstraintDependencyGraph::getConstrainingValues(const Constrain
 /* ConstraintDependencyGraphStructAnalysis */
 
 mlir::LogicalResult ConstraintDependencyGraphStructAnalysis::runAnalysis(
-    mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager
+    mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
+    bool runIntraprocedural
 ) {
-  auto result =
-      ConstraintDependencyGraph::compute(getModule(), getStruct(), solver, moduleAnalysisManager);
+  auto result = ConstraintDependencyGraph::compute(
+      getModule(), getStruct(), solver, moduleAnalysisManager, runIntraprocedural
+  );
   if (mlir::failed(result)) {
     return mlir::failure();
   }

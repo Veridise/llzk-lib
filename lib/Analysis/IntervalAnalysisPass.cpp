@@ -64,7 +64,7 @@ protected:
           "could not resolve fully qualified name of struct " + mlir::Twine(structDef.getName())
       );
       os << fullName.value() << ' ';
-      si.get().print(os, printSolverConstraints);
+      si.get().print(os, printSolverConstraints, printComputeIntervals);
     }
   }
 };

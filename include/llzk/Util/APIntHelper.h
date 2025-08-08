@@ -19,6 +19,7 @@
 #pragma once
 
 #include <llvm/ADT/APSInt.h>
+#include <llvm/ADT/StringRef.h>
 
 #include <algorithm>
 #include <initializer_list>
@@ -30,30 +31,37 @@ namespace llzk {
 /// with the reduction to the prime field.
 /// @param lhs an N bit number with an allocated width of X
 /// @param rhs an M bit number with an allocated width of Y
-/// @return A number that is max(N, M) + 1 bits wide with an allocated with of max(max(N, M) + 1, X,
-/// Y) bits.
-llvm::APSInt expandingAdd(const llvm::APSInt &lhs, const llvm::APSInt &rhs);
+/// @return A number that is max(N, M) + 1 bits wide with an allocated width of max(max(N, M) + 2,
+/// X, Y) bits (+2 to accomodate for the sign bit).
+llvm::APSInt expandingAdd(llvm::APSInt lhs, llvm::APSInt rhs);
 
 /// @brief Safely subtract lhs and rhs, expanding the width of the result as necessary.
 /// Numbers are never truncated here, as this assumes that truncation will occur
 /// with the reduction to the prime field.
 /// @param lhs an N bit number with an allocated width of X
 /// @param rhs an M bit number with an allocated width of Y
-/// @return A number that is max(N, M) + 1 bits wide with an allocated with of max(max(N, M) + 1, X,
-/// Y) bits.
-llvm::APSInt expandingSub(const llvm::APSInt &lhs, const llvm::APSInt &rhs);
+/// @return A number that is max(N, M) + 1 bits wide with an allocated witdh of max(max(N, M) + 2,
+/// X, Y) bits (+2 to accomodate for the sign bit).
+llvm::APSInt expandingSub(llvm::APSInt lhs, llvm::APSInt rhs);
 
 /// @brief Safely multiple lhs and rhs, expanding the width of the result as necessary.
 /// Numbers are never truncated here, as this assumes that truncation will occur
 /// with the reduction to the prime field.
 /// @param lhs an N bit number with an allocated width of X
 /// @param rhs an M bit number with an allocated width of Y
-/// @return A number that is N + M bits wide with an allocated with of max(N + M, X, Y) bits.
-llvm::APSInt expandingMul(const llvm::APSInt &lhs, const llvm::APSInt &rhs);
+/// @return A number that is N + M bits wide with an allocated width of max(N + M +1 , X, Y) bits
+/// (+1 to accomodate for the sign bit).
+llvm::APSInt expandingMul(llvm::APSInt lhs, llvm::APSInt rhs);
 
 /// @brief Compares lhs and rhs, regardless of the bitwidth of lhs and rhs.
 /// @return lhs is less, equal, or greater than rhs
-std::strong_ordering safeCmp(const llvm::APSInt &lhs, const llvm::APSInt &rhs);
+std::strong_ordering safeCmp(llvm::APSInt lhs, llvm::APSInt rhs);
+
+/// @brief Safely converts the given int to a signed int if it is an unsigned int
+/// by adding an extra bit for the sign.
+llvm::APSInt safeToSigned(llvm::APSInt i);
+inline llvm::APSInt safeToSigned(llvm::APInt i) { return safeToSigned(llvm::APSInt(i)); }
+inline llvm::APSInt safeToSigned(llvm::StringRef s) { return safeToSigned(llvm::APSInt(s)); }
 
 inline bool safeLt(const llvm::APSInt &lhs, const llvm::APSInt &rhs) {
   return std::is_lt(safeCmp(lhs, rhs));

@@ -117,6 +117,15 @@ public:
   cmp(llvm::SMTSolverRef solver, boolean::CmpOp op, const ExpressionValue &lhs,
       const ExpressionValue &rhs);
 
+  friend ExpressionValue
+  boolAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue
+  boolOr(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue
+  boolXor(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
   /// @brief Computes a solver expression based on the operation, but computes a fallback
   /// interval (which is just Entire, or unknown). Used for currently unsupported compute-only
   /// operations.
@@ -133,6 +142,8 @@ public:
   friend ExpressionValue neg(llvm::SMTSolverRef solver, const ExpressionValue &val);
 
   friend ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val);
+
+  friend ExpressionValue boolNot(llvm::SMTSolverRef solver, const ExpressionValue &val);
 
   friend ExpressionValue
   fallbackUnaryOp(llvm::SMTSolverRef solver, mlir::Operation *op, const ExpressionValue &val);
@@ -176,6 +187,9 @@ public:
   using LatticeValue = IntervalAnalysisLatticeValue;
   // Map mlir::Values to LatticeValues
   using ValueMap = mlir::DenseMap<mlir::Value, LatticeValue>;
+  // Map field references to LatticeValues. Used for field reads and writes.
+  // Structure is component value -> field attribute -> latticeValue
+  using FieldMap = mlir::DenseMap<mlir::Value, mlir::DenseMap<mlir::StringAttr, LatticeValue>>;
   // Expression to interval map for convenience.
   using ExpressionIntervals = mlir::DenseMap<llvm::SMTExprRef, Interval>;
   // Tracks all constraints and assignments in insertion order
@@ -193,8 +207,10 @@ public:
   void print(mlir::raw_ostream &os) const override;
 
   mlir::FailureOr<LatticeValue> getValue(mlir::Value v) const;
+  mlir::FailureOr<LatticeValue> getValue(mlir::Value v, mlir::StringAttr f) const;
 
   mlir::ChangeResult setValue(mlir::Value v, ExpressionValue e);
+  mlir::ChangeResult setValue(mlir::Value v, mlir::StringAttr f, ExpressionValue e);
 
   mlir::ChangeResult addSolverConstraint(ExpressionValue e);
 
@@ -218,6 +234,7 @@ public:
 
 private:
   ValueMap valMap;
+  FieldMap fieldMap;
   ConstraintSet constraints;
   ExpressionIntervals intervals;
 };
@@ -258,6 +275,7 @@ private:
   llvm::SMTSolverRef smtSolver;
   SymbolMap refSymbols;
   std::reference_wrapper<const Field> field;
+  mlir::SymbolTableCollection tables;
 
   void setToEntryState(Lattice *lattice) override {
     // initial state should be empty, so do nothing here
@@ -288,7 +306,8 @@ private:
     return mlir::isa<
         felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::ModFeltOp,
         felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp, felt::XorFeltOp,
-        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp>(op);
+        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp, boolean::AndBoolOp,
+        boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(op);
   }
 
   ExpressionValue
@@ -392,27 +411,33 @@ public:
   /// @return
   static mlir::FailureOr<StructIntervals> compute(
       mlir::ModuleOp mod, component::StructDefOp s, mlir::DataFlowSolver &solver,
-      mlir::AnalysisManager &am, IntervalAnalysisContext &ctx
+      IntervalAnalysisContext &ctx
   ) {
     StructIntervals si(mod, s);
-    if (si.computeIntervals(solver, am, ctx).failed()) {
+    if (si.computeIntervals(solver, ctx).failed()) {
       return mlir::failure();
     }
     return si;
   }
 
-  mlir::LogicalResult computeIntervals(
-      mlir::DataFlowSolver &solver, mlir::AnalysisManager &am, IntervalAnalysisContext &ctx
-  );
+  mlir::LogicalResult computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysisContext &ctx);
 
-  void print(mlir::raw_ostream &os, bool withConstraints = false) const;
+  void print(mlir::raw_ostream &os, bool withConstraints = false, bool printCompute = false) const;
 
-  const llvm::MapVector<ConstrainRef, Interval> &getIntervals() const {
+  const llvm::MapVector<ConstrainRef, Interval> &getConstrainIntervals() const {
     return constrainFieldRanges;
   }
 
-  const llvm::SetVector<ExpressionValue> getSolverConstraints() const {
+  const llvm::SetVector<ExpressionValue> getConstrainSolverConstraints() const {
     return constrainSolverConstraints;
+  }
+
+  const llvm::MapVector<ConstrainRef, Interval> &getComputeIntervals() const {
+    return computeFieldRanges;
+  }
+
+  const llvm::SetVector<ExpressionValue> getComputeSolverConstraints() const {
+    return computeSolverConstraints;
   }
 
   friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const StructIntervals &si) {
@@ -425,9 +450,9 @@ private:
   component::StructDefOp structDef;
   llvm::SMTSolverRef smtSolver;
   // llvm::MapVector keeps insertion order for consistent iteration
-  llvm::MapVector<ConstrainRef, Interval> constrainFieldRanges;
+  llvm::MapVector<ConstrainRef, Interval> constrainFieldRanges, computeFieldRanges;
   // llvm::SetVector for the same reasons as above
-  llvm::SetVector<ExpressionValue> constrainSolverConstraints;
+  llvm::SetVector<ExpressionValue> constrainSolverConstraints, computeSolverConstraints;
 
   StructIntervals(mlir::ModuleOp m, component::StructDefOp s) : mod(m), structDef(s) {}
 };
@@ -442,14 +467,13 @@ public:
   virtual ~StructIntervalAnalysis() = default;
 
   mlir::LogicalResult runAnalysis(
-      mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
-      IntervalAnalysisContext &ctx
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &_, IntervalAnalysisContext &ctx
   ) override {
-    auto r = StructIntervals::compute(getModule(), getStruct(), solver, moduleAnalysisManager, ctx);
-    if (mlir::failed(r)) {
+    auto computeRes = StructIntervals::compute(getModule(), getStruct(), solver, ctx);
+    if (mlir::failed(computeRes)) {
       return mlir::failure();
     }
-    setResult(std::move(*r));
+    setResult(std::move(*computeRes));
     return mlir::success();
   }
 };
