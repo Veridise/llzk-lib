@@ -10,6 +10,7 @@
 #include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -18,6 +19,7 @@
 #include <mlir/IR/BuiltinOps.h>
 
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/ADT/SmallSet.h>
 #include <llvm/Support/GraphWriter.h>
 
 using namespace mlir;
@@ -89,9 +91,14 @@ SymbolUseGraph::SymbolUseGraph(SymbolOpInterface rootSymbolOp) {
 /// Get (add if not present) the graph node for the "user" symbol def op.
 SymbolUseGraphNode *SymbolUseGraph::getSymbolUserNode(const SymbolTable::SymbolUse &u) {
   SymbolOpInterface userSymbol = getSelfOrParentOfType<SymbolOpInterface>(u.getUser());
-  return getPathAndCall<SymbolUseGraphNode *>(userSymbol, [this](ModuleOp r, SymbolRefAttr p) {
-    return this->getOrAddNode(r, p, nullptr);
-  });
+  return getPathAndCall<SymbolUseGraphNode *>(
+      userSymbol,
+      [this, &userSymbol](ModuleOp r, SymbolRefAttr p) {
+    auto n = this->getOrAddNode(r, p, nullptr);
+    n->opsThatUseTheSymbol.insert(userSymbol);
+    return n;
+  }
+  );
 }
 
 void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
@@ -107,12 +114,12 @@ void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
       // Create child node for each Symbol use, as successor of the user Symbol op.
       for (SymbolTable::SymbolUse u : usesOpt.value()) {
         bool isStructParam = false;
+        Operation *user = u.getUser();
         SymbolRefAttr symRef = u.getSymbolRef();
         // Pending [LLZK-272] only a heuristic approach is possible. Check for FlatSymbolRefAttr
         // where the user is a FieldRefOpInterface or the user is located within a StructDefOp and
         // append the StructDefOp path with the FlatSymbolRefAttr.
         if (FlatSymbolRefAttr flatSymRef = llvm::dyn_cast<FlatSymbolRefAttr>(symRef)) {
-          Operation *user = u.getUser();
           if (auto fref = llvm::dyn_cast<component::FieldRefOpInterface>(user);
               fref && fref.getFieldNameAttr() == flatSymRef) {
             symRef = llzk::appendLeaf(fref.getStructType().getNameRef(), flatSymRef);
@@ -130,6 +137,7 @@ void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
         }
         auto node = this->getOrAddNode(opRootModule.value(), symRef, getSymbolUserNode(u));
         node->isStructConstParam = isStructParam;
+        node->opsThatUseTheSymbol.insert(user);
       }
     }
   };
@@ -204,13 +212,22 @@ inline void safeAppendPathRoot(llvm::raw_ostream &os, ModuleOp root) {
 
 } // namespace
 
-void SymbolUseGraphNode::print(llvm::raw_ostream &os) const {
+void SymbolUseGraphNode::print(llvm::raw_ostream &os, std::string locLinePrefix) const {
   os << '\'' << symbolPath << '\'';
   if (isStructConstParam) {
     os << " (struct param)";
   }
   os << " with root module ";
   safeAppendPathRoot(os, symbolPathRoot);
+  // Print the user op locations (sorted for stable output). Printing only the location rather than
+  // the full Operation gives a short (single-line) format that's still useful for human debugging.
+  llvm::SmallSet<mlir::Location, 3, LocationComparator> locations;
+  for (Operation *user : getUserOps()) {
+    locations.insert(user->getLoc());
+  }
+  for (Location loc : locations) {
+    os << locLinePrefix << loc << '\n';
+  }
 }
 
 void SymbolUseGraph::print(llvm::raw_ostream &os) const {
@@ -227,7 +244,7 @@ void SymbolUseGraph::print(llvm::raw_ostream &os) const {
     }
     // Print the current node
     os << "// - Node : [" << node << "] ";
-    node->print(os);
+    node->print(os, "// --- ");
     // Print list of IDs for the predecessors (excluding root) and successors
     os << "// --- Predecessors : [";
     llvm::interleaveComma(
