@@ -65,6 +65,9 @@ def ConstraintDependencyGraphPrinterPass
   let summary = "Print constraint dependency graph for all LLZK structs.";
   let constructor =
       "llzk::createConstraintDependencyGraphPrinterPass(llvm::errs())";
+  let options =
+    [Option<"runIntraprocedural", "intraprocedural", "bool", /* default */ "false",
+          "Whether to run the analysis intra-procedurally only (default is false).">];
 }
 
 def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
