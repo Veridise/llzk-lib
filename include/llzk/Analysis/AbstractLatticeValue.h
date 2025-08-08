@@ -52,7 +52,7 @@ template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeVa
   static ArrayTy constructArrayTy(const mlir::ArrayRef<int64_t> &shape) {
     size_t totalElem = 1;
     for (auto dim : shape) {
-      ensure(dim != mlir::ShapedType::kDynamic, "Cannot pre-allocate dynamically-sized array");
+      ensure(!mlir::ShapedType::isDynamic(dim), "Cannot pre-allocate dynamically-sized array");
       totalElem *= dim;
     }
     ArrayTy arr(totalElem);
@@ -64,7 +64,7 @@ template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeVa
 
   static bool isDynamicArray(const mlir::ArrayRef<int64_t> &shape) {
     for (auto dim : shape) {
-      if (dim == mlir::ShapedType::kDynamic) {
+      if (mlir::ShapedType::isDynamic(dim)) {
         return true;
       }
     }

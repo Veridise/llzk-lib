@@ -37,8 +37,12 @@ void ConstrainRefIndex::print(mlir::raw_ostream &os) const {
   } else if (isIndex()) {
     os << getIndex();
   } else {
-    auto r = getIndexRange();
-    os << std::get<0>(r) << ':' << std::get<1>(r);
+    auto [low, high] = getIndexRange();
+    if (mlir::ShapedType::isDynamic(high.getSExtValue())) {
+      os << "<dynamic>";
+    } else {
+      os << low << ':' << high;
+    }
   }
 }
 
@@ -339,7 +343,7 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
 bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
   // This way two felt constants can be equal even if the declared in separate ops.
   if (isConstantInt() && rhs.isConstantInt()) {
-    return getConstantValue() == rhs.getConstantValue();
+    return getType() == rhs.getType() && getConstantValue() == rhs.getConstantValue();
   }
   return (root == rhs.root) && (fieldRefs == rhs.fieldRefs) && (constantVal == rhs.constantVal);
 }
@@ -411,11 +415,8 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
 }
 
 size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
-  if (val.isConstantFelt()) {
-    return OpHash<FeltConstantOp> {}(std::get<FeltConstantOp>(*val.constantVal));
-  } else if (val.isConstantIndex()) {
-    return OpHash<mlir::arith::ConstantIndexOp> {
-    }(std::get<mlir::arith::ConstantIndexOp>(*val.constantVal));
+  if (val.isConstantInt()) {
+    return llvm::hash_value(val.getConstantValue());
   } else if (val.isTemplateConstant()) {
     return OpHash<ConstReadOp> {}(std::get<ConstReadOp>(*val.constantVal));
   } else {

@@ -272,9 +272,10 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
 /* ConstraintDependencyGraph */
 
 mlir::FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
-    mlir::ModuleOp m, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
+    mlir::ModuleOp m, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am,
+    bool runIntraprocedural
 ) {
-  ConstraintDependencyGraph cdg(m, s);
+  ConstraintDependencyGraph cdg(m, s, runIntraprocedural);
   if (cdg.computeConstraints(solver, am).failed()) {
     return mlir::failure();
   }
@@ -371,7 +372,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
    * the call. We just need to see what constraints are generated here, and
    * add them to the transitive closures.
    */
-  constrainFnOp.walk([this, &solver, &am](CallOp fnCall) mutable {
+  auto fnCallWalker = [this, &solver, &am](CallOp fnCall) mutable {
     auto res = resolveCallable<FuncDefOp>(tables, fnCall);
     ensure(mlir::succeeded(res), "could not resolve constrain call");
 
@@ -396,7 +397,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
         am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);
     if (!childAnalysis.constructed()) {
       ensure(
-          mlir::succeeded(childAnalysis.runAnalysis(solver, am)),
+          mlir::succeeded(childAnalysis.runAnalysis(solver, am, /* runIntraprocedural */ false)),
           "could not construct CDG for child struct"
       );
     }
@@ -418,7 +419,10 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     for (auto &[ref, constSet] : translatedCDG.constantSets) {
       constantSets[ref].insert(constSet.begin(), constSet.end());
     }
-  });
+  };
+  if (!runIntraprocedural) {
+    constrainFnOp.walk(fnCallWalker);
+  }
 
   return mlir::success();
 }
@@ -561,10 +565,12 @@ ConstrainRefSet ConstraintDependencyGraph::getConstrainingValues(const Constrain
 /* ConstraintDependencyGraphStructAnalysis */
 
 mlir::LogicalResult ConstraintDependencyGraphStructAnalysis::runAnalysis(
-    mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager
+    mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
+    bool runIntraprocedural
 ) {
-  auto result =
-      ConstraintDependencyGraph::compute(getModule(), getStruct(), solver, moduleAnalysisManager);
+  auto result = ConstraintDependencyGraph::compute(
+      getModule(), getStruct(), solver, moduleAnalysisManager, runIntraprocedural
+  );
   if (mlir::failed(result)) {
     return mlir::failure();
   }
