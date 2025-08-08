@@ -27,7 +27,7 @@ def RedundantOperationEliminationPass : LLZKPass<"llzk-duplicate-op-elim"> {
     Remove llzk and arith dialect operations that produce the same results
     as previously executed operations.
 
-    Pass should be run after llzk-duplicate-read-write-elim for maximum effect.
+    Pass should be run after `llzk-duplicate-read-write-elim` for maximum effect.
   }];
   let constructor = "llzk::createRedundantOperationEliminationPass()";
 }
@@ -40,8 +40,8 @@ def UnusedDeclarationEliminationPass
     unit. Note that this pass may cause linking issues with external modules that
     depend on any unused field and struct declarations from this compilation unit.
 
-    Pass should be run after llzk-duplicate-read-write-elim
-    and llzk-duplicate-op-elim for maximum effect.
+    Pass should be run after `llzk-duplicate-read-write-elim`
+    and `llzk-duplicate-op-elim` for maximum effect.
   }];
   let constructor = "llzk::createUnusedDeclarationEliminationPass()";
   let options = [Option<"removeStructs", "remove-structs", "bool",
@@ -67,6 +67,29 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
                         /* default */ "2",
                         "Maximum degree of constraint polynomials "
                         "(default 2, minimum 2)">,
+  ];
+}
+
+def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
+  let summary = "Inlines nested structs (i.e., subcomponents).";
+  let description = [{
+    This pass inlines nested structs (i.e., subcomponents) at struct-type fields and at calls to the
+    subcomponent compute/constrain functions. Inlining decisions are guided by the call graph of
+    "constrain" functions.
+    
+    The `max-complexity` parameter can be used to limit the complexity of the resulting structs such
+    that a potential inlining will not take place if doing so would push the sum of constraint and
+    multiplications in the combined struct over the limit. The default value `0` indicates no limits
+    which means all structs will be inlined into the Main struct.
+
+    This pass should be run after `llzk-flatten` to ensure structs do not have template parameters
+    (this restriction may be removed in the future).
+  }];
+  let constructor = "llzk::createInlineStructsPass()";
+  let options = [Option<"maxComplexity", "max-complexity", "int64_t",
+                        /* default */ "0",
+                        "Maximum allowed constraint+multiplications in merged "
+                        "@constrain functions">,
   ];
 }
 

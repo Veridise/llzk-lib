@@ -170,6 +170,10 @@ namespace llzk {
 
 bool isDynamic(mlir::IntegerAttr intAttr);
 
+/// Compute the cardinality (i.e. number of scalar constraints) for an EmitEqualityOp type since the
+/// op can be used to constrain two same-size arrays.
+int64_t computeEmitEqCardinality(mlir::Type type);
+
 /// Optional result from type unifications. Maps `SymbolRefAttr` appearing in one type to the
 /// associated `Attribute` from the other type at the same nested position. The `Side` enum in the
 /// key indicates which input expression the `SymbolRefAttr` is from. Additionally, if a conflict is

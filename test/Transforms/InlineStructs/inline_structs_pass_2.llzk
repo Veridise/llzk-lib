@@ -1,0 +1,55 @@
+// RUN: llzk-opt --pass-pipeline='builtin.module(llzk-flatten{cleanup=main-as-root},llzk-inline-structs)' -verify-diagnostics %s | FileCheck %s
+// COM: This could be merged with `inline_structs_pass.llzk` once the issue with the default cleanup method of `llzk-flatten` is fixed (LLZK-303).
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @ComponentY<[@A, @B]> {
+    function.def @compute() -> !struct.type<@ComponentY<[@A, @B]>> {
+      %self = struct.new : !struct.type<@ComponentY<[@A, @B]>>
+      function.return %self : !struct.type<@ComponentY<[@A, @B]>>
+    }
+    function.def @constrain(%self: !struct.type<@ComponentY<[@A, @B]>>) { function.return }
+  }
+
+  struct.def @ComponentX<[@C]> {
+    struct.field @f2 : !struct.type<@ComponentY<[5, @C]>>
+
+    function.def @compute() -> !struct.type<@ComponentX<[@C]>> {
+      %self = struct.new : !struct.type<@ComponentX<[@C]>>
+      %x = function.call @ComponentY::@compute() : () -> (!struct.type<@ComponentY<[5, @C]>>)
+      struct.writef %self[@f2] = %x : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
+      function.return %self : !struct.type<@ComponentX<[@C]>>
+    }
+
+    function.def @constrain(%self: !struct.type<@ComponentX<[@C]>>) {
+      %b = struct.readf %self[@f2] : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
+      function.call @ComponentY::@constrain(%b) : (!struct.type<@ComponentY<[5, @C]>>) -> ()
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.field @f3 : !struct.type<@ComponentX<[43]>>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %x = function.call @ComponentX::@compute() : () -> (!struct.type<@ComponentX<[43]>>)
+      struct.writef %self[@f3] = %x : !struct.type<@Main>, !struct.type<@ComponentX<[43]>>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %b = struct.readf %self[@f3] : !struct.type<@Main>, !struct.type<@ComponentX<[43]>>
+      function.call @ComponentX::@constrain(%b) : (!struct.type<@ComponentX<[43]>>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -156,9 +156,9 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
   ensureConstrainFnExists(caller.getName());
   ensureConstrainFnExists(callee.getName());
 
-  auto callerFn = constrainFnMap.at(caller.getName());
-  auto calleeFn = constrainFnMap.at(callee.getName());
-  auto calleeTy = callee.getType();
+  FuncDefOp callerFn = constrainFnMap.at(caller.getName());
+  FuncDefOp calleeFn = constrainFnMap.at(callee.getName());
+  StructType calleeTy = callee.getType();
 
   size_t numOps = 0;
   for (auto it = caller.getBody().begin(); it != caller.getBody().end(); it++, numOps++)
@@ -176,9 +176,7 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
     OpBuilder builder(callerFn.getBody());
 
     auto field = builder.create<FieldReadOp>(
-        callLoc, calleeTy,
-        callerFn.getBody().getArgument(0), // first arg is self
-        fieldName
+        callLoc, calleeTy, callerFn.getSelfValueFromConstrain(), fieldName
     );
     builder.create<CallOp>(
         callLoc, TypeRange {}, calleeFn.getFullyQualifiedName(), ValueRange {field}

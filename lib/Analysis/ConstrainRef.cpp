@@ -228,8 +228,8 @@ ConstrainRef::getAllConstrainRefs(StructDefOp structDef, FieldDefOp fieldDef) {
       "could not lookup module from struct " + mlir::Twine(structDef.getName())
   );
 
-  // Get the self argument
-  BlockArgument self = constrainFnOp.getBody().getArgument(0);
+  // Get the self argument (like `FuncDefOp::getSelfValueFromConstrain()`)
+  BlockArgument self = constrainFnOp.getArguments().front();
 
   mlir::SymbolTableCollection tables;
   return getAllConstrainRefs(tables, modOp.value(), self, {ConstrainRefIndex(fieldDef)});
