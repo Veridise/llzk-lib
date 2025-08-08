@@ -337,6 +337,10 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
 }
 
 bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
+  // This way two felt constants can be equal even if the declared in separate ops.
+  if (isConstantInt() && rhs.isConstantInt()) {
+    return getConstantValue() == rhs.getConstantValue();
+  }
   return (root == rhs.root) && (fieldRefs == rhs.fieldRefs) && (constantVal == rhs.constantVal);
 }
 

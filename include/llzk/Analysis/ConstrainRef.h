@@ -177,6 +177,7 @@ public:
            std::holds_alternative<polymorphic::ConstReadOp>(*constantVal);
   }
   bool isConstant() const { return constantVal.has_value(); }
+  bool isConstantInt() const { return isConstantFelt() || isConstantIndex(); }
 
   bool isFeltVal() const { return mlir::isa<felt::FeltType>(getType()); }
   bool isIndexVal() const { return mlir::isa<mlir::IndexType>(getType()); }
