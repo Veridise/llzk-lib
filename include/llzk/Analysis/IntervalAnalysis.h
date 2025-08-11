@@ -252,10 +252,11 @@ class IntervalDataFlowAnalysis
 
 public:
   explicit IntervalDataFlowAnalysis(
-      mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f
+      mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f,
+      bool propInputConstraints
   )
       : Base::DenseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
-        smtSolver(smt), field(f) {}
+        smtSolver(smt), field(f), propagateInputConstraints(propInputConstraints) {}
 
   void visitCallControlFlowTransfer(
       mlir::CallOpInterface call, dataflow::CallControlFlowAction action, const Lattice &before,
@@ -275,6 +276,7 @@ private:
   llvm::SMTSolverRef smtSolver;
   SymbolMap refSymbols;
   std::reference_wrapper<const Field> field;
+  bool propagateInputConstraints;
   mlir::SymbolTableCollection tables;
 
   void setToEntryState(Lattice *lattice) override {
@@ -393,9 +395,11 @@ struct IntervalAnalysisContext {
   IntervalDataFlowAnalysis *intervalDFA;
   llvm::SMTSolverRef smtSolver;
   std::reference_wrapper<const Field> field;
+  bool propagateInputConstraints;
 
   llvm::SMTExprRef getSymbol(const ConstrainRef &r) { return intervalDFA->getOrCreateSymbol(r); }
   const Field &getField() const { return field.get(); }
+  bool doInputConstraintPropagation() const { return propagateInputConstraints; }
 };
 
 class StructIntervals {
@@ -489,14 +493,16 @@ public:
   virtual ~ModuleIntervalAnalysis() = default;
 
   void setField(const Field &f) { field = f; }
+  void setPropagateInputConstraints(bool prop) { propagateInputConstraints = prop; }
 
 protected:
   void initializeSolver() override {
     ensure(field.has_value(), "field not set, could not generate analysis context");
     (void)solver.load<ConstrainRefAnalysis>();
     auto smtSolverRef = smtSolver;
-    intervalDFA = solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &>(
-        std::move(smtSolverRef), field.value()
+    bool prop = propagateInputConstraints;
+    intervalDFA = solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &, bool>(
+        std::move(smtSolverRef), field.value(), std::move(prop)
     );
   }
 
@@ -506,6 +512,7 @@ protected:
         .intervalDFA = intervalDFA,
         .smtSolver = smtSolver,
         .field = field.value(),
+        .propagateInputConstraints = propagateInputConstraints,
     };
   }
 
@@ -513,6 +520,7 @@ private:
   llvm::SMTSolverRef smtSolver;
   IntervalDataFlowAnalysis *intervalDFA;
   std::optional<std::reference_wrapper<const Field>> field;
+  bool propagateInputConstraints;
 };
 
 } // namespace llzk

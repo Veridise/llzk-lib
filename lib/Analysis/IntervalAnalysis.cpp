@@ -660,28 +660,31 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
     }
   } else if (auto blockArg = mlir::dyn_cast<BlockArgument>(val)) {
     Operation *owningOp = blockArg.getOwner()->getParentOp();
-    // Apply the interval from the constrain function inputs to the compute function inputs
-    if (auto fnOp = dyn_cast<FuncDefOp>(owningOp); fnOp && fnOp.isStructConstrain() &&
-                                                   blockArg.getArgNumber() > 0 &&
-                                                   !newInterval.isEntire()) {
-      auto structOp = fnOp->getParentOfType<StructDefOp>();
-      FuncDefOp computeFn = structOp.getComputeFuncOp();
-      Operation *computeEntry = &computeFn.getRegion().front().front();
-      BlockArgument computeArg = computeFn.getArgument(blockArg.getArgNumber() - 1);
-      Lattice *computeEntryLattice = getOrCreate<Lattice>(computeEntry);
-      auto entryLatticeVal = computeEntryLattice->getValue(computeArg);
-      ExpressionValue newArgVal;
-      if (succeeded(entryLatticeVal)) {
-        newArgVal = entryLatticeVal->getScalarValue().withInterval(newInterval);
-      } else {
-        // We store the interval with an empty expression so that when the operation
-        // is visited, the expressions can be properly generated with an existing
-        // interval.
-        newArgVal = ExpressionValue(nullptr, newInterval);
+    if (propagateInputConstraints) {
+      // Apply the interval from the constrain function inputs to the compute function inputs
+      auto fnOp = dyn_cast<FuncDefOp>(owningOp);
+      if (fnOp && fnOp.isStructConstrain() && blockArg.getArgNumber() > 0 &&
+          !newInterval.isEntire()) {
+        auto structOp = fnOp->getParentOfType<StructDefOp>();
+        FuncDefOp computeFn = structOp.getComputeFuncOp();
+        Operation *computeEntry = &computeFn.getRegion().front().front();
+        BlockArgument computeArg = computeFn.getArgument(blockArg.getArgNumber() - 1);
+        Lattice *computeEntryLattice = getOrCreate<Lattice>(computeEntry);
+        auto entryLatticeVal = computeEntryLattice->getValue(computeArg);
+        ExpressionValue newArgVal;
+        if (succeeded(entryLatticeVal)) {
+          newArgVal = entryLatticeVal->getScalarValue().withInterval(newInterval);
+        } else {
+          // We store the interval with an empty expression so that when the operation
+          // is visited, the expressions can be properly generated with an existing
+          // interval.
+          newArgVal = ExpressionValue(nullptr, newInterval);
+        }
+        ChangeResult computeRes = computeEntryLattice->setValue(computeArg, newArgVal);
+        propagateIfChanged(computeEntryLattice, computeRes);
       }
-      ChangeResult computeRes = computeEntryLattice->setValue(computeArg, newArgVal);
-      propagateIfChanged(computeEntryLattice, computeRes);
     }
+
     valLattice = getOrCreate<Lattice>(blockArg.getOwner());
   } else {
     valLattice = getOrCreate<Lattice>(val);

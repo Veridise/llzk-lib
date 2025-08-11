@@ -49,6 +49,7 @@ protected:
 
     auto &mia = getAnalysis<ModuleIntervalAnalysis>();
     mia.setField(Field::getField(fieldName.c_str()));
+    mia.setPropagateInputConstraints(propagateInputConstraints);
     auto am = getAnalysisManager();
     mia.runAnalysis(am);
 
