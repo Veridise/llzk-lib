@@ -68,6 +68,22 @@ TEST_F(IntervalTests, UnreducedIntervalWidth) {
   AssertSafeEq(f.zero(), c.width());
 }
 
+TEST_F(IntervalTests, IntervalWidth) {
+  // Standard width.
+  Interval a = UnreducedInterval(0, 100).reduce(f);
+  AssertSafeEq(f.felt(101), a.width());
+  // Standard width for a single element range.
+  Interval b = UnreducedInterval(4, 4).reduce(f);
+  AssertSafeEq(f.one(), b.width());
+  // Range of this will be 0 since a > b.
+  Interval c = UnreducedInterval(4, 3).reduce(f);
+  AssertSafeEq(f.zero(), c.width());
+
+  AssertSafeEq(Interval::Entire(f).width(), f.prime());
+  AssertSafeEq(Interval::Empty(f).width(), f.zero());
+  AssertSafeEq(Interval::Degenerate(f, f.felt(7)).width(), f.one());
+}
+
 TEST_F(IntervalTests, Partitions) {
   UnreducedInterval a(0, 100), b(100, 200), c(101, 300), d(1, 0), s1(1, 10), s2(3, 7);
 
