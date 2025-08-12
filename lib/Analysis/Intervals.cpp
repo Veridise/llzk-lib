@@ -469,6 +469,12 @@ Interval boolXor(const Interval &lhs, const Interval &rhs) {
   ensure(lhs.isBoolean() && rhs.isBoolean(), "operation only supported for boolean-type intervals");
   const auto &field = rhs.getField();
 
+  // Xor-ing anything with [0, 1] could still result in either case, so just return
+  // the full boolean range.
+  if (lhs.isBoolEither() || rhs.isBoolEither()) {
+    return Interval::Boolean(lhs.getField());
+  }
+
   if (lhs.isBoolTrue() && rhs.isBoolTrue()) {
     return Interval::False(field);
   }

@@ -93,6 +93,9 @@ public:
   // mlir::Operation* is used for write-like operations that reference values as their destinations
   using ValueTy = llvm::PointerUnion<mlir::Value, mlir::Operation *>;
   using ValueMap = mlir::DenseMap<ValueTy, ConstrainRefLatticeValue>;
+  // Used to lookup MLIR values/operations from a given ConstrainRef (all values that a ref is referenced by)
+  using ValueSet = mlir::DenseSet<ValueTy>;
+  using Ref2Val = mlir::DenseMap<ConstrainRef, mlir::DenseSet<ValueTy>>;
   using AbstractDenseLattice::AbstractDenseLattice;
 
   /* Static utilities */
@@ -126,21 +129,21 @@ public:
 
   mlir::ChangeResult setValues(const ValueMap &rhs);
 
-  mlir::ChangeResult setValue(ValueTy v, const ConstrainRefLatticeValue &rhs) {
-    return valMap[v].setValue(rhs);
-  }
+  mlir::ChangeResult setValue(ValueTy v, const ConstrainRefLatticeValue &rhs);
 
-  mlir::ChangeResult setValue(ValueTy v, const ConstrainRef &ref) {
-    return valMap[v].setValue(ConstrainRefLatticeValue(ref));
-  }
+  mlir::ChangeResult setValue(ValueTy v, const ConstrainRef &ref);
 
   ConstrainRefLatticeValue getOrDefault(ValueTy v) const;
 
   ConstrainRefLatticeValue getReturnValue(unsigned i) const;
 
+  ValueSet lookupValues(const ConstrainRef &r) const;
+
   size_t size() const { return valMap.size(); }
 
   const ValueMap &getMap() const { return valMap; }
+
+  const Ref2Val &getRef2Val() const { return refMap; }
 
   ValueMap::iterator begin() { return valMap.begin(); }
   ValueMap::iterator end() { return valMap.end(); }
@@ -151,6 +154,13 @@ public:
 
 private:
   ValueMap valMap;
+  Ref2Val refMap;
 };
 
 } // namespace llzk
+
+namespace llvm {
+class raw_ostream;
+
+raw_ostream &operator<<(raw_ostream &os, llvm::PointerUnion<mlir::Value, mlir::Operation *> ptr);
+}

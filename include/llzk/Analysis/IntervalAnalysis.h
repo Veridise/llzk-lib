@@ -222,6 +222,7 @@ public:
   const ConstraintSet &getConstraints() const { return constraints; }
 
   mlir::FailureOr<Interval> findInterval(llvm::SMTExprRef expr) const;
+  mlir::ChangeResult setInterval(llvm::SMTExprRef expr, Interval i);
 
   size_t size() const { return valMap.size(); }
 
@@ -252,8 +253,7 @@ class IntervalDataFlowAnalysis
 
 public:
   explicit IntervalDataFlowAnalysis(
-      mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f,
-      bool propInputConstraints
+      mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f, bool propInputConstraints
   )
       : Base::DenseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
         smtSolver(smt), field(f), propagateInputConstraints(propInputConstraints) {}

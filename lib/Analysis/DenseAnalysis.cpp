@@ -244,11 +244,15 @@ void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
 void AbstractDenseForwardDataFlowAnalysis::visitRegionBranchOperation(
     ProgramPoint point, RegionBranchOpInterface branch, AbstractDenseLattice *after
 ) {
-  // Get the terminator predecessors.
-  const auto *predecessors = getOrCreateFor<PredecessorState>(point, point);
-  assert(predecessors->allPredecessorsKnown() && "unexpected unresolved region successors");
-
-  for (Operation *op : predecessors->getKnownPredecessors()) {
+  // LLZK: Removing use of PredecessorState analysis, which does not work for LLZK's
+  // lookup logic.
+  Operation *op = nullptr;
+  if (point.is<Block*>()) {
+    op = point.get<Block*>()->getParentOp();
+  } else if (point.is<Operation*>()) {
+    op = point.get<Operation*>();
+  }
+  if (op) {
     const AbstractDenseLattice *before;
     // If the predecessor is the parent, get the state before the parent.
     if (op == branch) {

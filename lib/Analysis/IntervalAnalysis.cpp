@@ -98,14 +98,25 @@ mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue
 ExpressionValue
 cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
-  res.i = Interval::Boolean(lhs.getField());
+  const Field &f = lhs.getField();
+  // Default result is any boolean output for when we are unsure about the comparison result.
+  res.i = Interval::Boolean(f);
   switch (op.getPredicate()) {
   case FeltCmpPredicate::EQ:
     res.expr = solver->mkEqual(lhs.expr, rhs.expr);
-    res.i = lhs.i.intersect(rhs.i);
+    if (lhs.i.isDegenerate() && rhs.i.isDegenerate() && lhs.i == rhs.i) {
+      res.i = Interval::True(f);
+    } else if (lhs.i.intersect(rhs.i).isEmpty()) {
+      res.i = Interval::False(f);
+    }
     break;
   case FeltCmpPredicate::NE:
     res.expr = solver->mkNot(solver->mkEqual(lhs.expr, rhs.expr));
+    if (lhs.i.isDegenerate() && rhs.i.isDegenerate() && lhs.i == rhs.i) {
+      res.i = Interval::False(f);
+    } else if (lhs.i.intersect(rhs.i).isEmpty()) {
+      res.i = Interval::True(f);
+    }
     break;
   case FeltCmpPredicate::LT:
     res.expr = solver->mkBVUlt(lhs.expr, rhs.expr);
@@ -340,6 +351,15 @@ FailureOr<Interval> IntervalAnalysisLattice::findInterval(llvm::SMTExprRef expr)
   return failure();
 }
 
+ChangeResult IntervalAnalysisLattice::setInterval(llvm::SMTExprRef expr, Interval i) {
+  auto it = intervals.find(expr);
+  if (it != intervals.end() && it->second == i) {
+    return ChangeResult::NoChange;
+  }
+  intervals[expr] = i;
+  return ChangeResult::Change;
+}
+
 /* IntervalDataFlowAnalysis */
 
 /// @brief The interval analysis is intraprocedural only for now, so this control
@@ -514,9 +534,25 @@ void IntervalDataFlowAnalysis::visitOperation(
     }
   } else if (auto writef = mlir::dyn_cast<FieldWriteOp>(op)) {
     // Update values stored in a field
+    // llvm::errs() << "update " << writef << ": " << operandVals[1].getScalarValue() << "\n";
+    // llvm::errs().indent(4) << operandVals[0] << '\n';
+    // llvm::errs().indent(4) << constrainRefLattice->getOrDefault(writef.getComponent()) << '\n';
+    ExpressionValue writeVal = operandVals[1].getScalarValue();
     changed |= after->setValue(
-        writef.getComponent(), writef.getFieldNameAttr().getAttr(), operandVals[1].getScalarValue()
+        writef.getComponent(), writef.getFieldNameAttr().getAttr(), writeVal
     );
+    // We also need to update the interval on the assigned symbol
+    ConstrainRefLatticeValue refSet = constrainRefLattice->getOrDefault(writef.getComponent());
+    if (refSet.isSingleValue()) {
+      auto fieldDefRes = writef.getFieldDefOp(tables);
+      if (succeeded(fieldDefRes)) {
+        ConstrainRefIndex idx(fieldDefRes.value());
+        ConstrainRef fieldRef = refSet.getSingleValue().createChild(idx);
+        // llvm::errs().indent(8) << fieldRef << '\n';
+        llvm::SMTExprRef expr = getOrCreateSymbol(fieldRef);
+        changed |= after->setInterval(expr, writeVal.getInterval());
+      }
+    }
   } else if (isa<IntToFeltOp, FeltToIndexOp>(op)) {
     // Casts don't modify the intervals
     changed |= after->setValue(op->getResult(0), operandVals[0].getScalarValue());
@@ -971,6 +1007,7 @@ StructIntervals::computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysis
       if (auto parentOr = ref.getParentPrefix(); succeeded(parentOr) && parentOr->isSignal()) {
         continue;
       }
+
       auto symbol = ctx.getSymbol(ref);
       auto intervalRes = lattice->findInterval(symbol);
       if (succeeded(intervalRes)) {

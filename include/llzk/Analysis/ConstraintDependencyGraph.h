@@ -141,6 +141,8 @@ public:
   /// @return The set of references that are connected to ref via constraints.
   ConstrainRefSet getConstrainingValues(const ConstrainRef &ref) const;
 
+  const ConstrainRefLattice::Ref2Val &getRef2Val() const { return ref2Val; }
+
   /*
   Rule of three, needed for the mlir::SymbolTableCollection, which has no copy constructor.
   Since the mlir::SymbolTableCollection is a caching mechanism, we simply allow default, empty
@@ -149,13 +151,15 @@ public:
 
   ConstraintDependencyGraph(const ConstraintDependencyGraph &other)
       : mod(other.mod), structDef(other.structDef), runIntraprocedural(other.runIntraprocedural),
-        signalSets(other.signalSets), constantSets(other.constantSets), tables() {}
+        signalSets(other.signalSets), constantSets(other.constantSets), ref2Val(other.ref2Val), tables() {}
+
   ConstraintDependencyGraph &operator=(const ConstraintDependencyGraph &other) {
     mod = other.mod;
     structDef = other.structDef;
     runIntraprocedural = other.runIntraprocedural;
     signalSets = other.signalSets;
     constantSets = other.constantSets;
+    ref2Val = other.ref2Val;
     return *this;
   }
   virtual ~ConstraintDependencyGraph() = default;
@@ -172,6 +176,9 @@ private:
   // A simple set mapping of constants, as we do not want to compute a transitive closure over
   // constants.
   std::unordered_map<ConstrainRef, ConstrainRefSet, ConstrainRef::Hash> constantSets;
+
+  // Maps references to the values where they are found.
+  ConstrainRefLattice::Ref2Val ref2Val;
 
   // Also mutable for caching within otherwise const lookup operations.
   mutable mlir::SymbolTableCollection tables;

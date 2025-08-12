@@ -79,11 +79,11 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
   else if (action == dataflow::CallControlFlowAction::ExitCallee) {
     // Get the argument values of the lattice by getting the state as it would
     // have been for the callsite.
-    dataflow::AbstractDenseLattice *beforeCall = nullptr;
+    const ConstrainRefLattice *beforeCall = nullptr;
     if (auto *prev = call->getPrevNode()) {
-      beforeCall = getLattice(prev);
+      beforeCall = static_cast<const ConstrainRefLattice*>(getLattice(prev));
     } else {
-      beforeCall = getLattice(call->getBlock());
+      beforeCall = static_cast<const ConstrainRefLattice*>(getLattice(call->getBlock()));
     }
     ensure(beforeCall, "could not get prior lattice");
 
@@ -98,17 +98,23 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
 
     for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
       auto key = ConstrainRef(funcOp.getArgument(i));
-      auto val = before.getOrDefault(callOp.getOperand(i));
+      auto val = beforeCall->getOrDefault(callOp.getOperand(i));
       translation[key] = val;
     }
 
-    // The lattice at the return is the lattice before the call + translated
-    // return values.
+    // The lattice at the return is:
+    // - the lattice before the call, plus
+    // - the translated, return values, plus
+    // - any translated internal values (so we can see where values are used)
     mlir::ChangeResult updated = after->join(*beforeCall);
     for (unsigned i = 0; i < callOp.getNumResults(); i++) {
       auto retVal = before.getReturnValue(i);
       auto [translatedVal, _] = retVal.translate(translation);
       updated |= after->setValue(callOp->getResult(i), translatedVal);
+    }
+    for (const auto &[val, refVal] : before.getMap()) {
+      auto [translatedVal, _] = refVal.translate(translation);
+      updated |= after->setValue(val, translatedVal);
     }
     propagateIfChanged(after, updated);
   }
@@ -138,9 +144,10 @@ void ConstrainRefAnalysis::visitOperation(
 
   // Propagate existing state.
   join(after, before);
+
   // Add operand values, if not already added. Ensures that the default value
   // of a ConstrainRef (the source of the ref) is visible in the lattice.
-  propagateIfChanged(after, after->setValues(operandVals));
+  ChangeResult res = after->setValues(operandVals);
 
   // We will now join the the operand refs based on the type of operand.
   if (auto fieldRefOp = mlir::dyn_cast<FieldRefOpInterface>(op)) {
@@ -148,17 +155,17 @@ void ConstrainRefAnalysis::visitOperation(
     auto fieldOpRes = fieldRefOp.getFieldDefOp(tables);
     ensure(mlir::succeeded(fieldOpRes), "could not find field read");
 
-    ConstrainRefLattice::ValueTy res;
+    ConstrainRefLattice::ValueTy fieldRefRes;
     if (fieldRefOp.isRead()) {
-      res = fieldRefOp.getVal();
+      fieldRefRes = fieldRefOp.getVal();
     } else {
-      res = fieldRefOp;
+      fieldRefRes = fieldRefOp;
     }
 
     const auto &ops = operandVals.at(fieldRefOp.getComponent());
     auto [fieldVals, _] = ops.referenceField(fieldOpRes.value());
 
-    propagateIfChanged(after, after->setValue(res, fieldVals));
+    res |= after->setValue(fieldRefRes, fieldVals);
   } else if (auto arrayAccessOp = mlir::dyn_cast<ArrayAccessOpInterface>(op)) {
     // Covers read/write/extract/insert array ops
     arraySubdivisionOpUpdate(arrayAccessOp, operandVals, before, after);
@@ -178,19 +185,21 @@ void ConstrainRefAnalysis::visitOperation(
       }
     }
 
-    auto res = createArray.getResult();
+    auto createArrayRes = createArray.getResult();
 
-    propagateIfChanged(after, after->setValue(res, newArrayVal));
+    res |= after->setValue(createArrayRes, newArrayVal);
   } else if (auto structNewOp = mlir::dyn_cast<CreateStructOp>(op)) {
-    auto res = structNewOp.getResult();
-    auto newStructValue = before.getOrDefault(res);
-    propagateIfChanged(after, after->setValue(res, newStructValue));
+    auto newOpRes = structNewOp.getResult();
+    auto newStructValue = before.getOrDefault(newOpRes);
+    res |= after->setValue(newOpRes, newStructValue);
   } else {
     // Standard union of operands into the results value.
     // TODO: Could perform constant computation/propagation here for, e.g., arithmetic
     // over constants, but such analysis may be better suited for a dedicated pass.
-    propagateIfChanged(after, fallbackOpUpdate(op, operandVals, before, after));
+    res |= fallbackOpUpdate(op, operandVals, before, after);
   }
+
+  propagateIfChanged(after, res);
 }
 
 // Perform a standard union of operands into the results value.
@@ -343,7 +352,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
 ) {
   // Fetch the constrain function. This is a required feature for all LLZK structs.
-  auto constrainFnOp = structDef.getConstrainFuncOp();
+  FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
   ensure(
       constrainFnOp,
       "malformed struct " + mlir::Twine(structDef.getName()) + " must define a constrain function"
@@ -357,12 +366,18 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
 
   // - Union all constraints from the analysis
   // This requires iterating over all of the emit operations
-  constrainFnOp.walk([this, &solver](EmitEqualityOp emitOp) {
-    this->walkConstrainOp(solver, emitOp);
-  });
-
-  constrainFnOp.walk([this, &solver](EmitContainmentOp emitOp) {
-    this->walkConstrainOp(solver, emitOp);
+  constrainFnOp.walk([this, &solver](Operation *op) {
+    const auto *refLattice = solver.lookupState<ConstrainRefLattice>(op);
+    // aggregate the ref2Val map across operations, as some may have nested
+    // regions and blocks that aren't propagated to the function terminator
+    if (refLattice) {
+      for (auto &[ref, vals] : refLattice->getRef2Val()) {
+        ref2Val[ref].insert(vals.begin(), vals.end());
+      }
+    }
+    if (isa<EmitEqualityOp, EmitContainmentOp>(op)) {
+      this->walkConstrainOp(solver, op);
+    }
   });
 
   /**
@@ -431,11 +446,12 @@ void ConstraintDependencyGraph::walkConstrainOp(
     mlir::DataFlowSolver &solver, mlir::Operation *emitOp
 ) {
   std::vector<ConstrainRef> signalUsages, constUsages;
-  auto lattice = solver.lookupState<ConstrainRefLattice>(emitOp);
-  ensure(lattice, "failed to get lattice for emit operation");
+
+  const ConstrainRefLattice *refLattice = solver.lookupState<ConstrainRefLattice>(emitOp);
+  ensure(refLattice, "missing lattice for constrain op");
 
   for (auto operand : emitOp->getOperands()) {
-    auto latticeVal = lattice->getOrDefault(operand);
+    auto latticeVal = refLattice->getOrDefault(operand);
     for (auto &ref : latticeVal.foldToScalar()) {
       if (ref.isConstant()) {
         constUsages.push_back(ref);
@@ -538,6 +554,17 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemap
       res.constantSets[ref].insert(translatedConsts.begin(), translatedConsts.end());
     }
   }
+
+  // Translate ref2Val as well
+  for (auto &[ref, vals] : ref2Val) {
+    auto translationRes = translate(ref);
+    if (succeeded(translationRes)) {
+      for (const auto &translatedRef : *translationRes) {
+        res.ref2Val[translatedRef].insert(vals.begin(), vals.end());
+      }
+    }
+  }
+
   return res;
 }
 

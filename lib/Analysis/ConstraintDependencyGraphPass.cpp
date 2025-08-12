@@ -19,6 +19,8 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/ErrorHandling.h>
 
+using namespace mlir;
+
 namespace llzk {
 
 using namespace component;

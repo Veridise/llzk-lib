@@ -141,10 +141,19 @@ mlir::ChangeResult ConstrainRefLatticeValue::translateScalar(const TranslationMa
   auto currVal = getScalarValue();
   // reset this value
   getValue() = ScalarTy();
-  for (auto &[ref, val] : translation) {
-    auto it = currVal.find(ref);
-    if (it != currVal.end()) {
-      res |= update(val);
+  // For each current element, see if the translation map contains a valid prefix.
+  // If so, translate the current element with all replacement prefixes indicated
+  // by the translation value.
+  for (const ConstrainRef &currRef : currVal) {
+    for (auto &[prefix, replacementVal] : translation) {
+      if (currRef.isValidPrefix(prefix)) {
+        for (const ConstrainRef &replacementPrefix : replacementVal.foldToScalar()) {
+          auto translatedRefRes = currRef.translate(prefix, replacementPrefix);
+          if (succeeded(translatedRefRes)) {
+            res |= insert(*translatedRefRes);
+          }
+        }
+      }
     }
   }
   return res;
@@ -231,6 +240,18 @@ mlir::ChangeResult ConstrainRefLattice::setValues(const ValueMap &rhs) {
   return res;
 }
 
+mlir::ChangeResult ConstrainRefLattice::setValue(ValueTy v, const ConstrainRefLatticeValue &rhs) {
+    for (const ConstrainRef &ref : rhs.foldToScalar()) {
+      refMap[ref].insert(v);
+    }
+    return valMap[v].setValue(rhs);
+  }
+
+  mlir::ChangeResult ConstrainRefLattice::setValue(ValueTy v, const ConstrainRef &ref) {
+    refMap[ref].insert(v);
+    return valMap[v].setValue(ConstrainRefLatticeValue(ref));
+  }
+
 ConstrainRefLatticeValue ConstrainRefLattice::getOrDefault(ConstrainRefLattice::ValueTy v) const {
   auto it = valMap.find(v);
   if (it != valMap.end()) {
@@ -257,9 +278,33 @@ ConstrainRefLatticeValue ConstrainRefLattice::getReturnValue(unsigned i) const {
   return ConstrainRefLatticeValue();
 }
 
+ConstrainRefLattice::ValueSet ConstrainRefLattice::lookupValues(const ConstrainRef &ref) const {
+  if (auto it = refMap.find(ref); it != refMap.end()) {
+    return it->second;
+  }
+  return ConstrainRefLattice::ValueSet();
+}
+
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const ConstrainRefLattice &lattice) {
   lattice.print(os);
   return os;
 }
 
 } // namespace llzk
+
+namespace llvm {
+
+raw_ostream &operator<<(raw_ostream &os, llvm::PointerUnion<mlir::Value, mlir::Operation *> ptr) {
+  if (ptr.is<Value>()) {
+    os << ptr.get<Value>();
+  } else {
+    Operation *op = ptr.get<Operation*>();
+    if (op) {
+      os << *op;
+    } else {
+      os << "<null operation>";
+    }
+  }
+  return os;
+}
+}
