@@ -659,10 +659,10 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(Operation *op, const LatticeVal
 
   auto res = TypeSwitch<Operation *, ExpressionValue>(op)
                  .Case<NegFeltOp>([&](auto _) { return neg(smtSolver, val); })
-                 .Case<NotFeltOp>([&](auto _) {
-    return notOp(smtSolver, val);
-  }).Case<NotBoolOp>([&](auto _) { return boolNot(smtSolver, val); })
-  .Default([&](auto *unsupported) {
+                 .Case<NotFeltOp>([&](auto _) { return notOp(smtSolver, val); })
+                 .Case<NotBoolOp>([&](auto _) {
+    return boolNot(smtSolver, val);
+  }).Default([&](auto *unsupported) {
     unsupported->emitWarning(
         "unsupported unary arithmetic operation, defaulting to over-approximated interval"
     );
