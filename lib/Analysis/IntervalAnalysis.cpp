@@ -96,6 +96,30 @@ mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue
 }
 
 ExpressionValue
+bitAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = lhs.i & rhs.i;
+  res.expr = solver->mkBVAnd(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
+shiftLeft(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = lhs.i << rhs.i;
+  res.expr = solver->mkBVShl(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
+shiftRight(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  ExpressionValue res;
+  res.i = lhs.i >> rhs.i;
+  res.expr = solver->mkBVLshr(lhs.expr, rhs.expr);
+  return res;
+}
+
+ExpressionValue
 cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   const Field &f = lhs.getField();
@@ -167,12 +191,9 @@ ExpressionValue fallbackBinaryOp(
   ExpressionValue res;
   res.i = Interval::Entire(lhs.getField());
   res.expr = TypeSwitch<Operation *, llvm::SMTExprRef>(op)
-                 .Case<AndFeltOp>([&](auto _) { return solver->mkBVAnd(lhs.expr, rhs.expr); })
                  .Case<OrFeltOp>([&](auto _) { return solver->mkBVOr(lhs.expr, rhs.expr); })
-                 .Case<XorFeltOp>([&](auto _) { return solver->mkBVXor(lhs.expr, rhs.expr); })
-                 .Case<ShlFeltOp>([&](auto _) { return solver->mkBVShl(lhs.expr, rhs.expr); })
-                 .Case<ShrFeltOp>([&](auto _) {
-    return solver->mkBVLshr(lhs.expr, rhs.expr);
+                 .Case<XorFeltOp>([&](auto _) {
+    return solver->mkBVXor(lhs.expr, rhs.expr);
   }).Default([&](auto *unsupported) {
     llvm::report_fatal_error(
         "no fallback provided for " + mlir::Twine(unsupported->getName().getStringRef())
@@ -634,6 +655,9 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
                  .Case<MulFeltOp>([&](auto _) { return mul(smtSolver, lhs, rhs); })
                  .Case<DivFeltOp>([&](auto divOp) { return div(smtSolver, divOp, lhs, rhs); })
                  .Case<ModFeltOp>([&](auto _) { return mod(smtSolver, lhs, rhs); })
+                 .Case<AndFeltOp>([&](auto _) { return bitAnd(smtSolver, lhs, rhs); })
+                 .Case<ShlFeltOp>([&](auto _) { return shiftLeft(smtSolver, lhs, rhs); })
+                 .Case<ShrFeltOp>([&](auto _) { return shiftRight(smtSolver, lhs, rhs); })
                  .Case<CmpOp>([&](auto cmpOp) { return cmp(smtSolver, cmpOp, lhs, rhs); })
                  .Case<AndBoolOp>([&](auto _) { return boolAnd(smtSolver, lhs, rhs); })
                  .Case<OrBoolOp>([&](auto _) { return boolOr(smtSolver, lhs, rhs); })

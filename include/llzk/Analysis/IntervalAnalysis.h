@@ -114,6 +114,15 @@ public:
   mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
+  bitAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue
+  shiftLeft(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue
+  shiftRight(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue
   cmp(llvm::SMTSolverRef solver, boolean::CmpOp op, const ExpressionValue &lhs,
       const ExpressionValue &rhs);
 

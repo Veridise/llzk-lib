@@ -303,6 +303,9 @@ public:
   friend Interval operator%(const Interval &lhs, const Interval &rhs);
   /// @brief Returns failure if a division-by-zero is encountered.
   friend mlir::FailureOr<Interval> operator/(const Interval &lhs, const Interval &rhs);
+  friend Interval operator&(const Interval &lhs, const Interval &rhs);
+  friend Interval operator<<(const Interval &lhs, const Interval &rhs);
+  friend Interval operator>>(const Interval &lhs, const Interval &rhs);
 
   /* boolean ops */
   friend Interval boolAnd(const Interval &lhs, const Interval &rhs);
