@@ -200,7 +200,7 @@ ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val) {
 ExpressionValue boolNot(llvm::SMTSolverRef solver, const ExpressionValue &val) {
   ExpressionValue res;
   res.i = boolNot(val.i);
-  res.expr = solver->mkBVNot(val.expr);
+  res.expr = solver->mkNot(val.expr);
   return res;
 }
 
