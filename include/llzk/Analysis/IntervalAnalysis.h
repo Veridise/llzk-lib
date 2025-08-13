@@ -383,18 +383,6 @@ private:
   bool isCallOp(mlir::Operation *op) const { return mlir::isa<function::CallOp>(op); }
 
   bool isReturnOp(mlir::Operation *op) const { return mlir::isa<function::ReturnOp>(op); }
-
-  /// @brief Used for sanity checking and warnings about the analysis. If new operations
-  /// are introduced and encountered, we can use this (and related methods) to issue
-  /// warnings to users.
-  /// @param op
-  /// @return
-  bool isConsideredOp(mlir::Operation *op) const {
-    return isConstOp(op) || isArithmeticOp(op) || isBoolOp(op) || isConversionOp(op) ||
-           isApplyMapOp(op) || isAssertOp(op) || isReadOp(op) || isWriteOp(op) ||
-           isArrayLengthOp(op) || isEmitOp(op) || isCreateOp(op) || isDefinitionOp(op) ||
-           isCallOp(op) || isReturnOp(op) || isExtractArrayOp(op);
-  }
 };
 
 /* StructIntervals */

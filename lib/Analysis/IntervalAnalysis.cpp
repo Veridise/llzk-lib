@@ -12,6 +12,8 @@
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 
+#include <mlir/Dialect/SCF/IR/SCF.h>
+
 #include <llvm/ADT/TypeSwitch.h>
 
 using namespace mlir;
@@ -491,10 +493,6 @@ void IntervalDataFlowAnalysis::visitOperation(
   }
 
   // Now, the way we update is dependent on the type of the operation.
-  if (!isConsideredOp(op)) {
-    op->emitWarning("unconsidered operation type, analysis may be incomplete");
-  }
-
   if (isConstOp(op)) {
     auto constVal = getConst(op);
     auto expr = createConstBitvectorExpr(constVal);
@@ -555,9 +553,6 @@ void IntervalDataFlowAnalysis::visitOperation(
     }
   } else if (auto writef = mlir::dyn_cast<FieldWriteOp>(op)) {
     // Update values stored in a field
-    // llvm::errs() << "update " << writef << ": " << operandVals[1].getScalarValue() << "\n";
-    // llvm::errs().indent(4) << operandVals[0] << '\n';
-    // llvm::errs().indent(4) << constrainRefLattice->getOrDefault(writef.getComponent()) << '\n';
     ExpressionValue writeVal = operandVals[1].getScalarValue();
     changed |= after->setValue(
         writef.getComponent(), writef.getFieldNameAttr().getAttr(), writeVal
@@ -569,7 +564,6 @@ void IntervalDataFlowAnalysis::visitOperation(
       if (succeeded(fieldDefRes)) {
         ConstrainRefIndex idx(fieldDefRes.value());
         ConstrainRef fieldRef = refSet.getSingleValue().createChild(idx);
-        // llvm::errs().indent(8) << fieldRef << '\n';
         llvm::SMTExprRef expr = getOrCreateSymbol(fieldRef);
         changed |= after->setInterval(expr, writeVal.getInterval());
       }
@@ -577,6 +571,29 @@ void IntervalDataFlowAnalysis::visitOperation(
   } else if (isa<IntToFeltOp, FeltToIndexOp>(op)) {
     // Casts don't modify the intervals
     changed |= after->setValue(op->getResult(0), operandVals[0].getScalarValue());
+  } else if (auto yieldOp = dyn_cast<scf::YieldOp>(op)) {
+    // Fetch the lattice of the parent operation
+    Operation *parent = op->getParentOp();
+    ensure(parent, "yield operation must have parent lattice");
+    auto *parentLattice = static_cast<IntervalAnalysisLattice *>(getLattice(parent));
+    ensure(parentLattice, "could not fetch parent lattice");
+    // Bind the operand values to the result values of the parent
+    for (unsigned idx = 0; idx < yieldOp.getResults().size(); ++idx) {
+      Value parentRes = parent->getResult(idx);
+      // Merge with the existing value, if present
+      auto exprValRes = parentLattice->getValue(parentRes);
+      ExpressionValue newResVal = operandVals[idx].getScalarValue();
+      if (succeeded(exprValRes)) {
+        ExpressionValue existingVal = exprValRes->getScalarValue();
+        newResVal =
+            existingVal.withInterval(existingVal.getInterval().join(newResVal.getInterval()));
+      } else {
+        newResVal = ExpressionValue(createFeltSymbol(parentRes), newResVal.getInterval());
+      }
+      changed |= after->setValue(parentRes, newResVal);
+    }
+
+    propagateIfChanged(parentLattice, parentLattice->join(*after));
   } else if (
       // We do not need to explicitly handle read ops since they are resolved at the operand value
       // step where constrain refs are queries (with the exception of the Signal struct, see above).
