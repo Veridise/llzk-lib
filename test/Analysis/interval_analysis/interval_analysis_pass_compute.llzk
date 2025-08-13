@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-inline-includes -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -I %S -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @BoolAnd {
@@ -51,7 +51,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @BoolAnd StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %self[@case0] in Degenerate(1)
 // CHECK-NEXT:     %self[@case1] in Degenerate(0)
@@ -117,7 +118,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @BoolOr StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %self[@case0] in Degenerate(1)
 // CHECK-NEXT:     %self[@case1] in Degenerate(1)
@@ -183,7 +185,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @BoolXor StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %self[@case0] in Degenerate(0)
 // CHECK-NEXT:     %self[@case1] in Degenerate(1)
@@ -231,7 +234,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @BoolNot StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %self[@case0] in Degenerate(0)
 // CHECK-NEXT:     %self[@case1] in Degenerate(1)
@@ -272,7 +276,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @BitAnd StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %arg1 in Entire
 // CHECK-NEXT:     %self[@case0] in Entire
@@ -318,7 +323,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @ShiftLeft StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %arg1 in Entire
 // CHECK-NEXT:     %self[@case0] in Entire
@@ -365,7 +371,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @ShiftRight StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %arg1 in Entire
 // CHECK-NEXT:     %self[@case0] in Entire
@@ -379,28 +386,29 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   // yield-less if that modifies intervals internally
-  struct.def @C {
+  struct.def @NoYieldIf {
     struct.field @data : !felt.type
     struct.field @const : !felt.type
 
-    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@C> {
-      %self = struct.new : !struct.type<@C>
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@NoYieldIf> {
+      %self = struct.new : !struct.type<@NoYieldIf>
       %z = felt.const 0
       %0 = bool.cmp ne(%a, %z)
       scf.if %0 {
-        struct.writef %self[@data] = %b : !struct.type<@C>, !felt.type
-        struct.writef %self[@const] = %z : !struct.type<@C>, !felt.type
+        struct.writef %self[@data] = %b : !struct.type<@NoYieldIf>, !felt.type
+        struct.writef %self[@const] = %z : !struct.type<@NoYieldIf>, !felt.type
       }
-      function.return %self : !struct.type<@C>
+      function.return %self : !struct.type<@NoYieldIf>
     }
 
-    function.def @constrain(%self : !struct.type<@C>, %a: !felt.type, %b: !felt.type) {
+    function.def @constrain(%self : !struct.type<@NoYieldIf>, %a: !felt.type, %b: !felt.type) {
       function.return
     }
   }
 }
 
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @NoYieldIf StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %arg1 in Entire
 // CHECK-NEXT:     %self[@data] in Entire
@@ -487,8 +495,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @MultiYield StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
 // CHECK-NEXT:    %self[@a] in TypeA:[ 1, 2 ]
 // CHECK-NEXT:    %self[@b] in TypeA:[ 2, 99 ]
@@ -498,27 +506,27 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  struct.def @Component03 {
+  struct.def @NoYieldFor {
     struct.field @a: !felt.type
 
-    function.def @compute(%x: index) -> !struct.type<@Component03> {
-      %self = struct.new : !struct.type<@Component03>
+    function.def @compute(%x: index) -> !struct.type<@NoYieldFor> {
+      %self = struct.new : !struct.type<@NoYieldFor>
       %0 = arith.constant 0 : index
       %1 = arith.constant 1 : index
       scf.for %i = %0 to %x step %1 {
         %c = felt.const 3
-        struct.writef %self[@a] = %c : !struct.type<@Component03>, !felt.type
+        struct.writef %self[@a] = %c : !struct.type<@NoYieldFor>, !felt.type
       }
-      function.return %self : !struct.type<@Component03>
+      function.return %self : !struct.type<@NoYieldFor>
     }
 
-    function.def @constrain(%self: !struct.type<@Component03>, %x: index) {
+    function.def @constrain(%self: !struct.type<@NoYieldFor>, %x: index) {
       function.return
     }
   }
 }
-
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @NoYieldFor StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
 // CHECK-NEXT:    %self[@a] in Degenerate(3)
 // CHECK-NEXT:  }
@@ -526,11 +534,11 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  struct.def @Component03 {
+  struct.def @YieldForConst {
     struct.field @a: !felt.type
 
-    function.def @compute(%x: index) -> !struct.type<@Component03> {
-      %self = struct.new : !struct.type<@Component03>
+    function.def @compute(%x: index) -> !struct.type<@YieldForConst> {
+      %self = struct.new : !struct.type<@YieldForConst>
       %0 = arith.constant 0 : index
       %1 = arith.constant 1 : index
       %f0 = felt.const 0
@@ -538,17 +546,18 @@ module attributes {veridise.lang = "llzk"} {
         %3 = felt.const 3
         scf.yield %3 : !felt.type
       }
-      struct.writef %self[@a] = %c : !struct.type<@Component03>, !felt.type
-      function.return %self : !struct.type<@Component03>
+      struct.writef %self[@a] = %c : !struct.type<@YieldForConst>, !felt.type
+      function.return %self : !struct.type<@YieldForConst>
     }
 
-    function.def @constrain(%self: !struct.type<@Component03>, %x: index) {
+    function.def @constrain(%self: !struct.type<@YieldForConst>, %x: index) {
       function.return
     }
   }
 }
 
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @YieldForConst StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
 // CHECK-NEXT:    %self[@a] in Degenerate(3)
 // CHECK-NEXT:  }
@@ -557,11 +566,11 @@ module attributes {veridise.lang = "llzk"} {
 
 // No guesses will be made about the computed value over the loop
 module attributes {veridise.lang = "llzk"} {
-  struct.def @Component03 {
+  struct.def @YieldForSum {
     struct.field @a: !felt.type
 
-    function.def @compute(%x: index) -> !struct.type<@Component03> {
-      %self = struct.new : !struct.type<@Component03>
+    function.def @compute(%x: index) -> !struct.type<@YieldForSum> {
+      %self = struct.new : !struct.type<@YieldForSum>
       %0 = arith.constant 0 : index
       %1 = arith.constant 1 : index
       %f0 = felt.const 0
@@ -570,17 +579,18 @@ module attributes {veridise.lang = "llzk"} {
         %s = felt.add %f1, %sum
         scf.yield %s : !felt.type
       }
-      struct.writef %self[@a] = %c : !struct.type<@Component03>, !felt.type
-      function.return %self : !struct.type<@Component03>
+      struct.writef %self[@a] = %c : !struct.type<@YieldForSum>, !felt.type
+      function.return %self : !struct.type<@YieldForSum>
     }
 
-    function.def @constrain(%self: !struct.type<@Component03>, %x: index) {
+    function.def @constrain(%self: !struct.type<@YieldForSum>, %x: index) {
       function.return
     }
   }
 }
 
-// CHECK-LABEL: compute {
+// CHECK-LABEL: @YieldForSum StructIntervals {
+// CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
 // CHECK-NEXT:    %self[@a] in Entire
 // CHECK-NEXT:  }
