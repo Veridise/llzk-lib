@@ -343,7 +343,8 @@ void ConstrainRef::print(mlir::raw_ostream &os) const {
 bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
   // This way two felt constants can be equal even if the declared in separate ops.
   if (isConstantInt() && rhs.isConstantInt()) {
-    return getType() == rhs.getType() && getConstantValue() == rhs.getConstantValue();
+    APSInt lhsVal(getConstantValue()), rhsVal(rhs.getConstantValue());
+    return getType() == rhs.getType() && safeEq(lhsVal, rhsVal);
   }
   return (root == rhs.root) && (fieldRefs == rhs.fieldRefs) && (constantVal == rhs.constantVal);
 }
@@ -356,10 +357,8 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   } else if (!isConstantFelt() && rhs.isConstantFelt()) {
     return true;
   } else if (isConstantFelt() && rhs.isConstantFelt()) {
-    auto lhsInt = getConstantFeltValue();
-    auto rhsInt = rhs.getConstantFeltValue();
-    auto bitWidthMax = std::max(lhsInt.getBitWidth(), rhsInt.getBitWidth());
-    return lhsInt.zext(bitWidthMax).ult(rhsInt.zext(bitWidthMax));
+    APSInt lhsInt(getConstantFeltValue()), rhsInt(rhs.getConstantFeltValue());
+    return safeLt(lhsInt, rhsInt);
   }
 
   if (isConstantIndex() && !rhs.isConstantIndex()) {
@@ -368,7 +367,8 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   } else if (!isConstantIndex() && rhs.isConstantIndex()) {
     return true;
   } else if (isConstantIndex() && rhs.isConstantIndex()) {
-    return getConstantIndexValue().ult(rhs.getConstantIndexValue());
+    APSInt lhsVal(getConstantIndexValue()), rhsVal(rhs.getConstantIndexValue());
+    return safeLt(lhsVal, rhsVal);
   }
 
   if (isTemplateConstant() && !rhs.isTemplateConstant()) {
