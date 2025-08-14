@@ -102,90 +102,12 @@ getStructDef(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, StructType
 }
 
 std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
-    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ArrayType arrayTy, ConstrainRef root
-) {
-  std::vector<ConstrainRef> res;
-  // Add root item
-  res.push_back(root);
-
-  // Recurse into arrays by iterating over their elements
-  int64_t maxSz = arrayTy.getDimSize(0);
-  for (int64_t i = 0; i < maxSz; i++) {
-    auto elemTy = arrayTy.getElementType();
-
-    ConstrainRef childRef = root.createChild(ConstrainRefIndex(i));
-
-    if (auto arrayElemTy = mlir::dyn_cast<ArrayType>(elemTy)) {
-      // recurse
-      auto subRes = getAllConstrainRefs(tables, mod, arrayElemTy, childRef);
-      res.insert(res.end(), subRes.begin(), subRes.end());
-    } else if (auto structTy = mlir::dyn_cast<StructType>(elemTy)) {
-      // recurse into struct def
-      auto subRes = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), childRef);
-      res.insert(res.end(), subRes.begin(), subRes.end());
-    } else {
-      // scalar type
-      res.push_back(childRef);
-    }
-  }
-
-  return res;
-}
-
-std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
-    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod,
-    SymbolLookupResult<StructDefOp> structDefRes, ConstrainRef root
-) {
-  std::vector<ConstrainRef> res;
-  // Add root item
-  res.emplace_back(root);
-  // Recurse into struct types by iterating over all their field definitions
-  for (auto f : structDefRes.get().getOps<FieldDefOp>()) {
-    // We want to store the FieldDefOp, but without the possibility of accidentally dropping the
-    // reference, so we need to re-lookup the symbol to create a SymbolLookupResult, which will
-    // manage the external module containing the field defs, if needed.
-    // TODO: It would be nice if we could manage module op references differently
-    // so we don't have to do this.
-    auto structDefCopy = structDefRes;
-    auto fieldLookup = lookupSymbolIn<FieldDefOp>(
-        tables, mlir::SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()),
-        std::move(structDefCopy), mod.getOperation()
-    );
-    ensure(mlir::succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp");
-    ConstrainRef childRef = root.createChild(ConstrainRefIndex(fieldLookup.value()));
-    // Make a reference to the current field, regardless of if it is a composite
-    // type or not.
-    res.push_back(childRef);
-    if (auto structTy = mlir::dyn_cast<StructType>(f.getType())) {
-      // Create refs for each field
-      auto subRes = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), childRef);
-      res.insert(res.end(), subRes.begin(), subRes.end());
-    } else if (auto arrayTy = mlir::dyn_cast<ArrayType>(f.getType())) {
-      // Create refs for each array element
-      auto subRes = getAllConstrainRefs(tables, mod, arrayTy, childRef);
-      res.insert(res.end(), subRes.begin(), subRes.end());
-    }
-  }
-  return res;
-}
-
-std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
     mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ConstrainRef root
 ) {
-  auto ty = root.getType();
-  std::vector<ConstrainRef> res;
-  if (auto structTy = mlir::dyn_cast<StructType>(ty)) {
-    // recurse over fields
-    res = getAllConstrainRefs(tables, mod, getStructDef(tables, mod, structTy), root);
-  } else if (auto arrayType = mlir::dyn_cast<ArrayType>(ty)) {
-    res = getAllConstrainRefs(tables, mod, arrayType, root);
-  } else if (mlir::isa<FeltType, IndexType, StringType>(ty)) {
-    // Scalar type
-    res.emplace_back(root);
-  } else {
-    std::string err;
-    debug::Appender(err) << "unsupported type: " << ty;
-    llvm::report_fatal_error(mlir::Twine(err));
+  std::vector<ConstrainRef> res = {root};
+  for (const ConstrainRef &child : root.getAllChildren(tables, mod)) {
+    auto recursiveChildren = getAllConstrainRefs(tables, mod, child);
+    res.insert(res.end(), recursiveChildren.begin(), recursiveChildren.end());
   }
   return res;
 }
@@ -260,16 +182,18 @@ mlir::Type ConstrainRef::getType() const {
       idx--;
     }
 
+    mlir::Type currTy = nullptr;
     if (idx >= 0) {
-      mlir::Type currTy = fieldRefs[idx].getField().getType();
-      while (array_derefs > 0) {
-        currTy = mlir::dyn_cast<ArrayType>(currTy).getElementType();
-        array_derefs--;
-      }
-      return currTy;
+      currTy = fieldRefs[idx].getField().getType();
+    } else {
+      currTy = isBlockArgument() ? getBlockArgument().getType() : getCreateStructOp().getType();
     }
 
-    return isBlockArgument() ? getBlockArgument().getType() : getCreateStructOp().getType();
+    while (array_derefs > 0) {
+      currTy = mlir::dyn_cast<ArrayType>(currTy).getElementType();
+      array_derefs--;
+    }
+    return currTy;
   }
 }
 
@@ -314,6 +238,57 @@ ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) c
   auto newSignalUsage = other;
   newSignalUsage.fieldRefs.insert(newSignalUsage.fieldRefs.end(), suffix->begin(), suffix->end());
   return newSignalUsage;
+}
+
+std::vector<ConstrainRef> getAllChildren(
+    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ArrayType arrayTy, ConstrainRef root
+) {
+  std::vector<ConstrainRef> res;
+  // Recurse into arrays by iterating over their elements
+  for (int64_t i = 0; i < arrayTy.getDimSize(0); i++) {
+    ConstrainRef childRef = root.createChild(ConstrainRefIndex(i));
+    res.push_back(childRef);
+  }
+
+  return res;
+}
+
+std::vector<ConstrainRef> getAllChildren(
+    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod,
+    SymbolLookupResult<StructDefOp> structDefRes, ConstrainRef root
+) {
+  std::vector<ConstrainRef> res;
+  // Recurse into struct types by iterating over all their field definitions
+  for (auto f : structDefRes.get().getOps<FieldDefOp>()) {
+    // We want to store the FieldDefOp, but without the possibility of accidentally dropping the
+    // reference, so we need to re-lookup the symbol to create a SymbolLookupResult, which will
+    // manage the external module containing the field defs, if needed.
+    // TODO: It would be nice if we could manage module op references differently
+    // so we don't have to do this.
+    auto structDefCopy = structDefRes;
+    auto fieldLookup = lookupSymbolIn<FieldDefOp>(
+        tables, mlir::SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()),
+        std::move(structDefCopy), mod.getOperation()
+    );
+    ensure(mlir::succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp");
+    ConstrainRef childRef = root.createChild(ConstrainRefIndex(fieldLookup.value()));
+    // Make a reference to the current field, regardless of if it is a composite
+    // type or not.
+    res.push_back(childRef);
+  }
+  return res;
+}
+
+std::vector<ConstrainRef>
+ConstrainRef::getAllChildren(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod) const {
+  auto ty = getType();
+  if (auto structTy = mlir::dyn_cast<StructType>(ty)) {
+    return llzk::getAllChildren(tables, mod, getStructDef(tables, mod, structTy), *this);
+  } else if (auto arrayType = mlir::dyn_cast<ArrayType>(ty)) {
+    return llzk::getAllChildren(tables, mod, arrayType, *this);
+  }
+  // Scalar type, no children
+  return {};
 }
 
 void ConstrainRef::print(mlir::raw_ostream &os) const {

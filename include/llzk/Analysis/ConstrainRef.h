@@ -116,29 +116,11 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Constra
 /// array).
 class ConstrainRef {
 
-  /// Produce all possible ConstraintRefs that are present starting from the given
-  /// arrayField, originating from a given root,
-  /// and partially-specified indices into that object (fields).
-  /// This produces refs for composite types (e.g., full structs and full arrays)
-  /// as well as individual fields and constants.
-  static std::vector<ConstrainRef> getAllConstrainRefs(
-      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, array::ArrayType arrayTy,
-      ConstrainRef root
-  );
-
-  /// Produce all possible ConstraintRefs that are present starting from the given
-  /// root. This produces refs for composite types (e.g., full structs and full arrays)
-  /// as well as individual fields and constants.
-  static std::vector<ConstrainRef> getAllConstrainRefs(
-      mlir::SymbolTableCollection &tables, mlir::ModuleOp mod,
-      SymbolLookupResult<component::StructDefOp> s, ConstrainRef root
-  );
-
+public:
   /// Produce all possible ConstraintRefs that are present starting from the given root.
   static std::vector<ConstrainRef>
   getAllConstrainRefs(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ConstrainRef root);
 
-public:
   /// Produce all possible ConstrainRefs that are present from given struct function.
   static std::vector<ConstrainRef>
   getAllConstrainRefs(component::StructDefOp structDef, function::FuncDefOp fnOp);
@@ -240,7 +222,6 @@ public:
   translate(const ConstrainRef &prefix, const ConstrainRef &other) const;
 
   /// @brief Create a new reference that is the immediate prefix of this reference if possible.
-  /// @return
   mlir::FailureOr<ConstrainRef> getParentPrefix() const {
     if (isConstantFelt() || fieldRefs.empty()) {
       return mlir::failure();
@@ -250,6 +231,10 @@ public:
     return copy;
   }
 
+  /// @brief Get all direct children of this ConstrainRef, assuming this ref is not a scalar.
+  std::vector<ConstrainRef>
+  getAllChildren(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod) const;
+
   ConstrainRef createChild(ConstrainRefIndex r) const {
     auto copy = *this;
     copy.fieldRefs.push_back(r);
@@ -257,10 +242,8 @@ public:
   }
 
   ConstrainRef createChild(ConstrainRef other) const {
-    auto copy = *this;
     assert(other.isConstantIndex());
-    copy.fieldRefs.push_back(ConstrainRefIndex(other.getConstantIndexValue()));
-    return copy;
+    return createChild(ConstrainRefIndex(other.getConstantIndexValue()));
   }
 
   const std::vector<ConstrainRefIndex> &getPieces() const { return fieldRefs; }

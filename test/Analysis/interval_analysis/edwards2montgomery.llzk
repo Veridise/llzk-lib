@@ -336,6 +336,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     %arg0[@$temp][@reg] in Entire
 // CHECK-NEXT:     %arg0[@v][@$super] in Entire
 // CHECK-NEXT:     %arg0[@v][@reciprocal] in Entire
+// CHECK-NEXT:     %arg1[0] in Entire
+// CHECK-NEXT:     %arg1[1] in Entire
 // CHECK-NEXT: }
 
 // CMP-LABEL: @Div StructIntervals {
