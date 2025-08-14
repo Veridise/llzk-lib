@@ -7,7 +7,7 @@ on:
 
 jobs:
   sync-issue:
-    if: secrets.JIRA_BASE_URL != '' && secrets.JIRA_USER_EMAIL != '' && secrets.JIRA_API_TOKEN != ''
+    if: ${{ secrets.JIRA_BASE_URL != '' && secrets.JIRA_USER_EMAIL != '' && secrets.JIRA_API_TOKEN != '' }}
     name: Update GitHub Issue to Jira
     runs-on: ubuntu-latest
     permissions:
