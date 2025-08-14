@@ -81,9 +81,9 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
     // have been for the callsite.
     const ConstrainRefLattice *beforeCall = nullptr;
     if (auto *prev = call->getPrevNode()) {
-      beforeCall = static_cast<const ConstrainRefLattice*>(getLattice(prev));
+      beforeCall = static_cast<const ConstrainRefLattice *>(getLattice(prev));
     } else {
-      beforeCall = static_cast<const ConstrainRefLattice*>(getLattice(call->getBlock()));
+      beforeCall = static_cast<const ConstrainRefLattice *>(getLattice(call->getBlock()));
     }
     ensure(beforeCall, "could not get prior lattice");
 

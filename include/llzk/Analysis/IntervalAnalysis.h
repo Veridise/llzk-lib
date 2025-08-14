@@ -262,7 +262,8 @@ class IntervalDataFlowAnalysis
 
 public:
   explicit IntervalDataFlowAnalysis(
-      mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f, bool propInputConstraints
+      mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f,
+      bool propInputConstraints
   )
       : Base::DenseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
         smtSolver(smt), field(f), propagateInputConstraints(propInputConstraints) {}

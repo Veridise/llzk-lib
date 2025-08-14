@@ -241,16 +241,16 @@ mlir::ChangeResult ConstrainRefLattice::setValues(const ValueMap &rhs) {
 }
 
 mlir::ChangeResult ConstrainRefLattice::setValue(ValueTy v, const ConstrainRefLatticeValue &rhs) {
-    for (const ConstrainRef &ref : rhs.foldToScalar()) {
-      refMap[ref].insert(v);
-    }
-    return valMap[v].setValue(rhs);
-  }
-
-  mlir::ChangeResult ConstrainRefLattice::setValue(ValueTy v, const ConstrainRef &ref) {
+  for (const ConstrainRef &ref : rhs.foldToScalar()) {
     refMap[ref].insert(v);
-    return valMap[v].setValue(ConstrainRefLatticeValue(ref));
   }
+  return valMap[v].setValue(rhs);
+}
+
+mlir::ChangeResult ConstrainRefLattice::setValue(ValueTy v, const ConstrainRef &ref) {
+  refMap[ref].insert(v);
+  return valMap[v].setValue(ConstrainRefLatticeValue(ref));
+}
 
 ConstrainRefLatticeValue ConstrainRefLattice::getOrDefault(ConstrainRefLattice::ValueTy v) const {
   auto it = valMap.find(v);
@@ -298,7 +298,7 @@ raw_ostream &operator<<(raw_ostream &os, llvm::PointerUnion<mlir::Value, mlir::O
   if (ptr.is<Value>()) {
     os << ptr.get<Value>();
   } else {
-    Operation *op = ptr.get<Operation*>();
+    Operation *op = ptr.get<Operation *>();
     if (op) {
       os << *op;
     } else {
@@ -307,4 +307,4 @@ raw_ostream &operator<<(raw_ostream &os, llvm::PointerUnion<mlir::Value, mlir::O
   }
   return os;
 }
-}
+} // namespace llvm

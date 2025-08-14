@@ -247,10 +247,10 @@ void AbstractDenseForwardDataFlowAnalysis::visitRegionBranchOperation(
   // LLZK: Removing use of PredecessorState analysis, which does not work for LLZK's
   // lookup logic.
   Operation *op = nullptr;
-  if (point.is<Block*>()) {
-    op = point.get<Block*>()->getParentOp();
-  } else if (point.is<Operation*>()) {
-    op = point.get<Operation*>();
+  if (point.is<Block *>()) {
+    op = point.get<Block *>()->getParentOp();
+  } else if (point.is<Operation *>()) {
+    op = point.get<Operation *>();
   }
   if (op) {
     const AbstractDenseLattice *before;

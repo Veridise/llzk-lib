@@ -554,9 +554,8 @@ void IntervalDataFlowAnalysis::visitOperation(
   } else if (auto writef = mlir::dyn_cast<FieldWriteOp>(op)) {
     // Update values stored in a field
     ExpressionValue writeVal = operandVals[1].getScalarValue();
-    changed |= after->setValue(
-        writef.getComponent(), writef.getFieldNameAttr().getAttr(), writeVal
-    );
+    changed |=
+        after->setValue(writef.getComponent(), writef.getFieldNameAttr().getAttr(), writeVal);
     // We also need to update the interval on the assigned symbol
     ConstrainRefLatticeValue refSet = constrainRefLattice->getOrDefault(writef.getComponent());
     if (refSet.isSingleValue()) {

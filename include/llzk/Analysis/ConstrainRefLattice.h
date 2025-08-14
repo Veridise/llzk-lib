@@ -93,7 +93,8 @@ public:
   // mlir::Operation* is used for write-like operations that reference values as their destinations
   using ValueTy = llvm::PointerUnion<mlir::Value, mlir::Operation *>;
   using ValueMap = mlir::DenseMap<ValueTy, ConstrainRefLatticeValue>;
-  // Used to lookup MLIR values/operations from a given ConstrainRef (all values that a ref is referenced by)
+  // Used to lookup MLIR values/operations from a given ConstrainRef (all values that a ref is
+  // referenced by)
   using ValueSet = mlir::DenseSet<ValueTy>;
   using Ref2Val = mlir::DenseMap<ConstrainRef, mlir::DenseSet<ValueTy>>;
   using AbstractDenseLattice::AbstractDenseLattice;
@@ -163,4 +164,4 @@ namespace llvm {
 class raw_ostream;
 
 raw_ostream &operator<<(raw_ostream &os, llvm::PointerUnion<mlir::Value, mlir::Operation *> ptr);
-}
+} // namespace llvm

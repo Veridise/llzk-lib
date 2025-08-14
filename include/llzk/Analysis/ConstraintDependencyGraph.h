@@ -151,7 +151,8 @@ public:
 
   ConstraintDependencyGraph(const ConstraintDependencyGraph &other)
       : mod(other.mod), structDef(other.structDef), runIntraprocedural(other.runIntraprocedural),
-        signalSets(other.signalSets), constantSets(other.constantSets), ref2Val(other.ref2Val), tables() {}
+        signalSets(other.signalSets), constantSets(other.constantSets), ref2Val(other.ref2Val),
+        tables() {}
 
   ConstraintDependencyGraph &operator=(const ConstraintDependencyGraph &other) {
     mod = other.mod;
