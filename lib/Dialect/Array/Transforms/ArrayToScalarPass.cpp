@@ -116,29 +116,39 @@ template <typename T> bool containsSplittableArrayType(ValueTypeRange<T> types) 
 
 /// If the given Type is an ArrayType that can be split into scalars, append `collect` with all of
 /// the scalar types that result from splitting the ArrayType. Otherwise, just push the `Type`.
-void splitArrayTypeTo(Type t, SmallVector<Type> &collect) {
+size_t splitArrayTypeTo(Type t, SmallVector<Type> &collect) {
   if (ArrayType at = splittableArray(t)) {
     int64_t n = at.getNumElements();
-    assert(std::cmp_less_equal(n, std::numeric_limits<SmallVector<Type>::size_type>::max()));
-    collect.append(n, at.getElementType());
+    assert(std::cmp_less_equal(n, std::numeric_limits<size_t>::max()));
+    size_t size = n;
+    collect.append(size, at.getElementType());
+    return size;
   } else {
     collect.push_back(t);
+    return 1;
   }
 }
 
 /// For each Type in the given input collection, call `splitArrayTypeTo(Type,...)`.
 template <typename TypeCollection>
-inline void splitArrayTypeTo(TypeCollection types, SmallVector<Type> &collect) {
+inline void splitArrayTypeTo(
+    TypeCollection types, SmallVector<Type> &collect, SmallVector<size_t> *originalIdxToSize
+) {
   for (Type t : types) {
-    splitArrayTypeTo(t, collect);
+    size_t count = splitArrayTypeTo(t, collect);
+    if (originalIdxToSize) {
+      originalIdxToSize->push_back(count);
+    }
   }
 }
 
 /// Return a list such that each scalar Type is directly added to the list but for each splittable
 /// ArrayType, the proper number of scalar element types are added instead.
-template <typename TypeCollection> inline SmallVector<Type> splitArrayType(TypeCollection types) {
+template <typename TypeCollection>
+inline SmallVector<Type>
+splitArrayType(TypeCollection types, SmallVector<size_t> *originalIdxToSize = nullptr) {
   SmallVector<Type> collect;
-  splitArrayTypeTo(types, collect);
+  splitArrayTypeTo(types, collect, originalIdxToSize);
   return collect;
 }
 
@@ -403,19 +413,60 @@ public:
     return !containsSplittableArrayType(op.getFunctionType());
   }
 
+  // Create a new ArrayAttr like the one given but with repetitions of the elements according to the
+  // mapping defined by `originalIdxToSize`. In other words, if `originalIdxToSize[i] = n`, then `n`
+  // copies of `origAttrs[i]` are appended in its place.
+  static ArrayAttr replicateAttributesAsNeeded(
+      ArrayAttr origAttrs, const SmallVector<size_t> &originalIdxToSize, size_t newSize
+  ) {
+    if (origAttrs) {
+      assert(originalIdxToSize.size() == origAttrs.size());
+      if (originalIdxToSize.size() != newSize) {
+        SmallVector<Attribute> newArgAttrs;
+        for (auto [i, s] : llvm::enumerate(originalIdxToSize)) {
+          newArgAttrs.append(s, origAttrs[i]);
+        }
+        return ArrayAttr::get(origAttrs.getContext(), newArgAttrs);
+      }
+    }
+    return nullptr;
+  }
+
   LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
 
   void rewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     // Update in/out types of the function to replace arrays with scalars
     FunctionType oldTy = op.getFunctionType();
-    SmallVector<Type> newInputs = splitArrayType(oldTy.getInputs());
-    SmallVector<Type> newOutputs = splitArrayType(oldTy.getResults());
+    SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
+    SmallVector<Type> newInputs = splitArrayType(oldTy.getInputs(), &originalInputIdxToSize);
+    SmallVector<Type> newResults = splitArrayType(oldTy.getResults(), &originalResultIdxToSize);
     FunctionType newTy =
-        FunctionType::get(oldTy.getContext(), TypeRange(newInputs), TypeRange(newOutputs));
+        FunctionType::get(oldTy.getContext(), TypeRange(newInputs), TypeRange(newResults));
     if (newTy == oldTy) {
       return; // nothing to change
     }
-    rewriter.modifyOpInPlace(op, [&op, &newTy]() { op.setFunctionType(newTy); });
+
+    // Pre-condition: arg/result count equals corresponding attribute count
+    assert(!op.getResAttrsAttr() || op.getResAttrsAttr().size() == op.getNumResults());
+    assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
+    rewriter.modifyOpInPlace(op, [&]() {
+      op.setFunctionType(newTy);
+
+      // If any input or result types were added, ensure the attributes are updated too.
+      if (ArrayAttr newArgAttrs = replicateAttributesAsNeeded(
+              op.getArgAttrsAttr(), originalInputIdxToSize, newInputs.size()
+          )) {
+        op.setArgAttrsAttr(newArgAttrs);
+      }
+      if (ArrayAttr newResAttrs = replicateAttributesAsNeeded(
+              op.getResAttrsAttr(), originalResultIdxToSize, newResults.size()
+          )) {
+        op.setResAttrsAttr(newResAttrs);
+      }
+    });
+    // Post-condition: arg/result count equals corresponding attribute count
+    assert(!op.getResAttrsAttr() || op.getResAttrsAttr().size() == op.getNumResults());
+    assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
 
     // If the function has a body, ensure the entry block arguments match the function inputs.
     if (Region *body = op.getCallableRegion()) {
@@ -539,6 +590,7 @@ public:
       // Create scalar version of the field
       FieldDefOp newField =
           rewriter.create<FieldDefOp>(op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn());
+      newField.setPublicAttr(op.hasPublicAttr());
       // Use SymbolTable to give it a unique name and store to the replacement map
       localRepMapRef[idx] = std::make_pair(structSymbolTable.insert(newField), elemTy);
     }
