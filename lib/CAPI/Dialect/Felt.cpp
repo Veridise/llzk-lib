@@ -19,6 +19,9 @@
 
 #include <mlir-c/Support.h>
 
+#include <llvm/ADT/APSInt.h>
+#include <llvm/Support/Debug.h>
+
 using namespace llzk::felt;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt, FeltDialect)
@@ -27,10 +30,9 @@ MlirAttribute llzkFeltConstAttrGet(MlirContext ctx, int64_t value) {
   return wrap(FeltConstAttr::get(unwrap(ctx), llzk::toAPInt(value)));
 }
 
-MlirAttribute
-llzkFeltConstAttrParseFromStr(MlirContext ctx, unsigned numBits, MlirStringRef str, uint8_t radix) {
-  // Using the constructor of APInt directly since the helper does not support this use case
-  auto value = llvm::APInt(numBits, unwrap(str), radix);
+MlirAttribute llzkFeltConstAttrParseFromBase10Str(MlirContext ctx, MlirStringRef str) {
+  // Using the constructor of APSInt directly since the helper does not support this use case
+  auto value = llvm::APSInt(unwrap(str));
   return wrap(FeltConstAttr::get(unwrap(ctx), value));
 }
 
