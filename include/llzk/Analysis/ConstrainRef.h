@@ -14,6 +14,7 @@
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/Hash.h"
 
@@ -74,6 +75,9 @@ public:
       // We compare the underlying fields, since the field could be in a symbol
       // lookup or not.
       return getField() == rhs.getField();
+    }
+    if (isIndex() && rhs.isIndex()) {
+      return safeEq(mlir::APSInt(getIndex()), mlir::APSInt(rhs.getIndex()));
     }
     return index == rhs.index;
   }
