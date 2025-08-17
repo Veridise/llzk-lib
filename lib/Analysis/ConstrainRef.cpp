@@ -72,7 +72,14 @@ bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
 
 size_t ConstrainRefIndex::Hash::operator()(const ConstrainRefIndex &c) const {
   if (c.isIndex()) {
-    return llvm::hash_value(c.getIndex());
+    // We don't hash the index directly, because the built-in LLVM hash includes
+    // the bitwidth of the APInt in the hash, which is undesirable for this application.
+    // i.e., We want a N-bit version of x to hash to the same value as an M-bit version of X,
+    // because our equality checks would consider them equal regardless of bitwidth.
+    APInt idx = c.getIndex();
+    unsigned requiredBits = idx.getSignificantBits();
+    auto hash = llvm::hash_value(idx.trunc(requiredBits));
+    return hash;
   } else if (c.isIndexRange()) {
     auto r = c.getIndexRange();
     return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
