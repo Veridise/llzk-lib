@@ -17,6 +17,7 @@
 #include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/MapVector.h>
 #include <llvm/ADT/SetVector.h>
+#include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/Support/DOTGraphTraits.h>
 
 #include <utility>
@@ -24,8 +25,11 @@
 namespace llzk {
 
 class SymbolUseGraphNode {
+  using OpSet = llvm::SmallPtrSet<mlir::Operation *, 3>;
+
   mlir::ModuleOp symbolPathRoot;
   mlir::SymbolRefAttr symbolPath;
+  OpSet opsThatUseTheSymbol;
   bool isStructConstParam;
 
   /* Tree structure. The SymbolUseGraph owns the nodes so just pointers here. */
@@ -66,6 +70,9 @@ public:
   /// The symbol path+name relative to the closest root ModuleOp.
   mlir::SymbolRefAttr getSymbolPath() const { return symbolPath; }
 
+  /// The set of operations that use the symbol.
+  const OpSet &getUserOps() const { return opsThatUseTheSymbol; }
+
   /// Return `true` iff the symbol is a struct constant parameter name.
   bool isStructParam() const { return isStructConstParam; }
 
@@ -105,7 +112,7 @@ public:
 
   /// Print the node in a human readable format.
   std::string toString() const;
-  void print(llvm::raw_ostream &os) const;
+  void print(llvm::raw_ostream &os, std::string locLinePrefix = "") const;
 };
 
 /// Builds a graph structure representing the relationships between symbols and their uses. There is
