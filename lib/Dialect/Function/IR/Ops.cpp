@@ -756,4 +756,13 @@ void CallOp::setCalleeFromCallable(CallInterfaceCallable callee) {
   setCalleeAttr(callee.get<SymbolRefAttr>());
 }
 
+SmallVector<ValueRange> CallOp::toVectorOfValueRange(OperandRangeRange input) {
+  llvm::SmallVector<ValueRange, 4> output;
+  output.reserve(input.size());
+  for (OperandRange r : input) {
+    output.push_back(r);
+  }
+  return output;
+}
+
 } // namespace llzk::function

@@ -302,12 +302,6 @@ def CallOp : FunctionDialectOp<
       [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::SymbolRefAttr":$callee,
            CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
-       OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
-                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
-                 [{
-                    build($_builder, $_state, callee.getResultTypes(),
-                          callee.getFullyQualifiedName(false), argOperands);
-                  }]>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::SymbolRefAttr":$callee,
            "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
@@ -321,6 +315,12 @@ def CallOp : FunctionDialectOp<
                  [{
                     build($_builder, $_state, resultTypes, callee, mapOperands,
                           $_builder.getDenseI32ArrayAttr(numDimsPerMap), argOperands);
+                  }]>,
+       OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                 [{
+                    build($_builder, $_state, callee.getResultTypes(),
+                          callee.getFullyQualifiedName(false), argOperands);
                   }]>,
        OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
@@ -370,6 +370,10 @@ def CallOp : FunctionDialectOp<
 
     /// Assuming the callee is `FUNC_NAME_COMPUTE`, return the single StructType result.
     ::llzk::component::StructType getSingleResultTypeOfCompute();
+
+    /// Allocate consecutive storage of the ValueRange instances in the parameter
+    /// so it can be passed to the builders as an `ArrayRef<ValueRange>`.
+    static ::llvm::SmallVector<::mlir::ValueRange> toVectorOfValueRange(::mlir::OperandRangeRange);
   }];
 
   let assemblyFormat = [{

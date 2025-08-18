@@ -19,6 +19,7 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/LLZKConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/WalkPatternRewriteDriver.h"
 #include "llzk/Util/Debug.h"
@@ -30,6 +31,7 @@
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
 
@@ -50,11 +52,14 @@ using namespace llzk::function;
 
 namespace {
 
-/// Mapping of `destStruct` field that has `srcStruct` type to each FieldDefOp from `srcStruct` to
-/// the cloned version of that `srcStruct` field within `destStruct`.
 using DestFieldWithSrcStructType = FieldDefOp;
 using DestCloneOfSrcStructField = FieldDefOp;
-using SrcStructFieldToCloneInDest = DenseMap<StringAttr, DestCloneOfSrcStructField>;
+/// Mapping of the name of each field in the inlining source struct to the new cloned version of the
+/// source field in the destination struct. Uses `std::map` for consistent ordering between multiple
+/// compliations of the same LLZK IR input.
+using SrcStructFieldToCloneInDest = std::map<StringRef, DestCloneOfSrcStructField>;
+/// Mapping of `FieldDefOp` in the inlining destination struct to each `FieldDefOp` from the
+/// inlining source struct to the new cloned version of the source field in the destination struct.
 using DestToSrcToClonedSrcInDest =
     DenseMap<DestFieldWithSrcStructType, SrcStructFieldToCloneInDest>;
 
@@ -86,7 +91,7 @@ bool combineHelper(
     return false;
   }
   SrcStructFieldToCloneInDest oldToNewFields = srcToClone->second;
-  auto resNewField = oldToNewFields.find(readOp.getFieldNameAttr().getAttr());
+  auto resNewField = oldToNewFields.find(readOp.getFieldName());
   if (resNewField == oldToNewFields.end()) {
     return false;
   }
@@ -127,6 +132,34 @@ bool combineReadChain(
   return combineHelper(readOp, tables, destToSrcToClone, readThatDefinesBaseComponent);
 }
 
+/// Find the `FieldWriteOp` that writes the given `Value`. Produce an error (using the given
+/// callback) if there is not exactly once such `FieldWriteOp`.
+FailureOr<FieldWriteOp>
+findOpThatWritesValue(Value writtenValue, function_ref<InFlightDiagnostic()> emitError) {
+  FieldWriteOp foundWrite = nullptr;
+  for (Operation *user : writtenValue.getUsers()) {
+    if (auto writeOp = llvm::dyn_cast<FieldWriteOp>(user)) {
+      // Find the write op that stores the created value
+      if (writeOp.getVal() == writtenValue) {
+        if (foundWrite) {
+          // Note: There is no reason for a subcomponent to be stored to more than one field.
+          auto diag = emitError().append("result should not be written to more than one field.");
+          diag.attachNote(foundWrite.getLoc()).append("written here");
+          diag.attachNote(writeOp.getLoc()).append("written here");
+          return diag;
+        } else {
+          foundWrite = writeOp;
+        }
+      }
+    }
+  }
+  if (!foundWrite) {
+    // Note: There is no reason to construct a subcomponent and not store it to a field.
+    return emitError().append("result should be written to a field.");
+  }
+  return foundWrite;
+}
+
 /// If the base component Value of the given FieldReadOp is the result of `struct.new` which is
 /// written to a field in `destToSrcToClone` and the field referenced by this FieldReadOp has a
 /// cloned field mapping in `destToSrcToClone`, replace this read with a new FieldReadOp referencing
@@ -152,34 +185,14 @@ LogicalResult combineNewThenReadChain(
   if (!createThatDefinesBaseComponent) {
     return success(); // No error. The pattern simply doesn't match.
   }
-
-  FieldWriteOp foundWrite = nullptr;
-  Value createdValue = createThatDefinesBaseComponent.getResult();
-  for (OpOperand &use : createdValue.getUses()) {
-    if (auto writeOp = llvm::dyn_cast<FieldWriteOp>(use.getOwner())) {
-      // Find the write op that stores the created value
-      if (writeOp.getVal() == createdValue) {
-        if (foundWrite) {
-          // Note: There is no reason for a subcomponent to be stored to more than one field.
-          auto diag = createThatDefinesBaseComponent.emitOpError(
-              "result should not be written to more than one field."
-          );
-          diag.attachNote(foundWrite.getLoc()).append("written here");
-          diag.attachNote(writeOp.getLoc()).append("written here");
-          return diag;
-        } else {
-          foundWrite = writeOp;
-        }
-      }
-    }
+  auto foundWrite =
+      findOpThatWritesValue(createThatDefinesBaseComponent, [&createThatDefinesBaseComponent]() {
+    return createThatDefinesBaseComponent.emitOpError();
+  });
+  if (failed(foundWrite)) {
+    return failure(); // error already printed within findOpThatWritesValue()
   }
-
-  if (!foundWrite) {
-    // Note: There is no reason to construct a subcomponent and not store it to a field.
-    return createThatDefinesBaseComponent.emitOpError("result should be written to a field.");
-  }
-
-  return success(combineHelper(readOp, tables, destToSrcToClone, foundWrite));
+  return success(combineHelper(readOp, tables, destToSrcToClone, foundWrite.value()));
 }
 
 /// Cache various ops from the caller struct that should be erased but only after all callees are
@@ -220,15 +233,12 @@ class StructInlinerBase {
       // Check if the FieldRef accesses a field of "self" within the `oldToNewFields` map.
       // Per `cloneWithFieldRefUpdate()`, `oldBaseVal` is the "self" value of `funcRef` so
       // check for a match there and then check that the referenced field name is in the map.
-      return success(
-          op.getComponent() == oldBaseVal &&
-          oldToNewFields.contains(op.getFieldNameAttr().getAttr())
-      );
+      return success(op.getComponent() == oldBaseVal && oldToNewFields.contains(op.getFieldName()));
     }
 
     void rewrite(FieldRefOpInterface op, PatternRewriter &rewriter) const final {
       rewriter.modifyOpInPlace(op, [this, &op]() {
-        FieldDefOp newF = oldToNewFields.at(op.getFieldNameAttr().getAttr());
+        FieldDefOp newF = oldToNewFields.at(op.getFieldName());
         op.setFieldName(newF.getSymName());
         op.getComponentMutable().set(this->newBaseVal);
       });
@@ -417,38 +427,13 @@ class StructInliner : public StructInlinerBase {
   LogicalResult inlineComputeCall(const DestToSrcToClonedSrcInDest &destToSrcToClone) {
     return doInlining(
         destToSrcToClone, srcStruct.getComputeFuncOp(), destStruct.getComputeFuncOp(),
-        [destStruct = &this->destStruct](CallOp callOp) {
+        [](CallOp callOp) {
       // The typical pattern is to write the return value of "compute()" to a field in
       // the current struct (i.e., `destStruct`).
-      FieldRefOpInterface selfFieldRefOp = nullptr;
-      Value selfArgFromCall = callOp.getSelfValueFromCompute();
-      for (OpOperand &use : selfArgFromCall.getUses()) {
-        if (auto writeOp = llvm::dyn_cast<FieldWriteOp>(use.getOwner())) {
-          // ASSERT: FieldWriteOp are only allowed to write to the current struct.
-          assert(writeOp.getComponent().getType() == destStruct->getType());
-          // ASSERT: The only other Value use in a write op is the Value being written.
-          assert(writeOp.getVal() == selfArgFromCall);
-          if (selfFieldRefOp) {
-            // Note: There is no reason for a subcomponent to be stored to more than one field.
-            auto diag = callOp.emitOpError().append(
-                "\"@", FUNC_NAME_COMPUTE, "\" result should not be written to more than one field."
-            );
-            diag.attachNote(selfFieldRefOp.getLoc()).append("written here");
-            diag.attachNote(writeOp.getLoc()).append("written here");
-            diag.report();
-            return static_cast<FieldRefOpInterface>(nullptr);
-          } else {
-            selfFieldRefOp = writeOp;
-          }
-        }
-      }
-      if (!selfFieldRefOp) {
-        // Note: There is no reason to construct a subcomponent and not store it to a field.
-        callOp.emitOpError()
-            .append("\"@", FUNC_NAME_COMPUTE, "\" result should be written to a field.")
-            .report();
-      }
-      return selfFieldRefOp;
+      auto foundWrite = findOpThatWritesValue(callOp.getSelfValueFromCompute(), [&callOp]() {
+        return callOp.emitOpError().append("\"@", FUNC_NAME_COMPUTE, "\" ");
+      });
+      return static_cast<FieldRefOpInterface>(foundWrite.value_or(nullptr));
     },
         // Within the compute function, find `CreateStructOp` with `srcStruct` type and mark them
         // for later deletion. The deletion must occur later because these values may still have
@@ -484,6 +469,85 @@ public:
     return destToSrcToClone;
   }
 };
+
+/// Replace the function parameter at `paramIdx` with multiple parameters according to the types of
+/// the values in the `nameToNewField` map. Within the body, replace reads from the original
+/// parameter with direct uses of the new block argument Values per the field name keys in the map.
+inline void splitFunctionParam(
+    FuncDefOp func, unsigned paramIdx, const SrcStructFieldToCloneInDest &nameToNewField
+) {
+  class Impl : public FunctionTypeConverter {
+    unsigned inputIdx;
+    const SrcStructFieldToCloneInDest &newFields;
+
+  public:
+    Impl(unsigned paramIdx, const SrcStructFieldToCloneInDest &nameToNewField)
+        : inputIdx(paramIdx), newFields(nameToNewField) {}
+
+  protected:
+    SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
+      SmallVector<Type> newTypes(origTypes);
+      auto it = newTypes.erase(newTypes.begin() + inputIdx);
+      for (auto [_, newField] : newFields) {
+        newTypes.insert(it, newField.getType());
+        ++it;
+      }
+      return newTypes;
+    }
+    SmallVector<Type> convertResults(ArrayRef<Type> origTypes) override {
+      return SmallVector<Type>(origTypes);
+    }
+    ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type>) override {
+      if (origAttrs) {
+        // Replicate the value at `origAttrs[inputIdx]` to have `newFields.size()`
+        SmallVector<Attribute> newAttrs(origAttrs.getValue());
+        newAttrs.insert(newAttrs.begin() + inputIdx, newFields.size() - 1, origAttrs[inputIdx]);
+        return ArrayAttr::get(origAttrs.getContext(), newAttrs);
+      }
+      return nullptr;
+    }
+    ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type>) override {
+      return origAttrs;
+    }
+
+    void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) override {
+      Value oldStructRef = entryBlock.getArgument(inputIdx);
+
+      // Insert new Block arguments, one per field, following the original one. Keep a map
+      // of field name to the associated block argument for replacing FieldReadOp.
+      llvm::StringMap<BlockArgument> fieldNameToNewArg;
+      Location loc = oldStructRef.getLoc();
+      unsigned idx = inputIdx;
+      for (auto [fieldName, newField] : newFields) {
+        // note: pre-increment so the original to be erased is still at `inputIdx`
+        BlockArgument newArg = entryBlock.insertArgument(++idx, newField.getType(), loc);
+        fieldNameToNewArg[fieldName] = newArg;
+      }
+
+      // Find all field reads from the original Block argument and replace uses of those
+      // reads with the appropriate new Block argument.
+      for (OpOperand &oldBlockArgUse : llvm::make_early_inc_range(oldStructRef.getUses())) {
+        if (auto readOp = llvm::dyn_cast<FieldReadOp>(oldBlockArgUse.getOwner())) {
+          if (readOp.getComponent() == oldStructRef) {
+            auto newArg = fieldNameToNewArg.at(readOp.getFieldName());
+            rewriter.replaceAllUsesWith(readOp, newArg);
+            rewriter.eraseOp(readOp);
+            continue;
+          }
+        }
+        // Currently, there's no other way in which a StructType parameter can be used.
+        llvm::errs() << "Unexpected use of " << oldBlockArgUse.get() << " in "
+                     << *oldBlockArgUse.getOwner() << '\n';
+        llvm_unreachable("Not yet implemented");
+      }
+
+      // Delete the original Block argument
+      entryBlock.eraseArgument(inputIdx);
+    }
+  };
+  IRRewriter rewriter(func.getContext());
+  Impl(paramIdx, nameToNewField).convert(func, rewriter);
+}
 
 class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructsPass> {
   /// Maps caller struct to callees that should be inlined. The outer SmallVector preserves the
@@ -610,10 +674,152 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     return retVal;
   }
 
+  /// Called before erasing an Operation to ensure that any remaining uses of the Operation's result
+  /// are removed if possible, else report an error (the subsequent call to erase() would fail
+  /// anyway if the result Value still has uses). Handles the following cases:
+  /// - If the op is used as argument to a function with a body, convert to take fields separately.
+  /// - If the op is used as argument to a function without a body, report an error.
+  inline static LogicalResult handleRemainingUses(
+      Operation *op, SymbolTableCollection &tables,
+      const DestToSrcToClonedSrcInDest &destToSrcToClone,
+      ArrayRef<FieldRefOpInterface> otherRefsToBeDeleted = {}
+  ) {
+    if (op->use_empty()) {
+      return success(); // safe to erase
+    }
+
+    // Helper function to determine if an Operation is contained in 'otherRefsToBeDeleted'
+    auto opWillBeDeleted = [&otherRefsToBeDeleted](Operation *op) -> bool {
+      return std::find(otherRefsToBeDeleted.begin(), otherRefsToBeDeleted.end(), op) !=
+             otherRefsToBeDeleted.end();
+    };
+
+    LLVM_DEBUG({
+      llvm::dbgs() << "[handleRemainingUses] op: " << *op << '\n';
+      llvm::dbgs() << "[handleRemainingUses]   in function: " << op->getParentOfType<FuncDefOp>()
+                   << '\n';
+    });
+    for (OpOperand &use : llvm::make_early_inc_range(op->getUses())) {
+      if (CallOp c = llvm::dyn_cast<CallOp>(use.getOwner())) {
+        LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]   use in call: " << c << '\n');
+        unsigned argIdx = use.getOperandNumber() - c.getArgOperands().getBeginOperandIndex();
+        LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]     at index: " << argIdx << '\n');
+
+        auto tgtFuncRes = c.getCalleeTarget(tables);
+        if (failed(tgtFuncRes)) {
+          return op
+              ->emitOpError("as argument to an unknown function is not supported by this pass.")
+              .attachNote(c.getLoc())
+              .append("used by this call");
+        }
+        FuncDefOp tgtFunc = tgtFuncRes->get();
+        LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]   call target: " << tgtFunc << '\n');
+        if (tgtFunc.isExternal()) {
+          // Those without a body (i.e. external implementation) present a problem because LLZK does
+          // not define a memory layout for the external implementation to interpret the struct.
+          return op
+              ->emitOpError("as argument to a no-body free function is not supported by this pass.")
+              .attachNote(c.getLoc())
+              .append("used by this call");
+        }
+
+        FieldRefOpInterface paramFromField = TypeSwitch<Operation *, FieldRefOpInterface>(op)
+                                                 .Case<FieldReadOp>([](auto p) { return p; })
+                                                 .Case<CreateStructOp>([](auto p) {
+          return findOpThatWritesValue(p, [&p]() { return p.emitOpError(); }).value_or(nullptr);
+        }).Default([](Operation *p) {
+          llvm::errs() << "Encountered unexpected op: "
+                       << (p ? p->getName().getStringRef() : "<<null>>") << '\n';
+          llvm_unreachable("Unexpected op kind");
+          return nullptr;
+        });
+        LLVM_DEBUG({
+          llvm::dbgs() << "[handleRemainingUses]   field ref op for param: "
+                       << (paramFromField ? debug::toStringOne(paramFromField) : "<<null>>")
+                       << '\n';
+        });
+        if (!paramFromField) {
+          return failure(); // error already printed within findOpThatWritesValue()
+        }
+        const SrcStructFieldToCloneInDest &newFields =
+            destToSrcToClone.at(getDef(tables, paramFromField));
+        LLVM_DEBUG({
+          llvm::dbgs() << "[handleRemainingUses]   fields to split: "
+                       << debug::toStringList(newFields) << '\n';
+        });
+
+        // Convert the FuncDefOp side first (to use the easier builder for the new CallOp).
+        splitFunctionParam(tgtFunc, argIdx, newFields);
+        LLVM_DEBUG({
+          llvm::dbgs() << "[handleRemainingUses]   UPDATED call target: " << tgtFunc << '\n';
+          llvm::dbgs() << "[handleRemainingUses]   UPDATED call target type: "
+                       << tgtFunc.getFunctionType() << '\n';
+        });
+
+        // Convert the CallOp side. Add a FieldReadOp for each value from the struct and pass them
+        // individually in place of the struct parameter.
+        {
+          OpBuilder builder(c);
+          SmallVector<Value> splitArgs;
+          // Before the CallOp, insert a read from every new field. These Values will replace the
+          // original argument in the CallOp.
+          auto originalBaseVal = paramFromField.getComponent();
+          for (auto [origName, newFieldRef] : newFields) {
+            splitArgs.push_back(builder.create<FieldReadOp>(
+                c.getLoc(), newFieldRef.getType(), originalBaseVal, newFieldRef.getNameAttr()
+            ));
+          }
+          // Generate the new argument list from the original but replace 'argIdx'
+          SmallVector<Value> newOpArgs(c.getArgOperands());
+          newOpArgs.insert(
+              newOpArgs.erase(newOpArgs.begin() + argIdx), splitArgs.begin(), splitArgs.end()
+          );
+          // Create the new CallOp, replace uses of the old with the new, delete the old
+          c.replaceAllUsesWith(builder.create<CallOp>(
+              c.getLoc(), tgtFunc, CallOp::toVectorOfValueRange(c.getMapOperands()),
+              c.getNumDimsPerMapAttr(), newOpArgs
+          ));
+          c.erase();
+        }
+        LLVM_DEBUG({
+          llvm::dbgs() << "[handleRemainingUses]   UPDATED function: "
+                       << op->getParentOfType<FuncDefOp>() << '\n';
+        });
+      } else {
+        Operation *user = use.getOwner();
+        // Report an error for any user other than some field ref that will be deleted anyway.
+        if (!opWillBeDeleted(user)) {
+          return op->emitOpError()
+              .append(
+                  "with use in '", user->getName().getStringRef(),
+                  "' is not (currently) supported by this pass."
+              )
+              .attachNote(user->getLoc())
+              .append("used by this call");
+        }
+      }
+    }
+    // Ensure that all users of the 'op' were deleted above, or will be per 'otherRefsToBeDeleted'.
+    if (!op->use_empty()) {
+      for (Operation *user : op->getUsers()) {
+        if (!opWillBeDeleted(user)) {
+          llvm::errs() << "Op has remaining use(s) that could not be removed: " << *op << '\n';
+          llvm_unreachable("Expected all uses to be removed");
+        }
+      }
+    }
+    return success();
+  }
+
   inline static LogicalResult finalizeStruct(
       SymbolTableCollection &tables, StructDefOp caller, PendingErasure &&toDelete,
       DestToSrcToClonedSrcInDest &&destToSrcToClone
   ) {
+    LLVM_DEBUG({
+      llvm::dbgs() << "[finalizeStruct] dumping 'caller' struct before compressing chains:\n";
+      llvm::dbgs() << caller << '\n';
+    });
+
     // Compress chains of reads that result after inlining multiple callees.
     caller.getConstrainFuncOp().walk([&tables, &destToSrcToClone](FieldReadOp readOp) {
       combineReadChain(readOp, tables, destToSrcToClone);
@@ -624,37 +830,43 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
       return failed(res) ? WalkResult::interrupt() : WalkResult::advance();
     });
     if (res.wasInterrupted()) {
-      return failure();
+      return failure(); // error already printed within combineNewThenReadChain()
     }
 
-    // To avoid "still has uses" errors, must erase FieldRefOpInterface before erasing
+    LLVM_DEBUG({
+      llvm::dbgs() << "[finalizeStruct] dumping 'caller' struct before deleting ops:\n";
+      llvm::dbgs() << caller << '\n';
+      llvm::dbgs() << "[finalizeStruct] ops marked for deletion:\n";
+      for (auto op : toDelete.fieldRefOps) {
+        llvm::dbgs().indent(2) << op << '\n';
+      }
+      for (auto op : toDelete.newStructOps) {
+        llvm::dbgs().indent(2) << op << '\n';
+      }
+      for (auto op : toDelete.fieldDefs) {
+        llvm::dbgs().indent(2) << op << '\n';
+      }
+    });
+
+    // Handle remaining uses of CreateStructOp before deleting anything because this process
+    // needs to be able to find the writes that stores the result of these ops.
+    for (auto op : toDelete.newStructOps) {
+      if (failed(handleRemainingUses(op, tables, destToSrcToClone, toDelete.fieldRefOps))) {
+        return failure(); // error already printed within handleRemainingUses()
+      }
+    }
+    // Next, to avoid "still has uses" errors, must erase FieldRefOpInterface before erasing
     // the CreateStructOp or FieldDefOp.
     for (auto op : toDelete.fieldRefOps) {
-      op.erase();
-    }
-    for (auto op : toDelete.newStructOps) {
-      // Before erasing the op, check if there are any uses of the struct Value as a free function
-      // parameter. This is (currently) unsupported. Free functions with a body could either be
-      // inlined also or have struct parameter(s) split to pass each field value separately. Those
-      // without a body (i.e. external implementation) present a problem because LLZK does not
-      // define a memory layout for structs that the external implementation could reference.
-      if (!op.use_empty()) {
-        for (OpOperand &use : op->getUses()) {
-          if (auto c = llvm::dyn_cast<CallOp>(use.getOwner())) {
-            if (!c.calleeIsStructCompute() && !c.calleeIsStructConstrain()) {
-              return op
-                  .emitOpError(
-                      "passed as parameter to a free function is not supported by this pass."
-                  )
-                  .attachNote(c.getLoc())
-                  .append("used by this call");
-            }
-          }
-        }
+      if (failed(handleRemainingUses(op, tables, destToSrcToClone))) {
+        return failure(); // error already printed within handleRemainingUses()
       }
       op.erase();
     }
-    // Erase FieldDefOp via SymbolTable so table itself is updated too.
+    for (auto op : toDelete.newStructOps) {
+      op.erase();
+    }
+    // Finally, erase FieldDefOp via SymbolTable so table itself is updated too.
     auto callerSymTab = tables.getSymbolTable(caller);
     for (auto op : toDelete.fieldDefs) {
       assert(op.getParentOp() == caller); // using correct SymbolTable

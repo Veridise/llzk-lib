@@ -797,3 +797,110 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// TESTS:
+//  - Passing struct as `constrain` parameter, multiple levels. Specifically,
+//    "@Component11C::@constrain()" where the '%a' parameter is passed through.
+//  - Attributes on fields are propagated correctly.
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Component11A {
+    struct.field @f : !felt.type {llzk.pub}
+
+    function.def @compute() -> !struct.type<@Component11A> {
+      %self = struct.new : !struct.type<@Component11A>
+      %12 = felt.const 12
+      struct.writef %self[@f] = %12 : !struct.type<@Component11A>, !felt.type
+      function.return %self : !struct.type<@Component11A>
+    }
+
+    function.def @constrain(%self: !struct.type<@Component11A>) {
+      %12 = felt.const 12
+      %c = struct.readf %self[@f] : !struct.type<@Component11A>, !felt.type
+      constrain.eq %12, %c : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Component11B {
+    struct.field @f : !felt.type
+
+    function.def @compute(%a: !struct.type<@Component11A>) -> !struct.type<@Component11B> {
+      %self = struct.new : !struct.type<@Component11B>
+      %r = struct.readf %a[@f] : !struct.type<@Component11A>, !felt.type
+      %m = felt.mul %r, %r
+      struct.writef %self[@f] = %m : !struct.type<@Component11B>, !felt.type
+      function.return %self : !struct.type<@Component11B>
+    }
+
+    function.def @constrain(%self: !struct.type<@Component11B>, %a: !struct.type<@Component11A>) {
+      %r = struct.readf %a[@f] : !struct.type<@Component11A>, !felt.type
+      %m = felt.mul %r, %r
+      %m2 = struct.readf %self[@f]: !struct.type<@Component11B>, !felt.type
+      constrain.eq %m, %m2 : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Component11C {
+    struct.field @fb : !struct.type<@Component11B>
+
+    function.def @compute(%a: !struct.type<@Component11A>) -> !struct.type<@Component11C> {
+      %self = struct.new : !struct.type<@Component11C>
+      %b = function.call @Component11B::@compute(%a) : (!struct.type<@Component11A>) -> !struct.type<@Component11B>
+      struct.writef %self[@fb] = %b : !struct.type<@Component11C>, !struct.type<@Component11B>
+      function.return %self : !struct.type<@Component11C>
+    }
+
+    function.def @constrain(%self: !struct.type<@Component11C>, %a: !struct.type<@Component11A>) {
+      %b = struct.readf %self[@fb] : !struct.type<@Component11C>, !struct.type<@Component11B>
+      function.call @Component11B::@constrain(%b, %a) : (!struct.type<@Component11B>,!struct.type<@Component11A>) -> ()
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.field @fa : !struct.type<@Component11A>
+    struct.field @fc : !struct.type<@Component11C>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %a = function.call @Component11A::@compute() : () -> !struct.type<@Component11A>
+      struct.writef %self[@fa] = %a : !struct.type<@Main>, !struct.type<@Component11A>
+      %c = function.call @Component11C::@compute(%a) : (!struct.type<@Component11A>) -> !struct.type<@Component11C>
+      struct.writef %self[@fc] = %c : !struct.type<@Main>, !struct.type<@Component11C>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %a = struct.readf %self[@fa] : !struct.type<@Main>, !struct.type<@Component11A>
+      function.call @Component11A::@constrain(%a) : (!struct.type<@Component11A>) -> ()
+      %c = struct.readf %self[@fc] : !struct.type<@Main>, !struct.type<@Component11C>
+      function.call @Component11C::@constrain(%c, %a) : (!struct.type<@Component11C>,!struct.type<@Component11A>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    struct.field @"fa:!s<@Component11A>+f" : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.field @"fc:!s<@Component11C>+fb:!s<@Component11B>+f" : !felt.type
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:      struct.writef %[[V0]][@"fa:!s<@Component11A>+f"] = %[[V1]] : <@Main>, !felt.type
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.readf %[[V0]][@"fa:!s<@Component11A>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.mul %[[V2]], %[[V2]] : !felt.type, !felt.type
+// CHECK-NEXT:      struct.writef %[[V0]][@"fc:!s<@Component11C>+fb:!s<@Component11B>+f"] = %[[V3]] : <@Main>, !felt.type
+// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.readf %[[V4]][@"fa:!s<@Component11A>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V6]], %[[V5]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readf %[[V4]][@"fa:!s<@Component11A>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = felt.mul %[[V7]], %[[V7]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readf %[[V4]][@"fc:!s<@Component11C>+fb:!s<@Component11B>+f"] : <@Main>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V8]], %[[V9]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

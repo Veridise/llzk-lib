@@ -303,15 +303,11 @@ private:
           }
 
           if (modified) {
-            SmallVector<ValueRange> mapOperands;
             OpBuilder builder(callOp);
-            for (auto group : callOp.getMapOperands()) {
-              mapOperands.push_back(group);
-            }
-
             builder.create<CallOp>(
-                callOp.getLoc(), callOp.getResultTypes(), callOp.getCallee(), mapOperands,
-                callOp.getNumDimsPerMap(), newOperands
+                callOp.getLoc(), callOp.getResultTypes(), callOp.getCallee(),
+                CallOp::toVectorOfValueRange(callOp.getMapOperands()), callOp.getNumDimsPerMap(),
+                newOperands
             );
             callOp->erase();
           }

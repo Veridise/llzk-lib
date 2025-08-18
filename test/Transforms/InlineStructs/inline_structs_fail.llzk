@@ -89,7 +89,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @f2 : !felt.type
 
     function.def @compute(%z: !felt.type) -> !struct.type<@StructAsParamToFreeFunc> {
-      // expected-error@+1 {{'struct.new' op passed as parameter to a free function is not supported by this pass.}}
+      // expected-error@+1 {{'struct.new' op as argument to a no-body free function is not supported by this pass.}}
       %self = struct.new : !struct.type<@StructAsParamToFreeFunc>
       struct.writef %self[@f1] = %z : !struct.type<@StructAsParamToFreeFunc>, !felt.type
       struct.writef %self[@f2] = %z : !struct.type<@StructAsParamToFreeFunc>, !felt.type
