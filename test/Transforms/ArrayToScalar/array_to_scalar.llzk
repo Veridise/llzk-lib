@@ -683,3 +683,53 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+!F = !felt.type
+module attributes {veridise.lang = "llzk"} {
+  struct.def @ArrayFieldsAndParamsWithPubModifier {
+    struct.field @arr : !array.type<2,3 x !F> {llzk.pub}
+
+    function.def @compute(%a: !array.type<2,3 x !F> {llzk.pub}) -> !struct.type<@ArrayFieldsAndParamsWithPubModifier> {
+      %self = struct.new : !struct.type<@ArrayFieldsAndParamsWithPubModifier>
+      struct.writef %self[@arr] = %a : !struct.type<@ArrayFieldsAndParamsWithPubModifier>, !array.type<2,3 x !F>
+      function.return %self : !struct.type<@ArrayFieldsAndParamsWithPubModifier>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayFieldsAndParamsWithPubModifier>, %b: !array.type<2,3 x !F> {llzk.pub}) {
+      %a = struct.readf %self[@arr] : !struct.type<@ArrayFieldsAndParamsWithPubModifier>, !array.type<2,3 x !F>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: struct.def @ArrayFieldsAndParamsWithPubModifier {
+// CHECK-NEXT:    struct.field @arr_0 : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.field @arr_1 : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.field @arr_2 : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.field @arr_3 : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.field @arr_4 : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.field @arr_5 : !felt.type {llzk.pub}
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}, %[[V2:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub},
+// CHECK-SAME:    %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}, %[[V4:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}, %[[V5:[0-9a-zA-Z_\.]+]]:
+// CHECK-SAME:    !felt.type {llzk.pub}) -> !struct.type<@ArrayFieldsAndParamsWithPubModifier> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.new : <@ArrayFieldsAndParamsWithPubModifier>
+// CHECK-DAG:       struct.writef %[[V6]][@arr_2] = %[[V2]] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-DAG:       struct.writef %[[V6]][@arr_3] = %[[V3]] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-DAG:       struct.writef %[[V6]][@arr_4] = %[[V4]] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-DAG:       struct.writef %[[V6]][@arr_0] = %[[V0]] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-DAG:       struct.writef %[[V6]][@arr_1] = %[[V1]] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-DAG:       struct.writef %[[V6]][@arr_5] = %[[V5]] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-NEXT:      function.return %[[V6]] : !struct.type<@ArrayFieldsAndParamsWithPubModifier>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@ArrayFieldsAndParamsWithPubModifier>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}, 
+// CHECK-SAME:    %[[V9:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}, %[[V10:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}, %[[V11:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}, 
+// CHECK-SAME:    %[[V12:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}, %[[V13:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}) attributes {function.allow_constraint} {
+// CHECK-DAG:       %[[V14:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_2] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-DAG:       %[[V15:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_3] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-DAG:       %[[V16:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_4] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-DAG:       %[[V17:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_0] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-DAG:       %[[V18:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_1] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-DAG:       %[[V19:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@arr_5] : <@ArrayFieldsAndParamsWithPubModifier>, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
