@@ -29,7 +29,7 @@ protected:
   virtual void processBlockArgs(mlir::Block &entryBlock, mlir::RewriterBase &rewriter) = 0;
 
 public:
-  virtual ~FunctionTypeConverter() {}
+  virtual ~FunctionTypeConverter() = default;
 
   void convert(function::FuncDefOp op, mlir::RewriterBase &rewriter) {
     // Update in/out types of the function

@@ -203,7 +203,15 @@ struct PendingErasure {
   SmallVector<FieldDefOp> fieldDefs;
 };
 
-class StructInlinerBase {
+class StructInliner {
+  SymbolTableCollection &tables;
+  PendingErasure &toDelete;
+  /// The struct that will be inlined (and maybe removed).
+  StructDefOp srcStruct;
+  /// The Struct whose body will be augmented with the inlined content.
+  StructDefOp destStruct;
+
+  inline FieldDefOp getDef(FieldRefOpInterface fRef) const { return ::getDef(tables, fRef); }
 
   // Update field read/write ops that target the "self" value of `withinFunction` and some key in
   // `oldToNewFieldDef` to instead target `newBaseVal` and the mapped value from `oldToNewFieldDef`.
@@ -261,98 +269,147 @@ class StructInlinerBase {
     }
   };
 
-protected:
-  SymbolTableCollection &tables;
-  PendingErasure &toDelete;
+  /// Common implementation for inlining both "constrain" and "compute" functions.
+  class ImplBase {
+  protected:
+    const StructInliner &data;
+    const DestToSrcToClonedSrcInDest &destToSrcToClone;
 
-  StructInlinerBase(SymbolTableCollection &symTables, PendingErasure &opsToDelete)
-      : tables(symTables), toDelete(opsToDelete) {}
+    virtual FieldRefOpInterface getSelfRef(CallOp callOp) = 0;
+    virtual void processCloneBeforeInlining(FuncDefOp func) {}
+    virtual ~ImplBase() = default;
 
-  inline FieldDefOp getDef(FieldRefOpInterface fRef) const { return ::getDef(tables, fRef); }
+  public:
+    ImplBase(const StructInliner &inliner, const DestToSrcToClonedSrcInDest &destToSrcToCloneRef)
+        : data(inliner), destToSrcToClone(destToSrcToCloneRef) {}
 
-  LogicalResult doInlining(
-      const DestToSrcToClonedSrcInDest &destToSrcToClone, FuncDefOp srcFunc, FuncDefOp destFunc,
-      llvm::function_ref<FieldRefOpInterface(CallOp)> getSelfRef,
-      llvm::function_ref<void(FuncDefOp)> processCloneBeforeInlining = nullptr
-  ) {
-    InlinerInterface inliner(destFunc.getContext());
+    LogicalResult doInlining(FuncDefOp srcFunc, FuncDefOp destFunc) {
+      InlinerInterface inliner(destFunc.getContext());
 
-    /// Replaces CallOp that target `srcFunc` with an inlined version of `srcFunc`.
-    auto callHandler = [&](CallOp callOp) {
-      // Ensure the CallOp targets `srcFunc`
-      auto callOpTarget = callOp.getCalleeTarget(tables);
-      assert(succeeded(callOpTarget));
-      if (callOpTarget->get() != srcFunc) {
+      /// Replaces CallOp that target `srcFunc` with an inlined version of `srcFunc`.
+      auto callHandler = [this, &inliner, &srcFunc](CallOp callOp) {
+        // Ensure the CallOp targets `srcFunc`
+        auto callOpTarget = callOp.getCalleeTarget(this->data.tables);
+        assert(succeeded(callOpTarget));
+        if (callOpTarget->get() != srcFunc) {
+          return WalkResult::advance();
+        }
+
+        // Get the "self" struct value from the CallOp and determine which struct field is used.
+        FieldRefOpInterface selfFieldRefOp = this->getSelfRef(callOp);
+        if (!selfFieldRefOp) {
+          // Note: error message was already printed within `getSelfRef` callback.
+          return WalkResult::interrupt(); // use interrupt to signal failure
+        }
+
+        // Create a clone of the source function (must do the whole function not just the body
+        // region because `inlineCall()` expects the Region to have a parent op) and update field
+        // references to the old struct fields to instead use the new struct fields.
+        FuncDefOp srcFuncClone = FieldRefRewriter::cloneWithFieldRefUpdate(
+            std::make_unique<FieldRefRewriter>(
+                srcFunc, selfFieldRefOp.getComponent(),
+                this->destToSrcToClone.at(this->data.getDef(selfFieldRefOp))
+            )
+        );
+        this->processCloneBeforeInlining(srcFuncClone);
+
+        // Inline the cloned function in place of `callOp`
+        LogicalResult inlineCallRes =
+            inlineCall(inliner, callOp, srcFuncClone, &srcFuncClone.getBody(), false);
+        if (failed(inlineCallRes)) {
+          callOp.emitError().append("Failed to inline ", srcFunc.getFullyQualifiedName()).report();
+          return WalkResult::interrupt(); // use interrupt to signal failure
+        }
+        srcFuncClone.erase();      // delete what's left after transferring the body elsewhere
+        callOp.erase();            // delete the original CallOp
+        return WalkResult::skip(); // Must skip because the CallOp was erased.
+      };
+
+      auto fieldWriteHandler = [this](FieldWriteOp writeOp) {
+        // Check if the field ref op should be deleted in the end
+        if (this->destToSrcToClone.contains(this->data.getDef(writeOp))) {
+          this->data.toDelete.fieldRefOps.push_back(writeOp);
+        }
         return WalkResult::advance();
+      };
+
+      /// Combine chained FieldReadOp according to replacements in `destToSrcToClone`.
+      /// See `combineReadChain()`
+      auto fieldReadHandler = [this](FieldReadOp readOp) {
+        // Check if the field ref op should be deleted in the end
+        if (this->destToSrcToClone.contains(this->data.getDef(readOp))) {
+          this->data.toDelete.fieldRefOps.push_back(readOp);
+        }
+        // If the FieldReadOp was replaced/erased, must skip.
+        return combineReadChain(readOp, this->data.tables, destToSrcToClone)
+                   ? WalkResult::skip()
+                   : WalkResult::advance();
+      };
+
+      auto walkRes = destFunc.getBody().walk<WalkOrder::PreOrder>([&](Operation *op) {
+        return TypeSwitch<Operation *, WalkResult>(op)
+            .Case<CallOp>(callHandler)
+            .Case<FieldWriteOp>(fieldWriteHandler)
+            .Case<FieldReadOp>(fieldReadHandler)
+            .Default([](Operation *) { return WalkResult::advance(); });
+      });
+
+      return failure(walkRes.wasInterrupted());
+    }
+  };
+
+  class ConstrainImpl : public ImplBase {
+    using ImplBase::ImplBase;
+
+    FieldRefOpInterface getSelfRef(CallOp callOp) override {
+      // The typical pattern is to read a struct instance from a field and then call "constrain()"
+      // on it. Get the Value passed as the "self" struct to the CallOp and determine which field it
+      // was read from in the current struct (i.e., `destStruct`).
+      Value selfArgFromCall = callOp.getSelfValueFromConstrain();
+      FieldRefOpInterface selfFieldRefOp =
+          llvm::dyn_cast_if_present<FieldReadOp>(selfArgFromCall.getDefiningOp());
+      if (selfFieldRefOp &&
+          selfFieldRefOp.getComponent().getType() == this->data.destStruct.getType()) {
+        return selfFieldRefOp;
       }
+      // TODO: There is a possibility that this value is not from a field read (ex: it could be a
+      // parameter to the `destStruct` function). That will not have a mapping in `destToSrcToClone`
+      // and new fields will still need to be added, they can be prefixed with parameter index since
+      // there is no current field name to use as the unique prefix.
+      //
+      // TODO: also, in that case, the signature of this lambda is insufficient. If there's no
+      // field involved we need to instead return the two relevant pieces, the "self" Value and
+      // the FieldDefOp created within `destStruct`.
+      //
+      llvm::errs() << "[TODO] callOp = " << callOp << '\n';
+      llvm::errs() << "[TODO] selfArgFromCall = " << selfArgFromCall << '\n';
+      assert(false && "TODO: handle this!");
+    }
+  };
 
-      // Get the "self" struct value from the CallOp and determine which struct field is used.
-      FieldRefOpInterface selfFieldRefOp = getSelfRef(callOp);
-      if (!selfFieldRefOp) {
-        // Note: error message was already printed within `getSelfRef` callback.
-        return WalkResult::interrupt(); // use interrupt to signal failure
-      }
+  class ComputeImpl : public ImplBase {
+    using ImplBase::ImplBase;
 
-      // Create a clone of the source function (must do the whole function not just the body region
-      // because `inlineCall()` expects the Region to have a parent op) and update field references
-      // to the old struct fields to instead use the new struct fields.
-      FuncDefOp srcFuncClone =
-          FieldRefRewriter::cloneWithFieldRefUpdate(std::make_unique<FieldRefRewriter>(
-              srcFunc, selfFieldRefOp.getComponent(), destToSrcToClone.at(getDef(selfFieldRefOp))
-          ));
-      if (processCloneBeforeInlining) {
-        processCloneBeforeInlining(srcFuncClone);
-      }
+    FieldRefOpInterface getSelfRef(CallOp callOp) override {
+      // The typical pattern is to write the return value of "compute()" to a field in
+      // the current struct (i.e., `destStruct`).
+      auto foundWrite = findOpThatWritesValue(callOp.getSelfValueFromCompute(), [&callOp]() {
+        return callOp.emitOpError().append("\"@", FUNC_NAME_COMPUTE, "\" ");
+      });
+      return static_cast<FieldRefOpInterface>(foundWrite.value_or(nullptr));
+    }
 
-      // Inline the cloned function in place of `callOp`
-      LogicalResult inlineCallRes =
-          inlineCall(inliner, callOp, srcFuncClone, &srcFuncClone.getBody(), false);
-      if (failed(inlineCallRes)) {
-        callOp.emitError().append("Failed to inline ", srcFunc.getFullyQualifiedName()).report();
-        return WalkResult::interrupt(); // use interrupt to signal failure
-      }
-      srcFuncClone.erase();      // delete what's left after transferring the body elsewhere
-      callOp.erase();            // delete the original CallOp
-      return WalkResult::skip(); // Must skip because the CallOp was erased.
-    };
-
-    auto fieldWriteHandler = [&](FieldWriteOp writeOp) {
-      // Check if the field ref op should be deleted in the end
-      if (destToSrcToClone.contains(getDef(writeOp))) {
-        toDelete.fieldRefOps.push_back(writeOp);
-      }
-      return WalkResult::advance();
-    };
-
-    /// Combine chained FieldReadOp according to replacements in `destToSrcToClone`.
-    /// See `combineReadChain()`
-    auto fieldReadHandler = [&](FieldReadOp readOp) {
-      // Check if the field ref op should be deleted in the end
-      if (destToSrcToClone.contains(getDef(readOp))) {
-        toDelete.fieldRefOps.push_back(readOp);
-      }
-      // If the FieldReadOp was replaced/erased, must skip.
-      return combineReadChain(readOp, tables, destToSrcToClone) ? WalkResult::skip()
-                                                                : WalkResult::advance();
-    };
-
-    auto walkRes = destFunc.getBody().walk<WalkOrder::PreOrder>([&](Operation *op) {
-      return TypeSwitch<Operation *, WalkResult>(op)
-          .Case<CallOp>(callHandler)
-          .Case<FieldWriteOp>(fieldWriteHandler)
-          .Case<FieldReadOp>(fieldReadHandler)
-          .Default([](Operation *) { return WalkResult::advance(); });
-    });
-
-    return failure(walkRes.wasInterrupted());
-  }
-};
-
-class StructInliner : public StructInlinerBase {
-  /// The struct that will be inlined (and maybe removed).
-  StructDefOp srcStruct;
-  /// The Struct whose body will be augmented with the inlined content.
-  StructDefOp destStruct;
+    void processCloneBeforeInlining(FuncDefOp func) override {
+      // Within the compute function, find `CreateStructOp` with `srcStruct` type and mark them
+      // for later deletion. The deletion must occur later because these values may still have
+      // uses until ALL callees of a function have been inlined.
+      func.getBody().walk([this](CreateStructOp newStructOp) {
+        if (newStructOp.getType() == this->data.srcStruct.getType()) {
+          this->data.toDelete.newStructOps.push_back(newStructOp);
+        }
+      });
+    }
+  };
 
   // Find any field(s) in `destStruct` whose type matches `srcStruct` (allowing any parameters, if
   // applicable). For each such field, clone all fields from `srcStruct` into `destStruct` and cache
@@ -394,66 +451,22 @@ class StructInliner : public StructInlinerBase {
   }
 
   /// Inline the "constrain" function from `srcStruct` into `destStruct`.
-  LogicalResult inlineConstrainCall(const DestToSrcToClonedSrcInDest &destToSrcToClone) {
-    return doInlining(
-        destToSrcToClone, srcStruct.getConstrainFuncOp(), destStruct.getConstrainFuncOp(),
-        [destStruct = &this->destStruct](CallOp callOp) {
-      // The typical pattern is to read a struct instance from a field and then call "constrain()"
-      // on it. Get the Value passed as the "self" struct to the CallOp and determine which field it
-      // was read from in the current struct (i.e., `destStruct`).
-      Value selfArgFromCall = callOp.getSelfValueFromConstrain();
-      FieldRefOpInterface selfFieldRefOp =
-          llvm::dyn_cast_if_present<FieldReadOp>(selfArgFromCall.getDefiningOp());
-      if (selfFieldRefOp && selfFieldRefOp.getComponent().getType() == destStruct->getType()) {
-        return selfFieldRefOp;
-      }
-      // TODO: There is a possibility that this value is not from a field read (ex: it could be a
-      // parameter to the `destStruct` function). That will not have a mapping in `destToSrcToClone`
-      // and new fields will still need to be added, they can be prefixed with parameter index since
-      // there is no current field name to use as the unique prefix.
-      //
-      // TODO: also, in that case, the signature of this lambda is insufficient. If there's no
-      // field involved we need to instead return the two relevant pieces, the "self" Value and
-      // the FieldDefOp created within `destStruct`.
-      //
-      llvm::errs() << "[TODO] callOp = " << callOp << '\n';
-      llvm::errs() << "[TODO] selfArgFromCall = " << selfArgFromCall << '\n';
-      assert(false && "TODO: handle this!");
-    }
-    );
+  inline LogicalResult inlineConstrainCall(const DestToSrcToClonedSrcInDest &destToSrcToClone) {
+    return ConstrainImpl(*this, destToSrcToClone)
+        .doInlining(srcStruct.getConstrainFuncOp(), destStruct.getConstrainFuncOp());
   }
 
   /// Inline the "compute" function from `srcStruct` into `destStruct`.
-  LogicalResult inlineComputeCall(const DestToSrcToClonedSrcInDest &destToSrcToClone) {
-    return doInlining(
-        destToSrcToClone, srcStruct.getComputeFuncOp(), destStruct.getComputeFuncOp(),
-        [](CallOp callOp) {
-      // The typical pattern is to write the return value of "compute()" to a field in
-      // the current struct (i.e., `destStruct`).
-      auto foundWrite = findOpThatWritesValue(callOp.getSelfValueFromCompute(), [&callOp]() {
-        return callOp.emitOpError().append("\"@", FUNC_NAME_COMPUTE, "\" ");
-      });
-      return static_cast<FieldRefOpInterface>(foundWrite.value_or(nullptr));
-    },
-        // Within the compute function, find `CreateStructOp` with `srcStruct` type and mark them
-        // for later deletion. The deletion must occur later because these values may still have
-        // uses until ALL callees of a function have been inlined.
-        [this](FuncDefOp func) {
-      StructType srcStructType = this->srcStruct.getType();
-      func.getBody().walk([&](CreateStructOp newStructOp) {
-        if (newStructOp.getType() == srcStructType) {
-          toDelete.newStructOps.push_back(newStructOp);
-        }
-      });
-    }
-    );
+  inline LogicalResult inlineComputeCall(const DestToSrcToClonedSrcInDest &destToSrcToClone) {
+    return ComputeImpl(*this, destToSrcToClone)
+        .doInlining(srcStruct.getComputeFuncOp(), destStruct.getComputeFuncOp());
   }
 
 public:
   StructInliner(
-      SymbolTableCollection &tables, PendingErasure &toDelete, StructDefOp from, StructDefOp into
+      SymbolTableCollection &tbls, PendingErasure &opsToDelete, StructDefOp from, StructDefOp into
   )
-      : StructInlinerBase(tables, toDelete), srcStruct(from), destStruct(into) {}
+      : tables(tbls), toDelete(opsToDelete), srcStruct(from), destStruct(into) {}
 
   FailureOr<DestToSrcToClonedSrcInDest> doInline() {
     LLVM_DEBUG(
