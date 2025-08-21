@@ -178,7 +178,7 @@ def FuncDefOp
 
     /// Return the full name for this function from the root module, including
     /// all surrounding symbol table names (i.e., modules and structs).
-    ::mlir::SymbolRefAttr getFullyQualifiedName();
+    ::mlir::SymbolRefAttr getFullyQualifiedName(bool requireParent = true);
 
     /// Return `true` iff the function name is `FUNC_NAME_COMPUTE` (if needed, a check
     /// that this FuncDefOp is located within a StructDefOp must be done separately).
@@ -297,8 +297,8 @@ def CallOp : FunctionDialectOp<
        OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
                      CArg<"::mlir::ValueRange", "{}">:$argOperands),
                  [{
-                    build($_builder, $_state, callee.getFunctionType().getResults(),
-                          ::mlir::SymbolRefAttr::get(callee), argOperands);
+                    build($_builder, $_state, callee.getResultTypes(),
+                          callee.getFullyQualifiedName(false), argOperands);
                   }]>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::SymbolRefAttr":$callee,
@@ -319,8 +319,8 @@ def CallOp : FunctionDialectOp<
                      "::mlir::DenseI32ArrayAttr":$numDimsPerMap,
                      CArg<"::mlir::ValueRange", "{}">:$argOperands),
                  [{
-                    build($_builder, $_state, callee.getFunctionType().getResults(),
-                          ::mlir::SymbolRefAttr::get(callee), mapOperands, numDimsPerMap, argOperands);
+                    build($_builder, $_state, callee.getResultTypes(),
+                          callee.getFullyQualifiedName(false), mapOperands, numDimsPerMap, argOperands);
                   }]>,
        OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
