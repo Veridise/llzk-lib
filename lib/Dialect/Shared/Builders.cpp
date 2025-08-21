@@ -145,7 +145,7 @@ ModuleBuilder::insertComputeCall(StructDefOp caller, StructDefOp callee, Locatio
   auto calleeFn = computeFnMap.at(callee.getName());
 
   OpBuilder builder(callerFn.getBody());
-  builder.create<CallOp>(callLoc, calleeFn.getResultTypes(), calleeFn.getFullyQualifiedName());
+  builder.create<CallOp>(callLoc, calleeFn);
   updateComputeReachability(caller, callee);
   return *this;
 }
@@ -206,7 +206,7 @@ ModuleBuilder::insertGlobalCall(FuncDefOp caller, std::string_view callee, Locat
   FuncDefOp calleeFn = globalFuncMap.at(callee);
 
   OpBuilder builder(caller.getBody());
-  builder.create<CallOp>(callLoc, calleeFn.getResultTypes(), calleeFn.getFullyQualifiedName());
+  builder.create<CallOp>(callLoc, calleeFn);
   return *this;
 }
 

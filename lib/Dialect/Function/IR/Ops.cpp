@@ -300,7 +300,11 @@ LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   return verifyTypeResolution(tables, *this, getFunctionType());
 }
 
-SymbolRefAttr FuncDefOp::getFullyQualifiedName() {
+SymbolRefAttr FuncDefOp::getFullyQualifiedName(bool requireParent) {
+  // If the parent is not present and not required, just return the symbol name
+  if (!requireParent && getOperation()->getParentOp() == nullptr) {
+    return SymbolRefAttr::get(getOperation());
+  }
   auto res = getPathFromRoot(*this);
   assert(succeeded(res));
   return res.value();
