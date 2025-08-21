@@ -607,9 +607,15 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
   /// resulting `InliningPlan` also preserves this bottom-up ordering to
   inline FailureOr<InliningPlan>
   makePlan(const SymbolUseGraph &useGraph, SymbolTableCollection &tables) {
-    LLVM_DEBUG(
-        llvm::dbgs() << "Running InlineStructsPass with max complexity " << maxComplexity << '\n'
-    );
+    LLVM_DEBUG({
+      llvm::dbgs() << "Running InlineStructsPass with max complexity ";
+      if (maxComplexity == 0) {
+        llvm::dbgs() << "unlimited";
+      } else {
+        llvm::dbgs() << maxComplexity;
+      }
+      llvm::dbgs() << '\n';
+    });
     InliningPlan retVal;
     DenseMap<const SymbolUseGraphNode *, int64_t> complexityMemo;
 
