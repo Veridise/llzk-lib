@@ -195,6 +195,11 @@ LogicalResult combineNewThenReadChain(
   return success(combineHelper(readOp, tables, destToSrcToClone, foundWrite.value()));
 }
 
+inline FieldReadOp getFieldReadThatDefinesSelfValuePassedToConstrain(CallOp callOp) {
+  Value selfArgFromCall = callOp.getSelfValueFromConstrain();
+  return llvm::dyn_cast_if_present<FieldReadOp>(selfArgFromCall.getDefiningOp());
+}
+
 /// Cache various ops from the caller struct that should be erased but only after all callees are
 /// fully handled (to avoid "still has uses" errors).
 struct PendingErasure {
@@ -275,7 +280,9 @@ class StructInliner {
     const StructInliner &data;
     const DestToSrcToClonedSrcInDest &destToSrcToClone;
 
-    virtual FieldRefOpInterface getSelfRef(CallOp callOp) = 0;
+    /// Get the "self" struct parameter from the CallOp and determine which field that struct was
+    /// stored in within the caller.
+    virtual FieldRefOpInterface getSelfRefField(CallOp callOp) = 0;
     virtual void processCloneBeforeInlining(FuncDefOp func) {}
     virtual ~ImplBase() = default;
 
@@ -284,6 +291,13 @@ class StructInliner {
         : data(inliner), destToSrcToClone(destToSrcToCloneRef) {}
 
     LogicalResult doInlining(FuncDefOp srcFunc, FuncDefOp destFunc) {
+      LLVM_DEBUG({
+        llvm::dbgs() << "[doInlining] SOURCE FUNCTION:\n";
+        srcFunc.dump();
+        llvm::dbgs() << "[doInlining] DESTINATION FUNCTION:\n";
+        destFunc.dump();
+      });
+
       InlinerInterface inliner(destFunc.getContext());
 
       /// Replaces CallOp that target `srcFunc` with an inlined version of `srcFunc`.
@@ -295,10 +309,11 @@ class StructInliner {
           return WalkResult::advance();
         }
 
-        // Get the "self" struct value from the CallOp and determine which struct field is used.
-        FieldRefOpInterface selfFieldRefOp = this->getSelfRef(callOp);
+        // Get the "self" struct parameter from the CallOp and determine which field that struct
+        // was stored in within the caller (i.e. `destFunc`).
+        FieldRefOpInterface selfFieldRefOp = this->getSelfRefField(callOp);
         if (!selfFieldRefOp) {
-          // Note: error message was already printed within `getSelfRef` callback.
+          // Note: error message was already printed within `getSelfRefField()`
           return WalkResult::interrupt(); // use interrupt to signal failure
         }
 
@@ -360,38 +375,34 @@ class StructInliner {
   class ConstrainImpl : public ImplBase {
     using ImplBase::ImplBase;
 
-    FieldRefOpInterface getSelfRef(CallOp callOp) override {
+    FieldRefOpInterface getSelfRefField(CallOp callOp) override {
       // The typical pattern is to read a struct instance from a field and then call "constrain()"
       // on it. Get the Value passed as the "self" struct to the CallOp and determine which field it
       // was read from in the current struct (i.e., `destStruct`).
-      Value selfArgFromCall = callOp.getSelfValueFromConstrain();
-      FieldRefOpInterface selfFieldRefOp =
-          llvm::dyn_cast_if_present<FieldReadOp>(selfArgFromCall.getDefiningOp());
-      if (selfFieldRefOp &&
-          selfFieldRefOp.getComponent().getType() == this->data.destStruct.getType()) {
-        return selfFieldRefOp;
+      FieldRefOpInterface selfFieldRef = getFieldReadThatDefinesSelfValuePassedToConstrain(callOp);
+      if (selfFieldRef &&
+          selfFieldRef.getComponent().getType() == this->data.destStruct.getType()) {
+        return selfFieldRef;
       }
-      // TODO: There is a possibility that this value is not from a field read (ex: it could be a
-      // parameter to the `destStruct` function). That will not have a mapping in `destToSrcToClone`
-      // and new fields will still need to be added, they can be prefixed with parameter index since
-      // there is no current field name to use as the unique prefix.
-      //
-      // TODO: also, in that case, the signature of this lambda is insufficient. If there's no
-      // field involved we need to instead return the two relevant pieces, the "self" Value and
-      // the FieldDefOp created within `destStruct`.
-      //
-      llvm::errs() << "[TODO] callOp = " << callOp << '\n';
-      llvm::errs() << "[TODO] selfArgFromCall = " << selfArgFromCall << '\n';
-      assert(false && "TODO: handle this!");
+      callOp.emitError()
+          .append(
+              "expected \"self\" parameter to \"@", FUNC_NAME_CONSTRAIN,
+              "\" to be passed a value read from a field in the current stuct."
+          )
+          .report();
+      return nullptr;
     }
   };
 
   class ComputeImpl : public ImplBase {
     using ImplBase::ImplBase;
 
-    FieldRefOpInterface getSelfRef(CallOp callOp) override {
+    FieldRefOpInterface getSelfRefField(CallOp callOp) override {
       // The typical pattern is to write the return value of "compute()" to a field in
       // the current struct (i.e., `destStruct`).
+      // It doesn't really make sense (although there is no semantic restriction against it) to just
+      // pass the "compute()" result into another function and never write it to a field since that
+      // leaves no way for the "constrain()" function to call "constrain()" on that result struct.
       auto foundWrite = findOpThatWritesValue(callOp.getSelfValueFromCompute(), [&callOp]() {
         return callOp.emitOpError().append("\"@", FUNC_NAME_COMPUTE, "\" ");
       });
@@ -612,6 +623,28 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     return maxComplexity > 0 && check > maxComplexity;
   }
 
+  /// Check for additional conditions that make inlining impossible (at least in the current
+  /// implementation).
+  static inline bool canInline(FuncDefOp currentFunc, FuncDefOp successorFunc) {
+    // Find CallOp for `successorFunc` within `currentFunc` and check the condition used by
+    // `ConstrainImpl::getSelfRefField()`.
+    //
+    // Implementation Note: There is a possibility that the "self" value is not from a field read.
+    // It could be a parameter to the current/destination function or a global read. Inlining a
+    // struct stored to a global would probably require splitting up the global into multiple, one
+    // for each field in the successor/source struct. That may not be a good idea. The parameter
+    // case could be handled but it will not have a mapping in `destToSrcToClone` in
+    // `getSelfRefField()` and new fields will still need to be added. They can be prefixed with
+    // parameter index since there is no current field name to use as the unique prefix. Handling
+    // that would require refactoring the inlining process a bit.
+    auto res = currentFunc.walk([](CallOp c) {
+      return getFieldReadThatDefinesSelfValuePassedToConstrain(c)
+                 ? WalkResult::interrupt() // use interrupt to indicate success
+                 : WalkResult::advance();
+    });
+    return res.wasInterrupted();
+  }
+
   /// Perform a bottom-up traversal of the "constrain" function nodes in the SymbolUseGraph to
   /// determine which ones can be inlined to their callers while respecting the `maxComplexity`
   /// option. Using a bottom-up traversal may give a better result than top-down because the latter
@@ -654,11 +687,12 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
         Operation *reportLoc = succeeded(res) ? res->get() : lookupFrom;
         return reportLoc->emitError("Cannot inline structs with parameters.");
       }
-      FailureOr<FuncDefOp> currentFunc = getIfStructConstrain(currentNode, tables);
-      if (failed(currentFunc)) {
+      FailureOr<FuncDefOp> currentFuncOpt = getIfStructConstrain(currentNode, tables);
+      if (failed(currentFuncOpt)) {
         continue;
       }
-      int64_t currentComplexity = complexity(currentFunc.value());
+      FuncDefOp currentFunc = currentFuncOpt.value();
+      int64_t currentComplexity = complexity(currentFunc);
       // If the current complexity is already too high, store it and continue.
       if (exceedsMaxComplexity(currentComplexity)) {
         complexityMemo[currentNode] = currentComplexity;
@@ -678,14 +712,17 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
         assert(potentialComplexity >= currentComplexity && "overflow");
         if (!exceedsMaxComplexity(potentialComplexity)) {
           currentComplexity = potentialComplexity;
-          FailureOr<FuncDefOp> successorFunc = getIfStructConstrain(successor, tables);
-          assert(succeeded(successorFunc)); // follows from the Note above
-          successorsToMerge.push_back(getParentStruct(successorFunc.value()));
+          FailureOr<FuncDefOp> successorFuncOpt = getIfStructConstrain(successor, tables);
+          assert(succeeded(successorFuncOpt)); // follows from the Note above
+          FuncDefOp successorFunc = successorFuncOpt.value();
+          if (canInline(currentFunc, successorFunc)) {
+            successorsToMerge.push_back(getParentStruct(successorFunc));
+          }
         }
       }
       complexityMemo[currentNode] = currentComplexity;
       if (!successorsToMerge.empty()) {
-        retVal.emplace_back(getParentStruct(currentFunc.value()), std::move(successorsToMerge));
+        retVal.emplace_back(getParentStruct(currentFunc), std::move(successorsToMerge));
       }
     }
 
@@ -697,7 +734,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
   /// anyway if the result Value still has uses). Handles the following cases:
   /// - If the op is used as argument to a function with a body, convert to take fields separately.
   /// - If the op is used as argument to a function without a body, report an error.
-  inline static LogicalResult handleRemainingUses(
+  static LogicalResult handleRemainingUses(
       Operation *op, SymbolTableCollection &tables,
       const DestToSrcToClonedSrcInDest &destToSrcToClone,
       ArrayRef<FieldRefOpInterface> otherRefsToBeDeleted = {}

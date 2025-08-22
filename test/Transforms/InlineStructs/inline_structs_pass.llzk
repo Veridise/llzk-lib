@@ -904,3 +904,188 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// TESTS: "self" parameter of "@constrain" call comes from a global read rather than field read.
+//        This prevents A->B inlining via `canInline()` check.
+module attributes {veridise.lang = "llzk"} {
+  global.def @g : !struct.type<@Component12A>
+
+  struct.def @Component12A {
+    struct.field @f : !felt.type
+
+    function.def @compute() -> !struct.type<@Component12A> {
+      %self = struct.new : !struct.type<@Component12A>
+      %12 = felt.const 12
+      struct.writef %self[@f] = %12 : !struct.type<@Component12A>, !felt.type
+      function.return %self : !struct.type<@Component12A>
+    }
+
+    function.def @constrain(%self: !struct.type<@Component12A>) {
+      %12 = felt.const 12
+      %c = struct.readf %self[@f] : !struct.type<@Component12A>, !felt.type
+      constrain.eq %12, %c : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Component12B {
+    function.def @compute() -> !struct.type<@Component12B> {
+      %a = function.call @Component12A::@compute() : () -> !struct.type<@Component12A>
+      global.write @g = %a : !struct.type<@Component12A>
+      %self = struct.new : !struct.type<@Component12B>
+      function.return %self : !struct.type<@Component12B>
+    }
+
+    function.def @constrain(%self: !struct.type<@Component12B>) {
+      %a = global.read @g : !struct.type<@Component12A>
+      // This line
+      function.call @Component12A::@constrain(%a) : (!struct.type<@Component12A>) -> ()
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.field @fb : !struct.type<@Component12B>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %b = function.call @Component12B::@compute() : () -> !struct.type<@Component12B>
+      struct.writef %self[@fb] = %b : !struct.type<@Main>, !struct.type<@Component12B>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %b = struct.readf %self[@fb] : !struct.type<@Main>, !struct.type<@Component12B>
+      function.call @Component12B::@constrain(%b) : (!struct.type<@Component12B>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: global.def @g : !struct.type<@Component12A>
+//
+// CHECK-LABEL: struct.def @Component12A {
+// CHECK-NEXT:    struct.field @f : !felt.type
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component12A> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component12A>
+// CHECK-NEXT:      struct.writef %[[V1]][@f] = %[[V0]] : <@Component12A>, !felt.type
+// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component12A>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component12A>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.readf %[[V2]][@f] : <@Component12A>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V4]], %[[V3]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component12A::@compute() : () -> !struct.type<@Component12A>
+// CHECK-NEXT:      global.write @g = %[[V1]] : !struct.type<@Component12A>
+// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = global.read @g : !struct.type<@Component12A>
+// CHECK-NEXT:      function.call @Component12A::@constrain(%[[V3]]) : (!struct.type<@Component12A>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// TESTS: "self" parameter of "@constrain" call comes from a function parameter rather than field read.
+//        This prevents A->B inlining via `canInline()` check.
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Component13A {
+    struct.field @f : !felt.type
+
+    function.def @compute() -> !struct.type<@Component13A> {
+      %self = struct.new : !struct.type<@Component13A>
+      %12 = felt.const 12
+      struct.writef %self[@f] = %12 : !struct.type<@Component13A>, !felt.type
+      function.return %self : !struct.type<@Component13A>
+    }
+
+    function.def @constrain(%self: !struct.type<@Component13A>) {
+      %12 = felt.const 12
+      %c = struct.readf %self[@f] : !struct.type<@Component13A>, !felt.type
+      constrain.eq %12, %c : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Component13B {
+    struct.field @f : !felt.type
+
+    function.def @compute(%a: !struct.type<@Component13A>) -> !struct.type<@Component13B> {
+      %self = struct.new : !struct.type<@Component13B>
+      %r = struct.readf %a[@f] : !struct.type<@Component13A>, !felt.type
+      %m = felt.mul %r, %r
+      struct.writef %self[@f] = %m : !struct.type<@Component13B>, !felt.type
+      function.return %self : !struct.type<@Component13B>
+    }
+
+    function.def @constrain(%self: !struct.type<@Component13B>, %a: !struct.type<@Component13A>) {
+      // This line
+      function.call @Component13A::@constrain(%a) : (!struct.type<@Component13A>) -> ()
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.field @fa : !struct.type<@Component13A>
+    struct.field @fb : !struct.type<@Component13B>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %a = function.call @Component13A::@compute() : () -> !struct.type<@Component13A>
+      struct.writef %self[@fa] = %a : !struct.type<@Main>, !struct.type<@Component13A>
+      %b = function.call @Component13B::@compute(%a) : (!struct.type<@Component13A>) -> !struct.type<@Component13B>
+      struct.writef %self[@fb] = %b : !struct.type<@Main>, !struct.type<@Component13B>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %a = struct.readf %self[@fa] : !struct.type<@Main>, !struct.type<@Component13A>
+      %b = struct.readf %self[@fb] : !struct.type<@Main>, !struct.type<@Component13B>
+      function.call @Component13B::@constrain(%b, %a) : (!struct.type<@Component13B>,!struct.type<@Component13A>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: struct.def @Component13A {
+// CHECK-NEXT:    struct.field @f : !felt.type
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component13A> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component13A>
+// CHECK-NEXT:      struct.writef %[[V1]][@f] = %[[V0]] : <@Component13A>, !felt.type
+// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component13A>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component13A>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.readf %[[V2]][@f] : <@Component13A>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V4]], %[[V3]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    struct.field @fa : !struct.type<@Component13A>
+// CHECK-NEXT:    struct.field @"fb:!s<@Component13B>+f" : !felt.type
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component13A::@compute() : () -> !struct.type<@Component13A>
+// CHECK-NEXT:      struct.writef %[[V0]][@fa] = %[[V1]] : <@Main>, !struct.type<@Component13A>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.readf %[[V1]][@f] : <@Component13A>, !felt.type
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.mul %[[V2]], %[[V2]] : !felt.type, !felt.type
+// CHECK-NEXT:      struct.writef %[[V0]][@"fb:!s<@Component13B>+f"] = %[[V3]] : <@Main>, !felt.type
+// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readf %[[V4]][@fa] : <@Main>, !struct.type<@Component13A>
+// CHECK-NEXT:      function.call @Component13A::@constrain(%[[V5]]) : (!struct.type<@Component13A>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
