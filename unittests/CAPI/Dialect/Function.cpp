@@ -166,14 +166,25 @@ false_pred_test(llzk_func_def_op_get_is_in_struct, llzkFuncDefOpGetIsInStruct);
 false_pred_test(llzk_func_def_op_get_is_struct_compute, llzkFuncDefOpGetIsStructCompute);
 false_pred_test(llzk_func_def_op_get_is_struct_constrain, llzkFuncDefOpGetIsStructConstrain);
 
-TEST_F(FuncDialectTest, llzk_func_def_op_get_single_result_type_of_compute) {
-  // We want to link the function to make sure it has been implemented but we don't want to
-  // call it because the precondition checks will fail with the test function.
-  auto f = test_function();
-  if (llzkFuncDefOpGetIsStructCompute(f.op)) {
-    llzkFuncDefOpGetSingleResultTypeOfCompute(f.op);
+/// We want to link the function to make sure it has been implemented but we don't want to
+/// call it because the precondition checks will fail with the test function.
+#define link_test_func_def_op(name, func)                                                          \
+  TEST_F(FuncDialectTest, name) {                                                                  \
+    auto f = test_function();                                                                      \
+    if (llzkFuncDefOpGetIsInStruct(f.op)) {                                                        \
+      func(f.op);                                                                                  \
+    }                                                                                              \
   }
-}
+
+link_test_func_def_op(
+    llzk_func_def_op_get_self_value_from_compute, llzkFuncDefOpGetSelfValueFromCompute
+);
+link_test_func_def_op(
+    llzk_func_def_op_get_self_value_from_constrain, llzkFuncDefOpGetSelfValueFromConstrain
+);
+link_test_func_def_op(
+    llzk_func_def_op_get_single_result_type_of_compute, llzkFuncDefOpGetSingleResultTypeOfCompute
+);
 
 TEST_F(FuncDialectTest, llzk_call_op_build) {
   auto f = test_function0();
@@ -297,18 +308,23 @@ call_pred_test(
     test_llzk_call_op_get_callee_is_struct_constrain, llzkCallOpGetCalleeIsStructConstrain, false
 );
 
-TEST_F(FuncDialectTest, llzk_call_op_get_single_result_type_of_compute) {
-  auto f = test_function0();
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-  auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
-
-  // We want to link the function to make sure it has been implemented but we don't want to
-  // call it because the precondition checks will fail with the test function.
-  if (llzkCallOpGetCalleeIsStructCompute(call)) {
-    llzkCallOpGetSingleResultTypeOfCompute(call);
+/// We want to link the function to make sure it has been implemented but we don't want to
+/// call it because the precondition checks will fail with the test function.
+#define link_test_call_op(name, func)                                                              \
+  TEST_F(FuncDialectTest, name) {                                                                  \
+    auto f = test_function0();                                                                     \
+    auto builder = mlirOpBuilderCreate(context);                                                   \
+    auto location = mlirLocationUnknownGet(context);                                               \
+    auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);      \
+    if (llzkCallOpGetCalleeIsStructCompute(call)) {                                                \
+      func(call);                                                                                  \
+    }                                                                                              \
+    mlirOperationDestroy(call);                                                                    \
+    mlirOpBuilderDestroy(builder);                                                                 \
   }
 
-  mlirOperationDestroy(call);
-  mlirOpBuilderDestroy(builder);
-}
+link_test_call_op(llzk_call_op_get_self_value_from_compute, llzkCallOpGetSelfValueFromCompute);
+link_test_call_op(llzk_call_op_get_self_value_from_constrain, llzkCallOpGetSelfValueFromConstrain);
+link_test_call_op(
+    llzk_call_op_get_single_result_type_of_compute, llzkCallOpGetSingleResultTypeOfCompute
+);

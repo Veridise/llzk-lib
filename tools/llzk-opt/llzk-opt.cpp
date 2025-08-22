@@ -57,7 +57,6 @@ int main(int argc, char **argv) {
   // MLIR initialization
   mlir::DialectRegistry registry;
   llzk::registerAllDialects(registry);
-  llzk::registerInliningExtensions(registry);
   r1cs::registerAllDialects(registry);
 
   llzk::registerAnalysisPasses();

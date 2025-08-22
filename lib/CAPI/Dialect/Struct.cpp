@@ -76,7 +76,6 @@ MlirType llzkStructDefOpGetType(MlirOperation op) {
 }
 
 MlirType llzkStructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute attr) {
-
   return wrap(mlir::cast<StructDefOp>(unwrap(op)).getType(mlir::cast<ArrayAttr>(unwrap(attr))));
 }
 

@@ -21,6 +21,7 @@
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Undef/IR/Dialect.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -47,5 +48,7 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       mlir::scf::SCFDialect
       // clang-format on
       >();
+
+  registerInliningExtensions(registry);
 }
 } // namespace llzk
