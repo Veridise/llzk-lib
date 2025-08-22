@@ -53,12 +53,12 @@ struct FuncInlinerInterface
 
   void handleTerminator(Operation *op, Block *newDest) const final {
     // Only return needs to be handled here. Replace the return with a branch to the dest.
+    // Note: This function is only called when there are multiple blocks in the region being
+    // inlined. In LLZK IR, that would only occur when the `cf` dialect is already used (since no
+    // LLZK dialect defines any kind of cross-block branching ops) so it's fine to add a
+    // `cf::BranchOp` here.
     if (auto returnOp = llvm::dyn_cast<function::ReturnOp>(op)) {
       OpBuilder builder(op);
-      // TODO: Would rather not introduce `cf` dialect ops but I'm not sure if there's any other way
-      // to do this. At some point `cf` may need to be allowed anyway (like converting `scf` to
-      // `cf`) so maybe it's not a problem to introduce it here. Or perhaps there's a transformation
-      // to reorder and merge blocks to remove BranchOp.
       builder.create<cf::BranchOp>(op->getLoc(), newDest, returnOp.getOperands());
       op->erase();
     }

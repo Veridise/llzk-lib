@@ -77,7 +77,7 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
     subcomponent compute/constrain functions. Inlining decisions are guided by the call graph of
     "constrain" functions.
     
-    The `max-complexity` parameter can be used to limit the complexity of the resulting structs such
+    The `max-merge-complexity` parameter can be used to limit the complexity of the resulting structs such
     that a potential inlining will not take place if doing so would push the sum of constraint and
     multiplications in the combined struct over the limit. The default value `0` indicates no limits
     which means all structs will be inlined into the Main struct.
@@ -86,7 +86,7 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
     (this restriction may be removed in the future).
   }];
   let constructor = "llzk::createInlineStructsPass()";
-  let options = [Option<"maxComplexity", "max-complexity", "int64_t",
+  let options = [Option<"maxComplexity", "max-merge-complexity", "int64_t",
                         /* default */ "0",
                         "Maximum allowed constraint+multiplications in merged "
                         "@constrain functions">,

@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-flatten,llzk-inline-structs{max-complexity=2})' -verify-diagnostics %s | FileCheck %s
+// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-flatten,llzk-inline-structs{max-merge-complexity=2})' -verify-diagnostics %s | FileCheck %s
 
 // TESTS: full inlining is within `maxComplexity` limit
 module attributes {veridise.lang = "llzk"} {
@@ -452,7 +452,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // -----
 
-// TESTS: 'max-complexity' prevents inlining A to Main but the others are inlined.
+// TESTS: 'max-merge-complexity' prevents inlining A to Main but the others are inlined.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component6A {
     struct.field @x : !felt.type
@@ -587,7 +587,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-// TESTS: 'max-complexity' prevents inlining C to Main (although B->C and A->Main are inlined) resulting in a
+// TESTS: 'max-merge-complexity' prevents inlining C to Main (although B->C and A->Main are inlined) resulting in a
 // remaining parameter of type A in the calls to C. Since A was inlined, the param must be split into fields.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component7A {
@@ -719,7 +719,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-// TESTS: 'max-complexity' prevents inlining B to C and A to B which exercises additional
+// TESTS: 'max-merge-complexity' prevents inlining B to C and A to B which exercises additional
 // conditions in the algorithm that converts a struct parameter to multiple parameters.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component8A {
