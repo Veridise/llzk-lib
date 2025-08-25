@@ -62,13 +62,8 @@ template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeVa
     return arr;
   }
 
-  static bool isDynamicArray(const mlir::ArrayRef<int64_t> &shape) {
-    for (auto dim : shape) {
-      if (mlir::ShapedType::isDynamic(dim)) {
-        return true;
-      }
-    }
-    return false;
+  static inline bool isDynamicArray(const mlir::ArrayRef<int64_t> &shape) {
+    return mlir::ShapedType::isDynamicShape(shape);
   }
 
 public:

@@ -31,14 +31,14 @@ using namespace string;
 
 /* ConstrainRefIndex */
 
-void ConstrainRefIndex::print(mlir::raw_ostream &os) const {
+void ConstrainRefIndex::print(raw_ostream &os) const {
   if (isField()) {
     os << '@' << getField().getName();
   } else if (isIndex()) {
     os << getIndex();
   } else {
     auto [low, high] = getIndexRange();
-    if (mlir::ShapedType::isDynamic(high.getSExtValue())) {
+    if (ShapedType::isDynamic(high.getSExtValue())) {
       os << "<dynamic>";
     } else {
       os << low << ':' << high;
@@ -98,19 +98,18 @@ size_t ConstrainRefIndex::Hash::operator()(const ConstrainRefIndex &c) const {
 /// lookup result is important, as it may manage a ModuleOp if the struct is found
 /// via an include.
 SymbolLookupResult<StructDefOp>
-getStructDef(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, StructType ty) {
+getStructDef(SymbolTableCollection &tables, ModuleOp mod, StructType ty) {
   auto sDef = ty.getDefinition(tables, mod);
   ensure(
-      mlir::succeeded(sDef),
+      succeeded(sDef),
       "could not find '" + StructDefOp::getOperationName() + "' op from struct type"
   );
 
   return std::move(sDef.value());
 }
 
-std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(
-    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ConstrainRef root
-) {
+std::vector<ConstrainRef>
+ConstrainRef::getAllConstrainRefs(SymbolTableCollection &tables, ModuleOp mod, ConstrainRef root) {
   std::vector<ConstrainRef> res = {root};
   for (const ConstrainRef &child : root.getAllChildren(tables, mod)) {
     auto recursiveChildren = getAllConstrainRefs(tables, mod, child);
@@ -127,12 +126,9 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDe
   );
 
   FailureOr<ModuleOp> modOp = getRootModule(structDef);
-  ensure(
-      mlir::succeeded(modOp),
-      "could not lookup module from struct " + mlir::Twine(structDef.getName())
-  );
+  ensure(succeeded(modOp), "could not lookup module from struct " + Twine(structDef.getName()));
 
-  mlir::SymbolTableCollection tables;
+  SymbolTableCollection tables;
   for (auto a : fnOp.getArguments()) {
     auto argRes = getAllConstrainRefs(tables, modOp.value(), ConstrainRef(a));
     res.insert(res.end(), argRes.begin(), argRes.end());
@@ -156,29 +152,26 @@ ConstrainRef::getAllConstrainRefs(StructDefOp structDef, FieldDefOp fieldDef) {
   std::vector<ConstrainRef> res;
   FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
   ensure(
-      fieldDef->getParentOfType<StructDefOp>() == structDef,
-      "Field " + mlir::Twine(fieldDef.getName()) + " is not a field of struct " +
-          mlir::Twine(structDef.getName())
+      fieldDef->getParentOfType<StructDefOp>() == structDef, "Field " + Twine(fieldDef.getName()) +
+                                                                 " is not a field of struct " +
+                                                                 Twine(structDef.getName())
   );
   FailureOr<ModuleOp> modOp = getRootModule(structDef);
-  ensure(
-      mlir::succeeded(modOp),
-      "could not lookup module from struct " + mlir::Twine(structDef.getName())
-  );
+  ensure(succeeded(modOp), "could not lookup module from struct " + Twine(structDef.getName()));
 
   // Get the self argument
   BlockArgument self = constrainFnOp.getBody().getArgument(0);
   ConstrainRef fieldRef = ConstrainRef(self, {ConstrainRefIndex(fieldDef)});
 
-  mlir::SymbolTableCollection tables;
+  SymbolTableCollection tables;
   return getAllConstrainRefs(tables, modOp.value(), fieldRef);
 }
 
-mlir::Type ConstrainRef::getType() const {
+Type ConstrainRef::getType() const {
   if (isConstantFelt()) {
     return std::get<FeltConstantOp>(*constantVal).getType();
   } else if (isConstantIndex()) {
-    return std::get<mlir::arith::ConstantIndexOp>(*constantVal).getType();
+    return std::get<arith::ConstantIndexOp>(*constantVal).getType();
   } else if (isTemplateConstant()) {
     return std::get<ConstReadOp>(*constantVal).getType();
   } else {
@@ -189,7 +182,7 @@ mlir::Type ConstrainRef::getType() const {
       idx--;
     }
 
-    mlir::Type currTy = nullptr;
+    Type currTy = nullptr;
     if (idx >= 0) {
       currTy = fieldRefs[idx].getField().getType();
     } else {
@@ -197,7 +190,7 @@ mlir::Type ConstrainRef::getType() const {
     }
 
     while (array_derefs > 0) {
-      currTy = mlir::dyn_cast<ArrayType>(currTy).getElementType();
+      currTy = dyn_cast<ArrayType>(currTy).getElementType();
       array_derefs--;
     }
     return currTy;
@@ -220,10 +213,10 @@ bool ConstrainRef::isValidPrefix(const ConstrainRef &prefix) const {
   return true;
 }
 
-mlir::FailureOr<std::vector<ConstrainRefIndex>> ConstrainRef::getSuffix(const ConstrainRef &prefix
-) const {
+FailureOr<std::vector<ConstrainRefIndex>>
+ConstrainRef::getSuffix(const ConstrainRef &prefix) const {
   if (!isValidPrefix(prefix)) {
-    return mlir::failure();
+    return failure();
   }
   std::vector<ConstrainRefIndex> suffix;
   for (size_t i = prefix.fieldRefs.size(); i < fieldRefs.size(); i++) {
@@ -232,14 +225,14 @@ mlir::FailureOr<std::vector<ConstrainRefIndex>> ConstrainRef::getSuffix(const Co
   return suffix;
 }
 
-mlir::FailureOr<ConstrainRef>
+FailureOr<ConstrainRef>
 ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) const {
   if (isConstant()) {
     return *this;
   }
   auto suffix = getSuffix(prefix);
-  if (mlir::failed(suffix)) {
-    return mlir::failure();
+  if (failed(suffix)) {
+    return failure();
   }
 
   auto newSignalUsage = other;
@@ -247,9 +240,8 @@ ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) c
   return newSignalUsage;
 }
 
-std::vector<ConstrainRef> getAllChildren(
-    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ArrayType arrayTy, ConstrainRef root
-) {
+std::vector<ConstrainRef>
+getAllChildren(SymbolTableCollection &tables, ModuleOp mod, ArrayType arrayTy, ConstrainRef root) {
   std::vector<ConstrainRef> res;
   // Recurse into arrays by iterating over their elements
   for (int64_t i = 0; i < arrayTy.getDimSize(0); i++) {
@@ -261,8 +253,8 @@ std::vector<ConstrainRef> getAllChildren(
 }
 
 std::vector<ConstrainRef> getAllChildren(
-    mlir::SymbolTableCollection &tables, mlir::ModuleOp mod,
-    SymbolLookupResult<StructDefOp> structDefRes, ConstrainRef root
+    SymbolTableCollection &tables, ModuleOp mod, SymbolLookupResult<StructDefOp> structDefRes,
+    ConstrainRef root
 ) {
   std::vector<ConstrainRef> res;
   // Recurse into struct types by iterating over all their field definitions
@@ -274,10 +266,10 @@ std::vector<ConstrainRef> getAllChildren(
     // so we don't have to do this.
     auto structDefCopy = structDefRes;
     auto fieldLookup = lookupSymbolIn<FieldDefOp>(
-        tables, mlir::SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()),
-        std::move(structDefCopy), mod.getOperation()
+        tables, SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()), std::move(structDefCopy),
+        mod.getOperation()
     );
-    ensure(mlir::succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp");
+    ensure(succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp");
     ConstrainRef childRef = root.createChild(ConstrainRefIndex(fieldLookup.value()));
     // Make a reference to the current field, regardless of if it is a composite
     // type or not.
@@ -287,18 +279,18 @@ std::vector<ConstrainRef> getAllChildren(
 }
 
 std::vector<ConstrainRef>
-ConstrainRef::getAllChildren(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod) const {
+ConstrainRef::getAllChildren(SymbolTableCollection &tables, ModuleOp mod) const {
   auto ty = getType();
-  if (auto structTy = mlir::dyn_cast<StructType>(ty)) {
+  if (auto structTy = dyn_cast<StructType>(ty)) {
     return llzk::getAllChildren(tables, mod, getStructDef(tables, mod, structTy), *this);
-  } else if (auto arrayType = mlir::dyn_cast<ArrayType>(ty)) {
+  } else if (auto arrayType = dyn_cast<ArrayType>(ty)) {
     return llzk::getAllChildren(tables, mod, arrayType, *this);
   }
   // Scalar type, no children
   return {};
 }
 
-void ConstrainRef::print(mlir::raw_ostream &os) const {
+void ConstrainRef::print(raw_ostream &os) const {
   if (isConstantFelt()) {
     os << "<felt.const: " << getConstantFeltValue() << '>';
   } else if (isConstantIndex()) {
@@ -413,7 +405,7 @@ size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
   }
 }
 
-mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRef &rhs) {
+raw_ostream &operator<<(raw_ostream &os, const ConstrainRef &rhs) {
   rhs.print(os);
   return os;
 }
@@ -425,7 +417,7 @@ ConstrainRefSet &ConstrainRefSet::join(const ConstrainRefSet &rhs) {
   return *this;
 }
 
-mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefSet &rhs) {
+raw_ostream &operator<<(raw_ostream &os, const ConstrainRefSet &rhs) {
   os << "{ ";
   std::vector<ConstrainRef> sortedRefs(rhs.begin(), rhs.end());
   std::sort(sortedRefs.begin(), sortedRefs.end());

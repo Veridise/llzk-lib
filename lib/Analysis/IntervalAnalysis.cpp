@@ -130,16 +130,16 @@ cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const Expre
   switch (op.getPredicate()) {
   case FeltCmpPredicate::EQ:
     res.expr = solver->mkEqual(lhs.expr, rhs.expr);
-    if (lhs.i.isDegenerate() && rhs.i.isDegenerate() && lhs.i == rhs.i) {
-      res.i = Interval::True(f);
+    if (lhs.i.isDegenerate() && rhs.i.isDegenerate()) {
+      res.i = lhs.i == rhs.i ? Interval::True(f) : Interval::False(f);
     } else if (lhs.i.intersect(rhs.i).isEmpty()) {
       res.i = Interval::False(f);
     }
     break;
   case FeltCmpPredicate::NE:
     res.expr = solver->mkNot(solver->mkEqual(lhs.expr, rhs.expr));
-    if (lhs.i.isDegenerate() && rhs.i.isDegenerate() && lhs.i == rhs.i) {
-      res.i = Interval::False(f);
+    if (lhs.i.isDegenerate() && rhs.i.isDegenerate()) {
+      res.i = lhs.i != rhs.i ? Interval::True(f) : Interval::False(f);
     } else if (lhs.i.intersect(rhs.i).isEmpty()) {
       res.i = Interval::True(f);
     }
