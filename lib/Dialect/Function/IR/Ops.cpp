@@ -711,7 +711,7 @@ CallInterfaceCallable CallOp::getCallableForCallee() { return getCalleeAttr(); }
 
 /// Set the callee for this operation.
 void CallOp::setCalleeFromCallable(CallInterfaceCallable callee) {
-  setCalleeAttr(callee.get<SymbolRefAttr>());
+  setCalleeAttr(llvm::cast<SymbolRefAttr>(callee));
 }
 
 } // namespace llzk::function

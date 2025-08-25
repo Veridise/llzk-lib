@@ -49,7 +49,7 @@ Value rebuildExprInCompute(
     return it->second;
   }
 
-  if (auto barg = val.dyn_cast<BlockArgument>()) {
+  if (auto barg = llvm::dyn_cast<BlockArgument>(val)) {
     unsigned index = barg.getArgNumber();
     Value mapped = computeFunc.getArgument(index - 1);
     return memo[val] = mapped;

@@ -126,7 +126,7 @@ resolveCallable(mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface 
   // We first try to resolve in the nearest symbol table, as per the default
   // MLIR behavior. If the resulting operation is not found, we will then
   // use the LLZK lookup helpers.
-  auto symbolRef = callable.get<mlir::SymbolRefAttr>();
+  auto symbolRef = llvm::cast<mlir::SymbolRefAttr>(callable);
   mlir::Operation *op = symbolTable.lookupNearestSymbolFrom(call.getOperation(), symbolRef);
 
   if (op) {

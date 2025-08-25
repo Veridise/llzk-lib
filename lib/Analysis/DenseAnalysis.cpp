@@ -282,7 +282,7 @@ void AbstractDenseForwardDataFlowAnalysis::visitRegionBranchOperation(
     // affected by the region.
     std::optional<unsigned> regionFrom =
         op == branch ? std::optional<unsigned>() : op->getBlock()->getParent()->getRegionNumber();
-    if (auto *toBlock = point.dyn_cast<Block *>()) {
+    if (auto *toBlock = llvm::dyn_cast<Block *>(point)) {
       unsigned regionTo = toBlock->getParent()->getRegionNumber();
       visitRegionBranchControlFlowTransfer(branch, regionFrom, regionTo, *before, after);
     } else {
