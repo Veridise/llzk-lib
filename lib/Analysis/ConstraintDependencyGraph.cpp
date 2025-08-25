@@ -267,7 +267,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
   auto [newVals, _] = currVals.extract(indices);
 
   if (mlir::isa<ReadArrayOp, WriteArrayOp>(arrayAccessOp)) {
-    ensure(newVals.isScalar(), "array read must produce a scalar value");
+    ensure(newVals.isScalar(), "array read/write must produce a scalar value");
   }
   // an extract operation may yield a "scalar" value if not all dimensions of
   // the source array are instantiated; for example, if extracting an array from
