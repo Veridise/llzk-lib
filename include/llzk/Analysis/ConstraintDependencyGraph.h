@@ -12,6 +12,7 @@
 #include "llzk/Analysis/AnalysisWrappers.h"
 #include "llzk/Analysis/ConstrainRef.h"
 #include "llzk/Analysis/ConstrainRefLattice.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 
 #include <mlir/Pass/AnalysisManager.h>
 
@@ -63,7 +64,7 @@ protected:
   // operate very similarly: index into the first operand using a variable number
   // of provided indices.
   void arraySubdivisionOpUpdate(
-      mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
+      array::ArrayAccessOpInterface op, const ConstrainRefLattice::ValueMap &operandVals,
       const ConstrainRefLattice &before, ConstrainRefLattice *after
   );
 
@@ -107,10 +108,12 @@ public:
   /// @param am A module-level analysis manager. This analysis manager needs to originate
   /// from a module-level analysis (i.e., for the `mod` module) so that analyses
   /// for other constraints can be queried via the getChildAnalysis method.
+  /// @param runIntraprocedural Whether to compute an intra-procedural
+  /// analysis (default is inter-procedural).
   /// @return
   static mlir::FailureOr<ConstraintDependencyGraph> compute(
       mlir::ModuleOp mod, component::StructDefOp s, mlir::DataFlowSolver &solver,
-      mlir::AnalysisManager &am
+      mlir::AnalysisManager &am, bool runIntraprocedural
   );
 
   /// @brief Dumps the CDG to stderr.
@@ -138,6 +141,8 @@ public:
   /// @return The set of references that are connected to ref via constraints.
   ConstrainRefSet getConstrainingValues(const ConstrainRef &ref) const;
 
+  const ConstrainRefLattice::Ref2Val &getRef2Val() const { return ref2Val; }
+
   /*
   Rule of three, needed for the mlir::SymbolTableCollection, which has no copy constructor.
   Since the mlir::SymbolTableCollection is a caching mechanism, we simply allow default, empty
@@ -145,13 +150,17 @@ public:
   */
 
   ConstraintDependencyGraph(const ConstraintDependencyGraph &other)
-      : mod(other.mod), structDef(other.structDef), signalSets(other.signalSets),
-        constantSets(other.constantSets), tables() {}
+      : mod(other.mod), structDef(other.structDef), runIntraprocedural(other.runIntraprocedural),
+        signalSets(other.signalSets), constantSets(other.constantSets), ref2Val(other.ref2Val),
+        tables() {}
+
   ConstraintDependencyGraph &operator=(const ConstraintDependencyGraph &other) {
     mod = other.mod;
     structDef = other.structDef;
+    runIntraprocedural = other.runIntraprocedural;
     signalSets = other.signalSets;
     constantSets = other.constantSets;
+    ref2Val = other.ref2Val;
     return *this;
   }
   virtual ~ConstraintDependencyGraph() = default;
@@ -161,6 +170,7 @@ private:
   // Using mutable because many operations are not const by default, even for "const"-like
   // operations, like "getName()", and this reduces const_casts.
   mutable component::StructDefOp structDef;
+  bool runIntraprocedural;
 
   // Transitive closure only over signals.
   llvm::EquivalenceClasses<ConstrainRef> signalSets;
@@ -168,14 +178,21 @@ private:
   // constants.
   std::unordered_map<ConstrainRef, ConstrainRefSet, ConstrainRef::Hash> constantSets;
 
+  // Maps references to the values where they are found.
+  ConstrainRefLattice::Ref2Val ref2Val;
+
   // Also mutable for caching within otherwise const lookup operations.
   mutable mlir::SymbolTableCollection tables;
 
   /// @brief Constructs an empty CDG. The CDG is populated using computeConstraints.
   /// @param m The parent LLZK-compliant module.
   /// @param s The struct to analyze.
-  ConstraintDependencyGraph(mlir::ModuleOp m, component::StructDefOp s)
-      : mod(m), structDef(s), signalSets() {}
+  /// @param intraprocedural Whether the CDG represents and intra-procedural or inter-procedural
+  /// analysis
+  ConstraintDependencyGraph(
+      mlir::ModuleOp m, component::StructDefOp s, bool intraprocedural = false
+  )
+      : mod(m), structDef(s), runIntraprocedural(intraprocedural) {}
 
   /// @brief Runs the constraint analysis to compute a transitive closure over ConstrainRefs
   /// as operated over by emit operations.
@@ -193,42 +210,57 @@ private:
   void walkConstrainOp(mlir::DataFlowSolver &solver, mlir::Operation *emitOp);
 };
 
+/// @brief Parameters and shared objects to pass to child analyses.
+struct CDGAnalysisContext {
+  bool runIntraprocedural = false;
+
+  bool runIntraproceduralAnalysis() const { return runIntraprocedural; }
+};
+
 /// @brief An analysis wrapper around the ConstraintDependencyGraph for a given struct.
 /// This analysis is a StructDefOp-level analysis that should not be directly
 /// interacted with---rather, it is a utility used by the ConstraintDependencyGraphModuleAnalysis
 /// that helps use MLIR's AnalysisManager to cache dependencies for sub-components.
 class ConstraintDependencyGraphStructAnalysis
-    : public StructAnalysis<ConstraintDependencyGraph, NoContext> {
+    : public StructAnalysis<ConstraintDependencyGraph, CDGAnalysisContext> {
 public:
   using StructAnalysis::StructAnalysis;
   virtual ~ConstraintDependencyGraphStructAnalysis() = default;
 
   mlir::LogicalResult runAnalysis(
-      mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager, NoContext &_
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
+      CDGAnalysisContext &ctx
   ) override {
-    return runAnalysis(solver, moduleAnalysisManager);
+    return runAnalysis(solver, moduleAnalysisManager, ctx.runIntraproceduralAnalysis());
   }
 
   /// @brief Construct a CDG, using the module's analysis manager to query
   /// ConstraintDependencyGraph objects for nested components.
-  mlir::LogicalResult
-  runAnalysis(mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager);
+  mlir::LogicalResult runAnalysis(
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
+      bool runIntraprocedural
+  );
 };
 
 /// @brief A module-level analysis for constructing ConstraintDependencyGraph objects for
 /// all structs in the given LLZK module.
 class ConstraintDependencyGraphModuleAnalysis
     : public ModuleAnalysis<
-          ConstraintDependencyGraph, NoContext, ConstraintDependencyGraphStructAnalysis> {
+          ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis> {
 
 public:
   using ModuleAnalysis::ModuleAnalysis;
   virtual ~ConstraintDependencyGraphModuleAnalysis() = default;
 
+  void setIntraprocedural(bool runIntraprocedural) { intraprocedural = runIntraprocedural; }
+
 protected:
   void initializeSolver() override { (void)solver.load<ConstrainRefAnalysis>(); }
 
-  NoContext getContext() override { return {}; }
+  CDGAnalysisContext getContext() override { return {.runIntraprocedural = intraprocedural}; }
+
+private:
+  bool intraprocedural = false;
 };
 
 } // namespace llzk

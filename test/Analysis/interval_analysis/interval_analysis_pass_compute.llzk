@@ -1,0 +1,596 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @BoolAnd {
+    struct.field @case0 : i1
+    struct.field @case1 : i1
+    struct.field @case2 : i1
+    struct.field @case3 : i1
+    struct.field @case4 : i1
+    struct.field @case5 : i1
+    struct.field @case6 : i1
+    struct.field @case7 : i1
+    struct.field @case8 : i1
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@BoolAnd> {
+      %self = struct.new : !struct.type<@BoolAnd>
+
+      %1 = felt.const 1
+      %2 = felt.const 2
+
+      %true = bool.cmp eq(%1, %1)
+      %false = bool.cmp eq(%1, %2)
+      %any = bool.cmp eq(%a, %1)
+
+      %case0 = bool.and %true, %true
+      %case1 = bool.and %true, %false
+      %case2 = bool.and %false, %true
+      %case3 = bool.and %false, %false
+      %case4 = bool.and %any, %any
+      %case5 = bool.and %any, %true
+      %case6 = bool.and %true, %any
+      %case7 = bool.and %any, %false
+      %case8 = bool.and %false, %any
+
+      struct.writef %self[@case0] = %case0 : <@BoolAnd>, i1
+      struct.writef %self[@case1] = %case1 : <@BoolAnd>, i1
+      struct.writef %self[@case2] = %case2 : <@BoolAnd>, i1
+      struct.writef %self[@case3] = %case3 : <@BoolAnd>, i1
+      struct.writef %self[@case4] = %case4 : <@BoolAnd>, i1
+      struct.writef %self[@case5] = %case5 : <@BoolAnd>, i1
+      struct.writef %self[@case6] = %case6 : <@BoolAnd>, i1
+      struct.writef %self[@case7] = %case7 : <@BoolAnd>, i1
+      struct.writef %self[@case8] = %case8 : <@BoolAnd>, i1
+
+      function.return %self : !struct.type<@BoolAnd>
+    }
+
+    function.def @constrain(%self: !struct.type<@BoolAnd>, %a: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @BoolAnd StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in Entire
+// CHECK-NEXT:     %self[@case0] in Degenerate(1)
+// CHECK-NEXT:     %self[@case1] in Degenerate(0)
+// CHECK-NEXT:     %self[@case2] in Degenerate(0)
+// CHECK-NEXT:     %self[@case3] in Degenerate(0)
+// CHECK-NEXT:     %self[@case4] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@case5] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@case6] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@case7] in Degenerate(0)
+// CHECK-NEXT:     %self[@case8] in Degenerate(0)
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @BoolOr {
+    struct.field @case0 : i1
+    struct.field @case1 : i1
+    struct.field @case2 : i1
+    struct.field @case3 : i1
+    struct.field @case4 : i1
+    struct.field @case5 : i1
+    struct.field @case6 : i1
+    struct.field @case7 : i1
+    struct.field @case8 : i1
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@BoolOr> {
+      %self = struct.new : !struct.type<@BoolOr>
+
+      %1 = felt.const 1
+      %2 = felt.const 2
+
+      %true = bool.cmp eq(%1, %1)
+      %false = bool.cmp eq(%1, %2)
+      %any = bool.cmp eq(%a, %1)
+
+      %case0 = bool.or %true, %true
+      %case1 = bool.or %true, %false
+      %case2 = bool.or %false, %true
+      %case3 = bool.or %false, %false
+      %case4 = bool.or %any, %any
+      %case5 = bool.or %any, %true
+      %case6 = bool.or %true, %any
+      %case7 = bool.or %any, %false
+      %case8 = bool.or %false, %any
+
+      struct.writef %self[@case0] = %case0 : <@BoolOr>, i1
+      struct.writef %self[@case1] = %case1 : <@BoolOr>, i1
+      struct.writef %self[@case2] = %case2 : <@BoolOr>, i1
+      struct.writef %self[@case3] = %case3 : <@BoolOr>, i1
+      struct.writef %self[@case4] = %case4 : <@BoolOr>, i1
+      struct.writef %self[@case5] = %case5 : <@BoolOr>, i1
+      struct.writef %self[@case6] = %case6 : <@BoolOr>, i1
+      struct.writef %self[@case7] = %case7 : <@BoolOr>, i1
+      struct.writef %self[@case8] = %case8 : <@BoolOr>, i1
+
+      function.return %self : !struct.type<@BoolOr>
+    }
+
+    function.def @constrain(%self: !struct.type<@BoolOr>, %a: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @BoolOr StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in Entire
+// CHECK-NEXT:     %self[@case0] in Degenerate(1)
+// CHECK-NEXT:     %self[@case1] in Degenerate(1)
+// CHECK-NEXT:     %self[@case2] in Degenerate(1)
+// CHECK-NEXT:     %self[@case3] in Degenerate(0)
+// CHECK-NEXT:     %self[@case4] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@case5] in Degenerate(1)
+// CHECK-NEXT:     %self[@case6] in Degenerate(1)
+// CHECK-NEXT:     %self[@case7] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@case8] in TypeA:[ 0, 1 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @BoolXor {
+    struct.field @case0 : i1
+    struct.field @case1 : i1
+    struct.field @case2 : i1
+    struct.field @case3 : i1
+    struct.field @case4 : i1
+    struct.field @case5 : i1
+    struct.field @case6 : i1
+    struct.field @case7 : i1
+    struct.field @case8 : i1
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@BoolXor> {
+      %self = struct.new : !struct.type<@BoolXor>
+
+      %1 = felt.const 1
+      %2 = felt.const 2
+
+      %true = bool.cmp eq(%1, %1)
+      %false = bool.cmp eq(%1, %2)
+      %any = bool.cmp eq(%a, %1)
+
+      %case0 = bool.xor %true, %true
+      %case1 = bool.xor %true, %false
+      %case2 = bool.xor %false, %true
+      %case3 = bool.xor %false, %false
+      %case4 = bool.xor %any, %any
+      %case5 = bool.xor %any, %true
+      %case6 = bool.xor %true, %any
+      %case7 = bool.xor %any, %false
+      %case8 = bool.xor %false, %any
+
+      struct.writef %self[@case0] = %case0 : <@BoolXor>, i1
+      struct.writef %self[@case1] = %case1 : <@BoolXor>, i1
+      struct.writef %self[@case2] = %case2 : <@BoolXor>, i1
+      struct.writef %self[@case3] = %case3 : <@BoolXor>, i1
+      struct.writef %self[@case4] = %case4 : <@BoolXor>, i1
+      struct.writef %self[@case5] = %case5 : <@BoolXor>, i1
+      struct.writef %self[@case6] = %case6 : <@BoolXor>, i1
+      struct.writef %self[@case7] = %case7 : <@BoolXor>, i1
+      struct.writef %self[@case8] = %case8 : <@BoolXor>, i1
+
+      function.return %self : !struct.type<@BoolXor>
+    }
+
+    function.def @constrain(%self: !struct.type<@BoolXor>, %a: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @BoolXor StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in Entire
+// CHECK-NEXT:     %self[@case0] in Degenerate(0)
+// CHECK-NEXT:     %self[@case1] in Degenerate(1)
+// CHECK-NEXT:     %self[@case2] in Degenerate(1)
+// CHECK-NEXT:     %self[@case3] in Degenerate(0)
+// CHECK-NEXT:     %self[@case4] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@case5] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@case6] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@case7] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@case8] in TypeA:[ 0, 1 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @BoolNot {
+    struct.field @case0 : i1
+    struct.field @case1 : i1
+    struct.field @case2 : i1
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@BoolNot> {
+      %self = struct.new : !struct.type<@BoolNot>
+
+      %1 = felt.const 1
+      %2 = felt.const 2
+
+      %true = bool.cmp eq(%1, %1)
+      %false = bool.cmp eq(%1, %2)
+      %any = bool.cmp eq(%a, %1)
+
+      %case0 = bool.not %true
+      %case1 = bool.not %false
+      %case2 = bool.not %any
+
+      struct.writef %self[@case0] = %case0 : <@BoolNot>, i1
+      struct.writef %self[@case1] = %case1 : <@BoolNot>, i1
+      struct.writef %self[@case2] = %case2 : <@BoolNot>, i1
+
+      function.return %self : !struct.type<@BoolNot>
+    }
+
+    function.def @constrain(%self: !struct.type<@BoolNot>, %a: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @BoolNot StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in Entire
+// CHECK-NEXT:     %self[@case0] in Degenerate(0)
+// CHECK-NEXT:     %self[@case1] in Degenerate(1)
+// CHECK-NEXT:     %self[@case2] in  TypeA:[ 0, 1 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @BitAnd {
+    struct.field @case0 : !felt.type
+    struct.field @case1 : !felt.type
+    struct.field @case2 : !felt.type
+    struct.field @case3 : !felt.type
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@BitAnd> {
+      %self = struct.new : !struct.type<@BitAnd>
+
+      %ff = felt.const 255 // 0xff
+      %2 = felt.const 2
+
+      %case0 = felt.bit_and %a, %b
+      %case1 = felt.bit_and %a, %ff
+      %case2 = felt.bit_and %ff, %a
+      %case3 = felt.bit_and %2, %ff
+
+      struct.writef %self[@case0] = %case0 : <@BitAnd>, !felt.type
+      struct.writef %self[@case1] = %case1 : <@BitAnd>, !felt.type
+      struct.writef %self[@case2] = %case2 : <@BitAnd>, !felt.type
+      struct.writef %self[@case3] = %case3 : <@BitAnd>, !felt.type
+
+      function.return %self : !struct.type<@BitAnd>
+    }
+
+    function.def @constrain(%self: !struct.type<@BitAnd>, %a: !felt.type, %b: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @BitAnd StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in Entire
+// CHECK-NEXT:     %arg1 in Entire
+// CHECK-NEXT:     %self[@case0] in Entire
+// CHECK-NEXT:     %self[@case1] in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %self[@case2] in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %self[@case3] in Degenerate(2)
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @ShiftLeft {
+    struct.field @case0 : !felt.type
+    struct.field @case1 : !felt.type
+    struct.field @case2 : !felt.type
+    struct.field @case3 : !felt.type
+    struct.field @case4 : !felt.type
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ShiftLeft> {
+      %self = struct.new : !struct.type<@ShiftLeft>
+
+      %ff = felt.const 255 // 0xff
+      %2 = felt.const 2
+
+      %case0 = felt.shl %a, %b
+      %case1 = felt.shl %a, %2
+      %case2 = felt.shl %ff, %2
+      %case3 = felt.shl %b, %ff
+      %case4 = felt.shl %2, %ff
+
+      struct.writef %self[@case0] = %case0 : <@ShiftLeft>, !felt.type
+      struct.writef %self[@case1] = %case1 : <@ShiftLeft>, !felt.type
+      struct.writef %self[@case2] = %case2 : <@ShiftLeft>, !felt.type
+      struct.writef %self[@case3] = %case3 : <@ShiftLeft>, !felt.type
+      struct.writef %self[@case4] = %case4 : <@ShiftLeft>, !felt.type
+
+      function.return %self : !struct.type<@ShiftLeft>
+    }
+
+    function.def @constrain(%self: !struct.type<@ShiftLeft>, %a: !felt.type, %b: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ShiftLeft StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in Entire
+// CHECK-NEXT:     %arg1 in Entire
+// CHECK-NEXT:     %self[@case0] in Entire
+// CHECK-NEXT:     %self[@case1] in Entire
+// CHECK-NEXT:     %self[@case2] in Degenerate(1020)
+// CHECK-NEXT:     %self[@case3] in Entire
+// CHECK-NEXT:     %self[@case4] in Entire
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @ShiftRight {
+    struct.field @case0 : !felt.type
+    struct.field @case1 : !felt.type
+    struct.field @case2 : !felt.type
+    struct.field @case3 : !felt.type
+    struct.field @case4 : !felt.type
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ShiftRight> {
+      %self = struct.new : !struct.type<@ShiftRight>
+
+      %ff = felt.const 255 // 0xff
+      %2 = felt.const 2
+
+      %case0 = felt.shr %a, %b
+      %case1 = felt.shr %a, %2
+      %case2 = felt.shr %ff, %2
+      %case3 = felt.shr %b, %ff
+      %case4 = felt.shr %2, %ff
+
+      struct.writef %self[@case0] = %case0 : <@ShiftRight>, !felt.type
+      struct.writef %self[@case1] = %case1 : <@ShiftRight>, !felt.type
+      struct.writef %self[@case2] = %case2 : <@ShiftRight>, !felt.type
+      struct.writef %self[@case3] = %case3 : <@ShiftRight>, !felt.type
+      struct.writef %self[@case4] = %case4 : <@ShiftRight>, !felt.type
+
+      function.return %self : !struct.type<@ShiftRight>
+    }
+
+    function.def @constrain(%self: !struct.type<@ShiftRight>, %a: !felt.type, %b: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ShiftRight StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in Entire
+// CHECK-NEXT:     %arg1 in Entire
+// CHECK-NEXT:     %self[@case0] in Entire
+// CHECK-NEXT:     %self[@case1] in Entire
+// CHECK-NEXT:     %self[@case2] in Degenerate(63)
+// CHECK-NEXT:     %self[@case3] in Entire
+// CHECK-NEXT:     %self[@case4] in Degenerate(0)
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  // yield-less if that modifies intervals internally
+  struct.def @NoYieldIf {
+    struct.field @data : !felt.type
+    struct.field @const : !felt.type
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@NoYieldIf> {
+      %self = struct.new : !struct.type<@NoYieldIf>
+      %z = felt.const 0
+      %0 = bool.cmp ne(%a, %z)
+      scf.if %0 {
+        struct.writef %self[@data] = %b : !struct.type<@NoYieldIf>, !felt.type
+        struct.writef %self[@const] = %z : !struct.type<@NoYieldIf>, !felt.type
+      }
+      function.return %self : !struct.type<@NoYieldIf>
+    }
+
+    function.def @constrain(%self : !struct.type<@NoYieldIf>, %a: !felt.type, %b: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @NoYieldIf StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in Entire
+// CHECK-NEXT:     %arg1 in Entire
+// CHECK-NEXT:     %self[@data] in Entire
+// CHECK-NEXT:     %self[@const] in Degenerate(0)
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  // A struct that stores if the input is 0 or not
+  // to showcase `scf.if`.
+  // Only constraints that the stored value is a boolean.
+  // A real circuit would have more stuff
+  struct.def @IsZero {
+    struct.field @bit : !felt.type
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@IsZero> {
+      %self = struct.new : !struct.type<@IsZero>
+      %z = felt.const 0
+      %b = bool.cmp eq(%a, %z)
+      %0 = scf.if %b -> !felt.type {
+        scf.yield %z : !felt.type
+      } else {
+        %2 = felt.const 1
+        scf.yield %2 : !felt.type
+      }
+      struct.writef %self[@bit] = %0 : !struct.type<@IsZero>, !felt.type
+      function.return %self : !struct.type<@IsZero>
+    }
+
+    function.def @constrain(%self : !struct.type<@IsZero>, %a: !felt.type) {
+      %0 = struct.readf %self[@bit] : !struct.type<@IsZero>, !felt.type
+      %1 = felt.const 1
+      %2 = felt.sub %0, %1
+      %3 = felt.mul %0, %2
+      %4 = felt.const 0
+      constrain.eq %3, %4 : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @IsZero StructIntervals {
+// CHECK-NEXT:     compute {
+// CHECK-NEXT:         %arg0 in Entire
+// CHECK-NEXT:         %self[@bit] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     }
+// CHECK-NEXT:     constrain {
+// CHECK-NEXT:         %arg0[@bit] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:         %arg1 in Entire
+// CHECK-NEXT:     }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @MultiYield {
+    struct.field @a : !felt.type
+    struct.field @b : !felt.type
+    struct.field @c : !felt.type
+
+    function.def @compute(%in : !felt.type) -> !struct.type<@MultiYield> {
+      %self = struct.new : !struct.type<@MultiYield>
+      %z = felt.const 0
+      %cmp = bool.cmp eq(%in, %z)
+      %a, %b, %c = scf.if %cmp -> (!felt.type, !felt.type, !felt.type) {
+        %0 = felt.const 1
+        %1 = felt.const 2
+        %2 = felt.const 3
+        scf.yield %0, %1, %2 : !felt.type, !felt.type, !felt.type
+      } else {
+        %0 = felt.const 2
+        %1 = felt.const 99
+        scf.yield %0, %1, %in : !felt.type, !felt.type, !felt.type
+      }
+      struct.writef %self[@a] = %a : !struct.type<@MultiYield>, !felt.type
+      struct.writef %self[@b] = %b : !struct.type<@MultiYield>, !felt.type
+      struct.writef %self[@c] = %c : !struct.type<@MultiYield>, !felt.type
+      function.return %self : !struct.type<@MultiYield>
+    }
+
+    function.def @constrain(%self : !struct.type<@MultiYield>, %in : !felt.type) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @MultiYield StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %arg0 in Entire
+// CHECK-NEXT:    %self[@a] in TypeA:[ 1, 2 ]
+// CHECK-NEXT:    %self[@b] in TypeA:[ 2, 99 ]
+// CHECK-NEXT:    %self[@c] in Entire
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @NoYieldFor {
+    struct.field @a: !felt.type
+
+    function.def @compute(%x: index) -> !struct.type<@NoYieldFor> {
+      %self = struct.new : !struct.type<@NoYieldFor>
+      %0 = arith.constant 0 : index
+      %1 = arith.constant 1 : index
+      scf.for %i = %0 to %x step %1 {
+        %c = felt.const 3
+        struct.writef %self[@a] = %c : !struct.type<@NoYieldFor>, !felt.type
+      }
+      function.return %self : !struct.type<@NoYieldFor>
+    }
+
+    function.def @constrain(%self: !struct.type<@NoYieldFor>, %x: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @NoYieldFor StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %arg0 in Entire
+// CHECK-NEXT:    %self[@a] in Degenerate(3)
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @YieldForConst {
+    struct.field @a: !felt.type
+
+    function.def @compute(%x: index) -> !struct.type<@YieldForConst> {
+      %self = struct.new : !struct.type<@YieldForConst>
+      %0 = arith.constant 0 : index
+      %1 = arith.constant 1 : index
+      %f0 = felt.const 0
+      %c = scf.for %i = %0 to %x step %1 iter_args (%unused = %f0) -> (!felt.type) {
+        %3 = felt.const 3
+        scf.yield %3 : !felt.type
+      }
+      struct.writef %self[@a] = %c : !struct.type<@YieldForConst>, !felt.type
+      function.return %self : !struct.type<@YieldForConst>
+    }
+
+    function.def @constrain(%self: !struct.type<@YieldForConst>, %x: index) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @YieldForConst StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %arg0 in Entire
+// CHECK-NEXT:    %self[@a] in Degenerate(3)
+// CHECK-NEXT:  }
+
+// -----
+
+// No guesses will be made about the computed value over the loop
+module attributes {veridise.lang = "llzk"} {
+  struct.def @YieldForSum {
+    struct.field @a: !felt.type
+
+    function.def @compute(%x: index) -> !struct.type<@YieldForSum> {
+      %self = struct.new : !struct.type<@YieldForSum>
+      %0 = arith.constant 0 : index
+      %1 = arith.constant 1 : index
+      %f0 = felt.const 0
+      %c = scf.for %i = %0 to %x step %1 iter_args (%sum = %f0) -> (!felt.type) {
+        %f1 = felt.const 1
+        %s = felt.add %f1, %sum
+        scf.yield %s : !felt.type
+      }
+      struct.writef %self[@a] = %c : !struct.type<@YieldForSum>, !felt.type
+      function.return %self : !struct.type<@YieldForSum>
+    }
+
+    function.def @constrain(%self: !struct.type<@YieldForSum>, %x: index) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @YieldForSum StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %arg0 in Entire
+// CHECK-NEXT:    %self[@a] in Entire
+// CHECK-NEXT:  }

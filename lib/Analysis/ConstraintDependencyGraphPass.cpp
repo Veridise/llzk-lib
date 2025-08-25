@@ -19,10 +19,13 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/ErrorHandling.h>
 
+using namespace mlir;
+
 namespace llzk {
 
 using namespace component;
 
+#define GEN_PASS_DECL_CONSTRAINTDEPENDENCYGRAPHPRINTERPASS
 #define GEN_PASS_DEF_CONSTRAINTDEPENDENCYGRAPHPRINTERPASS
 #include "llzk/Analysis/AnalysisPasses.h.inc"
 
@@ -46,6 +49,7 @@ protected:
     }
 
     auto &cs = getAnalysis<ConstraintDependencyGraphModuleAnalysis>();
+    cs.setIntraprocedural(runIntraprocedural);
     auto am = getAnalysisManager();
     cs.runAnalysis(am);
     for (auto &[s, cdg] : cs) {

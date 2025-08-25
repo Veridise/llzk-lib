@@ -1,4 +1,6 @@
 // RUN: llzk-opt -I %S -llzk-print-interval-analysis="field=babybear" %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -I %S -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s 2>&1 | FileCheck %s --check-prefix CMP
+// RUN: llzk-opt -I %S -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s --check-prefix PROP
 
 module attributes {veridise.lang = "llzk"} {
   module @globals {
@@ -334,4 +336,36 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     %arg0[@$temp][@reg] in Entire
 // CHECK-NEXT:     %arg0[@v][@$super] in Entire
 // CHECK-NEXT:     %arg0[@v][@reciprocal] in Entire
+// CHECK-NEXT:     %arg1[0] in Entire
+// CHECK-NEXT:     %arg1[1] in Entire
 // CHECK-NEXT: }
+
+// CMP-LABEL: @Div StructIntervals {
+// CMP-NEXT:     compute {
+// CMP-NEXT:         %arg0 in Entire
+// CMP-NEXT:         %arg1 in Entire
+// CMP-NEXT:         %self[@$super] in Entire
+// CMP-NEXT:         %self[@reciprocal] in Entire
+// CMP-NEXT:     }
+// CMP-NEXT:     constrain {
+// CMP-NEXT:         %arg0[@$super] in Entire
+// CMP-NEXT:         %arg0[@reciprocal] in TypeC:[ 1, 2013265920 ]
+// CMP-NEXT:         %arg1 in Entire
+// CMP-NEXT:         %arg2 in TypeC:[ 1, 2013265920 ]
+// CMP-NEXT:     }
+// CMP-NEXT: }
+
+// PROP-LABEL: @Div StructIntervals {
+// PROP-NEXT:     compute {
+// PROP-NEXT:         %arg0 in Entire
+// PROP-NEXT:         %arg1 in TypeC:[ 1, 2013265920 ]
+// PROP-NEXT:         %self[@$super] in Entire
+// PROP-NEXT:         %self[@reciprocal] in Entire
+// PROP-NEXT:     }
+// PROP-NEXT:     constrain {
+// PROP-NEXT:         %arg0[@$super] in Entire
+// PROP-NEXT:         %arg0[@reciprocal] in TypeC:[ 1, 2013265920 ]
+// PROP-NEXT:         %arg1 in Entire
+// PROP-NEXT:         %arg2 in TypeC:[ 1, 2013265920 ]
+// PROP-NEXT:     }
+// PROP-NEXT: }

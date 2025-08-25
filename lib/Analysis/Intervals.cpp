@@ -91,7 +91,12 @@ UnreducedInterval UnreducedInterval::computeGEPart(const UnreducedInterval &rhs)
   return UnreducedInterval(safeMax(a, rhs.a), b);
 }
 
-UnreducedInterval UnreducedInterval::operator-() const { return UnreducedInterval(-b, -a); }
+UnreducedInterval UnreducedInterval::operator-() const {
+  if (isEmpty()) {
+    return *this;
+  }
+  return UnreducedInterval(-b, -a);
+}
 
 UnreducedInterval operator+(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
   llvm::APSInt low = expandingAdd(lhs.a, rhs.a), high = expandingAdd(lhs.b, rhs.b);
@@ -145,9 +150,18 @@ bool UnreducedInterval::isEmpty() const { return safeEq(width(), llvm::APSInt::g
 
 /* Interval */
 
+const Field &checkFields(const Interval &lhs, const Interval &rhs) {
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
+  return lhs.getField();
+}
+
 UnreducedInterval Interval::toUnreduced() const {
   if (isEmpty()) {
-    return UnreducedInterval(field.get().zero(), field.get().zero());
+    // Since ranges are inclusive, empty is encoded as `[a, b]` where `a` > `b`.
+    // This matches the definition provided by UnreducedInterval::width().
+    return UnreducedInterval(field.get().one(), field.get().zero());
   }
   if (isEntire()) {
     return UnreducedInterval(field.get().zero(), field.get().maxVal());
@@ -157,7 +171,7 @@ UnreducedInterval Interval::toUnreduced() const {
 
 UnreducedInterval Interval::firstUnreduced() const {
   if (is<Type::TypeF>()) {
-    return UnreducedInterval(field.get().prime() - a, b);
+    return UnreducedInterval(a - field.get().prime(), b);
   }
   return toUnreduced();
 }
@@ -169,10 +183,7 @@ UnreducedInterval Interval::secondUnreduced() const {
 
 Interval Interval::join(const Interval &rhs) const {
   auto &lhs = *this;
-  ensure(
-      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
-  );
-  const Field &f = lhs.getField();
+  const Field &f = checkFields(lhs, rhs);
 
   // Trivial cases
   if (lhs.isEntire() || rhs.isEntire()) {
@@ -225,12 +236,10 @@ Interval Interval::join(const Interval &rhs) const {
 
 Interval Interval::intersect(const Interval &rhs) const {
   auto &lhs = *this;
-  ensure(
-      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
-  );
+  const Field &f = checkFields(lhs, rhs);
   // Trivial cases
   if (lhs.isEmpty() || rhs.isEmpty()) {
-    return Interval::Empty(field.get());
+    return Interval::Empty(f);
   }
   if (lhs.isEntire()) {
     return rhs;
@@ -239,7 +248,7 @@ Interval Interval::intersect(const Interval &rhs) const {
     return lhs;
   }
   if (lhs.isDegenerate() || rhs.isDegenerate()) {
-    return lhs.toUnreduced().intersect(rhs.toUnreduced()).reduce(field.get());
+    return lhs.toUnreduced().intersect(rhs.toUnreduced()).reduce(f);
   }
 
   // More complex cases
@@ -249,24 +258,24 @@ Interval Interval::intersect(const Interval &rhs) const {
     auto maxA = std::max(lhs.a, rhs.a);
     auto minB = std::min(lhs.b, rhs.b);
     if (maxA <= minB) {
-      return Interval(lhs.ty, field.get(), maxA, minB);
+      return Interval(lhs.ty, f, maxA, minB);
     } else {
-      return Interval::Empty(field.get());
+      return Interval::Empty(f);
     }
   }
   if (areOneOf<{Type::TypeA, Type::TypeB}>(lhs, rhs)) {
-    return Interval::Empty(field.get());
+    return Interval::Empty(f);
   }
   if (areOneOf<{Type::TypeF, Type::TypeF}, {Type::TypeA, Type::TypeF}>(lhs, rhs)) {
-    return lhs.firstUnreduced().intersect(rhs.firstUnreduced()).reduce(field.get());
+    return lhs.firstUnreduced().intersect(rhs.firstUnreduced()).reduce(f);
   }
   if (areOneOf<{Type::TypeB, Type::TypeF}>(lhs, rhs)) {
-    return lhs.secondUnreduced().intersect(rhs.firstUnreduced()).reduce(field.get());
+    return lhs.secondUnreduced().intersect(rhs.firstUnreduced()).reduce(f);
   }
   if (areOneOf<{Type::TypeC, Type::TypeF}>(lhs, rhs)) {
     auto rhsUnred = rhs.firstUnreduced();
-    auto opt1 = lhs.firstUnreduced().intersect(rhsUnred).reduce(field.get());
-    auto opt2 = lhs.secondUnreduced().intersect(rhsUnred).reduce(field.get());
+    auto opt1 = lhs.firstUnreduced().intersect(rhsUnred).reduce(f);
+    auto opt2 = lhs.secondUnreduced().intersect(rhsUnred).reduce(f);
     ensure(!opt1.isEntire() && !opt2.isEntire(), "impossible intersection");
     if (opt1.isEmpty()) {
       return opt2;
@@ -283,18 +292,17 @@ Interval Interval::intersect(const Interval &rhs) const {
       )) {
     return rhs.intersect(lhs);
   }
-  return Interval::Empty(field.get());
+  return Interval::Empty(f);
 }
 
 Interval Interval::difference(const Interval &other) const {
+  const Field &f = checkFields(*this, other);
   // intersect checks that we're in the same field
   Interval intersection = intersect(other);
   if (intersection.isEmpty()) {
     // There's nothing to remove, so just return this
     return *this;
   }
-
-  const Field &f = field.get();
 
   // Trivial cases with a non-empty intersection
   if (isDegenerate() || other.isEntire()) {
@@ -351,51 +359,104 @@ Interval Interval::difference(const Interval &other) const {
 
 Interval Interval::operator-() const { return (-firstUnreduced()).reduce(field.get()); }
 
+Interval Interval::operator~() const {
+  return Interval::Degenerate(field.get(), field.get().one()) - *this;
+}
+
 Interval operator+(const Interval &lhs, const Interval &rhs) {
-  ensure(lhs.field.get() == rhs.field.get(), "cannot add intervals in different fields");
-  return (lhs.firstUnreduced() + rhs.firstUnreduced()).reduce(lhs.field.get());
+  const Field &f = checkFields(lhs, rhs);
+  if (lhs.isEmpty()) {
+    return rhs;
+  }
+  if (rhs.isEmpty()) {
+    return lhs;
+  }
+  return (lhs.firstUnreduced() + rhs.firstUnreduced()).reduce(f);
 }
 
 Interval operator-(const Interval &lhs, const Interval &rhs) { return lhs + (-rhs); }
 
 Interval operator*(const Interval &lhs, const Interval &rhs) {
-  ensure(lhs.field.get() == rhs.field.get(), "cannot multiply intervals in different fields");
-  const auto &field = lhs.field.get();
-  auto zeroInterval = Interval::Degenerate(field, field.zero());
+  const Field &f = checkFields(lhs, rhs);
+  auto zeroInterval = Interval::Degenerate(f, f.zero());
   if (lhs == zeroInterval || rhs == zeroInterval) {
     return zeroInterval;
   }
   if (lhs.isEmpty() || rhs.isEmpty()) {
-    return Interval::Empty(field);
+    return Interval::Empty(f);
   }
   if (lhs.isEntire() || rhs.isEntire()) {
-    return Interval::Entire(field);
+    return Interval::Entire(f);
   }
 
   if (Interval::areOneOf<{Interval::Type::TypeB, Interval::Type::TypeB}>(lhs, rhs)) {
-    return (lhs.secondUnreduced() * rhs.secondUnreduced()).reduce(field);
+    return (lhs.secondUnreduced() * rhs.secondUnreduced()).reduce(f);
   }
-  return (lhs.firstUnreduced() * rhs.firstUnreduced()).reduce(field);
+  return (lhs.firstUnreduced() * rhs.firstUnreduced()).reduce(f);
 }
 
 FailureOr<Interval> operator/(const Interval &lhs, const Interval &rhs) {
-  ensure(lhs.getField() == rhs.getField(), "cannot divide intervals in different fields");
-  const auto &field = rhs.getField();
-  if (rhs.width() > field.one()) {
-    return Interval::Entire(field);
+  const Field &f = checkFields(lhs, rhs);
+  if (rhs.width() > f.one()) {
+    return Interval::Entire(f);
   }
   if (rhs.a.isZero()) {
     return failure();
   }
-  return success(UnreducedInterval(lhs.a / rhs.a, lhs.b / rhs.a).reduce(field));
+  return success(UnreducedInterval(lhs.a / rhs.a, lhs.b / rhs.a).reduce(f));
 }
 
 Interval operator%(const Interval &lhs, const Interval &rhs) {
-  ensure(
-      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
-  );
-  const auto &field = rhs.getField();
-  return UnreducedInterval(field.zero(), rhs.b).reduce(field);
+  const Field &f = checkFields(lhs, rhs);
+  return UnreducedInterval(f.zero(), rhs.b).reduce(f);
+}
+
+Interval operator&(const Interval &lhs, const Interval &rhs) {
+  const Field &f = checkFields(lhs, rhs);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return Interval::Empty(f);
+  }
+  if (lhs.isDegenerate() && rhs.isDegenerate()) {
+    return Interval::Degenerate(f, lhs.a & rhs.a);
+  } else if (lhs.isDegenerate()) {
+    return UnreducedInterval(f.zero(), lhs.a).reduce(f);
+  } else if (rhs.isDegenerate()) {
+    return UnreducedInterval(f.zero(), rhs.a).reduce(f);
+  }
+  return Interval::Entire(f);
+}
+
+Interval operator<<(const Interval &lhs, const Interval &rhs) {
+  const Field &f = checkFields(lhs, rhs);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return Interval::Empty(f);
+  }
+  if (lhs.isDegenerate() && rhs.isDegenerate()) {
+    if (safeGt(rhs.a, APSInt::getUnsigned(f.bitWidth()))) {
+      return Interval::Entire(f);
+    }
+
+    unsigned shiftAmt = rhs.a.getZExtValue();
+    auto v = lhs.a.relativeShl(shiftAmt);
+    return UnreducedInterval(v, v).reduce(f);
+  }
+  return Interval::Entire(f);
+}
+
+Interval operator>>(const Interval &lhs, const Interval &rhs) {
+  const Field &f = checkFields(lhs, rhs);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return Interval::Empty(f);
+  }
+  if (lhs.isDegenerate() && rhs.isDegenerate()) {
+    if (safeGt(rhs.a, APSInt::getUnsigned(f.bitWidth()))) {
+      return Interval::Degenerate(f, f.zero());
+    }
+
+    unsigned shiftAmt = rhs.a.getZExtValue();
+    return Interval::Degenerate(f, lhs.a.relativeShr(shiftAmt));
+  }
+  return Interval::Entire(f);
 }
 
 llvm::APSInt Interval::width() const {
@@ -407,8 +468,82 @@ llvm::APSInt Interval::width() const {
   case Type::Entire:
     return field.get().prime();
   default:
-    return toUnreduced().width();
+    return field.get().reduce(toUnreduced().width());
   }
+}
+
+Interval boolAnd(const Interval &lhs, const Interval &rhs) {
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
+  ensure(lhs.isBoolean() && rhs.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = rhs.getField();
+
+  if (lhs.isBoolFalse() || rhs.isBoolFalse()) {
+    return Interval::False(field);
+  }
+  if (lhs.isBoolTrue() && rhs.isBoolTrue()) {
+    return Interval::True(field);
+  }
+
+  return Interval::Boolean(field);
+}
+
+Interval boolOr(const Interval &lhs, const Interval &rhs) {
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
+  ensure(lhs.isBoolean() && rhs.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = rhs.getField();
+
+  if (lhs.isBoolFalse() && rhs.isBoolFalse()) {
+    return Interval::False(field);
+  }
+  if (lhs.isBoolTrue() || rhs.isBoolTrue()) {
+    return Interval::True(field);
+  }
+
+  return Interval::Boolean(field);
+}
+
+Interval boolXor(const Interval &lhs, const Interval &rhs) {
+  ensure(
+      lhs.getField() == rhs.getField(), "interval operations across differing fields is unsupported"
+  );
+  ensure(lhs.isBoolean() && rhs.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = rhs.getField();
+
+  // Xor-ing anything with [0, 1] could still result in either case, so just return
+  // the full boolean range.
+  if (lhs.isBoolEither() || rhs.isBoolEither()) {
+    return Interval::Boolean(lhs.getField());
+  }
+
+  if (lhs.isBoolTrue() && rhs.isBoolTrue()) {
+    return Interval::False(field);
+  }
+  if (lhs.isBoolTrue() || rhs.isBoolTrue()) {
+    return Interval::True(field);
+  }
+  if (lhs.isBoolFalse() && rhs.isBoolFalse()) {
+    return Interval::False(field);
+  }
+
+  return Interval::Boolean(field);
+}
+
+Interval boolNot(const Interval &iv) {
+  ensure(iv.isBoolean(), "operation only supported for boolean-type intervals");
+  const auto &field = iv.getField();
+
+  if (iv.isBoolTrue()) {
+    return Interval::False(field);
+  }
+  if (iv.isBoolFalse()) {
+    return Interval::True(field);
+  }
+
+  return iv;
 }
 
 void Interval::print(mlir::raw_ostream &os) const {

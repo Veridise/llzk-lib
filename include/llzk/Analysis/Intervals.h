@@ -228,6 +228,10 @@ public:
     return Interval(Type::Degenerate, f, val, val);
   }
 
+  static Interval False(const Field &f) { return Interval::Degenerate(f, f.zero()); }
+
+  static Interval True(const Field &f) { return Interval::Degenerate(f, f.one()); }
+
   static Interval Boolean(const Field &f) { return Interval::TypeA(f, f.zero(), f.one()); }
 
   static Interval Entire(const Field &f) { return Interval(Type::Entire, f); }
@@ -292,12 +296,22 @@ public:
   /* arithmetic ops */
 
   Interval operator-() const;
+  Interval operator~() const;
   friend Interval operator+(const Interval &lhs, const Interval &rhs);
   friend Interval operator-(const Interval &lhs, const Interval &rhs);
   friend Interval operator*(const Interval &lhs, const Interval &rhs);
   friend Interval operator%(const Interval &lhs, const Interval &rhs);
   /// @brief Returns failure if a division-by-zero is encountered.
   friend mlir::FailureOr<Interval> operator/(const Interval &lhs, const Interval &rhs);
+  friend Interval operator&(const Interval &lhs, const Interval &rhs);
+  friend Interval operator<<(const Interval &lhs, const Interval &rhs);
+  friend Interval operator>>(const Interval &lhs, const Interval &rhs);
+
+  /* boolean ops */
+  friend Interval boolAnd(const Interval &lhs, const Interval &rhs);
+  friend Interval boolOr(const Interval &lhs, const Interval &rhs);
+  friend Interval boolXor(const Interval &lhs, const Interval &rhs);
+  friend Interval boolNot(const Interval &iv);
 
   /* Checks and Comparisons */
 
@@ -309,6 +323,11 @@ public:
   inline bool isTypeB() const { return ty == Type::TypeB; }
   inline bool isTypeC() const { return ty == Type::TypeC; }
   inline bool isTypeF() const { return ty == Type::TypeF; }
+
+  inline bool isBoolFalse() const { return *this == Interval::False(field.get()); }
+  inline bool isBoolTrue() const { return *this == Interval::True(field.get()); }
+  inline bool isBoolEither() const { return *this == Interval::Boolean(field.get()); }
+  inline bool isBoolean() const { return isBoolFalse() || isBoolTrue() || isBoolEither(); }
 
   template <Type... Types> bool is() const { return ((ty == Types) || ...); }
 
@@ -341,7 +360,7 @@ public:
 private:
   Interval(Type t, const Field &f) : field(f), ty(t), a(f.zero()), b(f.zero()) {}
   Interval(Type t, const Field &f, llvm::APSInt lhs, llvm::APSInt rhs)
-      : field(f), ty(t), a(lhs.extend(f.bitWidth())), b(rhs.extend(f.bitWidth())) {}
+      : field(f), ty(t), a(f.reduce(lhs)), b(f.reduce(rhs)) {}
 
   std::reference_wrapper<const Field> field;
   Type ty;
