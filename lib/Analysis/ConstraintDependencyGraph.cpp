@@ -176,8 +176,8 @@ void ConstrainRefAnalysis::visitOperation(
     auto newArrayVal = ConstrainRefLatticeValue(createArray.getType().getShape());
     // If the array is statically initialized, iterate through all operands and initialize the array
     // value.
-    if (!hasAffineMapAttr(createArray.getResult().getType())) {
-      const auto &elements = createArray.getElements();
+    const auto &elements = createArray.getElements();
+    if (!elements.empty()) {
       for (unsigned i = 0; i < elements.size(); i++) {
         auto currentOp = elements[i];
         auto &opVals = operandVals[currentOp];
