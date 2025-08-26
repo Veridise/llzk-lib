@@ -45,19 +45,18 @@ class ScalarArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
     /// Required by DestructurableAllocationOpInterface / SROA pass
     bool $cppClass::canRewire(const ::mlir::DestructurableMemorySlot &slot,
                 ::llvm::SmallPtrSetImpl<::mlir::Attribute> &usedIndices,
-                ::mlir::SmallVectorImpl<::mlir::MemorySlot>
-                &mustBeSafelyUsed) {
+                ::mlir::SmallVectorImpl<::mlir::MemorySlot> &mustBeSafelyUsed,
+                const ::mlir::DataLayout &dataLayout) {
       return ::llvm::cast<ArrayAccessOpInterface>(getOperation())
-                .canRewire(slot, usedIndices, mustBeSafelyUsed);
+                .canRewire(slot, usedIndices, mustBeSafelyUsed, dataLayout);
     }
 
     /// Required by DestructurableAllocationOpInterface / SROA pass
-    ::mlir::DeletionKind $cppClass::rewire(const
-    ::mlir::DestructurableMemorySlot &slot,
+    ::mlir::DeletionKind $cppClass::rewire(const ::mlir::DestructurableMemorySlot &slot,
                 ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
-                ::mlir::RewriterBase &rewriter) {
+                ::mlir::OpBuilder &builder, const ::mlir::DataLayout &dataLayout) {
       return ::llvm::cast<ArrayAccessOpInterface>(getOperation())
-                .rewire(slot, subslots, rewriter);
+                .rewire(slot, subslots, builder, dataLayout);
     }
 
     /// Required by PromotableMemOpInterface / mem2reg pass
@@ -71,7 +70,8 @@ class ScalarArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
     }
 
     /// Required by PromotableAllocationOpInterface / mem2reg pass
-    ::mlir::Value $cppClass::getStored(const ::mlir::MemorySlot &, ::mlir::RewriterBase &) {
+    ::mlir::Value $cppClass::getStored(const ::mlir::MemorySlot &, ::mlir::OpBuilder &,
+                                       ::mlir::Value, const ::mlir::DataLayout &) {
       }]#!if(isRead,
              "llvm_unreachable(\"getStored() should not be called on "
              "$cppClass\")",
