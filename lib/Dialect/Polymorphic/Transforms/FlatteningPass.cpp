@@ -230,9 +230,10 @@ static LogicalResult
 applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternSet &&patterns) {
   bool currStepModified = false;
   MatchFailureListener failureListener;
-  LogicalResult result = applyPatternsAndFoldGreedily(
+  LogicalResult result = applyPatternsGreedily(
       modOp->getRegion(0), std::move(patterns),
-      GreedyRewriteConfig {.maxIterations = 20, .listener = &failureListener}, &currStepModified
+      GreedyRewriteConfig {.maxIterations = 20, .listener = &failureListener, .fold = true},
+      &currStepModified
   );
   tracker.updateModifiedFlag(currStepModified);
   return failure(result.failed() || failureListener.hadFailure);
