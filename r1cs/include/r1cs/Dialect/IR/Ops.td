@@ -16,12 +16,11 @@ include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-class R1CS_Op<string mnemonic, list<Trait> traits = []> :
-    Op<R1CSDialect, mnemonic, traits>;
+class R1CS_Op<string mnemonic, list<Trait> traits = []>
+    : Op<R1CSDialect, mnemonic, traits>;
 
-def R1CS_CircuitDefOp : R1CS_Op<"circuit", [
-  Symbol, IsolatedFromAbove, SingleBlock, NoTerminator
-]> {
+def R1CS_CircuitDefOp : R1CS_Op<"circuit", [Symbol, IsolatedFromAbove,
+                                            SingleBlock, NoTerminator]> {
   let summary = "Defines an R1CS circuit with labeled inputs and constraints";
   let description = [{
     The `r1cs.circuit` operation defines a named circuit, with explicit inputs
@@ -46,14 +45,12 @@ def R1CS_CircuitDefOp : R1CS_Op<"circuit", [
   }];
   let hasCustomAssemblyFormat = 1;
   let hasVerifier = 1;
-  let arguments = (ins SymbolNameAttr:$sym_name, OptionalAttr<DictionaryAttr>:$arg_attrs);
+  let arguments = (ins SymbolNameAttr:$sym_name,
+      OptionalAttr<DictionaryAttr>:$arg_attrs);
 
   let regions = (region SizedRegion<1>:$body);
-  
 
-  let builders = [
-    OpBuilder<(ins "::llvm::StringRef":$name)>,
-  ];
+  let builders = [OpBuilder<(ins "::llvm::StringRef":$name)>, ];
 
   let extraClassDeclaration = [{
     ::mlir::Block* addEntryBlock();
@@ -118,7 +115,8 @@ def R1CS_NegOp : R1CS_Op<"neg", [Pure]> {
 
 def R1CS_ConstrainOp : R1CS_Op<"constrain", []> {
   let summary = "Enforce a * b - c = 0 R1CS constraint";
-  let arguments = (ins R1CS_LinearType:$a, R1CS_LinearType:$b, R1CS_LinearType:$c);
+  let arguments = (ins R1CS_LinearType:$a, R1CS_LinearType:$b,
+      R1CS_LinearType:$c);
   let assemblyFormat = "$a `,` $b `,` $c attr-dict `:` type($a)";
 }
 

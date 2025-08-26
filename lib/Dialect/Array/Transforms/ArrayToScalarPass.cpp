@@ -363,8 +363,9 @@ public:
 
   LogicalResult match(ExtractArrayOp op) const override { return failure(legal(op)); }
 
-  void rewrite(ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
-      const override {
+  void rewrite(
+      ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     ArrayType at = splittableArray(op.getResult().getType());
     // Generate `CreateArrayOp` in place of the current op.
     auto newArray = rewriter.replaceOpWithNewOp<CreateArrayOp>(op, at);
@@ -647,8 +648,9 @@ public:
 
   LogicalResult match(FieldRefOpClass op) const override { return failure(ImplClass::legal(op)); }
 
-  void rewrite(FieldRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
-      const override {
+  void rewrite(
+      FieldRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     StructType tgtStructTy = llvm::cast<FieldRefOpInterface>(op.getOperation()).getStructType();
     assert(tgtStructTy);
     auto tgtStructDef = tgtStructTy.getDefinition(tables, op);

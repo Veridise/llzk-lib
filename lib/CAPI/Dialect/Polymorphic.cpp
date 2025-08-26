@@ -73,30 +73,36 @@ MlirAttribute llzkTypeVarTypeGetName(MlirType type) {
 
 LLZK_DEFINE_OP_BUILD_METHOD(ApplyMapOp, MlirAttribute map, MlirValueRange mapOperands) {
   SmallVector<Value> mapOperandsSto;
-  return wrap(create<ApplyMapOp>(
-      builder, location, llvm::cast<AffineMapAttr>(unwrap(map)),
-      ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
-  ));
+  return wrap(
+      create<ApplyMapOp>(
+          builder, location, llvm::cast<AffineMapAttr>(unwrap(map)),
+          ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
+      )
+  );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     ApplyMapOp, WithAffineMap, MlirAffineMap map, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
-  return wrap(create<ApplyMapOp>(
-      builder, location, unwrap(map),
-      ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
-  ));
+  return wrap(
+      create<ApplyMapOp>(
+          builder, location, unwrap(map),
+          ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
+      )
+  );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     ApplyMapOp, WithAffineExpr, MlirAffineExpr expr, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
-  return wrap(create<ApplyMapOp>(
-      builder, location, unwrap(expr),
-      ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
-  ));
+  return wrap(
+      create<ApplyMapOp>(
+          builder, location, unwrap(expr),
+          ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
+      )
+  );
 }
 
 bool llzkOperationIsAApplyMapOp(MlirOperation op) { return llvm::isa<ApplyMapOp>(unwrap(op)); }

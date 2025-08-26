@@ -21,14 +21,12 @@ def FeltAttr : AttrDef<R1CSDialect, "Felt"> {
 
   let assemblyFormat = "$value";
 
-  let builders = [
-    AttrBuilder<(ins "const ::llvm::APInt &":$v), [{
+  let builders = [AttrBuilder<(ins "const ::llvm::APInt &":$v), [{
       return Base::get(context, ::mlir::IntegerAttr::get(::mlir::IntegerType::get(context, v.getBitWidth()), v));
     }]>,
-    AttrBuilder<(ins "const ::llvm::APSInt &":$v), [{
+                  AttrBuilder<(ins "const ::llvm::APSInt &":$v), [{
       return Base::get(context, ::mlir::IntegerAttr::get(::mlir::IntegerType::get(context, v.getBitWidth()), v));
-    }]>
-  ];
+    }]>];
 }
 
 def PublicAttr : AttrDef<R1CSDialect, "Public"> {

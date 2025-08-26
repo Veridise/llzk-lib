@@ -153,8 +153,9 @@ public:
     assert(
         adaptor.getAttributes().empty() ||
         llvm::all_of(
-            adaptor.getAttributes(), [d = op->getAttrDictionary()](mlir::NamedAttribute a
-                                     ) { return d.contains(a.getName()); }
+            adaptor.getAttributes(), [d = op->getAttrDictionary()](mlir::NamedAttribute a) {
+      return d.contains(a.getName());
+    }
         )
     );
     // Convert any TypeAttr in the attribute list.
