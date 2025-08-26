@@ -192,16 +192,16 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLatticeVa
 /* ConstrainRefLattice */
 
 mlir::FailureOr<ConstrainRef> ConstrainRefLattice::getSourceRef(mlir::Value val) {
-  if (auto blockArg = mlir::dyn_cast<mlir::BlockArgument>(val)) {
+  if (auto blockArg = llvm::dyn_cast<mlir::BlockArgument>(val)) {
     return ConstrainRef(blockArg);
   } else if (auto defOp = val.getDefiningOp()) {
-    if (auto feltConst = mlir::dyn_cast<FeltConstantOp>(defOp)) {
+    if (auto feltConst = llvm::dyn_cast<FeltConstantOp>(defOp)) {
       return ConstrainRef(feltConst);
-    } else if (auto constIdx = mlir::dyn_cast<mlir::arith::ConstantIndexOp>(defOp)) {
+    } else if (auto constIdx = llvm::dyn_cast<mlir::arith::ConstantIndexOp>(defOp)) {
       return ConstrainRef(constIdx);
-    } else if (auto readConst = mlir::dyn_cast<ConstReadOp>(defOp)) {
+    } else if (auto readConst = llvm::dyn_cast<ConstReadOp>(defOp)) {
       return ConstrainRef(readConst);
-    } else if (auto structNew = mlir::dyn_cast<CreateStructOp>(defOp)) {
+    } else if (auto structNew = llvm::dyn_cast<CreateStructOp>(defOp)) {
       return ConstrainRef(structNew);
     }
   }

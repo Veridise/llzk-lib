@@ -50,15 +50,15 @@ MlirOperation llzkFuncDefOpCreateWithAttrsAndArgAttrs(
   SmallVector<Attribute> argAttrsSto;
   SmallVector<DictionaryAttr> unwrappedArgAttrs =
       llvm::map_to_vector(unwrapList(numArgAttrs, argAttrs, argAttrsSto), [](auto attr) {
-    return mlir::cast<DictionaryAttr>(attr);
+    return llvm::cast<DictionaryAttr>(attr);
   });
   return wrap(FuncDefOp::create(
-      unwrap(location), unwrap(name), mlir::cast<FunctionType>(unwrap(funcType)),
+      unwrap(location), unwrap(name), llvm::cast<FunctionType>(unwrap(funcType)),
       unwrapList(numAttrs, attrs, attrsSto), unwrappedArgAttrs
   ));
 }
 
-bool llzkOperationIsAFuncDefOp(MlirOperation op) { return mlir::isa<FuncDefOp>(unwrap(op)); }
+bool llzkOperationIsAFuncDefOp(MlirOperation op) { return llvm::isa<FuncDefOp>(unwrap(op)); }
 
 bool llzkFuncDefOpGetHasAllowConstraintAttr(MlirOperation op) {
   return mlir::unwrap_cast<FuncDefOp>(op).hasAllowConstraintAttr();
@@ -113,11 +113,11 @@ MlirType llzkFuncDefOpGetSingleResultTypeOfCompute(MlirOperation op) {
 // CallOp
 //===----------------------------------------------------------------------===//
 
-static auto unwrapCallee(MlirOperation op) { return mlir::cast<FuncDefOp>(unwrap(op)); }
+static auto unwrapCallee(MlirOperation op) { return llvm::cast<FuncDefOp>(unwrap(op)); }
 
-static auto unwrapDims(MlirAttribute attr) { return mlir::cast<DenseI32ArrayAttr>(unwrap(attr)); }
+static auto unwrapDims(MlirAttribute attr) { return llvm::cast<DenseI32ArrayAttr>(unwrap(attr)); }
 
-static auto unwrapName(MlirAttribute attr) { return mlir::cast<SymbolRefAttr>(unwrap(attr)); }
+static auto unwrapName(MlirAttribute attr) { return llvm::cast<SymbolRefAttr>(unwrap(attr)); }
 
 LLZK_DEFINE_OP_BUILD_METHOD(
     CallOp, intptr_t numResults, MlirType const *results, MlirAttribute name, intptr_t numOperands,
@@ -198,7 +198,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   ));
 }
 
-bool llzkOperationIsACallOp(MlirOperation op) { return mlir::isa<CallOp>(unwrap(op)); }
+bool llzkOperationIsACallOp(MlirOperation op) { return llvm::isa<CallOp>(unwrap(op)); }
 
 MlirType llzkCallOpGetCalleeType(MlirOperation op) {
   return wrap(mlir::unwrap_cast<CallOp>(op).getCalleeType());

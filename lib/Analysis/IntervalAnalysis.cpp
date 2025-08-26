@@ -450,7 +450,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     // We only care about scalar type values, so we ignore composite types, which
     // are currently limited to non-Signal structs and arrays.
     Type valTy = val.getType();
-    if (mlir::isa<ArrayType, StructType>(valTy) && !isSignalType(valTy)) {
+    if (llvm::isa<ArrayType, StructType>(valTy) && !isSignalType(valTy)) {
       operandVals.push_back(LatticeValue());
       continue;
     }
@@ -507,7 +507,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     }
 
     changed |= after->setValue(op->getResult(0), result);
-  } else if (EmitEqualityOp emitEq = mlir::dyn_cast<EmitEqualityOp>(op)) {
+  } else if (EmitEqualityOp emitEq = llvm::dyn_cast<EmitEqualityOp>(op)) {
     ensure(operandVals.size() == 2, "constraint op with the wrong number of operands");
     Value lhsVal = emitEq.getLhs(), rhsVal = emitEq.getRhs();
     ExpressionValue lhsExpr = operandVals[0].getScalarValue();
@@ -528,7 +528,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     changed |= applyInterval(emitEq, after, lhsVal, constraint.getInterval());
     changed |= applyInterval(emitEq, after, rhsVal, constraint.getInterval());
     changed |= after->addSolverConstraint(constraint);
-  } else if (AssertOp assertOp = mlir::dyn_cast<AssertOp>(op)) {
+  } else if (AssertOp assertOp = llvm::dyn_cast<AssertOp>(op)) {
     ensure(operandVals.size() == 1, "assert op with the wrong number of operands");
     // assert enforces that the operand is true. So we apply an interval of [1, 1]
     // to the operand.
@@ -539,7 +539,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     // Also add the solver constraint that the expression must be true.
     auto assertExpr = operandVals[0].getScalarValue();
     changed |= after->addSolverConstraint(assertExpr);
-  } else if (auto readf = mlir::dyn_cast<FieldReadOp>(op)) {
+  } else if (auto readf = llvm::dyn_cast<FieldReadOp>(op)) {
     if (isSignalType(readf.getComponent().getType())) {
       // The reg value read from the signal type is equal to the value of the Signal
       // struct overall.
@@ -550,7 +550,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       // The result value is the value previously written to this field.
       changed |= after->setValue(readf.getVal(), storedVal->getScalarValue());
     }
-  } else if (auto writef = mlir::dyn_cast<FieldWriteOp>(op)) {
+  } else if (auto writef = llvm::dyn_cast<FieldWriteOp>(op)) {
     // Update values stored in a field
     ExpressionValue writeVal = operandVals[1].getScalarValue();
     changed |=
@@ -603,7 +603,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       // The analysis ignores definition ops.
       && !isDefinitionOp(op)
       // We do not need to analyze the creation of structs.
-      && !mlir::isa<CreateStructOp>(op)
+      && !llvm::isa<CreateStructOp>(op)
   ) {
     op->emitWarning("unhandled operation, analysis may be incomplete").report();
   }
@@ -733,7 +733,7 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
   Lattice *valLattice = nullptr;
   if (Operation *valOp = val.getDefiningOp()) {
     valLattice = getLattice(getProgramPointBefore(valOp));
-  } else if (auto blockArg = mlir::dyn_cast<BlockArgument>(val)) {
+  } else if (auto blockArg = llvm::dyn_cast<BlockArgument>(val)) {
     Operation *owningOp = blockArg.getOwner()->getParentOp();
     if (propagateInputConstraints) {
       // Apply the interval from the constrain function inputs to the compute function inputs

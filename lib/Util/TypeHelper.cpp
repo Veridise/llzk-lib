@@ -93,24 +93,23 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
 
   size_t position = ret.size();
   // Adapted from AsmPrinter::Impl::printAttributeImpl()
-  if (llvm::isa<IntegerAttr>(a)) {
-    IntegerAttr ia = llvm::cast<IntegerAttr>(a);
+  if (auto ia = llvm::dyn_cast<IntegerAttr>(a)) {
     Type ty = ia.getType();
     bool isUnsigned = ty.isUnsignedInteger() || ty.isSignlessInteger(1);
     ia.getValue().print(ss, !isUnsigned);
-  } else if (llvm::isa<SymbolRefAttr>(a)) {
-    appendSymRef(llvm::cast<SymbolRefAttr>(a));
-  } else if (llvm::isa<TypeAttr>(a)) {
-    append(llvm::cast<TypeAttr>(a).getValue());
-  } else if (llvm::isa<AffineMapAttr>(a)) {
+  } else if (auto sra = llvm::dyn_cast<SymbolRefAttr>(a)) {
+    appendSymRef(sra);
+  } else if (auto ta = llvm::dyn_cast<TypeAttr>(a)) {
+    append(ta.getValue());
+  } else if (auto ama = llvm::dyn_cast<AffineMapAttr>(a)) {
     ss << "!m<";
     // Filter to remove spaces from the affine_map representation
     filtered_raw_ostream fs(ss, [](char c) { return c == ' '; });
-    llvm::cast<AffineMapAttr>(a).getValue().print(fs);
+    ama.getValue().print(fs);
     fs.flush();
     ss << '>';
-  } else if (llvm::isa<ArrayAttr>(a)) {
-    append(llvm::cast<ArrayAttr>(a).getValue());
+  } else if (auto aa = llvm::dyn_cast<ArrayAttr>(a)) {
+    append(aa.getValue());
   } else {
     // All valid/legal cases must be covered above
     assertValidAttrForParamOfType(a);

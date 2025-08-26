@@ -45,7 +45,7 @@ mlir::Operation *create(MlirOpBuilder cBuilder, MlirLocation cLocation, Args &&.
   mlir::OperationState state(location, getCheckRegisteredInfo<OpTy>(location.getContext()));
   OpTy::build(*builder, state, std::forward<Args>(args)...);
   auto *op = mlir::Operation::create(state);
-  assert(mlir::isa<OpTy>(op) && "builder didn't return the right type");
+  assert(llvm::isa<OpTy>(op) && "builder didn't return the right type");
   return op;
 }
 

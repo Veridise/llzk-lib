@@ -301,7 +301,7 @@ private:
   llvm::SMTExprRef createFeltSymbol(const char *name) const;
 
   bool isConstOp(mlir::Operation *op) const {
-    return mlir::isa<
+    return llvm::isa<
         felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
   }
 
@@ -316,7 +316,7 @@ private:
   }
 
   bool isArithmeticOp(mlir::Operation *op) const {
-    return mlir::isa<
+    return llvm::isa<
         felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::ModFeltOp,
         felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp, felt::XorFeltOp,
         felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp, boolean::AndBoolOp,
@@ -343,48 +343,48 @@ private:
   );
 
   bool isBoolOp(mlir::Operation *op) const {
-    return mlir::isa<boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(
+    return llvm::isa<boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(
         op
     );
   }
 
   bool isConversionOp(mlir::Operation *op) const {
-    return mlir::isa<cast::IntToFeltOp, cast::FeltToIndexOp>(op);
+    return llvm::isa<cast::IntToFeltOp, cast::FeltToIndexOp>(op);
   }
 
-  bool isApplyMapOp(mlir::Operation *op) const { return mlir::isa<polymorphic::ApplyMapOp>(op); }
+  bool isApplyMapOp(mlir::Operation *op) const { return llvm::isa<polymorphic::ApplyMapOp>(op); }
 
-  bool isAssertOp(mlir::Operation *op) const { return mlir::isa<boolean::AssertOp>(op); }
+  bool isAssertOp(mlir::Operation *op) const { return llvm::isa<boolean::AssertOp>(op); }
 
   bool isReadOp(mlir::Operation *op) const {
-    return mlir::isa<component::FieldReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);
+    return llvm::isa<component::FieldReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);
   }
 
   bool isWriteOp(mlir::Operation *op) const {
-    return mlir::isa<component::FieldWriteOp, array::WriteArrayOp, array::InsertArrayOp>(op);
+    return llvm::isa<component::FieldWriteOp, array::WriteArrayOp, array::InsertArrayOp>(op);
   }
 
-  bool isArrayLengthOp(mlir::Operation *op) const { return mlir::isa<array::ArrayLengthOp>(op); }
+  bool isArrayLengthOp(mlir::Operation *op) const { return llvm::isa<array::ArrayLengthOp>(op); }
 
   bool isEmitOp(mlir::Operation *op) const {
-    return mlir::isa<constrain::EmitEqualityOp, constrain::EmitContainmentOp>(op);
+    return llvm::isa<constrain::EmitEqualityOp, constrain::EmitContainmentOp>(op);
   }
 
   bool isCreateOp(mlir::Operation *op) const {
-    return mlir::isa<component::CreateStructOp, array::CreateArrayOp>(op);
+    return llvm::isa<component::CreateStructOp, array::CreateArrayOp>(op);
   }
 
-  bool isExtractArrayOp(mlir::Operation *op) const { return mlir::isa<array::ExtractArrayOp>(op); }
+  bool isExtractArrayOp(mlir::Operation *op) const { return llvm::isa<array::ExtractArrayOp>(op); }
 
   bool isDefinitionOp(mlir::Operation *op) const {
-    return mlir::isa<
+    return llvm::isa<
         component::StructDefOp, function::FuncDefOp, component::FieldDefOp, global::GlobalDefOp,
         mlir::ModuleOp>(op);
   }
 
-  bool isCallOp(mlir::Operation *op) const { return mlir::isa<function::CallOp>(op); }
+  bool isCallOp(mlir::Operation *op) const { return llvm::isa<function::CallOp>(op); }
 
-  bool isReturnOp(mlir::Operation *op) const { return mlir::isa<function::ReturnOp>(op); }
+  bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
 };
 
 /* StructIntervals */

@@ -221,10 +221,9 @@ LogicalResult FuncDefOp::verify() {
       return failure();
     }
     if (isInStruct() && (nameIsCompute() || nameIsConstrain()) && hasAffineMapAttr(*ptr)) {
-      emitErrorFunc().append(
+      return emitErrorFunc().append(
           "\"@", getName(), "\" parameters cannot contain affine map attributes but found ", *ptr
       );
-      return failure();
     }
   }
   llvm::ArrayRef<Type> resTypes = type.getResults();

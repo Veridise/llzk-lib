@@ -51,8 +51,8 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
 
   /// @brief Read the version of this dialect from the provided reader and return it as
   /// a `unique_ptr` to a dialect version object (or nullptr on failure).
-  std::unique_ptr<mlir::DialectVersion> readVersion(mlir::DialectBytecodeReader &reader
-  ) const override {
+  std::unique_ptr<mlir::DialectVersion>
+  readVersion(mlir::DialectBytecodeReader &reader) const override {
     auto versionOr = LLZKDialectVersion::read(reader);
     if (mlir::failed(versionOr)) {
       return nullptr;
@@ -73,11 +73,10 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
     }
     const auto &current = LLZKDialectVersion::CurrentVersion();
     if (*llzkVersion > current) {
-      topLevelOp->emitError(
-          mlir::Twine("Cannot upgrade from current version ") + current.str() +
-          " to future version " + llzkVersion->str()
+      return topLevelOp->emitError().append(
+          "Cannot upgrade from current version ", current.str(), " to future version ",
+          llzkVersion->str()
       );
-      return mlir::failure();
     }
     if (*llzkVersion == current) {
       // No work to do, versions match.
@@ -85,11 +84,10 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
     }
     // NOTE: This is the point at which upgrade functionality should be added
     // for backwards compatibility.
-    topLevelOp->emitWarning(
-        mlir::Twine("LLZK version ") + llzkVersion->str() + " is older than current version " +
-        current.str() + " and no upgrade methods have been implemented. Proceed with caution."
+    return topLevelOp->emitWarning().append(
+        "LLZK version ", llzkVersion->str(), " is older than current version ", current.str(),
+        " and no upgrade methods have been implemented. Proceed with caution."
     );
-    return mlir::failure();
   }
 };
 

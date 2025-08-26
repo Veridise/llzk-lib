@@ -191,9 +191,10 @@ public:
     if (isMoreConcreteUnification(oldType, newType, checkInstantiations)) {
       return true;
     }
-    LLVM_DEBUG(llvm::dbgs() << "[" << patName << "] Cannot replace old type " << oldType
-                            << " with new type " << newType
-                            << " because it does not define a compatible and more concrete type.\n";
+    LLVM_DEBUG(
+        llvm::dbgs() << "[" << patName << "] Cannot replace old type " << oldType
+                     << " with new type " << newType
+                     << " because it does not define a compatible and more concrete type.\n";
     );
     return false;
   }
@@ -201,8 +202,7 @@ public:
   template <typename T, typename U>
   inline bool areLegalConversions(T oldTypes, U newTypes, const char *patName) const {
     return llvm::all_of(
-        llvm::zip_equal(oldTypes, newTypes),
-        [this, &patName](std::tuple<Type, Type> oldThenNew) {
+        llvm::zip_equal(oldTypes, newTypes), [this, &patName](std::tuple<Type, Type> oldThenNew) {
       return this->isLegalConversion(std::get<0>(oldThenNew), std::get<1>(oldThenNew), patName);
     }
     );
@@ -554,9 +554,11 @@ class StructCloner {
     // to contain only those that did not have concrete instantiated values.
     StructDefOp newStruct = origStruct.clone();
     newStruct.setConstParamsAttr(reducedParamNameList);
-    newStruct.setSymName(BuildShortTypeString::from(
-        typeAtCaller.getNameRef().getLeafReference().str(), attrsForInstantiatedNameSuffix
-    ));
+    newStruct.setSymName(
+        BuildShortTypeString::from(
+            typeAtCaller.getNameRef().getLeafReference().str(), attrsForInstantiatedNameSuffix
+        )
+    );
 
     // Insert 'newStruct' into the parent ModuleOp of the original StructDefOp. Use the
     // `SymbolTable::insert()` function directly so that the name will be made unique.
@@ -655,8 +657,9 @@ public:
       // instead of the CallOpClassReplacePattern from newGeneralRewritePatternSet().
       : OpConversionPattern<CallOp>(converter, ctx, /*benefit=*/2), tracker_(tracker) {}
 
-  LogicalResult matchAndRewrite(CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter)
-      const override {
+  LogicalResult matchAndRewrite(
+      CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
+  ) const override {
     LLVM_DEBUG(llvm::dbgs() << "[CallStructFuncPattern] CallOp: " << op << '\n');
 
     // Convert the result types of the CallOp
@@ -843,23 +846,31 @@ struct AffineMapFolder {
           });
           LogicalResult foldResult = m.getAffineMap().constantFold(constAttrs, result, &hasPoison);
           if (hasPoison) {
-            LLVM_DEBUG(op->emitRemark().append(
-                "Cannot fold affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
-                " due to divide by 0 or modulus with negative divisor"
-            ));
+            LLVM_DEBUG(op->emitRemark()
+                           .append(
+                               "Cannot fold affine_map for ", aspect, " ",
+                               out.paramsOfStructTy.size(),
+                               " due to divide by 0 or modulus with negative divisor"
+                           )
+                           .report());
             return failure();
           }
           if (failed(foldResult)) {
-            LLVM_DEBUG(op->emitRemark().append(
-                "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(), " failed"
-            ));
+            LLVM_DEBUG(op->emitRemark()
+                           .append(
+                               "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
+                               " failed"
+                           )
+                           .report());
             return failure();
           }
           if (result.size() != 1) {
-            LLVM_DEBUG(op->emitRemark().append(
-                "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(), " produced ",
-                result.size(), " results but expected 1"
-            ));
+            LLVM_DEBUG(op->emitRemark()
+                           .append(
+                               "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
+                               " produced ", result.size(), " results but expected 1"
+                           )
+                           .report());
             return failure();
           }
           assert(!llvm::isa<AffineMapAttr>(result[0]) && "not converted");
@@ -1882,10 +1893,13 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       // Emit warning if there is no "Main" because all structs may be removed (only structs that
       // are reachable from a global def or free function will be preserved since those constructs
       // are not candidate for removal in this pass).
-      rootMod.emitWarning() << "using option '" << cleanupMode.getArgStr() << '='
-                            << stringifyStructCleanupMode(StructCleanupMode::MainAsRoot)
-                            << "' with no \"" << COMPONENT_NAME_MAIN
-                            << "\" struct may remove all structs!";
+      rootMod.emitWarning()
+          .append(
+              "using option '", cleanupMode.getArgStr(), '=',
+              stringifyStructCleanupMode(StructCleanupMode::MainAsRoot), "' with no \"",
+              COMPONENT_NAME_MAIN, "\" struct may remove all structs!"
+          )
+          .report();
     }
     return cleaner.eraseUnreachableFrom(
         main ? ArrayRef<StructDefOp> {main} : ArrayRef<StructDefOp> {}

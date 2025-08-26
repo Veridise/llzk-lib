@@ -41,9 +41,9 @@ protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
-    if (!mlir::isa<mlir::ModuleOp>(getOperation())) {
+    if (!llvm::isa<mlir::ModuleOp>(getOperation())) {
       auto msg = "IntervalAnalysisPrinterPass error: should be run on ModuleOp!";
-      getOperation()->emitError(msg);
+      getOperation()->emitError(msg).report();
       llvm::report_fatal_error(msg);
     }
 

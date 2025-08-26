@@ -59,7 +59,7 @@ bool llzkTypeParamsUnify(
 
 bool llzkArrayAttrTypeParamsUnify(MlirAttribute lhsParams, MlirAttribute rhsParams) {
   return typeParamsUnify(
-      mlir::cast<ArrayAttr>(unwrap(lhsParams)), mlir::cast<ArrayAttr>(unwrap(rhsParams))
+      llvm::cast<ArrayAttr>(unwrap(lhsParams)), llvm::cast<ArrayAttr>(unwrap(rhsParams))
   );
 }
 

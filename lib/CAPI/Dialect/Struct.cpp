@@ -38,12 +38,12 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component, StructDialect)
 //===----------------------------------------------------------------------===//
 
 MlirType llzkStructTypeGet(MlirAttribute name) {
-  return wrap(StructType::get(mlir::cast<SymbolRefAttr>(unwrap(name))));
+  return wrap(StructType::get(llvm::cast<SymbolRefAttr>(unwrap(name))));
 }
 
 MlirType llzkStructTypeGetWithArrayAttr(MlirAttribute name, MlirAttribute params) {
   return wrap(StructType::get(
-      mlir::cast<SymbolRefAttr>(unwrap(name)), mlir::cast<ArrayAttr>(unwrap(params))
+      llvm::cast<SymbolRefAttr>(unwrap(name)), llvm::cast<ArrayAttr>(unwrap(params))
   ));
 }
 
@@ -51,65 +51,65 @@ MlirType
 llzkStructTypeGetWithAttrs(MlirAttribute name, intptr_t numParams, MlirAttribute const *params) {
   SmallVector<Attribute> paramsSto;
   return wrap(StructType::get(
-      mlir::cast<SymbolRefAttr>(unwrap(name)), unwrapList(numParams, params, paramsSto)
+      llvm::cast<SymbolRefAttr>(unwrap(name)), unwrapList(numParams, params, paramsSto)
   ));
 }
 
-bool llzkTypeIsAStructType(MlirType type) { return mlir::isa<StructType>(unwrap(type)); }
+bool llzkTypeIsAStructType(MlirType type) { return llvm::isa<StructType>(unwrap(type)); }
 
 MlirAttribute llzkStructTypeGetName(MlirType type) {
-  return wrap(mlir::cast<StructType>(unwrap(type)).getNameRef());
+  return wrap(llvm::cast<StructType>(unwrap(type)).getNameRef());
 }
 
 MlirAttribute llzkStructTypeGetParams(MlirType type) {
-  return wrap(mlir::cast<StructType>(unwrap(type)).getParams());
+  return wrap(llvm::cast<StructType>(unwrap(type)).getParams());
 }
 
 //===----------------------------------------------------------------------===//
 // StructDefOp
 //===----------------------------------------------------------------------===//
 
-bool llzkOperationIsAStructDefOp(MlirOperation op) { return mlir::isa<StructDefOp>(unwrap(op)); }
+bool llzkOperationIsAStructDefOp(MlirOperation op) { return llvm::isa<StructDefOp>(unwrap(op)); }
 
 MlirType llzkStructDefOpGetType(MlirOperation op) {
-  return wrap(mlir::cast<StructDefOp>(unwrap(op)).getType());
+  return wrap(llvm::cast<StructDefOp>(unwrap(op)).getType());
 }
 
 MlirType llzkStructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute attr) {
 
-  return wrap(mlir::cast<StructDefOp>(unwrap(op)).getType(mlir::cast<ArrayAttr>(unwrap(attr))));
+  return wrap(llvm::cast<StructDefOp>(unwrap(op)).getType(llvm::cast<ArrayAttr>(unwrap(attr))));
 }
 
 MlirOperation llzkStructDefOpGetFieldDef(MlirOperation op, MlirStringRef name) {
   Builder builder(unwrap(op)->getContext());
-  return wrap(mlir::cast<StructDefOp>(unwrap(op)).getFieldDef(builder.getStringAttr(unwrap(name))));
+  return wrap(llvm::cast<StructDefOp>(unwrap(op)).getFieldDef(builder.getStringAttr(unwrap(name))));
 }
 
 void llzkStructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst) {
-  for (auto [offset, field] : llvm::enumerate(mlir::cast<StructDefOp>(unwrap(op)).getFieldDefs())) {
+  for (auto [offset, field] : llvm::enumerate(llvm::cast<StructDefOp>(unwrap(op)).getFieldDefs())) {
     dst[offset] = wrap(field);
   }
 }
 
 intptr_t llzkStructDefOpGetNumFieldDefs(MlirOperation op) {
-  return static_cast<intptr_t>(mlir::cast<StructDefOp>(unwrap(op)).getFieldDefs().size());
+  return static_cast<intptr_t>(llvm::cast<StructDefOp>(unwrap(op)).getFieldDefs().size());
 }
 
 MlirLogicalResult llzkStructDefOpGetHasColumns(MlirOperation op) {
-  return wrap(mlir::cast<StructDefOp>(unwrap(op)).hasColumns());
+  return wrap(llvm::cast<StructDefOp>(unwrap(op)).hasColumns());
 }
 
 MlirOperation llzkStructDefOpGetComputeFuncOp(MlirOperation op) {
-  return wrap(mlir::cast<StructDefOp>(unwrap(op)).getComputeFuncOp());
+  return wrap(llvm::cast<StructDefOp>(unwrap(op)).getComputeFuncOp());
 }
 
 MlirOperation llzkStructDefOpGetConstrainFuncOp(MlirOperation op) {
-  return wrap(mlir::cast<StructDefOp>(unwrap(op)).getConstrainFuncOp());
+  return wrap(llvm::cast<StructDefOp>(unwrap(op)).getConstrainFuncOp());
 }
 
 const char *
 llzkStructDefOpGetHeaderString(MlirOperation op, intptr_t *strSize, char *(*alloc_string)(size_t)) {
-  auto header = mlir::cast<StructDefOp>(unwrap(op)).getHeaderString();
+  auto header = llvm::cast<StructDefOp>(unwrap(op)).getHeaderString();
   *strSize = static_cast<intptr_t>(header.size()) + 1; // Plus one because it's a C string.
   char *dst = alloc_string(*strSize);
   dst[header.size()] = 0;
@@ -119,29 +119,29 @@ llzkStructDefOpGetHeaderString(MlirOperation op, intptr_t *strSize, char *(*allo
 
 bool llzkStructDefOpGetHasParamName(MlirOperation op, MlirStringRef name) {
   Builder builder(unwrap(op)->getContext());
-  return mlir::cast<StructDefOp>(unwrap(op)).hasParamNamed(builder.getStringAttr(unwrap(name)));
+  return llvm::cast<StructDefOp>(unwrap(op)).hasParamNamed(builder.getStringAttr(unwrap(name)));
 }
 
 MlirAttribute llzkStructDefOpGetFullyQualifiedName(MlirOperation op) {
-  return wrap(mlir::cast<StructDefOp>(unwrap(op)).getFullyQualifiedName());
+  return wrap(llvm::cast<StructDefOp>(unwrap(op)).getFullyQualifiedName());
 }
 
 bool llzkStructDefOpGetIsMainComponent(MlirOperation op) {
-  return mlir::cast<StructDefOp>(unwrap(op)).isMainComponent();
+  return llvm::cast<StructDefOp>(unwrap(op)).isMainComponent();
 }
 
 //===----------------------------------------------------------------------===//
 // FieldDefOp
 //===----------------------------------------------------------------------===//
 
-bool llzkOperationIsAFieldDefOp(MlirOperation op) { return mlir::isa<FieldDefOp>(unwrap(op)); }
+bool llzkOperationIsAFieldDefOp(MlirOperation op) { return llvm::isa<FieldDefOp>(unwrap(op)); }
 
 bool llzkFieldDefOpGetHasPublicAttr(MlirOperation op) {
-  return mlir::cast<FieldDefOp>(unwrap(op)).hasPublicAttr();
+  return llvm::cast<FieldDefOp>(unwrap(op)).hasPublicAttr();
 }
 
 void llzkFieldDefOpSetPublicAttr(MlirOperation op, bool value) {
-  mlir::cast<FieldDefOp>(unwrap(op)).setPublicAttr(value);
+  llvm::cast<FieldDefOp>(unwrap(op)).setPublicAttr(value);
 }
 
 //===----------------------------------------------------------------------===//

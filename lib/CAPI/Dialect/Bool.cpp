@@ -23,5 +23,5 @@ MlirAttribute llzkFeltCmpPredicateAttrGet(MlirContext ctx, LlzkCmp cmp) {
 }
 
 bool llzkAttributeIsAFeltCmpPredicateAttr(MlirAttribute attr) {
-  return mlir::isa<FeltCmpPredicateAttr>(unwrap(attr));
+  return llvm::isa<FeltCmpPredicateAttr>(unwrap(attr));
 }
