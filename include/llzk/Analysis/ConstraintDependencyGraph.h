@@ -45,7 +45,7 @@ public:
   /// @param op
   /// @param before
   /// @param after
-  void visitOperation(
+  mlir::LogicalResult visitOperation(
       mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
   ) override;
 

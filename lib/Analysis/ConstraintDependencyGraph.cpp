@@ -79,12 +79,7 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
   else if (action == dataflow::CallControlFlowAction::ExitCallee) {
     // Get the argument values of the lattice by getting the state as it would
     // have been for the callsite.
-    const ConstrainRefLattice *beforeCall = nullptr;
-    if (auto *prev = call->getPrevNode()) {
-      beforeCall = static_cast<const ConstrainRefLattice *>(getLattice(prev));
-    } else {
-      beforeCall = static_cast<const ConstrainRefLattice *>(getLattice(call->getBlock()));
-    }
+    const ConstrainRefLattice *beforeCall = getLattice(getProgramPointBefore(call));
     ensure(beforeCall, "could not get prior lattice");
 
     // Translate argument values based on the operands given at the call site.
@@ -132,7 +127,7 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
   }
 }
 
-void ConstrainRefAnalysis::visitOperation(
+mlir::LogicalResult ConstrainRefAnalysis::visitOperation(
     mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
 ) {
   LLVM_DEBUG(llvm::dbgs() << "ConstrainRefAnalysis::visitOperation: " << *op << '\n');
@@ -200,6 +195,7 @@ void ConstrainRefAnalysis::visitOperation(
   }
 
   propagateIfChanged(after, res);
+  return success();
 }
 
 // Perform a standard union of operands into the results value.
@@ -367,7 +363,8 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
   // - Union all constraints from the analysis
   // This requires iterating over all of the emit operations
   constrainFnOp.walk([this, &solver](Operation *op) {
-    const auto *refLattice = solver.lookupState<ConstrainRefLattice>(op);
+    ProgramPoint *pp = solver.getProgramPointAfter(op);
+    const auto *refLattice = solver.lookupState<ConstrainRefLattice>(pp);
     // aggregate the ref2Val map across operations, as some may have nested
     // regions and blocks that aren't propagated to the function terminator
     if (refLattice) {
@@ -399,7 +396,8 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     auto calledStruct = fn.getOperation()->getParentOfType<StructDefOp>();
     ConstrainRefRemappings translations;
 
-    auto lattice = solver.lookupState<ConstrainRefLattice>(fnCall.getOperation());
+    ProgramPoint *pp = solver.getProgramPointAfter(fnCall.getOperation());
+    auto lattice = solver.lookupState<ConstrainRefLattice>(pp);
     ensure(lattice, "could not find lattice for call operation");
 
     // Map fn parameters to args in the call op
@@ -447,7 +445,8 @@ void ConstraintDependencyGraph::walkConstrainOp(
 ) {
   std::vector<ConstrainRef> signalUsages, constUsages;
 
-  const ConstrainRefLattice *refLattice = solver.lookupState<ConstrainRefLattice>(emitOp);
+  ProgramPoint *pp = solver.getProgramPointAfter(emitOp);
+  const ConstrainRefLattice *refLattice = solver.lookupState<ConstrainRefLattice>(pp);
   ensure(refLattice, "missing lattice for constrain op");
 
   for (auto operand : emitOp->getOperands()) {
@@ -475,11 +474,11 @@ void ConstraintDependencyGraph::walkConstrainOp(
   }
 }
 
-ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemappings translation
-) const {
+ConstraintDependencyGraph
+ConstraintDependencyGraph::translate(ConstrainRefRemappings translation) const {
   ConstraintDependencyGraph res(mod, structDef);
-  auto translate = [&translation](const ConstrainRef &elem
-                   ) -> mlir::FailureOr<std::vector<ConstrainRef>> {
+  auto translate =
+      [&translation](const ConstrainRef &elem) -> mlir::FailureOr<std::vector<ConstrainRef>> {
     std::vector<ConstrainRef> refs;
     for (auto &[prefix, vals] : translation) {
       if (!elem.isValidPrefix(prefix)) {

@@ -273,7 +273,8 @@ public:
       Lattice *after
   ) override;
 
-  void visitOperation(mlir::Operation *op, const Lattice &before, Lattice *after) override;
+  mlir::LogicalResult
+  visitOperation(mlir::Operation *op, const Lattice &before, Lattice *after) override;
 
   /// @brief Either return the existing SMT expression that corresponds to the ConstrainRef,
   /// or create one.
