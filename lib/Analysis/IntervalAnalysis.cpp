@@ -469,7 +469,9 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
           )
           .report();
       propagateIfChanged(after, changed);
-      return failure();
+      // We still return success so we can return overapproximated and partial
+      // results to the user.
+      return success();
     } else if (!refSet.isSingleValue()) {
       std::string warning;
       debug::Appender(warning) << "operand " << val << " is not a single value " << refSet

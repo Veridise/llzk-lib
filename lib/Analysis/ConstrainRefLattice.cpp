@@ -268,7 +268,7 @@ ConstrainRefLatticeValue ConstrainRefLattice::getOrDefault(ConstrainRefLattice::
 
 ConstrainRefLatticeValue ConstrainRefLattice::getReturnValue(unsigned i) const {
   ProgramPoint *pp = llvm::cast<ProgramPoint *>(this->getAnchor());
-  if (auto retOp = mlir::dyn_cast_if_present<function::ReturnOp>(pp->getOperation())) {
+  if (auto retOp = mlir::dyn_cast_if_present<function::ReturnOp>(pp->getPrevOp())) {
     if (i >= retOp.getNumOperands()) {
       llvm::report_fatal_error("return value requested is out of range");
     }
