@@ -257,7 +257,7 @@ class StructInliner {
       });
     }
 
-    /// Create a clone of the`FuncDefOp` and update field references according to the
+    /// Create a clone of the `FuncDefOp` and update field references according to the
     /// `SrcStructFieldToCloneInDest` map (both are within the given `FieldRefRewriter`).
     static FuncDefOp cloneWithFieldRefUpdate(std::unique_ptr<FieldRefRewriter> thisPat) {
       IRMapping mapper;
