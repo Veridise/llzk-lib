@@ -65,6 +65,9 @@ def ConstraintDependencyGraphPrinterPass
   let summary = "Print constraint dependency graph for all LLZK structs.";
   let constructor =
       "llzk::createConstraintDependencyGraphPrinterPass(llvm::errs())";
+  let options =
+    [Option<"runIntraprocedural", "intraprocedural", "bool", /* default */ "false",
+          "Whether to run the analysis intra-procedurally only (default is false).">];
 }
 
 def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
@@ -74,9 +77,16 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
       [Option<"fieldName", "field", "std::string", /* default */ "\"bn128\"",
               "The field to use for interval analysis. Supported fields: "
               "bn128/bn254, babybear, goldilocks, mersenne31">,
+       Option<"propagateInputConstraints", "propagate-input-constraints", "bool", /* default */ "false",
+              "Whether to propagate constraints on inputs from @constrain to @compute functions. "
+              "This allows for tighter intervals to possibly be found for computed values, "
+              "assuming that the witness generator would include constraints as assertions during the computation.">,
        Option<"printSolverConstraints", "print-solver-constraints", "bool",
               /* default */ "false",
               "Whether to output SMT solver constraints along with intervals.">,
+       Option<"printComputeIntervals", "print-compute-intervals", "bool",
+              /* default */ "false",
+              "Whether to print compute function intervals (default only prints constrain function intervals).">,
   ];
 }
 

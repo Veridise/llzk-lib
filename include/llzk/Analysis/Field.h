@@ -36,8 +36,8 @@ public:
   /// @brief Returns p / 2.
   llvm::APSInt half() const { return halfPrime; }
 
-  /// @brief Returns i as a field element
-  inline llvm::APSInt felt(unsigned i) const { return reduce(i); }
+  /// @brief Returns i as a signed field element
+  inline llvm::APSInt felt(int i) const { return reduce(i); }
 
   /// @brief Returns 0 at the bitwidth of the field.
   inline llvm::APSInt zero() const { return felt(0); }
@@ -49,8 +49,10 @@ public:
   inline llvm::APSInt maxVal() const { return prime() - one(); }
 
   /// @brief Returns i mod p and reduces the result into the appropriate bitwidth.
+  /// Field elements are returned as signed integers so that negation functions
+  /// as expected (i.e., reducing -1 will yield p-1).
   llvm::APSInt reduce(llvm::APSInt i) const;
-  llvm::APSInt reduce(unsigned i) const;
+  llvm::APSInt reduce(int i) const;
 
   inline unsigned bitWidth() const { return primeMod.getBitWidth(); }
 
@@ -65,7 +67,6 @@ public:
 
 private:
   Field(std::string_view primeStr);
-  Field(llvm::APSInt p, llvm::APSInt h) : primeMod(p), halfPrime(h) {}
 
   llvm::APSInt primeMod, halfPrime;
 

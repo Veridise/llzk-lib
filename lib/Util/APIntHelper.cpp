@@ -11,30 +11,46 @@
 
 namespace llzk {
 
-llvm::APSInt expandingAdd(const llvm::APSInt &lhs, const llvm::APSInt &rhs) {
-  unsigned requiredBits = std::max(lhs.getActiveBits(), rhs.getActiveBits()) + 1;
+llvm::APSInt expandingAdd(llvm::APSInt lhs, llvm::APSInt rhs) {
+  lhs = safeToSigned(lhs), rhs = safeToSigned(rhs);
+  // +2: +1 for expansion, +1 to preserve the sign bit
+  unsigned requiredBits = std::max(lhs.getActiveBits(), rhs.getActiveBits()) + 2;
   unsigned newBitwidth = std::max({requiredBits, lhs.getBitWidth(), rhs.getBitWidth()});
   return lhs.extend(newBitwidth) + rhs.extend(newBitwidth);
 }
 
-llvm::APSInt expandingSub(const llvm::APSInt &lhs, const llvm::APSInt &rhs) {
-  unsigned requiredBits = std::max(lhs.getActiveBits(), rhs.getActiveBits()) + 1;
+llvm::APSInt expandingSub(llvm::APSInt lhs, llvm::APSInt rhs) {
+  lhs = safeToSigned(lhs), rhs = safeToSigned(rhs);
+  // +2: +1 for expansion, +1 to preserve the sign bit
+  unsigned requiredBits = std::max(lhs.getActiveBits(), rhs.getActiveBits()) + 2;
   unsigned newBitwidth = std::max({requiredBits, lhs.getBitWidth(), rhs.getBitWidth()});
   return lhs.extend(newBitwidth) - rhs.extend(newBitwidth);
 }
 
-llvm::APSInt expandingMul(const llvm::APSInt &lhs, const llvm::APSInt &rhs) {
-  unsigned requiredBits = lhs.getActiveBits() + rhs.getActiveBits();
+llvm::APSInt expandingMul(llvm::APSInt lhs, llvm::APSInt rhs) {
+  lhs = safeToSigned(lhs), rhs = safeToSigned(rhs);
+  // +1 to preserve the sign bit
+  unsigned requiredBits = lhs.getActiveBits() + rhs.getActiveBits() + 1;
   unsigned newBitwidth = std::max({requiredBits, lhs.getBitWidth(), rhs.getBitWidth()});
   return lhs.extend(newBitwidth) * rhs.extend(newBitwidth);
 }
 
-std::strong_ordering safeCmp(const llvm::APSInt &lhs, const llvm::APSInt &rhs) {
+llvm::APSInt safeToSigned(llvm::APSInt i) {
+  if (i.isSigned()) {
+    return i;
+  }
+  i = i.extend(i.getBitWidth() + 1);
+  i.setIsSigned(true);
+  return i;
+}
+
+std::strong_ordering safeCmp(llvm::APSInt lhs, llvm::APSInt rhs) {
+  lhs = safeToSigned(lhs), rhs = safeToSigned(rhs);
   unsigned requiredBits = std::max(lhs.getBitWidth(), rhs.getBitWidth());
-  auto a = lhs.extend(requiredBits), b = rhs.extend(requiredBits);
-  if (a < b) {
+  lhs = lhs.extend(requiredBits), rhs = rhs.extend(requiredBits);
+  if (lhs < rhs) {
     return std::strong_ordering::less;
-  } else if (a > b) {
+  } else if (lhs > rhs) {
     return std::strong_ordering::greater;
   } else {
     return std::strong_ordering::equal;

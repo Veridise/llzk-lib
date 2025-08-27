@@ -52,6 +52,7 @@ template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeVa
   static ArrayTy constructArrayTy(const mlir::ArrayRef<int64_t> &shape) {
     size_t totalElem = 1;
     for (auto dim : shape) {
+      ensure(!mlir::ShapedType::isDynamic(dim), "Cannot pre-allocate dynamically-sized array");
       totalElem *= dim;
     }
     ArrayTy arr(totalElem);
@@ -61,18 +62,29 @@ template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeVa
     return arr;
   }
 
+  static inline bool isDynamicArray(const mlir::ArrayRef<int64_t> &shape) {
+    return mlir::ShapedType::isDynamicShape(shape);
+  }
+
 public:
-  explicit AbstractLatticeValue(ScalarTy s) : value(s), arrayShape(std::nullopt) {}
+  explicit AbstractLatticeValue(ScalarTy s)
+      : value(s), arrayShape(std::nullopt), isDynamic(false) {}
   AbstractLatticeValue() : AbstractLatticeValue(ScalarTy()) {}
   explicit AbstractLatticeValue(const mlir::ArrayRef<int64_t> shape)
-      : value(constructArrayTy(shape)), arrayShape(shape) {}
+      : arrayShape(shape), isDynamic(isDynamicArray(shape)) {
+    if (isDynamic) {
+      value = ScalarTy();
+    } else {
+      value = constructArrayTy(shape);
+    }
+  }
 
   AbstractLatticeValue(const AbstractLatticeValue &rhs) { *this = rhs; }
 
   // Enable copying by duplicating unique_ptrs and copying the contained values.
   AbstractLatticeValue &operator=(const AbstractLatticeValue &rhs) {
     copyArrayShape(rhs);
-    if (rhs.isScalar()) {
+    if (rhs.isScalar() || rhs.isDynamicArray()) {
       getValue() = rhs.getScalarValue();
     } else {
       // create an empty array of the same size
@@ -90,6 +102,7 @@ public:
   bool isScalar() const { return std::holds_alternative<ScalarTy>(value); }
   bool isSingleValue() const { return isScalar() && getScalarValue().size() == 1; }
   bool isArray() const { return std::holds_alternative<ArrayTy>(value); }
+  bool isDynamicArray() const { return isDynamic; }
 
   const ScalarTy &getScalarValue() const {
     ensure(isScalar(), "not a scalar value");
@@ -102,25 +115,25 @@ public:
   }
 
   const ArrayTy &getArrayValue() const {
-    ensure(isArray(), "not an array value");
+    ensure(isArray() && !isDynamicArray(), "not a static array value");
     return std::get<ArrayTy>(value);
   }
 
   ArrayTy &getArrayValue() {
-    ensure(isArray(), "not an array value");
+    ensure(isArray() && !isDynamicArray(), "not a static array value");
     return std::get<ArrayTy>(value);
   }
 
   /// @brief Directly index into the flattened array using a single index.
   const Derived &getElemFlatIdx(unsigned i) const {
-    ensure(isArray(), "not an array value");
+    ensure(isArray() && !isDynamicArray(), "not a static array value");
     auto &arr = getArrayValue();
     ensure(i < arr.size(), "index out of range");
     return *arr.at(i);
   }
 
   Derived &getElemFlatIdx(unsigned i) {
-    ensure(isArray(), "not an array value");
+    ensure(isArray() && !isDynamicArray(), "not a static array value");
     auto &arr = getArrayValue();
     ensure(i < arr.size(), "index out of range");
     return *arr.at(i);
@@ -131,7 +144,7 @@ public:
   size_t getNumArrayDims() const { return getArrayShape().size(); }
 
   void print(mlir::raw_ostream &os) const {
-    if (isScalar()) {
+    if (isScalar() || isDynamicArray()) {
       os << getScalarValue();
     } else {
       os << "[ ";
@@ -213,7 +226,10 @@ protected:
     return arrShape.at(i);
   }
 
-  void copyArrayShape(const AbstractLatticeValue &rhs) { arrayShape = rhs.arrayShape; }
+  void copyArrayShape(const AbstractLatticeValue &rhs) {
+    arrayShape = rhs.arrayShape;
+    isDynamic = rhs.isDynamic;
+  }
 
   /// @brief Union this value with the given scalar.
   mlir::ChangeResult updateScalar(const ScalarTy &rhs) {
@@ -252,6 +268,7 @@ protected:
 private:
   std::variant<ScalarTy, ArrayTy> value;
   std::optional<std::vector<int64_t>> arrayShape;
+  bool isDynamic;
 };
 
 template <typename Derived, ScalarLatticeValue ScalarTy>
