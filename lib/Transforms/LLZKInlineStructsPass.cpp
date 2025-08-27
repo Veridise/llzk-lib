@@ -648,8 +648,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
   /// Perform a bottom-up traversal of the "constrain" function nodes in the SymbolUseGraph to
   /// determine which ones can be inlined to their callers while respecting the `maxComplexity`
   /// option. Using a bottom-up traversal may give a better result than top-down because the latter
-  /// could result in a chain of structs being inlined differently from different use sites. The
-  /// resulting `InliningPlan` also preserves this bottom-up ordering to
+  /// could result in a chain of structs being inlined differently from different use sites.
   inline FailureOr<InliningPlan>
   makePlan(const SymbolUseGraph &useGraph, SymbolTableCollection &tables) {
     LLVM_DEBUG({
