@@ -84,6 +84,9 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
 
     This pass should be run after `llzk-flatten` to ensure structs do not have template parameters
     (this restriction may be removed in the future).
+
+    This pass also assumes that all subcomponents that are created by calling a struct "@compute"
+    function are ultimately written to exactly one field within the current struct.
   }];
   let constructor = "llzk::createInlineStructsPass()";
   let options = [Option<"maxComplexity", "max-merge-complexity", "int64_t",

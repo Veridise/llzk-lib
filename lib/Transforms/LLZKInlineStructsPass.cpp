@@ -10,6 +10,12 @@
 /// \file
 /// This file implements the `-llzk-inline-structs` pass.
 ///
+/// This pass should be run after `llzk-flatten` to ensure structs do not have template parameters
+/// (this restriction may be removed in the future).
+///
+/// This pass also assumes that all subcomponents that are created by calling a struct "@compute"
+/// function are ultimately written to exactly one field within the current struct.
+///
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/GraphUtil.h"
@@ -132,10 +138,10 @@ bool combineReadChain(
   return combineHelper(readOp, tables, destToSrcToClone, readThatDefinesBaseComponent);
 }
 
-/// Find the `FieldWriteOp` that writes the given `Value`. Produce an error (using the given
-/// callback) if there is not exactly once such `FieldWriteOp`.
+/// Find the `FieldWriteOp` that writes the given subcomponent struct `Value`. Produce an error
+/// (using the given callback) if there is not exactly once such `FieldWriteOp`.
 FailureOr<FieldWriteOp>
-findOpThatWritesValue(Value writtenValue, function_ref<InFlightDiagnostic()> emitError) {
+findOpThatStoresSubcmp(Value writtenValue, function_ref<InFlightDiagnostic()> emitError) {
   FieldWriteOp foundWrite = nullptr;
   for (Operation *user : writtenValue.getUsers()) {
     if (FieldWriteOp writeOp = llvm::dyn_cast<FieldWriteOp>(user)) {
@@ -186,11 +192,11 @@ LogicalResult combineNewThenReadChain(
     return success(); // No error. The pattern simply doesn't match.
   }
   FailureOr<FieldWriteOp> foundWrite =
-      findOpThatWritesValue(createThatDefinesBaseComponent, [&createThatDefinesBaseComponent]() {
+      findOpThatStoresSubcmp(createThatDefinesBaseComponent, [&createThatDefinesBaseComponent]() {
     return createThatDefinesBaseComponent.emitOpError();
   });
   if (failed(foundWrite)) {
-    return failure(); // error already printed within findOpThatWritesValue()
+    return failure(); // error already printed within findOpThatStoresSubcmp()
   }
   return success(combineHelper(readOp, tables, destToSrcToClone, foundWrite.value()));
 }
@@ -405,7 +411,7 @@ class StructInliner {
       // pass the "compute()" result into another function and never write it to a field since that
       // leaves no way for the "constrain()" function to call "constrain()" on that result struct.
       FailureOr<FieldWriteOp> foundWrite =
-          findOpThatWritesValue(callOp.getSelfValueFromCompute(), [&callOp]() {
+          findOpThatStoresSubcmp(callOp.getSelfValueFromCompute(), [&callOp]() {
         return callOp.emitOpError().append("\"@", FUNC_NAME_COMPUTE, "\" ");
       });
       return static_cast<FieldRefOpInterface>(foundWrite.value_or(nullptr));
@@ -782,7 +788,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
         FieldRefOpInterface paramFromField = TypeSwitch<Operation *, FieldRefOpInterface>(op)
                                                  .Case<FieldReadOp>([](auto p) { return p; })
                                                  .Case<CreateStructOp>([](auto p) {
-          return findOpThatWritesValue(p, [&p]() { return p.emitOpError(); }).value_or(nullptr);
+          return findOpThatStoresSubcmp(p, [&p]() { return p.emitOpError(); }).value_or(nullptr);
         }).Default([](Operation *p) {
           llvm::errs() << "Encountered unexpected op: "
                        << (p ? p->getName().getStringRef() : "<<null>>") << '\n';
@@ -795,7 +801,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
                        << '\n';
         });
         if (!paramFromField) {
-          return failure(); // error already printed within findOpThatWritesValue()
+          return failure(); // error already printed within findOpThatStoresSubcmp()
         }
         const SrcStructFieldToCloneInDest &newFields =
             destToSrcToClone.at(getDef(tables, paramFromField));
