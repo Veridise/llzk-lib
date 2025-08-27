@@ -326,12 +326,11 @@ class StructInliner {
         // Create a clone of the source function (must do the whole function not just the body
         // region because `inlineCall()` expects the Region to have a parent op) and update field
         // references to the old struct fields to instead use the new struct fields.
-        FuncDefOp srcFuncClone = FieldRefRewriter::cloneWithFieldRefUpdate(
-            std::make_unique<FieldRefRewriter>(
+        FuncDefOp srcFuncClone =
+            FieldRefRewriter::cloneWithFieldRefUpdate(std::make_unique<FieldRefRewriter>(
                 srcFunc, selfFieldRefOp.getComponent(),
                 this->destToSrcToClone.at(this->data.getDef(selfFieldRefOp))
-            )
-        );
+            ));
         this->processCloneBeforeInlining(srcFuncClone);
 
         // Inline the cloned function in place of `callOp`
