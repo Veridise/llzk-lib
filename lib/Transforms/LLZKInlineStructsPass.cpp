@@ -649,6 +649,10 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
                  ? WalkResult::interrupt() // use interrupt to indicate success
                  : WalkResult::advance();
     });
+    LLVM_DEBUG({
+      llvm::dbgs() << "[canInline] " << successorFunc.getFullyQualifiedName() << " into "
+                   << currentFunc.getFullyQualifiedName() << "? " << res.wasInterrupted() << '\n';
+    });
     return res.wasInterrupted();
   }
 
@@ -681,6 +685,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     // post-order traversal so the complexity of all successor nodes is computed before computing
     // the current node's complexity.
     for (const SymbolUseGraphNode *currentNode : llvm::post_order(&useGraph)) {
+      LLVM_DEBUG(llvm::dbgs() << "\ncurrentNode = " << currentNode->toString());
       if (!currentNode->isRealNode()) {
         continue;
       }
@@ -708,6 +713,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
       // complexity becomes too high by adding that successor.
       SmallVector<StructDefOp> successorsToMerge;
       for (const SymbolUseGraphNode *successor : currentNode->successorIter()) {
+        LLVM_DEBUG(llvm::dbgs().indent(2) << "successor: " << successor->toString() << '\n');
         // Note: all "constrain" function nodes will have a value, and all other nodes will not.
         auto memoResult = complexityMemo.find(successor);
         if (memoResult == complexityMemo.end()) {
@@ -731,7 +737,17 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
         retVal.emplace_back(getParentStruct(currentFunc), std::move(successorsToMerge));
       }
     }
-
+    LLVM_DEBUG({
+      llvm::dbgs() << "-----------------------------------------------------------------\n";
+      llvm::dbgs() << "InlineStructsPass plan:\n";
+      for (auto &[caller, callees] : retVal) {
+        llvm::dbgs().indent(2) << "inlining the following into \"" << caller.getSymName() << "\"\n";
+        for (StructDefOp c : callees) {
+          llvm::dbgs().indent(4) << "\"" << c.getSymName() << "\"\n";
+        }
+      }
+      llvm::dbgs() << "-----------------------------------------------------------------\n";
+    });
     return retVal;
   }
 
