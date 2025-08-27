@@ -137,7 +137,7 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDe
   // For compute functions, the "self" field is not arg0 like for constrain, but
   // rather the struct value returned from the function.
   if (fnOp.isStructCompute()) {
-    Value selfVal = getSelfValueFromCompute(fnOp);
+    Value selfVal = fnOp.getSelfValueFromCompute();
     auto createOp = dyn_cast_if_present<CreateStructOp>(selfVal.getDefiningOp());
     ensure(createOp, "self value should originate from struct.new operation");
     auto selfRes = getAllConstrainRefs(tables, modOp.value(), ConstrainRef(createOp));
