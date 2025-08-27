@@ -171,7 +171,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = undef.undef : !felt.type
 // CHECK-NEXT:    %[[V4:[0-9a-zA-Z_\.]+]] = undef.undef : !felt.type
 // CHECK-NEXT:    %[[V5:[0-9a-zA-Z_\.]+]] = undef.undef : !felt.type
-// CHECK-NEXT:    function.return %[[V5]], %[[V4]], %[[V3]], %[[V2]], %[[V1]], %[[V0]] : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[V0]], %[[V1]], %[[V2]], %[[V3]], %[[V4]], %[[V5]] : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
 // CHECK-NEXT:  }
 // -----
 
@@ -206,7 +206,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  424867
 // CHECK-NEXT:    %[[V2:[0-9a-zA-Z_\.]+]] = felt.const  2465
 // CHECK-NEXT:    %[[V3:[0-9a-zA-Z_\.]+]] = felt.const  367
-// CHECK-NEXT:    %[[V4:[0-9a-zA-Z_\.]+]] = felt.add %[[V1]], %[[V2]] : !felt.type, !felt.type
+// CHECK-NEXT:    %[[V4:[0-9a-zA-Z_\.]+]] = felt.add %[[V2]], %[[V1]] : !felt.type, !felt.type
 // CHECK-NEXT:    %[[V5:[0-9a-zA-Z_\.]+]] = felt.add %[[V4]], %[[V3]] : !felt.type, !felt.type
 // CHECK-NEXT:    %[[V6:[0-9a-zA-Z_\.]+]] = felt.add %[[V5]], %[[V0]] : !felt.type, !felt.type
 // CHECK-NEXT:    function.return %[[V6]] : !felt.type
@@ -471,7 +471,7 @@ module attributes {veridise.lang = "llzk"} {
   function.def @new_then_insert_then_insert() -> !array.type<2,2,2 x !felt.type> {
     %a = felt.const 45
     %b = felt.const 214
-    %c = felt.const 2
+    %c = felt.const 3
     %d = felt.const 52
     %e = felt.const 99
     %f = felt.const 73
@@ -503,12 +503,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-DAG:     %[[V0:[0-9a-zA-Z_\.]+]] = felt.const  73
 // CHECK-DAG:     %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  99
 // CHECK-DAG:     %[[V2:[0-9a-zA-Z_\.]+]] = felt.const  52
-// CHECK-DAG:     %[[V3:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-DAG:     %[[V3:[0-9a-zA-Z_\.]+]] = felt.const  3
 // CHECK-DAG:     %[[V4:[0-9a-zA-Z_\.]+]] = felt.const  214
 // CHECK-DAG:     %[[V5:[0-9a-zA-Z_\.]+]] = felt.const  45
 // CHECK-DAG:     %[[V6:[0-9a-zA-Z_\.]+]] = undef.undef : !felt.type
 // CHECK-DAG:     %[[V7:[0-9a-zA-Z_\.]+]] = undef.undef : !felt.type
-// CHECK-NEXT:    function.return %[[V3]], %[[V2]], %[[V1]], %[[V0]], %[[V5]], %[[V4]], %[[V7]], %[[V6]]
+// CHECK-NEXT:    function.return %[[V3]], %[[V2]], %[[V1]], %[[V0]], %[[V5]], %[[V4]], %[[V6]], %[[V7]]
 // CHECK-SAME:           : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
 // CHECK-NEXT:  }
 // -----

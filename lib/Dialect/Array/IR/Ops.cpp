@@ -151,6 +151,7 @@ DenseMap<Attribute, MemorySlot> CreateArrayOp::destructure(
     assert(destructAsArrayTy && "expected ArrayType");
 
     auto subCreate = builder.create<CreateArrayOp>(getLoc(), destructAsArrayTy);
+    newAllocators.push_back(subCreate);
     slotMap.try_emplace<MemorySlot>(index, {subCreate.getResult(), destructAs});
   }
 
@@ -197,7 +198,7 @@ std::optional<PromotableAllocationOpInterface> CreateArrayOp::handlePromotionCom
   } else {
     this->erase();
   }
-  // Return `nullopt` becuase it produces only a single slot
+  // Return `nullopt` because it produces only a single slot
   return std::nullopt;
 }
 
@@ -255,11 +256,15 @@ DeletionKind ArrayAccessOpInterface::rewire(
   assert(indexAsAttr && "canRewire() should have returned false");
   const MemorySlot &memorySlot = subslots.at(indexAsAttr);
 
-  // Write to the sub-slot created for the index of `this`, using index 0
-  auto idx0 = builder.create<arith::ConstantIndexOp>(getLoc(), 0);
+  // Temporarily set insertion point before the current op for what's built below
+  OpBuilder::InsertionGuard guard(builder);
+  builder.setInsertionPoint(this->getOperation());
+
+  //  Write to the sub-slot created for the index of `this`, using index 0
   getArrRefMutable().set(memorySlot.ptr);
   getIndicesMutable().clear();
-  getIndicesMutable().assign(idx0);
+  getIndicesMutable().assign(builder.create<arith::ConstantIndexOp>(getLoc(), 0));
+
   return DeletionKind::Keep;
 }
 
