@@ -23,7 +23,7 @@ jobs:
           fetch-depth: ${{ env.PR_FETCH_DEPTH }}
       - name: Setup git-clang-format
         run: |
-          /home/linuxbrew/.linuxbrew/bin/brew install clang-format@20
+          /home/linuxbrew/.linuxbrew/bin/brew install clang-format
           export CLANG_FORMAT_SCRIPT="/home/linuxbrew/.linuxbrew/opt/clang-format/bin/git-clang-format"
           if [ ! -x "$CLANG_FORMAT_SCRIPT" ]; then
             echo "Missing executable $CLANG_FORMAT_SCRIPT"
