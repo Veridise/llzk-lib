@@ -47,8 +47,11 @@ inline std::string buildStringViaCallback(Func &&appendFn, Args &&...args) {
 
 /// Generate a string by calling `base.print(llvm::raw_ostream &)` on a stream backed by the
 /// returned string.
-template <typename T> inline std::string buildStringViaPrint(const T &base) {
-  return buildStringViaCallback([](llvm::raw_ostream &ss, const T &b) { b.print(ss); }, base);
+template <typename T, typename... Args>
+inline std::string buildStringViaPrint(const T &base, Args &&...args) {
+  return buildStringViaCallback([&](llvm::raw_ostream &ss, const T &b) {
+    b.print(ss, std::forward<Args>(args)...);
+  }, base);
 }
 
 /// Generate a string by using the insertion operator (<<) to append all args to a stream backed by

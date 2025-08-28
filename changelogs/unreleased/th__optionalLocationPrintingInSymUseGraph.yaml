@@ -1,0 +1,2 @@
+changed:
+  - Make location printing optional in SymbolUseGraph

@@ -193,7 +193,9 @@ const SymbolUseGraphNode *SymbolUseGraph::lookupNode(SymbolOpInterface symbolDef
 // Printing
 //===----------------------------------------------------------------------===//
 
-std::string SymbolUseGraphNode::toString() const { return buildStringViaPrint(*this); }
+std::string SymbolUseGraphNode::toString(bool showLocations) const {
+  return buildStringViaPrint(*this, showLocations);
+}
 
 namespace {
 
@@ -212,21 +214,26 @@ inline void safeAppendPathRoot(llvm::raw_ostream &os, ModuleOp root) {
 
 } // namespace
 
-void SymbolUseGraphNode::print(llvm::raw_ostream &os, std::string locLinePrefix) const {
+void SymbolUseGraphNode::print(
+    llvm::raw_ostream &os, bool showLocations, std::string locationLinePrefix
+) const {
   os << '\'' << symbolPath << '\'';
   if (isStructConstParam) {
     os << " (struct param)";
   }
   os << " with root module ";
   safeAppendPathRoot(os, symbolPathRoot);
-  // Print the user op locations (sorted for stable output). Printing only the location rather than
-  // the full Operation gives a short (single-line) format that's still useful for human debugging.
-  llvm::SmallSet<mlir::Location, 3, LocationComparator> locations;
-  for (Operation *user : getUserOps()) {
-    locations.insert(user->getLoc());
-  }
-  for (Location loc : locations) {
-    os << locLinePrefix << loc << '\n';
+  if (showLocations) {
+    // Print the user op locations (sorted for stable output). Printing only the location rather
+    // than the full Operation gives a short (single-line) format that's still useful for human
+    // debugging.
+    llvm::SmallSet<mlir::Location, 3, LocationComparator> locations;
+    for (Operation *user : getUserOps()) {
+      locations.insert(user->getLoc());
+    }
+    for (Location loc : locations) {
+      os << locationLinePrefix << loc << '\n';
+    }
   }
 }
 
@@ -244,7 +251,7 @@ void SymbolUseGraph::print(llvm::raw_ostream &os) const {
     }
     // Print the current node
     os << "// - Node : [" << node << "] ";
-    node->print(os, "// --- ");
+    node->print(os, true, "// --- ");
     // Print list of IDs for the predecessors (excluding root) and successors
     os << "// --- Predecessors : [";
     llvm::interleaveComma(
