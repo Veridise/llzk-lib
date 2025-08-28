@@ -23,13 +23,17 @@ jobs:
           fetch-depth: ${{ env.PR_FETCH_DEPTH }}
       - name: Setup git-clang-format
         run: |
-          /home/linuxbrew/.linuxbrew/bin/brew install clang-format
-          export CLANG_FORMAT_SCRIPT="/home/linuxbrew/.linuxbrew/opt/clang-format/bin/git-clang-format"
+          export CLANG_FORMAT_VERSION="20"
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+          echo "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-${CLANG_FORMAT_VERSION} main" | sudo tee -a /etc/apt/sources.list
+          sudo apt update
+          sudo apt install -y clang-format-${CLANG_FORMAT_VERSION}
+          export CLANG_FORMAT_SCRIPT="/usr/bin/git-clang-format-${CLANG_FORMAT_VERSION}"
           if [ ! -x "$CLANG_FORMAT_SCRIPT" ]; then
             echo "Missing executable $CLANG_FORMAT_SCRIPT"
             exit 1
           fi
-          echo "CLANG_FORMAT_COMMAND=$CLANG_FORMAT_SCRIPT --binary /home/linuxbrew/.linuxbrew/opt/clang-format/bin/clang-format" >> "${GITHUB_ENV}"
+          echo "CLANG_FORMAT_COMMAND=$CLANG_FORMAT_SCRIPT --binary /usr/bin/clang-format-${CLANG_FORMAT_VERSION}" >> "${GITHUB_ENV}"
       - name: Run clang-format
         run: |
           export tmp_patch="$(mktemp)"
