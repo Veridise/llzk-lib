@@ -546,21 +546,25 @@ bool hasAffineMapAttr(Type type) {
 
 bool isDynamic(IntegerAttr intAttr) { return ShapedType::isDynamic(fromAPInt(intAttr.getValue())); }
 
-int64_t computeEmitEqCardinality(Type type) {
-  struct Impl : LLZKTypeSwitch<Impl, int64_t> {
-    int64_t caseBool(IntegerType _) { return 1; }
-    int64_t caseIndex(IndexType _) { return 1; }
-    int64_t caseFelt(FeltType _) { return 1; }
-    int64_t caseArray(ArrayType t) { return t.getNumElements(); }
-    int64_t caseStruct(StructType t) {
+uint64_t computeEmitEqCardinality(Type type) {
+  struct Impl : LLZKTypeSwitch<Impl, uint64_t> {
+    uint64_t caseBool(IntegerType _) { return 1; }
+    uint64_t caseIndex(IndexType _) { return 1; }
+    uint64_t caseFelt(FeltType _) { return 1; }
+    uint64_t caseArray(ArrayType t) {
+      int64_t n = t.getNumElements();
+      assert(n >= 0);
+      return static_cast<uint64_t>(n);
+    }
+    uint64_t caseStruct(StructType t) {
       if (isSignalType(t)) {
         return 1;
       }
       llvm_unreachable("not a valid EmitEq type");
     }
-    int64_t caseString(StringType _) { llvm_unreachable("not a valid EmitEq type"); }
-    int64_t caseTypeVar(TypeVarType _) { llvm_unreachable("tvar has unknown cardinality"); }
-    int64_t caseInvalid(Type _) { llvm_unreachable("not a valid LLZK type"); }
+    uint64_t caseString(StringType _) { llvm_unreachable("not a valid EmitEq type"); }
+    uint64_t caseTypeVar(TypeVarType _) { llvm_unreachable("tvar has unknown cardinality"); }
+    uint64_t caseInvalid(Type _) { llvm_unreachable("not a valid LLZK type"); }
   };
   return Impl().match(type);
 }

@@ -89,7 +89,7 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
     function are ultimately written to exactly one field within the current struct.
   }];
   let constructor = "llzk::createInlineStructsPass()";
-  let options = [Option<"maxComplexity", "max-merge-complexity", "int64_t",
+  let options = [Option<"maxComplexity", "max-merge-complexity", "uint64_t",
                         /* default */ "0",
                         "Maximum allowed constraint+multiplications in merged "
                         "@constrain functions">,

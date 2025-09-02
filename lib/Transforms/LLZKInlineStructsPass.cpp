@@ -224,8 +224,9 @@ class StructInliner {
 
   inline FieldDefOp getDef(FieldRefOpInterface fRef) const { return ::getDef(tables, fRef); }
 
-  // Update field read/write ops that target the "self" value of `withinFunction` and some key in
-  // `oldToNewFieldDef` to instead target `newBaseVal` and the mapped value from `oldToNewFieldDef`.
+  // Update field read/write ops that target the "self" value of the FuncDefOp plus some key in
+  // `oldToNewFieldDef` to instead target the new base Value provided to the constructor plus the
+  // mapped Value from `oldToNewFieldDef`.
   // Example:
   //  old:  %1 = struct.readf %0[@f1] : <@Component1A>, !felt.type
   //  new:  %1 = struct.readf %self[@"f2:!s<@Component1A>+f1"] : <@Component1B>, !felt.type
@@ -588,8 +589,8 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
   /// would require updating some mapping in the plan along the way to ensure it's done properly.
   using InliningPlan = SmallVector<std::pair<StructDefOp, SmallVector<StructDefOp>>>;
 
-  static int64_t complexity(FuncDefOp f) {
-    int64_t complexity = 0;
+  static uint64_t complexity(FuncDefOp f) {
+    uint64_t complexity = 0;
     f.getBody().walk([&complexity](Operation *op) {
       if (llvm::isa<felt::MulFeltOp>(op)) {
         ++complexity;
@@ -626,7 +627,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
   }
 
   /// Return 'true' iff the `maxComplexity` option is set and the given value exceeds it.
-  inline bool exceedsMaxComplexity(int64_t check) {
+  inline bool exceedsMaxComplexity(uint64_t check) {
     return maxComplexity > 0 && check > maxComplexity;
   }
 
@@ -672,7 +673,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
       llvm::dbgs() << '\n';
     });
     InliningPlan retVal;
-    DenseMap<const SymbolUseGraphNode *, int64_t> complexityMemo;
+    DenseMap<const SymbolUseGraphNode *, uint64_t> complexityMemo;
 
     // NOTE: The assumption that the use graph has no cycles allows `complexityMemo` to only
     // store the result for relevant nodes and assume nodes without a mapped value are `0`. This
@@ -703,7 +704,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
         continue;
       }
       FuncDefOp currentFunc = currentFuncOpt.value();
-      int64_t currentComplexity = complexity(currentFunc);
+      uint64_t currentComplexity = complexity(currentFunc);
       // If the current complexity is already too high, store it and continue.
       if (exceedsMaxComplexity(currentComplexity)) {
         complexityMemo[currentNode] = currentComplexity;
@@ -719,9 +720,12 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
         if (memoResult == complexityMemo.end()) {
           continue; // inner loop
         }
-        int64_t sComplexity = memoResult->second;
-        int64_t potentialComplexity = currentComplexity + sComplexity;
-        assert(potentialComplexity >= currentComplexity && "overflow");
+        uint64_t sComplexity = memoResult->second;
+        assert(
+            sComplexity <= (std::numeric_limits<uint64_t>::max() - currentComplexity) &&
+            "addition will overflow"
+        );
+        uint64_t potentialComplexity = currentComplexity + sComplexity;
         if (!exceedsMaxComplexity(potentialComplexity)) {
           currentComplexity = potentialComplexity;
           FailureOr<FuncDefOp> successorFuncOpt = getIfStructConstrain(successor, tables);
