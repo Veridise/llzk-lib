@@ -62,7 +62,7 @@ using DestFieldWithSrcStructType = FieldDefOp;
 using DestCloneOfSrcStructField = FieldDefOp;
 /// Mapping of the name of each field in the inlining source struct to the new cloned version of the
 /// source field in the destination struct. Uses `std::map` for consistent ordering between multiple
-/// compliations of the same LLZK IR input.
+/// compilations of the same LLZK IR input.
 using SrcStructFieldToCloneInDest = std::map<StringRef, DestCloneOfSrcStructField>;
 /// Mapping of `FieldDefOp` in the inlining destination struct to each `FieldDefOp` from the
 /// inlining source struct to the new cloned version of the source field in the destination struct.
@@ -219,7 +219,7 @@ class StructInliner {
   PendingErasure &toDelete;
   /// The struct that will be inlined (and maybe removed).
   StructDefOp srcStruct;
-  /// The Struct whose body will be augmented with the inlined content.
+  /// The struct whose body will be augmented with the inlined content.
   StructDefOp destStruct;
 
   inline FieldDefOp getDef(FieldRefOpInterface fRef) const { return ::getDef(tables, fRef); }
