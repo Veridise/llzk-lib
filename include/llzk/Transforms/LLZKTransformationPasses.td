@@ -83,7 +83,8 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
     which means all structs will be inlined into the Main struct.
 
     This pass should be run after `llzk-flatten` to ensure structs do not have template parameters
-    (this restriction may be removed in the future).
+    because structs with template parameters cannot (currently) be inlined. Inlining is also not
+    (currently) supported for subcomponent structs stored in an array-type field.
 
     This pass also assumes that all subcomponents that are created by calling a struct "@compute"
     function are ultimately written to exactly one field within the current struct.
