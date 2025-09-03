@@ -119,6 +119,7 @@ template <typename T> bool containsSplittableArrayType(ValueTypeRange<T> types) 
 size_t splitArrayTypeTo(Type t, SmallVector<Type> &collect) {
   if (ArrayType at = splittableArray(t)) {
     int64_t n = at.getNumElements();
+    assert(n >= 0);
     assert(std::cmp_less_equal(n, std::numeric_limits<size_t>::max()));
     size_t size = n;
     collect.append(size, at.getElementType());
