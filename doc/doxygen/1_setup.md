@@ -62,6 +62,7 @@ To optionally generate API documentation, you need:
 To run tests, you also need:
 * Python 3
 * llvm-lit
+* gtest
 
 Note that tests are enabled by default; they can be disabled by setting
 `-DBUILD_TESTING=off` when invoking CMake.
