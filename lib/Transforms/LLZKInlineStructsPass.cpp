@@ -448,7 +448,7 @@ class StructInliner {
         toDelete.fieldDefs.push_back(destField);
         // Clone each field from 'srcStruct' into 'destStruct'. Add an entry to `destToSrcToClone`
         // even if there are no fields in `srcStruct` so its presence can be used as a marker.
-        SrcStructFieldToCloneInDest &srcToClone = destToSrcToClone.getOrInsertDefault(destField);
+        SrcStructFieldToCloneInDest &srcToClone = destToSrcToClone[destField];
         std::vector<FieldDefOp> srcFields = srcStruct.getFieldDefs();
         if (srcFields.empty()) {
           continue;

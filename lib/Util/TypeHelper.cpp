@@ -51,7 +51,7 @@ template <typename Derived, typename ResultType> struct LLZKTypeSwitch {
     })
         .template Case<StructType>([this](auto t) {
       return static_cast<Derived *>(this)->caseStruct(t);
-    }).template Default([this](Type t) {
+    }).Default([this](Type t) {
       if (t.isSignlessInteger(1)) {
         return static_cast<Derived *>(this)->caseBool(cast<IntegerType>(t));
       } else {
