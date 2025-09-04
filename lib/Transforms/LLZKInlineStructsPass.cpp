@@ -27,13 +27,13 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
-#include "llzk/Transforms/WalkPatternRewriteDriver.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Transforms/InliningUtils.h>
+#include <mlir/Transforms/WalkPatternRewriteDriver.h>
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallVector.h>
