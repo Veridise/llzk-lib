@@ -104,6 +104,18 @@ bool llzkFuncDefOpGetIsStructConstrain(MlirOperation op) {
   return mlir::unwrap_cast<FuncDefOp>(op).isStructConstrain();
 }
 
+/// Return the "self" value (i.e. the return value) from the function (which must be
+/// named `FUNC_NAME_COMPUTE`).
+MlirValue llzkFuncDefOpGetSelfValueFromCompute(MlirOperation op) {
+  return wrap(mlir::unwrap_cast<FuncDefOp>(op).getSelfValueFromCompute());
+}
+
+/// Return the "self" value (i.e. the first parameter) from the function (which must be
+/// named `FUNC_NAME_CONSTRAIN`).
+MlirValue llzkFuncDefOpGetSelfValueFromConstrain(MlirOperation op) {
+  return wrap(mlir::unwrap_cast<FuncDefOp>(op).getSelfValueFromConstrain());
+}
+
 /// Assuming the function is the compute function returns its StructType result.
 MlirType llzkFuncDefOpGetSingleResultTypeOfCompute(MlirOperation op) {
   return wrap(mlir::unwrap_cast<FuncDefOp>(op).getSingleResultTypeOfCompute());
@@ -218,6 +230,18 @@ bool llzkCallOpGetCalleeIsStructCompute(MlirOperation op) {
 
 bool llzkCallOpGetCalleeIsStructConstrain(MlirOperation op) {
   return mlir::unwrap_cast<CallOp>(op).calleeIsStructConstrain();
+}
+
+/// Return the "self" value (i.e. the return value) from the callee function (which must be
+/// named `FUNC_NAME_COMPUTE`).
+MlirValue llzkCallOpGetSelfValueFromCompute(MlirOperation op) {
+  return wrap(mlir::unwrap_cast<CallOp>(op).getSelfValueFromCompute());
+}
+
+/// Return the "self" value (i.e. the first parameter) from the callee function (which must be
+/// named `FUNC_NAME_CONSTRAIN`).
+MlirValue llzkCallOpGetSelfValueFromConstrain(MlirOperation op) {
+  return wrap(mlir::unwrap_cast<CallOp>(op).getSelfValueFromConstrain());
 }
 
 MlirType llzkCallOpGetSingleResultTypeOfCompute(MlirOperation op) {

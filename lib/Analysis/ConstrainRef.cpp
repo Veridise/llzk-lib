@@ -137,7 +137,7 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDe
   // For compute functions, the "self" field is not arg0 like for constrain, but
   // rather the struct value returned from the function.
   if (fnOp.isStructCompute()) {
-    Value selfVal = getSelfValueFromCompute(fnOp);
+    Value selfVal = fnOp.getSelfValueFromCompute();
     auto createOp = dyn_cast_if_present<CreateStructOp>(selfVal.getDefiningOp());
     ensure(createOp, "self value should originate from struct.new operation");
     auto selfRes = getAllConstrainRefs(tables, modOp.value(), ConstrainRef(createOp));
@@ -159,8 +159,8 @@ ConstrainRef::getAllConstrainRefs(StructDefOp structDef, FieldDefOp fieldDef) {
   FailureOr<ModuleOp> modOp = getRootModule(structDef);
   ensure(succeeded(modOp), "could not lookup module from struct " + Twine(structDef.getName()));
 
-  // Get the self argument
-  BlockArgument self = constrainFnOp.getBody().getArgument(0);
+  // Get the self argument (like `FuncDefOp::getSelfValueFromConstrain()`)
+  BlockArgument self = constrainFnOp.getArguments().front();
   ConstrainRef fieldRef = ConstrainRef(self, {ConstrainRefIndex(fieldDef)});
 
   SymbolTableCollection tables;

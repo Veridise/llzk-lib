@@ -19,6 +19,7 @@
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/OpImplementation.h>
@@ -308,6 +309,30 @@ SymbolRefAttr FuncDefOp::getFullyQualifiedName(bool requireParent) {
   auto res = getPathFromRoot(*this);
   assert(succeeded(res));
   return res.value();
+}
+
+Value FuncDefOp::getSelfValueFromCompute() {
+  assert(nameIsCompute()); // skip inStruct check to allow dangling functions
+  // Get the single block of the function body
+  Region &body = getBody();
+  assert(!body.empty() && "compute() function body is empty");
+  Block &block = body.back();
+
+  // The terminator should be the return op
+  Operation *terminator = block.getTerminator();
+  assert(terminator && "compute() function has no terminator");
+  auto retOp = llvm::dyn_cast<ReturnOp>(terminator);
+  if (!retOp) {
+    llvm::errs() << "Expected '" << ReturnOp::getOperationName() << "' but found '"
+                 << terminator->getName() << "'\n";
+    llvm_unreachable("compute() function must end with ReturnOp");
+  }
+  return retOp.getOperands().front();
+}
+
+Value FuncDefOp::getSelfValueFromConstrain() {
+  assert(nameIsConstrain()); // skip inStruct check to allow dangling functions
+  return getArguments().front();
 }
 
 StructType FuncDefOp::getSingleResultTypeOfCompute() {
@@ -701,6 +726,23 @@ bool CallOp::calleeIsStructConstrain() {
   });
 }
 
+Value CallOp::getSelfValueFromCompute() {
+  assert(calleeIsStructCompute());
+  return getResults().front();
+}
+
+Value CallOp::getSelfValueFromConstrain() {
+  assert(calleeIsStructConstrain());
+  return getArgOperands().front();
+}
+
+FailureOr<SymbolLookupResult<FuncDefOp>> CallOp::getCalleeTarget(SymbolTableCollection &tables) {
+  Operation *thisOp = this->getOperation();
+  auto root = getRootModule(thisOp);
+  assert(succeeded(root));
+  return llzk::lookupSymbolIn<FuncDefOp>(tables, getCallee(), root->getOperation(), thisOp);
+}
+
 StructType CallOp::getSingleResultTypeOfCompute() {
   assert(calleeIsCompute() && "violated implementation pre-condition");
   return getIfSingleton<StructType>(getResultTypes());
@@ -712,6 +754,15 @@ CallInterfaceCallable CallOp::getCallableForCallee() { return getCalleeAttr(); }
 /// Set the callee for this operation.
 void CallOp::setCalleeFromCallable(CallInterfaceCallable callee) {
   setCalleeAttr(callee.get<SymbolRefAttr>());
+}
+
+SmallVector<ValueRange> CallOp::toVectorOfValueRange(OperandRangeRange input) {
+  llvm::SmallVector<ValueRange, 4> output;
+  output.reserve(input.size());
+  for (OperandRange r : input) {
+    output.push_back(r);
+  }
+  return output;
 }
 
 } // namespace llzk::function
