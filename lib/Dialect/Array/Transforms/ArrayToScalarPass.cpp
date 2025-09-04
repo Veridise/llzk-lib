@@ -59,6 +59,7 @@
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Transforms/LLZKConversionUtils.h"
 #include "llzk/Util/Concepts.h"
 
 #include <mlir/IR/BuiltinOps.h>
@@ -119,6 +120,7 @@ template <typename T> bool containsSplittableArrayType(ValueTypeRange<T> types) 
 size_t splitArrayTypeTo(Type t, SmallVector<Type> &collect) {
   if (ArrayType at = splittableArray(t)) {
     int64_t n = at.getNumElements();
+    assert(n >= 0);
     assert(std::cmp_less_equal(n, std::numeric_limits<size_t>::max()));
     size_t size = n;
     collect.append(size, at.getElementType());
@@ -154,8 +156,7 @@ splitArrayType(TypeCollection types, SmallVector<size_t> *originalIdxToSize = nu
 
 /// Generate `arith::ConstantOp` at the current position of the `rewriter` for each int attribute in
 /// the ArrayAttr.
-SmallVector<Value>
-genIndexConstants(ArrayAttr index, Location loc, ConversionPatternRewriter &rewriter) {
+SmallVector<Value> genIndexConstants(ArrayAttr index, Location loc, RewriterBase &rewriter) {
   SmallVector<Value> operands;
   for (Attribute a : index) {
     // ASSERT: Attributes are index constants, created by ArrayType::getSubelementIndices().
@@ -166,10 +167,8 @@ genIndexConstants(ArrayAttr index, Location loc, ConversionPatternRewriter &rewr
   return operands;
 }
 
-inline WriteArrayOp genWrite(
-    Location loc, Value baseArrayOp, ArrayAttr index, Value init,
-    ConversionPatternRewriter &rewriter
-) {
+inline WriteArrayOp
+genWrite(Location loc, Value baseArrayOp, ArrayAttr index, Value init, RewriterBase &rewriter) {
   SmallVector<Value> readOperands = genIndexConstants(index, loc, rewriter);
   return rewriter.create<WriteArrayOp>(loc, baseArrayOp, ValueRange(readOperands), init);
 }
@@ -214,39 +213,6 @@ CallOp newCallOpWithSplitResults(
   rewriter.eraseOp(oldCall);
 
   return newCall;
-}
-
-/// For each argument to the Block that has a splittable ArrayType, replace it with the necessary
-/// number of scalar arguments, generate a CreateArrayOp, and generate writes from the new block
-/// scalar arguments to the new array. All users of the original block argument are updated to
-/// target the result of the CreateArrayOp.
-void processBlockArgs(Block &entryBlock, ConversionPatternRewriter &rewriter) {
-  OpBuilder::InsertionGuard guard(rewriter);
-  rewriter.setInsertionPointToStart(&entryBlock);
-
-  for (unsigned i = 0; i < entryBlock.getNumArguments();) {
-    Value oldV = entryBlock.getArgument(i);
-    if (ArrayType at = splittableArray(oldV.getType())) {
-      Location loc = oldV.getLoc();
-      // Generate `CreateArrayOp` and replace uses of the argument with it.
-      auto newArray = rewriter.create<CreateArrayOp>(loc, at);
-      rewriter.replaceAllUsesWith(oldV, newArray);
-      // Remove the argument from the block
-      entryBlock.eraseArgument(i);
-      // For all indices in the ArrayType (i.e., the element count), generate a new block
-      // argument and a write of that argument to the new array.
-      std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
-      assert(allIndices); // follows from legal() check
-      assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
-      for (ArrayAttr subIdx : allIndices.value()) {
-        BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
-        genWrite(loc, newArray, subIdx, newArg, rewriter);
-        ++i;
-      }
-    } else {
-      ++i;
-    }
-  }
 }
 
 inline ReadArrayOp
@@ -418,11 +384,12 @@ public:
   // mapping defined by `originalIdxToSize`. In other words, if `originalIdxToSize[i] = n`, then `n`
   // copies of `origAttrs[i]` are appended in its place.
   static ArrayAttr replicateAttributesAsNeeded(
-      ArrayAttr origAttrs, const SmallVector<size_t> &originalIdxToSize, size_t newSize
+      ArrayAttr origAttrs, const SmallVector<size_t> &originalIdxToSize,
+      const SmallVector<Type> &newTypes
   ) {
     if (origAttrs) {
       assert(originalIdxToSize.size() == origAttrs.size());
-      if (originalIdxToSize.size() != newSize) {
+      if (originalIdxToSize.size() != newTypes.size()) {
         SmallVector<Attribute> newArgAttrs;
         for (auto [i, s] : llvm::enumerate(originalIdxToSize)) {
           newArgAttrs.append(s, origAttrs[i]);
@@ -437,46 +404,57 @@ public:
 
   void rewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     // Update in/out types of the function to replace arrays with scalars
-    FunctionType oldTy = op.getFunctionType();
-    SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
-    SmallVector<Type> newInputs = splitArrayType(oldTy.getInputs(), &originalInputIdxToSize);
-    SmallVector<Type> newResults = splitArrayType(oldTy.getResults(), &originalResultIdxToSize);
-    FunctionType newTy =
-        FunctionType::get(oldTy.getContext(), TypeRange(newInputs), TypeRange(newResults));
-    if (newTy == oldTy) {
-      return; // nothing to change
-    }
+    class Impl : public FunctionTypeConverter {
+      SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
 
-    // Pre-condition: arg/result count equals corresponding attribute count
-    assert(!op.getResAttrsAttr() || op.getResAttrsAttr().size() == op.getNumResults());
-    assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
-    rewriter.modifyOpInPlace(op, [&]() {
-      op.setFunctionType(newTy);
+    protected:
+      SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
+        return splitArrayType(origTypes, &originalInputIdxToSize);
+      }
+      SmallVector<Type> convertResults(ArrayRef<Type> origTypes) override {
+        return splitArrayType(origTypes, &originalResultIdxToSize);
+      }
+      ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
+        return replicateAttributesAsNeeded(origAttrs, originalInputIdxToSize, newTypes);
+      }
+      ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
+        return replicateAttributesAsNeeded(origAttrs, originalResultIdxToSize, newTypes);
+      }
 
-      // If any input or result types were added, ensure the attributes are updated too.
-      if (ArrayAttr newArgAttrs = replicateAttributesAsNeeded(
-              op.getArgAttrsAttr(), originalInputIdxToSize, newInputs.size()
-          )) {
-        op.setArgAttrsAttr(newArgAttrs);
-      }
-      if (ArrayAttr newResAttrs = replicateAttributesAsNeeded(
-              op.getResAttrsAttr(), originalResultIdxToSize, newResults.size()
-          )) {
-        op.setResAttrsAttr(newResAttrs);
-      }
-    });
-    // Post-condition: arg/result count equals corresponding attribute count
-    assert(!op.getResAttrsAttr() || op.getResAttrsAttr().size() == op.getNumResults());
-    assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
+      /// For each argument to the Block that has a splittable ArrayType, replace it with the
+      /// necessary number of scalar arguments, generate a CreateArrayOp, and generate writes from
+      /// the new block scalar arguments to the new array. All users of the original block argument
+      /// are updated to target the result of the CreateArrayOp.
+      void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) override {
+        OpBuilder::InsertionGuard guard(rewriter);
+        rewriter.setInsertionPointToStart(&entryBlock);
 
-    // If the function has a body, ensure the entry block arguments match the function inputs.
-    if (Region *body = op.getCallableRegion()) {
-      Block &entryBlock = body->front();
-      if (std::cmp_equal(entryBlock.getNumArguments(), newInputs.size())) {
-        return; // nothing to change
+        for (unsigned i = 0; i < entryBlock.getNumArguments();) {
+          Value oldV = entryBlock.getArgument(i);
+          if (ArrayType at = splittableArray(oldV.getType())) {
+            Location loc = oldV.getLoc();
+            // Generate `CreateArrayOp` and replace uses of the argument with it.
+            auto newArray = rewriter.create<CreateArrayOp>(loc, at);
+            rewriter.replaceAllUsesWith(oldV, newArray);
+            // Remove the argument from the block
+            entryBlock.eraseArgument(i);
+            // For all indices in the ArrayType (i.e., the element count), generate a new block
+            // argument and a write of that argument to the new array.
+            std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
+            assert(allIndices); // follows from legal() check
+            assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
+            for (ArrayAttr subIdx : allIndices.value()) {
+              BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
+              genWrite(loc, newArray, subIdx, newArg, rewriter);
+              ++i;
+            }
+          } else {
+            ++i;
+          }
+        }
       }
-      processBlockArgs(entryBlock, rewriter);
-    }
+    };
+    Impl().convert(op, rewriter);
   }
 };
 

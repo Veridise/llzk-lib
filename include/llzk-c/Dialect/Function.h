@@ -105,6 +105,14 @@ LLZK_DECLARE_OP_PREDICATE(FuncDefOp, IsStructCompute);
 /// Returns true if the function is the struct's constrain definition.
 LLZK_DECLARE_OP_PREDICATE(FuncDefOp, IsStructConstrain);
 
+/// Return the "self" value (i.e. the return value) from the function (which must be
+/// named `FUNC_NAME_COMPUTE`).
+MLIR_CAPI_EXPORTED MlirValue llzkFuncDefOpGetSelfValueFromCompute(MlirOperation op);
+
+/// Return the "self" value (i.e. the first parameter) from the function (which must be
+/// named `FUNC_NAME_CONSTRAIN`).
+MLIR_CAPI_EXPORTED MlirValue llzkFuncDefOpGetSelfValueFromConstrain(MlirOperation op);
+
 /// Assuming the function is the compute function, returns its StructType result.
 MLIR_CAPI_EXPORTED MlirType llzkFuncDefOpGetSingleResultTypeOfCompute(MlirOperation op);
 
@@ -169,6 +177,14 @@ LLZK_DECLARE_OP_PREDICATE(CallOp, CalleeIsStructCompute);
 
 /// Returns true if the callee is the constraints definition of a struct.
 LLZK_DECLARE_OP_PREDICATE(CallOp, CalleeIsStructConstrain);
+
+/// Return the "self" value (i.e. the return value) from the callee function (which must be
+/// named `FUNC_NAME_COMPUTE`).
+MLIR_CAPI_EXPORTED MlirValue llzkCallOpGetSelfValueFromCompute(MlirOperation op);
+
+/// Return the "self" value (i.e. the first parameter) from the callee function (which must be
+/// named `FUNC_NAME_CONSTRAIN`).
+MLIR_CAPI_EXPORTED MlirValue llzkCallOpGetSelfValueFromConstrain(MlirOperation op);
 
 /// Assuming the callee is the compute function, returns its StructType result.
 MLIR_CAPI_EXPORTED MlirType llzkCallOpGetSingleResultTypeOfCompute(MlirOperation op);

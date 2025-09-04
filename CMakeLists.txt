@@ -119,10 +119,16 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   # NOTE: undefined behavior sanitizer ("undefined") has been removed due to its
-  # poor interaction with gtest fixtures and other standard MLIR/LLVM
-  # operations.
-  add_compile_options(-fsanitize=address,leak)
-  add_link_options(-fsanitize=address,leak)
+  # poor interaction with gtest fixtures and other standard MLIR/LLVM operations.
+  add_compile_options(-fsanitize=address)
+  add_link_options(-fsanitize=address)
+  # LeakSanitizer is not supported on all platforms (notably, MacOS)
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag("-fsanitize=leak" HAS_FSANITIZE_LEAK)
+  if(HAS_FSANITIZE_LEAK)
+    add_compile_options(-fsanitize=leak)
+    add_link_options(-fsanitize=leak)
+  endif()
 endif()
 
 if(LLZK_TEMPLATE_BACKTRACE_LIMIT)

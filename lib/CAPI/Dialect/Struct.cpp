@@ -80,7 +80,6 @@ MlirType llzkStructDefOpGetType(MlirOperation op) {
 }
 
 MlirType llzkStructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute attr) {
-
   return wrap(llvm::cast<StructDefOp>(unwrap(op)).getType(llvm::cast<ArrayAttr>(unwrap(attr))));
 }
 

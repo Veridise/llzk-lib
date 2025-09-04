@@ -27,9 +27,13 @@ std::unique_ptr<mlir::Pass> createPolyLoweringPass();
 
 std::unique_ptr<mlir::Pass> createPolyLoweringPass(unsigned maxDegree);
 
+std::unique_ptr<mlir::Pass> createInlineStructsPass();
+
 std::unique_ptr<mlir::Pass> createR1CSLoweringPass();
 
 void registerTransformationPassPipelines();
+
+void registerInliningExtensions(mlir::DialectRegistry &registry);
 
 #define GEN_PASS_REGISTRATION
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"

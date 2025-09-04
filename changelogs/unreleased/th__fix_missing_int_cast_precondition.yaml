@@ -1,0 +1,2 @@
+fixed:
+  - ensure signed int is not negative before cast to unsigned int

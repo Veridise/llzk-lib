@@ -25,8 +25,6 @@ struct AuxAssignment {
   mlir::Value computedValue;
 };
 
-mlir::Value getSelfValueFromCompute(function::FuncDefOp computeFunc);
-
 mlir::Value rebuildExprInCompute(
     mlir::Value val, function::FuncDefOp computeFunc, mlir::OpBuilder &builder,
     llvm::DenseMap<mlir::Value, mlir::Value> &memo

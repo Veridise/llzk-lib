@@ -89,6 +89,9 @@ def LLZK_StructDefOp
     /// Gets the StructType representing this struct. If the `constParams` to use in
     /// the type are not given, the StructType will use `this->getConstParamsAttr()`.
     StructType getType(::std::optional<::mlir::ArrayAttr> constParams = {});
+    inline StructType getType(::std::optional<::mlir::ArrayAttr> constParams = {}) const {
+      return const_cast<StructDefOp*>(this)->getType(constParams);
+    }
 
     /// Gets the FieldDefOp that defines the field in this
     /// structure with the given name, if present.

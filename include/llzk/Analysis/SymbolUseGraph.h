@@ -111,8 +111,9 @@ public:
   lookupSymbol(mlir::SymbolTableCollection &tables, bool reportMissing = true) const;
 
   /// Print the node in a human readable format.
-  std::string toString() const;
-  void print(llvm::raw_ostream &os, std::string locLinePrefix = "") const;
+  std::string toString(bool showLocations = false) const;
+  void print(llvm::raw_ostream &os, bool showLocations = false, std::string locationLinePrefix = "")
+      const;
 };
 
 /// Builds a graph structure representing the relationships between symbols and their uses. There is
@@ -271,7 +272,7 @@ template <> struct DOTGraphTraits<const llzk::SymbolUseGraphNode *> : public Def
 
   DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
 
-  std::string getNodeLabel(NodeRef n, GraphType) { return n->toString(); }
+  std::string getNodeLabel(NodeRef n, GraphType) { return n->toString(true); }
 };
 
 template <>
