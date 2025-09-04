@@ -24,11 +24,11 @@ namespace llzk {
 using namespace function;
 
 CallGraphAnalysis::CallGraphAnalysis(mlir::Operation *op) : cg(nullptr) {
-  if (auto modOp = mlir::dyn_cast<mlir::ModuleOp>(op)) {
+  if (auto modOp = llvm::dyn_cast<mlir::ModuleOp>(op)) {
     cg = std::make_unique<llzk::CallGraph>(modOp);
   } else {
     auto error_message = "CallGraphAnalysis expects provided op to be a ModuleOp!";
-    op->emitError(error_message);
+    op->emitError(error_message).report();
     llvm::report_fatal_error(error_message);
   }
 }
@@ -55,7 +55,7 @@ bool CallGraphReachabilityAnalysis::isReachable(FuncDefOp &A, FuncDefOp &B) cons
   auto startNode = callGraph.get().lookupNode(A.getCallableRegion());
   if (!startNode) {
     auto msg = "CallGraph contains no starting node!";
-    A.emitError() << msg;
+    A.emitError(msg).report();
     llvm::report_fatal_error(msg);
   }
   /**

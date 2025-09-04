@@ -21,9 +21,9 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Global, llzk__global, llzk::global::Global
 //===----------------------------------------------------------------------===//
 
 bool llzkOperationIsAGlobalDefOp(MlirOperation op) {
-  return mlir::isa<llzk::global::GlobalDefOp>(unwrap(op));
+  return llvm::isa<llzk::global::GlobalDefOp>(unwrap(op));
 }
 
 bool llzkGlobalDefOpGetIsConstant(MlirOperation op) {
-  return mlir::cast<llzk::global::GlobalDefOp>(unwrap(op)).isConstant();
+  return llvm::cast<llzk::global::GlobalDefOp>(unwrap(op)).isConstant();
 }

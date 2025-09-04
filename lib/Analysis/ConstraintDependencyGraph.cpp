@@ -79,12 +79,7 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
   else if (action == dataflow::CallControlFlowAction::ExitCallee) {
     // Get the argument values of the lattice by getting the state as it would
     // have been for the callsite.
-    const ConstrainRefLattice *beforeCall = nullptr;
-    if (auto *prev = call->getPrevNode()) {
-      beforeCall = static_cast<const ConstrainRefLattice *>(getLattice(prev));
-    } else {
-      beforeCall = static_cast<const ConstrainRefLattice *>(getLattice(call->getBlock()));
-    }
+    const ConstrainRefLattice *beforeCall = getLattice(getProgramPointBefore(call));
     ensure(beforeCall, "could not get prior lattice");
 
     // Translate argument values based on the operands given at the call site.
@@ -93,7 +88,7 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
     ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
     auto funcOp = funcOpRes->get();
 
-    auto callOp = mlir::dyn_cast<CallOp>(call.getOperation());
+    auto callOp = llvm::dyn_cast<CallOp>(call.getOperation());
     ensure(callOp, "call is not a llzk::CallOp");
 
     for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
@@ -132,7 +127,7 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
   }
 }
 
-void ConstrainRefAnalysis::visitOperation(
+mlir::LogicalResult ConstrainRefAnalysis::visitOperation(
     mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
 ) {
   LLVM_DEBUG(llvm::dbgs() << "ConstrainRefAnalysis::visitOperation: " << *op << '\n');
@@ -150,7 +145,7 @@ void ConstrainRefAnalysis::visitOperation(
   ChangeResult res = after->setValues(operandVals);
 
   // We will now join the the operand refs based on the type of operand.
-  if (auto fieldRefOp = mlir::dyn_cast<FieldRefOpInterface>(op)) {
+  if (auto fieldRefOp = llvm::dyn_cast<FieldRefOpInterface>(op)) {
     // The operand is indexed into by the FieldDefOp.
     auto fieldOpRes = fieldRefOp.getFieldDefOp(tables);
     ensure(mlir::succeeded(fieldOpRes), "could not find field read");
@@ -166,10 +161,10 @@ void ConstrainRefAnalysis::visitOperation(
     auto [fieldVals, _] = ops.referenceField(fieldOpRes.value());
 
     res |= after->setValue(fieldRefRes, fieldVals);
-  } else if (auto arrayAccessOp = mlir::dyn_cast<ArrayAccessOpInterface>(op)) {
+  } else if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
     // Covers read/write/extract/insert array ops
     arraySubdivisionOpUpdate(arrayAccessOp, operandVals, before, after);
-  } else if (auto createArray = mlir::dyn_cast<CreateArrayOp>(op)) {
+  } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {
     // Create an array using the operand values, if they exist.
     // Currently, the new array must either be fully initialized or uninitialized.
 
@@ -188,7 +183,7 @@ void ConstrainRefAnalysis::visitOperation(
     auto createArrayRes = createArray.getResult();
 
     res |= after->setValue(createArrayRes, newArrayVal);
-  } else if (auto structNewOp = mlir::dyn_cast<CreateStructOp>(op)) {
+  } else if (auto structNewOp = llvm::dyn_cast<CreateStructOp>(op)) {
     auto newOpRes = structNewOp.getResult();
     auto newStructValue = before.getOrDefault(newOpRes);
     res |= after->setValue(newOpRes, newStructValue);
@@ -200,6 +195,7 @@ void ConstrainRefAnalysis::visitOperation(
   }
 
   propagateIfChanged(after, res);
+  return success();
 }
 
 // Perform a standard union of operands into the results value.
@@ -228,7 +224,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
 ) {
   // We index the first operand by all remaining indices.
   ConstrainRefLattice::ValueTy res;
-  if (mlir::isa<ReadArrayOp, ExtractArrayOp>(arrayAccessOp)) {
+  if (llvm::isa<ReadArrayOp, ExtractArrayOp>(arrayAccessOp)) {
     res = arrayAccessOp->getResult(0);
   } else {
     res = arrayAccessOp;
@@ -256,7 +252,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
       indices.push_back(idx);
     } else {
       // Otherwise, assume any range is valid.
-      auto arrayType = mlir::dyn_cast<ArrayType>(array.getType());
+      auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
       auto lower = mlir::APInt::getZero(64);
       mlir::APInt upper(64, arrayType.getDimSize(i));
       auto idxRange = ConstrainRefIndex(lower, upper);
@@ -266,7 +262,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
 
   auto [newVals, _] = currVals.extract(indices);
 
-  if (mlir::isa<ReadArrayOp, WriteArrayOp>(arrayAccessOp)) {
+  if (llvm::isa<ReadArrayOp, WriteArrayOp>(arrayAccessOp)) {
     ensure(newVals.isScalar(), "array read/write must produce a scalar value");
   }
   // an extract operation may yield a "scalar" value if not all dimensions of
@@ -367,7 +363,8 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
   // - Union all constraints from the analysis
   // This requires iterating over all of the emit operations
   constrainFnOp.walk([this, &solver](Operation *op) {
-    const auto *refLattice = solver.lookupState<ConstrainRefLattice>(op);
+    ProgramPoint *pp = solver.getProgramPointAfter(op);
+    const auto *refLattice = solver.lookupState<ConstrainRefLattice>(pp);
     // aggregate the ref2Val map across operations, as some may have nested
     // regions and blocks that aren't propagated to the function terminator
     if (refLattice) {
@@ -399,7 +396,8 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     auto calledStruct = fn.getOperation()->getParentOfType<StructDefOp>();
     ConstrainRefRemappings translations;
 
-    auto lattice = solver.lookupState<ConstrainRefLattice>(fnCall.getOperation());
+    ProgramPoint *pp = solver.getProgramPointAfter(fnCall.getOperation());
+    auto lattice = solver.lookupState<ConstrainRefLattice>(pp);
     ensure(lattice, "could not find lattice for call operation");
 
     // Map fn parameters to args in the call op
@@ -447,7 +445,8 @@ void ConstraintDependencyGraph::walkConstrainOp(
 ) {
   std::vector<ConstrainRef> signalUsages, constUsages;
 
-  const ConstrainRefLattice *refLattice = solver.lookupState<ConstrainRefLattice>(emitOp);
+  ProgramPoint *pp = solver.getProgramPointAfter(emitOp);
+  const ConstrainRefLattice *refLattice = solver.lookupState<ConstrainRefLattice>(pp);
   ensure(refLattice, "missing lattice for constrain op");
 
   for (auto operand : emitOp->getOperands()) {
@@ -475,11 +474,11 @@ void ConstraintDependencyGraph::walkConstrainOp(
   }
 }
 
-ConstraintDependencyGraph ConstraintDependencyGraph::translate(ConstrainRefRemappings translation
-) const {
+ConstraintDependencyGraph
+ConstraintDependencyGraph::translate(ConstrainRefRemappings translation) const {
   ConstraintDependencyGraph res(mod, structDef);
-  auto translate = [&translation](const ConstrainRef &elem
-                   ) -> mlir::FailureOr<std::vector<ConstrainRef>> {
+  auto translate =
+      [&translation](const ConstrainRef &elem) -> mlir::FailureOr<std::vector<ConstrainRef>> {
     std::vector<ConstrainRef> refs;
     for (auto &[prefix, vals] : translation) {
       if (!elem.isValidPrefix(prefix)) {

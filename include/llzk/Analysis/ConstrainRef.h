@@ -165,10 +165,10 @@ public:
   bool isConstant() const { return constantVal.has_value(); }
   bool isConstantInt() const { return isConstantFelt() || isConstantIndex(); }
 
-  bool isFeltVal() const { return mlir::isa<felt::FeltType>(getType()); }
-  bool isIndexVal() const { return mlir::isa<mlir::IndexType>(getType()); }
-  bool isIntegerVal() const { return mlir::isa<mlir::IntegerType>(getType()); }
-  bool isTypeVarVal() const { return mlir::isa<polymorphic::TypeVarType>(getType()); }
+  bool isFeltVal() const { return llvm::isa<felt::FeltType>(getType()); }
+  bool isIndexVal() const { return llvm::isa<mlir::IndexType>(getType()); }
+  bool isIntegerVal() const { return llvm::isa<mlir::IntegerType>(getType()); }
+  bool isTypeVarVal() const { return llvm::isa<polymorphic::TypeVarType>(getType()); }
   bool isScalar() const {
     return isConstant() || isFeltVal() || isIndexVal() || isIntegerVal() || isTypeVarVal();
   }

@@ -230,9 +230,11 @@ TEST_F(OpTests, testMapOpInit_TooManyOpsForMap) {
 TEST_F(OpTests, testMapOpInit_TooFewOpsForMap) {
   OpBuilder bldr(mod->getRegion());
   // (d0, d1) -> (d0 + d1)
-  AffineMapAttr m = AffineMapAttr::get(AffineMap::get(
-      /*dimCount=*/2, /*symbolCount=*/0, bldr.getAffineDimExpr(0) + bldr.getAffineDimExpr(1)
-  ));
+  AffineMapAttr m = AffineMapAttr::get(
+      AffineMap::get(
+          /*dimCount=*/2, /*symbolCount=*/0, bldr.getAffineDimExpr(0) + bldr.getAffineDimExpr(1)
+      )
+  );
   ArrayType arrTy = ArrayType::get(bldr.getIndexType(), {m}); // !array.type<#m x index>
 
   auto v1 = bldr.create<arith::ConstantIndexOp>(loc, 10);

@@ -12,7 +12,9 @@
 #include "../CAPITestBase.h"
 
 TEST_F(CAPITest, mlir_get_dialect_handle_llzk) {
-  { mlirGetDialectHandle__llzk__(); }
+  {
+    mlirGetDialectHandle__llzk__();
+  }
 }
 
 TEST_F(CAPITest, llzk_public_attr_get) {

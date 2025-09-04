@@ -76,10 +76,12 @@ TEST_F(SymbolHelperTests, test_asSymbolRefAttr_ArrRef_Flat) {
 }
 
 TEST_F(SymbolHelperTests, test_asSymbolRefAttr_vector_Flat) {
-  SymbolRefAttr attr = asSymbolRefAttr(std::vector(
-      {FlatSymbolRefAttr::get(&ctx, "a"), FlatSymbolRefAttr::get(&ctx, "b"),
-       FlatSymbolRefAttr::get(&ctx, "c"), FlatSymbolRefAttr::get(&ctx, "d")}
-  ));
+  SymbolRefAttr attr = asSymbolRefAttr(
+      std::vector(
+          {FlatSymbolRefAttr::get(&ctx, "a"), FlatSymbolRefAttr::get(&ctx, "b"),
+           FlatSymbolRefAttr::get(&ctx, "c"), FlatSymbolRefAttr::get(&ctx, "d")}
+      )
+  );
   ASSERT_EQ(debug::toStringOne(attr), "@a::@b::@c::@d");
 }
 

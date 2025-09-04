@@ -1,6 +1,6 @@
 {
   inputs = {
-    llzk-pkgs.url = "github:Veridise/llzk-nix-pkgs?ref=main";
+    llzk-pkgs.url = "github:Veridise/llzk-nix-pkgs?ref=th/llvm20_upgrade";
 
     release-helpers = {
       url = "github:Veridise/open-source-release-helpers?ref=main";
@@ -32,7 +32,7 @@
           enablePythonBindings = true;
         };
 
-        llzk = final.callPackage ./nix/llzk.nix { clang = final.clang_18; };
+        llzk = final.callPackage ./nix/llzk.nix { clang = final.clang_20; };
 
         llzkDocs = final.llzk.overrideAttrs(attrs: {
           nativeBuildInputs = attrs.nativeBuildInputs ++ [
@@ -134,7 +134,7 @@
               git
 
               # clang-tidy and clang-format
-              clang-tools_18
+              clang-tools
 
               # git-clang-format
               libclang.python

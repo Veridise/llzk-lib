@@ -329,8 +329,9 @@ public:
 
   LogicalResult match(ExtractArrayOp op) const override { return failure(legal(op)); }
 
-  void rewrite(ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
-      const override {
+  void rewrite(
+      ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     ArrayType at = splittableArray(op.getResult().getType());
     // Generate `CreateArrayOp` in place of the current op.
     auto newArray = rewriter.replaceOpWithNewOp<CreateArrayOp>(op, at);
@@ -625,8 +626,9 @@ public:
 
   LogicalResult match(FieldRefOpClass op) const override { return failure(ImplClass::legal(op)); }
 
-  void rewrite(FieldRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
-      const override {
+  void rewrite(
+      FieldRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     StructType tgtStructTy = llvm::cast<FieldRefOpInterface>(op.getOperation()).getStructType();
     assert(tgtStructTy);
     auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
@@ -769,7 +771,18 @@ LogicalResult splitArrayCreateInit(ModuleOp modOp) {
   if (failed(step1(modOp, symTables, fieldRepMap))) {
     return failure();
   }
-  return step2(modOp, symTables, fieldRepMap);
+  LLVM_DEBUG({
+    llvm::dbgs() << "After step 1:\n";
+    modOp.dump();
+  });
+  if (failed(step2(modOp, symTables, fieldRepMap))) {
+    return failure();
+  }
+  LLVM_DEBUG({
+    llvm::dbgs() << "After step 2:\n";
+    modOp.dump();
+  });
+  return success();
 }
 
 class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayToScalarPass> {
@@ -788,10 +801,16 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
     nestedPM.addPass(createSROA());
     // The mem2reg pass converts all of the size 1 array allocation and access into SSA values.
     nestedPM.addPass(createMem2Reg());
+    // Cleanup SSA values made dead by the transformations
+    nestedPM.addPass(createRemoveDeadValuesPass());
     if (failed(runPipeline(nestedPM, module))) {
       signalPassFailure();
       return;
     }
+    LLVM_DEBUG({
+      llvm::dbgs() << "After SROA+Mem2Reg pipeline:\n";
+      module.dump();
+    });
   }
 };
 

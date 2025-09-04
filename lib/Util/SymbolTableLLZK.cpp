@@ -209,7 +209,7 @@ struct SymbolScope {
     if (Region *region = llvm::dyn_cast_if_present<Region *>(limit)) {
       return walkSymbolUses(*region, cback);
     }
-    return walkSymbolUses(limit.get<Operation *>(), cback);
+    return walkSymbolUses(llvm::cast<Operation *>(limit), cback);
   }
   /// This variant is used when the callback type matches a stripped down type:
   /// void(SymbolTable::SymbolUse use)
@@ -227,7 +227,7 @@ struct SymbolScope {
     if (Region *region = llvm::dyn_cast_if_present<Region *>(limit)) {
       return ::walkSymbolTable(*region, cback);
     }
-    return ::walkSymbolTable(limit.get<Operation *>(), cback);
+    return ::walkSymbolTable(llvm::cast<Operation *>(limit), cback);
   }
 
   /// The representation of the symbol within this scope.

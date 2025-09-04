@@ -23,6 +23,7 @@
 
 #include <llvm/ADT/StringRef.h>
 
+#include <variant>
 #include <vector>
 
 namespace llzk {

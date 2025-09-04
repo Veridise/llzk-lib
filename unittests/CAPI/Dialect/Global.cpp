@@ -19,7 +19,9 @@
 #include "../CAPITestBase.h"
 
 TEST_F(CAPITest, mlir_get_dialect_handle_llzk_global) {
-  { mlirGetDialectHandle__llzk__global__(); }
+  {
+    mlirGetDialectHandle__llzk__global__();
+  }
 }
 
 static MlirNamedAttribute named_attr(const char *s, MlirAttribute attr) {

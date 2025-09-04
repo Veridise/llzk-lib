@@ -34,7 +34,7 @@ function.def @mismatch_to_type_attr(
 function.def @mismatch_to_type_attr_size() {
   %a = felt.const 6744573456376
   %b = felt.const 381928390103509
-  // expected-error@+1 {{custom op 'array.new' 2 operands present, but expected 3}}
+  // expected-error@+1 {{custom op 'array.new' number of operands and types do not match: got 2 operands and 3 types}}
   %r = array.new %a, %b : !array.type<3 x !felt.type>
 }
 
@@ -42,7 +42,7 @@ function.def @mismatch_to_type_attr_size() {
 
 function.def @multi_array_not_enough_values(%a: index, %b: index) -> !array.type<2,2 x index> {
   %c = arith.constant 324 : index
-  // expected-error@+1 {{custom op 'array.new' 3 operands present, but expected 4}}
+  // expected-error@+1 {{custom op 'array.new' number of operands and types do not match: got 3 operands and 4 types}}
   %r = array.new %a, %b, %c: !array.type<2,2 x index>
   function.return %r: !array.type<2,2 x index>
 }
@@ -52,7 +52,7 @@ function.def @multi_array_too_many_values(%a: index, %b: index) -> !array.type<2
   %c = arith.constant 324 : index
   %d = arith.constant 999 : index
   %e = arith.constant 879 : index
-  // expected-error@+1 {{custom op 'array.new' 5 operands present, but expected 4}}
+  // expected-error@+1 {{custom op 'array.new' number of operands and types do not match: got 5 operands and 4 types}}
   %r = array.new %a, %b, %c, %d, %e: !array.type<2,2 x index>
   function.return %r: !array.type<2,2 x index>
 }

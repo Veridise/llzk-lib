@@ -27,13 +27,13 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
-#include "llzk/Transforms/WalkPatternRewriteDriver.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Transforms/InliningUtils.h>
+#include <mlir/Transforms/WalkPatternRewriteDriver.h>
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallVector.h>
@@ -327,11 +327,12 @@ class StructInliner {
         // Create a clone of the source function (must do the whole function not just the body
         // region because `inlineCall()` expects the Region to have a parent op) and update field
         // references to the old struct fields to instead use the new struct fields.
-        FuncDefOp srcFuncClone =
-            FieldRefRewriter::cloneWithFieldRefUpdate(std::make_unique<FieldRefRewriter>(
+        FuncDefOp srcFuncClone = FieldRefRewriter::cloneWithFieldRefUpdate(
+            std::make_unique<FieldRefRewriter>(
                 srcFunc, selfFieldRefOp.getComponent(),
                 this->destToSrcToClone.at(this->data.getDef(selfFieldRefOp))
-            ));
+            )
+        );
         this->processCloneBeforeInlining(srcFuncClone);
 
         // Inline the cloned function in place of `callOp`
@@ -448,7 +449,7 @@ class StructInliner {
         toDelete.fieldDefs.push_back(destField);
         // Clone each field from 'srcStruct' into 'destStruct'. Add an entry to `destToSrcToClone`
         // even if there are no fields in `srcStruct` so its presence can be used as a marker.
-        SrcStructFieldToCloneInDest &srcToClone = destToSrcToClone.getOrInsertDefault(destField);
+        SrcStructFieldToCloneInDest &srcToClone = destToSrcToClone[destField];
         std::vector<FieldDefOp> srcFields = srcStruct.getFieldDefs();
         if (srcFields.empty()) {
           continue;

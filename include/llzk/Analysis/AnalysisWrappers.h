@@ -45,16 +45,16 @@ public:
   /// analysis with the current StructDefOp and its parent ModuleOp.
   /// @param op The presumed StructDefOp.
   StructAnalysis(mlir::Operation *op) {
-    structDefOp = mlir::dyn_cast<component::StructDefOp>(op);
+    structDefOp = llvm::dyn_cast<component::StructDefOp>(op);
     if (!structDefOp) {
       auto error_message = "StructAnalysis expects provided op to be a StructDefOp!";
-      op->emitError(error_message);
+      op->emitError(error_message).report();
       llvm::report_fatal_error(error_message);
     }
     auto maybeModOp = getRootModule(op);
     if (mlir::failed(maybeModOp)) {
       auto error_message = "StructAnalysis could not find root module from StructDefOp!";
-      op->emitError(error_message);
+      op->emitError(error_message).report();
       llvm::report_fatal_error(error_message);
     }
     modOp = *maybeModOp;
@@ -130,9 +130,9 @@ public:
   /// constructor that is allowed by classes that are constructed using the
   /// `AnalysisManager::getAnalysis<Analysis>()` method.
   ModuleAnalysis(mlir::Operation *op) {
-    if (modOp = mlir::dyn_cast<mlir::ModuleOp>(op); !modOp) {
+    if (modOp = llvm::dyn_cast<mlir::ModuleOp>(op); !modOp) {
       auto error_message = "ModuleAnalysis expects provided op to be an mlir::ModuleOp!";
-      op->emitError(error_message);
+      op->emitError(error_message).report();
       llvm::report_fatal_error(error_message);
     }
   }
@@ -190,7 +190,7 @@ protected:
       auto &childAnalysis = am.getChildAnalysis<StructAnalysisTy>(s);
       if (mlir::failed(childAnalysis.runAnalysis(solver, am, ctx))) {
         auto error_message = "StructAnalysis failed to run for " + mlir::Twine(s.getName());
-        s->emitError(error_message);
+        s->emitError(error_message).report();
         llvm::report_fatal_error(error_message);
       }
       ensure(results.find(s) == results.end(), "struct location conflict");

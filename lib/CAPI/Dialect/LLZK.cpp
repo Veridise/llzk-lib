@@ -21,5 +21,5 @@ MlirAttribute llzkPublicAttrGet(MlirContext ctx) {
 }
 
 bool llzkAttributeIsAPublicAttr(MlirAttribute attr) {
-  return mlir::isa<llzk::PublicAttr>(unwrap(attr));
+  return llvm::isa<llzk::PublicAttr>(unwrap(attr));
 }

@@ -192,16 +192,16 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLatticeVa
 /* ConstrainRefLattice */
 
 mlir::FailureOr<ConstrainRef> ConstrainRefLattice::getSourceRef(mlir::Value val) {
-  if (auto blockArg = mlir::dyn_cast<mlir::BlockArgument>(val)) {
+  if (auto blockArg = llvm::dyn_cast<mlir::BlockArgument>(val)) {
     return ConstrainRef(blockArg);
   } else if (auto defOp = val.getDefiningOp()) {
-    if (auto feltConst = mlir::dyn_cast<FeltConstantOp>(defOp)) {
+    if (auto feltConst = llvm::dyn_cast<FeltConstantOp>(defOp)) {
       return ConstrainRef(feltConst);
-    } else if (auto constIdx = mlir::dyn_cast<mlir::arith::ConstantIndexOp>(defOp)) {
+    } else if (auto constIdx = llvm::dyn_cast<mlir::arith::ConstantIndexOp>(defOp)) {
       return ConstrainRef(constIdx);
-    } else if (auto readConst = mlir::dyn_cast<ConstReadOp>(defOp)) {
+    } else if (auto readConst = llvm::dyn_cast<ConstReadOp>(defOp)) {
       return ConstrainRef(readConst);
-    } else if (auto structNew = mlir::dyn_cast<CreateStructOp>(defOp)) {
+    } else if (auto structNew = llvm::dyn_cast<CreateStructOp>(defOp)) {
       return ConstrainRef(structNew);
     }
   }
@@ -213,10 +213,10 @@ void ConstrainRefLattice::print(mlir::raw_ostream &os) const {
   for (auto mit = valMap.begin(); mit != valMap.end();) {
     auto &[val, latticeVal] = *mit;
     os << "\n    (";
-    if (val.is<Value>()) {
-      os << val.get<Value>();
-    } else if (val.is<Operation *>()) {
-      os << *val.get<Operation *>();
+    if (auto asVal = llvm::dyn_cast<Value>(val)) {
+      os << asVal;
+    } else if (auto asOp = llvm::dyn_cast<Operation *>(val)) {
+      os << *asOp;
     } else {
       llvm_unreachable("unhandled ValueTy print case");
     }
@@ -233,7 +233,6 @@ void ConstrainRefLattice::print(mlir::raw_ostream &os) const {
 
 mlir::ChangeResult ConstrainRefLattice::setValues(const ValueMap &rhs) {
   auto res = mlir::ChangeResult::NoChange;
-
   for (auto &[v, s] : rhs) {
     res |= setValue(v, s);
   }
@@ -258,8 +257,8 @@ ConstrainRefLatticeValue ConstrainRefLattice::getOrDefault(ConstrainRefLattice::
     return it->second;
   }
 
-  if (v.is<Value>()) {
-    auto sourceRef = getSourceRef(v.get<Value>());
+  if (auto asVal = llvm::dyn_cast_if_present<Value>(v)) {
+    auto sourceRef = getSourceRef(asVal);
     if (mlir::succeeded(sourceRef)) {
       return ConstrainRefLatticeValue(sourceRef.value());
     }
@@ -268,8 +267,8 @@ ConstrainRefLatticeValue ConstrainRefLattice::getOrDefault(ConstrainRefLattice::
 }
 
 ConstrainRefLatticeValue ConstrainRefLattice::getReturnValue(unsigned i) const {
-  auto op = this->getPoint().get<mlir::Operation *>();
-  if (auto retOp = mlir::dyn_cast<function::ReturnOp>(op)) {
+  ProgramPoint *pp = llvm::cast<ProgramPoint *>(this->getAnchor());
+  if (auto retOp = mlir::dyn_cast_if_present<function::ReturnOp>(pp->getPrevOp())) {
     if (i >= retOp.getNumOperands()) {
       llvm::report_fatal_error("return value requested is out of range");
     }
@@ -295,15 +294,12 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const ConstrainRefLattice &
 namespace llvm {
 
 raw_ostream &operator<<(raw_ostream &os, llvm::PointerUnion<mlir::Value, mlir::Operation *> ptr) {
-  if (ptr.is<Value>()) {
-    os << ptr.get<Value>();
+  if (auto asVal = llvm::dyn_cast_if_present<Value>(ptr)) {
+    os << asVal;
+  } else if (auto asOp = llvm::dyn_cast_if_present<Operation *>(ptr)) {
+    os << *asOp;
   } else {
-    Operation *op = ptr.get<Operation *>();
-    if (op) {
-      os << *op;
-    } else {
-      os << "<null operation>";
-    }
+    os << "<<null PointerUnion>>";
   }
   return os;
 }

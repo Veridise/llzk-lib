@@ -19,7 +19,9 @@
 #include "../CAPITestBase.h"
 
 TEST_F(CAPITest, mlir_get_dialect_handle_llzk_component) {
-  { mlirGetDialectHandle__llzk__component__(); }
+  {
+    mlirGetDialectHandle__llzk__component__();
+  }
 }
 
 TEST_F(CAPITest, llzk_struct_type_get) {
@@ -131,7 +133,9 @@ protected:
 
 TEST_F(StructDefTest, llzk_operation_is_a_struct_def_op) {
   auto op = test_op();
-  { EXPECT_TRUE(!llzkOperationIsAStructDefOp(op.op)); }
+  {
+    EXPECT_TRUE(!llzkOperationIsAStructDefOp(op.op));
+  }
 }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_type) {
@@ -251,7 +255,9 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_is_main_component) {
 
 TEST_F(StructDefTest, llzk_operation_is_a_field_def_op) {
   auto op = test_op();
-  { EXPECT_TRUE(!llzkOperationIsAFieldDefOp(op.op)); }
+  {
+    EXPECT_TRUE(!llzkOperationIsAFieldDefOp(op.op));
+  }
 }
 
 TEST_F(StructDefTest, llzk_field_def_op_get_has_public_attr) {

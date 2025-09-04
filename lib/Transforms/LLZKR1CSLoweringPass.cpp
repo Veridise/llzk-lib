@@ -538,7 +538,7 @@ private:
     // Validate struct fields are felt and prepare signal types for circuit result types
     bool hasPublicSignals = false;
     for (auto field : structDef.getFieldDefs()) {
-      if (!field.getType().isa<FeltType>()) {
+      if (!llvm::isa<FeltType>(field.getType())) {
         field.emitError("Only felt fields are supported as output signals").report();
         signalPassFailure();
         return;
@@ -570,7 +570,7 @@ private:
 
     // Step 3: Validate that all parameters to the constrain function are felt types
     for (auto [i, arg] : llvm::enumerate(llvm::drop_begin(entryBlock.getArguments(), 1))) {
-      if (!arg.getType().isa<FeltType>()) {
+      if (!llvm::isa<FeltType>(arg.getType())) {
         constrainFunc.emitOpError("All input arguments must be of felt type").report();
         signalPassFailure();
         return;

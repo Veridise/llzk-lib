@@ -51,6 +51,7 @@ class InlineIncludesPass : public llzk::include::impl::InlineIncludesPassBase<In
             for (auto it = includeStack.rbegin(); it != includeStack.rend(); ++it) {
               err.attachNote(it->second).append("included from here");
             }
+            err.report();
           } else {
             includeStack.push_back(std::make_pair(incOp.getPath(), incOp.getLoc()));
             FailureOr<ModuleOp> result = incOp.inlineAndErase();

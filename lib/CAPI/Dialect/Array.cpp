@@ -47,7 +47,7 @@ llzkArrayTypeGetWithNumericDims(MlirType elementType, intptr_t nDims, int64_t co
   return wrap(ArrayType::get(unwrap(elementType), ArrayRef(dims, nDims)));
 }
 
-bool llzkTypeIsAArrayType(MlirType type) { return mlir::isa<ArrayType>(unwrap(type)); }
+bool llzkTypeIsAArrayType(MlirType type) { return llvm::isa<ArrayType>(unwrap(type)); }
 
 MlirType llzkArrayTypeGetElementType(MlirType type) {
   return wrap(mlir::unwrap_cast<ArrayType>(type).getElementType());
@@ -69,10 +69,12 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     CreateArrayOp, WithValues, MlirType arrayType, intptr_t nValues, MlirValue const *values
 ) {
   SmallVector<Value> valueSto;
-  return wrap(create<CreateArrayOp>(
-      builder, location, mlir::unwrap_cast<ArrayType>(arrayType),
-      ValueRange(unwrapList(nValues, values, valueSto))
-  ));
+  return wrap(
+      create<CreateArrayOp>(
+          builder, location, mlir::unwrap_cast<ArrayType>(arrayType),
+          ValueRange(unwrapList(nValues, values, valueSto))
+      )
+  );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
@@ -80,10 +82,12 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     MlirValueRange const *mapOperands, MlirAttribute numDimsPerMap
 ) {
   MapOperandsHelper<> mapOps(nMapOperands, mapOperands);
-  return wrap(create<CreateArrayOp>(
-      builder, location, mlir::unwrap_cast<ArrayType>(arrayType), *mapOps,
-      mlir::unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap)
-  ));
+  return wrap(
+      create<CreateArrayOp>(
+          builder, location, mlir::unwrap_cast<ArrayType>(arrayType), *mapOps,
+          mlir::unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap)
+      )
+  );
 }
 
 /// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
@@ -92,8 +96,10 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     MlirValueRange const *mapOperands, intptr_t nNumsDimsPerMap, int32_t const *numDimsPerMap
 ) {
   MapOperandsHelper<> mapOps(nMapOperands, mapOperands);
-  return wrap(create<CreateArrayOp>(
-      builder, location, mlir::unwrap_cast<ArrayType>(arrayType), *mapOps,
-      ArrayRef(numDimsPerMap, nNumsDimsPerMap)
-  ));
+  return wrap(
+      create<CreateArrayOp>(
+          builder, location, mlir::unwrap_cast<ArrayType>(arrayType), *mapOps,
+          ArrayRef(numDimsPerMap, nNumsDimsPerMap)
+      )
+  );
 }

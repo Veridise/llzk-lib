@@ -33,7 +33,8 @@
 #include <optional>
 
 using namespace mlir;
-using namespace mlir::dataflow;
+using Executable = mlir::dataflow::Executable;
+using CFGEdge = mlir::dataflow::CFGEdge;
 
 namespace llzk {
 
@@ -45,11 +46,12 @@ namespace dataflow {
 // Utilities
 //===----------------------------------------------------------------------===//
 
-void markAllOpsAsLive(mlir::DataFlowSolver &solver, mlir::Operation *top) {
-  for (mlir::Region &region : top->getRegions()) {
-    for (mlir::Block &block : region) {
-      (void)solver.getOrCreateState<mlir::dataflow::Executable>(&block)->setToLive();
-      for (mlir::Operation &oper : block) {
+void markAllOpsAsLive(DataFlowSolver &solver, Operation *top) {
+  for (Region &region : top->getRegions()) {
+    for (Block &block : region) {
+      ProgramPoint *point = solver.getProgramPointBefore(&block);
+      (void)solver.getOrCreateState<Executable>(point)->setToLive();
+      for (Operation &oper : block) {
         markAllOpsAsLive(solver, &oper);
       }
     }
@@ -62,7 +64,9 @@ void markAllOpsAsLive(mlir::DataFlowSolver &solver, mlir::Operation *top) {
 
 LogicalResult AbstractDenseForwardDataFlowAnalysis::initialize(Operation *top) {
   // Visit every operation and block.
-  processOperation(top);
+  if (failed(processOperation(top))) {
+    return failure();
+  }
   for (Region &region : top->getRegions()) {
     for (Block &block : region) {
       visitBlock(&block);
@@ -76,14 +80,11 @@ LogicalResult AbstractDenseForwardDataFlowAnalysis::initialize(Operation *top) {
   return success();
 }
 
-LogicalResult AbstractDenseForwardDataFlowAnalysis::visit(ProgramPoint point) {
-  if (auto *op = llvm::dyn_cast_if_present<Operation *>(point)) {
-    processOperation(op);
-  } else if (auto *block = llvm::dyn_cast_if_present<Block *>(point)) {
-    visitBlock(block);
-  } else {
-    return failure();
+LogicalResult AbstractDenseForwardDataFlowAnalysis::visit(ProgramPoint *point) {
+  if (!point->isBlockStart()) {
+    return processOperation(point->getPrevOp());
   }
+  visitBlock(point->getBlock());
   return success();
 }
 
@@ -96,15 +97,14 @@ void AbstractDenseForwardDataFlowAnalysis::visitCallOperation(
   // when the analysis is explicitly marked as non-interprocedural.
   auto callable = resolveCallable<FuncDefOp>(tables, call);
   if (!getSolverConfig().isInterprocedural() ||
-      (mlir::succeeded(callable) && !callable->get().getCallableRegion())) {
+      (succeeded(callable) && !callable->get().getCallableRegion())) {
     return visitCallControlFlowTransfer(call, CallControlFlowAction::ExternalCallee, before, after);
   }
 
   /// LLZK: The PredecessorState Analysis state does not work for LLZK's custom calls.
   /// We therefore accumulate predecessor operations (return ops) manually.
   SmallVector<Operation *> predecessors;
-  auto fnOp = callable.value().get();
-  fnOp.walk([&predecessors](ReturnOp ret) mutable { predecessors.push_back(ret); });
+  callable->get().walk([&predecessors](ReturnOp ret) mutable { predecessors.push_back(ret); });
 
   // If we have no predecessors, we cannot reason about dataflow, since there is
   // no return value.
@@ -128,56 +128,56 @@ void AbstractDenseForwardDataFlowAnalysis::visitCallOperation(
     //   }
     AbstractDenseLattice *latticeAfterCall = after;
     const AbstractDenseLattice *latticeAtCalleeReturn =
-        getLatticeFor(call.getOperation(), predecessor);
+        getLatticeFor(getProgramPointAfter(call.getOperation()), getProgramPointAfter(predecessor));
     visitCallControlFlowTransfer(
         call, CallControlFlowAction::ExitCallee, *latticeAtCalleeReturn, latticeAfterCall
     );
   }
 }
 
-void AbstractDenseForwardDataFlowAnalysis::processOperation(Operation *op) {
+LogicalResult AbstractDenseForwardDataFlowAnalysis::processOperation(Operation *op) {
+  ProgramPoint *point = getProgramPointAfter(op);
   // If the containing block is not executable, bail out.
-  if (!getOrCreateFor<Executable>(op, op->getBlock())->isLive()) {
-    return;
+  if (op->getBlock() != nullptr &&
+      !getOrCreateFor<Executable>(point, getProgramPointBefore(op->getBlock()))->isLive()) {
+    return success();
   }
 
   // Get the dense lattice to update.
-  AbstractDenseLattice *after = getLattice(op);
+  AbstractDenseLattice *after = getLattice(point);
 
   // Get the dense state before the execution of the op.
-  const AbstractDenseLattice *before;
-  if (Operation *prev = op->getPrevNode()) {
-    before = getLatticeFor(op, prev);
-  } else {
-    before = getLatticeFor(op, op->getBlock());
-  }
+  const AbstractDenseLattice *before = getLatticeFor(point, getProgramPointBefore(op));
 
   // If this op implements region control-flow, then control-flow dictates its
   // transfer function.
   if (auto branch = dyn_cast<RegionBranchOpInterface>(op)) {
-    return visitRegionBranchOperation(op, branch, after);
+    visitRegionBranchOperation(point, branch, after);
+    return success();
   }
 
   // If this is a call operation, then join its lattices across known return
   // sites.
   if (auto call = dyn_cast<CallOpInterface>(op)) {
-    return visitCallOperation(call, *before, after);
+    visitCallOperation(call, *before, after);
+    return success();
   }
 
   // Invoke the operation transfer function.
-  visitOperationImpl(op, *before, after);
+  return visitOperationImpl(op, *before, after);
 }
 
 /// LLZK: Removing use of PredecessorState because it does not work with LLZK's
 /// CallOp and FuncDefOp definitions.
 void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
   // If the block is not executable, bail out.
-  if (!getOrCreateFor<Executable>(block, block)->isLive()) {
+  ProgramPoint *point = getProgramPointBefore(block);
+  if (!getOrCreateFor<Executable>(point, point)->isLive()) {
     return;
   }
 
   // Get the dense lattice to update.
-  AbstractDenseLattice *after = getLattice(block);
+  AbstractDenseLattice *after = getLattice(point);
 
   // The dense lattices of entry blocks are set by region control-flow or the
   // callgraph.
@@ -190,12 +190,11 @@ void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
       }
       /// LLZK: Get callsites of the callable as the predecessors.
       auto moduleOpRes = getTopRootModule(callable.getOperation());
-      ensure(mlir::succeeded(moduleOpRes), "could not get root module from callable");
-
+      ensure(succeeded(moduleOpRes), "could not get root module from callable");
       SmallVector<Operation *> callsites;
       moduleOpRes->walk([this, &callable, &callsites](CallOp call) mutable {
         auto calledFnRes = resolveCallable<FuncDefOp>(tables, call);
-        if (mlir::succeeded(calledFnRes) &&
+        if (succeeded(calledFnRes) &&
             calledFnRes->get().getCallableRegion() == callable.getCallableRegion()) {
           callsites.push_back(call);
         }
@@ -203,12 +202,7 @@ void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
 
       for (Operation *callsite : callsites) {
         // Get the dense lattice before the callsite.
-        const AbstractDenseLattice *before;
-        if (Operation *prev = callsite->getPrevNode()) {
-          before = getLatticeFor(block, prev);
-        } else {
-          before = getLatticeFor(block, callsite->getBlock());
-        }
+        const AbstractDenseLattice *before = getLatticeFor(point, getProgramPointBefore(callsite));
 
         visitCallControlFlowTransfer(
             llvm::cast<CallOpInterface>(callsite), CallControlFlowAction::EnterCallee, *before,
@@ -220,7 +214,7 @@ void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
 
     // Check if we can reason about the control-flow.
     if (auto branch = dyn_cast<RegionBranchOpInterface>(block->getParentOp())) {
-      return visitRegionBranchOperation(block, branch, after);
+      return visitRegionBranchOperation(point, branch, after);
     }
 
     // Otherwise, we can't reason about the data-flow.
@@ -231,45 +225,34 @@ void AbstractDenseForwardDataFlowAnalysis::visitBlock(Block *block) {
   for (Block::pred_iterator it = block->pred_begin(), e = block->pred_end(); it != e; ++it) {
     // Skip control edges that aren't executable.
     Block *predecessor = *it;
-    if (!getOrCreateFor<Executable>(block, getProgramPoint<CFGEdge>(predecessor, block))
+    if (!getOrCreateFor<Executable>(point, getLatticeAnchor<CFGEdge>(predecessor, block))
              ->isLive()) {
       continue;
     }
 
     // Merge in the state from the predecessor's terminator.
-    join(after, *getLatticeFor(block, predecessor->getTerminator()));
+    join(after, *getLatticeFor(point, getProgramPointAfter(predecessor->getTerminator())));
   }
 }
 
+/// LLZK: Removing use of PredecessorState because it does not work with LLZK's lookup logic.
 void AbstractDenseForwardDataFlowAnalysis::visitRegionBranchOperation(
-    ProgramPoint point, RegionBranchOpInterface branch, AbstractDenseLattice *after
+    ProgramPoint *point, RegionBranchOpInterface branch, AbstractDenseLattice *after
 ) {
-  // LLZK: Removing use of PredecessorState analysis, which does not work for LLZK's
-  // lookup logic.
-  Operation *op = nullptr;
-  if (point.is<Block *>()) {
-    op = point.get<Block *>()->getParentOp();
-  } else if (point.is<Operation *>()) {
-    op = point.get<Operation *>();
-  }
+  Operation *op = point->isBlockStart() ? point->getBlock()->getParentOp() : point->getPrevOp();
   if (op) {
     const AbstractDenseLattice *before;
     // If the predecessor is the parent, get the state before the parent.
     if (op == branch) {
-      if (Operation *prev = op->getPrevNode()) {
-        before = getLatticeFor(point, prev);
-      } else {
-        before = getLatticeFor(point, op->getBlock());
-      }
-
+      before = getLatticeFor(point, getProgramPointBefore(op));
       // Otherwise, get the state after the terminator.
     } else {
-      before = getLatticeFor(point, op);
+      before = getLatticeFor(point, getProgramPointAfter(op));
     }
 
     // This function is called in two cases:
-    //   1. when visiting the block (point = block);
-    //   2. when visiting the parent operation (point = parent op).
+    //   1. when visiting the block (point = block start);
+    //   2. when visiting the parent operation (point = iter after parent op).
     // In both cases, we are looking for predecessor operations of the point,
     //   1. predecessor may be the terminator of another block from another
     //   region (assuming that the block does belong to another region via an
@@ -282,11 +265,11 @@ void AbstractDenseForwardDataFlowAnalysis::visitRegionBranchOperation(
     // affected by the region.
     std::optional<unsigned> regionFrom =
         op == branch ? std::optional<unsigned>() : op->getBlock()->getParent()->getRegionNumber();
-    if (auto *toBlock = point.dyn_cast<Block *>()) {
-      unsigned regionTo = toBlock->getParent()->getRegionNumber();
+    if (point->isBlockStart()) {
+      unsigned regionTo = point->getBlock()->getParent()->getRegionNumber();
       visitRegionBranchControlFlowTransfer(branch, regionFrom, regionTo, *before, after);
     } else {
-      assert(point.get<Operation *>() == branch && "expected to be visiting the branch itself");
+      assert(point->getPrevOp() == branch && "expected to be visiting the branch itself");
       // Only need to call the arc transfer when the predecessor is the region
       // or the op itself, not the previous op.
       if (op->getParentOp() == branch || op == branch) {
@@ -301,8 +284,8 @@ void AbstractDenseForwardDataFlowAnalysis::visitRegionBranchOperation(
 }
 
 const AbstractDenseLattice *
-AbstractDenseForwardDataFlowAnalysis::getLatticeFor(ProgramPoint dependent, ProgramPoint point) {
-  AbstractDenseLattice *state = getLattice(point);
+AbstractDenseForwardDataFlowAnalysis::getLatticeFor(ProgramPoint *dependent, LatticeAnchor anchor) {
+  AbstractDenseLattice *state = getLattice(anchor);
   addDependency(state, dependent);
   return state;
 }
