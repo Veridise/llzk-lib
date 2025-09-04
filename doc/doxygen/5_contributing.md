@@ -12,7 +12,7 @@ In this guide you will get an overview of our overarching philosophy, as well as
 
 To keep the LLZK codebase maintainable and approachable, we follow these guiding principles for all contributions:
 
-1. **Testing, testing, testing.** Every PR should come with thorough tests (especially lit tests) that demonstrate the behavior of the new feature/changes. Good tests make your PR easier to review and maintain, as test serve as both demonstrations of correctness and working examples.
+1. **Testing, testing, testing.** Every PR should come with thorough tests (especially lit tests) that demonstrate the behavior of the new feature/changes. Good tests make your PR easier to review and maintain, as tests serve as both demonstrations of correctness and working examples.
 2. **Document thoroughly.** New features should be documented clearly (e.g., with TableGen docs for passes). Documentation should describe both the *intent* and the *operation* of the feature.
 3. **Small PRs are better.** Large PRs are difficult to review. We would prefer to review a sequence of smaller PRs that gradually extend functionality rather than a single large PR. For example, start with a PR handling the simplest cases (with more complex cases as "TODOs"), and then extend support in subsequent PRs.
 4. **Readable over clever.** Code should be simple and understandable. If you must choose between a highly optimized solution and a readable one, choose readability. Optimizations can always come later.
@@ -62,10 +62,10 @@ When you're finished with the changes, create a _pull request_, also known as a 
 Before submitting your PR, ensure you have:
 
 - [ ] Added lit and/or unit tests covering all relevant cases.
-- [ ] Updated TableGen or other documentation to describe new features.
+- [ ] Updated TableGen and/or other documentation to describe new features.
 - [ ] Added a changelog. All PRs require a changelog describing what user-level changes have been made in the PR. To create a template changelog, run `create-changelog` from the nix shell.
 - [ ] [Linked the PR to an existing issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue), if applicable.
-- [ ] Enable the checkbox to [allow maintainer edits](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/allowing-changes-to-a-pull-request-branch-created-from-a-fork) so the branch can be updated for a merge.
+- [ ] Enabled the checkbox to [allow maintainer edits](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/allowing-changes-to-a-pull-request-branch-created-from-a-fork) so the branch can be updated for a merge.
 
 #### Pull Request Review
 
