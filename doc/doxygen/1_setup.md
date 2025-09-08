@@ -113,7 +113,7 @@ popd # back to third-party
 popd # back to top level
 
 # Use an alias to avoid "prefixed in the source directory" CMake error.
-ln -sv $INSTALL_ROOT ~/llvm-install-root-llzklib
+ln -s $INSTALL_ROOT ~/llvm-install-root-llzklib
 export INSTALL_ROOT=~/llvm-install-root-llzklib
 export LIT_PATH=$PWD/third-party/llvm-project/llvm/utils/lit/lit.py
 
