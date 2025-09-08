@@ -1,0 +1,102 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+//////////////////////////////////////////////////////////////////////////////////
+// Circom source
+//////////////////////////////////////////////////////////////////////////////////
+// template IsZero() {
+//     signal input in;
+//     signal output out;
+//
+//     signal inv;
+//
+//     inv <-- in!=0 ? 1/in : 0; // semantics of `felt.inv` captures the full line
+//
+//     out <== -in*inv +1;
+//     in*out === 0;
+// }
+//////////////////////////////////////////////////////////////////////////////////
+// Simplified LLZK-like syntax using return/args instead of fields.
+//////////////////////////////////////////////////////////////////////////////////
+// struct.def @IsZero {
+//   function.def @compute(%in: !felt.type) -> (!felt.type, !felt.type) {
+//     %const_1 = felt.const 1
+//     %inv = felt.inv %in
+//     %4 = felt.neg %in
+//     %5 = felt.mul %4, %inv
+//     %out = felt.add %5, %const_1
+//     function.return %out, %inv
+//   }
+//
+//   function.def @constrain(%out: !felt.type, %inv !felt.type, %in: !felt.type) {
+//     %const_0 = felt.const 0
+//     %const_1 = felt.const 1
+//     %4 = felt.neg %in
+//     %5 = felt.mul %4, %inv
+//     %6 = felt.add %5, %const_1
+//     constrain.eq %out, %6 : !felt.type
+//     %7 = felt.mul %in, %out
+//     constrain.eq %7, %const_0 : !felt.type
+//     function.return
+//   }
+// }
+//////////////////////////////////////////////////////////////////////////////////
+module attributes {veridise.lang = "llzk"} {
+  struct.def @IsZero {
+    struct.field @out: !felt.type {llzk.pub}
+    struct.field @inv: !felt.type
+
+    function.def @compute(%in: !felt.type) -> !struct.type<@IsZero> {
+      %self = struct.new : !struct.type<@IsZero>
+      %const_1 = felt.const 1
+      %inv = felt.inv %in
+      struct.writef %self[@inv] = %inv : !struct.type<@IsZero>, !felt.type
+      %4 = felt.neg %in
+      %5 = felt.mul %4, %inv
+      %out = felt.add %5, %const_1
+      struct.writef %self[@out] = %out : !struct.type<@IsZero>, !felt.type
+      function.return %self: !struct.type<@IsZero>
+    }
+
+    function.def @constrain(%self: !struct.type<@IsZero>, %in: !felt.type) {
+      %const_0 = felt.const 0
+      %const_1 = felt.const 1
+      %out = struct.readf %self[@out] : !struct.type<@IsZero>, !felt.type
+      %inv = struct.readf %self[@inv] : !struct.type<@IsZero>, !felt.type
+      %4 = felt.neg %in
+      %5 = felt.mul %4, %inv
+      %6 = felt.add %5, %const_1
+      constrain.eq %out, %6 : !felt.type
+      %7 = felt.mul %in, %out
+      constrain.eq %7, %const_0 : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: struct.def @IsZero {
+// CHECK-NEXT:    struct.field @out : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.field @inv : !felt.type
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@IsZero> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@IsZero>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.inv %[[V0]] : !felt.type
+// CHECK-NEXT:      struct.writef %[[V1]][@inv] = %[[V3]] : <@IsZero>, !felt.type
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = felt.neg %[[V0]] : !felt.type
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = felt.mul %[[V4]], %[[V3]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = felt.add %[[V5]], %[[V2]] : !felt.type, !felt.type
+// CHECK-NEXT:      struct.writef %[[V1]][@out] = %[[V6]] : <@IsZero>, !felt.type
+// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@IsZero>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@IsZero>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@out] : <@IsZero>, !felt.type
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readf %[[V7]][@inv] : <@IsZero>, !felt.type
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = felt.neg %[[V8]] : !felt.type
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = felt.mul %[[V13]], %[[V12]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = felt.add %[[V14]], %[[V10]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V11]], %[[V15]] : !felt.type, !felt.type
+// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = felt.mul %[[V8]], %[[V11]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[V16]], %[[V9]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
