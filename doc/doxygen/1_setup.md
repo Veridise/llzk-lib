@@ -119,6 +119,7 @@ export LIT_PATH=$PWD/third-party/llvm-project/llvm/utils/lit/lit.py
 
 # Generate LLZK build configuration.
 # You can set BUILD_TESTING=off if you don't want to enable tests.
+# You can set CMAKE_BUILD_TYPE=DebWithSans if you want to enable sanitizers.
 mkdir build && cd build
 cmake .. -GNinja \
   -DLLVM_ROOT="$INSTALL_ROOT" \
