@@ -27,7 +27,29 @@
   outputs = { self, nixpkgs, flake-utils, llzk-pkgs, release-helpers }:
     {
       # First, we define the packages used in this repository/flake
-      overlays.default = final: prev: {
+      overlays.default = final: prev: let
+        mkLlzkDebWithSans = stdenv: reportName:
+          (final.llzk_debug.override { inherit stdenv; }).overrideAttrs(attrs: {
+            cmakeBuildType = "DebWithSans";
+            NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "")
+              + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
+
+            # Disable container overflow checks because it can give false positives in
+            # newGeneralRewritePatternSet() since LLVM itself is not built with ASan.
+            # https://github.com/google/sanitizers/wiki/AddressSanitizerContainerOverflow#false-positives
+            preBuild = ''
+              export ASAN_OPTIONS=detect_container_overflow=0
+            '' + attrs.preBuild;
+
+            postInstall = ''
+              if [ -f test/report.xml ]; then
+                mkdir -p $out/artifacts
+                echo "-- Copying xUnit report to $out/artifacts/${reportName}-report.xml"
+                cp test/report.xml $out/artifacts/${reportName}-report.xml
+              fi
+            '';
+          });
+      in {
         llzk = final.callPackage ./nix/llzk.nix {
           clang = final.clang_20;
           mlir_pkg = final.mlir;
@@ -44,31 +66,8 @@
           mlir_pkg = final.mlirWithPython;
         };
 
-        llzkDebWithSansGCC = (final.llzk_debug.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
-          cmakeBuildType = "DebWithSans";
-          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
-
-          postInstall = ''
-            if [ -f test/report.xml ]; then
-              mkdir -p $out/artifacts
-              echo "-- Copying xUnit report to $out/artifacts/gcc-report.xml"
-              cp test/report.xml $out/artifacts/gcc-report.xml
-            fi
-          '';
-        });
-
-        llzkDebWithSansClang = (final.llzk_debug.override { stdenv = final.clangStdenv; }).overrideAttrs(attrs: {
-          cmakeBuildType = "DebWithSans";
-          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
-
-          postInstall = ''
-            if [ -f test/report.xml ]; then
-              mkdir -p $out/artifacts
-              echo "-- Copying xUnit report to $out/artifacts/clang-report.xml"
-              cp test/report.xml $out/artifacts/clang-report.xml
-            fi
-          '';
-        });
+        llzkDebWithSansGCC   = mkLlzkDebWithSans final.gccStdenv   "gcc";
+        llzkDebWithSansClang = mkLlzkDebWithSans final.clangStdenv "clang";
 
         llzkDebWithSansClangCov = final.llzkDebWithSansClang.overrideAttrs(attrs: {
           postCheck = ''
@@ -161,11 +160,6 @@
 
               # Needed for using mlir-tblgen inside the dev shell
               export LD_LIBRARY_PATH=${pkgs.z3.lib}/lib:$LD_LIBRARY_PATH
-
-              # Disable container overflow checks because it can give false positives in
-              # newGeneralRewritePatternSet() since LLVM itself is not built with ASan.
-              # https://github.com/google/sanitizers/wiki/AddressSanitizerContainerOverflow#false-positives
-              export ASAN_OPTIONS=detect_container_overflow=0
             '';
           });
         };
