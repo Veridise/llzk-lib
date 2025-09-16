@@ -9,7 +9,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @identity(%x: !felt.type) -> !felt.type {
-    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
+    // expected-error@+1 {{'struct.def' op cannot be nested within 'function.def' operations}}
     struct.def @ComponentA {}
     function.return %x: !felt.type
   }

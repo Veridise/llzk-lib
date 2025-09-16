@@ -233,6 +233,20 @@ LogicalResult FuncDefOp::verify() {
       return failure();
     }
   }
+  // Ensure that the function does not contain nested modules or struct definitions.
+  WalkResult res = this->walk<WalkOrder::PreOrder>([this](Operation *op) {
+    if (mlir::isa<ModuleOp, StructDefOp>(op)) {
+      getEmitOpErrFn(op)().append(
+          "cannot be nested within '", getOperation()->getName(), "' operations"
+      );
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  if (res.wasInterrupted()) {
+    return failure();
+  }
+
   return success();
 }
 
