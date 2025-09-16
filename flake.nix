@@ -57,6 +57,7 @@
         llzk_debug = final.callPackage ./nix/llzk.nix {
           clang = final.clang_20;
           mlir_pkg = final.mlir_debug;
+          cmakeBuildType = "Debug";
         };
 
         mlirWithPython = final.mlir.override {

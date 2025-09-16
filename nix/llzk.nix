@@ -6,7 +6,9 @@
   mlir_pkg, nlohmann_json,
 
   # test dependencies
-  gtest, python3, lit, z3, cvc5
+  gtest, python3, lit, z3, cvc5,
+
+  cmakeBuildType ? "Release"
 }:
 
 stdenv.mkDerivation {
@@ -40,6 +42,7 @@ stdenv.mkDerivation {
   ];
 
   cmakeFlags = [
+    "-DCMAKE_BUILD_TYPE=${cmakeBuildType}"
     "-DLLZK_BUILD_DEVTOOLS=ON"
   ];
 
