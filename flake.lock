@@ -63,11 +63,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1745285208,
-        "narHash": "sha256-e3egycUQrYO/lfmiqTGV11iv2/iLP0koPoHFZI0LP3s=",
+        "lastModified": 1747068965,
+        "narHash": "sha256-px7s7IVHnR3SiShc7FKCUiL6vfqew5AM6jnkH7qO03I=",
         "owner": "Veridise",
         "repo": "open-source-release-helpers",
-        "rev": "6eb64656f26ee534ecae22bf02f8aa8d8eb23e97",
+        "rev": "c3d1ab6082cc62b167927d074f2836f290b9e3b7",
         "type": "github"
       },
       "original": {
