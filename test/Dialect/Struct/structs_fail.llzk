@@ -9,7 +9,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   function.def @identity(%x: !felt.type) -> !felt.type {
-    // expected-error@+1 {{'struct.def' op cannot be nested within 'function.def' operations}}
+    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
     struct.def @ComponentA {}
     function.return %x: !felt.type
   }
@@ -372,4 +372,45 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+// -----
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Foo {
+    function.def @compute() -> !struct.type<@Foo> {
+      %self = struct.new : !struct.type<@Foo>
+      function.return %self : !struct.type<@Foo>
+    }
 
+    function.def @constrain(%self: !struct.type<@Foo>) {
+      function.return
+    }
+
+    // expected-error@+1 {{'builtin.module' op invalid operation in 'struct.def'; only 'struct.field' and 'function.def' operations are permitted}}
+    builtin.module @InvalidNestedModule {}
+  }
+}
+
+// -----
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Foo {
+    function.def @compute() -> !struct.type<@Foo> {
+      %self = struct.new : !struct.type<@Foo>
+      function.return %self : !struct.type<@Foo>
+    }
+
+    function.def @constrain(%self: !struct.type<@Foo>) {
+      function.return
+    }
+
+    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
+    struct.def @InvalidNestedStruct {
+      function.def @compute() {
+        %self = struct.new : !struct.type<@InvalidNestedStruct>
+        function.return %self : !struct.type<@InvalidNestedStruct>
+      }
+
+      function.def @constrain(%self: !struct.type<@InvalidNestedStruct>) {
+        function.return
+      }
+    }
+  }
+}

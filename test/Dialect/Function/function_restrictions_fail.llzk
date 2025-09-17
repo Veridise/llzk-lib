@@ -802,7 +802,7 @@ builtin.module attributes {veridise.lang = "llzk"} {
 // -----
 builtin.module attributes {veridise.lang = "llzk"} {
   function.def @free_func() {
-    // expected-error@+1 {{'struct.def' op cannot be nested within 'function.def' operations}}
+    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
     struct.def @ComponentG {
       function.def @compute() -> !struct.type<@ComponentG> {
         %self = struct.new : !struct.type<@ComponentG>
