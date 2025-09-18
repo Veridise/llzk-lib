@@ -41,7 +41,7 @@ LogicalResult FeltToIndexOp::verify() {
       visited.insert(v);
 
       if (Operation *op = v.getDefiningOp()) {
-        if (FieldReadOp readf = mlir::dyn_cast<FieldReadOp>(op);
+        if (FieldReadOp readf = llvm::dyn_cast<FieldReadOp>(op);
             readf && isSignalType(readf.getComponent().getType())) {
           return (emitOpError() << "input is derived from a Signal struct, which is "
                                 << "only valid within a '" << FuncDefOp::getOperationName()

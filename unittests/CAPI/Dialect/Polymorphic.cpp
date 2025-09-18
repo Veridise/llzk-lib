@@ -16,7 +16,9 @@
 #include "../CAPITestBase.h"
 
 TEST_F(CAPITest, mlir_get_dialect_handle_llzk_polymorphic) {
-  { mlirGetDialectHandle__llzk__polymorphic__(); }
+  {
+    mlirGetDialectHandle__llzk__polymorphic__();
+  }
 }
 
 TEST_F(CAPITest, llzk_type_var_type_get) {

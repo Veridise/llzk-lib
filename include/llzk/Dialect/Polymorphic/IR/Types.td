@@ -58,7 +58,7 @@ def TypeVarType : PolymorphicDialectType<"TypeVar", "tvar"> {
 // Type constraint matching only the given Type or TypeVarType.
 class VarTypeOr<Type allowedConcreteType, string text = TypeVarSummary.r>
     : Type<CPred<"::llvm::isa<llzk::polymorphic::"
-                 "TypeVarType,"#allowedConcreteType.cppClassName#">($_self)">,
+                 "TypeVarType,"#allowedConcreteType.cppType#">($_self)">,
            allowedConcreteType.summary#" or "#text, "::mlir::Type">;
 
 #endif // LLZK_POLYMORPHIC_TYPES

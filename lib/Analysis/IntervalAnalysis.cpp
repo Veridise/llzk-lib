@@ -78,9 +78,10 @@ div(llvm::SMTSolverRef solver, DivFeltOp op, const ExpressionValue &lhs,
   auto divRes = lhs.i / rhs.i;
   if (failed(divRes)) {
     op->emitWarning(
-        "divisor is not restricted to non-zero values, leading to potential divide-by-zero error."
-        " Range of division result will be treated as unbounded."
-    );
+          "divisor is not restricted to non-zero values, leading to potential divide-by-zero error."
+          " Range of division result will be treated as unbounded."
+    )
+        .report();
     res.i = Interval::Entire(lhs.getField());
   } else {
     res.i = *divRes;
@@ -407,12 +408,7 @@ void IntervalDataFlowAnalysis::visitCallControlFlowTransfer(
   else if (action == dataflow::CallControlFlowAction::ExitCallee) {
     // Get the argument values of the lattice by getting the state as it would
     // have been for the callsite.
-    dataflow::AbstractDenseLattice *beforeCall = nullptr;
-    if (auto *prev = call->getPrevNode()) {
-      beforeCall = getLattice(prev);
-    } else {
-      beforeCall = getLattice(call->getBlock());
-    }
+    const dataflow::AbstractDenseLattice *beforeCall = getLattice(getProgramPointBefore(call));
     ensure(beforeCall, "could not get prior lattice");
 
     // The lattice at the return is the lattice before the call
@@ -432,16 +428,15 @@ void IntervalDataFlowAnalysis::visitCallControlFlowTransfer(
   }
 }
 
-void IntervalDataFlowAnalysis::visitOperation(
-    Operation *op, const Lattice &before, Lattice *after
-) {
+mlir::LogicalResult
+IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, Lattice *after) {
   ChangeResult changed = after->join(before);
 
-  llvm::SmallVector<LatticeValue> operandVals;
-
-  auto constrainRefLattice = _dataflowSolver.lookupState<ConstrainRefLattice>(op);
+  ProgramPoint *pp = _dataflowSolver.getProgramPointAfter(op);
+  auto constrainRefLattice = _dataflowSolver.lookupState<ConstrainRefLattice>(pp);
   ensure(constrainRefLattice, "failed to get lattice");
 
+  llvm::SmallVector<LatticeValue> operandVals;
   for (OpOperand &operand : op->getOpOperands()) {
     Value val = operand.get();
     // First, lookup the operand value in the before state.
@@ -455,7 +450,7 @@ void IntervalDataFlowAnalysis::visitOperation(
     // We only care about scalar type values, so we ignore composite types, which
     // are currently limited to non-Signal structs and arrays.
     Type valTy = val.getType();
-    if (mlir::isa<ArrayType, StructType>(valTy) && !isSignalType(valTy)) {
+    if (llvm::isa<ArrayType, StructType>(valTy) && !isSignalType(valTy)) {
       operandVals.push_back(LatticeValue());
       continue;
     }
@@ -467,15 +462,21 @@ void IntervalDataFlowAnalysis::visitOperation(
       // If we can't compute the reference, then there must be some unsupported
       // op the reference analysis cannot handle. We emit a warning and return
       // early, since there's no meaningful computation we can do for this op.
-      op->emitWarning() << "state of " << val
-                        << " is empty; defining operation is unsupported by constrain ref analysis";
+      op->emitWarning()
+          .append(
+              "state of ", val,
+              " is empty; defining operation is unsupported by constrain ref analysis"
+          )
+          .report();
       propagateIfChanged(after, changed);
-      return;
+      // We still return success so we can return overapproximated and partial
+      // results to the user.
+      return success();
     } else if (!refSet.isSingleValue()) {
       std::string warning;
       debug::Appender(warning) << "operand " << val << " is not a single value " << refSet
                                << ", overapproximating";
-      op->emitWarning(warning);
+      op->emitWarning(warning).report();
       // Here, we will override the prior lattice value with a new symbol, representing
       // "any" value, then use that value for the operands.
       ExpressionValue anyVal(field.get(), createFeltSymbol(val));
@@ -508,7 +509,7 @@ void IntervalDataFlowAnalysis::visitOperation(
     }
 
     changed |= after->setValue(op->getResult(0), result);
-  } else if (EmitEqualityOp emitEq = mlir::dyn_cast<EmitEqualityOp>(op)) {
+  } else if (EmitEqualityOp emitEq = llvm::dyn_cast<EmitEqualityOp>(op)) {
     ensure(operandVals.size() == 2, "constraint op with the wrong number of operands");
     Value lhsVal = emitEq.getLhs(), rhsVal = emitEq.getRhs();
     ExpressionValue lhsExpr = operandVals[0].getScalarValue();
@@ -529,7 +530,7 @@ void IntervalDataFlowAnalysis::visitOperation(
     changed |= applyInterval(emitEq, after, lhsVal, constraint.getInterval());
     changed |= applyInterval(emitEq, after, rhsVal, constraint.getInterval());
     changed |= after->addSolverConstraint(constraint);
-  } else if (AssertOp assertOp = mlir::dyn_cast<AssertOp>(op)) {
+  } else if (AssertOp assertOp = llvm::dyn_cast<AssertOp>(op)) {
     ensure(operandVals.size() == 1, "assert op with the wrong number of operands");
     // assert enforces that the operand is true. So we apply an interval of [1, 1]
     // to the operand.
@@ -540,7 +541,7 @@ void IntervalDataFlowAnalysis::visitOperation(
     // Also add the solver constraint that the expression must be true.
     auto assertExpr = operandVals[0].getScalarValue();
     changed |= after->addSolverConstraint(assertExpr);
-  } else if (auto readf = mlir::dyn_cast<FieldReadOp>(op)) {
+  } else if (auto readf = llvm::dyn_cast<FieldReadOp>(op)) {
     if (isSignalType(readf.getComponent().getType())) {
       // The reg value read from the signal type is equal to the value of the Signal
       // struct overall.
@@ -551,7 +552,7 @@ void IntervalDataFlowAnalysis::visitOperation(
       // The result value is the value previously written to this field.
       changed |= after->setValue(readf.getVal(), storedVal->getScalarValue());
     }
-  } else if (auto writef = mlir::dyn_cast<FieldWriteOp>(op)) {
+  } else if (auto writef = llvm::dyn_cast<FieldWriteOp>(op)) {
     // Update values stored in a field
     ExpressionValue writeVal = operandVals[1].getScalarValue();
     changed |=
@@ -574,7 +575,8 @@ void IntervalDataFlowAnalysis::visitOperation(
     // Fetch the lattice of the parent operation
     Operation *parent = op->getParentOp();
     ensure(parent, "yield operation must have parent lattice");
-    auto *parentLattice = static_cast<IntervalAnalysisLattice *>(getLattice(parent));
+    auto *parentLattice =
+        static_cast<IntervalAnalysisLattice *>(getLattice(getProgramPointBefore(parent)));
     ensure(parentLattice, "could not fetch parent lattice");
     // Bind the operand values to the result values of the parent
     for (unsigned idx = 0; idx < yieldOp.getResults().size(); ++idx) {
@@ -603,12 +605,13 @@ void IntervalDataFlowAnalysis::visitOperation(
       // The analysis ignores definition ops.
       && !isDefinitionOp(op)
       // We do not need to analyze the creation of structs.
-      && !mlir::isa<CreateStructOp>(op)
+      && !llvm::isa<CreateStructOp>(op)
   ) {
-    op->emitWarning("unhandled operation, analysis may be incomplete");
+    op->emitWarning("unhandled operation, analysis may be incomplete").report();
   }
 
   propagateIfChanged(after, changed);
+  return success();
 }
 
 llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(const ConstrainRef &r) {
@@ -680,9 +683,11 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
                  .Case<XorBoolOp>([&](auto _) {
     return boolXor(smtSolver, lhs, rhs);
   }).Default([&](auto *unsupported) {
-    unsupported->emitWarning(
-        "unsupported binary arithmetic operation, defaulting to over-approximated intervals"
-    );
+    unsupported
+        ->emitWarning(
+            "unsupported binary arithmetic operation, defaulting to over-approximated intervals"
+        )
+        .report();
     return fallbackBinaryOp(smtSolver, unsupported, lhs, rhs);
   });
 
@@ -703,9 +708,11 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(Operation *op, const LatticeVal
                  .Case<NotBoolOp>([&](auto _) {
     return boolNot(smtSolver, val);
   }).Default([&](auto *unsupported) {
-    unsupported->emitWarning(
-        "unsupported unary arithmetic operation, defaulting to over-approximated interval"
-    );
+    unsupported
+        ->emitWarning(
+            "unsupported unary arithmetic operation, defaulting to over-approximated interval"
+        )
+        .report();
     return fallbackUnaryOp(smtSolver, unsupported, val);
   });
 
@@ -726,16 +733,9 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
   // To allow the dataflow analysis to do its fixed-point iteration, we need to
   // add the new expression to val's lattice as well.
   Lattice *valLattice = nullptr;
-  if (auto valOp = val.getDefiningOp()) {
-    // Getting the lattice at valOp gives us the "after" lattice, but we want to
-    // update the "before" lattice so that the inputs to visitOperation will be
-    // changed.
-    if (auto prev = valOp->getPrevNode()) {
-      valLattice = getOrCreate<Lattice>(prev);
-    } else {
-      valLattice = getOrCreate<Lattice>(valOp->getBlock());
-    }
-  } else if (auto blockArg = mlir::dyn_cast<BlockArgument>(val)) {
+  if (Operation *valOp = val.getDefiningOp()) {
+    valLattice = getLattice(getProgramPointBefore(valOp));
+  } else if (auto blockArg = llvm::dyn_cast<BlockArgument>(val)) {
     Operation *owningOp = blockArg.getOwner()->getParentOp();
     if (propagateInputConstraints) {
       // Apply the interval from the constrain function inputs to the compute function inputs
@@ -746,7 +746,7 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
         FuncDefOp computeFn = structOp.getComputeFuncOp();
         Operation *computeEntry = &computeFn.getRegion().front().front();
         BlockArgument computeArg = computeFn.getArgument(blockArg.getArgNumber() - 1);
-        Lattice *computeEntryLattice = getOrCreate<Lattice>(computeEntry);
+        Lattice *computeEntryLattice = getLattice(getProgramPointBefore(computeEntry));
         auto entryLatticeVal = computeEntryLattice->getValue(computeArg);
         ExpressionValue newArgVal;
         if (succeeded(entryLatticeVal)) {
@@ -762,9 +762,9 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
       }
     }
 
-    valLattice = getOrCreate<Lattice>(blockArg.getOwner());
+    valLattice = getLattice(getProgramPointBefore(blockArg.getOwner()));
   } else {
-    valLattice = getOrCreate<Lattice>(val);
+    valLattice = getLattice(val);
   }
   ensure(valLattice, "val should have a lattice");
   auto setNewVal = [&valLattice, &after, &val, &newLatticeVal, this]() {
@@ -876,7 +876,7 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
       newLhsInterval = lhsInterval.toUnreduced().computeGEPart(rhsInterval.toUnreduced()).reduce(f);
       newRhsInterval = rhsInterval.toUnreduced().computeLTPart(lhsInterval.toUnreduced()).reduce(f);
     } else {
-      cmpOp->emitWarning("unhandled cmp predicate");
+      cmpOp->emitWarning("unhandled cmp predicate").report();
       return ChangeResult::NoChange;
     }
 
@@ -1033,8 +1033,8 @@ StructIntervals::computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysis
                               ) {
     // Get the lattice at the end of the function.
     Operation *fnEnd = fn.getRegion().back().getTerminator();
-
-    const IntervalAnalysisLattice *lattice = solver.lookupState<IntervalAnalysisLattice>(fnEnd);
+    ProgramPoint *pp = solver.getProgramPointAfter(fnEnd);
+    const IntervalAnalysisLattice *lattice = solver.lookupState<IntervalAnalysisLattice>(pp);
 
     solverConstraints = lattice->getConstraints();
 

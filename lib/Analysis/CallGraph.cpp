@@ -45,7 +45,7 @@ mlir::Region *CallGraphNode::getCallableRegion() const {
 }
 
 FuncDefOp CallGraphNode::getCalledFunction() const {
-  return mlir::dyn_cast<FuncDefOp>(getCallableRegion()->getParentOp());
+  return llvm::dyn_cast<FuncDefOp>(getCallableRegion()->getParentOp());
 }
 
 /// Adds an reference edge to the given node. This is only valid on the
@@ -81,7 +81,7 @@ static void computeCallGraph(
     mlir::Operation *op, CallGraph &cg, mlir::SymbolTableCollection &symbolTable,
     CallGraphNode *parentNode, bool resolveCalls
 ) {
-  if (mlir::CallOpInterface call = mlir::dyn_cast<mlir::CallOpInterface>(op)) {
+  if (mlir::CallOpInterface call = llvm::dyn_cast<mlir::CallOpInterface>(op)) {
     // If there is no parent node, we ignore this operation. Even if this
     // operation was a call, there would be no callgraph node to attribute it
     // to.
@@ -92,7 +92,7 @@ static void computeCallGraph(
   }
 
   // Compute the callgraph nodes and edges for each of the nested operations.
-  if (mlir::CallableOpInterface callable = mlir::dyn_cast<mlir::CallableOpInterface>(op)) {
+  if (mlir::CallableOpInterface callable = llvm::dyn_cast<mlir::CallableOpInterface>(op)) {
     if (auto *callableRegion = callable.getCallableRegion()) {
       parentNode = cg.getOrAddNode(callableRegion, parentNode);
     } else {
@@ -127,7 +127,7 @@ CallGraph::CallGraph(mlir::Operation *op)
 /// Get or add a call graph node for the given region.
 CallGraphNode *CallGraph::getOrAddNode(mlir::Region *region, CallGraphNode *parentNode) {
   assert(
-      region && mlir::isa<mlir::CallableOpInterface>(region->getParentOp()) &&
+      region && llvm::isa<mlir::CallableOpInterface>(region->getParentOp()) &&
       "expected parent operation to be callable"
   );
   std::unique_ptr<CallGraphNode> &node = nodes[region];

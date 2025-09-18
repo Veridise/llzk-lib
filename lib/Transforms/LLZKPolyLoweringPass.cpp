@@ -73,7 +73,7 @@ private:
       return it->second;
     }
     // Handle function parameters (BlockArguments)
-    if (val.isa<BlockArgument>()) {
+    if (llvm::isa<BlockArgument>(val)) {
       memo[val] = 1;
       return 1;
     }

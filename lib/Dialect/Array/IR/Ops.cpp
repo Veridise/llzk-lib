@@ -131,12 +131,12 @@ SmallVector<DestructurableMemorySlot> CreateArrayOp::getDestructurableSlots() {
 /// Required by DestructurableAllocationOpInterface / SROA pass
 DenseMap<Attribute, MemorySlot> CreateArrayOp::destructure(
     const DestructurableMemorySlot &slot, const SmallPtrSetImpl<Attribute> &usedIndices,
-    RewriterBase &rewriter
+    OpBuilder &builder, SmallVectorImpl<DestructurableAllocationOpInterface> &newAllocators
 ) {
   assert(slot.ptr == getResult());
   assert(slot.elemType == getType());
 
-  rewriter.setInsertionPointAfter(*this);
+  builder.setInsertionPointAfter(*this);
 
   DenseMap<Attribute, MemorySlot> slotMap; // result
   for (Attribute index : usedIndices) {
@@ -145,12 +145,13 @@ DenseMap<Attribute, MemorySlot> CreateArrayOp::destructure(
     assert(indexAsArray && "expected ArrayAttr");
 
     Type destructAs = getType().getTypeAtIndex(indexAsArray);
-    assert(destructAs == slot.elementPtrs.lookup(indexAsArray));
+    assert(destructAs == slot.subelementTypes.lookup(indexAsArray));
 
     ArrayType destructAsArrayTy = llvm::dyn_cast<ArrayType>(destructAs);
     assert(destructAsArrayTy && "expected ArrayType");
 
-    auto subCreate = rewriter.create<CreateArrayOp>(getLoc(), destructAsArrayTy);
+    auto subCreate = builder.create<CreateArrayOp>(getLoc(), destructAsArrayTy);
+    newAllocators.push_back(subCreate);
     slotMap.try_emplace<MemorySlot>(index, {subCreate.getResult(), destructAs});
   }
 
@@ -158,11 +159,12 @@ DenseMap<Attribute, MemorySlot> CreateArrayOp::destructure(
 }
 
 /// Required by DestructurableAllocationOpInterface / SROA pass
-void CreateArrayOp::handleDestructuringComplete(
-    const DestructurableMemorySlot &slot, RewriterBase &rewriter
+std::optional<DestructurableAllocationOpInterface> CreateArrayOp::handleDestructuringComplete(
+    const DestructurableMemorySlot &slot, OpBuilder &builder
 ) {
   assert(slot.ptr == getResult());
-  rewriter.eraseOp(*this);
+  this->erase();
+  return std::nullopt;
 }
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
@@ -180,22 +182,24 @@ SmallVector<MemorySlot> CreateArrayOp::getPromotableSlots() {
 }
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
-Value CreateArrayOp::getDefaultValue(const MemorySlot &slot, RewriterBase &rewriter) {
-  return rewriter.create<undef::UndefOp>(getLoc(), slot.elemType);
+Value CreateArrayOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
+  return builder.create<undef::UndefOp>(getLoc(), slot.elemType);
 }
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
-void CreateArrayOp::handleBlockArgument(const MemorySlot &, BlockArgument, RewriterBase &) {}
+void CreateArrayOp::handleBlockArgument(const MemorySlot &, BlockArgument, OpBuilder &) {}
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
-void CreateArrayOp::handlePromotionComplete(
-    const MemorySlot &slot, Value defaultValue, RewriterBase &rewriter
+std::optional<PromotableAllocationOpInterface> CreateArrayOp::handlePromotionComplete(
+    const MemorySlot &slot, Value defaultValue, OpBuilder &builder
 ) {
   if (defaultValue.use_empty()) {
-    rewriter.eraseOp(defaultValue.getDefiningOp());
+    defaultValue.getDefiningOp()->erase();
   } else {
-    rewriter.eraseOp(*this);
+    this->erase();
   }
+  // Return `nullopt` because it produces only a single slot
+  return std::nullopt;
 }
 
 //===------------------------------------------------------------------===//
@@ -217,7 +221,7 @@ ArrayAttr ArrayAccessOpInterface::indexOperandsToAttributeArray() {
 /// Required by DestructurableAllocationOpInterface / SROA pass
 bool ArrayAccessOpInterface::canRewire(
     const DestructurableMemorySlot &slot, SmallPtrSetImpl<Attribute> &usedIndices,
-    SmallVectorImpl<MemorySlot> &mustBeSafelyUsed
+    SmallVectorImpl<MemorySlot> &mustBeSafelyUsed, const DataLayout &dataLayout
 ) {
   if (slot.ptr != getArrRef()) {
     return false;
@@ -241,7 +245,7 @@ bool ArrayAccessOpInterface::canRewire(
 /// Required by DestructurableAllocationOpInterface / SROA pass
 DeletionKind ArrayAccessOpInterface::rewire(
     const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
-    RewriterBase &rewriter
+    OpBuilder &builder, const DataLayout &dataLayout
 ) {
   assert(slot.ptr == getArrRef());
   assert(slot.elemType == getArrRefType());
@@ -252,13 +256,15 @@ DeletionKind ArrayAccessOpInterface::rewire(
   assert(indexAsAttr && "canRewire() should have returned false");
   const MemorySlot &memorySlot = subslots.at(indexAsAttr);
 
-  // Write to the sub-slot created for the index of `this`, using index 0
-  auto idx0 = rewriter.create<arith::ConstantIndexOp>(getLoc(), 0);
-  rewriter.modifyOpInPlace(*this, [&]() {
-    getArrRefMutable().set(memorySlot.ptr);
-    getIndicesMutable().clear();
-    getIndicesMutable().assign(idx0);
-  });
+  // Temporarily set insertion point before the current op for what's built below
+  OpBuilder::InsertionGuard guard(builder);
+  builder.setInsertionPoint(this->getOperation());
+
+  //  Write to the sub-slot created for the index of `this`, using index 0
+  getArrRefMutable().set(memorySlot.ptr);
+  getIndicesMutable().clear();
+  getIndicesMutable().assign(builder.create<arith::ConstantIndexOp>(getLoc(), 0));
+
   return DeletionKind::Keep;
 }
 
@@ -312,7 +318,7 @@ LogicalResult ReadArrayOp::verify() {
 /// Required by PromotableMemOpInterface / mem2reg pass
 bool ReadArrayOp::canUsesBeRemoved(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    SmallVectorImpl<OpOperand *> &newBlockingUses
+    SmallVectorImpl<OpOperand *> &newBlockingUses, const DataLayout &datalayout
 ) {
   if (blockingUses.size() != 1) {
     return false;
@@ -324,11 +330,11 @@ bool ReadArrayOp::canUsesBeRemoved(
 
 /// Required by PromotableMemOpInterface / mem2reg pass
 DeletionKind ReadArrayOp::removeBlockingUses(
-    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    RewriterBase &rewriter, Value reachingDefinition
+    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses, OpBuilder &builder,
+    Value reachingDefinition, const DataLayout &dataLayout
 ) {
   // `canUsesBeRemoved` checked this blocking use must be the loaded `slot.ptr`
-  rewriter.replaceAllUsesWith(getResult(), reachingDefinition);
+  getResult().replaceAllUsesWith(reachingDefinition);
   return DeletionKind::Delete;
 }
 
@@ -351,7 +357,7 @@ LogicalResult WriteArrayOp::verify() {
 /// Required by PromotableMemOpInterface / mem2reg pass
 bool WriteArrayOp::canUsesBeRemoved(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    SmallVectorImpl<OpOperand *> &newBlockingUses
+    SmallVectorImpl<OpOperand *> &newBlockingUses, const DataLayout &datalayout
 ) {
   if (blockingUses.size() != 1) {
     return false;
@@ -363,8 +369,7 @@ bool WriteArrayOp::canUsesBeRemoved(
 
 /// Required by PromotableMemOpInterface / mem2reg pass
 DeletionKind WriteArrayOp::removeBlockingUses(
-    const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    RewriterBase &rewriter, Value reachingDefinition
+    const MemorySlot &, const SmallPtrSetImpl<OpOperand *> &, OpBuilder &, Value, const DataLayout &
 ) {
   return DeletionKind::Delete;
 }

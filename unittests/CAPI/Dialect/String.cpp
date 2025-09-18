@@ -14,7 +14,9 @@
 #include "../CAPITestBase.h"
 
 TEST_F(CAPITest, mlir_get_dialect_handle_llzk_string) {
-  { mlirGetDialectHandle__llzk__string__(); }
+  {
+    mlirGetDialectHandle__llzk__string__();
+  }
 }
 
 TEST_F(CAPITest, llzk_string_type_get) {

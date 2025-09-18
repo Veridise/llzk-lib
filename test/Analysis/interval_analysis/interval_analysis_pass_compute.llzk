@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @BoolAnd {

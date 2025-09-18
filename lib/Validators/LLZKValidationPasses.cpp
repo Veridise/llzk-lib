@@ -52,13 +52,12 @@ class FieldWriteValidatorPass
           assert(structDef.getType() == write.getComponent().getType());
           StringRef writeToFieldName = write.getFieldName();
           if (FieldWriteOp earlierWrite = fieldNameToWriteOp.at(writeToFieldName)) {
-            write.emitWarning()
-                .append(
-                    "found multiple writes to '", FieldDefOp::getOperationName(), "' named \"@",
-                    writeToFieldName, '"'
-                )
-                .attachNote(earlierWrite.getLoc())
-                .append("earlier write here");
+            auto diag = write.emitWarning().append(
+                "found multiple writes to '", FieldDefOp::getOperationName(), "' named \"@",
+                writeToFieldName, '"'
+            );
+            diag.attachNote(earlierWrite.getLoc()).append("earlier write here");
+            diag.report();
           }
           fieldNameToWriteOp[writeToFieldName] = write;
         }
@@ -67,10 +66,12 @@ class FieldWriteValidatorPass
     // Finally, report a warning if any field was not written at all.
     for (auto &[a, b] : fieldNameToWriteOp) {
       if (!b) {
-        computeFunc.emitWarning().append(
-            '\'', FuncDefOp::getOperationName(), "' op \"@", FUNC_NAME_COMPUTE,
-            "\" missing write to '", FieldDefOp::getOperationName(), "' named \"@", a, '"'
-        );
+        computeFunc.emitWarning()
+            .append(
+                '\'', FuncDefOp::getOperationName(), "' op \"@", FUNC_NAME_COMPUTE,
+                "\" missing write to '", FieldDefOp::getOperationName(), "' named \"@", a, '"'
+            )
+            .report();
       }
     }
 

@@ -118,10 +118,14 @@ TEST_F(TypeTests, testShortString) {
   );
   EXPECT_EQ(
       "!s<@S1_43>",
-      BuildShortTypeString::from(StructType::get(
-          FlatSymbolRefAttr::get(&ctx, "S1"),
-          ArrayAttr::get(&ctx, ArrayRef<Attribute> {bldr.getIntegerAttr(bldr.getIndexType(), 43)})
-      ))
+      BuildShortTypeString::from(
+          StructType::get(
+              FlatSymbolRefAttr::get(&ctx, "S1"),
+              ArrayAttr::get(
+                  &ctx, ArrayRef<Attribute> {bldr.getIntegerAttr(bldr.getIndexType(), 43)}
+              )
+          )
+      )
   );
   {
     auto innerStruct = StructType::get(

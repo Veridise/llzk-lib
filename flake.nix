@@ -27,45 +27,50 @@
   outputs = { self, nixpkgs, flake-utils, llzk-pkgs, release-helpers }:
     {
       # First, we define the packages used in this repository/flake
-      overlays.default = final: prev: {
+      overlays.default = final: prev: let
+        mkLlzkDebWithSans = stdenv: reportName:
+          (final.llzk_debug.override { inherit stdenv; }).overrideAttrs(attrs: {
+            cmakeBuildType = "DebWithSans";
+            NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "")
+              + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
+
+            # Disable container overflow checks because it can give false positives in
+            # newGeneralRewritePatternSet() since LLVM itself is not built with ASan.
+            # https://github.com/google/sanitizers/wiki/AddressSanitizerContainerOverflow#false-positives
+            preBuild = ''
+              export ASAN_OPTIONS=detect_container_overflow=0
+            '' + attrs.preBuild;
+
+            postInstall = ''
+              if [ -f test/report.xml ]; then
+                mkdir -p $out/artifacts
+                echo "-- Copying xUnit report to $out/artifacts/${reportName}-report.xml"
+                cp test/report.xml $out/artifacts/${reportName}-report.xml
+              fi
+            '';
+          });
+      in {
+        llzk = final.callPackage ./nix/llzk.nix {
+          clang = final.clang_20;
+          mlir_pkg = final.mlir;
+        };
+        llzk_debug = final.callPackage ./nix/llzk.nix {
+          clang = final.clang_20;
+          mlir_pkg = final.mlir_debug;
+          cmakeBuildType = "Debug";
+        };
+
         mlirWithPython = final.mlir.override {
           enablePythonBindings = true;
         };
-
-        llzk = final.callPackage ./nix/llzk.nix { clang = final.clang_18; };
-
-        llzkDocs = final.llzk.overrideAttrs(attrs: {
-          nativeBuildInputs = attrs.nativeBuildInputs ++ [
-            final.doxygen final.graphviz
-            final.git final.cacert
-          ];
-          buildPhase = ''
-            cmake --build . --target doc -j$NIX_BUILD_CORES
-          '';
-          installPhase = ''
-            cp -r ./doc $out
-          '';
-          doCheck = false;
-        });
-
         llzkWithPython = final.llzk.override {
-          mlir = final.mlirWithPython;
+          mlir_pkg = final.mlirWithPython;
         };
 
-        llzkDebugClang = (final.llzk.override { stdenv = final.clangStdenv; }).overrideAttrs(attrs: {
-          cmakeBuildType = "DebWithSans";
-          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
+        llzkDebWithSansGCC   = mkLlzkDebWithSans final.gccStdenv   "gcc";
+        llzkDebWithSansClang = mkLlzkDebWithSans final.clangStdenv "clang";
 
-          postInstall = ''
-            if [ -f test/report.xml ]; then
-              mkdir -p $out/artifacts
-              echo "-- Copying xUnit report to $out/artifacts/clang-report.xml"
-              cp test/report.xml $out/artifacts/clang-report.xml
-            fi
-          '';
-        });
-
-        llzkDebugClangCov = final.llzkDebugClang.overrideAttrs(attrs: {
+        llzkDebWithSansClangCov = final.llzkDebWithSansClang.overrideAttrs(attrs: {
           postCheck = ''
             MANIFEST=profiles.manifest
             PROFDATA=coverage.profdata
@@ -102,17 +107,18 @@
           '';
         });
 
-        llzkDebugGCC = (final.llzk.override { stdenv = final.gccStdenv; }).overrideAttrs(attrs: {
-          cmakeBuildType = "DebWithSans";
-          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
-
-          postInstall = ''
-            if [ -f test/report.xml ]; then
-              mkdir -p $out/artifacts
-              echo "-- Copying xUnit report to $out/artifacts/gcc-report.xml"
-              cp test/report.xml $out/artifacts/gcc-report.xml
-            fi
+        llzkDocs = final.llzk.overrideAttrs(attrs: {
+          nativeBuildInputs = attrs.nativeBuildInputs ++ [
+            final.doxygen final.graphviz
+            final.git final.cacert
+          ];
+          buildPhase = ''
+            cmake --build . --target doc -j$NIX_BUILD_CORES
           '';
+          installPhase = ''
+            cp -r ./doc $out
+          '';
+          doCheck = false;
         });
 
         ccacheStdenv = prev.ccacheStdenv.override {
@@ -134,7 +140,7 @@
               git
 
               # clang-tidy and clang-format
-              clang-tools_18
+              pkgs.llzk_llvmPackages_debug.clang-tools
 
               # git-clang-format
               libclang.python
@@ -155,16 +161,11 @@
 
               # Needed for using mlir-tblgen inside the dev shell
               export LD_LIBRARY_PATH=${pkgs.z3.lib}/lib:$LD_LIBRARY_PATH
-
-              # Disable container overflow checks because it can give false positives in
-              # newGeneralRewritePatternSet() since LLVM itself is not built with ASan.
-              # https://github.com/google/sanitizers/wiki/AddressSanitizerContainerOverflow#false-positives
-              export ASAN_OPTIONS=detect_container_overflow=0
             '';
           });
         };
 
-        devShellBaseWithDefault = pkgs: final.devShellBase pkgs final.llzk;
+        devShellBaseWithDefault = pkgs: final.devShellBase pkgs final.llzk_debug;
       };
     } //
     (flake-utils.lib.eachDefaultSystem (system:
@@ -183,23 +184,30 @@
         # Now, we can define the actual outputs of the flake
         packages = flake-utils.lib.flattenTree {
           # Copy the packages from the overlay.
-          inherit (pkgs) llzk llzkWithPython changelogCreator;
+          inherit (pkgs) llzk llzk_debug llzkWithPython changelogCreator;
 
           # For debug purposes, expose the MLIR/LLVM packages.
-          inherit (pkgs) mlir mlirWithPython;
+          inherit (pkgs) mlir mlir_debug mlirWithPython;
           # Prevent use of libllvm and llvm from nixpkgs, which will have different
           # versions than the mlir from llzk-pkgs.
           inherit (pkgs.llzk_llvmPackages) libllvm llvm;
 
           default = pkgs.llzk;
-          debugClang = pkgs.llzkDebugClang;
-          debugClangCov = pkgs.llzkDebugClangCov;
-          debugGCC = pkgs.llzkDebugGCC;
+          debugClang = pkgs.llzkDebWithSansClang;
+          debugClangCov = pkgs.llzkDebWithSansClangCov;
+          debugGCC = pkgs.llzkDebWithSansGCC;
           docs = pkgs.llzkDocs;
         };
 
         checks = flake-utils.lib.flattenTree {
-          llzkInstallCheck = pkgs.callPackage ./nix/llzk-installcheck { };
+          llzkInstallCheckRelease = pkgs.callPackage ./nix/llzk-installcheck {
+            mlir_pkg = pkgs.mlir;
+            llzk_pkg = pkgs.llzk;
+          };
+          llzkInstallCheckDebug = pkgs.callPackage ./nix/llzk-installcheck {
+            mlir_pkg = pkgs.mlir_debug;
+            llzk_pkg = pkgs.llzk_debug;
+          };
         };
 
         devShells = flake-utils.lib.flattenTree {
@@ -207,11 +215,11 @@
             # Use Debug by default so assertions are enabled by default.
             cmakeBuildType = "Debug";
           });
-          debugClang = (pkgs.devShellBase pkgs pkgs.llzkDebugClang).shell;
-          debugGCC = (pkgs.devShellBase pkgs pkgs.llzkDebugGCC).shell;
+          debugClang = (pkgs.devShellBase pkgs pkgs.llzkDebWithSansClang).shell;
+          debugGCC = (pkgs.devShellBase pkgs pkgs.llzkDebWithSansGCC).shell;
 
           llvm = pkgs.mkShell {
-            buildInputs = [ pkgs.llzk_llvmPackages.libllvm.dev ];
+            buildInputs = [ pkgs.llzk_llvmPackages_debug.libllvm.dev ];
           };
         };
       }

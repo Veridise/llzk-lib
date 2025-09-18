@@ -213,8 +213,8 @@ bool ConstrainRef::isValidPrefix(const ConstrainRef &prefix) const {
   return true;
 }
 
-FailureOr<std::vector<ConstrainRefIndex>> ConstrainRef::getSuffix(const ConstrainRef &prefix
-) const {
+FailureOr<std::vector<ConstrainRefIndex>>
+ConstrainRef::getSuffix(const ConstrainRef &prefix) const {
   if (!isValidPrefix(prefix)) {
     return failure();
   }

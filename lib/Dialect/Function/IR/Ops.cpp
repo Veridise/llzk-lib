@@ -222,10 +222,9 @@ LogicalResult FuncDefOp::verify() {
       return failure();
     }
     if (isInStruct() && (nameIsCompute() || nameIsConstrain()) && hasAffineMapAttr(*ptr)) {
-      emitErrorFunc().append(
+      return emitErrorFunc().append(
           "\"@", getName(), "\" parameters cannot contain affine map attributes but found ", *ptr
       );
-      return failure();
     }
   }
   llvm::ArrayRef<Type> resTypes = type.getResults();
@@ -753,7 +752,7 @@ CallInterfaceCallable CallOp::getCallableForCallee() { return getCalleeAttr(); }
 
 /// Set the callee for this operation.
 void CallOp::setCalleeFromCallable(CallInterfaceCallable callee) {
-  setCalleeAttr(callee.get<SymbolRefAttr>());
+  setCalleeAttr(llvm::cast<SymbolRefAttr>(callee));
 }
 
 SmallVector<ValueRange> CallOp::toVectorOfValueRange(OperandRangeRange input) {

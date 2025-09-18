@@ -63,15 +63,13 @@ using CallControlFlowAction = mlir::dataflow::CallControlFlowAction;
 /// have been made.
 ///
 /// Base class for dense forward data-flow analyses. Dense data-flow analysis
-/// attaches a lattice between the execution of operations and implements a
-/// transfer function from the lattice before each operation to the lattice
-/// after. The lattice contains information about the state of the program at
-/// that point.
+/// attaches a lattice to program points and implements a transfer function from
+/// the lattice before each operation to the lattice after. The lattice contains
+/// information about the state of the program at that program point.
 ///
-/// In this implementation, a lattice attached to an operation represents the
-/// state of the program after its execution, and a lattice attached to block
-/// represents the state of the program right before it starts executing its
-/// body.
+/// Visit a program point in forward dense data-flow analysis will invoke the
+/// transfer function of the operation preceding the program point iterator.
+/// Visit a program point at the begining of block will visit the block itself.
 class AbstractDenseForwardDataFlowAnalysis : public mlir::DataFlowAnalysis {
 public:
   using mlir::DataFlowAnalysis::DataFlowAnalysis;
@@ -80,29 +78,31 @@ public:
   /// may modify the program state; that is, every operation and block.
   mlir::LogicalResult initialize(mlir::Operation *top) override;
 
-  /// Visit a program point that modifies the state of the program. If this is a
-  /// block, then the state is propagated from control-flow predecessors or
-  /// callsites. If this is a call operation or region control-flow operation,
-  /// then the state after the execution of the operation is set by control-flow
-  /// or the callgraph. Otherwise, this function invokes the operation transfer
-  /// function.
-  mlir::LogicalResult visit(mlir::ProgramPoint point) override;
+  /// Visit a program point that modifies the state of the program. If the
+  /// program point is at the beginning of a block, then the state is propagated
+  /// from control-flow predecessors or callsites.  If the operation before
+  /// program point iterator is a call operation or region control-flow
+  /// operation, then the state after the execution of the operation is set by
+  /// control-flow or the callgraph. Otherwise, this function invokes the
+  /// operation transfer function before the program point iterator.
+  mlir::LogicalResult visit(mlir::ProgramPoint *point) override;
 
 protected:
   /// Propagate the dense lattice before the execution of an operation to the
   /// lattice after its execution.
-  virtual void visitOperationImpl(
+  virtual mlir::LogicalResult visitOperationImpl(
       mlir::Operation *op, const AbstractDenseLattice &before, AbstractDenseLattice *after
   ) = 0;
 
-  /// Get the dense lattice after the execution of the given program point.
-  virtual AbstractDenseLattice *getLattice(mlir::ProgramPoint point) = 0;
+  /// Get the dense lattice on the given lattice anchor.
+  virtual AbstractDenseLattice *getLattice(mlir::LatticeAnchor anchor) = 0;
 
-  /// Get the dense lattice after the execution of the given program point and
-  /// add it as a dependency to a program point. That is, every time the lattice
-  /// after point is updated, the dependent program point must be visited, and
-  /// the newly triggered visit might update the lattice after dependent.
-  const AbstractDenseLattice *getLatticeFor(mlir::ProgramPoint dependent, mlir::ProgramPoint point);
+  /// Get the dense lattice on the given lattice anchor and add dependent as its
+  /// dependency. That is, every time the lattice after anchor is updated, the
+  /// dependent program point must be visited, and the newly triggered visit
+  /// might update the lattice on dependent.
+  const AbstractDenseLattice *
+  getLatticeFor(mlir::ProgramPoint *dependent, mlir::LatticeAnchor anchor);
 
   /// Set the dense lattice at control flow entry point and propagate an update
   /// if it changed.
@@ -117,7 +117,7 @@ protected:
   /// operation, then the state after the execution of the operation is set by
   /// control-flow or the callgraph. Otherwise, this function invokes the
   /// operation transfer function.
-  virtual void processOperation(mlir::Operation *op);
+  virtual mlir::LogicalResult processOperation(mlir::Operation *op);
 
   /// Propagate the dense lattice forward along the control flow edge from
   /// `regionFrom` to `regionTo` regions of the `branch` operation. `nullopt`
@@ -158,7 +158,7 @@ protected:
   /// in it. This can either be an entry block of one of the regions of the
   /// parent operation itself.
   void visitRegionBranchOperation(
-      mlir::ProgramPoint point, mlir::RegionBranchOpInterface branch, AbstractDenseLattice *after
+      mlir::ProgramPoint *point, mlir::RegionBranchOpInterface branch, AbstractDenseLattice *after
   );
 
   /// LLZK: Added for use of symbol helper caching.
@@ -201,7 +201,8 @@ public:
   /// Visit an operation with the dense lattice before its execution. This
   /// function is expected to set the dense lattice after its execution and
   /// trigger change propagation in case of change.
-  virtual void visitOperation(mlir::Operation *op, const LatticeT &before, LatticeT *after) = 0;
+  virtual mlir::LogicalResult
+  visitOperation(mlir::Operation *op, const LatticeT &before, LatticeT *after) = 0;
 
   /// Hook for customizing the behavior of lattice propagation along the call
   /// control flow edges. Two types of (forward) propagation are possible here:
@@ -258,8 +259,10 @@ public:
   }
 
 protected:
-  /// Get the dense lattice after this program point.
-  LatticeT *getLattice(mlir::ProgramPoint point) override { return getOrCreate<LatticeT>(point); }
+  /// Get the dense lattice on this lattice anchor.
+  LatticeT *getLattice(mlir::LatticeAnchor anchor) override {
+    return getOrCreate<LatticeT>(anchor);
+  }
 
   /// Set the dense lattice at control flow entry point and propagate an update
   /// if it changed.
@@ -270,10 +273,12 @@ protected:
 
   /// Type-erased wrappers that convert the abstract dense lattice to a derived
   /// lattice and invoke the virtual hooks operating on the derived lattice.
-  void visitOperationImpl(
+  mlir::LogicalResult visitOperationImpl(
       mlir::Operation *op, const AbstractDenseLattice &before, AbstractDenseLattice *after
   ) final {
-    visitOperation(op, static_cast<const LatticeT &>(before), static_cast<LatticeT *>(after));
+    return visitOperation(
+        op, static_cast<const LatticeT &>(before), static_cast<LatticeT *>(after)
+    );
   }
   void visitCallControlFlowTransfer(
       mlir::CallOpInterface call, CallControlFlowAction action, const AbstractDenseLattice &before,

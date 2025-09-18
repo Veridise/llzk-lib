@@ -29,6 +29,8 @@ jobs:
           name: veridise-public
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
       - name: Build and check install
-        run: nix --print-build-logs build '.#checks.x86_64-linux.llzkInstallCheck'
+        run: |
+          nix --print-build-logs build '.#checks.x86_64-linux.llzkInstallCheckRelease'
+          nix --print-build-logs build '.#checks.x86_64-linux.llzkInstallCheckDebug'
       - name: Build docs
         run: nix --option sandbox false --print-build-logs build '.#docs'

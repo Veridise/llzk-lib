@@ -115,7 +115,7 @@ def LLZK_ApplyMapOp : PolymorphicDialectOp<"applymap", [Pure]> {
                   OpBuilder<(ins "::mlir::AffineExpr":$expr,
                                 CArg<"::mlir::ValueRange", "{}">:$mapOperands),
                             [{
-                  auto map = ::mlir::AffineMap::inferFromExprList({expr}).front();
+                  auto map = ::mlir::AffineMap::inferFromExprList({expr}, $_builder.getContext()).front();
                   build($_builder, $_state, map, mapOperands);
                 }]>];
 

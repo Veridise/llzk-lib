@@ -1,4 +1,4 @@
-{ stdenv, lib, cmake, ninja, mlir, llzk }:
+{ stdenv, lib, cmake, ninja, mlir_pkg, llzk_pkg }:
 
 stdenv.mkDerivation {
   pname = "llzk-installcheck";
@@ -6,7 +6,7 @@ stdenv.mkDerivation {
 
   src = lib.cleanSource ./.;
 
-  buildInputs = [ mlir llzk ];
+  buildInputs = [ mlir_pkg llzk_pkg ];
   nativeBuildInputs = [ cmake ninja ];
 
   installPhase = ''touch "$out"'';

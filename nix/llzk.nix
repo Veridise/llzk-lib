@@ -3,10 +3,12 @@
 
   # build dependencies
   clang, cmake, ninja,
-  mlir, nlohmann_json,
+  mlir_pkg, nlohmann_json,
 
   # test dependencies
-  gtest, python3, lit, z3, cvc5
+  gtest, python3, lit, z3, cvc5,
+
+  cmakeBuildType ? "Release"
 }:
 
 stdenv.mkDerivation {
@@ -33,13 +35,14 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ clang cmake ninja ];
   buildInputs = [
-    mlir z3.lib
-  ] ++ lib.optionals mlir.hasPythonBindings [
-    mlir.python
-    mlir.pythonDeps
+    mlir_pkg z3.lib
+  ] ++ lib.optionals mlir_pkg.hasPythonBindings [
+    mlir_pkg.python
+    mlir_pkg.pythonDeps
   ];
 
   cmakeFlags = [
+    "-DCMAKE_BUILD_TYPE=${cmakeBuildType}"
     "-DLLZK_BUILD_DEVTOOLS=ON"
   ];
 

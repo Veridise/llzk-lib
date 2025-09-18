@@ -26,9 +26,9 @@ MlirAttribute llzkFeltConstAttrGet(MlirContext ctx, int64_t value) {
 }
 
 bool llzkAttributeIsAFeltConstAttr(MlirAttribute attr) {
-  return mlir::isa<FeltConstAttr>(unwrap(attr));
+  return llvm::isa<FeltConstAttr>(unwrap(attr));
 }
 
 MlirType llzkFeltTypeGet(MlirContext ctx) { return wrap(FeltType::get(unwrap(ctx))); }
 
-bool llzkTypeIsAFeltType(MlirType type) { return mlir::isa<FeltType>(unwrap(type)); }
+bool llzkTypeIsAFeltType(MlirType type) { return llvm::isa<FeltType>(unwrap(type)); }
