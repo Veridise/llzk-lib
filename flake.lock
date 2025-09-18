@@ -22,16 +22,16 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1758148042,
-        "narHash": "sha256-XEmLuJ6bGyR4IScfsxFwgIaAryvi0ZhM/3MiJiKny3k=",
+        "lastModified": 1758217060,
+        "narHash": "sha256-kuviDn6ByQ1o6/adbP7VE/klxYJV6l7qA5l+P2NNx9M=",
         "owner": "Veridise",
         "repo": "llzk-nix-pkgs",
-        "rev": "0ea3bf657ebfe34c87311addf4342080435ac38e",
+        "rev": "db435b46140d91da913163ba7f0bed66662f1131",
         "type": "github"
       },
       "original": {
         "owner": "Veridise",
-        "ref": "th/llvm20_upgrade",
+        "ref": "main",
         "repo": "llzk-nix-pkgs",
         "type": "github"
       }
