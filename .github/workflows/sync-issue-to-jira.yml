@@ -62,4 +62,4 @@ jobs:
 
       - name: Run driver script
         run: |
-          python3 jira_driver.py --issue "$ISSUE_NUM" "$ACTION"
+          python3 scripts/jira_driver.py --issue "$ISSUE_NUM" "$ACTION"

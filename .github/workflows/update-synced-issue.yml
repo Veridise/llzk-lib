@@ -76,9 +76,9 @@ jobs:
       - name: Update issue
         if: steps.check_label.outputs.has-label == 'true' && ${{ github.event_name }} == "issue_comment"
         run: |
-          python3 jira_driver.py --issue "$ISSUE_NUM" update --summary "$UPDATE_SUMMARY"
+          python3 scripts/jira_driver.py --issue "$ISSUE_NUM" update --summary "$UPDATE_SUMMARY"
 
       - name: Transition issue status
         if: steps.check_label.outputs.has-label == 'true' && ${{ github.event_name }} == "issues"
         run: |
-          python3 jira_driver.py --issue "$ISSUE_NUM" transition --action "$ACTION"
+          python3 scripts/jira_driver.py --issue "$ISSUE_NUM" transition --action "$ACTION"
