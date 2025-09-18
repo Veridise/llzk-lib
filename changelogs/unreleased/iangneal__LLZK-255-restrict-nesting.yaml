@@ -1,0 +1,2 @@
+changed:
+  - Function dialect: restrict nesting of modules and structs within functions

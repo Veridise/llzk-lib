@@ -790,3 +790,66 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+
+// -----
+builtin.module attributes {veridise.lang = "llzk"} {
+  function.def @free_func() {
+    // expected-error@+1 {{'builtin.module' op cannot be nested within 'function.def' operations}}
+    builtin.module {}
+    function.return
+  }
+}
+// -----
+builtin.module attributes {veridise.lang = "llzk"} {
+  function.def @free_func() {
+    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
+    struct.def @ComponentG {
+      function.def @compute() -> !struct.type<@ComponentG> {
+        %self = struct.new : !struct.type<@ComponentG>
+        function.return %self : !struct.type<@ComponentG>
+      }
+      function.def @constrain(%self: !struct.type<@ComponentG>)  {
+        function.return
+      }
+    }
+    function.return
+  }
+}
+// -----
+builtin.module attributes {veridise.lang = "llzk"} {
+  struct.def @ComponentG {
+    function.def @compute() -> !struct.type<@ComponentG> {
+      %self = struct.new : !struct.type<@ComponentG>
+      // expected-error@+1 {{'builtin.module' op cannot be nested within 'function.def' operations}}
+      builtin.module attributes {veridise.lang = "llzk"} {}
+      function.return %self : !struct.type<@ComponentG>
+    }
+    function.def @constrain(%self: !struct.type<@ComponentG>)  {
+      function.return
+    }
+  }
+}
+// -----
+builtin.module attributes {veridise.lang = "llzk"} {
+  struct.def @ComponentG {
+    function.def @compute() -> !struct.type<@ComponentG> {
+      %self = struct.new : !struct.type<@ComponentG>
+      // expected-error@+1 {{'builtin.module' op cannot be nested within 'function.def' operations}}
+      builtin.module attributes {veridise.lang = "llzk"} {
+        struct.def @ComponentX {
+          function.def @compute() -> !struct.type<@ComponentX> {
+            %self2 = struct.new : !struct.type<@ComponentX>
+            function.return %self2 : !struct.type<@ComponentX>
+          }
+          function.def @constrain(%self2: !struct.type<@ComponentX>)  {
+            function.return
+          }
+        }
+      }
+      function.return %self : !struct.type<@ComponentG>
+    }
+    function.def @constrain(%self: !struct.type<@ComponentG>)  {
+      function.return
+    }
+  }
+}

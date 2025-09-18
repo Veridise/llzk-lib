@@ -58,6 +58,8 @@ def FuncDefOp
     Only dialect attribute names may be specified in the attribute dictionaries
     for function arguments, results, or the function itself.
 
+    Modules and struct definitions are not allowed to be nested within functions.
+
     Example:
 
     ```llzk

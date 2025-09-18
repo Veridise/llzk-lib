@@ -233,6 +233,19 @@ LogicalResult FuncDefOp::verify() {
       return failure();
     }
   }
+  // Ensure that the function does not contain nested modules.
+  // Functions also cannot contain nested structs, but this check is handled
+  // via struct.def's requirement of having module as a parent.
+  WalkResult res = this->walk<WalkOrder::PreOrder>([this](ModuleOp nestedMod) {
+    getEmitOpErrFn(nestedMod)().append(
+        "cannot be nested within '", getOperation()->getName(), "' operations"
+    );
+    return WalkResult::interrupt();
+  });
+  if (res.wasInterrupted()) {
+    return failure();
+  }
+
   return success();
 }
 
