@@ -771,8 +771,8 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     }
 
     // Helper function to determine if an Operation is contained in 'otherRefsToBeDeleted'
-    auto opWillBeDeleted = [&otherRefsToBeDeleted](Operation *op) -> bool {
-      return std::find(otherRefsToBeDeleted.begin(), otherRefsToBeDeleted.end(), op) !=
+    auto opWillBeDeleted = [&otherRefsToBeDeleted](Operation *otherOp) -> bool {
+      return std::find(otherRefsToBeDeleted.begin(), otherRefsToBeDeleted.end(), otherOp) !=
              otherRefsToBeDeleted.end();
     };
 
@@ -908,8 +908,8 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     });
     auto res = caller.getComputeFuncOp().walk([&tables, &destToSrcToClone](FieldReadOp readOp) {
       combineReadChain(readOp, tables, destToSrcToClone);
-      LogicalResult res = combineNewThenReadChain(readOp, tables, destToSrcToClone);
-      return failed(res) ? WalkResult::interrupt() : WalkResult::advance();
+      LogicalResult innerRes = combineNewThenReadChain(readOp, tables, destToSrcToClone);
+      return failed(innerRes) ? WalkResult::interrupt() : WalkResult::advance();
     });
     if (res.wasInterrupted()) {
       return failure(); // error already printed within combineNewThenReadChain()
