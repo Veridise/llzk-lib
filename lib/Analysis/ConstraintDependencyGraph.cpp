@@ -220,7 +220,7 @@ mlir::ChangeResult ConstrainRefAnalysis::fallbackOpUpdate(
 // of provided indices.
 void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
     ArrayAccessOpInterface arrayAccessOp, const ConstrainRefLattice::ValueMap &operandVals,
-    const ConstrainRefLattice &before, ConstrainRefLattice *after
+    const ConstrainRefLattice & /*before*/, ConstrainRefLattice *after
 ) {
   // We index the first operand by all remaining indices.
   ConstrainRefLattice::ValueTy res;

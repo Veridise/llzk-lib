@@ -254,7 +254,7 @@ void processInputOperands(
 
 namespace {
 
-enum Direction {
+enum Direction : std::uint8_t {
   /// Copying a smaller array into a larger one, i.e., `InsertArrayOp`
   SMALL_TO_LARGE,
   /// Copying a larger array into a smaller one, i.e., `ExtractArrayOp`
@@ -602,7 +602,7 @@ protected:
   /// the element-wise operations that will be added by `forIndex()`.
   static GenHeaderType genHeader(FieldRefOpClass, ConversionPatternRewriter &) {
     ensureImplementedAtCompile();
-    assert(false && "unreachable");
+    llvm_unreachable("must have concrete instantiation");
   }
 
   /// Executed for each multi-dimensional array index in the ArrayType of the original field to
@@ -610,7 +610,7 @@ protected:
   static void
   forIndex(Location, GenHeaderType, ArrayAttr, FieldInfo, OpAdaptor, ConversionPatternRewriter &) {
     ensureImplementedAtCompile();
-    assert(false && "unreachable");
+    llvm_unreachable("must have concrete instantiation");
   }
 
 public:
@@ -621,7 +621,7 @@ public:
 
   static bool legal(FieldRefOpClass) {
     ensureImplementedAtCompile();
-    assert(false && "unreachable");
+    llvm_unreachable("must have concrete instantiation");
   }
 
   LogicalResult match(FieldRefOpClass op) const override { return failure(ImplClass::legal(op)); }
@@ -706,8 +706,8 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fie
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, boolean::BoolDialect, felt::FeltDialect,
       function::FunctionDialect, global::GlobalDialect, include::IncludeDialect,
-      component::StructDialect, constrain::ConstrainDialect, arith::ArithDialect, scf::SCFDialect>(
-  );
+      component::StructDialect, constrain::ConstrainDialect, arith::ArithDialect,
+      scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
 

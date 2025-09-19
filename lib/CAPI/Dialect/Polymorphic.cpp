@@ -51,7 +51,7 @@ MlirType llzkTypeVarTypeGet(MlirContext ctx, MlirStringRef name) {
 
 bool llzkTypeIsATypeVarType(MlirType type) { return llvm::isa<TypeVarType>(unwrap(type)); }
 
-MlirType llzkTypeVarTypeGetFromAttr(MlirContext ctx, MlirAttribute attrWrapper) {
+MlirType llzkTypeVarTypeGetFromAttr(MlirContext /*ctx*/, MlirAttribute attrWrapper) {
   auto attr = unwrap(attrWrapper);
   if (auto sym = llvm::dyn_cast<FlatSymbolRefAttr>(attr)) {
     return wrap(TypeVarType::get(sym));

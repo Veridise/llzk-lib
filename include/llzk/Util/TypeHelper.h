@@ -121,7 +121,7 @@ bool isSignalType(component::StructType sType);
 /// @brief Return `true` iff the given type contains an AffineMapAttr.
 bool hasAffineMapAttr(mlir::Type type);
 
-enum class Side { EMPTY = 0, LHS, RHS, TOMB };
+enum class Side : std::uint8_t { EMPTY = 0, LHS, RHS, TOMB };
 static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const Side &val) {
   switch (val) {
   case Side::EMPTY:

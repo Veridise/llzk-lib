@@ -38,8 +38,8 @@ public:
     );
   }
 
-  UnreducedInterval(llvm::APSInt x, llvm::APSInt y) : a(x), b(y) {}
-  UnreducedInterval(llvm::APInt x, llvm::APInt y) : a(x), b(y) {}
+  UnreducedInterval(const llvm::APSInt &x, const llvm::APSInt &y) : a(x), b(y) {}
+  UnreducedInterval(const llvm::APInt &x, const llvm::APInt &y) : a(x), b(y) {}
   /// @brief This constructor is primarily for convenience for unit tests.
   UnreducedInterval(uint64_t x, uint64_t y) : a(llvm::APInt(64, x)), b(llvm::APInt(64, y)) {}
 
@@ -213,7 +213,7 @@ private:
 /// - union: don't care for now, we can revisit this later.
 class Interval {
 public:
-  enum class Type { TypeA = 0, TypeB, TypeC, TypeF, Empty, Degenerate, Entire };
+  enum class Type : std::uint8_t { TypeA = 0, TypeB, TypeC, TypeF, Empty, Degenerate, Entire };
   static constexpr std::array<std::string_view, 7> TypeNames = {"TypeA", "TypeB", "TypeC",
                                                                 "TypeF", "Empty", "Degenerate",
                                                                 "Entire"};
@@ -224,7 +224,7 @@ public:
 
   static Interval Empty(const Field &f) { return Interval(Type::Empty, f); }
 
-  static Interval Degenerate(const Field &f, llvm::APSInt val) {
+  static Interval Degenerate(const Field &f, const llvm::APSInt &val) {
     return Interval(Type::Degenerate, f, val, val);
   }
 
@@ -236,19 +236,19 @@ public:
 
   static Interval Entire(const Field &f) { return Interval(Type::Entire, f); }
 
-  static Interval TypeA(const Field &f, llvm::APSInt a, llvm::APSInt b) {
+  static Interval TypeA(const Field &f, const llvm::APSInt &a, const llvm::APSInt &b) {
     return Interval(Type::TypeA, f, a, b);
   }
 
-  static Interval TypeB(const Field &f, llvm::APSInt a, llvm::APSInt b) {
+  static Interval TypeB(const Field &f, const llvm::APSInt &a, const llvm::APSInt &b) {
     return Interval(Type::TypeB, f, a, b);
   }
 
-  static Interval TypeC(const Field &f, llvm::APSInt a, llvm::APSInt b) {
+  static Interval TypeC(const Field &f, const llvm::APSInt &a, const llvm::APSInt &b) {
     return Interval(Type::TypeC, f, a, b);
   }
 
-  static Interval TypeF(const Field &f, llvm::APSInt a, llvm::APSInt b) {
+  static Interval TypeF(const Field &f, const llvm::APSInt &a, const llvm::APSInt &b) {
     return Interval(Type::TypeF, f, a, b);
   }
 
@@ -359,7 +359,7 @@ public:
 
 private:
   Interval(Type t, const Field &f) : field(f), ty(t), a(f.zero()), b(f.zero()) {}
-  Interval(Type t, const Field &f, llvm::APSInt lhs, llvm::APSInt rhs)
+  Interval(Type t, const Field &f, const llvm::APSInt &lhs, const llvm::APSInt &rhs)
       : field(f), ty(t), a(f.reduce(lhs)), b(f.reduce(rhs)) {}
 
   std::reference_wrapper<const Field> field;

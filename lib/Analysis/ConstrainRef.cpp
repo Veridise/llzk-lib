@@ -240,8 +240,9 @@ ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) c
   return newSignalUsage;
 }
 
-std::vector<ConstrainRef>
-getAllChildren(SymbolTableCollection &tables, ModuleOp mod, ArrayType arrayTy, ConstrainRef root) {
+std::vector<ConstrainRef> getAllChildren(
+    SymbolTableCollection &tables, ModuleOp /*mod*/, ArrayType arrayTy, ConstrainRef root
+) {
   std::vector<ConstrainRef> res;
   // Recurse into arrays by iterating over their elements
   for (int64_t i = 0; i < arrayTy.getDimSize(0); i++) {
@@ -351,8 +352,8 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   } else if (!isTemplateConstant() && rhs.isTemplateConstant()) {
     return true;
   } else if (isTemplateConstant() && rhs.isTemplateConstant()) {
-    auto lhsName = std::get<ConstReadOp>(*constantVal).getConstName();
-    auto rhsName = std::get<ConstReadOp>(*rhs.constantVal).getConstName();
+    StringRef lhsName = std::get<ConstReadOp>(*constantVal).getConstName();
+    StringRef rhsName = std::get<ConstReadOp>(*rhs.constantVal).getConstName();
     return lhsName.compare(rhsName) < 0;
   }
 

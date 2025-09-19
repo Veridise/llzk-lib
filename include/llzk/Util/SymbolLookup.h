@@ -119,9 +119,9 @@ public:
   template <typename T> Within(SymbolLookupResult<T> &&res) : Within(std::move(res.inner)) {}
 
   Within(const Within &) = delete;
-  Within(Within &&other) : from(std::move(other.from)) {}
+  Within(Within &&other) noexcept : from(std::move(other.from)) {}
   Within &operator=(const Within &) = delete;
-  Within &operator=(Within &&);
+  Within &operator=(Within &&) noexcept;
 
   inline static Within root() { return Within(); }
 

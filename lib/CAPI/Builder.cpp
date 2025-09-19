@@ -28,11 +28,12 @@ public:
   ListenerT(MlirNotifyOperationInserted op, MlirNotifyBlockInserted block, void *data)
       : opInsertedCb(op), blockInsertedCb(block), userData(data) {}
 
-  void notifyOperationInserted(Operation *op, OpBuilder::InsertPoint previous) final {
+  void notifyOperationInserted(Operation *op, OpBuilder::InsertPoint /*previous*/) final {
     opInsertedCb(wrap(op), userData);
   }
 
-  void notifyBlockInserted(Block *block, Region *previous, Region::iterator previousIt) final {
+  void
+  notifyBlockInserted(Block *block, Region * /*previous*/, Region::iterator /*previousIt*/) final {
     blockInsertedCb(wrap(block), userData);
   }
 

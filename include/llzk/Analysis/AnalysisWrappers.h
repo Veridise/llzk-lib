@@ -47,13 +47,13 @@ public:
   StructAnalysis(mlir::Operation *op) {
     structDefOp = llvm::dyn_cast<component::StructDefOp>(op);
     if (!structDefOp) {
-      auto error_message = "StructAnalysis expects provided op to be a StructDefOp!";
+      const char *error_message = "StructAnalysis expects provided op to be a StructDefOp!";
       op->emitError(error_message).report();
       llvm::report_fatal_error(error_message);
     }
     auto maybeModOp = getRootModule(op);
     if (mlir::failed(maybeModOp)) {
-      auto error_message = "StructAnalysis could not find root module from StructDefOp!";
+      const char *error_message = "StructAnalysis could not find root module from StructDefOp!";
       op->emitError(error_message).report();
       llvm::report_fatal_error(error_message);
     }

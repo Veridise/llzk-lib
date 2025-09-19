@@ -194,8 +194,8 @@ ExpressionValue fallbackBinaryOp(
   ExpressionValue res;
   res.i = Interval::Entire(lhs.getField());
   res.expr = TypeSwitch<Operation *, llvm::SMTExprRef>(op)
-                 .Case<OrFeltOp>([&](auto _) { return solver->mkBVOr(lhs.expr, rhs.expr); })
-                 .Case<XorFeltOp>([&](auto _) {
+                 .Case<OrFeltOp>([&](auto) { return solver->mkBVOr(lhs.expr, rhs.expr); })
+                 .Case<XorFeltOp>([&](auto) {
     return solver->mkBVXor(lhs.expr, rhs.expr);
   }).Default([&](auto *unsupported) {
     llvm::report_fatal_error(
@@ -234,7 +234,7 @@ fallbackUnaryOp(llvm::SMTSolverRef solver, Operation *op, const ExpressionValue 
   ExpressionValue res;
   res.i = Interval::Entire(field);
   res.expr = TypeSwitch<Operation *, llvm::SMTExprRef>(op)
-                 .Case<InvFeltOp>([&](InvFeltOp _) {
+                 .Case<InvFeltOp>([&](auto) {
     // The definition of an inverse X^-1 is Y s.t. XY % prime = 1.
     // To create this expression, we create a new symbol for Y and add the
     // XY % prime = 1 constraint to the solver.
@@ -247,9 +247,9 @@ fallbackUnaryOp(llvm::SMTSolverRef solver, Operation *op, const ExpressionValue 
     llvm::SMTExprRef constraint = solver->mkEqual(mod, one);
     solver->addConstraint(constraint);
     return invSym;
-  }).Default([&](Operation *unsupported) {
+  }).Default([](Operation *unsupported) {
     llvm::report_fatal_error(
-        "no fallback provided for " + mlir::Twine(op->getName().getStringRef())
+        "no fallback provided for " + mlir::Twine(unsupported->getName().getStringRef())
     );
     return nullptr;
   });
@@ -375,7 +375,7 @@ FailureOr<Interval> IntervalAnalysisLattice::findInterval(llvm::SMTExprRef expr)
   return failure();
 }
 
-ChangeResult IntervalAnalysisLattice::setInterval(llvm::SMTExprRef expr, Interval i) {
+ChangeResult IntervalAnalysisLattice::setInterval(llvm::SMTExprRef expr, const Interval &i) {
   auto it = intervals.find(expr);
   if (it != intervals.end() && it->second == i) {
     return ChangeResult::NoChange;
@@ -495,8 +495,8 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
 
   // Now, the way we update is dependent on the type of the operation.
   if (isConstOp(op)) {
-    auto constVal = getConst(op);
-    auto expr = createConstBitvectorExpr(constVal);
+    APSInt constVal = getConst(op);
+    llvm::SMTExprRef expr = createConstBitvectorExpr(constVal);
     ExpressionValue latticeVal(field.get(), expr, constVal);
     changed |= after->setValue(op->getResult(0), latticeVal);
   } else if (isArithmeticOp(op)) {
@@ -619,7 +619,7 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(const ConstrainRef 
   if (it != refSymbols.end()) {
     return it->second;
   }
-  auto sym = createFeltSymbol(r);
+  llvm::SMTExprRef sym = createFeltSymbol(r);
   refSymbols[r] = sym;
   return sym;
 }
@@ -926,7 +926,7 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
             .Case<CmpOp>([&](auto op) { return cmpCase(op); })
             .Case<MulFeltOp>([&](auto op) { return mulCase(op); })
             .Case<FieldReadOp>([&](auto op){ return readfCase(op); })
-            .Default([&](auto *_) { return ChangeResult::NoChange; });
+            .Default([&](Operation *) { return ChangeResult::NoChange; });
   // clang-format on
 
   // Set the new val after recursion to avoid having recursive calls unset the value.

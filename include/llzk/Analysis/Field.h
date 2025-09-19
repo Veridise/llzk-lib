@@ -27,7 +27,7 @@ public:
 
   Field() = delete;
   Field(const Field &) = default;
-  Field(Field &&) = default;
+  Field(Field &&) noexcept = default;
   Field &operator=(const Field &) = default;
 
   /// @brief For the prime field p, returns p.

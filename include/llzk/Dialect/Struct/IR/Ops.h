@@ -30,7 +30,7 @@ public:
 
 namespace function {
 class FuncDefOp;
-}
+} // namespace function
 
 } // namespace llzk
 

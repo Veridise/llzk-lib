@@ -21,8 +21,7 @@
 #include <optional>
 #include <string>
 
-namespace llzk {
-namespace debug {
+namespace llzk::debug {
 
 namespace {
 
@@ -197,5 +196,4 @@ void dumpSymbolTables(mlir::SymbolTableCollection &tables);
 [[maybe_unused]]
 void dumpToFile(mlir::Operation *op, llvm::StringRef filename);
 
-} // namespace debug
-} // namespace llzk
+} // namespace llzk::debug

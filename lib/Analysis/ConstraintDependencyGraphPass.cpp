@@ -43,7 +43,7 @@ protected:
     markAllAnalysesPreserved();
 
     if (!llvm::isa<mlir::ModuleOp>(getOperation())) {
-      auto msg = "ConstraintDependencyGraphPrinterPass error: should be run on ModuleOp!";
+      const char *msg = "ConstraintDependencyGraphPrinterPass error: should be run on ModuleOp!";
       getOperation()->emitError(msg).report();
       llvm::report_fatal_error(msg);
     }

@@ -34,8 +34,7 @@
 #include <mlir/Interfaces/CallInterfaces.h>
 #include <mlir/Interfaces/ControlFlowInterfaces.h>
 
-namespace llzk {
-namespace dataflow {
+namespace llzk::dataflow {
 
 //===----------------------------------------------------------------------===//
 // Utilities
@@ -127,7 +126,7 @@ protected:
   /// any effect on the lattice that isn't already expressed by the interface
   /// itself.
   virtual void visitRegionBranchControlFlowTransfer(
-      mlir::RegionBranchOpInterface branch, std::optional<unsigned> regionFrom,
+      mlir::RegionBranchOpInterface /*branch*/, std::optional<unsigned> regionFrom,
       std::optional<unsigned> regionTo, const AbstractDenseLattice &before,
       AbstractDenseLattice *after
   ) {
@@ -142,8 +141,8 @@ protected:
   /// implementation for the external callee action additionally sets the
   /// "after" lattice to the entry state.
   virtual void visitCallControlFlowTransfer(
-      mlir::CallOpInterface call, CallControlFlowAction action, const AbstractDenseLattice &before,
-      AbstractDenseLattice *after
+      mlir::CallOpInterface /*call*/, CallControlFlowAction action,
+      const AbstractDenseLattice &before, AbstractDenseLattice *after
   ) {
     join(after, before);
     // Note that `setToEntryState` may be a "partial fixpoint" for some
@@ -300,5 +299,4 @@ protected:
   }
 };
 
-} // namespace dataflow
-} // namespace llzk
+} // namespace llzk::dataflow
