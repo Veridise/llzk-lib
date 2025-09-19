@@ -24,8 +24,6 @@
 // TableGen'd implementation files
 #include "llzk/Dialect/LLZK/IR/Dialect.cpp.inc"
 
-using namespace llzk;
-
 // Need a complete declaration of storage classes for below
 #define GET_ATTRDEF_CLASSES
 #include "llzk/Dialect/LLZK/IR/Attrs.cpp.inc"
@@ -34,7 +32,7 @@ using namespace llzk;
 // LLZKDialect
 //===------------------------------------------------------------------===//
 
-auto LLZKDialect::initialize() -> void {
+auto llzk::LLZKDialect::initialize() -> void {
   // clang-format off
   addAttributes<
     #define GET_ATTRDEF_LIST
