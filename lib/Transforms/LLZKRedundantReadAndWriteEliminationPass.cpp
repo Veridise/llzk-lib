@@ -64,7 +64,7 @@ public:
     }
   }
   explicit ReferenceID(FlatSymbolRefAttr s) : identifier(s) {}
-  explicit ReferenceID(APInt i) : identifier(i) {}
+  explicit ReferenceID(const APInt &i) : identifier(i) {}
   explicit ReferenceID(unsigned i) : identifier(APInt(64, i)) {}
 
   bool isValue() const { return std::holds_alternative<Value>(identifier); }

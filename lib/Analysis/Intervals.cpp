@@ -50,12 +50,12 @@ Interval UnreducedInterval::reduce(const Field &field) const {
 }
 
 UnreducedInterval UnreducedInterval::intersect(const UnreducedInterval &rhs) const {
-  auto &lhs = *this;
+  const auto &lhs = *this;
   return UnreducedInterval(safeMax(lhs.a, rhs.a), safeMin(lhs.b, rhs.b));
 }
 
 UnreducedInterval UnreducedInterval::doUnion(const UnreducedInterval &rhs) const {
-  auto &lhs = *this;
+  const auto &lhs = *this;
   return UnreducedInterval(safeMin(lhs.a, rhs.a), safeMax(lhs.b, rhs.b));
 }
 
@@ -182,7 +182,7 @@ UnreducedInterval Interval::secondUnreduced() const {
 }
 
 Interval Interval::join(const Interval &rhs) const {
-  auto &lhs = *this;
+  const auto &lhs = *this;
   const Field &f = checkFields(lhs, rhs);
 
   // Trivial cases
@@ -235,7 +235,7 @@ Interval Interval::join(const Interval &rhs) const {
 }
 
 Interval Interval::intersect(const Interval &rhs) const {
-  auto &lhs = *this;
+  const auto &lhs = *this;
   const Field &f = checkFields(lhs, rhs);
   // Trivial cases
   if (lhs.isEmpty() || rhs.isEmpty()) {

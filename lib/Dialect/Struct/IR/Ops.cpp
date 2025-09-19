@@ -576,12 +576,12 @@ void FieldReadOp::build(
 }
 
 void FieldReadOp::build(
-    OpBuilder &builder, OperationState &state, TypeRange resultTypes, ValueRange operands,
-    ArrayRef<NamedAttribute> attrs
+    OpBuilder & /*odsBuilder*/, OperationState &odsState, TypeRange resultTypes,
+    ValueRange operands, ArrayRef<NamedAttribute> attrs
 ) {
-  state.addTypes(resultTypes);
-  state.addOperands(operands);
-  state.addAttributes(attrs);
+  odsState.addTypes(resultTypes);
+  odsState.addOperands(operands);
+  odsState.addAttributes(attrs);
 }
 
 LogicalResult FieldReadOp::verify() {

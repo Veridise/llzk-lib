@@ -32,9 +32,7 @@ ParseResult parseDimAndSymbolListImpl(
   return parser.parseOperandList(mapOperands, OpAsmParser::Delimiter::OptionalSquare);
 }
 
-void printDimAndSymbolListImpl(
-    OpAsmPrinter &printer, Operation *op, OperandRange mapOperands, size_t numDims
-) {
+void printDimAndSymbolListImpl(OpAsmPrinter &printer, OperandRange mapOperands, size_t numDims) {
   printer << '(' << mapOperands.take_front(numDims) << ')';
   if (mapOperands.size() > numDims) {
     printer << '[' << mapOperands.drop_front(numDims) << ']';
@@ -53,9 +51,9 @@ ParseResult parseDimAndSymbolList(
 }
 
 void printDimAndSymbolList(
-    OpAsmPrinter &printer, Operation *op, OperandRange mapOperands, IntegerAttr numDims
+    OpAsmPrinter &printer, Operation *, OperandRange mapOperands, IntegerAttr numDims
 ) {
-  printDimAndSymbolListImpl(printer, op, mapOperands, numDims.getInt());
+  printDimAndSymbolListImpl(printer, mapOperands, numDims.getInt());
 }
 
 ParseResult parseMultiDimAndSymbolList(
@@ -79,13 +77,13 @@ ParseResult parseMultiDimAndSymbolList(
 }
 
 void printMultiDimAndSymbolList(
-    OpAsmPrinter &printer, Operation *op, OperandRangeRange multiMapOperands,
+    OpAsmPrinter &printer, Operation *, OperandRangeRange multiMapOperands,
     DenseI32ArrayAttr numDimsPerMap
 ) {
   size_t count = numDimsPerMap.size();
   assert(multiMapOperands.size() == count);
   llvm::interleaveComma(llvm::seq<size_t>(0, count), printer.getStream(), [&](size_t i) {
-    printDimAndSymbolListImpl(printer, op, multiMapOperands[i], numDimsPerMap[i]);
+    printDimAndSymbolListImpl(printer, multiMapOperands[i], numDimsPerMap[i]);
   });
 }
 

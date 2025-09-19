@@ -42,7 +42,7 @@ namespace llzk::polymorphic::detail {
 namespace {
 
 /// Lists all Op classes that may contain a StructType in their results or attributes.
-static struct {
+static struct OpClassesWithStructTypes {
 
   /// Subset that define the general builder function:
   /// `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)`

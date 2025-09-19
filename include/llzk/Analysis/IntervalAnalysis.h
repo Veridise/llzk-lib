@@ -50,10 +50,11 @@ public:
   explicit ExpressionValue(const Field &f, llvm::SMTExprRef exprRef)
       : i(Interval::Entire(f)), expr(exprRef) {}
 
-  ExpressionValue(const Field &f, llvm::SMTExprRef exprRef, llvm::APSInt singleVal)
+  ExpressionValue(const Field &f, llvm::SMTExprRef exprRef, const llvm::APSInt &singleVal)
       : i(Interval::Degenerate(f, singleVal)), expr(exprRef) {}
 
-  ExpressionValue(llvm::SMTExprRef exprRef, Interval interval) : i(interval), expr(exprRef) {}
+  ExpressionValue(llvm::SMTExprRef exprRef, const Interval &interval)
+      : i(interval), expr(exprRef) {}
 
   llvm::SMTExprRef getExpr() const { return expr; }
 
@@ -70,7 +71,7 @@ public:
 
   /* Required to be a ScalarLatticeValue. */
   /// @brief Fold two expressions together when overapproximating array elements.
-  ExpressionValue &join(const ExpressionValue &rhs) {
+  ExpressionValue &join(const ExpressionValue & /*rhs*/) {
     i = Interval::Entire(getField());
     return *this;
   }
@@ -208,7 +209,7 @@ public:
 
   mlir::ChangeResult join(const AbstractDenseLattice &other) override;
 
-  mlir::ChangeResult meet(const AbstractDenseLattice &rhs) override {
+  mlir::ChangeResult meet(const AbstractDenseLattice & /*rhs*/) override {
     llvm::report_fatal_error("IntervalDataFlowAnalysis::meet : unsupported");
     return mlir::ChangeResult::NoChange;
   }
@@ -231,7 +232,7 @@ public:
   const ConstraintSet &getConstraints() const { return constraints; }
 
   mlir::FailureOr<Interval> findInterval(llvm::SMTExprRef expr) const;
-  mlir::ChangeResult setInterval(llvm::SMTExprRef expr, Interval i);
+  mlir::ChangeResult setInterval(llvm::SMTExprRef expr, const Interval &i);
 
   size_t size() const { return valMap.size(); }
 
@@ -307,7 +308,7 @@ private:
 
   llvm::APSInt getConst(mlir::Operation *op) const;
 
-  llvm::SMTExprRef createConstBitvectorExpr(llvm::APSInt v) const {
+  llvm::SMTExprRef createConstBitvectorExpr(const llvm::APSInt &v) const {
     return smtSolver->mkBitvector(v, field.get().bitWidth());
   }
 
@@ -396,7 +397,9 @@ struct IntervalAnalysisContext {
   std::reference_wrapper<const Field> field;
   bool propagateInputConstraints;
 
-  llvm::SMTExprRef getSymbol(const ConstrainRef &r) { return intervalDFA->getOrCreateSymbol(r); }
+  llvm::SMTExprRef getSymbol(const ConstrainRef &r) const {
+    return intervalDFA->getOrCreateSymbol(r);
+  }
   const Field &getField() const { return field.get(); }
   bool doInputConstraintPropagation() const { return propagateInputConstraints; }
 };
@@ -470,7 +473,7 @@ public:
   virtual ~StructIntervalAnalysis() = default;
 
   mlir::LogicalResult runAnalysis(
-      mlir::DataFlowSolver &solver, mlir::AnalysisManager &_, IntervalAnalysisContext &ctx
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &, IntervalAnalysisContext &ctx
   ) override {
     auto computeRes = StructIntervals::compute(getModule(), getStruct(), solver, ctx);
     if (mlir::failed(computeRes)) {

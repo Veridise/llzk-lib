@@ -60,7 +60,7 @@ std::strong_ordering safeCmp(llvm::APSInt lhs, llvm::APSInt rhs);
 /// @brief Safely converts the given int to a signed int if it is an unsigned int
 /// by adding an extra bit for the sign.
 llvm::APSInt safeToSigned(llvm::APSInt i);
-inline llvm::APSInt safeToSigned(llvm::APInt i) { return safeToSigned(llvm::APSInt(i)); }
+inline llvm::APSInt safeToSigned(const llvm::APInt &i) { return safeToSigned(llvm::APSInt(i)); }
 inline llvm::APSInt safeToSigned(llvm::StringRef s) { return safeToSigned(llvm::APSInt(s)); }
 
 inline bool safeLt(const llvm::APSInt &lhs, const llvm::APSInt &rhs) {

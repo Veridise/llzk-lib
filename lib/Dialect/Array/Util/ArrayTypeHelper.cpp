@@ -49,7 +49,8 @@ template <typename TypeOfIndex> inline std::optional<int64_t> toI64(TypeOfIndex 
 }
 
 template <typename OutType> struct CheckAndConvert {
-  template <typename InType> static std::optional<OutType> from(InType index, int64_t dimSize) {
+  template <typename InType>
+  static std::optional<OutType> from(InType /*index*/, int64_t /*dimSize*/) {
     static_assert(sizeof(OutType) == 0, "CheckAndConvert not implemented for requested type.");
     assert(false);
   }

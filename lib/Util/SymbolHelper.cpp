@@ -47,7 +47,7 @@ namespace {
 constexpr char POSITION_IS_ROOT_INDICATOR[] = "<<symbol lookup root>>";
 constexpr char UNNAMED_SYMBOL_INDICATOR[] = "<<unnamed symbol>>";
 
-enum RootSelector { CLOSEST, FURTHEST };
+enum RootSelector : std::uint8_t { CLOSEST, FURTHEST };
 
 class RootPathBuilder {
   RootSelector _whichRoot;
@@ -186,7 +186,7 @@ public:
 
         // For any other symbol, append the name of the symbol and then delegate to
         // `buildPathFromRootToAnyOp()`.
-        .Default([this, &to](Operation *_) {
+        .Default([this, &to](Operation *) {
       std::vector<FlatSymbolRefAttr> path;
       if (StringAttr name = llzk::getSymbolName(to)) {
         path.push_back(FlatSymbolRefAttr::get(name));

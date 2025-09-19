@@ -84,11 +84,11 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     BuildShortTypeString &outer;
     Impl(BuildShortTypeString &outerRef) : outer(outerRef) {}
 
-    void caseInvalid(Type _) { outer.ss << "!INVALID"; }
-    void caseBool(IntegerType _) { outer.ss << 'b'; }
-    void caseIndex(IndexType _) { outer.ss << 'i'; }
-    void caseFelt(FeltType _) { outer.ss << 'f'; }
-    void caseString(StringType _) { outer.ss << 's'; }
+    void caseInvalid(Type) { outer.ss << "!INVALID"; }
+    void caseBool(IntegerType) { outer.ss << 'b'; }
+    void caseIndex(IndexType) { outer.ss << 'i'; }
+    void caseFelt(FeltType) { outer.ss << 'f'; }
+    void caseString(StringType) { outer.ss << 's'; }
     void caseTypeVar(TypeVarType t) {
       outer.ss << "!t<";
       outer.appendSymName(llvm::cast<TypeVarType>(t).getRefName());
@@ -472,10 +472,10 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
     Impl(AllowedTypes &outerRef) : outer(outerRef) {}
 
     bool caseBool(IntegerType t) { return !outer.no_int && t.isSignlessInteger(1); }
-    bool caseIndex(IndexType _) { return !outer.no_int; }
-    bool caseFelt(FeltType _) { return !outer.no_felt; }
-    bool caseString(StringType _) { return !outer.no_string; }
-    bool caseTypeVar(TypeVarType _) { return !outer.no_var; }
+    bool caseIndex(IndexType) { return !outer.no_int; }
+    bool caseFelt(FeltType) { return !outer.no_felt; }
+    bool caseString(StringType) { return !outer.no_string; }
+    bool caseTypeVar(TypeVarType) { return !outer.no_var; }
     bool caseArray(ArrayType t) {
       return !outer.no_array &&
              outer.isValidArrayTypeImpl(t.getElementType(), t.getDimensionSizes());
@@ -547,9 +547,9 @@ bool isDynamic(IntegerAttr intAttr) { return ShapedType::isDynamic(fromAPInt(int
 
 uint64_t computeEmitEqCardinality(Type type) {
   struct Impl : LLZKTypeSwitch<Impl, uint64_t> {
-    uint64_t caseBool(IntegerType _) { return 1; }
-    uint64_t caseIndex(IndexType _) { return 1; }
-    uint64_t caseFelt(FeltType _) { return 1; }
+    uint64_t caseBool(IntegerType) { return 1; }
+    uint64_t caseIndex(IndexType) { return 1; }
+    uint64_t caseFelt(FeltType) { return 1; }
     uint64_t caseArray(ArrayType t) {
       int64_t n = t.getNumElements();
       assert(n >= 0);
@@ -561,9 +561,9 @@ uint64_t computeEmitEqCardinality(Type type) {
       }
       llvm_unreachable("not a valid EmitEq type");
     }
-    uint64_t caseString(StringType _) { llvm_unreachable("not a valid EmitEq type"); }
-    uint64_t caseTypeVar(TypeVarType _) { llvm_unreachable("tvar has unknown cardinality"); }
-    uint64_t caseInvalid(Type _) { llvm_unreachable("not a valid LLZK type"); }
+    uint64_t caseString(StringType) { llvm_unreachable("not a valid EmitEq type"); }
+    uint64_t caseTypeVar(TypeVarType) { llvm_unreachable("tvar has unknown cardinality"); }
+    uint64_t caseInvalid(Type) { llvm_unreachable("not a valid LLZK type"); }
   };
   return Impl().match(type);
 }

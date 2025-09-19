@@ -67,7 +67,7 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
   mlir::LogicalResult upgradeFromVersion(
       mlir::Operation *topLevelOp, const mlir::DialectVersion &version
   ) const override {
-    auto llzkVersion = reinterpret_cast<const LLZKDialectVersion *>(&version);
+    const auto *llzkVersion = reinterpret_cast<const LLZKDialectVersion *>(&version);
     if (!llzkVersion) {
       return mlir::success();
     }

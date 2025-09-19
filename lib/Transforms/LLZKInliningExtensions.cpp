@@ -84,7 +84,7 @@ struct FullyLegalForInlining
 
   bool isLegalToInline(Operation *, Operation *, bool) const override { return true; }
   bool isLegalToInline(Region *, Region *, bool, IRMapping &) const override { return true; }
-  bool isLegalToInline(Operation *op, Region *, bool, IRMapping &) const override { return true; }
+  bool isLegalToInline(Operation *, Region *, bool, IRMapping &) const override { return true; }
 };
 
 } // namespace

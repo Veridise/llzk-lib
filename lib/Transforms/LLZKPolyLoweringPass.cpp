@@ -276,7 +276,7 @@ private:
       // The pass doesn't currently support EmitContainmentOp as it depends on
       // https://veridise.atlassian.net/browse/LLZK-245 being fixed Once this is fixed, the op
       // should lower all the elements in the row being looked up
-      constrainFunc.walk([this, &moduleOp](EmitContainmentOp containOp) {
+      constrainFunc.walk([this, &moduleOp](EmitContainmentOp /*containOp*/) {
         auto diag = moduleOp.emitError();
         diag << "EmitContainmentOp is unsupported for now in the lowering pass";
         diag.report();

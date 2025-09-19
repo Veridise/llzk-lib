@@ -406,7 +406,7 @@ void CallOp::build(
 }
 
 namespace {
-enum class CalleeKind { Compute, Constrain, Other };
+enum class CalleeKind : std::uint8_t { Compute, Constrain, Other };
 
 CalleeKind calleeNameToKind(StringRef tgtName) {
   if (FUNC_NAME_COMPUTE == tgtName) {

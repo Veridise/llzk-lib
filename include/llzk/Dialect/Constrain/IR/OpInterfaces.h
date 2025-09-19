@@ -19,8 +19,9 @@
 namespace llzk::constrain {
 
 inline bool containsConstraintOp(mlir::Operation *op) {
-  return op->walk([](ConstraintOpInterface p) { return mlir::WalkResult::interrupt(); }
-  ).wasInterrupted();
+  return op->walk([](ConstraintOpInterface) {
+    return mlir::WalkResult::interrupt();
+  }).wasInterrupted();
 }
 
 } // namespace llzk::constrain

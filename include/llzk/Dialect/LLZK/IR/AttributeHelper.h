@@ -31,7 +31,7 @@ template <> struct mlir::FieldParser<llvm::APInt> {
 namespace llzk {
 
 inline llvm::APInt toAPInt(int64_t i) { return llvm::APInt(64, i); }
-inline int64_t fromAPInt(llvm::APInt i) { return i.getZExtValue(); }
+inline int64_t fromAPInt(const llvm::APInt &i) { return i.getSExtValue(); }
 
 inline bool isNullOrEmpty(mlir::ArrayAttr a) { return !a || a.empty(); }
 inline bool isNullOrEmpty(mlir::DenseArrayAttr a) { return !a || a.empty(); }

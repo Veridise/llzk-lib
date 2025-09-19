@@ -19,17 +19,9 @@
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/STLExtras.h>
 
-namespace llvm {
-
-template <class GraphType> struct GraphTraits;
-class raw_ostream;
-
-} // namespace llvm
-
 namespace mlir {
 
 class Operation;
-class ModuleOp;
 
 } // namespace mlir
 
@@ -63,7 +55,7 @@ class CallGraphReachabilityAnalysis {
 public:
   CallGraphReachabilityAnalysis(mlir::Operation *, mlir::AnalysisManager &am);
 
-  bool isInvalidated(const mlir::AnalysisManager::PreservedAnalyses &pa) {
+  static bool isInvalidated(const mlir::AnalysisManager::PreservedAnalyses &pa) {
     return !pa.isPreserved<CallGraphReachabilityAnalysis>() || !pa.isPreserved<CallGraphAnalysis>();
   }
 

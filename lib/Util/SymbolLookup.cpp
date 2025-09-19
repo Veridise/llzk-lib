@@ -106,7 +106,7 @@ void SymbolLookupResultUntyped::trackIncludeAsName(llvm::StringRef includeOpSymN
 // Within
 //===------------------------------------------------------------------===//
 
-Within &Within::operator=(Within &&other) {
+Within &Within::operator=(Within &&other) noexcept {
   if (this != &other) {
     from = std::move(other.from);
   }

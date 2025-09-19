@@ -55,8 +55,8 @@ mlir::ParseResult parseAttrDictWithWarnings(
 
 template <typename ConcreteOp>
 inline void printAttrDictWithWarnings(
-    mlir::OpAsmPrinter &printer, ConcreteOp op, mlir::DictionaryAttr extraAttrs,
-    typename ConcreteOp::Properties state
+    mlir::OpAsmPrinter &printer, ConcreteOp /*op*/, mlir::DictionaryAttr extraAttrs,
+    typename ConcreteOp::Properties /*state*/
 ) {
   printer.printOptionalAttrDict(extraAttrs.getValue(), ConcreteOp::getAttributeNames());
 }

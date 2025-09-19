@@ -240,8 +240,9 @@ ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) c
   return newSignalUsage;
 }
 
-std::vector<ConstrainRef>
-getAllChildren(SymbolTableCollection &tables, ModuleOp mod, ArrayType arrayTy, ConstrainRef root) {
+std::vector<ConstrainRef> getAllChildren(
+    SymbolTableCollection &tables, ModuleOp /*mod*/, ArrayType arrayTy, ConstrainRef root
+) {
   std::vector<ConstrainRef> res;
   // Recurse into arrays by iterating over their elements
   for (int64_t i = 0; i < arrayTy.getDimSize(0); i++) {

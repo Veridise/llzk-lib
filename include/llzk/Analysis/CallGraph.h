@@ -29,7 +29,7 @@ namespace llzk {
 
 namespace function {
 class FuncDefOp;
-}
+} // namespace function
 
 /// This is a simple port of the mlir::CallGraphNode with llzk::CallGraph
 /// as a friend class, for mlir::CallGraphNode has a private constructor and
@@ -40,7 +40,7 @@ class CallGraphNode {
 public:
   /// This class represents a directed edge between two nodes in the callgraph.
   class Edge {
-    enum class Kind {
+    enum class Kind : std::uint8_t {
       // An 'Abstract' edge represents an opaque, non-operation, reference
       // between this node and the target. Edges of this type are only valid
       // from the external node (e.g., an external library call),
