@@ -768,23 +768,23 @@ private:
     // If either side is ShapedType::kDynamic then, similarly to Symbols, assume they unify.
     if (unifyDynamicSize) {
       auto dyn_cast_if_dynamic = [](Attribute attr) -> IntegerAttr {
-        if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+        if (IntegerAttr intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
           if (isDynamic(intAttr)) {
             return intAttr;
           }
         }
         return nullptr;
       };
-      auto isa_const = [](Attribute attr) {
+      auto is_const_like = [](Attribute attr) {
         return llvm::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(attr);
       };
-      if (auto lhsIntAttr = dyn_cast_if_dynamic(lhsAttr)) {
-        if (isa_const(rhsAttr)) {
+      if (IntegerAttr lhsIntAttr = dyn_cast_if_dynamic(lhsAttr)) {
+        if (is_const_like(rhsAttr)) {
           return true;
         }
       }
-      if (auto rhsIntAttr = dyn_cast_if_dynamic(rhsAttr)) {
-        if (isa_const(lhsAttr)) {
+      if (IntegerAttr rhsIntAttr = dyn_cast_if_dynamic(rhsAttr)) {
+        if (is_const_like(lhsAttr)) {
           return true;
         }
       }
