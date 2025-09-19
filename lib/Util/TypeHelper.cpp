@@ -644,7 +644,7 @@ struct UnifierImpl {
       return false;
     }
     // Check if the parameters unify between the LHS and RHS
-    return typeParamsUnify(lhs.getParams(), rhs.getParams());
+    return typeParamsUnify(lhs.getParams(), rhs.getParams(), /*unifyDynamicSize=*/false);
   }
 
   bool typesUnify(Type lhs, Type rhs) {
@@ -766,6 +766,10 @@ private:
       return true;
     }
     // If either side is ShapedType::kDynamic then, similarly to Symbols, assume they unify.
+    // NOTE: Dynamic array dimensions (i.e. '?') are allowed in LLZK but should generally be
+    // restricted to scenarios where it can be replaced with a concrete value during the flattening
+    // pass, such as a `unifiable_cast` where the other side of the cast has concrete dimensions or
+    // extern functions with varargs.
     if (unifyDynamicSize) {
       auto dyn_cast_if_dynamic = [](Attribute attr) -> IntegerAttr {
         if (IntegerAttr intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
