@@ -351,8 +351,8 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   } else if (!isTemplateConstant() && rhs.isTemplateConstant()) {
     return true;
   } else if (isTemplateConstant() && rhs.isTemplateConstant()) {
-    auto lhsName = std::get<ConstReadOp>(*constantVal).getConstName();
-    auto rhsName = std::get<ConstReadOp>(*rhs.constantVal).getConstName();
+    StringRef lhsName = std::get<ConstReadOp>(*constantVal).getConstName();
+    StringRef rhsName = std::get<ConstReadOp>(*rhs.constantVal).getConstName();
     return lhsName.compare(rhsName) < 0;
   }
 
