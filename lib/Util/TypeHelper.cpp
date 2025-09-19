@@ -766,25 +766,27 @@ private:
       return true;
     }
     // If either side is ShapedType::kDynamic then, similarly to Symbols, assume they unify.
-    auto dyn_cast_if_dynamic = [](Attribute attr) -> IntegerAttr {
-      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
-        if (isDynamic(intAttr)) {
-          return intAttr;
+    if (unifyDynamicSize) {
+      auto dyn_cast_if_dynamic = [](Attribute attr) -> IntegerAttr {
+        if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+          if (isDynamic(intAttr)) {
+            return intAttr;
+          }
+        }
+        return nullptr;
+      };
+      auto isa_const = [](Attribute attr) {
+        return llvm::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(attr);
+      };
+      if (auto lhsIntAttr = dyn_cast_if_dynamic(lhsAttr)) {
+        if (isa_const(rhsAttr)) {
+          return true;
         }
       }
-      return nullptr;
-    };
-    auto isa_const = [](Attribute attr) {
-      return llvm::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(attr);
-    };
-    if (auto lhsIntAttr = dyn_cast_if_dynamic(lhsAttr)) {
-      if (isa_const(rhsAttr)) {
-        return true;
-      }
-    }
-    if (auto rhsIntAttr = dyn_cast_if_dynamic(rhsAttr)) {
-      if (isa_const(lhsAttr)) {
-        return true;
+      if (auto rhsIntAttr = dyn_cast_if_dynamic(rhsAttr)) {
+        if (isa_const(lhsAttr)) {
+          return true;
+        }
       }
     }
     // If both are type refs, check for unification of the types.
