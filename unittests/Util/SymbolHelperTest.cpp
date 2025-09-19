@@ -15,15 +15,14 @@
 
 #include <gtest/gtest.h>
 
+#include "../LLZKTestBase.h"
+
 using namespace llzk;
 using namespace mlir;
 
-class SymbolHelperTests : public ::testing::Test {
+class SymbolHelperTests : public LLZKTest {
 protected:
-  MLIRContext ctx;
-  Location loc;
-
-  SymbolHelperTests() : ctx(), loc(getUnknownLoc(&ctx)) {}
+  SymbolHelperTests() : LLZKTest() {}
 
   SymbolRefAttr newExample(unsigned numNestedRefs = 0) {
     llvm::SmallVector<FlatSymbolRefAttr> nestedRefs;
