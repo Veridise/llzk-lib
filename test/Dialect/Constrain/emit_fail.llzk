@@ -475,3 +475,35 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
+
+// -----
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Component26 {
+    function.def @constrain(%self: !struct.type<@Component26>, %b: !array.type<89 x !struct.type<@Component26>>) {
+      // expected-error@+1 {{'constrain.in' op element type must be any LLZK type, excluding non-Signal struct and string types, but got '!struct.type<@Component26>'}}
+      constrain.in %b, %self : !array.type<89 x !struct.type<@Component26>>, !struct.type<@Component26>
+      function.return
+    }
+
+    function.def @compute(%b: !array.type<89 x !struct.type<@Component26>>) -> !struct.type<@Component26> {
+      %self = struct.new : !struct.type<@Component26>
+      function.return %self : !struct.type<@Component26>
+    }
+  }
+}
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Component27 {
+    function.def @constrain(%self: !struct.type<@Component27>, %a: !array.type<7,3,2 x index>, %b: !array.type<89,2 x index>) {
+      // expected-error@+1 {{'constrain.in' op cannot unify array dimensions [3, 2] with [89, 2]}}
+      constrain.in %a, %b : !array.type<7,3,2 x index>, !array.type<89,2 x index>
+      function.return
+    }
+
+    function.def @compute(%a: !array.type<7,3,2 x index>, %b: !array.type<89,2 x index>) -> !struct.type<@Component27> {
+      %self = struct.new : !struct.type<@Component27>
+      function.return %self : !struct.type<@Component27>
+    }
+  }
+}
