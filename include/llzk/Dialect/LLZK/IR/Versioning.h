@@ -67,25 +67,22 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
   mlir::LogicalResult upgradeFromVersion(
       mlir::Operation *topLevelOp, const mlir::DialectVersion &version
   ) const override {
-    const auto *llzkVersion = reinterpret_cast<const LLZKDialectVersion *>(&version);
-    if (!llzkVersion) {
-      return mlir::success();
-    }
+    const auto &requested = static_cast<const LLZKDialectVersion &>(version);
     const auto &current = LLZKDialectVersion::CurrentVersion();
-    if (*llzkVersion > current) {
-      return topLevelOp->emitError().append(
-          "Cannot upgrade from current version ", current.str(), " to future version ",
-          llzkVersion->str()
-      );
-    }
-    if (*llzkVersion == current) {
+    if (requested == current) {
       // No work to do, versions match.
       return mlir::success();
+    }
+    if (requested > current) {
+      return topLevelOp->emitError().append(
+          "Cannot upgrade from current version ", current.str(), " to future version ",
+          requested.str()
+      );
     }
     // NOTE: This is the point at which upgrade functionality should be added
     // for backwards compatibility.
     return topLevelOp->emitWarning().append(
-        "LLZK version ", llzkVersion->str(), " is older than current version ", current.str(),
+        "LLZK version ", requested.str(), " is older than current version ", current.str(),
         " and no upgrade methods have been implemented. Proceed with caution."
     );
   }
