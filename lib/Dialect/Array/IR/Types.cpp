@@ -12,6 +12,8 @@
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/IR/BuiltinTypeInterfaces.h>
+
 using namespace mlir;
 
 namespace llzk::array {
