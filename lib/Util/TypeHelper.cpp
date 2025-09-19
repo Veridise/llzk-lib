@@ -644,7 +644,7 @@ struct UnifierImpl {
       return false;
     }
     // Check if the parameters unify between the LHS and RHS
-    return typeParamsUnify(lhs.getParams(), rhs.getParams());
+    return typeParamsUnify(lhs.getParams(), rhs.getParams(), /*unifyDynamicSize=*/false);
   }
 
   bool typesUnify(Type lhs, Type rhs) {
@@ -766,25 +766,31 @@ private:
       return true;
     }
     // If either side is ShapedType::kDynamic then, similarly to Symbols, assume they unify.
-    auto dyn_cast_if_dynamic = [](Attribute attr) -> IntegerAttr {
-      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
-        if (isDynamic(intAttr)) {
-          return intAttr;
+    // NOTE: Dynamic array dimensions (i.e. '?') are allowed in LLZK but should generally be
+    // restricted to scenarios where it can be replaced with a concrete value during the flattening
+    // pass, such as a `unifiable_cast` where the other side of the cast has concrete dimensions or
+    // extern functions with varargs.
+    if (unifyDynamicSize) {
+      auto dyn_cast_if_dynamic = [](Attribute attr) -> IntegerAttr {
+        if (IntegerAttr intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+          if (isDynamic(intAttr)) {
+            return intAttr;
+          }
+        }
+        return nullptr;
+      };
+      auto is_const_like = [](Attribute attr) {
+        return llvm::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(attr);
+      };
+      if (IntegerAttr lhsIntAttr = dyn_cast_if_dynamic(lhsAttr)) {
+        if (is_const_like(rhsAttr)) {
+          return true;
         }
       }
-      return nullptr;
-    };
-    auto isa_const = [](Attribute attr) {
-      return llvm::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(attr);
-    };
-    if (auto lhsIntAttr = dyn_cast_if_dynamic(lhsAttr)) {
-      if (isa_const(rhsAttr)) {
-        return true;
-      }
-    }
-    if (auto rhsIntAttr = dyn_cast_if_dynamic(rhsAttr)) {
-      if (isa_const(lhsAttr)) {
-        return true;
+      if (IntegerAttr rhsIntAttr = dyn_cast_if_dynamic(rhsAttr)) {
+        if (is_const_like(lhsAttr)) {
+          return true;
+        }
       }
     }
     // If both are type refs, check for unification of the types.
