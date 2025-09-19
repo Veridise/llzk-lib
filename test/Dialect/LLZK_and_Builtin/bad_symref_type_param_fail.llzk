@@ -564,7 +564,7 @@ module attributes {veridise.lang = "llzk"} {
       %b = felt.const 3
       // See NOTE on line 4.
       // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!array.type<@Unknown x !felt.type>' vs '!array.type<5 x !felt.type>'}}
-      constrain.in %a, %b : !array.type<@Unknown x !felt.type>
+      constrain.in %a, %b : !array.type<@Unknown x !felt.type>, !felt.type
       function.return
     }
 

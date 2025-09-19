@@ -287,4 +287,20 @@ mlir::LogicalResult verifyArrayType(
     EmitErrorFn emitError, mlir::Type elementType, mlir::ArrayRef<mlir::Attribute> dimensionSizes
 );
 
+/// Determine if the `subArrayType` is a valid subarray of `arrayType`.
+/// `arrayType` must be an array of dimension N and `subArrayType` must be
+/// an array of dimension M, where N > M >= 1.
+/// For example, <3,7 x int> is a valid subarray of <5,3,7 x int>, but
+/// <8 x int> is not an neither is <3,7 x string>.
+mlir::LogicalResult verifySubArrayType(
+    EmitErrorFn emitError, array::ArrayType arrayType, array::ArrayType subArrayType
+);
+
+/// Determine if the `subArrayOrElemType` is either a valid subarray of `arrayType`
+/// (see `verifySubArrayType`), or if `subArrayOrElemType` matches the element
+/// type of `arrayType`.
+mlir::LogicalResult verifySubArrayOrElementType(
+    EmitErrorFn emitError, array::ArrayType arrayType, mlir::Type subArrayOrElemType
+);
+
 } // namespace llzk

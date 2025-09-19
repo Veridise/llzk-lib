@@ -22,6 +22,10 @@ def EmitEqType
     : Type<CPred<"::llzk::isValidEmitEqType($_self)">,
            "any LLZK type, excluding non-Signal struct and string types">;
 
+def EmitContainmentType
+    : Type<CPred<"::llzk::isValidEmitContainmentType($_self)">,
+           "an array of EmitEqTypes or a single EmitEqType">;
+
 def ConstReadType : Type<CPred<"::llzk::isValidConstReadType($_self)">,
                          "integral, felt, or typevar type">;
 

@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Function/IR/OpTraits.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/BuilderHelper.h"
+#include "llzk/Util/ErrorHelper.h"
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -46,9 +47,9 @@ LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &tables)
   );
 }
 
-Type EmitContainmentOp::inferRHS(Type lhsType) {
-  assert(llvm::isa<ArrayType>(lhsType)); // per ODS spec of EmitContainmentOp
-  return llvm::cast<ArrayType>(lhsType).getElementType();
+LogicalResult EmitContainmentOp::verify() {
+  auto arrType = llvm::cast<ArrayType>(getLhs().getType()); // per the ODS definition
+  return verifySubArrayOrElementType(getEmitOpErrFn(this), arrType, getRhs().getType());
 }
 
 } // namespace llzk::constrain

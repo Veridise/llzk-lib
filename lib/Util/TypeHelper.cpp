@@ -931,4 +931,53 @@ void assertValidAttrForParamOfType(Attribute attr) {
   }
 }
 
+LogicalResult
+verifySubArrayType(EmitErrorFn emitError, ArrayType arrayType, ArrayType subArrayType) {
+  ArrayRef<Attribute> dimsFromArr = arrayType.getDimensionSizes();
+  size_t numArrDims = dimsFromArr.size();
+  ArrayRef<Attribute> dimsFromSubArr = subArrayType.getDimensionSizes();
+  size_t numSubArrDims = dimsFromSubArr.size();
+  assert(numArrDims >= numSubArrDims); // precondition
+  size_t toDrop = numArrDims - numSubArrDims;
+  ArrayRef<Attribute> dimsFromArrReduced = dimsFromArr.drop_front(toDrop);
+
+  // Ensure dimension sizes are compatible (ignoring the indexed dimensions)
+  if (!typeParamsUnify(dimsFromArrReduced, dimsFromSubArr)) {
+    std::string message;
+    llvm::raw_string_ostream ss(message);
+    auto appendOne = [&ss](Attribute a) { appendWithoutType(ss, a); };
+    ss << "cannot unify array dimensions [";
+    llvm::interleaveComma(dimsFromArrReduced, ss, appendOne);
+    ss << "] with [";
+    llvm::interleaveComma(dimsFromSubArr, ss, appendOne);
+    ss << "]";
+    return emitError().append(message);
+  }
+
+  // Ensure element types of the arrays are compatible
+  if (!typesUnify(arrayType.getElementType(), subArrayType.getElementType())) {
+    return emitError().append(
+        "incorrect array element type; expected: ", arrayType.getElementType(),
+        ", found: ", subArrayType.getElementType()
+    );
+  }
+
+  return success();
+}
+
+LogicalResult
+verifySubArrayOrElementType(EmitErrorFn emitError, ArrayType arrayType, Type subArrayOrElemType) {
+  if (auto subArrayType = llvm::dyn_cast<ArrayType>(subArrayOrElemType)) {
+    return verifySubArrayType(emitError, arrayType, subArrayType);
+  }
+  if (!typesUnify(arrayType.getElementType(), subArrayOrElemType)) {
+    return emitError().append(
+        "incorrect array element type; expected: ", arrayType.getElementType(),
+        ", found: ", subArrayOrElemType
+    );
+  }
+
+  return success();
+}
+
 } // namespace llzk
