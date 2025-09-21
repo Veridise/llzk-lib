@@ -937,7 +937,13 @@ verifySubArrayType(EmitErrorFn emitError, ArrayType arrayType, ArrayType subArra
   size_t numArrDims = dimsFromArr.size();
   ArrayRef<Attribute> dimsFromSubArr = subArrayType.getDimensionSizes();
   size_t numSubArrDims = dimsFromSubArr.size();
-  assert(numArrDims >= numSubArrDims); // precondition
+
+  if (numArrDims < numSubArrDims) {
+    return emitError().append(
+        "subarray type ", subArrayType, " has more dimensions than array type ", arrayType
+    );
+  }
+
   size_t toDrop = numArrDims - numSubArrDims;
   ArrayRef<Attribute> dimsFromArrReduced = dimsFromArr.drop_front(toDrop);
 

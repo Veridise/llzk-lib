@@ -445,9 +445,6 @@ LogicalResult InsertArrayOp::verify() {
   if (numIndices > lhsDims) {
     return emitOpError("cannot select more dimensions than exist in the source array");
   }
-  if (lhsDims < rhsDims) {
-    return emitOpError("cannot insert array into destination with fewer dimensions");
-  }
 
   // Ensure the rValue dimension count equals the base reduced dimension count
   auto compare = (numIndices + rhsDims) <=> lhsDims;
@@ -458,7 +455,9 @@ LogicalResult InsertArrayOp::verify() {
     );
   }
 
-  // Having verified the dimensions are of appropriate size, we verify the subarray type.
+  // Having verified the indices are of appropriate size, we verify the subarray type.
+  // This will verify the dimensions of the subarray, which is why we only check the
+  // size of the indices above.
   return verifySubArrayType(getEmitOpErrFn(this), baseArrRefArrType, rValueArrType);
 }
 

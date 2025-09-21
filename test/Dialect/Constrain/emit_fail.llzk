@@ -477,6 +477,8 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // -----
+
+// Test: cannot use struct type with [constrain.in] op
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component26 {
     function.def @constrain(%self: !struct.type<@Component26>, %b: !array.type<89 x !struct.type<@Component26>>) {
@@ -493,6 +495,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
+// Test: mismatched dimensions with [constrain.in] op
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component27 {
     function.def @constrain(%self: !struct.type<@Component27>, %a: !array.type<7,3,2 x index>, %b: !array.type<89,2 x index>) {
@@ -504,6 +507,24 @@ module attributes {veridise.lang = "llzk"} {
     function.def @compute(%a: !array.type<7,3,2 x index>, %b: !array.type<89,2 x index>) -> !struct.type<@Component27> {
       %self = struct.new : !struct.type<@Component27>
       function.return %self : !struct.type<@Component27>
+    }
+  }
+}
+
+// -----
+
+// Test: rhs has more dimensions than lhs, not allowed for [constrain.in] op
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Component28 {
+    function.def @constrain(%self: !struct.type<@ComponentE>, %a: !array.type<2 x index>, %b: !array.type<89,2 x index>) {
+      // expected-error@+1 {{'constrain.in' op subarray type '!array.type<89,2 x index>' has more dimensions than array type '!array.type<2 x index>'}}
+      constrain.in %a, %b : <2 x index>, !array.type<89,2 x index>
+      function.return
+    }
+
+    function.def @compute(%a: !array.type<2 x index>, %b: !array.type<89,2 x index>) -> !struct.type<@ComponentE> {
+      %self = struct.new : !struct.type<@ComponentE>
+      function.return %self : !struct.type<@ComponentE>
     }
   }
 }

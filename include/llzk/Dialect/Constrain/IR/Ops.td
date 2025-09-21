@@ -81,7 +81,7 @@ def EmitContainmentOp : EmitOp<"in"> {
   let description = [{
     Emits a containment constraint between lhs and rhs (rhs must be contained
     within lhs). If lhs is an N-dimensional array (N >= 1), rhs must be an
-    M-dimensional array, where N > M (M=0 means that rhs is a scalar element
+    M-dimensional array, where N >= M (M=0 means that rhs is a scalar element
     of type accepted by the `constrain.eq` operation).
   }];
 
