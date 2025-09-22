@@ -30,7 +30,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB {
     function.def @constrain(%self: !struct.type<@ComponentB>, %a: !felt.type, %b: !array.type<5 x !felt.type>) {
-      constrain.in %b, %a : !array.type<5 x !felt.type>
+      constrain.in %b, %a : !array.type<5 x !felt.type>, !felt.type
       function.return
     }
 
@@ -57,7 +57,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentC {
     function.def @constrain(%self: !struct.type<@ComponentC>, %a: index, %b: !array.type<89 x index>) {
-      constrain.in %b, %a : !array.type<89 x index>
+      constrain.in %b, %a : !array.type<89 x index>, index
       function.return
     }
 
@@ -81,27 +81,27 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentD {
-    function.def @constrain(%self: !struct.type<@ComponentD>, %b: !array.type<89 x !struct.type<@ComponentD>>) {
-      constrain.in %b, %self : !array.type<89 x !struct.type<@ComponentD>>
+    function.def @constrain(%self: !struct.type<@ComponentD>, %a: !array.type<2 x index>, %b: !array.type<89,2 x index>) {
+      constrain.in %b, %a : !array.type<89,2 x index>, !array.type<2 x index>
       function.return
     }
 
-    function.def @compute(%b: !array.type<89 x !struct.type<@ComponentD>>) -> !struct.type<@ComponentD> {
+    function.def @compute(%a: !array.type<2 x index>, %b: !array.type<89,2 x index>) -> !struct.type<@ComponentD> {
       %self = struct.new : !struct.type<@ComponentD>
       function.return %self : !struct.type<@ComponentD>
     }
   }
 }
 //CHECK-LABEL:  struct.def @ComponentD {
-//CHECK-NEXT:     function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentD>,
-//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<89 x !struct.type<@ComponentD>>) attributes {function.allow_constraint} {
-//CHECK-NEXT:       constrain.in %[[A1]], %[[A0]] : <89 x !struct.type<@ComponentD>>, !struct.type<@ComponentD>
+//CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentD>,
+//CHECK-SAME:         %[[A0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<89,2 x index>) attributes {function.allow_constraint} {
+//CHECK-NEXT:       constrain.in %[[A1]], %[[A0]] : <89,2 x index>, !array.type<2 x index>
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @compute(%[[A1:[0-9a-zA-Z_\.]+]]: !array.type<89 x !struct.type<@ComponentD>>) -> !struct.type<@ComponentD> attributes {function.allow_witness} {
+//CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+//CHECK-SAME:         %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<89,2 x index>) -> !struct.type<@ComponentD>  attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentD>
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentD>
 //CHECK-NEXT:     }
@@ -111,7 +111,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentE {
     function.def @constrain(%self: !struct.type<@ComponentE>, %a: index, %b: !array.type<89,2 x index>) {
-      constrain.in %b, %a : !array.type<89,2 x index>
+      constrain.in %b, %a : !array.type<89,2 x index>, index
       function.return
     }
 
@@ -133,7 +133,6 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentE>
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
-
 // -----
 
 !Signal = !struct.type<@Signal>

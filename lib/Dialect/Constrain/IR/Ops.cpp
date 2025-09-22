@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Function/IR/OpTraits.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/BuilderHelper.h"
+#include "llzk/Util/ErrorHelper.h"
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -46,9 +47,25 @@ LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &tables)
   );
 }
 
-Type EmitContainmentOp::inferRHS(Type lhsType) {
-  assert(llvm::isa<ArrayType>(lhsType)); // per ODS spec of EmitContainmentOp
-  return llvm::cast<ArrayType>(lhsType).getElementType();
+LogicalResult EmitContainmentOp::verify() {
+  auto arrType = llvm::cast<ArrayType>(getLhs().getType()); // per the ODS definition
+  OwningEmitErrorFn errFn = getEmitOpErrFn(this);
+
+  if (failed(verifySubArrayOrElementType(errFn, arrType, getRhs().getType()))) {
+    // error already reported
+    return failure();
+  }
+  // The types are known to unify at this point; we can now check that the
+  // array element type is a valid emit equal type.
+  Type elemTy = arrType.getElementType();
+  if (!isValidEmitEqType(elemTy)) {
+    return errFn().append(
+        "element type must be any LLZK type, excluding non-Signal struct and string types, but "
+        "got ",
+        elemTy
+    );
+  }
+  return success();
 }
 
 } // namespace llzk::constrain

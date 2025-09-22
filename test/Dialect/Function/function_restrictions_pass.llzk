@@ -86,7 +86,7 @@ module attributes {veridise.lang = "llzk"} {
       %up = arith.constant 4 : index
       %step = arith.constant 1 : index
       scf.for %iv = %lb to %up step %step {
-        constrain.in %b, %a : !array.type<5 x !felt.type>
+        constrain.in %b, %a : !array.type<5 x !felt.type>, !felt.type
       }
       function.return
     }
@@ -122,7 +122,7 @@ module attributes {veridise.lang = "llzk"} {
       scf.if %a {
         scf.if %b {
           scf.if %c {
-            constrain.in %y, %x : !array.type<5 x index>
+            constrain.in %y, %x : !array.type<5 x index>, index
           }
         }
       }

@@ -431,53 +431,34 @@ LogicalResult InsertArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult InsertArrayOp::verify() {
-  size_t numIndices = getIndices().size();
-
   ArrayType baseArrRefArrType = getArrRefType();
-
   Type rValueType = getRvalue().getType();
   assert(llvm::isa<ArrayType>(rValueType)); // per ODS spec of InsertArrayOp
   ArrayType rValueArrType = llvm::cast<ArrayType>(rValueType);
 
-  ArrayRef<Attribute> dimsFromBase = baseArrRefArrType.getDimensionSizes();
+  // size of lhs dimensions == numIndices + size of rhs dimensions
+  size_t lhsDims = baseArrRefArrType.getDimensionSizes().size();
+  size_t numIndices = getIndices().size();
+  size_t rhsDims = rValueArrType.getDimensionSizes().size();
+
   // Ensure the number of indices specified does not exceed base dimension count.
-  if (numIndices > dimsFromBase.size()) {
+  if (numIndices > lhsDims) {
     return emitOpError("cannot select more dimensions than exist in the source array");
   }
 
-  ArrayRef<Attribute> dimsFromRValue = rValueArrType.getDimensionSizes();
-  ArrayRef<Attribute> dimsFromBaseReduced = dimsFromBase.drop_front(numIndices);
   // Ensure the rValue dimension count equals the base reduced dimension count
-  auto compare = dimsFromRValue.size() <=> dimsFromBaseReduced.size();
+  auto compare = (numIndices + rhsDims) <=> lhsDims;
   if (compare != 0) {
     return emitOpError().append(
         "has ", (compare < 0 ? "insufficient" : "too many"), " indexed dimensions: expected ",
-        (dimsFromBase.size() - dimsFromRValue.size()), " but found ", numIndices
+        (lhsDims - rhsDims), " but found ", numIndices
     );
   }
 
-  // Ensure dimension sizes are compatible (ignoring the indexed dimensions)
-  if (!typeParamsUnify(dimsFromBaseReduced, dimsFromRValue)) {
-    std::string message;
-    llvm::raw_string_ostream ss(message);
-    auto appendOne = [&ss](Attribute a) { appendWithoutType(ss, a); };
-    ss << "cannot unify array dimensions [";
-    llvm::interleaveComma(dimsFromBaseReduced, ss, appendOne);
-    ss << "] with [";
-    llvm::interleaveComma(dimsFromRValue, ss, appendOne);
-    ss << "]";
-    return emitOpError().append(message);
-  }
-
-  // Ensure element types of the arrays are compatible
-  if (!typesUnify(baseArrRefArrType.getElementType(), rValueArrType.getElementType())) {
-    return emitOpError().append(
-        "incorrect array element type; expected: ", baseArrRefArrType.getElementType(),
-        ", found: ", rValueArrType.getElementType()
-    );
-  }
-
-  return success();
+  // Having verified the indices are of appropriate size, we verify the subarray type.
+  // This will verify the dimensions of the subarray, which is why we only check the
+  // size of the indices above.
+  return verifySubArrayType(getEmitOpErrFn(this), baseArrRefArrType, rValueArrType);
 }
 
 //===------------------------------------------------------------------===//
