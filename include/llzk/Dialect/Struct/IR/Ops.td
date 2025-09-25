@@ -28,9 +28,8 @@ include "mlir/IR/SymbolInterfaces.td"
 class StructDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<StructDialect, mnemonic, traits>;
 
-/// Only valid/implemented for StructDefOp. Sets the proper
-/// `AllowConstraintAttr` and `AllowWitnessAttr` on the functions defined within
-/// the StructDefOp.
+/// Only valid/implemented for StructDefOp. Sets the proper `AllowWitnessAttr`
+/// and `AllowConstraintAttr` on the functions defined within the StructDefOp.
 def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
   string cppNamespace = "::llzk::component";
 }
