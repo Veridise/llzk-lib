@@ -42,8 +42,9 @@ def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
 def LLZK_StructDefOp
     : StructDialectOp<
           "def", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
-                  IsolatedFromAbove, GraphRegionNoTerminator, SetFuncAllowAttrs,
-                  DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+                  IsolatedFromAbove, SetFuncAllowAttrs,
+                  DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                  NoRegionArguments]#GraphRegionNoTerminator.traits> {
   let summary = "circuit component definition";
   let description = [{
       This operation describes a component in a circuit. It can contain any number
