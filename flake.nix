@@ -140,7 +140,7 @@
               git
 
               # clang-tidy and clang-format
-              pkgs.llzk_llvmPackages_debug.clang-tools
+              llzk_llvmPackages_debug.clang-tools
 
               # git-clang-format
               libclang.python
