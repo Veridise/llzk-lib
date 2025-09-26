@@ -140,7 +140,7 @@
               git
 
               # clang-tidy and clang-format
-              pkgs.llzk_llvmPackages_debug.clang-tools
+              llzk-llvmPackages.clang-tools
 
               # git-clang-format
               libclang.python
@@ -188,9 +188,9 @@
 
           # For debug purposes, expose the MLIR/LLVM packages.
           inherit (pkgs) mlir mlir_debug mlirWithPython;
-          # Prevent use of libllvm and llvm from nixpkgs, which will have different
-          # versions than the mlir from llzk-pkgs.
           inherit (pkgs.llzk_llvmPackages) libllvm llvm;
+          # Prevent use of libllvm and llvm from nixpkgs, which will have 
+          # different versions than mlir/llvm built here.
 
           default = pkgs.llzk;
           debugClang = pkgs.llzkDebWithSansClang;
