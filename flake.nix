@@ -1,9 +1,9 @@
 {
   inputs = {
-    llzk-pkgs.url = "github:Veridise/llzk-nix-pkgs?ref=main";
+    llzk-pkgs.url = "github:Veridise/llzk-nix-pkgs?ref=th/cleanup";
 
     release-helpers = {
-      url = "github:Veridise/open-source-release-helpers?ref=main";
+      url = "github:Veridise/open-source-release-helpers";
       inputs = {
         nixpkgs.follows = "llzk-pkgs/nixpkgs";
         flake-utils.follows = "llzk-pkgs/flake-utils";
@@ -29,7 +29,7 @@
       # First, we define the packages used in this repository/flake
       overlays.default = final: prev: let
         mkLlzkDebWithSans = stdenv: reportName:
-          (final.llzk_debug.override { inherit stdenv; }).overrideAttrs(attrs: {
+          (final.llzk-debug.override { inherit stdenv; }).overrideAttrs(attrs: {
             cmakeBuildType = "DebWithSans";
             NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "")
               + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
@@ -54,17 +54,17 @@
           clang = final.clang_20;
           mlir_pkg = final.mlir;
         };
-        llzk_debug = final.callPackage ./nix/llzk.nix {
+        llzk-debug = final.callPackage ./nix/llzk.nix {
           clang = final.clang_20;
-          mlir_pkg = final.mlir_debug;
+          mlir_pkg = final.mlir-debug;
           cmakeBuildType = "Debug";
         };
 
-        mlirWithPython = final.mlir.override {
+        mlir-with-python = final.mlir.override {
           enablePythonBindings = true;
         };
-        llzkWithPython = final.llzk.override {
-          mlir_pkg = final.mlirWithPython;
+        llzk-with-python = final.llzk.override {
+          mlir_pkg = final.mlir-with-python;
         };
 
         llzkDebWithSansGCC   = mkLlzkDebWithSans final.gccStdenv   "gcc";
@@ -165,7 +165,7 @@
           });
         };
 
-        devShellBaseWithDefault = pkgs: final.devShellBase pkgs final.llzk_debug;
+        devShellBaseWithDefault = pkgs: final.devShellBase pkgs final.llzk-debug;
       };
     } //
     (flake-utils.lib.eachDefaultSystem (system:
@@ -184,13 +184,13 @@
         # Now, we can define the actual outputs of the flake
         packages = flake-utils.lib.flattenTree {
           # Copy the packages from the overlay.
-          inherit (pkgs) llzk llzk_debug llzkWithPython changelogCreator;
+          inherit (pkgs) llzk llzk-debug llzk-with-python changelogCreator;
 
           # For debug purposes, expose the MLIR/LLVM packages.
-          inherit (pkgs) mlir mlir_debug mlirWithPython;
-          inherit (pkgs.llzk_llvmPackages) libllvm llvm;
+          inherit (pkgs) mlir mlir-debug mlir-with-python;
           # Prevent use of libllvm and llvm from nixpkgs, which will have 
           # different versions than mlir/llvm built here.
+          inherit (pkgs.llzk-llvmPackages) libllvm llvm;
 
           default = pkgs.llzk;
           debugClang = pkgs.llzkDebWithSansClang;
@@ -200,13 +200,13 @@
         };
 
         checks = flake-utils.lib.flattenTree {
-          llzkInstallCheckRelease = pkgs.callPackage ./nix/llzk-installcheck {
+          llzk-installcheck-release = pkgs.callPackage ./nix/llzk-installcheck {
             mlir_pkg = pkgs.mlir;
             llzk_pkg = pkgs.llzk;
           };
-          llzkInstallCheckDebug = pkgs.callPackage ./nix/llzk-installcheck {
-            mlir_pkg = pkgs.mlir_debug;
-            llzk_pkg = pkgs.llzk_debug;
+          llzk-installcheck-debug = pkgs.callPackage ./nix/llzk-installcheck {
+            mlir_pkg = pkgs.mlir-debug;
+            llzk_pkg = pkgs.llzk-debug;
           };
         };
 
