@@ -217,10 +217,6 @@
           });
           debugClang = (pkgs.devShellBase pkgs pkgs.llzkDebWithSansClang).shell;
           debugGCC = (pkgs.devShellBase pkgs pkgs.llzkDebWithSansGCC).shell;
-
-          llvm = pkgs.mkShell {
-            buildInputs = [ pkgs.llzk_llvmPackages_debug.libllvm.dev ];
-          };
         };
       }
     ));
