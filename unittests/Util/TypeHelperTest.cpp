@@ -50,3 +50,12 @@ TEST_F(TypeHelperTests, test_structTypesUnify) {
   // `false` because StructType does not allow `kDynamic`
   ASSERT_FALSE(structTypesUnify(a, b));
 }
+
+TEST_F(TypeHelperTests, test_forceIntType) {
+  // create an 8-bit IntegerAttr
+  IntegerAttr a = IntegerAttr::get(IntegerType::get(&ctx, 8), 42);
+  // Force IndexType on it without changing the value
+  IntegerAttr b = forceIntType(a);
+  ASSERT_TRUE(llvm::isa<IndexType>(b.getType()));
+  ASSERT_EQ(b.getValue().getZExtValue(), 42);
+}

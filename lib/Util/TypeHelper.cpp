@@ -866,7 +866,13 @@ IntegerAttr forceIntType(IntegerAttr attr) {
   if (AllowedTypes().onlyInt().isValidTypeImpl(attr.getType())) {
     return attr;
   }
-  return IntegerAttr::get(IndexType::get(attr.getContext()), attr.getValue());
+  // Ensure the APInt is the right bitwidth for IndexType or else
+  // IntegerAttr::verify(..) will report an error.
+  APInt value = attr.getValue();
+  if (value.getBitWidth() != IndexType::kInternalStorageBitWidth) {
+    value = value.sextOrTrunc(IndexType::kInternalStorageBitWidth);
+  }
+  return IntegerAttr::get(IndexType::get(attr.getContext()), value);
 }
 
 Attribute forceIntAttrType(Attribute attr) {
