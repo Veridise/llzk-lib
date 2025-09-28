@@ -25,23 +25,9 @@ class Interval;
 /// not necessarily bound to a given field.
 class UnreducedInterval {
 public:
-  /// @brief A utility method to determine the largest bitwidth among arms of two
-  /// UnreducedIntervals. Useful for widening integers for comparisons between APInts.
-  /// TODO: When we upgrade to LLVM 19/20, we can instead use DynamicAPInts to avoid
-  /// the messy widening/narrowing logic.
-  /// @param lhs
-  /// @param rhs
-  /// @return
-  static size_t getMaxBitWidth(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
-    return std::max(
-        {lhs.a.getBitWidth(), lhs.b.getBitWidth(), rhs.a.getBitWidth(), rhs.b.getBitWidth()}
-    );
-  }
-
-  UnreducedInterval(const llvm::APSInt &x, const llvm::APSInt &y) : a(x), b(y) {}
-  UnreducedInterval(const llvm::APInt &x, const llvm::APInt &y) : a(x), b(y) {}
+  UnreducedInterval(const llvm::DynamicAPInt &x, const llvm::DynamicAPInt &y) : a(x), b(y) {}
   /// @brief This constructor is primarily for convenience for unit tests.
-  UnreducedInterval(uint64_t x, uint64_t y) : a(llvm::APInt(64, x)), b(llvm::APInt(64, y)) {}
+  UnreducedInterval(int64_t x, int64_t y) : a(x), b(y) {}
 
   /* Operations */
 
@@ -117,15 +103,15 @@ public:
   };
 
   /* Utility */
-  llvm::APSInt getLHS() const { return a; }
-  llvm::APSInt getRHS() const { return b; }
+  llvm::DynamicAPInt getLHS() const { return a; }
+  llvm::DynamicAPInt getRHS() const { return b; }
 
   /// @brief Compute the width of this interval within a given field `f`.
   /// If `a` > `b`, returns 0. Otherwise, returns `b` - `a` + 1.
-  llvm::APSInt width() const;
+  llvm::DynamicAPInt width() const;
 
   /// @brief Returns true iff width() is zero.
-  bool isEmpty() const;
+  inline bool isEmpty() const { return width() == 0; }
 
   bool isNotEmpty() const { return !isEmpty(); }
 
@@ -137,7 +123,7 @@ public:
   }
 
 private:
-  llvm::APSInt a, b;
+  llvm::DynamicAPInt a, b;
 };
 
 /* Interval */
@@ -224,7 +210,7 @@ public:
 
   static Interval Empty(const Field &f) { return Interval(Type::Empty, f); }
 
-  static Interval Degenerate(const Field &f, const llvm::APSInt &val) {
+  static Interval Degenerate(const Field &f, const llvm::DynamicAPInt &val) {
     return Interval(Type::Degenerate, f, val, val);
   }
 
@@ -236,19 +222,19 @@ public:
 
   static Interval Entire(const Field &f) { return Interval(Type::Entire, f); }
 
-  static Interval TypeA(const Field &f, const llvm::APSInt &a, const llvm::APSInt &b) {
+  static Interval TypeA(const Field &f, const llvm::DynamicAPInt &a, const llvm::DynamicAPInt &b) {
     return Interval(Type::TypeA, f, a, b);
   }
 
-  static Interval TypeB(const Field &f, const llvm::APSInt &a, const llvm::APSInt &b) {
+  static Interval TypeB(const Field &f, const llvm::DynamicAPInt &a, const llvm::DynamicAPInt &b) {
     return Interval(Type::TypeB, f, a, b);
   }
 
-  static Interval TypeC(const Field &f, const llvm::APSInt &a, const llvm::APSInt &b) {
+  static Interval TypeC(const Field &f, const llvm::DynamicAPInt &a, const llvm::DynamicAPInt &b) {
     return Interval(Type::TypeC, f, a, b);
   }
 
-  static Interval TypeF(const Field &f, const llvm::APSInt &a, const llvm::APSInt &b) {
+  static Interval TypeF(const Field &f, const llvm::DynamicAPInt &a, const llvm::DynamicAPInt &b) {
     return Interval(Type::TypeF, f, a, b);
   }
 
@@ -337,10 +323,10 @@ public:
 
   const Field &getField() const { return field.get(); }
 
-  llvm::APSInt width() const;
+  llvm::DynamicAPInt width() const;
 
-  llvm::APSInt lhs() const { return a; }
-  llvm::APSInt rhs() const { return b; }
+  llvm::DynamicAPInt lhs() const { return a; }
+  llvm::DynamicAPInt rhs() const { return b; }
 
   /* Utility */
   struct Hash {
@@ -359,12 +345,12 @@ public:
 
 private:
   Interval(Type t, const Field &f) : field(f), ty(t), a(f.zero()), b(f.zero()) {}
-  Interval(Type t, const Field &f, const llvm::APSInt &lhs, const llvm::APSInt &rhs)
+  Interval(Type t, const Field &f, const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs)
       : field(f), ty(t), a(f.reduce(lhs)), b(f.reduce(rhs)) {}
 
   std::reference_wrapper<const Field> field;
   Type ty;
-  llvm::APSInt a, b;
+  llvm::DynamicAPInt a, b;
 };
 
 } // namespace llzk

@@ -81,14 +81,15 @@ ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices)
       std::vector<size_t> newIdxs;
       ensure(idx.isIndex() || idx.isIndexRange(), "wrong type of index for array");
       if (idx.isIndex()) {
-        auto idxVal = fromAPInt(idx.getIndex());
+        int64_t idxVal = int64fromDynamicAPInt(idx.getIndex());
         std::transform(
             currIdxs.begin(), currIdxs.end(), std::back_inserter(newIdxs),
             [&currDim, &idxVal](size_t j) { return j * currDim + idxVal; }
         );
       } else {
         auto [low, high] = idx.getIndexRange();
-        for (auto idxVal = fromAPInt(low); idxVal < fromAPInt(high); idxVal++) {
+        int64_t lowInt = int64fromDynamicAPInt(low), highInt = int64fromDynamicAPInt(high);
+        for (int64_t idxVal = lowInt; idxVal < highInt; idxVal++) {
           std::transform(
               currIdxs.begin(), currIdxs.end(), std::back_inserter(newIdxs),
               [&currDim, &idxVal](size_t j) { return j * currDim + idxVal; }

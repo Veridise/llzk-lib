@@ -14,7 +14,7 @@
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Util/APIntHelper.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/Hash.h"
 
@@ -22,6 +22,7 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Pass/AnalysisManager.h>
 
+#include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/EquivalenceClasses.h>
 
 #include <unordered_set>
@@ -33,14 +34,16 @@ namespace llzk {
 /// definition, and for arrays, this is an element index.
 /// Effectively a wrapper around a std::variant with extra utility methods.
 class ConstrainRefIndex {
-  using IndexRange = std::pair<mlir::APInt, mlir::APInt>;
+  using IndexRange = std::pair<llvm::DynamicAPInt, llvm::DynamicAPInt>;
 
 public:
   explicit ConstrainRefIndex(component::FieldDefOp f) : index(f) {}
   explicit ConstrainRefIndex(SymbolLookupResult<component::FieldDefOp> f) : index(f) {}
-  explicit ConstrainRefIndex(mlir::APInt i) : index(i) {}
-  explicit ConstrainRefIndex(int64_t i) : index(toAPInt(i)) {}
-  ConstrainRefIndex(mlir::APInt low, mlir::APInt high) : index(IndexRange {low, high}) {}
+  explicit ConstrainRefIndex(const llvm::DynamicAPInt &i) : index(i) {}
+  explicit ConstrainRefIndex(const llvm::APInt &i) : index(toDynamicAPInt(i)) {}
+  explicit ConstrainRefIndex(int64_t i) : index(llvm::DynamicAPInt(i)) {}
+  ConstrainRefIndex(const llvm::APInt &low, const llvm::APInt &high)
+      : index(IndexRange {toDynamicAPInt(low), toDynamicAPInt(high)}) {}
   explicit ConstrainRefIndex(IndexRange r) : index(r) {}
 
   bool isField() const {
@@ -55,10 +58,10 @@ public:
     return std::get<SymbolLookupResult<component::FieldDefOp>>(index).get();
   }
 
-  bool isIndex() const { return std::holds_alternative<mlir::APInt>(index); }
-  mlir::APInt getIndex() const {
+  bool isIndex() const { return std::holds_alternative<llvm::DynamicAPInt>(index); }
+  llvm::DynamicAPInt getIndex() const {
     ensure(isIndex(), "ConstrainRefIndex: index requested but not contained");
-    return std::get<mlir::APInt>(index);
+    return std::get<llvm::DynamicAPInt>(index);
   }
 
   bool isIndexRange() const { return std::holds_alternative<IndexRange>(index); }
@@ -77,7 +80,7 @@ public:
       return getField() == rhs.getField();
     }
     if (isIndex() && rhs.isIndex()) {
-      return safeEq(mlir::APSInt(getIndex()), mlir::APSInt(rhs.getIndex()));
+      return getIndex() == rhs.getIndex();
     }
     return index == rhs.index;
   }
@@ -100,7 +103,8 @@ private:
   /// 3. A half-open range of indices into an array, for when we're unsure about a specific index
   /// Likely, this will be from [0, size) at this point.
   std::variant<
-      component::FieldDefOp, SymbolLookupResult<component::FieldDefOp>, mlir::APInt, IndexRange>
+      component::FieldDefOp, SymbolLookupResult<component::FieldDefOp>, llvm::DynamicAPInt,
+      IndexRange>
       index;
 };
 
@@ -191,15 +195,16 @@ public:
     return std::get<component::CreateStructOp>(*root);
   }
 
-  mlir::APInt getConstantFeltValue() const {
+  llvm::DynamicAPInt getConstantFeltValue() const {
     ensure(isConstantFelt(), __FUNCTION__ + mlir::Twine(" requires a constant felt!"));
-    return std::get<felt::FeltConstantOp>(*constantVal).getValueAttr().getValue();
+    llvm::APInt i = std::get<felt::FeltConstantOp>(*constantVal).getValueAttr().getValue();
+    return toDynamicAPInt(i);
   }
-  mlir::APInt getConstantIndexValue() const {
+  llvm::DynamicAPInt getConstantIndexValue() const {
     ensure(isConstantIndex(), __FUNCTION__ + mlir::Twine(" requires a constant index!"));
-    return toAPInt(std::get<mlir::arith::ConstantIndexOp>(*constantVal).value());
+    return llvm::DynamicAPInt(std::get<mlir::arith::ConstantIndexOp>(*constantVal).value());
   }
-  mlir::APInt getConstantValue() const {
+  llvm::DynamicAPInt getConstantValue() const {
     ensure(
         isConstantFelt() || isConstantIndex(),
         __FUNCTION__ + mlir::Twine(" requires a constant int type!")
