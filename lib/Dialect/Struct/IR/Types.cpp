@@ -31,7 +31,9 @@ void printStructParams(AsmPrinter &printer, ArrayAttr value) {
   printer << ']';
 }
 
-LogicalResult StructType::verify(EmitErrorFn emitError, SymbolRefAttr nameRef, ArrayAttr params) {
+LogicalResult StructType::verify(
+    function_ref<InFlightDiagnostic()> emitError, SymbolRefAttr nameRef, ArrayAttr params
+) {
   return verifyStructTypeParams(emitError, params);
 }
 

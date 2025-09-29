@@ -227,8 +227,8 @@ public:
   }
 
   static void reportInvalid(EmitErrorFn emitError, const Twine &foundName, const char *aspect) {
-    InFlightDiagnostic diag = emitError().append(aspect, " must be one of ");
-    Appender<InFlightDiagnostic>::append(diag);
+    InFlightDiagnosticWrapper diag = emitError().append(aspect, " must be one of ");
+    Appender<InFlightDiagnosticWrapper>::append(diag);
     diag.append(" but found '", foundName, '\'').report();
   }
 
