@@ -31,11 +31,11 @@ void FeltConstantOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
   llvm::SmallString<32> buf;
   llvm::raw_svector_ostream os(buf);
   os << "felt_const_";
-  getValue().getValue().toStringUnsigned(buf);
+  getValue().toStringUnsigned(buf);
   setNameFn(getResult(), buf);
 }
 
-OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValue(); }
+OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValueAttr(); }
 
 //===------------------------------------------------------------------===//
 // FeltNonDetOp

@@ -193,7 +193,7 @@ public:
 
   mlir::APInt getConstantFeltValue() const {
     ensure(isConstantFelt(), __FUNCTION__ + mlir::Twine(" requires a constant felt!"));
-    return std::get<felt::FeltConstantOp>(*constantVal).getValueAttr().getValue();
+    return std::get<felt::FeltConstantOp>(*constantVal).getValue();
   }
   mlir::APInt getConstantIndexValue() const {
     ensure(isConstantIndex(), __FUNCTION__ + mlir::Twine(" requires a constant index!"));
