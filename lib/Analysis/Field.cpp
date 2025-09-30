@@ -29,14 +29,14 @@ Field::Field(std::string_view primeStr) {
 }
 
 const Field &Field::getField(const char *fieldName) {
-  static llvm::DenseMap<llvm::StringRef, Field> knownFields;
+  static DenseMap<StringRef, Field> knownFields;
   static std::once_flag fieldsInit;
   std::call_once(fieldsInit, initKnownFields, knownFields);
 
   if (auto it = knownFields.find(fieldName); it != knownFields.end()) {
     return it->second;
   }
-  llvm::report_fatal_error("field \"" + llvm::Twine(fieldName) + "\" is unsupported");
+  report_fatal_error("field \"" + Twine(fieldName) + "\" is unsupported");
 }
 
 void Field::initKnownFields(DenseMap<StringRef, Field> &knownFields) {
