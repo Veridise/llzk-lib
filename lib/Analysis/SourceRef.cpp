@@ -1,4 +1,4 @@
-//===-- ConstraintRef.cpp - ConstrainRef implementation ---------*- C++ -*-===//
+//===-- SourceRef.cpp - SourceRef implementation ----------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Analysis/ConstrainRef.h"
+#include "llzk/Analysis/SourceRef.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
@@ -29,9 +29,9 @@ using namespace function;
 using namespace polymorphic;
 using namespace string;
 
-/* ConstrainRefIndex */
+/* SourceRefIndex */
 
-void ConstrainRefIndex::print(raw_ostream &os) const {
+void SourceRefIndex::print(raw_ostream &os) const {
   if (isField()) {
     os << '@' << getField().getName();
   } else if (isIndex()) {
@@ -46,7 +46,7 @@ void ConstrainRefIndex::print(raw_ostream &os) const {
   }
 }
 
-bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
+bool SourceRefIndex::operator<(const SourceRefIndex &rhs) const {
   if (isField() && rhs.isField()) {
     return NamedOpLocationLess<FieldDefOp> {}(getField(), rhs.getField());
   }
@@ -69,7 +69,7 @@ bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
   return false;
 }
 
-size_t ConstrainRefIndex::Hash::operator()(const ConstrainRefIndex &c) const {
+size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
   if (c.isIndex()) {
     // We don't hash the index directly, because the built-in LLVM hash includes
     // the bitwidth of the APInt in the hash, which is undesirable for this application.
@@ -87,7 +87,7 @@ size_t ConstrainRefIndex::Hash::operator()(const ConstrainRefIndex &c) const {
   }
 }
 
-/* ConstrainRef */
+/* SourceRef */
 
 /// @brief Lookup a `StructDefOp` from a given `StructType`.
 /// @param tables
@@ -107,18 +107,18 @@ getStructDef(SymbolTableCollection &tables, ModuleOp mod, StructType ty) {
   return std::move(sDef.value());
 }
 
-std::vector<ConstrainRef>
-ConstrainRef::getAllConstrainRefs(SymbolTableCollection &tables, ModuleOp mod, ConstrainRef root) {
-  std::vector<ConstrainRef> res = {root};
-  for (const ConstrainRef &child : root.getAllChildren(tables, mod)) {
-    auto recursiveChildren = getAllConstrainRefs(tables, mod, child);
+std::vector<SourceRef>
+SourceRef::getAllSourceRefs(SymbolTableCollection &tables, ModuleOp mod, SourceRef root) {
+  std::vector<SourceRef> res = {root};
+  for (const SourceRef &child : root.getAllChildren(tables, mod)) {
+    auto recursiveChildren = getAllSourceRefs(tables, mod, child);
     res.insert(res.end(), recursiveChildren.begin(), recursiveChildren.end());
   }
   return res;
 }
 
-std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDef, FuncDefOp fnOp) {
-  std::vector<ConstrainRef> res;
+std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, FuncDefOp fnOp) {
+  std::vector<SourceRef> res;
 
   ensure(
       structDef == fnOp->getParentOfType<StructDefOp>(), "function must be within the given struct"
@@ -129,7 +129,7 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDe
 
   SymbolTableCollection tables;
   for (auto a : fnOp.getArguments()) {
-    auto argRes = getAllConstrainRefs(tables, modOp.value(), ConstrainRef(a));
+    auto argRes = getAllSourceRefs(tables, modOp.value(), SourceRef(a));
     res.insert(res.end(), argRes.begin(), argRes.end());
   }
 
@@ -139,16 +139,15 @@ std::vector<ConstrainRef> ConstrainRef::getAllConstrainRefs(StructDefOp structDe
     Value selfVal = fnOp.getSelfValueFromCompute();
     auto createOp = dyn_cast_if_present<CreateStructOp>(selfVal.getDefiningOp());
     ensure(createOp, "self value should originate from struct.new operation");
-    auto selfRes = getAllConstrainRefs(tables, modOp.value(), ConstrainRef(createOp));
+    auto selfRes = getAllSourceRefs(tables, modOp.value(), SourceRef(createOp));
     res.insert(res.end(), selfRes.begin(), selfRes.end());
   }
 
   return res;
 }
 
-std::vector<ConstrainRef>
-ConstrainRef::getAllConstrainRefs(StructDefOp structDef, FieldDefOp fieldDef) {
-  std::vector<ConstrainRef> res;
+std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, FieldDefOp fieldDef) {
+  std::vector<SourceRef> res;
   FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
   ensure(
       fieldDef->getParentOfType<StructDefOp>() == structDef, "Field " + Twine(fieldDef.getName()) +
@@ -160,13 +159,13 @@ ConstrainRef::getAllConstrainRefs(StructDefOp structDef, FieldDefOp fieldDef) {
 
   // Get the self argument (like `FuncDefOp::getSelfValueFromConstrain()`)
   BlockArgument self = constrainFnOp.getArguments().front();
-  ConstrainRef fieldRef = ConstrainRef(self, {ConstrainRefIndex(fieldDef)});
+  SourceRef fieldRef = SourceRef(self, {SourceRefIndex(fieldDef)});
 
   SymbolTableCollection tables;
-  return getAllConstrainRefs(tables, modOp.value(), fieldRef);
+  return getAllSourceRefs(tables, modOp.value(), fieldRef);
 }
 
-Type ConstrainRef::getType() const {
+Type SourceRef::getType() const {
   if (isConstantFelt()) {
     return std::get<FeltConstantOp>(*constantVal).getType();
   } else if (isConstantIndex()) {
@@ -196,7 +195,7 @@ Type ConstrainRef::getType() const {
   }
 }
 
-bool ConstrainRef::isValidPrefix(const ConstrainRef &prefix) const {
+bool SourceRef::isValidPrefix(const SourceRef &prefix) const {
   if (isConstant()) {
     return false;
   }
@@ -212,20 +211,18 @@ bool ConstrainRef::isValidPrefix(const ConstrainRef &prefix) const {
   return true;
 }
 
-FailureOr<std::vector<ConstrainRefIndex>>
-ConstrainRef::getSuffix(const ConstrainRef &prefix) const {
+FailureOr<std::vector<SourceRefIndex>> SourceRef::getSuffix(const SourceRef &prefix) const {
   if (!isValidPrefix(prefix)) {
     return failure();
   }
-  std::vector<ConstrainRefIndex> suffix;
+  std::vector<SourceRefIndex> suffix;
   for (size_t i = prefix.fieldRefs.size(); i < fieldRefs.size(); i++) {
     suffix.push_back(fieldRefs[i]);
   }
   return suffix;
 }
 
-FailureOr<ConstrainRef>
-ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) const {
+FailureOr<SourceRef> SourceRef::translate(const SourceRef &prefix, const SourceRef &other) const {
   if (isConstant()) {
     return *this;
   }
@@ -239,24 +236,23 @@ ConstrainRef::translate(const ConstrainRef &prefix, const ConstrainRef &other) c
   return newSignalUsage;
 }
 
-std::vector<ConstrainRef> getAllChildren(
-    SymbolTableCollection &tables, ModuleOp /*mod*/, ArrayType arrayTy, ConstrainRef root
-) {
-  std::vector<ConstrainRef> res;
+std::vector<SourceRef>
+getAllChildren(SymbolTableCollection &tables, ModuleOp /*mod*/, ArrayType arrayTy, SourceRef root) {
+  std::vector<SourceRef> res;
   // Recurse into arrays by iterating over their elements
   for (int64_t i = 0; i < arrayTy.getDimSize(0); i++) {
-    ConstrainRef childRef = root.createChild(ConstrainRefIndex(i));
+    SourceRef childRef = root.createChild(SourceRefIndex(i));
     res.push_back(childRef);
   }
 
   return res;
 }
 
-std::vector<ConstrainRef> getAllChildren(
+std::vector<SourceRef> getAllChildren(
     SymbolTableCollection &tables, ModuleOp mod, SymbolLookupResult<StructDefOp> structDefRes,
-    ConstrainRef root
+    SourceRef root
 ) {
-  std::vector<ConstrainRef> res;
+  std::vector<SourceRef> res;
   // Recurse into struct types by iterating over all their field definitions
   for (auto f : structDefRes.get().getOps<FieldDefOp>()) {
     // We want to store the FieldDefOp, but without the possibility of accidentally dropping the
@@ -270,7 +266,7 @@ std::vector<ConstrainRef> getAllChildren(
         mod.getOperation()
     );
     ensure(succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp");
-    ConstrainRef childRef = root.createChild(ConstrainRefIndex(fieldLookup.value()));
+    SourceRef childRef = root.createChild(SourceRefIndex(fieldLookup.value()));
     // Make a reference to the current field, regardless of if it is a composite
     // type or not.
     res.push_back(childRef);
@@ -278,8 +274,8 @@ std::vector<ConstrainRef> getAllChildren(
   return res;
 }
 
-std::vector<ConstrainRef>
-ConstrainRef::getAllChildren(SymbolTableCollection &tables, ModuleOp mod) const {
+std::vector<SourceRef>
+SourceRef::getAllChildren(SymbolTableCollection &tables, ModuleOp mod) const {
   auto ty = getType();
   if (auto structTy = dyn_cast<StructType>(ty)) {
     return llzk::getAllChildren(tables, mod, getStructDef(tables, mod, structTy), *this);
@@ -290,7 +286,7 @@ ConstrainRef::getAllChildren(SymbolTableCollection &tables, ModuleOp mod) const 
   return {};
 }
 
-void ConstrainRef::print(raw_ostream &os) const {
+void SourceRef::print(raw_ostream &os) const {
   if (isConstantFelt()) {
     os << "<felt.const: " << getConstantFeltValue() << '>';
   } else if (isConstantIndex()) {
@@ -314,7 +310,7 @@ void ConstrainRef::print(raw_ostream &os) const {
   }
 }
 
-bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
+bool SourceRef::operator==(const SourceRef &rhs) const {
   // This way two felt constants can be equal even if the declared in separate ops.
   if (isConstantInt() && rhs.isConstantInt()) {
     DynamicAPInt lhsVal = getConstantValue(), rhsVal = rhs.getConstantValue();
@@ -324,7 +320,7 @@ bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
 }
 
 // required for EquivalenceClasses usage
-bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
+bool SourceRef::operator<(const SourceRef &rhs) const {
   if (isConstantFelt() && !rhs.isConstantFelt()) {
     // Put all constants at the end
     return false;
@@ -388,13 +384,13 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   return fieldRefs.size() < rhs.fieldRefs.size();
 }
 
-size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
+size_t SourceRef::Hash::operator()(const SourceRef &val) const {
   if (val.isConstantInt()) {
     return llvm::hash_value(val.getConstantValue());
   } else if (val.isTemplateConstant()) {
     return OpHash<ConstReadOp> {}(std::get<ConstReadOp>(*val.constantVal));
   } else {
-    ensure(val.isBlockArgument() || val.isCreateStructOp(), "unhandled ConstrainRef hash case");
+    ensure(val.isBlockArgument() || val.isCreateStructOp(), "unhandled SourceRef hash case");
 
     size_t hash = val.isBlockArgument() ? std::hash<unsigned> {}(val.getInputNum())
                                         : OpHash<CreateStructOp> {}(val.getCreateStructOp());
@@ -405,21 +401,21 @@ size_t ConstrainRef::Hash::operator()(const ConstrainRef &val) const {
   }
 }
 
-raw_ostream &operator<<(raw_ostream &os, const ConstrainRef &rhs) {
+raw_ostream &operator<<(raw_ostream &os, const SourceRef &rhs) {
   rhs.print(os);
   return os;
 }
 
-/* ConstrainRefSet */
+/* SourceRefSet */
 
-ConstrainRefSet &ConstrainRefSet::join(const ConstrainRefSet &rhs) {
+SourceRefSet &SourceRefSet::join(const SourceRefSet &rhs) {
   insert(rhs.begin(), rhs.end());
   return *this;
 }
 
-raw_ostream &operator<<(raw_ostream &os, const ConstrainRefSet &rhs) {
+raw_ostream &operator<<(raw_ostream &os, const SourceRefSet &rhs) {
   os << "{ ";
-  std::vector<ConstrainRef> sortedRefs(rhs.begin(), rhs.end());
+  std::vector<SourceRef> sortedRefs(rhs.begin(), rhs.end());
   std::sort(sortedRefs.begin(), sortedRefs.end());
   for (auto it = sortedRefs.begin(); it != sortedRefs.end();) {
     os << *it;

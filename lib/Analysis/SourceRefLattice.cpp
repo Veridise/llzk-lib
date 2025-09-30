@@ -1,4 +1,4 @@
-//===-- ConstrainRefLattice.cpp - ConstrainRef lattice & utils --*- C++ -*-===//
+//===-- SourceRefLattice.cpp - SourceRef lattice & utils --*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Analysis/ConstrainRefLattice.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/DenseAnalysis.h"
+#include "llzk/Analysis/SourceRefLattice.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/Hash.h"
@@ -33,10 +33,10 @@ using namespace component;
 using namespace felt;
 using namespace polymorphic;
 
-/* ConstrainRefLatticeValue */
+/* SourceRefLatticeValue */
 
-mlir::ChangeResult ConstrainRefLatticeValue::insert(const ConstrainRef &rhs) {
-  auto rhsVal = ConstrainRefLatticeValue(rhs);
+mlir::ChangeResult SourceRefLatticeValue::insert(const SourceRef &rhs) {
+  auto rhsVal = SourceRefLatticeValue(rhs);
   if (isScalar()) {
     return updateScalar(rhsVal.getScalarValue());
   } else {
@@ -44,8 +44,8 @@ mlir::ChangeResult ConstrainRefLatticeValue::insert(const ConstrainRef &rhs) {
   }
 }
 
-std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
-ConstrainRefLatticeValue::translate(const TranslationMap &translation) const {
+std::pair<SourceRefLatticeValue, mlir::ChangeResult>
+SourceRefLatticeValue::translate(const TranslationMap &translation) const {
   auto newVal = *this;
   auto res = mlir::ChangeResult::NoChange;
   if (newVal.isScalar()) {
@@ -60,15 +60,15 @@ ConstrainRefLatticeValue::translate(const TranslationMap &translation) const {
   return {newVal, res};
 }
 
-std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
-ConstrainRefLatticeValue::referenceField(SymbolLookupResult<FieldDefOp> fieldRef) const {
-  ConstrainRefIndex idx(fieldRef);
-  auto transform = [&idx](const ConstrainRef &r) -> ConstrainRef { return r.createChild(idx); };
+std::pair<SourceRefLatticeValue, mlir::ChangeResult>
+SourceRefLatticeValue::referenceField(SymbolLookupResult<FieldDefOp> fieldRef) const {
+  SourceRefIndex idx(fieldRef);
+  auto transform = [&idx](const SourceRef &r) -> SourceRef { return r.createChild(idx); };
   return elementwiseTransform(transform);
 }
 
-std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
-ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices) const {
+std::pair<SourceRefLatticeValue, mlir::ChangeResult>
+SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const {
   if (isArray()) {
     ensure(indices.size() <= getNumArrayDims(), "invalid extract array operands");
 
@@ -108,14 +108,14 @@ ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices)
     }
     if (newArrayDims.empty()) {
       // read case, where the return value is a scalar (single element)
-      ConstrainRefLatticeValue extractedVal;
+      SourceRefLatticeValue extractedVal;
       for (auto idx : currIdxs) {
         (void)extractedVal.update(getElemFlatIdx(idx));
       }
       return {extractedVal, mlir::ChangeResult::Change};
     } else {
       // extract case, where the return value is an array of fewer dimensions.
-      ConstrainRefLatticeValue extractedVal(newArrayDims);
+      SourceRefLatticeValue extractedVal(newArrayDims);
       for (auto chunkStart : currIdxs) {
         for (size_t i = 0; i < chunkSz; i++) {
           (void)extractedVal.getElemFlatIdx(i).update(getElemFlatIdx(chunkStart + i));
@@ -127,7 +127,7 @@ ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices)
     auto currVal = *this;
     auto res = mlir::ChangeResult::NoChange;
     for (auto &idx : indices) {
-      auto transform = [&idx](const ConstrainRef &r) -> ConstrainRef { return r.createChild(idx); };
+      auto transform = [&idx](const SourceRef &r) -> SourceRef { return r.createChild(idx); };
       auto [newVal, transformRes] = currVal.elementwiseTransform(transform);
       currVal = std::move(newVal);
       res |= transformRes;
@@ -136,7 +136,7 @@ ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices)
   }
 }
 
-mlir::ChangeResult ConstrainRefLatticeValue::translateScalar(const TranslationMap &translation) {
+mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &translation) {
   auto res = mlir::ChangeResult::NoChange;
   // copy the current value
   auto currVal = getScalarValue();
@@ -145,10 +145,10 @@ mlir::ChangeResult ConstrainRefLatticeValue::translateScalar(const TranslationMa
   // For each current element, see if the translation map contains a valid prefix.
   // If so, translate the current element with all replacement prefixes indicated
   // by the translation value.
-  for (const ConstrainRef &currRef : currVal) {
+  for (const SourceRef &currRef : currVal) {
     for (auto &[prefix, replacementVal] : translation) {
       if (currRef.isValidPrefix(prefix)) {
-        for (const ConstrainRef &replacementPrefix : replacementVal.foldToScalar()) {
+        for (const SourceRef &replacementPrefix : replacementVal.foldToScalar()) {
           auto translatedRefRes = currRef.translate(prefix, replacementPrefix);
           if (succeeded(translatedRefRes)) {
             res |= insert(*translatedRefRes);
@@ -160,9 +160,8 @@ mlir::ChangeResult ConstrainRefLatticeValue::translateScalar(const TranslationMa
   return res;
 }
 
-std::pair<ConstrainRefLatticeValue, mlir::ChangeResult>
-ConstrainRefLatticeValue::elementwiseTransform(
-    llvm::function_ref<ConstrainRef(const ConstrainRef &)> transform
+std::pair<SourceRefLatticeValue, mlir::ChangeResult> SourceRefLatticeValue::elementwiseTransform(
+    llvm::function_ref<SourceRef(const SourceRef &)> transform
 ) const {
   auto newVal = *this;
   auto res = mlir::ChangeResult::NoChange;
@@ -185,32 +184,32 @@ ConstrainRefLatticeValue::elementwiseTransform(
   return {newVal, res};
 }
 
-mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefLatticeValue &v) {
+mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRefLatticeValue &v) {
   v.print(os);
   return os;
 }
 
-/* ConstrainRefLattice */
+/* SourceRefLattice */
 
-mlir::FailureOr<ConstrainRef> ConstrainRefLattice::getSourceRef(mlir::Value val) {
+mlir::FailureOr<SourceRef> SourceRefLattice::getSourceRef(mlir::Value val) {
   if (auto blockArg = llvm::dyn_cast<mlir::BlockArgument>(val)) {
-    return ConstrainRef(blockArg);
+    return SourceRef(blockArg);
   } else if (auto defOp = val.getDefiningOp()) {
     if (auto feltConst = llvm::dyn_cast<FeltConstantOp>(defOp)) {
-      return ConstrainRef(feltConst);
+      return SourceRef(feltConst);
     } else if (auto constIdx = llvm::dyn_cast<mlir::arith::ConstantIndexOp>(defOp)) {
-      return ConstrainRef(constIdx);
+      return SourceRef(constIdx);
     } else if (auto readConst = llvm::dyn_cast<ConstReadOp>(defOp)) {
-      return ConstrainRef(readConst);
+      return SourceRef(readConst);
     } else if (auto structNew = llvm::dyn_cast<CreateStructOp>(defOp)) {
-      return ConstrainRef(structNew);
+      return SourceRef(structNew);
     }
   }
   return mlir::failure();
 }
 
-void ConstrainRefLattice::print(mlir::raw_ostream &os) const {
-  os << "ConstrainRefLattice { ";
+void SourceRefLattice::print(mlir::raw_ostream &os) const {
+  os << "SourceRefLattice { ";
   for (auto mit = valMap.begin(); mit != valMap.end();) {
     auto &[val, latticeVal] = *mit;
     os << "\n    (";
@@ -232,7 +231,7 @@ void ConstrainRefLattice::print(mlir::raw_ostream &os) const {
   os << "}\n";
 }
 
-mlir::ChangeResult ConstrainRefLattice::setValues(const ValueMap &rhs) {
+mlir::ChangeResult SourceRefLattice::setValues(const ValueMap &rhs) {
   auto res = mlir::ChangeResult::NoChange;
   for (auto &[v, s] : rhs) {
     res |= setValue(v, s);
@@ -240,19 +239,19 @@ mlir::ChangeResult ConstrainRefLattice::setValues(const ValueMap &rhs) {
   return res;
 }
 
-mlir::ChangeResult ConstrainRefLattice::setValue(ValueTy v, const ConstrainRefLatticeValue &rhs) {
-  for (const ConstrainRef &ref : rhs.foldToScalar()) {
+mlir::ChangeResult SourceRefLattice::setValue(ValueTy v, const SourceRefLatticeValue &rhs) {
+  for (const SourceRef &ref : rhs.foldToScalar()) {
     refMap[ref].insert(v);
   }
   return valMap[v].setValue(rhs);
 }
 
-mlir::ChangeResult ConstrainRefLattice::setValue(ValueTy v, const ConstrainRef &ref) {
+mlir::ChangeResult SourceRefLattice::setValue(ValueTy v, const SourceRef &ref) {
   refMap[ref].insert(v);
-  return valMap[v].setValue(ConstrainRefLatticeValue(ref));
+  return valMap[v].setValue(SourceRefLatticeValue(ref));
 }
 
-ConstrainRefLatticeValue ConstrainRefLattice::getOrDefault(ConstrainRefLattice::ValueTy v) const {
+SourceRefLatticeValue SourceRefLattice::getOrDefault(SourceRefLattice::ValueTy v) const {
   auto it = valMap.find(v);
   if (it != valMap.end()) {
     return it->second;
@@ -261,13 +260,13 @@ ConstrainRefLatticeValue ConstrainRefLattice::getOrDefault(ConstrainRefLattice::
   if (auto asVal = llvm::dyn_cast_if_present<Value>(v)) {
     auto sourceRef = getSourceRef(asVal);
     if (mlir::succeeded(sourceRef)) {
-      return ConstrainRefLatticeValue(sourceRef.value());
+      return SourceRefLatticeValue(sourceRef.value());
     }
   }
-  return ConstrainRefLatticeValue();
+  return SourceRefLatticeValue();
 }
 
-ConstrainRefLatticeValue ConstrainRefLattice::getReturnValue(unsigned i) const {
+SourceRefLatticeValue SourceRefLattice::getReturnValue(unsigned i) const {
   ProgramPoint *pp = llvm::cast<ProgramPoint *>(this->getAnchor());
   if (auto retOp = mlir::dyn_cast_if_present<function::ReturnOp>(pp->getPrevOp())) {
     if (i >= retOp.getNumOperands()) {
@@ -275,17 +274,17 @@ ConstrainRefLatticeValue ConstrainRefLattice::getReturnValue(unsigned i) const {
     }
     return this->getOrDefault(retOp.getOperand(i));
   }
-  return ConstrainRefLatticeValue();
+  return SourceRefLatticeValue();
 }
 
-ConstrainRefLattice::ValueSet ConstrainRefLattice::lookupValues(const ConstrainRef &ref) const {
+SourceRefLattice::ValueSet SourceRefLattice::lookupValues(const SourceRef &ref) const {
   if (auto it = refMap.find(ref); it != refMap.end()) {
     return it->second;
   }
-  return ConstrainRefLattice::ValueSet();
+  return SourceRefLattice::ValueSet();
 }
 
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const ConstrainRefLattice &lattice) {
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const SourceRefLattice &lattice) {
   lattice.print(os);
   return os;
 }

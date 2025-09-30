@@ -433,8 +433,8 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
   ChangeResult changed = after->join(before);
 
   ProgramPoint *pp = _dataflowSolver.getProgramPointAfter(op);
-  auto constrainRefLattice = _dataflowSolver.lookupState<ConstrainRefLattice>(pp);
-  ensure(constrainRefLattice, "failed to get lattice");
+  auto sourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(pp);
+  ensure(sourceRefLattice, "failed to get lattice");
 
   llvm::SmallVector<LatticeValue> operandVals;
   for (OpOperand &operand : op->getOpOperands()) {
@@ -455,7 +455,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       continue;
     }
 
-    ConstrainRefLatticeValue refSet = constrainRefLattice->getOrDefault(val);
+    SourceRefLatticeValue refSet = sourceRefLattice->getOrDefault(val);
     ensure(refSet.isScalar(), "should have ruled out array values already");
 
     if (refSet.getScalarValue().empty()) {
@@ -517,7 +517,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
 
     // Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
     // These patterns enforce that s is one of c0, ..., cN.
-    auto res = getGeneralizedDecompInterval(constrainRefLattice, lhsVal, rhsVal);
+    auto res = getGeneralizedDecompInterval(sourceRefLattice, lhsVal, rhsVal);
     if (succeeded(res)) {
       for (Value signalVal : res->first) {
         changed |= applyInterval(emitEq, after, signalVal, res->second);
@@ -558,12 +558,12 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     changed |=
         after->setValue(writef.getComponent(), writef.getFieldNameAttr().getAttr(), writeVal);
     // We also need to update the interval on the assigned symbol
-    ConstrainRefLatticeValue refSet = constrainRefLattice->getOrDefault(writef.getComponent());
+    SourceRefLatticeValue refSet = sourceRefLattice->getOrDefault(writef.getComponent());
     if (refSet.isSingleValue()) {
       auto fieldDefRes = writef.getFieldDefOp(tables);
       if (succeeded(fieldDefRes)) {
-        ConstrainRefIndex idx(fieldDefRes.value());
-        ConstrainRef fieldRef = refSet.getSingleValue().createChild(idx);
+        SourceRefIndex idx(fieldDefRes.value());
+        SourceRef fieldRef = refSet.getSingleValue().createChild(idx);
         llvm::SMTExprRef expr = getOrCreateSymbol(fieldRef);
         changed |= after->setInterval(expr, writeVal.getInterval());
       }
@@ -614,7 +614,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
   return success();
 }
 
-llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(const ConstrainRef &r) {
+llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(const SourceRef &r) {
   auto it = refSymbols.find(r);
   if (it != refSymbols.end()) {
     return it->second;
@@ -624,7 +624,7 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(const ConstrainRef 
   return sym;
 }
 
-llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const ConstrainRef &r) const {
+llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const SourceRef &r) const {
   return createFeltSymbol(buildStringViaPrint(r).c_str());
 }
 
@@ -937,7 +937,7 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
 
 FailureOr<std::pair<DenseSet<Value>, Interval>>
 IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
-    const ConstrainRefLattice *constrainRefLattice, Value lhs, Value rhs
+    const SourceRefLattice *sourceRefLattice, Value lhs, Value rhs
 ) {
   auto isZeroConst = [this](Value v) {
     Operation *op = v.getDefiningOp();
@@ -960,7 +960,7 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
   }
 
   // We now explore the expression tree for multiplications of subtractions/signal values.
-  std::optional<ConstrainRef> signalRef = std::nullopt;
+  std::optional<SourceRef> signalRef = std::nullopt;
   DenseSet<Value> signalVals;
   SmallVector<DynamicAPInt> consts;
   SmallVector<Value> frontier {exprTree};
@@ -971,12 +971,12 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
 
     FeltConstantOp c;
     Value signalVal;
-    auto handleRefValue = [&constrainRefLattice, &signalRef, &signalVal, &signalVals]() {
-      ConstrainRefLatticeValue refSet = constrainRefLattice->getOrDefault(signalVal);
+    auto handleRefValue = [&sourceRefLattice, &signalRef, &signalVal, &signalVals]() {
+      SourceRefLatticeValue refSet = sourceRefLattice->getOrDefault(signalVal);
       if (!refSet.isScalar() || !refSet.isSingleValue()) {
         return failure();
       }
-      ConstrainRef r = refSet.getSingleValue();
+      SourceRef r = refSet.getSingleValue();
       if (signalRef.has_value() && signalRef.value() != r) {
         return failure();
       } else if (!signalRef.has_value()) {
@@ -1026,8 +1026,7 @@ LogicalResult
 StructIntervals::computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysisContext &ctx) {
 
   auto computeIntervalsImpl = [&solver, &ctx, this](
-                                  FuncDefOp fn,
-                                  llvm::MapVector<ConstrainRef, Interval> &fieldRanges,
+                                  FuncDefOp fn, llvm::MapVector<SourceRef, Interval> &fieldRanges,
                                   llvm::SetVector<ExpressionValue> &solverConstraints
                               ) {
     // Get the lattice at the end of the function.
@@ -1037,7 +1036,7 @@ StructIntervals::computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysis
 
     solverConstraints = lattice->getConstraints();
 
-    for (const auto &ref : ConstrainRef::getAllConstrainRefs(structDef, fn)) {
+    for (const auto &ref : SourceRef::getAllSourceRefs(structDef, fn)) {
       // We only want to compute intervals for field elements and not composite types,
       // with the exception of the Signal struct.
       if (!ref.isScalar() && !ref.isSignal()) {
@@ -1069,7 +1068,7 @@ StructIntervals::computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysis
 void StructIntervals::print(mlir::raw_ostream &os, bool withConstraints, bool printCompute) const {
   auto writeIntervals =
       [&os, &withConstraints](
-          const char *fnName, const llvm::MapVector<ConstrainRef, Interval> &fieldRanges,
+          const char *fnName, const llvm::MapVector<SourceRef, Interval> &fieldRanges,
           const llvm::SetVector<ExpressionValue> &solverConstraints, bool printName
       ) {
     int indent = 4;
