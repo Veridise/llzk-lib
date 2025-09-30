@@ -159,7 +159,7 @@ inline void ensure(bool condition, llvm::Twine errMsg) {
 /// is handled by `*Type::get()` via `StorageUserBase` (i.e., use DefaultDiagnosticEmitFn and assert
 /// after reporting the error).
 ///
-/// NOTE: Passing `emitError== null` is not a common use case since it will always result in an
+/// NOTE: Passing `emitError == null` is not a common use case since it will always result in an
 /// assertion failure immediately after reporting the error; likely only useful in custom type
 /// builders.
 ///
