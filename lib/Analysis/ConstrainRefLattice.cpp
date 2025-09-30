@@ -88,7 +88,7 @@ ConstrainRefLatticeValue::extract(const std::vector<ConstrainRefIndex> &indices)
         );
       } else {
         auto [low, high] = idx.getIndexRange();
-        int64_t lowInt = int64fromDynamicAPInt(low), highInt = int64fromDynamicAPInt(high);
+        int64_t lowInt(low), highInt(high);
         for (int64_t idxVal = lowInt; idxVal < highInt; idxVal++) {
           std::transform(
               currIdxs.begin(), currIdxs.end(), std::back_inserter(newIdxs),
