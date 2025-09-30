@@ -47,18 +47,16 @@ public:
   InFlightDiagnosticWrapper(mlir::InFlightDiagnostic &&diag) : inner(std::move(diag)) {}
 
   // Constructor for DefaultAndFailInFlightDiagnostic from MLIRContext.
-  // NOTE: This is not a common use case since it will always result will always result in an
-  // assertion failure immediately after reporting the error; likely only useful in custom type
-  // builders.
+  // NOTE: This is not a common use case since it will always result in an assertion failure
+  // immediately after reporting the error; likely only useful in custom type builders.
   InFlightDiagnosticWrapper(mlir::MLIRContext *ctx)
       : InFlightDiagnosticWrapper(
             DefaultAndFailInFlightDiagnostic(mlir::detail::getDefaultDiagnosticEmitFn(ctx)())
         ) {}
 
   // Constructor for DefaultAndFailInFlightDiagnostic from Location.
-  // NOTE: This is not a common use case since it will always result will always result in an
-  // assertion failure immediately after reporting the error; likely only useful in custom type
-  // builders.
+  // NOTE: This is not a common use case since it will always result in an assertion failure
+  // immediately after reporting the error; likely only useful in custom type builders.
   InFlightDiagnosticWrapper(const mlir::Location &loc)
       : InFlightDiagnosticWrapper(loc.getContext()) {}
 
@@ -151,9 +149,9 @@ inline void ensure(bool condition, llvm::Twine errMsg) {
 /// is handled by `*Type::get()` via `StorageUserBase` (i.e., use DefaultDiagnosticEmitFn and assert
 /// after reporting the error).
 ///
-/// NOTE: Passing `emitError== null` is not a common use case since it will always result will
-/// always result in an assertion failure immediately after reporting the error; likely only useful
-/// in custom type builders.
+/// NOTE: Passing `emitError== null` is not a common use case since it will always result in an
+/// assertion failure immediately after reporting the error; likely only useful in custom type
+/// builders.
 ///
 /// SEE:
 /// https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180
