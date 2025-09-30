@@ -643,7 +643,7 @@ llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
       TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
           .Case<FeltConstantOp>([&](FeltConstantOp feltConst) {
     llvm::APSInt constOpVal(feltConst.getValue());
-    return field.get().reduce(toDynamicAPInt(constOpVal));
+    return field.get().reduce(constOpVal);
   })
           .Case<arith::ConstantIndexOp>([&](arith::ConstantIndexOp indexConst) {
     llvm::APInt i(field.get().bitWidth(), indexConst.value());
