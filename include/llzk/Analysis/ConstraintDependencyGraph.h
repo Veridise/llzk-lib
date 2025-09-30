@@ -10,8 +10,8 @@
 #pragma once
 
 #include "llzk/Analysis/AnalysisWrappers.h"
-#include "llzk/Analysis/ConstrainRef.h"
-#include "llzk/Analysis/ConstrainRefLattice.h"
+#include "llzk/Analysis/SourceRef.h"
+#include "llzk/Analysis/SourceRefLattice.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 
 #include <mlir/Pass/AnalysisManager.h>
@@ -26,19 +26,19 @@ class DataFlowSolver;
 
 namespace llzk {
 
-using ConstrainRefRemappings = std::vector<std::pair<ConstrainRef, ConstrainRefLatticeValue>>;
+using SourceRefRemappings = std::vector<std::pair<SourceRef, SourceRefLatticeValue>>;
 
 /// @brief The dataflow analysis that computes the set of references that
 /// LLZK operations use and produce. The analysis is simple: any operation will
 /// simply output a union of its input references, regardless of what type of
 /// operation it performs, as the analysis is operator-insensitive.
-class ConstrainRefAnalysis : public dataflow::DenseForwardDataFlowAnalysis<ConstrainRefLattice> {
+class SourceRefAnalysis : public dataflow::DenseForwardDataFlowAnalysis<SourceRefLattice> {
 public:
-  using dataflow::DenseForwardDataFlowAnalysis<ConstrainRefLattice>::DenseForwardDataFlowAnalysis;
+  using dataflow::DenseForwardDataFlowAnalysis<SourceRefLattice>::DenseForwardDataFlowAnalysis;
 
   void visitCallControlFlowTransfer(
       mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
-      const ConstrainRefLattice &before, ConstrainRefLattice *after
+      const SourceRefLattice &before, SourceRefLattice *after
   ) override;
 
   /// @brief Propagate constrain reference lattice values from operands to results.
@@ -46,26 +46,26 @@ public:
   /// @param before
   /// @param after
   mlir::LogicalResult visitOperation(
-      mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
+      mlir::Operation *op, const SourceRefLattice &before, SourceRefLattice *after
   ) override;
 
 protected:
-  void setToEntryState(ConstrainRefLattice *lattice) override {
+  void setToEntryState(SourceRefLattice *lattice) override {
     // the entry state is empty, so do nothing.
   }
 
   // Perform a standard union of operands into the results value.
   mlir::ChangeResult fallbackOpUpdate(
-      mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
-      const ConstrainRefLattice &before, ConstrainRefLattice *after
+      mlir::Operation *op, const SourceRefLattice::ValueMap &operandVals,
+      const SourceRefLattice &before, SourceRefLattice *after
   );
 
   // Perform the update for either a array.read op or an array.extract op, which
   // operate very similarly: index into the first operand using a variable number
   // of provided indices.
   void arraySubdivisionOpUpdate(
-      array::ArrayAccessOpInterface op, const ConstrainRefLattice::ValueMap &operandVals,
-      const ConstrainRefLattice &before, ConstrainRefLattice *after
+      array::ArrayAccessOpInterface op, const SourceRefLattice::ValueMap &operandVals,
+      const SourceRefLattice &before, SourceRefLattice *after
   );
 
 private:
@@ -122,14 +122,14 @@ public:
   /// @param os The LLVM/MLIR output stream.
   void print(mlir::raw_ostream &os) const;
 
-  /// @brief Translate the ConstrainRefs in this CDG to that of a different
+  /// @brief Translate the SourceRefs in this CDG to that of a different
   /// context. Used to translate a CDG of a struct to a CDG for a called subcomponent.
   /// @param translation A vector of mappings of current reference prefix -> translated reference
   /// prefix.
   /// @return A CDG that contains only translated references. Non-constant references with
   /// no translation are omitted. This omissions allows calling components to ignore internal
   /// references within subcomponents that are inaccessible to the caller.
-  ConstraintDependencyGraph translate(ConstrainRefRemappings translation) const;
+  ConstraintDependencyGraph translate(SourceRefRemappings translation) const;
 
   /// @brief Get the values that are connected to the given ref via emitted constraints.
   /// This method looks for constraints to the value in the ref and constraints to any
@@ -139,9 +139,9 @@ public:
   /// operations.
   /// @param ref
   /// @return The set of references that are connected to ref via constraints.
-  ConstrainRefSet getConstrainingValues(const ConstrainRef &ref) const;
+  SourceRefSet getConstrainingValues(const SourceRef &ref) const;
 
-  const ConstrainRefLattice::Ref2Val &getRef2Val() const { return ref2Val; }
+  const SourceRefLattice::Ref2Val &getRef2Val() const { return ref2Val; }
 
   /*
   Rule of three, needed for the mlir::SymbolTableCollection, which has no copy constructor.
@@ -173,13 +173,13 @@ private:
   bool runIntraprocedural;
 
   // Transitive closure only over signals.
-  llvm::EquivalenceClasses<ConstrainRef> signalSets;
+  llvm::EquivalenceClasses<SourceRef> signalSets;
   // A simple set mapping of constants, as we do not want to compute a transitive closure over
   // constants.
-  std::unordered_map<ConstrainRef, ConstrainRefSet, ConstrainRef::Hash> constantSets;
+  std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> constantSets;
 
   // Maps references to the values where they are found.
-  ConstrainRefLattice::Ref2Val ref2Val;
+  SourceRefLattice::Ref2Val ref2Val;
 
   // Also mutable for caching within otherwise const lookup operations.
   mutable mlir::SymbolTableCollection tables;
@@ -194,7 +194,7 @@ private:
   )
       : mod(m), structDef(s), runIntraprocedural(intraprocedural) {}
 
-  /// @brief Runs the constraint analysis to compute a transitive closure over ConstrainRefs
+  /// @brief Runs the constraint analysis to compute a transitive closure over SourceRefs
   /// as operated over by emit operations.
   /// @param solver The pre-configured solver.
   /// @param am The module-level AnalysisManager.
@@ -255,7 +255,7 @@ public:
   void setIntraprocedural(bool runIntraprocedural) { intraprocedural = runIntraprocedural; }
 
 protected:
-  void initializeSolver() override { (void)solver.load<ConstrainRefAnalysis>(); }
+  void initializeSolver() override { (void)solver.load<SourceRefAnalysis>(); }
 
   CDGAnalysisContext getContext() override { return {.runIntraprocedural = intraprocedural}; }
 

@@ -1,4 +1,4 @@
-//===-- ConstrainRef.h ------------------------------------------*- C++ -*-===//
+//===-- SourceRef.h ------------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -33,25 +33,25 @@ namespace llzk {
 /// @brief Defines an index into an LLZK object. For structs, this is a field
 /// definition, and for arrays, this is an element index.
 /// Effectively a wrapper around a std::variant with extra utility methods.
-class ConstrainRefIndex {
+class SourceRefIndex {
   using IndexRange = std::pair<llvm::DynamicAPInt, llvm::DynamicAPInt>;
 
 public:
-  explicit ConstrainRefIndex(component::FieldDefOp f) : index(f) {}
-  explicit ConstrainRefIndex(SymbolLookupResult<component::FieldDefOp> f) : index(f) {}
-  explicit ConstrainRefIndex(const llvm::DynamicAPInt &i) : index(i) {}
-  explicit ConstrainRefIndex(const llvm::APInt &i) : index(toDynamicAPInt(i)) {}
-  explicit ConstrainRefIndex(int64_t i) : index(llvm::DynamicAPInt(i)) {}
-  ConstrainRefIndex(const llvm::APInt &low, const llvm::APInt &high)
+  explicit SourceRefIndex(component::FieldDefOp f) : index(f) {}
+  explicit SourceRefIndex(SymbolLookupResult<component::FieldDefOp> f) : index(f) {}
+  explicit SourceRefIndex(const llvm::DynamicAPInt &i) : index(i) {}
+  explicit SourceRefIndex(const llvm::APInt &i) : index(toDynamicAPInt(i)) {}
+  explicit SourceRefIndex(int64_t i) : index(llvm::DynamicAPInt(i)) {}
+  SourceRefIndex(const llvm::APInt &low, const llvm::APInt &high)
       : index(IndexRange {toDynamicAPInt(low), toDynamicAPInt(high)}) {}
-  explicit ConstrainRefIndex(IndexRange r) : index(r) {}
+  explicit SourceRefIndex(IndexRange r) : index(r) {}
 
   bool isField() const {
     return std::holds_alternative<SymbolLookupResult<component::FieldDefOp>>(index) ||
            std::holds_alternative<component::FieldDefOp>(index);
   }
   component::FieldDefOp getField() const {
-    ensure(isField(), "ConstrainRefIndex: field requested but not contained");
+    ensure(isField(), "SourceRefIndex: field requested but not contained");
     if (std::holds_alternative<component::FieldDefOp>(index)) {
       return std::get<component::FieldDefOp>(index);
     }
@@ -60,20 +60,20 @@ public:
 
   bool isIndex() const { return std::holds_alternative<llvm::DynamicAPInt>(index); }
   llvm::DynamicAPInt getIndex() const {
-    ensure(isIndex(), "ConstrainRefIndex: index requested but not contained");
+    ensure(isIndex(), "SourceRefIndex: index requested but not contained");
     return std::get<llvm::DynamicAPInt>(index);
   }
 
   bool isIndexRange() const { return std::holds_alternative<IndexRange>(index); }
   IndexRange getIndexRange() const {
-    ensure(isIndexRange(), "ConstrainRefIndex: index range requested but not contained");
+    ensure(isIndexRange(), "SourceRefIndex: index range requested but not contained");
     return std::get<IndexRange>(index);
   }
 
   inline void dump() const { print(llvm::errs()); }
   void print(mlir::raw_ostream &os) const;
 
-  inline bool operator==(const ConstrainRefIndex &rhs) const {
+  inline bool operator==(const SourceRefIndex &rhs) const {
     if (isField() && rhs.isField()) {
       // We compare the underlying fields, since the field could be in a symbol
       // lookup or not.
@@ -85,12 +85,12 @@ public:
     return index == rhs.index;
   }
 
-  bool operator<(const ConstrainRefIndex &rhs) const;
+  bool operator<(const SourceRefIndex &rhs) const;
 
-  bool operator>(const ConstrainRefIndex &rhs) const { return rhs < *this; }
+  bool operator>(const SourceRefIndex &rhs) const { return rhs < *this; }
 
   struct Hash {
-    size_t operator()(const ConstrainRefIndex &c) const;
+    size_t operator()(const SourceRefIndex &c) const;
   };
 
   inline size_t getHash() const { return Hash {}(*this); }
@@ -108,49 +108,51 @@ private:
       index;
 };
 
-static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefIndex &rhs) {
+static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRefIndex &rhs) {
   rhs.print(os);
   return os;
 }
 
-/// @brief Defines a reference to a llzk object within a constrain function call.
+/// @brief A reference to a "source", which is the base value from which other
+/// SSA values are derived.
 /// The object may be a reference to an individual felt, felt.const, or a composite type,
 /// like an array or an entire struct.
-/// - ConstrainRefs are allowed to reference composite types so that references can be generated
+/// - SourceRefs are allowed to reference composite types so that references can be generated
 /// for intermediate operations (e.g., readf to read a nested struct).
-/// These references are relative to a particular constrain call, so they are either (1) constants,
-/// or (2) rooted at a block argument (which is either "self" or another input) and optionally
-/// contain indices into that block argument (e.g., a field reference in a struct or a index into an
-/// array).
-class ConstrainRef {
+///
+/// These references are relative to a particular function call, so they are either (1) constants,
+/// or (2) rooted at a block argument (which is either "self" in @constrain
+/// functions or another input) and optionally contain indices into that block
+/// argument (e.g., a field reference in a struct or a index into an array).
+class SourceRef {
 
 public:
-  /// Produce all possible ConstraintRefs that are present starting from the given root.
-  static std::vector<ConstrainRef>
-  getAllConstrainRefs(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, ConstrainRef root);
+  /// Produce all possible SourceRefs that are present starting from the given root.
+  static std::vector<SourceRef>
+  getAllSourceRefs(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, SourceRef root);
 
-  /// Produce all possible ConstrainRefs that are present from given struct function.
-  static std::vector<ConstrainRef>
-  getAllConstrainRefs(component::StructDefOp structDef, function::FuncDefOp fnOp);
+  /// Produce all possible SourceRefs that are present from given struct function.
+  static std::vector<SourceRef>
+  getAllSourceRefs(component::StructDefOp structDef, function::FuncDefOp fnOp);
 
-  /// Produce all possible ConstrainRefs from a specific field in a struct.
+  /// Produce all possible SourceRefs from a specific field in a struct.
   /// May produce multiple if the given field is of an aggregate type.
-  static std::vector<ConstrainRef>
-  getAllConstrainRefs(component::StructDefOp structDef, component::FieldDefOp fieldDef);
+  static std::vector<SourceRef>
+  getAllSourceRefs(component::StructDefOp structDef, component::FieldDefOp fieldDef);
 
-  explicit ConstrainRef(mlir::BlockArgument b) : root(b), fieldRefs(), constantVal(std::nullopt) {}
-  ConstrainRef(mlir::BlockArgument b, std::vector<ConstrainRefIndex> f)
+  explicit SourceRef(mlir::BlockArgument b) : root(b), fieldRefs(), constantVal(std::nullopt) {}
+  SourceRef(mlir::BlockArgument b, std::vector<SourceRefIndex> f)
       : root(b), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
 
-  explicit ConstrainRef(component::CreateStructOp createOp)
+  explicit SourceRef(component::CreateStructOp createOp)
       : root(createOp), fieldRefs(), constantVal(std::nullopt) {}
-  ConstrainRef(component::CreateStructOp createOp, std::vector<ConstrainRefIndex> f)
+  SourceRef(component::CreateStructOp createOp, std::vector<SourceRefIndex> f)
       : root(createOp), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
 
-  explicit ConstrainRef(felt::FeltConstantOp c) : root(std::nullopt), fieldRefs(), constantVal(c) {}
-  explicit ConstrainRef(mlir::arith::ConstantIndexOp c)
+  explicit SourceRef(felt::FeltConstantOp c) : root(std::nullopt), fieldRefs(), constantVal(c) {}
+  explicit SourceRef(mlir::arith::ConstantIndexOp c)
       : root(std::nullopt), fieldRefs(), constantVal(c) {}
-  explicit ConstrainRef(polymorphic::ConstReadOp c)
+  explicit SourceRef(polymorphic::ConstReadOp c)
       : root(std::nullopt), fieldRefs(), constantVal(c) {}
 
   mlir::Type getType() const;
@@ -213,13 +215,13 @@ public:
   }
 
   /// @brief Returns true iff `prefix` is a valid prefix of this reference.
-  bool isValidPrefix(const ConstrainRef &prefix) const;
+  bool isValidPrefix(const SourceRef &prefix) const;
 
   /// @brief If `prefix` is a valid prefix of this reference, return the suffix that
   /// remains after removing the prefix. I.e., `this` = `prefix` + `suffix`
   /// @param prefix
   /// @return the suffix
-  mlir::FailureOr<std::vector<ConstrainRefIndex>> getSuffix(const ConstrainRef &prefix) const;
+  mlir::FailureOr<std::vector<SourceRefIndex>> getSuffix(const SourceRef &prefix) const;
 
   /// @brief Create a new reference with prefix replaced with other iff prefix is a valid prefix for
   /// this reference. If this reference is a felt.const, the translation will always succeed and
@@ -227,11 +229,10 @@ public:
   /// @param prefix
   /// @param other
   /// @return
-  mlir::FailureOr<ConstrainRef>
-  translate(const ConstrainRef &prefix, const ConstrainRef &other) const;
+  mlir::FailureOr<SourceRef> translate(const SourceRef &prefix, const SourceRef &other) const;
 
   /// @brief Create a new reference that is the immediate prefix of this reference if possible.
-  mlir::FailureOr<ConstrainRef> getParentPrefix() const {
+  mlir::FailureOr<SourceRef> getParentPrefix() const {
     if (isConstantFelt() || fieldRefs.empty()) {
       return mlir::failure();
     }
@@ -240,37 +241,37 @@ public:
     return copy;
   }
 
-  /// @brief Get all direct children of this ConstrainRef, assuming this ref is not a scalar.
-  std::vector<ConstrainRef>
+  /// @brief Get all direct children of this SourceRef, assuming this ref is not a scalar.
+  std::vector<SourceRef>
   getAllChildren(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod) const;
 
-  ConstrainRef createChild(ConstrainRefIndex r) const {
+  SourceRef createChild(SourceRefIndex r) const {
     auto copy = *this;
     copy.fieldRefs.push_back(r);
     return copy;
   }
 
-  ConstrainRef createChild(ConstrainRef other) const {
+  SourceRef createChild(SourceRef other) const {
     assert(other.isConstantIndex());
-    return createChild(ConstrainRefIndex(other.getConstantIndexValue()));
+    return createChild(SourceRefIndex(other.getConstantIndexValue()));
   }
 
-  const std::vector<ConstrainRefIndex> &getPieces() const { return fieldRefs; }
+  const std::vector<SourceRefIndex> &getPieces() const { return fieldRefs; }
 
   void print(mlir::raw_ostream &os) const;
   void dump() const { print(llvm::errs()); }
 
-  bool operator==(const ConstrainRef &rhs) const;
+  bool operator==(const SourceRef &rhs) const;
 
-  bool operator!=(const ConstrainRef &rhs) const { return !(*this == rhs); }
+  bool operator!=(const SourceRef &rhs) const { return !(*this == rhs); }
 
   // required for EquivalenceClasses usage
-  bool operator<(const ConstrainRef &rhs) const;
+  bool operator<(const SourceRef &rhs) const;
 
-  bool operator>(const ConstrainRef &rhs) const { return rhs < *this; }
+  bool operator>(const SourceRef &rhs) const { return rhs < *this; }
 
   struct Hash {
-    size_t operator()(const ConstrainRef &val) const;
+    size_t operator()(const SourceRef &val) const;
   };
 
 private:
@@ -285,53 +286,51 @@ private:
    */
   std::optional<std::variant<mlir::BlockArgument, component::CreateStructOp>> root;
 
-  std::vector<ConstrainRefIndex> fieldRefs;
+  std::vector<SourceRefIndex> fieldRefs;
   // using mutable to reduce constant casts for certain get* functions.
   mutable std::optional<
       std::variant<felt::FeltConstantOp, mlir::arith::ConstantIndexOp, polymorphic::ConstReadOp>>
       constantVal;
 };
 
-mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRef &rhs);
+mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRef &rhs);
 
-/* ConstrainRefSet */
+/* SourceRefSet */
 
-class ConstrainRefSet : public std::unordered_set<ConstrainRef, ConstrainRef::Hash> {
-  using Base = std::unordered_set<ConstrainRef, ConstrainRef::Hash>;
+class SourceRefSet : public std::unordered_set<SourceRef, SourceRef::Hash> {
+  using Base = std::unordered_set<SourceRef, SourceRef::Hash>;
 
 public:
   using Base::Base;
 
-  ConstrainRefSet &join(const ConstrainRefSet &rhs);
+  SourceRefSet &join(const SourceRefSet &rhs);
 
-  friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const ConstrainRefSet &rhs);
+  friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRefSet &rhs);
 };
 
 static_assert(
-    dataflow::ScalarLatticeValue<ConstrainRefSet>,
-    "ConstrainRefSet must satisfy the ScalarLatticeValue requirements"
+    dataflow::ScalarLatticeValue<SourceRefSet>,
+    "SourceRefSet must satisfy the ScalarLatticeValue requirements"
 );
 
 } // namespace llzk
 
 namespace llvm {
 
-template <> struct DenseMapInfo<llzk::ConstrainRef> {
-  static llzk::ConstrainRef getEmptyKey() {
-    return llzk::ConstrainRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(1)));
+template <> struct DenseMapInfo<llzk::SourceRef> {
+  static llzk::SourceRef getEmptyKey() {
+    return llzk::SourceRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(1)));
   }
-  static inline llzk::ConstrainRef getTombstoneKey() {
-    return llzk::ConstrainRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(2)));
+  static inline llzk::SourceRef getTombstoneKey() {
+    return llzk::SourceRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(2)));
   }
-  static unsigned getHashValue(const llzk::ConstrainRef &ref) {
+  static unsigned getHashValue(const llzk::SourceRef &ref) {
     if (ref == getEmptyKey() || ref == getTombstoneKey()) {
       return llvm::hash_value(ref.getBlockArgument().getAsOpaquePointer());
     }
-    return llzk::ConstrainRef::Hash {}(ref);
+    return llzk::SourceRef::Hash {}(ref);
   }
-  static bool isEqual(const llzk::ConstrainRef &lhs, const llzk::ConstrainRef &rhs) {
-    return lhs == rhs;
-  }
+  static bool isEqual(const llzk::SourceRef &lhs, const llzk::SourceRef &rhs) { return lhs == rhs; }
 };
 
 } // namespace llvm
