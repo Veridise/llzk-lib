@@ -1,4 +1,4 @@
-//===-- DynamicAPIntHelper.coo ----------------------------------*- C++ -*-===//
+//===-- DynamicAPIntHelper.cpp ----------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -18,6 +18,9 @@ using namespace llvm;
 using namespace std;
 
 static DynamicAPInt po2(const DynamicAPInt &e) {
+  // Ensure parameter is not negative and that it can be safely cast to unsigned.
+  assert(e >= 0);
+  assert(e <= std::numeric_limits<unsigned>::max() /* upcast from unsigned -> int64_t */);
   unsigned shiftAmt = llzk::toAPSInt(e).getZExtValue();
   APSInt p = APSInt::get(1) << shiftAmt;
   return llzk::toDynamicAPInt(p);
@@ -25,14 +28,10 @@ static DynamicAPInt po2(const DynamicAPInt &e) {
 
 static DynamicAPInt fromBigEndian(const std::vector<bool> &bits) {
   APSInt rawInt(bits.size(), /* isUnsigned */ false);
-  llvm::errs() << "fromBigEndian: ";
   for (unsigned i = 0; i < bits.size(); ++i) {
-    llvm::errs() << bits[i];
     rawInt.setBitVal(i, bits[i]);
   }
-  auto res = llzk::toDynamicAPInt(rawInt);
-  llvm::errs() << "\n\t" << res << '\n';
-  return res;
+  return llzk::toDynamicAPInt(rawInt);
 }
 
 static DynamicAPInt
@@ -41,8 +40,8 @@ binaryBitOp(const DynamicAPInt &lhs, const DynamicAPInt &rhs, function_ref<bool(
   std::vector<bool> bits;
   while (a != 0 || b != 0) {
     // bits are sign extended
-    bool abit = bool(a != 0 ? int64_t(a % 2) : int64_t(lhs < 0));
-    bool bbit = bool(b != 0 ? int64_t(b % 2) : int64_t(rhs < 0));
+    bool abit = a != 0 ? bool(int64_t(a % 2)) : lhs < 0;
+    bool bbit = b != 0 ? bool(int64_t(b % 2)) : rhs < 0;
     bits.push_back(fn(abit, bbit));
     a /= 2;
     b /= 2;
@@ -92,12 +91,17 @@ DynamicAPInt toDynamicAPInt(StringRef str) {
 }
 
 DynamicAPInt toDynamicAPInt(const APSInt &i) {
+  if (i.getBitWidth() <= 64) {
+    // Fast path for smaller values, just use the int64_t conversion
+    return DynamicAPInt(i.isNegative() ? i.getSExtValue() : i.getZExtValue());
+  }
+
   DynamicAPInt res(0), po2(1);
   // Since LLVM 20 doesn't have a direct APInt to DynamicAPInt constructor, we
   // manually construct the DynamicAPInt from bits of the input.
   // We use the positive representation so our negation works at the end.
   APSInt raw = i < 0 ? -i : i;
-  for (int64_t b = 0; b < raw.getActiveBits(); b++) {
+  for (unsigned b = 0; b < raw.getActiveBits(); b++) {
     DynamicAPInt bitSet(raw[b]);
     res += (bitSet * po2);
     po2 *= 2;

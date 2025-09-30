@@ -646,12 +646,10 @@ llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
     return field.get().reduce(constOpVal);
   })
           .Case<arith::ConstantIndexOp>([&](arith::ConstantIndexOp indexConst) {
-    llvm::APInt i(field.get().bitWidth(), indexConst.value());
-    return toDynamicAPInt(i);
+    return DynamicAPInt(indexConst.value());
   })
           .Case<arith::ConstantIntOp>([&](arith::ConstantIntOp intConst) {
-    llvm::APInt i(field.get().bitWidth(), intConst.value());
-    return toDynamicAPInt(i);
+    return DynamicAPInt(intConst.value());
   }).Default([](Operation *illegalOp) {
     std::string err;
     debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
