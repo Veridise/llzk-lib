@@ -261,13 +261,14 @@ template <typename TypeClass> inline TypeClass getAtIndex(mlir::TypeRange types,
 }
 
 /// Convert an IntegerAttr with a type other than IndexType to use IndexType.
-mlir::IntegerAttr forceIntType(mlir::IntegerAttr attr);
+mlir::FailureOr<mlir::IntegerAttr> forceIntType(mlir::IntegerAttr attr, EmitErrorFn emitError);
 
 /// Convert any IntegerAttr with a type other than IndexType to use IndexType.
-mlir::Attribute forceIntAttrType(mlir::Attribute attr);
+mlir::FailureOr<mlir::Attribute> forceIntAttrType(mlir::Attribute attr, EmitErrorFn emitError);
 
 /// Convert any IntegerAttr with a type other than IndexType to use IndexType.
-llvm::SmallVector<mlir::Attribute> forceIntAttrTypes(llvm::ArrayRef<mlir::Attribute> attrList);
+mlir::FailureOr<llvm::SmallVector<mlir::Attribute>>
+forceIntAttrTypes(llvm::ArrayRef<mlir::Attribute> attrList, EmitErrorFn emitError);
 
 /// Verify that all IntegerAttr have type IndexType.
 mlir::LogicalResult verifyIntAttrType(EmitErrorFn emitError, mlir::Attribute in);

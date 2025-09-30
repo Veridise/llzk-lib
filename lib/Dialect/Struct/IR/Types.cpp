@@ -20,8 +20,14 @@ ParseResult parseStructParams(AsmParser &parser, ArrayAttr &value) {
   if (failed(parseResult)) {
     return parser.emitError(parser.getCurrentLocation(), "failed to parse struct parameters");
   }
-  SmallVector<Attribute> own = forceIntAttrTypes(parseResult->getValue());
-  value = parser.getBuilder().getArrayAttr(own);
+  auto emitError = [&parser] {
+    return InFlightDiagnosticWrapper(parser.emitError(parser.getCurrentLocation()));
+  };
+  FailureOr<SmallVector<Attribute>> res = forceIntAttrTypes(parseResult->getValue(), emitError);
+  if (failed(res)) {
+    return failure();
+  }
+  value = parser.getBuilder().getArrayAttr(*res);
   return success();
 }
 
