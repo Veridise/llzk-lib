@@ -33,20 +33,14 @@ DEFINE_C_API_STRUCT(MlirOpBuilderListener, void);
 
 #undef DEFINE_C_API_STRUCT
 
-struct MlirOpInsertionPoint {
+struct MlirOpBuilderInsertPoint {
   MlirBlock block;
   MlirOperation point;
 };
-typedef struct MlirOpInsertionPoint MlirOpInsertionPoint;
+typedef struct MlirOpBuilderInsertPoint MlirOpBuilderInsertPoint;
 
-struct MlirBlockInsertionPoint {
-  MlirRegion region;
-  MlirBlock point;
-};
-typedef struct MlirBlockInsertionPoint MlirBlockInsertionPoint;
-
-typedef void (*MlirNotifyOperationInserted)(MlirOperation, void *);
-typedef void (*MlirNotifyBlockInserted)(MlirBlock, void *);
+typedef void (*MlirNotifyOperationInserted)(MlirOperation, MlirOpBuilderInsertPoint, void *);
+typedef void (*MlirNotifyBlockInserted)(MlirBlock, MlirRegion, MlirBlock, void *);
 
 //===----------------------------------------------------------------------===//
 // MlirOpBuilder
