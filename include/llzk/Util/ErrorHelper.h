@@ -53,20 +53,20 @@ private:
       : inner(std::move(diag)) {}
 
 public:
-  // Constructor for regular InFlightDiagnostic.
+  /// Constructor for regular InFlightDiagnostic.
   explicit InFlightDiagnosticWrapper(mlir::InFlightDiagnostic &&diag) : inner(std::move(diag)) {}
 
-  // Constructor for DefaultAndFailInFlightDiagnostic from MLIRContext.
-  // NOTE: This is not a common use case since it will always result in an assertion failure
-  // immediately after reporting the error; likely only useful in custom type builders.
+  /// Constructor for DefaultAndFailInFlightDiagnostic from MLIRContext.
+  /// NOTE: This is not a common use case since it will always result in an assertion failure
+  /// immediately after reporting the error; likely only useful in custom type builders.
   explicit InFlightDiagnosticWrapper(mlir::MLIRContext *ctx)
       : InFlightDiagnosticWrapper(
             DefaultAndFailInFlightDiagnostic(mlir::detail::getDefaultDiagnosticEmitFn(ctx)())
         ) {}
 
-  // Constructor for DefaultAndFailInFlightDiagnostic from Location.
-  // NOTE: This is not a common use case since it will always result in an assertion failure
-  // immediately after reporting the error; likely only useful in custom type builders.
+  /// Constructor for DefaultAndFailInFlightDiagnostic from Location.
+  /// NOTE: This is not a common use case since it will always result in an assertion failure
+  /// immediately after reporting the error; likely only useful in custom type builders.
   explicit InFlightDiagnosticWrapper(const mlir::Location &loc)
       : InFlightDiagnosticWrapper(loc.getContext()) {}
 
@@ -137,8 +137,8 @@ public:
 /// Callback to produce an error diagnostic.
 using EmitErrorFn = llvm::function_ref<InFlightDiagnosticWrapper()>;
 
-// This type is required in cases like the functions below to take ownership of the lambda so it is
-// not destroyed upon return from the function. It can be implicitly converted to EmitErrorFn.
+/// This type is required in cases like the functions below to take ownership of the lambda so it is
+/// not destroyed upon return from the function. It can be implicitly converted to EmitErrorFn.
 using OwningEmitErrorFn = std::function<InFlightDiagnosticWrapper()>;
 
 inline OwningEmitErrorFn getEmitOpErrFn(mlir::Operation *op) {
