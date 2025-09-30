@@ -30,7 +30,7 @@ mlir::LogicalResult computeDimsFromShape(
 );
 
 mlir::LogicalResult computeShapeFromDims(
-    EmitErrorFn emitError, mlir::MLIRContext *ctx, llvm::ArrayRef<mlir::Attribute> dimensionSizes,
+    EmitErrorFn emitError, llvm::ArrayRef<mlir::Attribute> dimensionSizes,
     llvm::SmallVector<int64_t> &shape
 );
 
