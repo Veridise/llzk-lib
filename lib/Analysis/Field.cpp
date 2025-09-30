@@ -8,33 +8,38 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/Field.h"
-#include "llzk/Util/APIntHelper.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 
+#include <llvm/ADT/APSInt.h>
+#include <llvm/ADT/SlowDynamicAPInt.h>
 #include <llvm/ADT/Twine.h>
 
 #include <mutex>
 
+using namespace llvm;
+
 namespace llzk {
 
-// We make the primeMod signed to allow for signed arithmetic, otherwise APSInt
-// throws an assertion failure if signedness does not match. This requires adding
-// an extra bit for the signed bit.
-Field::Field(std::string_view primeStr) : primeMod(safeToSigned(primeStr)) {
+Field::Field(std::string_view primeStr) {
+  APSInt parsedInt(primeStr);
+
+  primeMod = toDynamicAPInt(parsedInt);
   halfPrime = (primeMod + felt(1)) / felt(2);
+  bitwidth = parsedInt.getBitWidth();
 }
 
 const Field &Field::getField(const char *fieldName) {
-  static llvm::DenseMap<llvm::StringRef, Field> knownFields;
+  static DenseMap<StringRef, Field> knownFields;
   static std::once_flag fieldsInit;
   std::call_once(fieldsInit, initKnownFields, knownFields);
 
   if (auto it = knownFields.find(fieldName); it != knownFields.end()) {
     return it->second;
   }
-  llvm::report_fatal_error("field \"" + llvm::Twine(fieldName) + "\" is unsupported");
+  report_fatal_error("field \"" + Twine(fieldName) + "\" is unsupported");
 }
 
-void Field::initKnownFields(llvm::DenseMap<llvm::StringRef, Field> &knownFields) {
+void Field::initKnownFields(DenseMap<StringRef, Field> &knownFields) {
   // bn128/254, default for circom
   knownFields.try_emplace(
       "bn128",
@@ -49,20 +54,14 @@ void Field::initKnownFields(llvm::DenseMap<llvm::StringRef, Field> &knownFields)
   knownFields.try_emplace("mersenne31", Field("2147483647"));
 }
 
-llvm::APSInt Field::reduce(llvm::APSInt i) const {
-  // Force i to be signed since prime() is signed
-  i = safeToSigned(i);
-  unsigned maxBits = std::max(i.getBitWidth(), bitWidth());
-  llvm::APSInt m = (i.extend(maxBits) % prime().extend(maxBits)).trunc(bitWidth());
-  if (m.isNegative()) {
+DynamicAPInt Field::reduce(const DynamicAPInt &i) const {
+  DynamicAPInt m = i % prime();
+  if (m < 0) {
     return prime() + m;
   }
   return m;
 }
 
-llvm::APSInt Field::reduce(int i) const {
-  auto ap = llvm::APSInt(llvm::APInt(bitWidth(), i), /*isUnsigned=*/false);
-  return reduce(ap);
-}
+DynamicAPInt Field::reduce(const APInt &i) const { return reduce(toDynamicAPInt(i)); }
 
 } // namespace llzk

@@ -240,8 +240,8 @@ fallbackUnaryOp(llvm::SMTSolverRef solver, Operation *op, const ExpressionValue 
     // XY % prime = 1 constraint to the solver.
     std::string symName = buildStringViaInsertionOp(*op);
     llvm::SMTExprRef invSym = field.createSymbol(solver, symName.c_str());
-    llvm::SMTExprRef one = solver->mkBitvector(field.one(), field.bitWidth());
-    llvm::SMTExprRef prime = solver->mkBitvector(field.prime(), field.bitWidth());
+    llvm::SMTExprRef one = solver->mkBitvector(APSInt::get(1), field.bitWidth());
+    llvm::SMTExprRef prime = solver->mkBitvector(toAPSInt(field.prime()), field.bitWidth());
     llvm::SMTExprRef mult = solver->mkBVMul(val.getExpr(), invSym);
     llvm::SMTExprRef mod = solver->mkBVURem(mult, prime);
     llvm::SMTExprRef constraint = solver->mkEqual(mod, one);
@@ -495,7 +495,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
 
   // Now, the way we update is dependent on the type of the operation.
   if (isConstOp(op)) {
-    APSInt constVal = getConst(op);
+    llvm::DynamicAPInt constVal = getConst(op);
     llvm::SMTExprRef expr = createConstBitvectorExpr(constVal);
     ExpressionValue latticeVal(field.get(), expr, constVal);
     changed |= after->setValue(op->getResult(0), latticeVal);
@@ -636,27 +636,27 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const char *name) co
   return field.get().createSymbol(smtSolver, name);
 }
 
-llvm::APSInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
+llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   ensure(isConstOp(op), "op is not a const op");
 
-  llvm::APInt fieldConst =
-      TypeSwitch<Operation *, llvm::APInt>(op)
+  llvm::DynamicAPInt fieldConst =
+      TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
           .Case<FeltConstantOp>([&](FeltConstantOp feltConst) {
     llvm::APSInt constOpVal(feltConst.getValue());
     return field.get().reduce(constOpVal);
   })
           .Case<arith::ConstantIndexOp>([&](arith::ConstantIndexOp indexConst) {
-    return llvm::APInt(field.get().bitWidth(), indexConst.value());
+    return DynamicAPInt(indexConst.value());
   })
           .Case<arith::ConstantIntOp>([&](arith::ConstantIntOp intConst) {
-    return llvm::APInt(field.get().bitWidth(), intConst.value());
+    return DynamicAPInt(intConst.value());
   }).Default([](Operation *illegalOp) {
     std::string err;
     debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
     llvm::report_fatal_error(Twine(err));
-    return llvm::APInt();
+    return llvm::DynamicAPInt();
   });
-  return safeToSigned(fieldConst);
+  return fieldConst;
 }
 
 ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
@@ -947,8 +947,7 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
     if (!isConstOp(op)) {
       return false;
     }
-    llvm::APSInt c = getConst(op);
-    return safeEq(c, field.get().zero());
+    return getConst(op) == field.get().zero();
   };
   bool lhsIsZero = isZeroConst(lhs), rhsIsZero = isZeroConst(rhs);
   Value exprTree = nullptr;
@@ -963,7 +962,7 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
   // We now explore the expression tree for multiplications of subtractions/signal values.
   std::optional<ConstrainRef> signalRef = std::nullopt;
   DenseSet<Value> signalVals;
-  SmallVector<APSInt> consts;
+  SmallVector<DynamicAPInt> consts;
   SmallVector<Value> frontier {exprTree};
   while (!frontier.empty()) {
     Value v = frontier.back();

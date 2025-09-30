@@ -12,9 +12,9 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
-#include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Debug.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 
@@ -38,7 +38,7 @@ void ConstrainRefIndex::print(raw_ostream &os) const {
     os << getIndex();
   } else {
     auto [low, high] = getIndexRange();
-    if (ShapedType::isDynamic(high.getSExtValue())) {
+    if (ShapedType::isDynamic(int64_t(high))) {
       os << "<dynamic>";
     } else {
       os << low << ':' << high;
@@ -51,13 +51,12 @@ bool ConstrainRefIndex::operator<(const ConstrainRefIndex &rhs) const {
     return NamedOpLocationLess<FieldDefOp> {}(getField(), rhs.getField());
   }
   if (isIndex() && rhs.isIndex()) {
-    return safeLt(APSInt(getIndex()), APSInt(rhs.getIndex()));
+    return getIndex() < rhs.getIndex();
   }
   if (isIndexRange() && rhs.isIndexRange()) {
-    auto l = getIndexRange(), r = rhs.getIndexRange();
-    auto ll = APSInt(std::get<0>(l)), lu = APSInt(std::get<1>(l));
-    auto rl = APSInt(std::get<0>(r)), ru = APSInt(std::get<1>(r));
-    return safeLt(ll, rl) || (safeEq(ll, rl) && safeLt(lu, ru));
+    auto [ll, lu] = getIndexRange();
+    auto [rl, ru] = rhs.getIndexRange();
+    return ll < rl || (ll == rl && lu < ru);
   }
 
   if (isField()) {
@@ -76,7 +75,7 @@ size_t ConstrainRefIndex::Hash::operator()(const ConstrainRefIndex &c) const {
     // the bitwidth of the APInt in the hash, which is undesirable for this application.
     // i.e., We want a N-bit version of x to hash to the same value as an M-bit version of X,
     // because our equality checks would consider them equal regardless of bitwidth.
-    APInt idx = c.getIndex();
+    APSInt idx = toAPSInt(c.getIndex());
     unsigned requiredBits = idx.getSignificantBits();
     auto hash = llvm::hash_value(idx.trunc(requiredBits));
     return hash;
@@ -318,8 +317,8 @@ void ConstrainRef::print(raw_ostream &os) const {
 bool ConstrainRef::operator==(const ConstrainRef &rhs) const {
   // This way two felt constants can be equal even if the declared in separate ops.
   if (isConstantInt() && rhs.isConstantInt()) {
-    APSInt lhsVal(getConstantValue()), rhsVal(rhs.getConstantValue());
-    return getType() == rhs.getType() && safeEq(lhsVal, rhsVal);
+    DynamicAPInt lhsVal = getConstantValue(), rhsVal = rhs.getConstantValue();
+    return getType() == rhs.getType() && lhsVal == rhsVal;
   }
   return (root == rhs.root) && (fieldRefs == rhs.fieldRefs) && (constantVal == rhs.constantVal);
 }
@@ -332,8 +331,8 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   } else if (!isConstantFelt() && rhs.isConstantFelt()) {
     return true;
   } else if (isConstantFelt() && rhs.isConstantFelt()) {
-    APSInt lhsInt(getConstantFeltValue()), rhsInt(rhs.getConstantFeltValue());
-    return safeLt(lhsInt, rhsInt);
+    DynamicAPInt lhsInt = getConstantFeltValue(), rhsInt = rhs.getConstantFeltValue();
+    return lhsInt < rhsInt;
   }
 
   if (isConstantIndex() && !rhs.isConstantIndex()) {
@@ -342,8 +341,8 @@ bool ConstrainRef::operator<(const ConstrainRef &rhs) const {
   } else if (!isConstantIndex() && rhs.isConstantIndex()) {
     return true;
   } else if (isConstantIndex() && rhs.isConstantIndex()) {
-    APSInt lhsVal(getConstantIndexValue()), rhsVal(rhs.getConstantIndexValue());
-    return safeLt(lhsVal, rhsVal);
+    DynamicAPInt lhsVal = getConstantIndexValue(), rhsVal = rhs.getConstantIndexValue();
+    return lhsVal < rhsVal;
   }
 
   if (isTemplateConstant() && !rhs.isTemplateConstant()) {

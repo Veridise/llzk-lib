@@ -15,24 +15,25 @@
 
 #include "../LLZKTestUtils.h"
 
+using namespace llvm;
 using namespace llzk;
 
 static const Field &f = Field::getField("babybear");
 
-class FieldTests : public testing::Test, public testing::WithParamInterface<llvm::APSInt> {};
+class FieldTests : public testing::Test, public testing::WithParamInterface<DynamicAPInt> {};
 
 TEST_F(FieldTests, Negatives) {
   // -a == b mod p s.t. a + b mod p = 0
   // In other words, -a = p - a
-  AssertSafeEq(f.maxVal(), f.reduce(-f.one()));
-  AssertSafeEq(f.zero(), f.reduce(f.felt(7) - f.felt(7)));
+  ASSERT_EQ(f.maxVal(), f.reduce(-f.one()));
+  ASSERT_EQ(f.zero(), f.reduce(f.felt(7) - f.felt(7)));
 }
 
 TEST_P(FieldTests, DoubleNegatives) {
   auto p = f.reduce(GetParam());
   auto neg = f.reduce(-p);
   auto doubleNeg = f.reduce(-neg);
-  AssertSafeEq(p, doubleNeg);
+  ASSERT_EQ(p, doubleNeg);
 }
 
 INSTANTIATE_TEST_SUITE_P(

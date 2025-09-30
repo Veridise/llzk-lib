@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Debug.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 
 #include <gtest/gtest.h>
 
@@ -25,9 +25,4 @@ static testing::AssertionResult checkCond(const T &expected, const T &actual, bo
   std::string errMsg;
   llzk::debug::Appender(errMsg) << "expected " << expected << ", actual is " << actual;
   return testing::AssertionFailure() << errMsg;
-}
-
-/// Uses a bitwidth-safe comparison method to check if expected == actual
-inline static void AssertSafeEq(const llvm::APSInt &expected, const llvm::APSInt &actual) {
-  ASSERT_TRUE(checkCond(expected, actual, llzk::safeEq(expected, actual)));
 }

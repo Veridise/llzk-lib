@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/Support/SMTAPI.h>
 
 #include <string_view>
@@ -19,6 +19,9 @@ namespace llzk {
 
 /// @brief Information about the prime finite field used for the interval analysis.
 /// @note See implementation of initKnownFields for supported primes.
+/// @note We use DynamicAPInt to support arithmetic that may require increasing
+/// or signed arithmetic (e.g., multiplying field elements before applying the
+/// modulus).
 class Field {
 public:
   /// @brief Get a Field from a given field name string.
@@ -31,30 +34,31 @@ public:
   Field &operator=(const Field &) = default;
 
   /// @brief For the prime field p, returns p.
-  llvm::APSInt prime() const { return primeMod; }
+  llvm::DynamicAPInt prime() const { return primeMod; }
 
   /// @brief Returns p / 2.
-  llvm::APSInt half() const { return halfPrime; }
+  llvm::DynamicAPInt half() const { return halfPrime; }
 
   /// @brief Returns i as a signed field element
-  inline llvm::APSInt felt(int i) const { return reduce(i); }
+  inline llvm::DynamicAPInt felt(int i) const { return reduce(i); }
 
   /// @brief Returns 0 at the bitwidth of the field.
-  inline llvm::APSInt zero() const { return felt(0); }
+  inline llvm::DynamicAPInt zero() const { return felt(0); }
 
   /// @brief Returns 1 at the bitwidth of the field.
-  inline llvm::APSInt one() const { return felt(1); }
+  inline llvm::DynamicAPInt one() const { return felt(1); }
 
   /// @brief Returns p - 1, which is the max value possible in a prime field described by p.
-  inline llvm::APSInt maxVal() const { return prime() - one(); }
+  inline llvm::DynamicAPInt maxVal() const { return prime() - one(); }
 
   /// @brief Returns i mod p and reduces the result into the appropriate bitwidth.
   /// Field elements are returned as signed integers so that negation functions
   /// as expected (i.e., reducing -1 will yield p-1).
-  llvm::APSInt reduce(llvm::APSInt i) const;
-  llvm::APSInt reduce(int i) const;
+  llvm::DynamicAPInt reduce(const llvm::DynamicAPInt &i) const;
+  inline llvm::DynamicAPInt reduce(int i) const { return reduce(llvm::DynamicAPInt(i)); }
+  llvm::DynamicAPInt reduce(const llvm::APInt &i) const;
 
-  inline unsigned bitWidth() const { return primeMod.getBitWidth(); }
+  inline unsigned bitWidth() const { return bitwidth; }
 
   /// @brief Create a SMT solver symbol with the current field's bitwidth.
   llvm::SMTExprRef createSymbol(llvm::SMTSolverRef solver, const char *name) const {
@@ -68,7 +72,8 @@ public:
 private:
   Field(std::string_view primeStr);
 
-  llvm::APSInt primeMod, halfPrime;
+  llvm::DynamicAPInt primeMod, halfPrime;
+  unsigned bitwidth;
 
   static void initKnownFields(llvm::DenseMap<llvm::StringRef, Field> &knownFields);
 };

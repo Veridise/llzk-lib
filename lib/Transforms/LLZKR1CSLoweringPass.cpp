@@ -18,7 +18,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
-#include "llzk/Util/APIntHelper.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "r1cs/Dialect/IR/Attrs.h"
 #include "r1cs/Dialect/IR/Ops.h"
 #include "r1cs/Dialect/IR/Types.h"
@@ -53,13 +53,13 @@ namespace {
 
 /// A LinearCombination is a map from a Value (like a variable or FieldRead) to a felt constant.
 struct LinearCombination {
-  DenseMap<Value, APSInt> terms; // variable -> coeff
-  APSInt constant;
+  DenseMap<Value, DynamicAPInt> terms; // variable -> coeff
+  DynamicAPInt constant;
 
-  LinearCombination() : constant(APInt(1, 0), false) {}
+  LinearCombination() : constant() {}
 
-  void addTerm(Value v, APSInt coeff) {
-    if (coeff.isZero()) {
+  void addTerm(Value v, const DynamicAPInt &coeff) {
+    if (coeff == 0) {
       return;
     }
 
@@ -70,6 +70,11 @@ struct LinearCombination {
     }
   }
 
+  void addTerm(Value v, int64_t coeff) {
+    DynamicAPInt dynamicCoeff(coeff);
+    return addTerm(v, dynamicCoeff);
+  }
+
   void negate() {
     for (auto &kv : terms) {
       kv.second = -kv.second;
@@ -77,19 +82,22 @@ struct LinearCombination {
     constant = -constant;
   };
 
-  void addConstant(APSInt c) { constant += c; }
-
-  LinearCombination scaled(const APSInt &factor) const {
+  LinearCombination scaled(const DynamicAPInt &factor) const {
     LinearCombination result;
-    if (factor.isZero()) {
+    if (factor == 0) {
       return result;
     }
 
     for (const auto &kv : terms) {
-      result.terms[kv.first] = expandingMul(kv.second, factor);
+      result.terms[kv.first] = kv.second * factor;
     }
-    result.constant = expandingMul(constant, factor);
+    result.constant = constant * factor;
     return result;
+  }
+
+  LinearCombination scaled(int64_t factor) const {
+    DynamicAPInt dynamicFactor(factor);
+    return scaled(dynamicFactor);
   }
 
   LinearCombination add(const LinearCombination &other) const {
@@ -99,16 +107,14 @@ struct LinearCombination {
       if (!result.terms.contains(kv.first)) {
         result.terms[kv.first] = kv.second;
       } else {
-        result.terms[kv.first] = expandingAdd(result.terms[kv.first], kv.second);
+        result.terms[kv.first] = result.terms[kv.first] + kv.second;
       }
     }
-    result.constant = expandingAdd(result.constant, other.constant);
+    result.constant = result.constant + other.constant;
     return result;
   }
 
-  LinearCombination negated() const {
-    return scaled(APSInt(APInt(constant.getBitWidth(), -1, true), false));
-  }
+  LinearCombination negated() const { return scaled(-1); }
 
   void print(raw_ostream &os) const {
     bool first = true;
@@ -119,13 +125,13 @@ struct LinearCombination {
       first = false;
       os << coeff << '*' << val;
     }
-    if (!constant.isZero()) {
+    if (constant != 0) {
       if (!first) {
         os << " + ";
       }
       os << constant;
     }
-    if (first && constant.isZero()) {
+    if (first && constant == 0) {
       os << '0';
     }
   }
@@ -144,14 +150,14 @@ struct R1CSConstraint {
     return result;
   }
 
-  R1CSConstraint scaled(const APSInt &factor) const {
+  R1CSConstraint scaled(const DynamicAPInt &factor) const {
     R1CSConstraint result(*this);
     result.a = a.scaled(factor);
     result.c = c.scaled(factor);
     return result;
   }
 
-  R1CSConstraint(const APSInt &constant) { c.constant = constant; }
+  R1CSConstraint(const DynamicAPInt &constant) { c.constant = constant; }
 
   R1CSConstraint() = default;
 
@@ -417,7 +423,7 @@ private:
       if (!op || llvm::isa<FieldReadOp>(op)) {
         // Leaf (input variable or field read)
         R1CSConstraint eq;
-        eq.c.addTerm(v, APSInt::get(1));
+        eq.c.addTerm(v, 1);
         constraintMap[v] = eq;
         continue;
       }
@@ -437,7 +443,7 @@ private:
         R1CSConstraint inner = constraintMap[op->getOperand(0)];
         constraintMap[v] = inner.negated();
       } else if (auto cst = dyn_cast<FeltConstantOp>(op)) {
-        R1CSConstraint c(APSInt(cst.getValue(), false));
+        R1CSConstraint c(toDynamicAPInt(cst.getValue()));
         constraintMap[v] = c;
       } else {
         llvm::errs() << "Unhandled op in R1CS lowering: " << *op << '\n';
@@ -482,9 +488,9 @@ private:
     auto linearTy = r1cs::LinearType::get(builder.getContext());
 
     // Start with the constant, if present
-    if (!lc.constant.isZero()) {
+    if (lc.constant != 0) {
       result = builder.create<r1cs::ConstOp>(
-          loc, linearTy, r1cs::FeltAttr::get(builder.getContext(), lc.constant)
+          loc, linearTy, r1cs::FeltAttr::get(builder.getContext(), toAPSInt(lc.constant))
       );
     }
 
@@ -494,11 +500,11 @@ private:
       // most of these will be removed with CSE passes
       Value lin = builder.create<r1cs::ToLinearOp>(loc, linearTy, mapped);
       // %scaled = r1cs.mul_const %lin, coeff
-      Value scaled = coeff == 1
-                         ? lin
-                         : builder.create<r1cs::MulConstOp>(
-                               loc, linearTy, lin, r1cs::FeltAttr::get(builder.getContext(), coeff)
-                           );
+      Value scaled = coeff == 1 ? lin
+                                : builder.create<r1cs::MulConstOp>(
+                                      loc, linearTy, lin,
+                                      r1cs::FeltAttr::get(builder.getContext(), toAPSInt(coeff))
+                                  );
 
       // Accumulate via r1cs.add
       if (!result) {

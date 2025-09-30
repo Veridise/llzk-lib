@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-inline-includes -llzk-print-interval-analysis %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -I %S -split-input-file -llzk-print-interval-analysis %s 2>&1 | FileCheck %s
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ConstantConstraint {

@@ -23,13 +23,13 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
-#include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Compare.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/AnalysisManager.h>
 #include <mlir/Support/LLVM.h>
 
+#include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/MapVector.h>
 #include <llvm/Support/SMTAPI.h>
 
@@ -50,7 +50,7 @@ public:
   explicit ExpressionValue(const Field &f, llvm::SMTExprRef exprRef)
       : i(Interval::Entire(f)), expr(exprRef) {}
 
-  ExpressionValue(const Field &f, llvm::SMTExprRef exprRef, const llvm::APSInt &singleVal)
+  ExpressionValue(const Field &f, llvm::SMTExprRef exprRef, const llvm::DynamicAPInt &singleVal)
       : i(Interval::Degenerate(f, singleVal)), expr(exprRef) {}
 
   ExpressionValue(llvm::SMTExprRef exprRef, const Interval &interval)
@@ -306,9 +306,13 @@ private:
         felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
   }
 
-  llvm::APSInt getConst(mlir::Operation *op) const;
+  llvm::DynamicAPInt getConst(mlir::Operation *op) const;
 
-  llvm::SMTExprRef createConstBitvectorExpr(const llvm::APSInt &v) const {
+  inline llvm::SMTExprRef createConstBitvectorExpr(const llvm::DynamicAPInt &v) const {
+    return createConstBitvectorExpr(toAPSInt(v));
+  }
+
+  inline llvm::SMTExprRef createConstBitvectorExpr(const llvm::APSInt &v) const {
     return smtSolver->mkBitvector(v, field.get().bitWidth());
   }
 
