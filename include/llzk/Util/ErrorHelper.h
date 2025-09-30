@@ -49,16 +49,17 @@ private:
 
   std::variant<mlir::InFlightDiagnostic, DefaultAndFailInFlightDiagnostic> inner;
 
-  InFlightDiagnosticWrapper(DefaultAndFailInFlightDiagnostic &&diag) : inner(std::move(diag)) {}
+  explicit InFlightDiagnosticWrapper(DefaultAndFailInFlightDiagnostic &&diag)
+      : inner(std::move(diag)) {}
 
 public:
   // Constructor for regular InFlightDiagnostic.
-  InFlightDiagnosticWrapper(mlir::InFlightDiagnostic &&diag) : inner(std::move(diag)) {}
+  explicit InFlightDiagnosticWrapper(mlir::InFlightDiagnostic &&diag) : inner(std::move(diag)) {}
 
   // Constructor for DefaultAndFailInFlightDiagnostic from MLIRContext.
   // NOTE: This is not a common use case since it will always result in an assertion failure
   // immediately after reporting the error; likely only useful in custom type builders.
-  InFlightDiagnosticWrapper(mlir::MLIRContext *ctx)
+  explicit InFlightDiagnosticWrapper(mlir::MLIRContext *ctx)
       : InFlightDiagnosticWrapper(
             DefaultAndFailInFlightDiagnostic(mlir::detail::getDefaultDiagnosticEmitFn(ctx)())
         ) {}
@@ -66,7 +67,7 @@ public:
   // Constructor for DefaultAndFailInFlightDiagnostic from Location.
   // NOTE: This is not a common use case since it will always result in an assertion failure
   // immediately after reporting the error; likely only useful in custom type builders.
-  InFlightDiagnosticWrapper(const mlir::Location &loc)
+  explicit InFlightDiagnosticWrapper(const mlir::Location &loc)
       : InFlightDiagnosticWrapper(loc.getContext()) {}
 
   /// Stream operator for new diagnostic arguments.
@@ -172,6 +173,12 @@ inline OwningEmitErrorFn wrapNullableInFlightDiagnostic(
   } else {
     return [ctx]() -> auto { return InFlightDiagnosticWrapper(ctx); };
   }
+}
+
+inline OwningEmitErrorFn
+wrapNonNullableInFlightDiagnostic(llvm::function_ref<mlir::InFlightDiagnostic()> emitError) {
+  assert(emitError && "emitError must be non-null");
+  return [emitError]() -> auto { return InFlightDiagnosticWrapper(emitError()); };
 }
 
 } // namespace llzk

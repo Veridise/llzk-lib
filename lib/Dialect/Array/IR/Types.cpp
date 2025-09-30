@@ -74,7 +74,7 @@ LogicalResult ArrayType::verify(
     function_ref<InFlightDiagnostic()> emitError, Type elementType,
     ArrayRef<Attribute> dimensionSizes, ArrayRef<int64_t> shape
 ) {
-  return verifyArrayType(emitError, elementType, dimensionSizes);
+  return verifyArrayType(wrapNonNullableInFlightDiagnostic(emitError), elementType, dimensionSizes);
 }
 
 ArrayType ArrayType::cloneWith(std::optional<ArrayRef<int64_t>> shape, Type elementType) const {

@@ -34,7 +34,7 @@ void printStructParams(AsmPrinter &printer, ArrayAttr value) {
 LogicalResult StructType::verify(
     function_ref<InFlightDiagnostic()> emitError, SymbolRefAttr nameRef, ArrayAttr params
 ) {
-  return verifyStructTypeParams(emitError, params);
+  return verifyStructTypeParams(wrapNonNullableInFlightDiagnostic(emitError), params);
 }
 
 FailureOr<SymbolLookupResult<StructDefOp>>
