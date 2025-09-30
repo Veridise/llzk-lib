@@ -28,10 +28,18 @@ def LLZK_ArrayType
   let summary = "n-dimensional array";
   let description = [{
     Array type with a ranked shape and homogeneous element type.
-    It can only be instantiated with the following types:
+    It can only be instantiated with the following element types:
       - Any LLZK type
       - IndexType
       - Unsigned integers of 1 bit (aka booleans)
+
+    The dimensions of the array are specified using a list of attributes, one
+    per dimension. Each attribute must be one of the following:
+      - IntegerAttr (with IndexType), specifying a fixed dimension size
+      - SymbolRefAttr, specifying a dimension size defined by a struct parameter or
+        global constant
+      - AffineMapAttr, specifying a dimension size computed from surrounding loop
+        induction variables
 
     ```llzk
     // Example array of 5 by 2 elements of `Felt` type.

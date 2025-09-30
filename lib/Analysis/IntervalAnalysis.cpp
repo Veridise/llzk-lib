@@ -642,7 +642,7 @@ llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   llvm::DynamicAPInt fieldConst =
       TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
           .Case<FeltConstantOp>([&](FeltConstantOp feltConst) {
-    llvm::APSInt constOpVal(feltConst.getValueAttr().getValue());
+    llvm::APSInt constOpVal(feltConst.getValue());
     return field.get().reduce(toDynamicAPInt(constOpVal));
   })
           .Case<arith::ConstantIndexOp>([&](arith::ConstantIndexOp indexConst) {
@@ -993,7 +993,7 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
       if (failed(handleRefValue())) {
         return failure();
       }
-      auto constInt = APSInt(c.getValueAttr().getValue());
+      auto constInt = APSInt(c.getValue());
       consts.push_back(field.get().reduce(constInt));
       continue;
     } else if (m_RefValue(&signalVal).match(v)) {

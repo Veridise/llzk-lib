@@ -28,7 +28,18 @@ include "mlir/IR/SymbolInterfaces.td"
 class EmitOp<string mnemonic, list<Trait> traits = []>
     : Op<ConstrainDialect, mnemonic,
          traits#[ConstraintOpInterface, ConstraintGen,
-                 DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+                 DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {}
+
+def EmitEqualityOp
+    : EmitOp<"eq", [Commutative, ElementwiseMappable, TypesUnify<"lhs", "rhs">,
+]> {
+  let summary = "emit an equality constraint";
+  let description = [{
+    Emits an equality constraint between lhs and rhs. For the built-in Signal
+    struct, the constraint is performed on the Signal's inner `@reg` felt field.
+  }];
+
+  let arguments = (ins EmitEqType:$lhs, EmitEqType:$rhs);
 
   let assemblyFormat = [{
     $lhs `,` $rhs `:` type($lhs)
@@ -65,23 +76,22 @@ class EmitOp<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-def EmitEqualityOp
-    : EmitOp<"eq", [Commutative, ElementwiseMappable, TypesUnify<"lhs", "rhs">,
-]> {
-  let summary = "emit an equality constraint";
+def EmitContainmentOp : EmitOp<"in"> {
+  let summary = "emit a containment constraint";
   let description = [{
-    Emits an equality constraint between lhs and rhs. For the built-in Signal
-    struct, the constraint is performed on the Signal's inner `@reg` felt field.
+    Emits a containment constraint between lhs and rhs (rhs must be contained
+    within lhs). If lhs is an N-dimensional array (N >= 1), rhs must be an
+    M-dimensional array, where N >= M (M=0 means that rhs is a scalar element
+    of type accepted by the `constrain.eq` operation).
   }];
 
-  let arguments = (ins EmitEqType:$lhs, EmitEqType:$rhs);
-}
+  let arguments = (ins LLZK_ArrayType:$lhs, AnyLLZKType:$rhs);
 
-def EmitContainmentOp : EmitOp<"in", [ArrayElemTypeUnifyWith<"lhs", "rhs">]> {
-  let summary = "emit a containment constraint";
-  let description = [{}];
+  let assemblyFormat = [{
+    $lhs `,` $rhs `:` type($lhs) `,` type($rhs) attr-dict
+  }];
 
-  let arguments = (ins LLZK_ArrayType:$lhs, ArrayElemType:$rhs);
+  let hasVerifier = true;
 }
 
 #endif // LLZK_CONSTRAIN_OPS

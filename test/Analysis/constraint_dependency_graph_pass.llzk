@@ -90,7 +90,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB {
     function.def @constrain(%self: !struct.type<@ComponentB>, %a: !felt.type, %b: !array.type<5 x !felt.type>) {
-      constrain.in %b, %a : !array.type<5 x !felt.type>
+      constrain.in %b, %a : !array.type<5 x !felt.type>, !felt.type
       function.return
     }
 

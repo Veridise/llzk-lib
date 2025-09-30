@@ -197,7 +197,7 @@ public:
 
   llvm::DynamicAPInt getConstantFeltValue() const {
     ensure(isConstantFelt(), __FUNCTION__ + mlir::Twine(" requires a constant felt!"));
-    llvm::APInt i = std::get<felt::FeltConstantOp>(*constantVal).getValueAttr().getValue();
+    llvm::APInt i = std::get<felt::FeltConstantOp>(*constantVal).getValue();
     return toDynamicAPInt(i);
   }
   llvm::DynamicAPInt getConstantIndexValue() const {

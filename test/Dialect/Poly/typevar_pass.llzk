@@ -439,7 +439,7 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.type<@ComponentF1<[@C, @T]>>
     }
     function.def @constrain(%self: !struct.type<@ComponentF1<[@C, @T]>>, %a: !poly.tvar<@T>, %b: !array.type<@C x !poly.tvar<@T>>) {
-      constrain.in %b, %a : !array.type<@C x !poly.tvar<@T>>
+      constrain.in %b, %a : !array.type<@C x !poly.tvar<@T>>, !poly.tvar<@T>
       function.return
     }
   }

@@ -443,7 +443,7 @@ private:
         R1CSConstraint inner = constraintMap[op->getOperand(0)];
         constraintMap[v] = inner.negated();
       } else if (auto cst = dyn_cast<FeltConstantOp>(op)) {
-        R1CSConstraint c(toDynamicAPInt(cst.getValueAttr().getValue()));
+        R1CSConstraint c(toDynamicAPInt(cst.getValue()));
         constraintMap[v] = c;
       } else {
         llvm::errs() << "Unhandled op in R1CS lowering: " << *op << '\n';

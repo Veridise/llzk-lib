@@ -622,6 +622,7 @@ public:
   static bool legal(FieldRefOpClass) {
     ensureImplementedAtCompile();
     llvm_unreachable("must have concrete instantiation");
+    return false;
   }
 
   LogicalResult match(FieldRefOpClass op) const override { return failure(ImplClass::legal(op)); }

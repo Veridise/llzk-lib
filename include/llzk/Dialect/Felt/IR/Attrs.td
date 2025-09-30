@@ -26,6 +26,9 @@ def LLZK_FeltConstAttr
 
   let parameters = (ins APIntParameter<"The felt constant value">:$value);
 
+  let returnType = "::llvm::APInt";
+  let convertFromStorage = "$_self.getValue()";
+
   let assemblyFormat = [{ $value }];
 
   let extraClassDeclaration = [{
