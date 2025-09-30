@@ -75,7 +75,7 @@ Value rebuildExprInCompute(
   }
 
   if (auto c = val.getDefiningOp<FeltConstantOp>()) {
-    return memo[val] = builder.create<FeltConstantOp>(c.getLoc(), c.getValue());
+    return memo[val] = builder.create<FeltConstantOp>(c.getLoc(), c.getValueAttr());
   }
 
   llvm::errs() << "Unhandled op in rebuildExprInCompute: " << val << '\n';
