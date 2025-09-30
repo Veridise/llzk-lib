@@ -22,16 +22,15 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1758917558,
+        "lastModified": 1759260436,
         "narHash": "sha256-5+s6xkcEwDsgTq25s2JdeDqspvu0TF7MUS3ZU3VC5KE=",
         "owner": "Veridise",
         "repo": "llzk-nix-pkgs",
-        "rev": "36f196482b3550530b24aef6f4382ec199e99ab8",
+        "rev": "1b823ab142612a5c8b03e4b99dfebdf0ad35c887",
         "type": "github"
       },
       "original": {
         "owner": "Veridise",
-        "ref": "th/cleanup",
         "repo": "llzk-nix-pkgs",
         "type": "github"
       }

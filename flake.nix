@@ -1,6 +1,6 @@
 {
   inputs = {
-    llzk-pkgs.url = "github:Veridise/llzk-nix-pkgs?ref=th/cleanup";
+    llzk-pkgs.url = "github:Veridise/llzk-nix-pkgs";
 
     release-helpers = {
       url = "github:Veridise/open-source-release-helpers";
