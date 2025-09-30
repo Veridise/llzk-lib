@@ -32,6 +32,15 @@ private:
     DefaultAndFailInFlightDiagnostic(mlir::InFlightDiagnostic &&base)
         : mlir::InFlightDiagnostic(std::move(base)) {}
 
+    DefaultAndFailInFlightDiagnostic(DefaultAndFailInFlightDiagnostic &&other)
+        : mlir::InFlightDiagnostic(std::move(other)) {}
+
+    ~DefaultAndFailInFlightDiagnostic() {
+      if (getUnderlyingDiagnostic()) {
+        report();
+      }
+    }
+
     void report() {
       InFlightDiagnostic::report();
       assert(false);
