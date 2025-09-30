@@ -142,7 +142,7 @@ Type ArrayType::getTypeAtIndex(Attribute index) const {
 
 ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
   SmallVector<Attribute> attrs;
-  auto parseElement = [&]() -> ParseResult {
+  auto parseElement = [&parser, &value]() -> ParseResult {
     auto qResult = parser.parseOptionalQuestion();
     if (succeeded(qResult)) {
       auto &builder = parser.getBuilder();
@@ -151,7 +151,14 @@ ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
     }
     auto attrParseResult = FieldParser<Attribute>::parse(parser);
     if (succeeded(attrParseResult)) {
-      value.push_back(forceIntAttrType(*attrParseResult));
+      auto emitError = [&parser] {
+        return InFlightDiagnosticWrapper(parser.emitError(parser.getCurrentLocation()));
+      };
+      FailureOr<Attribute> forced = forceIntAttrType(*attrParseResult, emitError);
+      if (failed(forced)) {
+        return failure();
+      }
+      value.push_back(*forced);
     }
     return ParseResult(attrParseResult);
   };

@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
+#include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
@@ -862,28 +863,40 @@ bool isMoreConcreteUnification(
   return !llvm::any_of(unifications, entryIsRHS) && !llvm::any_of(affineInstantiations, entryIsRHS);
 }
 
-IntegerAttr forceIntType(IntegerAttr attr) {
-  if (AllowedTypes().onlyInt().isValidTypeImpl(attr.getType())) {
+FailureOr<IntegerAttr> forceIntType(IntegerAttr attr, EmitErrorFn emitError) {
+  if (llvm::isa<IndexType>(attr.getType())) {
     return attr;
   }
   // Ensure the APInt is the right bitwidth for IndexType or else
   // IntegerAttr::verify(..) will report an error.
   APInt value = attr.getValue();
-  if (value.getBitWidth() != IndexType::kInternalStorageBitWidth) {
-    value = value.sextOrTrunc(IndexType::kInternalStorageBitWidth);
+  auto compare = value.getBitWidth() <=> IndexType::kInternalStorageBitWidth;
+  if (compare < 0) {
+    value = value.zext(IndexType::kInternalStorageBitWidth);
+  } else if (compare > 0) {
+    return emitError().append("value is too large for `index` type: ", debug::toStringOne(value));
   }
   return IntegerAttr::get(IndexType::get(attr.getContext()), value);
 }
 
-Attribute forceIntAttrType(Attribute attr) {
+FailureOr<Attribute> forceIntAttrType(Attribute attr, EmitErrorFn emitError) {
   if (IntegerAttr intAttr = llvm::dyn_cast_if_present<IntegerAttr>(attr)) {
-    return forceIntType(intAttr);
+    return forceIntType(intAttr, emitError);
   }
   return attr;
 }
 
-SmallVector<Attribute> forceIntAttrTypes(ArrayRef<Attribute> attrList) {
-  return llvm::map_to_vector(attrList, forceIntAttrType);
+FailureOr<SmallVector<Attribute>>
+forceIntAttrTypes(ArrayRef<Attribute> attrList, EmitErrorFn emitError) {
+  SmallVector<Attribute> result;
+  for (Attribute attr : attrList) {
+    FailureOr<Attribute> forced = forceIntAttrType(attr, emitError);
+    if (failed(forced)) {
+      return failure();
+    }
+    result.push_back(*forced);
+  }
+  return result;
 }
 
 LogicalResult verifyIntAttrType(EmitErrorFn emitError, Attribute in) {
