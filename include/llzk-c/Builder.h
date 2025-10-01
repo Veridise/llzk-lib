@@ -33,24 +33,14 @@ DEFINE_C_API_STRUCT(MlirOpBuilderListener, void);
 
 #undef DEFINE_C_API_STRUCT
 
-// Commented out because they are not used for the callbacks in MLIR 18
-// but are used for MLIR 20+, which we plan to move on in the near future.
-#if 0
-struct MlirOpInsertionPoint {
+struct MlirOpBuilderInsertPoint {
   MlirBlock block;
   MlirOperation point;
 };
-typedef struct MlirOpInsertionPoint MlirOpInsertionPoint;
+typedef struct MlirOpBuilderInsertPoint MlirOpBuilderInsertPoint;
 
-struct MlirBlockInsertionPoint {
-  MlirRegion region;
-  MlirBlock point;
-};
-typedef struct MlirBlockInsertionPoint MlirBlockInsertionPoint;
-#endif
-
-typedef void (*MlirNotifyOperationInserted)(MlirOperation, void *);
-typedef void (*MlirNotifyBlockInserted)(MlirBlock, void *);
+typedef void (*MlirNotifyOperationInserted)(MlirOperation, MlirOpBuilderInsertPoint, void *);
+typedef void (*MlirNotifyBlockInserted)(MlirBlock, MlirRegion, MlirBlock, void *);
 
 //===----------------------------------------------------------------------===//
 // MlirOpBuilder
