@@ -92,8 +92,7 @@ SymbolUseGraph::SymbolUseGraph(SymbolOpInterface rootSymbolOp) {
 SymbolUseGraphNode *SymbolUseGraph::getSymbolUserNode(const SymbolTable::SymbolUse &u) {
   SymbolOpInterface userSymbol = getSelfOrParentOfType<SymbolOpInterface>(u.getUser());
   return getPathAndCall<SymbolUseGraphNode *>(
-      userSymbol,
-      [this, &userSymbol](ModuleOp r, SymbolRefAttr p) {
+      userSymbol, [this, &userSymbol](ModuleOp r, SymbolRefAttr p) {
     auto n = this->getOrAddNode(r, p, nullptr);
     n->opsThatUseTheSymbol.insert(userSymbol);
     return n;

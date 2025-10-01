@@ -186,10 +186,9 @@ TEST_F(TypeTests, testShortStringWithPartials) {
   auto symK = FlatSymbolRefAttr::get(&ctx, "K");
 
   std::string v1 = BuildShortTypeString::from(
-      "prefix",
-      ArrayRef<Attribute> {
-          nullptr, symA, nullptr, nullptr, symB, nullptr, nullptr, nullptr, symC, nullptr
-      }
+      "prefix", ArrayRef<Attribute> {
+                    nullptr, symA, nullptr, nullptr, symB, nullptr, nullptr, nullptr, symC, nullptr
+                }
   );
   EXPECT_EQ("prefix_\x1A_@A_\x1A_\x1A_@B_\x1A_\x1A_\x1A_@C_\x1A", v1);
 

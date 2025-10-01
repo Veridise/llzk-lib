@@ -66,8 +66,7 @@ void registerTransformationPassPipelines() {
   );
 
   PassPipelineRegistration<>(
-      "llzk-full-r1cs-lowering", "Lower all polynomial constraints to r1cs",
-      [](OpPassManager &pm) {
+      "llzk-full-r1cs-lowering", "Lower all polynomial constraints to r1cs", [](OpPassManager &pm) {
     // 1. Degree lowering
     pm.addPass(llzk::createPolyLoweringPass(2));
 
