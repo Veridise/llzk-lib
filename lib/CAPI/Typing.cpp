@@ -77,8 +77,7 @@ bool llzkIsMoreConcreteUnification(
     void *userData
 ) {
   return isMoreConcreteUnification(
-      unwrap(oldTy), unwrap(newTy),
-      [knownOldToNew, userData](auto lhs, auto rhs) {
+      unwrap(oldTy), unwrap(newTy), [knownOldToNew, userData](auto lhs, auto rhs) {
     return knownOldToNew(wrap(lhs), wrap(rhs), userData);
   }
   );
