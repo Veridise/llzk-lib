@@ -1,6 +1,8 @@
 {
   inputs = {
     llzk-pkgs.url = "github:Veridise/llzk-nix-pkgs";
+    nixpkgs.follows = "llzk-pkgs/nixpkgs";
+    flake-utils.follows = "llzk-pkgs/flake-utils";
 
     release-helpers = {
       url = "github:Veridise/open-source-release-helpers";
@@ -8,16 +10,6 @@
         nixpkgs.follows = "llzk-pkgs/nixpkgs";
         flake-utils.follows = "llzk-pkgs/flake-utils";
       };
-    };
-
-    nixpkgs = {
-      url = "github:NixOS/nixpkgs";
-      follows = "llzk-pkgs/nixpkgs";
-    };
-
-    flake-utils = {
-      url = "github:numtide/flake-utils/v1.0.0";
-      follows = "llzk-pkgs/flake-utils";
     };
   };
 
