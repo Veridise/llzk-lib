@@ -29,8 +29,8 @@ struct FileLineColLocComparator {
   bool operator()(const mlir::FileLineColLoc &LHS, const mlir::FileLineColLoc &RHS) const {
     auto filenameCmp = LHS.getFilename().compare(RHS.getFilename());
     return filenameCmp < 0 || (filenameCmp == 0 && LHS.getLine() < RHS.getLine()) ||
-           (filenameCmp == 0 && LHS.getLine() == RHS.getLine() &&
-            LHS.getColumn() < RHS.getColumn());
+           (filenameCmp == 0 && LHS.getLine() == RHS.getLine() && LHS.getColumn() < RHS.getColumn()
+           );
   }
 };
 
