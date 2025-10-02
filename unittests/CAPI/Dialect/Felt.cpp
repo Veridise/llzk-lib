@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk-c/Dialect/Felt.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
@@ -19,6 +20,24 @@ TEST_F(CAPITest, mlir_get_dialect_handle_llzk_felt) { mlirGetDialectHandle__llzk
 TEST_F(CAPITest, llzk_felt_const_attr_get) {
   auto attr = llzkFeltConstAttrGet(context, 0);
   EXPECT_NE(attr.ptr, (void *)NULL);
+}
+
+TEST_F(CAPITest, llzkFeltConstAttrGetFromString) {
+  constexpr auto BITS = 64;
+  auto attr = llzkFeltConstAttrGetFromString(context, BITS, "123");
+  EXPECT_NE(attr.ptr, (void *)NULL);
+  auto expected = llzk::felt::FeltConstAttr::get(unwrap(context), llvm::APInt(BITS, "123"));
+  EXPECT_EQ(unwrap(attr), expected);
+}
+
+TEST_F(CAPITest, llzkFeltConstAttrGetFromParts) {
+  constexpr auto BITS = 254;
+  const uint64_t[] parts = {10, 20, 30, 40};
+  auto attr = llzkFeltConstAttrGetFromParts(context, BITS, parts, 4);
+  EXPECT_NE(attr.ptr, (void *)NULL);
+  auto expected =
+      llzk::felt::FeltConstAttr::get(unwrap(context), llvm::APInt(BITS, llvm::ArrayRef(parts, 4)));
+  EXPECT_EQ(unwrap(attr), expected);
 }
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_const_attr_pass) {
