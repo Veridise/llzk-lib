@@ -31,10 +31,10 @@ def LLZK_FeltConstAttr
 
   let assemblyFormat = [{ $value }];
 
-  let builders = [
-    AttrBuilder<(ins "unsigned":$numBits,"::llvm::StringRef":$str)>,
-    AttrBuilder<(ins "unsigned":$numBits,"::llvm::ArrayRef<uint64_t>":$parts)
-  ];
+  let builders = [AttrBuilder<(ins "unsigned":$numBits,
+                      "::llvm::StringRef":$str)>,
+                  AttrBuilder<(ins "unsigned":$numBits,
+                      "::llvm::ArrayRef<uint64_t>":$parts)>];
 
   let extraClassDeclaration = [{
     ::mlir::Type getType() const;
