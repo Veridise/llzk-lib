@@ -31,6 +31,10 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt);
 /// Creates a llzk::felt::FeltConstAttr.
 MLIR_CAPI_EXPORTED MlirAttribute llzkFeltConstAttrGet(MlirContext context, int64_t value);
 
+/// Creates a llzk::felt::FeltConstAttr with a set bit length.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkFeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value);
+
 /// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number.
 MLIR_CAPI_EXPORTED MlirAttribute
 llzkFeltConstAttrGetFromString(MlirContext context, unsigned numBits, MlirStringRef str);

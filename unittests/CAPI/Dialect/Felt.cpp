@@ -26,6 +26,17 @@ TEST_F(CAPITest, llzk_felt_const_attr_get) {
   EXPECT_NE(attr.ptr, (void *)NULL);
 }
 
+TEST_F(CAPITest, llzkFeltConstAttrGetWithBits) {
+  constexpr auto BITS = 128;
+  auto attr = llzkFeltConstAttrGetWithBits(context, BITS, 0);
+  EXPECT_NE(attr.ptr, (void *)NULL);
+  auto cxx_attr = llvm::dyn_cast<llzk::felt::FeltConstAttr>(unwrap(attr));
+  EXPECT_TRUE(cxx_attr);
+  auto value = cxx_attr.getValue();
+  EXPECT_EQ(value.getBitWidth(), BITS);
+  EXPECT_EQ(value.getZExtValue(), 0);
+}
+
 TEST_F(CAPITest, llzkFeltConstAttrGetFromString) {
   constexpr auto BITS = 64;
   auto str = MlirStringRef {.data = "123", .length = 3};
