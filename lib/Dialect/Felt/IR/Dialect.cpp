@@ -49,3 +49,19 @@ auto llzk::felt::FeltDialect::initialize() -> void {
   // clang-format on
   addInterfaces<LLZKDialectBytecodeInterface<FeltDialect>>();
 }
+
+//===------------------------------------------------------------------===//
+// FeltConstAttr
+//===------------------------------------------------------------------===//
+
+llzk::felt::FeltConstAttr llzk::felt::FeltConstAttr::get(
+    ::mlir::MLIRContext *context, unsigned numBits, llvm::StringRef str
+) {
+  return Base::get(context, llvm::APInt(numBits, str, 10));
+}
+
+llzk::felt::FeltConstAttr llzk::felt::FeltConstAttr::get(
+    mlir::MLIRContext *context, unsigned numBits, llvm::ArrayRef<uint64_t> parts
+) {
+  return Base::get(context, llvm::APInt(numBits, parts));
+}

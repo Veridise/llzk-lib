@@ -14,15 +14,4 @@ namespace llzk::felt {
 
 mlir::Type FeltConstAttr::getType() const { return FeltType::get(this->getContext()); }
 
-FeltConstAttr
-FeltConstAttr::get(::mlir::MLIRContext *context, unsigned numBits, ::llvm::StringRef str) {
-  return Base::get(context, llvm::APInt(numBits, str, 10));
-}
-
-FeltConstAttr FeltConstAttr::get(
-    ::mlir::MLIRContext *context, unsigned numBits, ::llvm::ArrayRef<uint64_t> parts
-) {
-  return Base::get(context, llvm::APInt(numBits, parts));
-}
-
 } // namespace llzk::felt

@@ -8,10 +8,14 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk-c/Dialect/Felt.h"
+#include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
+#include <mlir-c/Support.h>
+
+#include <llvm/ADT/APInt.h>
 
 #include "../CAPITestBase.h"
 
@@ -24,15 +28,18 @@ TEST_F(CAPITest, llzk_felt_const_attr_get) {
 
 TEST_F(CAPITest, llzkFeltConstAttrGetFromString) {
   constexpr auto BITS = 64;
-  auto attr = llzkFeltConstAttrGetFromString(context, BITS, "123");
+  auto str = MlirStringRef {.data = "123", .length = 3};
+  auto attr = llzkFeltConstAttrGetFromString(context, BITS, str);
   EXPECT_NE(attr.ptr, (void *)NULL);
-  auto expected = llzk::felt::FeltConstAttr::get(unwrap(context), llvm::APInt(BITS, "123"));
+  auto expected = llzk::felt::FeltConstAttr::get(
+      unwrap(context), llvm::APInt(BITS, llvm::StringRef("123", 3), 10)
+  );
   EXPECT_EQ(unwrap(attr), expected);
 }
 
 TEST_F(CAPITest, llzkFeltConstAttrGetFromParts) {
   constexpr auto BITS = 254;
-  const uint64_t[] parts = {10, 20, 30, 40};
+  const uint64_t parts[] = {10, 20, 30, 40};
   auto attr = llzkFeltConstAttrGetFromParts(context, BITS, parts, 4);
   EXPECT_NE(attr.ptr, (void *)NULL);
   auto expected =
