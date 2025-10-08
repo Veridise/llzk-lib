@@ -12,6 +12,7 @@
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -21,6 +22,8 @@
 #include <llvm/ADT/MapVector.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringSet.h>
+
+#include <optional>
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Struct/IR/OpInterfaces.cpp.inc"
@@ -68,6 +71,9 @@ template <> LogicalResult SetFuncAllowAttrs<StructDefOp>::verifyTrait(Operation 
       funcDef.setAllowWitnessAttr(false);
     } else if (funcDef.nameIsCompute()) {
       funcDef.setAllowConstraintAttr(false);
+      funcDef.setAllowWitnessAttr();
+    } else if (funcDef.nameIsProduct()) {
+      funcDef.setAllowConstraintAttr();
       funcDef.setAllowWitnessAttr();
     }
   });
@@ -134,9 +140,13 @@ LogicalResult checkSelfType(
 //===------------------------------------------------------------------===//
 namespace {
 
-inline LogicalResult msgOneFunction(EmitErrorFn emitError, const Twine &name) {
-  return emitError() << "must define exactly one '" << name << "' function";
-}
+// inline LogicalResult msgOneFunction(EmitErrorFn emitError, const Twine &name) {
+//   return emitError() << "must define exactly one '" << name << "' function";
+// }
+
+// inline LogicalResult msgDuplicateFunction(EmitErrorFn emitError, const Twine &name) {
+//   return emitError() << "must not define multiple '" << name << "' functions";
+// }
 
 } // namespace
 
@@ -237,6 +247,7 @@ LogicalResult StructDefOp::verifyRegions() {
   assert(getBody().hasOneBlock()); // per ODS, SizedRegion<1>
   std::optional<FuncDefOp> foundCompute = std::nullopt;
   std::optional<FuncDefOp> foundConstrain = std::nullopt;
+  std::optional<FuncDefOp> foundProduct = std::nullopt;
   {
     // Verify the following:
     // 1. The only ops within the body are field and function definitions
@@ -246,21 +257,46 @@ LogicalResult StructDefOp::verifyRegions() {
       if (!llvm::isa<FieldDefOp>(op)) {
         if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
           if (funcDef.nameIsCompute()) {
+            if (foundProduct) {
+              emitError() << "cannot define both '" << FUNC_NAME_COMPUTE << "' and '"
+                          << FUNC_NAME_PRODUCT << "' functions";
+            }
             if (foundCompute) {
-              return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
+              emitError() << "cannot define multiple '" << FUNC_NAME_COMPUTE << "' functions";
             }
             foundCompute = std::make_optional(funcDef);
           } else if (funcDef.nameIsConstrain()) {
-            if (foundConstrain) {
-              return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
+            if (foundConstrain || foundProduct) {
+              if (foundProduct) {
+                emitError() << "cannot define both '" << FUNC_NAME_CONSTRAIN << "' and '"
+                            << FUNC_NAME_PRODUCT << "' functions";
+              }
+              if (foundConstrain) {
+                emitError() << "cannot define multiple '" << FUNC_NAME_CONSTRAIN << "' functions";
+              }
             }
             foundConstrain = std::make_optional(funcDef);
+          } else if (funcDef.nameIsProduct()) {
+            if (foundCompute) {
+              return emitError() << "cannot define both '" << FUNC_NAME_COMPUTE << "' and '"
+                                 << FUNC_NAME_PRODUCT << "' functions";
+            }
+            if (foundConstrain) {
+              return emitError() << "cannot define both '" << FUNC_NAME_CONSTRAIN << "' and '"
+                                 << FUNC_NAME_PRODUCT << "' functions";
+            }
+            if (foundProduct) {
+              return emitError() << "cannot define multiple '" << FUNC_NAME_PRODUCT
+                                 << "' functions";
+            }
+            foundProduct = std::make_optional(funcDef);
           } else {
             // Must do a little more than a simple call to '?.emitOpError()' to
             // tag the error with correct location and correct op name.
             return op.emitError() << '\'' << getOperationName() << "' op " << "must define only \"@"
                                   << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
-                                  << "\" functions;" << " found \"@" << funcDef.getSymName() << '"';
+                                  << "\" functions, or a @" << FUNC_NAME_PRODUCT << " function;"
+                                  << " found \"@" << funcDef.getSymName() << '"';
           }
         } else {
           return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
@@ -270,14 +306,17 @@ LogicalResult StructDefOp::verifyRegions() {
         }
       }
     }
-    if (!foundCompute.has_value()) {
-      return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
+    if (!foundProduct.has_value() && !foundCompute.has_value()) {
+      return emitError() << "must define either '" << FUNC_NAME_PRODUCT << "' or '"
+                         << FUNC_NAME_COMPUTE << "' functions";
     }
-    if (!foundConstrain.has_value()) {
-      return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
+    if (!foundProduct.has_value() && !foundConstrain.has_value()) {
+      return emitError() << "must define either '" << FUNC_NAME_PRODUCT << "' or '"
+                         << FUNC_NAME_CONSTRAIN << "' functions";
     }
   }
 
+  // TODO: factor these into separate verifyCC and verifyProduct functions!
   // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly.
   assert(foundConstrain->hasAllowConstraintAttr());
   assert(!foundCompute->hasAllowConstraintAttr());

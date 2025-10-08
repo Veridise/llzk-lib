@@ -221,7 +221,8 @@ LogicalResult FuncDefOp::verify() {
     if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
       return failure();
     }
-    if (isInStruct() && (nameIsCompute() || nameIsConstrain()) && hasAffineMapAttr(*ptr)) {
+    if (isInStruct() && (nameIsCompute() || nameIsConstrain() || nameIsProduct()) &&
+        hasAffineMapAttr(*ptr)) {
       return emitErrorFunc().append(
           "\"@", getName(), "\" parameters cannot contain affine map attributes but found ", *ptr
       );
@@ -406,13 +407,15 @@ void CallOp::build(
 }
 
 namespace {
-enum class CalleeKind : std::uint8_t { Compute, Constrain, Other };
+enum class CalleeKind : std::uint8_t { Compute, Constrain, Product, Other };
 
 CalleeKind calleeNameToKind(StringRef tgtName) {
   if (FUNC_NAME_COMPUTE == tgtName) {
     return CalleeKind::Compute;
   } else if (FUNC_NAME_CONSTRAIN == tgtName) {
     return CalleeKind::Constrain;
+  } else if (FUNC_NAME_PRODUCT == tgtName) {
+    return CalleeKind::Product;
   } else {
     return CalleeKind::Other;
   }
