@@ -75,6 +75,14 @@ MlirAttribute llzkStructTypeGetParams(MlirType type) {
 
 bool llzkOperationIsAStructDefOp(MlirOperation op) { return llvm::isa<StructDefOp>(unwrap(op)); }
 
+MlirRegion llzkStructDefOpGetBodyRegion(MlirOperation op) {
+  return wrap(&llvm::cast<StructDefOp>(unwrap(op)).getBodyRegion());
+}
+
+MlirBlock llzkStructDefOpGetBody(MlirOperation op) {
+  return wrap(llvm::cast<StructDefOp>(unwrap(op)).getBody());
+}
+
 MlirType llzkStructDefOpGetType(MlirOperation op) {
   return wrap(llvm::cast<StructDefOp>(unwrap(op)).getType());
 }

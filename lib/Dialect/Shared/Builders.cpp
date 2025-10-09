@@ -111,7 +111,7 @@ ModuleBuilder::insertEmptyStruct(std::string_view structName, Location loc, int 
 ModuleBuilder &ModuleBuilder::insertComputeFn(StructDefOp op, Location loc) {
   ensureNoSuchComputeFn(op.getName());
 
-  OpBuilder opBuilder(op.getBody());
+  OpBuilder opBuilder(op.getBodyRegion());
 
   auto fnOp = opBuilder.create<FuncDefOp>(
       loc, StringAttr::get(context, FUNC_NAME_COMPUTE),
@@ -125,7 +125,7 @@ ModuleBuilder &ModuleBuilder::insertComputeFn(StructDefOp op, Location loc) {
 ModuleBuilder &ModuleBuilder::insertConstrainFn(StructDefOp op, Location loc) {
   ensureNoSuchConstrainFn(op.getName());
 
-  OpBuilder opBuilder(op.getBody());
+  OpBuilder opBuilder(op.getBodyRegion());
 
   auto fnOp = opBuilder.create<FuncDefOp>(
       loc, StringAttr::get(context, FUNC_NAME_CONSTRAIN),
@@ -160,14 +160,12 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
   FuncDefOp calleeFn = constrainFnMap.at(callee.getName());
   StructType calleeTy = callee.getType();
 
-  size_t numOps = 0;
-  for (auto it = caller.getBody().begin(); it != caller.getBody().end(); it++, numOps++)
-    ;
+  size_t numOps = caller.getBody()->getOperations().size();
   auto fieldName = StringAttr::get(context, callee.getName().str() + std::to_string(numOps));
 
   // Insert the field declaration op
   {
-    OpBuilder builder(caller.getBody());
+    OpBuilder builder(caller.getBodyRegion());
     builder.create<FieldDefOp>(fieldDefLoc, fieldName, calleeTy);
   }
 

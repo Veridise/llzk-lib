@@ -79,10 +79,10 @@ def LLZK_StructDefOp
   let arguments = (ins SymbolNameAttr:$sym_name,
       OptionalAttr<FlatSymbolRefArrayAttr>:$const_params);
 
-  let regions = (region SizedRegion<1>:$body);
+  let regions = (region SizedRegion<1>:$bodyRegion);
 
   let assemblyFormat = [{
-    $sym_name (`<` $const_params^ `>`)? $body attr-dict
+    $sym_name (`<` $const_params^ `>`)? $bodyRegion attr-dict
   }];
 
   let extraClassDeclaration = [{

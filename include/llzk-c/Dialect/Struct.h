@@ -66,6 +66,12 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetParams(MlirType type);
 /// Returns true if the op is a StructDefOp
 LLZK_DECLARE_OP_ISA(StructDefOp);
 
+/// Returns the single body Region of the StructDefOp.
+MLIR_CAPI_EXPORTED MlirRegion llzkStructDefOpGetBodyRegion(MlirOperation op);
+
+/// Returns the single body Block within the StructDefOp's Region.
+MLIR_CAPI_EXPORTED MlirBlock llzkStructDefOpGetBody(MlirOperation op);
+
 /// Returns the associated StructType to this op using the const params defined by the op.
 MLIR_CAPI_EXPORTED MlirType llzkStructDefOpGetType(MlirOperation op);
 
