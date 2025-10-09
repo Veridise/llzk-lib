@@ -138,6 +138,24 @@ TEST_F(StructDefTest, llzk_operation_is_a_struct_def_op) {
   }
 }
 
+TEST_F(StructDefTest, llzk_struct_def_op_get_body) {
+  auto op = test_op();
+  {
+    if (llzkOperationIsAStructDefOp(op.op)) {
+      llzkStructDefOpGetBody(op.op);
+    }
+  }
+}
+
+TEST_F(StructDefTest, llzk_struct_def_op_get_body_region) {
+  auto op = test_op();
+  {
+    if (llzkOperationIsAStructDefOp(op.op)) {
+      llzkStructDefOpGetBodyRegion(op.op);
+    }
+  }
+}
+
 TEST_F(StructDefTest, llzk_struct_def_op_get_type) {
   auto op = test_op();
   {
