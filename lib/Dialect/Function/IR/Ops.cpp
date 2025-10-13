@@ -213,11 +213,11 @@ bool FuncDefOp::hasArgPublicAttr(unsigned index) {
 LogicalResult FuncDefOp::verify() {
   OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
   // Ensure that only valid LLZK types are used for arguments and return.
-  // @compute and @constrain functions also may not have AffineMapAttrs in their
+  // @compute, @constrain, and @product functions also may not have AffineMapAttrs in their
   // parameters.
   FunctionType type = getFunctionType();
   llvm::ArrayRef<Type> inTypes = type.getInputs();
-  for (auto ptr = inTypes.begin(); ptr < inTypes.end(); ptr++) {
+  for (const auto *ptr = inTypes.begin(); ptr < inTypes.end(); ptr++) {
     if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
       return failure();
     }
@@ -229,7 +229,7 @@ LogicalResult FuncDefOp::verify() {
     }
   }
   llvm::ArrayRef<Type> resTypes = type.getResults();
-  for (auto ptr = resTypes.begin(); ptr < resTypes.end(); ptr++) {
+  for (const auto *ptr = resTypes.begin(); ptr < resTypes.end(); ptr++) {
     if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
       return failure();
     }
@@ -273,6 +273,12 @@ verifyFuncTypeCompute(FuncDefOp &origin, SymbolTableCollection &tables, StructDe
 }
 
 LogicalResult
+verifyFuncTypeProduct(FuncDefOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
+  // The signature for @product is the same as the signature for @compute
+  return verifyFuncTypeCompute(origin, tables, parent);
+}
+
+LogicalResult
 verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, StructDefOp &parent) {
   FunctionType funcType = origin.getFunctionType();
   // Must return '()' type, i.e., have no return types
@@ -308,6 +314,8 @@ LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
       return verifyFuncTypeCompute(*this, tables, parentStructOpt.value());
     } else if (nameIsConstrain()) {
       return verifyFuncTypeConstrain(*this, tables, parentStructOpt.value());
+    } else if (nameIsProduct()) {
+      return verifyFuncTypeProduct(*this, tables, parentStructOpt.value());
     }
   }
   // In the general case, verify symbol resolution in all input and output types.

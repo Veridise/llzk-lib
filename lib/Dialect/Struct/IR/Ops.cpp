@@ -241,6 +241,80 @@ inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool a
   return inFunc.emitError(message);
 }
 
+inline LogicalResult verifyStructComputeConstrain(
+    StructDefOp &structDef, FuncDefOp &computeFunc, FuncDefOp &constrainFunc
+) {
+  // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly.
+  assert(constrainFunc.hasAllowConstraintAttr());
+  assert(!computeFunc.hasAllowConstraintAttr());
+  assert(!constrainFunc.hasAllowWitnessAttr());
+  assert(computeFunc.hasAllowWitnessAttr());
+
+  // Verify parameter types are valid. Skip the first parameter of the "constrain" function; it is
+  // already checked via verifyFuncTypeConstrain() in Function/IR/Ops.cpp.
+  ArrayRef<Type> computeParams = computeFunc.getFunctionType().getInputs();
+  ArrayRef<Type> constrainParams = constrainFunc.getFunctionType().getInputs().drop_front();
+  if (structDef.isMainComponent()) {
+    // Verify that the Struct has no parameters.
+    if (!isNullOrEmpty(structDef.getConstParamsAttr())) {
+      return structDef.emitError().append(
+          "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
+      );
+    }
+    // Verify the input parameter types are legal. The error message is explicit about what types
+    // are allowed so there is no benefit to report multiple errors if more than one parameter in
+    // the referenced function has an illegal type.
+    for (Type t : computeParams) {
+      if (failed(checkMainFuncParamType(t, computeFunc, false))) {
+        return failure(); // checkMainFuncParamType() already emits a sufficient error message
+      }
+    }
+    for (Type t : constrainParams) {
+      if (failed(checkMainFuncParamType(t, constrainFunc, true))) {
+        return failure(); // checkMainFuncParamType() already emits a sufficient error message
+      }
+    }
+  }
+
+  if (!typeListsUnify(computeParams, constrainParams)) {
+    return constrainFunc.emitError()
+        .append(
+            "expected \"@", FUNC_NAME_CONSTRAIN,
+            "\" function argument types (sans the first one) to match \"@", FUNC_NAME_COMPUTE,
+            "\" function argument types"
+        )
+        .attachNote(computeFunc.getLoc())
+        .append("\"@", FUNC_NAME_COMPUTE, "\" function defined here");
+  }
+
+  return success();
+}
+
+inline LogicalResult verifyStructProduct(StructDefOp &structDef, FuncDefOp &productFunc) {
+
+  // ASSERT: The `SetFuncALlowAttrs` trait on StructDefOp set the attributes correctly
+  assert(productFunc.hasAllowConstraintAttr());
+  assert(productFunc.hasAllowWitnessAttr());
+
+  // Verify parameter types are valid
+  ArrayRef<Type> productParams = productFunc.getFunctionType().getInputs();
+  if (structDef.isMainComponent()) {
+    if (!isNullOrEmpty(structDef.getConstParamsAttr())) {
+      return structDef.emitError().append(
+          "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
+      );
+    }
+  }
+
+  for (Type t : productParams) {
+    if (failed(checkMainFuncParamType(t, productFunc, false))) {
+      return failure();
+    }
+  }
+
+  return success();
+}
+
 } // namespace
 
 LogicalResult StructDefOp::verifyRegions() {
@@ -316,52 +390,10 @@ LogicalResult StructDefOp::verifyRegions() {
     }
   }
 
-  // TODO: factor these into separate verifyCC and verifyProduct functions!
-  // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly.
-  assert(foundConstrain->hasAllowConstraintAttr());
-  assert(!foundCompute->hasAllowConstraintAttr());
-  assert(!foundConstrain->hasAllowWitnessAttr());
-  assert(foundCompute->hasAllowWitnessAttr());
-
-  // Verify parameter types are valid. Skip the first parameter of the "constrain" function; it is
-  // already checked via verifyFuncTypeConstrain() in Function/IR/Ops.cpp.
-  ArrayRef<Type> computeParams = foundCompute->getFunctionType().getInputs();
-  ArrayRef<Type> constrainParams = foundConstrain->getFunctionType().getInputs().drop_front();
-  if (this->isMainComponent()) {
-    // Verify that the Struct has no parameters.
-    if (!isNullOrEmpty(this->getConstParamsAttr())) {
-      return this->emitError().append(
-          "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
-      );
-    }
-    // Verify the input parameter types are legal. The error message is explicit about what types
-    // are allowed so there is no benefit to report multiple errors if more than one parameter in
-    // the referenced function has an illegal type.
-    for (Type t : computeParams) {
-      if (failed(checkMainFuncParamType(t, *foundCompute, false))) {
-        return failure(); // checkMainFuncParamType() already emits a sufficient error message
-      }
-    }
-    for (Type t : constrainParams) {
-      if (failed(checkMainFuncParamType(t, *foundConstrain, true))) {
-        return failure(); // checkMainFuncParamType() already emits a sufficient error message
-      }
-    }
+  if (foundCompute && foundConstrain) {
+    return verifyStructComputeConstrain(*this, *foundCompute, *foundConstrain);
   }
-  // Verify that function input types from `compute()` and `constrain()` match, sans the first
-  // parameter of `constrain()` which is the instance of the parent struct.
-  if (!typeListsUnify(computeParams, constrainParams)) {
-    return foundConstrain->emitError()
-        .append(
-            "expected \"@", FUNC_NAME_CONSTRAIN,
-            "\" function argument types (sans the first one) to match \"@", FUNC_NAME_COMPUTE,
-            "\" function argument types"
-        )
-        .attachNote(foundCompute->getLoc())
-        .append("\"@", FUNC_NAME_COMPUTE, "\" function defined here");
-  }
-
-  return success();
+  return verifyStructProduct(*this, *foundProduct);
 }
 
 FieldDefOp StructDefOp::getFieldDef(StringAttr fieldName) {
