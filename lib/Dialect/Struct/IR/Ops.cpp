@@ -292,7 +292,7 @@ inline LogicalResult verifyStructComputeConstrain(
 
 inline LogicalResult verifyStructProduct(StructDefOp &structDef, FuncDefOp &productFunc) {
 
-  // ASSERT: The `SetFuncALlowAttrs` trait on StructDefOp set the attributes correctly
+  // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly
   assert(productFunc.hasAllowConstraintAttr());
   assert(productFunc.hasAllowWitnessAttr());
 
