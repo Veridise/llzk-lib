@@ -1,7 +1,7 @@
 { stdenv, lib, cmake, ninja, mlir_pkg, llzk_pkg }:
 
 let
-  buildTypeStr = lib.toLower (llzk_pkg.cmakeBuildType or "release");
+  buildTypeStr = lib.toLower (mlir_pkg.cmakeBuildType or "release");
 in
 stdenv.mkDerivation {
   pname = "llzk-installcheck-${buildTypeStr}";
