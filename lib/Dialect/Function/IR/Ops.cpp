@@ -212,19 +212,6 @@ bool FuncDefOp::hasArgPublicAttr(unsigned index) {
 
 LogicalResult FuncDefOp::verify() {
   OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
-<<<<<<< HEAD
-  // Ensure that only valid LLZK types are used for arguments and return.
-  // @compute, @constrain, and @product functions also may not have AffineMapAttrs in their
-  // parameters.
-  FunctionType type = getFunctionType();
-  llvm::ArrayRef<Type> inTypes = type.getInputs();
-  for (const auto *ptr = inTypes.begin(); ptr < inTypes.end(); ptr++) {
-    if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
-      return failure();
-    }
-    if (isInStruct() && (nameIsCompute() || nameIsConstrain() || nameIsProduct()) &&
-        hasAffineMapAttr(*ptr)) {
-=======
   // Ensure that only valid LLZK types are used for arguments and return. Additionally, the struct
   // functions may not use AffineMapAttrs in their parameter types. If such a scenario seems to make
   // sense when generating LLZK IR, it's likely better to introduce a struct parameter to use
@@ -235,20 +222,13 @@ LogicalResult FuncDefOp::verify() {
       return failure();
     }
     if (isInStruct() && hasAffineMapAttr(t)) {
->>>>>>> 49fe573 (Code cleanup and documentation clarification in `FuncDefOp::verify()` (#191))
       return emitErrorFunc().append(
           "\"@", getName(), "\" parameters cannot contain affine map attributes but found ", t
       );
     }
   }
-<<<<<<< HEAD
-  llvm::ArrayRef<Type> resTypes = type.getResults();
-  for (const auto *ptr = resTypes.begin(); ptr < resTypes.end(); ptr++) {
-    if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
-=======
   for (Type t : type.getResults()) {
     if (llzk::checkValidType(emitErrorFunc, t).failed()) {
->>>>>>> 49fe573 (Code cleanup and documentation clarification in `FuncDefOp::verify()` (#191))
       return failure();
     }
   }
