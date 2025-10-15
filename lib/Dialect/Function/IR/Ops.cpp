@@ -220,7 +220,7 @@ LogicalResult FuncDefOp::verify() {
     if (llzk::checkValidType(emitErrorFunc, t).failed()) {
       return failure();
     }
-    if (isInStruct() && (nameIsCompute() || nameIsConstrain()) && hasAffineMapAttr(t)) {
+    if (isInStruct() && hasAffineMapAttr(t)) {
       return emitErrorFunc().append(
           "\"@", getName(), "\" parameters cannot contain affine map attributes but found ", t
       );
