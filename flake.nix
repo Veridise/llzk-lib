@@ -33,7 +33,6 @@
             stdenv: reportName:
             (final.llzk-debug.override { inherit stdenv; }).overrideAttrs (attrs: {
               cmakeBuildType = "DebWithSans";
-              NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
 
               # Disable container overflow checks because it can give false positives in
               # newGeneralRewritePatternSet() since LLVM itself is not built with ASan.
@@ -57,11 +56,15 @@
             clang = final.clang_20;
             mlir_pkg = final.mlir;
           };
-          llzk-debug = final.callPackage ./nix/llzk.nix {
-            clang = final.clang_20;
-            mlir_pkg = final.mlir-debug;
-            cmakeBuildType = "Debug";
-          };
+          llzk-debug =
+            (final.callPackage ./nix/llzk.nix {
+              clang = final.clang_20;
+              mlir_pkg = final.mlir-debug;
+              cmakeBuildType = "Debug";
+            }).overrideAttrs
+              (attrs: {
+                NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0";
+              });
 
           mlir-with-python = final.mlir.override {
             enablePythonBindings = true;
