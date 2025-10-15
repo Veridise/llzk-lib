@@ -18,9 +18,9 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_global) {
-  (void)mlirGetDialectHandle__llzk__global__();
-}
+// Include the auto-generated tests
+#include "llzk/Dialect/Global/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Global/IR/Ops.capi.test.cpp.inc"
 
 static MlirNamedAttribute named_attr(const char *s, MlirAttribute attr) {
   return mlirNamedAttributeGet(
@@ -50,7 +50,7 @@ static MlirOperation create_global_def_op(
   return mlirOperationCreate(&state);
 }
 
-TEST_F(CAPITest, llzk_operation_is_a_global_def_op) {
+TEST_F(CAPITest, llzk_operation_is_a_global_def_op_pass) {
   auto op = create_global_def_op(context, "G", false, mlirIndexTypeGet(context), std::nullopt);
   EXPECT_NE(op.ptr, (void *)NULL);
   EXPECT_TRUE(llzkOperationIsAGlobalDefOp(op));

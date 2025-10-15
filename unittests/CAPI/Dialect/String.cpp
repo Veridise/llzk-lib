@@ -13,9 +13,10 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_string) {
-  (void)mlirGetDialectHandle__llzk__string__();
-}
+// Include the auto-generated tests
+#include "llzk/Dialect/String/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/String/IR/Ops.capi.test.cpp.inc"
+#include "llzk/Dialect/String/IR/Types.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_string_type_get) {
   auto type = llzkStringTypeGet(context);
@@ -25,9 +26,4 @@ TEST_F(CAPITest, llzk_string_type_get) {
 TEST_F(CAPITest, llzk_type_is_a_string_type_pass) {
   auto type = llzkStringTypeGet(context);
   EXPECT_TRUE(llzkTypeIsAStringType(type));
-}
-
-TEST_F(CAPITest, llzk_type_is_a_string_type_fail) {
-  auto type = mlirIndexTypeGet(context);
-  EXPECT_TRUE(!llzkTypeIsAStringType(type));
 }

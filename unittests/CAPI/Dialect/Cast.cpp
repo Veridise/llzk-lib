@@ -11,4 +11,6 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_cast) { (void)mlirGetDialectHandle__llzk__cast__(); }
+// Include the auto-generated tests
+#include "llzk/Dialect/Cast/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Cast/IR/Ops.capi.test.cpp.inc"

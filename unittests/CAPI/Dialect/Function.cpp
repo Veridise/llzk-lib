@@ -22,6 +22,11 @@
 
 #include "../CAPITestBase.h"
 
+// Include the auto-generated tests
+#include "llzk/Dialect/Function/IR/Attrs.capi.test.cpp.inc"
+#include "llzk/Dialect/Function/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Function/IR/Ops.capi.test.cpp.inc"
+
 static MlirType
 create_func_type(MlirContext ctx, llvm::ArrayRef<MlirType> ins, llvm::ArrayRef<MlirType> outs) {
   return mlirFunctionTypeGet(ctx, ins.size(), ins.data(), outs.size(), outs.data());
@@ -90,10 +95,6 @@ protected:
   }
 };
 
-TEST_F(FuncDialectTest, mlir_get_dialect_handle_llzk_function) {
-  (void)mlirGetDialectHandle__llzk__function__();
-}
-
 TEST_F(FuncDialectTest, llzk_func_def_op_create_with_attrs_and_arg_attrs) {
   MlirType in_types[] = {mlirIndexTypeGet(context)};
   auto in_attrs = empty_arg_attrs<1>(context);
@@ -105,7 +106,7 @@ TEST_F(FuncDialectTest, llzk_func_def_op_create_with_attrs_and_arg_attrs) {
   mlirOperationDestroy(op);
 }
 
-TEST_F(FuncDialectTest, llzk_operation_is_a_func_def_op) {
+TEST_F(FuncDialectTest, llzk_operation_is_a_func_def_op_pass) {
   auto f = test_function();
   EXPECT_TRUE(llzkOperationIsAFuncDefOp(f.op));
 }
@@ -282,7 +283,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims)
     mlirOpBuilderDestroy(builder);                                                                 \
   }
 
-call_pred_test(test_llzk_operation_is_a_call_op, llzkOperationIsACallOp, true);
+call_pred_test(test_llzk_operation_is_a_call_op_pass, llzkOperationIsACallOp, true);
 
 TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
   auto f = test_function0();

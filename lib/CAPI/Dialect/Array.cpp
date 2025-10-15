@@ -23,12 +23,14 @@
 #include <mlir-c/Pass.h>
 
 using namespace mlir;
-using namespace llzk::array;
 using namespace llzk;
+using namespace llzk::array;
 
-static void registerLLZKArrayTransformationPasses() { llzk::array::registerTransformationPasses(); }
+static void registerLLZKArrayTransformationPasses() { registerTransformationPasses(); }
 
-// Include impl for transformation passes
+// Include the generated CAPI
+#include "llzk/Dialect/Array/IR/Ops.capi.cpp.inc"
+#include "llzk/Dialect/Array/IR/Types.capi.cpp.inc"
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Array, llzk__array, ArrayDialect)
@@ -37,28 +39,14 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Array, llzk__array, ArrayDialect)
 // ArrayType
 //===----------------------------------------------------------------------===//
 
-MlirType llzkArrayTypeGet(MlirType elementType, intptr_t nDims, MlirAttribute const *dims) {
+MlirType
+llzkArrayArrayTypeGetWithDims(MlirType elementType, intptr_t nDims, MlirAttribute const *dims) {
   SmallVector<Attribute> dimsSto;
   return wrap(ArrayType::get(unwrap(elementType), unwrapList(nDims, dims, dimsSto)));
 }
 
-MlirType
-llzkArrayTypeGetWithNumericDims(MlirType elementType, intptr_t nDims, int64_t const *dims) {
+MlirType llzkArrayArrayTypeGetWithShape(MlirType elementType, intptr_t nDims, int64_t const *dims) {
   return wrap(ArrayType::get(unwrap(elementType), ArrayRef(dims, nDims)));
-}
-
-bool llzkTypeIsAArrayType(MlirType type) { return llvm::isa<ArrayType>(unwrap(type)); }
-
-MlirType llzkArrayTypeGetElementType(MlirType type) {
-  return wrap(mlir::unwrap_cast<ArrayType>(type).getElementType());
-}
-
-intptr_t llzkArrayTypeGetNumDims(MlirType type) {
-  return static_cast<intptr_t>(mlir::unwrap_cast<ArrayType>(type).getDimensionSizes().size());
-}
-
-MlirAttribute llzkArrayTypeGetDim(MlirType type, intptr_t idx) {
-  return wrap(mlir::unwrap_cast<ArrayType>(type).getDimensionSizes()[idx]);
 }
 
 //===----------------------------------------------------------------------===//
@@ -71,7 +59,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   SmallVector<Value> valueSto;
   return wrap(
       create<CreateArrayOp>(
-          builder, location, mlir::unwrap_cast<ArrayType>(arrayType),
+          builder, location, unwrap_cast<ArrayType>(arrayType),
           ValueRange(unwrapList(nValues, values, valueSto))
       )
   );
@@ -84,8 +72,8 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOps(nMapOperands, mapOperands);
   return wrap(
       create<CreateArrayOp>(
-          builder, location, mlir::unwrap_cast<ArrayType>(arrayType), *mapOps,
-          mlir::unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap)
+          builder, location, unwrap_cast<ArrayType>(arrayType), *mapOps,
+          unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap)
       )
   );
 }
@@ -98,7 +86,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOps(nMapOperands, mapOperands);
   return wrap(
       create<CreateArrayOp>(
-          builder, location, mlir::unwrap_cast<ArrayType>(arrayType), *mapOps,
+          builder, location, unwrap_cast<ArrayType>(arrayType), *mapOps,
           ArrayRef(numDimsPerMap, nNumsDimsPerMap)
       )
   );

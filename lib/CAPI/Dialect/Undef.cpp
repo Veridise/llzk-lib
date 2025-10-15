@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Undef/IR/Dialect.h"
 #include "llzk/Dialect/Undef/IR/Ops.h"
 
@@ -14,12 +15,9 @@
 
 #include <mlir/CAPI/Registration.h>
 
+using namespace llzk::undef;
+
+// Include the generated CAPI
+#include "llzk/Dialect/Undef/IR/Ops.capi.cpp.inc"
+
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Undef, llzk__undef, llzk::undef::UndefDialect)
-
-//===----------------------------------------------------------------------===//
-// UndefOp
-//===----------------------------------------------------------------------===//
-
-bool llzkOperationIsAUndefOp(MlirOperation op) {
-  return llvm::isa<llzk::undef::UndefOp>(unwrap(op));
-}

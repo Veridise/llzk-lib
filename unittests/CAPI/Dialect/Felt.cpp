@@ -19,16 +19,20 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_felt) { (void)mlirGetDialectHandle__llzk__felt__(); }
+// Include the auto-generated tests
+#include "llzk/Dialect/Felt/IR/Attrs.capi.test.cpp.inc"
+#include "llzk/Dialect/Felt/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Felt/IR/Ops.capi.test.cpp.inc"
+#include "llzk/Dialect/Felt/IR/Types.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_felt_const_attr_get) {
-  auto attr = llzkFeltConstAttrGet(context, 0);
+  auto attr = llzkFeltFeltConstAttrGet(context, 0);
   EXPECT_NE(attr.ptr, (void *)NULL);
 }
 
-TEST_F(CAPITest, llzkFeltConstAttrGetWithBits) {
+TEST_F(CAPITest, llzkFeltFeltConstAttrGetWithBits) {
   constexpr auto BITS = 128;
-  auto attr = llzkFeltConstAttrGetWithBits(context, BITS, 0);
+  auto attr = llzkFeltFeltConstAttrGetWithBits(context, BITS, 0);
   EXPECT_NE(attr.ptr, (void *)NULL);
   auto cxx_attr = llvm::dyn_cast<llzk::felt::FeltConstAttr>(unwrap(attr));
   EXPECT_TRUE(cxx_attr);
@@ -37,10 +41,10 @@ TEST_F(CAPITest, llzkFeltConstAttrGetWithBits) {
   EXPECT_EQ(value.getZExtValue(), 0);
 }
 
-TEST_F(CAPITest, llzkFeltConstAttrGetFromString) {
+TEST_F(CAPITest, llzkFeltFeltConstAttrGetFromString) {
   constexpr auto BITS = 64;
   auto str = MlirStringRef {.data = "123", .length = 3};
-  auto attr = llzkFeltConstAttrGetFromString(context, BITS, str);
+  auto attr = llzkFeltFeltConstAttrGetFromString(context, BITS, str);
   EXPECT_NE(attr.ptr, (void *)NULL);
   auto expected = llzk::felt::FeltConstAttr::get(
       unwrap(context), llvm::APInt(BITS, llvm::StringRef("123", 3), 10)
@@ -48,10 +52,10 @@ TEST_F(CAPITest, llzkFeltConstAttrGetFromString) {
   EXPECT_EQ(unwrap(attr), expected);
 }
 
-TEST_F(CAPITest, llzkFeltConstAttrGetFromParts) {
+TEST_F(CAPITest, llzkFeltFeltConstAttrGetFromParts) {
   constexpr auto BITS = 254;
   const uint64_t parts[] = {10, 20, 30, 40};
-  auto attr = llzkFeltConstAttrGetFromParts(context, BITS, parts, 4);
+  auto attr = llzkFeltFeltConstAttrGetFromParts(context, BITS, parts, 4);
   EXPECT_NE(attr.ptr, (void *)NULL);
   auto expected =
       llzk::felt::FeltConstAttr::get(unwrap(context), llvm::APInt(BITS, llvm::ArrayRef(parts, 4)));
@@ -59,26 +63,16 @@ TEST_F(CAPITest, llzkFeltConstAttrGetFromParts) {
 }
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_const_attr_pass) {
-  auto attr = llzkFeltConstAttrGet(context, 0);
+  auto attr = llzkFeltFeltConstAttrGet(context, 0);
   EXPECT_TRUE(llzkAttributeIsAFeltConstAttr(attr));
 }
 
-TEST_F(CAPITest, llzk_attribute_is_a_felt_const_attr_fail) {
-  auto attr = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);
-  EXPECT_TRUE(!llzkAttributeIsAFeltConstAttr(attr));
-}
-
 TEST_F(CAPITest, llzk_felt_type_get) {
-  auto type = llzkFeltTypeGet(context);
+  auto type = llzkFeltFeltTypeGet(context);
   EXPECT_NE(type.ptr, (void *)NULL);
 }
 
 TEST_F(CAPITest, llzk_type_is_a_felt_type_pass) {
-  auto type = llzkFeltTypeGet(context);
+  auto type = llzkFeltFeltTypeGet(context);
   EXPECT_TRUE(llzkTypeIsAFeltType(type));
-}
-
-TEST_F(CAPITest, llzk_type_is_a_felt_type_fail) {
-  auto type = mlirIndexTypeGet(context);
-  EXPECT_TRUE(!llzkTypeIsAFeltType(type));
 }

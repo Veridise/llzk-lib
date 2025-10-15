@@ -14,12 +14,13 @@
 
 #include <mlir/CAPI/Registration.h>
 
+using namespace llzk;
+
+// Include the generated CAPI
+#include "llzk/Dialect/LLZK/IR/Attrs.capi.cpp.inc"
+
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(LLZK, llzk, llzk::LLZKDialect)
 
 MlirAttribute llzkPublicAttrGet(MlirContext ctx) {
   return wrap(llzk::PublicAttr::get(unwrap(ctx)));
-}
-
-bool llzkAttributeIsAPublicAttr(MlirAttribute attr) {
-  return llvm::isa<llzk::PublicAttr>(unwrap(attr));
 }

@@ -9,9 +9,13 @@
 
 #include "llzk-c/Dialect/LLZK.h"
 
+#include <mlir-c/BuiltinTypes.h>
+
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk) { (void)mlirGetDialectHandle__llzk__(); }
+// Include the auto-generated tests
+#include "llzk/Dialect/LLZK/IR/Attrs.capi.test.cpp.inc"
+#include "llzk/Dialect/LLZK/IR/Dialect.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_public_attr_get) {
   auto attr = llzkPublicAttrGet(context);

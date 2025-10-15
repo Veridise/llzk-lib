@@ -15,14 +15,14 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_undef) {
-  (void)mlirGetDialectHandle__llzk__undef__();
-}
+// Include the auto-generated tests
+#include "llzk/Dialect/Undef/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Undef/IR/Ops.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzkOperationIsAUndefOp) {
   auto op_name = mlirStringRefCreateFromCString("undef.undef");
   auto state = mlirOperationStateGet(op_name, mlirLocationUnknownGet(context));
-  auto t = llzkFeltTypeGet(context);
+  auto t = llzkFeltFeltTypeGet(context);
   mlirOperationStateAddResults(&state, 1, &t);
 
   auto op = mlirOperationCreate(&state);
