@@ -138,17 +138,6 @@ LogicalResult checkSelfType(
 //===------------------------------------------------------------------===//
 // StructDefOp
 //===------------------------------------------------------------------===//
-namespace {
-
-// inline LogicalResult msgOneFunction(EmitErrorFn emitError, const Twine &name) {
-//   return emitError() << "must define exactly one '" << name << "' function";
-// }
-
-// inline LogicalResult msgDuplicateFunction(EmitErrorFn emitError, const Twine &name) {
-//   return emitError() << "must not define multiple '" << name << "' functions";
-// }
-
-} // namespace
 
 StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
   auto pathRes = getPathFromRoot(*this);
