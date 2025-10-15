@@ -216,20 +216,18 @@ LogicalResult FuncDefOp::verify() {
   // @compute and @constrain functions also may not have AffineMapAttrs in their
   // parameters.
   FunctionType type = getFunctionType();
-  llvm::ArrayRef<Type> inTypes = type.getInputs();
-  for (auto ptr = inTypes.begin(); ptr < inTypes.end(); ptr++) {
-    if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
+  for (Type t : type.getInputs()) {
+    if (llzk::checkValidType(emitErrorFunc, t).failed()) {
       return failure();
     }
-    if (isInStruct() && (nameIsCompute() || nameIsConstrain()) && hasAffineMapAttr(*ptr)) {
+    if (isInStruct() && (nameIsCompute() || nameIsConstrain()) && hasAffineMapAttr(t)) {
       return emitErrorFunc().append(
-          "\"@", getName(), "\" parameters cannot contain affine map attributes but found ", *ptr
+          "\"@", getName(), "\" parameters cannot contain affine map attributes but found ", t
       );
     }
   }
-  llvm::ArrayRef<Type> resTypes = type.getResults();
-  for (auto ptr = resTypes.begin(); ptr < resTypes.end(); ptr++) {
-    if (llzk::checkValidType(emitErrorFunc, *ptr).failed()) {
+  for (Type t : type.getResults()) {
+    if (llzk::checkValidType(emitErrorFunc, t).failed()) {
       return failure();
     }
   }
