@@ -212,9 +212,10 @@ bool FuncDefOp::hasArgPublicAttr(unsigned index) {
 
 LogicalResult FuncDefOp::verify() {
   OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
-  // Ensure that only valid LLZK types are used for arguments and return.
-  // @compute and @constrain functions also may not have AffineMapAttrs in their
-  // parameters.
+  // Ensure that only valid LLZK types are used for arguments and return. Additionally, the struct
+  // functions may not use AffineMapAttrs in their parameter types. If such a scenario seems to make
+  // sense when generating LLZK IR, it's likely better to introduce a struct parameter to use
+  // instead and instantiate the struct with that AffineMapAttr.
   FunctionType type = getFunctionType();
   for (Type t : type.getInputs()) {
     if (llzk::checkValidType(emitErrorFunc, t).failed()) {
