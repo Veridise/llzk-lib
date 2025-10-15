@@ -17,7 +17,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB<[@B, @D, @C]> {
-    // expected-error@+1 {{'struct.def' op must define only "@compute" and "@constrain" functions; found "@invalidname"}}
+    // expected-error@+1 {{'struct.def' op must define only "@compute" and "@constrain" functions, or a "@product" function; found "@invalidname"}}
     function.def @invalidname(%a: !felt.type, %b: !felt.type) {
       function.return
     }
@@ -40,7 +40,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'struct.def' op must define exactly one 'constrain' function}}
+  // expected-error@+1 {{'struct.def' op must define either "@product" or "@constrain" functions}}
   struct.def @ComponentF<[@B, @D, @C]> {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentF<[@B, @D, @C]>> {
       %self = struct.new : !struct.type<@ComponentF<[@B, @D, @C]>>
@@ -277,7 +277,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.type<@ComponentZ>)  {
       function.return
     }
-    // expected-error@+1 {{'struct.def' op must define only "@compute" and "@constrain" functions; found "@extra"}}
+    // expected-error@+1 {{'struct.def' op must define only "@compute" and "@constrain" functions, or a "@product" function; found "@extra"}}
     function.def @extra() { function.return }
   }
 }

@@ -358,7 +358,7 @@ LogicalResult StructDefOp::verifyRegions() {
             // tag the error with correct location and correct op name.
             return op.emitError() << '\'' << getOperationName() << "' op " << "must define only \"@"
                                   << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
-                                  << "\" functions, or a @" << FUNC_NAME_PRODUCT << " function;"
+                                  << "\" functions, or a \"@" << FUNC_NAME_PRODUCT << "\" function;"
                                   << " found \"@" << funcDef.getSymName() << '"';
           }
         } else {
@@ -370,12 +370,12 @@ LogicalResult StructDefOp::verifyRegions() {
       }
     }
     if (!foundProduct.has_value() && !foundCompute.has_value()) {
-      return emitError() << "must define either '" << FUNC_NAME_PRODUCT << "' or '"
-                         << FUNC_NAME_COMPUTE << "' functions";
+      return emitError() << "must define either \"@" << FUNC_NAME_PRODUCT << "\" or \"@"
+                         << FUNC_NAME_COMPUTE << "\" functions";
     }
     if (!foundProduct.has_value() && !foundConstrain.has_value()) {
-      return emitError() << "must define either '" << FUNC_NAME_PRODUCT << "' or '"
-                         << FUNC_NAME_CONSTRAIN << "' functions";
+      return emitError() << "must define either \"@" << FUNC_NAME_PRODUCT << "\" or \"@"
+                         << FUNC_NAME_CONSTRAIN << "\" functions";
     }
   }
 
