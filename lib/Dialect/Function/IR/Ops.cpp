@@ -513,7 +513,8 @@ struct KnownTargetVerifier : public CallOpVerifier {
   }
 
   LogicalResult verifyAffineMapParams() override {
-    if (CalleeKind::Compute == tgtKind && isInStruct(tgt.getOperation())) {
+    if ((CalleeKind::Compute == tgtKind || CalleeKind::Product == tgtKind) &&
+        isInStruct(tgt.getOperation())) {
       // Return type should be a single StructType. If that is not the case here, just bail without
       // producing an error. The combination of this KnownTargetVerifier resolving the callee to a
       // specific FuncDefOp and verifyFuncTypeCompute() ensuring all FUNC_NAME_COMPUTE FuncOps have
@@ -611,11 +612,27 @@ struct UnknownTargetVerifier : public CallOpVerifier {
                        << '\'';
       };
 
-      if (tgtKind == CalleeKind::Constrain && !caller.hasAllowConstraintAttr()) {
-        emitAttrErr(AllowConstraintAttr::name);
-      }
-      if (tgtKind == CalleeKind::Compute && !caller.hasAllowWitnessAttr()) {
-        emitAttrErr(AllowWitnessAttr::name);
+      switch (tgtKind) {
+      case CalleeKind::Constrain:
+        if (!caller.hasAllowConstraintAttr()) {
+          emitAttrErr(AllowConstraintAttr::name);
+        }
+        break;
+      case CalleeKind::Compute:
+        if (!caller.hasAllowWitnessAttr()) {
+          emitAttrErr(AllowWitnessAttr::name);
+        }
+        break;
+      case CalleeKind::Product:
+        if (!caller.hasAllowWitnessAttr()) {
+          emitAttrErr(AllowWitnessAttr::name);
+        }
+        if (!caller.hasAllowConstraintAttr()) {
+          emitAttrErr(AllowConstraintAttr::name);
+        }
+        break;
+      default:
+        break;
       }
     }
     return aggregateRes;
