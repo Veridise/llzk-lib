@@ -14,10 +14,6 @@
 
 #include <mlir/Interfaces/MemorySlotInterfaces.h>
 
-// forward-declare ops
-#define GET_OP_FWD_DEFINES
-#include "llzk/Dialect/Array/IR/Ops.h.inc"
-
 // Include TableGen'd declarations
 #define GET_TYPEDEF_CLASSES
 #include "llzk/Dialect/Array/IR/Types.h.inc"
