@@ -149,7 +149,7 @@ template <typename OpImplClass> inline OwningEmitErrorFn getEmitOpErrFn(OpImplCl
   return getEmitOpErrFn(opImpl->getOperation());
 }
 
-inline void ensure(bool condition, llvm::Twine errMsg) {
+inline void ensure(bool condition, const llvm::Twine &errMsg) {
   if (!condition) {
     llvm::report_fatal_error(errMsg);
   }
