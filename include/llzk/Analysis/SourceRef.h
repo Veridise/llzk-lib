@@ -198,18 +198,22 @@ public:
   }
 
   llvm::DynamicAPInt getConstantFeltValue() const {
-    ensure(isConstantFelt(), mlir::Twine(__FUNCTION__).concat(" requires a constant felt!"));
+    ensure(
+        isConstantFelt(), mlir::Twine(mlir::StringRef(__FUNCTION__), " requires a constant felt!")
+    );
     llvm::APInt i = std::get<felt::FeltConstantOp>(*constantVal).getValue();
     return toDynamicAPInt(i);
   }
   llvm::DynamicAPInt getConstantIndexValue() const {
-    ensure(isConstantIndex(), mlir::Twine(__FUNCTION__).concat(" requires a constant index!"));
+    ensure(
+        isConstantIndex(), mlir::Twine(mlir::StringRef(__FUNCTION__), " requires a constant index!")
+    );
     return llvm::DynamicAPInt(std::get<mlir::arith::ConstantIndexOp>(*constantVal).value());
   }
   llvm::DynamicAPInt getConstantValue() const {
     ensure(
         isConstantFelt() || isConstantIndex(),
-        mlir::Twine(__FUNCTION__).concat(" requires a constant int type!")
+        mlir::Twine(mlir::StringRef(__FUNCTION__), " requires a constant int type!")
     );
     return isConstantFelt() ? getConstantFeltValue() : getConstantIndexValue();
   }
