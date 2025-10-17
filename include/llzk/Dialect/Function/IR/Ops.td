@@ -190,6 +190,10 @@ def FuncDefOp
     /// check that this FuncDefOp is located within a StructDefOp must be done separately).
     inline bool nameIsConstrain() { return FUNC_NAME_CONSTRAIN == getSymName(); }
 
+    /// Return `true` iff the function name is `FUNC_NAME_PRODUCT` (if needed, a
+    /// check that this FuncDefOp is located within a StructDefOp must be done separately).
+    inline bool nameIsProduct() { return FUNC_NAME_PRODUCT == getSymName(); }
+
     /// Return `true` iff the function is within a StructDefOp
     inline bool isInStruct() { return ::llzk::component::isInStruct(*this); }
 
@@ -198,6 +202,9 @@ def FuncDefOp
 
     /// Return `true` iff the function is within a StructDefOp and named `FUNC_NAME_CONSTRAIN`.
     inline bool isStructConstrain() { return isInStruct() && nameIsConstrain(); }
+
+    /// Return `true` iff the function is within a StructDefOp and named `FUNC_NAME_PRODUCT`.
+    inline bool isStructProduct() { return isInStruct() && nameIsProduct(); }
 
     /// Return the "self" value (i.e. the return value) from the function (which must be
     /// named `FUNC_NAME_COMPUTE`).

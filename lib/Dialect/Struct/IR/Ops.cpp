@@ -12,6 +12,7 @@
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -21,6 +22,8 @@
 #include <llvm/ADT/MapVector.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringSet.h>
+
+#include <optional>
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Struct/IR/OpInterfaces.cpp.inc"
@@ -69,6 +72,9 @@ template <> LogicalResult SetFuncAllowAttrs<StructDefOp>::verifyTrait(Operation 
     } else if (funcDef.nameIsCompute()) {
       funcDef.setAllowConstraintAttr(false);
       funcDef.setAllowWitnessAttr();
+    } else if (funcDef.nameIsProduct()) {
+      funcDef.setAllowConstraintAttr();
+      funcDef.setAllowWitnessAttr();
     }
   });
   return success();
@@ -85,6 +91,13 @@ InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const
       prefix, "must use type of its ancestor '", StructDefOp::getOperationName(), "' \"",
       expected.getHeaderString(), "\" as ", aspect, " type"
   );
+}
+
+static inline InFlightDiagnostic structFunDefError(Operation *origin) {
+  return origin->emitError() << '\'' << StructDefOp::getOperationName() << "' op "
+                             << "must define only \"@" << FUNC_NAME_COMPUTE << "\" and \"@"
+                             << FUNC_NAME_CONSTRAIN << "\" functions, or a \"@" << FUNC_NAME_PRODUCT
+                             << "\" function; ";
 }
 
 /// Verifies that the given `actualType` matches the `StructDefOp` given (i.e., for the "self" type
@@ -132,13 +145,6 @@ LogicalResult checkSelfType(
 //===------------------------------------------------------------------===//
 // StructDefOp
 //===------------------------------------------------------------------===//
-namespace {
-
-inline LogicalResult msgOneFunction(EmitErrorFn emitError, const Twine &name) {
-  return emitError() << "must define exactly one '" << name << "' function";
-}
-
-} // namespace
 
 StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
   auto pathRes = getPathFromRoot(*this);
@@ -231,35 +237,138 @@ inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool a
   return inFunc.emitError(message);
 }
 
+inline LogicalResult verifyStructComputeConstrain(
+    StructDefOp &structDef, FuncDefOp &computeFunc, FuncDefOp &constrainFunc
+) {
+  // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly.
+  assert(constrainFunc.hasAllowConstraintAttr());
+  assert(!computeFunc.hasAllowConstraintAttr());
+  assert(!constrainFunc.hasAllowWitnessAttr());
+  assert(computeFunc.hasAllowWitnessAttr());
+
+  // Verify parameter types are valid. Skip the first parameter of the "constrain" function; it is
+  // already checked via verifyFuncTypeConstrain() in Function/IR/Ops.cpp.
+  ArrayRef<Type> computeParams = computeFunc.getFunctionType().getInputs();
+  ArrayRef<Type> constrainParams = constrainFunc.getFunctionType().getInputs().drop_front();
+  if (structDef.isMainComponent()) {
+    // Verify that the Struct has no parameters.
+    if (!isNullOrEmpty(structDef.getConstParamsAttr())) {
+      return structDef.emitError().append(
+          "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
+      );
+    }
+    // Verify the input parameter types are legal. The error message is explicit about what types
+    // are allowed so there is no benefit to report multiple errors if more than one parameter in
+    // the referenced function has an illegal type.
+    for (Type t : computeParams) {
+      if (failed(checkMainFuncParamType(t, computeFunc, false))) {
+        return failure(); // checkMainFuncParamType() already emits a sufficient error message
+      }
+    }
+    for (Type t : constrainParams) {
+      if (failed(checkMainFuncParamType(t, constrainFunc, true))) {
+        return failure(); // checkMainFuncParamType() already emits a sufficient error message
+      }
+    }
+  }
+
+  if (!typeListsUnify(computeParams, constrainParams)) {
+    return constrainFunc.emitError()
+        .append(
+            "expected \"@", FUNC_NAME_CONSTRAIN,
+            "\" function argument types (sans the first one) to match \"@", FUNC_NAME_COMPUTE,
+            "\" function argument types"
+        )
+        .attachNote(computeFunc.getLoc())
+        .append("\"@", FUNC_NAME_COMPUTE, "\" function defined here");
+  }
+
+  return success();
+}
+
+inline LogicalResult verifyStructProduct(StructDefOp &structDef, FuncDefOp &productFunc) {
+
+  // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly
+  assert(productFunc.hasAllowConstraintAttr());
+  assert(productFunc.hasAllowWitnessAttr());
+
+  // Verify parameter types are valid
+  ArrayRef<Type> productParams = productFunc.getFunctionType().getInputs();
+  if (structDef.isMainComponent()) {
+    if (!isNullOrEmpty(structDef.getConstParamsAttr())) {
+      return structDef.emitError().append(
+          "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
+      );
+    }
+  }
+
+  for (Type t : productParams) {
+    if (failed(checkMainFuncParamType(t, productFunc, false))) {
+      return failure();
+    }
+  }
+
+  return success();
+}
+
 } // namespace
 
 LogicalResult StructDefOp::verifyRegions() {
   std::optional<FuncDefOp> foundCompute = std::nullopt;
   std::optional<FuncDefOp> foundConstrain = std::nullopt;
+  std::optional<FuncDefOp> foundProduct = std::nullopt;
   {
     // Verify the following:
     // 1. The only ops within the body are field and function definitions
-    // 2. The only functions defined in the struct are `compute()` and `constrain()`
+    // 2. The only functions defined in the struct are `@compute()` and `@constrain()`, or
+    // `@product()`
     OwningEmitErrorFn emitError = getEmitOpErrFn(this);
     for (Operation &op : *getBody()) {
       if (!llvm::isa<FieldDefOp>(op)) {
         if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
           if (funcDef.nameIsCompute()) {
+            if (foundProduct) {
+              return structFunDefError(funcDef.getOperation())
+                     << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
+                     << "\" functions";
+            }
             if (foundCompute) {
-              return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
+              return structFunDefError(funcDef.getOperation())
+                     << "found multiple \"@" << FUNC_NAME_COMPUTE << "\" functions";
             }
             foundCompute = std::make_optional(funcDef);
           } else if (funcDef.nameIsConstrain()) {
+            if (foundProduct) {
+              return structFunDefError(funcDef.getOperation())
+                     << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@" << FUNC_NAME_PRODUCT
+                     << "\" functions";
+            }
             if (foundConstrain) {
-              return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
+              return structFunDefError(funcDef.getOperation())
+                     << "found multiple \"@" << FUNC_NAME_CONSTRAIN << "\" functions";
             }
             foundConstrain = std::make_optional(funcDef);
+          } else if (funcDef.nameIsProduct()) {
+            if (foundCompute) {
+              return structFunDefError(funcDef.getOperation())
+                     << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
+                     << "\" functions";
+            }
+            if (foundConstrain) {
+              return structFunDefError(funcDef.getOperation())
+                     << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@" << FUNC_NAME_PRODUCT
+                     << "\" functions";
+            }
+            if (foundProduct) {
+              return structFunDefError(funcDef.getOperation())
+                     << "found multiple \"@" << FUNC_NAME_PRODUCT << "\" functions";
+            }
+            foundProduct = std::make_optional(funcDef);
           } else {
             // Must do a little more than a simple call to '?.emitOpError()' to
             // tag the error with correct location and correct op name.
-            return op.emitError() << '\'' << getOperationName() << "' op " << "must define only \"@"
-                                  << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
-                                  << "\" functions;" << " found \"@" << funcDef.getSymName() << '"';
+            return structFunDefError(funcDef.getOperation())
+                   << "found \"@" << funcDef.getSymName() << '"';
           }
         } else {
           return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
@@ -269,59 +378,20 @@ LogicalResult StructDefOp::verifyRegions() {
         }
       }
     }
-    if (!foundCompute.has_value()) {
-      return msgOneFunction(emitError, FUNC_NAME_COMPUTE);
+    if (!foundProduct.has_value() && !foundCompute.has_value()) {
+      return structFunDefError(getOperation())
+             << "missing \"@" << FUNC_NAME_COMPUTE << "\" or \"@" << FUNC_NAME_PRODUCT << "\"";
     }
-    if (!foundConstrain.has_value()) {
-      return msgOneFunction(emitError, FUNC_NAME_CONSTRAIN);
+    if (!foundProduct.has_value() && !foundConstrain.has_value()) {
+      return structFunDefError(getOperation())
+             << "missing \"@" << FUNC_NAME_CONSTRAIN << "\" or \"@" << FUNC_NAME_PRODUCT << "\"";
     }
   }
 
-  // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly.
-  assert(foundConstrain->hasAllowConstraintAttr());
-  assert(!foundCompute->hasAllowConstraintAttr());
-  assert(!foundConstrain->hasAllowWitnessAttr());
-  assert(foundCompute->hasAllowWitnessAttr());
-
-  // Verify parameter types are valid. Skip the first parameter of the "constrain" function; it is
-  // already checked via verifyFuncTypeConstrain() in Function/IR/Ops.cpp.
-  ArrayRef<Type> computeParams = foundCompute->getFunctionType().getInputs();
-  ArrayRef<Type> constrainParams = foundConstrain->getFunctionType().getInputs().drop_front();
-  if (this->isMainComponent()) {
-    // Verify that the Struct has no parameters.
-    if (!isNullOrEmpty(this->getConstParamsAttr())) {
-      return this->emitError().append(
-          "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
-      );
-    }
-    // Verify the input parameter types are legal. The error message is explicit about what types
-    // are allowed so there is no benefit to report multiple errors if more than one parameter in
-    // the referenced function has an illegal type.
-    for (Type t : computeParams) {
-      if (failed(checkMainFuncParamType(t, *foundCompute, false))) {
-        return failure(); // checkMainFuncParamType() already emits a sufficient error message
-      }
-    }
-    for (Type t : constrainParams) {
-      if (failed(checkMainFuncParamType(t, *foundConstrain, true))) {
-        return failure(); // checkMainFuncParamType() already emits a sufficient error message
-      }
-    }
+  if (foundCompute && foundConstrain) {
+    return verifyStructComputeConstrain(*this, *foundCompute, *foundConstrain);
   }
-  // Verify that function input types from `compute()` and `constrain()` match, sans the first
-  // parameter of `constrain()` which is the instance of the parent struct.
-  if (!typeListsUnify(computeParams, constrainParams)) {
-    return foundConstrain->emitError()
-        .append(
-            "expected \"@", FUNC_NAME_CONSTRAIN,
-            "\" function argument types (sans the first one) to match \"@", FUNC_NAME_COMPUTE,
-            "\" function argument types"
-        )
-        .attachNote(foundCompute->getLoc())
-        .append("\"@", FUNC_NAME_COMPUTE, "\" function defined here");
-  }
-
-  return success();
+  return verifyStructProduct(*this, *foundProduct);
 }
 
 FieldDefOp StructDefOp::getFieldDef(StringAttr fieldName) {
