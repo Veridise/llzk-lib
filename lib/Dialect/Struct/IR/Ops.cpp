@@ -93,6 +93,13 @@ InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const
   );
 }
 
+static inline InFlightDiagnostic structFunDefError(Operation *origin) {
+  return origin->emitError() << '\'' << StructDefOp::getOperationName() << "' op "
+                             << "must define only \"@" << FUNC_NAME_COMPUTE << "\" and \"@"
+                             << FUNC_NAME_CONSTRAIN << "\" functions, or a \"@" << FUNC_NAME_PRODUCT
+                             << "\" function; ";
+}
+
 /// Verifies that the given `actualType` matches the `StructDefOp` given (i.e., for the "self" type
 /// parameter and return of the struct functions).
 LogicalResult checkSelfType(
@@ -314,52 +321,55 @@ LogicalResult StructDefOp::verifyRegions() {
   {
     // Verify the following:
     // 1. The only ops within the body are field and function definitions
-    // 2. The only functions defined in the struct are `compute()` and `constrain()`
+    // 2. The only functions defined in the struct are `@compute()` and `@constrain()`, or
+    // `@product()`
     OwningEmitErrorFn emitError = getEmitOpErrFn(this);
     for (Operation &op : getBody().front()) {
       if (!llvm::isa<FieldDefOp>(op)) {
         if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
           if (funcDef.nameIsCompute()) {
             if (foundProduct) {
-              emitError() << "cannot define both '" << FUNC_NAME_COMPUTE << "' and '"
-                          << FUNC_NAME_PRODUCT << "' functions";
+              return structFunDefError(funcDef.getOperation())
+                     << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
+                     << "\" functions";
             }
             if (foundCompute) {
-              emitError() << "cannot define multiple '" << FUNC_NAME_COMPUTE << "' functions";
+              return structFunDefError(funcDef.getOperation())
+                     << "found multiple \"@" << FUNC_NAME_COMPUTE << "\" functions";
             }
             foundCompute = std::make_optional(funcDef);
           } else if (funcDef.nameIsConstrain()) {
-            if (foundConstrain || foundProduct) {
-              if (foundProduct) {
-                emitError() << "cannot define both '" << FUNC_NAME_CONSTRAIN << "' and '"
-                            << FUNC_NAME_PRODUCT << "' functions";
-              }
-              if (foundConstrain) {
-                emitError() << "cannot define multiple '" << FUNC_NAME_CONSTRAIN << "' functions";
-              }
+            if (foundProduct) {
+              return structFunDefError(funcDef.getOperation())
+                     << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@" << FUNC_NAME_PRODUCT
+                     << "\" functions";
+            }
+            if (foundConstrain) {
+              return structFunDefError(funcDef.getOperation())
+                     << "found multiple \"@" << FUNC_NAME_CONSTRAIN << "\" functions";
             }
             foundConstrain = std::make_optional(funcDef);
           } else if (funcDef.nameIsProduct()) {
             if (foundCompute) {
-              return emitError() << "cannot define both '" << FUNC_NAME_COMPUTE << "' and '"
-                                 << FUNC_NAME_PRODUCT << "' functions";
+              return structFunDefError(funcDef.getOperation())
+                     << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
+                     << "\" functions";
             }
             if (foundConstrain) {
-              return emitError() << "cannot define both '" << FUNC_NAME_CONSTRAIN << "' and '"
-                                 << FUNC_NAME_PRODUCT << "' functions";
+              return structFunDefError(funcDef.getOperation())
+                     << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@" << FUNC_NAME_PRODUCT
+                     << "\" functions";
             }
             if (foundProduct) {
-              return emitError() << "cannot define multiple '" << FUNC_NAME_PRODUCT
-                                 << "' functions";
+              return structFunDefError(funcDef.getOperation())
+                     << "found multiple \"@" << FUNC_NAME_PRODUCT << "\" functions";
             }
             foundProduct = std::make_optional(funcDef);
           } else {
             // Must do a little more than a simple call to '?.emitOpError()' to
             // tag the error with correct location and correct op name.
-            return op.emitError() << '\'' << getOperationName() << "' op " << "must define only \"@"
-                                  << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
-                                  << "\" functions, or a \"@" << FUNC_NAME_PRODUCT << "\" function;"
-                                  << " found \"@" << funcDef.getSymName() << '"';
+            return structFunDefError(funcDef.getOperation())
+                   << "found \"@" << funcDef.getSymName() << '"';
           }
         } else {
           return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
@@ -370,12 +380,12 @@ LogicalResult StructDefOp::verifyRegions() {
       }
     }
     if (!foundProduct.has_value() && !foundCompute.has_value()) {
-      return emitError() << "must define either \"@" << FUNC_NAME_PRODUCT << "\" or \"@"
-                         << FUNC_NAME_COMPUTE << "\" functions";
+      return structFunDefError(getOperation())
+             << "missing \"@" << FUNC_NAME_COMPUTE << "\" or \"@" << FUNC_NAME_PRODUCT << "\"";
     }
     if (!foundProduct.has_value() && !foundConstrain.has_value()) {
-      return emitError() << "must define either \"@" << FUNC_NAME_PRODUCT << "\" or \"@"
-                         << FUNC_NAME_CONSTRAIN << "\" functions";
+      return structFunDefError(getOperation())
+             << "missing \"@" << FUNC_NAME_CONSTRAIN << "\" or \"@" << FUNC_NAME_PRODUCT << "\"";
     }
   }
 

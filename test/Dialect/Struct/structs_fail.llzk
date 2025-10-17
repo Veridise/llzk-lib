@@ -40,7 +40,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'struct.def' op must define either "@product" or "@constrain" functions}}
+  // expected-error@+1 {{'struct.def' op must define only "@compute" and "@constrain" functions, or a "@product" function; missing "@constrain" or "@product"}}
   struct.def @ComponentF<[@B, @D, @C]> {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentF<[@B, @D, @C]>> {
       %self = struct.new : !struct.type<@ComponentF<[@B, @D, @C]>>

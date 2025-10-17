@@ -639,7 +639,7 @@ struct UnknownTargetVerifier : public CallOpVerifier {
   }
 
   LogicalResult verifyInputs() override {
-    if (CalleeKind::Compute == tgtKind) {
+    if (CalleeKind::Compute == tgtKind || CalleeKind::Product == tgtKind) {
       // Without known target, no additional checks can be done.
     } else if (CalleeKind::Constrain == tgtKind) {
       // Without known target, this can only check that the first input is VarType using the same
@@ -658,7 +658,7 @@ struct UnknownTargetVerifier : public CallOpVerifier {
   }
 
   LogicalResult verifyOutputs() override {
-    if (CalleeKind::Compute == tgtKind) {
+    if (CalleeKind::Compute == tgtKind || CalleeKind::Product == tgtKind) {
       // Without known target, this can only check that the function returns VarType using the same
       // struct parameter as the base of the callee (later replaced with the target struct's type).
       Operation::result_type_range resTypes = callOp->getResultTypes();
@@ -683,7 +683,7 @@ struct UnknownTargetVerifier : public CallOpVerifier {
   }
 
   LogicalResult verifyAffineMapParams() override {
-    if (CalleeKind::Compute == tgtKind) {
+    if (CalleeKind::Compute == tgtKind || CalleeKind::Product == tgtKind) {
       // Without known target, no additional checks can be done.
     } else if (CalleeKind::Constrain == tgtKind) {
       // Without known target, this can only check that there are no affine map instantiations.
