@@ -26,3 +26,18 @@ static testing::AssertionResult checkCond(const T &expected, const T &actual, bo
   llzk::debug::Appender(errMsg) << "expected " << expected << ", actual is " << actual;
   return testing::AssertionFailure() << errMsg;
 }
+
+namespace llvm {
+
+/// @brief GoogleTest printer for DynamicAPInt to control how parameter values are displayed.
+/// It cannot contain spaces, dashes, or any non-alphanumeric characters other than underscores.
+/// This prevents GoogleTest from printing the raw memory representation of DynamicAPInt objects.
+inline void PrintTo(const DynamicAPInt &val, std::ostream *os) {
+  if (val < 0) {
+    *os << "neg_" << llzk::debug::toStringOne(-val);
+  } else {
+    *os << llzk::debug::toStringOne(val);
+  }
+}
+
+} // namespace llvm
