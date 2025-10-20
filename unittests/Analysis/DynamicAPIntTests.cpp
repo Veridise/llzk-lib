@@ -23,8 +23,7 @@ using namespace std;
 static DynamicAPInt bn254 =
     toDynamicAPInt("21888242871839275222246405745257275088696311157297823662689037894645226208583");
 
-struct DynamicAPIntUnaryTests : public testing::Test,
-                                public testing::WithParamInterface<DynamicAPInt> {
+struct DynamicAPIntUnaryTests : public testing::TestWithParam<DynamicAPInt> {
   static const std::vector<DynamicAPInt> &TestingValues() {
     static std::vector<DynamicAPInt> vals = {
         DynamicAPInt(-1), DynamicAPInt(0), DynamicAPInt(1234), bn254, -1 * bn254,
@@ -34,8 +33,7 @@ struct DynamicAPIntUnaryTests : public testing::Test,
 };
 
 struct DynamicAPIntBinaryTests
-    : public testing::Test,
-      public testing::WithParamInterface<std::pair<DynamicAPInt, DynamicAPInt>> {
+    : public testing::TestWithParam<std::pair<DynamicAPInt, DynamicAPInt>> {
   static const std::vector<std::pair<DynamicAPInt, DynamicAPInt>> &TestingValues() {
     static std::vector<std::pair<DynamicAPInt, DynamicAPInt>> vals = {
         {DynamicAPInt(-1), DynamicAPInt(0)},
@@ -46,9 +44,7 @@ struct DynamicAPIntBinaryTests
   }
 };
 
-struct DynamicAPIntShiftTests
-    : public testing::Test,
-      public testing::WithParamInterface<std::pair<DynamicAPInt, unsigned>> {
+struct DynamicAPIntShiftTests : public testing::TestWithParam<std::pair<DynamicAPInt, unsigned>> {
   static const std::vector<std::pair<DynamicAPInt, unsigned>> &TestingValues() {
     static std::vector<std::pair<DynamicAPInt, unsigned>> vals = {
         {DynamicAPInt(-1), 0},
