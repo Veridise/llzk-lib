@@ -12,7 +12,5 @@
 #include "../CAPITestBase.h"
 
 TEST_F(CAPITest, mlir_get_dialect_handle_llzk_undef) {
-  {
-    mlirGetDialectHandle__llzk__undef__();
-  }
+  (void)mlirGetDialectHandle__llzk__undef__();
 }

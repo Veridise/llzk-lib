@@ -11,4 +11,4 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_cast) { mlirGetDialectHandle__llzk__cast__(); }
+TEST_F(CAPITest, mlir_get_dialect_handle_llzk_cast) { (void)mlirGetDialectHandle__llzk__cast__(); }

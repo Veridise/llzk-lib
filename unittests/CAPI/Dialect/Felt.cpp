@@ -19,7 +19,7 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_felt) { mlirGetDialectHandle__llzk__felt__(); }
+TEST_F(CAPITest, mlir_get_dialect_handle_llzk_felt) { (void)mlirGetDialectHandle__llzk__felt__(); }
 
 TEST_F(CAPITest, llzk_felt_const_attr_get) {
   auto attr = llzkFeltConstAttrGet(context, 0);
