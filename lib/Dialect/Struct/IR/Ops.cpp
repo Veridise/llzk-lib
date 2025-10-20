@@ -80,7 +80,7 @@ template <> LogicalResult SetFuncAllowAttrs<StructDefOp>::verifyTrait(Operation 
   return success();
 }
 
-InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const char *aspect) {
+InFlightDiagnostic genCompareErr(StructDefOp expected, Operation *origin, const char *aspect) {
   std::string prefix = std::string();
   if (SymbolOpInterface symbol = llvm::dyn_cast<SymbolOpInterface>(origin)) {
     prefix += "\"@";
@@ -103,7 +103,7 @@ static inline InFlightDiagnostic structFunDefError(Operation *origin) {
 /// Verifies that the given `actualType` matches the `StructDefOp` given (i.e., for the "self" type
 /// parameter and return of the struct functions).
 LogicalResult checkSelfType(
-    SymbolTableCollection &tables, StructDefOp &expectedStruct, Type actualType, Operation *origin,
+    SymbolTableCollection &tables, StructDefOp expectedStruct, Type actualType, Operation *origin,
     const char *aspect
 ) {
   if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {
@@ -238,7 +238,7 @@ inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool a
 }
 
 inline LogicalResult verifyStructComputeConstrain(
-    StructDefOp &structDef, FuncDefOp &computeFunc, FuncDefOp &constrainFunc
+    StructDefOp structDef, FuncDefOp computeFunc, FuncDefOp constrainFunc
 ) {
   // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly.
   assert(constrainFunc.hasAllowConstraintAttr());
@@ -286,8 +286,7 @@ inline LogicalResult verifyStructComputeConstrain(
   return success();
 }
 
-inline LogicalResult verifyStructProduct(StructDefOp &structDef, FuncDefOp &productFunc) {
-
+inline LogicalResult verifyStructProduct(StructDefOp structDef, FuncDefOp productFunc) {
   // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly
   assert(productFunc.hasAllowConstraintAttr());
   assert(productFunc.hasAllowWitnessAttr());
