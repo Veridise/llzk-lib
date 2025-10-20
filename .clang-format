@@ -37,3 +37,6 @@ InsertNewlineAtEOF: true
 ---
 Language: Json
 DisableFormat: true
+---
+Language: JavaScript
+DisableFormat: true
