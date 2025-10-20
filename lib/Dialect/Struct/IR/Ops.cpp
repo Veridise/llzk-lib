@@ -427,6 +427,20 @@ FuncDefOp StructDefOp::getConstrainFuncOp() {
   return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_CONSTRAIN));
 }
 
+FuncDefOp StructDefOp::getComputeOrProductFuncOp() {
+  if (auto *computeFunc = lookupSymbol(FUNC_NAME_COMPUTE)) {
+    return llvm::dyn_cast<FuncDefOp>(computeFunc);
+  }
+  return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_PRODUCT));
+}
+
+FuncDefOp StructDefOp::getConstrainOrProductFuncOp() {
+  if (auto *constrainFunc = lookupSymbol(FUNC_NAME_CONSTRAIN)) {
+    return llvm::dyn_cast<FuncDefOp>(constrainFunc);
+  }
+  return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_PRODUCT));
+}
+
 bool StructDefOp::isMainComponent() { return COMPONENT_NAME_MAIN == this->getSymName(); }
 
 //===------------------------------------------------------------------===//
