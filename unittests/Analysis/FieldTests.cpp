@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/Field.h"
-#include "llzk/Util/Debug.h"
 
 #include <gtest/gtest.h>
 #include <string>
