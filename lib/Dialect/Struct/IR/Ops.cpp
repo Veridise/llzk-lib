@@ -328,46 +328,46 @@ LogicalResult StructDefOp::verifyRegions() {
         if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
           if (funcDef.nameIsCompute()) {
             if (foundProduct) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
                      << "\" functions";
             }
             if (foundCompute) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found multiple \"@" << FUNC_NAME_COMPUTE << "\" functions";
             }
             foundCompute = std::make_optional(funcDef);
           } else if (funcDef.nameIsConstrain()) {
             if (foundProduct) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@" << FUNC_NAME_PRODUCT
                      << "\" functions";
             }
             if (foundConstrain) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found multiple \"@" << FUNC_NAME_CONSTRAIN << "\" functions";
             }
             foundConstrain = std::make_optional(funcDef);
           } else if (funcDef.nameIsProduct()) {
             if (foundCompute) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
                      << "\" functions";
             }
             if (foundConstrain) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@" << FUNC_NAME_PRODUCT
                      << "\" functions";
             }
             if (foundProduct) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found multiple \"@" << FUNC_NAME_PRODUCT << "\" functions";
             }
             foundProduct = std::make_optional(funcDef);
           } else {
             // Must do a little more than a simple call to '?.emitOpError()' to
             // tag the error with correct location and correct op name.
-            return structFunDefError(funcDef.getOperation())
+            return structFuncDefError(funcDef.getOperation())
                    << "found \"@" << funcDef.getSymName() << '"';
           }
         } else {
@@ -379,11 +379,11 @@ LogicalResult StructDefOp::verifyRegions() {
       }
     }
     if (!foundProduct.has_value() && !foundCompute.has_value()) {
-      return structFunDefError(getOperation())
+      return structFuncDefError(getOperation())
              << "missing \"@" << FUNC_NAME_COMPUTE << "\" or \"@" << FUNC_NAME_PRODUCT << "\"";
     }
     if (!foundProduct.has_value() && !foundConstrain.has_value()) {
-      return structFunDefError(getOperation())
+      return structFuncDefError(getOperation())
              << "missing \"@" << FUNC_NAME_CONSTRAIN << "\" or \"@" << FUNC_NAME_PRODUCT << "\"";
     }
   }
