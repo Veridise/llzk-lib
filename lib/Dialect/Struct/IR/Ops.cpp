@@ -95,9 +95,9 @@ InFlightDiagnostic genCompareErr(StructDefOp expected, Operation *origin, const 
 
 static inline InFlightDiagnostic structFuncDefError(Operation *origin) {
   return origin->emitError() << '\'' << StructDefOp::getOperationName() << "' op "
-                             << "must define only \"@" << FUNC_NAME_COMPUTE << "\" and \"@"
-                             << FUNC_NAME_CONSTRAIN << "\" functions, or a \"@" << FUNC_NAME_PRODUCT
-                             << "\" function; ";
+                             << "must define either only a \"@" << FUNC_NAME_PRODUCT
+                             << "\" function, or both \"@" << FUNC_NAME_COMPUTE << "\" and \"@"
+                             << FUNC_NAME_CONSTRAIN << "\" functions; ";
 }
 
 /// Verifies that the given `actualType` matches the `StructDefOp` given (i.e., for the "self" type
@@ -378,14 +378,21 @@ LogicalResult StructDefOp::verifyRegions() {
         }
       }
     }
-    if (!foundProduct.has_value() && !foundCompute.has_value()) {
-      return structFuncDefError(getOperation())
-             << "missing \"@" << FUNC_NAME_COMPUTE << "\" or \"@" << FUNC_NAME_PRODUCT << "\"";
+
+    if (!foundCompute.has_value() && foundConstrain.has_value()) {
+      return structFuncDefError(getOperation()) << "found \"@" << FUNC_NAME_CONSTRAIN
+                                                << "\", missing \"@" << FUNC_NAME_COMPUTE << "\"";
     }
-    if (!foundProduct.has_value() && !foundConstrain.has_value()) {
-      return structFuncDefError(getOperation())
-             << "missing \"@" << FUNC_NAME_CONSTRAIN << "\" or \"@" << FUNC_NAME_PRODUCT << "\"";
+    if (!foundConstrain.has_value() && foundCompute.has_value()) {
+      return structFuncDefError(getOperation()) << "found \"@" << FUNC_NAME_COMPUTE
+                                                << "\", missing \"@" << FUNC_NAME_CONSTRAIN << "\"";
     }
+  }
+
+  if (!foundCompute.has_value() && !foundConstrain.has_value() && !foundProduct.has_value()) {
+    return structFuncDefError(getOperation())
+           << "missing either \"@" << FUNC_NAME_PRODUCT << "\" or \"@" << FUNC_NAME_COMPUTE
+           << "\" and @\"" << FUNC_NAME_CONSTRAIN << "\"";
   }
 
   if (foundCompute && foundConstrain) {
