@@ -131,5 +131,5 @@ TEST_P(DynamicAPIntShiftTest, ShiftRight) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    ShiftRight, DynamicAPIntShiftTest, testing::ValuesIn(DynamicAPIntShiftTest::TestingValues())
+    , DynamicAPIntShiftTest, testing::ValuesIn(DynamicAPIntShiftTest::TestingValues())
 );
