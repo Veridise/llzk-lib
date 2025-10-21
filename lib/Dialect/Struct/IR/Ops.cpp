@@ -93,7 +93,7 @@ InFlightDiagnostic genCompareErr(StructDefOp expected, Operation *origin, const 
   );
 }
 
-static inline InFlightDiagnostic structFunDefError(Operation *origin) {
+static inline InFlightDiagnostic structFuncDefError(Operation *origin) {
   return origin->emitError() << '\'' << StructDefOp::getOperationName() << "' op "
                              << "must define only \"@" << FUNC_NAME_COMPUTE << "\" and \"@"
                              << FUNC_NAME_CONSTRAIN << "\" functions, or a \"@" << FUNC_NAME_PRODUCT

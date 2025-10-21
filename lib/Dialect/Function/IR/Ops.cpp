@@ -304,7 +304,7 @@ verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, Struct
 } // namespace
 
 LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
-  // Additional checks for the compute/constrain/product functions w/in a struct
+  // Additional checks for the compute/constrain/product functions within a struct
   FailureOr<StructDefOp> parentStructOpt = getParentOfType<StructDefOp>(*this);
   if (succeeded(parentStructOpt)) {
     // Verify return type restrictions for functions within a StructDefOp

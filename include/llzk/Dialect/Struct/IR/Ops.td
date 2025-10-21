@@ -119,7 +119,7 @@ def LLZK_StructDefOp
     /// Gets the FuncDefOp that defines the constrain function in this structure, if present, or the product function otherwise.
     ::llzk::function::FuncDefOp getConstrainOrProductFuncOp();
 
-    /// Returns `true` iff this structure defines compute/constrain functions
+    /// Returns `true` iff this structure defines compute and constrain functions.
     bool hasComputeConstrain() { return lookupSymbol(FUNC_NAME_COMPUTE) != nullptr && lookupSymbol(FUNC_NAME_CONSTRAIN) != nullptr; }
 
     /// Generate header string, in the same format as the assemblyFormat
