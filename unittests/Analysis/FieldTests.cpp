@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/Field.h"
-#include "llzk/Util/Debug.h"
 
 #include <gtest/gtest.h>
 #include <string>
@@ -20,7 +19,12 @@ using namespace llzk;
 
 static const Field &f = Field::getField("babybear");
 
-class FieldTests : public testing::Test, public testing::WithParamInterface<DynamicAPInt> {};
+struct FieldTests : public testing::TestWithParam<DynamicAPInt> {
+  static const std::vector<DynamicAPInt> &TestingValues() {
+    static std::vector<DynamicAPInt> vals = {f.zero(), f.one(), f.half(), f.maxVal()};
+    return vals;
+  }
+};
 
 TEST_F(FieldTests, Negatives) {
   // -a == b mod p s.t. a + b mod p = 0
@@ -36,6 +40,4 @@ TEST_P(FieldTests, DoubleNegatives) {
   ASSERT_EQ(p, doubleNeg);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    FieldVals, FieldTests, testing::Values(f.zero(), f.one(), f.half(), f.maxVal())
-);
+INSTANTIATE_TEST_SUITE_P(FieldValSuite, FieldTests, testing::ValuesIn(FieldTests::TestingValues()));

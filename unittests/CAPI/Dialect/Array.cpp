@@ -128,9 +128,7 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
 }
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
-
   int64_t dims[1] = {1};
-
   auto elt_type = mlirIndexTypeGet(context);
   auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
 
