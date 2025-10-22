@@ -590,7 +590,7 @@ LogicalResult checkSelfTypeUnknownTarget(
 /// Precondition: the CallOp callee references a parameter of the CallOp's parent struct. This
 /// creates a restriction that the referenced parameter must be instantiated with a StructType.
 /// Hence, the call must target a function within a struct, not a global function, so the callee
-/// name must be `compute`, `constrain` or `product`, nothing else.
+/// name must be `compute`, `constrain`, or `product`, nothing else.
 /// Normally, full verification of the `compute` and `constrain` callees is done via
 /// KnownTargetVerifier, which checks that input and output types of the caller match the callee,
 /// plus verifyFuncTypeCompute() when the callee is `compute` or verifyFuncTypeConstrain() when
