@@ -73,7 +73,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'struct.def' op must define either only a "@product" function, or both "@compute" and "@constrain" functions; missing either "@product" or "@compute" and @"constrain"}}
+  // expected-error@+1 {{'struct.def' op must define either only a "@product" function, or both "@compute" and "@constrain" functions; could not find "@product", "@compute", or "@constrain"}}
   struct.def @ComponentF3<[@B, @D, @C]> {
     
   }

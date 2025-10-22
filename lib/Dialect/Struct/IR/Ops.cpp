@@ -391,8 +391,8 @@ LogicalResult StructDefOp::verifyRegions() {
 
   if (!foundCompute.has_value() && !foundConstrain.has_value() && !foundProduct.has_value()) {
     return structFuncDefError(getOperation())
-           << "could not find \"@" << FUNC_NAME_PRODUCT << "\, \"@" << FUNC_NAME_COMPUTE
-           << "\", or @\"" << FUNC_NAME_CONSTRAIN << "\"";
+           << "could not find \"@" << FUNC_NAME_PRODUCT << "\", \"@" << FUNC_NAME_COMPUTE
+           << "\", or \"@" << FUNC_NAME_CONSTRAIN << "\"";
   }
 
   if (foundCompute && foundConstrain) {
