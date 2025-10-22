@@ -599,5 +599,5 @@ module attributes {veridise.lang = "llzk"} {
 
 // COM: Regression test for convergence of the interval analysis.
 module attributes {veridise.lang = "llzk"} {
-  include.from "FrontendLang/Zirgen/zir_example_loops.llzk" as @zir_loops
+  include.from "FrontendLang/Zirgen/Inputs/zir_example_loops.llzk" as @zir_loops
 }
