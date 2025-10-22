@@ -29,7 +29,8 @@ set_target_properties(LLZKDialectRegistration PROPERTIES EXPORT_NAME
 target_sources(LLZKDialectRegistration PRIVATE InitDialects.cpp)
 target_link_libraries(
   LLZKDialectRegistration PUBLIC LLZKAllDialects ${LLZK_DEP_DIALECT_LIBS}
-                                 LLZKDialectHeaders)
+                                 LLZKDialectHeaders
+                                 LLZK::LLZKTransforms)
 add_dependencies(LLZKDialectRegistration LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKDialectRegistration)
 
