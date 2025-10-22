@@ -81,6 +81,11 @@ void registerTransformationPassPipelines() {
     pm.addPass(mlir::createCSEPass());
   }
   );
+
+  PassPipelineRegistration<>(
+      "compute-constrain-to-product", "Convert @compute/@constrain functions to @product function",
+      [](OpPassManager &pm) { pm.addPass(llzk::createComputeConstrainToProductPass()); }
+  );
 }
 
 } // namespace llzk

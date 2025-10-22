@@ -13,6 +13,8 @@
 
 namespace llzk {
 
+std::unique_ptr<mlir::Pass> createComputeConstrainToProductPass();
+
 std::unique_ptr<mlir::Pass> createFlatteningPass();
 
 std::unique_ptr<mlir::Pass> createRedundantReadAndWriteEliminationPass();

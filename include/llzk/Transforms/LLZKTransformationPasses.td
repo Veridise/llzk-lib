@@ -108,4 +108,10 @@ def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
   let constructor = "llzk::createR1CSLoweringPass()";
 }
 
+def ComputeConstrainToProductPass : LLZKPass<"llzk-compute-constrain-to-product"> {
+  let summary = "Replaces separate @compute and @constrain functions in a struct with a single @product function";
+  let description = summary;
+  let constructor = "llzk::createComputeConstrainToProductPass()";
+}
+
 #endif // LLZK_TRANSFORMATION_PASSES_TD
