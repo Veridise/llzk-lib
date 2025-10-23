@@ -118,7 +118,8 @@ concept ContextType = requires(const Context &a, const Context &b) {
 /// require any context.
 struct NoContext {};
 
-/// @brief Any type that is a subclass of `StructAnalysis`.
+/// @brief Any type that is a subclass of `StructAnalysis` and provided a
+/// `Context` that matches `ContextType`.
 template <typename Analysis, typename Result, typename Context>
 concept StructAnalysisType = requires {
   requires std::is_base_of<StructAnalysis<Result, Context>, Analysis>::value;
@@ -139,9 +140,10 @@ class ModuleAnalysis {
       component::StructDefOp, std::reference_wrapper<const Result>,
       NamedOpLocationLess<component::StructDefOp>>;
 
-  /// @brief A map of this module's structs to the result of the `StructAnalysis` on that struct
-  /// for a given configuration (denoted by the `Context` object).
-  /// The inner `ResultMap` is implemented as an ordered map to control sorting order for iteration.
+  /// @brief A map of this module's structs to the result of the `StructAnalysis`
+  /// on that struct for a given configuration (denoted by the `Context` object).
+  /// The inner `StructResults` is implemented as an ordered map to control
+  /// sorting order for iteration.
   using ResultMap = std::unordered_map<Context, StructResults>;
 
 public:
