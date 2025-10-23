@@ -300,11 +300,10 @@ inline LogicalResult verifyStructProduct(StructDefOp &structDef, FuncDefOp &prod
           "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
       );
     }
-  }
-
-  for (Type t : productParams) {
-    if (failed(checkMainFuncParamType(t, productFunc, false))) {
-      return failure();
+    for (Type t : productParams) {
+      if (failed(checkMainFuncParamType(t, productFunc, false))) {
+        return failure();
+      }
     }
   }
 
