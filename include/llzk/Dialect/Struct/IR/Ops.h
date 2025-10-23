@@ -44,10 +44,10 @@ class FuncDefOp;
 namespace llzk::component {
 
 mlir::InFlightDiagnostic
-genCompareErr(StructDefOp &expected, mlir::Operation *origin, const char *aspect);
+genCompareErr(StructDefOp expected, mlir::Operation *origin, const char *aspect);
 
 mlir::LogicalResult checkSelfType(
-    mlir::SymbolTableCollection &symbolTable, StructDefOp &expectedStruct, mlir::Type actualType,
+    mlir::SymbolTableCollection &symbolTable, StructDefOp expectedStruct, mlir::Type actualType,
     mlir::Operation *origin, const char *aspect
 );
 

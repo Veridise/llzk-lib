@@ -26,6 +26,7 @@ constexpr char COMPONENT_NAME_MAIN[] = "Main";
 /// component.
 constexpr char FUNC_NAME_COMPUTE[] = "compute";
 constexpr char FUNC_NAME_CONSTRAIN[] = "constrain";
+constexpr char FUNC_NAME_PRODUCT[] = "product";
 
 /// Name of the attribute on the top-level ModuleOp that specifies the IR language name.
 constexpr char LANG_ATTR_NAME[] = "veridise.lang";
