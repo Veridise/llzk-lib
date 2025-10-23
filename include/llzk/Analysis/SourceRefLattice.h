@@ -60,7 +60,7 @@ public:
   std::pair<SourceRefLatticeValue, mlir::ChangeResult>
   translate(const TranslationMap &translation) const;
 
-  /// @brief Add the given `fieldRef` to the constrain refs contained within this value.
+  /// @brief Add the given `fieldRef` to the `SourceRef`s contained within this value.
   /// For example, if `fieldRef` is a field reference `@foo` and this value represents `%self`,
   /// the new value will represent `%self[@foo]`.
   /// @param fieldRef The field reference into the current value.

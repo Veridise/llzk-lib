@@ -398,13 +398,35 @@ private:
 struct IntervalAnalysisContext {
   IntervalDataFlowAnalysis *intervalDFA;
   llvm::SMTSolverRef smtSolver;
-  std::reference_wrapper<const Field> field;
+  std::optional<std::reference_wrapper<const Field>> field;
   bool propagateInputConstraints;
 
   llvm::SMTExprRef getSymbol(const SourceRef &r) const { return intervalDFA->getOrCreateSymbol(r); }
-  const Field &getField() const { return field.get(); }
+  bool hasField() const { return field.has_value(); }
+  const Field &getField() const {
+    ensure(field.has_value(), "field not set within context");
+    return field->get();
+  }
   bool doInputConstraintPropagation() const { return propagateInputConstraints; }
+
+  friend bool
+  operator==(const IntervalAnalysisContext &a, const IntervalAnalysisContext &b) = default;
 };
+
+} // namespace llzk
+
+template <> struct std::hash<llzk::IntervalAnalysisContext> {
+  size_t operator()(const llzk::IntervalAnalysisContext &c) const {
+    return llvm::hash_combine(
+        std::hash<const llzk::IntervalDataFlowAnalysis *> {}(c.intervalDFA),
+        std::hash<const llvm::SMTSolver *> {}(c.smtSolver.get()),
+        std::hash<const llzk::Field *> {}(&c.getField()),
+        std::hash<bool> {}(c.propagateInputConstraints)
+    );
+  }
+};
+
+namespace llzk {
 
 class StructIntervals {
 public:
@@ -419,7 +441,7 @@ public:
   /// @return
   static mlir::FailureOr<StructIntervals> compute(
       mlir::ModuleOp mod, component::StructDefOp s, mlir::DataFlowSolver &solver,
-      IntervalAnalysisContext &ctx
+      const IntervalAnalysisContext &ctx
   ) {
     StructIntervals si(mod, s);
     if (si.computeIntervals(solver, ctx).failed()) {
@@ -428,7 +450,8 @@ public:
     return si;
   }
 
-  mlir::LogicalResult computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysisContext &ctx);
+  mlir::LogicalResult
+  computeIntervals(mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx);
 
   void print(mlir::raw_ostream &os, bool withConstraints = false, bool printCompute = false) const;
 
@@ -475,13 +498,13 @@ public:
   virtual ~StructIntervalAnalysis() = default;
 
   mlir::LogicalResult runAnalysis(
-      mlir::DataFlowSolver &solver, mlir::AnalysisManager &, IntervalAnalysisContext &ctx
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &, const IntervalAnalysisContext &ctx
   ) override {
     auto computeRes = StructIntervals::compute(getModule(), getStruct(), solver, ctx);
     if (mlir::failed(computeRes)) {
       return mlir::failure();
     }
-    setResult(std::move(*computeRes));
+    setResult(ctx, std::move(*computeRes));
     return mlir::success();
   }
 };
@@ -492,39 +515,33 @@ class ModuleIntervalAnalysis
     : public ModuleAnalysis<StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis> {
 
 public:
-  ModuleIntervalAnalysis(mlir::Operation *op)
-      : ModuleAnalysis(op), smtSolver(llvm::CreateZ3Solver()), field(std::nullopt) {}
+  ModuleIntervalAnalysis(mlir::Operation *op) : ModuleAnalysis(op), ctx {} {
+    ctx.smtSolver = llvm::CreateZ3Solver();
+  }
   virtual ~ModuleIntervalAnalysis() = default;
 
-  void setField(const Field &f) { field = f; }
-  void setPropagateInputConstraints(bool prop) { propagateInputConstraints = prop; }
+  void setField(const Field &f) { ctx.field = f; }
+  void setPropagateInputConstraints(bool prop) { ctx.propagateInputConstraints = prop; }
 
 protected:
   void initializeSolver() override {
-    ensure(field.has_value(), "field not set, could not generate analysis context");
+    ensure(ctx.hasField(), "field not set, could not generate analysis context");
     (void)solver.load<SourceRefAnalysis>();
-    auto smtSolverRef = smtSolver;
-    bool prop = propagateInputConstraints;
-    intervalDFA = solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &, bool>(
-        std::move(smtSolverRef), field.value(), std::move(prop)
-    );
+    auto smtSolverRef = ctx.smtSolver;
+    bool prop = ctx.propagateInputConstraints;
+    ctx.intervalDFA =
+        solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &, bool>(
+            std::move(smtSolverRef), ctx.getField(), std::move(prop)
+        );
   }
 
-  IntervalAnalysisContext getContext() override {
-    ensure(field.has_value(), "field not set, could not generate analysis context");
-    return {
-        .intervalDFA = intervalDFA,
-        .smtSolver = smtSolver,
-        .field = field.value(),
-        .propagateInputConstraints = propagateInputConstraints,
-    };
+  const IntervalAnalysisContext &getContext() const override {
+    ensure(ctx.field.has_value(), "field not set, could not generate analysis context");
+    return ctx;
   }
 
 private:
-  llvm::SMTSolverRef smtSolver;
-  IntervalDataFlowAnalysis *intervalDFA;
-  std::optional<std::reference_wrapper<const Field>> field;
-  bool propagateInputConstraints;
+  IntervalAnalysisContext ctx;
 };
 
 } // namespace llzk

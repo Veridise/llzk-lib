@@ -446,7 +446,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       continue;
     }
 
-    // Else, look up the stored value by constrain ref.
+    // Else, look up the stored value by `SourceRef`.
     // We only care about scalar type values, so we ignore composite types, which
     // are currently limited to non-Signal structs and arrays.
     Type valTy = val.getType();
@@ -464,8 +464,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       // early, since there's no meaningful computation we can do for this op.
       op->emitWarning()
           .append(
-              "state of ", val,
-              " is empty; defining operation is unsupported by constrain ref analysis"
+              "state of ", val, " is empty; defining operation is unsupported by SourceRef analysis"
           )
           .report();
       propagateIfChanged(after, changed);
@@ -572,17 +571,19 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     // Casts don't modify the intervals
     changed |= after->setValue(op->getResult(0), operandVals[0].getScalarValue());
   } else if (auto yieldOp = dyn_cast<scf::YieldOp>(op)) {
-    // Fetch the lattice of the parent operation
+    // Fetch the lattice for after the parent operation so we can propagate
+    // the yielded value to subsequent operations.
     Operation *parent = op->getParentOp();
-    ensure(parent, "yield operation must have parent lattice");
-    auto *parentLattice =
-        static_cast<IntervalAnalysisLattice *>(getLattice(getProgramPointBefore(parent)));
-    ensure(parentLattice, "could not fetch parent lattice");
+    ensure(parent, "yield operation must have parent operation");
+    auto postYieldLattice =
+        static_cast<IntervalAnalysisLattice *>(getLattice(getProgramPointAfter(parent)));
+    ensure(postYieldLattice, "could not fetch post-yield lattice");
     // Bind the operand values to the result values of the parent
     for (unsigned idx = 0; idx < yieldOp.getResults().size(); ++idx) {
       Value parentRes = parent->getResult(idx);
-      // Merge with the existing value, if present
-      auto exprValRes = parentLattice->getValue(parentRes);
+      // Merge with the existing value, if present (e.g., another branch)
+      // has possible value that must be merged.
+      auto exprValRes = postYieldLattice->getValue(parentRes);
       ExpressionValue newResVal = operandVals[idx].getScalarValue();
       if (succeeded(exprValRes)) {
         ExpressionValue existingVal = exprValRes->getScalarValue();
@@ -594,10 +595,10 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       changed |= after->setValue(parentRes, newResVal);
     }
 
-    propagateIfChanged(parentLattice, parentLattice->join(*after));
+    propagateIfChanged(postYieldLattice, postYieldLattice->join(*after));
   } else if (
       // We do not need to explicitly handle read ops since they are resolved at the operand value
-      // step where constrain refs are queries (with the exception of the Signal struct, see above).
+      // step where `SourceRef`s are queries (with the exception of the Signal struct, see above).
       !isReadOp(op)
       // We do not currently handle return ops as the analysis is currently limited to constrain
       // functions, which return no value.
@@ -1022,8 +1023,9 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
 
 /* StructIntervals */
 
-LogicalResult
-StructIntervals::computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysisContext &ctx) {
+LogicalResult StructIntervals::computeIntervals(
+    mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx
+) {
 
   auto computeIntervalsImpl = [&solver, &ctx, this](
                                   FuncDefOp fn, llvm::MapVector<SourceRef, Interval> &fieldRanges,
@@ -1052,7 +1054,7 @@ StructIntervals::computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysis
       if (succeeded(intervalRes)) {
         fieldRanges[ref] = *intervalRes;
       } else {
-        fieldRanges[ref] = Interval::Entire(ctx.field);
+        fieldRanges[ref] = Interval::Entire(ctx.getField());
       }
     }
   };

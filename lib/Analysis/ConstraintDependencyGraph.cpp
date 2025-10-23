@@ -276,9 +276,9 @@ void SourceRefAnalysis::arraySubdivisionOpUpdate(
 
 mlir::FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
     mlir::ModuleOp m, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am,
-    bool runIntraprocedural
+    const CDGAnalysisContext &ctx
 ) {
-  ConstraintDependencyGraph cdg(m, s, runIntraprocedural);
+  ConstraintDependencyGraph cdg(m, s, ctx);
   if (cdg.computeConstraints(solver, am).failed()) {
     return mlir::failure();
   }
@@ -406,13 +406,13 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     }
     auto &childAnalysis =
         am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);
-    if (!childAnalysis.constructed()) {
+    if (!childAnalysis.constructed(ctx)) {
       ensure(
-          mlir::succeeded(childAnalysis.runAnalysis(solver, am, /* runIntraprocedural */ false)),
+          mlir::succeeded(childAnalysis.runAnalysis(solver, am, {.runIntraprocedural = false})),
           "could not construct CDG for child struct"
       );
     }
-    auto translatedCDG = childAnalysis.getResult().translate(translations);
+    auto translatedCDG = childAnalysis.getResult(ctx).translate(translations);
 
     // Now, union sets based on the translation
     // We should be able to just merge what is in the translatedCDG to the current CDG
@@ -431,7 +431,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
       constantSets[ref].insert(constSet.begin(), constSet.end());
     }
   };
-  if (!runIntraprocedural) {
+  if (!ctx.runIntraproceduralAnalysis()) {
     constrainFnOp.walk(fnCallWalker);
   }
 
@@ -474,7 +474,7 @@ void ConstraintDependencyGraph::walkConstrainOp(
 
 ConstraintDependencyGraph
 ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
-  ConstraintDependencyGraph res(mod, structDef);
+  ConstraintDependencyGraph res(mod, structDef, ctx);
   auto translate =
       [&translation](const SourceRef &elem) -> mlir::FailureOr<std::vector<SourceRef>> {
     std::vector<SourceRef> refs;
@@ -590,15 +590,15 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
 
 mlir::LogicalResult ConstraintDependencyGraphStructAnalysis::runAnalysis(
     mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
-    bool runIntraprocedural
+    const CDGAnalysisContext &ctx
 ) {
   auto result = ConstraintDependencyGraph::compute(
-      getModule(), getStruct(), solver, moduleAnalysisManager, runIntraprocedural
+      getModule(), getStruct(), solver, moduleAnalysisManager, ctx
   );
   if (mlir::failed(result)) {
     return mlir::failure();
   }
-  setResult(std::move(*result));
+  setResult(ctx, std::move(*result));
   return mlir::success();
 }
 

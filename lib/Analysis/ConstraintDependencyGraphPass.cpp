@@ -51,10 +51,10 @@ protected:
     auto &cs = getAnalysis<ConstraintDependencyGraphModuleAnalysis>();
     cs.setIntraprocedural(runIntraprocedural);
     auto am = getAnalysisManager();
-    cs.runAnalysis(am);
-    for (auto &[s, cdg] : cs) {
+    cs.ensureAnalysisRun(am);
+    for (auto &[s, cdg] : cs.getCurrentResults()) {
       auto &structDef = const_cast<StructDefOp &>(s);
-      auto fullName = getPathFromTopRoot(structDef);
+      FailureOr<SymbolRefAttr> fullName = getPathFromTopRoot(structDef);
       ensure(
           mlir::succeeded(fullName),
           "could not resolve fully qualified name of struct " + mlir::Twine(structDef.getName())
