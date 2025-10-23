@@ -41,12 +41,11 @@ LogicalResult transformStruct(StructDefOp structDef) {
   Block *entryBlock = productFunc.addEntryBlock();
   OpBuilder bodyBuilder(entryBlock, entryBlock->begin());
 
-  // std::vector<Value> args = productFunc.getArguments().vec();
   std::vector<Value> args;
   std::copy(
       productFunc.getArguments().begin(), productFunc.getArguments().end(), std::back_inserter(args)
   );
-  // ValueRange args = productFunc.getArguments();
+
   CallOp computeCall = bodyBuilder.create<CallOp>(bodyBuilder.getUnknownLoc(), computeFunc, args);
   args.insert(args.begin(), computeCall->getResult(0));
   CallOp constrainCall =
@@ -63,11 +62,6 @@ LogicalResult transformStruct(StructDefOp structDef) {
 
   computeCall->erase();
   constrainCall->erase();
-
-  // Block *productBody = productFunc.addEntryBlock();
-  // builder.setInsertionPointToEnd(productBody);
-
-  // builder.create<ReturnOp>(builder.getInsertionPoint()->getLoc());
 
   computeFunc.erase();
   constrainFunc.erase();
