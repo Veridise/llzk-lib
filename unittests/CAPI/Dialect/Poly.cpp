@@ -1,4 +1,4 @@
-//===-- Polymorphic.cpp -----------------------------------------*- C++ -*-===//
+//===-- Poly.cpp ------------------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk-c/Dialect/Polymorphic.h"
+#include "llzk-c/Dialect/Poly.h"
 
 #include <mlir-c/BuiltinAttributes.h>
 
