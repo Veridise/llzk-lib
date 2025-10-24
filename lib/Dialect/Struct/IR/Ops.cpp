@@ -80,7 +80,7 @@ template <> LogicalResult SetFuncAllowAttrs<StructDefOp>::verifyTrait(Operation 
   return success();
 }
 
-InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const char *aspect) {
+InFlightDiagnostic genCompareErr(StructDefOp expected, Operation *origin, const char *aspect) {
   std::string prefix = std::string();
   if (SymbolOpInterface symbol = llvm::dyn_cast<SymbolOpInterface>(origin)) {
     prefix += "\"@";
@@ -93,17 +93,17 @@ InFlightDiagnostic genCompareErr(StructDefOp &expected, Operation *origin, const
   );
 }
 
-static inline InFlightDiagnostic structFunDefError(Operation *origin) {
+static inline InFlightDiagnostic structFuncDefError(Operation *origin) {
   return origin->emitError() << '\'' << StructDefOp::getOperationName() << "' op "
-                             << "must define only \"@" << FUNC_NAME_COMPUTE << "\" and \"@"
-                             << FUNC_NAME_CONSTRAIN << "\" functions, or a \"@" << FUNC_NAME_PRODUCT
-                             << "\" function; ";
+                             << "must define either only a \"@" << FUNC_NAME_PRODUCT
+                             << "\" function, or both \"@" << FUNC_NAME_COMPUTE << "\" and \"@"
+                             << FUNC_NAME_CONSTRAIN << "\" functions; ";
 }
 
 /// Verifies that the given `actualType` matches the `StructDefOp` given (i.e., for the "self" type
 /// parameter and return of the struct functions).
 LogicalResult checkSelfType(
-    SymbolTableCollection &tables, StructDefOp &expectedStruct, Type actualType, Operation *origin,
+    SymbolTableCollection &tables, StructDefOp expectedStruct, Type actualType, Operation *origin,
     const char *aspect
 ) {
   if (StructType actualStructType = llvm::dyn_cast<StructType>(actualType)) {
@@ -238,7 +238,7 @@ inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool a
 }
 
 inline LogicalResult verifyStructComputeConstrain(
-    StructDefOp &structDef, FuncDefOp &computeFunc, FuncDefOp &constrainFunc
+    StructDefOp structDef, FuncDefOp computeFunc, FuncDefOp constrainFunc
 ) {
   // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly.
   assert(constrainFunc.hasAllowConstraintAttr());
@@ -286,8 +286,7 @@ inline LogicalResult verifyStructComputeConstrain(
   return success();
 }
 
-inline LogicalResult verifyStructProduct(StructDefOp &structDef, FuncDefOp &productFunc) {
-
+inline LogicalResult verifyStructProduct(StructDefOp structDef, FuncDefOp productFunc) {
   // ASSERT: The `SetFuncAllowAttrs` trait on StructDefOp set the attributes correctly
   assert(productFunc.hasAllowConstraintAttr());
   assert(productFunc.hasAllowWitnessAttr());
@@ -328,46 +327,46 @@ LogicalResult StructDefOp::verifyRegions() {
         if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
           if (funcDef.nameIsCompute()) {
             if (foundProduct) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
                      << "\" functions";
             }
             if (foundCompute) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found multiple \"@" << FUNC_NAME_COMPUTE << "\" functions";
             }
             foundCompute = std::make_optional(funcDef);
           } else if (funcDef.nameIsConstrain()) {
             if (foundProduct) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@" << FUNC_NAME_PRODUCT
                      << "\" functions";
             }
             if (foundConstrain) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found multiple \"@" << FUNC_NAME_CONSTRAIN << "\" functions";
             }
             foundConstrain = std::make_optional(funcDef);
           } else if (funcDef.nameIsProduct()) {
             if (foundCompute) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
                      << "\" functions";
             }
             if (foundConstrain) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@" << FUNC_NAME_PRODUCT
                      << "\" functions";
             }
             if (foundProduct) {
-              return structFunDefError(funcDef.getOperation())
+              return structFuncDefError(funcDef.getOperation())
                      << "found multiple \"@" << FUNC_NAME_PRODUCT << "\" functions";
             }
             foundProduct = std::make_optional(funcDef);
           } else {
             // Must do a little more than a simple call to '?.emitOpError()' to
             // tag the error with correct location and correct op name.
-            return structFunDefError(funcDef.getOperation())
+            return structFuncDefError(funcDef.getOperation())
                    << "found \"@" << funcDef.getSymName() << '"';
           }
         } else {
@@ -378,14 +377,21 @@ LogicalResult StructDefOp::verifyRegions() {
         }
       }
     }
-    if (!foundProduct.has_value() && !foundCompute.has_value()) {
-      return structFunDefError(getOperation())
-             << "missing \"@" << FUNC_NAME_COMPUTE << "\" or \"@" << FUNC_NAME_PRODUCT << "\"";
+
+    if (!foundCompute.has_value() && foundConstrain.has_value()) {
+      return structFuncDefError(getOperation()) << "found \"@" << FUNC_NAME_CONSTRAIN
+                                                << "\", missing \"@" << FUNC_NAME_COMPUTE << "\"";
     }
-    if (!foundProduct.has_value() && !foundConstrain.has_value()) {
-      return structFunDefError(getOperation())
-             << "missing \"@" << FUNC_NAME_CONSTRAIN << "\" or \"@" << FUNC_NAME_PRODUCT << "\"";
+    if (!foundConstrain.has_value() && foundCompute.has_value()) {
+      return structFuncDefError(getOperation()) << "found \"@" << FUNC_NAME_COMPUTE
+                                                << "\", missing \"@" << FUNC_NAME_CONSTRAIN << "\"";
     }
+  }
+
+  if (!foundCompute.has_value() && !foundConstrain.has_value() && !foundProduct.has_value()) {
+    return structFuncDefError(getOperation())
+           << "could not find \"@" << FUNC_NAME_PRODUCT << "\", \"@" << FUNC_NAME_COMPUTE
+           << "\", or \"@" << FUNC_NAME_CONSTRAIN << "\"";
   }
 
   if (foundCompute && foundConstrain) {
@@ -425,6 +431,20 @@ FuncDefOp StructDefOp::getComputeFuncOp() {
 
 FuncDefOp StructDefOp::getConstrainFuncOp() {
   return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_CONSTRAIN));
+}
+
+FuncDefOp StructDefOp::getComputeOrProductFuncOp() {
+  if (auto *computeFunc = lookupSymbol(FUNC_NAME_COMPUTE)) {
+    return llvm::dyn_cast<FuncDefOp>(computeFunc);
+  }
+  return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_PRODUCT));
+}
+
+FuncDefOp StructDefOp::getConstrainOrProductFuncOp() {
+  if (auto *constrainFunc = lookupSymbol(FUNC_NAME_CONSTRAIN)) {
+    return llvm::dyn_cast<FuncDefOp>(constrainFunc);
+  }
+  return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_PRODUCT));
 }
 
 bool StructDefOp::isMainComponent() { return COMPONENT_NAME_MAIN == this->getSymName(); }

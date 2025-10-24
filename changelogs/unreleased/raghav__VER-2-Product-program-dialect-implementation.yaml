@@ -1,4 +1,6 @@
+added:
+  - Support for `@product` function
+
 changed:
-  - Added support for `@product` function
   - Updated error messages and documentation
   - Updated testcases with new error messages
