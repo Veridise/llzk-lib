@@ -22,11 +22,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1759260436,
-        "narHash": "sha256-5+s6xkcEwDsgTq25s2JdeDqspvu0TF7MUS3ZU3VC5KE=",
+        "lastModified": 1761665291,
+        "narHash": "sha256-MAoDhmedH/McBpDRGRALMLCC3ZJLjSqlUP1gRx/b+fI=",
         "owner": "Veridise",
         "repo": "llzk-nix-pkgs",
-        "rev": "1b823ab142612a5c8b03e4b99dfebdf0ad35c887",
+        "rev": "2b32fde32f3f4bc2c985d2e293faa0d60da1eb83",
         "type": "github"
       },
       "original": {
