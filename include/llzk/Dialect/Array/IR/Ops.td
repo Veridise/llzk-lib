@@ -114,17 +114,18 @@ def LLZK_CreateArrayOp
   let summary = "create a new array";
   let description = [{
     This operation creates a new array with the given elements.
-    The arguments are passed as a flat array but get arranged
-    according the shape declared in the type.
+    The arguments are passed as a flat array but get arranged in
+    row-major order according the shape declared in the type.
 
     Examples:
     ```llzk
     %0 = array.new %a, %b, %c : !array.type<3 x !felt.type>
 
-    // Create an array from the given values using the specified shape
+    // Create an array of the specified shape, initialized with the given
+    // values assigned in row-major order: [[%a, %b], [%c, %d]]
     %1 = array.new %a, %b, %c, %d : !array.type<2,2 x !felt.type>
 
-    // Create an uninitialized array
+    // Create an uninitialized array: [[?, ?], [?, ?], [?, ?]]
     %2 = array.new : !array.type<3,2 x !felt.type>
     ```
 
@@ -148,7 +149,6 @@ def LLZK_CreateArrayOp
     Also note that `std::equal_to` is used in the `VariadicTypesMatchWith`
     trait on this Op so that the verifier function mirrors the aforementioned
     restriction in the parser.
-
 
     In some cases, the length of an uninitialized array depends on the value
     of the loop induction variable (i.e., each iteration creates an array with
