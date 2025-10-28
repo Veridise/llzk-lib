@@ -6,7 +6,6 @@
 #include <iterator>
 #include <memory>
 
-#include "llvm/Support/Debug.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/Transforms/InliningUtils.h"
 namespace llzk {
@@ -37,7 +36,7 @@ LogicalResult transformStruct(StructDefOp structDef) {
       funcBuilder.getUnknownLoc(), FUNC_NAME_PRODUCT, computeFunc.getFunctionType()
   );
 
-  productFunc.setPrivate();
+  // productFunc.setPrivate();
   Block *entryBlock = productFunc.addEntryBlock();
   OpBuilder bodyBuilder(entryBlock, entryBlock->begin());
 

@@ -83,7 +83,8 @@ void registerTransformationPassPipelines() {
   );
 
   PassPipelineRegistration<>(
-      "compute-constrain-to-product", "Convert @compute/@constrain functions to @product function",
+      "llzk-product-program",
+      "Convert @compute/@constrain functions to @product function and perform alignment",
       [](OpPassManager &pm) { pm.addPass(llzk::createComputeConstrainToProductPass()); }
   );
 }
