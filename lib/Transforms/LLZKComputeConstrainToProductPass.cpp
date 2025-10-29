@@ -9,6 +9,7 @@
 #include "mlir/IR/Builders.h"
 #include "mlir/Transforms/InliningUtils.h"
 namespace llzk {
+#define GEN_PASS_DECL_COMPUTECONSTRAINTOPRODUCTPASS
 #define GEN_PASS_DEF_COMPUTECONSTRAINTOPRODUCTPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -28,15 +29,12 @@ class Inliner : public InlinerInterface {
   bool isLegalToInline(Region *, Region *, bool, IRMapping &) const override { return true; }
 };
 
-LogicalResult transformStruct(StructDefOp structDef) {
-  FuncDefOp computeFunc = structDef.getComputeFuncOp();
-  FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
+FuncDefOp alignStruct(StructDefOp structDef, FuncDefOp computeFunc, FuncDefOp constrainFunc) {
   OpBuilder funcBuilder(computeFunc);
   FuncDefOp productFunc = funcBuilder.create<FuncDefOp>(
       funcBuilder.getUnknownLoc(), FUNC_NAME_PRODUCT, computeFunc.getFunctionType()
   );
 
-  // productFunc.setPrivate();
   Block *entryBlock = productFunc.addEntryBlock();
   OpBuilder bodyBuilder(entryBlock, entryBlock->begin());
 
@@ -53,10 +51,12 @@ LogicalResult transformStruct(StructDefOp structDef) {
 
   InlinerInterface inliner(productFunc.getContext());
   if (failed(inlineCall(inliner, computeCall, computeFunc, &computeFunc.getBody(), false))) {
-    return failure();
+    structDef->emitError() << "failed to inline " << FUNC_NAME_COMPUTE;
+    return nullptr;
   }
   if (failed(inlineCall(inliner, constrainCall, constrainFunc, &constrainFunc.getBody(), false))) {
-    return failure();
+    structDef->emitError() << "failed to inline " << FUNC_NAME_CONSTRAIN;
+    return nullptr;
   }
 
   computeCall->erase();
@@ -64,14 +64,45 @@ LogicalResult transformStruct(StructDefOp structDef) {
 
   computeFunc.erase();
   constrainFunc.erase();
-  return success();
+  return productFunc;
+}
+
+bool isValidRoot(StructDefOp structDef) {
+  FuncDefOp computeFunc = structDef.getComputeFuncOp();
+  FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
+
+  if (!computeFunc || !constrainFunc) {
+    structDef->emitError() << "no " << FUNC_NAME_COMPUTE << "/" << FUNC_NAME_CONSTRAIN
+                           << " to align";
+    return false;
+  }
+
+  // TODO: Check to see if root::@compute and root::@constrain are called anywhere else
+
+  return true;
 }
 
 class ComputeConstrainToProductPass
     : public llzk::impl::ComputeConstrainToProductPassBase<ComputeConstrainToProductPass> {
 
   void runOnOperation() override {
-    getOperation().walk([](StructDefOp structDef) { (void)transformStruct(structDef); });
+    ModuleOp mod = getOperation();
+    StructDefOp root;
+
+    mod.walk([&root, this](StructDefOp structDef) {
+      if (structDef.getSymName() == rootStruct) {
+        root = structDef;
+      }
+    });
+
+    if (!isValidRoot(root)) {
+      signalPassFailure();
+      return;
+    }
+
+    FuncDefOp product = alignStruct(root, root.getComputeFuncOp(), root.getConstrainFuncOp());
+    if (!product) {
+    }
   }
 };
 
