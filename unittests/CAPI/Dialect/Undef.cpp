@@ -26,5 +26,5 @@ TEST_F(CAPITest, llzkOperationIsAUndefOp) {
   mlirOperationStateAddResults(&state, 1, &t);
 
   auto op = mlirOperationCreate(&state);
-  EXPECT_TRUE(!llzkOperationIsAUndefOp(op));
+  EXPECT_TRUE(llzkOperationIsAUndefOp(op));
 }

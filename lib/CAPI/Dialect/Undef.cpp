@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Undef/IR/Dialect.h"
+#include "llzk/Dialect/Undef/IR/Ops.h"
 
 #include "llzk-c/Dialect/Undef.h"
 
