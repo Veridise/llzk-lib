@@ -19,7 +19,7 @@ TEST_F(CAPITest, mlir_get_dialect_handle_llzk_undef) {
   (void)mlirGetDialectHandle__llzk__undef__();
 }
 
-TEST_F(CAPITest, llzk_operation_is_a_struct_def_op) {
+TEST_F(CAPITest, llzkOperationIsAUndefOp) {
   auto op_name = mlirStringRefCreateFromCString("undef.undef");
   auto state = mlirOperationStateGet(op_name, mlirLocationUnknownGet(context));
   auto t = llzkFeltTypeGet(context);
