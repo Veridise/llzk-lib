@@ -165,8 +165,7 @@ mlir::LogicalResult SourceRefAnalysis::visitOperation(
   } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {
     // Create an array using the operand values, if they exist.
     // Currently, the new array must either be fully initialized or uninitialized.
-
-    auto newArrayVal = SourceRefLatticeValue(createArray.getType().getShape());
+    SourceRefLatticeValue newArrayVal(createArray.getType().getShape());
     // If the array is statically initialized, iterate through all operands and initialize the array
     // value.
     const auto &elements = createArray.getElements();

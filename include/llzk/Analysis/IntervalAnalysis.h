@@ -69,6 +69,11 @@ public:
     return ExpressionValue(expr, newInterval);
   }
 
+  /// @brief Return the current expression with a new SMT expression.
+  ExpressionValue withExpression(const llvm::SMTExprRef &newExpr) const {
+    return ExpressionValue(newExpr, i);
+  }
+
   /* Required to be a ScalarLatticeValue. */
   /// @brief Fold two expressions together when overapproximating array elements.
   ExpressionValue &join(const ExpressionValue & /*rhs*/) {
@@ -77,6 +82,10 @@ public:
   }
 
   bool operator==(const ExpressionValue &rhs) const;
+
+  bool isBoolSort(llvm::SMTSolverRef solver) const {
+    return solver->getBoolSort() == solver->getSort(expr);
+  }
 
   /// @brief Compute the intersection of the lhs and rhs intervals, and create a solver
   /// expression that constrains both sides to be equal.

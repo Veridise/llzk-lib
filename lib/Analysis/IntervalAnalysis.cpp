@@ -41,6 +41,14 @@ bool ExpressionValue::operator==(const ExpressionValue &rhs) const {
 }
 
 ExpressionValue
+boolToFelt(llvm::SMTSolverRef solver, const ExpressionValue &expr, unsigned bitwidth) {
+  llvm::SMTExprRef zero = solver->mkBitvector(mlir::APSInt::get(0), bitwidth);
+  llvm::SMTExprRef one = solver->mkBitvector(mlir::APSInt::get(1), bitwidth);
+  llvm::SMTExprRef boolToFeltConv = solver->mkIte(expr.getExpr(), one, zero);
+  return expr.withExpression(boolToFeltConv);
+}
+
+ExpressionValue
 intersection(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   Interval res = lhs.i.intersect(rhs.i);
   auto exprEq = solver->mkEqual(lhs.expr, rhs.expr);
@@ -525,9 +533,10 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
 
     ExpressionValue constraint = intersection(smtSolver, lhsExpr, rhsExpr);
     // Update the LHS and RHS to the same value, but restricted intervals
-    // based on the constraints
-    changed |= applyInterval(emitEq, after, lhsVal, constraint.getInterval());
-    changed |= applyInterval(emitEq, after, rhsVal, constraint.getInterval());
+    // based on the constraints.
+    const Interval &constrainInterval = constraint.getInterval();
+    changed |= applyInterval(emitEq, after, lhsVal, constrainInterval);
+    changed |= applyInterval(emitEq, after, rhsVal, constrainInterval);
     changed |= after->addSolverConstraint(constraint);
   } else if (AssertOp assertOp = llvm::dyn_cast<AssertOp>(op)) {
     ensure(operandVals.size() == 1, "assert op with the wrong number of operands");
@@ -568,8 +577,15 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       }
     }
   } else if (isa<IntToFeltOp, FeltToIndexOp>(op)) {
-    // Casts don't modify the intervals
-    changed |= after->setValue(op->getResult(0), operandVals[0].getScalarValue());
+    // Casts don't modify the intervals, but they do modify the SMT types.
+    ExpressionValue expr = operandVals[0].getScalarValue();
+    // We treat all ints and indexes as felts with the exception of comparison
+    // results, which are bools. So if `expr` is a bool, this cast needs to
+    // upcast to a felt.
+    if (expr.isBoolSort(smtSolver)) {
+      expr = boolToFelt(smtSolver, expr, field.get().bitWidth());
+    }
+    changed |= after->setValue(op->getResult(0), expr);
   } else if (auto yieldOp = dyn_cast<scf::YieldOp>(op)) {
     // Fetch the lattice for after the parent operation so we can propagate
     // the yielded value to subsequent operations.
@@ -919,6 +935,11 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
     return ChangeResult::NoChange;
   };
 
+  // For casts, just pass the interval along to the cast's operand.
+  auto castCase = [&](Operation *op) {
+    return applyInterval(originalOp, after, op->getOperand(0), newInterval);
+  };
+
   // - Apply the rules given the op.
   // NOTE: disabling clang-format for this because it makes the last case statement
   // look ugly.
@@ -927,6 +948,7 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
             .Case<CmpOp>([&](auto op) { return cmpCase(op); })
             .Case<MulFeltOp>([&](auto op) { return mulCase(op); })
             .Case<FieldReadOp>([&](auto op){ return readfCase(op); })
+            .Case<IntToFeltOp, FeltToIndexOp>([&](auto op) { return castCase(op); })
             .Default([&](Operation *) { return ChangeResult::NoChange; });
   // clang-format on
 

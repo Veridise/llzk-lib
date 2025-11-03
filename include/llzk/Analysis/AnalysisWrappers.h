@@ -194,7 +194,7 @@ public:
     return results.at(getContext());
   }
 
-  const mlir::DataFlowSolver &getSolver() const { return solver; }
+  mlir::DataFlowSolver &getSolver() { return solver; }
 
 protected:
   mlir::DataFlowSolver solver;
