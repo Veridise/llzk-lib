@@ -297,10 +297,18 @@ def CallOp : FunctionDialectOp<
     ```
   }];
 
+  // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.
   let arguments = (ins SymbolRefAttr:$callee,
       Variadic<AnyLLZKType>:$argOperands,
+      // List of AffineMap operand groups where each group provides the
+      // arguments to instantiate the next (left-to-right) AffineMap used as a
+      // struct parameter in the result StructType.
       VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands,
+      // Within each group in '$mapOperands', denotes the number of values that
+      // are AffineMap "dimensional" arguments with the remaining values being
+      // AffineMap "symbolic" arguments.
       DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
+      // Denotes the size of each variadic group in '$mapOperands'.
       DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs Variadic<AnyLLZKType>);
 

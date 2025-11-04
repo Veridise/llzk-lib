@@ -172,9 +172,20 @@ def LLZK_CreateArrayOp
     ```
   }];
 
-  let arguments = (ins Variadic<ArrayElemType>:$elements,
+  // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.
+  let arguments = (ins
+      // Elements to initialize the array. Length is either zero or equal to
+      // the length of the flattened/linearized result ArrayType.
+      Variadic<ArrayElemType>:$elements,
+      // List of AffineMap operand groups where each group provides the
+      // arguments to instantiate the next (left-to-right) AffineMap used as an
+      // array dimension in the result ArrayType.
       VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands,
+      // Within each group in '$mapOperands', denotes the number of values that
+      // are AffineMap "dimensional" arguments with the remaining values being
+      // AffineMap "symbolic" arguments.
       DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
+      // Denotes the size of each variadic group in '$mapOperands'.
       DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs LLZK_ArrayType:$result);
 
