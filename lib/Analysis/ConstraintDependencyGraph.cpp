@@ -87,27 +87,27 @@ void SourceRefAnalysis::visitCallControlFlowTransfer(
     auto funcOp = funcOpRes->get();
 
     auto callOp = llvm::dyn_cast<CallOp>(call.getOperation());
-    ensure(callOp, "call is not a llzk::CallOp");
+    ensure(callOp, "call is not a CallOp");
 
     for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
-      auto key = SourceRef(funcOp.getArgument(i));
-      auto val = beforeCall->getOrDefault(callOp.getOperand(i));
-      translation[key] = val;
+      SourceRef key(funcOp.getArgument(i));
+      // Look up the lattice that defines the operand value first, but default
+      // to the beforeCall if the operand is not defined by an operand.
+      const SourceRefLattice *operandLattice = beforeCall;
+      Value operand = callOp.getOperand(i);
+      if (Operation *defOp = operand.getDefiningOp()) {
+        operandLattice = getLattice(getProgramPointAfter(defOp));
+      }
+
+      translation[key] = operandLattice->getOrDefault(operand);
     }
 
-    // The lattice at the return is:
-    // - the lattice before the call, plus
-    // - the translated, return values, plus
-    // - any translated internal values (so we can see where values are used)
-    mlir::ChangeResult updated = after->join(*beforeCall);
+    // The lattice at the return is the translated return values
+    mlir::ChangeResult updated = mlir::ChangeResult::NoChange;
     for (unsigned i = 0; i < callOp.getNumResults(); i++) {
       auto retVal = before.getReturnValue(i);
       auto [translatedVal, _] = retVal.translate(translation);
       updated |= after->setValue(callOp->getResult(i), translatedVal);
-    }
-    for (const auto &[val, refVal] : before.getMap()) {
-      auto [translatedVal, _] = refVal.translate(translation);
-      updated |= after->setValue(val, translatedVal);
     }
     propagateIfChanged(after, updated);
   }
@@ -131,12 +131,16 @@ mlir::LogicalResult SourceRefAnalysis::visitOperation(
   LLVM_DEBUG(llvm::dbgs() << "SourceRefAnalysis::visitOperation: " << *op << '\n');
   // Collect the references that are made by the operands to `op`.
   SourceRefLattice::ValueMap operandVals;
-  for (mlir::OpOperand &operand : op->getOpOperands()) {
-    operandVals[operand.get()] = before.getOrDefault(operand.get());
+  for (OpOperand &operand : op->getOpOperands()) {
+    const SourceRefLattice *prior = &before;
+    // Lookup the lattice for the operand, if it is op defined.
+    Value operandVal = operand.get();
+    if (Operation *defOp = operandVal.getDefiningOp()) {
+      prior = getLattice(getProgramPointAfter(defOp));
+    }
+    // Get the value (if there was a defining operation), or the default value.
+    operandVals[operandVal] = prior->getOrDefault(operand.get());
   }
-
-  // Propagate existing state.
-  join(after, before);
 
   // Add operand values, if not already added. Ensures that the default value
   // of a SourceRef (the source of the ref) is visible in the lattice.
@@ -394,13 +398,23 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     SourceRefRemappings translations;
 
     ProgramPoint *pp = solver.getProgramPointAfter(fnCall.getOperation());
-    auto lattice = solver.lookupState<SourceRefLattice>(pp);
-    ensure(lattice, "could not find lattice for call operation");
+    auto *afterCallLattice = solver.lookupState<SourceRefLattice>(pp);
+    ensure(afterCallLattice, "could not find lattice for call operation");
 
     // Map fn parameters to args in the call op
     for (unsigned i = 0; i < fn.getNumArguments(); i++) {
       SourceRef prefix(fn.getArgument(i));
-      SourceRefLatticeValue val = lattice->getOrDefault(fnCall.getOperand(i));
+      // Look up the lattice that defines the operand value first, but default
+      // to the afterCallLattice if the operand is not defined by an operand.
+      const SourceRefLattice *operandLattice = afterCallLattice;
+      Value operand = fnCall.getOperand(i);
+      if (Operation *defOp = operand.getDefiningOp()) {
+        ProgramPoint *defPoint = solver.getProgramPointAfter(defOp);
+        operandLattice = solver.lookupState<SourceRefLattice>(defPoint);
+        ensure(afterCallLattice, "could not find lattice for call operand");
+      }
+
+      SourceRefLatticeValue val = operandLattice->getOrDefault(operand);
       translations.push_back({prefix, val});
     }
     auto &childAnalysis =
