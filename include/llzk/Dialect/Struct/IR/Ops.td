@@ -231,8 +231,9 @@ def LLZK_FieldReadOp
       FlatSymbolRefAttr:$field_name,
       OptionalAttr<AnyAttrOf<[SymbolRefAttr, IndexAttr,
                               AffineMapAttr]>>:$tableOffset,
-      // List of AffineMap operand groups where each group provides the arguments
-      // to instantiate the next (left-to-right) AffineMap used in `tableOffset`.
+      // List of AffineMap operand groups where each group provides the
+      // arguments to instantiate the next (left-to-right) AffineMap used in
+      // `tableOffset`.
       VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands,
       // Within each group in '$mapOperands', denotes the number of values that
       // are AffineMap "dimensional" arguments with the remaining values being
