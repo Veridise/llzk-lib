@@ -69,11 +69,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1762297547,
-        "narHash": "sha256-Msh9cc6qYIeLxPmOmnzpawTq/PTdIBv7+UY7AwxNJxc=",
+        "lastModified": 1762321052,
+        "narHash": "sha256-Dmj0HJvsMpM8RNcPtUvaveZRb9LBNhLgudMTnRyIOuc=",
         "owner": "Veridise",
         "repo": "pcl-mlir",
-        "rev": "e5bcfc582bac59db00961846059133d74ec890bf",
+        "rev": "8f71aa01bf01ca3928b49a7138bb2b75d4e27ae7",
         "type": "github"
       },
       "original": {
