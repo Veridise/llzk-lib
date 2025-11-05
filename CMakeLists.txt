@@ -67,7 +67,6 @@ endif()
 
 message(STATUS "LLZK_WITH_PCL=${LLZK_WITH_PCL} (found pcl=${LLZK_WITH_PCL_BOOL})")
 
-
 message(STATUS "Using LLVM in: ${LLVM_DIR}")
 message(STATUS "Using MLIR in: ${MLIR_DIR}")
 
@@ -83,7 +82,6 @@ set(LLZK_EXPORT_TARGETS "LLZKTargets")
 # INTERFACE libraries and link against them
 add_header_library(LLVMHeaders ${LLVM_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})
 add_header_library(MLIRHeaders ${MLIR_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})
-
 
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
