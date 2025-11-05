@@ -196,6 +196,7 @@ mlir::LogicalResult SourceRefAnalysis::visitOperation(
   }
 
   propagateIfChanged(after, res);
+  LLVM_DEBUG(llvm::dbgs().indent(4) << "lattice is of size " << after->size() << '\n');
   return success();
 }
 

@@ -228,6 +228,7 @@ public:
   mlir::FailureOr<LatticeValue> getValue(mlir::Value v) const;
   mlir::FailureOr<LatticeValue> getValue(mlir::Value v, mlir::StringAttr f) const;
 
+  mlir::ChangeResult setValue(mlir::Value v, const LatticeValue &val);
   mlir::ChangeResult setValue(mlir::Value v, ExpressionValue e);
   mlir::ChangeResult setValue(mlir::Value v, mlir::StringAttr f, ExpressionValue e);
 
@@ -348,8 +349,10 @@ private:
   /// @param after The current lattice state. Assumes that this has already been joined with the
   /// `before` lattice in `visitOperation`, so lookups and updates can be performed on the `after`
   /// lattice alone.
-  mlir::ChangeResult
-  applyInterval(mlir::Operation *originalOp, Lattice *after, mlir::Value val, Interval newInterval);
+  mlir::ChangeResult applyInterval(
+      mlir::Operation *originalOp, Lattice *originalLattice, Lattice *after, mlir::Value val,
+      Interval newInterval
+  );
 
   /// @brief Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
   mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>> getGeneralizedDecompInterval(
