@@ -42,7 +42,31 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FeatureTests.cmake)
 # Dependency setup
 
 find_package(LLVM 20.1 REQUIRED CONFIG)
-find_package(MLIR REQUIRED CONFIG)
+find_package(MLIR 20.1 REQUIRED CONFIG)
+
+# Optional PCL dialect
+set(LLZK_WITH_PCL "AUTO" CACHE STRING "Enable PCL integration (AUTO, ON, OFF)")
+set_property(CACHE LLZK_WITH_PCL PROPERTY STRINGS "AUTO;ON;OFF")
+
+# boolean used to guard imports in other CMakeLists.txt
+set(LLZK_WITH_PCL_BOOL OFF)
+
+if(LLZK_WITH_PCL STREQUAL "ON")
+  find_package(PCL CONFIG REQUIRED)
+  set(LLZK_WITH_PCL_BOOL ON)
+elseif(LLZK_WITH_PCL STREQUAL "AUTO")
+  find_package(PCL CONFIG QUIET)
+  if(PCL_FOUND)
+    set(LLZK_WITH_PCL_BOOL ON)
+  endif()
+elseif(LLZK_WITH_PCL STREQUAL "OFF")
+  # do nothing
+else()
+  message(FATAL_ERROR "LLZK_WITH_PCL must be AUTO, ON, or OFF")
+endif()
+
+message(STATUS "LLZK_WITH_PCL=${LLZK_WITH_PCL} (found pcl=${LLZK_WITH_PCL_BOOL})")
+
 
 message(STATUS "Using LLVM in: ${LLVM_DIR}")
 message(STATUS "Using MLIR in: ${MLIR_DIR}")
@@ -59,6 +83,7 @@ set(LLZK_EXPORT_TARGETS "LLZKTargets")
 # INTERFACE libraries and link against them
 add_header_library(LLVMHeaders ${LLVM_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})
 add_header_library(MLIRHeaders ${MLIR_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})
+
 
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
