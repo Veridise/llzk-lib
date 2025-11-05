@@ -12,7 +12,7 @@
       };
     };
 
-    pcl-mlir = {
+    pcl-mlir-pkg = {
       url = "github:Veridise/pcl-mlir";
       inputs = {
         shared-pkgs.follows = "llzk-pkgs";
@@ -32,7 +32,7 @@
       nixpkgs,
       flake-utils,
       llzk-pkgs,
-      pcl-mlir,
+      pcl-mlir-pkg,
       release-helpers,
     }:
     {
@@ -66,13 +66,13 @@
           llzk = final.callPackage ./nix/llzk.nix {
             clang = final.clang_20;
             mlir_pkg = final.mlir;
-            pcl_pkg = final.pcl;
+            pcl_pkg = final.pcl-mlir;
           };
           llzk-debug =
             (final.callPackage ./nix/llzk.nix {
               clang = final.clang_20;
               mlir_pkg = final.mlir-debug;
-              pcl_pkg = final.pcl-debug;
+              pcl_pkg = final.pcl-mlir-debug;
               cmakeBuildType = "Debug";
             }).overrideAttrs
               (attrs: {
@@ -201,7 +201,7 @@
           overlays = [
             self.overlays.default
             llzk-pkgs.overlays.default
-            pcl-mlir.overlays.default
+            pcl-mlir-pkg.overlays.default
             release-helpers.overlays.default
           ];
         };
@@ -212,7 +212,7 @@
           # Copy the packages from imported overlays.
           inherit (pkgs) llzk llzk-debug;
           inherit (pkgs) mlir mlir-debug;
-          inherit (pkgs) pcl pcl-debug;
+          inherit (pkgs) pcl-mlir pcl-mlir-debug;
           inherit (pkgs) changelogCreator;
           inherit (pkgs) mlir-with-python llzk-with-python;
           # Prevent use of libllvm and llvm from nixpkgs, which will have
