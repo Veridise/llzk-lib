@@ -427,6 +427,9 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
       );
     }
     auto translatedCDG = childAnalysis.getResult(ctx).translate(translations);
+    // Update the refMap with the translation
+    const auto &translatedRef2Val = translatedCDG.getRef2Val();
+    ref2Val.insert(translatedRef2Val.begin(), translatedRef2Val.end());
 
     // Now, union sets based on the translation
     // We should be able to just merge what is in the translatedCDG to the current CDG

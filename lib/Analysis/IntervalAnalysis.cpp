@@ -458,10 +458,8 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
   // We always propagate the values of the function args from the function
   // entry as the function context; if the input values are changed, this will
   // force the recomputation of intervals throughout the function.
-  Operation *fnEntry = &fn.getRegion().front().front();
-  Lattice *fnEntryLattice = getLattice(getProgramPointBefore(fnEntry));
   for (BlockArgument blockArg : fn.getArguments()) {
-    auto blockArgLookupRes = fnEntryLattice->getValue(blockArg);
+    auto blockArgLookupRes = before.getValue(blockArg);
     if (succeeded(blockArgLookupRes)) {
       changed |= after->setValue(blockArg, *blockArgLookupRes);
     }
@@ -481,17 +479,12 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
   };
 
   Lattice *defaultBefore = getLattice(getProgramPointBefore(op));
-  auto getBeforeLatticeForOp = [&](Operation *op) {
-    auto *l = getLattice(getProgramPointAfter(op));
-    ensure(l, "failed to get Lattice for value");
-    return l;
-  };
-  auto getBefore = [&](Value val) {
+  auto getAfter = [&](Value val) {
     if (Operation *defOp = val.getDefiningOp()) {
-      return getBeforeLatticeForOp(defOp);
+      return getLattice(getProgramPointAfter(defOp));
     } else if (auto blockArg = dyn_cast<BlockArgument>(val)) {
-      Operation *parentOp = blockArg.getOwner()->getParentOp();
-      return getBeforeLatticeForOp(parentOp);
+      Operation *blockEntry = &blockArg.getOwner()->front();
+      return getLattice(getProgramPointBefore(blockEntry));
     }
     return defaultBefore;
   };
@@ -506,8 +499,8 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     } else {
       operandRefs.push_back(std::nullopt);
     }
-    // First, lookup the operand value in the before state.
-    Lattice *valLattice = getBefore(val);
+    // First, lookup the operand value after it is initialized
+    Lattice *valLattice = getAfter(val);
     auto priorState = valLattice->getValue(val);
     if (succeeded(priorState) && priorState->getScalarValue().getExpr() != nullptr) {
       operandVals.push_back(*priorState);
@@ -596,7 +589,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     auto res = getGeneralizedDecompInterval(defaultSourceRefLattice, lhsVal, rhsVal);
     if (succeeded(res)) {
       for (Value signalVal : res->first) {
-        changed |= applyInterval(emitEq, after, getBefore(signalVal), signalVal, res->second);
+        changed |= applyInterval(emitEq, after, getAfter(signalVal), signalVal, res->second);
       }
     }
 
@@ -604,8 +597,8 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     // Update the LHS and RHS to the same value, but restricted intervals
     // based on the constraints.
     const Interval &constrainInterval = constraint.getInterval();
-    changed |= applyInterval(emitEq, after, after, lhsVal, constrainInterval);
-    changed |= applyInterval(emitEq, after, after, rhsVal, constrainInterval);
+    changed |= applyInterval(emitEq, after, getAfter(lhsVal), lhsVal, constrainInterval);
+    changed |= applyInterval(emitEq, after, getAfter(rhsVal), rhsVal, constrainInterval);
     changed |= after->addSolverConstraint(constraint);
   } else if (AssertOp assertOp = llvm::dyn_cast<AssertOp>(op)) {
     ensure(operandVals.size() == 1, "assert op with the wrong number of operands");
@@ -625,7 +618,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       // struct overall.
       changed |= after->setValue(readf.getVal(), operandVals[0].getScalarValue());
     } else {
-      auto storedVal = getBefore(cmp)->getValue(cmp, readf.getFieldNameAttr().getAttr());
+      auto storedVal = getAfter(cmp)->getValue(cmp, readf.getFieldNameAttr().getAttr());
       if (succeeded(storedVal)) {
         // The result value is the value previously written to this field.
         changed |= after->setValue(readf.getVal(), storedVal->getScalarValue());
@@ -670,8 +663,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     // the yielded value to subsequent operations.
     Operation *parent = op->getParentOp();
     ensure(parent, "yield operation must have parent operation");
-    auto postYieldLattice =
-        static_cast<IntervalAnalysisLattice *>(getLattice(getProgramPointAfter(parent)));
+    auto postYieldLattice = getLattice(getProgramPointAfter(parent));
     ensure(postYieldLattice, "could not fetch post-yield lattice");
     // Bind the operand values to the result values of the parent
     for (unsigned idx = 0; idx < yieldOp.getResults().size(); ++idx) {
@@ -827,8 +819,8 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
     return ChangeResult::NoChange;
   }
   ExpressionValue newLatticeVal = latValRes->getScalarValue().withInterval(newInterval);
-  ChangeResult res = after->setValue(val, newLatticeVal);
-  res |= originalLattice->setValue(val, newLatticeVal);
+  propagateIfChanged(after, after->setValue(val, newLatticeVal));
+  ChangeResult res = originalLattice->setValue(val, newLatticeVal);
   // To allow the dataflow analysis to do its fixed-point iteration, we need to
   // add the new expression to val's lattice as well.
   Lattice *valLattice = nullptr;
@@ -836,34 +828,31 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
     valLattice = getLattice(getProgramPointAfter(valOp));
   } else if (auto blockArg = llvm::dyn_cast<BlockArgument>(val)) {
     auto fnOp = dyn_cast<FuncDefOp>(blockArg.getOwner()->getParentOp());
-    Operation *fnEntry = &fnOp.getRegion().front().front();
+    Operation *blockEntry = &blockArg.getOwner()->front();
 
-    if (propagateInputConstraints) {
-      // Apply the interval from the constrain function inputs to the compute function inputs
-      if (fnOp && fnOp.isStructConstrain() && blockArg.getArgNumber() > 0 &&
-          !newInterval.isEntire()) {
-        auto structOp = fnOp->getParentOfType<StructDefOp>();
-        FuncDefOp computeFn = structOp.getComputeFuncOp();
-        Operation *computeEntry = &computeFn.getRegion().front().front();
-        BlockArgument computeArg = computeFn.getArgument(blockArg.getArgNumber() - 1);
-        Lattice *computeEntryLattice = getLattice(getProgramPointBefore(computeEntry));
-        // auto entryLatticeVal = computeEntryLattice->getValue(computeArg);
-        SourceRef ref(computeArg);
-        ExpressionValue newArgVal(getOrCreateSymbol(ref), newInterval);
-        ChangeResult computeRes = computeEntryLattice->setValue(computeArg, newArgVal);
-        propagateIfChanged(computeEntryLattice, computeRes);
-      }
+    // Apply the interval from the constrain function inputs to the compute function inputs
+    if (propagateInputConstraints && fnOp && fnOp.isStructConstrain() &&
+        blockArg.getArgNumber() > 0 && !newInterval.isEntire()) {
+      auto structOp = fnOp->getParentOfType<StructDefOp>();
+      FuncDefOp computeFn = structOp.getComputeFuncOp();
+      Operation *computeEntry = &computeFn.getRegion().front().front();
+      BlockArgument computeArg = computeFn.getArgument(blockArg.getArgNumber() - 1);
+      Lattice *computeEntryLattice = getLattice(getProgramPointBefore(computeEntry));
+
+      SourceRef ref(computeArg);
+      ExpressionValue newArgVal(getOrCreateSymbol(ref), newInterval);
+      ChangeResult computeRes = computeEntryLattice->setValue(computeArg, newArgVal);
+      propagateIfChanged(computeEntryLattice, computeRes);
     }
 
-    valLattice = getLattice(getProgramPointBefore(fnEntry));
+    valLattice = getLattice(getProgramPointBefore(blockEntry));
   } else {
     valLattice = getLattice(val);
   }
 
   ensure(valLattice, "val should have a lattice");
   auto setNewVal = [&valLattice, &val, &newLatticeVal, &res, this]() {
-    res |= valLattice->setValue(val, newLatticeVal);
-    propagateIfChanged(valLattice, res);
+    propagateIfChanged(valLattice, valLattice->setValue(val, newLatticeVal));
     return res;
   };
 
@@ -877,8 +866,8 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
     if (Operation *defOp = operand.getDefiningOp()) {
       return getLattice(getProgramPointAfter(defOp));
     } else if (auto blockArg = dyn_cast<BlockArgument>(operand)) {
-      Operation *parentOp = blockArg.getOwner()->getParentOp();
-      return getLattice(getProgramPointAfter(parentOp));
+      Operation *blockEntry = &blockArg.getOwner()->front();
+      return getLattice(getProgramPointBefore(blockEntry));
     }
     return definingOpLattice;
   };
@@ -1183,11 +1172,6 @@ LogicalResult StructIntervals::computeIntervals(
 
     // Get all ops in reverse order, including nested ops.
     llvm::SmallVector<Operation *> opList;
-    // for (Block &b : llvm::reverse(fn.getBody())) {
-    //   for (Operation &op : llvm::reverse(b)) {
-    //     opList.push_back(&op);
-    //   }
-    // }
     getReversedOps(&fn.getBody(), opList);
 
     // Also traverse the function op itself
