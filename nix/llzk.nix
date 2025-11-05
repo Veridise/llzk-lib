@@ -3,7 +3,7 @@
 
   # build dependencies
   clang, cmake, ninja,
-  mlir_pkg, nlohmann_json,
+  mlir_pkg, nlohmann_json, pcl_pkg,
 
   # test dependencies
   gtest, python3, lit, z3, cvc5,
@@ -35,7 +35,7 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ clang cmake ninja ];
   buildInputs = [
-    mlir_pkg z3.lib
+    mlir_pkg z3.lib pcl_pkg
   ] ++ lib.optionals mlir_pkg.hasPythonBindings [
     mlir_pkg.python
     mlir_pkg.pythonDeps

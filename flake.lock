@@ -22,11 +22,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1761665291,
-        "narHash": "sha256-MAoDhmedH/McBpDRGRALMLCC3ZJLjSqlUP1gRx/b+fI=",
+        "lastModified": 1761872169,
+        "narHash": "sha256-fO6uRWlCHg4HuJrRfQReFUhSFIQ/kSXS3iyhdT8026Q=",
         "owner": "Veridise",
         "repo": "llzk-nix-pkgs",
-        "rev": "2b32fde32f3f4bc2c985d2e293faa0d60da1eb83",
+        "rev": "7615a3a1ae875952ce1df0b513de1162e829894e",
         "type": "github"
       },
       "original": {
@@ -37,16 +37,48 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1758917213,
-        "narHash": "sha256-1oA6zZxSl8F1yCKEWnw8EdE1TGoifTWlwGdfUlAQ5Hs=",
+        "lastModified": 1761656231,
+        "narHash": "sha256-EiED5k6gXTWoAIS8yQqi5mAX6ojnzpHwAQTS3ykeYMg=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "1fb3d0b78eb00961e57bf274d980120dd8a48f82",
+        "rev": "e99366c665bdd53b7b500ccdc5226675cfc51f45",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
         "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "pcl-mlir": {
+      "inputs": {
+        "flake-utils": [
+          "llzk-pkgs",
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "llzk-pkgs",
+          "nixpkgs"
+        ],
+        "release-helpers": [
+          "release-helpers"
+        ],
+        "shared-pkgs": [
+          "llzk-pkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1762321052,
+        "narHash": "sha256-Dmj0HJvsMpM8RNcPtUvaveZRb9LBNhLgudMTnRyIOuc=",
+        "owner": "Veridise",
+        "repo": "pcl-mlir",
+        "rev": "8f71aa01bf01ca3928b49a7138bb2b75d4e27ae7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Veridise",
+        "repo": "pcl-mlir",
         "type": "github"
       }
     },
@@ -86,6 +118,7 @@
           "llzk-pkgs",
           "nixpkgs"
         ],
+        "pcl-mlir": "pcl-mlir",
         "release-helpers": "release-helpers"
       }
     }

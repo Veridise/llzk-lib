@@ -37,6 +37,11 @@
 
 #include "tools/config.h"
 
+#if LLZK_WITH_PCL
+#include <pcl/Dialect/IR/Dialect.h>
+#include <pcl/InitAllDialects.h>
+#endif // LLZK_WITH_PCL
+
 static llvm::cl::list<std::string> IncludeDirs(
     "I", llvm::cl::desc("Directory of include files"), llvm::cl::value_desc("directory"),
     llvm::cl::Prefix
@@ -60,6 +65,9 @@ int main(int argc, char **argv) {
   mlir::DialectRegistry registry;
   llzk::registerAllDialects(registry);
   r1cs::registerAllDialects(registry);
+#if LLZK_WITH_PCL
+  pcl::registerAllDialects(registry);
+#endif // LLZK_WITH_PCL
 
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();

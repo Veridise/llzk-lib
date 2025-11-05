@@ -11,6 +11,16 @@
         flake-utils.follows = "llzk-pkgs/flake-utils";
       };
     };
+
+    pcl-mlir = {
+      url = "github:Veridise/pcl-mlir";
+      inputs = {
+        shared-pkgs.follows = "llzk-pkgs";
+        nixpkgs.follows = "llzk-pkgs/nixpkgs";
+        flake-utils.follows = "llzk-pkgs/flake-utils";
+        release-helpers.follows = "release-helpers";
+      };
+    };
   };
 
   # Custom colored bash prompt
@@ -22,6 +32,7 @@
       nixpkgs,
       flake-utils,
       llzk-pkgs,
+      pcl-mlir,
       release-helpers,
     }:
     {
@@ -55,11 +66,13 @@
           llzk = final.callPackage ./nix/llzk.nix {
             clang = final.clang_20;
             mlir_pkg = final.mlir;
+            pcl_pkg = final.pcl;
           };
           llzk-debug =
             (final.callPackage ./nix/llzk.nix {
               clang = final.clang_20;
               mlir_pkg = final.mlir-debug;
+              pcl_pkg = final.pcl-debug;
               cmakeBuildType = "Debug";
             }).overrideAttrs
               (attrs: {
@@ -188,6 +201,7 @@
           overlays = [
             self.overlays.default
             llzk-pkgs.overlays.default
+            pcl-mlir.overlays.default
             release-helpers.overlays.default
           ];
         };
@@ -198,6 +212,7 @@
           # Copy the packages from imported overlays.
           inherit (pkgs) llzk llzk-debug;
           inherit (pkgs) mlir mlir-debug;
+          inherit (pkgs) pcl pcl-debug;
           inherit (pkgs) changelogCreator;
           inherit (pkgs) mlir-with-python llzk-with-python;
           # Prevent use of libllvm and llvm from nixpkgs, which will have
@@ -215,10 +230,12 @@
           llzk-installcheck-release = pkgs.callPackage ./nix/llzk-installcheck {
             mlir_pkg = pkgs.mlir;
             llzk_pkg = pkgs.llzk;
+            pcl_pkg = pkgs.pcl;
           };
           llzk-installcheck-debug = pkgs.callPackage ./nix/llzk-installcheck {
             mlir_pkg = pkgs.mlir-debug;
             llzk_pkg = pkgs.llzk-debug;
+            pcl_pkg = pkgs.pcl-debug;
           };
         };
 
