@@ -51,7 +51,7 @@
         "type": "github"
       }
     },
-    "pcl-mlir": {
+    "pcl-mlir-pkg": {
       "inputs": {
         "flake-utils": [
           "llzk-pkgs",
@@ -69,11 +69,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1762321052,
-        "narHash": "sha256-Dmj0HJvsMpM8RNcPtUvaveZRb9LBNhLgudMTnRyIOuc=",
+        "lastModified": 1762369885,
+        "narHash": "sha256-j7aARWOa10cranctQ39cfEELMlEAeZsRrJIGKPJ5o88=",
         "owner": "Veridise",
         "repo": "pcl-mlir",
-        "rev": "8f71aa01bf01ca3928b49a7138bb2b75d4e27ae7",
+        "rev": "a82620c4dabf6e51ceda66bba2abb19f7f74ac7d",
         "type": "github"
       },
       "original": {
@@ -118,7 +118,7 @@
           "llzk-pkgs",
           "nixpkgs"
         ],
-        "pcl-mlir": "pcl-mlir",
+        "pcl-mlir-pkg": "pcl-mlir-pkg",
         "release-helpers": "release-helpers"
       }
     }
