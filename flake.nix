@@ -230,10 +230,12 @@
           llzk-installcheck-release = pkgs.callPackage ./nix/llzk-installcheck {
             mlir_pkg = pkgs.mlir;
             llzk_pkg = pkgs.llzk;
+            pcl_pkg = pkgs.pcl;
           };
           llzk-installcheck-debug = pkgs.callPackage ./nix/llzk-installcheck {
             mlir_pkg = pkgs.mlir-debug;
             llzk_pkg = pkgs.llzk-debug;
+            pcl_pkg = pkgs.pcl-debug;
           };
         };
 
