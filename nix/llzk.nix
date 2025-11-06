@@ -41,6 +41,8 @@ stdenv.mkDerivation {
     mlir_pkg.pythonDeps
   ];
 
+  propagatedBuildInputs = [ pcl_pkg ];
+
   cmakeFlags = [
     "-DCMAKE_BUILD_TYPE=${cmakeBuildType}"
     "-DLLZK_BUILD_DEVTOOLS=ON"

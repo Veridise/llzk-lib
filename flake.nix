@@ -37,7 +37,7 @@
     }:
     {
       # First, we define the packages used in this repository/flake
-      overlays.default =
+      overlays.llzk =
         final: prev:
         let
           mkLlzkDebWithSans =
@@ -191,6 +191,8 @@
 
           devShellBaseWithDefault = pkgs: final.devShellBase pkgs final.llzk-debug;
         };
+        # So downstream users don't need to apply the pcl-mlir-pkg overlay directly
+        overlays.default = nixpkgs.lib.composeExtensions pcl-mlir-pkg.overlays.default self.overlays.llzk;
     }
     // (flake-utils.lib.eachDefaultSystem (
       system:
