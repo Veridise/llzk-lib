@@ -69,6 +69,11 @@ public:
     return ExpressionValue(expr, newInterval);
   }
 
+  /// @brief Return the current expression with a new SMT expression.
+  ExpressionValue withExpression(const llvm::SMTExprRef &newExpr) const {
+    return ExpressionValue(newExpr, i);
+  }
+
   /* Required to be a ScalarLatticeValue. */
   /// @brief Fold two expressions together when overapproximating array elements.
   ExpressionValue &join(const ExpressionValue & /*rhs*/) {
@@ -77,6 +82,10 @@ public:
   }
 
   bool operator==(const ExpressionValue &rhs) const;
+
+  bool isBoolSort(llvm::SMTSolverRef solver) const {
+    return solver->getBoolSort() == solver->getSort(expr);
+  }
 
   /// @brief Compute the intersection of the lhs and rhs intervals, and create a solver
   /// expression that constrains both sides to be equal.
@@ -219,6 +228,7 @@ public:
   mlir::FailureOr<LatticeValue> getValue(mlir::Value v) const;
   mlir::FailureOr<LatticeValue> getValue(mlir::Value v, mlir::StringAttr f) const;
 
+  mlir::ChangeResult setValue(mlir::Value v, const LatticeValue &val);
   mlir::ChangeResult setValue(mlir::Value v, ExpressionValue e);
   mlir::ChangeResult setValue(mlir::Value v, mlir::StringAttr f, ExpressionValue e);
 
@@ -339,13 +349,14 @@ private:
   /// @param after The current lattice state. Assumes that this has already been joined with the
   /// `before` lattice in `visitOperation`, so lookups and updates can be performed on the `after`
   /// lattice alone.
-  mlir::ChangeResult
-  applyInterval(mlir::Operation *originalOp, Lattice *after, mlir::Value val, Interval newInterval);
+  mlir::ChangeResult applyInterval(
+      mlir::Operation *originalOp, Lattice *originalLattice, Lattice *after, mlir::Value val,
+      Interval newInterval
+  );
 
   /// @brief Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
-  mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>> getGeneralizedDecompInterval(
-      const SourceRefLattice *SourceRefLattice, mlir::Value lhs, mlir::Value rhs
-  );
+  mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>>
+  getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 
   bool isBoolOp(mlir::Operation *op) const {
     return llvm::isa<boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(
@@ -390,6 +401,10 @@ private:
   bool isCallOp(mlir::Operation *op) const { return llvm::isa<function::CallOp>(op); }
 
   bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
+
+  /// @brief Get the SourceRefLattice that defines `val`, or the SourceRefLattice after `baseOp`
+  /// if `val` has no associated SourceRefLattice.
+  const SourceRefLattice *getSourceRefLattice(mlir::Operation *baseOp, mlir::Value val);
 };
 
 /* StructIntervals */

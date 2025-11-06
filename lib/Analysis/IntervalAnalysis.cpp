@@ -41,6 +41,14 @@ bool ExpressionValue::operator==(const ExpressionValue &rhs) const {
 }
 
 ExpressionValue
+boolToFelt(llvm::SMTSolverRef solver, const ExpressionValue &expr, unsigned bitwidth) {
+  llvm::SMTExprRef zero = solver->mkBitvector(mlir::APSInt::get(0), bitwidth);
+  llvm::SMTExprRef one = solver->mkBitvector(mlir::APSInt::get(1), bitwidth);
+  llvm::SMTExprRef boolToFeltConv = solver->mkIte(expr.getExpr(), one, zero);
+  return expr.withExpression(boolToFeltConv);
+}
+
+ExpressionValue
 intersection(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   Interval res = lhs.i.intersect(rhs.i);
   auto exprEq = solver->mkEqual(lhs.expr, rhs.expr);
@@ -339,6 +347,16 @@ IntervalAnalysisLattice::getValue(Value v, StringAttr f) const {
   return fit->second;
 }
 
+ChangeResult IntervalAnalysisLattice::setValue(Value v, const LatticeValue &val) {
+  if (valMap[v] == val) {
+    return ChangeResult::NoChange;
+  }
+  valMap[v] = val;
+  ExpressionValue e = val.foldToScalar();
+  intervals[e.getExpr()] = e.getInterval();
+  return ChangeResult::Change;
+}
+
 ChangeResult IntervalAnalysisLattice::setValue(Value v, ExpressionValue e) {
   LatticeValue val(e);
   if (valMap[v] == val) {
@@ -428,21 +446,65 @@ void IntervalDataFlowAnalysis::visitCallControlFlowTransfer(
   }
 }
 
+const SourceRefLattice *
+IntervalDataFlowAnalysis::getSourceRefLattice(Operation *baseOp, Value val) {
+  ProgramPoint *pp = _dataflowSolver.getProgramPointAfter(baseOp);
+  auto defaultSourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(pp);
+  ensure(defaultSourceRefLattice, "failed to get lattice");
+  if (Operation *defOp = val.getDefiningOp()) {
+    ProgramPoint *defPoint = _dataflowSolver.getProgramPointAfter(defOp);
+    auto sourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(defPoint);
+    ensure(sourceRefLattice, "failed to get SourceRefLattice for value");
+    return sourceRefLattice;
+  }
+  return defaultSourceRefLattice;
+}
+
 mlir::LogicalResult
 IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, Lattice *after) {
-  ChangeResult changed = after->join(before);
+  // We only perform the visitation on operations within functions
+  FuncDefOp fn = op->getParentOfType<FuncDefOp>();
+  if (!fn) {
+    return success();
+  }
 
-  ProgramPoint *pp = _dataflowSolver.getProgramPointAfter(op);
-  auto sourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(pp);
-  ensure(sourceRefLattice, "failed to get lattice");
+  ChangeResult changed = ChangeResult::NoChange;
+  // We always propagate the values of the function args from the function
+  // entry as the function context; if the input values are changed, this will
+  // force the recomputation of intervals throughout the function.
+  for (BlockArgument blockArg : fn.getArguments()) {
+    auto blockArgLookupRes = before.getValue(blockArg);
+    if (succeeded(blockArgLookupRes)) {
+      changed |= after->setValue(blockArg, *blockArgLookupRes);
+    }
+  }
+
+  auto getAfter = [&](Value val) {
+    if (Operation *defOp = val.getDefiningOp()) {
+      return getLattice(getProgramPointAfter(defOp));
+    } else if (auto blockArg = dyn_cast<BlockArgument>(val)) {
+      Operation *blockEntry = &blockArg.getOwner()->front();
+      return getLattice(getProgramPointBefore(blockEntry));
+    }
+    return getLattice(getProgramPointBefore(op));
+  };
 
   llvm::SmallVector<LatticeValue> operandVals;
+  llvm::SmallVector<std::optional<SourceRef>> operandRefs;
   for (OpOperand &operand : op->getOpOperands()) {
     Value val = operand.get();
-    // First, lookup the operand value in the before state.
-    auto priorState = before.getValue(val);
+    SourceRefLatticeValue refSet = getSourceRefLattice(op, val)->getOrDefault(val);
+    if (refSet.isSingleValue()) {
+      operandRefs.push_back(refSet.getSingleValue());
+    } else {
+      operandRefs.push_back(std::nullopt);
+    }
+    // First, lookup the operand value after it is initialized
+    Lattice *valLattice = getAfter(val);
+    auto priorState = valLattice->getValue(val);
     if (succeeded(priorState) && priorState->getScalarValue().getExpr() != nullptr) {
       operandVals.push_back(*priorState);
+      changed |= after->setValue(val, *priorState);
       continue;
     }
 
@@ -451,11 +513,12 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     // are currently limited to non-Signal structs and arrays.
     Type valTy = val.getType();
     if (llvm::isa<ArrayType, StructType>(valTy) && !isSignalType(valTy)) {
-      operandVals.push_back(LatticeValue());
+      LatticeValue empty;
+      operandVals.push_back(empty);
+      changed |= after->setValue(val, empty);
       continue;
     }
 
-    SourceRefLatticeValue refSet = sourceRefLattice->getOrDefault(val);
     ensure(refSet.isScalar(), "should have ruled out array values already");
 
     if (refSet.getScalarValue().empty()) {
@@ -482,7 +545,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       changed |= after->setValue(val, anyVal);
       operandVals.emplace_back(anyVal);
     } else {
-      auto ref = refSet.getSingleValue();
+      const SourceRef &ref = refSet.getSingleValue();
       ExpressionValue exprVal(field.get(), getOrCreateSymbol(ref));
       if (succeeded(priorState)) {
         exprVal = exprVal.withInterval(priorState->getScalarValue().getInterval());
@@ -490,6 +553,13 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       changed |= after->setValue(val, exprVal);
       operandVals.emplace_back(exprVal);
     }
+
+    // Since we initialized a value that was not found in the before lattice,
+    // update that value in the lattice so we can find it later, but we don't
+    // need to propagate the changes, since we already have what we need.
+    auto res = after->getValue(val);
+    ensure(succeeded(res), "expected precondition is that value is set");
+    (void)valLattice->setValue(val, *res);
   }
 
   // Now, the way we update is dependent on the type of the operation.
@@ -516,48 +586,59 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
 
     // Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
     // These patterns enforce that s is one of c0, ..., cN.
-    auto res = getGeneralizedDecompInterval(sourceRefLattice, lhsVal, rhsVal);
+    auto res = getGeneralizedDecompInterval(op, lhsVal, rhsVal);
     if (succeeded(res)) {
       for (Value signalVal : res->first) {
-        changed |= applyInterval(emitEq, after, signalVal, res->second);
+        changed |= applyInterval(emitEq, after, getAfter(signalVal), signalVal, res->second);
       }
     }
 
     ExpressionValue constraint = intersection(smtSolver, lhsExpr, rhsExpr);
     // Update the LHS and RHS to the same value, but restricted intervals
-    // based on the constraints
-    changed |= applyInterval(emitEq, after, lhsVal, constraint.getInterval());
-    changed |= applyInterval(emitEq, after, rhsVal, constraint.getInterval());
+    // based on the constraints.
+    const Interval &constrainInterval = constraint.getInterval();
+    changed |= applyInterval(emitEq, after, getAfter(lhsVal), lhsVal, constrainInterval);
+    changed |= applyInterval(emitEq, after, getAfter(rhsVal), rhsVal, constrainInterval);
     changed |= after->addSolverConstraint(constraint);
   } else if (AssertOp assertOp = llvm::dyn_cast<AssertOp>(op)) {
     ensure(operandVals.size() == 1, "assert op with the wrong number of operands");
     // assert enforces that the operand is true. So we apply an interval of [1, 1]
     // to the operand.
     changed |= applyInterval(
-        assertOp, after, assertOp.getCondition(),
+        assertOp, after, after, assertOp.getCondition(),
         Interval::Degenerate(field.get(), field.get().one())
     );
     // Also add the solver constraint that the expression must be true.
     auto assertExpr = operandVals[0].getScalarValue();
     changed |= after->addSolverConstraint(assertExpr);
   } else if (auto readf = llvm::dyn_cast<FieldReadOp>(op)) {
-    if (isSignalType(readf.getComponent().getType())) {
+    Value cmp = readf.getComponent();
+    if (isSignalType(cmp.getType())) {
       // The reg value read from the signal type is equal to the value of the Signal
       // struct overall.
       changed |= after->setValue(readf.getVal(), operandVals[0].getScalarValue());
-    } else if (auto storedVal =
-                   before.getValue(readf.getComponent(), readf.getFieldNameAttr().getAttr());
-               succeeded(storedVal)) {
-      // The result value is the value previously written to this field.
-      changed |= after->setValue(readf.getVal(), storedVal->getScalarValue());
+    } else {
+      auto storedVal = getAfter(cmp)->getValue(cmp, readf.getFieldNameAttr().getAttr());
+      if (succeeded(storedVal)) {
+        // The result value is the value previously written to this field.
+        changed |= after->setValue(readf.getVal(), storedVal->getScalarValue());
+      } else if (operandRefs[0].has_value()) {
+        // Initialize the value
+        auto fieldDefRes = readf.getFieldDefOp(tables);
+        if (succeeded(fieldDefRes)) {
+          SourceRef ref = operandRefs[0]->createChild(SourceRefIndex(*fieldDefRes));
+          ExpressionValue exprVal(field.get(), getOrCreateSymbol(ref));
+          changed |= after->setValue(readf.getVal(), exprVal);
+        }
+      }
     }
   } else if (auto writef = llvm::dyn_cast<FieldWriteOp>(op)) {
     // Update values stored in a field
     ExpressionValue writeVal = operandVals[1].getScalarValue();
-    changed |=
-        after->setValue(writef.getComponent(), writef.getFieldNameAttr().getAttr(), writeVal);
+    auto cmp = writef.getComponent();
+    changed |= after->setValue(cmp, writef.getFieldNameAttr().getAttr(), writeVal);
     // We also need to update the interval on the assigned symbol
-    SourceRefLatticeValue refSet = sourceRefLattice->getOrDefault(writef.getComponent());
+    SourceRefLatticeValue refSet = getSourceRefLattice(op, cmp)->getOrDefault(cmp);
     if (refSet.isSingleValue()) {
       auto fieldDefRes = writef.getFieldDefOp(tables);
       if (succeeded(fieldDefRes)) {
@@ -568,15 +649,21 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       }
     }
   } else if (isa<IntToFeltOp, FeltToIndexOp>(op)) {
-    // Casts don't modify the intervals
-    changed |= after->setValue(op->getResult(0), operandVals[0].getScalarValue());
+    // Casts don't modify the intervals, but they do modify the SMT types.
+    ExpressionValue expr = operandVals[0].getScalarValue();
+    // We treat all ints and indexes as felts with the exception of comparison
+    // results, which are bools. So if `expr` is a bool, this cast needs to
+    // upcast to a felt.
+    if (expr.isBoolSort(smtSolver)) {
+      expr = boolToFelt(smtSolver, expr, field.get().bitWidth());
+    }
+    changed |= after->setValue(op->getResult(0), expr);
   } else if (auto yieldOp = dyn_cast<scf::YieldOp>(op)) {
     // Fetch the lattice for after the parent operation so we can propagate
     // the yielded value to subsequent operations.
     Operation *parent = op->getParentOp();
     ensure(parent, "yield operation must have parent operation");
-    auto postYieldLattice =
-        static_cast<IntervalAnalysisLattice *>(getLattice(getProgramPointAfter(parent)));
+    auto postYieldLattice = getLattice(getProgramPointAfter(parent));
     ensure(postYieldLattice, "could not fetch post-yield lattice");
     // Bind the operand values to the result values of the parent
     for (unsigned idx = 0; idx < yieldOp.getResults().size(); ++idx) {
@@ -706,8 +793,10 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(Operation *op, const LatticeVal
   auto res = TypeSwitch<Operation *, ExpressionValue>(op)
                  .Case<NegFeltOp>([&](auto _) { return neg(smtSolver, val); })
                  .Case<NotFeltOp>([&](auto _) { return notOp(smtSolver, val); })
-                 .Case<NotBoolOp>([&](auto _) {
-    return boolNot(smtSolver, val);
+                 .Case<NotBoolOp>([&](auto _) { return boolNot(smtSolver, val); })
+                 // The inverse op is currently overapproximated
+                 .Case<InvFeltOp>([&](auto inv) {
+    return fallbackUnaryOp(smtSolver, inv, val);
   }).Default([&](auto *unsupported) {
     unsupported
         ->emitWarning(
@@ -722,7 +811,7 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(Operation *op, const LatticeVal
 }
 
 ChangeResult IntervalDataFlowAnalysis::applyInterval(
-    Operation *originalOp, Lattice *after, Value val, Interval newInterval
+    Operation *originalOp, Lattice *originalLattice, Lattice *after, Value val, Interval newInterval
 ) {
   auto latValRes = after->getValue(val);
   if (failed(latValRes)) {
@@ -730,56 +819,61 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
     return ChangeResult::NoChange;
   }
   ExpressionValue newLatticeVal = latValRes->getScalarValue().withInterval(newInterval);
-  ChangeResult res = after->setValue(val, newLatticeVal);
+  propagateIfChanged(after, after->setValue(val, newLatticeVal));
+  ChangeResult res = originalLattice->setValue(val, newLatticeVal);
   // To allow the dataflow analysis to do its fixed-point iteration, we need to
   // add the new expression to val's lattice as well.
   Lattice *valLattice = nullptr;
   if (Operation *valOp = val.getDefiningOp()) {
-    valLattice = getLattice(getProgramPointBefore(valOp));
+    valLattice = getLattice(getProgramPointAfter(valOp));
   } else if (auto blockArg = llvm::dyn_cast<BlockArgument>(val)) {
-    Operation *owningOp = blockArg.getOwner()->getParentOp();
-    if (propagateInputConstraints) {
-      // Apply the interval from the constrain function inputs to the compute function inputs
-      auto fnOp = dyn_cast<FuncDefOp>(owningOp);
-      if (fnOp && fnOp.isStructConstrain() && blockArg.getArgNumber() > 0 &&
-          !newInterval.isEntire()) {
-        auto structOp = fnOp->getParentOfType<StructDefOp>();
-        FuncDefOp computeFn = structOp.getComputeFuncOp();
-        Operation *computeEntry = &computeFn.getRegion().front().front();
-        BlockArgument computeArg = computeFn.getArgument(blockArg.getArgNumber() - 1);
-        Lattice *computeEntryLattice = getLattice(getProgramPointBefore(computeEntry));
-        auto entryLatticeVal = computeEntryLattice->getValue(computeArg);
-        ExpressionValue newArgVal;
-        if (succeeded(entryLatticeVal)) {
-          newArgVal = entryLatticeVal->getScalarValue().withInterval(newInterval);
-        } else {
-          // We store the interval with an empty expression so that when the operation
-          // is visited, the expressions can be properly generated with an existing
-          // interval.
-          newArgVal = ExpressionValue(nullptr, newInterval);
-        }
-        ChangeResult computeRes = computeEntryLattice->setValue(computeArg, newArgVal);
-        propagateIfChanged(computeEntryLattice, computeRes);
-      }
+    auto fnOp = dyn_cast<FuncDefOp>(blockArg.getOwner()->getParentOp());
+    Operation *blockEntry = &blockArg.getOwner()->front();
+
+    // Apply the interval from the constrain function inputs to the compute function inputs
+    if (propagateInputConstraints && fnOp && fnOp.isStructConstrain() &&
+        blockArg.getArgNumber() > 0 && !newInterval.isEntire()) {
+      auto structOp = fnOp->getParentOfType<StructDefOp>();
+      FuncDefOp computeFn = structOp.getComputeFuncOp();
+      Operation *computeEntry = &computeFn.getRegion().front().front();
+      BlockArgument computeArg = computeFn.getArgument(blockArg.getArgNumber() - 1);
+      Lattice *computeEntryLattice = getLattice(getProgramPointBefore(computeEntry));
+
+      SourceRef ref(computeArg);
+      ExpressionValue newArgVal(getOrCreateSymbol(ref), newInterval);
+      ChangeResult computeRes = computeEntryLattice->setValue(computeArg, newArgVal);
+      propagateIfChanged(computeEntryLattice, computeRes);
     }
 
-    valLattice = getLattice(getProgramPointBefore(blockArg.getOwner()));
+    valLattice = getLattice(getProgramPointBefore(blockEntry));
   } else {
     valLattice = getLattice(val);
   }
+
   ensure(valLattice, "val should have a lattice");
-  auto setNewVal = [&valLattice, &after, &val, &newLatticeVal, this]() {
-    if (valLattice != after) {
-      propagateIfChanged(valLattice, valLattice->setValue(val, newLatticeVal));
-    }
+  auto setNewVal = [&valLattice, &val, &newLatticeVal, &res, this]() {
+    propagateIfChanged(valLattice, valLattice->setValue(val, newLatticeVal));
+    return res;
   };
 
   // Now we descend into val's operands, if it has any.
   Operation *definingOp = val.getDefiningOp();
   if (!definingOp) {
-    setNewVal();
-    return res;
+    return setNewVal();
   }
+  Lattice *definingOpLattice = getLattice(getProgramPointAfter(definingOp));
+  auto getOperandLattice = [&](Value operand) {
+    if (Operation *defOp = operand.getDefiningOp()) {
+      return getLattice(getProgramPointAfter(defOp));
+    } else if (auto blockArg = dyn_cast<BlockArgument>(operand)) {
+      Operation *blockEntry = &blockArg.getOwner()->front();
+      return getLattice(getProgramPointBefore(blockEntry));
+    }
+    return definingOpLattice;
+  };
+  auto getOperandLatticeVal = [&](Value operand) {
+    return getOperandLattice(operand)->getValue(operand);
+  };
 
   const Field &f = field.get();
 
@@ -803,8 +897,8 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
 
     bool cmpTrue = newInterval.rhs() == f.one();
 
-    Value lhs = cmpOp->getOperand(0), rhs = cmpOp->getOperand(1);
-    auto lhsLatValRes = after->getValue(lhs), rhsLatValRes = after->getValue(rhs);
+    Value lhs = cmpOp.getLhs(), rhs = cmpOp.getRhs();
+    auto lhsLatValRes = getOperandLatticeVal(lhs), rhsLatValRes = getOperandLatticeVal(rhs);
     if (failed(lhsLatValRes) || failed(rhsLatValRes)) {
       return ChangeResult::NoChange;
     }
@@ -846,7 +940,6 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
     if (eqCase()) {
       newLhsInterval = newRhsInterval = lhsInterval.intersect(rhsInterval);
     } else if (neCase()) {
-
       if (lhsInterval.isDegenerate() && rhsInterval.isDegenerate() && lhsInterval == rhsInterval) {
         // In this case, we know lhs and rhs cannot satisfy this assertion, so they have
         // an empty value range.
@@ -882,8 +975,8 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
     }
 
     // Now we recurse to each operand
-    return applyInterval(originalOp, after, lhs, newLhsInterval) |
-           applyInterval(originalOp, after, rhs, newRhsInterval);
+    return applyInterval(originalOp, originalLattice, getOperandLattice(lhs), lhs, newLhsInterval) |
+           applyInterval(originalOp, originalLattice, getOperandLattice(rhs), rhs, newRhsInterval);
   };
 
   // If the result of a multiplication is non-zero, then both operands must be
@@ -895,8 +988,8 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
       return ChangeResult::NoChange;
     }
 
-    Value lhs = mulOp->getOperand(0), rhs = mulOp->getOperand(1);
-    auto lhsLatValRes = after->getValue(lhs), rhsLatValRes = after->getValue(rhs);
+    Value lhs = mulOp.getLhs(), rhs = mulOp.getRhs();
+    auto lhsLatValRes = getOperandLatticeVal(lhs), rhsLatValRes = getOperandLatticeVal(rhs);
     if (failed(lhsLatValRes) || failed(rhsLatValRes)) {
       return ChangeResult::NoChange;
     }
@@ -904,8 +997,8 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
                     rhsExpr = rhsLatValRes->getScalarValue();
     Interval newLhsInterval = lhsExpr.getInterval().difference(zeroInt);
     Interval newRhsInterval = rhsExpr.getInterval().difference(zeroInt);
-    return applyInterval(originalOp, after, lhs, newLhsInterval) |
-           applyInterval(originalOp, after, rhs, newRhsInterval);
+    return applyInterval(originalOp, originalLattice, getOperandLattice(lhs), lhs, newLhsInterval) |
+           applyInterval(originalOp, originalLattice, getOperandLattice(rhs), rhs, newRhsInterval);
   };
 
   // We have a special case for the Signal struct: if this value is created
@@ -914,9 +1007,17 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
   auto readfCase = [&](FieldReadOp readfOp) {
     Value comp = readfOp.getComponent();
     if (isSignalType(comp.getType())) {
-      return applyInterval(originalOp, after, comp, newInterval);
+      return applyInterval(originalOp, originalLattice, getOperandLattice(comp), comp, newInterval);
     }
     return ChangeResult::NoChange;
+  };
+
+  // For casts, just pass the interval along to the cast's operand.
+  auto castCase = [&](Operation *op) {
+    Value operand = op->getOperand(0);
+    return applyInterval(
+        originalOp, originalLattice, getOperandLattice(operand), operand, newInterval
+    );
   };
 
   // - Apply the rules given the op.
@@ -927,19 +1028,16 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
             .Case<CmpOp>([&](auto op) { return cmpCase(op); })
             .Case<MulFeltOp>([&](auto op) { return mulCase(op); })
             .Case<FieldReadOp>([&](auto op){ return readfCase(op); })
+            .Case<IntToFeltOp, FeltToIndexOp>([&](auto op) { return castCase(op); })
             .Default([&](Operation *) { return ChangeResult::NoChange; });
   // clang-format on
 
   // Set the new val after recursion to avoid having recursive calls unset the value.
-  setNewVal();
-
-  return res;
+  return setNewVal();
 }
 
 FailureOr<std::pair<DenseSet<Value>, Interval>>
-IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
-    const SourceRefLattice *sourceRefLattice, Value lhs, Value rhs
-) {
+IntervalDataFlowAnalysis::getGeneralizedDecompInterval(Operation *baseOp, Value lhs, Value rhs) {
   auto isZeroConst = [this](Value v) {
     Operation *op = v.getDefiningOp();
     if (!op) {
@@ -972,8 +1070,9 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
 
     FeltConstantOp c;
     Value signalVal;
-    auto handleRefValue = [&sourceRefLattice, &signalRef, &signalVal, &signalVals]() {
-      SourceRefLatticeValue refSet = sourceRefLattice->getOrDefault(signalVal);
+    auto handleRefValue = [this, &baseOp, &signalRef, &signalVal, &signalVals]() {
+      SourceRefLatticeValue refSet =
+          getSourceRefLattice(baseOp, signalVal)->getOrDefault(signalVal);
       if (!refSet.isScalar() || !refSet.isSingleValue()) {
         return failure();
       }
@@ -1023,6 +1122,17 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
 
 /* StructIntervals */
 
+static void getReversedOps(Region *r, llvm::SmallVector<Operation *> &opList) {
+  for (Block &b : llvm::reverse(*r)) {
+    for (Operation &op : llvm::reverse(b)) {
+      for (Region &nested : llvm::reverse(op.getRegions())) {
+        getReversedOps(&nested, opList);
+      }
+      opList.push_back(&op);
+    }
+  }
+}
+
 LogicalResult StructIntervals::computeIntervals(
     mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx
 ) {
@@ -1031,13 +1141,12 @@ LogicalResult StructIntervals::computeIntervals(
                                   FuncDefOp fn, llvm::MapVector<SourceRef, Interval> &fieldRanges,
                                   llvm::SetVector<ExpressionValue> &solverConstraints
                               ) {
-    // Get the lattice at the end of the function.
-    Operation *fnEnd = fn.getRegion().back().getTerminator();
-    ProgramPoint *pp = solver.getProgramPointAfter(fnEnd);
-    const IntervalAnalysisLattice *lattice = solver.lookupState<IntervalAnalysisLattice>(pp);
+    // Since every lattice value does not contain every value, we will traverse
+    // the function backwards (from most up-to-date to least-up-to-date lattices)
+    // searching for the source refs. Once a source ref is found, we remove it
+    // from the search set.
 
-    solverConstraints = lattice->getConstraints();
-
+    SourceRefSet searchSet;
     for (const auto &ref : SourceRef::getAllSourceRefs(structDef, fn)) {
       // We only want to compute intervals for field elements and not composite types,
       // with the exception of the Signal struct.
@@ -1048,15 +1157,42 @@ LogicalResult StructIntervals::computeIntervals(
       if (auto parentOr = ref.getParentPrefix(); succeeded(parentOr) && parentOr->isSignal()) {
         continue;
       }
-
-      auto symbol = ctx.getSymbol(ref);
-      auto intervalRes = lattice->findInterval(symbol);
-      if (succeeded(intervalRes)) {
-        fieldRanges[ref] = *intervalRes;
-      } else {
-        fieldRanges[ref] = Interval::Entire(ctx.getField());
-      }
+      searchSet.insert(ref);
     }
+
+    // Get all ops in reverse order, including nested ops.
+    llvm::SmallVector<Operation *> opList;
+    getReversedOps(&fn.getBody(), opList);
+
+    // Also traverse the function op itself
+    opList.push_back(fn);
+
+    for (Operation *op : opList) {
+      ProgramPoint *pp = solver.getProgramPointAfter(op);
+      const IntervalAnalysisLattice *lattice = solver.lookupState<IntervalAnalysisLattice>(pp);
+      const auto &c = lattice->getConstraints();
+      solverConstraints.insert(c.begin(), c.end());
+
+      SourceRefSet newSearchSet;
+      for (const auto &ref : searchSet) {
+        auto symbol = ctx.getSymbol(ref);
+        auto intervalRes = lattice->findInterval(symbol);
+        if (succeeded(intervalRes)) {
+          fieldRanges[ref] = *intervalRes;
+        } else {
+          newSearchSet.insert(ref);
+        }
+      }
+      searchSet = newSearchSet;
+    }
+
+    // For all unfound refs, default to the entire range.
+    for (const auto &ref : searchSet) {
+      fieldRanges[ref] = Interval::Entire(ctx.getField());
+    }
+
+    // Sort the outputs since we assembled things out of order.
+    llvm::sort(fieldRanges, [](auto a, auto b) { return std::get<0>(a) < std::get<0>(b); });
   };
 
   computeIntervalsImpl(structDef.getComputeFuncOp(), computeFieldRanges, computeSolverConstraints);
