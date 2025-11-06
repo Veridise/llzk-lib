@@ -203,7 +203,6 @@
           overlays = [
             self.overlays.default
             llzk-pkgs.overlays.default
-            pcl-mlir-pkg.overlays.default
             release-helpers.overlays.default
           ];
         };
