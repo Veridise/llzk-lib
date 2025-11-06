@@ -139,7 +139,7 @@ mlir::LogicalResult SourceRefAnalysis::visitOperation(
       prior = getLattice(getProgramPointAfter(defOp));
     }
     // Get the value (if there was a defining operation), or the default value.
-    operandVals[operandVal] = prior->getOrDefault(operand.get());
+    operandVals[operandVal] = prior->getOrDefault(operandVal);
   }
 
   // Add operand values, if not already added. Ensures that the default value
@@ -412,8 +412,8 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
       if (Operation *defOp = operand.getDefiningOp()) {
         ProgramPoint *defPoint = solver.getProgramPointAfter(defOp);
         operandLattice = solver.lookupState<SourceRefLattice>(defPoint);
-        ensure(afterCallLattice, "could not find lattice for call operand");
       }
+      ensure(operandLattice, "could not find lattice for call operand");
 
       SourceRefLatticeValue val = operandLattice->getOrDefault(operand);
       translations.push_back({prefix, val});

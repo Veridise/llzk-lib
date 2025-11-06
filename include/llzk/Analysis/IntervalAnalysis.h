@@ -355,9 +355,8 @@ private:
   );
 
   /// @brief Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
-  mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>> getGeneralizedDecompInterval(
-      const SourceRefLattice *SourceRefLattice, mlir::Value lhs, mlir::Value rhs
-  );
+  mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>>
+  getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 
   bool isBoolOp(mlir::Operation *op) const {
     return llvm::isa<boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(
@@ -402,6 +401,10 @@ private:
   bool isCallOp(mlir::Operation *op) const { return llvm::isa<function::CallOp>(op); }
 
   bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
+
+  /// @brief Get the SourceRefLattice that defines `val`, or the SourceRefLattice after `baseOp`
+  /// if `val` has no associated SourceRefLattice.
+  const SourceRefLattice *getSourceRefLattice(mlir::Operation *baseOp, mlir::Value val);
 };
 
 /* StructIntervals */

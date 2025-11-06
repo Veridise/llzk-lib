@@ -446,6 +446,20 @@ void IntervalDataFlowAnalysis::visitCallControlFlowTransfer(
   }
 }
 
+const SourceRefLattice *
+IntervalDataFlowAnalysis::getSourceRefLattice(Operation *baseOp, Value val) {
+  ProgramPoint *pp = _dataflowSolver.getProgramPointAfter(baseOp);
+  auto defaultSourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(pp);
+  ensure(defaultSourceRefLattice, "failed to get lattice");
+  if (Operation *defOp = val.getDefiningOp()) {
+    ProgramPoint *defPoint = _dataflowSolver.getProgramPointAfter(defOp);
+    auto sourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(defPoint);
+    ensure(sourceRefLattice, "failed to get SourceRefLattice for value");
+    return sourceRefLattice;
+  }
+  return defaultSourceRefLattice;
+}
+
 mlir::LogicalResult
 IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, Lattice *after) {
   // We only perform the visitation on operations within functions
@@ -465,20 +479,6 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     }
   }
 
-  ProgramPoint *pp = _dataflowSolver.getProgramPointAfter(op);
-  auto defaultSourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(pp);
-  ensure(defaultSourceRefLattice, "failed to get lattice");
-  auto getSourceRefLattice = [&](Value val) {
-    if (Operation *defOp = val.getDefiningOp()) {
-      ProgramPoint *defPoint = _dataflowSolver.getProgramPointAfter(defOp);
-      auto sourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(defPoint);
-      ensure(sourceRefLattice, "failed to get SourceRefLattice for value");
-      return sourceRefLattice;
-    }
-    return defaultSourceRefLattice;
-  };
-
-  Lattice *defaultBefore = getLattice(getProgramPointBefore(op));
   auto getAfter = [&](Value val) {
     if (Operation *defOp = val.getDefiningOp()) {
       return getLattice(getProgramPointAfter(defOp));
@@ -486,14 +486,14 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
       Operation *blockEntry = &blockArg.getOwner()->front();
       return getLattice(getProgramPointBefore(blockEntry));
     }
-    return defaultBefore;
+    return getLattice(getProgramPointBefore(op));
   };
 
   llvm::SmallVector<LatticeValue> operandVals;
   llvm::SmallVector<std::optional<SourceRef>> operandRefs;
   for (OpOperand &operand : op->getOpOperands()) {
     Value val = operand.get();
-    SourceRefLatticeValue refSet = getSourceRefLattice(val)->getOrDefault(val);
+    SourceRefLatticeValue refSet = getSourceRefLattice(op, val)->getOrDefault(val);
     if (refSet.isSingleValue()) {
       operandRefs.push_back(refSet.getSingleValue());
     } else {
@@ -586,7 +586,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
 
     // Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
     // These patterns enforce that s is one of c0, ..., cN.
-    auto res = getGeneralizedDecompInterval(defaultSourceRefLattice, lhsVal, rhsVal);
+    auto res = getGeneralizedDecompInterval(op, lhsVal, rhsVal);
     if (succeeded(res)) {
       for (Value signalVal : res->first) {
         changed |= applyInterval(emitEq, after, getAfter(signalVal), signalVal, res->second);
@@ -638,7 +638,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     auto cmp = writef.getComponent();
     changed |= after->setValue(cmp, writef.getFieldNameAttr().getAttr(), writeVal);
     // We also need to update the interval on the assigned symbol
-    SourceRefLatticeValue refSet = getSourceRefLattice(cmp)->getOrDefault(cmp);
+    SourceRefLatticeValue refSet = getSourceRefLattice(op, cmp)->getOrDefault(cmp);
     if (refSet.isSingleValue()) {
       auto fieldDefRes = writef.getFieldDefOp(tables);
       if (succeeded(fieldDefRes)) {
@@ -1037,18 +1037,7 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
 }
 
 FailureOr<std::pair<DenseSet<Value>, Interval>>
-IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
-    const SourceRefLattice *defaultSourceRefLattice, Value lhs, Value rhs
-) {
-  auto getSourceRefLattice = [&](Value val) {
-    if (Operation *defOp = val.getDefiningOp()) {
-      ProgramPoint *defPoint = _dataflowSolver.getProgramPointAfter(defOp);
-      auto sourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(defPoint);
-      ensure(sourceRefLattice, "failed to get SourceRefLattice for operand");
-      return sourceRefLattice;
-    }
-    return defaultSourceRefLattice;
-  };
+IntervalDataFlowAnalysis::getGeneralizedDecompInterval(Operation *baseOp, Value lhs, Value rhs) {
   auto isZeroConst = [this](Value v) {
     Operation *op = v.getDefiningOp();
     if (!op) {
@@ -1081,8 +1070,9 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
 
     FeltConstantOp c;
     Value signalVal;
-    auto handleRefValue = [&getSourceRefLattice, &signalRef, &signalVal, &signalVals]() {
-      SourceRefLatticeValue refSet = getSourceRefLattice(signalVal)->getOrDefault(signalVal);
+    auto handleRefValue = [this, &baseOp, &signalRef, &signalVal, &signalVals]() {
+      SourceRefLatticeValue refSet =
+          getSourceRefLattice(baseOp, signalVal)->getOrDefault(signalVal);
       if (!refSet.isScalar() || !refSet.isSingleValue()) {
         return failure();
       }
