@@ -115,8 +115,8 @@ private:
     for (auto field : structDef.getFieldDefs()) {
       auto fieldType = field.getType();
       if (!llvm::dyn_cast<FeltType>(fieldType)) {
-        return structDef.emitError() << "Field must be felt type. Found " << fieldType
-                                     << " for field: " << field.getName();
+        return field.emitError() << "Field must be felt type. Found " << fieldType
+                                 << " for field: " << field.getName();
       }
     }
     return success();
