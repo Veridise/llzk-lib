@@ -108,4 +108,17 @@ def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
   let constructor = "llzk::createR1CSLoweringPass()";
 }
 
+def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
+  let summary = "Rewrites constraints to be compatible with PCL constraints "
+                "used by Picus";
+  let description = [{
+    Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect.
+  }];
+  let constructor = "llzk::createPCLLoweringPass()";
+  let options = [Option<"prime", "prime", "::llvm::APInt",
+                        "llvm::APInt(31, 2130706433)", // KoalaBear in decimal
+                        "Prime field that the constraints operate over. This "
+                        "is required by PCL">];
+}
+
 #endif // LLZK_TRANSFORMATION_PASSES_TD

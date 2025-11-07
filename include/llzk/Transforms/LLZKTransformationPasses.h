@@ -10,6 +10,10 @@
 #pragma once
 
 #include "llzk/Pass/PassBase.h"
+#include "llzk/Transforms/Parsers.h"
+
+#include <llvm/ADT/APInt.h>
+#include <llvm/Support/CommandLine.h>
 
 namespace llzk {
 
@@ -30,6 +34,8 @@ std::unique_ptr<mlir::Pass> createPolyLoweringPass(unsigned maxDegree);
 std::unique_ptr<mlir::Pass> createInlineStructsPass();
 
 std::unique_ptr<mlir::Pass> createR1CSLoweringPass();
+
+std::unique_ptr<mlir::Pass> createPCLLoweringPass();
 
 void registerTransformationPassPipelines();
 

@@ -1,0 +1,450 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -I %S -split-input-file -llzk-to-pcl -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+// Subw chip from Sp1-hypercube in LLZK
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Subw<[]> {
+    struct.field @fresh_output_1 : !felt.type {llzk.pub}
+    struct.field @fresh_output_2 : !felt.type {llzk.pub}
+    struct.field @fresh_output_6 : !felt.type {llzk.pub}
+    struct.field @subw_operation_29 : !felt.type {llzk.pub}
+    struct.field @subw_operation_30 : !felt.type {llzk.pub}
+    struct.field @fresh_output_12 : !felt.type {llzk.pub}
+    struct.field @fresh_output_15 : !felt.type {llzk.pub}
+    struct.field @fresh_output_24 : !felt.type {llzk.pub}
+    struct.field @state_1 : !felt.type
+    struct.field @state_2 : !felt.type
+    struct.field @adapter_12 : !felt.type
+    struct.field @adapter_20 : !felt.type
+    struct.field @adapter_27 : !felt.type
+    struct.field @adapter_28 : !felt.type
+    struct.field @subw_operation_31 : !felt.type
+    struct.field @is_real_32 : !felt.type
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type, %arg2: !felt.type, %arg3: !felt.type, %arg4: !felt.type, %arg5: !felt.type, %arg6: !felt.type, %arg7: !felt.type, %arg8: !felt.type, %arg9: !felt.type, %arg10: !felt.type, %arg11: !felt.type, %arg12: !felt.type, %arg13: !felt.type, %arg14: !felt.type, %arg15: !felt.type, %arg16: !felt.type, %arg17: !felt.type, %arg18: !felt.type, %arg19: !felt.type, %arg20: !felt.type, %arg21: !felt.type, %arg22: !felt.type, %arg23: !felt.type, %arg24: !felt.type, %arg25: !felt.type, %arg26: !felt.type, %arg27: !felt.type) -> !struct.type<@Subw<[]>> attributes {function.allow_witness} {
+      %self = struct.new : <@Subw<[]>>
+      function.return %self : !struct.type<@Subw<[]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@Subw<[]>>, %arg1: !felt.type, %arg2: !felt.type, %arg3: !felt.type, %arg4: !felt.type, %arg5: !felt.type, %arg6: !felt.type, %arg7: !felt.type, %arg8: !felt.type, %arg9: !felt.type, %arg10: !felt.type, %arg11: !felt.type, %arg12: !felt.type, %arg13: !felt.type, %arg14: !felt.type, %arg15: !felt.type, %arg16: !felt.type, %arg17: !felt.type, %arg18: !felt.type, %arg19: !felt.type, %arg20: !felt.type, %arg21: !felt.type, %arg22: !felt.type, %arg23: !felt.type, %arg24: !felt.type, %arg25: !felt.type, %arg26: !felt.type, %arg27: !felt.type, %arg28: !felt.type) attributes {function.allow_constraint} {
+      %felt_const_3 = felt.const  3
+      %felt_const_65535 = felt.const  65535
+      %felt_const_256 = felt.const  256
+      %felt_const_8192 = felt.const  8192
+      %felt_const_1864368129 = felt.const  1864368129
+      %felt_const_65537 = felt.const  65537
+      %felt_const_4 = felt.const  4
+      %felt_const_2 = felt.const  2
+      %felt_const_0 = felt.const  0
+      %felt_const_2130673921 = felt.const  2130673921
+      %felt_const_65536 = felt.const  65536
+      %felt_const_1 = felt.const  1
+      %0 = struct.readf %arg0[@subw_operation_29] : <@Subw<[]>>, !felt.type
+      %1 = struct.readf %arg0[@subw_operation_30] : <@Subw<[]>>, !felt.type
+      %2 = struct.readf %arg0[@subw_operation_31] : <@Subw<[]>>, !felt.type
+      %3 = felt.add %arg19, %felt_const_65536 : !felt.type, !felt.type
+      %4 = felt.sub %3, %felt_const_1 : !felt.type, !felt.type
+      %5 = felt.sub %4, %arg25 : !felt.type, !felt.type
+      %6 = felt.sub %5, %0 : !felt.type, !felt.type
+      %7 = felt.add %6, %felt_const_1 : !felt.type, !felt.type
+      %8 = felt.mul %7, %felt_const_2130673921 : !felt.type, !felt.type
+      %9 = felt.sub %8, %felt_const_1 : !felt.type, !felt.type
+      %10 = felt.mul %8, %9 : !felt.type, !felt.type
+      %11 = felt.mul %10, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %11, %felt_const_0 : !felt.type, !felt.type
+      %12 = felt.add %arg20, %felt_const_65536 : !felt.type, !felt.type
+      %13 = felt.sub %12, %felt_const_1 : !felt.type, !felt.type
+      %14 = felt.sub %13, %arg26 : !felt.type, !felt.type
+      %15 = felt.sub %14, %1 : !felt.type, !felt.type
+      %16 = felt.add %15, %8 : !felt.type, !felt.type
+      %17 = felt.mul %16, %felt_const_2130673921 : !felt.type, !felt.type
+      %18 = felt.sub %17, %felt_const_1 : !felt.type, !felt.type
+      %19 = felt.mul %17, %18 : !felt.type, !felt.type
+      %20 = felt.mul %19, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %20, %felt_const_0 : !felt.type, !felt.type
+      %21 = felt.mul %0, %felt_const_1 : !felt.type, !felt.type
+      %22 = bool.cmp lt(%21, %felt_const_65536)
+      %23 = cast.tofelt %22 : i1
+      constrain.eq %23, %felt_const_1 : !felt.type, !felt.type
+      %24 = felt.mul %1, %felt_const_1 : !felt.type, !felt.type
+      %25 = bool.cmp lt(%24, %felt_const_65536)
+      %26 = cast.tofelt %25 : i1
+      constrain.eq %26, %felt_const_1 : !felt.type, !felt.type
+      %27 = felt.sub %2, %felt_const_1 : !felt.type, !felt.type
+      %28 = felt.mul %2, %27 : !felt.type, !felt.type
+      constrain.eq %28, %felt_const_0 : !felt.type, !felt.type
+      %29 = felt.mul %1, %felt_const_2 : !felt.type, !felt.type
+      %30 = felt.mul %2, %felt_const_65536 : !felt.type, !felt.type
+      %31 = felt.sub %29, %30 : !felt.type, !felt.type
+      %32 = felt.mul %31, %felt_const_1 : !felt.type, !felt.type
+      %33 = bool.cmp lt(%32, %felt_const_65536)
+      %34 = cast.tofelt %33 : i1
+      constrain.eq %34, %felt_const_1 : !felt.type, !felt.type
+      %35 = felt.add %arg3, %felt_const_4 : !felt.type, !felt.type
+      %36 = struct.readf %arg0[@state_1] : <@Subw<[]>>, !felt.type
+      %37 = struct.readf %arg0[@state_2] : <@Subw<[]>>, !felt.type
+      %38 = felt.mul %36, %felt_const_65536 : !felt.type, !felt.type
+      %39 = felt.add %37, %38 : !felt.type, !felt.type
+      %40 = bool.cmp lt(%arg4, %felt_const_65537)
+      %41 = cast.tofelt %40 : i1
+      constrain.eq %41, %felt_const_1 : !felt.type, !felt.type
+      %42 = bool.cmp lt(%arg5, %felt_const_65536)
+      %43 = cast.tofelt %42 : i1
+      constrain.eq %43, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %arg2, %39 : !felt.type, !felt.type
+      %44 = struct.readf %arg0[@fresh_output_2] : <@Subw<[]>>, !felt.type
+      constrain.eq %44, %35 : !felt.type, !felt.type
+      %45 = felt.sub %37, %felt_const_1 : !felt.type, !felt.type
+      %46 = felt.mul %45, %felt_const_1864368129 : !felt.type, !felt.type
+      %47 = felt.mul %46, %felt_const_1 : !felt.type, !felt.type
+      %48 = bool.cmp lt(%47, %felt_const_8192)
+      %49 = cast.tofelt %48 : i1
+      constrain.eq %49, %felt_const_1 : !felt.type, !felt.type
+      %50 = felt.mul %36, %felt_const_1 : !felt.type, !felt.type
+      %51 = bool.cmp lt(%50, %felt_const_256)
+      %52 = cast.tofelt %51 : i1
+      constrain.eq %52, %felt_const_1 : !felt.type, !felt.type
+      %53 = felt.mul %felt_const_1, %felt_const_0 : !felt.type, !felt.type
+      %54 = bool.cmp lt(%53, %felt_const_256)
+      %55 = cast.tofelt %54 : i1
+      constrain.eq %55, %felt_const_1 : !felt.type, !felt.type
+      %56 = felt.mul %2, %felt_const_65535 : !felt.type, !felt.type
+      %57 = struct.readf %arg0[@adapter_12] : <@Subw<[]>>, !felt.type
+      %58 = struct.readf %arg0[@adapter_20] : <@Subw<[]>>, !felt.type
+      %59 = struct.readf %arg0[@adapter_27] : <@Subw<[]>>, !felt.type
+      %60 = struct.readf %arg0[@adapter_28] : <@Subw<[]>>, !felt.type
+      %61 = felt.sub %felt_const_1, %60 : !felt.type, !felt.type
+      %62 = felt.sub %61, %felt_const_1 : !felt.type, !felt.type
+      %63 = felt.mul %61, %62 : !felt.type, !felt.type
+      constrain.eq %63, %felt_const_0 : !felt.type, !felt.type
+      %64 = felt.sub %60, %felt_const_1 : !felt.type, !felt.type
+      %65 = felt.mul %60, %64 : !felt.type, !felt.type
+      constrain.eq %65, %felt_const_0 : !felt.type, !felt.type
+      %66 = felt.add %61, %60 : !felt.type, !felt.type
+      %67 = felt.sub %66, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %67, %felt_const_0 : !felt.type, !felt.type
+      %68 = struct.readf %arg0[@fresh_151] : <@Subw<[]>>, !felt.type
+      %69 = felt.sub %68, %felt_const_1 : !felt.type, !felt.type
+      %70 = felt.mul %61, %69 : !felt.type, !felt.type
+      constrain.eq %70, %felt_const_0 : !felt.type, !felt.type
+      %71 = felt.add %arg24, %felt_const_0 : !felt.type, !felt.type
+      constrain.eq %arg10, %71 : !felt.type, !felt.type
+      %72 = felt.sub %0, %felt_const_0 : !felt.type, !felt.type
+      %73 = felt.mul %arg11, %72 : !felt.type, !felt.type
+      constrain.eq %73, %felt_const_0 : !felt.type, !felt.type
+      %74 = felt.sub %1, %felt_const_0 : !felt.type, !felt.type
+      %75 = felt.mul %arg11, %74 : !felt.type, !felt.type
+      constrain.eq %75, %felt_const_0 : !felt.type, !felt.type
+      %76 = felt.sub %56, %felt_const_0 : !felt.type, !felt.type
+      %77 = felt.mul %arg11, %76 : !felt.type, !felt.type
+      constrain.eq %77, %felt_const_0 : !felt.type, !felt.type
+      constrain.eq %77, %felt_const_0 : !felt.type, !felt.type
+      %78 = felt.add %39, %felt_const_4 : !felt.type, !felt.type
+      %79 = felt.sub %78, %arg12 : !felt.type, !felt.type
+      %80 = felt.sub %79, %felt_const_1 : !felt.type, !felt.type
+      %81 = felt.sub %80, %57 : !felt.type, !felt.type
+      %82 = felt.mul %81, %felt_const_2130673921 : !felt.type, !felt.type
+      %83 = felt.mul %57, %felt_const_1 : !felt.type, !felt.type
+      %84 = bool.cmp lt(%83, %felt_const_65536)
+      %85 = cast.tofelt %84 : i1
+      constrain.eq %85, %felt_const_1 : !felt.type, !felt.type
+      %86 = felt.mul %82, %felt_const_1 : !felt.type, !felt.type
+      %87 = bool.cmp lt(%86, %felt_const_256)
+      %88 = cast.tofelt %87 : i1
+      constrain.eq %88, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %55, %felt_const_1 : !felt.type, !felt.type
+      %89 = bool.cmp lt(%arg13, %felt_const_65536)
+      %90 = cast.tofelt %89 : i1
+      constrain.eq %90, %felt_const_1 : !felt.type, !felt.type
+      %91 = bool.cmp lt(%arg14, %felt_const_65536)
+      %92 = cast.tofelt %91 : i1
+      constrain.eq %92, %felt_const_1 : !felt.type, !felt.type
+      %93 = bool.cmp lt(%arg15, %felt_const_65536)
+      %94 = cast.tofelt %93 : i1
+      constrain.eq %94, %felt_const_1 : !felt.type, !felt.type
+      %95 = bool.cmp lt(%arg16, %felt_const_65536)
+      %96 = cast.tofelt %95 : i1
+      constrain.eq %96, %felt_const_1 : !felt.type, !felt.type
+      %97 = struct.readf %arg0[@fresh_output_12] : <@Subw<[]>>, !felt.type
+      constrain.eq %97, %56 : !felt.type, !felt.type
+      %98 = felt.add %39, %felt_const_3 : !felt.type, !felt.type
+      %99 = felt.sub %98, %arg17 : !felt.type, !felt.type
+      %100 = felt.sub %99, %felt_const_1 : !felt.type, !felt.type
+      %101 = felt.sub %100, %58 : !felt.type, !felt.type
+      %102 = felt.mul %101, %felt_const_2130673921 : !felt.type, !felt.type
+      %103 = felt.mul %58, %felt_const_1 : !felt.type, !felt.type
+      %104 = bool.cmp lt(%103, %felt_const_65536)
+      %105 = cast.tofelt %104 : i1
+      constrain.eq %105, %felt_const_1 : !felt.type, !felt.type
+      %106 = felt.mul %102, %felt_const_1 : !felt.type, !felt.type
+      %107 = bool.cmp lt(%106, %felt_const_256)
+      %108 = cast.tofelt %107 : i1
+      constrain.eq %108, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %55, %felt_const_1 : !felt.type, !felt.type
+      %109 = bool.cmp lt(%arg19, %felt_const_65536)
+      %110 = cast.tofelt %109 : i1
+      constrain.eq %110, %felt_const_1 : !felt.type, !felt.type
+      %111 = bool.cmp lt(%arg20, %felt_const_65536)
+      %112 = cast.tofelt %111 : i1
+      constrain.eq %112, %felt_const_1 : !felt.type, !felt.type
+      %113 = bool.cmp lt(%arg21, %felt_const_65536)
+      %114 = cast.tofelt %113 : i1
+      constrain.eq %114, %felt_const_1 : !felt.type, !felt.type
+      %115 = bool.cmp lt(%arg22, %felt_const_65536)
+      %116 = cast.tofelt %115 : i1
+      constrain.eq %116, %felt_const_1 : !felt.type, !felt.type
+      %117 = struct.readf %arg0[@fresh_output_15] : <@Subw<[]>>, !felt.type
+      constrain.eq %117, %98 : !felt.type, !felt.type
+      %118 = felt.add %39, %felt_const_2 : !felt.type, !felt.type
+      %119 = felt.sub %118, %arg23 : !felt.type, !felt.type
+      %120 = felt.sub %119, %felt_const_1 : !felt.type, !felt.type
+      %121 = felt.sub %120, %59 : !felt.type, !felt.type
+      %122 = felt.mul %121, %felt_const_2130673921 : !felt.type, !felt.type
+      %123 = felt.mul %59, %felt_const_1 : !felt.type, !felt.type
+      %124 = bool.cmp lt(%123, %felt_const_65536)
+      %125 = cast.tofelt %124 : i1
+      constrain.eq %125, %felt_const_1 : !felt.type, !felt.type
+      %126 = felt.mul %122, %felt_const_1 : !felt.type, !felt.type
+      %127 = bool.cmp lt(%126, %felt_const_256)
+      %128 = cast.tofelt %127 : i1
+      constrain.eq %128, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %55, %felt_const_1 : !felt.type, !felt.type
+      %129 = bool.cmp lt(%arg25, %felt_const_65536)
+      %130 = cast.tofelt %129 : i1
+      constrain.eq %130, %felt_const_1 : !felt.type, !felt.type
+      %131 = bool.cmp lt(%arg26, %felt_const_65536)
+      %132 = cast.tofelt %131 : i1
+      constrain.eq %132, %felt_const_1 : !felt.type, !felt.type
+      %133 = bool.cmp lt(%arg27, %felt_const_65536)
+      %134 = cast.tofelt %133 : i1
+      constrain.eq %134, %felt_const_1 : !felt.type, !felt.type
+      %135 = bool.cmp lt(%arg28, %felt_const_65536)
+      %136 = cast.tofelt %135 : i1
+      constrain.eq %136, %felt_const_1 : !felt.type, !felt.type
+      %137 = struct.readf %arg0[@fresh_output_24] : <@Subw<[]>>, !felt.type
+      constrain.eq %137, %118 : !felt.type, !felt.type
+      function.return
+    }
+    struct.field @fresh_151 : !felt.type
+  }
+}
+
+// CHECK:   func.func @Subw(
+// CHECK-SAME:                    %[[ARG0:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG1:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG2:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG3:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG4:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG5:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG6:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG7:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG8:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG9:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG10:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG11:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG12:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG13:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG14:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG15:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG16:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG17:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG18:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG19:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG20:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG21:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG22:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG23:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG24:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG25:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG26:[0-9a-zA-Z_\.]+]]: !pcl.felt,
+// CHECK-SAME:                    %[[ARG27:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
+// CHECK:           %[[VAR_0:[0-9a-zA-Z_\.]+]] = pcl.var "fresh_output_1" true
+// CHECK:           %[[VAR_1:[0-9a-zA-Z_\.]+]] = pcl.var "fresh_output_2" true
+// CHECK:           %[[VAR_2:[0-9a-zA-Z_\.]+]] = pcl.var "fresh_output_6" true
+// CHECK:           %[[VAR_3:[0-9a-zA-Z_\.]+]] = pcl.var "subw_operation_29" true
+// CHECK:           %[[VAR_4:[0-9a-zA-Z_\.]+]] = pcl.var "subw_operation_30" true
+// CHECK:           %[[VAR_5:[0-9a-zA-Z_\.]+]] = pcl.var "fresh_output_12" true
+// CHECK:           %[[VAR_6:[0-9a-zA-Z_\.]+]] = pcl.var "fresh_output_15" true
+// CHECK:           %[[VAR_7:[0-9a-zA-Z_\.]+]] = pcl.var "fresh_output_24" true
+// CHECK:           %[[VAR_8:[0-9a-zA-Z_\.]+]] = pcl.var "state_1" false
+// CHECK:           %[[VAR_9:[0-9a-zA-Z_\.]+]] = pcl.var "state_2" false
+// CHECK:           %[[VAR_10:[0-9a-zA-Z_\.]+]] = pcl.var "adapter_12" false
+// CHECK:           %[[VAR_11:[0-9a-zA-Z_\.]+]] = pcl.var "adapter_20" false
+// CHECK:           %[[VAR_12:[0-9a-zA-Z_\.]+]] = pcl.var "adapter_27" false
+// CHECK:           %[[VAR_13:[0-9a-zA-Z_\.]+]] = pcl.var "adapter_28" false
+// CHECK:           %[[VAR_14:[0-9a-zA-Z_\.]+]] = pcl.var "subw_operation_31" false
+// CHECK:           %[[VAR_15:[0-9a-zA-Z_\.]+]] = pcl.var "is_real_32" false
+// CHECK:           %[[VAR_16:[0-9a-zA-Z_\.]+]] = pcl.var "fresh_151" false
+// CHECK:           %[[CONST_0:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i4
+// CHECK:           %[[CONST_1:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i20
+// CHECK:           %[[CONST_2:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i12
+// CHECK:           %[[CONST_3:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i16
+// CHECK:           %[[CONST_4:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i40
+// CHECK:           %[[CONST_5:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i20
+// CHECK:           %[[CONST_6:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i4
+// CHECK:           %[[CONST_7:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i4
+// CHECK:           %[[CONST_8:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i64
+// CHECK:           %[[CONST_9:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i40
+// CHECK:           %[[CONST_10:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i20
+// CHECK:           %[[CONST_11:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i4
+// CHECK:           %[[ADD_0:[0-9a-zA-Z_\.]+]] = pcl.add %[[ARG18]], %[[CONST_10]]
+// CHECK:           %[[SUB_0:[0-9a-zA-Z_\.]+]] = pcl.sub %[[ADD_0]], %[[CONST_11]]
+// CHECK:           %[[SUB_1:[0-9a-zA-Z_\.]+]] = pcl.sub %[[SUB_0]], %[[ARG24]]
+// CHECK:           %[[SUB_2:[0-9a-zA-Z_\.]+]] = pcl.sub %[[SUB_1]], %[[VAR_3]]
+// CHECK:           %[[ADD_1:[0-9a-zA-Z_\.]+]] = pcl.add %[[SUB_2]], %[[CONST_11]]
+// CHECK:           %[[MUL_0:[0-9a-zA-Z_\.]+]] = pcl.mul %[[ADD_1]], %[[CONST_9]]
+// CHECK:           %[[SUB_3:[0-9a-zA-Z_\.]+]] = pcl.sub %[[MUL_0]], %[[CONST_11]]
+// CHECK:           %[[MUL_1:[0-9a-zA-Z_\.]+]] = pcl.mul %[[MUL_0]], %[[SUB_3]]
+// CHECK:           %[[MUL_2:[0-9a-zA-Z_\.]+]] = pcl.mul %[[MUL_1]], %[[CONST_11]]
+// CHECK:           %[[EQ_0:[0-9a-zA-Z_\.]+]] = pcl.eq %[[MUL_2]], %[[CONST_8]]
+// CHECK:           pcl.assert %[[EQ_0]]
+// CHECK:           %[[ADD_2:[0-9a-zA-Z_\.]+]] = pcl.add %[[ARG19]], %[[CONST_10]]
+// CHECK:           %[[SUB_4:[0-9a-zA-Z_\.]+]] = pcl.sub %[[ADD_2]], %[[CONST_11]]
+// CHECK:           %[[SUB_5:[0-9a-zA-Z_\.]+]] = pcl.sub %[[SUB_4]], %[[ARG25]]
+// CHECK:           %[[SUB_6:[0-9a-zA-Z_\.]+]] = pcl.sub %[[SUB_5]], %[[VAR_4]]
+// CHECK:           %[[ADD_3:[0-9a-zA-Z_\.]+]] = pcl.add %[[SUB_6]], %[[MUL_0]]
+// CHECK:           %[[MUL_3:[0-9a-zA-Z_\.]+]] = pcl.mul %[[ADD_3]], %[[CONST_9]]
+// CHECK:           %[[SUB_7:[0-9a-zA-Z_\.]+]] = pcl.sub %[[MUL_3]], %[[CONST_11]]
+// CHECK:           %[[MUL_4:[0-9a-zA-Z_\.]+]] = pcl.mul %[[MUL_3]], %[[SUB_7]]
+// CHECK:           %[[MUL_5:[0-9a-zA-Z_\.]+]] = pcl.mul %[[MUL_4]], %[[CONST_11]]
+// CHECK:           %[[EQ_1:[0-9a-zA-Z_\.]+]] = pcl.eq %[[MUL_5]], %[[CONST_8]]
+// CHECK:           pcl.assert %[[EQ_1]]
+// CHECK:           %[[MUL_6:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_3]], %[[CONST_11]]
+// CHECK:           %[[LT_0:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_6]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_0]]
+// CHECK:           %[[MUL_7:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_4]], %[[CONST_11]]
+// CHECK:           %[[LT_1:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_7]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_1]]
+// CHECK:           %[[SUB_8:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAR_14]], %[[CONST_11]]
+// CHECK:           %[[MUL_8:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_14]], %[[SUB_8]]
+// CHECK:           %[[EQ_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[MUL_8]], %[[CONST_8]]
+// CHECK:           pcl.assert %[[EQ_2]]
+// CHECK:           %[[MUL_9:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_4]], %[[CONST_7]]
+// CHECK:           %[[MUL_10:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_14]], %[[CONST_10]]
+// CHECK:           %[[SUB_9:[0-9a-zA-Z_\.]+]] = pcl.sub %[[MUL_9]], %[[MUL_10]]
+// CHECK:           %[[MUL_11:[0-9a-zA-Z_\.]+]] = pcl.mul %[[SUB_9]], %[[CONST_11]]
+// CHECK:           %[[LT_2:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_11]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_2]]
+// CHECK:           %[[ADD_4:[0-9a-zA-Z_\.]+]] = pcl.add %[[ARG2]], %[[CONST_6]]
+// CHECK:           %[[MUL_12:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_8]], %[[CONST_10]]
+// CHECK:           %[[ADD_5:[0-9a-zA-Z_\.]+]] = pcl.add %[[VAR_9]], %[[MUL_12]]
+// CHECK:           %[[LT_3:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG3]], %[[CONST_5]]
+// CHECK:           pcl.assert %[[LT_3]]
+// CHECK:           %[[LT_4:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG4]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_4]]
+// CHECK:           %[[EQ_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[ARG1]], %[[ADD_5]]
+// CHECK:           pcl.assert %[[EQ_3]]
+// CHECK:           %[[EQ_4:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAR_1]], %[[ADD_4]]
+// CHECK:           pcl.assert %[[EQ_4]]
+// CHECK:           %[[SUB_10:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAR_9]], %[[CONST_11]]
+// CHECK:           %[[MUL_13:[0-9a-zA-Z_\.]+]] = pcl.mul %[[SUB_10]], %[[CONST_4]]
+// CHECK:           %[[MUL_14:[0-9a-zA-Z_\.]+]] = pcl.mul %[[MUL_13]], %[[CONST_11]]
+// CHECK:           %[[LT_5:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_14]], %[[CONST_3]]
+// CHECK:           pcl.assert %[[LT_5]]
+// CHECK:           %[[MUL_15:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_8]], %[[CONST_11]]
+// CHECK:           %[[LT_6:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_15]], %[[CONST_2]]
+// CHECK:           pcl.assert %[[LT_6]]
+// CHECK:           %[[MUL_16:[0-9a-zA-Z_\.]+]] = pcl.mul %[[CONST_11]], %[[CONST_8]]
+// CHECK:           %[[LT_7:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_16]], %[[CONST_2]]
+// CHECK:           pcl.assert %[[LT_7]]
+// CHECK:           %[[MUL_17:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_14]], %[[CONST_1]]
+// CHECK:           %[[SUB_11:[0-9a-zA-Z_\.]+]] = pcl.sub %[[CONST_11]], %[[VAR_13]]
+// CHECK:           %[[SUB_12:[0-9a-zA-Z_\.]+]] = pcl.sub %[[SUB_11]], %[[CONST_11]]
+// CHECK:           %[[MUL_18:[0-9a-zA-Z_\.]+]] = pcl.mul %[[SUB_11]], %[[SUB_12]]
+// CHECK:           %[[EQ_5:[0-9a-zA-Z_\.]+]] = pcl.eq %[[MUL_18]], %[[CONST_8]]
+// CHECK:           pcl.assert %[[EQ_5]]
+// CHECK:           %[[SUB_13:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAR_13]], %[[CONST_11]]
+// CHECK:           %[[MUL_19:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_13]], %[[SUB_13]]
+// CHECK:           %[[EQ_6:[0-9a-zA-Z_\.]+]] = pcl.eq %[[MUL_19]], %[[CONST_8]]
+// CHECK:           pcl.assert %[[EQ_6]]
+// CHECK:           %[[ADD_6:[0-9a-zA-Z_\.]+]] = pcl.add %[[SUB_11]], %[[VAR_13]]
+// CHECK:           %[[SUB_14:[0-9a-zA-Z_\.]+]] = pcl.sub %[[ADD_6]], %[[CONST_11]]
+// CHECK:           %[[EQ_7:[0-9a-zA-Z_\.]+]] = pcl.eq %[[SUB_14]], %[[CONST_8]]
+// CHECK:           pcl.assert %[[EQ_7]]
+// CHECK:           %[[SUB_15:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAR_16]], %[[CONST_11]]
+// CHECK:           %[[MUL_20:[0-9a-zA-Z_\.]+]] = pcl.mul %[[SUB_11]], %[[SUB_15]]
+// CHECK:           %[[EQ_8:[0-9a-zA-Z_\.]+]] = pcl.eq %[[MUL_20]], %[[CONST_8]]
+// CHECK:           pcl.assert %[[EQ_8]]
+// CHECK:           %[[ADD_7:[0-9a-zA-Z_\.]+]] = pcl.add %[[ARG23]], %[[CONST_8]]
+// CHECK:           %[[EQ_9:[0-9a-zA-Z_\.]+]] = pcl.eq %[[ARG9]], %[[ADD_7]]
+// CHECK:           pcl.assert %[[EQ_9]]
+// CHECK:           %[[SUB_16:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAR_3]], %[[CONST_8]]
+// CHECK:           %[[MUL_21:[0-9a-zA-Z_\.]+]] = pcl.mul %[[ARG10]], %[[SUB_16]]
+// CHECK:           %[[EQ_10:[0-9a-zA-Z_\.]+]] = pcl.eq %[[MUL_21]], %[[CONST_8]]
+// CHECK:           pcl.assert %[[EQ_10]]
+// CHECK:           %[[SUB_17:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAR_4]], %[[CONST_8]]
+// CHECK:           %[[MUL_22:[0-9a-zA-Z_\.]+]] = pcl.mul %[[ARG10]], %[[SUB_17]]
+// CHECK:           %[[EQ_11:[0-9a-zA-Z_\.]+]] = pcl.eq %[[MUL_22]], %[[CONST_8]]
+// CHECK:           pcl.assert %[[EQ_11]]
+// CHECK:           %[[SUB_18:[0-9a-zA-Z_\.]+]] = pcl.sub %[[MUL_17]], %[[CONST_8]]
+// CHECK:           %[[MUL_23:[0-9a-zA-Z_\.]+]] = pcl.mul %[[ARG10]], %[[SUB_18]]
+// CHECK:           %[[EQ_12:[0-9a-zA-Z_\.]+]] = pcl.eq %[[MUL_23]], %[[CONST_8]]
+// CHECK:           pcl.assert %[[EQ_12]]
+// CHECK:           %[[EQ_13:[0-9a-zA-Z_\.]+]] = pcl.eq %[[MUL_23]], %[[CONST_8]]
+// CHECK:           pcl.assert %[[EQ_13]]
+// CHECK:           %[[ADD_8:[0-9a-zA-Z_\.]+]] = pcl.add %[[ADD_5]], %[[CONST_6]]
+// CHECK:           %[[SUB_19:[0-9a-zA-Z_\.]+]] = pcl.sub %[[ADD_8]], %[[ARG11]]
+// CHECK:           %[[SUB_20:[0-9a-zA-Z_\.]+]] = pcl.sub %[[SUB_19]], %[[CONST_11]]
+// CHECK:           %[[SUB_21:[0-9a-zA-Z_\.]+]] = pcl.sub %[[SUB_20]], %[[VAR_10]]
+// CHECK:           %[[MUL_24:[0-9a-zA-Z_\.]+]] = pcl.mul %[[SUB_21]], %[[CONST_9]]
+// CHECK:           %[[MUL_25:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_10]], %[[CONST_11]]
+// CHECK:           %[[LT_8:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_25]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_8]]
+// CHECK:           %[[MUL_26:[0-9a-zA-Z_\.]+]] = pcl.mul %[[MUL_24]], %[[CONST_11]]
+// CHECK:           %[[LT_9:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_26]], %[[CONST_2]]
+// CHECK:           pcl.assert %[[LT_9]]
+// CHECK:           pcl.assert %[[LT_7]]
+// CHECK:           %[[LT_10:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG12]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_10]]
+// CHECK:           %[[LT_11:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG13]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_11]]
+// CHECK:           %[[LT_12:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG14]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_12]]
+// CHECK:           %[[LT_13:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG15]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_13]]
+// CHECK:           %[[EQ_14:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAR_5]], %[[MUL_17]]
+// CHECK:           pcl.assert %[[EQ_14]]
+// CHECK:           %[[ADD_9:[0-9a-zA-Z_\.]+]] = pcl.add %[[ADD_5]], %[[CONST_0]]
+// CHECK:           %[[SUB_22:[0-9a-zA-Z_\.]+]] = pcl.sub %[[ADD_9]], %[[ARG16]]
+// CHECK:           %[[SUB_23:[0-9a-zA-Z_\.]+]] = pcl.sub %[[SUB_22]], %[[CONST_11]]
+// CHECK:           %[[SUB_24:[0-9a-zA-Z_\.]+]] = pcl.sub %[[SUB_23]], %[[VAR_11]]
+// CHECK:           %[[MUL_27:[0-9a-zA-Z_\.]+]] = pcl.mul %[[SUB_24]], %[[CONST_9]]
+// CHECK:           %[[MUL_28:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_11]], %[[CONST_11]]
+// CHECK:           %[[LT_14:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_28]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_14]]
+// CHECK:           %[[MUL_29:[0-9a-zA-Z_\.]+]] = pcl.mul %[[MUL_27]], %[[CONST_11]]
+// CHECK:           %[[LT_15:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_29]], %[[CONST_2]]
+// CHECK:           pcl.assert %[[LT_15]]
+// CHECK:           pcl.assert %[[LT_7]]
+// CHECK:           %[[LT_16:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG18]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_16]]
+// CHECK:           %[[LT_17:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG19]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_17]]
+// CHECK:           %[[LT_18:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG20]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_18]]
+// CHECK:           %[[LT_19:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG21]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_19]]
+// CHECK:           %[[EQ_15:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAR_6]], %[[ADD_9]]
+// CHECK:           pcl.assert %[[EQ_15]]
+// CHECK:           %[[ADD_10:[0-9a-zA-Z_\.]+]] = pcl.add %[[ADD_5]], %[[CONST_7]]
+// CHECK:           %[[SUB_25:[0-9a-zA-Z_\.]+]] = pcl.sub %[[ADD_10]], %[[ARG22]]
+// CHECK:           %[[SUB_26:[0-9a-zA-Z_\.]+]] = pcl.sub %[[SUB_25]], %[[CONST_11]]
+// CHECK:           %[[SUB_27:[0-9a-zA-Z_\.]+]] = pcl.sub %[[SUB_26]], %[[VAR_12]]
+// CHECK:           %[[MUL_30:[0-9a-zA-Z_\.]+]] = pcl.mul %[[SUB_27]], %[[CONST_9]]
+// CHECK:           %[[MUL_31:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAR_12]], %[[CONST_11]]
+// CHECK:           %[[LT_20:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_31]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_20]]
+// CHECK:           %[[MUL_32:[0-9a-zA-Z_\.]+]] = pcl.mul %[[MUL_30]], %[[CONST_11]]
+// CHECK:           %[[LT_21:[0-9a-zA-Z_\.]+]] = pcl.lt %[[MUL_32]], %[[CONST_2]]
+// CHECK:           pcl.assert %[[LT_21]]
+// CHECK:           pcl.assert %[[LT_7]]
+// CHECK:           %[[LT_22:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG24]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_22]]
+// CHECK:           %[[LT_23:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG25]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_23]]
+// CHECK:           %[[LT_24:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG26]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_24]]
+// CHECK:           %[[LT_25:[0-9a-zA-Z_\.]+]] = pcl.lt %[[ARG27]], %[[CONST_10]]
+// CHECK:           pcl.assert %[[LT_25]]
+// CHECK:           %[[EQ_16:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAR_7]], %[[ADD_10]]
+// CHECK:           pcl.assert %[[EQ_16]]
+// CHECK:           pcl.return %[[VAR_0]], %[[VAR_1]], %[[VAR_2]], %[[VAR_3]], %[[VAR_4]], %[[VAR_5]], %[[VAR_6]], %[[VAR_7]] : !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt
+// CHECK:         }

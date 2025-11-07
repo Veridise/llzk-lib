@@ -9,7 +9,8 @@ target_link_libraries(
                      LLVMHeaders MLIRHeaders
                   PRIVATE
                      LLZKDialect
-                     R1CSDialect)
+                     R1CSDialect
+                     $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLDialect>)
 add_dependencies(LLZKTransforms LLZKDialect LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKTransforms)
 
