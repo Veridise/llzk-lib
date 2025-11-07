@@ -413,7 +413,9 @@ private:
 class PCLLoweringPass : public llzk::impl::PCLLoweringPassBase<PCLLoweringPass> {
   void getDependentDialects(mlir::DialectRegistry &registry) const override {}
 
-  void runOnOperation() override {}
+  void runOnOperation() override {
+    llvm_unreachable("PCL dialect not available locally for translation")
+  }
 };
 #endif // LLZK_WITH_PCL
 } // namespace
