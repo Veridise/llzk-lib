@@ -22,6 +22,8 @@ IncludeCategories:
     Priority: 0                    # Needs to be set to 1 when we change priorities soon.
   - Regex: '^("|<)llzk-c/.*("|>)$' # LLZK C API headers 
     Priority: 1                    # Set to priority 1 and onwards in preparation for putting LLZK headers in priority 1
+  - Regex: '^<pcl/.*>$'           # PCL headers
+    Priority: 2
   - Regex: '^<mlir/.*>$'           # MLIR headers
     Priority: 2
   - Regex: '^<mlir-c/.*>$'         # MLIR C API headers
