@@ -260,10 +260,24 @@ private:
           // handle equality
           res = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, m, llzkToPcl);
           break;
-        case FeltCmpPredicate::NE:
+        case FeltCmpPredicate::NE: {
           // handle inequality
-          res = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, m, llzkToPcl);
+          // Translate it as an equality followed by a negation
+          auto eq = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, m, llzkToPcl);
+          if (failed(eq)) {
+            res = eq;
+            break;
+          }
+          auto eqRes = lookup(m.getResult(), llzkToPcl, m.getOperation());
+          if (failed(eqRes)) {
+            res = failure();
+            break;
+          }
+          auto loc = m.getLoc();
+          auto neg = b.create<pcl::NegOp>(loc, *eqRes);
+          b.create<pcl::AssertOp>(loc, neg.getRes());
           break;
+        }
         case FeltCmpPredicate::LT:
           res = lowerBinaryLike<CmpOp, pcl::CmpLtOp>(b, m, llzkToPcl);
           break;
