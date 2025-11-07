@@ -110,7 +110,7 @@ private:
     registry.insert<pcl::PCLDialect, func::FuncDialect>();
   }
 
-  /// The translation only works now on LLZK structs where all the fields are structs
+  /// The translation only works now on LLZK structs where all the fields are felts.
   LogicalResult validateStruct(StructDefOp structDef) {
     for (auto field : structDef.getFieldDefs()) {
       auto fieldType = field.getType();
