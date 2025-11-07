@@ -257,12 +257,10 @@ private:
         auto pred = m.getPredicate();
         switch (pred) {
         case FeltCmpPredicate::EQ:
-          // handle equality
           res = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, m, llzkToPcl);
           break;
         case FeltCmpPredicate::NE: {
-          // handle inequality
-          // Translate it as an equality followed by a negation
+          // Translate not-equals as an equality followed by a negation
           auto eq = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, m, llzkToPcl);
           if (failed(eq)) {
             res = eq;
@@ -282,7 +280,6 @@ private:
           res = lowerBinaryLike<CmpOp, pcl::CmpLtOp>(b, m, llzkToPcl);
           break;
         case FeltCmpPredicate::LE:
-          // handle less-than or less-equal
           res = lowerBinaryLike<CmpOp, pcl::CmpLeOp>(b, m, llzkToPcl);
           break;
         case FeltCmpPredicate::GT:
