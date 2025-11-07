@@ -25,15 +25,15 @@ IncludeCategories:
   - Regex: '^<pcl/.*>$'           # PCL headers
     Priority: 2
   - Regex: '^<mlir/.*>$'           # MLIR headers
-    Priority: 2
-  - Regex: '^<mlir-c/.*>$'         # MLIR C API headers
     Priority: 3
-  - Regex: '^<llvm/.*>$'           # LLVM headers
+  - Regex: '^<mlir-c/.*>$'         # MLIR C API headers
     Priority: 4
-  - Regex: '^<.*(\.h)?>$'          # Standard library headers
+  - Regex: '^<llvm/.*>$'           # LLVM headers
     Priority: 5
-  - Regex: '^.*$'                  # Everything else
+  - Regex: '^<.*(\.h)?>$'          # Standard library headers
     Priority: 6
+  - Regex: '^.*$'                  # Everything else
+    Priority: 7
 SortIncludes: true
 InsertNewlineAtEOF: true
 ---
