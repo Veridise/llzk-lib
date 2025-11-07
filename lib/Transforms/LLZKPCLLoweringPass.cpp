@@ -80,11 +80,12 @@ template <typename SrcBinOp, typename DstBinOp>
 static LogicalResult
 lowerBinaryLike(OpBuilder &b, SrcBinOp src, llvm::DenseMap<Value, Value> &mapping) {
   auto loc = src.getLoc();
-  auto lhs = lookup(src.getLhs(), mapping, src.getOperation());
+  auto op = src.getOperation();
+  auto lhs = lookup(src.getLhs(), mapping, op);
   if (failed(lhs)) {
     return failure();
   }
-  auto rhs = lookup(src.getRhs(), mapping, src.getOperation());
+  auto rhs = lookup(src.getRhs(), mapping, op);
   if (failed(rhs)) {
     return failure();
   }
@@ -174,30 +175,30 @@ private:
     if (isBool(lhsVal) && isConstOne(rhsVal)) {
       // bool == 1 → assert(bool)
       emitAssertTrue(lhsVal);
-      return mlir::success();
+      return success();
     }
     if (isBool(rhsVal) && isConstOne(lhsVal)) {
       // 1 == bool → assert(bool)
       emitAssertTrue(rhsVal);
-      return mlir::success();
+      return success();
     }
     if (isBool(lhsVal) && isConstZero(rhsVal)) {
       // bool == 0 → assert(!bool)
       emitAssertFalse(lhsVal);
-      return mlir::success();
+      return success();
     }
     if (isBool(rhsVal) && isConstZero(lhsVal)) {
       // 0 == bool → assert(!bool)
       emitAssertFalse(rhsVal);
-      return mlir::success();
+      return success();
     }
 
     // Fallback to assert(lhs == rhs)
     emitEqAssert(lhsVal, rhsVal);
-    return mlir::success();
+    return success();
   }
 
-  /// Lower the constraint ops to PCL opts
+  /// Lower the constraint ops to PCL ops
   LogicalResult lowerStructToPCLBody(
       StructDefOp structDef, func::FuncOp dstFunc, llvm::DenseMap<Value, Value> &llzkToPcl
   ) {
@@ -226,7 +227,11 @@ private:
         outVars.push_back(pclVar);
       }
     }
-
+    if (!srcFunc.getBody().hasOneBlock()) {
+      return srcFunc.emitError(
+          "llzk-to-pcl translation assumes the constrain function body has 1 block"
+      );
+    }
     Block &srcEntry = srcFunc.getBody().front();
     // Translate each op. Almost 1-1 and currently only support Felt ops.
     // TODO: support calls.
