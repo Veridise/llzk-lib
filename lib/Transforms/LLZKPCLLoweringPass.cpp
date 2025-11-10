@@ -338,7 +338,7 @@ private:
     auto constrainFunc = structDef.getConstrainFuncOp();
     auto ctx = structDef.getContext();
     for (auto arg : constrainFunc.getArguments().drop_front()) {
-      if (!llvm::dyn_cast<FeltType>(arg.getType())) {
+      if (!llvm::isa<FeltType>(arg.getType())) {
         return constrainFunc.emitError() << "arg is expected to be a felt";
       }
       pclInputTypes.push_back(pcl::FeltType::get(ctx));
