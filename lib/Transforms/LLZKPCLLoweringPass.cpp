@@ -26,14 +26,11 @@
 #include "r1cs/Dialect/IR/Ops.h"
 #include "r1cs/Dialect/IR/Types.h"
 
-#if LLZK_WITH_PCL
 #include <pcl/Dialect/IR/Dialect.h>
 #include <pcl/Dialect/IR/Ops.h>
 #include <pcl/Dialect/IR/Types.h>
 
 #include <mlir/Dialect/Func/IR/FuncOps.h>
-#endif // LLZK_WITH_PCL
-
 #include <mlir/IR/BuiltinOps.h>
 
 #include <llvm/ADT/DenseMap.h>
@@ -62,7 +59,6 @@ using namespace llzk::component;
 using namespace llzk::constrain;
 
 namespace {
-#if LLZK_WITH_PCL
 
 static FailureOr<Value> lookup(Value v, llvm::DenseMap<Value, Value> &m, Operation *onError) {
   if (auto it = m.find(v); it != m.end()) {
@@ -412,15 +408,6 @@ private:
     newMod.erase();
   }
 };
-#else
-class PCLLoweringPass : public llzk::impl::PCLLoweringPassBase<PCLLoweringPass> {
-  void getDependentDialects(mlir::DialectRegistry &registry) const override {}
-
-  void runOnOperation() override {
-    llvm_unreachable("PCL dialect not available locally for translation")
-  }
-};
-#endif // LLZK_WITH_PCL
 } // namespace
 
 std::unique_ptr<mlir::Pass> llzk::createPCLLoweringPass() {
