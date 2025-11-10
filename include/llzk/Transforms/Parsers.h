@@ -30,6 +30,7 @@ public:
       return O.error("arg must be in base 10 (digits).");
     }
     // Decimal-only: allocate a safe width then shrink.
+    assert(std::cmp_less_equal(Arg.size(), std::numeric_limits<unsigned>::max()));
     unsigned bits = std::max(1u, 4u * (unsigned)Arg.size());
     APInt tmp(bits, Arg, 10);
     unsigned active = tmp.getActiveBits();
