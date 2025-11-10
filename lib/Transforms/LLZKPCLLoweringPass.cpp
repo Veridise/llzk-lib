@@ -68,7 +68,7 @@ static FailureOr<Value> lookup(Value v, llvm::DenseMap<Value, Value> &m, Operati
   if (auto it = m.find(v); it != m.end()) {
     return it->second;
   }
-  return onError->emitError("missing operand mapping"), failure();
+  return onError->emitError("missing operand mapping");
 }
 
 static void rememberResult(Value from, Value to, llvm::DenseMap<Value, Value> &m) {
@@ -199,9 +199,9 @@ private:
   }
 
   /// Lower the constraint ops to PCL ops
-  LogicalResult lowerStructToPCLBody(
-      StructDefOp structDef, func::FuncOp dstFunc, llvm::DenseMap<Value, Value> &llzkToPcl
-  ) {
+  LogicalResult lowerStructToPCLBody(StructDefOp structDef, func::FuncOp dstFunc) {
+    // As we build, map llzk values to their pcl ones
+    llvm::DenseMap<Value, Value> llzkToPcl;
     OpBuilder b(dstFunc.getBody());
     // Map field name to PCL vars; public fields are outputs, privates are intermediates
     llvm::DenseMap<StringRef, Value> field2pclvar;
@@ -234,7 +234,7 @@ private:
     }
     Block &srcEntry = srcFunc.getBody().front();
     // Translate each op. Almost 1-1 and currently only support Felt ops.
-    // TODO: support calls.
+    // TODO: Support calls, if-else, globals/lookups.
     for (Operation &op : srcEntry) {
       LogicalResult res = success();
       llvm::TypeSwitch<Operation *, void>(&op)
@@ -271,6 +271,7 @@ private:
             res = eq;
             break;
           }
+          // Get the result from the `pcl::CmpEqOp` to pass into `Neg`
           auto eqRes = lookup(m.getResult(), llzkToPcl, m.getOperation());
           if (failed(eqRes)) {
             res = failure();
@@ -278,7 +279,8 @@ private:
           }
           auto loc = m.getLoc();
           auto neg = b.create<pcl::NegOp>(loc, *eqRes);
-          b.create<pcl::AssertOp>(loc, neg.getRes());
+          // Associate the result of the llzk-op with the result of the pcl-neg
+          rememberResult(m.getResult(), neg.getResult(), llzkToPcl);
           break;
         }
         case FeltCmpPredicate::LT:
@@ -347,7 +349,7 @@ private:
     }
     for (auto field : structDef.getFieldDefs()) {
       auto fieldType = field.getType();
-      if (!llvm::dyn_cast<FeltType>(fieldType)) {
+      if (!llvm::isa<FeltType>(fieldType)) {
         return structDef.emitError() << "Field must be felt type. Found " << fieldType
                                      << " for field: " << field.getName();
       }
@@ -392,9 +394,8 @@ private:
         return WalkResult::interrupt();
       }
       // 3) Fill in the PCL function body
-      llvm::DenseMap<Value, Value> llzk2pcl;
       newMod.getBody()->push_back(*pclFuncOp);
-      if (failed(lowerStructToPCLBody(structDef, pclFuncOp.value(), llzk2pcl))) {
+      if (failed(lowerStructToPCLBody(structDef, pclFuncOp.value()))) {
         signalPassFailure();
         return WalkResult::interrupt();
       }

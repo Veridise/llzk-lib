@@ -1,3 +1,4 @@
+// REQUIRES: with-pcl
 // RUN: llzk-opt -I %S -split-input-file -llzk-to-pcl -verify-diagnostics %s
 
 !F = !felt.type

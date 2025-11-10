@@ -26,6 +26,9 @@ public:
     if (Arg.empty()) {
       return O.error("empty integer literal");
     }
+    if (!all_of(Arg, [](char c) { return isDigit(c); })) {
+      return O.error("arg must be in base 10 (digits).");
+    }
     // Decimal-only: allocate a safe width then shrink.
     unsigned bits = std::max(1u, 4u * (unsigned)Arg.size());
     APInt tmp(bits, Arg, 10);
@@ -39,18 +42,16 @@ public:
 
   // Prints how the passed option differs from the default one specified in the pass
   // For example, if V = 17 and Default = 11 then it should print
-  // [OptionName] 17 (bits=5) (default: 11 (bits=4))
+  // [OptionName] 17 (default: 11)
   void printOptionDiff(
       const Option &O, const APInt &V, OptionValue<APInt> Default, size_t GlobalWidth
   ) const {
     std::string Cur = llvm::toString(V, 10, false);
-    Cur += " (bits=" + std::to_string(V.getBitWidth()) + ")";
 
     std::string Def = "<unspecified>";
     if (Default.hasValue()) {
       const APInt &D = Default.getValue();
       Def = llvm::toString(D, 10, false);
-      Def += " (bits=" + std::to_string(D.getBitWidth()) + ")";
     }
 
     printOptionName(O, GlobalWidth);
