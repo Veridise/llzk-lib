@@ -120,8 +120,8 @@ def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
   let options = [Option<
       "prime", "prime", "::llvm::APInt",
       "llvm::APInt(31, 2130706433)", // KoalaBear in decimal
-      "Prime field that the constraints operate over expressed in. This "
-      "is required by PCL. Prime must be passed in digits.">];
+      "The prime field that the constraints operate over. This "
+      "is required by PCL, and the prime must be passed in digits.">];
 }
 #endif // WITH_PCL
 

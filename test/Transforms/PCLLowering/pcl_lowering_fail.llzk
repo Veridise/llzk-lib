@@ -11,7 +11,7 @@ module attributes {veridise.lang = "llzk"} {
       function.return %self : !struct.type<@ComponentA2>
     }
 
-    // expected-error@+1 {{arg is expected to be a felt}}
+    // expected-error@+1 {{Constrain function's args are expected to be felts. Found '!struct.type<@ComponentA1>'for arg #: 1}}
     function.def @constrain(%self: !struct.type<@ComponentA2>, %p: !struct.type<@ComponentA1>) {
       function.return
     }

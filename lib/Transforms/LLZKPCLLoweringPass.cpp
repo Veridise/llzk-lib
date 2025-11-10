@@ -56,7 +56,6 @@ using namespace llzk::constrain;
 using namespace llzk::felt;
 using namespace llzk::function;
 using namespace llzk::component;
-using namespace llzk::constrain;
 
 namespace {
 
@@ -102,7 +101,7 @@ lowerConst(OpBuilder &b, FeltConstantOp cst, llvm::DenseMap<Value, Value> &mappi
 class PCLLoweringPass : public llzk::impl::PCLLoweringPassBase<PCLLoweringPass> {
 
 private:
-  void getDependentDialects(mlir::DialectRegistry &registry) const override {
+  void getDependentDialects(DialectRegistry &registry) const override {
     registry.insert<pcl::PCLDialect, func::FuncDialect>();
   }
 
@@ -110,7 +109,7 @@ private:
   LogicalResult validateStruct(StructDefOp structDef) {
     for (auto field : structDef.getFieldDefs()) {
       auto fieldType = field.getType();
-      if (!llvm::dyn_cast<FeltType>(fieldType)) {
+      if (!llvm::isa<FeltType>(fieldType)) {
         return field.emitError() << "Field must be felt type. Found " << fieldType
                                  << " for field: " << field.getName();
       }
@@ -132,37 +131,37 @@ private:
   static LogicalResult
   emitAssertEqOptimized(OpBuilder &b, Location loc, Value lhsVal, Value rhsVal) {
     // --- Small helpers --------------------------------------------------------
-    auto isBool = [](mlir::Value v) { return llvm::isa<pcl::BoolType>(v.getType()); };
+    auto isBool = [](Value v) { return llvm::isa<pcl::BoolType>(v.getType()); };
 
     auto getConstAPInt = [](Value v) -> std::optional<llvm::APInt> {
-      if (auto c = llvm::dyn_cast_or_null<pcl::ConstOp>(v.getDefiningOp())) {
+      if (auto c = llvm::dyn_cast_if_present<pcl::ConstOp>(v.getDefiningOp())) {
         // Chain: ConstOp -> FeltAttr (or BoolAttr-as-int) -> IntegerAttr -> APInt
         return c.getValue().getValue().getValue();
       }
       return std::nullopt;
     };
 
-    auto isConstOne = [&](mlir::Value v) {
+    auto isConstOne = [&](Value v) {
       if (auto ap = getConstAPInt(v)) {
         return ap->isOne();
       }
       return false;
     };
-    auto isConstZero = [&](mlir::Value v) {
+    auto isConstZero = [&](Value v) {
       if (auto ap = getConstAPInt(v)) {
         return ap->isZero();
       }
       return false;
     };
 
-    auto emitEqAssert = [&](mlir::Value l, mlir::Value r) {
+    auto emitEqAssert = [&](Value l, Value r) {
       auto eq = b.create<pcl::CmpEqOp>(loc, l, r);
       b.create<pcl::AssertOp>(loc, eq.getRes());
     };
 
-    auto emitAssertTrue = [&](mlir::Value pred) { b.create<pcl::AssertOp>(loc, pred); };
+    auto emitAssertTrue = [&](Value pred) { b.create<pcl::AssertOp>(loc, pred); };
 
-    auto emitAssertFalse = [&](mlir::Value pred) {
+    auto emitAssertFalse = [&](Value pred) {
       auto neg = b.create<pcl::NotOp>(loc, pred);
       b.create<pcl::AssertOp>(loc, neg.getRes());
     };
@@ -338,8 +337,11 @@ private:
     auto constrainFunc = structDef.getConstrainFuncOp();
     auto ctx = structDef.getContext();
     for (auto arg : constrainFunc.getArguments().drop_front()) {
-      if (!llvm::isa<FeltType>(arg.getType())) {
-        return constrainFunc.emitError() << "arg is expected to be a felt";
+      auto argType = arg.getType();
+      if (!llvm::isa<FeltType>(argType)) {
+        return constrainFunc.emitError()
+               << "Constrain function's args are expected to be felts. Found " << argType
+               << "for arg #: " << arg.getArgNumber();
       }
       pclInputTypes.push_back(pcl::FeltType::get(ctx));
     }
@@ -380,25 +382,23 @@ private:
     auto walkResult = moduleOp.walk([this, &newMod](StructDefOp structDef) -> WalkResult {
       // 1) verify the struct can be converted to PCL
       if (failed(validateStruct(structDef))) {
-        signalPassFailure();
         return WalkResult::interrupt();
       }
       // 2) Construct the PCL function op but with an empty body
       FailureOr<func::FuncOp> pclFuncOp = buildPCLFunc(structDef);
       if (failed(pclFuncOp)) {
-        signalPassFailure();
         return WalkResult::interrupt();
       }
       // 3) Fill in the PCL function body
       newMod.getBody()->push_back(*pclFuncOp);
       if (failed(lowerStructToPCLBody(structDef, pclFuncOp.value()))) {
-        signalPassFailure();
         return WalkResult::interrupt();
       }
 
       return WalkResult::advance();
     });
     if (walkResult.wasInterrupted()) {
+      signalPassFailure();
       return;
     }
     // clear the original ops
@@ -410,6 +410,4 @@ private:
 };
 } // namespace
 
-std::unique_ptr<mlir::Pass> llzk::createPCLLoweringPass() {
-  return std::make_unique<PCLLoweringPass>();
-}
+std::unique_ptr<Pass> llzk::createPCLLoweringPass() { return std::make_unique<PCLLoweringPass>(); }
