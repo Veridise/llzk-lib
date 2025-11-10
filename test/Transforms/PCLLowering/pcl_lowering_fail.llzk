@@ -1,9 +1,9 @@
 // REQUIRES: with-pcl
 // RUN: llzk-opt -I %S -split-input-file -llzk-to-pcl -verify-diagnostics %s
 
+// Expect the test to fail because the ComponentA2's constrain arg is not a felt
 !F = !felt.type
 module attributes {veridise.lang = "llzk"} {
-  // Order the structs so that the field ref is converted before the field itself
   struct.def @ComponentA2 {
     function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
@@ -30,6 +30,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
+// Expect the test to fail because the ComponentA1 has a non-felt field
 !F = !felt.type
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1 {
