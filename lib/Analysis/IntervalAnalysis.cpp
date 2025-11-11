@@ -606,7 +606,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     // to the operand.
     changed |= applyInterval(
         assertOp, after, after, assertOp.getCondition(),
-        Interval::Degenerate(field.get(), field.get().one())
+        Interval::True(field.get())
     );
     // Also add the solver constraint that the expression must be true.
     auto assertExpr = operandVals[0].getScalarValue();
@@ -1116,7 +1116,7 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(Operation *baseOp, Value 
   // Now, we aggregate the Interval. If we have sparse values (e.g., 0, 2, 4),
   // we will create a larger range of [0, 4], since we don't support multiple intervals.
   std::sort(consts.begin(), consts.end());
-  Interval iv = Interval::TypeA(field.get(), consts.front(), consts.back());
+  Interval iv = UnreducedInterval(consts.front(), consts.back()).reduce(field.get());
   return std::make_pair(std::move(signalVals), iv);
 }
 

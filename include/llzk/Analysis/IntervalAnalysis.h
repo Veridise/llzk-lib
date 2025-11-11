@@ -358,47 +358,15 @@ private:
   mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>>
   getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 
-  bool isBoolOp(mlir::Operation *op) const {
-    return llvm::isa<boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(
-        op
-    );
-  }
-
-  bool isConversionOp(mlir::Operation *op) const {
-    return llvm::isa<cast::IntToFeltOp, cast::FeltToIndexOp>(op);
-  }
-
-  bool isApplyMapOp(mlir::Operation *op) const { return llvm::isa<polymorphic::ApplyMapOp>(op); }
-
-  bool isAssertOp(mlir::Operation *op) const { return llvm::isa<boolean::AssertOp>(op); }
-
   bool isReadOp(mlir::Operation *op) const {
     return llvm::isa<component::FieldReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);
   }
-
-  bool isWriteOp(mlir::Operation *op) const {
-    return llvm::isa<component::FieldWriteOp, array::WriteArrayOp, array::InsertArrayOp>(op);
-  }
-
-  bool isArrayLengthOp(mlir::Operation *op) const { return llvm::isa<array::ArrayLengthOp>(op); }
-
-  bool isEmitOp(mlir::Operation *op) const {
-    return llvm::isa<constrain::EmitEqualityOp, constrain::EmitContainmentOp>(op);
-  }
-
-  bool isCreateOp(mlir::Operation *op) const {
-    return llvm::isa<component::CreateStructOp, array::CreateArrayOp>(op);
-  }
-
-  bool isExtractArrayOp(mlir::Operation *op) const { return llvm::isa<array::ExtractArrayOp>(op); }
 
   bool isDefinitionOp(mlir::Operation *op) const {
     return llvm::isa<
         component::StructDefOp, function::FuncDefOp, component::FieldDefOp, global::GlobalDefOp,
         mlir::ModuleOp>(op);
   }
-
-  bool isCallOp(mlir::Operation *op) const { return llvm::isa<function::CallOp>(op); }
 
   bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
 
