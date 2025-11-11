@@ -3,7 +3,6 @@ add_library(LLZK::LLZKTransforms ALIAS LLZKTransforms)
 
 file(GLOB LLZKTransforms_SOURCES "*.cpp")
 
-
 # Remove the PCL lowering .cpp only when disabled.
 if(NOT LLZK_WITH_PCL)
   list(REMOVE_ITEM LLZKTransforms_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/LLZKPCLLoweringPass.cpp")
