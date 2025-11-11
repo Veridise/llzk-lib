@@ -100,7 +100,7 @@ def LLZK_StructDefOp
     /// Get all FieldDefOp in this structure.
     ::std::vector<FieldDefOp> getFieldDefs();
 
-    /// Returns wether the struct defines fields marked as columns.
+    /// Returns whether the struct defines fields marked as columns.
     ::mlir::LogicalResult hasColumns() {
       return ::mlir::success(::llvm::any_of(getFieldDefs(), [](FieldDefOp fdOp) {
         return fdOp.getColumn();

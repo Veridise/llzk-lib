@@ -178,7 +178,6 @@ public:
   bool isScalar() const {
     return isConstant() || isFeltVal() || isIndexVal() || isIntegerVal() || isTypeVarVal();
   }
-  bool isSignal() const { return isSignalType(getType()); }
 
   bool isBlockArgument() const {
     return root.has_value() && std::holds_alternative<mlir::BlockArgument>(*root);

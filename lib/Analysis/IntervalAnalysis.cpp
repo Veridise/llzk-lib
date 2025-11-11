@@ -512,7 +512,7 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     // We only care about scalar type values, so we ignore composite types, which
     // are currently limited to non-Signal structs and arrays.
     Type valTy = val.getType();
-    if (llvm::isa<ArrayType, StructType>(valTy) && !isSignalType(valTy)) {
+    if (llvm::isa<ArrayType, StructType>(valTy)) {
       LatticeValue empty;
       operandVals.push_back(empty);
       changed |= after->setValue(val, empty);
@@ -613,23 +613,17 @@ IntervalDataFlowAnalysis::visitOperation(Operation *op, const Lattice &before, L
     changed |= after->addSolverConstraint(assertExpr);
   } else if (auto readf = llvm::dyn_cast<FieldReadOp>(op)) {
     Value cmp = readf.getComponent();
-    if (isSignalType(cmp.getType())) {
-      // The reg value read from the signal type is equal to the value of the Signal
-      // struct overall.
-      changed |= after->setValue(readf.getVal(), operandVals[0].getScalarValue());
-    } else {
-      auto storedVal = getAfter(cmp)->getValue(cmp, readf.getFieldNameAttr().getAttr());
-      if (succeeded(storedVal)) {
-        // The result value is the value previously written to this field.
-        changed |= after->setValue(readf.getVal(), storedVal->getScalarValue());
-      } else if (operandRefs[0].has_value()) {
-        // Initialize the value
-        auto fieldDefRes = readf.getFieldDefOp(tables);
-        if (succeeded(fieldDefRes)) {
-          SourceRef ref = operandRefs[0]->createChild(SourceRefIndex(*fieldDefRes));
-          ExpressionValue exprVal(field.get(), getOrCreateSymbol(ref));
-          changed |= after->setValue(readf.getVal(), exprVal);
-        }
+    auto storedVal = getAfter(cmp)->getValue(cmp, readf.getFieldNameAttr().getAttr());
+    if (succeeded(storedVal)) {
+      // The result value is the value previously written to this field.
+      changed |= after->setValue(readf.getVal(), storedVal->getScalarValue());
+    } else if (operandRefs[0].has_value()) {
+      // Initialize the value
+      auto fieldDefRes = readf.getFieldDefOp(tables);
+      if (succeeded(fieldDefRes)) {
+        SourceRef ref = operandRefs[0]->createChild(SourceRefIndex(*fieldDefRes));
+        ExpressionValue exprVal(field.get(), getOrCreateSymbol(ref));
+        changed |= after->setValue(readf.getVal(), exprVal);
       }
     }
   } else if (auto writef = llvm::dyn_cast<FieldWriteOp>(op)) {
@@ -1001,17 +995,6 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
            applyInterval(originalOp, originalLattice, getOperandLattice(rhs), rhs, newRhsInterval);
   };
 
-  // We have a special case for the Signal struct: if this value is created
-  // from reading a Signal struct's reg field, we also apply the interval to
-  // the struct itself.
-  auto readfCase = [&](FieldReadOp readfOp) {
-    Value comp = readfOp.getComponent();
-    if (isSignalType(comp.getType())) {
-      return applyInterval(originalOp, originalLattice, getOperandLattice(comp), comp, newInterval);
-    }
-    return ChangeResult::NoChange;
-  };
-
   // For casts, just pass the interval along to the cast's operand.
   auto castCase = [&](Operation *op) {
     Value operand = op->getOperand(0);
@@ -1027,7 +1010,6 @@ ChangeResult IntervalDataFlowAnalysis::applyInterval(
   res |= TypeSwitch<Operation *, ChangeResult>(definingOp)
             .Case<CmpOp>([&](auto op) { return cmpCase(op); })
             .Case<MulFeltOp>([&](auto op) { return mulCase(op); })
-            .Case<FieldReadOp>([&](auto op){ return readfCase(op); })
             .Case<IntToFeltOp, FeltToIndexOp>([&](auto op) { return castCase(op); })
             .Default([&](Operation *) { return ChangeResult::NoChange; });
   // clang-format on
@@ -1148,13 +1130,8 @@ LogicalResult StructIntervals::computeIntervals(
 
     SourceRefSet searchSet;
     for (const auto &ref : SourceRef::getAllSourceRefs(structDef, fn)) {
-      // We only want to compute intervals for field elements and not composite types,
-      // with the exception of the Signal struct.
-      if (!ref.isScalar() && !ref.isSignal()) {
-        continue;
-      }
-      // We also don't want to show the interval for a Signal and its internal reg.
-      if (auto parentOr = ref.getParentPrefix(); succeeded(parentOr) && parentOr->isSignal()) {
+      // We only want to compute intervals for field elements and not composite types.
+      if (!ref.isScalar()) {
         continue;
       }
       searchSet.insert(ref);

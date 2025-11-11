@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -34,6 +35,7 @@
 
 using namespace mlir;
 using namespace llzk::array;
+using namespace llzk::felt;
 using namespace llzk::function;
 
 namespace llzk::component {
@@ -216,10 +218,10 @@ LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 namespace {
 
 inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool appendSelf) {
-  if (isSignalType(pType)) {
+  if (llvm::isa<FeltType>(pType)) {
     return success();
   } else if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
-    if (isSignalType(arrayParamTy.getElementType())) {
+    if (llvm::isa<FeltType>(arrayParamTy.getElementType())) {
       return success();
     }
   }
@@ -230,9 +232,8 @@ inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool a
     if (appendSelf) {
       ss << "!" << StructType::name << "<@" << COMPONENT_NAME_MAIN << ">, ";
     }
-    ss << "!" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL << ">, ";
-    ss << "!" << ArrayType::name << "<.. x !" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL
-       << ">>}";
+    ss << "!" << FeltType::name << ", ";
+    ss << "!" << ArrayType::name << "<.. x !" << FeltType::name << ">}";
   });
   return inFunc.emitError(message);
 }
@@ -374,6 +375,8 @@ LogicalResult StructDefOp::verifyRegions() {
                                   << " and '" << FuncDefOp::getOperationName()
                                   << "' operations are permitted";
         }
+      } else if (isMainComponent()) {
+        // Verify that all
       }
     }
 
