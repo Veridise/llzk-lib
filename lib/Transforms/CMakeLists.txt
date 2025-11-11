@@ -1,11 +1,10 @@
 add_library(LLZKTransforms)
 add_library(LLZK::LLZKTransforms ALIAS LLZKTransforms)
 
-# Grab all .cpp, but EXCLUDE the PCL file from the base set.
 file(GLOB LLZKTransforms_SOURCES "*.cpp")
 
 
-# Add the PCL lowering .cpp only when enabled.
+# Remove the PCL lowering .cpp only when disabled.
 if(NOT LLZK_WITH_PCL)
   list(REMOVE_ITEM LLZKTransforms_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/LLZKPCLLoweringPass.cpp")
 endif()
