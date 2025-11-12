@@ -52,6 +52,8 @@ void Field::initKnownFields(DenseMap<StringRef, Field> &knownFields) {
   knownFields.try_emplace("goldilocks", Field("18446744069414584321"));
   // 2^31 - 1, used for Plonky3
   knownFields.try_emplace("mersenne31", Field("2147483647"));
+  // 2^31 - 2^24 + 1, also for Plonky3
+  knownFields.try_emplace("koalabear", Field("2130706433"));
 }
 
 DynamicAPInt Field::reduce(const DynamicAPInt &i) const {
