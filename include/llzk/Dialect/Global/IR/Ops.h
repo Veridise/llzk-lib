@@ -13,8 +13,7 @@
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Util/SymbolLookup.h"
 
-// forward-declare ops
-#define GET_OP_FWD_DEFINES
+// Forward-declare ops since GlobalDefOp is used within OpInterfaces
 #include "llzk/Dialect/Global/IR/Ops.h.inc"
 
 // Include TableGen'd declarations

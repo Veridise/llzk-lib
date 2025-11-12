@@ -18,6 +18,8 @@
 #ifndef LLZK_C_DIALECT_UNDEF_H
 #define LLZK_C_DIALECT_UNDEF_H
 
+#include "llzk-c/Support.h"
+
 #include <mlir-c/IR.h>
 
 #ifdef __cplusplus
@@ -25,6 +27,9 @@ extern "C" {
 #endif
 
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Undef, llzk__undef);
+
+/// Returns true if the op is a UndefOp
+LLZK_DECLARE_OP_ISA(UndefOp);
 
 #ifdef __cplusplus
 }

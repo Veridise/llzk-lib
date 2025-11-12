@@ -1,0 +1,3 @@
+fixed:
+  - Interval analysis: fix handling of cast operations
+  - Analysis passes: improved performance of dataflow analyses

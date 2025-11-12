@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Analysis/ConstrainRefLattice.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/DenseAnalysis.h"
+#include "llzk/Analysis/SourceRefLattice.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -36,15 +36,13 @@ using namespace component;
 using namespace constrain;
 using namespace function;
 
-/* ConstrainRefAnalysis */
+/* SourceRefAnalysis */
 
-void ConstrainRefAnalysis::visitCallControlFlowTransfer(
+void SourceRefAnalysis::visitCallControlFlowTransfer(
     mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
-    const ConstrainRefLattice &before, ConstrainRefLattice *after
+    const SourceRefLattice &before, SourceRefLattice *after
 ) {
-  LLVM_DEBUG(
-      llvm::dbgs() << "ConstrainRefAnalysis::visitCallControlFlowTransfer: " << call << '\n'
-  );
+  LLVM_DEBUG(llvm::dbgs() << "SourceRefAnalysis::visitCallControlFlowTransfer: " << call << '\n');
   auto fnOpRes = resolveCallable<FuncDefOp>(tables, call);
   ensure(succeeded(fnOpRes), "could not resolve called function");
 
@@ -65,7 +63,7 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
   ///   - `after` is the state at the beginning of the callee entry block;
   if (action == dataflow::CallControlFlowAction::EnterCallee) {
     // We skip updating the incoming lattice for function calls,
-    // as ConstrainRefs are relative to the containing function/struct, so we don't need to pollute
+    // as SourceRefs are relative to the containing function/struct, so we don't need to pollute
     // the callee with the callers values.
     // This also avoids a non-convergence scenario, as calling a
     // function from other contexts can cause the lattice values to oscillate and constantly
@@ -79,37 +77,37 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
   else if (action == dataflow::CallControlFlowAction::ExitCallee) {
     // Get the argument values of the lattice by getting the state as it would
     // have been for the callsite.
-    const ConstrainRefLattice *beforeCall = getLattice(getProgramPointBefore(call));
+    const SourceRefLattice *beforeCall = getLattice(getProgramPointBefore(call));
     ensure(beforeCall, "could not get prior lattice");
 
     // Translate argument values based on the operands given at the call site.
-    std::unordered_map<ConstrainRef, ConstrainRefLatticeValue, ConstrainRef::Hash> translation;
+    std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
     auto funcOpRes = resolveCallable<FuncDefOp>(tables, call);
     ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
     auto funcOp = funcOpRes->get();
 
     auto callOp = llvm::dyn_cast<CallOp>(call.getOperation());
-    ensure(callOp, "call is not a llzk::CallOp");
+    ensure(callOp, "call is not a CallOp");
 
     for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
-      auto key = ConstrainRef(funcOp.getArgument(i));
-      auto val = beforeCall->getOrDefault(callOp.getOperand(i));
-      translation[key] = val;
+      SourceRef key(funcOp.getArgument(i));
+      // Look up the lattice that defines the operand value first, but default
+      // to the beforeCall if the operand is not defined by an operand.
+      const SourceRefLattice *operandLattice = beforeCall;
+      Value operand = callOp.getOperand(i);
+      if (Operation *defOp = operand.getDefiningOp()) {
+        operandLattice = getLattice(getProgramPointAfter(defOp));
+      }
+
+      translation[key] = operandLattice->getOrDefault(operand);
     }
 
-    // The lattice at the return is:
-    // - the lattice before the call, plus
-    // - the translated, return values, plus
-    // - any translated internal values (so we can see where values are used)
-    mlir::ChangeResult updated = after->join(*beforeCall);
+    // The lattice at the return is the translated return values
+    mlir::ChangeResult updated = mlir::ChangeResult::NoChange;
     for (unsigned i = 0; i < callOp.getNumResults(); i++) {
       auto retVal = before.getReturnValue(i);
       auto [translatedVal, _] = retVal.translate(translation);
       updated |= after->setValue(callOp->getResult(i), translatedVal);
-    }
-    for (const auto &[val, refVal] : before.getMap()) {
-      auto [translatedVal, _] = refVal.translate(translation);
-      updated |= after->setValue(val, translatedVal);
     }
     propagateIfChanged(after, updated);
   }
@@ -127,21 +125,25 @@ void ConstrainRefAnalysis::visitCallControlFlowTransfer(
   }
 }
 
-mlir::LogicalResult ConstrainRefAnalysis::visitOperation(
-    mlir::Operation *op, const ConstrainRefLattice &before, ConstrainRefLattice *after
+mlir::LogicalResult SourceRefAnalysis::visitOperation(
+    mlir::Operation *op, const SourceRefLattice &before, SourceRefLattice *after
 ) {
-  LLVM_DEBUG(llvm::dbgs() << "ConstrainRefAnalysis::visitOperation: " << *op << '\n');
+  LLVM_DEBUG(llvm::dbgs() << "SourceRefAnalysis::visitOperation: " << *op << '\n');
   // Collect the references that are made by the operands to `op`.
-  ConstrainRefLattice::ValueMap operandVals;
-  for (mlir::OpOperand &operand : op->getOpOperands()) {
-    operandVals[operand.get()] = before.getOrDefault(operand.get());
+  SourceRefLattice::ValueMap operandVals;
+  for (OpOperand &operand : op->getOpOperands()) {
+    const SourceRefLattice *prior = &before;
+    // Lookup the lattice for the operand, if it is op defined.
+    Value operandVal = operand.get();
+    if (Operation *defOp = operandVal.getDefiningOp()) {
+      prior = getLattice(getProgramPointAfter(defOp));
+    }
+    // Get the value (if there was a defining operation), or the default value.
+    operandVals[operandVal] = prior->getOrDefault(operandVal);
   }
 
-  // Propagate existing state.
-  join(after, before);
-
   // Add operand values, if not already added. Ensures that the default value
-  // of a ConstrainRef (the source of the ref) is visible in the lattice.
+  // of a SourceRef (the source of the ref) is visible in the lattice.
   ChangeResult res = after->setValues(operandVals);
 
   // We will now join the the operand refs based on the type of operand.
@@ -150,7 +152,7 @@ mlir::LogicalResult ConstrainRefAnalysis::visitOperation(
     auto fieldOpRes = fieldRefOp.getFieldDefOp(tables);
     ensure(mlir::succeeded(fieldOpRes), "could not find field read");
 
-    ConstrainRefLattice::ValueTy fieldRefRes;
+    SourceRefLattice::ValueTy fieldRefRes;
     if (fieldRefOp.isRead()) {
       fieldRefRes = fieldRefOp.getVal();
     } else {
@@ -167,8 +169,7 @@ mlir::LogicalResult ConstrainRefAnalysis::visitOperation(
   } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {
     // Create an array using the operand values, if they exist.
     // Currently, the new array must either be fully initialized or uninitialized.
-
-    auto newArrayVal = ConstrainRefLatticeValue(createArray.getType().getShape());
+    SourceRefLatticeValue newArrayVal(createArray.getType().getShape());
     // If the array is statically initialized, iterate through all operands and initialize the array
     // value.
     const auto &elements = createArray.getElements();
@@ -195,13 +196,14 @@ mlir::LogicalResult ConstrainRefAnalysis::visitOperation(
   }
 
   propagateIfChanged(after, res);
+  LLVM_DEBUG(llvm::dbgs().indent(4) << "lattice is of size " << after->size() << '\n');
   return success();
 }
 
 // Perform a standard union of operands into the results value.
-mlir::ChangeResult ConstrainRefAnalysis::fallbackOpUpdate(
-    mlir::Operation *op, const ConstrainRefLattice::ValueMap &operandVals,
-    const ConstrainRefLattice &before, ConstrainRefLattice *after
+mlir::ChangeResult SourceRefAnalysis::fallbackOpUpdate(
+    mlir::Operation *op, const SourceRefLattice::ValueMap &operandVals,
+    const SourceRefLattice &before, SourceRefLattice *after
 ) {
   auto updated = mlir::ChangeResult::NoChange;
   for (auto res : op->getResults()) {
@@ -218,12 +220,12 @@ mlir::ChangeResult ConstrainRefAnalysis::fallbackOpUpdate(
 // Perform the update for either a readarr op or an extractarr op, which
 // operate very similarly: index into the first operand using a variable number
 // of provided indices.
-void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
-    ArrayAccessOpInterface arrayAccessOp, const ConstrainRefLattice::ValueMap &operandVals,
-    const ConstrainRefLattice & /*before*/, ConstrainRefLattice *after
+void SourceRefAnalysis::arraySubdivisionOpUpdate(
+    ArrayAccessOpInterface arrayAccessOp, const SourceRefLattice::ValueMap &operandVals,
+    const SourceRefLattice & /*before*/, SourceRefLattice *after
 ) {
   // We index the first operand by all remaining indices.
-  ConstrainRefLattice::ValueTy res;
+  SourceRefLattice::ValueTy res;
   if (llvm::isa<ReadArrayOp, ExtractArrayOp>(arrayAccessOp)) {
     res = arrayAccessOp->getResult(0);
   } else {
@@ -235,7 +237,7 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
   ensure(it != operandVals.end(), "improperly constructed operandVals map");
   auto currVals = it->second;
 
-  std::vector<ConstrainRefIndex> indices;
+  std::vector<SourceRefIndex> indices;
 
   for (unsigned i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
     auto idxOperand = arrayAccessOp.getIndices()[i];
@@ -248,14 +250,14 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
     // was missing, there would be a semantic check failure. So we accept either
     // so we don't have to track the cast ourselves.
     if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
-      ConstrainRefIndex idx(idxVals.getSingleValue().getConstantValue());
+      SourceRefIndex idx(idxVals.getSingleValue().getConstantValue());
       indices.push_back(idx);
     } else {
       // Otherwise, assume any range is valid.
       auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
       auto lower = mlir::APInt::getZero(64);
       mlir::APInt upper(64, arrayType.getDimSize(i));
-      auto idxRange = ConstrainRefIndex(lower, upper);
+      auto idxRange = SourceRefIndex(lower, upper);
       indices.push_back(idxRange);
     }
   }
@@ -278,9 +280,9 @@ void ConstrainRefAnalysis::arraySubdivisionOpUpdate(
 
 mlir::FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
     mlir::ModuleOp m, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am,
-    bool runIntraprocedural
+    const CDGAnalysisContext &ctx
 ) {
-  ConstraintDependencyGraph cdg(m, s, runIntraprocedural);
+  ConstraintDependencyGraph cdg(m, s, ctx);
   if (cdg.computeConstraints(solver, am).failed()) {
     return mlir::failure();
   }
@@ -294,13 +296,13 @@ void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
   // the EquivalenceClasses::iterator is sorted, but the EquivalenceClasses::member_iterator is
   // not guaranteed to be sorted. So, we will sort members before printing them.
   // We also want to add the constant values into the printing.
-  std::set<std::set<ConstrainRef>> sortedSets;
+  std::set<std::set<SourceRef>> sortedSets;
   for (auto it = signalSets.begin(); it != signalSets.end(); it++) {
     if (!it->isLeader()) {
       continue;
     }
 
-    std::set<ConstrainRef> sortedMembers;
+    std::set<SourceRef> sortedMembers;
     for (auto mit = signalSets.member_begin(it); mit != signalSets.member_end(); mit++) {
       sortedMembers.insert(*mit);
     }
@@ -316,7 +318,7 @@ void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
     if (constSet.empty()) {
       continue;
     }
-    std::set<ConstrainRef> sortedMembers(constSet.begin(), constSet.end());
+    std::set<SourceRef> sortedMembers(constSet.begin(), constSet.end());
     sortedMembers.insert(ref);
     sortedSets.insert(sortedMembers);
   }
@@ -364,7 +366,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
   // This requires iterating over all of the emit operations
   constrainFnOp.walk([this, &solver](Operation *op) {
     ProgramPoint *pp = solver.getProgramPointAfter(op);
-    const auto *refLattice = solver.lookupState<ConstrainRefLattice>(pp);
+    const auto *refLattice = solver.lookupState<SourceRefLattice>(pp);
     // aggregate the ref2Val map across operations, as some may have nested
     // regions and blocks that aren't propagated to the function terminator
     if (refLattice) {
@@ -394,27 +396,40 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     }
     // Nested
     auto calledStruct = fn.getOperation()->getParentOfType<StructDefOp>();
-    ConstrainRefRemappings translations;
+    SourceRefRemappings translations;
 
     ProgramPoint *pp = solver.getProgramPointAfter(fnCall.getOperation());
-    auto lattice = solver.lookupState<ConstrainRefLattice>(pp);
-    ensure(lattice, "could not find lattice for call operation");
+    auto *afterCallLattice = solver.lookupState<SourceRefLattice>(pp);
+    ensure(afterCallLattice, "could not find lattice for call operation");
 
     // Map fn parameters to args in the call op
     for (unsigned i = 0; i < fn.getNumArguments(); i++) {
-      auto prefix = ConstrainRef(fn.getArgument(i));
-      auto val = lattice->getOrDefault(fnCall.getOperand(i));
+      SourceRef prefix(fn.getArgument(i));
+      // Look up the lattice that defines the operand value first, but default
+      // to the afterCallLattice if the operand is not defined by an operand.
+      const SourceRefLattice *operandLattice = afterCallLattice;
+      Value operand = fnCall.getOperand(i);
+      if (Operation *defOp = operand.getDefiningOp()) {
+        ProgramPoint *defPoint = solver.getProgramPointAfter(defOp);
+        operandLattice = solver.lookupState<SourceRefLattice>(defPoint);
+      }
+      ensure(operandLattice, "could not find lattice for call operand");
+
+      SourceRefLatticeValue val = operandLattice->getOrDefault(operand);
       translations.push_back({prefix, val});
     }
     auto &childAnalysis =
         am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);
-    if (!childAnalysis.constructed()) {
+    if (!childAnalysis.constructed(ctx)) {
       ensure(
-          mlir::succeeded(childAnalysis.runAnalysis(solver, am, /* runIntraprocedural */ false)),
+          mlir::succeeded(childAnalysis.runAnalysis(solver, am, {.runIntraprocedural = false})),
           "could not construct CDG for child struct"
       );
     }
-    auto translatedCDG = childAnalysis.getResult().translate(translations);
+    auto translatedCDG = childAnalysis.getResult(ctx).translate(translations);
+    // Update the refMap with the translation
+    const auto &translatedRef2Val = translatedCDG.getRef2Val();
+    ref2Val.insert(translatedRef2Val.begin(), translatedRef2Val.end());
 
     // Now, union sets based on the translation
     // We should be able to just merge what is in the translatedCDG to the current CDG
@@ -433,7 +448,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
       constantSets[ref].insert(constSet.begin(), constSet.end());
     }
   };
-  if (!runIntraprocedural) {
+  if (!ctx.runIntraproceduralAnalysis()) {
     constrainFnOp.walk(fnCallWalker);
   }
 
@@ -443,10 +458,10 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
 void ConstraintDependencyGraph::walkConstrainOp(
     mlir::DataFlowSolver &solver, mlir::Operation *emitOp
 ) {
-  std::vector<ConstrainRef> signalUsages, constUsages;
+  std::vector<SourceRef> signalUsages, constUsages;
 
   ProgramPoint *pp = solver.getProgramPointAfter(emitOp);
-  const ConstrainRefLattice *refLattice = solver.lookupState<ConstrainRefLattice>(pp);
+  const SourceRefLattice *refLattice = solver.lookupState<SourceRefLattice>(pp);
   ensure(refLattice, "missing lattice for constrain op");
 
   for (auto operand : emitOp->getOperands()) {
@@ -475,11 +490,11 @@ void ConstraintDependencyGraph::walkConstrainOp(
 }
 
 ConstraintDependencyGraph
-ConstraintDependencyGraph::translate(ConstrainRefRemappings translation) const {
-  ConstraintDependencyGraph res(mod, structDef);
+ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
+  ConstraintDependencyGraph res(mod, structDef, ctx);
   auto translate =
-      [&translation](const ConstrainRef &elem) -> mlir::FailureOr<std::vector<ConstrainRef>> {
-    std::vector<ConstrainRef> refs;
+      [&translation](const SourceRef &elem) -> mlir::FailureOr<std::vector<SourceRef>> {
+    std::vector<SourceRef> refs;
     for (auto &[prefix, vals] : translation) {
       if (!elem.isValidPrefix(prefix)) {
         continue;
@@ -515,7 +530,7 @@ ConstraintDependencyGraph::translate(ConstrainRefRemappings translation) const {
       continue;
     }
     // translate everything in this set first
-    std::vector<ConstrainRef> translatedSignals, translatedConsts;
+    std::vector<SourceRef> translatedSignals, translatedConsts;
     for (auto mit = signalSets.member_begin(leaderIt); mit != signalSets.member_end(); mit++) {
       auto member = translate(*mit);
       if (mlir::failed(member)) {
@@ -567,9 +582,9 @@ ConstraintDependencyGraph::translate(ConstrainRefRemappings translation) const {
   return res;
 }
 
-ConstrainRefSet ConstraintDependencyGraph::getConstrainingValues(const ConstrainRef &ref) const {
-  ConstrainRefSet res;
-  auto currRef = mlir::FailureOr<ConstrainRef>(ref);
+SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &ref) const {
+  SourceRefSet res;
+  auto currRef = mlir::FailureOr<SourceRef>(ref);
   while (mlir::succeeded(currRef)) {
     // Add signals
     for (auto it = signalSets.findLeader(*currRef); it != signalSets.member_end(); it++) {
@@ -592,15 +607,15 @@ ConstrainRefSet ConstraintDependencyGraph::getConstrainingValues(const Constrain
 
 mlir::LogicalResult ConstraintDependencyGraphStructAnalysis::runAnalysis(
     mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
-    bool runIntraprocedural
+    const CDGAnalysisContext &ctx
 ) {
   auto result = ConstraintDependencyGraph::compute(
-      getModule(), getStruct(), solver, moduleAnalysisManager, runIntraprocedural
+      getModule(), getStruct(), solver, moduleAnalysisManager, ctx
   );
   if (mlir::failed(result)) {
     return mlir::failure();
   }
-  setResult(std::move(*result));
+  setResult(ctx, std::move(*result));
   return mlir::success();
 }
 

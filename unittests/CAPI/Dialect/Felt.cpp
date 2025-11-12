@@ -8,17 +8,54 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk-c/Dialect/Felt.h"
+#include "llzk/CAPI/Support.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
+#include <mlir-c/Support.h>
+
+#include <llvm/ADT/APInt.h>
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_felt) { mlirGetDialectHandle__llzk__felt__(); }
+TEST_F(CAPITest, mlir_get_dialect_handle_llzk_felt) { (void)mlirGetDialectHandle__llzk__felt__(); }
 
 TEST_F(CAPITest, llzk_felt_const_attr_get) {
   auto attr = llzkFeltConstAttrGet(context, 0);
   EXPECT_NE(attr.ptr, (void *)NULL);
+}
+
+TEST_F(CAPITest, llzkFeltConstAttrGetWithBits) {
+  constexpr auto BITS = 128;
+  auto attr = llzkFeltConstAttrGetWithBits(context, BITS, 0);
+  EXPECT_NE(attr.ptr, (void *)NULL);
+  auto cxx_attr = llvm::dyn_cast<llzk::felt::FeltConstAttr>(unwrap(attr));
+  EXPECT_TRUE(cxx_attr);
+  auto value = cxx_attr.getValue();
+  EXPECT_EQ(value.getBitWidth(), BITS);
+  EXPECT_EQ(value.getZExtValue(), 0);
+}
+
+TEST_F(CAPITest, llzkFeltConstAttrGetFromString) {
+  constexpr auto BITS = 64;
+  auto str = MlirStringRef {.data = "123", .length = 3};
+  auto attr = llzkFeltConstAttrGetFromString(context, BITS, str);
+  EXPECT_NE(attr.ptr, (void *)NULL);
+  auto expected = llzk::felt::FeltConstAttr::get(
+      unwrap(context), llvm::APInt(BITS, llvm::StringRef("123", 3), 10)
+  );
+  EXPECT_EQ(unwrap(attr), expected);
+}
+
+TEST_F(CAPITest, llzkFeltConstAttrGetFromParts) {
+  constexpr auto BITS = 254;
+  const uint64_t parts[] = {10, 20, 30, 40};
+  auto attr = llzkFeltConstAttrGetFromParts(context, BITS, parts, 4);
+  EXPECT_NE(attr.ptr, (void *)NULL);
+  auto expected =
+      llzk::felt::FeltConstAttr::get(unwrap(context), llvm::APInt(BITS, llvm::ArrayRef(parts, 4)));
+  EXPECT_EQ(unwrap(attr), expected);
 }
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_const_attr_pass) {

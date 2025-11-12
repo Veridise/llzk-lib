@@ -26,7 +26,19 @@ def LLZK_FeltConstAttr
 
   let parameters = (ins APIntParameter<"The felt constant value">:$value);
 
+  let returnType = "::llvm::APInt";
+  let convertFromStorage = "$_self.getValue()";
+
   let assemblyFormat = [{ $value }];
+
+  let builders =
+      [AttrBuilder<(ins "unsigned":$numBits, "::llvm::StringRef":$str), [{
+      return $_get(context, ::llvm::APInt(numBits, str, 10));
+    }]>,
+       AttrBuilder<
+           (ins "unsigned":$numBits, "::llvm::ArrayRef<uint64_t>":$parts), [{
+      return $_get(context, ::llvm::APInt(numBits, parts));
+    }]>];
 
   let extraClassDeclaration = [{
     ::mlir::Type getType() const;

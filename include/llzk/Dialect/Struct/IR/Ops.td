@@ -28,9 +28,8 @@ include "mlir/IR/SymbolInterfaces.td"
 class StructDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<StructDialect, mnemonic, traits>;
 
-/// Only valid/implemented for StructDefOp. Sets the proper
-/// `AllowConstraintAttr` and `AllowWitnessAttr` on the functions defined within
-/// the StructDefOp.
+/// Only valid/implemented for StructDefOp. Sets the proper `AllowWitnessAttr`
+/// and `AllowConstraintAttr` on the functions defined within the StructDefOp.
 def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
   string cppNamespace = "::llzk::component";
 }
@@ -42,8 +41,9 @@ def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
 def LLZK_StructDefOp
     : StructDialectOp<
           "def", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
-                  IsolatedFromAbove, GraphRegionNoTerminator, SetFuncAllowAttrs,
-                  DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+                  IsolatedFromAbove, SetFuncAllowAttrs,
+                  DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                  NoRegionArguments]#GraphRegionNoTerminator.traits> {
   let summary = "circuit component definition";
   let description = [{
       This operation describes a component in a circuit. It can contain any number
@@ -79,10 +79,10 @@ def LLZK_StructDefOp
   let arguments = (ins SymbolNameAttr:$sym_name,
       OptionalAttr<FlatSymbolRefArrayAttr>:$const_params);
 
-  let regions = (region SizedRegion<1>:$body);
+  let regions = (region SizedRegion<1>:$bodyRegion);
 
   let assemblyFormat = [{
-    $sym_name (`<` $const_params^ `>`)? $body attr-dict
+    $sym_name (`<` $const_params^ `>`)? $bodyRegion attr-dict
   }];
 
   let extraClassDeclaration = [{
@@ -226,12 +226,20 @@ def LLZK_FieldReadOp
   }];
   let isRead = 1;
 
+  // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.
   let arguments = (ins LLZK_StructType:$component,
       FlatSymbolRefAttr:$field_name,
       OptionalAttr<AnyAttrOf<[SymbolRefAttr, IndexAttr,
                               AffineMapAttr]>>:$tableOffset,
+      // List of AffineMap operand groups where each group provides the
+      // arguments to instantiate the next (left-to-right) AffineMap used in
+      // `tableOffset`.
       VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands,
+      // Within each group in '$mapOperands', denotes the number of values that
+      // are AffineMap "dimensional" arguments with the remaining values being
+      // AffineMap "symbolic" arguments.
       DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
+      // Denotes the size of each variadic group in '$mapOperands'.
       DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs AnyLLZKType:$val);
 

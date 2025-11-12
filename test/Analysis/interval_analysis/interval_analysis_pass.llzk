@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-inline-includes -llzk-print-interval-analysis %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -I %S -split-input-file -llzk-print-interval-analysis %s 2>&1 | FileCheck %s
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ConstantConstraint {
@@ -433,3 +433,48 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: @BitConstraint StructIntervals {
 // CHECK-NEXT:    %arg0[@bit] in TypeA:[ 0, 3 ]
 // CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @CheckBit {
+    function.def @compute(%maybeBit: !felt.type) -> !struct.type<@CheckBit> {
+      %self = struct.new : <@CheckBit>
+      function.return %self : !struct.type<@CheckBit>
+    }
+
+    function.def @constrain(%self : !struct.type<@CheckBit>, %maybeBit: !felt.type) {
+      %felt_const_1 = felt.const 1
+      %felt_const_2 = felt.const 2
+      %lt2 = bool.cmp lt(%maybeBit, %felt_const_2)
+      %lt2_felt = cast.tofelt %lt2 : i1
+      // Constrain that %maybeBit < 2, meaning %maybeBit is in [0, 1]
+      constrain.eq %lt2_felt, %felt_const_1 : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @CheckBitInv {
+    function.def @compute(%maybeBit: !felt.type) -> !struct.type<@CheckBitInv> {
+      %self = struct.new : <@CheckBitInv>
+      function.return %self : !struct.type<@CheckBitInv>
+    }
+
+    function.def @constrain(%self : !struct.type<@CheckBitInv>, %maybeBit: !felt.type) {
+      %felt_const_0 = felt.const 0
+      %felt_const_2 = felt.const 2
+      %ge2 = bool.cmp ge(%maybeBit, %felt_const_2)
+      %ge2_felt = cast.tofelt %ge2 : i1
+      // Constrain that is not %maybeBit >= 2, meaning %maybeBit is in [0, 1]
+      constrain.eq %ge2_felt, %felt_const_0 : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CheckBit StructIntervals {
+// CHECK:     %arg1 in TypeA:[ 0, 1 ]
+// CHECK: }
+// CHECK-LABEL: @CheckBitInv StructIntervals {
+// CHECK:     %arg1 in TypeA:[ 0, 1 ]
+// CHECK: }

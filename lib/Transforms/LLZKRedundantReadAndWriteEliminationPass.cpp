@@ -56,7 +56,7 @@ public:
         v.getImpl() == reinterpret_cast<mlir::detail::ValueImpl *>(2)) {
       identifier = v;
     } else if (auto constVal = dyn_cast_if_present<FeltConstantOp>(v.getDefiningOp())) {
-      identifier = constVal.getValue().getValue();
+      identifier = constVal.getValue();
     } else if (auto constIdxVal = dyn_cast_if_present<arith::ConstantIndexOp>(v.getDefiningOp())) {
       identifier = llvm::cast<IntegerAttr>(constIdxVal.getValue()).getValue();
     } else {

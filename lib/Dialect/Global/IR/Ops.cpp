@@ -81,7 +81,7 @@ LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 namespace {
 
-inline InFlightDiagnostic reportMismatch(
+inline InFlightDiagnosticWrapper reportMismatch(
     EmitErrorFn errFn, Type rootType, const Twine &aspect, const Twine &expected, const Twine &found
 ) {
   return errFn().append(
@@ -89,7 +89,7 @@ inline InFlightDiagnostic reportMismatch(
   );
 }
 
-inline InFlightDiagnostic reportMismatch(
+inline InFlightDiagnosticWrapper reportMismatch(
     EmitErrorFn errFn, Type rootType, const Twine &aspect, const Twine &expected, Attribute found
 ) {
   return reportMismatch(errFn, rootType, aspect, expected, found.getAbstractAttribute().getName());

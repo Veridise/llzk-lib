@@ -77,13 +77,14 @@ bool llzkIsMoreConcreteUnification(
     void *userData
 ) {
   return isMoreConcreteUnification(
-      unwrap(oldTy), unwrap(newTy),
-      [knownOldToNew, userData](auto lhs, auto rhs) {
+      unwrap(oldTy), unwrap(newTy), [knownOldToNew, userData](auto lhs, auto rhs) {
     return knownOldToNew(wrap(lhs), wrap(rhs), userData);
   }
   );
 }
 
-MlirAttribute llzkForceIntAttrType(MlirAttribute attr) {
-  return wrap(forceIntAttrType(unwrap(attr)));
+MlirAttribute llzkForceIntAttrType(MlirAttribute attr, MlirLocation loc) {
+  auto emitErrorFn = [&loc]() { return InFlightDiagnosticWrapper(mlir::emitError(unwrap(loc))); };
+  FailureOr<Attribute> forced = forceIntAttrType(unwrap(attr), emitErrorFn);
+  return wrap(succeeded(forced) ? *forced : nullptr);
 }

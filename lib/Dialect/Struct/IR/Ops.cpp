@@ -65,7 +65,7 @@ bool isInStructFunctionNamed(Operation *op, char const *funcName) {
 // Again, only valid/implemented for StructDefOp
 template <> LogicalResult SetFuncAllowAttrs<StructDefOp>::verifyTrait(Operation *structOp) {
   assert(llvm::isa<StructDefOp>(structOp));
-  llvm::cast<StructDefOp>(structOp).getBody().walk([](FuncDefOp funcDef) {
+  llvm::cast<StructDefOp>(structOp).getBody()->walk([](FuncDefOp funcDef) {
     if (funcDef.nameIsConstrain()) {
       funcDef.setAllowConstraintAttr();
       funcDef.setAllowWitnessAttr(false);
@@ -312,7 +312,6 @@ inline LogicalResult verifyStructProduct(StructDefOp structDef, FuncDefOp produc
 } // namespace
 
 LogicalResult StructDefOp::verifyRegions() {
-  assert(getBody().hasOneBlock()); // per ODS, SizedRegion<1>
   std::optional<FuncDefOp> foundCompute = std::nullopt;
   std::optional<FuncDefOp> foundConstrain = std::nullopt;
   std::optional<FuncDefOp> foundProduct = std::nullopt;
@@ -322,7 +321,7 @@ LogicalResult StructDefOp::verifyRegions() {
     // 2. The only functions defined in the struct are `@compute()` and `@constrain()`, or
     // `@product()`
     OwningEmitErrorFn emitError = getEmitOpErrFn(this);
-    for (Operation &op : getBody().front()) {
+    for (Operation &op : *getBody()) {
       if (!llvm::isa<FieldDefOp>(op)) {
         if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
           if (funcDef.nameIsCompute()) {
@@ -401,9 +400,7 @@ LogicalResult StructDefOp::verifyRegions() {
 }
 
 FieldDefOp StructDefOp::getFieldDef(StringAttr fieldName) {
-  assert(getBody().hasOneBlock()); // per ODS, SizedRegion<1>
-  // Just search front() since there's only one Block.
-  for (Operation &op : getBody().front()) {
+  for (Operation &op : *getBody()) {
     if (FieldDefOp fieldDef = llvm::dyn_cast_if_present<FieldDefOp>(op)) {
       if (fieldName.compare(fieldDef.getSymNameAttr()) == 0) {
         return fieldDef;
@@ -414,10 +411,8 @@ FieldDefOp StructDefOp::getFieldDef(StringAttr fieldName) {
 }
 
 std::vector<FieldDefOp> StructDefOp::getFieldDefs() {
-  assert(getBody().hasOneBlock()); // per ODS, SizedRegion<1>
-  // Just search front() since there's only one Block.
   std::vector<FieldDefOp> res;
-  for (Operation &op : getBody().front()) {
+  for (Operation &op : *getBody()) {
     if (FieldDefOp fieldDef = llvm::dyn_cast_if_present<FieldDefOp>(op)) {
       res.push_back(fieldDef);
     }
