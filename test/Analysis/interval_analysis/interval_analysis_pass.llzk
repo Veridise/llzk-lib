@@ -478,3 +478,239 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: @CheckBitInv StructIntervals {
 // CHECK:     %arg1 in TypeA:[ 0, 1 ]
 // CHECK: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @IntTest<[]> {
+    struct.field @x : !felt.type {llzk.pub}
+    struct.field @y : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
+      %self = struct.new : <@IntTest<[]>>
+      function.return %self : !struct.type<@IntTest<[]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@IntTest<[]>>) attributes {function.allow_constraint} {
+      %0 = struct.readf %arg0[@x] : <@IntTest<[]>>, !felt.type
+      %1 = struct.readf %arg0[@y] : <@IntTest<[]>>, !felt.type
+      %felt_const_65536 = felt.const  65536
+      %felt_const_1 = felt.const  1
+      %felt_const_256 = felt.const  256
+      %felt_const_512 = felt.const  512
+      %2 = felt.add %0, %1 : !felt.type, !felt.type
+      %3 = bool.cmp lt(%2, %felt_const_65536)
+      %4 = bool.cmp lt(%0, %felt_const_512)
+      %5 = cast.tofelt %3 : i1
+      %6 = cast.tofelt %4 : i1
+      constrain.eq %5, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %6, %felt_const_1 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @IntTest StructIntervals {
+// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 511 ]
+// CHECK-NEXT:     %arg0[@y] in TypeF:[ 21888242871839275222246405745257275088696311157297823662689037894645226208072, 65535 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @IntTest<[]> {
+    struct.field @x : !felt.type {llzk.pub}
+    struct.field @y : !felt.type {llzk.pub}
+    struct.field @z : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
+      %self = struct.new : <@IntTest<[]>>
+      function.return %self : !struct.type<@IntTest<[]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@IntTest<[]>>) attributes {function.allow_constraint} {
+      %0 = struct.readf %arg0[@x] : <@IntTest<[]>>, !felt.type
+      %1 = struct.readf %arg0[@y] : <@IntTest<[]>>, !felt.type
+      %2 = struct.readf %arg0[@z] : <@IntTest<[]>>, !felt.type
+      %felt_const_65536 = felt.const  65536
+      %felt_const_1 = felt.const  1
+      %felt_const_256 = felt.const  256
+      %felt_const_512 = felt.const  512
+      %3 = felt.mul %0, %1 : !felt.type, !felt.type
+      %4 = bool.cmp lt(%3, %felt_const_65536)
+      %5 = bool.cmp ge(%1, %felt_const_256)
+      %6 = bool.cmp lt(%1, %felt_const_512)
+      %7 = bool.cmp lt(%0, %felt_const_512)
+      %8 = cast.tofelt %4 : i1
+      %9 = cast.tofelt %5 : i1
+      %10 = cast.tofelt %7 : i1
+      %11 = cast.tofelt %6 : i1
+      constrain.eq %8, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %9, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %10, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %11, %felt_const_1 : !felt.type, !felt.type
+      %12 = felt.mul %1, %felt_const_256 : !felt.type, !felt.type
+      %13 = felt.add %12, %0 : !felt.type, !felt.type
+      constrain.eq %2, %13 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// TODO: Refine multiplication range
+// CHECK-LABEL: @IntTest StructIntervals {
+// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 511 ]
+// CHECK-NEXT:     %arg0[@y] in TypeA:[ 256, 511 ]
+// CHECK-NEXT:     %arg0[@z] in TypeA:[ 65536, 131327 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @IntTest<[]> {
+    struct.field @x: !felt.type {llzk.pub}
+    struct.field @y : !felt.type {llzk.pub}
+
+    function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
+      %self = struct.new : <@IntTest<[]>>
+      function.return %self : !struct.type<@IntTest<[]>>
+    }
+
+    function.def @constrain(%self: !struct.type<@IntTest<[]>>) attributes {function.allow_constraint} {
+      %x = struct.readf %self[@x] : <@IntTest<[]>>, !felt.type
+      %y = struct.readf %self[@y] : <@IntTest<[]>>, !felt.type
+      %65536 = felt.const 65536
+
+      %one = felt.const 1
+      %256 = felt.const 256
+      %512 = felt.const 512
+      %m = felt.add %x, %y : !felt.type, !felt.type
+      // These two conditions are contradictory
+      %0 = bool.cmp lt(%m, %65536)
+      %1 = bool.cmp ge(%m, %65536)
+      %2 = bool.cmp lt(%x, %512)
+      %bool0 = cast.tofelt %0 : i1
+      %bool1 = cast.tofelt %1 : i1
+      %bool2 = cast.tofelt %2 : i1
+      constrain.eq %bool0, %one : !felt.type, !felt.type
+      constrain.eq %bool1, %one : !felt.type, !felt.type
+      constrain.eq %bool2, %one : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @IntTest StructIntervals {
+// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 511 ]
+// CHECK-NEXT:     %arg0[@y] in Entire
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @IntTest<[]> {
+    struct.field @x: !felt.type {llzk.pub}
+    struct.field @y : !felt.type {llzk.pub}
+
+    function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
+      %self = struct.new : <@IntTest<[]>>
+      function.return %self : !struct.type<@IntTest<[]>>
+    }
+
+    function.def @constrain(%self: !struct.type<@IntTest<[]>>) attributes {function.allow_constraint} {
+      %x = struct.readf %self[@x] : <@IntTest<[]>>, !felt.type
+      %y = struct.readf %self[@y] : <@IntTest<[]>>, !felt.type
+      %65536 = felt.const 65536
+      %32768 = felt.const 32768
+
+      %one = felt.const 1
+      %256 = felt.const 256
+      %512 = felt.const 512
+      %m = felt.add %x, %y : !felt.type, !felt.type
+      %0 = bool.cmp lt(%m, %65536)
+      %1 = bool.cmp ge(%m, %32768)
+      %2 = bool.cmp lt(%x, %512)
+      %bool0 = cast.tofelt %0 : i1
+      %bool1 = cast.tofelt %1 : i1
+      %bool2 = cast.tofelt %2 : i1
+      constrain.eq %bool0, %one : !felt.type, !felt.type
+      constrain.eq %bool1, %one : !felt.type, !felt.type
+      constrain.eq %bool2, %one : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @IntTest StructIntervals {
+// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 511 ]
+// CHECK-NEXT:     %arg0[@y] in TypeA:[ 32257, 65535 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @SubTest<[]> {
+    struct.field @x : !felt.type {llzk.pub}
+    struct.field @y : !felt.type {llzk.pub}
+    struct.field @z : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@SubTest<[]>> attributes {function.allow_witness} {
+      %self = struct.new : <@SubTest<[]>>
+      function.return %self : !struct.type<@SubTest<[]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@SubTest<[]>>) attributes {function.allow_constraint} {
+      %0 = struct.readf %arg0[@x] : <@SubTest<[]>>, !felt.type
+      %1 = struct.readf %arg0[@y] : <@SubTest<[]>>, !felt.type
+      // Note: y is read twice
+      %2 = struct.readf %arg0[@y] : <@SubTest<[]>>, !felt.type
+      %felt_const_1 = felt.const  1
+      %felt_const_256 = felt.const  256
+      %3 = felt.sub %0, %1 : !felt.type, !felt.type
+      %4 = bool.cmp lt(%0, %felt_const_256)
+      %5 = bool.cmp lt(%1, %felt_const_256)
+      %6 = cast.tofelt %4 : i1
+      %7 = cast.tofelt %5 : i1
+      constrain.eq %6, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %7, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %2, %3 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @SubTest StructIntervals {
+// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %arg0[@y] in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %arg0[@z] in Entire
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @SubTest<[]> {
+    struct.field @x : !felt.type {llzk.pub}
+    struct.field @y : !felt.type {llzk.pub}
+    struct.field @z : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@SubTest<[]>> attributes {function.allow_witness} {
+      %self = struct.new : <@SubTest<[]>>
+      function.return %self : !struct.type<@SubTest<[]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@SubTest<[]>>) attributes {function.allow_constraint} {
+      %0 = struct.readf %arg0[@x] : <@SubTest<[]>>, !felt.type
+      %1 = struct.readf %arg0[@y] : <@SubTest<[]>>, !felt.type
+      %2 = struct.readf %arg0[@z] : <@SubTest<[]>>, !felt.type
+      %felt_const_1 = felt.const  1
+      %felt_const_256 = felt.const  256
+      %3 = felt.sub %0, %1 : !felt.type, !felt.type
+      %4 = bool.cmp lt(%0, %felt_const_256)
+      %5 = bool.cmp lt(%1, %felt_const_256)
+      %6 = cast.tofelt %4 : i1
+      %7 = cast.tofelt %5 : i1
+      constrain.eq %6, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %7, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %2, %3 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @SubTest StructIntervals {
+// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %arg0[@y] in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %arg0[@z] in TypeF:[ 21888242871839275222246405745257275088696311157297823662689037894645226208328, 255 ]
+// CHECK-NEXT: }

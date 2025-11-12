@@ -156,15 +156,39 @@ cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const Expre
     break;
   case FeltCmpPredicate::LT:
     res.expr = solver->mkBVUlt(lhs.expr, rhs.expr);
+    if (lhs.i.toUnreduced().computeGEPart(rhs.i.toUnreduced()).reduce(f).isEmpty()) {
+      res.i = Interval::True(f);
+    }
+    if (lhs.i.toUnreduced().computeLTPart(rhs.i.toUnreduced()).reduce(f).isEmpty()) {
+      res.i = Interval::False(f);
+    }
     break;
   case FeltCmpPredicate::LE:
     res.expr = solver->mkBVUle(lhs.expr, rhs.expr);
+    if (lhs.i.toUnreduced().computeGTPart(rhs.i.toUnreduced()).reduce(f).isEmpty()) {
+      res.i = Interval::True(f);
+    }
+    if (lhs.i.toUnreduced().computeLEPart(rhs.i.toUnreduced()).reduce(f).isEmpty()) {
+      res.i = Interval::False(f);
+    }
     break;
   case FeltCmpPredicate::GT:
     res.expr = solver->mkBVUgt(lhs.expr, rhs.expr);
+    if (lhs.i.toUnreduced().computeLEPart(rhs.i.toUnreduced()).reduce(f).isEmpty()) {
+      res.i = Interval::True(f);
+    }
+    if (lhs.i.toUnreduced().computeGTPart(rhs.i.toUnreduced()).reduce(f).isEmpty()) {
+      res.i = Interval::False(f);
+    }
     break;
   case FeltCmpPredicate::GE:
     res.expr = solver->mkBVUge(lhs.expr, rhs.expr);
+    if (lhs.i.toUnreduced().computeLTPart(rhs.i.toUnreduced()).reduce(f).isEmpty()) {
+      res.i = Interval::True(f);
+    }
+    if (lhs.i.toUnreduced().computeGEPart(rhs.i.toUnreduced()).reduce(f).isEmpty()) {
+      res.i = Interval::False(f);
+    }
     break;
   }
   return res;
@@ -300,7 +324,7 @@ ChangeResult IntervalAnalysisLattice::meet(const AbstractSparseLattice &other) {
   }
   // Intersect the intervals
   ExpressionValue lhsExpr = val.getScalarValue();
-  ExpressionValue rhsExpr = val.getScalarValue();
+  ExpressionValue rhsExpr = rhs->getValue().getScalarValue();
   Interval newInterval = lhsExpr.getInterval().intersect(rhsExpr.getInterval());
   ChangeResult res = setValue(lhsExpr.withInterval(newInterval));
   for (auto &v : rhs->constraints) {
@@ -448,6 +472,11 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       result = performBinaryArithmetic(op, operandVals[0], operandVals[1]);
     } else {
       result = performUnaryArithmetic(op, operandVals[0]);
+    }
+    // Also intersect with prior interval, if it's initialized
+    const ExpressionValue &prior = results[0]->getValue().getScalarValue();
+    if (prior.getExpr()) {
+      result = result.withInterval(result.getInterval().intersect(prior.getInterval()));
     }
     propagateIfChanged(results[0], results[0]->setValue(result));
   } else if (EmitEqualityOp emitEq = llvm::dyn_cast<EmitEqualityOp>(op)) {
@@ -681,14 +710,8 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
   ExpressionValue newLatticeVal = oldLatticeVal.withInterval(intersection);
   ChangeResult changed = valLattice->setValue(newLatticeVal);
 
-  if (changed == ChangeResult::NoChange) {
-    // We don't need to keep recursing since `val`s interval hasn't changed
-    return;
-  }
-
   if (auto blockArg = llvm::dyn_cast<BlockArgument>(val)) {
     auto fnOp = dyn_cast<FuncDefOp>(blockArg.getOwner()->getParentOp());
-    Operation *blockEntry = &blockArg.getOwner()->front();
 
     // Apply the interval from the constrain function inputs to the compute function inputs
     if (propagateInputConstraints && fnOp && fnOp.isStructConstrain() &&
@@ -721,10 +744,12 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
   // cmp.<pred> restricts each side of the comparison if the result is known.
   auto cmpCase = [&](CmpOp cmpOp) {
     // Cmp output range is [0, 1], so in order to do something, we must have newInterval
-    // either "true" (1) or "false" (0)
+    // either "true" (1) or "false" (0).
+    // -- In the case of a contradictory circuit, however, the cmp result is allowed
+    // to be empty.
     ensure(
-        newInterval.isBoolean(),
-        "new interval for CmpOp outside of allowed boolean range or is empty"
+        newInterval.isBoolean() || newInterval.isEmpty(),
+        "new interval for CmpOp is not boolean or empty"
     );
     if (!newInterval.isDegenerate()) {
       // The comparison result is unknown, so we can't update the operand ranges
@@ -861,49 +886,40 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     applyInterval(mulOp, rhs, newRhsInterval);
   };
 
-  // Addition case:
-  // - If one operand is a constant, we can propagate the new interval when subtracting
-  // the constant
   auto addCase = [&](AddFeltOp addOp) {
-    // We check for the constant case first.
-    auto constCase = [&](FeltConstantOp constOperand, Value operand) {
-      auto latVal = getLatticeElement(operand)->getValue().getScalarValue();
-      auto constVal = toDynamicAPInt(constOperand.getValue());
-      Interval updatedInterval = newInterval - Interval::Degenerate(f, constVal);
-      applyInterval(addOp, operand, updatedInterval);
-    };
-
     Value lhs = addOp.getLhs(), rhs = addOp.getRhs();
+    Lattice *lhsLat = getLatticeElement(lhs), *rhsLat = getLatticeElement(rhs);
+    ExpressionValue lhsVal = lhsLat->getValue().getScalarValue();
+    ExpressionValue rhsVal = rhsLat->getValue().getScalarValue();
 
-    auto lhsConstOp = dyn_cast_if_present<FeltConstantOp>(lhs.getDefiningOp());
-    auto rhsConstOp = dyn_cast_if_present<FeltConstantOp>(rhs.getDefiningOp());
-    // If both are consts, we don't need to do anything
-    if (lhsConstOp && !rhsConstOp) {
-      constCase(lhsConstOp, rhs);
-    } else if (rhsConstOp && !lhsConstOp) {
-      constCase(rhsConstOp, lhs);
-    }
+    const Interval &currLhsInt = lhsVal.getInterval(), &currRhsInt = rhsVal.getInterval();
+
+    Interval derivedLhsInt = newInterval - currRhsInt;
+    Interval derivedRhsInt = newInterval - currLhsInt;
+
+    Interval finalLhsInt = currLhsInt.intersect(derivedLhsInt);
+    Interval finalRhsInt = currRhsInt.intersect(derivedRhsInt);
+
+    applyInterval(addOp, lhs, finalLhsInt);
+    applyInterval(addOp, rhs, finalRhsInt);
   };
 
-  // Subtraction case:
-  // - If one operand is a constant, we can propagate the new interval when adding
-  // the constant.
   auto subCase = [&](SubFeltOp subOp) {
-    // We check for the constant case first.
     Value lhs = subOp.getLhs(), rhs = subOp.getRhs();
+    Lattice *lhsLat = getLatticeElement(lhs), *rhsLat = getLatticeElement(rhs);
+    ExpressionValue lhsVal = lhsLat->getValue().getScalarValue();
+    ExpressionValue rhsVal = rhsLat->getValue().getScalarValue();
 
-    auto lhsConstOp = dyn_cast_if_present<FeltConstantOp>(lhs.getDefiningOp());
-    auto rhsConstOp = dyn_cast_if_present<FeltConstantOp>(rhs.getDefiningOp());
-    // If both are consts, we don't need to do anything
-    if (lhsConstOp && !rhsConstOp) {
-      auto constVal = toDynamicAPInt(lhsConstOp.getValue());
-      Interval updatedInterval = Interval::Degenerate(f, constVal) - newInterval;
-      applyInterval(subOp, rhs, updatedInterval);
-    } else if (rhsConstOp && !lhsConstOp) {
-      auto constVal = toDynamicAPInt(rhsConstOp.getValue());
-      Interval updatedInterval = newInterval + Interval::Degenerate(f, constVal);
-      applyInterval(subOp, lhs, updatedInterval);
-    }
+    const Interval &currLhsInt = lhsVal.getInterval(), &currRhsInt = rhsVal.getInterval();
+
+    Interval derivedLhsInt = newInterval + currRhsInt;
+    Interval derivedRhsInt = currLhsInt - newInterval;
+
+    Interval finalLhsInt = currLhsInt.intersect(derivedLhsInt);
+    Interval finalRhsInt = currRhsInt.intersect(derivedRhsInt);
+
+    applyInterval(subOp, lhs, finalLhsInt);
+    applyInterval(subOp, rhs, finalRhsInt);
   };
 
   auto readfCase = [&](FieldReadOp readfOp) {
@@ -1055,17 +1071,6 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(Operation *baseOp, Value 
 }
 
 /* StructIntervals */
-
-static void getReversedOps(Region *r, llvm::SmallVector<Operation *> &opList) {
-  for (Block &b : llvm::reverse(*r)) {
-    for (Operation &op : llvm::reverse(b)) {
-      for (Region &nested : llvm::reverse(op.getRegions())) {
-        getReversedOps(&nested, opList);
-      }
-      opList.push_back(&op);
-    }
-  }
-}
 
 LogicalResult StructIntervals::computeIntervals(
     mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx

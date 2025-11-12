@@ -136,6 +136,8 @@ LogicalResult AbstractSparseForwardDataFlowAnalysis::visitOperation(Operation *o
     operandLattices.push_back(operandLattice);
   }
 
+  // LLZK TODO: Enable for interprocedural analysis.
+  /*
   if (auto call = dyn_cast<CallOpInterface>(op)) {
     /// LLZK: Use LLZK resolveCallable interface.
     // If the call operation is to an external function, attempt to infer the
@@ -167,6 +169,7 @@ LogicalResult AbstractSparseForwardDataFlowAnalysis::visitOperation(Operation *o
     }
     return success();
   }
+  */
 
   // Invoke the operation transfer function.
   return visitOperationImpl(op, operandLattices, resultLattices);
@@ -197,6 +200,8 @@ void AbstractSparseForwardDataFlowAnalysis::visitBlock(Block *block) {
   // callgraph.
   if (block->isEntryBlock()) {
     // Check if this block is the entry block of a callable region.
+    // LLZK TODO: Enable for interprocedural analysis.
+    /*
     auto callable = dyn_cast<CallableOpInterface>(block->getParentOp());
     if (callable && callable.getCallableRegion() == block->getParent()) {
       /// LLZK: Get callsites of the callable as the predecessors.
@@ -225,6 +230,7 @@ void AbstractSparseForwardDataFlowAnalysis::visitBlock(Block *block) {
       }
       return;
     }
+    */
 
     // Check if the lattices can be determined from region control flow.
     if (auto branch = dyn_cast<RegionBranchOpInterface>(block->getParentOp())) {
