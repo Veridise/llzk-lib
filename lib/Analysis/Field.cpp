@@ -66,6 +66,8 @@ DynamicAPInt Field::reduce(const APInt &i) const { return reduce(toDynamicAPInt(
 
 DynamicAPInt Field::inv(const DynamicAPInt &i) const { return modInversePrime(i, prime()); }
 
-DynamicAPInt Field::inv(const llvm::APInt &i) const { return modInversePrime(toDynamicAPInt(i), prime()); }
+DynamicAPInt Field::inv(const llvm::APInt &i) const {
+  return modInversePrime(toDynamicAPInt(i), prime());
+}
 
 } // namespace llzk

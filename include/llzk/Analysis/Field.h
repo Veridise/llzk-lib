@@ -9,13 +9,13 @@
 
 #pragma once
 
+#include "llzk/Util/DynamicAPIntHelper.h"
+
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/Support/SMTAPI.h>
 
 #include <string_view>
-
-#include "llzk/Util/DynamicAPIntHelper.h"
 
 namespace llzk {
 

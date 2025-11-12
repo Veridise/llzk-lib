@@ -134,9 +134,7 @@ APSInt toAPSInt(const DynamicAPInt &i) {
   return res;
 }
 
-DynamicAPInt modExp(const DynamicAPInt &base,
-                                 const DynamicAPInt &exp,
-                                 const DynamicAPInt &mod) {
+DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const DynamicAPInt &mod) {
   DynamicAPInt result(1);
   DynamicAPInt b = base;
   DynamicAPInt e = exp;
@@ -154,8 +152,7 @@ DynamicAPInt modExp(const DynamicAPInt &base,
   return result;
 }
 
-llvm::DynamicAPInt modInversePrime(const DynamicAPInt &f,
-                                   const DynamicAPInt &p) {
+llvm::DynamicAPInt modInversePrime(const DynamicAPInt &f, const DynamicAPInt &p) {
   assert(f != 0 && "0 has no inverse");
   // Fermat: f^(p-2) mod p
   DynamicAPInt exp = p - 2;
