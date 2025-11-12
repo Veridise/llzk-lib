@@ -19,13 +19,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/GraphUtil.h"
-#include "llzk/Analysis/SymbolDefTree.h"
 #include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/LLZKInlineStructsPass.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -327,12 +327,11 @@ class StructInliner {
         // Create a clone of the source function (must do the whole function not just the body
         // region because `inlineCall()` expects the Region to have a parent op) and update field
         // references to the old struct fields to instead use the new struct fields.
-        FuncDefOp srcFuncClone = FieldRefRewriter::cloneWithFieldRefUpdate(
-            std::make_unique<FieldRefRewriter>(
+        FuncDefOp srcFuncClone =
+            FieldRefRewriter::cloneWithFieldRefUpdate(std::make_unique<FieldRefRewriter>(
                 srcFunc, selfFieldRefOp.getComponent(),
                 this->destToSrcToClone.at(this->data.getDef(selfFieldRefOp))
-            )
-        );
+            ));
         this->processCloneBeforeInlining(srcFuncClone);
 
         // Inline the cloned function in place of `callOp`
@@ -756,208 +755,6 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     return retVal;
   }
 
-  /// Called before erasing an Operation to ensure that any remaining uses of the Operation's result
-  /// are removed if possible, else report an error (the subsequent call to erase() would fail
-  /// anyway if the result Value still has uses). Handles the following cases:
-  /// - If the op is used as argument to a function with a body, convert to take fields separately.
-  /// - If the op is used as argument to a function without a body, report an error.
-  static LogicalResult handleRemainingUses(
-      Operation *op, SymbolTableCollection &tables,
-      const DestToSrcToClonedSrcInDest &destToSrcToClone,
-      ArrayRef<FieldRefOpInterface> otherRefsToBeDeleted = {}
-  ) {
-    if (op->use_empty()) {
-      return success(); // safe to erase
-    }
-
-    // Helper function to determine if an Operation is contained in 'otherRefsToBeDeleted'
-    auto opWillBeDeleted = [&otherRefsToBeDeleted](Operation *otherOp) -> bool {
-      return std::find(otherRefsToBeDeleted.begin(), otherRefsToBeDeleted.end(), otherOp) !=
-             otherRefsToBeDeleted.end();
-    };
-
-    LLVM_DEBUG({
-      llvm::dbgs() << "[handleRemainingUses] op: " << *op << '\n';
-      llvm::dbgs() << "[handleRemainingUses]   in function: " << op->getParentOfType<FuncDefOp>()
-                   << '\n';
-    });
-    for (OpOperand &use : llvm::make_early_inc_range(op->getUses())) {
-      if (CallOp c = llvm::dyn_cast<CallOp>(use.getOwner())) {
-        LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]   use in call: " << c << '\n');
-        unsigned argIdx = use.getOperandNumber() - c.getArgOperands().getBeginOperandIndex();
-        LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]     at index: " << argIdx << '\n');
-
-        auto tgtFuncRes = c.getCalleeTarget(tables);
-        if (failed(tgtFuncRes)) {
-          return op
-              ->emitOpError("as argument to an unknown function is not supported by this pass.")
-              .attachNote(c.getLoc())
-              .append("used by this call");
-        }
-        FuncDefOp tgtFunc = tgtFuncRes->get();
-        LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]   call target: " << tgtFunc << '\n');
-        if (tgtFunc.isExternal()) {
-          // Those without a body (i.e. external implementation) present a problem because LLZK does
-          // not define a memory layout for the external implementation to interpret the struct.
-          return op
-              ->emitOpError("as argument to a no-body free function is not supported by this pass.")
-              .attachNote(c.getLoc())
-              .append("used by this call");
-        }
-
-        FieldRefOpInterface paramFromField = TypeSwitch<Operation *, FieldRefOpInterface>(op)
-                                                 .Case<FieldReadOp>([](auto p) { return p; })
-                                                 .Case<CreateStructOp>([](auto p) {
-          return findOpThatStoresSubcmp(p, [&p]() { return p.emitOpError(); }).value_or(nullptr);
-        }).Default([](Operation *p) {
-          llvm::errs() << "Encountered unexpected op: "
-                       << (p ? p->getName().getStringRef() : "<<null>>") << '\n';
-          llvm_unreachable("Unexpected op kind");
-          return nullptr;
-        });
-        LLVM_DEBUG({
-          llvm::dbgs() << "[handleRemainingUses]   field ref op for param: "
-                       << (paramFromField ? debug::toStringOne(paramFromField) : "<<null>>")
-                       << '\n';
-        });
-        if (!paramFromField) {
-          return failure(); // error already printed within findOpThatStoresSubcmp()
-        }
-        const SrcStructFieldToCloneInDest &newFields =
-            destToSrcToClone.at(getDef(tables, paramFromField));
-        LLVM_DEBUG({
-          llvm::dbgs() << "[handleRemainingUses]   fields to split: "
-                       << debug::toStringList(newFields) << '\n';
-        });
-
-        // Convert the FuncDefOp side first (to use the easier builder for the new CallOp).
-        splitFunctionParam(tgtFunc, argIdx, newFields);
-        LLVM_DEBUG({
-          llvm::dbgs() << "[handleRemainingUses]   UPDATED call target: " << tgtFunc << '\n';
-          llvm::dbgs() << "[handleRemainingUses]   UPDATED call target type: "
-                       << tgtFunc.getFunctionType() << '\n';
-        });
-
-        // Convert the CallOp side. Add a FieldReadOp for each value from the struct and pass them
-        // individually in place of the struct parameter.
-        {
-          OpBuilder builder(c);
-          SmallVector<Value> splitArgs;
-          // Before the CallOp, insert a read from every new field. These Values will replace the
-          // original argument in the CallOp.
-          Value originalBaseVal = paramFromField.getComponent();
-          for (auto [origName, newFieldRef] : newFields) {
-            splitArgs.push_back(builder.create<FieldReadOp>(
-                c.getLoc(), newFieldRef.getType(), originalBaseVal, newFieldRef.getNameAttr()
-            ));
-          }
-          // Generate the new argument list from the original but replace 'argIdx'
-          SmallVector<Value> newOpArgs(c.getArgOperands());
-          newOpArgs.insert(
-              newOpArgs.erase(newOpArgs.begin() + argIdx), splitArgs.begin(), splitArgs.end()
-          );
-          // Create the new CallOp, replace uses of the old with the new, delete the old
-          c.replaceAllUsesWith(builder.create<CallOp>(
-              c.getLoc(), tgtFunc, CallOp::toVectorOfValueRange(c.getMapOperands()),
-              c.getNumDimsPerMapAttr(), newOpArgs
-          ));
-          c.erase();
-        }
-        LLVM_DEBUG({
-          llvm::dbgs() << "[handleRemainingUses]   UPDATED function: "
-                       << op->getParentOfType<FuncDefOp>() << '\n';
-        });
-      } else {
-        Operation *user = use.getOwner();
-        // Report an error for any user other than some field ref that will be deleted anyway.
-        if (!opWillBeDeleted(user)) {
-          return op->emitOpError()
-              .append(
-                  "with use in '", user->getName().getStringRef(),
-                  "' is not (currently) supported by this pass."
-              )
-              .attachNote(user->getLoc())
-              .append("used by this call");
-        }
-      }
-    }
-    // Ensure that all users of the 'op' were deleted above, or will be per 'otherRefsToBeDeleted'.
-    if (!op->use_empty()) {
-      for (Operation *user : op->getUsers()) {
-        if (!opWillBeDeleted(user)) {
-          llvm::errs() << "Op has remaining use(s) that could not be removed: " << *op << '\n';
-          llvm_unreachable("Expected all uses to be removed");
-        }
-      }
-    }
-    return success();
-  }
-
-  inline static LogicalResult finalizeStruct(
-      SymbolTableCollection &tables, StructDefOp caller, PendingErasure &&toDelete,
-      DestToSrcToClonedSrcInDest &&destToSrcToClone
-  ) {
-    LLVM_DEBUG({
-      llvm::dbgs() << "[finalizeStruct] dumping 'caller' struct before compressing chains:\n";
-      llvm::dbgs() << caller << '\n';
-    });
-
-    // Compress chains of reads that result after inlining multiple callees.
-    caller.getConstrainFuncOp().walk([&tables, &destToSrcToClone](FieldReadOp readOp) {
-      combineReadChain(readOp, tables, destToSrcToClone);
-    });
-    auto res = caller.getComputeFuncOp().walk([&tables, &destToSrcToClone](FieldReadOp readOp) {
-      combineReadChain(readOp, tables, destToSrcToClone);
-      LogicalResult innerRes = combineNewThenReadChain(readOp, tables, destToSrcToClone);
-      return failed(innerRes) ? WalkResult::interrupt() : WalkResult::advance();
-    });
-    if (res.wasInterrupted()) {
-      return failure(); // error already printed within combineNewThenReadChain()
-    }
-
-    LLVM_DEBUG({
-      llvm::dbgs() << "[finalizeStruct] dumping 'caller' struct before deleting ops:\n";
-      llvm::dbgs() << caller << '\n';
-      llvm::dbgs() << "[finalizeStruct] ops marked for deletion:\n";
-      for (FieldRefOpInterface op : toDelete.fieldRefOps) {
-        llvm::dbgs().indent(2) << op << '\n';
-      }
-      for (CreateStructOp op : toDelete.newStructOps) {
-        llvm::dbgs().indent(2) << op << '\n';
-      }
-      for (DestFieldWithSrcStructType op : toDelete.fieldDefs) {
-        llvm::dbgs().indent(2) << op << '\n';
-      }
-    });
-
-    // Handle remaining uses of CreateStructOp before deleting anything because this process
-    // needs to be able to find the writes that stores the result of these ops.
-    for (CreateStructOp op : toDelete.newStructOps) {
-      if (failed(handleRemainingUses(op, tables, destToSrcToClone, toDelete.fieldRefOps))) {
-        return failure(); // error already printed within handleRemainingUses()
-      }
-    }
-    // Next, to avoid "still has uses" errors, must erase FieldRefOpInterface before erasing
-    // the CreateStructOp or FieldDefOp.
-    for (FieldRefOpInterface op : toDelete.fieldRefOps) {
-      if (failed(handleRemainingUses(op, tables, destToSrcToClone))) {
-        return failure(); // error already printed within handleRemainingUses()
-      }
-      op.erase();
-    }
-    for (CreateStructOp op : toDelete.newStructOps) {
-      op.erase();
-    }
-    // Finally, erase FieldDefOp via SymbolTable so table itself is updated too.
-    SymbolTable &callerSymTab = tables.getSymbolTable(caller);
-    for (DestFieldWithSrcStructType op : toDelete.fieldDefs) {
-      assert(op.getParentOp() == caller); // using correct SymbolTable
-      callerSymTab.erase(op);
-    }
-
-    return success();
-  }
-
 public:
   void runOnOperation() override {
     const SymbolUseGraph &useGraph = getAnalysis<SymbolUseGraph>();
@@ -970,38 +767,245 @@ public:
       return;
     }
 
-    for (auto &[caller, callees] : plan.value()) {
-      // Cache operations that should be deleted but must wait until all callees are processed
-      // to ensure that all uses of the values defined by these operations are replaced.
-      PendingErasure toDelete;
-      // Cache old-to-new field mappings across all calleeds inlined for the current struct.
-      DestToSrcToClonedSrcInDest aggregateReplacements;
-      // Inline callees/subcomponents of the current struct
-      for (StructDefOp toInline : callees) {
-        FailureOr<DestToSrcToClonedSrcInDest> res =
-            StructInliner(tables, toDelete, toInline, caller).doInline();
-        if (failed(res)) {
-          signalPassFailure(); // error already printed w/in doInline()
-          return;
-        }
-        // Add current field replacements to the aggregate
-        for (auto &[k, v] : res.value()) {
-          assert(!aggregateReplacements.contains(k) && "duplicate not possible");
-          aggregateReplacements[k] = std::move(v);
-        }
-      }
-      // Complete steps to finalize/cleanup the caller
-      LogicalResult finalizeResult =
-          finalizeStruct(tables, caller, std::move(toDelete), std::move(aggregateReplacements));
-      if (failed(finalizeResult)) {
-        signalPassFailure(); // error already printed w/in combineNewThenReadChain()
-        return;
-      }
-    }
+    if (failed(performInlining(tables, plan.value()))) {
+      signalPassFailure();
+      return;
+    };
   }
 };
 
 } // namespace
+
+/// Called before erasing an Operation to ensure that any remaining uses of the Operation's result
+/// are removed if possible, else report an error (the subsequent call to erase() would fail
+/// anyway if the result Value still has uses). Handles the following cases:
+/// - If the op is used as argument to a function with a body, convert to take fields separately.
+/// - If the op is used as argument to a function without a body, report an error.
+static inline LogicalResult handleRemainingUses(
+    Operation *op, SymbolTableCollection &tables,
+    const DestToSrcToClonedSrcInDest &destToSrcToClone,
+    ArrayRef<FieldRefOpInterface> otherRefsToBeDeleted = {}
+) {
+  if (op->use_empty()) {
+    return success(); // safe to erase
+  }
+
+  // Helper function to determine if an Operation is contained in 'otherRefsToBeDeleted'
+  auto opWillBeDeleted = [&otherRefsToBeDeleted](Operation *otherOp) -> bool {
+    return std::find(otherRefsToBeDeleted.begin(), otherRefsToBeDeleted.end(), otherOp) !=
+           otherRefsToBeDeleted.end();
+  };
+
+  LLVM_DEBUG({
+    llvm::dbgs() << "[handleRemainingUses] op: " << *op << '\n';
+    llvm::dbgs() << "[handleRemainingUses]   in function: " << op->getParentOfType<FuncDefOp>()
+                 << '\n';
+  });
+  for (OpOperand &use : llvm::make_early_inc_range(op->getUses())) {
+    if (CallOp c = llvm::dyn_cast<CallOp>(use.getOwner())) {
+      LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]   use in call: " << c << '\n');
+      unsigned argIdx = use.getOperandNumber() - c.getArgOperands().getBeginOperandIndex();
+      LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]     at index: " << argIdx << '\n');
+
+      auto tgtFuncRes = c.getCalleeTarget(tables);
+      if (failed(tgtFuncRes)) {
+        return op->emitOpError("as argument to an unknown function is not supported by this pass.")
+            .attachNote(c.getLoc())
+            .append("used by this call");
+      }
+      FuncDefOp tgtFunc = tgtFuncRes->get();
+      LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]   call target: " << tgtFunc << '\n');
+      if (tgtFunc.isExternal()) {
+        // Those without a body (i.e. external implementation) present a problem because LLZK does
+        // not define a memory layout for the external implementation to interpret the struct.
+        return op
+            ->emitOpError("as argument to a no-body free function is not supported by this pass.")
+            .attachNote(c.getLoc())
+            .append("used by this call");
+      }
+
+      FieldRefOpInterface paramFromField = TypeSwitch<Operation *, FieldRefOpInterface>(op)
+                                               .Case<FieldReadOp>([](auto p) { return p; })
+                                               .Case<CreateStructOp>([](auto p) {
+        return findOpThatStoresSubcmp(p, [&p]() { return p.emitOpError(); }).value_or(nullptr);
+      }).Default([](Operation *p) {
+        llvm::errs() << "Encountered unexpected op: "
+                     << (p ? p->getName().getStringRef() : "<<null>>") << '\n';
+        llvm_unreachable("Unexpected op kind");
+        return nullptr;
+      });
+      LLVM_DEBUG({
+        llvm::dbgs() << "[handleRemainingUses]   field ref op for param: "
+                     << (paramFromField ? debug::toStringOne(paramFromField) : "<<null>>") << '\n';
+      });
+      if (!paramFromField) {
+        return failure(); // error already printed within findOpThatStoresSubcmp()
+      }
+      const SrcStructFieldToCloneInDest &newFields =
+          destToSrcToClone.at(getDef(tables, paramFromField));
+      LLVM_DEBUG({
+        llvm::dbgs() << "[handleRemainingUses]   fields to split: "
+                     << debug::toStringList(newFields) << '\n';
+      });
+
+      // Convert the FuncDefOp side first (to use the easier builder for the new CallOp).
+      splitFunctionParam(tgtFunc, argIdx, newFields);
+      LLVM_DEBUG({
+        llvm::dbgs() << "[handleRemainingUses]   UPDATED call target: " << tgtFunc << '\n';
+        llvm::dbgs() << "[handleRemainingUses]   UPDATED call target type: "
+                     << tgtFunc.getFunctionType() << '\n';
+      });
+
+      // Convert the CallOp side. Add a FieldReadOp for each value from the struct and pass them
+      // individually in place of the struct parameter.
+      {
+        OpBuilder builder(c);
+        SmallVector<Value> splitArgs;
+        // Before the CallOp, insert a read from every new field. These Values will replace the
+        // original argument in the CallOp.
+        Value originalBaseVal = paramFromField.getComponent();
+        for (auto [origName, newFieldRef] : newFields) {
+          splitArgs.push_back(builder.create<FieldReadOp>(
+              c.getLoc(), newFieldRef.getType(), originalBaseVal, newFieldRef.getNameAttr()
+          ));
+        }
+        // Generate the new argument list from the original but replace 'argIdx'
+        SmallVector<Value> newOpArgs(c.getArgOperands());
+        newOpArgs.insert(
+            newOpArgs.erase(newOpArgs.begin() + argIdx), splitArgs.begin(), splitArgs.end()
+        );
+        // Create the new CallOp, replace uses of the old with the new, delete the old
+        c.replaceAllUsesWith(builder.create<CallOp>(
+            c.getLoc(), tgtFunc, CallOp::toVectorOfValueRange(c.getMapOperands()),
+            c.getNumDimsPerMapAttr(), newOpArgs
+        ));
+        c.erase();
+      }
+      LLVM_DEBUG({
+        llvm::dbgs() << "[handleRemainingUses]   UPDATED function: "
+                     << op->getParentOfType<FuncDefOp>() << '\n';
+      });
+    } else {
+      Operation *user = use.getOwner();
+      // Report an error for any user other than some field ref that will be deleted anyway.
+      if (!opWillBeDeleted(user)) {
+        return op->emitOpError()
+            .append(
+                "with use in '", user->getName().getStringRef(),
+                "' is not (currently) supported by this pass."
+            )
+            .attachNote(user->getLoc())
+            .append("used by this call");
+      }
+    }
+  }
+  // Ensure that all users of the 'op' were deleted above, or will be per 'otherRefsToBeDeleted'.
+  if (!op->use_empty()) {
+    for (Operation *user : op->getUsers()) {
+      if (!opWillBeDeleted(user)) {
+        llvm::errs() << "Op has remaining use(s) that could not be removed: " << *op << '\n';
+        llvm_unreachable("Expected all uses to be removed");
+      }
+    }
+  }
+  return success();
+}
+
+inline static LogicalResult finalizeStruct(
+    SymbolTableCollection &tables, StructDefOp caller, PendingErasure &&toDelete,
+    DestToSrcToClonedSrcInDest &&destToSrcToClone
+) {
+  LLVM_DEBUG({
+    llvm::dbgs() << "[finalizeStruct] dumping 'caller' struct before compressing chains:\n";
+    llvm::dbgs() << caller << '\n';
+  });
+
+  // Compress chains of reads that result after inlining multiple callees.
+  caller.getConstrainFuncOp().walk([&tables, &destToSrcToClone](FieldReadOp readOp) {
+    combineReadChain(readOp, tables, destToSrcToClone);
+  });
+  auto res = caller.getComputeFuncOp().walk([&tables, &destToSrcToClone](FieldReadOp readOp) {
+    combineReadChain(readOp, tables, destToSrcToClone);
+    LogicalResult innerRes = combineNewThenReadChain(readOp, tables, destToSrcToClone);
+    return failed(innerRes) ? WalkResult::interrupt() : WalkResult::advance();
+  });
+  if (res.wasInterrupted()) {
+    return failure(); // error already printed within combineNewThenReadChain()
+  }
+
+  LLVM_DEBUG({
+    llvm::dbgs() << "[finalizeStruct] dumping 'caller' struct before deleting ops:\n";
+    llvm::dbgs() << caller << '\n';
+    llvm::dbgs() << "[finalizeStruct] ops marked for deletion:\n";
+    for (FieldRefOpInterface op : toDelete.fieldRefOps) {
+      llvm::dbgs().indent(2) << op << '\n';
+    }
+    for (CreateStructOp op : toDelete.newStructOps) {
+      llvm::dbgs().indent(2) << op << '\n';
+    }
+    for (DestFieldWithSrcStructType op : toDelete.fieldDefs) {
+      llvm::dbgs().indent(2) << op << '\n';
+    }
+  });
+
+  // Handle remaining uses of CreateStructOp before deleting anything because this process
+  // needs to be able to find the writes that stores the result of these ops.
+  for (CreateStructOp op : toDelete.newStructOps) {
+    if (failed(handleRemainingUses(op, tables, destToSrcToClone, toDelete.fieldRefOps))) {
+      return failure(); // error already printed within handleRemainingUses()
+    }
+  }
+  // Next, to avoid "still has uses" errors, must erase FieldRefOpInterface before erasing
+  // the CreateStructOp or FieldDefOp.
+  for (FieldRefOpInterface op : toDelete.fieldRefOps) {
+    if (failed(handleRemainingUses(op, tables, destToSrcToClone))) {
+      return failure(); // error already printed within handleRemainingUses()
+    }
+    op.erase();
+  }
+  for (CreateStructOp op : toDelete.newStructOps) {
+    op.erase();
+  }
+  // Finally, erase FieldDefOp via SymbolTable so table itself is updated too.
+  SymbolTable &callerSymTab = tables.getSymbolTable(caller);
+  for (DestFieldWithSrcStructType op : toDelete.fieldDefs) {
+    assert(op.getParentOp() == caller); // using correct SymbolTable
+    callerSymTab.erase(op);
+  }
+
+  return success();
+}
+
+using InliningPlan = SmallVector<std::pair<StructDefOp, SmallVector<StructDefOp>>>;
+mlir::LogicalResult performInlining(mlir::SymbolTableCollection &tables, InliningPlan &plan) {
+  for (auto &[caller, callees] : plan) {
+    // Cache operations that should be deleted but must wait until all callees are processed
+    // to ensure that all uses of the values defined by these operations are replaced.
+    PendingErasure toDelete;
+    // Cache old-to-new field mappings across all calleeds inlined for the current struct.
+    DestToSrcToClonedSrcInDest aggregateReplacements;
+    // Inline callees/subcomponents of the current struct
+    for (StructDefOp toInline : callees) {
+      FailureOr<DestToSrcToClonedSrcInDest> res =
+          StructInliner(tables, toDelete, toInline, caller).doInline();
+      if (failed(res)) {
+        return failure();
+      }
+      // Add current field replacements to the aggregate
+      for (auto &[k, v] : res.value()) {
+        assert(!aggregateReplacements.contains(k) && "duplicate not possible");
+        aggregateReplacements[k] = std::move(v);
+      }
+    }
+    // Complete steps to finalize/cleanup the caller
+    LogicalResult finalizeResult =
+        finalizeStruct(tables, caller, std::move(toDelete), std::move(aggregateReplacements));
+    if (failed(finalizeResult)) {
+      return failure();
+    }
+  }
+  return success();
+}
 
 std::unique_ptr<mlir::Pass> llzk::createInlineStructsPass() {
   return std::make_unique<InlineStructsPass>();
