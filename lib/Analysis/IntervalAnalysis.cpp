@@ -1112,7 +1112,13 @@ LogicalResult StructIntervals::computeIntervals(
       SourceRef ref {arg};
       if (searchSet.erase(ref)) {
         const IntervalAnalysisLattice *lattice = solver.lookupState<IntervalAnalysisLattice>(arg);
-        fieldRanges[ref] = lattice->getValue().getScalarValue().getInterval();
+        // If we never referenced this argument, use a default value
+        ExpressionValue expr = lattice->getValue().getScalarValue();
+        if (!expr.getExpr()) {
+          expr = expr.withInterval(Interval::Entire(ctx.getField()));
+        }
+        fieldRanges[ref] = expr.getInterval();
+        assert(fieldRanges[ref].getField() == ctx.getField() && "bad interval defaults");
       }
     }
 
@@ -1122,12 +1128,14 @@ LogicalResult StructIntervals::computeIntervals(
       if (!lattices.empty() && searchSet.erase(ref)) {
         const IntervalAnalysisLattice *lattice = *lattices.begin();
         fieldRanges[ref] = lattice->getValue().getScalarValue().getInterval();
+        assert(fieldRanges[ref].getField() == ctx.getField() && "bad interval defaults");
       }
     }
 
     for (const auto &[ref, val] : ctx.intervalDFA->getFieldWriteResults()) {
       if (searchSet.erase(ref)) {
         fieldRanges[ref] = val.getInterval();
+        assert(fieldRanges[ref].getField() == ctx.getField() && "bad interval defaults");
       }
     }
 

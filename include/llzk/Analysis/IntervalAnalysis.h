@@ -48,7 +48,9 @@ public:
   /* Must be default initializable to be a ScalarLatticeValue. */
   ExpressionValue() : i(), expr(nullptr) {}
 
-  explicit ExpressionValue(const Field &f, llvm::SMTExprRef exprRef)
+  explicit ExpressionValue(const Field &f) : i(Interval::Entire(f)), expr(nullptr) {}
+
+  ExpressionValue(const Field &f, llvm::SMTExprRef exprRef)
       : i(Interval::Entire(f)), expr(exprRef) {}
 
   ExpressionValue(const Field &f, llvm::SMTExprRef exprRef, const llvm::DynamicAPInt &singleVal)
@@ -295,7 +297,8 @@ private:
   llvm::DenseMap<SourceRef, ExpressionValue> fieldWriteResults;
 
   void setToEntryState(Lattice *lattice) override {
-    // initial state should be empty, so do nothing here
+    // Initialize the value with an interval in our specified field.
+    (void)lattice->setValue(ExpressionValue(field.get()));
   }
 
   llvm::SMTExprRef createFeltSymbol(const SourceRef &r) const;
