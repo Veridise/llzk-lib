@@ -40,6 +40,7 @@
 #if LLZK_WITH_PCL
 #include <pcl/Dialect/IR/Dialect.h>
 #include <pcl/InitAllDialects.h>
+#include <pcl/Transforms/PCLTransformationPasses.h>
 #endif // LLZK_WITH_PCL
 
 static llvm::cl::list<std::string> IncludeDirs(
@@ -76,6 +77,10 @@ int main(int argc, char **argv) {
   llzk::polymorphic::registerTransformationPasses();
   llzk::registerTransformationPassPipelines();
   llzk::registerValidationPasses();
+
+#if LLZK_WITH_PCL
+  pcl::registerTransformationPasses();
+#endif // LLZK_WITH_PCL
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;
