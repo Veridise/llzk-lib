@@ -3,27 +3,15 @@ added:
 
 changed:
   - CAPI Renames:
-    - llzkArrayTypeGet -> llzkArrayArrayTypeGetWithDims
-    - llzkArrayTypeGetWithNumericDims -> llzkArrayArrayTypeGetWithShape
-    - llzkArrayTypeGetElementType -> llzkArrayArrayTypeGetElementType
-    - llzkArrayTypeGetNumDims -> llzkArrayArrayTypeGetDimensionSizesCount
-    - llzkArrayTypeGetDim -> llzkArrayArrayTypeGetDimensionSizesAt
-    - LlzkCmp -> LlzkBoolFeltCmpPredicate
-    - llzkFeltCmpPredicateAttrGet -> llzkBoolFeltCmpPredicateAttrGet
-    - llzkFeltConstAttrGet -> llzkFeltFeltConstAttrGet
-    - llzkFeltConstAttrGetWithBits -> llzkFeltFeltConstAttrGetWithBits
-    - llzkFeltConstAttrGetFromString -> llzkFeltFeltConstAttrGetFromString
-    - llzkFeltConstAttrGetFromParts -> llzkFeltFeltConstAttrGetFromParts
-    - llzkFeltTypeGet -> llzkFeltFeltTypeGet
-
-deprecated:
-  - 
-
-fixed:
-  - 
-
-removed:
-  - 
-
-security:
-  - 
+    - llzkArrayTypeGet to llzkArrayArrayTypeGetWithDims
+    - llzkArrayTypeGetWithNumericDims to llzkArrayArrayTypeGetWithShape
+    - llzkArrayTypeGetElementType to llzkArrayArrayTypeGetElementType
+    - llzkArrayTypeGetNumDims to llzkArrayArrayTypeGetDimensionSizesCount
+    - llzkArrayTypeGetDim to llzkArrayArrayTypeGetDimensionSizesAt
+    - LlzkCmp to LlzkBoolFeltCmpPredicate
+    - llzkFeltCmpPredicateAttrGet to llzkBoolFeltCmpPredicateAttrGet
+    - llzkFeltConstAttrGet to llzkFeltFeltConstAttrGet
+    - llzkFeltConstAttrGetWithBits to llzkFeltFeltConstAttrGetWithBits
+    - llzkFeltConstAttrGetFromString to llzkFeltFeltConstAttrGetFromString
+    - llzkFeltConstAttrGetFromParts to llzkFeltFeltConstAttrGetFromParts
+    - llzkFeltTypeGet to llzkFeltFeltTypeGet
