@@ -134,4 +134,29 @@ APSInt toAPSInt(const DynamicAPInt &i) {
   return res;
 }
 
+DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const DynamicAPInt &mod) {
+  DynamicAPInt result(1);
+  DynamicAPInt b = base;
+  DynamicAPInt e = exp;
+  DynamicAPInt one(1);
+
+  while (e != 0) {
+    if (e % 2 != 0) {
+      result = (result * b) % mod;
+    }
+
+    b = (b * b) % mod;
+    e = e >> one;
+  }
+  assert((base * result) % mod == 1 && "inverse is incorrect");
+  return result;
+}
+
+llvm::DynamicAPInt modInversePrime(const DynamicAPInt &f, const DynamicAPInt &p) {
+  assert(f != 0 && "0 has no inverse");
+  // Fermat: f^(p-2) mod p
+  DynamicAPInt exp = p - 2;
+  return modExp(f, exp, p);
+}
+
 } // namespace llzk

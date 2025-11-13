@@ -197,7 +197,12 @@ Interval Interval::join(const Interval &rhs) const {
   if (areOneOf<
           {Type::TypeA, Type::TypeA}, {Type::TypeB, Type::TypeB}, {Type::TypeC, Type::TypeC},
           {Type::TypeA, Type::TypeC}, {Type::TypeB, Type::TypeC}>(lhs, rhs)) {
-    return Interval(rhs.ty, f, std::min(lhs.a, rhs.a), std::max(lhs.b, rhs.b));
+    auto newLhs = std::min(lhs.a, rhs.a);
+    auto newRhs = std::max(lhs.b, rhs.b);
+    if (newLhs == newRhs) {
+      return Interval::Degenerate(f, newLhs);
+    }
+    return Interval(rhs.ty, f, newLhs, newRhs);
   }
   if (areOneOf<{Type::TypeA, Type::TypeB}>(lhs, rhs)) {
     auto lhsUnred = lhs.firstUnreduced();
@@ -232,6 +237,9 @@ Interval Interval::intersect(const Interval &rhs) const {
   const auto &lhs = *this;
   const Field &f = checkFields(lhs, rhs);
   // Trivial cases
+  if (lhs == rhs) {
+    return lhs;
+  }
   if (lhs.isEmpty() || rhs.isEmpty()) {
     return Interval::Empty(f);
   }
@@ -241,8 +249,15 @@ Interval Interval::intersect(const Interval &rhs) const {
   if (rhs.isEntire()) {
     return lhs;
   }
-  if (lhs.isDegenerate() || rhs.isDegenerate()) {
-    return lhs.toUnreduced().intersect(rhs.toUnreduced()).reduce(f);
+  if (lhs.isDegenerate() && rhs.isDegenerate()) {
+    // These must not be equal
+    return Interval::Empty(f);
+  }
+  if (lhs.isDegenerate()) {
+    return Interval::TypeA(f, lhs.a, lhs.a).intersect(rhs);
+  }
+  if (rhs.isDegenerate()) {
+    return Interval::TypeA(f, rhs.a, rhs.a).intersect(lhs);
   }
 
   // More complex cases
@@ -251,8 +266,10 @@ Interval Interval::intersect(const Interval &rhs) const {
           {Type::TypeA, Type::TypeC}, {Type::TypeB, Type::TypeC}>(lhs, rhs)) {
     auto maxA = std::max(lhs.a, rhs.a);
     auto minB = std::min(lhs.b, rhs.b);
-    if (maxA <= minB) {
+    if (maxA < minB) {
       return Interval(lhs.ty, f, maxA, minB);
+    } else if (maxA == minB) {
+      return Interval::Degenerate(f, maxA);
     } else {
       return Interval::Empty(f);
     }
@@ -359,10 +376,10 @@ Interval Interval::operator~() const {
 
 Interval operator+(const Interval &lhs, const Interval &rhs) {
   const Field &f = checkFields(lhs, rhs);
-  if (lhs.isEmpty()) {
+  if (lhs.isEmpty() || rhs.isEntire()) {
     return rhs;
   }
-  if (rhs.isEmpty()) {
+  if (rhs.isEmpty() || lhs.isEntire()) {
     return lhs;
   }
   return (lhs.firstUnreduced() + rhs.firstUnreduced()).reduce(f);

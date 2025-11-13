@@ -42,4 +42,10 @@ inline llvm::DynamicAPInt toDynamicAPInt(const llvm::APInt &i) {
 
 llvm::APSInt toAPSInt(const llvm::DynamicAPInt &i);
 
+llvm::DynamicAPInt modExp(
+    const llvm::DynamicAPInt &base, const llvm::DynamicAPInt &exp, const llvm::DynamicAPInt &mod
+);
+
+llvm::DynamicAPInt modInversePrime(const llvm::DynamicAPInt &f, const llvm::DynamicAPInt &p);
+
 } // namespace llzk

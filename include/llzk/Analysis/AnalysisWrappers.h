@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "llzk/Analysis/DenseAnalysis.h"
+#include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/ErrorHelper.h"
