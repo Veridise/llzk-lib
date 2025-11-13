@@ -90,12 +90,12 @@ protected:
   /// @brief Generate IsA test for a class
   virtual void genIsATest() const {
     static constexpr char fmt[] = R"(
-TEST_F({0}{1}LinkTests, IsA_{2}) {{
-  // This test ensures {3}{1}IsA{2} links properly.
+TEST_F({0}{1}LinkTests, IsA_{0}{2}) {{
+  // This test ensures {3}{1}IsA{0}{2} links properly.
   auto test{1} = createTest{1}();
   
   // This should always return false since test{1} is {4}
-  EXPECT_FALSE({3}{1}IsA{2}(test{1}));
+  EXPECT_FALSE({3}{1}IsA{0}{2}(test{1}));
 }
 )";
     assert(!className.empty() && "className must be set");
@@ -115,7 +115,7 @@ TEST_F({0}{1}LinkTests, Get_{2}) {{
   auto test{1} = createTest{1}();
   
   // We only verify the function compiles and links, wrapped in an unreachable condition
-  if ({3}{1}IsA{2}(test{1})) {{
+  if ({3}{1}IsA{0}{2}(test{1})) {{
 {4}
     (void){3}{0}{2}Get(context{5});
   }
@@ -135,7 +135,7 @@ TEST_F({0}{1}LinkTests, Get_{2}_{3}) {{
   // This test ensures {4}{0}{2}Get{5} links properly.
   auto test{1} = createTest{1}();
   
-  if ({4}{1}IsA{2}(test{1})) {{
+  if ({4}{1}IsA{0}{2}(test{1})) {{
     (void){4}{0}{2}Get{5}(test{1});
   }
 }
@@ -155,7 +155,7 @@ TEST_F({0}{1}LinkTests, Get_{2}_{3}Count) {{
   // This test ensures {4}{0}{2}Get{5}Count links properly.
   auto test{1} = createTest{1}();
   
-  if ({4}{1}IsA{2}(test{1})) {{
+  if ({4}{1}IsA{0}{2}(test{1})) {{
     (void){4}{0}{2}Get{5}Count(test{1});
   }
 }
@@ -175,7 +175,7 @@ TEST_F({0}{1}LinkTests, Get_{2}_{3}At) {{
   // This test ensures {4}{0}{2}Get{5}At links properly.
   auto test{1} = createTest{1}();
   
-  if ({4}{1}IsA{2}(test{1})) {{
+  if ({4}{1}IsA{0}{2}(test{1})) {{
     (void){4}{0}{2}Get{5}At(test{1}, 0);
   }
 }

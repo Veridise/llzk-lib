@@ -122,12 +122,12 @@ protected:
   /// @brief Generate IsA test for an operation
   void genIsATest() const {
     static constexpr char fmt[] = R"(
-TEST_F({0}OpLinkTests, IsA_{1}) {{
-  // This test ensures llzkOperationIsA{1} links properly.
+TEST_F({0}OpLinkTests, IsA_{0}{1}) {{
+  // This test ensures llzkOperationIsA{0}{1} links properly.
   auto testOp = createTestOp();
   
   // This should always return false since testOp is from {2} dialect
-  EXPECT_FALSE(llzkOperationIsA{1}(testOp));
+  EXPECT_FALSE(llzkOperationIsA{0}{1}(testOp));
   
   mlirOperationDestroy(testOp);
 }
@@ -507,14 +507,18 @@ protected:
   virtual void setDialectAndClassName(const Dialect *d, StringRef cppClassName) override {
     Generator::setDialectAndClassName(d, cppClassName);
     assert(!className.empty() && "className must be set");
-    this->isACheck = llvm::formatv("{0}OperationIsA{1}", FunctionPrefix, this->className).str();
     this->testPrefix = llvm::formatv("{0}{1}", FunctionPrefix, this->dialectNameCapitalized).str();
+    this->isACheck =
+        llvm::formatv(
+            "{0}OperationIsA{1}{2}", FunctionPrefix, this->dialectNameCapitalized, this->className
+        )
+            .str();
   }
 
   std::string testDialect;
   std::string testOpName;
-  std::string isACheck;
   std::string testPrefix;
+  std::string isACheck;
 
 private:
   /// @brief Generate dummy parameters for create function based on operation

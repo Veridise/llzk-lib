@@ -64,7 +64,7 @@ TEST_F(CAPITest, llzkFeltFeltConstAttrGetFromParts) {
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_const_attr_pass) {
   auto attr = llzkFeltFeltConstAttrGet(context, 0);
-  EXPECT_TRUE(llzkAttributeIsAFeltConstAttr(attr));
+  EXPECT_TRUE(llzkAttributeIsAFeltFeltConstAttr(attr));
 }
 
 TEST_F(CAPITest, llzk_felt_type_get) {
@@ -74,5 +74,5 @@ TEST_F(CAPITest, llzk_felt_type_get) {
 
 TEST_F(CAPITest, llzk_type_is_a_felt_type_pass) {
   auto type = llzkFeltFeltTypeGet(context);
-  EXPECT_TRUE(llzkTypeIsAFeltType(type));
+  EXPECT_TRUE(llzkTypeIsAFeltFeltType(type));
 }

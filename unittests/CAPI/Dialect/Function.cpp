@@ -108,7 +108,7 @@ TEST_F(FuncDialectTest, llzk_func_def_op_create_with_attrs_and_arg_attrs) {
 
 TEST_F(FuncDialectTest, llzk_operation_is_a_func_def_op_pass) {
   auto f = test_function();
-  EXPECT_TRUE(llzkOperationIsAFuncDefOp(f.op));
+  EXPECT_TRUE(llzkOperationIsAFunctionFuncDefOp(f.op));
 }
 
 TEST_F(FuncDialectTest, llzk_func_def_op_get_has_allow_constraint_attr) {
@@ -283,7 +283,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims)
     mlirOpBuilderDestroy(builder);                                                                 \
   }
 
-call_pred_test(test_llzk_operation_is_a_call_op_pass, llzkOperationIsACallOp, true);
+call_pred_test(test_llzk_operation_is_a_call_op_pass, llzkOperationIsAFunctionCallOp, true);
 
 TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
   auto f = test_function0();

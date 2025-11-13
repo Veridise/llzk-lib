@@ -63,7 +63,7 @@ TEST_F(ArrayDialectTests, type_is_a_array_type_pass) {
   MlirAttribute dims[1] = {size};
   auto arr_type = llzkArrayArrayTypeGetWithDims(indexType(), 1, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  EXPECT_TRUE(llzkTypeIsAArrayType(arr_type));
+  EXPECT_TRUE(llzkTypeIsAArrayArrayType(arr_type));
 }
 
 TEST_F(ArrayDialectTests, array_type_get_with_numeric_dims) {

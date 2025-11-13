@@ -342,11 +342,13 @@ extern "C" {
 
   virtual void genIsADecl() const {
     static constexpr char fmt[] = R"(
-/* Returns true if the {1} is a {2}::{3}. */
-MLIR_CAPI_EXPORTED bool {0}{1}IsA{3}(Mlir{1});
+/* Returns true if the {1} is a {3}::{4}. */
+MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{4}(Mlir{1});
 )";
     assert(dialect && "Dialect must be set");
-    os << llvm::formatv(fmt, FunctionPrefix, kind, dialect->getCppNamespace(), className);
+    os << llvm::formatv(
+        fmt, FunctionPrefix, kind, dialectNameCapitalized, dialect->getCppNamespace(), className
+    );
   }
 
   /// @brief Generate declarations for extra methods from extraClassDeclaration
@@ -392,12 +394,12 @@ struct ImplementationGenerator : public Generator {
 
   virtual void genIsAImpl() const {
     static constexpr char fmt[] = R"(
-bool {0}{1}IsA{2}(Mlir{1} inp) {{
-  return llvm::isa<{2}>(unwrap(inp));
+bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
+  return llvm::isa<{3}>(unwrap(inp));
 }
 )";
     assert(!className.empty() && "className must be set");
-    os << llvm::formatv(fmt, FunctionPrefix, kind, className);
+    os << llvm::formatv(fmt, FunctionPrefix, kind, dialectNameCapitalized, className);
   }
 
   /// @brief Generate implementations for extra methods from extraClassDeclaration

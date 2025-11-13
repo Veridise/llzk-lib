@@ -25,5 +25,5 @@ TEST_F(CAPITest, llzk_string_type_get) {
 
 TEST_F(CAPITest, llzk_type_is_a_string_type_pass) {
   auto type = llzkStringTypeGet(context);
-  EXPECT_TRUE(llzkTypeIsAStringType(type));
+  EXPECT_TRUE(llzkTypeIsAStringStringType(type));
 }

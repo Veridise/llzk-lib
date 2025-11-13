@@ -27,7 +27,7 @@ TEST_F(CAPITest, llzk_type_var_type_get) {
 
 TEST_F(CAPITest, llzk_type_is_a_type_var_type_pass) {
   auto t = llzkTypeVarTypeGet(context, mlirStringRefCreateFromCString("T"));
-  EXPECT_TRUE(llzkTypeIsATypeVarType(t));
+  EXPECT_TRUE(llzkTypeIsAPolyTypeVarType(t));
 }
 
 TEST_F(CAPITest, llzk_type_var_type_get_from_attr) {
@@ -118,7 +118,7 @@ TEST_F(CAPITest, llzk_op_is_a_apply_map_op_pass) {
   );
   EXPECT_NE(op.ptr, (void *)NULL);
   EXPECT_TRUE(mlirOperationVerify(op));
-  EXPECT_TRUE(llzkOperationIsAApplyMapOp(op));
+  EXPECT_TRUE(llzkOperationIsAPolyApplyMapOp(op));
   mlirOperationDestroy(op);
   mlirOpBuilderDestroy(builder);
 }

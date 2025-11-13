@@ -24,5 +24,5 @@ TEST_F(CAPITest, llzk_public_attr_get) {
 
 TEST_F(CAPITest, llzk_attribute_is_a_public_attr_pass) {
   auto attr = llzkPublicAttrGet(context);
-  EXPECT_TRUE(llzkAttributeIsAPublicAttr(attr));
+  EXPECT_TRUE(llzkAttributeIsALlzkPublicAttr(attr));
 }

@@ -38,5 +38,5 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_cmp_predicate_attr_pass) {
   auto attr = llzkBoolFeltCmpPredicateAttrGet(context, LlzkBoolFeltCmpPredicate_EQ);
-  EXPECT_TRUE(llzkAttributeIsAFeltCmpPredicateAttr(attr));
+  EXPECT_TRUE(llzkAttributeIsABoolFeltCmpPredicateAttr(attr));
 }
