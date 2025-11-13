@@ -96,7 +96,7 @@ struct OpHeaderGenerator : public HeaderGenerator, OpGeneratorData {
   void genOpCreateDecl(std::string const &params) const {
     static constexpr char fmt[] = R"(
 /* Create a {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED MlirOperation {0}{1}Create{3}(MlirContext ctx, MlirLocation location{4});
+MLIR_CAPI_EXPORTED MlirOperation {0}{1}{3}Create(MlirContext ctx, MlirLocation location{4});
 )";
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
@@ -450,7 +450,7 @@ struct OpImplementationGenerator : public ImplementationGenerator, OpGeneratorDa
       std::string const &params, std::string const &operationName, std::string const &assignments
   ) const {
     static constexpr char fmt[] = R"(
-MlirOperation {0}{1}Create{2}(MlirContext ctx, MlirLocation location{3}) {{
+MlirOperation {0}{1}{2}Create(MlirContext ctx, MlirLocation location{3}) {{
   MlirOperationState state = mlirOperationStateGet(mlirStringRefCreateFromCString("{4}"), location);
 {5}
   return mlirOperationCreate(&state);

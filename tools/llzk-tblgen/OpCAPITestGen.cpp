@@ -140,8 +140,8 @@ TEST_F({0}OpLinkTests, IsA_{1}) {{
   /// @param op The operation definition
   void genCreateOpTest(const Operator &op) const {
     static constexpr char fmt[] = R"(
-TEST_F({0}OpLinkTests, {1}_Create_{2}) {{
-  // This test ensures {3}Create{2} links properly.
+TEST_F({0}OpLinkTests, {1}{2}_Create) {{
+  // This test ensures {3}{2}Create links properly.
   // We create a {4}.{5} op, which will never match the {2} dialect check.
   auto testOp = createTestOp();
   
@@ -150,7 +150,7 @@ TEST_F({0}OpLinkTests, {1}_Create_{2}) {{
   if ({6}(testOp)) {{
     auto location = mlirLocationUnknownGet(context);
 {7}
-    (void){3}Create{2}(context, location{8});
+    (void){3}{2}Create(context, location{8});
   }
   
   mlirOperationDestroy(testOp);
