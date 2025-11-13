@@ -16,6 +16,7 @@ include "llzk/Dialect/Polymorphic/IR/Types.td"
 class NaryOpBase<Dialect dialect, string mnemonic, string defaultTypeBuilder,
                  list<Trait> traits = []> : Op<dialect, mnemonic, traits> {
   let extraClassDeclaration = [{
+  private:
     static ::mlir::ParseResult parseInferredOrParsedType(
         ::mlir::OpAsmParser &parser, ::mlir::Type &opType, bool isFirst
     ) {

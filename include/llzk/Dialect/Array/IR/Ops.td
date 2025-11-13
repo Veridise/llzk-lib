@@ -218,15 +218,17 @@ def LLZK_CreateArrayOp
       }];
 
   let extraClassDeclaration = [{
+  private:
     static ::mlir::ParseResult parseInferredArrayType(::mlir::OpAsmParser &parser,
         ::llvm::SmallVector<::mlir::Type,1> &elementsTypes,
         ::mlir::ArrayRef<::mlir::OpAsmParser::UnresolvedOperand> elements,
         ::mlir::Type resultType
     );
+
     static void printInferredArrayType(::mlir::OpAsmPrinter &printer, CreateArrayOp,
         ::mlir::TypeRange, ::mlir::OperandRange, ::mlir::Type
     );
-  private:
+
     static ::llvm::SmallVector<::mlir::Type> resultTypeToElementsTypes(::mlir::Type resultType);
   }];
 
