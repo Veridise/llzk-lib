@@ -25,6 +25,10 @@
 
 #include <stdint.h>
 
+// Include the generated CAPI
+#include "llzk/Dialect/Function/IR/Attrs.capi.h.inc"
+#include "llzk/Dialect/Function/IR/Ops.capi.h.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -68,9 +72,6 @@ static inline MlirOperation llzkFuncDefOpCreateWithArgAttrs(
       loc, name, type, /*nAttrs=*/0, /*attrs=*/NULL, nArgAttrs, argAttrs
   );
 }
-
-/// Returns true if the operation is a FuncDefOp.
-LLZK_DECLARE_OP_ISA(FuncDefOp);
 
 /// Returns true if the FuncDefOp has the allow_constraint attribute.
 LLZK_DECLARE_OP_PREDICATE(FuncDefOp, HasAllowConstraintAttr);
@@ -159,9 +160,6 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
     MlirValueRange const *mapOperands, intptr_t numDimsPermMapLength, int32_t const *numDimsPerMap,
     intptr_t numArgOperands, MlirValue const *argOperands
 );
-
-/// Returns true if the operation is a CallOp.
-LLZK_DECLARE_OP_ISA(CallOp);
 
 /// Returns the FunctionType of the callee.
 MLIR_CAPI_EXPORTED MlirType llzkCallOpGetCalleeType(MlirOperation op);

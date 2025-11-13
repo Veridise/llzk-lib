@@ -27,9 +27,13 @@
 
 #include <llvm/ADT/STLExtras.h>
 
-using namespace llzk;
 using namespace mlir;
+using namespace llzk;
 using namespace llzk::component;
+
+// Include the generated CAPI
+#include "llzk/Dialect/Struct/IR/Ops.capi.cpp.inc"
+#include "llzk/Dialect/Struct/IR/Types.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component, StructDialect)
 
@@ -59,8 +63,6 @@ llzkStructTypeGetWithAttrs(MlirAttribute name, intptr_t numParams, MlirAttribute
   );
 }
 
-bool llzkTypeIsAStructType(MlirType type) { return llvm::isa<StructType>(unwrap(type)); }
-
 MlirAttribute llzkStructTypeGetName(MlirType type) {
   return wrap(llvm::cast<StructType>(unwrap(type)).getNameRef());
 }
@@ -72,8 +74,6 @@ MlirAttribute llzkStructTypeGetParams(MlirType type) {
 //===----------------------------------------------------------------------===//
 // StructDefOp
 //===----------------------------------------------------------------------===//
-
-bool llzkOperationIsAStructDefOp(MlirOperation op) { return llvm::isa<StructDefOp>(unwrap(op)); }
 
 MlirRegion llzkStructDefOpGetBodyRegion(MlirOperation op) {
   return wrap(&llvm::cast<StructDefOp>(unwrap(op)).getBodyRegion());
@@ -144,8 +144,6 @@ bool llzkStructDefOpGetIsMainComponent(MlirOperation op) {
 //===----------------------------------------------------------------------===//
 // FieldDefOp
 //===----------------------------------------------------------------------===//
-
-bool llzkOperationIsAFieldDefOp(MlirOperation op) { return llvm::isa<FieldDefOp>(unwrap(op)); }
 
 bool llzkFieldDefOpGetHasPublicAttr(MlirOperation op) {
   return llvm::cast<FieldDefOp>(unwrap(op)).hasPublicAttr();

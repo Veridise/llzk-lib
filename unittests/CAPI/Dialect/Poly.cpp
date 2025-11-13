@@ -15,18 +15,19 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_polymorphic) {
-  (void)mlirGetDialectHandle__llzk__polymorphic__();
-}
+// Include the auto-generated tests
+#include "llzk/Dialect/Polymorphic/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Polymorphic/IR/Ops.capi.test.cpp.inc"
+#include "llzk/Dialect/Polymorphic/IR/Types.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_type_var_type_get) {
   auto t = llzkTypeVarTypeGet(context, mlirStringRefCreateFromCString("T"));
   EXPECT_NE(t.ptr, (void *)NULL);
 }
 
-TEST_F(CAPITest, llzk_type_is_a_type_var_type) {
+TEST_F(CAPITest, llzk_type_is_a_type_var_type_pass) {
   auto t = llzkTypeVarTypeGet(context, mlirStringRefCreateFromCString("T"));
-  EXPECT_TRUE(llzkTypeIsATypeVarType(t));
+  EXPECT_TRUE(llzkTypeIsAPolyTypeVarType(t));
 }
 
 TEST_F(CAPITest, llzk_type_var_type_get_from_attr) {
@@ -104,7 +105,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_expr) {
   mlirOpBuilderDestroy(builder);
 }
 
-TEST_F(CAPITest, llzk_op_is_a_apply_map_op) {
+TEST_F(CAPITest, llzk_op_is_a_apply_map_op_pass) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
   auto expr = mlirAffineConstantExprGet(context, 1);
@@ -117,7 +118,7 @@ TEST_F(CAPITest, llzk_op_is_a_apply_map_op) {
   );
   EXPECT_NE(op.ptr, (void *)NULL);
   EXPECT_TRUE(mlirOperationVerify(op));
-  EXPECT_TRUE(llzkOperationIsAApplyMapOp(op));
+  EXPECT_TRUE(llzkOperationIsAPolyApplyMapOp(op));
   mlirOperationDestroy(op);
   mlirOpBuilderDestroy(builder);
 }

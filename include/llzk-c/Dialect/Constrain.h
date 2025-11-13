@@ -20,6 +20,9 @@
 
 #include <mlir-c/IR.h>
 
+// Include the generated CAPI
+#include "llzk/Dialect/Constrain/IR/Ops.capi.h.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

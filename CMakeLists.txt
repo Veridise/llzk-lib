@@ -201,6 +201,11 @@ set(R1CS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/r1cs/include")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LLZKMacros.cmake)
 
+# Build `llzk-tblgen` first since it generates files used by the `include` directory below
+add_subdirectory(tools/llzk-tblgen)
+set(LLZK_TABLEGEN_EXE llzk-tblgen)
+set(LLZK_TABLEGEN_TARGET llzk-tblgen)
+
 # Create an empty list for the dialect libraries, to be populated in the lib
 # subdirectory.
 add_library(LLZKAllDialects INTERFACE)

@@ -33,9 +33,9 @@ stdenv.mkDerivation {
         src = src0;
       };
 
-  nativeBuildInputs = [ clang cmake ninja ];
+  nativeBuildInputs = [ cmake ninja ];
   buildInputs = [
-    mlir_pkg z3.lib pcl_pkg
+    clang.dev mlir_pkg z3.lib pcl_pkg
   ] ++ lib.optionals mlir_pkg.hasPythonBindings [
     mlir_pkg.python
     mlir_pkg.pythonDeps

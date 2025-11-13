@@ -26,6 +26,10 @@
 
 #include <stdint.h>
 
+// Include the generated CAPI
+#include "llzk/Dialect/Struct/IR/Ops.capi.h.inc"
+#include "llzk/Dialect/Struct/IR/Types.capi.h.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,9 +54,6 @@ MlirType llzkStructTypeGetWithArrayAttr(MlirAttribute name, MlirAttribute params
 MLIR_CAPI_EXPORTED MlirType
 llzkStructTypeGetWithAttrs(MlirAttribute name, intptr_t numParams, MlirAttribute const *params);
 
-/// Returns true if the type is a StructType.
-LLZK_DECLARE_TYPE_ISA(StructType);
-
 /// Returns the fully qualified name of a llzk::component::StructType.
 MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetName(MlirType type);
 
@@ -62,9 +63,6 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetParams(MlirType type);
 //===----------------------------------------------------------------------===//
 // StructDefOp
 //===----------------------------------------------------------------------===//
-
-/// Returns true if the op is a StructDefOp
-LLZK_DECLARE_OP_ISA(StructDefOp);
 
 /// Returns the single body Region of the StructDefOp.
 MLIR_CAPI_EXPORTED MlirRegion llzkStructDefOpGetBodyRegion(MlirOperation op);
@@ -118,9 +116,6 @@ LLZK_DECLARE_OP_PREDICATE(StructDefOp, IsMainComponent);
 //===----------------------------------------------------------------------===//
 // FieldDefOp
 //===----------------------------------------------------------------------===//
-
-/// Returns true if the op is a FieldDefOp
-LLZK_DECLARE_OP_ISA(FieldDefOp);
 
 /// Returns true if the field has been marked public with a PublicAttr
 LLZK_DECLARE_OP_PREDICATE(FieldDefOp, HasPublicAttr);

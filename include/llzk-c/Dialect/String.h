@@ -22,6 +22,10 @@
 
 #include <mlir-c/IR.h>
 
+// Include the generated CAPI
+#include "llzk/Dialect/String/IR/Ops.capi.h.inc"
+#include "llzk/Dialect/String/IR/Types.capi.h.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,9 +34,6 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(String, llzk__string);
 
 /// Creates a llzk::string::StringType.
 MLIR_CAPI_EXPORTED MlirType llzkStringTypeGet(MlirContext);
-
-/// Returns true if the type is a StringType.
-LLZK_DECLARE_TYPE_ISA(StringType);
 
 #ifdef __cplusplus
 }

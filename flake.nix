@@ -64,13 +64,13 @@
         in
         {
           llzk = final.callPackage ./nix/llzk.nix {
-            clang = final.clang_20;
+            clang = final.llzk-llvmPackages.clang-unwrapped;
             mlir_pkg = final.mlir;
             pcl_pkg = final.pcl-mlir;
           };
           llzk-debug =
             (final.callPackage ./nix/llzk.nix {
-              clang = final.clang_20;
+              clang = final.llzk-llvmPackages.clang-unwrapped;
               mlir_pkg = final.mlir-debug;
               pcl_pkg = final.pcl-mlir-debug;
               cmakeBuildType = "Debug";
