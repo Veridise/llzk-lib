@@ -773,8 +773,15 @@ static LogicalResult finalizeStruct(
   caller.getConstrainFuncOp().walk([&tables, &destToSrcToClone](FieldReadOp readOp) {
     combineReadChain(readOp, tables, destToSrcToClone);
   });
-  auto res = caller.getComputeFuncOp().walk([&tables, &destToSrcToClone](FieldReadOp readOp) {
+  Value computeSelfVal = caller.getComputeFuncOp().getSelfValueFromCompute();
+  auto res = caller.getComputeFuncOp().walk([&tables, &destToSrcToClone,
+                                             &computeSelfVal](FieldReadOp readOp) {
     combineReadChain(readOp, tables, destToSrcToClone);
+    // Reads targeting the "self" value from "compute()" are not eligible for the compression
+    // provided in `combineNewThenReadChain()` and will actually cause an error within.
+    if (readOp.getComponent() == computeSelfVal) {
+      return WalkResult::advance();
+    }
     LogicalResult innerRes = combineNewThenReadChain(readOp, tables, destToSrcToClone);
     return failed(innerRes) ? WalkResult::interrupt() : WalkResult::advance();
   });
