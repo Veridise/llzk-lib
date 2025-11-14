@@ -87,11 +87,13 @@ static inline FieldDefOp getDef(SymbolTableCollection &tables, FieldRefOpInterfa
 
 /// If there exists a field ref chain in `destToSrcToClone` for the given `FieldReadOp` (as
 /// described in `combineReadChain()` or `combineNewThenReadChain()`), replace it with a
-/// new `FieldReadOp` that directly reads from the cloned field.
+/// new `FieldReadOp` that directly reads from the given cloned field and delete it.
 static bool combineHelper(
     FieldReadOp readOp, SymbolTableCollection &tables,
     const DestToSrcToClonedSrcInDest &destToSrcToClone, FieldRefOpInterface destFieldRefOp
 ) {
+  LLVM_DEBUG({ llvm::dbgs() << "[combineHelper] " << readOp << " => " << destFieldRefOp << '\n'; });
+
   auto srcToClone = destToSrcToClone.find(getDef(tables, destFieldRefOp));
   if (srcToClone == destToSrcToClone.end()) {
     return false;
@@ -130,6 +132,8 @@ static bool combineReadChain(
     FieldReadOp readOp, SymbolTableCollection &tables,
     const DestToSrcToClonedSrcInDest &destToSrcToClone
 ) {
+  LLVM_DEBUG({ llvm::dbgs() << "[combineReadChain] " << readOp << '\n'; });
+
   FieldReadOp readThatDefinesBaseComponent =
       llvm::dyn_cast_if_present<FieldReadOp>(readOp.getComponent().getDefiningOp());
   if (!readThatDefinesBaseComponent) {
@@ -349,6 +353,8 @@ class StructInliner {
     using ImplBase::ImplBase;
 
     FieldRefOpInterface getSelfRefField(CallOp callOp) override {
+      LLVM_DEBUG({ llvm::dbgs() << "[ConstrainImpl::getSelfRefField] " << callOp << '\n'; });
+
       // The typical pattern is to read a struct instance from a field and then call "constrain()"
       // on it. Get the Value passed as the "self" struct to the CallOp and determine which field it
       // was read from in the current struct (i.e., `destStruct`).
@@ -371,6 +377,8 @@ class StructInliner {
     using ImplBase::ImplBase;
 
     FieldRefOpInterface getSelfRefField(CallOp callOp) override {
+      LLVM_DEBUG({ llvm::dbgs() << "[ComputeImpl::getSelfRefField] " << callOp << '\n'; });
+
       // The typical pattern is to write the return value of "compute()" to a field in
       // the current struct (i.e., `destStruct`).
       // It doesn't really make sense (although there is no semantic restriction against it) to just
@@ -547,9 +555,9 @@ static void splitFunctionParam(
 }
 
 /// If the base component Value of the given FieldReadOp is the result of `struct.new` which is
-/// written to a field in `destToSrcToClone` and the field referenced by this FieldReadOp has a
-/// cloned field mapping in `destToSrcToClone`, replace this read with a new FieldReadOp referencing
-/// the cloned field.
+/// written to a field in `destToSrcToClone` and the field referenced by the given FieldReadOp has a
+/// cloned field mapping in `destToSrcToClone`, replace the given FieldReadOp with a new FieldReadOp
+/// referencing the cloned field.
 ///
 /// Example:
 ///   Given the mapping (@fa, !struct.type<@Component10A>) -> @f -> \@"fa:!s<@Component10A>+f"
@@ -566,6 +574,8 @@ static LogicalResult combineNewThenReadChain(
     FieldReadOp readOp, SymbolTableCollection &tables,
     const DestToSrcToClonedSrcInDest &destToSrcToClone
 ) {
+  LLVM_DEBUG({ llvm::dbgs() << "[combineNewThenReadChain] " << readOp << '\n'; });
+
   CreateStructOp createThatDefinesBaseComponent =
       llvm::dyn_cast_if_present<CreateStructOp>(readOp.getComponent().getDefiningOp());
   if (!createThatDefinesBaseComponent) {
@@ -700,7 +710,7 @@ static LogicalResult handleRemainingUses(
                 "' is not (currently) supported by this pass."
             )
             .attachNote(user->getLoc())
-            .append("used by this call");
+            .append("used by this operation");
       }
     }
   }
@@ -722,7 +732,8 @@ static LogicalResult finalizeStruct(
 ) {
   LLVM_DEBUG({
     llvm::dbgs() << "[finalizeStruct] dumping 'caller' struct before compressing chains:\n";
-    llvm::dbgs() << caller << '\n';
+    caller.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
+    llvm::dbgs() << '\n';
   });
 
   // Compress chains of reads that result after inlining multiple callees.
@@ -740,7 +751,8 @@ static LogicalResult finalizeStruct(
 
   LLVM_DEBUG({
     llvm::dbgs() << "[finalizeStruct] dumping 'caller' struct before deleting ops:\n";
-    llvm::dbgs() << caller << '\n';
+    caller.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
+    llvm::dbgs() << '\n';
     llvm::dbgs() << "[finalizeStruct] ops marked for deletion:\n";
     for (FieldRefOpInterface op : toDelete.fieldRefOps) {
       llvm::dbgs().indent(2) << op << '\n';
@@ -788,7 +800,7 @@ LogicalResult performInlining(SymbolTableCollection &tables, InliningPlan &plan)
     // Cache operations that should be deleted but must wait until all callees are processed
     // to ensure that all uses of the values defined by these operations are replaced.
     PendingErasure toDelete;
-    // Cache old-to-new field mappings across all calleeds inlined for the current struct.
+    // Cache old-to-new field mappings across all callees inlined for the current struct.
     DestToSrcToClonedSrcInDest aggregateReplacements;
     // Inline callees/subcomponents of the current struct
     for (StructDefOp toInline : callees) {
