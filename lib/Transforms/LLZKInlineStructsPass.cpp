@@ -582,14 +582,6 @@ inline void splitFunctionParam(
 }
 
 class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructsPass> {
-  /// Maps caller struct to callees that should be inlined. The outer SmallVector preserves the
-  /// ordering from the bottom-up traversal that builds the InliningPlan so performing inlining
-  /// in the order given will not lose any or require doing any more than once.
-  /// Note: Applying in the opposite direction would reduce making repeated clones of the ops within
-  /// the inlined struct functions (as they are inlined further and further up the tree) but that
-  /// would require updating some mapping in the plan along the way to ensure it's done properly.
-  using InliningPlan = SmallVector<std::pair<StructDefOp, SmallVector<StructDefOp>>>;
-
   static uint64_t complexity(FuncDefOp f) {
     uint64_t complexity = 0;
     f.getBody().walk([&complexity](Operation *op) {
@@ -977,7 +969,6 @@ inline static LogicalResult finalizeStruct(
   return success();
 }
 
-using InliningPlan = SmallVector<std::pair<StructDefOp, SmallVector<StructDefOp>>>;
 mlir::LogicalResult performInlining(mlir::SymbolTableCollection &tables, InliningPlan &plan) {
   for (auto &[caller, callees] : plan) {
     // Cache operations that should be deleted but must wait until all callees are processed
