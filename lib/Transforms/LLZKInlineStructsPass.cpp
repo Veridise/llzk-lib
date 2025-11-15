@@ -542,9 +542,9 @@ public:
     }
 
     LLVM_DEBUG({
-      llvm::dbgs() << "[handleRemainingUses] op: " << *op << '\n';
-      llvm::dbgs() << "[handleRemainingUses]   in function: " << op->getParentOfType<FuncDefOp>()
-                   << '\n';
+      llvm::dbgs() << "[DanglingUseHandler::handle] op: " << *op << '\n';
+      llvm::dbgs() << "[DanglingUseHandler::handle]   in function: "
+                   << op->getParentOfType<FuncDefOp>() << '\n';
     });
     for (OpOperand &use : llvm::make_early_inc_range(op->getUses())) {
       if (CallOp c = llvm::dyn_cast<CallOp>(use.getOwner())) {
@@ -579,9 +579,13 @@ public:
 
 private:
   inline LogicalResult handleUseInCallOp(OpOperand &use, CallOp inCall, Operation *origin) const {
-    LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]   use in call: " << inCall << '\n');
+    LLVM_DEBUG(
+        llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   use in call: " << inCall << '\n'
+    );
     unsigned argIdx = use.getOperandNumber() - inCall.getArgOperands().getBeginOperandIndex();
-    LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]     at index: " << argIdx << '\n');
+    LLVM_DEBUG(
+        llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]     at index: " << argIdx << '\n'
+    );
 
     auto tgtFuncRes = inCall.getCalleeTarget(tables);
     if (failed(tgtFuncRes)) {
@@ -591,7 +595,9 @@ private:
           .append("used by this call");
     }
     FuncDefOp tgtFunc = tgtFuncRes->get();
-    LLVM_DEBUG(llvm::dbgs() << "[handleRemainingUses]   call target: " << tgtFunc << '\n');
+    LLVM_DEBUG(
+        llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   call target: " << tgtFunc << '\n'
+    );
     if (tgtFunc.isExternal()) {
       // Those without a body (i.e. external implementation) present a problem because LLZK does
       // not define a memory layout for the external implementation to interpret the struct.
@@ -612,7 +618,7 @@ private:
       return nullptr;
     });
     LLVM_DEBUG({
-      llvm::dbgs() << "[handleRemainingUses]   field ref op for param: "
+      llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   field ref op for param: "
                    << (paramFromField ? debug::toStringOne(paramFromField) : "<<null>>") << '\n';
     });
     if (!paramFromField) {
@@ -621,15 +627,16 @@ private:
     const SrcStructFieldToCloneInDest &newFields =
         destToSrcToClone.at(getDef(tables, paramFromField));
     LLVM_DEBUG({
-      llvm::dbgs() << "[handleRemainingUses]   fields to split: " << debug::toStringList(newFields)
-                   << '\n';
+      llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   fields to split: "
+                   << debug::toStringList(newFields) << '\n';
     });
 
     // Convert the FuncDefOp side first (to use the easier builder for the new CallOp).
     splitFunctionParam(tgtFunc, argIdx, newFields);
     LLVM_DEBUG({
-      llvm::dbgs() << "[handleRemainingUses]   UPDATED call target: " << tgtFunc << '\n';
-      llvm::dbgs() << "[handleRemainingUses]   UPDATED call target type: "
+      llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   UPDATED call target: " << tgtFunc
+                   << '\n';
+      llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   UPDATED call target type: "
                    << tgtFunc.getFunctionType() << '\n';
     });
 
@@ -659,7 +666,7 @@ private:
       inCall.erase();
     }
     LLVM_DEBUG({
-      llvm::dbgs() << "[handleRemainingUses]   UPDATED function: "
+      llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   UPDATED function: "
                    << origin->getParentOfType<FuncDefOp>() << '\n';
     });
     return success();
