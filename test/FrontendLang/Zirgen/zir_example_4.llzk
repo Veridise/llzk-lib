@@ -37,5 +37,20 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-
-// CHECK: TODO
+// CHECK-LABEL:   struct.def @Reg {
+// CHECK-NEXT:      struct.field @"$super:!s<@NondetReg>+inner" : !felt.type {column}
+// CHECK-NEXT:      struct.field @"reg:!s<@NondetReg>+inner" : !felt.type {column}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Reg> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Reg>
+// CHECK-NEXT:        struct.writef %[[VAL_1]][@"reg:!s<@NondetReg>+inner"] = %[[VAL_0]] : <@Reg>, !felt.type
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_1]][@"reg:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Reg>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Reg>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_3]][@"reg:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_5]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_3]][@"$super:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_6]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
