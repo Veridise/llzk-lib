@@ -36,10 +36,13 @@
 #include <mlir/Transforms/WalkPatternRewriteDriver.h>
 
 #include <llvm/ADT/PostOrderIterator.h>
+#include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
+
+#include <concepts>
 
 // Include the generated base pass class definitions.
 namespace llzk {
@@ -219,7 +222,8 @@ static inline FieldReadOp getFieldReadThatDefinesSelfValuePassedToConstrain(Call
 /// Cache various ops from the caller struct that should be erased but only after all callees are
 /// fully handled (to avoid "still has uses" errors).
 struct PendingErasure {
-  SmallVector<FieldRefOpInterface> fieldRefOps;
+  SmallPtrSet<Operation *, 8> fieldReadOps;
+  SmallPtrSet<Operation *, 8> fieldWriteOps;
   SmallVector<CreateStructOp> newStructOps;
   SmallVector<DestFieldWithSrcStructType> fieldDefs;
 };
@@ -361,7 +365,7 @@ class StructInliner {
       auto fieldWriteHandler = [this](FieldWriteOp writeOp) {
         // Check if the field ref op should be deleted in the end
         if (this->destToSrcToClone.contains(this->data.getDef(writeOp))) {
-          this->data.toDelete.fieldRefOps.push_back(writeOp);
+          this->data.toDelete.fieldWriteOps.insert(writeOp);
         }
         return WalkResult::advance();
       };
@@ -371,7 +375,7 @@ class StructInliner {
       auto fieldReadHandler = [this](FieldReadOp readOp) {
         // Check if the field ref op should be deleted in the end
         if (this->destToSrcToClone.contains(this->data.getDef(readOp))) {
-          this->data.toDelete.fieldRefOps.push_back(readOp);
+          this->data.toDelete.fieldReadOps.insert(readOp);
         }
         // If the FieldReadOp was replaced/erased, must skip.
         return combineReadChain(readOp, this->data.tables, destToSrcToClone)
@@ -517,19 +521,26 @@ public:
   }
 };
 
+template <typename T>
+concept HasContainsOp = requires(const T &t, Operation *p) {
+  { t.contains(p) } -> std::convertible_to<bool>;
+};
+
 /// Handles remaining uses of an Operation's result Value before erasing the Operation.
+template <typename... PendingDeletionSets>
+  requires(HasContainsOp<PendingDeletionSets> && ...)
 class DanglingUseHandler {
   SymbolTableCollection &tables;
   const DestToSrcToClonedSrcInDest &destToSrcToClone;
-  ArrayRef<FieldRefOpInterface> otherRefsToBeDeleted;
+  std::tuple<const PendingDeletionSets &...> otherRefsToBeDeleted;
 
 public:
   DanglingUseHandler(
       SymbolTableCollection &symTables, const DestToSrcToClonedSrcInDest &destToSrcToCloneRef,
-      ArrayRef<FieldRefOpInterface> otherRefsPendingDeletion = {}
+      const PendingDeletionSets &...otherRefsPendingDeletion
   )
       : tables(symTables), destToSrcToClone(destToSrcToCloneRef),
-        otherRefsToBeDeleted(otherRefsPendingDeletion) {}
+        otherRefsToBeDeleted(otherRefsPendingDeletion...) {}
 
   /// Call before erasing an Operation to ensure that any remaining uses of the Operation's result
   /// are removed if possible, else report an error (the subsequent call to erase() would fail
@@ -608,8 +619,8 @@ private:
     }
 
     FieldRefOpInterface paramFromField = TypeSwitch<Operation *, FieldRefOpInterface>(origin)
-                                             .Case<FieldReadOp>([](auto p) { return p; })
-                                             .Case<CreateStructOp>([](auto p) {
+                                             .template Case<FieldReadOp>([](auto p) { return p; })
+                                             .template Case<CreateStructOp>([](auto p) {
       return findOpThatStoresSubcmp(p, [&p]() { return p.emitOpError(); }).value_or(nullptr);
     }).Default([](Operation *p) {
       llvm::errs() << "Encountered unexpected op: "
@@ -674,8 +685,9 @@ private:
 
   /// Helper function to determine if an Operation is contained in 'otherRefsToBeDeleted'
   inline bool opWillBeDeleted(Operation *otherOp) const {
-    return std::find(otherRefsToBeDeleted.begin(), otherRefsToBeDeleted.end(), otherOp) !=
-           otherRefsToBeDeleted.end();
+    return std::apply([&](const auto &...sets) {
+      return ((sets.contains(otherOp)) || ...);
+    }, otherRefsToBeDeleted);
   }
 
   /// Replace the function parameter at `paramIdx` with multiple parameters according to the types
@@ -794,8 +806,11 @@ static LogicalResult finalizeStruct(
     caller.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
     llvm::dbgs() << '\n';
     llvm::dbgs() << "[finalizeStruct] ops marked for deletion:\n";
-    for (FieldRefOpInterface op : toDelete.fieldRefOps) {
-      llvm::dbgs().indent(2) << op << '\n';
+    for (Operation *op : toDelete.fieldReadOps) {
+      llvm::dbgs().indent(2) << *op << '\n';
+    }
+    for (Operation *op : toDelete.fieldWriteOps) {
+      llvm::dbgs().indent(2) << *op << '\n';
     }
     for (CreateStructOp op : toDelete.newStructOps) {
       llvm::dbgs().indent(2) << op << '\n';
@@ -806,25 +821,28 @@ static LogicalResult finalizeStruct(
   });
 
   // Handle remaining uses of CreateStructOp before deleting anything because this process
-  // needs to be able to find the writes that stores the result of these ops.
-  {
-    DanglingUseHandler useHandler(tables, destToSrcToClone, toDelete.fieldRefOps);
-    for (CreateStructOp op : toDelete.newStructOps) {
-      if (failed(useHandler.handle(op))) {
-        return failure(); // error already printed within handle()
-      }
+  // needs to be able to find the FieldWriteOp instances that store the result of these ops.
+  DanglingUseHandler<SmallPtrSet<Operation *, 8>, SmallPtrSet<Operation *, 8>> useHandler(
+      tables, destToSrcToClone, toDelete.fieldWriteOps, toDelete.fieldReadOps
+  );
+  for (CreateStructOp op : toDelete.newStructOps) {
+    if (failed(useHandler.handle(op))) {
+      return failure(); // error already printed within handle()
     }
   }
-  // Next, to avoid "still has uses" errors, must erase FieldRefOpInterface before erasing
-  // the CreateStructOp or FieldDefOp.
-  {
-    DanglingUseHandler useHandler(tables, destToSrcToClone);
-    for (FieldRefOpInterface op : toDelete.fieldRefOps) {
-      if (failed(useHandler.handle(op))) {
-        return failure(); // error already printed within handle()
-      }
-      op.erase();
+  // Next, to avoid "still has uses" errors, must erase FieldWriteOp first, then FieldReadOp, before
+  // erasing the CreateStructOp or FieldDefOp.
+  for (Operation *op : toDelete.fieldWriteOps) {
+    if (failed(useHandler.handle(op))) {
+      return failure(); // error already printed within handle()
     }
+    op->erase();
+  }
+  for (Operation *op : toDelete.fieldReadOps) {
+    if (failed(useHandler.handle(op))) {
+      return failure(); // error already printed within handle()
+    }
+    op->erase();
   }
   for (CreateStructOp op : toDelete.newStructOps) {
     op.erase();
