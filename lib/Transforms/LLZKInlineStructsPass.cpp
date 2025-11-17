@@ -653,29 +653,27 @@ private:
 
     // Convert the CallOp side. Add a FieldReadOp for each value from the struct and pass them
     // individually in place of the struct parameter.
-    {
-      OpBuilder builder(inCall);
-      SmallVector<Value> splitArgs;
-      // Before the CallOp, insert a read from every new field. These Values will replace the
-      // original argument in the CallOp.
-      Value originalBaseVal = paramFromField.getComponent();
-      for (auto [origName, newFieldRef] : newFields) {
-        splitArgs.push_back(builder.create<FieldReadOp>(
-            inCall.getLoc(), newFieldRef.getType(), originalBaseVal, newFieldRef.getNameAttr()
-        ));
-      }
-      // Generate the new argument list from the original but replace 'argIdx'
-      SmallVector<Value> newOpArgs(inCall.getArgOperands());
-      newOpArgs.insert(
-          newOpArgs.erase(newOpArgs.begin() + argIdx), splitArgs.begin(), splitArgs.end()
-      );
-      // Create the new CallOp, replace uses of the old with the new, delete the old
-      inCall.replaceAllUsesWith(builder.create<CallOp>(
-          inCall.getLoc(), tgtFunc, CallOp::toVectorOfValueRange(inCall.getMapOperands()),
-          inCall.getNumDimsPerMapAttr(), newOpArgs
+    OpBuilder builder(inCall);
+    SmallVector<Value> splitArgs;
+    // Before the CallOp, insert a read from every new field. These Values will replace the
+    // original argument in the CallOp.
+    Value originalBaseVal = paramFromField.getComponent();
+    for (auto [origName, newFieldRef] : newFields) {
+      splitArgs.push_back(builder.create<FieldReadOp>(
+          inCall.getLoc(), newFieldRef.getType(), originalBaseVal, newFieldRef.getNameAttr()
       ));
-      inCall.erase();
     }
+    // Generate the new argument list from the original but replace 'argIdx'
+    SmallVector<Value> newOpArgs(inCall.getArgOperands());
+    newOpArgs.insert(
+        newOpArgs.erase(newOpArgs.begin() + argIdx), splitArgs.begin(), splitArgs.end()
+    );
+    // Create the new CallOp, replace uses of the old with the new, delete the old
+    inCall.replaceAllUsesWith(builder.create<CallOp>(
+        inCall.getLoc(), tgtFunc, CallOp::toVectorOfValueRange(inCall.getMapOperands()),
+        inCall.getNumDimsPerMapAttr(), newOpArgs
+    ));
+    inCall.erase();
     LLVM_DEBUG({
       llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   UPDATED function: "
                    << origin->getParentOfType<FuncDefOp>() << '\n';
