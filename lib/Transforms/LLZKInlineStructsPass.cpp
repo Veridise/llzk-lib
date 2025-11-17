@@ -785,8 +785,7 @@ static LogicalResult finalizeStruct(
   });
   FuncDefOp computeFn = caller.getComputeFuncOp();
   Value computeSelfVal = computeFn.getSelfValueFromCompute();
-  auto res = computeFn.walk([&tables, &destToSrcToClone,
-                                             &computeSelfVal](FieldReadOp readOp) {
+  auto res = computeFn.walk([&tables, &destToSrcToClone, &computeSelfVal](FieldReadOp readOp) {
     combineReadChain(readOp, tables, destToSrcToClone);
     // Reads targeting the "self" value from "compute()" are not eligible for the compression
     // provided in `combineNewThenReadChain()` and will actually cause an error within.
