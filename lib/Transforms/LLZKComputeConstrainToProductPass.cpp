@@ -26,17 +26,17 @@ using namespace llzk::component;
 using namespace llzk::function;
 using namespace mlir;
 
-bool isValidRoot(StructDefOp structDef) {
-  FuncDefOp computeFunc = structDef.getComputeFuncOp();
-  FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
+bool isValidRoot(StructDefOp root) {
+  FuncDefOp computeFunc = root.getComputeFuncOp();
+  FuncDefOp constrainFunc = root.getConstrainFuncOp();
 
   if (!computeFunc || !constrainFunc) {
-    structDef->emitError() << "no " << FUNC_NAME_COMPUTE << "/" << FUNC_NAME_CONSTRAIN
-                           << " to align";
+    root->emitError() << "no " << FUNC_NAME_COMPUTE << "/" << FUNC_NAME_CONSTRAIN << " to align";
     return false;
   }
 
-  // TODO: Check to see if root::@compute and root::@constrain are called anywhere else
+  // TODO: If root::@compute and root::@constrain are called anywhere else, this is not a valid root
+  // TODO: to start aligning from
 
   return true;
 }
@@ -45,11 +45,15 @@ class ComputeConstrainToProductPass
     : public llzk::impl::ComputeConstrainToProductPassBase<ComputeConstrainToProductPass> {
 
   std::vector<StructDefOp> alignedStructs;
-
+  // Given a @product function body, try to match up calls to @A::@compute and @A::@constrain for
+  // every sub-struct @A and replace them with a call to @A::@product
   LogicalResult alignCalls(
       FuncDefOp product, SymbolTableCollection &tables,
       LightweightSignalEquivalenceAnalysis &equivalence
   );
+
+  // Given a StructDefOp @root, replace the @root::@compute and @root::@constrain functions with a
+  // @root::@product
   FuncDefOp alignFuncs(
       StructDefOp root, FuncDefOp compute, FuncDefOp constrain, SymbolTableCollection &tables,
       LightweightSignalEquivalenceAnalysis &equivalence
@@ -65,17 +69,18 @@ public:
         getAnalysis<LightweightSignalEquivalenceAnalysis>()
     };
 
+    // Find the indicated root struct and make sure its a valid place to start aligning
     mod.walk([&root, this](StructDefOp structDef) {
       if (structDef.getSymName() == rootStruct) {
         root = structDef;
       }
     });
-
     if (!isValidRoot(root)) {
       signalPassFailure();
       return;
     }
 
+    // Try aligning the root functions
     if (!alignFuncs(
             root, root.getComputeFuncOp(), root.getConstrainFuncOp(), tables, equivalence
         )) {
@@ -127,8 +132,10 @@ FuncDefOp ComputeConstrainToProductPass::alignFuncs(
   computeCall->erase();
   constrainCall->erase();
 
-  alignedStructs.push_back(root); // Mark the compute/constrain for deletion
+  // Mark the compute/constrain for deletion
+  alignedStructs.push_back(root);
 
+  // Make sure we can align sub-calls to @compute and @constrain
   if (failed(alignCalls(productFunc, tables, equivalence))) {
     return nullptr;
   }
@@ -151,7 +158,9 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
 
   llvm::SetVector<std::pair<CallOp, CallOp>> alignedCalls;
 
-  auto doCallsAlign = [&](CallOp compute, CallOp constrain) -> bool {
+  // A @compute matches a @constrain if they belong to the same struct and all their input signals
+  // are pairwise equivalent
+  auto doCallsMatch = [&](CallOp compute, CallOp constrain) -> bool {
     LLVM_DEBUG({
       llvm::outs() << "Asking for equivalence between calls\n"
                    << compute << "\nand\n"
@@ -175,8 +184,9 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
   };
 
   for (auto compute : computeCalls) {
+    // If there is exactly one @compute that matches a given @constrain, we can align them
     auto matches = llvm::filter_to_vector(constrainCalls, [&](CallOp constrain) {
-      return doCallsAlign(compute, constrain);
+      return doCallsMatch(compute, constrain);
     });
 
     if (matches.size() == 1) {
@@ -186,7 +196,15 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
     }
   }
 
+  // TODO: If unaligned calls remain, fully inline their structs and continue instead of failing
+  if (!computeCalls.empty() && constrainCalls.empty()) {
+    product->emitError() << "failed to align some @" << FUNC_NAME_COMPUTE << " and @"
+                         << FUNC_NAME_CONSTRAIN;
+    return failure();
+  }
+
   for (auto [compute, constrain] : alignedCalls) {
+    // If @A::@compute matches @A::@constrain, recursively align the functions in @A...
     auto newRoot = compute.getCalleeTarget(tables)->get()->getParentOfType<StructDefOp>();
     assert(newRoot);
     FuncDefOp newProduct = alignFuncs(
@@ -196,6 +214,7 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
       return failure();
     }
 
+    // ...and replace the two calls with a single call to @A::@product
     OpBuilder callBuilder(compute);
     CallOp newCall =
         callBuilder.create<CallOp>(callBuilder.getUnknownLoc(), newProduct, compute.getOperands());
@@ -203,24 +222,6 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
     compute->erase();
     constrain->erase();
   }
-
-  for (auto call : llvm::concat<const CallOp>(computeCalls, constrainCalls)) {
-    InlinerInterface inliner(product.getContext());
-    auto funcDef = call.getCalleeTarget(tables)->get();
-    if (failed(inlineCall(inliner, call, funcDef, &funcDef.getBody(), true))) {
-      call->emitError() << "failed to inline";
-      return failure();
-    }
-    call->erase();
-  }
-
-  product.walk<WalkOrder::PostOrder>([](Operation *op) {
-    if (op->getNumResults() > 0 && op->getUses().empty()) {
-      op->erase();
-      return WalkResult::skip();
-    }
-    return WalkResult::advance();
-  });
 
   return success();
 }
