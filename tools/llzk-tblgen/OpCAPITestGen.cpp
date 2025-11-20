@@ -86,6 +86,11 @@ struct OpTestGenerator : public Generator {
   OpTestGenerator(llvm::raw_ostream &outputStream)
       : Generator("Operation", outputStream), testDialect("arith"), testOpName("constant") {}
 
+  /// @brief Generate test for an extra method from extraClassDeclaration
+  virtual void genExtraMethod(const ExtraMethod &method) const override {
+    llvm_unreachable("Not implemented"); // TODO
+  }
+
   /// @brief Generate the test class prologue
   void genTestClassPrologue() const {
     static constexpr char fmt[] =

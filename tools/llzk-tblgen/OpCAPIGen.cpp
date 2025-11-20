@@ -433,7 +433,7 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &os)
 
     // Generate extra class method wrappers
     if (GenExtraClassMethods) {
-      generator.genExtraMethodsDecl(op.getExtraClassDeclaration());
+      generator.genExtraMethods(op.getExtraClassDeclaration());
     }
   }
 
@@ -841,7 +841,7 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
 
     // Generate extra class method implementations
     if (GenExtraClassMethods) {
-      generator.genExtraMethodsImpl(op.getExtraClassDeclaration());
+      generator.genExtraMethods(op.getExtraClassDeclaration());
     }
   }
 

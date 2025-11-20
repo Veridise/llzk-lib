@@ -142,7 +142,7 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{4}{3}Get(MlirContext ctx{5});
     if (GenExtraClassMethods) {
       std::optional<mlir::StringRef> extraDecls = def.getExtraDecls();
       if (extraDecls.has_value()) {
-        this->genExtraMethodsDecl(extraDecls.value());
+        this->genExtraMethods(extraDecls.value());
       }
     }
   }
@@ -385,7 +385,7 @@ Mlir{1} {0}{2}{3}Get(MlirContext ctx{4}) {{
     if (GenExtraClassMethods) {
       std::optional<mlir::StringRef> extraDecls = def.getExtraDecls();
       if (extraDecls.has_value()) {
-        this->genExtraMethodsImpl(extraDecls.value());
+        this->genExtraMethods(extraDecls.value());
       }
     }
   }

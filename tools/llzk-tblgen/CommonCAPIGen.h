@@ -158,6 +158,9 @@ inline bool isAPIntType(mlir::StringRef cppType) {
 /// This class simplifies setting up Clang's lexer for parsing C++ code snippets.
 /// It manages the lifetime of all required Clang objects (FileManager, SourceManager,
 /// DiagnosticsEngine, etc.) and provides easy access to the lexer.
+///
+/// The Lexer is used instead of the Parser so that comments preceding method declarations
+/// can be captured for documentation generation.
 class ClangLexerContext {
 public:
   /// @brief Construct a lexer context for the given source code
@@ -183,6 +186,13 @@ private:
   clang::Lexer *lexer = nullptr;
 };
 
+struct MethodParameter {
+  /// The C++ type of the parameter
+  std::string type;
+  /// The name of the parameter
+  std::string name;
+};
+
 /// @brief Structure to represent a parsed method signature from extraClassDeclaration
 ///
 /// This structure holds information extracted from parsing C++ method declarations.
@@ -198,6 +208,8 @@ struct ExtraMethod {
   bool isConst = false;
   /// Whether the method has parameters (unsupported for now)
   bool hasParameters = false;
+  /// The parameters of the method
+  std::vector<MethodParameter> parameters;
 };
 
 /// @brief Parse method declarations from extraClassDeclaration using Clang's Lexer
@@ -221,7 +233,7 @@ struct ExtraMethod {
 /// - ExtraMethod { returnType="bool", methodName="isSignless", isConst=true, hasParameters=false }
 ///
 /// Note: Methods with parameters are detected but currently skipped during code generation.
-std::vector<ExtraMethod> parseExtraMethods(mlir::StringRef extraDecl);
+llvm::SmallVector<ExtraMethod> parseExtraMethods(mlir::StringRef extraDecl);
 
 /// @brief Check if a C++ type matches an MLIR type pattern
 /// @param cppType The C++ type to check
@@ -243,9 +255,7 @@ mlir::StringRef getReturnWrapCode(mlir::StringRef capiType);
 /// @param capiReturnType The target MLIR C API return type
 /// @param cppReturnType The source C++ return type
 /// @return true if the conversion is supported
-bool isValidReturnTypeConversion(
-    const std::string &capiReturnType, const std::string &cppReturnType
-);
+bool isValidTypeConversion(const std::string &capiReturnType, const std::string &cppReturnType);
 
 /// @brief Map C++ type to corresponding MLIR C API return type
 /// @param cppType The C++ type to map
@@ -310,6 +320,21 @@ struct Generator {
     this->className = cppClassName;
   }
 
+  /// @brief Generate code for extra methods from extraClassDeclaration
+  /// @param extraDecl The extra class declaration string
+  virtual void genExtraMethods(mlir::StringRef extraDecl) const {
+    if (extraDecl.empty()) {
+      return;
+    }
+    for (const ExtraMethod &method : parseExtraMethods(extraDecl)) {
+      genExtraMethod(method);
+    }
+  }
+
+  /// @brief Generate code for an extra method
+  /// @param method The extra method to generate code for
+  virtual void genExtraMethod(const ExtraMethod &method) const = 0;
+
 protected:
   std::string kind;
   llvm::raw_ostream &os;
@@ -351,39 +376,42 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{4}(Mlir{1});
     );
   }
 
-  /// @brief Generate declarations for extra methods from extraClassDeclaration
-  virtual void genExtraMethodsDecl(mlir::StringRef extraDecl) const {
-    static constexpr char fmt[] = R"(
-/* {0} */
-MLIR_CAPI_EXPORTED {1} {2}{3}{4}{5}(Mlir{6});
-)";
-    if (extraDecl.empty()) {
+  /// @brief Generate declaration for an extra method from extraClassDeclaration
+  virtual void genExtraMethod(const ExtraMethod &method) const override {
+    // Convert return type to C API type
+    std::string capiReturnType = cppTypeToCapiType(method.returnType);
+
+    // Skip if the return type couldn't be converted
+    if (!isValidTypeConversion(capiReturnType, method.returnType)) {
       return;
     }
 
-    std::vector<ExtraMethod> methods = parseExtraMethods(extraDecl);
-    for (const auto &method : methods) {
-      // Skip methods with parameters (not supported yet)
-      if (method.hasParameters) {
-        continue;
+    // Build parameter list
+    std::string paramList = llvm::formatv("Mlir{0} inp", kind).str();
+    for (const auto &param : method.parameters) {
+      // Convert C++ type to C API type for parameter declaration
+      std::string capiParamType = cppTypeToCapiType(param.type);
+      // Skip if the parameter type couldn't be converted
+      if (!isValidTypeConversion(capiParamType, param.type)) {
+        return;
       }
-
-      // Convert return type to C API type
-      std::string capiReturnType = cppTypeToCapiType(method.returnType);
-
-      // Skip if the return type couldn't be converted
-      if (!isValidReturnTypeConversion(capiReturnType, method.returnType)) {
-        continue;
-      }
-
-      // Generate declaration
-      std::string docComment =
-          method.documentation.empty() ? method.methodName : method.documentation;
-      os << llvm::formatv(
-          fmt, docComment, capiReturnType, FunctionPrefix, dialectNameCapitalized, className,
-          toPascalCase(method.methodName), kind
-      );
+      paramList += ", " + capiParamType + " " + param.name;
     }
+
+    // Generate declaration
+    std::string docComment =
+        method.documentation.empty() ? method.methodName : method.documentation;
+
+    os << llvm::formatv("\n/* {0} */\n", docComment);
+    os << llvm::formatv(
+        "MLIR_CAPI_EXPORTED {0} {1}{2}{3}{4}({5});\n",
+        capiReturnType,                  // {0}
+        FunctionPrefix,                  // {1}
+        dialectNameCapitalized,          // {2}
+        className,                       // {3}
+        toPascalCase(method.methodName), // {4}
+        paramList                        // {5}
+    );
   }
 };
 
@@ -402,63 +430,87 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
     os << llvm::formatv(fmt, FunctionPrefix, kind, dialectNameCapitalized, className);
   }
 
-  /// @brief Generate implementations for extra methods from extraClassDeclaration
-  virtual void genExtraMethodsImpl(mlir::StringRef extraDecl) const {
-    static constexpr char fmt[] = R"(
-{0} {1}{2}{3}{4}(Mlir{5} inp) {{
-  {6}llvm::cast<{3}>(unwrap(inp)).{7}(){8};
-}
- )";
-    if (extraDecl.empty()) {
+  /// @brief Generate implementation for an extra method from extraClassDeclaration
+  virtual void genExtraMethod(const ExtraMethod &method) const override {
+    // Convert return type to C API type
+    std::string capiReturnType = cppTypeToCapiType(method.returnType);
+
+    // Skip if the return type couldn't be converted
+    if (!isValidTypeConversion(capiReturnType, method.returnType)) {
       return;
     }
 
-    std::vector<ExtraMethod> methods = parseExtraMethods(extraDecl);
-    for (const auto &method : methods) {
-      // Skip methods with parameters (not supported yet)
-      if (method.hasParameters) {
-        continue;
+    // Build parameter list for C API function signature
+    std::string paramList = llvm::formatv("Mlir{0} inp", kind).str();
+    for (const auto &param : method.parameters) {
+      // Convert C++ type to C API type for parameter declaration
+      std::string capiParamType = cppTypeToCapiType(param.type);
+      // Skip if the parameter type couldn't be converted
+      if (!isValidTypeConversion(capiParamType, param.type)) {
+        return;
       }
-
-      // Convert return type to C API type
-      std::string capiReturnType = cppTypeToCapiType(method.returnType);
-
-      // Skip if the return type couldn't be converted
-      if (!isValidReturnTypeConversion(capiReturnType, method.returnType)) {
-        continue;
-      }
-
-      std::string capitalizedMethodName = toPascalCase(method.methodName);
-      mlir::StringRef wrapCode = getReturnWrapCode(capiReturnType);
-
-      // Build the return statement prefix and suffix
-      std::string returnPrefix;
-      std::string returnSuffix;
-
-      if (capiReturnType == "void") {
-        returnPrefix = "";
-        returnSuffix = "";
-      } else if (!wrapCode.empty()) {
-        returnPrefix = std::string("return ") + wrapCode.str() + "(";
-        returnSuffix = ")";
-      } else {
-        returnPrefix = "return ";
-        returnSuffix = "";
-      }
-
-      // Generate implementation
-      os << llvm::formatv(
-          fmt,
-          capiReturnType,         // {0}
-          FunctionPrefix,         // {1}
-          dialectNameCapitalized, // {2}
-          className,              // {3}
-          capitalizedMethodName,  // {4}
-          kind,                   // {5}
-          returnPrefix,           // {6}
-          method.methodName,      // {7}
-          returnSuffix            // {8}
-      );
+      paramList += ", " + capiParamType + " " + param.name;
     }
+
+    // Build argument list for C++ method call
+    std::string argList;
+    for (size_t i = 0; i < method.parameters.size(); ++i) {
+      if (i > 0) {
+        argList += ", ";
+      }
+      const auto &param = method.parameters[i];
+      std::string capiParamType = cppTypeToCapiType(param.type);
+
+      // Check if parameter needs unwrapping
+      if (isPrimitiveType(capiParamType)) {
+        // Primitive types don't need unwrapping
+        argList += param.name;
+      } else if (capiParamType.starts_with("Mlir")) {
+        // MLIR C API types need unwrapping
+        argList += "unwrap(" + param.name + ")";
+      } else {
+        // Unknown types - pass through as-is
+        argList += param.name;
+      }
+    }
+
+    std::string capitalizedMethodName = toPascalCase(method.methodName);
+    mlir::StringRef wrapCode = getReturnWrapCode(capiReturnType);
+
+    // Build the return statement prefix and suffix
+    std::string returnPrefix;
+    std::string returnSuffix;
+
+    if (capiReturnType == "void") {
+      returnPrefix = "";
+      returnSuffix = "";
+    } else if (!wrapCode.empty()) {
+      returnPrefix = std::string("return ") + wrapCode.str() + "(";
+      returnSuffix = ")";
+    } else {
+      returnPrefix = "return ";
+      returnSuffix = "";
+    }
+
+    // Generate implementation
+    os << "\n";
+    os << llvm::formatv(
+        "{0} {1}{2}{3}{4}({5}) {{\n",
+        capiReturnType,         // {0}
+        FunctionPrefix,         // {1}
+        dialectNameCapitalized, // {2}
+        className,              // {3}
+        capitalizedMethodName,  // {4}
+        paramList               // {5}
+    );
+    os << llvm::formatv(
+        "  {0}llvm::cast<{1}>(unwrap(inp)).{2}({3}){4};\n",
+        returnPrefix,      // {0}
+        className,         // {1}
+        method.methodName, // {2}
+        argList,           // {3}
+        returnSuffix       // {4}
+    );
+    os << "}\n";
   }
 };

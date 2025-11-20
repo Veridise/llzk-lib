@@ -141,7 +141,7 @@ TEST_F(FuncDialectTest, llzk_func_def_op_set_allow_witness_attr) {
 
 TEST_F(FuncDialectTest, llzk_func_def_op_get_has_arg_is_pub) {
   auto f = test_function();
-  EXPECT_TRUE(!llzkFuncDefOpGetHasArgIsPub(f.op, 0));
+  EXPECT_TRUE(!llzkFunctionFuncDefOpHasArgPublicAttr(f.op, 0));
 }
 
 TEST_F(FuncDialectTest, llzk_func_def_op_get_fully_qualified_name) {

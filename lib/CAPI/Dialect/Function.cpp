@@ -80,10 +80,6 @@ void llzkFuncDefOpSetAllowWitnessAttr(MlirOperation op, bool value) {
   unwrap_cast<FuncDefOp>(op).setAllowWitnessAttr(value);
 }
 
-bool llzkFuncDefOpGetHasArgIsPub(MlirOperation op, unsigned argNo) {
-  return unwrap_cast<FuncDefOp>(op).hasArgPublicAttr(argNo);
-}
-
 MlirAttribute llzkFuncDefOpGetFullyQualifiedName(MlirOperation op) {
   return wrap(unwrap_cast<FuncDefOp>(op).getFullyQualifiedName());
 }

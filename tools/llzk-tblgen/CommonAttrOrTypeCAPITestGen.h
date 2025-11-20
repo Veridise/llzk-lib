@@ -69,6 +69,11 @@ struct AttrOrTypeTestGenerator : public Generator {
     this->paramNameCapitalized = toPascalCase(name);
   }
 
+  /// @brief Generate test for an extra method from extraClassDeclaration
+  virtual void genExtraMethod(const ExtraMethod &method) const override {
+    llvm_unreachable("Not implemented"); // TODO
+  }
+
   /// @brief Generate the test class prologue
   virtual void genTestClassPrologue() const {
     static constexpr char fmt[] = R"(#include "llzk-c/Dialect/{0}.h"
