@@ -38,8 +38,16 @@ extern llvm::cl::opt<std::string> DialectName;
 extern llvm::cl::opt<std::string> FunctionPrefix;
 
 // Shared flags for controlling code generation
-extern llvm::cl::opt<bool> GenIsAChecks;
-extern llvm::cl::opt<bool> GenIsATests;
+extern llvm::cl::opt<bool> GenIsA;
+extern llvm::cl::opt<bool> GenOpCreate;
+extern llvm::cl::opt<bool> GenOpNameGetter;
+extern llvm::cl::opt<bool> GenOpOperandGetters;
+extern llvm::cl::opt<bool> GenOpOperandSetters;
+extern llvm::cl::opt<bool> GenOpAttributeGetters;
+extern llvm::cl::opt<bool> GenOpAttributeSetters;
+extern llvm::cl::opt<bool> GenOpRegionGetters;
+extern llvm::cl::opt<bool> GenOpResultGetters;
+extern llvm::cl::opt<bool> GenTypeOrAttrGet;
 extern llvm::cl::opt<bool> GenTypeOrAttrParamGetters;
 extern llvm::cl::opt<bool> GenExtraClassMethods;
 

@@ -114,7 +114,7 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{4}{3}Get(MlirContext ctx{5});
     this->setDialectAndClassName(&dialect, def.getCppClassName());
 
     // Generate IsA check
-    if (GenIsAChecks) {
+    if (GenIsA) {
       this->genIsADecl();
     }
 
@@ -339,12 +339,12 @@ Mlir{1} {0}{2}{3}Get(MlirContext ctx{4}) {{
     this->setDialectAndClassName(&dialect, def.getCppClassName());
 
     // Generate IsA check implementation
-    if (GenIsAChecks) {
+    if (GenIsA) {
       this->genIsAImpl();
     }
 
     // Generate default Get builder implementation if not skipped
-    if (!def.skipDefaultBuilders()) {
+    if (GenTypeOrAttrGet && !def.skipDefaultBuilders()) {
       this->genDefaultGetBuilderImpl(def);
     }
 

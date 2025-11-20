@@ -45,14 +45,53 @@ llvm::cl::opt<std::string> FunctionPrefix(
     llvm::cl::init("mlir"), llvm::cl::cat(OpGenCat)
 );
 
-llvm::cl::opt<bool> GenIsAChecks(
-    "gen-isa-checks", llvm::cl::desc("Generate IsA type checks"), llvm::cl::init(true),
+llvm::cl::opt<bool> GenIsA(
+    "gen-isa", llvm::cl::desc("Generate IsA checks"), llvm::cl::init(true), llvm::cl::cat(OpGenCat)
+);
+
+llvm::cl::opt<bool> GenOpCreate(
+    "gen-op-create", llvm::cl::desc("Generate operation create functions"), llvm::cl::init(true),
     llvm::cl::cat(OpGenCat)
 );
 
-llvm::cl::opt<bool> GenIsATests(
-    "gen-isa-tests", llvm::cl::desc("Generate tests for IsA type checks"), llvm::cl::init(true),
+llvm::cl::opt<bool> GenOpNameGetter(
+    "gen-op-name-getter", llvm::cl::desc("Generate operation name getter"), llvm::cl::init(true),
     llvm::cl::cat(OpGenCat)
+);
+
+llvm::cl::opt<bool> GenOpOperandGetters(
+    "gen-operand-getters", llvm::cl::desc("Generate operand getters for operations"),
+    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
+);
+
+llvm::cl::opt<bool> GenOpOperandSetters(
+    "gen-operand-setters", llvm::cl::desc("Generate operand setters for operations"),
+    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
+);
+
+llvm::cl::opt<bool> GenOpAttributeGetters(
+    "gen-attribute-getters", llvm::cl::desc("Generate attribute getters for operations"),
+    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
+);
+
+llvm::cl::opt<bool> GenOpAttributeSetters(
+    "gen-attribute-setters", llvm::cl::desc("Generate attribute setters for operations"),
+    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
+);
+
+llvm::cl::opt<bool> GenOpRegionGetters(
+    "gen-region-getters", llvm::cl::desc("Generate region getters for operations"),
+    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
+);
+
+llvm::cl::opt<bool> GenOpResultGetters(
+    "gen-result-getters", llvm::cl::desc("Generate result getters for operations"),
+    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
+);
+
+llvm::cl::opt<bool> GenTypeOrAttrGet(
+    "gen-type-attr-get", llvm::cl::desc("Generate get functions for types and attributes"),
+    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
 );
 
 llvm::cl::opt<bool> GenTypeOrAttrParamGetters(

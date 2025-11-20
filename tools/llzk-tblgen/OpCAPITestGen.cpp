@@ -48,31 +48,6 @@
 using namespace mlir;
 using namespace mlir::tblgen;
 
-static llvm::cl::opt<bool> GenOpCreateTests(
-    "gen-create-tests", llvm::cl::desc("Generate tests for operation create functions"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
-
-static llvm::cl::opt<bool> GenOpOperandTests(
-    "gen-operand-tests", llvm::cl::desc("Generate tests for operand getters/setters"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
-
-static llvm::cl::opt<bool> GenOpAttributeTests(
-    "gen-attribute-tests", llvm::cl::desc("Generate tests for attribute getters/setters"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
-
-static llvm::cl::opt<bool> GenOpResultTests(
-    "gen-result-tests", llvm::cl::desc("Generate tests for result getters"), llvm::cl::init(true),
-    llvm::cl::cat(OpGenCat)
-);
-
-static llvm::cl::opt<bool> GenOpRegionTests(
-    "gen-region-tests", llvm::cl::desc("Generate tests for region getters"), llvm::cl::init(true),
-    llvm::cl::cat(OpGenCat)
-);
-
 namespace {
 
 /// @brief Generator for operation C API tests
@@ -88,7 +63,67 @@ struct OpTestGenerator : public Generator {
 
   /// @brief Generate test for an extra method from extraClassDeclaration
   virtual void genExtraMethod(const ExtraMethod &method) const override {
-    llvm_unreachable("Not implemented"); // TODO
+    // Convert return type to C API type
+    std::string capiReturnType = cppTypeToCapiType(method.returnType);
+
+    // Skip if the return type couldn't be converted
+    if (!isValidTypeConversion(capiReturnType, method.returnType)) {
+      return;
+    }
+
+    // Build parameter list for dummy values
+    std::string dummyParams;
+    std::string paramList;
+
+    for (const auto &param : method.parameters) {
+      // Convert C++ type to C API type for parameter
+      std::string capiParamType = cppTypeToCapiType(param.type);
+      // Skip if the parameter type couldn't be converted
+      if (!isValidTypeConversion(capiParamType, param.type)) {
+        return;
+      }
+
+      // Generate dummy value creation for each parameter
+      if (capiParamType == "MlirValue") {
+        dummyParams += "    auto " + param.name + " = mlirOperationGetResult(testOp, 0);\n";
+      } else if (capiParamType == "MlirType") {
+        dummyParams += "    auto " + param.name + " = mlirIndexTypeGet(context);\n";
+      } else if (capiParamType == "MlirAttribute") {
+        dummyParams +=
+            "    auto " + param.name + " = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);\n";
+      } else if (capiParamType == "intptr_t" || capiParamType == "int" ||
+                 capiParamType == "int64_t") {
+        dummyParams += "    " + capiParamType + " " + param.name + " = 0;\n";
+      } else if (capiParamType == "bool") {
+        dummyParams += "    bool " + param.name + " = false;\n";
+      } else {
+        // For unknown types, create a default-initialized variable
+        dummyParams += "    " + capiParamType + " " + param.name + " = {};\n";
+      }
+
+      paramList += ", " + param.name;
+    }
+
+    std::string capitalizedMethodName = toPascalCase(method.methodName);
+
+    static constexpr char fmt[] = R"(
+TEST_F({0}OpLinkTests, {1}_{2}_{3}) {{
+  // This test ensures {4}{2}{3} links properly.
+  auto testOp = createTestOp();
+  
+  if ({5}(testOp)) {{
+{6}
+    (void){4}{2}{3}(testOp{7});
+  }
+  
+  mlirOperationDestroy(testOp);
+}
+)";
+    assert(!className.empty() && "className must be set");
+    os << llvm::formatv(
+        fmt, dialectNameCapitalized, FunctionPrefix, className, capitalizedMethodName, testPrefix,
+        isACheck, dummyParams, paramList
+    );
   }
 
   /// @brief Generate the test class prologue
@@ -242,29 +277,36 @@ TEST_F({0}OpLinkTests, {1}_{2}_Set{3}_Variadic) {{
     for (int i = 0, e = op.getNumOperands(); i < e; ++i) {
       const auto &operand = op.getOperand(i);
       std::string capName = toPascalCase(operand.name);
-
-      if (!operand.isVariadic()) {
-        os << llvm::formatv(
-            OperandGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName, isACheck,
-            testPrefix
-        );
-        os << llvm::formatv(
-            OperandSetterTest, dialectNameCapitalized, FunctionPrefix, className, capName, isACheck,
-            testPrefix
-        );
+      if (operand.isVariadic()) {
+        if (GenOpOperandGetters) {
+          os << llvm::formatv(
+              VariadicOperandCountGetterTest, dialectNameCapitalized, FunctionPrefix, className,
+              capName, isACheck, testPrefix
+          );
+          os << llvm::formatv(
+              VariadicOperandIndexedGetterTest, dialectNameCapitalized, FunctionPrefix, className,
+              capName, isACheck, testPrefix
+          );
+        }
+        if (GenOpOperandSetters) {
+          os << llvm::formatv(
+              VariadicOperandSetterTest, dialectNameCapitalized, FunctionPrefix, className, capName,
+              isACheck, testPrefix
+          );
+        }
       } else {
-        os << llvm::formatv(
-            VariadicOperandCountGetterTest, dialectNameCapitalized, FunctionPrefix, className,
-            capName, isACheck, testPrefix
-        );
-        os << llvm::formatv(
-            VariadicOperandIndexedGetterTest, dialectNameCapitalized, FunctionPrefix, className,
-            capName, isACheck, testPrefix
-        );
-        os << llvm::formatv(
-            VariadicOperandSetterTest, dialectNameCapitalized, FunctionPrefix, className, capName,
-            isACheck, testPrefix
-        );
+        if (GenOpOperandGetters) {
+          os << llvm::formatv(
+              OperandGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName,
+              isACheck, testPrefix
+          );
+        }
+        if (GenOpOperandSetters) {
+          os << llvm::formatv(
+              OperandSetterTest, dialectNameCapitalized, FunctionPrefix, className, capName,
+              isACheck, testPrefix
+          );
+        }
       }
     }
   }
@@ -300,18 +342,18 @@ TEST_F({0}OpLinkTests, {1}_{2}_Set{3}Attr) {{
 
     for (const auto &namedAttr : op.getAttributes()) {
       std::string capName = toPascalCase(namedAttr.name);
-
-      // Getter test
-      os << llvm::formatv(
-          AttributeGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName, isACheck,
-          testPrefix
-      );
-
-      // Setter test
-      os << llvm::formatv(
-          AttributeSetterTest, dialectNameCapitalized, FunctionPrefix, className, capName, isACheck,
-          testPrefix
-      );
+      if (GenOpAttributeGetters) {
+        os << llvm::formatv(
+            AttributeGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName,
+            isACheck, testPrefix
+        );
+      }
+      if (GenOpAttributeSetters) {
+        os << llvm::formatv(
+            AttributeSetterTest, dialectNameCapitalized, FunctionPrefix, className, capName,
+            isACheck, testPrefix
+        );
+      }
     }
   }
 
@@ -361,12 +403,7 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
           result.name.empty() ? llvm::formatv("Result{0}", i).str() : result.name.str();
       std::string capName = toPascalCase(resultName);
 
-      if (!result.isVariadic()) {
-        os << llvm::formatv(
-            ResultGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName, isACheck,
-            testPrefix
-        );
-      } else {
+      if (result.isVariadic()) {
         os << llvm::formatv(
             VariadicResultCountGetterTest, dialectNameCapitalized, FunctionPrefix, className,
             capName, isACheck, testPrefix
@@ -374,6 +411,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
         os << llvm::formatv(
             VariadicResultIndexedGetterTest, dialectNameCapitalized, FunctionPrefix, className,
             capName, isACheck, testPrefix
+        );
+      } else {
+        os << llvm::formatv(
+            ResultGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName, isACheck,
+            testPrefix
         );
       }
     }
@@ -425,12 +467,7 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
           region.name.empty() ? llvm::formatv("Region{0}", i).str() : region.name.str();
       std::string capName = toPascalCase(regionName);
 
-      if (!region.isVariadic()) {
-        os << llvm::formatv(
-            RegionGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName, isACheck,
-            testPrefix
-        );
-      } else {
+      if (region.isVariadic()) {
         os << llvm::formatv(
             VariadicRegionCountGetterTest, dialectNameCapitalized, FunctionPrefix, className,
             capName, isACheck, testPrefix
@@ -438,6 +475,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
         os << llvm::formatv(
             VariadicRegionIndexedGetterTest, dialectNameCapitalized, FunctionPrefix, className,
             capName, isACheck, testPrefix
+        );
+      } else {
+        os << llvm::formatv(
+            RegionGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName, isACheck,
+            testPrefix
         );
       }
     }
@@ -474,38 +516,30 @@ TEST_F({0}OpLinkTests, {1}_{2}_GetOperationName) {{
 
     this->setDialectAndClassName(&dialect, op.getCppClassName());
 
-    // Generate IsA test
-    if (GenIsATests) {
+    if (GenIsA) {
       this->genIsATest();
     }
-
-    // Generate create function test
-    if (GenOpCreateTests && !op.skipDefaultBuilders()) {
+    if (GenOpCreate && !op.skipDefaultBuilders()) {
       this->genCreateOpTest(op);
     }
-
-    // Generate operand tests
-    if (GenOpOperandTests) {
+    if (GenOpNameGetter) {
+      this->genOperationNameGetterTest();
+    }
+    if (GenOpOperandGetters || GenOpOperandSetters) {
       this->genOperandTests(op);
     }
-
-    // Generate attribute tests
-    if (GenOpAttributeTests) {
+    if (GenOpAttributeGetters || GenOpAttributeSetters) {
       this->genAttributeTests(op);
     }
-
-    // Generate result tests
-    if (GenOpResultTests) {
-      this->genResultTests(op);
-    }
-
-    // Generate region tests
-    if (GenOpRegionTests) {
+    if (GenOpRegionGetters) {
       this->genRegionTests(op);
     }
-
-    // Generate operation name getter test
-    this->genOperationNameGetterTest();
+    if (GenOpResultGetters) {
+      this->genResultTests(op);
+    }
+    if (GenExtraClassMethods) {
+      this->genExtraMethods(op.getExtraClassDeclaration());
+    }
   }
 
 protected:

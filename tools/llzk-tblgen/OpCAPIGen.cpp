@@ -28,46 +28,6 @@
 using namespace mlir;
 using namespace mlir::tblgen;
 
-static llvm::cl::opt<bool> genOpCreate(
-    "gen-create", llvm::cl::desc("Generate operation create functions"), llvm::cl::init(true),
-    llvm::cl::cat(OpGenCat)
-);
-
-static llvm::cl::opt<bool> GenOpOperandGetters(
-    "gen-operand-getters", llvm::cl::desc("Generate operand getters"), llvm::cl::init(true),
-    llvm::cl::cat(OpGenCat)
-);
-
-static llvm::cl::opt<bool> GenOpOperandSetters(
-    "gen-operand-setters", llvm::cl::desc("Generate operand setters"), llvm::cl::init(true),
-    llvm::cl::cat(OpGenCat)
-);
-
-static llvm::cl::opt<bool> GenOpAttributeGetters(
-    "gen-attribute-getters", llvm::cl::desc("Generate attribute getters"), llvm::cl::init(true),
-    llvm::cl::cat(OpGenCat)
-);
-
-static llvm::cl::opt<bool> GenOpAttributeSetters(
-    "gen-attribute-setters", llvm::cl::desc("Generate attribute setters"), llvm::cl::init(true),
-    llvm::cl::cat(OpGenCat)
-);
-
-static llvm::cl::opt<bool> GenOpResultGetters(
-    "gen-result-getters", llvm::cl::desc("Generate result getters"), llvm::cl::init(true),
-    llvm::cl::cat(OpGenCat)
-);
-
-static llvm::cl::opt<bool> GenOpRegionGetters(
-    "gen-region-getters", llvm::cl::desc("Generate region getters"), llvm::cl::init(true),
-    llvm::cl::cat(OpGenCat)
-);
-
-static llvm::cl::opt<bool> GenOperationNameGetter(
-    "gen-operation-name-getter", llvm::cl::desc("Generate operation name getter"),
-    llvm::cl::init(true), llvm::cl::cat(OpGenCat)
-);
-
 /// @brief Common between header and implementation generators for operations
 struct OpGeneratorData {
   void setOperandName(mlir::StringRef name) { this->operandNameCapitalized = toPascalCase(name); }
@@ -356,12 +316,12 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &os)
     generator.setDialectAndClassName(&dialect, op.getCppClassName());
 
     // Generate create function
-    if (genOpCreate && !op.skipDefaultBuilders()) {
+    if (GenOpCreate && !op.skipDefaultBuilders()) {
       generator.genOpCreateDecl(generateCAPIParams(op));
     }
 
     // Generate IsA check
-    if (GenIsAChecks) {
+    if (GenIsA) {
       generator.genIsADecl();
     }
 
@@ -427,7 +387,7 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &os)
     }
 
     // Generate operation name getter
-    if (GenOperationNameGetter) {
+    if (GenOpNameGetter) {
       generator.GenOperationNameGetterDecl();
     }
 
@@ -762,14 +722,14 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
     generator.setDialectAndClassName(&dialect, op.getCppClassName());
 
     // Generate create function
-    if (genOpCreate && !op.skipDefaultBuilders()) {
+    if (GenOpCreate && !op.skipDefaultBuilders()) {
       std::string params = generateCAPIParams(op);
       std::string assignments = generateCAPIAssignments(op);
       generator.genOpCreateImpl(params, op.getOperationName(), assignments);
     }
 
     // Generate IsA check implementation
-    if (GenIsAChecks) {
+    if (GenIsA) {
       generator.genIsAImpl();
     }
 
@@ -835,7 +795,7 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
     }
 
     // Generate operation name getter implementation
-    if (GenOperationNameGetter) {
+    if (GenOpNameGetter) {
       generator.GenOperationNameGetterImpl();
     }
 

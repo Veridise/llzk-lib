@@ -71,7 +71,65 @@ struct AttrOrTypeTestGenerator : public Generator {
 
   /// @brief Generate test for an extra method from extraClassDeclaration
   virtual void genExtraMethod(const ExtraMethod &method) const override {
-    llvm_unreachable("Not implemented"); // TODO
+    // Convert return type to C API type
+    std::string capiReturnType = cppTypeToCapiType(method.returnType);
+
+    // Skip if the return type couldn't be converted
+    if (!isValidTypeConversion(capiReturnType, method.returnType)) {
+      return;
+    }
+
+    // Build parameter list for dummy values
+    std::string dummyParams;
+    std::string paramList;
+
+    for (const auto &param : method.parameters) {
+      // Convert C++ type to C API type for parameter
+      std::string capiParamType = cppTypeToCapiType(param.type);
+      // Skip if the parameter type couldn't be converted
+      if (!isValidTypeConversion(capiParamType, param.type)) {
+        return;
+      }
+
+      // Generate dummy value creation for each parameter
+      if (capiParamType == "MlirType") {
+        dummyParams += "    auto " + param.name + " = mlirIndexTypeGet(context);\n";
+      } else if (capiParamType == "MlirAttribute") {
+        dummyParams +=
+            "    auto " + param.name + " = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);\n";
+      } else if (capiParamType == "intptr_t" || capiParamType == "int" ||
+                 capiParamType == "int64_t") {
+        dummyParams += "    " + capiParamType + " " + param.name + " = 0;\n";
+      } else if (capiParamType == "bool") {
+        dummyParams += "    bool " + param.name + " = false;\n";
+      } else if (capiParamType == "MlirStringRef") {
+        dummyParams += "    auto " + param.name + " = mlirStringRefCreateFromCString(\"\");\n";
+      } else {
+        // For unknown types, create a default-initialized variable
+        dummyParams += "    " + capiParamType + " " + param.name + " = {};\n";
+      }
+
+      paramList += ", " + param.name;
+    }
+
+    std::string capitalizedMethodName = toPascalCase(method.methodName);
+
+    static constexpr char fmt[] = R"(
+TEST_F({0}{1}LinkTests, {2}_{3}) {{
+  // This test ensures {4}{0}{2}{3} links properly.
+  auto test{1} = createTest{1}();
+  
+  if ({4}{1}IsA{0}{2}(test{1})) {{
+{5}
+    (void){4}{0}{2}{3}(test{1}{6});
+  }
+}
+)";
+    assert(!className.empty() && "className must be set");
+    os << llvm::formatv(
+        fmt, dialectNameCapitalized, kind, className, capitalizedMethodName, FunctionPrefix,
+        dummyParams, paramList
+    );
   }
 
   /// @brief Generate the test class prologue
@@ -204,12 +262,12 @@ TEST_F({0}{1}LinkTests, Get_{2}_{3}At) {{
     this->setDialectAndClassName(&dialect, def.getCppClassName());
 
     // Generate IsA test
-    if (GenIsATests) {
+    if (GenIsA) {
       this->genIsATest();
     }
 
     // Generate Get builder test
-    if (!def.skipDefaultBuilders()) {
+    if (GenTypeOrAttrGet && !def.skipDefaultBuilders()) {
       std::string dummyParams = generateDummyParamsForAttrOrTypeGet(def, isType);
       std::string paramList = generateParamListForAttrOrTypeGet(def);
       this->genGetBuilderTest(dummyParams, paramList);
@@ -226,6 +284,14 @@ TEST_F({0}{1}LinkTests, Get_{2}_{3}At) {{
         } else {
           this->genParamGetterTest();
         }
+      }
+    }
+
+    // Generate extra class method tests
+    if (GenExtraClassMethods) {
+      std::optional<mlir::StringRef> extraDecls = def.getExtraDecls();
+      if (extraDecls.has_value()) {
+        this->genExtraMethods(extraDecls.value());
       }
     }
   }
