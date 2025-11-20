@@ -13,12 +13,13 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_boolean) { mlirGetDialectHandle__llzk__boolean__(); }
+TEST_F(CAPITest, mlir_get_dialect_handle_llzk_boolean) {
+  (void)mlirGetDialectHandle__llzk__boolean__();
+}
 
 class CmpAttrTest : public CAPITest, public testing::WithParamInterface<LlzkCmp> {};
 
 TEST_P(CmpAttrTest, llzk_felt_cmp_predicate_attr_get) {
-
   auto attr = llzkFeltCmpPredicateAttrGet(context, GetParam());
   EXPECT_NE(attr.ptr, (void *)NULL);
 }

@@ -15,6 +15,7 @@
 #include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Analysis/Field.h"
 #include "llzk/Analysis/Intervals.h"
+#include "llzk/Analysis/SparseAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
@@ -23,13 +24,13 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
-#include "llzk/Util/APIntHelper.h"
 #include "llzk/Util/Compare.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/AnalysisManager.h>
 #include <mlir/Support/LLVM.h>
 
+#include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/MapVector.h>
 #include <llvm/Support/SMTAPI.h>
 
@@ -47,10 +48,12 @@ public:
   /* Must be default initializable to be a ScalarLatticeValue. */
   ExpressionValue() : i(), expr(nullptr) {}
 
-  explicit ExpressionValue(const Field &f, llvm::SMTExprRef exprRef)
+  explicit ExpressionValue(const Field &f) : i(Interval::Entire(f)), expr(nullptr) {}
+
+  ExpressionValue(const Field &f, llvm::SMTExprRef exprRef)
       : i(Interval::Entire(f)), expr(exprRef) {}
 
-  ExpressionValue(const Field &f, llvm::SMTExprRef exprRef, const llvm::APSInt &singleVal)
+  ExpressionValue(const Field &f, llvm::SMTExprRef exprRef, const llvm::DynamicAPInt &singleVal)
       : i(Interval::Degenerate(f, singleVal)), expr(exprRef) {}
 
   ExpressionValue(llvm::SMTExprRef exprRef, const Interval &interval)
@@ -69,6 +72,11 @@ public:
     return ExpressionValue(expr, newInterval);
   }
 
+  /// @brief Return the current expression with a new SMT expression.
+  ExpressionValue withExpression(const llvm::SMTExprRef &newExpr) const {
+    return ExpressionValue(newExpr, i);
+  }
+
   /* Required to be a ScalarLatticeValue. */
   /// @brief Fold two expressions together when overapproximating array elements.
   ExpressionValue &join(const ExpressionValue & /*rhs*/) {
@@ -77,6 +85,10 @@ public:
   }
 
   bool operator==(const ExpressionValue &rhs) const;
+
+  bool isBoolSort(llvm::SMTSolverRef solver) const {
+    return solver->getBoolSort() == solver->getSort(expr);
+  }
 
   /// @brief Compute the intersection of the lhs and rhs intervals, and create a solver
   /// expression that constrains both sides to be equal.
@@ -190,9 +202,7 @@ public:
 
 class IntervalDataFlowAnalysis;
 
-/// @brief Maps mlir::Values to LatticeValues.
-///
-class IntervalAnalysisLattice : public dataflow::AbstractDenseLattice {
+class IntervalAnalysisLattice : public dataflow::AbstractSparseLattice {
 public:
   using LatticeValue = IntervalAnalysisLatticeValue;
   // Map mlir::Values to LatticeValues
@@ -205,22 +215,18 @@ public:
   // Tracks all constraints and assignments in insertion order
   using ConstraintSet = llvm::SetVector<ExpressionValue>;
 
-  using AbstractDenseLattice::AbstractDenseLattice;
+  using AbstractSparseLattice::AbstractSparseLattice;
 
-  mlir::ChangeResult join(const AbstractDenseLattice &other) override;
+  mlir::ChangeResult join(const AbstractSparseLattice &other) override;
 
-  mlir::ChangeResult meet(const AbstractDenseLattice & /*rhs*/) override {
-    llvm::report_fatal_error("IntervalDataFlowAnalysis::meet : unsupported");
-    return mlir::ChangeResult::NoChange;
-  }
+  mlir::ChangeResult meet(const AbstractSparseLattice &other) override;
 
   void print(mlir::raw_ostream &os) const override;
 
-  mlir::FailureOr<LatticeValue> getValue(mlir::Value v) const;
-  mlir::FailureOr<LatticeValue> getValue(mlir::Value v, mlir::StringAttr f) const;
+  const LatticeValue &getValue() const { return val; }
 
-  mlir::ChangeResult setValue(mlir::Value v, ExpressionValue e);
-  mlir::ChangeResult setValue(mlir::Value v, mlir::StringAttr f, ExpressionValue e);
+  mlir::ChangeResult setValue(const LatticeValue &val);
+  mlir::ChangeResult setValue(ExpressionValue e);
 
   mlir::ChangeResult addSolverConstraint(ExpressionValue e);
 
@@ -234,54 +240,48 @@ public:
   mlir::FailureOr<Interval> findInterval(llvm::SMTExprRef expr) const;
   mlir::ChangeResult setInterval(llvm::SMTExprRef expr, const Interval &i);
 
-  size_t size() const { return valMap.size(); }
-
-  const ValueMap &getMap() const { return valMap; }
-
-  ValueMap::iterator begin() { return valMap.begin(); }
-  ValueMap::iterator end() { return valMap.end(); }
-  ValueMap::const_iterator begin() const { return valMap.begin(); }
-  ValueMap::const_iterator end() const { return valMap.end(); }
-
 private:
-  ValueMap valMap;
-  FieldMap fieldMap;
+  LatticeValue val;
   ConstraintSet constraints;
-  ExpressionIntervals intervals;
 };
 
 /* IntervalDataFlowAnalysis */
 
 class IntervalDataFlowAnalysis
-    : public dataflow::DenseForwardDataFlowAnalysis<IntervalAnalysisLattice> {
-  using Base = dataflow::DenseForwardDataFlowAnalysis<IntervalAnalysisLattice>;
+    : public dataflow::SparseForwardDataFlowAnalysis<IntervalAnalysisLattice> {
+  using Base = dataflow::SparseForwardDataFlowAnalysis<IntervalAnalysisLattice>;
   using Lattice = IntervalAnalysisLattice;
   using LatticeValue = IntervalAnalysisLattice::LatticeValue;
 
   // Map fields to their symbols
-  using SymbolMap = mlir::DenseMap<ConstrainRef, llvm::SMTExprRef>;
+  using SymbolMap = mlir::DenseMap<SourceRef, llvm::SMTExprRef>;
 
 public:
   explicit IntervalDataFlowAnalysis(
       mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f,
       bool propInputConstraints
   )
-      : Base::DenseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
+      : Base::SparseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
         smtSolver(smt), field(f), propagateInputConstraints(propInputConstraints) {}
 
-  void visitCallControlFlowTransfer(
-      mlir::CallOpInterface call, dataflow::CallControlFlowAction action, const Lattice &before,
-      Lattice *after
+  mlir::LogicalResult visitOperation(
+      mlir::Operation *op, mlir::ArrayRef<const Lattice *> operands,
+      mlir::ArrayRef<Lattice *> results
   ) override;
 
-  mlir::LogicalResult
-  visitOperation(mlir::Operation *op, const Lattice &before, Lattice *after) override;
-
-  /// @brief Either return the existing SMT expression that corresponds to the ConstrainRef,
+  /// @brief Either return the existing SMT expression that corresponds to the SourceRef,
   /// or create one.
   /// @param r
   /// @return
-  llvm::SMTExprRef getOrCreateSymbol(const ConstrainRef &r);
+  llvm::SMTExprRef getOrCreateSymbol(const SourceRef &r);
+
+  const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getFieldReadResults() const {
+    return fieldReadResults;
+  }
+
+  const llvm::DenseMap<SourceRef, ExpressionValue> &getFieldWriteResults() const {
+    return fieldWriteResults;
+  }
 
 private:
   mlir::DataFlowSolver &_dataflowSolver;
@@ -291,11 +291,17 @@ private:
   bool propagateInputConstraints;
   mlir::SymbolTableCollection tables;
 
+  // Track field reads so that propagations to fields can be all updated efficiently.
+  llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> fieldReadResults;
+  // Track field writes values. For now, we'll overapproximate this.
+  llvm::DenseMap<SourceRef, ExpressionValue> fieldWriteResults;
+
   void setToEntryState(Lattice *lattice) override {
-    // initial state should be empty, so do nothing here
+    // Initialize the value with an interval in our specified field.
+    (void)lattice->setValue(ExpressionValue(field.get()));
   }
 
-  llvm::SMTExprRef createFeltSymbol(const ConstrainRef &r) const;
+  llvm::SMTExprRef createFeltSymbol(const SourceRef &r) const;
 
   llvm::SMTExprRef createFeltSymbol(mlir::Value val) const;
 
@@ -306,9 +312,13 @@ private:
         felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
   }
 
-  llvm::APSInt getConst(mlir::Operation *op) const;
+  llvm::DynamicAPInt getConst(mlir::Operation *op) const;
 
-  llvm::SMTExprRef createConstBitvectorExpr(const llvm::APSInt &v) const {
+  inline llvm::SMTExprRef createConstBitvectorExpr(const llvm::DynamicAPInt &v) const {
+    return createConstBitvectorExpr(toAPSInt(v));
+  }
+
+  inline llvm::SMTExprRef createConstBitvectorExpr(const llvm::APSInt &v) const {
     return smtSolver->mkBitvector(v, field.get().bitWidth());
   }
 
@@ -335,47 +345,15 @@ private:
   /// @param after The current lattice state. Assumes that this has already been joined with the
   /// `before` lattice in `visitOperation`, so lookups and updates can be performed on the `after`
   /// lattice alone.
-  mlir::ChangeResult
-  applyInterval(mlir::Operation *originalOp, Lattice *after, mlir::Value val, Interval newInterval);
+  void applyInterval(mlir::Operation *originalOp, mlir::Value val, Interval newInterval);
 
   /// @brief Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
-  mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>> getGeneralizedDecompInterval(
-      const ConstrainRefLattice *constrainRefLattice, mlir::Value lhs, mlir::Value rhs
-  );
-
-  bool isBoolOp(mlir::Operation *op) const {
-    return llvm::isa<boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(
-        op
-    );
-  }
-
-  bool isConversionOp(mlir::Operation *op) const {
-    return llvm::isa<cast::IntToFeltOp, cast::FeltToIndexOp>(op);
-  }
-
-  bool isApplyMapOp(mlir::Operation *op) const { return llvm::isa<polymorphic::ApplyMapOp>(op); }
-
-  bool isAssertOp(mlir::Operation *op) const { return llvm::isa<boolean::AssertOp>(op); }
+  mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>>
+  getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 
   bool isReadOp(mlir::Operation *op) const {
     return llvm::isa<component::FieldReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);
   }
-
-  bool isWriteOp(mlir::Operation *op) const {
-    return llvm::isa<component::FieldWriteOp, array::WriteArrayOp, array::InsertArrayOp>(op);
-  }
-
-  bool isArrayLengthOp(mlir::Operation *op) const { return llvm::isa<array::ArrayLengthOp>(op); }
-
-  bool isEmitOp(mlir::Operation *op) const {
-    return llvm::isa<constrain::EmitEqualityOp, constrain::EmitContainmentOp>(op);
-  }
-
-  bool isCreateOp(mlir::Operation *op) const {
-    return llvm::isa<component::CreateStructOp, array::CreateArrayOp>(op);
-  }
-
-  bool isExtractArrayOp(mlir::Operation *op) const { return llvm::isa<array::ExtractArrayOp>(op); }
 
   bool isDefinitionOp(mlir::Operation *op) const {
     return llvm::isa<
@@ -383,9 +361,11 @@ private:
         mlir::ModuleOp>(op);
   }
 
-  bool isCallOp(mlir::Operation *op) const { return llvm::isa<function::CallOp>(op); }
-
   bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
+
+  /// @brief Get the SourceRefLattice that defines `val`, or the SourceRefLattice after `baseOp`
+  /// if `val` has no associated SourceRefLattice.
+  const SourceRefLattice *getSourceRefLattice(mlir::Operation *baseOp, mlir::Value val);
 };
 
 /* StructIntervals */
@@ -394,15 +374,35 @@ private:
 struct IntervalAnalysisContext {
   IntervalDataFlowAnalysis *intervalDFA;
   llvm::SMTSolverRef smtSolver;
-  std::reference_wrapper<const Field> field;
+  std::optional<std::reference_wrapper<const Field>> field;
   bool propagateInputConstraints;
 
-  llvm::SMTExprRef getSymbol(const ConstrainRef &r) const {
-    return intervalDFA->getOrCreateSymbol(r);
+  llvm::SMTExprRef getSymbol(const SourceRef &r) const { return intervalDFA->getOrCreateSymbol(r); }
+  bool hasField() const { return field.has_value(); }
+  const Field &getField() const {
+    ensure(field.has_value(), "field not set within context");
+    return field->get();
   }
-  const Field &getField() const { return field.get(); }
   bool doInputConstraintPropagation() const { return propagateInputConstraints; }
+
+  friend bool
+  operator==(const IntervalAnalysisContext &a, const IntervalAnalysisContext &b) = default;
 };
+
+} // namespace llzk
+
+template <> struct std::hash<llzk::IntervalAnalysisContext> {
+  size_t operator()(const llzk::IntervalAnalysisContext &c) const {
+    return llvm::hash_combine(
+        std::hash<const llzk::IntervalDataFlowAnalysis *> {}(c.intervalDFA),
+        std::hash<const llvm::SMTSolver *> {}(c.smtSolver.get()),
+        std::hash<const llzk::Field *> {}(&c.getField()),
+        std::hash<bool> {}(c.propagateInputConstraints)
+    );
+  }
+};
+
+namespace llzk {
 
 class StructIntervals {
 public:
@@ -417,7 +417,7 @@ public:
   /// @return
   static mlir::FailureOr<StructIntervals> compute(
       mlir::ModuleOp mod, component::StructDefOp s, mlir::DataFlowSolver &solver,
-      IntervalAnalysisContext &ctx
+      const IntervalAnalysisContext &ctx
   ) {
     StructIntervals si(mod, s);
     if (si.computeIntervals(solver, ctx).failed()) {
@@ -426,11 +426,12 @@ public:
     return si;
   }
 
-  mlir::LogicalResult computeIntervals(mlir::DataFlowSolver &solver, IntervalAnalysisContext &ctx);
+  mlir::LogicalResult
+  computeIntervals(mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx);
 
   void print(mlir::raw_ostream &os, bool withConstraints = false, bool printCompute = false) const;
 
-  const llvm::MapVector<ConstrainRef, Interval> &getConstrainIntervals() const {
+  const llvm::MapVector<SourceRef, Interval> &getConstrainIntervals() const {
     return constrainFieldRanges;
   }
 
@@ -438,7 +439,7 @@ public:
     return constrainSolverConstraints;
   }
 
-  const llvm::MapVector<ConstrainRef, Interval> &getComputeIntervals() const {
+  const llvm::MapVector<SourceRef, Interval> &getComputeIntervals() const {
     return computeFieldRanges;
   }
 
@@ -456,7 +457,7 @@ private:
   component::StructDefOp structDef;
   llvm::SMTSolverRef smtSolver;
   // llvm::MapVector keeps insertion order for consistent iteration
-  llvm::MapVector<ConstrainRef, Interval> constrainFieldRanges, computeFieldRanges;
+  llvm::MapVector<SourceRef, Interval> constrainFieldRanges, computeFieldRanges;
   // llvm::SetVector for the same reasons as above
   llvm::SetVector<ExpressionValue> constrainSolverConstraints, computeSolverConstraints;
 
@@ -473,13 +474,13 @@ public:
   virtual ~StructIntervalAnalysis() = default;
 
   mlir::LogicalResult runAnalysis(
-      mlir::DataFlowSolver &solver, mlir::AnalysisManager &, IntervalAnalysisContext &ctx
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &, const IntervalAnalysisContext &ctx
   ) override {
     auto computeRes = StructIntervals::compute(getModule(), getStruct(), solver, ctx);
     if (mlir::failed(computeRes)) {
       return mlir::failure();
     }
-    setResult(std::move(*computeRes));
+    setResult(ctx, std::move(*computeRes));
     return mlir::success();
   }
 };
@@ -490,39 +491,33 @@ class ModuleIntervalAnalysis
     : public ModuleAnalysis<StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis> {
 
 public:
-  ModuleIntervalAnalysis(mlir::Operation *op)
-      : ModuleAnalysis(op), smtSolver(llvm::CreateZ3Solver()), field(std::nullopt) {}
+  ModuleIntervalAnalysis(mlir::Operation *op) : ModuleAnalysis(op), ctx {} {
+    ctx.smtSolver = llvm::CreateZ3Solver();
+  }
   virtual ~ModuleIntervalAnalysis() = default;
 
-  void setField(const Field &f) { field = f; }
-  void setPropagateInputConstraints(bool prop) { propagateInputConstraints = prop; }
+  void setField(const Field &f) { ctx.field = f; }
+  void setPropagateInputConstraints(bool prop) { ctx.propagateInputConstraints = prop; }
 
 protected:
   void initializeSolver() override {
-    ensure(field.has_value(), "field not set, could not generate analysis context");
-    (void)solver.load<ConstrainRefAnalysis>();
-    auto smtSolverRef = smtSolver;
-    bool prop = propagateInputConstraints;
-    intervalDFA = solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &, bool>(
-        std::move(smtSolverRef), field.value(), std::move(prop)
-    );
+    ensure(ctx.hasField(), "field not set, could not generate analysis context");
+    (void)solver.load<SourceRefAnalysis>();
+    auto smtSolverRef = ctx.smtSolver;
+    bool prop = ctx.propagateInputConstraints;
+    ctx.intervalDFA =
+        solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &, bool>(
+            std::move(smtSolverRef), ctx.getField(), std::move(prop)
+        );
   }
 
-  IntervalAnalysisContext getContext() override {
-    ensure(field.has_value(), "field not set, could not generate analysis context");
-    return {
-        .intervalDFA = intervalDFA,
-        .smtSolver = smtSolver,
-        .field = field.value(),
-        .propagateInputConstraints = propagateInputConstraints,
-    };
+  const IntervalAnalysisContext &getContext() const override {
+    ensure(ctx.field.has_value(), "field not set, could not generate analysis context");
+    return ctx;
   }
 
 private:
-  llvm::SMTSolverRef smtSolver;
-  IntervalDataFlowAnalysis *intervalDFA;
-  std::optional<std::reference_wrapper<const Field>> field;
-  bool propagateInputConstraints;
+  IntervalAnalysisContext ctx;
 };
 
 } // namespace llzk

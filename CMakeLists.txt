@@ -41,8 +41,31 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FeatureTests.cmake)
 # Dependency setup
 
-find_package(LLVM 20.1 REQUIRED CONFIG)
-find_package(MLIR REQUIRED CONFIG)
+find_package(LLVM 20.1.8 REQUIRED CONFIG)
+find_package(MLIR 20.1.8 REQUIRED CONFIG)
+
+# Optional PCL dialect
+set(LLZK_WITH_PCL "AUTO" CACHE STRING "Enable PCL integration (AUTO, ON, OFF)")
+set_property(CACHE LLZK_WITH_PCL PROPERTY STRINGS "AUTO;ON;OFF")
+
+# boolean used to guard imports in other CMakeLists.txt
+set(LLZK_WITH_PCL_BOOL OFF)
+
+if(LLZK_WITH_PCL STREQUAL "ON")
+  find_package(PCL CONFIG REQUIRED)
+  set(LLZK_WITH_PCL_BOOL ON)
+elseif(LLZK_WITH_PCL STREQUAL "AUTO")
+  find_package(PCL CONFIG QUIET)
+  if(PCL_FOUND)
+    set(LLZK_WITH_PCL_BOOL ON)
+  endif()
+elseif(LLZK_WITH_PCL STREQUAL "OFF")
+  # do nothing
+else()
+  message(FATAL_ERROR "LLZK_WITH_PCL must be AUTO, ON, or OFF")
+endif()
+
+message(STATUS "LLZK_WITH_PCL=${LLZK_WITH_PCL} (found pcl=${LLZK_WITH_PCL_BOOL})")
 
 message(STATUS "Using LLVM in: ${LLVM_DIR}")
 message(STATUS "Using MLIR in: ${MLIR_DIR}")
@@ -207,7 +230,7 @@ if(Doxygen_FOUND)
   FetchContent_Declare(
     DoxygenAwesomeCSS
     GIT_REPOSITORY https://github.com/jothepro/doxygen-awesome-css.git
-    GIT_TAG v2.3.4
+    GIT_TAG v2.4.1
     SOURCE_DIR "${DoxygenAwesomeCSS_SOURCE_DIR}"
   )
   FetchContent_MakeAvailable(DoxygenAwesomeCSS)
@@ -219,7 +242,9 @@ if(Doxygen_FOUND)
     "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-sidebar-only-darkmode-toggle.css")
   set(DOXYGEN_HTML_EXTRA_FILES
     "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-darkmode-toggle.js"
-    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-paragraph-link.js")
+    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-paragraph-link.js"
+    "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/interactive-toc.js"
+    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-fragment-copy-button.js")
   set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/header.html")
   set(DOXYGEN_HTML_FOOTER "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/footer.html")
   set(DOXYGEN_GENERATE_TREEVIEW YES)
@@ -230,6 +255,14 @@ if(Doxygen_FOUND)
   set(DOXYGEN_DOT_TRANSPARENT YES)
   set(DOXYGEN_TREEVIEW_WIDTH 700)
   # set(DOXYGEN_INTERACTIVE_SVG YES) # This is an option, but it's kinda clunky
+
+  set(DOXYGEN_MARKDOWN_SUPPORT YES)
+  set(DOXYGEN_MARKDOWN_ID_STYLE "GITHUB")
+
+  if (DOXYGEN_VERSION VERSION_GREATER_EQUAL "1.14.0")
+    # https://jothepro.github.io/doxygen-awesome-css/md_docs_2extensions.html#extension-toc
+    set(DOXYGEN_PAGE_OUTLINE_PANEL NO)
+  endif()
 
   # Remaining doxygen setup
   set(DOXYGEN_EXTRACT_ALL YES)

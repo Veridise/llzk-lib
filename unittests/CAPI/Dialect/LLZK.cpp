@@ -11,22 +11,14 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk) {
-  {
-    mlirGetDialectHandle__llzk__();
-  }
-}
+TEST_F(CAPITest, mlir_get_dialect_handle_llzk) { (void)mlirGetDialectHandle__llzk__(); }
 
 TEST_F(CAPITest, llzk_public_attr_get) {
-  {
-    auto attr = llzkPublicAttrGet(context);
-    EXPECT_NE(attr.ptr, (void *)NULL);
-  };
+  auto attr = llzkPublicAttrGet(context);
+  EXPECT_NE(attr.ptr, (void *)NULL);
 }
 
 TEST_F(CAPITest, llzk_attribute_is_a_public_attr_pass) {
-  {
-    auto attr = llzkPublicAttrGet(context);
-    EXPECT_TRUE(llzkAttributeIsAPublicAttr(attr));
-  };
+  auto attr = llzkPublicAttrGet(context);
+  EXPECT_TRUE(llzkAttributeIsAPublicAttr(attr));
 }

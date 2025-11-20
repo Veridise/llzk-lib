@@ -1,12 +1,15 @@
-{ stdenv, lib, cmake, ninja, mlir_pkg, llzk_pkg }:
+{ stdenv, lib, cmake, ninja, mlir_pkg, llzk_pkg, pcl_pkg }:
 
+let
+  buildTypeStr = lib.toLower (mlir_pkg.cmakeBuildType or "release");
+in
 stdenv.mkDerivation {
-  pname = "llzk-installcheck";
+  pname = "llzk-installcheck-${buildTypeStr}";
   version = "1.0.0";
 
   src = lib.cleanSource ./.;
 
-  buildInputs = [ mlir_pkg llzk_pkg ];
+  buildInputs = [ mlir_pkg llzk_pkg pcl_pkg ];
   nativeBuildInputs = [ cmake ninja ];
 
   installPhase = ''touch "$out"'';

@@ -25,6 +25,20 @@ MlirAttribute llzkFeltConstAttrGet(MlirContext ctx, int64_t value) {
   return wrap(FeltConstAttr::get(unwrap(ctx), llzk::toAPInt(value)));
 }
 
+MlirAttribute llzkFeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value) {
+  return wrap(FeltConstAttr::get(unwrap(ctx), llvm::APInt(numBits, value)));
+}
+
+MlirAttribute llzkFeltConstAttrGetFromString(MlirContext ctx, unsigned numBits, MlirStringRef str) {
+  return wrap(FeltConstAttr::get(unwrap(ctx), numBits, unwrap(str)));
+}
+
+MlirAttribute llzkFeltConstAttrGetFromParts(
+    MlirContext context, unsigned numBits, const uint64_t *parts, intptr_t nParts
+) {
+  return wrap(FeltConstAttr::get(unwrap(context), numBits, llvm::ArrayRef(parts, nParts)));
+}
+
 bool llzkAttributeIsAFeltConstAttr(MlirAttribute attr) {
   return llvm::isa<FeltConstAttr>(unwrap(attr));
 }

@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "llzk/Analysis/DenseAnalysis.h"
+#include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/ErrorHelper.h"
@@ -73,16 +73,20 @@ public:
   /// @return `mlir::success()` if the analysis ran without errors, and a `mlir::failure()`
   /// otherwise.
   virtual mlir::LogicalResult runAnalysis(
-      mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager, Context &ctx
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager, const Context &ctx
   ) = 0;
 
-  /// @brief Query if the analysis has constructed a `Result` object.
-  bool constructed() const { return res != nullptr; }
+  /// @brief Query if the analysis has constructed a `Result` object for the given `Context`.
+  bool constructed(const Context &ctx) const { return res.contains(ctx); }
 
-  /// @brief Access the result iff it has been created.
-  const Result &getResult() const {
-    ensure(constructed(), mlir::Twine(__PRETTY_FUNCTION__) + ": result has not been constructed");
-    return *res;
+  /// @brief Access the result iff it has been created for the given `Context` object `ctx`.
+  const Result &getResult(const Context &ctx) const {
+    ensure(
+        constructed(ctx), mlir::Twine(__FUNCTION__) +
+                              ": result has not been constructed for struct " +
+                              mlir::Twine(getStruct().getName())
+    );
+    return *res.at(ctx);
   }
 
 protected:
@@ -93,22 +97,34 @@ protected:
   component::StructDefOp getStruct() const { return structDefOp; }
 
   /// @brief Initialize the final `Result` object.
-  void setResult(Result &&r) { res = std::make_unique<Result>(r); }
+  void setResult(const Context &ctx, Result &&r) {
+    auto [_, inserted] = res.insert(std::make_pair(ctx, std::make_unique<Result>(r)));
+    ensure(inserted, "Result already initialized");
+  }
 
 private:
   mlir::ModuleOp modOp;
   component::StructDefOp structDefOp;
-  std::unique_ptr<Result> res;
+  std::unordered_map<Context, std::unique_ptr<Result>> res;
+};
+
+template <typename Context>
+concept ContextType = requires(const Context &a, const Context &b) {
+  { a == b } -> std::convertible_to<bool>;
+  { std::hash<Context> {}(a) } -> std::convertible_to<std::size_t>;
 };
 
 /// @brief An empty struct that is used for convenience for analyses that do not
 /// require any context.
 struct NoContext {};
 
-/// @brief Any type that is a subclass of `StructAnalysis`.
+/// @brief Any type that is a subclass of `StructAnalysis` and provided a
+/// `Context` that matches `ContextType`.
 template <typename Analysis, typename Result, typename Context>
-concept StructAnalysisType =
-    requires { requires std::is_base_of<StructAnalysis<Result, Context>, Analysis>::value; };
+concept StructAnalysisType = requires {
+  requires std::is_base_of<StructAnalysis<Result, Context>, Analysis>::value;
+  requires ContextType<Context>;
+};
 
 /// @brief An analysis wrapper that runs the given `StructAnalysisTy` struct analysis over
 /// all of the struct contained within the module. Through the use of the `Context` object, this
@@ -118,11 +134,17 @@ concept StructAnalysisType =
 /// @tparam StructAnalysisType The analysis run on all the contained module's structs.
 template <typename Result, typename Context, StructAnalysisType<Result, Context> StructAnalysisTy>
 class ModuleAnalysis {
-  /// @brief A map of this module's structs to the result of the `StructAnalysis` on that struct.
-  /// The `ResultMap` is implemented as an ordered map to control sorting order for iteration.
-  using ResultMap = std::map<
+
+  /// @brief Per-struct results mapping.
+  using StructResults = std::map<
       component::StructDefOp, std::reference_wrapper<const Result>,
       NamedOpLocationLess<component::StructDefOp>>;
+
+  /// @brief A map of this module's structs to the result of the `StructAnalysis`
+  /// on that struct for a given configuration (denoted by the `Context` object).
+  /// The inner `StructResults` is implemented as an ordered map to control
+  /// sorting order for iteration.
+  using ResultMap = std::unordered_map<Context, StructResults>;
 
 public:
   /// @brief Asserts that the analysis is being run on a `ModuleOp`.
@@ -144,21 +166,35 @@ public:
   /// to construct this analysis.
   virtual void runAnalysis(mlir::AnalysisManager &am) { constructChildAnalyses(am); }
 
+  /// @brief Runs the analysis if the results do not already exist.
+  void ensureAnalysisRun(mlir::AnalysisManager &am) {
+    if (!constructed()) {
+      runAnalysis(am);
+    }
+  }
+
+  /// @brief Check if the results of this analysis have been created for the currently
+  /// available context.
+  bool constructed() const { return results.contains(getContext()); }
+
   /// @brief Checks if `op` has a result contained in the current result map.
-  bool hasResult(component::StructDefOp op) const { return results.find(op) != results.end(); }
+  bool hasResult(component::StructDefOp op) const {
+    return constructed() && results.at(getContext()).contains(op);
+  }
 
   /// @brief Asserts that `op` has a result and returns it.
   const Result &getResult(component::StructDefOp op) const {
     ensureResultCreated(op);
-    return results.at(op).get();
+    return results.at(getContext()).at(op).get();
   }
 
-  ResultMap::iterator begin() { return results.begin(); }
-  ResultMap::iterator end() { return results.end(); }
-  ResultMap::const_iterator cbegin() const { return results.cbegin(); }
-  ResultMap::const_iterator cend() const { return results.cend(); }
+  /// @brief Get the results for the current context.
+  const StructResults &getCurrentResults() const {
+    ensure(constructed(), "results are not yet constructed for the current context");
+    return results.at(getContext());
+  }
 
-  const mlir::DataFlowSolver &getSolver() const { return solver; }
+  mlir::DataFlowSolver &getSolver() { return solver; }
 
 protected:
   mlir::DataFlowSolver solver;
@@ -168,10 +204,9 @@ protected:
   /// @param solver
   virtual void initializeSolver() = 0;
 
-  /// @brief Create and return a valid `Context` object. This function is called
-  /// once by `constructChildAnalyses` and the resulting `Context` is passed to
-  /// each child struct analysis run by this module analysis.
-  virtual Context getContext() = 0;
+  /// @brief Return the current `Context` object. The context contains parameters
+  /// that configure or pass information to the analysis.
+  virtual const Context &getContext() const = 0;
 
   /// @brief Construct and run the `StructAnalysisTy` analyses on each `StructDefOp` contained
   /// in the `ModuleOp` that is being subjected to this analysis.
@@ -185,16 +220,25 @@ protected:
     auto res = solver.initializeAndRun(modOp);
     ensure(res.succeeded(), "solver failed to run on module!");
 
-    auto ctx = getContext();
+    const Context &ctx = getContext();
     modOp.walk([this, &am, &ctx](component::StructDefOp s) mutable {
       auto &childAnalysis = am.getChildAnalysis<StructAnalysisTy>(s);
-      if (mlir::failed(childAnalysis.runAnalysis(solver, am, ctx))) {
-        auto error_message = "StructAnalysis failed to run for " + mlir::Twine(s.getName());
-        s->emitError(error_message).report();
-        llvm::report_fatal_error(error_message);
+      // Don't re-run the analysis if we already have the results.
+      // The analysis may have been run as part of a nested analysis.
+      if (!childAnalysis.constructed(ctx)) {
+        mlir::LogicalResult childAnalysisRes = childAnalysis.runAnalysis(solver, am, ctx);
+
+        if (mlir::failed(childAnalysisRes)) {
+          auto error_message = "StructAnalysis failed to run for " + mlir::Twine(s.getName());
+          s->emitError(error_message).report();
+          llvm::report_fatal_error(error_message);
+        }
       }
-      ensure(results.find(s) == results.end(), "struct location conflict");
-      results.insert(std::make_pair(s, std::reference_wrapper(childAnalysis.getResult())));
+
+      auto [_, inserted] = results[ctx].insert(
+          std::make_pair(s, std::reference_wrapper(childAnalysis.getResult(ctx)))
+      );
+      ensure(inserted, "struct location conflict");
       return mlir::WalkResult::skip();
     });
   }

@@ -36,8 +36,10 @@ def LLZK_IncludeOp
   let extraClassDeclaration = [{
     static IncludeOp create(::mlir::Location, ::llvm::StringRef name, ::llvm::StringRef path);
     static IncludeOp create(::mlir::Location, ::mlir::StringAttr name, ::mlir::StringAttr path);
+  
     /// Opens the module this include references but doesn't insert it into the parent module.
     ::mlir::FailureOr<mlir::OwningOpRef<mlir::ModuleOp>> openModule();
+  
     /// Opens the module this include references and replace this include with that module.
     ::mlir::FailureOr<mlir::ModuleOp> inlineAndErase();
   }];

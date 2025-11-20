@@ -202,8 +202,7 @@ public:
   template <typename T, typename U>
   inline bool areLegalConversions(T oldTypes, U newTypes, const char *patName) const {
     return llvm::all_of(
-        llvm::zip_equal(oldTypes, newTypes),
-        [this, &patName](std::tuple<Type, Type> oldThenNew) {
+        llvm::zip_equal(oldTypes, newTypes), [this, &patName](std::tuple<Type, Type> oldThenNew) {
       return this->isLegalConversion(std::get<0>(oldThenNew), std::get<1>(oldThenNew), patName);
     }
     );

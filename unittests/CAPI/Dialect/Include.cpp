@@ -12,20 +12,15 @@
 #include "../CAPITestBase.h"
 
 TEST_F(CAPITest, mlir_get_dialect_handle_llzk_include) {
-  {
-    mlirGetDialectHandle__llzk__include__();
-  }
+  (void)mlirGetDialectHandle__llzk__include__();
 }
 
 TEST_F(CAPITest, llzk_include_op_create) {
-  {
-    auto location = mlirLocationUnknownGet(context);
-    auto op = llzkIncludeOpCreate(
-        location, mlirStringRefCreateFromCString("test"),
-        mlirStringRefCreateFromCString("test.mlir")
-    );
+  auto location = mlirLocationUnknownGet(context);
+  auto op = llzkIncludeOpCreate(
+      location, mlirStringRefCreateFromCString("test"), mlirStringRefCreateFromCString("test.mlir")
+  );
 
-    EXPECT_NE(op.ptr, (void *)NULL);
-    mlirOperationDestroy(op);
-  }
+  EXPECT_NE(op.ptr, (void *)NULL);
+  mlirOperationDestroy(op);
 }

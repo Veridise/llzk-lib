@@ -1,6 +1,5 @@
 add_library(LLZKCAPI)
 add_library(LLZK::LLZKCAPI ALIAS LLZKCAPI)
-target_link_libraries(LLZKAllDialects INTERFACE LLZKCAPI)
 
 target_sources(LLZKCAPI PRIVATE 
   Transforms.cpp 
@@ -18,7 +17,7 @@ target_sources(LLZKCAPI PRIVATE
   Dialect/Global.cpp 
   Dialect/Include.cpp 
   Dialect/LLZK.cpp 
-  Dialect/Polymorphic.cpp 
+  Dialect/Poly.cpp 
   Dialect/String.cpp 
   Dialect/Struct.cpp 
   Dialect/Undef.cpp)

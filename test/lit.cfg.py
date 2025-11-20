@@ -63,3 +63,6 @@ llvm_config.with_environment('PYTHONPATH', [
 
 if config.per_test_coverage:
     config.environment["LLVM_PROFILE_FILE"] = "covdata-%p.profraw"
+
+# Limit testing time in the case of non-converging analyses
+config.maxIndividualTestTime = 60
