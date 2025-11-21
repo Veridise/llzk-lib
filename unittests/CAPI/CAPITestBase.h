@@ -42,7 +42,7 @@ protected:
   }
 
   // Helper to create a simple test operation: `arith.constant 0 : index`
-  MlirOperation createIndexConstOp() {
+  MlirOperation createIndexOperation() {
     MlirType indexType = createIndexType();
     MlirOperationState op_state = mlirOperationStateGet(
         mlirStringRefCreateFromCString("arith.constant"), mlirLocationUnknownGet(context)

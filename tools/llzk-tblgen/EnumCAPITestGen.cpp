@@ -40,19 +40,13 @@ namespace {
 ///
 /// This class generates link-time tests for enum C APIs. The tests verify
 /// that all generated enums and wrap/unwrap functions compile and link correctly.
-struct EnumTestGenerator : public Generator {
+struct EnumTestGenerator : public TestGenerator {
   /// @brief Construct an enum test generator
   /// @param outputStream The output stream for generated code
-  EnumTestGenerator(llvm::raw_ostream &outputStream) : Generator("Enum", outputStream) {}
+  EnumTestGenerator(llvm::raw_ostream &outputStream) : TestGenerator("Enum", outputStream) {}
 
   virtual void genExtraMethod(const ExtraMethod &method) const override {
     llvm_unreachable("Enums cannot have extra methods");
-  }
-
-  /// @brief Generate the test class prologue
-  void genTestClassPrologue() const {
-    static constexpr char fmt[] = "class {0}EnumLinkTests : public CAPITest {{};\n";
-    os << llvm::formatv(fmt, dialectNameCapitalized);
   }
 
   /// @brief Generate enum usage test

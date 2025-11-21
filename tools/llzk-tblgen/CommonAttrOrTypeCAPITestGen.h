@@ -46,9 +46,9 @@ std::string generateParamListForAttrOrTypeGet(const mlir::tblgen::AttrOrTypeDef 
 /// @brief Base class for attribute and type test generators
 ///
 /// This class provides common functionality for generating unit tests
-/// for attributes and types. It extends the base Generator class.
-struct AttrOrTypeTestGenerator : public Generator {
-  using Generator::Generator;
+/// for attributes and types. It extends the base TestGenerator class.
+struct AttrOrTypeTestGenerator : public TestGenerator {
+  using TestGenerator::TestGenerator;
 
   virtual ~AttrOrTypeTestGenerator() = default;
 
@@ -57,101 +57,6 @@ struct AttrOrTypeTestGenerator : public Generator {
   void setParamName(mlir::StringRef name) {
     this->paramName = name;
     this->paramNameCapitalized = toPascalCase(name);
-  }
-
-  /// @brief Generate test for an extra method from extraClassDeclaration
-  virtual void genExtraMethod(const ExtraMethod &method) const override {
-    // Convert return type to C API type, skip if it can't be converted
-    std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
-    if (!capiReturnTypeOpt.has_value()) {
-      return;
-    }
-
-    // Build parameter list for dummy values
-    std::string dummyParams;
-    llvm::raw_string_ostream dummyParamsStream(dummyParams);
-    std::string paramList;
-    llvm::raw_string_ostream paramListStream(paramList);
-
-    for (const auto &param : method.parameters) {
-      // Convert C++ type to C API type for parameter, skip if it can't be converted
-      std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
-      if (!capiParamTypeOpt.has_value()) {
-        return;
-      }
-      std::string capiParamType = capiParamTypeOpt.value();
-      std::string name = param.name;
-
-      // Generate dummy value creation for each parameter
-      if (capiParamType == "bool") {
-        dummyParamsStream << "    bool " << name << " = false;\n";
-      } else if (capiParamType == "MlirType") {
-        dummyParamsStream << "    auto " << name << " = mlirIndexTypeGet(context);\n";
-      } else if (capiParamType == "MlirAttribute") {
-        dummyParamsStream << "    auto " << name
-                          << " = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);\n";
-      } else if (capiParamType == "MlirStringRef") {
-        dummyParamsStream << "    auto " << name << " = mlirStringRefCreateFromCString(\"\");\n";
-      } else if (capiParamType == "intptr_t" || capiParamType == "int" ||
-                 capiParamType == "int64_t") {
-        dummyParamsStream << "    " << capiParamType << " " << name << " = 0;\n";
-      } else {
-        // For unknown types, create a default-initialized variable
-        dummyParamsStream << "    " << capiParamType << " " << name << " = {};\n";
-      }
-
-      paramListStream << ", " << name;
-    }
-
-    static constexpr char fmt[] = R"(
-// This test ensures {0}{2}{3}{4} links properly.
-TEST_F({2}{1}LinkTests, {3}_{4}) {{
-  auto test{1} = createIndex{1}();
-  
-  if ({0}{1}IsA{2}{3}(test{1})) {{
-{5}
-    (void){0}{2}{3}{4}(test{1}{6});
-  }
-}
-)";
-    assert(!className.empty() && "className must be set");
-    os << llvm::formatv(
-        fmt,
-        FunctionPrefix,                  // {0}
-        kind,                            // {1}
-        dialectNameCapitalized,          // {2}
-        className,                       // {3}
-        toPascalCase(method.methodName), // {4}
-        dummyParams,                     // {5}
-        paramList                        // {6}
-    );
-  }
-
-  /// @brief Generate the test class prologue
-  virtual void genTestClassPrologue() const {
-    static constexpr char fmt[] = "class {0}{1}LinkTests : public CAPITest {{};\n";
-    os << llvm::formatv(fmt, dialectNameCapitalized, kind);
-  }
-
-  /// @brief Generate IsA test for a class
-  virtual void genIsATest() const {
-    static constexpr char fmt[] = R"(
-// This test ensures {0}{1}IsA{2}{3} links properly.
-TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
-  auto test{1} = createIndex{1}();
-  
-  // This should always return false since test{1} is IndexType/IntegerAttr
-  EXPECT_FALSE({0}{1}IsA{2}{3}(test{1}));
-}
-)";
-    assert(!className.empty() && "className must be set");
-    os << llvm::formatv(
-        fmt,
-        FunctionPrefix,         // {0}
-        kind,                   // {1}
-        dialectNameCapitalized, // {2}
-        className               // {3}
-    );
   }
 
   /// @brief Generate Get builder test for a definition
@@ -185,7 +90,6 @@ TEST_F({2}{1}LinkTests, Get_{3}) {{
 
   /// @brief Generate parameter getter test
   virtual void genParamGetterTest() const {
-
     static constexpr char fmt[] = R"(
 // This test ensures {0}{2}{3}Get{5} links properly.
 TEST_F({2}{1}LinkTests, Get_{3}_{4}) {{

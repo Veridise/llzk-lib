@@ -55,116 +55,22 @@ namespace {
 /// This class generates link-time tests for operation C APIs. The tests verify
 /// that all generated functions compile and link correctly by wrapping calls
 /// in conditions that are always false at runtime.
-struct OpTestGenerator : public Generator {
+struct OpTestGenerator : public TestGenerator {
   /// @brief Construct an operation test generator
   /// @param outputStream The output stream for generated code
-  OpTestGenerator(llvm::raw_ostream &outputStream) : Generator("Operation", outputStream) {}
+  OpTestGenerator(llvm::raw_ostream &outputStream) : TestGenerator("Operation", outputStream) {}
 
-  /// @brief Generate test for an extra method from extraClassDeclaration
-  virtual void genExtraMethod(const ExtraMethod &method) const override {
-    // Convert return type to C API type, skip if it can't be converted
-    std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
-    if (!capiReturnTypeOpt.has_value()) {
-      return;
-    }
-
-    // Build parameter list for dummy values
-    std::string dummyParams;
-    llvm::raw_string_ostream dummyParamsStream(dummyParams);
-    std::string paramList;
-    llvm::raw_string_ostream paramListStream(paramList);
-
-    for (const auto &param : method.parameters) {
-      // Convert C++ type to C API type for parameter, skip if it can't be converted
-      std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
-      if (!capiParamTypeOpt.has_value()) {
-        return;
-      }
-      std::string capiParamType = capiParamTypeOpt.value();
-      std::string name = param.name;
-
-      // Generate dummy value creation for each parameter
-      if (capiParamType == "bool") {
-        dummyParamsStream << "    bool " << name << " = false;\n";
-      } else if (capiParamType == "MlirValue") {
-        dummyParamsStream << "    auto " << name << " = mlirOperationGetResult(testOp, 0);\n";
-      } else if (capiParamType == "MlirType") {
-        dummyParamsStream << "    auto " << name << " = mlirIndexTypeGet(context);\n";
-      } else if (capiParamType == "MlirAttribute") {
-        dummyParamsStream << "    auto " << name
-                          << " = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);\n";
-      } else if (capiParamType == "intptr_t" || capiParamType == "int" ||
-                 capiParamType == "int64_t") {
-        dummyParamsStream << "    " << capiParamType << " " << name << " = 0;\n";
-      } else {
-        // For unknown types, create a default-initialized variable
-        dummyParamsStream << "    " << capiParamType << " " << name << " = {};\n";
-      }
-
-      paramListStream << ", " << name;
-    }
-
-    static constexpr char fmt[] = R"(
-// This test ensures {0}{1}{2}{3} links properly.
-TEST_F({1}OpLinkTests, {0}_{2}_{3}) {{
-  auto testOp = createIndexConstOp();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-{4}
-    (void){0}{1}{2}{3}(testOp{5});
-  }
-  
-  mlirOperationDestroy(testOp);
-}
-)";
-    assert(!className.empty() && "className must be set");
-    os << llvm::formatv(
-        fmt,
-        FunctionPrefix,                  // {0}
-        dialectNameCapitalized,          // {1}
-        className,                       // {2}
-        toPascalCase(method.methodName), // {3}
-        dummyParams,                     // {4}
-        paramList                        // {5}
-    );
-  }
-
-  /// @brief Generate the test class prologue
-  void genTestClassPrologue() const {
-    static constexpr char fmt[] = "class {0}OpLinkTests : public CAPITest {{};\n";
-    os << llvm::formatv(fmt, dialectNameCapitalized);
-  }
-
-  /// @brief Generate IsA test for an operation
-  void genIsATest() const {
-    static constexpr char fmt[] = R"(
-// This test ensures {0}OperationIsA{1}{2} links properly.
-TEST_F({1}OpLinkTests, IsA_{1}{2}) {{
-  auto testOp = createIndexConstOp();
-  
-  // This should always return false since testOp is from `arith` dialect
-  EXPECT_FALSE({0}OperationIsA{1}{2}(testOp));
-  
-  mlirOperationDestroy(testOp);
-}
-)";
-    assert(!className.empty() && "className must be set");
-    os << llvm::formatv(
-        fmt,
-        FunctionPrefix,         // {0}
-        dialectNameCapitalized, // {1}
-        className               // {2}
-    );
-  }
+  /// @brief Generate cleanup code for extra method LinkTests
+  virtual std::string genCleanup() const override { return "mlirOperationDestroy"; };
 
   /// @brief Generate create function test for an operation
   /// @param op The operation definition
   void genCreateOpTest(const Operator &op) const {
     static constexpr char fmt[] = R"(
 // This test ensures {0}{1}{2}Create links properly.
-TEST_F({1}OpLinkTests, {0}{2}_Create) {{
+TEST_F({1}OperationLinkTests, {0}{2}_Create) {{
   // Returns an `arith.constant` op, which will never match the {2} dialect check.
-  auto testOp = createIndexConstOp();
+  auto testOp = createIndexOperation();
   
   // This condition is always false, so the function is never actually called.
   // We only verify it compiles and links correctly.
@@ -193,8 +99,8 @@ TEST_F({1}OpLinkTests, {0}{2}_Create) {{
   /// @param op The operation definition
   void genOperandTests(const Operator &op) const {
     static constexpr char OperandGetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
@@ -205,8 +111,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
 )";
 
     static constexpr char OperandSetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Set{3}) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
@@ -218,8 +124,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}) {{
 )";
 
     static constexpr char VariadicOperandCountGetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}Count(testOp);
@@ -230,8 +136,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
 )";
 
     static constexpr char VariadicOperandIndexedGetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp, 0);
@@ -242,8 +148,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
 )";
 
     static constexpr char VariadicOperandSetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Set{3}_Variadic) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}_Variadic) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
@@ -312,8 +218,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}_Variadic) {{
   /// @param op The operation definition
   void genAttributeTests(const Operator &op) const {
     static constexpr char AttributeGetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Attr) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Attr) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
@@ -324,8 +230,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Attr) {{
 )";
 
     static constexpr char AttributeSetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Set{3}Attr) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}Attr) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     auto dummyAttr = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);
@@ -364,8 +270,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}Attr) {{
   /// @param op The operation definition
   void genResultTests(const Operator &op) const {
     static constexpr char ResultGetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
@@ -376,8 +282,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
 )";
 
     static constexpr char VariadicResultCountGetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}Count(testOp);
@@ -388,8 +294,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
 )";
 
     static constexpr char VariadicResultIndexedGetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp, 0);
@@ -437,8 +343,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
   /// @param op The operation definition
   void genRegionTests(const Operator &op) const {
     static constexpr char RegionGetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Region) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Region) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
@@ -449,8 +355,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Region) {{
 )";
 
     static constexpr char VariadicRegionCountGetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}Count(testOp);
@@ -461,8 +367,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
 )";
 
     static constexpr char VariadicRegionIndexedGetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp, 0);
@@ -509,8 +415,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
   /// @brief Generate operation name getter test
   void genOperationNameGetterTest() const {
     static constexpr char OperationNameGetterTest[] = R"(
-TEST_F({1}OpLinkTests, {0}_{2}_GetOperationName) {{
-  auto testOp = createIndexConstOp();
+TEST_F({1}OperationLinkTests, {0}_{2}_GetOperationName) {{
+  auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}GetOperationName(testOp);
