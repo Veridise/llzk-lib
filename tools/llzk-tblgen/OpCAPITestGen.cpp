@@ -513,14 +513,14 @@ TEST_F({0}OpLinkTests, {1}_{2}_GetOperationName) {{
   /// @brief Generate all tests for a complete operation record
   /// @param op The operation definition
   void genCompleteRecord(const Operator &op) {
-    const Dialect &dialect = op.getDialect();
+    const Dialect &defDialect = op.getDialect();
 
     // Generate for the selected dialect only
-    if (dialect.getName() != DialectName) {
+    if (defDialect.getName() != DialectName) {
       return;
     }
 
-    this->setDialectAndClassName(&dialect, op.getCppClassName());
+    this->setDialectAndClassName(&defDialect, op.getCppClassName());
 
     if (GenIsA) {
       this->genIsATest();

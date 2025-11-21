@@ -51,14 +51,14 @@ struct AttrOrTypeTestGenerator : public Generator {
   /// @brief Construct a test generator
   /// @param recordKind The kind of record ("Attribute" or "Type")
   /// @param outputStream The output stream for generated code
-  /// @param testObjCreateExpr C expression to create a test object
-  /// @param description Description for the test object
+  /// @param testObjCreateExpression C expression to create a test object
+  /// @param testObjDescriptionComment Description for the test object
   AttrOrTypeTestGenerator(
       std::string_view recordKind, llvm::raw_ostream &outputStream,
-      mlir::StringRef testObjCreateExpr, mlir::StringRef testObjDescription
+      mlir::StringRef testObjCreateExpression, mlir::StringRef testObjDescriptionComment
   )
-      : Generator(recordKind, outputStream), testObjCreateExpr(testObjCreateExpr),
-        testObjDescription(testObjDescription) {}
+      : Generator(recordKind, outputStream), testObjCreateExpr(testObjCreateExpression),
+        testObjDescription(testObjDescriptionComment) {}
 
   virtual ~AttrOrTypeTestGenerator() = default;
 
@@ -250,14 +250,14 @@ TEST_F({0}{1}LinkTests, Get_{2}_{3}At) {{
   }
 
   void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef def, bool isType) {
-    const mlir::tblgen::Dialect &dialect = def.getDialect();
+    const mlir::tblgen::Dialect &defDialect = def.getDialect();
 
     // Generate for the selected dialect only
-    if (dialect.getName() != DialectName) {
+    if (defDialect.getName() != DialectName) {
       return;
     }
 
-    this->setDialectAndClassName(&dialect, def.getCppClassName());
+    this->setDialectAndClassName(&defDialect, def.getCppClassName());
 
     // Generate IsA test
     if (GenIsA) {

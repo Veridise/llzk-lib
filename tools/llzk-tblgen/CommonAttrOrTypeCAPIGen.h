@@ -104,14 +104,14 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{4}{3}Get(MlirContext ctx{5});
   }
 
   void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef def) {
-    const mlir::tblgen::Dialect &dialect = def.getDialect();
+    const mlir::tblgen::Dialect &defDialect = def.getDialect();
 
     // Generate for the selected dialect only
-    if (dialect.getName() != DialectName) {
+    if (defDialect.getName() != DialectName) {
       return;
     }
 
-    this->setDialectAndClassName(&dialect, def.getCppClassName());
+    this->setDialectAndClassName(&defDialect, def.getCppClassName());
 
     // Generate IsA check
     if (GenIsA) {
@@ -329,14 +329,14 @@ Mlir{1} {0}{2}{3}Get(MlirContext ctx{4}) {{
   }
 
   void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef def) {
-    const mlir::tblgen::Dialect &dialect = def.getDialect();
+    const mlir::tblgen::Dialect &defDialect = def.getDialect();
 
     // Generate for the selected dialect only
-    if (dialect.getName() != DialectName) {
+    if (defDialect.getName() != DialectName) {
       return;
     }
 
-    this->setDialectAndClassName(&dialect, def.getCppClassName());
+    this->setDialectAndClassName(&defDialect, def.getCppClassName());
 
     // Generate IsA check implementation
     if (GenIsA) {
