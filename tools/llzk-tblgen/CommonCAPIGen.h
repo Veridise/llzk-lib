@@ -63,18 +63,19 @@ inline std::string toPascalCase(mlir::StringRef str) {
 
   std::string result;
   result.reserve(str.size());
+  llvm::raw_string_ostream resultStream(result);
   bool capitalizeNext = true;
 
   for (char c : str) {
     if (c == '_' || c == ':') {
       capitalizeNext = true;
     } else {
-      result += capitalizeNext ? llvm::toUpper(c) : c;
+      resultStream << (capitalizeNext ? llvm::toUpper(c) : c);
       capitalizeNext = false;
     }
   }
 
-  return result;
+  return resultStream.str();
 }
 
 /// @brief Check if a C++ type is a known primitive type
@@ -359,7 +360,9 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{4}(Mlir{1});
     std::string capiReturnType = capiReturnTypeOpt.value();
 
     // Build parameter list
-    std::string paramList = llvm::formatv("Mlir{0} inp", kind).str();
+    std::string paramList;
+    llvm::raw_string_ostream paramListStream(paramList);
+    paramListStream << llvm::formatv("Mlir{0} inp", kind);
     for (const auto &param : method.parameters) {
       // Convert C++ type to C API type for parameter, skip if it can't be converted
       std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
@@ -367,7 +370,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{4}(Mlir{1});
         return;
       }
       std::string capiParamType = capiParamTypeOpt.value();
-      paramList += ", " + capiParamType + " " + param.name;
+      paramListStream << ", " << capiParamType << " " << param.name;
     }
 
     // Generate declaration
@@ -382,7 +385,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{4}(Mlir{1});
         dialectNameCapitalized,          // {2}
         className,                       // {3}
         toPascalCase(method.methodName), // {4}
-        paramList                        // {5}
+        paramListStream.str()            // {5}
     );
   }
 };
@@ -412,7 +415,9 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
     std::string capiReturnType = capiReturnTypeOpt.value();
 
     // Build parameter list for C API function signature
-    std::string paramList = llvm::formatv("Mlir{0} inp", kind).str();
+    std::string paramList;
+    llvm::raw_string_ostream paramListStream(paramList);
+    paramListStream << llvm::formatv("Mlir{0} inp", kind);
     for (const auto &param : method.parameters) {
       // Convert C++ type to C API type for parameter, skip if it can't be converted
       std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
@@ -420,14 +425,15 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
         return;
       }
       std::string capiParamType = capiParamTypeOpt.value();
-      paramList += ", " + capiParamType + " " + param.name;
+      paramListStream << ", " << capiParamType << " " << param.name;
     }
 
     // Build argument list for C++ method call
     std::string argList;
+    llvm::raw_string_ostream argListStream(argList);
     for (size_t i = 0; i < method.parameters.size(); ++i) {
       if (i > 0) {
-        argList += ", ";
+        argListStream << ", ";
       }
       const auto &param = method.parameters[i];
       // Convert C++ type to C API type for parameter, skip if it can't be converted
@@ -440,13 +446,13 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
       // Check if parameter needs unwrapping
       if (isPrimitiveType(capiParamType)) {
         // Primitive types don't need unwrapping
-        argList += param.name;
+        argListStream << param.name;
       } else if (capiParamType.starts_with("Mlir")) {
         // MLIR C API types need unwrapping
-        argList += "unwrap(" + param.name + ")";
+        argListStream << "unwrap(" << param.name << ")";
       } else {
         // Unknown types - pass through as-is
-        argList += param.name;
+        argListStream << param.name;
       }
     }
 
@@ -477,15 +483,15 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
         dialectNameCapitalized, // {2}
         className,              // {3}
         capitalizedMethodName,  // {4}
-        paramList               // {5}
+        paramListStream.str()   // {5}
     );
     os << llvm::formatv(
         "  {0}llvm::cast<{1}>(unwrap(inp)).{2}({3}){4};\n",
-        returnPrefix,      // {0}
-        className,         // {1}
-        method.methodName, // {2}
-        argList,           // {3}
-        returnSuffix       // {4}
+        returnPrefix,        // {0}
+        className,           // {1}
+        method.methodName,   // {2}
+        argListStream.str(), // {3}
+        returnSuffix         // {4}
     );
     os << "}\n";
   }

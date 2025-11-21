@@ -71,7 +71,9 @@ struct OpTestGenerator : public Generator {
 
     // Build parameter list for dummy values
     std::string dummyParams;
+    llvm::raw_string_ostream dummyParamsStream(dummyParams);
     std::string paramList;
+    llvm::raw_string_ostream paramListStream(paramList);
 
     for (const auto &param : method.parameters) {
       // Convert C++ type to C API type for parameter, skip if it can't be converted
@@ -83,24 +85,24 @@ struct OpTestGenerator : public Generator {
       std::string name = param.name;
 
       // Generate dummy value creation for each parameter
-      if (capiParamType == "MlirValue") {
-        dummyParams += "    auto " + name + " = mlirOperationGetResult(testOp, 0);\n";
+      if (capiParamType == "bool") {
+        dummyParamsStream << "    bool " << name << " = false;\n";
+      } else if (capiParamType == "MlirValue") {
+        dummyParamsStream << "    auto " << name << " = mlirOperationGetResult(testOp, 0);\n";
       } else if (capiParamType == "MlirType") {
-        dummyParams += "    auto " + name + " = mlirIndexTypeGet(context);\n";
+        dummyParamsStream << "    auto " << name << " = mlirIndexTypeGet(context);\n";
       } else if (capiParamType == "MlirAttribute") {
-        dummyParams +=
-            "    auto " + name + " = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);\n";
+        dummyParamsStream << "    auto " << name
+                          << " = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);\n";
       } else if (capiParamType == "intptr_t" || capiParamType == "int" ||
                  capiParamType == "int64_t") {
-        dummyParams += "    " + capiParamType + " " + name + " = 0;\n";
-      } else if (capiParamType == "bool") {
-        dummyParams += "    bool " + name + " = false;\n";
+        dummyParamsStream << "    " << capiParamType << " " << name << " = 0;\n";
       } else {
         // For unknown types, create a default-initialized variable
-        dummyParams += "    " + capiParamType + " " + name + " = {};\n";
+        dummyParamsStream << "    " << capiParamType << " " << name << " = {};\n";
       }
 
-      paramList += ", " + name;
+      paramListStream << ", " << name;
     }
 
     std::string capitalizedMethodName = toPascalCase(method.methodName);
@@ -121,14 +123,14 @@ TEST_F({0}OpLinkTests, {1}_{2}_{3}) {{
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
         fmt,
-        dialectNameCapitalized, // {0}
-        FunctionPrefix,         // {1}
-        className,              // {2}
-        capitalizedMethodName,  // {3}
-        testPrefix,             // {4}
-        isACheck,               // {5}
-        dummyParams,            // {6}
-        paramList               // {7}
+        dialectNameCapitalized,  // {0}
+        FunctionPrefix,          // {1}
+        className,               // {2}
+        capitalizedMethodName,   // {3}
+        testPrefix,              // {4}
+        isACheck,                // {5}
+        dummyParamsStream.str(), // {6}
+        paramListStream.str()    // {7}
     );
   }
 

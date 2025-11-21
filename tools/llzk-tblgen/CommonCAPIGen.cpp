@@ -516,12 +516,15 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
                   }
 
                   // Other identifiers and other tokens (keywords, ::, *, &, etc.) are part of type.
+                  // Use raw_string_ostream for efficient string building
+                  llvm::raw_string_ostream paramTypeStream(currentParamType);
                   if (!currentParamType.empty() && tokenText != "*" && tokenText != "&" &&
                       tokenText != "::" && !tokenText.starts_with("::") &&
                       !StringRef(currentParamType).ends_with("::")) {
-                    currentParamType += " ";
+                    paramTypeStream << " ";
                   }
-                  currentParamType += tokenText;
+                  paramTypeStream << tokenText;
+                  currentParamType = paramTypeStream.str();
                 }
 
                 // Add the last parameter if valid
