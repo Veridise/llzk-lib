@@ -105,13 +105,13 @@ struct OpTestGenerator : public Generator {
     }
 
     static constexpr char fmt[] = R"(
-// This test ensures {4}{2}{3} links properly.
+// This test ensures {0}{1}{2}{3} links properly.
 TEST_F({1}OpLinkTests, {0}_{2}_{3}) {{
   auto testOp = createIndexConstOp();
   
-  if ({5}(testOp)) {{
-{6}
-    (void){4}{2}{3}(testOp{7});
+  if ({0}OperationIsA{1}{2}(testOp)) {{
+{4}
+    (void){0}{1}{2}{3}(testOp{5});
   }
   
   mlirOperationDestroy(testOp);
@@ -124,10 +124,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_{3}) {{
         dialectNameCapitalized,          // {1}
         className,                       // {2}
         toPascalCase(method.methodName), // {3}
-        testPrefix,                      // {4}
-        isACheck,                        // {5}
-        dummyParams,                     // {6}
-        paramList                        // {7}
+        dummyParams,                     // {4}
+        paramList                        // {5}
     );
   }
 
@@ -163,17 +161,17 @@ TEST_F({1}OpLinkTests, IsA_{1}{2}) {{
   /// @param op The operation definition
   void genCreateOpTest(const Operator &op) const {
     static constexpr char fmt[] = R"(
-// This test ensures {3}{2}Create links properly.
+// This test ensures {0}{1}{2}Create links properly.
 TEST_F({1}OpLinkTests, {0}{2}_Create) {{
   // Returns an `arith.constant` op, which will never match the {2} dialect check.
   auto testOp = createIndexConstOp();
   
   // This condition is always false, so the function is never actually called.
   // We only verify it compiles and links correctly.
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     auto location = mlirLocationUnknownGet(context);
-{5}
-    (void){3}{2}Create(context, location{6});
+{3}
+    (void){0}{1}{2}Create(context, location{4});
   }
   
   mlirOperationDestroy(testOp);
@@ -186,10 +184,8 @@ TEST_F({1}OpLinkTests, {0}{2}_Create) {{
         FunctionPrefix,          // {0}
         dialectNameCapitalized,  // {1}
         className,               // {2}
-        testPrefix,              // {3}
-        isACheck,                // {4}
-        generateDummyParams(op), // {5}
-        generateParamList(op)    // {6}
+        generateDummyParams(op), // {3}
+        generateParamList(op)    // {4}
     );
   }
 
@@ -200,7 +196,7 @@ TEST_F({1}OpLinkTests, {0}{2}_Create) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
   }
   
@@ -212,7 +208,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Set{3}) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
     {0}{1}{2}Set{3}(testOp, dummyValue);
   }
@@ -225,7 +221,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}Count(testOp);
   }
   
@@ -237,7 +233,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp, 0);
   }
   
@@ -249,7 +245,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Set{3}_Variadic) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
     MlirValue values[] = {{dummyValue};
     {0}{1}{2}Set{3}(testOp, 1, values);
@@ -270,16 +266,14 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}_Variadic) {{
               FunctionPrefix,         // {0}
               dialectNameCapitalized, // {1}
               className,              // {2}
-              capName,                // {3}
-              isACheck                // {4}
+              capName                 // {3}
           );
           os << llvm::formatv(
               VariadicOperandIndexedGetterTest,
               FunctionPrefix,         // {0}
               dialectNameCapitalized, // {1}
               className,              // {2}
-              capName,                // {3}
-              isACheck                // {4}
+              capName                 // {3}
           );
         }
         if (GenOpOperandSetters) {
@@ -288,8 +282,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}_Variadic) {{
               FunctionPrefix,         // {0}
               dialectNameCapitalized, // {1}
               className,              // {2}
-              capName,                // {3}
-              isACheck                // {4}
+              capName                 // {3}
           );
         }
       } else {
@@ -299,8 +292,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}_Variadic) {{
               FunctionPrefix,         // {0}
               dialectNameCapitalized, // {1}
               className,              // {2}
-              capName,                // {3}
-              isACheck                // {4}
+              capName                 // {3}
           );
         }
         if (GenOpOperandSetters) {
@@ -309,8 +301,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}_Variadic) {{
               FunctionPrefix,         // {0}
               dialectNameCapitalized, // {1}
               className,              // {2}
-              capName,                // {3}
-              isACheck                // {4}
+              capName                 // {3}
           );
         }
       }
@@ -324,7 +315,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}_Variadic) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Attr) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
   }
   
@@ -336,7 +327,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Attr) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Set{3}Attr) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     auto dummyAttr = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);
     {0}{1}{2}Set{3}(testOp, dummyAttr);
   }
@@ -354,8 +345,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}Attr) {{
             FunctionPrefix,         // {0}
             dialectNameCapitalized, // {1}
             className,              // {2}
-            capName,                // {3}
-            isACheck                // {4}
+            capName                 // {3}
         );
       }
       if (GenOpAttributeSetters) {
@@ -364,8 +354,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}Attr) {{
             FunctionPrefix,         // {0}
             dialectNameCapitalized, // {1}
             className,              // {2}
-            capName,                // {3}
-            isACheck                // {4}
+            capName                 // {3}
         );
       }
     }
@@ -378,7 +367,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}Attr) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
   }
   
@@ -390,7 +379,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}Count(testOp);
   }
   
@@ -402,7 +391,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp, 0);
   }
   
@@ -423,14 +412,14 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
             FunctionPrefix,         // {0}
             dialectNameCapitalized, // {1}
             className,              // {2}
-            capName, isACheck       // {3}
+            capName                 // {3}
         );
         os << llvm::formatv(
             VariadicResultIndexedGetterTest,
             FunctionPrefix,         // {0}
             dialectNameCapitalized, // {1}
             className,              // {2}
-            capName, isACheck       // {3}
+            capName                 // {3}
         );
       } else {
         os << llvm::formatv(
@@ -438,8 +427,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
             FunctionPrefix,         // {0}
             dialectNameCapitalized, // {1}
             className,              // {2}
-            capName,                // {3}
-            isACheck                // {4}
+            capName                 // {3}
         );
       }
     }
@@ -452,7 +440,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Region) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
   }
   
@@ -464,7 +452,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Region) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}Count(testOp);
   }
   
@@ -476,7 +464,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
   auto testOp = createIndexConstOp();
   
-  if ({4}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp, 0);
   }
   
@@ -497,16 +485,14 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
             FunctionPrefix,         // {0}
             dialectNameCapitalized, // {1}
             className,              // {2}
-            capName,                // {3}
-            isACheck                // {4}
+            capName                 // {3}
         );
         os << llvm::formatv(
             VariadicRegionIndexedGetterTest,
             FunctionPrefix,         // {0}
             dialectNameCapitalized, // {1}
             className,              // {2}
-            capName,                // {3}
-            isACheck                // {4}
+            capName                 // {3}
         );
       } else {
         os << llvm::formatv(
@@ -514,8 +500,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
             FunctionPrefix,         // {0}
             dialectNameCapitalized, // {1}
             className,              // {2}
-            capName,                // {3}
-            isACheck                // {4}
+            capName                 // {3}
         );
       }
     }
@@ -527,7 +512,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
 TEST_F({1}OpLinkTests, {0}_{2}_GetOperationName) {{
   auto testOp = createIndexConstOp();
   
-  if ({3}(testOp)) {{
+  if ({0}OperationIsA{1}{2}(testOp)) {{
     (void){0}{1}{2}GetOperationName(testOp);
   }
   
@@ -539,8 +524,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_GetOperationName) {{
         OperationNameGetterTest,
         FunctionPrefix,         // {0}
         dialectNameCapitalized, // {1}
-        className,              // {2}
-        isACheck                // {3}
+        className               // {2}
     );
   }
 
@@ -581,28 +565,6 @@ TEST_F({1}OpLinkTests, {0}_{2}_GetOperationName) {{
       this->genExtraMethods(op.getExtraClassDeclaration());
     }
   }
-
-protected:
-  virtual void setDialectAndClassName(const Dialect *d, StringRef cppClassName) override {
-    Generator::setDialectAndClassName(d, cppClassName);
-    assert(!className.empty() && "className must be set");
-    this->testPrefix = llvm::formatv(
-                           "{0}{1}",
-                           FunctionPrefix,              // {0}
-                           this->dialectNameCapitalized // {1}
-    )
-                           .str();
-    this->isACheck = llvm::formatv(
-                         "{0}OperationIsA{1}{2}",
-                         FunctionPrefix,               // {0}
-                         this->dialectNameCapitalized, // {1}
-                         this->className               // {2}
-    )
-                         .str();
-  }
-
-  std::string testPrefix;
-  std::string isACheck;
 
 private:
   /// @brief Generate dummy parameters for create function based on operation

@@ -103,8 +103,6 @@ struct AttrOrTypeTestGenerator : public Generator {
       paramListStream << ", " << name;
     }
 
-    std::string capitalizedMethodName = toPascalCase(method.methodName);
-
     static constexpr char fmt[] = R"(
 // This test ensures {0}{2}{3}{4} links properly.
 TEST_F({2}{1}LinkTests, {3}_{4}) {{
@@ -119,13 +117,13 @@ TEST_F({2}{1}LinkTests, {3}_{4}) {{
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,         // {0}
-        kind,                   // {1}
-        dialectNameCapitalized, // {2}
-        className,              // {3}
-        capitalizedMethodName,  // {4}
-        dummyParams,            // {5}
-        paramList               // {6}
+        FunctionPrefix,                  // {0}
+        kind,                            // {1}
+        dialectNameCapitalized,          // {2}
+        className,                       // {3}
+        toPascalCase(method.methodName), // {4}
+        dummyParams,                     // {5}
+        paramList                        // {6}
     );
   }
 
