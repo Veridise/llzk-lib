@@ -42,7 +42,7 @@ static bool emitTypeCAPITests(const llvm::RecordKeeper &records, raw_ostream &os
   emitSourceFileHeader("Type C API Tests", os, records);
 
   // Create generator with test object creation expression
-  AttrOrTypeTestGenerator generator("Type", os, "mlirIndexTypeGet(context)", "an IndexType");
+  AttrOrTypeTestGenerator generator("Type", os);
 
   // Generate test class prologue
   generator.genTestClassPrologue();

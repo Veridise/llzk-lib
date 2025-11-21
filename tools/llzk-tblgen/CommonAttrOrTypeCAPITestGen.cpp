@@ -36,10 +36,10 @@ std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &def, bool i
         paramsStream << llvm::formatv("    {0} {1}Array = 0;\n", elemType, pName);
         paramsStream << llvm::formatv("    {0} *{1} = &{1}Array;\n", elemType, pName);
       } else if (isType && elemType == "MlirType") {
-        paramsStream << llvm::formatv("    auto {0}Elem = createTestType();\n", pName);
+        paramsStream << llvm::formatv("    auto {0}Elem = createIndexType();\n", pName);
         paramsStream << llvm::formatv("    {0} *{1} = &{0}Elem;\n", elemType, pName);
       } else if (!isType && elemType == "MlirAttribute") {
-        paramsStream << llvm::formatv("    auto {0}Elem = createTestAttr();\n", pName);
+        paramsStream << llvm::formatv("    auto {0}Elem = createIndexAttribute();\n", pName);
         paramsStream << llvm::formatv("    {0} *{1} = &{0}Elem;\n", elemType, pName);
       } else {
         paramsStream << llvm::formatv("    {0} {1}Elem = {{}};\n", elemType, pName);
@@ -50,9 +50,9 @@ std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &def, bool i
       if (isPrimitiveType(cppType)) {
         paramsStream << llvm::formatv("    {0} {1} = 0;\n", capiType, pName);
       } else if (isType && capiType == "MlirType") {
-        paramsStream << llvm::formatv("    auto {0} = createTestType();\n", pName);
+        paramsStream << llvm::formatv("    auto {0} = createIndexType();\n", pName);
       } else if (!isType && capiType == "MlirAttribute") {
-        paramsStream << llvm::formatv("    auto {0} = createTestAttr();\n", pName);
+        paramsStream << llvm::formatv("    auto {0} = createIndexAttribute();\n", pName);
       } else {
         // For enum or other types, use static_cast to initialize with 0
         paramsStream << llvm::formatv("    {0} {1} = static_cast<{0}>(0);\n", capiType, pName);

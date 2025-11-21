@@ -11,6 +11,8 @@
 
 #include "llzk-c/InitDialects.h"
 
+#include <mlir-c/BuiltinAttributes.h>
+#include <mlir-c/BuiltinTypes.h>
 #include <mlir-c/IR.h>
 #include <mlir-c/RegisterEverything.h>
 
@@ -30,4 +32,28 @@ protected:
   }
 
   ~CAPITest() override { mlirContextDestroy(context); }
+
+  /// Helper to get IndexType
+  inline MlirType createIndexType() const { return mlirIndexTypeGet(context); }
+
+  /// Helper to create a simple IntegerAttr with IndexType
+  inline MlirAttribute createIndexAttribute() const {
+    return mlirIntegerAttrGet(createIndexType(), 0);
+  }
+
+  // Helper to create a simple test operation: `arith.constant 0 : index`
+  MlirOperation createIndexConstOp() {
+    MlirType indexType = createIndexType();
+    MlirOperationState op_state = mlirOperationStateGet(
+        mlirStringRefCreateFromCString("arith.constant"), mlirLocationUnknownGet(context)
+    );
+    mlirOperationStateAddResults(&op_state, 1, &indexType);
+
+    MlirNamedAttribute attr = mlirNamedAttributeGet(
+        mlirIdentifierGet(context, mlirStringRefCreateFromCString("value")), createIndexAttribute()
+    );
+    mlirOperationStateAddAttributes(&op_state, 1, &attr);
+
+    return mlirOperationCreate(&op_state);
+  }
 };

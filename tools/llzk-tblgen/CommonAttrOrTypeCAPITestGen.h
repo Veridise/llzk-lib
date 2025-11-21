@@ -48,17 +48,7 @@ std::string generateParamListForAttrOrTypeGet(const mlir::tblgen::AttrOrTypeDef 
 /// This class provides common functionality for generating unit tests
 /// for attributes and types. It extends the base Generator class.
 struct AttrOrTypeTestGenerator : public Generator {
-  /// @brief Construct a test generator
-  /// @param recordKind The kind of record ("Attribute" or "Type")
-  /// @param outputStream The output stream for generated code
-  /// @param testObjCreateExpression C expression to create a test object
-  /// @param testObjDescriptionComment Description for the test object
-  AttrOrTypeTestGenerator(
-      std::string_view recordKind, llvm::raw_ostream &outputStream,
-      mlir::StringRef testObjCreateExpression, mlir::StringRef testObjDescriptionComment
-  )
-      : Generator(recordKind, outputStream), testObjCreateExpr(testObjCreateExpression),
-        testObjDescription(testObjDescriptionComment) {}
+  using Generator::Generator;
 
   virtual ~AttrOrTypeTestGenerator() = default;
 
@@ -118,7 +108,7 @@ struct AttrOrTypeTestGenerator : public Generator {
     static constexpr char fmt[] = R"(
 // This test ensures {0}{2}{3}{4} links properly.
 TEST_F({2}{1}LinkTests, {3}_{4}) {{
-  auto test{1} = createTest{1}();
+  auto test{1} = createIndex{1}();
   
   if ({0}{1}IsA{2}{3}(test{1})) {{
 {5}
@@ -141,19 +131,8 @@ TEST_F({2}{1}LinkTests, {3}_{4}) {{
 
   /// @brief Generate the test class prologue
   virtual void genTestClassPrologue() const {
-    static constexpr char fmt[] = R"(
-#include <mlir-c/Builtin{1}s.h>
-#include <mlir-c/IR.h>
-
-class {0}{1}LinkTests : public CAPITest {{
-protected:
-  // Helper to create a simple test {1}
-  Mlir{1} createTest{1}() {{
-    return {2};
-  }
-};
-)";
-    os << llvm::formatv(fmt, dialectNameCapitalized, kind, testObjCreateExpr);
+    static constexpr char fmt[] = "class {0}{1}LinkTests : public CAPITest {{};\n";
+    os << llvm::formatv(fmt, dialectNameCapitalized, kind);
   }
 
   /// @brief Generate IsA test for a class
@@ -161,9 +140,9 @@ protected:
     static constexpr char fmt[] = R"(
 // This test ensures {0}{1}IsA{2}{3} links properly.
 TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
-  auto test{1} = createTest{1}();
+  auto test{1} = createIndex{1}();
   
-  // This should always return false since test{1} is {4}
+  // This should always return false since test{1} is IndexType/IntegerAttr
   EXPECT_FALSE({0}{1}IsA{2}{3}(test{1}));
 }
 )";
@@ -173,8 +152,7 @@ TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
         FunctionPrefix,         // {0}
         kind,                   // {1}
         dialectNameCapitalized, // {2}
-        className,              // {3}
-        testObjDescription      // {4}
+        className               // {3}
     );
   }
 
@@ -186,7 +164,7 @@ TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
     static constexpr char fmt[] = R"(
 // This test ensures {0}{2}{3}Get links properly.
 TEST_F({2}{1}LinkTests, Get_{3}) {{
-  auto test{1} = createTest{1}();
+  auto test{1} = createIndex{1}();
   
   // We only verify the function compiles and links, wrapped in an unreachable condition
   if ({0}{1}IsA{2}{3}(test{1})) {{
@@ -213,7 +191,7 @@ TEST_F({2}{1}LinkTests, Get_{3}) {{
     static constexpr char fmt[] = R"(
 // This test ensures {0}{2}{3}Get{5} links properly.
 TEST_F({2}{1}LinkTests, Get_{3}_{4}) {{
-  auto test{1} = createTest{1}();
+  auto test{1} = createIndex{1}();
   
   if ({0}{1}IsA{2}{3}(test{1})) {{
     (void){0}{2}{3}Get{5}(test{1});
@@ -233,7 +211,7 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}) {{
     static constexpr char fmt[] = R"(
 // This test ensures {0}{2}{3}Get{5}Count links properly.
 TEST_F({2}{1}LinkTests, Get_{3}_{4}Count) {{
-  auto test{1} = createTest{1}();
+  auto test{1} = createIndex{1}();
   
   if ({0}{1}IsA{2}{3}(test{1})) {{
     (void){0}{2}{3}Get{5}Count(test{1});
@@ -253,7 +231,7 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}Count) {{
     static constexpr char fmt[] = R"(
 // This test ensures {0}{2}{3}Get{5}At links properly.
 TEST_F({2}{1}LinkTests, Get_{3}_{4}At) {{
-  auto test{1} = createTest{1}();
+  auto test{1} = createIndex{1}();
   
   if ({0}{1}IsA{2}{3}(test{1})) {{
     (void){0}{2}{3}Get{5}At(test{1}, 0);
@@ -314,8 +292,6 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}At) {{
   }
 
 protected:
-  mlir::StringRef testObjCreateExpr;
-  mlir::StringRef testObjDescription;
   mlir::StringRef paramName;
   std::string paramNameCapitalized;
 };

@@ -51,13 +51,7 @@ struct EnumTestGenerator : public Generator {
 
   /// @brief Generate the test class prologue
   void genTestClassPrologue() const {
-    static constexpr char fmt[] =
-        R"(#include "llzk-c/Dialect/{0}.h"
-
-#include <mlir-c/IR.h>
-
-class {0}EnumLinkTests : public CAPITest {{};
-)";
+    static constexpr char fmt[] = "class {0}EnumLinkTests : public CAPITest {{};\n";
     os << llvm::formatv(fmt, dialectNameCapitalized);
   }
 

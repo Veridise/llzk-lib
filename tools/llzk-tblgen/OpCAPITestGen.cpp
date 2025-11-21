@@ -58,8 +58,7 @@ namespace {
 struct OpTestGenerator : public Generator {
   /// @brief Construct an operation test generator
   /// @param outputStream The output stream for generated code
-  OpTestGenerator(llvm::raw_ostream &outputStream)
-      : Generator("Operation", outputStream), testDialect("arith"), testOpName("constant") {}
+  OpTestGenerator(llvm::raw_ostream &outputStream) : Generator("Operation", outputStream) {}
 
   /// @brief Generate test for an extra method from extraClassDeclaration
   virtual void genExtraMethod(const ExtraMethod &method) const override {
@@ -108,7 +107,7 @@ struct OpTestGenerator : public Generator {
     static constexpr char fmt[] = R"(
 // This test ensures {4}{2}{3} links properly.
 TEST_F({1}OpLinkTests, {0}_{2}_{3}) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({5}(testOp)) {{
 {6}
@@ -134,35 +133,8 @@ TEST_F({1}OpLinkTests, {0}_{2}_{3}) {{
 
   /// @brief Generate the test class prologue
   void genTestClassPrologue() const {
-    static constexpr char fmt[] =
-        R"(#include "llzk-c/Dialect/{0}.h"
-
-#include <mlir-c/BuiltinAttributes.h>
-#include <mlir-c/BuiltinTypes.h>
-#include <mlir-c/IR.h>
-
-class {0}OpLinkTests : public CAPITest {{
-protected:
-  // Helper to create a simple test operation from {1} dialect
-  MlirOperation createTestOp() {{
-    auto name = mlirStringRefCreateFromCString("{1}.{2}");
-    auto location = mlirLocationUnknownGet(context);
-    auto indexType = mlirIndexTypeGet(context);
-    
-    auto op_state = mlirOperationStateGet(name, location);
-    mlirOperationStateAddResults(&op_state, 1, &indexType);
-    
-    // Add a simple attribute
-    auto attr_name = mlirIdentifierGet(context, mlirStringRefCreateFromCString("value"));
-    auto attr_value = mlirIntegerAttrGet(indexType, 0);
-    auto attr = mlirNamedAttributeGet(attr_name, attr_value);
-    mlirOperationStateAddAttributes(&op_state, 1, &attr);
-    
-    return mlirOperationCreate(&op_state);
-  }
-};
-)";
-    os << llvm::formatv(fmt, dialectNameCapitalized, testDialect, testOpName);
+    static constexpr char fmt[] = "class {0}OpLinkTests : public CAPITest {{};\n";
+    os << llvm::formatv(fmt, dialectNameCapitalized);
   }
 
   /// @brief Generate IsA test for an operation
@@ -170,9 +142,9 @@ protected:
     static constexpr char fmt[] = R"(
 // This test ensures {0}OperationIsA{1}{2} links properly.
 TEST_F({1}OpLinkTests, IsA_{1}{2}) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
-  // This should always return false since testOp is from {3} dialect
+  // This should always return false since testOp is from `arith` dialect
   EXPECT_FALSE({0}OperationIsA{1}{2}(testOp));
   
   mlirOperationDestroy(testOp);
@@ -183,8 +155,7 @@ TEST_F({1}OpLinkTests, IsA_{1}{2}) {{
         fmt,
         FunctionPrefix,         // {0}
         dialectNameCapitalized, // {1}
-        className,              // {2}
-        testDialect             // {3}
+        className               // {2}
     );
   }
 
@@ -194,15 +165,15 @@ TEST_F({1}OpLinkTests, IsA_{1}{2}) {{
     static constexpr char fmt[] = R"(
 // This test ensures {3}{2}Create links properly.
 TEST_F({1}OpLinkTests, {0}{2}_Create) {{
-  // We create a {4}.{5} op, which will never match the {2} dialect check.
-  auto testOp = createTestOp();
+  // Returns an `arith.constant` op, which will never match the {2} dialect check.
+  auto testOp = createIndexConstOp();
   
   // This condition is always false, so the function is never actually called.
   // We only verify it compiles and links correctly.
-  if ({6}(testOp)) {{
+  if ({4}(testOp)) {{
     auto location = mlirLocationUnknownGet(context);
-{7}
-    (void){3}{2}Create(context, location{8});
+{5}
+    (void){3}{2}Create(context, location{6});
   }
   
   mlirOperationDestroy(testOp);
@@ -216,11 +187,9 @@ TEST_F({1}OpLinkTests, {0}{2}_Create) {{
         dialectNameCapitalized,  // {1}
         className,               // {2}
         testPrefix,              // {3}
-        testDialect,             // {4}
-        testOpName,              // {5}
-        isACheck,                // {6}
-        generateDummyParams(op), // {7}
-        generateParamList(op)    // {8}
+        isACheck,                // {4}
+        generateDummyParams(op), // {5}
+        generateParamList(op)    // {6}
     );
   }
 
@@ -229,7 +198,7 @@ TEST_F({1}OpLinkTests, {0}{2}_Create) {{
   void genOperandTests(const Operator &op) const {
     static constexpr char OperandGetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
@@ -241,7 +210,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
 
     static constexpr char OperandSetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Set{3}) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
@@ -254,7 +223,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}) {{
 
     static constexpr char VariadicOperandCountGetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     (void){0}{1}{2}Get{3}Count(testOp);
@@ -266,7 +235,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
 
     static constexpr char VariadicOperandIndexedGetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp, 0);
@@ -278,7 +247,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
 
     static constexpr char VariadicOperandSetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Set{3}_Variadic) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
@@ -353,7 +322,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}_Variadic) {{
   void genAttributeTests(const Operator &op) const {
     static constexpr char AttributeGetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Attr) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
@@ -365,7 +334,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Attr) {{
 
     static constexpr char AttributeSetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Set{3}Attr) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     auto dummyAttr = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);
@@ -407,7 +376,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Set{3}Attr) {{
   void genResultTests(const Operator &op) const {
     static constexpr char ResultGetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
@@ -419,7 +388,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
 
     static constexpr char VariadicResultCountGetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     (void){0}{1}{2}Get{3}Count(testOp);
@@ -431,7 +400,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
 
     static constexpr char VariadicResultIndexedGetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp, 0);
@@ -481,7 +450,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
   void genRegionTests(const Operator &op) const {
     static constexpr char RegionGetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Region) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp);
@@ -493,7 +462,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Region) {{
 
     static constexpr char VariadicRegionCountGetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     (void){0}{1}{2}Get{3}Count(testOp);
@@ -505,7 +474,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
 
     static constexpr char VariadicRegionIndexedGetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({4}(testOp)) {{
     (void){0}{1}{2}Get{3}(testOp, 0);
@@ -556,7 +525,7 @@ TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
   void genOperationNameGetterTest() const {
     static constexpr char OperationNameGetterTest[] = R"(
 TEST_F({1}OpLinkTests, {0}_{2}_GetOperationName) {{
-  auto testOp = createTestOp();
+  auto testOp = createIndexConstOp();
   
   if ({3}(testOp)) {{
     (void){0}{1}{2}GetOperationName(testOp);
@@ -632,8 +601,6 @@ protected:
                          .str();
   }
 
-  std::string testDialect;
-  std::string testOpName;
   std::string testPrefix;
   std::string isACheck;
 
