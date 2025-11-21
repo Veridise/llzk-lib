@@ -247,25 +247,20 @@ llvm::SmallVector<ExtraMethod> parseExtraMethods(mlir::StringRef extraDecl);
 /// @return true if the C++ type matches the MLIR type
 bool matchesMLIRClass(mlir::StringRef cppType, mlir::StringRef typeName);
 
-/// @brief Convert C++ return type to MLIR C API type
+/// @brief Convert C++ type to MLIR C API type
 /// @param cppType The C++ type to convert
-/// @return The corresponding MLIR C API type
-std::string cppTypeToCapiType(mlir::StringRef cppType);
+/// @return The corresponding MLIR C API type if convertible, std::nullopt otherwise
+std::optional<std::string>
+tryCppTypeToCapiType(mlir::StringRef cppType, bool reportUnmatched = true);
 
 /// @brief Determine the wrapping code needed for a return value
 /// @param capiType The MLIR C API type
 /// @return The wrapper function name (e.g., "wrap") or empty string if no wrapping needed
 mlir::StringRef getReturnWrapCode(mlir::StringRef capiType);
 
-/// @brief Check if a return type conversion is valid for C API generation
-/// @param capiReturnType The target MLIR C API return type
-/// @param cppReturnType The source C++ return type
-/// @return true if the conversion is supported
-bool isValidTypeConversion(const std::string &capiReturnType, const std::string &cppReturnType);
-
-/// @brief Map C++ type to corresponding MLIR C API return type
+/// @brief Map C++ type to corresponding C API type
 /// @param cppType The C++ type to map
-/// @return The corresponding MLIR C API type string
+/// @return The corresponding C API type string
 ///
 /// @note This function should not be called for ArrayRef types.
 /// Use extractArrayRefElementType() for those instead.
@@ -347,23 +342,22 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{4}(Mlir{1});
 
   /// @brief Generate declaration for an extra method from extraClassDeclaration
   virtual void genExtraMethod(const ExtraMethod &method) const override {
-    // Convert return type to C API type
-    std::string capiReturnType = cppTypeToCapiType(method.returnType);
-
-    // Skip if the return type couldn't be converted
-    if (!isValidTypeConversion(capiReturnType, method.returnType)) {
+    // Convert return type to C API type, skip if it can't be converted
+    std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
+    if (!capiReturnTypeOpt.has_value()) {
       return;
     }
+    std::string capiReturnType = capiReturnTypeOpt.value();
 
     // Build parameter list
     std::string paramList = llvm::formatv("Mlir{0} inp", kind).str();
     for (const auto &param : method.parameters) {
-      // Convert C++ type to C API type for parameter declaration
-      std::string capiParamType = cppTypeToCapiType(param.type);
-      // Skip if the parameter type couldn't be converted
-      if (!isValidTypeConversion(capiParamType, param.type)) {
+      // Convert C++ type to C API type for parameter, skip if it can't be converted
+      std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
+      if (!capiParamTypeOpt.has_value()) {
         return;
       }
+      std::string capiParamType = capiParamTypeOpt.value();
       paramList += ", " + capiParamType + " " + param.name;
     }
 
@@ -401,23 +395,22 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
 
   /// @brief Generate implementation for an extra method from extraClassDeclaration
   virtual void genExtraMethod(const ExtraMethod &method) const override {
-    // Convert return type to C API type
-    std::string capiReturnType = cppTypeToCapiType(method.returnType);
-
-    // Skip if the return type couldn't be converted
-    if (!isValidTypeConversion(capiReturnType, method.returnType)) {
+    // Convert return type to C API type, skip if it can't be converted
+    std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
+    if (!capiReturnTypeOpt.has_value()) {
       return;
     }
+    std::string capiReturnType = capiReturnTypeOpt.value();
 
     // Build parameter list for C API function signature
     std::string paramList = llvm::formatv("Mlir{0} inp", kind).str();
     for (const auto &param : method.parameters) {
-      // Convert C++ type to C API type for parameter declaration
-      std::string capiParamType = cppTypeToCapiType(param.type);
-      // Skip if the parameter type couldn't be converted
-      if (!isValidTypeConversion(capiParamType, param.type)) {
+      // Convert C++ type to C API type for parameter, skip if it can't be converted
+      std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
+      if (!capiParamTypeOpt.has_value()) {
         return;
       }
+      std::string capiParamType = capiParamTypeOpt.value();
       paramList += ", " + capiParamType + " " + param.name;
     }
 
@@ -428,7 +421,12 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
         argList += ", ";
       }
       const auto &param = method.parameters[i];
-      std::string capiParamType = cppTypeToCapiType(param.type);
+      // Convert C++ type to C API type for parameter, skip if it can't be converted
+      std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
+      if (!capiParamTypeOpt.has_value()) {
+        return;
+      }
+      std::string capiParamType = capiParamTypeOpt.value();
 
       // Check if parameter needs unwrapping
       if (isPrimitiveType(capiParamType)) {
@@ -462,7 +460,7 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
     }
 
     // Generate implementation
-    os << "\n";
+    os << '\n';
     os << llvm::formatv(
         "{0} {1}{2}{3}{4}({5}) {{\n",
         capiReturnType,         // {0}

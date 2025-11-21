@@ -63,11 +63,9 @@ struct OpTestGenerator : public Generator {
 
   /// @brief Generate test for an extra method from extraClassDeclaration
   virtual void genExtraMethod(const ExtraMethod &method) const override {
-    // Convert return type to C API type
-    std::string capiReturnType = cppTypeToCapiType(method.returnType);
-
-    // Skip if the return type couldn't be converted
-    if (!isValidTypeConversion(capiReturnType, method.returnType)) {
+    // Convert return type to C API type, skip if it can't be converted
+    std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
+    if (!capiReturnTypeOpt.has_value()) {
       return;
     }
 
@@ -76,12 +74,12 @@ struct OpTestGenerator : public Generator {
     std::string paramList;
 
     for (const auto &param : method.parameters) {
-      // Convert C++ type to C API type for parameter
-      std::string capiParamType = cppTypeToCapiType(param.type);
-      // Skip if the parameter type couldn't be converted
-      if (!isValidTypeConversion(capiParamType, param.type)) {
+      // Convert C++ type to C API type for parameter, skip if it can't be converted
+      std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
+      if (!capiParamTypeOpt.has_value()) {
         return;
       }
+      std::string capiParamType = capiParamTypeOpt.value();
 
       // Generate dummy value creation for each parameter
       if (capiParamType == "MlirValue") {

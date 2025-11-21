@@ -609,60 +609,102 @@ bool matchesMLIRClass(StringRef cppType, StringRef typeName) {
   return false;
 }
 
-/// Convert C++ return type to MLIR C API type
-std::string cppTypeToCapiType(StringRef cppType) {
+/// Convert C++ type to MLIR C API type
+std::optional<std::string> tryCppTypeToCapiType(StringRef cppType, bool reportUnmatched) {
   cppType = cppType.trim();
 
-  // Handle primitive types
+  // Primitive types are unchanged
   if (isPrimitiveType(cppType)) {
-    return cppType.str();
+    return std::make_optional(cppType.str());
   }
 
-  // Handle pointer types
+  // APInt type is converted via llzk::fromAPInt()
+  if (isAPIntType(cppType)) {
+    return std::make_optional("int64_t");
+  }
+
+  // Pointer type conversions happen via the `unwrap()` function generated
+  // by `DEFINE_C_API_PTR_METHODS()` in `mlir/include/mlir/CAPI/IR.h`
   if (cppType.ends_with(" *") || cppType.ends_with("*")) {
     size_t starPos = cppType.rfind('*');
     if (starPos != StringRef::npos) {
       StringRef baseType = cppType.substr(0, starPos).trim();
-
-      if (matchesMLIRClass(baseType, "Region") || baseType.ends_with("Region")) {
-        return "MlirRegion";
+      if (matchesMLIRClass(baseType, "AsmState")) {
+        return std::make_optional("MlirAsmState");
       }
-      if (matchesMLIRClass(baseType, "Operation") || baseType.ends_with("Operation")) {
-        return "MlirOperation";
+      if (matchesMLIRClass(baseType, "BytecodeWriterConfig")) {
+        return std::make_optional("MlirBytecodeWriterConfig");
+      }
+      if (matchesMLIRClass(baseType, "MLIRContext")) {
+        return std::make_optional("MlirContext");
+      }
+      if (matchesMLIRClass(baseType, "Dialect")) {
+        return std::make_optional("MlirDialect");
+      }
+      if (matchesMLIRClass(baseType, "DialectRegistry")) {
+        return std::make_optional("MlirDialectRegistry");
+      }
+      if (matchesMLIRClass(baseType, "Operation")) {
+        return std::make_optional("MlirOperation");
+      }
+      if (matchesMLIRClass(baseType, "Block")) {
+        return std::make_optional("MlirBlock");
+      }
+      if (matchesMLIRClass(baseType, "OpOperand")) {
+        return std::make_optional("MlirOpOperand");
+      }
+      if (matchesMLIRClass(baseType, "OpPrintingFlags")) {
+        return std::make_optional("MlirOpPrintingFlags");
+      }
+      if (matchesMLIRClass(baseType, "Region")) {
+        return std::make_optional("MlirRegion");
+      }
+      if (matchesMLIRClass(baseType, "SymbolTable")) {
+        return std::make_optional("MlirSymbolTable");
       }
     } else {
-      llvm::errs() << "Error: Failed to parse pointer type: " << cppType << "\n";
+      llvm::errs() << "Error: Failed to parse pointer type: " << cppType << '\n';
     }
   }
 
-  // Handle unsupported template types (ArrayRef, SmallVector, etc.)
-  if (cppType.contains("ArrayRef") || cppType.contains("SmallVector") ||
-      cppType.contains("iterator_range")) {
-    return cppType.str(); // Return as-is, will be skipped by caller
+  // Pointer type conversions happen via the `unwrap()` function generated
+  // by `DEFINE_C_API_METHODS()` in `mlir/include/mlir/CAPI/IR.h`
+  if (matchesMLIRClass(cppType, "Attribute")) {
+    return std::make_optional("MlirAttribute");
   }
-
-  // Map MLIR types to their C API equivalents
+  if (matchesMLIRClass(cppType, "StringAttr")) {
+    return std::make_optional("MlirIdentifier");
+  }
+  if (matchesMLIRClass(cppType, "Location")) {
+    return std::make_optional("MlirLocation");
+  }
+  if (matchesMLIRClass(cppType, "ModuleOp")) {
+    return std::make_optional("MlirModule");
+  }
+  if (matchesMLIRClass(cppType, "Type")) {
+    return std::make_optional("MlirType");
+  }
   if (matchesMLIRClass(cppType, "Value")) {
-    return "MlirValue";
-  }
-  if (matchesMLIRClass(cppType, "Type") || cppType.ends_with("Type")) {
-    return "MlirType";
-  }
-  if (matchesMLIRClass(cppType, "Attribute") || cppType.ends_with("Attr")) {
-    return "MlirAttribute";
-  }
-  if (matchesMLIRClass(cppType, "Region")) {
-    return "MlirRegion";
-  }
-  if (matchesMLIRClass(cppType, "Block")) {
-    return "MlirBlock";
-  }
-  if (matchesMLIRClass(cppType, "Operation")) {
-    return "MlirOperation";
+    return std::make_optional("MlirValue");
   }
 
-  // Default: return as-is (may need manual wrapping)
-  return cppType.str();
+  // Heuristically map user-defined types to their C API equivalents
+  if (cppType.ends_with("Type")) {
+    return std::make_optional("MlirType");
+  }
+  if (cppType.ends_with("Attr")) {
+    return std::make_optional("MlirAttribute");
+  }
+  // if (cppType.ends_with("Op")) {
+  //   return std::make_optional("MlirOperation");
+  // }
+
+  // Otherwise, not sure how to convert it
+  if (reportUnmatched) {
+    llvm::errs() << "Error: Unsupported type conversion from C++ type '" << cppType
+                 << "' to C API type\n";
+  }
+  return std::nullopt;
 }
 
 /// Determine the wrapping code needed for a return value
@@ -680,43 +722,13 @@ StringRef getReturnWrapCode(StringRef capiType) {
   return ""; // Unknown, no wrapping
 }
 
-/// Check if a return type conversion is valid for C API generation
-/// Check if conversion failed by seeing if the type is unchanged and not a known primitive
-bool isValidTypeConversion(const std::string &capiReturnType, const std::string &cppReturnType) {
-  if (capiReturnType == cppReturnType && !isPrimitiveType(capiReturnType)) {
-    llvm::errs() << "Error: Unsupported type conversion from C++ type '" << cppReturnType
-                 << "' to C API type\n";
-    return false;
-  }
-  return true;
-}
-
-/// Map C++ type to corresponding MLIR C API return type
+// Map C++ type to corresponding C API type
 std::string mapCppTypeToCapiType(StringRef cppType) {
   assert(!isArrayRefType(cppType) && "use extractArrayRefElementType instead");
 
-  // Primitive types
-  if (isPrimitiveType(cppType)) {
-    return cppType.str();
-  }
-
-  // Direct type mappings
-  if (matchesMLIRClass(cppType, "Type")) {
-    return "MlirType";
-  }
-  if (matchesMLIRClass(cppType, "Attribute")) {
-    return "MlirAttribute";
-  }
-
-  // APInt types - convert to int64_t using fromAPInt helper
-  if (isAPIntType(cppType)) {
-    return "int64_t";
-  }
-
-  // Specific MLIR attribute types
-  if ((cppType.starts_with("mlir::") || cppType.starts_with("::mlir::")) &&
-      cppType.ends_with("Attr")) {
-    return "MlirAttribute";
+  std::optional<std::string> capiTypeOpt = tryCppTypeToCapiType(cppType, false);
+  if (capiTypeOpt.has_value()) {
+    return capiTypeOpt.value();
   }
 
   // Otherwise assume it's a type where the C name is a direct translation from the C++ name.
