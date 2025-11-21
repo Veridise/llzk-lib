@@ -234,8 +234,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}Attr) {{
   auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
-    auto dummyAttr = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);
-    {0}{1}{2}Set{3}(testOp, dummyAttr);
+    {0}{1}{2}Set{3}(testOp, createIndexAttribute());
   }
   
   mlirOperationDestroy(testOp);
@@ -504,7 +503,7 @@ private:
       if (attrType.has_value() && attrType.value() == "MlirIdentifier") {
         rhs = "mlirOperationGetName(testOp)";
       } else {
-        rhs = "mlirIntegerAttrGet(mlirIndexTypeGet(context), 0)";
+        rhs = "createIndexAttribute()";
       }
       paramsStream << llvm::formatv("    auto {0}Attr = {1};\n", namedAttr.name, rhs);
     }
@@ -517,15 +516,13 @@ private:
             result.name.empty() ? llvm::formatv("result{0}", i).str() : result.name.str();
         if (result.isVariadic()) {
           paramsStream << llvm::formatv(
-              "    auto {0}TypeArray = mlirIndexTypeGet(context);\n"
+              "    auto {0}TypeArray = createIndexType();\n"
               "    MlirType {0}Types[] = {{{0}TypeArray};\n"
               "    intptr_t {0}Size = 0;\n",
               resultName
           );
         } else {
-          paramsStream << llvm::formatv(
-              "    auto {0}Type = mlirIndexTypeGet(context);\n", resultName
-          );
+          paramsStream << llvm::formatv("    auto {0}Type = createIndexType();\n", resultName);
         }
       }
     }

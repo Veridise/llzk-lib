@@ -579,14 +579,12 @@ TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
       } else if (capiParamType == "MlirValue") {
         dummyParamsStream << "    auto " << name << " = mlirOperationGetResult(testOp, 0);\n";
       } else if (capiParamType == "MlirType") {
-        dummyParamsStream << "    auto " << name << " = mlirIndexTypeGet(context);\n";
+        dummyParamsStream << "    auto " << name << " = createIndexType();\n";
       } else if (capiParamType == "MlirAttribute") {
-        dummyParamsStream << "    auto " << name
-                          << " = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);\n";
+        dummyParamsStream << "    auto " << name << " = createIndexAttribute();\n";
       } else if (capiParamType == "MlirStringRef") {
         dummyParamsStream << "    auto " << name << " = mlirStringRefCreateFromCString(\"\");\n";
-      } else if (capiParamType == "intptr_t" || capiParamType == "int" ||
-                 capiParamType == "int64_t") {
+      } else if (isIntegerType(capiParamType)) {
         dummyParamsStream << "    " << capiParamType << " " << name << " = 0;\n";
       } else {
         // For unknown types, create a default-initialized variable
