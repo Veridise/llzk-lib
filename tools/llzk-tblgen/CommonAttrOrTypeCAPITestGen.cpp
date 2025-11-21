@@ -30,8 +30,9 @@ std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &def, bool i
 
     if (isArrayRefType(cppType)) {
       paramsStream << llvm::formatv("    intptr_t {0}Count = 0;\n", pName);
-      std::string elemType = extractArrayRefElementType(cppType);
-      if (isPrimitiveType(elemType)) {
+      mlir::StringRef cppElemType = extractArrayRefElementType(cppType);
+      std::string elemType = mapCppTypeToCapiType(cppElemType);
+      if (isPrimitiveType(cppElemType)) {
         paramsStream << llvm::formatv("    {0} {1}Array = 0;\n", elemType, pName);
         paramsStream << llvm::formatv("    {0} *{1} = &{1}Array;\n", elemType, pName);
       } else if (isType && elemType == "MlirType") {
@@ -46,7 +47,7 @@ std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &def, bool i
       }
     } else {
       std::string capiType = mapCppTypeToCapiType(cppType);
-      if (isPrimitiveType(capiType)) {
+      if (isPrimitiveType(cppType)) {
         paramsStream << llvm::formatv("    {0} {1} = 0;\n", capiType, pName);
       } else if (isType && capiType == "MlirType") {
         paramsStream << llvm::formatv("    auto {0} = createTestType();\n", pName);

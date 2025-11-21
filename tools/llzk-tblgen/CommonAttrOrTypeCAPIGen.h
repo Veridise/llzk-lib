@@ -33,73 +33,82 @@ struct AttrOrTypeHeaderGenerator : public HeaderGenerator {
   }
 
   /// @brief Generate regular getter for non-ArrayRef type parameter
-  virtual void genParameterGetterDecl(std::string capiType) const {
+  virtual void genParameterGetterDecl(mlir::StringRef cppType) const {
     static constexpr char fmt[] = R"(
-/* Get '{6}' parameter from a {2}::{3} {1}. */
-MLIR_CAPI_EXPORTED {7} {0}{4}{3}Get{5}(Mlir{1});
+/* Get '{5}' parameter from a {6}::{3} {1}. */
+MLIR_CAPI_EXPORTED {7} {0}{2}{3}Get{4}(Mlir{1});
 )";
     assert(dialect && "Dialect must be set");
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialect->getCppNamespace(), className, dialectNameCapitalized,
-        paramNameCapitalized, paramName, capiType
-    );
-  }
-
-  /// @brief Generate count function for ArrayRef parameter
-  virtual void genArrayRefParameterCountDecl() const {
-    static constexpr char fmt[] = R"(
-/* Get count of '{6}' parameter from a {2}::{3} {1}. */
-MLIR_CAPI_EXPORTED intptr_t {0}{4}{3}Get{5}Count(Mlir{1});
-)";
-    assert(dialect && "Dialect must be set");
-    assert(!paramName.empty() && "paramName must be set");
-    os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialect->getCppNamespace(), className, dialectNameCapitalized,
-        paramNameCapitalized, paramName
+        fmt,
+        FunctionPrefix,               // {0}
+        kind,                         // {1}
+        dialectNameCapitalized,       // {2}
+        className,                    // {3}
+        paramNameCapitalized,         // {4}
+        paramName,                    // {5}
+        dialect->getCppNamespace(),   // {6}
+        mapCppTypeToCapiType(cppType) // {7}
     );
   }
 
   /// @brief Generate accessor function for ArrayRef parameter elements
-  virtual void genArrayRefParameterAtDecl(std::string elemType) const {
+  virtual void genArrayRefParameterGetterDecls(mlir::StringRef cppType) const {
     static constexpr char fmt[] = R"(
-/* Get element at index from '{6}' parameter from a {2}::{3} {1}. */
-MLIR_CAPI_EXPORTED {7} {0}{4}{3}Get{5}At(Mlir{1}, intptr_t pos);
+/* Get count of '{5}' parameter from a {6}::{3} {1}. */
+MLIR_CAPI_EXPORTED intptr_t {0}{2}{3}Get{4}Count(Mlir{1});
+
+/* Get element at index from '{5}' parameter from a {6}::{3} {1}. */
+MLIR_CAPI_EXPORTED {7} {0}{2}{3}Get{4}At(Mlir{1}, intptr_t pos);
 )";
     assert(dialect && "Dialect must be set");
     assert(!paramName.empty() && "paramName must be set");
+    mlir::StringRef cppElemType = extractArrayRefElementType(cppType);
     os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialect->getCppNamespace(), className, dialectNameCapitalized,
-        paramNameCapitalized, paramName, elemType
+        fmt,
+        FunctionPrefix,                   // {0}
+        kind,                             // {1}
+        dialectNameCapitalized,           // {2}
+        className,                        // {3}
+        paramNameCapitalized,             // {4}
+        paramName,                        // {5}
+        dialect->getCppNamespace(),       // {6}
+        mapCppTypeToCapiType(cppElemType) // {7}
     );
   }
 
   /// @brief Generate default Get builder declaration
   virtual void genDefaultGetBuilderDecl(const mlir::tblgen::AttrOrTypeDef &def) const {
     static constexpr char fmt[] = R"(
-/* Create a {2}::{3} {1} with the given parameters. */
-MLIR_CAPI_EXPORTED Mlir{1} {0}{4}{3}Get(MlirContext ctx{5});
+/* Create a {5}::{3} {1} with the given parameters. */
+MLIR_CAPI_EXPORTED Mlir{1} {0}{2}{3}Get(MlirContext ctx{4});
 )";
     assert(dialect && "Dialect must be set");
 
-    // Use raw_string_ostream for efficient string building
+    // Use raw_string_ostream for efficient string building of parameter list
     std::string paramListBuffer;
     llvm::raw_string_ostream paramListStream(paramListBuffer);
-
     for (const auto &param : def.getParameters()) {
       mlir::StringRef cppType = param.getCppType();
       if (isArrayRefType(cppType)) {
         // For ArrayRef parameters, use intptr_t for count and pointer to element type
+        mlir::StringRef cppElemType = extractArrayRefElementType(cppType);
         paramListStream << ", intptr_t " << param.getName() << "Count, "
-                        << extractArrayRefElementType(cppType) << " *" << param.getName();
+                        << mapCppTypeToCapiType(cppElemType) << " *" << param.getName();
       } else {
         paramListStream << ", " << mapCppTypeToCapiType(cppType) << " " << param.getName();
       }
     }
 
     os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialect->getCppNamespace(), className, dialectNameCapitalized,
-        paramListStream.str()
+        fmt,
+        FunctionPrefix,            // {0}
+        kind,                      // {1}
+        dialectNameCapitalized,    // {2}
+        className,                 // {3}
+        paramListStream.str(),     // {4}
+        dialect->getCppNamespace() // {5}
     );
   }
 
@@ -128,12 +137,10 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{4}{3}Get(MlirContext ctx{5});
       for (const auto &param : def.getParameters()) {
         this->setParamName(param.getName());
         mlir::StringRef cppType = param.getCppType();
-
         if (isArrayRefType(cppType)) {
-          this->genArrayRefParameterCountDecl();
-          this->genArrayRefParameterAtDecl(extractArrayRefElementType(cppType));
+          this->genArrayRefParameterGetterDecls(cppType);
         } else {
-          this->genParameterGetterDecl(mapCppTypeToCapiType(cppType));
+          this->genParameterGetterDecl(cppType);
         }
       }
     }
@@ -180,94 +187,48 @@ using namespace llvm;
 )";
   }
 
-  virtual void genArrayRefParameterCountImpl() const {
+  virtual void genArrayRefParameterImpls(mlir::StringRef cppType) const {
     static constexpr char fmt[] = R"(
 intptr_t {0}{2}{3}Get{4}Count(Mlir{1} inp) {{
   return static_cast<intptr_t>(llvm::cast<{3}>(unwrap(inp)).get{4}().size());
 }
- )";
-    assert(!className.empty() && "className must be set");
-    assert(!paramName.empty() && "paramName must be set");
-    os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramNameCapitalized
-    );
-  }
 
-  virtual void genArrayRefParameterAtImplAPInt() const {
-    static constexpr char fmt[] = R"(
-int64_t {0}{2}{3}Get{4}At(Mlir{1} inp, intptr_t pos) {{
-  return ::llzk::fromAPInt(llvm::cast<{3}>(unwrap(inp)).get{4}()[pos]);
-}
- )";
-    assert(!className.empty() && "className must be set");
-    assert(!paramName.empty() && "paramName must be set");
-    os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramNameCapitalized
-    );
-  }
-
-  virtual void genArrayRefParameterAtImplRaw(std::string elemType) const {
-    static constexpr char fmt[] = R"(
 {5} {0}{2}{3}Get{4}At(Mlir{1} inp, intptr_t pos) {{
-  return llvm::cast<{3}>(unwrap(inp)).get{4}()[pos];
+  return {6}(llvm::cast<{3}>(unwrap(inp)).get{4}()[pos]);
 }
  )";
     assert(!className.empty() && "className must be set");
     assert(!paramName.empty() && "paramName must be set");
+    mlir::StringRef cppElemType = extractArrayRefElementType(cppType);
     os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramNameCapitalized, elemType
+        fmt,
+        FunctionPrefix,                            // {0}
+        kind,                                      // {1}
+        dialectNameCapitalized,                    // {2}
+        className,                                 // {3}
+        paramNameCapitalized,                      // {4}
+        mapCppTypeToCapiType(cppElemType),         // {5}
+        isPrimitiveType(cppElemType) ? "" : "wrap" // {6}
     );
   }
 
-  virtual void genArrayRefParameterAtImplWrapped(std::string elemType) const {
-    static constexpr char fmt[] = R"(
-{5} {0}{2}{3}Get{4}At(Mlir{1} inp, intptr_t pos) {{
-  return wrap(llvm::cast<{3}>(unwrap(inp)).get{4}()[pos]);
-}
- )";
-    assert(!className.empty() && "className must be set");
-    assert(!paramName.empty() && "paramName must be set");
-    os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramNameCapitalized, elemType
-    );
-  }
-
-  virtual void genParameterGetterImplAPInt() const {
-    static constexpr char fmt[] = R"(
-int64_t {0}{2}{3}Get{4}(Mlir{1} inp) {{
-  return ::llzk::fromAPInt(llvm::cast<{3}>(unwrap(inp)).get{4}());
-}
- )";
-    assert(!className.empty() && "className must be set");
-    assert(!paramName.empty() && "paramName must be set");
-    os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramNameCapitalized
-    );
-  }
-
-  virtual void genParameterGetterImplRaw(std::string capiType) const {
+  virtual void genParameterGetterImpl(mlir::StringRef cppType) const {
     static constexpr char fmt[] = R"(
 {5} {0}{2}{3}Get{4}(Mlir{1} inp) {{
-  return llvm::cast<{3}>(unwrap(inp)).get{4}();
+  return {6}(llvm::cast<{3}>(unwrap(inp)).get{4}());
 }
  )";
     assert(!className.empty() && "className must be set");
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramNameCapitalized, capiType
-    );
-  }
-
-  virtual void genParameterGetterImplWrapped(std::string capiType) const {
-    static constexpr char fmt[] = R"(
-{5} {0}{2}{3}Get{4}(Mlir{1} inp) {{
-  return wrap(llvm::cast<{3}>(unwrap(inp)).get{4}());
-}
- )";
-    assert(!className.empty() && "className must be set");
-    assert(!paramName.empty() && "paramName must be set");
-    os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramNameCapitalized, capiType
+        fmt,
+        FunctionPrefix,                        // {0}
+        kind,                                  // {1}
+        dialectNameCapitalized,                // {2}
+        className,                             // {3}
+        paramNameCapitalized,                  // {4}
+        mapCppTypeToCapiType(cppType),         // {5}
+        isPrimitiveType(cppType) ? "" : "wrap" // {6}
     );
   }
 
@@ -287,21 +248,20 @@ Mlir{1} {0}{2}{3}Get(MlirContext ctx{4}) {{
     llvm::raw_string_ostream argListStream(argListBuffer);
 
     for (const auto &param : def.getParameters()) {
-      mlir::StringRef cppType = param.getCppType();
       std::string pName = param.getName().str();
-
+      mlir::StringRef cppType = param.getCppType();
       if (isArrayRefType(cppType)) {
         // For ArrayRef parameters, convert from pointer + count to ArrayRef
-        std::string elemType = extractArrayRefElementType(cppType);
-        paramListStream << ", intptr_t " << pName << "Count, " << elemType << " *" << pName;
+        mlir::StringRef cppElemType = extractArrayRefElementType(cppType);
+        std::string capiElemType = mapCppTypeToCapiType(cppElemType);
+        paramListStream << ", intptr_t " << pName << "Count, " << capiElemType << " *" << pName;
 
-        // In the call, we need to convert back to ArrayRef
-        // Check if elements need unwrapping
-        if (isPrimitiveType(elemType)) {
-          argListStream << ", ::llvm::ArrayRef<" << elemType << ">(" << pName << ", " << pName
+        // In the call, we need to convert back to ArrayRef. Check if elements need unwrapping.
+        if (isPrimitiveType(cppElemType)) {
+          argListStream << ", ::llvm::ArrayRef<" << capiElemType << ">(" << pName << ", " << pName
                         << "Count)";
         } else {
-          argListStream << ", ::llvm::ArrayRef<" << elemType << ">(unwrapList(" << pName << ", "
+          argListStream << ", ::llvm::ArrayRef<" << capiElemType << ">(unwrapList(" << pName << ", "
                         << pName << "Count))";
         }
       } else {
@@ -323,8 +283,13 @@ Mlir{1} {0}{2}{3}Get(MlirContext ctx{4}) {{
     }
 
     os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramListStream.str(),
-        argListStream.str()
+        fmt,
+        FunctionPrefix,         // {0}
+        kind,                   // {1}
+        dialectNameCapitalized, // {2}
+        className,              // {3}
+        paramListBuffer,        // {4}
+        argListBuffer           // {5}
     );
   }
 
@@ -353,30 +318,10 @@ Mlir{1} {0}{2}{3}Get(MlirContext ctx{4}) {{
       for (const auto &param : def.getParameters()) {
         this->setParamName(param.getName());
         mlir::StringRef cppType = param.getCppType();
-
         if (isArrayRefType(cppType)) {
-          // Generate getter functions for ArrayRef parameters
-          this->genArrayRefParameterCountImpl();
-          std::string elemType = extractArrayRefElementType(cppType);
-          if (isAPIntType(elemType)) {
-            this->genArrayRefParameterAtImplAPInt();
-          } else if (isPrimitiveType(elemType)) {
-            this->genArrayRefParameterAtImplRaw(elemType);
-          } else {
-            this->genArrayRefParameterAtImplWrapped(elemType);
-          }
+          this->genArrayRefParameterImpls(cppType);
         } else {
-          // Generate regular getter implementation
-          if (isAPIntType(cppType)) {
-            this->genParameterGetterImplAPInt();
-          } else {
-            std::string capiType = mapCppTypeToCapiType(cppType);
-            if (isPrimitiveType(capiType)) {
-              this->genParameterGetterImplRaw(capiType);
-            } else {
-              this->genParameterGetterImplWrapped(capiType);
-            }
-          }
+          this->genParameterGetterImpl(cppType);
         }
       }
     }

@@ -90,46 +90,52 @@ struct AttrOrTypeTestGenerator : public Generator {
         return;
       }
       std::string capiParamType = capiParamTypeOpt.value();
+      std::string name = param.name;
 
       // Generate dummy value creation for each parameter
       if (capiParamType == "bool") {
-        dummyParamsStream << "    bool " << param.name << " = false;\n";
+        dummyParamsStream << "    bool " << name << " = false;\n";
       } else if (capiParamType == "MlirType") {
-        dummyParamsStream << "    auto " << param.name << " = mlirIndexTypeGet(context);\n";
+        dummyParamsStream << "    auto " << name << " = mlirIndexTypeGet(context);\n";
       } else if (capiParamType == "MlirAttribute") {
-        dummyParamsStream << "    auto " << param.name
+        dummyParamsStream << "    auto " << name
                           << " = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);\n";
       } else if (capiParamType == "MlirStringRef") {
-        dummyParamsStream << "    auto " << param.name
-                          << " = mlirStringRefCreateFromCString(\"\");\n";
+        dummyParamsStream << "    auto " << name << " = mlirStringRefCreateFromCString(\"\");\n";
       } else if (capiParamType == "intptr_t" || capiParamType == "int" ||
                  capiParamType == "int64_t") {
-        dummyParamsStream << "    " << capiParamType << " " << param.name << " = 0;\n";
+        dummyParamsStream << "    " << capiParamType << " " << name << " = 0;\n";
       } else {
         // For unknown types, create a default-initialized variable
-        dummyParamsStream << "    " << capiParamType << " " << param.name << " = {};\n";
+        dummyParamsStream << "    " << capiParamType << " " << name << " = {};\n";
       }
 
-      paramListStream << ", " << param.name;
+      paramListStream << ", " << name;
     }
 
     std::string capitalizedMethodName = toPascalCase(method.methodName);
 
     static constexpr char fmt[] = R"(
-TEST_F({0}{1}LinkTests, {2}_{3}) {{
-  // This test ensures {4}{0}{2}{3} links properly.
+// This test ensures {0}{2}{3}{4} links properly.
+TEST_F({2}{1}LinkTests, {3}_{4}) {{
   auto test{1} = createTest{1}();
   
-  if ({4}{1}IsA{0}{2}(test{1})) {{
+  if ({0}{1}IsA{2}{3}(test{1})) {{
 {5}
-    (void){4}{0}{2}{3}(test{1}{6});
+    (void){0}{2}{3}{4}(test{1}{6});
   }
 }
 )";
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
-        fmt, dialectNameCapitalized, kind, className, capitalizedMethodName, FunctionPrefix,
-        dummyParamsStream.str(), paramListStream.str()
+        fmt,
+        FunctionPrefix,          // {0}
+        kind,                    // {1}
+        dialectNameCapitalized,  // {2}
+        className,               // {3}
+        capitalizedMethodName,   // {4}
+        dummyParamsStream.str(), // {5}
+        paramListStream.str()    // {6}
     );
   }
 
@@ -153,17 +159,22 @@ protected:
   /// @brief Generate IsA test for a class
   virtual void genIsATest() const {
     static constexpr char fmt[] = R"(
-TEST_F({0}{1}LinkTests, IsA_{0}{2}) {{
-  // This test ensures {3}{1}IsA{0}{2} links properly.
+// This test ensures {0}{1}IsA{2}{3} links properly.
+TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
   auto test{1} = createTest{1}();
   
   // This should always return false since test{1} is {4}
-  EXPECT_FALSE({3}{1}IsA{0}{2}(test{1}));
+  EXPECT_FALSE({0}{1}IsA{2}{3}(test{1}));
 }
 )";
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
-        fmt, dialectNameCapitalized, kind, className, FunctionPrefix, testObjDescription
+        fmt,
+        FunctionPrefix,         // {0}
+        kind,                   // {1}
+        dialectNameCapitalized, // {2}
+        className,              // {3}
+        testObjDescription      // {4}
     );
   }
 
@@ -173,20 +184,26 @@ TEST_F({0}{1}LinkTests, IsA_{0}{2}) {{
   virtual void
   genGetBuilderTest(const std::string &dummyParams, const std::string &paramList) const {
     static constexpr char fmt[] = R"(
-TEST_F({0}{1}LinkTests, Get_{2}) {{
-  // This test ensures {3}{0}{2}Get links properly.
+// This test ensures {0}{2}{3}Get links properly.
+TEST_F({2}{1}LinkTests, Get_{3}) {{
   auto test{1} = createTest{1}();
   
   // We only verify the function compiles and links, wrapped in an unreachable condition
-  if ({3}{1}IsA{0}{2}(test{1})) {{
+  if ({0}{1}IsA{2}{3}(test{1})) {{
 {4}
-    (void){3}{0}{2}Get(context{5});
+    (void){0}{2}{3}Get(context{5});
   }
 }
 )";
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
-        fmt, dialectNameCapitalized, kind, className, FunctionPrefix, dummyParams, paramList
+        fmt,
+        FunctionPrefix,         // {0}
+        kind,                   // {1}
+        dialectNameCapitalized, // {2}
+        className,              // {3}
+        dummyParams,            // {4}
+        paramList               // {5}
     );
   }
 
@@ -194,19 +211,19 @@ TEST_F({0}{1}LinkTests, Get_{2}) {{
   virtual void genParamGetterTest() const {
 
     static constexpr char fmt[] = R"(
-TEST_F({0}{1}LinkTests, Get_{2}_{3}) {{
-  // This test ensures {4}{0}{2}Get{5} links properly.
+// This test ensures {0}{2}{3}Get{5} links properly.
+TEST_F({2}{1}LinkTests, Get_{3}_{4}) {{
   auto test{1} = createTest{1}();
   
-  if ({4}{1}IsA{0}{2}(test{1})) {{
-    (void){4}{0}{2}Get{5}(test{1});
+  if ({0}{1}IsA{2}{3}(test{1})) {{
+    (void){0}{2}{3}Get{5}(test{1});
   }
 }
 )";
     assert(!className.empty() && "className must be set");
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
-        fmt, dialectNameCapitalized, kind, className, paramName, FunctionPrefix,
+        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramName,
         paramNameCapitalized
     );
   }
@@ -214,19 +231,19 @@ TEST_F({0}{1}LinkTests, Get_{2}_{3}) {{
   /// @brief Generate ArrayRef parameter count getter test
   virtual void genArrayRefParamCountTest() const {
     static constexpr char fmt[] = R"(
-TEST_F({0}{1}LinkTests, Get_{2}_{3}Count) {{
-  // This test ensures {4}{0}{2}Get{5}Count links properly.
+// This test ensures {0}{2}{3}Get{5}Count links properly.
+TEST_F({2}{1}LinkTests, Get_{3}_{4}Count) {{
   auto test{1} = createTest{1}();
   
-  if ({4}{1}IsA{0}{2}(test{1})) {{
-    (void){4}{0}{2}Get{5}Count(test{1});
+  if ({0}{1}IsA{2}{3}(test{1})) {{
+    (void){0}{2}{3}Get{5}Count(test{1});
   }
 }
 )";
     assert(!className.empty() && "className must be set");
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
-        fmt, dialectNameCapitalized, kind, className, paramName, FunctionPrefix,
+        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramName,
         paramNameCapitalized
     );
   }
@@ -234,19 +251,19 @@ TEST_F({0}{1}LinkTests, Get_{2}_{3}Count) {{
   /// @brief Generate ArrayRef parameter element getter test
   virtual void genArrayRefParamAtTest() const {
     static constexpr char fmt[] = R"(
-TEST_F({0}{1}LinkTests, Get_{2}_{3}At) {{
-  // This test ensures {4}{0}{2}Get{5}At links properly.
+// This test ensures {0}{2}{3}Get{5}At links properly.
+TEST_F({2}{1}LinkTests, Get_{3}_{4}At) {{
   auto test{1} = createTest{1}();
   
-  if ({4}{1}IsA{0}{2}(test{1})) {{
-    (void){4}{0}{2}Get{5}At(test{1}, 0);
+  if ({0}{1}IsA{2}{3}(test{1})) {{
+    (void){0}{2}{3}Get{5}At(test{1}, 0);
   }
 }
 )";
     assert(!className.empty() && "className must be set");
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
-        fmt, dialectNameCapitalized, kind, className, paramName, FunctionPrefix,
+        fmt, FunctionPrefix, kind, dialectNameCapitalized, className, paramName,
         paramNameCapitalized
     );
   }

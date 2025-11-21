@@ -79,11 +79,14 @@ inline std::string toPascalCase(mlir::StringRef str) {
 }
 
 /// @brief Check if a C++ type is a known primitive type
-/// @param type The type string to check
+/// @param cppType The C++ type string to check
 /// @return true if the type is a primitive (bool, void, int, etc.)
-inline bool isPrimitiveType(mlir::StringRef type) {
-  type.consume_front("::");
-  return llvm::StringSwitch<bool>(type)
+///
+/// @note This function must be called on the CPP type because after converting to CAPI type, some
+/// things like APInt become primitive which can lead to missing wrap/unwrap functions.
+inline bool isPrimitiveType(mlir::StringRef cppType) {
+  cppType.consume_front("::");
+  return llvm::StringSwitch<bool>(cppType)
       .Case("bool", true)
       .Case("void", true)
       .Case("int", true)
@@ -142,6 +145,15 @@ inline bool isIntegerType(mlir::StringRef type) {
          type.starts_with("uint");
 }
 
+/// @brief Check if a C++ type is APInt
+/// @param cppType The C++ type string to check
+/// @return true if the type is APInt, llvm::APInt, or ::llvm::APInt
+inline bool isAPIntType(mlir::StringRef cppType) {
+  cppType.consume_front("::");
+  cppType.consume_front("llvm::") || cppType.consume_front("mlir::");
+  return cppType == "APInt";
+}
+
 /// @brief Check if a C++ type is an ArrayRef type
 /// @param cppType The C++ type string to check
 /// @return true if the type is ArrayRef, llvm::ArrayRef, or ::llvm::ArrayRef
@@ -151,13 +163,15 @@ inline bool isArrayRefType(mlir::StringRef cppType) {
   return cppType.starts_with("ArrayRef<");
 }
 
-/// @brief Check if a C++ type is APInt
-/// @param cppType The C++ type string to check
-/// @return true if the type is APInt, llvm::APInt, or ::llvm::APInt
-inline bool isAPIntType(mlir::StringRef cppType) {
+/// Extract element type from ArrayRef<...>
+inline mlir::StringRef extractArrayRefElementType(mlir::StringRef cppType) {
+  assert(isArrayRefType(cppType) && "must check `isArrayRefType()` outside");
+
+  // Remove "ArrayRef<" prefix and ">" suffix
   cppType.consume_front("::");
   cppType.consume_front("llvm::") || cppType.consume_front("mlir::");
-  return cppType == "APInt";
+  cppType.consume_front("ArrayRef<") && cppType.consume_back(">");
+  return cppType;
 }
 
 /// @brief RAII wrapper for Clang lexer infrastructure
@@ -263,21 +277,13 @@ bool matchesMLIRClass(mlir::StringRef cppType, mlir::StringRef typeName);
 std::optional<std::string>
 tryCppTypeToCapiType(mlir::StringRef cppType, bool reportUnmatched = true);
 
-/// @brief Determine the wrapping code needed for a return value
-/// @param capiType The MLIR C API type
-/// @return The wrapper function name (e.g., "wrap") or empty string if no wrapping needed
-mlir::StringRef getReturnWrapCode(mlir::StringRef capiType);
-
 /// @brief Map C++ type to corresponding C API type
 /// @param cppType The C++ type to map
 /// @return The corresponding C API type string
 ///
-/// @note This function should not be called for ArrayRef types.
-/// Use extractArrayRefElementType() for those instead.
+/// @note This function should not be called directly for ArrayRef types.
+/// Use extractArrayRefElementType() first and then use this on the result.
 std::string mapCppTypeToCapiType(mlir::StringRef cppType);
-
-/// Extract element type from ArrayRef<...>
-std::string extractArrayRefElementType(mlir::StringRef cppType);
 
 /// @brief Base class for C API generators
 struct Generator {
@@ -341,12 +347,17 @@ extern "C" {
 
   virtual void genIsADecl() const {
     static constexpr char fmt[] = R"(
-/* Returns true if the {1} is a {3}::{4}. */
-MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{4}(Mlir{1});
+/* Returns true if the {1} is a {4}::{3}. */
+MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{3}(Mlir{1});
 )";
     assert(dialect && "Dialect must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, kind, dialectNameCapitalized, dialect->getCppNamespace(), className
+        fmt,
+        FunctionPrefix,            // {0}
+        kind,                      // {1}
+        dialectNameCapitalized,    // {2}
+        className,                 // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
@@ -414,6 +425,30 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
     }
     std::string capiReturnType = capiReturnTypeOpt.value();
 
+    // Build the return statement prefix and suffix
+    std::string returnPrefix;
+    std::string returnSuffix;
+    mlir::StringRef cppReturnType = method.returnType;
+
+    if (cppReturnType == "void") {
+      // "void" type doesn't even need "return"
+      returnPrefix = "";
+      returnSuffix = "";
+    } else {
+      // Check if return needs wrapping
+      if (isPrimitiveType(cppReturnType)) {
+        // Primitive types don't need wrapping
+        returnPrefix = "return ";
+        returnSuffix = "";
+      } else if (capiReturnType.starts_with("Mlir") || isAPIntType(cppReturnType)) {
+        // MLIR C API types and APInt type need wrapping
+        returnPrefix = "return wrap(";
+        returnSuffix = ")";
+      } else {
+        return;
+      }
+    }
+
     // Build parameter list for C API function signature
     std::string paramList;
     llvm::raw_string_ostream paramListStream(paramList);
@@ -436,62 +471,45 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
         argListStream << ", ";
       }
       const auto &param = method.parameters[i];
-      // Convert C++ type to C API type for parameter, skip if it can't be converted
-      std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
-      if (!capiParamTypeOpt.has_value()) {
-        return;
-      }
-      std::string capiParamType = capiParamTypeOpt.value();
 
       // Check if parameter needs unwrapping
-      if (isPrimitiveType(capiParamType)) {
+      mlir::StringRef cppParamType = param.type;
+      if (isPrimitiveType(cppParamType)) {
         // Primitive types don't need unwrapping
         argListStream << param.name;
-      } else if (capiParamType.starts_with("Mlir")) {
-        // MLIR C API types need unwrapping
+      } else if (isAPIntType(cppParamType)) {
+        // APInt needs unwrapping
         argListStream << "unwrap(" << param.name << ")";
       } else {
-        // Unknown types - pass through as-is
-        argListStream << param.name;
+        // Convert C++ type to C API type for parameter, skip if it can't be converted
+        std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(cppParamType);
+        if (capiParamTypeOpt.has_value() && capiParamTypeOpt->starts_with("Mlir")) {
+          // MLIR C API types need unwrapping
+          argListStream << "unwrap(" << param.name << ")";
+        } else {
+          return;
+        }
       }
-    }
-
-    std::string capitalizedMethodName = toPascalCase(method.methodName);
-    mlir::StringRef wrapCode = getReturnWrapCode(capiReturnType);
-
-    // Build the return statement prefix and suffix
-    std::string returnPrefix;
-    std::string returnSuffix;
-
-    if (capiReturnType == "void") {
-      returnPrefix = "";
-      returnSuffix = "";
-    } else if (!wrapCode.empty()) {
-      returnPrefix = std::string("return ") + wrapCode.str() + "(";
-      returnSuffix = ")";
-    } else {
-      returnPrefix = "return ";
-      returnSuffix = "";
     }
 
     // Generate implementation
     os << '\n';
     os << llvm::formatv(
         "{0} {1}{2}{3}{4}({5}) {{\n",
-        capiReturnType,         // {0}
-        FunctionPrefix,         // {1}
-        dialectNameCapitalized, // {2}
-        className,              // {3}
-        capitalizedMethodName,  // {4}
-        paramListStream.str()   // {5}
+        capiReturnType,                  // {0}
+        FunctionPrefix,                  // {1}
+        dialectNameCapitalized,          // {2}
+        className,                       // {3}
+        toPascalCase(method.methodName), // {4}
+        paramList                        // {5}
     );
     os << llvm::formatv(
         "  {0}llvm::cast<{1}>(unwrap(inp)).{2}({3}){4};\n",
-        returnPrefix,        // {0}
-        className,           // {1}
-        method.methodName,   // {2}
-        argListStream.str(), // {3}
-        returnSuffix         // {4}
+        returnPrefix,      // {0}
+        className,         // {1}
+        method.methodName, // {2}
+        argList,           // {3}
+        returnSuffix       // {4}
     );
     os << "}\n";
   }

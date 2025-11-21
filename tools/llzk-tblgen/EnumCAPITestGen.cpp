@@ -66,8 +66,8 @@ class {0}EnumLinkTests : public CAPITest {{};
   /// @param firstCaseValue The first enum case value
   void genEnumUsageTest(StringRef cEnumName, StringRef firstCaseValue) const {
     static constexpr char fmt[] = R"(
+// This test ensures the {1} enum compiles and links properly.
 TEST_F({0}EnumLinkTests, Enum_{1}_Usage) {{
-  // This test ensures the {1} enum compiles and links properly.
   // We create a variable and check that enum values can be assigned.
   {1} enumValue = {2};
   (void)enumValue;
@@ -84,8 +84,8 @@ TEST_F({0}EnumLinkTests, Enum_{1}_Usage) {{
   /// @param firstCaseValue The first enum case value
   void genWrapUnwrapTest(StringRef cEnumName, StringRef firstCaseValue) const {
     static constexpr char fmt[] = R"(
+// This test ensures wrap/unwrap functions for {1} compile and link.
 TEST_F({0}EnumLinkTests, Enum_{1}_WrapUnwrap) {{
-  // This test ensures wrap/unwrap functions for {1} compile and link.
   // We use the first enum case value for testing.
   {1} cValue = {2};
   

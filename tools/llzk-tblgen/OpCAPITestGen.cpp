@@ -108,8 +108,8 @@ struct OpTestGenerator : public Generator {
     std::string capitalizedMethodName = toPascalCase(method.methodName);
 
     static constexpr char fmt[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_{3}) {{
-  // This test ensures {4}{2}{3} links properly.
+// This test ensures {4}{2}{3} links properly.
+TEST_F({1}OpLinkTests, {0}_{2}_{3}) {{
   auto testOp = createTestOp();
   
   if ({5}(testOp)) {{
@@ -123,8 +123,8 @@ TEST_F({0}OpLinkTests, {1}_{2}_{3}) {{
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
         fmt,
-        dialectNameCapitalized,  // {0}
-        FunctionPrefix,          // {1}
+        FunctionPrefix,          // {0}
+        dialectNameCapitalized,  // {1}
         className,               // {2}
         capitalizedMethodName,   // {3}
         testPrefix,              // {4}
@@ -170,26 +170,32 @@ protected:
   /// @brief Generate IsA test for an operation
   void genIsATest() const {
     static constexpr char fmt[] = R"(
-TEST_F({0}OpLinkTests, IsA_{0}{1}) {{
-  // This test ensures llzkOperationIsA{0}{1} links properly.
+// This test ensures {0}OperationIsA{1}{2} links properly.
+TEST_F({1}OpLinkTests, IsA_{1}{2}) {{
   auto testOp = createTestOp();
   
-  // This should always return false since testOp is from {2} dialect
-  EXPECT_FALSE(llzkOperationIsA{0}{1}(testOp));
+  // This should always return false since testOp is from {3} dialect
+  EXPECT_FALSE({0}OperationIsA{1}{2}(testOp));
   
   mlirOperationDestroy(testOp);
 }
 )";
     assert(!className.empty() && "className must be set");
-    os << llvm::formatv(fmt, dialectNameCapitalized, className, testDialect);
+    os << llvm::formatv(
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        testDialect             // {3}
+    );
   }
 
   /// @brief Generate create function test for an operation
   /// @param op The operation definition
   void genCreateOpTest(const Operator &op) const {
     static constexpr char fmt[] = R"(
-TEST_F({0}OpLinkTests, {1}{2}_Create) {{
-  // This test ensures {3}{2}Create links properly.
+// This test ensures {3}{2}Create links properly.
+TEST_F({1}OpLinkTests, {0}{2}_Create) {{
   // We create a {4}.{5} op, which will never match the {2} dialect check.
   auto testOp = createTestOp();
   
@@ -206,12 +212,17 @@ TEST_F({0}OpLinkTests, {1}{2}_Create) {{
 )";
 
     assert(!className.empty() && "className must be set");
-    std::string dummyParams = generateDummyParams(op);
-    std::string paramList = generateParamList(op);
-
     os << llvm::formatv(
-        fmt, dialectNameCapitalized, FunctionPrefix, className, testPrefix, testDialect, testOpName,
-        isACheck, dummyParams, paramList
+        fmt,
+        FunctionPrefix,          // {0}
+        dialectNameCapitalized,  // {1}
+        className,               // {2}
+        testPrefix,              // {3}
+        testDialect,             // {4}
+        testOpName,              // {5}
+        isACheck,                // {6}
+        generateDummyParams(op), // {7}
+        generateParamList(op)    // {8}
     );
   }
 
@@ -219,11 +230,11 @@ TEST_F({0}OpLinkTests, {1}{2}_Create) {{
   /// @param op The operation definition
   void genOperandTests(const Operator &op) const {
     static constexpr char OperandGetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Get{3}) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
-    (void){5}{2}Get{3}(testOp);
+    (void){0}{1}{2}Get{3}(testOp);
   }
   
   mlirOperationDestroy(testOp);
@@ -231,12 +242,12 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}) {{
 )";
 
     static constexpr char OperandSetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Set{3}) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Set{3}) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
-    {5}{2}Set{3}(testOp, dummyValue);
+    {0}{1}{2}Set{3}(testOp, dummyValue);
   }
   
   mlirOperationDestroy(testOp);
@@ -244,11 +255,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Set{3}) {{
 )";
 
     static constexpr char VariadicOperandCountGetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Get{3}Count) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
-    (void){5}{2}Get{3}Count(testOp);
+    (void){0}{1}{2}Get{3}Count(testOp);
   }
   
   mlirOperationDestroy(testOp);
@@ -256,11 +267,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}Count) {{
 )";
 
     static constexpr char VariadicOperandIndexedGetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
-    (void){5}{2}Get{3}(testOp, 0);
+    (void){0}{1}{2}Get{3}(testOp, 0);
   }
   
   mlirOperationDestroy(testOp);
@@ -268,13 +279,13 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
 )";
 
     static constexpr char VariadicOperandSetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Set{3}_Variadic) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Set{3}_Variadic) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
     MlirValue values[] = {{dummyValue};
-    {5}{2}Set{3}(testOp, 1, values);
+    {0}{1}{2}Set{3}(testOp, 1, values);
   }
   
   mlirOperationDestroy(testOp);
@@ -288,31 +299,51 @@ TEST_F({0}OpLinkTests, {1}_{2}_Set{3}_Variadic) {{
       if (operand.isVariadic()) {
         if (GenOpOperandGetters) {
           os << llvm::formatv(
-              VariadicOperandCountGetterTest, dialectNameCapitalized, FunctionPrefix, className,
-              capName, isACheck, testPrefix
+              VariadicOperandCountGetterTest,
+              FunctionPrefix,         // {0}
+              dialectNameCapitalized, // {1}
+              className,              // {2}
+              capName,                // {3}
+              isACheck                // {4}
           );
           os << llvm::formatv(
-              VariadicOperandIndexedGetterTest, dialectNameCapitalized, FunctionPrefix, className,
-              capName, isACheck, testPrefix
+              VariadicOperandIndexedGetterTest,
+              FunctionPrefix,         // {0}
+              dialectNameCapitalized, // {1}
+              className,              // {2}
+              capName,                // {3}
+              isACheck                // {4}
           );
         }
         if (GenOpOperandSetters) {
           os << llvm::formatv(
-              VariadicOperandSetterTest, dialectNameCapitalized, FunctionPrefix, className, capName,
-              isACheck, testPrefix
+              VariadicOperandSetterTest,
+              FunctionPrefix,         // {0}
+              dialectNameCapitalized, // {1}
+              className,              // {2}
+              capName,                // {3}
+              isACheck                // {4}
           );
         }
       } else {
         if (GenOpOperandGetters) {
           os << llvm::formatv(
-              OperandGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName,
-              isACheck, testPrefix
+              OperandGetterTest,
+              FunctionPrefix,         // {0}
+              dialectNameCapitalized, // {1}
+              className,              // {2}
+              capName,                // {3}
+              isACheck                // {4}
           );
         }
         if (GenOpOperandSetters) {
           os << llvm::formatv(
-              OperandSetterTest, dialectNameCapitalized, FunctionPrefix, className, capName,
-              isACheck, testPrefix
+              OperandSetterTest,
+              FunctionPrefix,         // {0}
+              dialectNameCapitalized, // {1}
+              className,              // {2}
+              capName,                // {3}
+              isACheck                // {4}
           );
         }
       }
@@ -323,11 +354,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Set{3}_Variadic) {{
   /// @param op The operation definition
   void genAttributeTests(const Operator &op) const {
     static constexpr char AttributeGetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Get{3}Attr) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Attr) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
-    (void){5}{2}Get{3}(testOp);
+    (void){0}{1}{2}Get{3}(testOp);
   }
   
   mlirOperationDestroy(testOp);
@@ -335,12 +366,12 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}Attr) {{
 )";
 
     static constexpr char AttributeSetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Set{3}Attr) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Set{3}Attr) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
     auto dummyAttr = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);
-    {5}{2}Set{3}(testOp, dummyAttr);
+    {0}{1}{2}Set{3}(testOp, dummyAttr);
   }
   
   mlirOperationDestroy(testOp);
@@ -352,14 +383,22 @@ TEST_F({0}OpLinkTests, {1}_{2}_Set{3}Attr) {{
       std::string capName = toPascalCase(namedAttr.name);
       if (GenOpAttributeGetters) {
         os << llvm::formatv(
-            AttributeGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName,
-            isACheck, testPrefix
+            AttributeGetterTest,
+            FunctionPrefix,         // {0}
+            dialectNameCapitalized, // {1}
+            className,              // {2}
+            capName,                // {3}
+            isACheck                // {4}
         );
       }
       if (GenOpAttributeSetters) {
         os << llvm::formatv(
-            AttributeSetterTest, dialectNameCapitalized, FunctionPrefix, className, capName,
-            isACheck, testPrefix
+            AttributeSetterTest,
+            FunctionPrefix,         // {0}
+            dialectNameCapitalized, // {1}
+            className,              // {2}
+            capName,                // {3}
+            isACheck                // {4}
         );
       }
     }
@@ -369,11 +408,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Set{3}Attr) {{
   /// @param op The operation definition
   void genResultTests(const Operator &op) const {
     static constexpr char ResultGetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Get{3}) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Get{3}) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
-    (void){5}{2}Get{3}(testOp);
+    (void){0}{1}{2}Get{3}(testOp);
   }
   
   mlirOperationDestroy(testOp);
@@ -381,11 +420,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}) {{
 )";
 
     static constexpr char VariadicResultCountGetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Get{3}Count) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
-    (void){5}{2}Get{3}Count(testOp);
+    (void){0}{1}{2}Get{3}Count(testOp);
   }
   
   mlirOperationDestroy(testOp);
@@ -393,11 +432,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}Count) {{
 )";
 
     static constexpr char VariadicResultIndexedGetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
-    (void){5}{2}Get{3}(testOp, 0);
+    (void){0}{1}{2}Get{3}(testOp, 0);
   }
   
   mlirOperationDestroy(testOp);
@@ -413,17 +452,27 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
 
       if (result.isVariadic()) {
         os << llvm::formatv(
-            VariadicResultCountGetterTest, dialectNameCapitalized, FunctionPrefix, className,
-            capName, isACheck, testPrefix
+            VariadicResultCountGetterTest,
+            FunctionPrefix,         // {0}
+            dialectNameCapitalized, // {1}
+            className,              // {2}
+            capName, isACheck       // {3}
         );
         os << llvm::formatv(
-            VariadicResultIndexedGetterTest, dialectNameCapitalized, FunctionPrefix, className,
-            capName, isACheck, testPrefix
+            VariadicResultIndexedGetterTest,
+            FunctionPrefix,         // {0}
+            dialectNameCapitalized, // {1}
+            className,              // {2}
+            capName, isACheck       // {3}
         );
       } else {
         os << llvm::formatv(
-            ResultGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName, isACheck,
-            testPrefix
+            ResultGetterTest,
+            FunctionPrefix,         // {0}
+            dialectNameCapitalized, // {1}
+            className,              // {2}
+            capName,                // {3}
+            isACheck                // {4}
         );
       }
     }
@@ -433,11 +482,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
   /// @param op The operation definition
   void genRegionTests(const Operator &op) const {
     static constexpr char RegionGetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Get{3}Region) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Region) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
-    (void){5}{2}Get{3}(testOp);
+    (void){0}{1}{2}Get{3}(testOp);
   }
   
   mlirOperationDestroy(testOp);
@@ -445,11 +494,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}Region) {{
 )";
 
     static constexpr char VariadicRegionCountGetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Get{3}Count) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
-    (void){5}{2}Get{3}Count(testOp);
+    (void){0}{1}{2}Get{3}Count(testOp);
   }
   
   mlirOperationDestroy(testOp);
@@ -457,11 +506,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}Count) {{
 )";
 
     static constexpr char VariadicRegionIndexedGetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
+TEST_F({1}OpLinkTests, {0}_{2}_Get{3}_Indexed) {{
   auto testOp = createTestOp();
   
   if ({4}(testOp)) {{
-    (void){5}{2}Get{3}(testOp, 0);
+    (void){0}{1}{2}Get{3}(testOp, 0);
   }
   
   mlirOperationDestroy(testOp);
@@ -477,17 +526,29 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
 
       if (region.isVariadic()) {
         os << llvm::formatv(
-            VariadicRegionCountGetterTest, dialectNameCapitalized, FunctionPrefix, className,
-            capName, isACheck, testPrefix
+            VariadicRegionCountGetterTest,
+            FunctionPrefix,         // {0}
+            dialectNameCapitalized, // {1}
+            className,              // {2}
+            capName,                // {3}
+            isACheck                // {4}
         );
         os << llvm::formatv(
-            VariadicRegionIndexedGetterTest, dialectNameCapitalized, FunctionPrefix, className,
-            capName, isACheck, testPrefix
+            VariadicRegionIndexedGetterTest,
+            FunctionPrefix,         // {0}
+            dialectNameCapitalized, // {1}
+            className,              // {2}
+            capName,                // {3}
+            isACheck                // {4}
         );
       } else {
         os << llvm::formatv(
-            RegionGetterTest, dialectNameCapitalized, FunctionPrefix, className, capName, isACheck,
-            testPrefix
+            RegionGetterTest,
+            FunctionPrefix,         // {0}
+            dialectNameCapitalized, // {1}
+            className,              // {2}
+            capName,                // {3}
+            isACheck                // {4}
         );
       }
     }
@@ -496,11 +557,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_Get{3}_Indexed) {{
   /// @brief Generate operation name getter test
   void genOperationNameGetterTest() const {
     static constexpr char OperationNameGetterTest[] = R"(
-TEST_F({0}OpLinkTests, {1}_{2}_GetOperationName) {{
+TEST_F({1}OpLinkTests, {0}_{2}_GetOperationName) {{
   auto testOp = createTestOp();
   
   if ({3}(testOp)) {{
-    (void){1}{0}{2}GetOperationName(testOp);
+    (void){0}{1}{2}GetOperationName(testOp);
   }
   
   mlirOperationDestroy(testOp);
@@ -508,7 +569,11 @@ TEST_F({0}OpLinkTests, {1}_{2}_GetOperationName) {{
 )";
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
-        OperationNameGetterTest, dialectNameCapitalized, FunctionPrefix, className, isACheck
+        OperationNameGetterTest,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        isACheck                // {3}
     );
   }
 
@@ -554,12 +619,19 @@ protected:
   virtual void setDialectAndClassName(const Dialect *d, StringRef cppClassName) override {
     Generator::setDialectAndClassName(d, cppClassName);
     assert(!className.empty() && "className must be set");
-    this->testPrefix = llvm::formatv("{0}{1}", FunctionPrefix, this->dialectNameCapitalized).str();
-    this->isACheck =
-        llvm::formatv(
-            "{0}OperationIsA{1}{2}", FunctionPrefix, this->dialectNameCapitalized, this->className
-        )
-            .str();
+    this->testPrefix = llvm::formatv(
+                           "{0}{1}",
+                           FunctionPrefix,              // {0}
+                           this->dialectNameCapitalized // {1}
+    )
+                           .str();
+    this->isACheck = llvm::formatv(
+                         "{0}OperationIsA{1}{2}",
+                         FunctionPrefix,               // {0}
+                         this->dialectNameCapitalized, // {1}
+                         this->className               // {2}
+    )
+                         .str();
   }
 
   std::string testDialect;

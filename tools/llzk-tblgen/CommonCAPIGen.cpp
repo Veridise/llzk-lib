@@ -703,24 +703,9 @@ std::optional<std::string> tryCppTypeToCapiType(StringRef cppType, bool reportUn
   return std::nullopt;
 }
 
-/// Determine the wrapping code needed for a return value
-StringRef getReturnWrapCode(StringRef capiType) {
-  // Primitive types need no wrapping
-  if (isPrimitiveType(capiType)) {
-    return "";
-  }
-
-  // All MLIR C API types use "wrap"
-  if (capiType.starts_with("Mlir")) {
-    return "wrap";
-  }
-
-  return ""; // Unknown, no wrapping
-}
-
 // Map C++ type to corresponding C API type
 std::string mapCppTypeToCapiType(StringRef cppType) {
-  assert(!isArrayRefType(cppType) && "use extractArrayRefElementType instead");
+  assert(!isArrayRefType(cppType) && "must check `isArrayRefType()` outside");
 
   std::optional<std::string> capiTypeOpt = tryCppTypeToCapiType(cppType, false);
   if (capiTypeOpt.has_value()) {
@@ -729,15 +714,4 @@ std::string mapCppTypeToCapiType(StringRef cppType) {
 
   // Otherwise assume it's a type where the C name is a direct translation from the C++ name.
   return toPascalCase(cppType);
-}
-
-/// Extract element type from ArrayRef<...>
-std::string extractArrayRefElementType(StringRef cppType) {
-  // Remove "::llvm::ArrayRef<" or "ArrayRef<" prefix and ">" suffix
-  cppType.consume_front("::");
-  cppType.consume_front("llvm::") || cppType.consume_front("mlir::");
-  if (cppType.consume_front("ArrayRef<") && cppType.consume_back(">")) {
-    return mapCppTypeToCapiType(cppType);
-  }
-  return "MlirAttribute"; // fallback
 }

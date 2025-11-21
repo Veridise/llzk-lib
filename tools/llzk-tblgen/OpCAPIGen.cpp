@@ -55,192 +55,258 @@ struct OpHeaderGenerator : public HeaderGenerator, OpGeneratorData {
 
   void genOpCreateDecl(std::string const &params) const {
     static constexpr char fmt[] = R"(
-/* Create a {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED MlirOperation {0}{1}{3}Create(MlirContext ctx, MlirLocation location{4});
+/* Create a {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED MlirOperation {0}{1}{2}Create(MlirContext ctx, MlirLocation location{3});
 )";
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className, params
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        params,                    // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
   void genOperandGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get {4} operand from {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED MlirValue {0}{1}{3}Get{4}(MlirOperation op);
+/* Get {3} operand from {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        operandNameCapitalized
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        operandNameCapitalized,    // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
   void genOperandSetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Set {4} operand of {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED void {0}{1}{3}Set{4}(MlirOperation op, MlirValue value);
+/* Set {3} operand of {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED void {0}{1}{2}Set{3}(MlirOperation op, MlirValue value);
 )";
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        operandNameCapitalized
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        operandNameCapitalized,    // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
   void genVariadicOperandCountGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get number of {4} operands in {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED intptr_t {0}{1}{3}Get{4}Count(MlirOperation op);
+/* Get number of {3} operands in {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED intptr_t {0}{1}{2}Get{3}Count(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        operandNameCapitalized
+
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        operandNameCapitalized,    // {3}
+        dialect->getCppNamespace() // {4}
+
     );
   }
 
   void genVariadicOperandIndexedGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get {4} operand at index from {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED MlirValue {0}{1}{3}Get{4}(MlirOperation op, intptr_t index);
+/* Get {3} operand at index from {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index);
 )";
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        operandNameCapitalized
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        operandNameCapitalized,    // {3}
+        dialect->getCppNamespace() // {4}
+
     );
   }
 
   void genVariadicOperandSetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Set {4} operands of {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED void {0}{1}{3}Set{4}(MlirOperation op, intptr_t count, MlirValue const *values);
+/* Set {3} operands of {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED void {0}{1}{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values);
 )";
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        operandNameCapitalized
+
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        operandNameCapitalized,    // {3}
+        dialect->getCppNamespace() // {4}
+
     );
   }
 
   void genAttributeGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get {4} attribute from {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED MlirAttribute {0}{1}{3}Get{4}(MlirOperation op);
+/* Get {3} attribute from {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED MlirAttribute {0}{1}{2}Get{3}(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
     assert(!attrNameCapitalized.empty() && "attrName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        attrNameCapitalized
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        attrNameCapitalized,       // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
   void genAttributeSetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Set {4} attribute of {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED void {0}{1}{3}Set{4}(MlirOperation op, MlirAttribute attr);
+/* Set {3} attribute of {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED void {0}{1}{2}Set{3}(MlirOperation op, MlirAttribute attr);
 )";
     assert(!className.empty() && "className must be set");
     assert(!attrNameCapitalized.empty() && "attrName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        attrNameCapitalized
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        attrNameCapitalized,       // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
   void genResultGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get {4} result from {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED MlirValue {0}{1}{3}Get{4}(MlirOperation op);
+/* Get {3} result from {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
     assert(!resultNameCapitalized.empty() && "resultName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        resultNameCapitalized
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        resultNameCapitalized,     // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
   void genVariadicResultCountGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get number of {4} results in {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED intptr_t {0}{1}{3}Get{4}Count(MlirOperation op);
+/* Get number of {3} results in {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED intptr_t {0}{1}{2}Get{3}Count(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
     assert(!resultNameCapitalized.empty() && "resultName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        resultNameCapitalized
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        resultNameCapitalized,     // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
   void genVariadicResultIndexedGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get {4} result at index from {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED MlirValue {0}{1}{3}Get{4}(MlirOperation op, intptr_t index);
+/* Get {3} result at index from {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index);
 )";
     assert(!className.empty() && "className must be set");
     assert(!resultNameCapitalized.empty() && "resultName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        resultNameCapitalized
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        resultNameCapitalized,     // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
   void genRegionGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get {4} region from {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED MlirRegion {0}{1}{3}Get{4}(MlirOperation op);
+/* Get {3} region from {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
     assert(!regionNameCapitalized.empty() && "regionName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        regionNameCapitalized
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        regionNameCapitalized,     // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
   void genVariadicRegionCountGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get number of {4} regions in {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED intptr_t {0}{1}{3}Get{4}Count(MlirOperation op);
+/* Get number of {3} regions in {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED intptr_t {0}{1}{2}Get{3}Count(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
     assert(!regionNameCapitalized.empty() && "regionName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        regionNameCapitalized
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        regionNameCapitalized,     // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
   void genVariadicRegionIndexedGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get {4} region at index from {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED MlirRegion {0}{1}{3}Get{4}(MlirOperation op, intptr_t index);
+/* Get {3} region at index from {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}(MlirOperation op, intptr_t index);
 )";
     assert(!className.empty() && "className must be set");
     assert(!regionNameCapitalized.empty() && "regionName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className,
-        regionNameCapitalized
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        regionNameCapitalized,     // {3}
+        dialect->getCppNamespace() // {4}
     );
   }
 
   void genOperationNameGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get operation name for {2}::{3} Operation. */
-MLIR_CAPI_EXPORTED MlirStringRef {0}{1}{3}GetOperationName(MlirOperation op);
+/* Get operation name for {3}::{2} Operation. */
+MLIR_CAPI_EXPORTED MlirStringRef {0}{1}{2}GetOperationName(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, dialect->getCppNamespace(), className
+        fmt,
+        FunctionPrefix,            // {0}
+        dialectNameCapitalized,    // {1}
+        className,                 // {2}
+        dialect->getCppNamespace() // {3}
     );
   }
 };
@@ -419,7 +485,13 @@ MlirOperation {0}{1}{2}Create(MlirContext ctx, MlirLocation location{3}) {{
 )";
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, params, operationName, assignments
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        params,                 // {3}
+        operationName,          // {4}
+        assignments             // {5}
     );
   }
 
@@ -432,7 +504,12 @@ MlirValue {0}{1}{2}Get{3}(MlirOperation op) {{
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, operandNameCapitalized, index
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        operandNameCapitalized, // {3}
+        index                   // {4}
     );
   }
 
@@ -445,7 +522,12 @@ void {0}{1}{2}Set{3}(MlirOperation op, MlirValue value) {{
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, operandNameCapitalized, index
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        operandNameCapitalized, // {3}
+        index                   // {4}
     );
   }
 
@@ -460,7 +542,12 @@ intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, operandNameCapitalized, startIdx
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        operandNameCapitalized, // {3}
+        startIdx                // {4}
     );
   }
 
@@ -473,7 +560,12 @@ MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, operandNameCapitalized, startIdx
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        operandNameCapitalized, // {3}
+        startIdx                // {4}
     );
   }
 
@@ -517,7 +609,12 @@ void {0}{1}{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values) 
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, operandNameCapitalized, startIdx
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        operandNameCapitalized, // {3}
+        startIdx                // {4}
     );
   }
 
@@ -530,7 +627,12 @@ MlirAttribute {0}{1}{2}Get{3}(MlirOperation op) {{
     assert(!className.empty() && "className must be set");
     assert(!attrNameCapitalized.empty() && "attrName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, attrNameCapitalized, attrName
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        attrNameCapitalized,    // {3}
+        attrName                // {4}
     );
   }
 
@@ -543,7 +645,12 @@ void {0}{1}{2}Set{3}(MlirOperation op, MlirAttribute attr) {{
     assert(!className.empty() && "className must be set");
     assert(!attrNameCapitalized.empty() && "attrName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, attrNameCapitalized, attrName
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        attrNameCapitalized,    // {3}
+        attrName                // {4}
     );
   }
 
@@ -556,7 +663,12 @@ MlirValue {0}{1}{2}Get{3}(MlirOperation op) {{
     assert(!className.empty() && "className must be set");
     assert(!resultNameCapitalized.empty() && "resultName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, resultNameCapitalized, index
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        resultNameCapitalized,  // {3}
+        index                   // {4}
     );
   }
 
@@ -571,7 +683,12 @@ intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
     assert(!className.empty() && "className must be set");
     assert(!resultNameCapitalized.empty() && "resultName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, resultNameCapitalized, startIdx
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        resultNameCapitalized,  // {3}
+        startIdx                // {4}
     );
   }
 
@@ -584,7 +701,12 @@ MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
     assert(!className.empty() && "className must be set");
     assert(!resultNameCapitalized.empty() && "resultName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, resultNameCapitalized, startIdx
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        resultNameCapitalized,  // {3}
+        startIdx                // {4}
     );
   }
 
@@ -597,7 +719,12 @@ MlirRegion {0}{1}{2}Get{3}(MlirOperation op) {{
     assert(!className.empty() && "className must be set");
     assert(!regionNameCapitalized.empty() && "regionName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, regionNameCapitalized, index
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        regionNameCapitalized,  // {3}
+        index                   // {4}
     );
   }
 
@@ -612,7 +739,12 @@ intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
     assert(!className.empty() && "className must be set");
     assert(!regionNameCapitalized.empty() && "regionName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, regionNameCapitalized, startIdx
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        regionNameCapitalized,  // {3}
+        startIdx                // {4}
     );
   }
 
@@ -625,7 +757,12 @@ MlirRegion {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
     assert(!className.empty() && "className must be set");
     assert(!regionNameCapitalized.empty() && "regionName must be set");
     os << llvm::formatv(
-        fmt, FunctionPrefix, dialectNameCapitalized, className, regionNameCapitalized, startIdx
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        regionNameCapitalized,  // {3}
+        startIdx                // {4}
     );
   }
 
@@ -636,7 +773,12 @@ MlirStringRef {0}{1}{2}GetOperationName(MlirOperation op) {{
 }
 )";
     assert(!className.empty() && "className must be set");
-    os << llvm::formatv(fmt, FunctionPrefix, dialectNameCapitalized, className);
+    os << llvm::formatv(
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className               // {2}
+    );
   }
 };
 
