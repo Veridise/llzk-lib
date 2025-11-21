@@ -135,8 +135,7 @@ TEST_F({0}{1}LinkTests, {2}_{3}) {{
 
   /// @brief Generate the test class prologue
   virtual void genTestClassPrologue() const {
-    static constexpr char fmt[] = R"(#include "llzk-c/Dialect/{0}.h"
-
+    static constexpr char fmt[] = R"(
 #include <mlir-c/Builtin{1}s.h>
 #include <mlir-c/IR.h>
 

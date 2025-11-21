@@ -38,9 +38,7 @@ static llvm::cl::OptionCategory dialectTestGenCat("Options for -gen-dialect-capi
 
 namespace test_templates {
 
-static constexpr char DialectTestTemplate[] =
-    R"(#include "llzk-c/Dialect/{0}.h"
-
+static constexpr char DialectTestTemplate[] = R"(
 #include <mlir-c/IR.h>
 
 class {0}DialectLinkTests : public CAPITest {{};
