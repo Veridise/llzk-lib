@@ -80,26 +80,27 @@ struct OpTestGenerator : public Generator {
         return;
       }
       std::string capiParamType = capiParamTypeOpt.value();
+      std::string name = param.name;
 
       // Generate dummy value creation for each parameter
       if (capiParamType == "MlirValue") {
-        dummyParams += "    auto " + param.name + " = mlirOperationGetResult(testOp, 0);\n";
+        dummyParams += "    auto " + name + " = mlirOperationGetResult(testOp, 0);\n";
       } else if (capiParamType == "MlirType") {
-        dummyParams += "    auto " + param.name + " = mlirIndexTypeGet(context);\n";
+        dummyParams += "    auto " + name + " = mlirIndexTypeGet(context);\n";
       } else if (capiParamType == "MlirAttribute") {
         dummyParams +=
-            "    auto " + param.name + " = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);\n";
+            "    auto " + name + " = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);\n";
       } else if (capiParamType == "intptr_t" || capiParamType == "int" ||
                  capiParamType == "int64_t") {
-        dummyParams += "    " + capiParamType + " " + param.name + " = 0;\n";
+        dummyParams += "    " + capiParamType + " " + name + " = 0;\n";
       } else if (capiParamType == "bool") {
-        dummyParams += "    bool " + param.name + " = false;\n";
+        dummyParams += "    bool " + name + " = false;\n";
       } else {
         // For unknown types, create a default-initialized variable
-        dummyParams += "    " + capiParamType + " " + param.name + " = {};\n";
+        dummyParams += "    " + capiParamType + " " + name + " = {};\n";
       }
 
-      paramList += ", " + param.name;
+      paramList += ", " + name;
     }
 
     std::string capitalizedMethodName = toPascalCase(method.methodName);
@@ -119,8 +120,15 @@ TEST_F({0}OpLinkTests, {1}_{2}_{3}) {{
 )";
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
-        fmt, dialectNameCapitalized, FunctionPrefix, className, capitalizedMethodName, testPrefix,
-        isACheck, dummyParams, paramList
+        fmt,
+        dialectNameCapitalized, // {0}
+        FunctionPrefix,         // {1}
+        className,              // {2}
+        capitalizedMethodName,  // {3}
+        testPrefix,             // {4}
+        isACheck,               // {5}
+        dummyParams,            // {6}
+        paramList               // {7}
     );
   }
 
@@ -571,6 +579,8 @@ private:
 
     // Add operands
     for (const auto &operand : op.getOperands()) {
+      // per `generateParamList()` only need to create something additional in case
+      // of variadic operand, otherwise `dummyValue` is used directly.
       if (operand.isVariadic()) {
         paramsStream << llvm::formatv(
             "    MlirValue {0}Values[] = {{dummyValue};\n"
@@ -582,9 +592,14 @@ private:
 
     // Add attributes
     for (const auto &namedAttr : op.getAttributes()) {
-      paramsStream << llvm::formatv(
-          "    auto {0}Attr = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);\n", namedAttr.name
-      );
+      std::string rhs;
+      std::optional<std::string> attrType = tryCppTypeToCapiType(namedAttr.attr.getStorageType());
+      if (attrType.has_value() && attrType.value() == "MlirIdentifier") {
+        rhs = "mlirOperationGetName(testOp)";
+      } else {
+        rhs = "mlirIntegerAttrGet(mlirIndexTypeGet(context), 0)";
+      }
+      paramsStream << llvm::formatv("    auto {0}Attr = {1};\n", namedAttr.name, rhs);
     }
 
     // Add result types if not inferred

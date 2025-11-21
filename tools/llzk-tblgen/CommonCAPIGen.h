@@ -192,14 +192,23 @@ private:
   clang::Lexer *lexer = nullptr;
 };
 
+/// @brief Structure to represent a parameter in a parsed method signature from
+/// an `extraClassDeclaration`
 struct MethodParameter {
   /// The C++ type of the parameter
   std::string type;
   /// The name of the parameter
   std::string name;
+
+  /// @brief Construct a new Method Parameter object
+  /// @param paramType
+  /// @param paramName
+  MethodParameter(const std::string &paramType, const std::string &paramName)
+      : type(mlir::StringRef(paramType).trim().str()),
+        name(mlir::StringRef(paramName).trim().str()) {}
 };
 
-/// @brief Structure to represent a parsed method signature from extraClassDeclaration
+/// @brief Structure to represent a parsed method signature from an `extraClassDeclaration`
 ///
 /// This structure holds information extracted from parsing C++ method declarations.
 /// It is used to generate corresponding C API wrapper functions.
@@ -218,8 +227,8 @@ struct ExtraMethod {
   std::vector<MethodParameter> parameters;
 };
 
-/// @brief Parse method declarations from extraClassDeclaration using Clang's Lexer
-/// @param extraDecl The C++ code from extraClassDeclaration
+/// @brief Parse method declarations from an `extraClassDeclaration` using Clang's Lexer
+/// @param extraDecl The C++ code from an `extraClassDeclaration`
 /// @return Vector of parsed method signatures
 ///
 /// This function parses C++ method declarations to extract signatures that can be
@@ -284,7 +293,7 @@ struct Generator {
     this->className = cppClassName;
   }
 
-  /// @brief Generate code for extra methods from extraClassDeclaration
+  /// @brief Generate code for extra methods from an `extraClassDeclaration`
   /// @param extraDecl The extra class declaration string
   virtual void genExtraMethods(mlir::StringRef extraDecl) const {
     if (extraDecl.empty()) {
@@ -340,7 +349,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{4}(Mlir{1});
     );
   }
 
-  /// @brief Generate declaration for an extra method from extraClassDeclaration
+  /// @brief Generate declaration for an extra method from an `extraClassDeclaration`
   virtual void genExtraMethod(const ExtraMethod &method) const override {
     // Convert return type to C API type, skip if it can't be converted
     std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
@@ -393,7 +402,7 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
     os << llvm::formatv(fmt, FunctionPrefix, kind, dialectNameCapitalized, className);
   }
 
-  /// @brief Generate implementation for an extra method from extraClassDeclaration
+  /// @brief Generate implementation for an extra method from an `extraClassDeclaration`
   virtual void genExtraMethod(const ExtraMethod &method) const override {
     // Convert return type to C API type, skip if it can't be converted
     std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);

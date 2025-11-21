@@ -233,7 +233,7 @@ MLIR_CAPI_EXPORTED MlirRegion {0}{1}{3}Get{4}(MlirOperation op, intptr_t index);
     );
   }
 
-  void GenOperationNameGetterDecl() const {
+  void genOperationNameGetterDecl() const {
     static constexpr char fmt[] = R"(
 /* Get operation name for {2}::{3} Operation. */
 MLIR_CAPI_EXPORTED MlirStringRef {0}{1}{3}GetOperationName(MlirOperation op);
@@ -265,7 +265,8 @@ static std::string generateCAPIParams(const Operator &op) {
 
   // Add attributes
   for (const auto &namedAttr : op.getAttributes()) {
-    oss << llvm::formatv(", MlirAttribute {0}", namedAttr.name).str();
+    std::optional<std::string> attrType = tryCppTypeToCapiType(namedAttr.attr.getStorageType());
+    oss << llvm::formatv(", {0} {1}", attrType.value_or("MlirAttribute"), namedAttr.name).str();
   }
 
   // Add result types if not inferred
@@ -388,7 +389,7 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &os)
 
     // Generate operation name getter
     if (GenOpNameGetter) {
-      generator.GenOperationNameGetterDecl();
+      generator.genOperationNameGetterDecl();
     }
 
     // Generate extra class method wrappers
@@ -663,8 +664,18 @@ static std::string generateCAPIAssignments(const Operator &op) {
     oss << "  MlirNamedAttribute attributes[] = {\n";
     for (const auto &namedAttr : op.getAttributes()) {
       std::string name = namedAttr.name.str();
-      oss << "    { mlirIdentifierGet(ctx, mlirStringRefCreateFromCString(\"" + name + "\")), " +
-                 name + " },\n";
+      oss << "    mlirNamedAttributeGet(mlirIdentifierGet(ctx, mlirStringRefCreateFromCString(\""
+          << name << "\")), ";
+      // The second parameter to `mlirNamedAttributeGet()` must be an "MlirAttribute". However, if
+      // it ends up as "MlirIdentifier", a reinterpret cast is needed. These C structs have the same
+      // layout and the C++ mlir::StringAttr is a subclass of mlir::Attribute so the cast is safe.
+      std::optional<std::string> attrType = tryCppTypeToCapiType(namedAttr.attr.getStorageType());
+      if (attrType.has_value() && attrType.value() == "MlirIdentifier") {
+        oss << "reinterpret_cast<MlirAttribute&>(" << name << ")";
+      } else {
+        oss << name;
+      }
+      oss << " ),\n";
     }
     oss << "  };\n";
     oss << llvm::formatv(

@@ -225,7 +225,7 @@ static inline std::string getDocumentation(
     } else if (!curr.is(tok::unknown)) {
       // Stop looking backwards when we hit a non-comment, non-whitespace token
       // that could be part of another declaration
-      if (curr.is(tok::semi) || curr.is(tok::r_brace) || curr.is(tok::l_brace)) {
+      if (curr.isOneOf(tok::semi, tok::r_brace, tok::l_brace)) {
         break;
       }
       if (curr.is(tok::raw_identifier) && isAccessModifier(curr.getRawIdentifier())) {
@@ -327,7 +327,7 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
         for (size_t j = i; j > 0; --j) {
           Token curr = tokens[j - 1];
           // Semicolon or right brace indicates lookback has reached the end of a prior declaration.
-          if (curr.is(tok::semi) || curr.is(tok::r_brace)) {
+          if (curr.isOneOf(tok::semi, tok::r_brace)) {
             returnTypeStart = j;
             break;
           }
@@ -441,20 +441,24 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
 
               // Parse parameters between '(' and ')'
               // Parameters follow the pattern: type name [, type name ...]
-              std::vector<Token> paramTokens;
-              for (size_t k = i + 2; k < j; ++k) {
-                if (k >= tokenCount) {
-                  break;
+              const std::vector<Token> paramTokens = [&tokens, i, j, tokenCount]() {
+                std::vector<Token> temp;
+                for (size_t k = i + 2; k < j; ++k) {
+                  if (k >= tokenCount) {
+                    break;
+                  }
+                  if (!tokens[k].is(tok::comment)) {
+                    temp.push_back(tokens[k]);
+                  }
                 }
-                if (!tokens[k].is(tok::comment)) {
-                  paramTokens.push_back(tokens[k]);
-                }
-              }
+                return temp;
+              }();
+              const size_t paramTokenCount = paramTokens.size();
 
               // Check if we have actual parameters
-              if (!paramTokens.empty()) {
+              if (paramTokenCount > 0) {
                 // Check if it's just "void"
-                if (paramTokens.size() == 1) {
+                if (paramTokenCount == 1) {
                   std::string paramToken(
                       sourceMgr.getCharacterData(paramTokens[0].getLocation()),
                       paramTokens[0].getLength()
@@ -473,67 +477,56 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
                 std::string currentParamName;
                 bool inDefaultValue = false;
 
-                for (size_t k = 0; k < paramTokens.size(); ++k) {
-                  std::string tokenText(
-                      sourceMgr.getCharacterData(paramTokens[k].getLocation()),
-                      paramTokens[k].getLength()
-                  );
-
+                for (size_t k = 0; k < paramTokenCount; ++k) {
+                  // Check for end of current parameter
+                  if (paramTokens[k].is(tok::comma)) {
+                    // Add the current parameter if valid
+                    if (!currentParamType.empty() && !currentParamName.empty()) {
+                      parameters.push_back(MethodParameter(currentParamType, currentParamName));
+                    }
+                    currentParamType.clear();
+                    currentParamName.clear();
+                    inDefaultValue = false;
+                    continue;
+                  }
+                  // Skip tokens that are part of the default value
+                  if (inDefaultValue) {
+                    continue;
+                  }
                   // Check for '=' which indicates start of default value
                   if (paramTokens[k].is(tok::equal)) {
                     inDefaultValue = true;
                     continue;
                   }
 
-                  if (paramTokens[k].is(tok::comma)) {
-                    // End of current parameter
-                    if (!currentParamType.empty() && !currentParamName.empty()) {
-                      MethodParameter param;
-                      param.type = StringRef(currentParamType).trim().str();
-                      param.name = StringRef(currentParamName).trim().str();
-                      parameters.push_back(param);
-                    }
-                    currentParamType.clear();
-                    currentParamName.clear();
-                    inDefaultValue = false;
-                  } else if (inDefaultValue) {
-                    // Skip tokens that are part of the default value
-                    continue;
-                  } else if (paramTokens[k].is(tok::raw_identifier)) {
-                    // Could be part of type or the parameter name
-                    // Simple heuristic: last identifier before comma, '=' or end is the name
-                    if (k + 1 < paramTokens.size() &&
-                        (paramTokens[k + 1].is(tok::comma) || paramTokens[k + 1].is(tok::equal) ||
-                         k + 1 == paramTokens.size())) {
-                      // This is the parameter name
+                  std::string tokenText(
+                      sourceMgr.getCharacterData(paramTokens[k].getLocation()),
+                      paramTokens[k].getLength()
+                  );
+
+                  // Identifier token could be part of the type or the parameter name.
+                  // Simple heuristic: last identifier before comma, equal, or end is the name
+                  if (paramTokens[k].is(tok::raw_identifier)) {
+                    if (k + 1 == paramTokenCount ||
+                        (k + 1 < paramTokenCount &&
+                         paramTokens[k + 1].isOneOf(tok::comma, tok::equal))) {
                       currentParamName = tokenText;
-                    } else if (k + 1 == paramTokens.size()) {
-                      // Last token, must be parameter name
-                      currentParamName = tokenText;
-                    } else {
-                      // Part of the type
-                      if (!currentParamType.empty()) {
-                        currentParamType += " ";
-                      }
-                      currentParamType += tokenText;
+                      continue;
                     }
-                  } else {
-                    // Other tokens (keywords, ::, *, &, etc.) - part of type
-                    if (!currentParamType.empty() && !StringRef(currentParamType).ends_with("::") &&
-                        tokenText != "::" && !tokenText.starts_with("::") && tokenText != "*" &&
-                        tokenText != "&") {
-                      currentParamType += " ";
-                    }
-                    currentParamType += tokenText;
                   }
+
+                  // Other identifiers and other tokens (keywords, ::, *, &, etc.) are part of type.
+                  if (!currentParamType.empty() && tokenText != "*" && tokenText != "&" &&
+                      tokenText != "::" && !tokenText.starts_with("::") &&
+                      !StringRef(currentParamType).ends_with("::")) {
+                    currentParamType += " ";
+                  }
+                  currentParamType += tokenText;
                 }
 
-                // Add the last parameter
+                // Add the last parameter if valid
                 if (!currentParamType.empty() && !currentParamName.empty()) {
-                  MethodParameter param;
-                  param.type = StringRef(currentParamType).trim().str();
-                  param.name = StringRef(currentParamName).trim().str();
-                  parameters.push_back(param);
+                  parameters.push_back(MethodParameter(currentParamType, currentParamName));
                 }
               }
 
@@ -552,7 +545,7 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
       size_t endIdx = closeParenIdx + 1;
       while (endIdx < tokenCount) {
         Token curr = tokens[endIdx];
-        if (curr.is(tok::semi) || curr.is(tok::l_brace)) {
+        if (curr.isOneOf(tok::semi, tok::l_brace)) {
           break;
         }
         if (curr.is(tok::raw_identifier) && curr.getRawIdentifier() == "const") {
@@ -695,9 +688,9 @@ std::optional<std::string> tryCppTypeToCapiType(StringRef cppType, bool reportUn
   if (cppType.ends_with("Attr")) {
     return std::make_optional("MlirAttribute");
   }
-  // if (cppType.ends_with("Op")) {
-  //   return std::make_optional("MlirOperation");
-  // }
+  if (cppType.ends_with("Op")) {
+    return std::make_optional("MlirOperation");
+  }
 
   // Otherwise, not sure how to convert it
   if (reportUnmatched) {
