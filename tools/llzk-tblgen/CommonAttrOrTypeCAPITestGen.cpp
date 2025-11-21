@@ -60,7 +60,7 @@ std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &def, bool i
     }
   }
 
-  return paramsStream.str();
+  return paramsBuffer;
 }
 
 /// Generate parameter list for Get builder call
@@ -70,15 +70,13 @@ std::string generateParamListForAttrOrTypeGet(const AttrOrTypeDef &def) {
   llvm::raw_string_ostream paramsStream(paramsBuffer);
 
   for (const auto &param : def.getParameters()) {
-    StringRef cppType = param.getCppType();
     std::string pName = param.getName().str();
-
-    if (isArrayRefType(cppType)) {
+    if (isArrayRefType(param.getCppType())) {
       paramsStream << llvm::formatv(", {0}Count, {0}", pName);
     } else {
       paramsStream << llvm::formatv(", {0}", pName);
     }
   }
 
-  return paramsStream.str();
+  return paramsBuffer;
 }

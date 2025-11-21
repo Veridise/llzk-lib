@@ -105,8 +105,6 @@ struct OpTestGenerator : public Generator {
       paramListStream << ", " << name;
     }
 
-    std::string capitalizedMethodName = toPascalCase(method.methodName);
-
     static constexpr char fmt[] = R"(
 // This test ensures {4}{2}{3} links properly.
 TEST_F({1}OpLinkTests, {0}_{2}_{3}) {{
@@ -123,14 +121,14 @@ TEST_F({1}OpLinkTests, {0}_{2}_{3}) {{
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,          // {0}
-        dialectNameCapitalized,  // {1}
-        className,               // {2}
-        capitalizedMethodName,   // {3}
-        testPrefix,              // {4}
-        isACheck,                // {5}
-        dummyParamsStream.str(), // {6}
-        paramListStream.str()    // {7}
+        FunctionPrefix,                  // {0}
+        dialectNameCapitalized,          // {1}
+        className,                       // {2}
+        toPascalCase(method.methodName), // {3}
+        testPrefix,                      // {4}
+        isACheck,                        // {5}
+        dummyParams,                     // {6}
+        paramList                        // {7}
     );
   }
 
@@ -714,7 +712,7 @@ private:
       }
     }
 
-    return paramsStream.str();
+    return paramsBuffer;
   }
 
   /// @brief Generate parameter list for create function call
@@ -765,7 +763,7 @@ private:
       }
     }
 
-    return paramsStream.str();
+    return paramsBuffer;
   }
 };
 

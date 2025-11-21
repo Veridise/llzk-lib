@@ -129,13 +129,13 @@ TEST_F({2}{1}LinkTests, {3}_{4}) {{
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,          // {0}
-        kind,                    // {1}
-        dialectNameCapitalized,  // {2}
-        className,               // {3}
-        capitalizedMethodName,   // {4}
-        dummyParamsStream.str(), // {5}
-        paramListStream.str()    // {6}
+        FunctionPrefix,         // {0}
+        kind,                   // {1}
+        dialectNameCapitalized, // {2}
+        className,              // {3}
+        capitalizedMethodName,  // {4}
+        dummyParams,            // {5}
+        paramList               // {6}
     );
   }
 

@@ -75,7 +75,7 @@ inline std::string toPascalCase(mlir::StringRef str) {
     }
   }
 
-  return resultStream.str();
+  return result;
 }
 
 /// @brief Check if a C++ type is a known primitive type
@@ -396,7 +396,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{3}(Mlir{1});
         dialectNameCapitalized,          // {2}
         className,                       // {3}
         toPascalCase(method.methodName), // {4}
-        paramListStream.str()            // {5}
+        paramList                        // {5}
     );
   }
 };

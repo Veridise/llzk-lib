@@ -107,7 +107,7 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{2}{3}Get(MlirContext ctx{4});
         kind,                      // {1}
         dialectNameCapitalized,    // {2}
         className,                 // {3}
-        paramListStream.str(),     // {4}
+        paramListBuffer,           // {4}
         dialect->getCppNamespace() // {5}
     );
   }
