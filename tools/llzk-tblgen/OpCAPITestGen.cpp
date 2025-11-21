@@ -411,28 +411,6 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
     }
   }
 
-  /// @brief Generate operation name getter test
-  void genOperationNameGetterTest() const {
-    static constexpr char OperationNameGetterTest[] = R"(
-TEST_F({1}OperationLinkTests, {0}_{2}_GetOperationName) {{
-  auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}GetOperationName(testOp);
-  }
-  
-  mlirOperationDestroy(testOp);
-}
-)";
-    assert(!className.empty() && "className must be set");
-    os << llvm::formatv(
-        OperationNameGetterTest,
-        FunctionPrefix,         // {0}
-        dialectNameCapitalized, // {1}
-        className               // {2}
-    );
-  }
-
   /// @brief Generate all tests for a complete operation record
   /// @param op The operation definition
   void genCompleteRecord(const Operator &op) {
@@ -450,9 +428,6 @@ TEST_F({1}OperationLinkTests, {0}_{2}_GetOperationName) {{
     }
     if (GenOpCreate && !op.skipDefaultBuilders()) {
       this->genCreateOpTest(op);
-    }
-    if (GenOpNameGetter) {
-      this->genOperationNameGetterTest();
     }
     if (GenOpOperandGetters || GenOpOperandSetters) {
       this->genOperandTests(op);

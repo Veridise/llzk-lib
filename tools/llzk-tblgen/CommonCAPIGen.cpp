@@ -54,11 +54,6 @@ llvm::cl::opt<bool> GenOpCreate(
     llvm::cl::cat(OpGenCat)
 );
 
-llvm::cl::opt<bool> GenOpNameGetter(
-    "gen-op-name-getter", llvm::cl::desc("Generate operation name getter"), llvm::cl::init(true),
-    llvm::cl::cat(OpGenCat)
-);
-
 llvm::cl::opt<bool> GenOpOperandGetters(
     "gen-operand-getters", llvm::cl::desc("Generate operand getters for operations"),
     llvm::cl::init(true), llvm::cl::cat(OpGenCat)

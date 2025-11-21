@@ -38,7 +38,6 @@ extern llvm::cl::opt<std::string> FunctionPrefix;
 // Shared flags for controlling code generation
 extern llvm::cl::opt<bool> GenIsA;
 extern llvm::cl::opt<bool> GenOpCreate;
-extern llvm::cl::opt<bool> GenOpNameGetter;
 extern llvm::cl::opt<bool> GenOpOperandGetters;
 extern llvm::cl::opt<bool> GenOpOperandSetters;
 extern llvm::cl::opt<bool> GenOpAttributeGetters;

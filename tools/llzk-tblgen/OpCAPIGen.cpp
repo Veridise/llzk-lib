@@ -294,21 +294,6 @@ MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}(MlirOperation op, intptr_t index);
         dialect->getCppNamespace() // {4}
     );
   }
-
-  void genOperationNameGetterDecl() const {
-    static constexpr char fmt[] = R"(
-/* Get operation name for {3}::{2} Operation. */
-MLIR_CAPI_EXPORTED MlirStringRef {0}{1}{2}GetOperationName(MlirOperation op);
-)";
-    assert(!className.empty() && "className must be set");
-    os << llvm::formatv(
-        fmt,
-        FunctionPrefix,            // {0}
-        dialectNameCapitalized,    // {1}
-        className,                 // {2}
-        dialect->getCppNamespace() // {3}
-    );
-  }
 };
 
 /// Generate C API parameter list from operation arguments
@@ -451,11 +436,6 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &os)
           generator.genRegionGetterDecl();
         }
       }
-    }
-
-    // Generate operation name getter
-    if (GenOpNameGetter) {
-      generator.genOperationNameGetterDecl();
     }
 
     // Generate extra class method wrappers
@@ -765,21 +745,6 @@ MlirRegion {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
         startIdx                // {4}
     );
   }
-
-  void GenOperationNameGetterImpl() const {
-    static constexpr char fmt[] = R"(
-MlirStringRef {0}{1}{2}GetOperationName(MlirOperation op) {{
-  return wrap(mlir::unwrap_cast<{2}>(op).getOperationName());
-}
-)";
-    assert(!className.empty() && "className must be set");
-    os << llvm::formatv(
-        fmt,
-        FunctionPrefix,         // {0}
-        dialectNameCapitalized, // {1}
-        className               // {2}
-    );
-  }
 };
 
 /// Generate C API parameter assignments for operation creation
@@ -945,11 +910,6 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
           generator.genRegionGetterImpl(i);
         }
       }
-    }
-
-    // Generate operation name getter implementation
-    if (GenOpNameGetter) {
-      generator.GenOperationNameGetterImpl();
     }
 
     // Generate extra class method implementations
