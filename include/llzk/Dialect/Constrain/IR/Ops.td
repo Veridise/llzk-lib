@@ -48,6 +48,7 @@ def EmitEqualityOp
   }];
 
   let extraClassDeclaration = [{
+  private:
     static ::mlir::Type inferRHS(::mlir::Type lhsType);
 
     static ::mlir::ParseResult parseInferredOrParsedType(::mlir::OpAsmParser &parser,

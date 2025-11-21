@@ -100,8 +100,9 @@ TEST_F(TypingTest, is_more_concrete_unification) {
 }
 
 TEST_F(TypingTest, force_int_attr_type) {
+  auto location = mlirLocationUnknownGet(context);
   auto in_attr = mlirIntegerAttrGet(mlirIntegerTypeGet(context, 64), 0);
-  auto out_attr = llzkForceIntAttrType(in_attr);
+  auto out_attr = llzkForceIntAttrType(in_attr, location);
   EXPECT_TRUE(!mlirAttributeEqual(in_attr, out_attr));
 }
 

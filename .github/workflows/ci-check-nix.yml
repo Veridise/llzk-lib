@@ -1,4 +1,4 @@
-name: CI
+name: Check nix
 on:
   push:
     branches: [ main ]
@@ -6,8 +6,11 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        cmakeBuildType: [debug, release]
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,9 +31,5 @@ jobs:
         with:
           name: veridise-public
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
-      - name: Build and check install (release)
-        run: nix --print-build-logs build '.#checks.x86_64-linux.llzkInstallCheckRelease'
-      - name: Build and check install (debug)
-        run: nix --print-build-logs build '.#checks.x86_64-linux.llzkInstallCheckDebug'
-      - name: Build docs
-        run: nix --option sandbox false --print-build-logs build '.#docs'
+      - name: Build and check install (${{ matrix.cmakeBuildType }})
+        run: nix --print-build-logs build '.#checks.x86_64-linux.llzk-installcheck-${{ matrix.cmakeBuildType }}'

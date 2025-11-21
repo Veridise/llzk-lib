@@ -90,7 +90,8 @@ MLIR_CAPI_EXPORTED bool llzkIsMoreConcreteUnification(
 );
 
 /// Convert any IntegerAttr with a type other than IndexType to use IndexType.
-MLIR_CAPI_EXPORTED MlirAttribute llzkForceIntAttrType(MlirAttribute attr);
+/// The location is used for error reporting if the conversion is not possible.
+MLIR_CAPI_EXPORTED MlirAttribute llzkForceIntAttrType(MlirAttribute attr, MlirLocation loc);
 
 #ifdef __cplusplus
 }

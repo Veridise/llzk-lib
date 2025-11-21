@@ -14,10 +14,6 @@
 
 #include <mlir/Interfaces/MemorySlotInterfaces.h>
 
-// forward-declare ops
-#define GET_OP_FWD_DEFINES
-#include "llzk/Dialect/Array/IR/Ops.h.inc"
-
 // Include TableGen'd declarations
 #define GET_TYPEDEF_CLASSES
 #include "llzk/Dialect/Array/IR/Types.h.inc"
@@ -30,7 +26,7 @@ mlir::LogicalResult computeDimsFromShape(
 );
 
 mlir::LogicalResult computeShapeFromDims(
-    EmitErrorFn emitError, mlir::MLIRContext *ctx, llvm::ArrayRef<mlir::Attribute> dimensionSizes,
+    EmitErrorFn emitError, llvm::ArrayRef<mlir::Attribute> dimensionSizes,
     llvm::SmallVector<int64_t> &shape
 );
 

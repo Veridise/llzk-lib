@@ -1,0 +1,2 @@
+changed:
+  - Simplify the implementation of FeltConstAttr::getValue() to directly return the stored APInt without additional calls

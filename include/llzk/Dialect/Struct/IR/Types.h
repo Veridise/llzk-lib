@@ -13,8 +13,7 @@
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/TypeHelper.h"
 
-// forward-declare ops
-#define GET_OP_FWD_DEFINES
+// Forward-declare ops since StructDefOp is used within type definitions
 #include "llzk/Dialect/Struct/IR/Ops.h.inc"
 
 // Include TableGen'd declarations

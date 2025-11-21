@@ -8,9 +8,18 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Undef/IR/Dialect.h"
+#include "llzk/Dialect/Undef/IR/Ops.h"
 
 #include "llzk-c/Dialect/Undef.h"
 
 #include <mlir/CAPI/Registration.h>
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Undef, llzk__undef, llzk::undef::UndefDialect)
+
+//===----------------------------------------------------------------------===//
+// UndefOp
+//===----------------------------------------------------------------------===//
+
+bool llzkOperationIsAUndefOp(MlirOperation op) {
+  return llvm::isa<llzk::undef::UndefOp>(unwrap(op));
+}

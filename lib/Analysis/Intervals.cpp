@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/Intervals.h"
-#include "llzk/Util/APIntHelper.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 
 using namespace mlir;
@@ -18,30 +18,28 @@ namespace llzk {
 /* UnreducedInterval */
 
 Interval UnreducedInterval::reduce(const Field &field) const {
-  if (safeGt(a, b)) {
+  if (a > b) {
     return Interval::Empty(field);
   }
-  if (safeGe(width(), field.prime())) {
+  if (width() >= field.prime()) {
     return Interval::Entire(field);
   }
   auto lhs = field.reduce(a), rhs = field.reduce(b);
-  // lhs and rhs are now guaranteed to have the same bitwidth, so we can use
-  // built-in functions.
-  if ((rhs - lhs).isZero()) {
+  if (rhs == lhs) {
     return Interval::Degenerate(field, lhs);
   }
 
   const auto &half = field.half();
-  if (lhs.ule(rhs)) {
-    if (lhs.ult(half) && rhs.ult(half)) {
+  if (lhs <= rhs) {
+    if (lhs < half && rhs < half) {
       return Interval::TypeA(field, lhs, rhs);
-    } else if (lhs.ult(half)) {
+    } else if (lhs < half) {
       return Interval::TypeC(field, lhs, rhs);
     } else {
       return Interval::TypeB(field, lhs, rhs);
     }
   } else {
-    if (lhs.uge(half) && rhs.ult(half)) {
+    if (lhs >= half && rhs < half) {
       return Interval::TypeF(field, lhs, rhs);
     } else {
       return Interval::Entire(field);
@@ -51,44 +49,42 @@ Interval UnreducedInterval::reduce(const Field &field) const {
 
 UnreducedInterval UnreducedInterval::intersect(const UnreducedInterval &rhs) const {
   const auto &lhs = *this;
-  return UnreducedInterval(safeMax(lhs.a, rhs.a), safeMin(lhs.b, rhs.b));
+  return UnreducedInterval(std::max(lhs.a, rhs.a), std::min(lhs.b, rhs.b));
 }
 
 UnreducedInterval UnreducedInterval::doUnion(const UnreducedInterval &rhs) const {
   const auto &lhs = *this;
-  return UnreducedInterval(safeMin(lhs.a, rhs.a), safeMax(lhs.b, rhs.b));
+  return UnreducedInterval(std::min(lhs.a, rhs.a), std::max(lhs.b, rhs.b));
 }
 
 UnreducedInterval UnreducedInterval::computeLTPart(const UnreducedInterval &rhs) const {
   if (isEmpty() || rhs.isEmpty()) {
     return *this;
   }
-  auto one = llvm::APSInt(llvm::APInt(a.getBitWidth(), 1));
-  auto bound = expandingSub(rhs.b, one);
-  return UnreducedInterval(a, safeMin(b, bound));
+  DynamicAPInt bound = rhs.b - 1;
+  return UnreducedInterval(a, std::min(b, bound));
 }
 
 UnreducedInterval UnreducedInterval::computeLEPart(const UnreducedInterval &rhs) const {
   if (isEmpty() || rhs.isEmpty()) {
     return *this;
   }
-  return UnreducedInterval(a, safeMin(b, rhs.b));
+  return UnreducedInterval(a, std::min(b, rhs.b));
 }
 
 UnreducedInterval UnreducedInterval::computeGTPart(const UnreducedInterval &rhs) const {
   if (isEmpty() || rhs.isEmpty()) {
     return *this;
   }
-  auto one = llvm::APSInt(llvm::APInt(a.getBitWidth(), 1));
-  auto bound = expandingAdd(rhs.a, one);
-  return UnreducedInterval(safeMax(a, bound), b);
+  DynamicAPInt bound = rhs.a + 1;
+  return UnreducedInterval(std::max(a, bound), b);
 }
 
 UnreducedInterval UnreducedInterval::computeGEPart(const UnreducedInterval &rhs) const {
   if (isEmpty() || rhs.isEmpty()) {
     return *this;
   }
-  return UnreducedInterval(safeMax(a, rhs.a), b);
+  return UnreducedInterval(std::max(a, rhs.a), b);
 }
 
 UnreducedInterval UnreducedInterval::operator-() const {
@@ -99,7 +95,7 @@ UnreducedInterval UnreducedInterval::operator-() const {
 }
 
 UnreducedInterval operator+(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
-  llvm::APSInt low = expandingAdd(lhs.a, rhs.a), high = expandingAdd(lhs.b, rhs.b);
+  DynamicAPInt low = lhs.a + rhs.a, high = lhs.b + rhs.b;
   return UnreducedInterval(low, high);
 }
 
@@ -108,45 +104,43 @@ UnreducedInterval operator-(const UnreducedInterval &lhs, const UnreducedInterva
 }
 
 UnreducedInterval operator*(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
-  auto v1 = expandingMul(lhs.a, rhs.a);
-  auto v2 = expandingMul(lhs.a, rhs.b);
-  auto v3 = expandingMul(lhs.b, rhs.a);
-  auto v4 = expandingMul(lhs.b, rhs.b);
+  DynamicAPInt v1 = lhs.a * rhs.a;
+  DynamicAPInt v2 = lhs.a * rhs.b;
+  DynamicAPInt v3 = lhs.b * rhs.a;
+  DynamicAPInt v4 = lhs.b * rhs.b;
 
-  auto minVal = safeMin({v1, v2, v3, v4});
-  auto maxVal = safeMax({v1, v2, v3, v4});
+  auto minVal = std::min({v1, v2, v3, v4});
+  auto maxVal = std::max({v1, v2, v3, v4});
 
   return UnreducedInterval(minVal, maxVal);
 }
 
 bool UnreducedInterval::overlaps(const UnreducedInterval &rhs) const {
-  return isNotEmpty() && rhs.isNotEmpty() && safeGe(b, rhs.a) && safeLe(a, rhs.b);
+  return isNotEmpty() && rhs.isNotEmpty() && (b >= rhs.a) && (a <= rhs.b);
 }
 
 std::strong_ordering operator<=>(const UnreducedInterval &lhs, const UnreducedInterval &rhs) {
-  if (safeLt(lhs.a, rhs.a) || (safeEq(lhs.a, rhs.a) && safeLt(lhs.b, rhs.b))) {
+  if ((lhs.a < rhs.a) || ((lhs.a == rhs.a) && (lhs.b < rhs.b))) {
     return std::strong_ordering::less;
   }
-  if (safeGt(lhs.a, rhs.a) || (safeEq(lhs.a, rhs.a) && safeGt(lhs.b, rhs.b))) {
+  if ((lhs.a > rhs.a) || ((lhs.a == rhs.a) && (lhs.b > rhs.b))) {
     return std::strong_ordering::greater;
   }
   return std::strong_ordering::equal;
 }
 
-llvm::APSInt UnreducedInterval::width() const {
-  llvm::APSInt w;
-  if (safeGt(a, b)) {
+DynamicAPInt UnreducedInterval::width() const {
+  DynamicAPInt w;
+  if (a > b) {
     // This would be reduced to an empty Interval, so the width is just zero.
-    w = llvm::APSInt::getUnsigned(0);
+    w = 0;
   } else {
     // Since the range is inclusive, we add one to the difference to get the true width.
-    w = expandingSub(b, a)++;
+    w = (b - a) + 1;
   }
-  ensure(safeGe(w, llvm::APSInt::getUnsigned(0)), "cannot have negative width");
+  ensure(w >= 0, "cannot have negative width");
   return w;
 }
-
-bool UnreducedInterval::isEmpty() const { return safeEq(width(), llvm::APSInt::getUnsigned(0)); }
 
 /* Interval */
 
@@ -203,7 +197,12 @@ Interval Interval::join(const Interval &rhs) const {
   if (areOneOf<
           {Type::TypeA, Type::TypeA}, {Type::TypeB, Type::TypeB}, {Type::TypeC, Type::TypeC},
           {Type::TypeA, Type::TypeC}, {Type::TypeB, Type::TypeC}>(lhs, rhs)) {
-    return Interval(rhs.ty, f, std::min(lhs.a, rhs.a), std::max(lhs.b, rhs.b));
+    auto newLhs = std::min(lhs.a, rhs.a);
+    auto newRhs = std::max(lhs.b, rhs.b);
+    if (newLhs == newRhs) {
+      return Interval::Degenerate(f, newLhs);
+    }
+    return Interval(rhs.ty, f, newLhs, newRhs);
   }
   if (areOneOf<{Type::TypeA, Type::TypeB}>(lhs, rhs)) {
     auto lhsUnred = lhs.firstUnreduced();
@@ -238,6 +237,9 @@ Interval Interval::intersect(const Interval &rhs) const {
   const auto &lhs = *this;
   const Field &f = checkFields(lhs, rhs);
   // Trivial cases
+  if (lhs == rhs) {
+    return lhs;
+  }
   if (lhs.isEmpty() || rhs.isEmpty()) {
     return Interval::Empty(f);
   }
@@ -247,8 +249,15 @@ Interval Interval::intersect(const Interval &rhs) const {
   if (rhs.isEntire()) {
     return lhs;
   }
-  if (lhs.isDegenerate() || rhs.isDegenerate()) {
-    return lhs.toUnreduced().intersect(rhs.toUnreduced()).reduce(f);
+  if (lhs.isDegenerate() && rhs.isDegenerate()) {
+    // These must not be equal
+    return Interval::Empty(f);
+  }
+  if (lhs.isDegenerate()) {
+    return Interval::TypeA(f, lhs.a, lhs.a).intersect(rhs);
+  }
+  if (rhs.isDegenerate()) {
+    return Interval::TypeA(f, rhs.a, rhs.a).intersect(lhs);
   }
 
   // More complex cases
@@ -257,8 +266,10 @@ Interval Interval::intersect(const Interval &rhs) const {
           {Type::TypeA, Type::TypeC}, {Type::TypeB, Type::TypeC}>(lhs, rhs)) {
     auto maxA = std::max(lhs.a, rhs.a);
     auto minB = std::min(lhs.b, rhs.b);
-    if (maxA <= minB) {
+    if (maxA < minB) {
       return Interval(lhs.ty, f, maxA, minB);
+    } else if (maxA == minB) {
+      return Interval::Degenerate(f, maxA);
     } else {
       return Interval::Empty(f);
     }
@@ -365,10 +376,10 @@ Interval Interval::operator~() const {
 
 Interval operator+(const Interval &lhs, const Interval &rhs) {
   const Field &f = checkFields(lhs, rhs);
-  if (lhs.isEmpty()) {
+  if (lhs.isEmpty() || rhs.isEntire()) {
     return rhs;
   }
-  if (rhs.isEmpty()) {
+  if (rhs.isEmpty() || lhs.isEntire()) {
     return lhs;
   }
   return (lhs.firstUnreduced() + rhs.firstUnreduced()).reduce(f);
@@ -400,7 +411,7 @@ FailureOr<Interval> operator/(const Interval &lhs, const Interval &rhs) {
   if (rhs.width() > f.one()) {
     return Interval::Entire(f);
   }
-  if (rhs.a.isZero()) {
+  if (rhs.a == 0) {
     return failure();
   }
   return success(UnreducedInterval(lhs.a / rhs.a, lhs.b / rhs.a).reduce(f));
@@ -432,12 +443,11 @@ Interval operator<<(const Interval &lhs, const Interval &rhs) {
     return Interval::Empty(f);
   }
   if (lhs.isDegenerate() && rhs.isDegenerate()) {
-    if (safeGt(rhs.a, APSInt::getUnsigned(f.bitWidth()))) {
+    if (rhs.a > f.bitWidth()) {
       return Interval::Entire(f);
     }
 
-    unsigned shiftAmt = rhs.a.getZExtValue();
-    auto v = lhs.a.relativeShl(shiftAmt);
+    DynamicAPInt v = lhs.a << rhs.a;
     return UnreducedInterval(v, v).reduce(f);
   }
   return Interval::Entire(f);
@@ -449,17 +459,16 @@ Interval operator>>(const Interval &lhs, const Interval &rhs) {
     return Interval::Empty(f);
   }
   if (lhs.isDegenerate() && rhs.isDegenerate()) {
-    if (safeGt(rhs.a, APSInt::getUnsigned(f.bitWidth()))) {
+    if (rhs.a > f.bitWidth()) {
       return Interval::Degenerate(f, f.zero());
     }
 
-    unsigned shiftAmt = rhs.a.getZExtValue();
-    return Interval::Degenerate(f, lhs.a.relativeShr(shiftAmt));
+    return Interval::Degenerate(f, lhs.a >> rhs.a);
   }
   return Interval::Entire(f);
 }
 
-llvm::APSInt Interval::width() const {
+DynamicAPInt Interval::width() const {
   switch (ty) {
   case Type::Empty:
     return field.get().zero();

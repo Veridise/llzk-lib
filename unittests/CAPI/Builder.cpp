@@ -15,8 +15,8 @@ TEST_F(CAPITest, MlirOpBuilderCreate) {
   auto builder = mlirOpBuilderCreate(context);
   mlirOpBuilderDestroy(builder);
 }
-static void test_cb1(MlirOperation, void *) {}
-static void test_cb2(MlirBlock, void *) {}
+static void test_cb1(MlirOperation, MlirOpBuilderInsertPoint, void *) {}
+static void test_cb2(MlirBlock, MlirRegion, MlirBlock, void *) {}
 
 TEST_F(CAPITest, MlirOpBuilderCreateWithListener) {
   auto listener = mlirOpBuilderListenerCreate(test_cb1, test_cb2, NULL);

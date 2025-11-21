@@ -1,4 +1,4 @@
-//===-- Polymorphic.cpp - Polymorphic dialect C API impl --------*- C++ -*-===//
+//===-- Poly.cpp - Polymorphic dialect C API impl ---------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -14,7 +14,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 
-#include "llzk-c/Dialect/Polymorphic.h"
+#include "llzk-c/Dialect/Poly.h"
 
 #include <mlir/CAPI/AffineExpr.h>
 #include <mlir/CAPI/AffineMap.h>

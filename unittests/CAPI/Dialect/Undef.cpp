@@ -9,10 +9,22 @@
 
 #include "llzk-c/Dialect/Undef.h"
 
+#include "llzk-c/Dialect/Felt.h"
+
+#include <mlir-c/IR.h>
+
 #include "../CAPITestBase.h"
 
 TEST_F(CAPITest, mlir_get_dialect_handle_llzk_undef) {
-  {
-    mlirGetDialectHandle__llzk__undef__();
-  }
+  (void)mlirGetDialectHandle__llzk__undef__();
+}
+
+TEST_F(CAPITest, llzkOperationIsAUndefOp) {
+  auto op_name = mlirStringRefCreateFromCString("undef.undef");
+  auto state = mlirOperationStateGet(op_name, mlirLocationUnknownGet(context));
+  auto t = llzkFeltTypeGet(context);
+  mlirOperationStateAddResults(&state, 1, &t);
+
+  auto op = mlirOperationCreate(&state);
+  EXPECT_TRUE(llzkOperationIsAUndefOp(op));
 }

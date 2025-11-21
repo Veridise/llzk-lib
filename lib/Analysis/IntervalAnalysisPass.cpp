@@ -51,9 +51,9 @@ protected:
     mia.setField(Field::getField(fieldName.c_str()));
     mia.setPropagateInputConstraints(propagateInputConstraints);
     auto am = getAnalysisManager();
-    mia.runAnalysis(am);
+    mia.ensureAnalysisRun(am);
 
-    for (auto &[s, si] : mia) {
+    for (auto &[s, si] : mia.getCurrentResults()) {
       auto &structDef = const_cast<StructDefOp &>(s);
       // Don't print the analysis for built-ins.
       if (isSignalType(structDef.getType())) {

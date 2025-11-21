@@ -91,7 +91,7 @@ protected:
 };
 
 TEST_F(FuncDialectTest, mlir_get_dialect_handle_llzk_function) {
-  mlirGetDialectHandle__llzk__function__();
+  (void)mlirGetDialectHandle__llzk__function__();
 }
 
 TEST_F(FuncDialectTest, llzk_func_def_op_create_with_attrs_and_arg_attrs) {
