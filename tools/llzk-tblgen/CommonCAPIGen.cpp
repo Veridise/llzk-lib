@@ -594,7 +594,7 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
 }
 
 /// Check if a C++ type matches an MLIR type pattern
-bool matchesMLIRType(StringRef cppType, StringRef typeName) {
+bool matchesMLIRClass(StringRef cppType, StringRef typeName) {
   if (cppType == typeName) {
     return true;
   }
@@ -624,10 +624,10 @@ std::string cppTypeToCapiType(StringRef cppType) {
     if (starPos != StringRef::npos) {
       StringRef baseType = cppType.substr(0, starPos).trim();
 
-      if (matchesMLIRType(baseType, "Region") || baseType.ends_with("Region")) {
+      if (matchesMLIRClass(baseType, "Region") || baseType.ends_with("Region")) {
         return "MlirRegion";
       }
-      if (matchesMLIRType(baseType, "Operation") || baseType.ends_with("Operation")) {
+      if (matchesMLIRClass(baseType, "Operation") || baseType.ends_with("Operation")) {
         return "MlirOperation";
       }
     } else {
@@ -642,22 +642,22 @@ std::string cppTypeToCapiType(StringRef cppType) {
   }
 
   // Map MLIR types to their C API equivalents
-  if (matchesMLIRType(cppType, "Value")) {
+  if (matchesMLIRClass(cppType, "Value")) {
     return "MlirValue";
   }
-  if (matchesMLIRType(cppType, "Type") || cppType.ends_with("Type")) {
+  if (matchesMLIRClass(cppType, "Type") || cppType.ends_with("Type")) {
     return "MlirType";
   }
-  if (matchesMLIRType(cppType, "Attribute") || cppType.ends_with("Attr")) {
+  if (matchesMLIRClass(cppType, "Attribute") || cppType.ends_with("Attr")) {
     return "MlirAttribute";
   }
-  if (matchesMLIRType(cppType, "Region")) {
+  if (matchesMLIRClass(cppType, "Region")) {
     return "MlirRegion";
   }
-  if (matchesMLIRType(cppType, "Block")) {
+  if (matchesMLIRClass(cppType, "Block")) {
     return "MlirBlock";
   }
-  if (matchesMLIRType(cppType, "Operation")) {
+  if (matchesMLIRClass(cppType, "Operation")) {
     return "MlirOperation";
   }
 
@@ -701,10 +701,10 @@ std::string mapCppTypeToCapiType(StringRef cppType) {
   }
 
   // Direct type mappings
-  if (matchesMLIRType(cppType, "Type")) {
+  if (matchesMLIRClass(cppType, "Type")) {
     return "MlirType";
   }
-  if (matchesMLIRType(cppType, "Attribute")) {
+  if (matchesMLIRClass(cppType, "Attribute")) {
     return "MlirAttribute";
   }
 

@@ -245,7 +245,7 @@ llvm::SmallVector<ExtraMethod> parseExtraMethods(mlir::StringRef extraDecl);
 /// @param cppType The C++ type to check
 /// @param typeName The MLIR type name to match against
 /// @return true if the C++ type matches the MLIR type
-bool matchesMLIRType(mlir::StringRef cppType, mlir::StringRef typeName);
+bool matchesMLIRClass(mlir::StringRef cppType, mlir::StringRef typeName);
 
 /// @brief Convert C++ return type to MLIR C API type
 /// @param cppType The C++ type to convert
