@@ -1,7 +1,7 @@
 include_directories(${MLIR_INCLUDE_DIRS} ${LLZK_INCLUDE_DIR})
 
 set(_TBLGEN_PCL_FLAG "")
-if(LLZK_WITH_PCL)
+if(LLZK_WITH_PCL_BOOL)
   set(_TBLGEN_PCL_FLAG "-DWITH_PCL")
 endif()
 
