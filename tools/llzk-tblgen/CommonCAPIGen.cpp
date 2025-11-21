@@ -735,7 +735,7 @@ std::string mapCppTypeToCapiType(StringRef cppType) {
 std::string extractArrayRefElementType(StringRef cppType) {
   // Remove "::llvm::ArrayRef<" or "ArrayRef<" prefix and ">" suffix
   cppType.consume_front("::");
-  cppType.consume_front("llvm::");
+  cppType.consume_front("llvm::") || cppType.consume_front("mlir::");
   if (cppType.consume_front("ArrayRef<") && cppType.consume_back(">")) {
     return mapCppTypeToCapiType(cppType);
   }

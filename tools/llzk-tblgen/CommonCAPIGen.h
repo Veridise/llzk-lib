@@ -147,7 +147,7 @@ inline bool isIntegerType(mlir::StringRef type) {
 /// @return true if the type is ArrayRef, llvm::ArrayRef, or ::llvm::ArrayRef
 inline bool isArrayRefType(mlir::StringRef cppType) {
   cppType.consume_front("::");
-  cppType.consume_front("llvm::");
+  cppType.consume_front("llvm::") || cppType.consume_front("mlir::");
   return cppType.starts_with("ArrayRef<");
 }
 
@@ -156,7 +156,7 @@ inline bool isArrayRefType(mlir::StringRef cppType) {
 /// @return true if the type is APInt, llvm::APInt, or ::llvm::APInt
 inline bool isAPIntType(mlir::StringRef cppType) {
   cppType.consume_front("::");
-  cppType.consume_front("llvm::");
+  cppType.consume_front("llvm::") || cppType.consume_front("mlir::");
   return cppType == "APInt";
 }
 
