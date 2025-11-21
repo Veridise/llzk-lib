@@ -43,6 +43,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FeatureTests.cmake)
 
 find_package(LLVM 20.1.8 REQUIRED CONFIG)
 find_package(MLIR 20.1.8 REQUIRED CONFIG)
+find_package(Clang 20.1.8 REQUIRED CONFIG)
 
 # Optional PCL dialect
 set(LLZK_WITH_PCL "AUTO" CACHE STRING "Enable PCL integration (AUTO, ON, OFF)")
