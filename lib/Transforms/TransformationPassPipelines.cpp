@@ -80,6 +80,12 @@ void registerTransformationPassPipelines() {
     pm.addPass(mlir::createCSEPass());
   }
   );
+
+  PassPipelineRegistration<>(
+      "llzk-product-program",
+      "Convert @compute/@constrain functions to @product function and perform alignment",
+      [](OpPassManager &pm) { pm.addPass(llzk::createComputeConstrainToProductPass()); }
+  );
 }
 
 } // namespace llzk

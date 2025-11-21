@@ -1,0 +1,62 @@
+#include "llzk/Analysis/LightweightSignalEquivalenceAnalysis.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
+
+#include "llvm/Support/Debug.h"
+
+#define DEBUG_TYPE "llzk-signal-equivalence"
+
+namespace llzk {
+using namespace mlir;
+using namespace component;
+
+LightweightSignalEquivalenceAnalysis::LightweightSignalEquivalenceAnalysis(mlir::Operation *) {}
+
+Value replaceReadWithWrite(Value v) {
+  if (!v.getDefiningOp()) {
+    return v;
+  }
+  if (auto read = dyn_cast<FieldReadOp>(v.getDefiningOp())) {
+    // Traverse backwards through the block until we find a write
+    for (Operation *cur = read; cur != nullptr; cur = cur->getPrevNode()) {
+      if (auto write = dyn_cast<FieldWriteOp>(cur)) {
+        // Return the written value
+        return write.getVal();
+      }
+    }
+  }
+  return v;
+}
+
+bool LightweightSignalEquivalenceAnalysis::areSignalsEquivalent(mlir::Value v1, mlir::Value v2) {
+  v1 = replaceReadWithWrite(v1);
+  v2 = replaceReadWithWrite(v2);
+  LLVM_DEBUG(llvm::outs() << "Asking for equivalence between " << v1 << " and " << v2 << "\n");
+  if (equivalentSignals.isEquivalent(v1, v2)) {
+    return true;
+  }
+
+  Operation *o1 = v1.getDefiningOp();
+  Operation *o2 = v2.getDefiningOp();
+
+  if (o1 == nullptr || o2 == nullptr) {
+    return false;
+  }
+
+  if (o1->getName() != o2->getName()) {
+    return false;
+  }
+
+  if (o1->getNumOperands() != o2->getNumOperands()) {
+    return false;
+  }
+
+  for (size_t i = 0; i < o1->getNumOperands(); i++) {
+    if (!areSignalsEquivalent(o1->getOperand(i), o2->getOperand(i))) {
+      return false;
+    }
+  }
+
+  equivalentSignals.unionSets(v1, v2);
+  return true;
+}
+} // namespace llzk
