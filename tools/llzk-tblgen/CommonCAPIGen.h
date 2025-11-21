@@ -28,8 +28,6 @@
 namespace clang {
 class Lexer;
 class SourceManager;
-class FileManager;
-class DiagnosticsEngine;
 } // namespace clang
 
 // Shared command-line options used by all CAPI generators
@@ -271,47 +269,10 @@ bool isValidTypeConversion(const std::string &capiReturnType, const std::string 
 ///
 /// @note This function should not be called for ArrayRef types.
 /// Use extractArrayRefElementType() for those instead.
-inline std::string mapCppTypeToCapiType(mlir::StringRef cppType) {
-  assert(!isArrayRefType(cppType) && "use extractArrayRefElementType instead");
-
-  // Primitive types
-  if (isPrimitiveType(cppType)) {
-    return cppType.str();
-  }
-
-  // Direct type mappings
-  if (matchesMLIRType(cppType, "Type")) {
-    return "MlirType";
-  }
-  if (matchesMLIRType(cppType, "Attribute")) {
-    return "MlirAttribute";
-  }
-
-  // APInt types - convert to int64_t using fromAPInt helper
-  if (isAPIntType(cppType)) {
-    return "int64_t";
-  }
-
-  // Specific MLIR attribute types
-  if ((cppType.starts_with("mlir::") || cppType.starts_with("::mlir::")) &&
-      cppType.ends_with("Attr")) {
-    return "MlirAttribute";
-  }
-
-  // Otherwise assume it's a type where the C name is a direct translation from the C++ name.
-  return toPascalCase(cppType);
-}
+std::string mapCppTypeToCapiType(mlir::StringRef cppType);
 
 /// Extract element type from ArrayRef<...>
-inline std::string extractArrayRefElementType(mlir::StringRef cppType) {
-  // Remove "::llvm::ArrayRef<" or "ArrayRef<" prefix and ">" suffix
-  cppType.consume_front("::");
-  cppType.consume_front("llvm::");
-  if (cppType.consume_front("ArrayRef<") && cppType.consume_back(">")) {
-    return mapCppTypeToCapiType(cppType);
-  }
-  return "MlirAttribute"; // fallback
-}
+std::string extractArrayRefElementType(mlir::StringRef cppType);
 
 /// @brief Base class for C API generators
 struct Generator {

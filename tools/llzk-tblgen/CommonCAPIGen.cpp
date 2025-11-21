@@ -690,3 +690,46 @@ bool isValidTypeConversion(const std::string &capiReturnType, const std::string 
   }
   return true;
 }
+
+/// Map C++ type to corresponding MLIR C API return type
+std::string mapCppTypeToCapiType(StringRef cppType) {
+  assert(!isArrayRefType(cppType) && "use extractArrayRefElementType instead");
+
+  // Primitive types
+  if (isPrimitiveType(cppType)) {
+    return cppType.str();
+  }
+
+  // Direct type mappings
+  if (matchesMLIRType(cppType, "Type")) {
+    return "MlirType";
+  }
+  if (matchesMLIRType(cppType, "Attribute")) {
+    return "MlirAttribute";
+  }
+
+  // APInt types - convert to int64_t using fromAPInt helper
+  if (isAPIntType(cppType)) {
+    return "int64_t";
+  }
+
+  // Specific MLIR attribute types
+  if ((cppType.starts_with("mlir::") || cppType.starts_with("::mlir::")) &&
+      cppType.ends_with("Attr")) {
+    return "MlirAttribute";
+  }
+
+  // Otherwise assume it's a type where the C name is a direct translation from the C++ name.
+  return toPascalCase(cppType);
+}
+
+/// Extract element type from ArrayRef<...>
+std::string extractArrayRefElementType(StringRef cppType) {
+  // Remove "::llvm::ArrayRef<" or "ArrayRef<" prefix and ">" suffix
+  cppType.consume_front("::");
+  cppType.consume_front("llvm::");
+  if (cppType.consume_front("ArrayRef<") && cppType.consume_back(">")) {
+    return mapCppTypeToCapiType(cppType);
+  }
+  return "MlirAttribute"; // fallback
+}
