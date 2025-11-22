@@ -26,20 +26,18 @@
 
 #include <mlir-c/Pass.h>
 
-static void registerLLZKPolymorphicTransformationPasses() {
-  llzk::polymorphic::registerTransformationPasses();
-}
-
+using namespace mlir;
 using namespace llzk;
 using namespace llzk::polymorphic;
-using namespace mlir;
 
-// Include impl for transformation passes
+static void registerLLZKPolymorphicTransformationPasses() { registerTransformationPasses(); }
+
+// Include the generated CAPI
+#include "llzk/Dialect/Polymorphic/IR/Ops.capi.cpp.inc"
+#include "llzk/Dialect/Polymorphic/IR/Types.capi.cpp.inc"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.cpp.inc"
 
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(
-    Polymorphic, llzk__polymorphic, llzk::polymorphic::PolymorphicDialect
-)
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic, PolymorphicDialect)
 
 //===----------------------------------------------------------------------===//
 // TypeVarType
@@ -48,8 +46,6 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(
 MlirType llzkTypeVarTypeGet(MlirContext ctx, MlirStringRef name) {
   return wrap(TypeVarType::get(FlatSymbolRefAttr::get(StringAttr::get(unwrap(ctx), unwrap(name)))));
 }
-
-bool llzkTypeIsATypeVarType(MlirType type) { return llvm::isa<TypeVarType>(unwrap(type)); }
 
 MlirType llzkTypeVarTypeGetFromAttr(MlirContext /*ctx*/, MlirAttribute attrWrapper) {
   auto attr = unwrap(attrWrapper);
@@ -105,19 +101,17 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   );
 }
 
-bool llzkOperationIsAApplyMapOp(MlirOperation op) { return llvm::isa<ApplyMapOp>(unwrap(op)); }
-
 /// Returns the affine map associated with the op.
 MlirAffineMap llzkApplyMapOpGetAffineMap(MlirOperation op) {
-  return wrap(mlir::unwrap_cast<ApplyMapOp>(op).getAffineMap());
+  return wrap(unwrap_cast<ApplyMapOp>(op).getAffineMap());
 }
 
 static ValueRange dimOperands(MlirOperation op) {
-  return mlir::unwrap_cast<ApplyMapOp>(op).getDimOperands();
+  return unwrap_cast<ApplyMapOp>(op).getDimOperands();
 }
 
 static ValueRange symbolOperands(MlirOperation op) {
-  return mlir::unwrap_cast<ApplyMapOp>(op).getSymbolOperands();
+  return unwrap_cast<ApplyMapOp>(op).getSymbolOperands();
 }
 
 static void copyValues(ValueRange in, MlirValue *out) {

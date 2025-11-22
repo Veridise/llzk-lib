@@ -1,0 +1,17 @@
+added:
+  - llzk-tblgen tool to auto-generate C API and linking tests for C API
+
+changed:
+  - CAPI Renames:
+    - llzkArrayTypeGet to llzkArrayArrayTypeGetWithDims
+    - llzkArrayTypeGetWithNumericDims to llzkArrayArrayTypeGetWithShape
+    - llzkArrayTypeGetElementType to llzkArrayArrayTypeGetElementType
+    - llzkArrayTypeGetNumDims to llzkArrayArrayTypeGetDimensionSizesCount
+    - llzkArrayTypeGetDim to llzkArrayArrayTypeGetDimensionSizesAt
+    - LlzkCmp to LlzkBoolFeltCmpPredicate
+    - llzkFeltCmpPredicateAttrGet to llzkBoolFeltCmpPredicateAttrGet
+    - llzkFeltConstAttrGet to llzkFeltFeltConstAttrGet
+    - llzkFeltConstAttrGetWithBits to llzkFeltFeltConstAttrGetWithBits
+    - llzkFeltConstAttrGetFromString to llzkFeltFeltConstAttrGetFromString
+    - llzkFeltConstAttrGetFromParts to llzkFeltFeltConstAttrGetFromParts
+    - llzkFeltTypeGet to llzkFeltFeltTypeGet

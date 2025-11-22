@@ -18,14 +18,17 @@
 #ifndef LLZK_C_DIALECT_POLYMORPHIC_H
 #define LLZK_C_DIALECT_POLYMORPHIC_H
 
-#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc"
-
 #include "llzk-c/Support.h"
 
 #include <mlir-c/AffineExpr.h>
 #include <mlir-c/AffineMap.h>
 #include <mlir-c/IR.h>
 #include <mlir-c/Support.h>
+
+// Include the generated CAPI
+#include "llzk/Dialect/Polymorphic/IR/Ops.capi.h.inc"
+#include "llzk/Dialect/Polymorphic/IR/Types.capi.h.inc"
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,9 +42,6 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic);
 
 /// Creates a llzk::polymorphic::TypeVarType.
 MLIR_CAPI_EXPORTED MlirType llzkTypeVarTypeGet(MlirContext context, MlirStringRef value);
-
-/// Returns true if the type is a TypeVarType.
-LLZK_DECLARE_TYPE_ISA(TypeVarType);
 
 /// Creates a llzk::polymorphic::TypeVarType from either a StringAttr or a FlatSymbolRefAttr.
 MLIR_CAPI_EXPORTED MlirType llzkTypeVarTypeGetFromAttr(MlirContext context, MlirAttribute value);
@@ -68,9 +68,6 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
     ApplyMapOp, WithAffineExpr, MlirAffineExpr affineExpr, MlirValueRange operands
 );
-
-/// Returns true if the op is an ApplyMapOp.
-LLZK_DECLARE_OP_ISA(ApplyMapOp);
 
 /// Returns the affine map associated with the op.
 MLIR_CAPI_EXPORTED MlirAffineMap llzkApplyMapOpGetAffineMap(MlirOperation op);

@@ -11,9 +11,9 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_include) {
-  (void)mlirGetDialectHandle__llzk__include__();
-}
+// Include the auto-generated tests
+#include "llzk/Dialect/Include/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Include/IR/Ops.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_include_op_create) {
   auto location = mlirLocationUnknownGet(context);
