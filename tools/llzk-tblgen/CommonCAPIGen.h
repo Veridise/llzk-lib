@@ -24,6 +24,23 @@
 #include <memory>
 #include <string>
 
+constexpr bool WARN_SKIPPED_METHODS = false;
+
+/// @brief Print warning about skipping a function.
+template <typename S> inline void warnSkipped(const S &methodName, const std::string &message) {
+  if (WARN_SKIPPED_METHODS) {
+    llvm::errs() << "Warning: Skipping method '" << methodName << "' - " << message << '\n';
+  }
+}
+
+/// @brief Print warning about skipping a function due to no conversion of C++ type to C API type.
+template <typename S>
+inline void warnSkippedNoConversion(const S &methodName, const std::string &cppType) {
+  if (WARN_SKIPPED_METHODS) {
+    warnSkipped(methodName, "no conversion to C API type for '" + cppType + '\'');
+  }
+}
+
 // Forward declarations for Clang classes
 namespace clang {
 class Lexer;
@@ -273,8 +290,7 @@ bool matchesMLIRClass(mlir::StringRef cppType, mlir::StringRef typeName);
 /// @brief Convert C++ type to MLIR C API type
 /// @param cppType The C++ type to convert
 /// @return The corresponding MLIR C API type if convertible, std::nullopt otherwise
-std::optional<std::string>
-tryCppTypeToCapiType(mlir::StringRef cppType, bool reportUnmatched = true);
+std::optional<std::string> tryCppTypeToCapiType(mlir::StringRef cppType);
 
 /// @brief Map C++ type to corresponding C API type
 /// @param cppType The C++ type to map
@@ -365,6 +381,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{3}(Mlir{1});
     // Convert return type to C API type, skip if it can't be converted
     std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
     if (!capiReturnTypeOpt.has_value()) {
+      warnSkippedNoConversion(method.methodName, method.returnType);
       return;
     }
     std::string capiReturnType = capiReturnTypeOpt.value();
@@ -377,6 +394,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{3}(Mlir{1});
       // Convert C++ type to C API type for parameter, skip if it can't be converted
       std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
       if (!capiParamTypeOpt.has_value()) {
+        warnSkippedNoConversion(method.methodName, param.type);
         return;
       }
       std::string capiParamType = capiParamTypeOpt.value();
@@ -420,6 +438,7 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
     // Convert return type to C API type, skip if it can't be converted
     std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
     if (!capiReturnTypeOpt.has_value()) {
+      warnSkippedNoConversion(method.methodName, method.returnType);
       return;
     }
     std::string capiReturnType = capiReturnTypeOpt.value();
@@ -456,6 +475,7 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
       // Convert C++ type to C API type for parameter, skip if it can't be converted
       std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
       if (!capiParamTypeOpt.has_value()) {
+        warnSkippedNoConversion(method.methodName, param.type);
         return;
       }
       std::string capiParamType = capiParamTypeOpt.value();
@@ -486,6 +506,7 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
           // MLIR C API types need unwrapping
           argListStream << "unwrap(" << param.name << ")";
         } else {
+          warnSkippedNoConversion(method.methodName, cppParamType.str());
           return;
         }
       }
@@ -554,6 +575,7 @@ TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
     // Convert return type to C API type, skip if it can't be converted
     std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
     if (!capiReturnTypeOpt.has_value()) {
+      warnSkippedNoConversion(method.methodName, method.returnType);
       return;
     }
 
@@ -567,6 +589,7 @@ TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
       // Convert C++ type to C API type for parameter, skip if it can't be converted
       std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(param.type);
       if (!capiParamTypeOpt.has_value()) {
+        warnSkippedNoConversion(method.methodName, param.type);
         return;
       }
       std::string capiParamType = capiParamTypeOpt.value();

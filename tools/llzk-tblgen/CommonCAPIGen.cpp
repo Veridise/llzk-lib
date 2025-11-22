@@ -555,8 +555,7 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
       // Create method struct
       if (!returnType.empty() && !methodName.empty()) {
         if (methods.contains(methodName)) {
-          llvm::errs() << "Warning: Skipping overloaded method '" << methodName
-                       << "' - C API does not support method overloading\n";
+          warnSkipped(methodName, "C API does not support method overloading");
           methods[methodName] = std::nullopt;
         } else {
           ExtraMethod method;
@@ -601,7 +600,7 @@ bool matchesMLIRClass(StringRef cppType, StringRef typeName) {
 }
 
 /// Convert C++ type to MLIR C API type
-std::optional<std::string> tryCppTypeToCapiType(StringRef cppType, bool reportUnmatched) {
+std::optional<std::string> tryCppTypeToCapiType(StringRef cppType) {
   cppType = cppType.trim();
 
   // Primitive types are unchanged
@@ -715,10 +714,6 @@ std::optional<std::string> tryCppTypeToCapiType(StringRef cppType, bool reportUn
   }
 
   // Otherwise, not sure how to convert it
-  if (reportUnmatched) {
-    llvm::errs() << "Error: Unsupported type conversion from C++ type '" << cppType
-                 << "' to C API type\n";
-  }
   return std::nullopt;
 }
 
@@ -726,7 +721,7 @@ std::optional<std::string> tryCppTypeToCapiType(StringRef cppType, bool reportUn
 std::string mapCppTypeToCapiType(StringRef cppType) {
   assert(!isArrayRefType(cppType) && "must check `isArrayRefType()` outside");
 
-  std::optional<std::string> capiTypeOpt = tryCppTypeToCapiType(cppType, false);
+  std::optional<std::string> capiTypeOpt = tryCppTypeToCapiType(cppType);
   if (capiTypeOpt.has_value()) {
     return capiTypeOpt.value();
   }
