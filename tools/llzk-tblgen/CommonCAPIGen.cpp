@@ -161,12 +161,15 @@ ClangLexerContext::ClangLexerContext(StringRef source, StringRef bufferName)
 }
 
 Lexer &ClangLexerContext::getLexer() const {
-  assert(lexer && "Lexer not initialized");
+  assert(lexer && "Lexer not initialized - check isValid() before calling getLexer()");
   return *lexer;
 }
 
 SourceManager &ClangLexerContext::getSourceManager() const {
-  assert(impl->sourceMgr && "SourceManager not initialized");
+  assert(
+      impl && impl->sourceMgr &&
+      "SourceManager not initialized - check isValid() before calling getSourceManager()"
+  );
   return *impl->sourceMgr;
 }
 

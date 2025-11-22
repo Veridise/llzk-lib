@@ -643,7 +643,15 @@ TEST_F({2}{1}LinkTests, {0}_{3}_{4}) {{
     );
   }
 
-  /// @brief Generate cleanup code for extra method LinkTests
+  /// @brief Generate cleanup code for test methods
+  /// @return String containing the cleanup function name or comment marker
+  ///
+  /// This method generates the cleanup code that should be called at the end
+  /// of each test to properly release resources. The default implementation
+  /// returns "//" which comments out the cleanup call (for types/attributes
+  /// that don't need explicit cleanup). Derived classes should override this
+  /// to return the appropriate cleanup function name (e.g., "mlirOperationDestroy"
+  /// for operations).
   virtual std::string genCleanup() const {
     // The default case is to just comment out the rest of the cleanup line
     return "//";

@@ -60,7 +60,11 @@ struct OpTestGenerator : public TestGenerator {
   /// @param outputStream The output stream for generated code
   OpTestGenerator(llvm::raw_ostream &outputStream) : TestGenerator("Operation", outputStream) {}
 
-  /// @brief Generate cleanup code for extra method LinkTests
+  /// @brief Generate cleanup code for operation tests
+  /// @return The name of the cleanup function for operations
+  ///
+  /// Operations require explicit destruction via mlirOperationDestroy(),
+  /// so this override returns the function name rather than a comment.
   virtual std::string genCleanup() const override { return "mlirOperationDestroy"; };
 
   /// @brief Generate create function test for an operation
@@ -453,6 +457,11 @@ private:
   static std::string generateDummyParams(const Operator &op) {
     // Use raw_string_ostream for efficient string building
     std::string paramsBuffer;
+    // Reserve approximate space: ~100 chars per operand/attribute/result/region
+    paramsBuffer.reserve(
+        100 *
+        (op.getNumOperands() + op.getNumAttributes() + op.getNumResults() + op.getNumRegions() + 1)
+    );
     llvm::raw_string_ostream paramsStream(paramsBuffer);
 
     // Declare dummyValue first
@@ -487,7 +496,7 @@ private:
     if (!op.allResultTypesKnown()) {
       for (int i = 0, e = op.getNumResults(); i < e; ++i) {
         const auto &result = op.getResult(i);
-        std::string resultName =
+        const std::string resultName =
             result.name.empty() ? llvm::formatv("result{0}", i).str() : result.name.str();
         if (result.isVariadic()) {
           paramsStream << llvm::formatv(
@@ -505,7 +514,7 @@ private:
     // Add regions
     for (int i = 0, e = op.getNumRegions(); i < e; ++i) {
       const auto &region = op.getRegion(i);
-      std::string regionName =
+      const std::string regionName =
           region.name.empty() ? llvm::formatv("region{0}", i).str() : region.name.str();
       if (region.isVariadic()) {
         paramsStream << llvm::formatv(
@@ -528,6 +537,10 @@ private:
   static std::string generateParamList(const Operator &op) {
     // Use raw_string_ostream for efficient string building
     std::string paramsBuffer;
+    // Reserve approximate space: ~30 chars per operand/attribute/result/region
+    paramsBuffer.reserve(
+        30 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults() + op.getNumRegions())
+    );
     llvm::raw_string_ostream paramsStream(paramsBuffer);
 
     // Add operands
@@ -548,7 +561,7 @@ private:
     if (!op.allResultTypesKnown()) {
       for (int i = 0, e = op.getNumResults(); i < e; ++i) {
         const auto &result = op.getResult(i);
-        std::string resultName =
+        const std::string resultName =
             result.name.empty() ? llvm::formatv("result{0}", i).str() : result.name.str();
         if (result.isVariadic()) {
           paramsStream << llvm::formatv(", {0}Size, {0}Types", resultName);
@@ -561,7 +574,7 @@ private:
     // Add regions
     for (int i = 0, e = op.getNumRegions(); i < e; ++i) {
       const auto &region = op.getRegion(i);
-      std::string regionName =
+      const std::string regionName =
           region.name.empty() ? llvm::formatv("region{0}", i).str() : region.name.str();
       if (region.isVariadic()) {
         paramsStream << llvm::formatv(", {0}Size, {0}", regionName);

@@ -22,16 +22,19 @@ using namespace mlir::tblgen;
 std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &def, bool isType) {
   // Use raw_string_ostream for efficient string building
   std::string paramsBuffer;
+  // Reserve approximate space: ~80 chars per parameter
+  paramsBuffer.reserve(80 * def.getParameters().size());
   llvm::raw_string_ostream paramsStream(paramsBuffer);
 
   for (const auto &param : def.getParameters()) {
-    StringRef cppType = param.getCppType();
-    std::string pName = param.getName().str();
+    // Cache the string conversions to avoid repeated calls
+    const StringRef cppType = param.getCppType();
+    const std::string pName = param.getName().str();
 
     if (isArrayRefType(cppType)) {
       paramsStream << llvm::formatv("    intptr_t {0}Count = 0;\n", pName);
-      mlir::StringRef cppElemType = extractArrayRefElementType(cppType);
-      std::string elemType = mapCppTypeToCapiType(cppElemType);
+      const StringRef cppElemType = extractArrayRefElementType(cppType);
+      const std::string elemType = mapCppTypeToCapiType(cppElemType);
       if (isPrimitiveType(cppElemType)) {
         paramsStream << llvm::formatv("    {0} {1}Array = 0;\n", elemType, pName);
         paramsStream << llvm::formatv("    {0} *{1} = &{1}Array;\n", elemType, pName);
@@ -46,7 +49,7 @@ std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &def, bool i
         paramsStream << llvm::formatv("    {0} *{1} = &{1}Elem;\n", elemType, pName);
       }
     } else {
-      std::string capiType = mapCppTypeToCapiType(cppType);
+      const std::string capiType = mapCppTypeToCapiType(cppType);
       if (isPrimitiveType(cppType)) {
         paramsStream << llvm::formatv("    {0} {1} = 0;\n", capiType, pName);
       } else if (isType && capiType == "MlirType") {
@@ -67,10 +70,13 @@ std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &def, bool i
 std::string generateParamListForAttrOrTypeGet(const AttrOrTypeDef &def) {
   // Use raw_string_ostream for efficient string building
   std::string paramsBuffer;
+  // Reserve approximate space: ~30 chars per parameter
+  paramsBuffer.reserve(30 * def.getParameters().size());
   llvm::raw_string_ostream paramsStream(paramsBuffer);
 
   for (const auto &param : def.getParameters()) {
-    std::string pName = param.getName().str();
+    // Cache the string conversion to avoid repeated calls
+    const std::string pName = param.getName().str();
     if (isArrayRefType(param.getCppType())) {
       paramsStream << llvm::formatv(", {0}Count, {0}", pName);
     } else {

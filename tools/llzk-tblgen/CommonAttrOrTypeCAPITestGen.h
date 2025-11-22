@@ -6,9 +6,37 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
-//
-// Common utilities shared between Attribute and Type CAPI test generators.
-//
+///
+/// \file
+/// This file provides common utilities for generating C API link tests for
+/// attributes and types. The test generation strategy is:
+///
+/// **Test Philosophy:**
+/// These are link-time verification tests, not functional tests. They ensure
+/// that all generated C API functions compile correctly and link properly,
+/// catching issues like:
+/// - Missing function definitions (link errors)
+/// - Signature mismatches between header and implementation
+/// - Missing symbols in the build system
+/// - ABI compatibility problems
+/// - Breaking changes from refactoring
+///
+/// **Test Pattern:**
+/// Each test creates a dummy object (IndexType or IntegerAttr from MLIR builtins)
+/// and wraps the C API function call inside a conditional that checks if the
+/// dummy object is of the target dialect type. Since the dummy is from a
+/// different dialect, the condition is always false at runtime, but the compiler
+/// still verifies type correctness and the linker ensures symbol resolution.
+///
+/// **Limitations:**
+/// These tests do NOT verify:
+/// - Runtime correctness of the generated code
+/// - Semantic behavior of the operations
+/// - Error handling paths
+/// - Generator logic bugs (if generator is wrong, tests will be wrong too)
+///
+/// For functional testing, separate integration tests are needed.
+///
 //===----------------------------------------------------------------------===//
 
 #pragma once

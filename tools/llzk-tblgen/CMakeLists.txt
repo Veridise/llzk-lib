@@ -17,8 +17,6 @@ add_tablegen(llzk-tblgen LLZK
 
 target_link_libraries(llzk-tblgen PRIVATE
   MLIRTblgenLib
-  LLVMTargetParser
-  LLVMCore
   LLVMSupport
   clangBasic
   clangLex

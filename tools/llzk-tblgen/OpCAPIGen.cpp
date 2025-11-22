@@ -303,6 +303,10 @@ MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}(MlirOperation op, intptr_t index);
 /// Variadic parameters are represented as (count, array) pairs.
 static std::string generateCAPIParams(const Operator &op) {
   std::string params;
+  // Reserve approximate space: ~50 chars per operand/attribute/result/region
+  params.reserve(
+      50 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults() + op.getNumRegions())
+  );
   llvm::raw_string_ostream oss(params);
 
   // Add operands
@@ -453,6 +457,10 @@ struct OpImplementationGenerator : public ImplementationGenerator, OpGeneratorDa
   using ImplementationGenerator::ImplementationGenerator;
   virtual ~OpImplementationGenerator() = default;
 
+  /// @brief Generate operation create function implementation
+  /// @param params The parameter list for the create function
+  /// @param operationName The full operation name (e.g., "dialect.opname")
+  /// @param assignments The code to populate the operation state with operands, attributes, etc.
   void genOpCreateImpl(
       std::string const &params, std::string const &operationName, std::string const &assignments
   ) const {
@@ -559,12 +567,12 @@ void {0}{1}{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values) 
   if (startIdx < 0 || startIdx > numOperands) {{
     return;
   }
-  if (count < 0) {{
+  if (count < 0 || count > (std::numeric_limits<intptr_t>::max() - startIdx)) {{
     return;
   }
   
   intptr_t oldCount = numOperands - startIdx;
-  intptr_t newNumOperands = numOperands - oldCount + count;
+  intptr_t newNumOperands = startIdx + count;
 
   std::vector<MlirValue> newOperands(newNumOperands);
 
@@ -754,6 +762,10 @@ MlirRegion {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
 /// variadic parameters appropriately.
 static std::string generateCAPIAssignments(const Operator &op) {
   std::string assignments;
+  // Reserve approximate space: ~80 chars per operand/attribute/result/region
+  assignments.reserve(
+      80 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults() + op.getNumRegions())
+  );
   llvm::raw_string_ostream oss(assignments);
 
   // Add operands
