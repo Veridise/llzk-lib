@@ -50,7 +50,7 @@ TEST_F(CAPITest, llzk_struct_type_get_with_attrs) {
   EXPECT_NE(t.ptr, (void *)NULL);
 }
 
-TEST_F(CAPITest, llzk_type_is_a_struct_type) {
+TEST_F(CAPITest, llzk_type_is_a_struct_type_pass) {
   auto s = mlirStringRefCreateFromCString("T");
   auto sym = mlirFlatSymbolRefAttrGet(context, s);
   auto t = llzkStructTypeGet(sym);
@@ -87,7 +87,19 @@ struct TestOp {
 class StructDefTest : public CAPITest {
 
 protected:
-  MlirOperation new_struct() const {
+  MlirOperation make_struct_def_op() const {
+    auto name = mlirStringRefCreateFromCString("struct.def");
+    auto location = mlirLocationUnknownGet(context);
+    llvm::SmallVector<MlirNamedAttribute> attrs({mlirNamedAttributeGet(
+        mlirIdentifierGet(context, mlirStringRefCreateFromCString("sym_name")),
+        mlirStringAttrGet(context, mlirStringRefCreateFromCString("S"))
+    )});
+    auto op_state = mlirOperationStateGet(name, location);
+    mlirOperationStateAddAttributes(&op_state, attrs.size(), attrs.data());
+    return mlirOperationCreate(&op_state);
+  }
+
+  MlirOperation make_struct_new_op() const {
     auto struct_name = mlirFlatSymbolRefAttrGet(context, mlirStringRefCreateFromCString("S"));
     auto name = mlirStringRefCreateFromCString("struct.new");
     auto location = mlirLocationUnknownGet(context);
@@ -96,6 +108,25 @@ protected:
     mlirOperationStateAddResults(&op_state, 1, &result);
     return mlirOperationCreate(&op_state);
   }
+
+  MlirOperation make_field_def_op() const {
+    auto name = mlirStringRefCreateFromCString("struct.field");
+    auto location = mlirLocationUnknownGet(context);
+    llvm::SmallVector<MlirNamedAttribute> attrs(
+        {mlirNamedAttributeGet(
+             mlirIdentifierGet(context, mlirStringRefCreateFromCString("sym_name")),
+             mlirStringAttrGet(context, mlirStringRefCreateFromCString("S"))
+         ),
+         mlirNamedAttributeGet(
+             mlirIdentifierGet(context, mlirStringRefCreateFromCString("type")),
+             mlirTypeAttrGet(mlirIndexTypeGet(context))
+         )}
+    );
+    auto op_state = mlirOperationStateGet(name, location);
+    mlirOperationStateAddAttributes(&op_state, attrs.size(), attrs.data());
+    return mlirOperationCreate(&op_state);
+  }
+
   TestOp test_op() const {
     auto elt_type = mlirIndexTypeGet(context);
     auto name = mlirStringRefCreateFromCString("arith.constant");
@@ -113,7 +144,12 @@ protected:
   }
 };
 
-TEST_F(StructDefTest, llzk_operation_is_a_struct_def_op) {
+TEST_F(StructDefTest, llzk_operation_is_a_struct_def_op_pass) {
+  auto op = make_struct_def_op();
+  EXPECT_TRUE(llzkOperationIsAStructDefOp(op));
+}
+
+TEST_F(StructDefTest, llzk_operation_is_a_struct_def_op_fail) {
   auto op = test_op();
   EXPECT_TRUE(!llzkOperationIsAStructDefOp(op.op));
 }
@@ -223,7 +259,12 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_is_main_component) {
   }
 }
 
-TEST_F(StructDefTest, llzk_operation_is_a_field_def_op) {
+TEST_F(StructDefTest, llzk_operation_is_a_field_def_op_pass) {
+  auto op = make_field_def_op();
+  EXPECT_TRUE(llzkOperationIsAFieldDefOp(op));
+}
+
+TEST_F(StructDefTest, llzk_operation_is_a_field_def_op_fail) {
   auto op = test_op();
   EXPECT_TRUE(!llzkOperationIsAFieldDefOp(op.op));
 }
@@ -246,14 +287,15 @@ TEST_F(StructDefTest, llzk_field_read_op_build) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
   auto index_type = mlirIndexTypeGet(context);
-  auto _struct = new_struct();
-  auto struct_value = mlirOperationGetResult(_struct, 0);
+  auto struct_new_op = make_struct_new_op();
+  auto struct_value = mlirOperationGetResult(struct_new_op, 0);
+
   auto op = llzkFieldReadOpBuild(
       builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f")
   );
 
   mlirOperationDestroy(op);
-  mlirOperationDestroy(_struct);
+  mlirOperationDestroy(struct_new_op);
   mlirOpBuilderDestroy(builder);
 }
 
@@ -261,8 +303,8 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_affine_map_distance) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
   auto index_type = mlirIndexTypeGet(context);
-  auto _struct = new_struct();
-  auto struct_value = mlirOperationGetResult(_struct, 0);
+  auto struct_new_op = make_struct_new_op();
+  auto struct_value = mlirOperationGetResult(struct_new_op, 0);
 
   llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
   auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
@@ -276,7 +318,7 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_affine_map_distance) {
   );
 
   mlirOperationDestroy(op);
-  mlirOperationDestroy(_struct);
+  mlirOperationDestroy(struct_new_op);
   mlirOpBuilderDestroy(builder);
 }
 
@@ -284,8 +326,8 @@ TEST_F(StructDefTest, llzk_field_read_op_builder_with_const_param_distance) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
   auto index_type = mlirIndexTypeGet(context);
-  auto _struct = new_struct();
-  auto struct_value = mlirOperationGetResult(_struct, 0);
+  auto struct_new_op = make_struct_new_op();
+  auto struct_value = mlirOperationGetResult(struct_new_op, 0);
 
   auto op = llzkFieldReadOpBuildWithConstParamDistance(
       builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"),
@@ -293,7 +335,7 @@ TEST_F(StructDefTest, llzk_field_read_op_builder_with_const_param_distance) {
   );
 
   mlirOperationDestroy(op);
-  mlirOperationDestroy(_struct);
+  mlirOperationDestroy(struct_new_op);
   mlirOpBuilderDestroy(builder);
 }
 
@@ -301,14 +343,14 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_literal_distance) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
   auto index_type = mlirIndexTypeGet(context);
-  auto _struct = new_struct();
-  auto struct_value = mlirOperationGetResult(_struct, 0);
+  auto struct_new_op = make_struct_new_op();
+  auto struct_value = mlirOperationGetResult(struct_new_op, 0);
 
   auto op = llzkFieldReadOpBuildWithLiteralDistance(
       builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"), 1
   );
 
   mlirOperationDestroy(op);
-  mlirOperationDestroy(_struct);
+  mlirOperationDestroy(struct_new_op);
   mlirOpBuilderDestroy(builder);
 }
