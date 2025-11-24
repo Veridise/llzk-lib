@@ -14,15 +14,35 @@
 #ifndef LLZK_C_IR_H
 #define LLZK_C_IR_H
 
-#include "llzk-c/Builder.h" // IWYU pragma: keep
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 
-#include <mlir-c/IR.h> // IWYU pragma: keep
+#include "llzk-c/Builder.h"
+
+#include <mlir/CAPI/IR.h>
+
+#include <mlir-c/IR.h>
 
 #include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//===----------------------------------------------------------------------===//
+// Custom wrap/unwrap functions for C API types.
+//===----------------------------------------------------------------------===//
+
+static inline int64_t wrap(::llvm::APInt cpp) { return ::llzk::fromAPInt(cpp); }
+
+static inline ::llvm::APInt unwrap(int64_t c) { return ::llzk::toAPInt(c); }
+
+static inline MlirNamedAttribute wrap(mlir::NamedAttribute attr) {
+  return MlirNamedAttribute {wrap(attr.getName()), wrap(attr.getValue())};
+}
+
+static inline mlir::NamedAttribute unwrap(MlirNamedAttribute attr) {
+  return mlir::NamedAttribute(unwrap(attr.name), unwrap(attr.attribute));
+}
 
 //===----------------------------------------------------------------------===//
 // Utility macros for function declarations.

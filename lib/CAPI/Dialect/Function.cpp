@@ -36,10 +36,6 @@ using namespace llzk::function;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Function, llzk__function, FunctionDialect)
 
-static NamedAttribute unwrap(MlirNamedAttribute attr) {
-  return NamedAttribute(unwrap(attr.name), unwrap(attr.attribute));
-}
-
 //===----------------------------------------------------------------------===//
 // FuncDefOp
 //===----------------------------------------------------------------------===//
