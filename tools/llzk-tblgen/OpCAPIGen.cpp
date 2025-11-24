@@ -103,27 +103,11 @@ MLIR_CAPI_EXPORTED void {0}{1}{2}Set{3}(MlirOperation op, MlirValue value);
     );
   }
 
-  void genVariadicOperandCountGetterDecl() const {
+  void genVariadicOperandGetterDecl() const {
     static constexpr char fmt[] = R"(
 /* Get number of {3} operands in {4}::{2} Operation. */
 MLIR_CAPI_EXPORTED intptr_t {0}{1}{2}Get{3}Count(MlirOperation op);
-)";
-    assert(!className.empty() && "className must be set");
-    assert(!operandNameCapitalized.empty() && "operandName must be set");
-    os << llvm::formatv(
 
-        fmt,
-        FunctionPrefix,            // {0}
-        dialectNameCapitalized,    // {1}
-        className,                 // {2}
-        operandNameCapitalized,    // {3}
-        dialect->getCppNamespace() // {4}
-
-    );
-  }
-
-  void genVariadicOperandIndexedGetterDecl() const {
-    static constexpr char fmt[] = R"(
 /* Get {3} operand at index from {4}::{2} Operation. */
 MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index);
 )";
@@ -210,25 +194,11 @@ MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}(MlirOperation op);
     );
   }
 
-  void genVariadicResultCountGetterDecl() const {
+  void genVariadicResultGetterDecl() const {
     static constexpr char fmt[] = R"(
 /* Get number of {3} results in {4}::{2} Operation. */
 MLIR_CAPI_EXPORTED intptr_t {0}{1}{2}Get{3}Count(MlirOperation op);
-)";
-    assert(!className.empty() && "className must be set");
-    assert(!resultNameCapitalized.empty() && "resultName must be set");
-    os << llvm::formatv(
-        fmt,
-        FunctionPrefix,            // {0}
-        dialectNameCapitalized,    // {1}
-        className,                 // {2}
-        resultNameCapitalized,     // {3}
-        dialect->getCppNamespace() // {4}
-    );
-  }
 
-  void genVariadicResultIndexedGetterDecl() const {
-    static constexpr char fmt[] = R"(
 /* Get {3} result at index from {4}::{2} Operation. */
 MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index);
 )";
@@ -261,25 +231,11 @@ MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}(MlirOperation op);
     );
   }
 
-  void genVariadicRegionCountGetterDecl() const {
+  void genVariadicRegionGetterDecl() const {
     static constexpr char fmt[] = R"(
 /* Get number of {3} regions in {4}::{2} Operation. */
 MLIR_CAPI_EXPORTED intptr_t {0}{1}{2}Get{3}Count(MlirOperation op);
-)";
-    assert(!className.empty() && "className must be set");
-    assert(!regionNameCapitalized.empty() && "regionName must be set");
-    os << llvm::formatv(
-        fmt,
-        FunctionPrefix,            // {0}
-        dialectNameCapitalized,    // {1}
-        className,                 // {2}
-        regionNameCapitalized,     // {3}
-        dialect->getCppNamespace() // {4}
-    );
-  }
 
-  void genVariadicRegionIndexedGetterDecl() const {
-    static constexpr char fmt[] = R"(
 /* Get {3} region at index from {4}::{2} Operation. */
 MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}(MlirOperation op, intptr_t index);
 )";
@@ -387,8 +343,7 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &os)
       generator.setOperandName(operand.name);
       if (operand.isVariadic()) {
         if (GenOpOperandGetters) {
-          generator.genVariadicOperandCountGetterDecl();
-          generator.genVariadicOperandIndexedGetterDecl();
+          generator.genVariadicOperandGetterDecl();
         }
         if (GenOpOperandSetters) {
           generator.genVariadicOperandSetterDecl();
@@ -420,8 +375,7 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &os)
         const auto &result = op.getResult(i);
         generator.setResultName(result.name, i);
         if (result.isVariadic()) {
-          generator.genVariadicResultCountGetterDecl();
-          generator.genVariadicResultIndexedGetterDecl();
+          generator.genVariadicResultGetterDecl();
         } else {
           generator.genResultGetterDecl();
         }
@@ -434,8 +388,7 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &os)
         const auto &region = op.getRegion(i);
         generator.setRegionName(region.name, i);
         if (region.isVariadic()) {
-          generator.genVariadicRegionCountGetterDecl();
-          generator.genVariadicRegionIndexedGetterDecl();
+          generator.genVariadicRegionGetterDecl();
         } else {
           generator.genRegionGetterDecl();
         }
@@ -519,28 +472,14 @@ void {0}{1}{2}Set{3}(MlirOperation op, MlirValue value) {{
     );
   }
 
-  void genVariadicOperandCountGetterImpl(int startIdx) const {
+  void genVariadicOperandGetterImpl(int startIdx) const {
     static constexpr char fmt[] = R"(
 intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
   intptr_t count = mlirOperationGetNumOperands(op);
   assert(count >= {4} && "operand count less than start index");
   return count - {4};
 }
-)";
-    assert(!className.empty() && "className must be set");
-    assert(!operandNameCapitalized.empty() && "operandName must be set");
-    os << llvm::formatv(
-        fmt,
-        FunctionPrefix,         // {0}
-        dialectNameCapitalized, // {1}
-        className,              // {2}
-        operandNameCapitalized, // {3}
-        startIdx                // {4}
-    );
-  }
 
-  void genVariadicOperandIndexedGetterImpl(int startIdx) const {
-    static constexpr char fmt[] = R"(
 MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
   return mlirOperationGetOperand(op, {4} + index);
 }
@@ -660,28 +599,14 @@ MlirValue {0}{1}{2}Get{3}(MlirOperation op) {{
     );
   }
 
-  void genVariadicResultCountGetterImpl(int startIdx) const {
+  void genVariadicResultGetterImpl(int startIdx) const {
     static constexpr char fmt[] = R"(
 intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
   intptr_t count = mlirOperationGetNumResults(op);
   assert(count >= {4} && "result count less than start index");
   return count - {4};
 }
-)";
-    assert(!className.empty() && "className must be set");
-    assert(!resultNameCapitalized.empty() && "resultName must be set");
-    os << llvm::formatv(
-        fmt,
-        FunctionPrefix,         // {0}
-        dialectNameCapitalized, // {1}
-        className,              // {2}
-        resultNameCapitalized,  // {3}
-        startIdx                // {4}
-    );
-  }
 
-  void genVariadicResultIndexedGetterImpl(int startIdx) const {
-    static constexpr char fmt[] = R"(
 MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
   return mlirOperationGetResult(op, {4} + index);
 }
@@ -716,28 +641,14 @@ MlirRegion {0}{1}{2}Get{3}(MlirOperation op) {{
     );
   }
 
-  void genVariadicRegionCountGetterImpl(unsigned startIdx) const {
+  void genVariadicRegionGetterImpl(unsigned startIdx) const {
     static constexpr char fmt[] = R"(
 intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
   intptr_t count = mlirOperationGetNumRegions(op);
   assert(count >= {4} && "region count less than start index");
   return count - {4};
 }
-)";
-    assert(!className.empty() && "className must be set");
-    assert(!regionNameCapitalized.empty() && "regionName must be set");
-    os << llvm::formatv(
-        fmt,
-        FunctionPrefix,         // {0}
-        dialectNameCapitalized, // {1}
-        className,              // {2}
-        regionNameCapitalized,  // {3}
-        startIdx                // {4}
-    );
-  }
 
-  void genVariadicRegionIndexedGetterImpl(unsigned startIdx) const {
-    static constexpr char fmt[] = R"(
 MlirRegion {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
   return mlirOperationGetRegion(op, {4} + index);
 }
@@ -869,8 +780,7 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
       generator.setOperandName(operand.name);
       if (operand.isVariadic()) {
         if (GenOpOperandGetters) {
-          generator.genVariadicOperandCountGetterImpl(i);
-          generator.genVariadicOperandIndexedGetterImpl(i);
+          generator.genVariadicOperandGetterImpl(i);
         }
         if (GenOpOperandSetters) {
           generator.genVariadicOperandSetterImpl(i);
@@ -902,8 +812,7 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
         const auto &result = op.getResult(i);
         generator.setResultName(result.name, i);
         if (result.isVariadic()) {
-          generator.genVariadicResultCountGetterImpl(i);
-          generator.genVariadicResultIndexedGetterImpl(i);
+          generator.genVariadicResultGetterImpl(i);
         } else {
           generator.genResultGetterImpl(i);
         }
@@ -916,8 +825,7 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
         const auto &region = op.getRegion(i);
         generator.setRegionName(region.name, i);
         if (region.isVariadic()) {
-          generator.genVariadicRegionCountGetterImpl(i);
-          generator.genVariadicRegionIndexedGetterImpl(i);
+          generator.genVariadicRegionGetterImpl(i);
         } else {
           generator.genRegionGetterImpl(i);
         }

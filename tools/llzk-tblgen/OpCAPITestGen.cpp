@@ -127,7 +127,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}) {{
 }
 )";
 
-    static constexpr char VariadicOperandCountGetterTest[] = R"(
+    static constexpr char VariadicOperandGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexOperation();
   
@@ -137,9 +137,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   
   mlirOperationDestroy(testOp);
 }
-)";
 
-    static constexpr char VariadicOperandIndexedGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
   auto testOp = createIndexOperation();
   
@@ -172,14 +170,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}_Variadic) {{
       if (operand.isVariadic()) {
         if (GenOpOperandGetters) {
           os << llvm::formatv(
-              VariadicOperandCountGetterTest,
-              FunctionPrefix,         // {0}
-              dialectNameCapitalized, // {1}
-              className,              // {2}
-              capName                 // {3}
-          );
-          os << llvm::formatv(
-              VariadicOperandIndexedGetterTest,
+              VariadicOperandGetterTest,
               FunctionPrefix,         // {0}
               dialectNameCapitalized, // {1}
               className,              // {2}
@@ -284,7 +275,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}) {{
 }
 )";
 
-    static constexpr char VariadicResultCountGetterTest[] = R"(
+    static constexpr char VariadicResultGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexOperation();
   
@@ -294,9 +285,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   
   mlirOperationDestroy(testOp);
 }
-)";
 
-    static constexpr char VariadicResultIndexedGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
   auto testOp = createIndexOperation();
   
@@ -317,14 +306,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
 
       if (result.isVariadic()) {
         os << llvm::formatv(
-            VariadicResultCountGetterTest,
-            FunctionPrefix,         // {0}
-            dialectNameCapitalized, // {1}
-            className,              // {2}
-            capName                 // {3}
-        );
-        os << llvm::formatv(
-            VariadicResultIndexedGetterTest,
+            VariadicResultGetterTest,
             FunctionPrefix,         // {0}
             dialectNameCapitalized, // {1}
             className,              // {2}
@@ -357,7 +339,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Region) {{
 }
 )";
 
-    static constexpr char VariadicRegionCountGetterTest[] = R"(
+    static constexpr char VariadicRegionGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexOperation();
   
@@ -367,9 +349,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   
   mlirOperationDestroy(testOp);
 }
-)";
 
-    static constexpr char VariadicRegionIndexedGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
   auto testOp = createIndexOperation();
   
@@ -390,14 +370,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
 
       if (region.isVariadic()) {
         os << llvm::formatv(
-            VariadicRegionCountGetterTest,
-            FunctionPrefix,         // {0}
-            dialectNameCapitalized, // {1}
-            className,              // {2}
-            capName                 // {3}
-        );
-        os << llvm::formatv(
-            VariadicRegionIndexedGetterTest,
+            VariadicRegionGetterTest,
             FunctionPrefix,         // {0}
             dialectNameCapitalized, // {1}
             className,              // {2}
