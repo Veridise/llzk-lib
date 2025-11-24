@@ -19,12 +19,12 @@ namespace llzk {
 
 #define DEBUG_TYPE "llzk-compute-constrain-to-product-pass"
 
-namespace llzk {
-using std::make_unique;
-
 using namespace llzk::component;
 using namespace llzk::function;
 using namespace mlir;
+
+namespace llzk {
+using std::make_unique;
 
 bool isValidRoot(StructDefOp root) {
   FuncDefOp computeFunc = root.getComputeFuncOp();

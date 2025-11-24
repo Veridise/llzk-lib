@@ -5,9 +5,10 @@
 
 #define DEBUG_TYPE "llzk-signal-equivalence"
 
-namespace llzk {
 using namespace mlir;
-using namespace component;
+using namespace llzk::component;
+
+namespace llzk {
 
 LightweightSignalEquivalenceAnalysis::LightweightSignalEquivalenceAnalysis(mlir::Operation *) {}
 
