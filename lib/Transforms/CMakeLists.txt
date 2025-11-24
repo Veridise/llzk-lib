@@ -21,6 +21,7 @@ target_link_libraries(
   PRIVATE
     LLZKDialect
     R1CSDialect
+    LLZKAnalysis
 )
 
 add_dependencies(LLZKTransforms LLZKDialect LLZKDialectHeaders)
