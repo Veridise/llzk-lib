@@ -27,8 +27,8 @@
 
 #include <llvm/ADT/STLExtras.h>
 
-using namespace llzk;
 using namespace mlir;
+using namespace llzk;
 using namespace llzk::component;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component, StructDialect)

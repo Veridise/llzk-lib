@@ -26,20 +26,16 @@
 
 #include <mlir-c/Pass.h>
 
-static void registerLLZKPolymorphicTransformationPasses() {
-  llzk::polymorphic::registerTransformationPasses();
-}
-
+using namespace mlir;
 using namespace llzk;
 using namespace llzk::polymorphic;
-using namespace mlir;
+
+static void registerLLZKPolymorphicTransformationPasses() { registerTransformationPasses(); }
 
 // Include impl for transformation passes
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.cpp.inc"
 
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(
-    Polymorphic, llzk__polymorphic, llzk::polymorphic::PolymorphicDialect
-)
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic, PolymorphicDialect)
 
 //===----------------------------------------------------------------------===//
 // TypeVarType
@@ -109,15 +105,15 @@ bool llzkOperationIsAApplyMapOp(MlirOperation op) { return llvm::isa<ApplyMapOp>
 
 /// Returns the affine map associated with the op.
 MlirAffineMap llzkApplyMapOpGetAffineMap(MlirOperation op) {
-  return wrap(mlir::unwrap_cast<ApplyMapOp>(op).getAffineMap());
+  return wrap(unwrap_cast<ApplyMapOp>(op).getAffineMap());
 }
 
 static ValueRange dimOperands(MlirOperation op) {
-  return mlir::unwrap_cast<ApplyMapOp>(op).getDimOperands();
+  return unwrap_cast<ApplyMapOp>(op).getDimOperands();
 }
 
 static ValueRange symbolOperands(MlirOperation op) {
-  return mlir::unwrap_cast<ApplyMapOp>(op).getSymbolOperands();
+  return unwrap_cast<ApplyMapOp>(op).getSymbolOperands();
 }
 
 static void copyValues(ValueRange in, MlirValue *out) {

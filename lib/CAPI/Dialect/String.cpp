@@ -15,8 +15,8 @@
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
 
-using namespace llzk::string;
 using namespace mlir;
+using namespace llzk::string;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(String, llzk__string, StringDialect)
 
