@@ -245,7 +245,7 @@ private:
           .Case<MulFeltOp>([&b, &llzkToPcl, &res](auto m) {
         res = lowerBinaryLike<MulFeltOp, pcl::MulOp>(b, m, llzkToPcl);
       })
-          .Case<IntToFeltOp>([&llzkToPcl, &res](IntToFeltOp m) {
+          .Case<IntToFeltOp>([&llzkToPcl, &res](auto m) {
         auto arg = lookup(m.getValue(), llzkToPcl, m.getOperation());
         if (failed(arg)) {
           res = failure();
@@ -253,61 +253,61 @@ private:
         }
         rememberResult(m.getResult(), arg.value(), llzkToPcl);
       })
-          .Case<CmpOp>([&b, &llzkToPcl, &res](CmpOp m) {
-        auto pred = m.getPredicate();
+          .Case<CmpOp>([&b, &llzkToPcl, &res](auto cmp) {
+        auto pred = cmp.getPredicate();
         switch (pred) {
         case FeltCmpPredicate::EQ:
-          res = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, m, llzkToPcl);
+          res = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, cmp, llzkToPcl);
           break;
         case FeltCmpPredicate::NE: {
           // Translate not-equals as an equality followed by a negation
-          auto eq = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, m, llzkToPcl);
+          auto eq = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, cmp, llzkToPcl);
           if (failed(eq)) {
             res = eq;
             break;
           }
           // Get the result from the `pcl::CmpEqOp` to pass into `Neg`
-          auto eqRes = lookup(m.getResult(), llzkToPcl, m.getOperation());
+          auto eqRes = lookup(cmp.getResult(), llzkToPcl, cmp.getOperation());
           if (failed(eqRes)) {
             res = failure();
             break;
           }
-          auto loc = m.getLoc();
+          auto loc = cmp.getLoc();
           auto neg = b.create<pcl::NegOp>(loc, *eqRes);
           // Associate the result of the llzk-op with the result of the pcl-neg
-          rememberResult(m.getResult(), neg.getResult(), llzkToPcl);
+          rememberResult(cmp.getResult(), neg.getResult(), llzkToPcl);
           break;
         }
         case FeltCmpPredicate::LT:
-          res = lowerBinaryLike<CmpOp, pcl::CmpLtOp>(b, m, llzkToPcl);
+          res = lowerBinaryLike<CmpOp, pcl::CmpLtOp>(b, cmp, llzkToPcl);
           break;
         case FeltCmpPredicate::LE:
-          res = lowerBinaryLike<CmpOp, pcl::CmpLeOp>(b, m, llzkToPcl);
+          res = lowerBinaryLike<CmpOp, pcl::CmpLeOp>(b, cmp, llzkToPcl);
           break;
         case FeltCmpPredicate::GT:
-          res = lowerBinaryLike<CmpOp, pcl::CmpGtOp>(b, m, llzkToPcl);
+          res = lowerBinaryLike<CmpOp, pcl::CmpGtOp>(b, cmp, llzkToPcl);
           break;
         case FeltCmpPredicate::GE:
-          res = lowerBinaryLike<CmpOp, pcl::CmpGeOp>(b, m, llzkToPcl);
+          res = lowerBinaryLike<CmpOp, pcl::CmpGeOp>(b, cmp, llzkToPcl);
           break;
         }
       })
-          .Case<EmitEqualityOp>([&b, &llzkToPcl, &res](EmitEqualityOp m) {
-        auto lhs = lookup(m.getLhs(), llzkToPcl, m.getOperation());
-        auto rhs = lookup(m.getRhs(), llzkToPcl, m.getOperation());
+          .Case<EmitEqualityOp>([&b, &llzkToPcl, &res](auto eq) {
+        auto lhs = lookup(eq.getLhs(), llzkToPcl, eq.getOperation());
+        auto rhs = lookup(eq.getRhs(), llzkToPcl, eq.getOperation());
         if (failed(lhs) || failed(rhs)) {
           res = failure();
           return;
         }
 
         Value lhsVal = *lhs, rhsVal = *rhs;
-        auto loc = m.getLoc();
+        auto loc = eq.getLoc();
         if (failed(emitAssertEqOptimized(b, loc, lhsVal, rhsVal))) {
           res = failure();
           return;
         }
       })
-          .Case<FieldReadOp>([&field2pclvar, &llzkToPcl, &srcFunc](FieldReadOp read) {
+          .Case<FieldReadOp>([&field2pclvar, &llzkToPcl, &srcFunc](auto read) {
         // At this point every field in the struct should have a var associated with it
         // so we should simply retrieve the var associated with the field.
         assert(read.getComponent() == srcFunc.getArguments()[0]);
@@ -317,7 +317,7 @@ private:
           llvm_unreachable("Every field should have been mapped to a pcl var");
         }
       })
-          .Case<ReturnOp>([&b, &outVars](ReturnOp ret) {
+          .Case<ReturnOp>([&b, &outVars](auto ret) {
         // We return all the output vars we defined above.
         b.create<pcl::ReturnOp>(
             ret.getLoc(), (llvm::SmallVector<Value>(outVars.begin(), outVars.end()))
