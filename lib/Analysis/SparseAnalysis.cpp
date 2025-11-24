@@ -48,8 +48,8 @@ namespace llzk::dataflow {
 // AbstractSparseForwardDataFlowAnalysis
 //===----------------------------------------------------------------------===//
 
-AbstractSparseForwardDataFlowAnalysis::AbstractSparseForwardDataFlowAnalysis(DataFlowSolver &solver)
-    : DataFlowAnalysis(solver) {
+AbstractSparseForwardDataFlowAnalysis::AbstractSparseForwardDataFlowAnalysis(DataFlowSolver &s)
+    : DataFlowAnalysis(s) {
   registerAnchorKind<CFGEdge>();
 }
 

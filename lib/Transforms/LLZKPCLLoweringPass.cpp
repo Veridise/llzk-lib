@@ -317,10 +317,10 @@ private:
           llvm_unreachable("Every field should have been mapped to a pcl var");
         }
       })
-          .Case<ReturnOp>([&b, &outVars](ReturnOp op) {
+          .Case<ReturnOp>([&b, &outVars](ReturnOp ret) {
         // We return all the output vars we defined above.
         b.create<pcl::ReturnOp>(
-            op.getLoc(), (llvm::SmallVector<Value>(outVars.begin(), outVars.end()))
+            ret.getLoc(), (llvm::SmallVector<Value>(outVars.begin(), outVars.end()))
         );
       }).Default([](Operation *unknown) {
         unknown->emitError("unsupported op in PCL lowering: ") << unknown->getName();
