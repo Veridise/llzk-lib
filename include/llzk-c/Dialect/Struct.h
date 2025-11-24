@@ -105,20 +105,14 @@ MLIR_CAPI_EXPORTED const char *
 llzkStructDefOpGetHeaderString(MlirOperation op, intptr_t *dstSize, char *(*alloc_string)(size_t));
 
 /// Returns true if the struct has a parameter that with the given name.
-LLZK_DECLARE_NARY_OP_PREDICATE(StructDefOp, HasParamName, MlirStringRef name);
+LLZK_DECLARE_NARY_OP_PREDICATE(Struct, StructDefOp, HasParamName, MlirStringRef name);
 
 /// Returns a StringAttr with the fully qualified name of the struct.
 MLIR_CAPI_EXPORTED MlirAttribute llzkStructDefOpGetFullyQualifiedName(MlirOperation op);
 
-/// Returns true if the struct is the main entry point of the circuit.
-LLZK_DECLARE_OP_PREDICATE(StructDefOp, IsMainComponent);
-
 //===----------------------------------------------------------------------===//
 // FieldDefOp
 //===----------------------------------------------------------------------===//
-
-/// Returns true if the field has been marked public with a PublicAttr
-LLZK_DECLARE_OP_PREDICATE(FieldDefOp, HasPublicAttr);
 
 /// Sets the public attribute in the given field.
 MLIR_CAPI_EXPORTED void llzkFieldDefOpSetPublicAttr(MlirOperation op, bool value);
@@ -129,28 +123,29 @@ MLIR_CAPI_EXPORTED void llzkFieldDefOpSetPublicAttr(MlirOperation op, bool value
 
 /// Creates a FieldReadOp.
 LLZK_DECLARE_OP_BUILD_METHOD(
-    FieldReadOp, MlirType type, MlirValue component, MlirStringRef fieldName
+    Struct, FieldReadOp, MlirType type, MlirValue component, MlirStringRef fieldName
 );
 
 /// Creates a FieldReadOp to a column offset by the given distance affine map. The values in the
 /// ValueRange are operands representing the arguments to the affine map. The integer value is the
 /// number of arguments in the map that are dimensions.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    FieldReadOp, WithAffineMapDistance, MlirType type, MlirValue component, MlirStringRef fieldName,
-    MlirAffineMap affineMap, MlirValueRange mapOperands, int32_t nDimensions
+    Struct, FieldReadOp, WithAffineMapDistance, MlirType type, MlirValue component,
+    MlirStringRef fieldName, MlirAffineMap affineMap, MlirValueRange mapOperands,
+    int32_t nDimensions
 );
 
 /// Creates a FieldReadOp to a column offset by the given distance defined by a name to a constant
 /// parameter in the struct.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    FieldReadOp, WithConstParamDistance, MlirType type, MlirValue component,
+    Struct, FieldReadOp, WithConstParamDistance, MlirType type, MlirValue component,
     MlirStringRef fieldName, MlirStringRef paramName
 );
 
 /// Creates a FieldReadOp to a column offset by the given distance defined by an integer value.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    FieldReadOp, WithLiteralDistance, MlirType type, MlirValue component, MlirStringRef fieldName,
-    int64_t distance
+    Struct, FieldReadOp, WithLiteralDistance, MlirType type, MlirValue component,
+    MlirStringRef fieldName, int64_t distance
 );
 
 #ifdef __cplusplus

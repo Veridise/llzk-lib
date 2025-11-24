@@ -21,11 +21,3 @@ using namespace llzk::global;
 #include "llzk/Dialect/Global/IR/Ops.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Global, llzk__global, GlobalDialect)
-
-//===----------------------------------------------------------------------===//
-// GlobalDefOp
-//===----------------------------------------------------------------------===//
-
-bool llzkGlobalDefOpGetIsConstant(MlirOperation op) {
-  return llvm::cast<GlobalDefOp>(unwrap(op)).isConstant();
-}

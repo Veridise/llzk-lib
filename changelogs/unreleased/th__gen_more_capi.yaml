@@ -3,15 +3,67 @@ added:
 
 changed:
   - CAPI Renames:
-    - llzkArrayTypeGet to llzkArrayArrayTypeGetWithDims
-    - llzkArrayTypeGetWithNumericDims to llzkArrayArrayTypeGetWithShape
-    - llzkArrayTypeGetElementType to llzkArrayArrayTypeGetElementType
-    - llzkArrayTypeGetNumDims to llzkArrayArrayTypeGetDimensionSizesCount
-    - llzkArrayTypeGetDim to llzkArrayArrayTypeGetDimensionSizesAt
-    - LlzkCmp to LlzkBoolFeltCmpPredicate
-    - llzkFeltCmpPredicateAttrGet to llzkBoolFeltCmpPredicateAttrGet
-    - llzkFeltConstAttrGet to llzkFeltFeltConstAttrGet
-    - llzkFeltConstAttrGetWithBits to llzkFeltFeltConstAttrGetWithBits
-    - llzkFeltConstAttrGetFromString to llzkFeltFeltConstAttrGetFromString
-    - llzkFeltConstAttrGetFromParts to llzkFeltFeltConstAttrGetFromParts
-    - llzkFeltTypeGet to llzkFeltFeltTypeGet
+    - All Dialects:
+      - llzk<KIND>IsA<NAME> to llzk<KIND>IsA<DIALECT><NAME>
+    - Array Dialect:
+      - llzkArrayTypeGet to llzkArrayArrayTypeGetWithDims
+      - llzkArrayTypeGetWithNumericDims to llzkArrayArrayTypeGetWithShape
+      - llzkArrayTypeGetElementType to llzkArrayArrayTypeGetElementType
+      - llzkArrayTypeGetNumDims to llzkArrayArrayTypeGetDimensionSizesCount
+      - llzkArrayTypeGetDim to llzkArrayArrayTypeGetDimensionSizesAt
+      - llzkCreateArrayOpBuildWithValues to llzkArrayCreateArrayOpBuildWithValues
+      - llzkCreateArrayOpBuildWithMapOperands to llzkArrayCreateArrayOpBuildWithMapOperands
+      - llzkCreateArrayOpBuildWithMapOperandsAndDims to llzkArrayCreateArrayOpBuildWithMapOperandsAndDims
+    - Bool Dialect:
+      - LlzkCmp to LlzkBoolFeltCmpPredicate
+      - llzkFeltCmpPredicateAttrGet to llzkBoolFeltCmpPredicateAttrGet
+    - Felt Dialect:
+      - llzkFeltConstAttrGet to llzkFeltFeltConstAttrGet
+      - llzkFeltConstAttrGetWithBits to llzkFeltFeltConstAttrGetWithBits
+      - llzkFeltConstAttrGetFromString to llzkFeltFeltConstAttrGetFromString
+      - llzkFeltConstAttrGetFromParts to llzkFeltFeltConstAttrGetFromParts
+      - llzkFeltTypeGet to llzkFeltFeltTypeGet
+    - Function Dialect:
+      - llzkFuncDefOpGetHasAllowConstraintAttr to llzkFunctionFuncDefOpHasAllowConstraintAttr
+      - llzkFuncDefOpGetHasAllowWitnessAttr to llzkFunctionFuncDefOpHasAllowWitnessAttr
+      - llzkFuncDefOpGetNameIsCompute to llzkFunctionFuncDefOpNameIsCompute
+      - llzkFuncDefOpGetNameIsConstrain to llzkFunctionFuncDefOpNameIsConstrain
+      - llzkFuncDefOpGetIsInStruct to llzkFunctionFuncDefOpIsInStruct
+      - llzkFuncDefOpGetIsStructCompute to llzkFunctionFuncDefOpIsStructCompute
+      - llzkFuncDefOpGetIsStructConstrain to llzkFunctionFuncDefOpIsStructConstrain
+      - llzkFuncDefOpSetAllowConstraintAttr to llzkFunctionFuncDefOpSetAllowConstraintAttr
+      - llzkFuncDefOpSetAllowWitnessAttr to llzkFunctionFuncDefOpSetAllowWitnessAttr
+      - llzkFuncDefOpGetFullyQualifiedName to llzkFunctionFuncDefOpGetFullyQualifiedName
+      - llzkFuncDefOpGetSelfValueFromCompute to llzkFunctionFuncDefOpGetSelfValueFromCompute
+      - llzkFuncDefOpGetSelfValueFromConstrain to llzkFunctionFuncDefOpGetSelfValueFromConstrain
+      - llzkFuncDefOpGetSingleResultTypeOfCompute to llzkFunctionFuncDefOpGetSingleResultTypeOfCompute
+      - llzkFuncDefOpGetHasArgIsPub to llzkFunctionFuncDefOpHasArgPublicAttr
+      - llzkFuncDefOpCreateWithAttrsAndArgAttrs to llzkFunctionFuncDefOpCreateWithAttrsAndArgAttrs
+      - llzkFuncDefOpCreateWithAttrs to llzkFunctionFuncDefOpCreateWithAttrs
+      - llzkFuncDefOpCreate to llzkFunctionFuncDefOpCreate
+      - llzkFuncDefOpCreateWithArgAttrs to llzkFunctionFuncDefOpCreateWithArgAttrs
+      - llzkCallOpBuild to llzkFunctionCallOpBuild
+      - llzkCallOpGetCalleeIsCompute to llzkFunctionCallOpCalleeIsCompute
+      - llzkCallOpGetCalleeIsConstrain to llzkFunctionCallOpCalleeIsConstrain
+      - llzkCallOpGetCalleeIsStructCompute to llzkFunctionCallOpCalleeIsStructCompute
+      - llzkCallOpGetCalleeIsStructConstrain to llzkFunctionCallOpCalleeIsStructConstrain
+      - llzkCallOpGetCalleeType to llzkFunctionCallOpGetCalleeType
+      - llzkCallOpGetSelfValueFromCompute to llzkFunctionCallOpGetSelfValueFromCompute
+      - llzkCallOpGetSelfValueFromConstrain to llzkFunctionCallOpGetSelfValueFromConstrain
+      - llzkCallOpGetSingleResultTypeOfCompute to llzkFunctionCallOpGetSingleResultTypeOfCompute
+    - Global Dialect:
+      - llzkGlobalDefOpGetIsConstant to llzkGlobalGlobalDefOpIsConstant
+    - Poly Dialect:
+      - llzkApplyMapOpBuild to llzkPolyApplyMapOpBuild
+      - llzkApplyMapOpBuildWithAffineExpr to llzkPolyApplyMapOpBuildWithAffineExpr
+      - llzkApplyMapOpBuildWithAffineMap to llzkPolyApplyMapOpBuildWithAffineMap
+    - Struct Dialect:
+      - llzkStructDefOpGetHasParamName to llzkStructStructDefOpGetHasParamName
+      - llzkStructDefOpGetIsMainComponent to llzkStructStructDefOpIsMainComponent
+      - llzkFieldDefOpGetHasPublicAttr to llzkStructFieldDefOpHasPublicAttr
+      - llzkFieldReadOpBuild to llzkStructFieldReadOpBuild
+      - llzkFieldReadOpBuildWithAffineMapDistance to llzkStructFieldReadOpBuildWithAffineMapDistance
+      - llzkFieldReadOpBuildWithConstParamDistance to llzkStructFieldReadOpBuildWithConstParamDistance
+      - llzkFieldReadOpBuildWithLiteralDistance to llzkStructFieldReadOpBuildWithLiteralDistance
+    
+

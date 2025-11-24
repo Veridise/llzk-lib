@@ -37,7 +37,7 @@ static MlirOperation create_func_def_op(
     llvm::ArrayRef<MlirAttribute> arg_attrs
 ) {
   auto location = mlirLocationUnknownGet(ctx);
-  return llzkFuncDefOpCreateWithAttrsAndArgAttrs(
+  return llzkFunctionFuncDefOpCreateWithAttrsAndArgAttrs(
       location, mlirStringRefCreateFromCString(name), type, attrs.size(), attrs.data(),
       arg_attrs.size(), arg_attrs.data()
   );
@@ -113,30 +113,30 @@ TEST_F(FuncDialectTest, llzk_operation_is_a_func_def_op_pass) {
 
 TEST_F(FuncDialectTest, llzk_func_def_op_get_has_allow_constraint_attr) {
   auto f = test_function();
-  EXPECT_TRUE(!llzkFuncDefOpGetHasAllowConstraintAttr(f.op));
+  EXPECT_TRUE(!llzkFunctionFuncDefOpHasAllowConstraintAttr(f.op));
 }
 
 TEST_F(FuncDialectTest, llzk_func_def_op_set_allow_constraint_attr) {
   auto f = test_function();
-  EXPECT_TRUE(!llzkFuncDefOpGetHasAllowConstraintAttr(f.op));
-  llzkFuncDefOpSetAllowConstraintAttr(f.op, true);
-  EXPECT_TRUE(llzkFuncDefOpGetHasAllowConstraintAttr(f.op));
-  llzkFuncDefOpSetAllowConstraintAttr(f.op, false);
-  EXPECT_TRUE(!llzkFuncDefOpGetHasAllowConstraintAttr(f.op));
+  EXPECT_TRUE(!llzkFunctionFuncDefOpHasAllowConstraintAttr(f.op));
+  llzkFunctionFuncDefOpSetAllowConstraintAttr(f.op, true);
+  EXPECT_TRUE(llzkFunctionFuncDefOpHasAllowConstraintAttr(f.op));
+  llzkFunctionFuncDefOpSetAllowConstraintAttr(f.op, false);
+  EXPECT_TRUE(!llzkFunctionFuncDefOpHasAllowConstraintAttr(f.op));
 }
 
 TEST_F(FuncDialectTest, llzk_func_def_op_get_has_allow_witness_attr) {
   auto f = test_function();
-  EXPECT_TRUE(!llzkFuncDefOpGetHasAllowWitnessAttr(f.op));
+  EXPECT_TRUE(!llzkFunctionFuncDefOpHasAllowWitnessAttr(f.op));
 }
 
 TEST_F(FuncDialectTest, llzk_func_def_op_set_allow_witness_attr) {
   auto f = test_function();
-  EXPECT_TRUE(!llzkFuncDefOpGetHasAllowWitnessAttr(f.op));
-  llzkFuncDefOpSetAllowWitnessAttr(f.op, true);
-  EXPECT_TRUE(llzkFuncDefOpGetHasAllowWitnessAttr(f.op));
-  llzkFuncDefOpSetAllowWitnessAttr(f.op, false);
-  EXPECT_TRUE(!llzkFuncDefOpGetHasAllowWitnessAttr(f.op));
+  EXPECT_TRUE(!llzkFunctionFuncDefOpHasAllowWitnessAttr(f.op));
+  llzkFunctionFuncDefOpSetAllowWitnessAttr(f.op, true);
+  EXPECT_TRUE(llzkFunctionFuncDefOpHasAllowWitnessAttr(f.op));
+  llzkFunctionFuncDefOpSetAllowWitnessAttr(f.op, false);
+  EXPECT_TRUE(!llzkFunctionFuncDefOpHasAllowWitnessAttr(f.op));
 }
 
 TEST_F(FuncDialectTest, llzk_func_def_op_get_has_arg_is_pub) {
@@ -151,7 +151,7 @@ TEST_F(FuncDialectTest, llzk_func_def_op_get_fully_qualified_name) {
   // cannot see that.
   auto f = test_function();
   if (f.op.ptr == (void *)NULL) {
-    llzkFuncDefOpGetFullyQualifiedName(f.op);
+    llzkFunctionFuncDefOpGetFullyQualifiedName(f.op, true);
   }
 }
 
@@ -161,31 +161,11 @@ TEST_F(FuncDialectTest, llzk_func_def_op_get_fully_qualified_name) {
     EXPECT_FALSE(func(f.op));                                                                      \
   }
 
-false_pred_test(llzk_func_def_op_get_name_is_compute, llzkFuncDefOpGetNameIsCompute);
-false_pred_test(llzk_func_def_op_get_name_is_constrain, llzkFuncDefOpGetNameIsConstrain);
-false_pred_test(llzk_func_def_op_get_is_in_struct, llzkFuncDefOpGetIsInStruct);
-false_pred_test(llzk_func_def_op_get_is_struct_compute, llzkFuncDefOpGetIsStructCompute);
-false_pred_test(llzk_func_def_op_get_is_struct_constrain, llzkFuncDefOpGetIsStructConstrain);
-
-/// We want to link the function to make sure it has been implemented but we don't want to
-/// call it because the precondition checks will fail with the test function.
-#define link_test_func_def_op(name, func)                                                          \
-  TEST_F(FuncDialectTest, name) {                                                                  \
-    auto f = test_function();                                                                      \
-    if (llzkFuncDefOpGetIsInStruct(f.op)) {                                                        \
-      func(f.op);                                                                                  \
-    }                                                                                              \
-  }
-
-link_test_func_def_op(
-    llzk_func_def_op_get_self_value_from_compute, llzkFuncDefOpGetSelfValueFromCompute
-);
-link_test_func_def_op(
-    llzk_func_def_op_get_self_value_from_constrain, llzkFuncDefOpGetSelfValueFromConstrain
-);
-link_test_func_def_op(
-    llzk_func_def_op_get_single_result_type_of_compute, llzkFuncDefOpGetSingleResultTypeOfCompute
-);
+false_pred_test(llzk_func_def_op_get_name_is_compute, llzkFunctionFuncDefOpNameIsCompute);
+false_pred_test(llzk_func_def_op_get_name_is_constrain, llzkFunctionFuncDefOpNameIsConstrain);
+false_pred_test(llzk_func_def_op_get_is_in_struct, llzkFunctionFuncDefOpIsInStruct);
+false_pred_test(llzk_func_def_op_get_is_struct_compute, llzkFunctionFuncDefOpIsStructCompute);
+false_pred_test(llzk_func_def_op_get_is_struct_constrain, llzkFunctionFuncDefOpIsStructConstrain);
 
 TEST_F(FuncDialectTest, llzk_call_op_build) {
   auto f = test_function0();
@@ -193,7 +173,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build) {
   auto builder = mlirOpBuilderCreate(ctx);
   auto location = mlirLocationUnknownGet(ctx);
   auto callee_name = mlirFlatSymbolRefAttrGet(ctx, f.nameRef());
-  auto call = llzkCallOpBuild(
+  auto call = llzkFunctionCallOpBuild(
       builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
       (const MlirValue *)NULL
   );
@@ -207,7 +187,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee) {
   auto ctx = mlirOperationGetContext(f.op);
   auto builder = mlirOpBuilderCreate(ctx);
   auto location = mlirLocationUnknownGet(ctx);
-  auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
+  auto call = llzkFunctionCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
   mlirOpBuilderDestroy(builder);
@@ -220,7 +200,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands) {
   auto location = mlirLocationUnknownGet(ctx);
   auto callee_name = mlirFlatSymbolRefAttrGet(ctx, f.nameRef());
   auto dims_per_map = mlirDenseI32ArrayGet(ctx, 0, (const int *)NULL);
-  auto call = llzkCallOpBuildWithMapOperands(
+  auto call = llzkFunctionCallOpBuildWithMapOperands(
       builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
       (const MlirValueRange *)NULL, dims_per_map, 0, (const MlirValue *)NULL
   );
@@ -235,7 +215,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands_and_dims) {
   auto builder = mlirOpBuilderCreate(ctx);
   auto location = mlirLocationUnknownGet(ctx);
   auto callee_name = mlirFlatSymbolRefAttrGet(ctx, f.nameRef());
-  auto call = llzkCallOpBuildWithMapOperandsAndDims(
+  auto call = llzkFunctionCallOpBuildWithMapOperandsAndDims(
       builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
       (const MlirValueRange *)NULL, 0, (const int *)NULL, 0, (const MlirValue *)NULL
   );
@@ -250,7 +230,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
   auto builder = mlirOpBuilderCreate(ctx);
   auto location = mlirLocationUnknownGet(ctx);
   auto dims_per_map = mlirDenseI32ArrayGet(ctx, 0, (const int *)NULL);
-  auto call = llzkCallOpBuildToCalleeWithMapOperands(
+  auto call = llzkFunctionCallOpBuildToCalleeWithMapOperands(
       builder, location, f.op, 0, (const MlirValueRange *)NULL, dims_per_map, 0,
       (const MlirValue *)NULL
   );
@@ -263,7 +243,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims)
   auto f = test_function0();
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
-  auto call = llzkCallOpBuildToCalleeWithMapOperandsAndDims(
+  auto call = llzkFunctionCallOpBuildToCalleeWithMapOperandsAndDims(
       builder, location, f.op, 0, (const MlirValueRange *)NULL, 0, (const int *)NULL, 0,
       (const MlirValue *)NULL
   );
@@ -277,7 +257,8 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims)
     auto f = test_function0();                                                                     \
     auto builder = mlirOpBuilderCreate(context);                                                   \
     auto location = mlirLocationUnknownGet(context);                                               \
-    auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);      \
+    auto call =                                                                                    \
+        llzkFunctionCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);      \
     EXPECT_EQ(func(call), expected);                                                               \
     mlirOperationDestroy(call);                                                                    \
     mlirOpBuilderDestroy(builder);                                                                 \
@@ -290,42 +271,24 @@ TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
   auto ctx = mlirOperationGetContext(f.op);
   auto builder = mlirOpBuilderCreate(ctx);
   auto location = mlirLocationUnknownGet(ctx);
-  auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
+  auto call = llzkFunctionCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
 
   auto func_type = create_func_type(ctx, f.in_types, f.out_types);
-  auto out_type = llzkCallOpGetCalleeType(call);
+  auto out_type = llzkFunctionCallOpGetCalleeType(call);
   EXPECT_TRUE(mlirTypeEqual(func_type, out_type));
 
   mlirOperationDestroy(call);
   mlirOpBuilderDestroy(builder);
 }
 
-call_pred_test(test_llzk_call_op_get_callee_is_compute, llzkCallOpGetCalleeIsCompute, false);
-call_pred_test(test_llzk_call_op_get_callee_is_constrain, llzkCallOpGetCalleeIsConstrain, false);
+call_pred_test(test_llzk_call_op_get_callee_is_compute, llzkFunctionCallOpCalleeIsCompute, false);
 call_pred_test(
-    test_llzk_call_op_get_callee_is_struct_compute, llzkCallOpGetCalleeIsStructCompute, false
+    test_llzk_call_op_get_callee_is_constrain, llzkFunctionCallOpCalleeIsConstrain, false
 );
 call_pred_test(
-    test_llzk_call_op_get_callee_is_struct_constrain, llzkCallOpGetCalleeIsStructConstrain, false
+    test_llzk_call_op_get_callee_is_struct_compute, llzkFunctionCallOpCalleeIsStructCompute, false
 );
-
-/// We want to link the function to make sure it has been implemented but we don't want to
-/// call it because the precondition checks will fail with the test function.
-#define link_test_call_op(name, func)                                                              \
-  TEST_F(FuncDialectTest, name) {                                                                  \
-    auto f = test_function0();                                                                     \
-    auto builder = mlirOpBuilderCreate(context);                                                   \
-    auto location = mlirLocationUnknownGet(context);                                               \
-    auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);      \
-    if (llzkCallOpGetCalleeIsStructCompute(call)) {                                                \
-      func(call);                                                                                  \
-    }                                                                                              \
-    mlirOperationDestroy(call);                                                                    \
-    mlirOpBuilderDestroy(builder);                                                                 \
-  }
-
-link_test_call_op(llzk_call_op_get_self_value_from_compute, llzkCallOpGetSelfValueFromCompute);
-link_test_call_op(llzk_call_op_get_self_value_from_constrain, llzkCallOpGetSelfValueFromConstrain);
-link_test_call_op(
-    llzk_call_op_get_single_result_type_of_compute, llzkCallOpGetSingleResultTypeOfCompute
+call_pred_test(
+    test_llzk_call_op_get_callee_is_struct_constrain, llzkFunctionCallOpCalleeIsStructConstrain,
+    false
 );

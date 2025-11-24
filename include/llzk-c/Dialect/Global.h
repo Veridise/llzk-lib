@@ -31,13 +31,6 @@ extern "C" {
 
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Global, llzk__global);
 
-//===----------------------------------------------------------------------===//
-// GlobalDefOp
-//===----------------------------------------------------------------------===//
-
-/// Returns true if the op defines a constant value.
-LLZK_DECLARE_OP_PREDICATE(GlobalDefOp, IsConstant);
-
 #ifdef __cplusplus
 }
 #endif

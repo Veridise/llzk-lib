@@ -57,7 +57,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build) {
   llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
   auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
   auto affine_map_attr = mlirAffineMapAttrGet(affine_map);
-  auto op = llzkApplyMapOpBuild(
+  auto op = llzkPolyApplyMapOpBuild(
       builder, location, affine_map_attr,
       MlirValueRange {
           .values = (const MlirValue *)NULL,
@@ -75,7 +75,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_map) {
   auto location = mlirLocationUnknownGet(context);
   llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
   auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
-  auto op = llzkApplyMapOpBuildWithAffineMap(
+  auto op = llzkPolyApplyMapOpBuildWithAffineMap(
       builder, location, affine_map,
       MlirValueRange {
           .values = (const MlirValue *)NULL,
@@ -92,7 +92,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_expr) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
   auto expr = mlirAffineConstantExprGet(context, 1);
-  auto op = llzkApplyMapOpBuildWithAffineExpr(
+  auto op = llzkPolyApplyMapOpBuildWithAffineExpr(
       builder, location, expr,
       MlirValueRange {
           .values = (const MlirValue *)NULL,
@@ -109,7 +109,7 @@ TEST_F(CAPITest, llzk_op_is_a_apply_map_op_pass) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
   auto expr = mlirAffineConstantExprGet(context, 1);
-  auto op = llzkApplyMapOpBuildWithAffineExpr(
+  auto op = llzkPolyApplyMapOpBuildWithAffineExpr(
       builder, location, expr,
       MlirValueRange {
           .values = (const MlirValue *)NULL,
@@ -128,7 +128,7 @@ TEST_F(CAPITest, llzk_apply_map_op_get_affine_map) {
   auto location = mlirLocationUnknownGet(context);
   llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
   auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
-  auto op = llzkApplyMapOpBuildWithAffineMap(
+  auto op = llzkPolyApplyMapOpBuildWithAffineMap(
       builder, location, affine_map,
       MlirValueRange {
           .values = (const MlirValue *)NULL,
@@ -148,7 +148,7 @@ TEST_F(CAPITest, llzk_apply_map_op_get_dim_operands) {
   auto location = mlirLocationUnknownGet(context);
   llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
   auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
-  auto op = llzkApplyMapOpBuildWithAffineMap(
+  auto op = llzkPolyApplyMapOpBuildWithAffineMap(
       builder, location, affine_map,
       MlirValueRange {
           .values = (const MlirValue *)NULL,
@@ -170,7 +170,7 @@ TEST_F(CAPITest, llzk_apply_map_op_get_symbol_operands) {
   auto location = mlirLocationUnknownGet(context);
   llvm::SmallVector<MlirAffineExpr> exprs = {mlirAffineConstantExprGet(context, 1)};
   auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
-  auto op = llzkApplyMapOpBuildWithAffineMap(
+  auto op = llzkPolyApplyMapOpBuildWithAffineMap(
       builder, location, affine_map,
       MlirValueRange {
           .values = (const MlirValue *)NULL,

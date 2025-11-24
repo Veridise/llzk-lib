@@ -237,7 +237,7 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_has_param_name) {
   auto op = test_op();
   if (llzkOperationIsAStructStructDefOp(op.op)) {
     auto name = mlirStringRefCreateFromCString("p");
-    llzkStructDefOpGetHasParamName(op.op, name);
+    llzkStructStructDefOpGetHasParamName(op.op, name);
   }
 }
 
@@ -251,7 +251,7 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_fully_qualified_name) {
 TEST_F(StructDefTest, llzk_struct_def_op_get_is_main_component) {
   auto op = test_op();
   if (llzkOperationIsAStructStructDefOp(op.op)) {
-    llzkStructDefOpGetIsMainComponent(op.op);
+    llzkStructStructDefOpIsMainComponent(op.op);
   }
 }
 
@@ -263,7 +263,7 @@ TEST_F(StructDefTest, llzk_operation_is_a_field_def_op_pass) {
 TEST_F(StructDefTest, llzk_field_def_op_get_has_public_attr) {
   auto op = test_op();
   if (llzkOperationIsAStructFieldDefOp(op.op)) {
-    llzkFieldDefOpGetHasPublicAttr(op.op);
+    llzkStructFieldDefOpHasPublicAttr(op.op);
   }
 }
 
@@ -280,7 +280,7 @@ TEST_F(StructDefTest, llzk_field_read_op_build) {
   auto index_type = mlirIndexTypeGet(context);
   auto struct_new_op = make_struct_new_op();
   auto struct_value = mlirOperationGetResult(struct_new_op, 0);
-  auto op = llzkFieldReadOpBuild(
+  auto op = llzkStructFieldReadOpBuild(
       builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f")
   );
 
@@ -298,7 +298,7 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_affine_map_distance) {
 
   llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
   auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
-  auto op = llzkFieldReadOpBuildWithAffineMapDistance(
+  auto op = llzkStructFieldReadOpBuildWithAffineMapDistance(
       builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"), affine_map,
       MlirValueRange {
           .values = (const MlirValue *)NULL,
@@ -319,7 +319,7 @@ TEST_F(StructDefTest, llzk_field_read_op_builder_with_const_param_distance) {
   auto struct_new_op = make_struct_new_op();
   auto struct_value = mlirOperationGetResult(struct_new_op, 0);
 
-  auto op = llzkFieldReadOpBuildWithConstParamDistance(
+  auto op = llzkStructFieldReadOpBuildWithConstParamDistance(
       builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"),
       mlirStringRefCreateFromCString("N")
   );
@@ -336,7 +336,7 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_literal_distance) {
   auto struct_new_op = make_struct_new_op();
   auto struct_value = mlirOperationGetResult(struct_new_op, 0);
 
-  auto op = llzkFieldReadOpBuildWithLiteralDistance(
+  auto op = llzkStructFieldReadOpBuildWithLiteralDistance(
       builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"), 1
   );
 

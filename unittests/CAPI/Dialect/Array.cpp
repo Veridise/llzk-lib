@@ -109,8 +109,9 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
   }
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
-  auto create_array_op =
-      llzkCreateArrayOpBuildWithValues(builder, location, test_type, values.size(), values.data());
+  auto create_array_op = llzkArrayCreateArrayOpBuildWithValues(
+      builder, location, test_type, values.size(), values.data()
+  );
   for (auto op : ops) {
     EXPECT_TRUE(mlirOperationVerify(op));
   }
@@ -133,8 +134,9 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
   auto location = mlirLocationUnknownGet(context);
   auto dims_per_map = mlirDenseI32ArrayGet(context, 0, NULL);
 
-  auto op =
-      llzkCreateArrayOpBuildWithMapOperands(builder, location, test_type, 0, NULL, dims_per_map);
+  auto op = llzkArrayCreateArrayOpBuildWithMapOperands(
+      builder, location, test_type, 0, NULL, dims_per_map
+  );
 
   EXPECT_TRUE(mlirOperationVerify(op));
   mlirOperationDestroy(op);
@@ -149,8 +151,9 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
 
-  auto op =
-      llzkCreateArrayOpBuildWithMapOperandsAndDims(builder, location, test_type, 0, NULL, 0, NULL);
+  auto op = llzkArrayCreateArrayOpBuildWithMapOperandsAndDims(
+      builder, location, test_type, 0, NULL, 0, NULL
+  );
 
   EXPECT_TRUE(mlirOperationVerify(op));
   mlirOperationDestroy(op);

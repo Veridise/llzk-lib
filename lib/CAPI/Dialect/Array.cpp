@@ -54,7 +54,7 @@ MlirType llzkArrayArrayTypeGetWithShape(MlirType elementType, intptr_t nDims, in
 //===----------------------------------------------------------------------===//
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithValues, MlirType arrayType, intptr_t nValues, MlirValue const *values
+    Array, CreateArrayOp, WithValues, MlirType arrayType, intptr_t nValues, MlirValue const *values
 ) {
   SmallVector<Value> valueSto;
   return wrap(
@@ -66,7 +66,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithMapOperands, MlirType arrayType, intptr_t nMapOperands,
+    Array, CreateArrayOp, WithMapOperands, MlirType arrayType, intptr_t nMapOperands,
     MlirValueRange const *mapOperands, MlirAttribute numDimsPerMap
 ) {
   MapOperandsHelper<> mapOps(nMapOperands, mapOperands);
@@ -80,7 +80,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 
 /// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithMapOperandsAndDims, MlirType arrayType, intptr_t nMapOperands,
+    Array, CreateArrayOp, WithMapOperandsAndDims, MlirType arrayType, intptr_t nMapOperands,
     MlirValueRange const *mapOperands, intptr_t nNumsDimsPerMap, int32_t const *numDimsPerMap
 ) {
   MapOperandsHelper<> mapOps(nMapOperands, mapOperands);

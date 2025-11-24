@@ -53,19 +53,19 @@ llzkArrayArrayTypeGetWithShape(MlirType type, intptr_t nDims, int64_t const *dim
 
 /// Creates a CreateArrayOp from a list of Values.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithValues, MlirType arrType, intptr_t nValues, MlirValue const *values
+    Array, CreateArrayOp, WithValues, MlirType arrType, intptr_t nValues, MlirValue const *values
 );
 
 /// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
 /// The Attribute argument must be a DenseI32ArrayAttr.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithMapOperands, MlirType arrType, intptr_t nMapOperands,
+    Array, CreateArrayOp, WithMapOperands, MlirType arrType, intptr_t nMapOperands,
     MlirValueRange const *mapOperands, MlirAttribute dimsPerMap
 );
 
 /// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithMapOperandsAndDims, MlirType arrType, intptr_t nMapOperands,
+    Array, CreateArrayOp, WithMapOperandsAndDims, MlirType arrType, intptr_t nMapOperands,
     MlirValueRange const *mapOperands, intptr_t nDimsPerMap, int32_t const *dimsPerMap
 );
 
