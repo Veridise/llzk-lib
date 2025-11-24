@@ -1,0 +1,24 @@
+# This is a template that lists the available options when creating a changelog entry file
+# Edit according to your changes, before marking a PR as ready for review.
+
+added:
+  - Add a new feature
+  - Configuration:
+      - Add sub sections
+changed:
+  - Update existing functionality
+
+deprecated:
+  - Functionality X is deprecated
+
+fixed:
+  - Fix issue Y
+
+removed:
+  - Some text for removed functionality
+
+security:
+  - This text spans multiple lines,
+    but new lines are replaced by space. <br />
+    With markdown change line <br />
+    we move to next line
