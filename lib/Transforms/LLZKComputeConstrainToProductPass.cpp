@@ -23,8 +23,9 @@ using namespace llzk::component;
 using namespace llzk::function;
 using namespace mlir;
 
-namespace llzk {
 using std::make_unique;
+
+namespace llzk {
 
 bool isValidRoot(StructDefOp root) {
   FuncDefOp computeFunc = root.getComputeFuncOp();
