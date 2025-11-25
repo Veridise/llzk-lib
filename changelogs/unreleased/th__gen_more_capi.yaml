@@ -4,7 +4,7 @@ added:
 changed:
   - CAPI Renames:
     - All Dialects:
-      - llzk<KIND>IsA<NAME> to llzk<KIND>IsA<DIALECT><NAME>
+      - llzk[KIND]IsA[NAME] to llzk[KIND]IsA[DIALECT][NAME]
     - Array Dialect:
       - llzkArrayTypeGet to llzkArrayArrayTypeGetWithDims
       - llzkArrayTypeGetWithNumericDims to llzkArrayArrayTypeGetWithShape
