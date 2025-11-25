@@ -20,8 +20,6 @@
 
 #include "llzk/Dialect/Bool/IR/Enums.h"
 
-#include "llzk-c/Support.h"
-
 #include <mlir-c/IR.h>
 
 // Include the generated CAPI

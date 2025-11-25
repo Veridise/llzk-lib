@@ -18,8 +18,6 @@
 #ifndef LLZK_C_DIALECT_LLZK_H
 #define LLZK_C_DIALECT_LLZK_H
 
-#include "llzk-c/Support.h"
-
 #include <mlir-c/IR.h>
 
 // Include the generated CAPI
