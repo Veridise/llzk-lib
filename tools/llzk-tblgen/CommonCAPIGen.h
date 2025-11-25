@@ -54,7 +54,7 @@ extern llvm::cl::opt<std::string> FunctionPrefix;
 
 // Shared flags for controlling code generation
 extern llvm::cl::opt<bool> GenIsA;
-extern llvm::cl::opt<bool> GenOpCreate;
+extern llvm::cl::opt<bool> GenOpBuild;
 extern llvm::cl::opt<bool> GenOpOperandGetters;
 extern llvm::cl::opt<bool> GenOpOperandSetters;
 extern llvm::cl::opt<bool> GenOpAttributeGetters;
@@ -344,7 +344,9 @@ struct HeaderGenerator : public Generator {
   virtual ~HeaderGenerator() = default;
 
   virtual void genPrologue() const {
-    os << R"(#include "mlir-c/IR.h"
+    os << R"(
+#include "llzk-c/Builder.h"
+#include "mlir-c/IR.h"
 
 #ifdef __cplusplus
 extern "C" {
