@@ -21,6 +21,7 @@ target_link_libraries(
   PRIVATE
     LLZKDialect
     R1CSDialect
+    LLZKAnalysis
 )
 
 llzk_target_add_mlir_link_settings(LLZKTransforms)
