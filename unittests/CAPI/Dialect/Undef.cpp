@@ -19,7 +19,7 @@
 #include "llzk/Dialect/Undef/IR/Dialect.capi.test.cpp.inc"
 #include "llzk/Dialect/Undef/IR/Ops.capi.test.cpp.inc"
 
-TEST_F(CAPITest, llzkOperationIsAUndefUndefOp) {
+TEST_F(CAPITest, llzk_operation_is_a_undef_op_pass) {
   auto op_name = mlirStringRefCreateFromCString("undef.undef");
   auto state = mlirOperationStateGet(op_name, mlirLocationUnknownGet(context));
   auto t = llzkFeltFeltTypeGet(context);

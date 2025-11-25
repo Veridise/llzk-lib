@@ -155,8 +155,8 @@ class SparseForwardDataFlowAnalysis : public AbstractSparseForwardDataFlowAnalys
   );
 
 public:
-  explicit SparseForwardDataFlowAnalysis(mlir::DataFlowSolver &solver)
-      : AbstractSparseForwardDataFlowAnalysis(solver) {}
+  explicit SparseForwardDataFlowAnalysis(mlir::DataFlowSolver &s)
+      : AbstractSparseForwardDataFlowAnalysis(s) {}
 
   /// Visit an operation with the lattices of its operands. This function is
   /// expected to set the lattices of the operation's results.

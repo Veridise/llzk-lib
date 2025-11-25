@@ -20,4 +20,4 @@ using namespace llzk::undef;
 // Include the generated CAPI
 #include "llzk/Dialect/Undef/IR/Ops.capi.cpp.inc"
 
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Undef, llzk__undef, llzk::undef::UndefDialect)
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Undef, llzk__undef, UndefDialect)
