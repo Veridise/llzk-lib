@@ -128,7 +128,7 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{2}{3}Get(MlirContext ctx{4});
     }
 
     // Generate default Get builder if not skipped
-    if (!def.skipDefaultBuilders()) {
+    if (GenTypeOrAttrGet && !def.skipDefaultBuilders()) {
       this->genDefaultGetBuilderDecl(def);
     }
 
