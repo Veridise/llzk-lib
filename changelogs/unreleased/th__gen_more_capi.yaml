@@ -40,8 +40,8 @@ changed:
       - llzkFuncDefOpGetHasArgIsPub to llzkFunctionFuncDefOpHasArgPublicAttr
       - llzkFuncDefOpCreateWithAttrsAndArgAttrs to llzkFunctionFuncDefOpCreateWithAttrsAndArgAttrs
       - llzkFuncDefOpCreateWithAttrs to llzkFunctionFuncDefOpCreateWithAttrs
-      - llzkFuncDefOpCreate to llzkFunctionFuncDefOpCreate
       - llzkFuncDefOpCreateWithArgAttrs to llzkFunctionFuncDefOpCreateWithArgAttrs
+      - llzkFuncDefOpCreate to llzkFunctionFuncDefOpCreateWithoutAttrs
       - llzkCallOpBuild to llzkFunctionCallOpBuild
       - llzkCallOpGetCalleeIsCompute to llzkFunctionCallOpCalleeIsCompute
       - llzkCallOpGetCalleeIsConstrain to llzkFunctionCallOpCalleeIsConstrain

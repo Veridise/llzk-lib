@@ -56,12 +56,6 @@ static inline MlirOperation llzkFunctionFuncDefOpCreateWithAttrs(
   );
 }
 
-/// Creates a FuncDefOp.
-static inline MlirOperation
-llzkFunctionFuncDefOpCreate(MlirLocation loc, MlirStringRef name, MlirType type) {
-  return llzkFunctionFuncDefOpCreateWithAttrs(loc, name, type, /*nAttrs=*/0, /*attrs=*/NULL);
-}
-
 /// Creates a FuncDefOp with the given argument attributes. Each argument attribute has to be a
 /// DictionaryAttr.
 static inline MlirOperation llzkFunctionFuncDefOpCreateWithArgAttrs(
@@ -71,6 +65,12 @@ static inline MlirOperation llzkFunctionFuncDefOpCreateWithArgAttrs(
   return llzkFunctionFuncDefOpCreateWithAttrsAndArgAttrs(
       loc, name, type, /*nAttrs=*/0, /*attrs=*/NULL, nArgAttrs, argAttrs
   );
+}
+
+/// Creates a FuncDefOp.
+static inline MlirOperation
+llzkFunctionFuncDefOpCreateWithoutAttrs(MlirLocation loc, MlirStringRef name, MlirType type) {
+  return llzkFunctionFuncDefOpCreateWithAttrs(loc, name, type, /*nAttrs=*/0, /*attrs=*/NULL);
 }
 
 //===----------------------------------------------------------------------===//
