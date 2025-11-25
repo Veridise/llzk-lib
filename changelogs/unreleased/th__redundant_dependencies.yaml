@@ -1,0 +1,2 @@
+changed:
+  - cleanup cmake by removing `add_dependencies` for targets that already have dependencies due to `target_link_libraries`
