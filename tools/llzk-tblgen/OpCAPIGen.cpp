@@ -255,14 +255,12 @@ MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}At(MlirOperation op, intptr_t index
 /// Generate C API parameter list from operation arguments
 ///
 /// This function builds a comma-separated parameter list for the operation "Build" function.
-/// It includes operands, attributes, result types (if not inferred), and regions.
+/// It includes operands, attributes, and result types (if not inferred).
 /// Variadic parameters are represented as (count, array) pairs.
 static std::string generateCAPIBuildParams(const Operator &op) {
   std::string params;
-  // Reserve approximate space: ~50 chars per operand/attribute/result/region
-  params.reserve(
-      50 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults() + op.getNumRegions())
-  );
+  // Reserve approximate space: ~50 chars per operand/attribute/result
+  params.reserve(50 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults()));
   llvm::raw_string_ostream oss(params);
 
   // Add operands
@@ -291,18 +289,6 @@ static std::string generateCAPIBuildParams(const Operator &op) {
       } else {
         oss << llvm::formatv(", MlirType {0}Type", resultName).str();
       }
-    }
-  }
-
-  // Add regions
-  for (unsigned i = 0, e = op.getNumRegions(); i < e; ++i) {
-    const auto &region = op.getRegion(i);
-    std::string regionName =
-        region.name.empty() ? llvm::formatv("region{0}", i).str() : region.name.str();
-    if (region.isVariadic()) {
-      oss << llvm::formatv(", intptr_t {0}Size, MlirRegion const *{0}", regionName).str();
-    } else {
-      oss << llvm::formatv(", MlirRegion {0}", regionName).str();
     }
   }
 
@@ -669,20 +655,18 @@ MlirRegion {0}{1}{2}Get{3}At(MlirOperation op, intptr_t index) {{
 /// Generate C API parameter assignments for operation creation
 ///
 /// This function generates the C code that populates an MlirOperationState with
-/// operands, attributes, result types, and regions. It handles both regular and
+/// operands, attributes, and result types. It handles both regular and
 /// variadic parameters appropriately.
 static std::string generateCAPIAssignments(const Operator &op) {
   // Code generated here can use the following variables:
   //  - MlirOpBuilder builder
   //  - MlirLocation location
   //  - MlirOperationState state
-  //  - Operand/Attribute/Result/Region parameters per `generateCAPIBuildParams()`
+  //  - Operand/Attribute/Result parameters per `generateCAPIBuildParams()`
 
   std::string assignments;
-  // Reserve approximate space: ~80 chars per operand/attribute/result/region
-  assignments.reserve(
-      80 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults() + op.getNumRegions())
-  );
+  // Reserve approximate space: ~80 chars per operand/attribute/result
+  assignments.reserve(80 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults()));
   llvm::raw_string_ostream oss(assignments);
 
   // Add operands
@@ -737,19 +721,6 @@ static std::string generateCAPIAssignments(const Operator &op) {
     }
   } else {
     oss << "  mlirOperationStateEnableResultTypeInference(&state);\n";
-  }
-
-  // Add regions
-  for (unsigned i = 0, e = op.getNumRegions(); i < e; ++i) {
-    const auto &region = op.getRegion(i);
-    std::string name =
-        region.name.empty() ? llvm::formatv("region{0}", i).str() : region.name.str();
-    if (region.isVariadic()) {
-      oss << llvm::formatv("  mlirOperationStateAddOwnedRegions(&state, {0}Size, {0});\n", name)
-                 .str();
-    } else {
-      oss << llvm::formatv("  mlirOperationStateAddOwnedRegions(&state, 1, &{0});\n", name).str();
-    }
   }
 
   return assignments;
