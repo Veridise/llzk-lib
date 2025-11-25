@@ -53,10 +53,10 @@ struct OpHeaderGenerator : public HeaderGenerator, OpGeneratorData {
   using HeaderGenerator::HeaderGenerator;
   virtual ~OpHeaderGenerator() = default;
 
-  void genOpCreateDecl(std::string const &params) const {
+  void genOpBuildDecl(std::string const &params) const {
     static constexpr char fmt[] = R"(
-/* Create a {4}::{2} Operation. */
-MLIR_CAPI_EXPORTED MlirOperation {0}{1}{2}Create(MlirContext ctx, MlirLocation location{3});
+/* Build a {4}::{2} Operation. */
+MLIR_CAPI_EXPORTED MlirOperation {0}{1}{2}Build(MlirOpBuilder builder, MlirLocation location{3});
 )";
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
@@ -254,10 +254,10 @@ MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}At(MlirOperation op, intptr_t index
 
 /// Generate C API parameter list from operation arguments
 ///
-/// This function builds a comma-separated parameter list for the operation create function.
+/// This function builds a comma-separated parameter list for the operation "Build" function.
 /// It includes operands, attributes, result types (if not inferred), and regions.
 /// Variadic parameters are represented as (count, array) pairs.
-static std::string generateCAPIParams(const Operator &op) {
+static std::string generateCAPIBuildParams(const Operator &op) {
   std::string params;
   // Reserve approximate space: ~50 chars per operand/attribute/result/region
   params.reserve(
@@ -327,9 +327,9 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &os)
 
     generator.setDialectAndClassName(&dialect, op.getCppClassName());
 
-    // Generate create function
-    if (GenOpCreate && !op.skipDefaultBuilders()) {
-      generator.genOpCreateDecl(generateCAPIParams(op));
+    // Generate "Build" function
+    if (GenOpBuild && !op.skipDefaultBuilders()) {
+      generator.genOpBuildDecl(generateCAPIBuildParams(op));
     }
 
     // Generate IsA check
@@ -410,15 +410,15 @@ struct OpImplementationGenerator : public ImplementationGenerator, OpGeneratorDa
   using ImplementationGenerator::ImplementationGenerator;
   virtual ~OpImplementationGenerator() = default;
 
-  /// @brief Generate operation create function implementation
-  /// @param params The parameter list for the create function
+  /// @brief Generate operation "Build" function implementation
   /// @param operationName The full operation name (e.g., "dialect.opname")
+  /// @param params The parameter list for the "Build" function
   /// @param assignments The code to populate the operation state with operands, attributes, etc.
-  void genOpCreateImpl(
-      std::string const &params, std::string const &operationName, std::string const &assignments
+  void genOpBuildImpl(
+      std::string const &operationName, std::string const &params, std::string const &assignments
   ) const {
     static constexpr char fmt[] = R"(
-MlirOperation {0}{1}{2}Create(MlirContext ctx, MlirLocation location{3}) {{
+MlirOperation {0}{1}{2}Build(MlirOpBuilder builder, MlirLocation location{3}) {{
   MlirOperationState state = mlirOperationStateGet(mlirStringRefCreateFromCString("{4}"), location);
 {5}
   return mlirOperationCreate(&state);
@@ -672,6 +672,12 @@ MlirRegion {0}{1}{2}Get{3}At(MlirOperation op, intptr_t index) {{
 /// operands, attributes, result types, and regions. It handles both regular and
 /// variadic parameters appropriately.
 static std::string generateCAPIAssignments(const Operator &op) {
+  // Code generated here can use the following variables:
+  //  - MlirOpBuilder builder
+  //  - MlirLocation location
+  //  - MlirOperationState state
+  //  - Operand/Attribute/Result/Region parameters per `generateCAPIBuildParams()`
+
   std::string assignments;
   // Reserve approximate space: ~80 chars per operand/attribute/result/region
   assignments.reserve(
@@ -691,6 +697,7 @@ static std::string generateCAPIAssignments(const Operator &op) {
 
   // Add attributes
   if (!op.getAttributes().empty()) {
+    oss << "  MlirContext ctx = mlirOpBuilderGetContext(builder);\n";
     oss << "  MlirNamedAttribute attributes[] = {\n";
     for (const auto &namedAttr : op.getAttributes()) {
       std::string name = namedAttr.name.str();
@@ -762,11 +769,10 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
     const Dialect &dialect = op.getDialect();
     generator.setDialectAndClassName(&dialect, op.getCppClassName());
 
-    // Generate create function
-    if (GenOpCreate && !op.skipDefaultBuilders()) {
-      std::string params = generateCAPIParams(op);
+    // Generate "Build" function
+    if (GenOpBuild && !op.skipDefaultBuilders()) {
       std::string assignments = generateCAPIAssignments(op);
-      generator.genOpCreateImpl(params, op.getOperationName(), assignments);
+      generator.genOpBuildImpl(op.getOperationName(), generateCAPIBuildParams(op), assignments);
     }
 
     // Generate IsA check implementation

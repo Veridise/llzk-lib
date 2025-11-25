@@ -49,8 +49,8 @@ llvm::cl::opt<bool> GenIsA(
     "gen-isa", llvm::cl::desc("Generate IsA checks"), llvm::cl::init(true), llvm::cl::cat(OpGenCat)
 );
 
-llvm::cl::opt<bool> GenOpCreate(
-    "gen-op-create", llvm::cl::desc("Generate operation create functions"), llvm::cl::init(true),
+llvm::cl::opt<bool> GenOpBuild(
+    "gen-op-build", llvm::cl::desc("Generate operation build(..) functions"), llvm::cl::init(true),
     llvm::cl::cat(OpGenCat)
 );
 

@@ -67,21 +67,23 @@ struct OpTestGenerator : public TestGenerator {
   /// so this override returns the function name rather than a comment.
   virtual std::string genCleanup() const override { return "mlirOperationDestroy"; };
 
-  /// @brief Generate create function test for an operation
+  /// @brief Generate "Build" function test for an operation
   /// @param op The operation definition
-  void genCreateOpTest(const Operator &op) const {
+  void genBuildOpTest(const Operator &op) const {
     static constexpr char fmt[] = R"(
-// This test ensures {0}{1}{2}Create links properly.
-TEST_F({1}OperationLinkTests, {0}{2}_Create) {{
+// This test ensures {0}{1}{2}Build links properly.
+TEST_F({1}OperationLinkTests, {0}{2}_Build) {{
   // Returns an `arith.constant` op, which will never match the {2} dialect check.
   auto testOp = createIndexOperation();
   
   // This condition is always false, so the function is never actually called.
   // We only verify it compiles and links correctly.
   if ({0}OperationIsA{1}{2}(testOp)) {{
-    auto location = mlirLocationUnknownGet(context);
+    MlirOpBuilder builder = mlirOpBuilderCreate(context);
+    MlirLocation location = mlirLocationUnknownGet(context);
 {3}
-    (void){0}{1}{2}Create(context, location{4});
+    (void){0}{1}{2}Build(builder, location{4});
+    mlirOpBuilderDestroy(builder);
   }
   
   mlirOperationDestroy(testOp);
@@ -91,11 +93,11 @@ TEST_F({1}OperationLinkTests, {0}{2}_Create) {{
     assert(!className.empty() && "className must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,          // {0}
-        dialectNameCapitalized,  // {1}
-        className,               // {2}
-        generateDummyParams(op), // {3}
-        generateParamList(op)    // {4}
+        FunctionPrefix,               // {0}
+        dialectNameCapitalized,       // {1}
+        className,                    // {2}
+        generateBuildDummyParams(op), // {3}
+        generateBuildParamList(op)    // {4}
     );
   }
 
@@ -403,8 +405,8 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
     if (GenIsA) {
       this->genIsATest();
     }
-    if (GenOpCreate && !op.skipDefaultBuilders()) {
-      this->genCreateOpTest(op);
+    if (GenOpBuild && !op.skipDefaultBuilders()) {
+      this->genBuildOpTest(op);
     }
     if (GenOpOperandGetters || GenOpOperandSetters) {
       this->genOperandTests(op);
@@ -424,10 +426,10 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
   }
 
 private:
-  /// @brief Generate dummy parameters for create function based on operation
+  /// @brief Generate dummy parameters for "Build" function based on operation
   /// @param op The operation definition
   /// @return String containing dummy parameter declarations
-  static std::string generateDummyParams(const Operator &op) {
+  static std::string generateBuildDummyParams(const Operator &op) {
     // Use raw_string_ostream for efficient string building
     std::string paramsBuffer;
     // Reserve approximate space: ~100 chars per operand/attribute/result/region
@@ -504,10 +506,10 @@ private:
     return paramsBuffer;
   }
 
-  /// @brief Generate parameter list for create function call
+  /// @brief Generate parameter list for "Build" function call
   /// @param op The operation definition
   /// @return String containing the parameter list
-  static std::string generateParamList(const Operator &op) {
+  static std::string generateBuildParamList(const Operator &op) {
     // Use raw_string_ostream for efficient string building
     std::string paramsBuffer;
     // Reserve approximate space: ~30 chars per operand/attribute/result/region
