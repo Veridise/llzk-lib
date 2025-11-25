@@ -69,5 +69,16 @@ changed:
       - llzkIncludeOpCreate to llzkIncludeIncludeOpCreateInferredContext
     - LLZK Dialect:
       - llzkPublicAttrGet to llzkLlzkPublicAttrGet
+    - Poly Dialect:
+      - llzkTypeVarTypeGet to llzkPolyTypeVarTypeGetFromStringRef
+      - llzkTypeVarTypeGetFromAttr to llzkPolyTypeVarTypeGetFromAttr
+      - llzkTypeVarTypeGetNameRef to llzkPolyTypeVarTypeGetRefName
+      - llzkTypeVarTypeGetName to llzkPolyTypeVarTypeGetNameRef
+      - llzkApplyMapOpGetAffineMap to llzkPolyApplyMapOpGetAffineMap
+      - llzkApplyMapOpGetNumDimOperands to llzkPolyApplyMapOpGetNumDimOperands
+      - llzkApplyMapOpGetDimOperands to llzkPolyApplyMapOpGetDimOperands
+      - llzkApplyMapOpGetNumSymbolOperands to llzkPolyApplyMapOpGetNumSymbolOperands
+      - llzkApplyMapOpGetSymbolOperands to llzkPolyApplyMapOpGetSymbolOperands
+      
     
 
