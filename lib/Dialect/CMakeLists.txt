@@ -31,7 +31,6 @@ target_link_libraries(
   LLZKDialectRegistration PUBLIC LLZKAllDialects ${LLZK_DEP_DIALECT_LIBS}
                                  LLZKDialectHeaders
                                  LLZK::LLZKTransforms)
-add_dependencies(LLZKDialectRegistration LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKDialectRegistration)
 
 install(TARGETS LLZKDialectRegistration EXPORT LLZKTargets)

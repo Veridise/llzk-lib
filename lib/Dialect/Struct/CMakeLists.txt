@@ -8,7 +8,6 @@ target_link_libraries(
   LLZKStructDialect PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
                      MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
                      LLVMHeaders MLIRHeaders LLZKUtil)
-add_dependencies(LLZKStructDialect LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKStructDialect)
 
 install(TARGETS LLZKStructDialect EXPORT LLZKTargets)
