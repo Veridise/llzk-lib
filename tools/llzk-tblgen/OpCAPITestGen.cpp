@@ -432,10 +432,9 @@ private:
   static std::string generateBuildDummyParams(const Operator &op) {
     // Use raw_string_ostream for efficient string building
     std::string paramsBuffer;
-    // Reserve approximate space: ~100 chars per operand/attribute/result/region
+    // Reserve approximate space: ~100 chars per operand/attribute/result
     paramsBuffer.reserve(
-        100 *
-        (op.getNumOperands() + op.getNumAttributes() + op.getNumResults() + op.getNumRegions() + 1)
+        100 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults() + 1)
     );
     llvm::raw_string_ostream paramsStream(paramsBuffer);
 
@@ -486,23 +485,6 @@ private:
       }
     }
 
-    // Add regions
-    for (int i = 0, e = op.getNumRegions(); i < e; ++i) {
-      const auto &region = op.getRegion(i);
-      const std::string regionName =
-          region.name.empty() ? llvm::formatv("region{0}", i).str() : region.name.str();
-      if (region.isVariadic()) {
-        paramsStream << llvm::formatv(
-            "    auto {0}Array = mlirRegionCreate();\n"
-            "    MlirRegion {0}[] = {{{0}Array};\n"
-            "    intptr_t {0}Size = 0;\n",
-            regionName
-        );
-      } else {
-        paramsStream << llvm::formatv("    auto {0} = mlirRegionCreate();\n", regionName);
-      }
-    }
-
     return paramsBuffer;
   }
 
@@ -512,10 +494,8 @@ private:
   static std::string generateBuildParamList(const Operator &op) {
     // Use raw_string_ostream for efficient string building
     std::string paramsBuffer;
-    // Reserve approximate space: ~30 chars per operand/attribute/result/region
-    paramsBuffer.reserve(
-        30 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults() + op.getNumRegions())
-    );
+    // Reserve approximate space: ~30 chars per operand/attribute/result
+    paramsBuffer.reserve(30 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults()));
     llvm::raw_string_ostream paramsStream(paramsBuffer);
 
     // Add operands
@@ -543,18 +523,6 @@ private:
         } else {
           paramsStream << llvm::formatv(", {0}Type", resultName);
         }
-      }
-    }
-
-    // Add regions
-    for (int i = 0, e = op.getNumRegions(); i < e; ++i) {
-      const auto &region = op.getRegion(i);
-      const std::string regionName =
-          region.name.empty() ? llvm::formatv("region{0}", i).str() : region.name.str();
-      if (region.isVariadic()) {
-        paramsStream << llvm::formatv(", {0}Size, {0}", regionName);
-      } else {
-        paramsStream << llvm::formatv(", {0}", regionName);
       }
     }
 
