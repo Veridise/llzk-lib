@@ -40,8 +40,8 @@ public:
     ranges.reserve(nMapOperands);
 
     for (intptr_t i = 0; i < nMapOperands; i++) {
-      auto &sto = storage[i];
-      auto ops = mapOperands[i];
+      mlir::SmallVector<mlir::Value, N> &sto = storage[i];
+      MlirValueRange ops = mapOperands[i];
       ranges.push_back(mlir::ValueRange(unwrapList(ops.size, ops.values, sto)));
     }
   }

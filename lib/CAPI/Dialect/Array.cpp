@@ -23,10 +23,10 @@
 #include <mlir-c/Pass.h>
 
 using namespace mlir;
-using namespace llzk::array;
 using namespace llzk;
+using namespace llzk::array;
 
-static void registerLLZKArrayTransformationPasses() { llzk::array::registerTransformationPasses(); }
+static void registerLLZKArrayTransformationPasses() { registerTransformationPasses(); }
 
 // Include impl for transformation passes
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.capi.cpp.inc"
@@ -50,15 +50,15 @@ llzkArrayTypeGetWithNumericDims(MlirType elementType, intptr_t nDims, int64_t co
 bool llzkTypeIsAArrayType(MlirType type) { return llvm::isa<ArrayType>(unwrap(type)); }
 
 MlirType llzkArrayTypeGetElementType(MlirType type) {
-  return wrap(mlir::unwrap_cast<ArrayType>(type).getElementType());
+  return wrap(unwrap_cast<ArrayType>(type).getElementType());
 }
 
 intptr_t llzkArrayTypeGetNumDims(MlirType type) {
-  return static_cast<intptr_t>(mlir::unwrap_cast<ArrayType>(type).getDimensionSizes().size());
+  return static_cast<intptr_t>(unwrap_cast<ArrayType>(type).getDimensionSizes().size());
 }
 
 MlirAttribute llzkArrayTypeGetDim(MlirType type, intptr_t idx) {
-  return wrap(mlir::unwrap_cast<ArrayType>(type).getDimensionSizes()[idx]);
+  return wrap(unwrap_cast<ArrayType>(type).getDimensionSizes()[idx]);
 }
 
 //===----------------------------------------------------------------------===//
@@ -71,7 +71,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   SmallVector<Value> valueSto;
   return wrap(
       create<CreateArrayOp>(
-          builder, location, mlir::unwrap_cast<ArrayType>(arrayType),
+          builder, location, unwrap_cast<ArrayType>(arrayType),
           ValueRange(unwrapList(nValues, values, valueSto))
       )
   );
@@ -84,8 +84,8 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOps(nMapOperands, mapOperands);
   return wrap(
       create<CreateArrayOp>(
-          builder, location, mlir::unwrap_cast<ArrayType>(arrayType), *mapOps,
-          mlir::unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap)
+          builder, location, unwrap_cast<ArrayType>(arrayType), *mapOps,
+          unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap)
       )
   );
 }
@@ -98,7 +98,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOps(nMapOperands, mapOperands);
   return wrap(
       create<CreateArrayOp>(
-          builder, location, mlir::unwrap_cast<ArrayType>(arrayType), *mapOps,
+          builder, location, unwrap_cast<ArrayType>(arrayType), *mapOps,
           ArrayRef(numDimsPerMap, nNumsDimsPerMap)
       )
   );
