@@ -24,7 +24,6 @@ target_link_libraries(
     LLZKAnalysis
 )
 
-add_dependencies(LLZKTransforms LLZKDialect LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKTransforms)
 install(TARGETS LLZKTransforms EXPORT LLZKTargets)
 
