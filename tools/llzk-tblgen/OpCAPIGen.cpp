@@ -109,7 +109,7 @@ MLIR_CAPI_EXPORTED void {0}{1}{2}Set{3}(MlirOperation op, MlirValue value);
 MLIR_CAPI_EXPORTED intptr_t {0}{1}{2}Get{3}Count(MlirOperation op);
 
 /* Get {3} operand at index from {4}::{2} Operation. */
-MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index);
+MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}At(MlirOperation op, intptr_t index);
 )";
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
@@ -200,7 +200,7 @@ MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}(MlirOperation op);
 MLIR_CAPI_EXPORTED intptr_t {0}{1}{2}Get{3}Count(MlirOperation op);
 
 /* Get {3} result at index from {4}::{2} Operation. */
-MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index);
+MLIR_CAPI_EXPORTED MlirValue {0}{1}{2}Get{3}At(MlirOperation op, intptr_t index);
 )";
     assert(!className.empty() && "className must be set");
     assert(!resultNameCapitalized.empty() && "resultName must be set");
@@ -237,7 +237,7 @@ MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}(MlirOperation op);
 MLIR_CAPI_EXPORTED intptr_t {0}{1}{2}Get{3}Count(MlirOperation op);
 
 /* Get {3} region at index from {4}::{2} Operation. */
-MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}(MlirOperation op, intptr_t index);
+MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}At(MlirOperation op, intptr_t index);
 )";
     assert(!className.empty() && "className must be set");
     assert(!regionNameCapitalized.empty() && "regionName must be set");
@@ -480,7 +480,7 @@ intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
   return count - {4};
 }
 
-MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
+MlirValue {0}{1}{2}Get{3}At(MlirOperation op, intptr_t index) {{
   return mlirOperationGetOperand(op, {4} + index);
 }
 )";
@@ -607,7 +607,7 @@ intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
   return count - {4};
 }
 
-MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
+MlirValue {0}{1}{2}Get{3}At(MlirOperation op, intptr_t index) {{
   return mlirOperationGetResult(op, {4} + index);
 }
 )";
@@ -649,7 +649,7 @@ intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
   return count - {4};
 }
 
-MlirRegion {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
+MlirRegion {0}{1}{2}Get{3}At(MlirOperation op, intptr_t index) {{
   return mlirOperationGetRegion(op, {4} + index);
 }
 )";

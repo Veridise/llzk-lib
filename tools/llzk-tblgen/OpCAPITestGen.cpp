@@ -138,11 +138,11 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   mlirOperationDestroy(testOp);
 }
 
-TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
   auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}(testOp, 0);
+    (void){0}{1}{2}Get{3}At(testOp, 0);
   }
   
   mlirOperationDestroy(testOp);
@@ -286,11 +286,11 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   mlirOperationDestroy(testOp);
 }
 
-TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
   auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}(testOp, 0);
+    (void){0}{1}{2}Get{3}At(testOp, 0);
   }
   
   mlirOperationDestroy(testOp);
@@ -350,11 +350,11 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   mlirOperationDestroy(testOp);
 }
 
-TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}_Indexed) {{
+TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
   auto testOp = createIndexOperation();
   
   if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}(testOp, 0);
+    (void){0}{1}{2}Get{3}At(testOp, 0);
   }
   
   mlirOperationDestroy(testOp);
