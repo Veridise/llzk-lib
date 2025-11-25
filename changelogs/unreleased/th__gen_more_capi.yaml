@@ -65,5 +65,9 @@ changed:
       - llzkFieldReadOpBuildWithAffineMapDistance to llzkStructFieldReadOpBuildWithAffineMapDistance
       - llzkFieldReadOpBuildWithConstParamDistance to llzkStructFieldReadOpBuildWithConstParamDistance
       - llzkFieldReadOpBuildWithLiteralDistance to llzkStructFieldReadOpBuildWithLiteralDistance
+    - Include Dialect:
+      - llzkIncludeOpCreate to llzkIncludeIncludeOpCreateInferredContext
+    - LLZK Dialect:
+      - llzkPublicAttrGet to llzkLlzkPublicAttrGet
     
 

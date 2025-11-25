@@ -29,9 +29,6 @@ extern "C" {
 
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(LLZK, llzk);
 
-/// Creates a llzk::PublicAttr.
-MLIR_CAPI_EXPORTED MlirAttribute llzkPublicAttrGet(MlirContext context);
-
 #ifdef __cplusplus
 }
 #endif

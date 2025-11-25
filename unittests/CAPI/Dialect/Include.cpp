@@ -17,7 +17,7 @@
 
 TEST_F(CAPITest, llzk_include_op_create) {
   auto location = mlirLocationUnknownGet(context);
-  auto op = llzkIncludeOpCreate(
+  auto op = llzkIncludeIncludeOpCreateInferredContext(
       location, mlirStringRefCreateFromCString("test"), mlirStringRefCreateFromCString("test.mlir")
   );
 

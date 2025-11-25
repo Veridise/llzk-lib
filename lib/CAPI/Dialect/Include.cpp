@@ -30,6 +30,8 @@ static void registerLLZKIncludeTransformationPasses() { registerTransformationPa
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Include, llzk__include, IncludeDialect)
 
-MlirOperation llzkIncludeOpCreate(MlirLocation location, MlirStringRef name, MlirStringRef path) {
+MlirOperation llzkIncludeIncludeOpCreateInferredContext(
+    MlirLocation location, MlirStringRef name, MlirStringRef path
+) {
   return wrap(IncludeOp::create(unwrap(location), unwrap(name), unwrap(path)));
 }

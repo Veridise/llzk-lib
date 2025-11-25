@@ -18,11 +18,11 @@
 #include "llzk/Dialect/LLZK/IR/Dialect.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_public_attr_get) {
-  auto attr = llzkPublicAttrGet(context);
+  auto attr = llzkLlzkPublicAttrGet(context);
   EXPECT_NE(attr.ptr, (void *)NULL);
 }
 
 TEST_F(CAPITest, llzk_attribute_is_a_public_attr_pass) {
-  auto attr = llzkPublicAttrGet(context);
+  auto attr = llzkLlzkPublicAttrGet(context);
   EXPECT_TRUE(llzkAttributeIsALlzkPublicAttr(attr));
 }
