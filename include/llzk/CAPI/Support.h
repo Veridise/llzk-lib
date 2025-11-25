@@ -48,7 +48,7 @@ static inline mlir::NamedAttribute unwrap(MlirNamedAttribute attr) {
 }
 
 namespace mlir {
-template <typename To> auto unwrap_cast(auto &from) { return cast<To>(unwrap(from)); }
+template <typename To> inline auto unwrap_cast(auto &from) { return cast<To>(unwrap(from)); }
 } // namespace mlir
 
 //===----------------------------------------------------------------------===//

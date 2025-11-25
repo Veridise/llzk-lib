@@ -106,15 +106,15 @@ MlirAffineMap llzkApplyMapOpGetAffineMap(MlirOperation op) {
   return wrap(unwrap_cast<ApplyMapOp>(op).getAffineMap());
 }
 
-static ValueRange dimOperands(MlirOperation op) {
+static inline ValueRange dimOperands(MlirOperation op) {
   return unwrap_cast<ApplyMapOp>(op).getDimOperands();
 }
 
-static ValueRange symbolOperands(MlirOperation op) {
+static inline ValueRange symbolOperands(MlirOperation op) {
   return unwrap_cast<ApplyMapOp>(op).getSymbolOperands();
 }
 
-static void copyValues(ValueRange in, MlirValue *out) {
+static inline void copyValues(ValueRange in, MlirValue *out) {
   for (auto [n, value] : llvm::enumerate(in)) {
     out[n] = wrap(value);
   }
