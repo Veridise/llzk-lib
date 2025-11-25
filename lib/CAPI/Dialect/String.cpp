@@ -25,5 +25,3 @@ using namespace llzk::string;
 #include "llzk/Dialect/String/IR/Types.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(String, llzk__string, StringDialect)
-
-MlirType llzkStringTypeGet(MlirContext ctx) { return wrap(StringType::get(unwrap(ctx))); }

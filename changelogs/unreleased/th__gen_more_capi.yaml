@@ -79,6 +79,6 @@ changed:
       - llzkApplyMapOpGetDimOperands to llzkPolyApplyMapOpGetDimOperands
       - llzkApplyMapOpGetNumSymbolOperands to llzkPolyApplyMapOpGetNumSymbolOperands
       - llzkApplyMapOpGetSymbolOperands to llzkPolyApplyMapOpGetSymbolOperands
-      
-    
+    - String Dialect:
+      - llzkStringTypeGet to llzkStringStringTypeGet    
 
