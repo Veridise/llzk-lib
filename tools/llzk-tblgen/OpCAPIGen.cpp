@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "CommonCAPIGen.h"
+#include "OpCAPIParamHelper.h"
 
 using namespace mlir;
 using namespace mlir::tblgen;
@@ -258,41 +259,29 @@ MLIR_CAPI_EXPORTED MlirRegion {0}{1}{2}Get{3}At(MlirOperation op, intptr_t index
 /// It includes operands, attributes, and result types (if not inferred).
 /// Variadic parameters are represented as (count, array) pairs.
 static std::string generateCAPIBuildParams(const Operator &op) {
-  std::string params;
-  // Reserve approximate space: ~50 chars per operand/attribute/result
-  params.reserve(50 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults()));
-  llvm::raw_string_ostream oss(params);
-
-  // Add operands
-  for (const auto &operand : op.getOperands()) {
-    if (operand.isVariadic()) {
-      oss << llvm::formatv(", intptr_t {0}Size, MlirValue const *{0}", operand.name).str();
-    } else {
-      oss << llvm::formatv(", MlirValue {0}", operand.name).str();
-    }
-  }
-
-  // Add attributes
-  for (const auto &namedAttr : op.getAttributes()) {
-    std::optional<std::string> attrType = tryCppTypeToCapiType(namedAttr.attr.getStorageType());
-    oss << llvm::formatv(", {0} {1}", attrType.value_or("MlirAttribute"), namedAttr.name).str();
-  }
-
-  // Add result types if not inferred
-  if (!op.allResultTypesKnown()) {
-    for (int i = 0, e = op.getNumResults(); i < e; ++i) {
-      const auto &result = op.getResult(i);
-      std::string resultName =
-          result.name.empty() ? llvm::formatv("result{0}", i).str() : result.name.str();
+  struct : GenStringFromOpPieces {
+    void genResult(
+        llvm::raw_ostream &os, const NamedTypeConstraint &result, const std::string &resultName
+    ) override {
       if (result.isVariadic()) {
-        oss << llvm::formatv(", intptr_t {0}Size, MlirType const *{0}Types", resultName).str();
+        os << llvm::formatv(", intptr_t {0}Size, MlirType const *{0}Types", resultName);
       } else {
-        oss << llvm::formatv(", MlirType {0}Type", resultName).str();
+        os << llvm::formatv(", MlirType {0}Type", resultName);
       }
     }
-  }
-
-  return params;
+    void genOperand(llvm::raw_ostream &os, const NamedTypeConstraint &operand) override {
+      if (operand.isVariadic()) {
+        os << llvm::formatv(", intptr_t {0}Size, MlirValue const *{0}", operand.name);
+      } else {
+        os << llvm::formatv(", MlirValue {0}", operand.name);
+      }
+    }
+    void genAttribute(llvm::raw_ostream &os, const NamedAttribute &attr) override {
+      std::optional<std::string> attrType = tryCppTypeToCapiType(attr.attr.getStorageType());
+      os << llvm::formatv(", {0} {1}", attrType.value_or("MlirAttribute"), attr.name);
+    }
+  } paramStringGenerator;
+  return paramStringGenerator.gen(op);
 }
 
 /// Emit C API header
@@ -663,67 +652,56 @@ static std::string generateCAPIAssignments(const Operator &op) {
   //  - MlirLocation location
   //  - MlirOperationState state
   //  - Operand/Attribute/Result parameters per `generateCAPIBuildParams()`
-
-  std::string assignments;
-  // Reserve approximate space: ~80 chars per operand/attribute/result
-  assignments.reserve(80 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults()));
-  llvm::raw_string_ostream oss(assignments);
-
-  // Add operands
-  for (const auto &operand : op.getOperands()) {
-    std::string name = operand.name.str();
-    if (operand.isVariadic()) {
-      oss << llvm::formatv("  mlirOperationStateAddOperands(&state, {0}Size, {0});\n", name).str();
-    } else {
-      oss << llvm::formatv("  mlirOperationStateAddOperands(&state, 1, &{0});\n", name).str();
+  struct : GenStringFromOpPieces {
+    void genResultInferred(llvm::raw_ostream &os) override {
+      os << "  mlirOperationStateEnableResultTypeInference(&state);\n";
     }
-  }
-
-  // Add attributes
-  if (!op.getAttributes().empty()) {
-    oss << "  MlirContext ctx = mlirOpBuilderGetContext(builder);\n";
-    oss << "  MlirNamedAttribute attributes[] = {\n";
-    for (const auto &namedAttr : op.getAttributes()) {
-      std::string name = namedAttr.name.str();
-      oss << "    mlirNamedAttributeGet(mlirIdentifierGet(ctx, mlirStringRefCreateFromCString(\""
-          << name << "\")), ";
+    void genResult(
+        llvm::raw_ostream &os, const NamedTypeConstraint &result, const std::string &resultName
+    ) override {
+      if (result.isVariadic()) {
+        os << llvm::formatv(
+            "  mlirOperationStateAddResults(&state, {0}Size, {0}Types);\n", resultName
+        );
+      } else {
+        os << llvm::formatv("  mlirOperationStateAddResults(&state, 1, &{0}Type);\n", resultName);
+      }
+    }
+    void genOperand(llvm::raw_ostream &os, const NamedTypeConstraint &operand) override {
+      if (operand.isVariadic()) {
+        os << llvm::formatv(
+            "  mlirOperationStateAddOperands(&state, {0}Size, {0});\n", operand.name
+        );
+      } else {
+        os << llvm::formatv("  mlirOperationStateAddOperands(&state, 1, &{0});\n", operand.name);
+      }
+    }
+    void genAttributesPrefix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
+      os << "  MlirContext ctx = mlirOpBuilderGetContext(builder);\n";
+      os << "  MlirNamedAttribute attributes[] = {\n";
+    }
+    void genAttribute(llvm::raw_ostream &os, const NamedAttribute &attr) override {
+      os << "    mlirNamedAttributeGet(mlirIdentifierGet(ctx, mlirStringRefCreateFromCString(\""
+         << attr.name << "\")), ";
       // The second parameter to `mlirNamedAttributeGet()` must be an "MlirAttribute". However, if
       // it ends up as "MlirIdentifier", a reinterpret cast is needed. These C structs have the same
       // layout and the C++ mlir::StringAttr is a subclass of mlir::Attribute so the cast is safe.
-      std::optional<std::string> attrType = tryCppTypeToCapiType(namedAttr.attr.getStorageType());
+      std::optional<std::string> attrType = tryCppTypeToCapiType(attr.attr.getStorageType());
       if (attrType.has_value() && attrType.value() == "MlirIdentifier") {
-        oss << "reinterpret_cast<MlirAttribute&>(" << name << ")";
+        os << "reinterpret_cast<MlirAttribute&>(" << attr.name << ")";
       } else {
-        oss << name;
+        os << attr.name;
       }
-      oss << " ),\n";
+      os << " ),\n";
     }
-    oss << "  };\n";
-    oss << llvm::formatv(
-               "  mlirOperationStateAddAttributes(&state, {0}, attributes);\n",
-               op.getNumAttributes()
-    )
-               .str();
-  }
-
-  // Add result types if not inferred
-  if (!op.allResultTypesKnown()) {
-    for (int i = 0, e = op.getNumResults(); i < e; ++i) {
-      const auto &result = op.getResult(i);
-      std::string name =
-          result.name.empty() ? llvm::formatv("result{0}", i).str() : result.name.str();
-      if (result.isVariadic()) {
-        oss << llvm::formatv("  mlirOperationStateAddResults(&state, {0}Size, {0}Types);\n", name)
-                   .str();
-      } else {
-        oss << llvm::formatv("  mlirOperationStateAddResults(&state, 1, &{0}Type);\n", name).str();
-      }
+    void genAttributesSuffix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
+      os << "  };\n";
+      os << llvm::formatv(
+          "  mlirOperationStateAddAttributes(&state, {0}, attributes);\n", op.getNumAttributes()
+      );
     }
-  } else {
-    oss << "  mlirOperationStateEnableResultTypeInference(&state);\n";
-  }
-
-  return assignments;
+  } paramStringGenerator;
+  return paramStringGenerator.gen(op);
 }
 
 /// Emit C API implementation
