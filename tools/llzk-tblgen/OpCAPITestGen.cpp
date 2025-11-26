@@ -44,6 +44,7 @@
 #include <llvm/TableGen/TableGenBackend.h>
 
 #include "CommonCAPIGen.h"
+#include "OpCAPIParamHelper.h"
 
 using namespace mlir;
 using namespace mlir::tblgen;
@@ -430,103 +431,76 @@ private:
   /// @param op The operation definition
   /// @return String containing dummy parameter declarations
   static std::string generateBuildDummyParams(const Operator &op) {
-    // Use raw_string_ostream for efficient string building
-    std::string paramsBuffer;
-    // Reserve approximate space: ~100 chars per operand/attribute/result
-    paramsBuffer.reserve(
-        100 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults() + 1)
-    );
-    llvm::raw_string_ostream paramsStream(paramsBuffer);
-
-    // Declare dummyValue first
-    paramsStream << "    auto dummyValue = mlirOperationGetResult(testOp, 0);\n";
-
-    // Add operands
-    for (const auto &operand : op.getOperands()) {
-      // per `generateParamList()` only need to create something additional in case
-      // of variadic operand, otherwise `dummyValue` is used directly.
-      if (operand.isVariadic()) {
-        paramsStream << llvm::formatv(
-            "    MlirValue {0}Values[] = {{dummyValue};\n"
-            "    intptr_t {0}Size = 0;\n",
-            operand.name
-        );
+    struct : GenStringFromOpPieces {
+      void genHeader(llvm::raw_ostream &os) override {
+        // Declare dummyValue first
+        os << "    auto dummyValue = mlirOperationGetResult(testOp, 0);\n";
       }
-    }
-
-    // Add attributes
-    for (const auto &namedAttr : op.getAttributes()) {
-      std::string rhs;
-      std::optional<std::string> attrType = tryCppTypeToCapiType(namedAttr.attr.getStorageType());
-      if (attrType.has_value() && attrType.value() == "MlirIdentifier") {
-        rhs = "mlirOperationGetName(testOp)";
-      } else {
-        rhs = "createIndexAttribute()";
-      }
-      paramsStream << llvm::formatv("    auto {0}Attr = {1};\n", namedAttr.name, rhs);
-    }
-
-    // Add result types if not inferred
-    if (!op.allResultTypesKnown()) {
-      for (int i = 0, e = op.getNumResults(); i < e; ++i) {
-        const auto &result = op.getResult(i);
-        const std::string resultName =
-            result.name.empty() ? llvm::formatv("result{0}", i).str() : result.name.str();
+      void genResult(
+          llvm::raw_ostream &os, const NamedTypeConstraint &result, const std::string &resultName
+      ) override {
         if (result.isVariadic()) {
-          paramsStream << llvm::formatv(
+          os << llvm::formatv(
               "    auto {0}TypeArray = createIndexType();\n"
               "    MlirType {0}Types[] = {{{0}TypeArray};\n"
               "    intptr_t {0}Size = 0;\n",
               resultName
           );
         } else {
-          paramsStream << llvm::formatv("    auto {0}Type = createIndexType();\n", resultName);
+          os << llvm::formatv("    auto {0}Type = createIndexType();\n", resultName);
         }
       }
-    }
-
-    return paramsBuffer;
+      void genOperand(llvm::raw_ostream &os, const NamedTypeConstraint &operand) override {
+        // per `generateParamList()` only need to create something additional in case
+        // of variadic operand, otherwise `dummyValue` is used directly.
+        if (operand.isVariadic()) {
+          os << llvm::formatv(
+              "    MlirValue {0}Values[] = {{dummyValue};\n"
+              "    intptr_t {0}Size = 0;\n",
+              operand.name
+          );
+        }
+      }
+      void genAttribute(llvm::raw_ostream &os, const NamedAttribute &attr) override {
+        std::string rhs;
+        std::optional<std::string> attrType = tryCppTypeToCapiType(attr.attr.getStorageType());
+        if (attrType.has_value() && attrType.value() == "MlirIdentifier") {
+          rhs = "mlirOperationGetName(testOp)";
+        } else {
+          rhs = "createIndexAttribute()";
+        }
+        os << llvm::formatv("    auto {0}Attr = {1};\n", attr.name, rhs);
+      }
+    } paramsStringGenerator;
+    return paramsStringGenerator.gen(op);
   }
 
   /// @brief Generate parameter list for "Build" function call
   /// @param op The operation definition
   /// @return String containing the parameter list
   static std::string generateBuildParamList(const Operator &op) {
-    // Use raw_string_ostream for efficient string building
-    std::string paramsBuffer;
-    // Reserve approximate space: ~30 chars per operand/attribute/result
-    paramsBuffer.reserve(30 * (op.getNumOperands() + op.getNumAttributes() + op.getNumResults()));
-    llvm::raw_string_ostream paramsStream(paramsBuffer);
-
-    // Add operands
-    for (const auto &operand : op.getOperands()) {
-      if (operand.isVariadic()) {
-        paramsStream << llvm::formatv(", {0}Size, {0}Values", operand.name);
-      } else {
-        paramsStream << ", dummyValue";
-      }
-    }
-
-    // Add attributes
-    for (const auto &namedAttr : op.getAttributes()) {
-      paramsStream << llvm::formatv(", {0}Attr", namedAttr.name);
-    }
-
-    // Add result types if not inferred
-    if (!op.allResultTypesKnown()) {
-      for (int i = 0, e = op.getNumResults(); i < e; ++i) {
-        const auto &result = op.getResult(i);
-        const std::string resultName =
-            result.name.empty() ? llvm::formatv("result{0}", i).str() : result.name.str();
+    struct : GenStringFromOpPieces {
+      void genResult(
+          llvm::raw_ostream &os, const NamedTypeConstraint &result, const std::string &resultName
+      ) override {
         if (result.isVariadic()) {
-          paramsStream << llvm::formatv(", {0}Size, {0}Types", resultName);
+          os << llvm::formatv(", {0}Size, {0}Types", resultName);
         } else {
-          paramsStream << llvm::formatv(", {0}Type", resultName);
+          os << llvm::formatv(", {0}Type", resultName);
         }
       }
-    }
-
-    return paramsBuffer;
+      void genOperand(llvm::raw_ostream &os, const NamedTypeConstraint &operand) override {
+        if (operand.isVariadic()) {
+          os << llvm::formatv(", {0}Size, {0}Values", operand.name);
+        } else {
+          os << ", dummyValue";
+        }
+      }
+      void genAttribute(llvm::raw_ostream &os, const NamedAttribute &attr) override {
+        os << llvm::formatv(", {0}Attr", attr.name);
+      }
+    } paramsStringGenerator;
+    return paramsStringGenerator.gen(op);
   }
 };
 
