@@ -1,7 +1,26 @@
+//===- LightweightSignalEquivalenceAnalysis.cpp ---------------------------===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+// Adapted from mlir/lib/Analysis/DataFlow/SparseAnalysis.cpp.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// This file implements a basic signal equivalence analysis
+///
+//===----------------------------------------------------------------------===//
+
 #include "llzk/Analysis/LightweightSignalEquivalenceAnalysis.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 
-#include "llvm/Support/Debug.h"
+#include <llvm/Support/Debug.h>
 
 #define DEBUG_TYPE "llzk-signal-equivalence"
 
