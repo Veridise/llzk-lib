@@ -59,10 +59,8 @@ struct TestFuncDefOp {
   ~TestFuncDefOp() { mlirOperationDestroy(op); }
 };
 
-class FuncDialectTest : public CAPITest {
-
-protected:
-  TestFuncDefOp test_function() {
+struct FuncDialectTest : public CAPITest {
+  TestFuncDefOp test_function() const {
     auto in_types = llvm::SmallVector<MlirType>({createIndexType(), createIndexType()});
     auto in_attrs = empty_arg_attrs<2>(context);
     auto out_types = llvm::SmallVector<MlirType>({createIndexType()});
@@ -78,7 +76,7 @@ protected:
     };
   }
 
-  TestFuncDefOp test_function0() {
+  TestFuncDefOp test_function0() const {
     auto in_types = llvm::SmallVector<MlirType>();
     auto out_types = llvm::SmallVector<MlirType>({createIndexType()});
     const auto *name = "bar";
@@ -166,120 +164,137 @@ false_pred_test(llzk_func_def_op_get_is_in_struct, llzkFunctionFuncDefOpIsInStru
 false_pred_test(llzk_func_def_op_get_is_struct_compute, llzkFunctionFuncDefOpIsStructCompute);
 false_pred_test(llzk_func_def_op_get_is_struct_constrain, llzkFunctionFuncDefOpIsStructConstrain);
 
+struct CallOpBuildFuncHelper : public TestAnyBuildFuncHelper<FuncDialectTest> {
+  bool callIsA(MlirOperation op) override { return llzkOperationIsAFunctionCallOp(op); }
+};
+
 TEST_F(FuncDialectTest, llzk_call_op_build) {
-  auto f = test_function0();
-  auto ctx = mlirOperationGetContext(f.op);
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
-  auto callee_name = mlirFlatSymbolRefAttrGet(ctx, f.nameRef());
-  auto call = llzkFunctionCallOpBuild(
-      builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
-      (const MlirValue *)NULL
-  );
-  EXPECT_TRUE(mlirOperationVerify(call));
-  mlirOperationDestroy(call);
-  mlirOpBuilderDestroy(builder);
+  struct : CallOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      auto f = testClass.test_function0();
+      auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
+      return llzkFunctionCallOpBuild(
+          builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
+          (const MlirValue *)NULL
+      );
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_to_callee) {
-  auto f = test_function0();
-  auto ctx = mlirOperationGetContext(f.op);
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
-  auto call = llzkFunctionCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
-  EXPECT_TRUE(mlirOperationVerify(call));
-  mlirOperationDestroy(call);
-  mlirOpBuilderDestroy(builder);
+  struct : CallOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      auto f = testClass.test_function0();
+      return llzkFunctionCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands) {
-  auto f = test_function0();
-  auto ctx = mlirOperationGetContext(f.op);
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
-  auto callee_name = mlirFlatSymbolRefAttrGet(ctx, f.nameRef());
-  auto dims_per_map = mlirDenseI32ArrayGet(ctx, 0, (const int *)NULL);
-  auto call = llzkFunctionCallOpBuildWithMapOperands(
-      builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
-      (const MlirValueRange *)NULL, dims_per_map, 0, (const MlirValue *)NULL
-  );
-  EXPECT_TRUE(mlirOperationVerify(call));
-  mlirOperationDestroy(call);
-  mlirOpBuilderDestroy(builder);
+  struct : CallOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      auto f = testClass.test_function0();
+      auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
+      auto dims_per_map = mlirDenseI32ArrayGet(testClass.context, 0, (const int *)NULL);
+      return llzkFunctionCallOpBuildWithMapOperands(
+          builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
+          (const MlirValueRange *)NULL, dims_per_map, 0, (const MlirValue *)NULL
+      );
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands_and_dims) {
-  auto f = test_function0();
-  auto ctx = mlirOperationGetContext(f.op);
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
-  auto callee_name = mlirFlatSymbolRefAttrGet(ctx, f.nameRef());
-  auto call = llzkFunctionCallOpBuildWithMapOperandsAndDims(
-      builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
-      (const MlirValueRange *)NULL, 0, (const int *)NULL, 0, (const MlirValue *)NULL
-  );
-  EXPECT_TRUE(mlirOperationVerify(call));
-  mlirOperationDestroy(call);
-  mlirOpBuilderDestroy(builder);
+  struct : CallOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      auto f = testClass.test_function0();
+      auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
+      return llzkFunctionCallOpBuildWithMapOperandsAndDims(
+          builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
+          (const MlirValueRange *)NULL, 0, (const int *)NULL, 0, (const MlirValue *)NULL
+      );
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
-  auto f = test_function0();
-  auto ctx = mlirOperationGetContext(f.op);
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
-  auto dims_per_map = mlirDenseI32ArrayGet(ctx, 0, (const int *)NULL);
-  auto call = llzkFunctionCallOpBuildToCalleeWithMapOperands(
-      builder, location, f.op, 0, (const MlirValueRange *)NULL, dims_per_map, 0,
-      (const MlirValue *)NULL
-  );
-  EXPECT_TRUE(mlirOperationVerify(call));
-  mlirOperationDestroy(call);
-  mlirOpBuilderDestroy(builder);
+  struct : CallOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      auto f = testClass.test_function0();
+      auto dims_per_map = mlirDenseI32ArrayGet(testClass.context, 0, (const int *)NULL);
+      return llzkFunctionCallOpBuildToCalleeWithMapOperands(
+          builder, location, f.op, 0, (const MlirValueRange *)NULL, dims_per_map, 0,
+          (const MlirValue *)NULL
+      );
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims) {
-  auto f = test_function0();
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-  auto call = llzkFunctionCallOpBuildToCalleeWithMapOperandsAndDims(
-      builder, location, f.op, 0, (const MlirValueRange *)NULL, 0, (const int *)NULL, 0,
-      (const MlirValue *)NULL
-  );
-  EXPECT_TRUE(mlirOperationVerify(call));
-  mlirOperationDestroy(call);
-  mlirOpBuilderDestroy(builder);
+  struct : CallOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      auto f = testClass.test_function0();
+      return llzkFunctionCallOpBuildToCalleeWithMapOperandsAndDims(
+          builder, location, f.op, 0, (const MlirValueRange *)NULL, 0, (const int *)NULL, 0,
+          (const MlirValue *)NULL
+      );
+    }
+  } helper;
+  helper.run(*this);
+}
+
+TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
+  struct : CallOpBuildFuncHelper {
+    MlirType func_type;
+    MlirOperation callBuild(
+        const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      auto f = testClass.test_function0();
+      this->func_type = create_func_type(testClass.context, f.in_types, f.out_types);
+      return llzkFunctionCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
+    }
+    void doOtherChecks(MlirOperation op) override {
+      auto out_type = llzkFunctionCallOpGetCalleeType(op);
+      EXPECT_TRUE(mlirTypeEqual(this->func_type, out_type));
+    }
+  } helper;
+  helper.run(*this);
 }
 
 #define call_pred_test(name, func, expected)                                                       \
   TEST_F(FuncDialectTest, name) {                                                                  \
-    auto f = test_function0();                                                                     \
-    auto builder = mlirOpBuilderCreate(context);                                                   \
-    auto location = mlirLocationUnknownGet(context);                                               \
-    auto call =                                                                                    \
-        llzkFunctionCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);      \
-    EXPECT_EQ(func(call), expected);                                                               \
-    mlirOperationDestroy(call);                                                                    \
-    mlirOpBuilderDestroy(builder);                                                                 \
+    struct : CallOpBuildFuncHelper {                                                               \
+      MlirOperation callBuild(                                                                     \
+          const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location           \
+      ) override {                                                                                 \
+        auto f = testClass.test_function0();                                                       \
+        return llzkFunctionCallOpBuildToCallee(                                                    \
+            builder, location, f.op, 0, (const MlirValue *)NULL                                    \
+        );                                                                                         \
+      }                                                                                            \
+      void doOtherChecks(MlirOperation op) override { EXPECT_EQ(func(op), expected); }             \
+    } helper;                                                                                      \
+    helper.run(*this);                                                                             \
   }
 
 call_pred_test(test_llzk_operation_is_a_call_op_pass, llzkOperationIsAFunctionCallOp, true);
-
-TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
-  auto f = test_function0();
-  auto ctx = mlirOperationGetContext(f.op);
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
-  auto call = llzkFunctionCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
-
-  auto func_type = create_func_type(ctx, f.in_types, f.out_types);
-  auto out_type = llzkFunctionCallOpGetCalleeType(call);
-  EXPECT_TRUE(mlirTypeEqual(func_type, out_type));
-
-  mlirOperationDestroy(call);
-  mlirOpBuilderDestroy(builder);
-}
-
 call_pred_test(test_llzk_call_op_get_callee_is_compute, llzkFunctionCallOpCalleeIsCompute, false);
 call_pred_test(
     test_llzk_call_op_get_callee_is_constrain, llzkFunctionCallOpCalleeIsConstrain, false

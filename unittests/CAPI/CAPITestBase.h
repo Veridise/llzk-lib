@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk-c/Builder.h"
 #include "llzk-c/InitDialects.h"
 
 #include <mlir-c/BuiltinAttributes.h>
@@ -20,8 +21,6 @@
 
 class CAPITest : public ::testing::Test {
 protected:
-  MlirContext context;
-
   CAPITest() : context(mlirContextCreate()) {
     auto registry = mlirDialectRegistryCreate();
     mlirRegisterAllDialects(registry);
@@ -32,6 +31,9 @@ protected:
   }
 
   ~CAPITest() override { mlirContextDestroy(context); }
+
+public:
+  MlirContext context;
 
   /// Helper to get IndexType
   inline MlirType createIndexType() const { return mlirIndexTypeGet(context); }
@@ -47,7 +49,7 @@ protected:
   inline MlirAttribute createIndexAttribute() const { return createIndexAttribute(0); }
 
   // Helper to create a simple test operation: `arith.constant 0 : index`
-  MlirOperation createIndexOperation() {
+  MlirOperation createIndexOperation() const {
     MlirType indexType = createIndexType();
     MlirOperationState op_state = mlirOperationStateGet(
         mlirStringRefCreateFromCString("arith.constant"), mlirLocationUnknownGet(context)
@@ -60,5 +62,31 @@ protected:
     mlirOperationStateAddAttributes(&op_state, 1, &attr);
 
     return mlirOperationCreate(&op_state);
+  }
+};
+
+/// @brief
+/// @tparam GTestBaseClass must be a subclass of `CAPITest`
+template <typename GTestBaseClass> struct TestAnyBuildFuncHelper {
+  virtual ~TestAnyBuildFuncHelper() = default;
+
+  virtual bool callIsA(MlirOperation builtOp) = 0;
+  virtual MlirOperation callBuild(const GTestBaseClass &, MlirOpBuilder, MlirLocation) = 0;
+  virtual void doOtherChecks(MlirOperation builtOp) {}
+
+  void run(const GTestBaseClass &testClass) {
+    MlirOpBuilder builder = mlirOpBuilderCreate(testClass.context);
+    MlirLocation location = mlirLocationUnknownGet(testClass.context);
+
+    MlirOperation op = callBuild(testClass, builder, location);
+
+    EXPECT_NE(op.ptr, (void *)NULL);
+    EXPECT_TRUE(mlirOperationVerify(op));
+    EXPECT_TRUE(callIsA(op));
+
+    doOtherChecks(op);
+
+    mlirOperationDestroy(op);
+    mlirOpBuilderDestroy(builder);
   }
 };

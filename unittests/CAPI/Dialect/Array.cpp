@@ -23,13 +23,12 @@
 #include "llzk/Dialect/Array/IR/Ops.capi.test.cpp.inc"
 #include "llzk/Dialect/Array/IR/Types.capi.test.cpp.inc"
 
-class ArrayDialectTests : public CAPITest {
-protected:
-  MlirType test_array(MlirType elt, llvm::ArrayRef<int64_t> dims) {
+struct ArrayDialectTests : public CAPITest {
+  MlirType test_array(MlirType elt, llvm::ArrayRef<int64_t> dims) const {
     return llzkArrayArrayTypeGetWithShape(elt, dims.size(), dims.data());
   }
 
-  llvm::SmallVector<MlirOperation> create_n_ops(int64_t n_ops, MlirType elt_type) {
+  llvm::SmallVector<MlirOperation> create_n_ops(int64_t n_ops, MlirType elt_type) const {
     auto name = mlirStringRefCreateFromCString("arith.constant");
     auto attr_name = mlirIdentifierGet(context, mlirStringRefCreateFromCString("value"));
     auto location = mlirLocationUnknownGet(context);
@@ -94,65 +93,72 @@ TEST_F(ArrayDialectTests, array_type_get_dim) {
   EXPECT_TRUE(mlirAttributeEqual(out_dim, dim_as_attr));
 }
 
+struct CreateArrayOpBuildFuncHelper : public TestAnyBuildFuncHelper<ArrayDialectTests> {
+  bool callIsA(MlirOperation op) override { return llzkOperationIsAArrayCreateArrayOp(op); }
+};
+
 TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
-  int64_t dims[1] = {1};
-  auto elt_type = createIndexType();
-  auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
-  auto n_elements = 1;
-  auto ops = create_n_ops(n_elements, elt_type);
-  llvm::SmallVector<MlirValue> values;
-  for (auto op : ops) {
-    values.push_back(mlirOperationGetResult(op, 0));
-  }
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-  auto create_array_op = llzkArrayCreateArrayOpBuildWithValues(
-      builder, location, test_type, values.size(), values.data()
-  );
-  for (auto op : ops) {
-    EXPECT_TRUE(mlirOperationVerify(op));
-  }
+  struct LocalHelper : CreateArrayOpBuildFuncHelper {
+    llvm::SmallVector<MlirOperation> otherOps;
 
-  EXPECT_TRUE(mlirOperationVerify(create_array_op));
-
-  mlirOperationDestroy(create_array_op);
-  for (auto op : ops) {
-    mlirOperationDestroy(op);
-  }
-  mlirOpBuilderDestroy(builder);
+    MlirOperation callBuild(
+        const ArrayDialectTests &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      int64_t dims[1] = {1};
+      auto elt_type = testClass.createIndexType();
+      auto test_type = testClass.test_array(elt_type, llvm::ArrayRef(dims, 1));
+      this->otherOps = testClass.create_n_ops(1, elt_type);
+      llvm::SmallVector<MlirValue> values;
+      for (auto op : this->otherOps) {
+        values.push_back(mlirOperationGetResult(op, 0));
+      }
+      return llzkArrayCreateArrayOpBuildWithValues(
+          builder, location, test_type, values.size(), values.data()
+      );
+    }
+    void doOtherChecks(MlirOperation) override {
+      for (auto op : this->otherOps) {
+        EXPECT_TRUE(mlirOperationVerify(op));
+      }
+    }
+    ~LocalHelper() override {
+      for (auto op : this->otherOps) {
+        mlirOperationDestroy(op);
+      }
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
-  int64_t dims[1] = {1};
-  auto elt_type = createIndexType();
-  auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
-
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-  auto dims_per_map = mlirDenseI32ArrayGet(context, 0, NULL);
-
-  auto op = llzkArrayCreateArrayOpBuildWithMapOperands(
-      builder, location, test_type, 0, NULL, dims_per_map
-  );
-
-  EXPECT_TRUE(mlirOperationVerify(op));
-  mlirOperationDestroy(op);
-  mlirOpBuilderDestroy(builder);
+  struct : CreateArrayOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const ArrayDialectTests &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      int64_t dims[1] = {1};
+      auto elt_type = testClass.createIndexType();
+      auto test_type = testClass.test_array(elt_type, llvm::ArrayRef(dims, 1));
+      auto dims_per_map = mlirDenseI32ArrayGet(testClass.context, 0, NULL);
+      return llzkArrayCreateArrayOpBuildWithMapOperands(
+          builder, location, test_type, 0, NULL, dims_per_map
+      );
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
-  int64_t dims[1] = {1};
-  auto elt_type = createIndexType();
-  auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
-
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-
-  auto op = llzkArrayCreateArrayOpBuildWithMapOperandsAndDims(
-      builder, location, test_type, 0, NULL, 0, NULL
-  );
-
-  EXPECT_TRUE(mlirOperationVerify(op));
-  mlirOperationDestroy(op);
-  mlirOpBuilderDestroy(builder);
+  struct : CreateArrayOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const ArrayDialectTests &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      int64_t dims[1] = {1};
+      auto elt_type = testClass.createIndexType();
+      auto test_type = testClass.test_array(elt_type, llvm::ArrayRef(dims, 1));
+      return llzkArrayCreateArrayOpBuildWithMapOperandsAndDims(
+          builder, location, test_type, 0, NULL, 0, NULL
+      );
+    }
+  } helper;
+  helper.run(*this);
 }
