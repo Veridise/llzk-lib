@@ -63,10 +63,9 @@ class FuncDialectTest : public CAPITest {
 
 protected:
   TestFuncDefOp test_function() {
-    auto in_types =
-        llvm::SmallVector<MlirType>({mlirIndexTypeGet(context), mlirIndexTypeGet(context)});
+    auto in_types = llvm::SmallVector<MlirType>({createIndexType(), createIndexType()});
     auto in_attrs = empty_arg_attrs<2>(context);
-    auto out_types = llvm::SmallVector<MlirType>({mlirIndexTypeGet(context)});
+    auto out_types = llvm::SmallVector<MlirType>({createIndexType()});
     const auto *name = "foo";
     return {
         .in_types = in_types,
@@ -81,7 +80,7 @@ protected:
 
   TestFuncDefOp test_function0() {
     auto in_types = llvm::SmallVector<MlirType>();
-    auto out_types = llvm::SmallVector<MlirType>({mlirIndexTypeGet(context)});
+    auto out_types = llvm::SmallVector<MlirType>({createIndexType()});
     const auto *name = "bar";
     return {
         .in_types = in_types,
@@ -96,7 +95,7 @@ protected:
 };
 
 TEST_F(FuncDialectTest, llzk_func_def_op_create_with_attrs_and_arg_attrs) {
-  MlirType in_types[] = {mlirIndexTypeGet(context)};
+  MlirType in_types[] = {createIndexType()};
   auto in_attrs = empty_arg_attrs<1>(context);
   auto op = create_func_def_op(
       context, "foo",

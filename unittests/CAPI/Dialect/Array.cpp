@@ -25,8 +25,6 @@
 
 class ArrayDialectTests : public CAPITest {
 protected:
-  MlirType indexType() { return mlirIndexTypeGet(context); }
-
   MlirType test_array(MlirType elt, llvm::ArrayRef<int64_t> dims) {
     return llzkArrayArrayTypeGetWithShape(elt, dims.size(), dims.data());
   }
@@ -37,7 +35,6 @@ protected:
     auto location = mlirLocationUnknownGet(context);
     llvm::SmallVector<MlirOperation> result;
     for (int64_t n = 0; n < n_ops; n++) {
-
       auto attr = mlirNamedAttributeGet(attr_name, mlirIntegerAttrGet(elt_type, n));
       auto op_state = mlirOperationStateGet(name, location);
       mlirOperationStateAddResults(&op_state, 1, &elt_type);
@@ -52,37 +49,37 @@ protected:
 };
 
 TEST_F(ArrayDialectTests, array_type_get) {
-  auto size = mlirIntegerAttrGet(indexType(), 1);
+  auto size = createIndexAttribute(1);
   MlirAttribute dims[1] = {size};
-  auto arr_type = llzkArrayArrayTypeGetWithDims(indexType(), 1, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithDims(createIndexType(), 1, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
 }
 
 TEST_F(ArrayDialectTests, type_is_a_array_type_pass) {
-  auto size = mlirIntegerAttrGet(indexType(), 1);
+  auto size = createIndexAttribute(1);
   MlirAttribute dims[1] = {size};
-  auto arr_type = llzkArrayArrayTypeGetWithDims(indexType(), 1, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithDims(createIndexType(), 1, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
   EXPECT_TRUE(llzkTypeIsAArrayArrayType(arr_type));
 }
 
 TEST_F(ArrayDialectTests, array_type_get_with_numeric_dims) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayArrayTypeGetWithShape(indexType(), 2, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
 }
 
 TEST_F(ArrayDialectTests, array_type_get_element_type) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayArrayTypeGetWithShape(indexType(), 2, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
   auto elt_type = llzkArrayArrayTypeGetElementType(arr_type);
-  EXPECT_TRUE(mlirTypeEqual(indexType(), elt_type));
+  EXPECT_TRUE(mlirTypeEqual(createIndexType(), elt_type));
 }
 
 TEST_F(ArrayDialectTests, array_type_get_num_dims) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayArrayTypeGetWithShape(indexType(), 2, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
   auto n_dims = llzkArrayArrayTypeGetDimensionSizesCount(arr_type);
   EXPECT_EQ(n_dims, 2);
@@ -90,16 +87,16 @@ TEST_F(ArrayDialectTests, array_type_get_num_dims) {
 
 TEST_F(ArrayDialectTests, array_type_get_dim) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayArrayTypeGetWithShape(indexType(), 2, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
   auto out_dim = llzkArrayArrayTypeGetDimensionSizesAt(arr_type, 0);
-  auto dim_as_attr = mlirIntegerAttrGet(indexType(), dims[0]);
+  auto dim_as_attr = createIndexAttribute(dims[0]);
   EXPECT_TRUE(mlirAttributeEqual(out_dim, dim_as_attr));
 }
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
   int64_t dims[1] = {1};
-  auto elt_type = mlirIndexTypeGet(context);
+  auto elt_type = createIndexType();
   auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
   auto n_elements = 1;
   auto ops = create_n_ops(n_elements, elt_type);
@@ -127,7 +124,7 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
   int64_t dims[1] = {1};
-  auto elt_type = mlirIndexTypeGet(context);
+  auto elt_type = createIndexType();
   auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
 
   auto builder = mlirOpBuilderCreate(context);
@@ -145,7 +142,7 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
   int64_t dims[1] = {1};
-  auto elt_type = mlirIndexTypeGet(context);
+  auto elt_type = createIndexType();
   auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
 
   auto builder = mlirOpBuilderCreate(context);

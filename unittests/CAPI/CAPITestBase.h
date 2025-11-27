@@ -37,9 +37,14 @@ protected:
   inline MlirType createIndexType() const { return mlirIndexTypeGet(context); }
 
   /// Helper to create a simple IntegerAttr with IndexType
-  inline MlirAttribute createIndexAttribute() const {
-    return mlirIntegerAttrGet(createIndexType(), 0);
+  inline MlirAttribute createIndexAttribute(int64_t value) const {
+    return mlirIntegerAttrGet(createIndexType(), value);
   }
+
+  /// Helper to create a simple IntegerAttr with IndexType and value 0
+  /// Note: This no-parameter overload must exist because `llzk-tblgen` generates
+  /// code that calls `createIndex[Type/Attribute/Operation]` without parameters.
+  inline MlirAttribute createIndexAttribute() const { return createIndexAttribute(0); }
 
   // Helper to create a simple test operation: `arith.constant 0 : index`
   MlirOperation createIndexOperation() {

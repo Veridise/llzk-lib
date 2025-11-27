@@ -120,7 +120,7 @@ protected:
          ),
          mlirNamedAttributeGet(
              mlirIdentifierGet(context, mlirStringRefCreateFromCString("type")),
-             mlirTypeAttrGet(mlirIndexTypeGet(context))
+             mlirTypeAttrGet(createIndexType())
          )}
     );
     auto op_state = mlirOperationStateGet(name, location);
@@ -129,7 +129,7 @@ protected:
   }
 
   TestOp test_op() const {
-    auto elt_type = mlirIndexTypeGet(context);
+    auto elt_type = createIndexType();
     auto name = mlirStringRefCreateFromCString("arith.constant");
     auto attr_name = mlirIdentifierGet(context, mlirStringRefCreateFromCString("value"));
     auto location = mlirLocationUnknownGet(context);
@@ -278,7 +278,7 @@ TEST_F(StructDefTest, llzk_field_def_op_set_public_attr) {
 TEST_F(StructDefTest, llzk_field_read_op_build) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
-  auto index_type = mlirIndexTypeGet(context);
+  auto index_type = createIndexType();
   auto struct_new_op = make_struct_new_op();
   auto struct_value = mlirOperationGetResult(struct_new_op, 0);
   auto op = llzkStructFieldReadOpBuild(
@@ -293,7 +293,7 @@ TEST_F(StructDefTest, llzk_field_read_op_build) {
 TEST_F(StructDefTest, llzk_field_read_op_build_with_affine_map_distance) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
-  auto index_type = mlirIndexTypeGet(context);
+  auto index_type = createIndexType();
   auto struct_new_op = make_struct_new_op();
   auto struct_value = mlirOperationGetResult(struct_new_op, 0);
 
@@ -316,7 +316,7 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_affine_map_distance) {
 TEST_F(StructDefTest, llzk_field_read_op_builder_with_const_param_distance) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
-  auto index_type = mlirIndexTypeGet(context);
+  auto index_type = createIndexType();
   auto struct_new_op = make_struct_new_op();
   auto struct_value = mlirOperationGetResult(struct_new_op, 0);
 
@@ -333,7 +333,7 @@ TEST_F(StructDefTest, llzk_field_read_op_builder_with_const_param_distance) {
 TEST_F(StructDefTest, llzk_field_read_op_build_with_literal_distance) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
-  auto index_type = mlirIndexTypeGet(context);
+  auto index_type = createIndexType();
   auto struct_new_op = make_struct_new_op();
   auto struct_value = mlirOperationGetResult(struct_new_op, 0);
 
