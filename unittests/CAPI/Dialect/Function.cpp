@@ -108,7 +108,7 @@ TEST_F(FuncDialectTest, llzk_operation_is_a_func_def_op_pass) {
   EXPECT_TRUE(llzkOperationIsAFunctionFuncDefOp(f.op));
 }
 
-TEST_F(FuncDialectTest, llzk_func_def_op_get_has_allow_constraint_attr) {
+TEST_F(FuncDialectTest, llzk_func_def_op_has_allow_constraint_attr) {
   auto f = test_function();
   EXPECT_TRUE(!llzkFunctionFuncDefOpHasAllowConstraintAttr(f.op));
 }
@@ -122,7 +122,7 @@ TEST_F(FuncDialectTest, llzk_func_def_op_set_allow_constraint_attr) {
   EXPECT_TRUE(!llzkFunctionFuncDefOpHasAllowConstraintAttr(f.op));
 }
 
-TEST_F(FuncDialectTest, llzk_func_def_op_get_has_allow_witness_attr) {
+TEST_F(FuncDialectTest, llzk_func_def_op_has_allow_witness_attr) {
   auto f = test_function();
   EXPECT_TRUE(!llzkFunctionFuncDefOpHasAllowWitnessAttr(f.op));
 }
@@ -136,7 +136,7 @@ TEST_F(FuncDialectTest, llzk_func_def_op_set_allow_witness_attr) {
   EXPECT_TRUE(!llzkFunctionFuncDefOpHasAllowWitnessAttr(f.op));
 }
 
-TEST_F(FuncDialectTest, llzk_func_def_op_get_has_arg_is_pub) {
+TEST_F(FuncDialectTest, llzk_func_def_op_has_arg_is_pub) {
   auto f = test_function();
   EXPECT_TRUE(!llzkFunctionFuncDefOpHasArgPublicAttr(f.op, 0));
 }
@@ -158,11 +158,11 @@ TEST_F(FuncDialectTest, llzk_func_def_op_get_fully_qualified_name) {
     EXPECT_FALSE(func(f.op));                                                                      \
   }
 
-false_pred_test(llzk_func_def_op_get_name_is_compute, llzkFunctionFuncDefOpNameIsCompute);
-false_pred_test(llzk_func_def_op_get_name_is_constrain, llzkFunctionFuncDefOpNameIsConstrain);
-false_pred_test(llzk_func_def_op_get_is_in_struct, llzkFunctionFuncDefOpIsInStruct);
-false_pred_test(llzk_func_def_op_get_is_struct_compute, llzkFunctionFuncDefOpIsStructCompute);
-false_pred_test(llzk_func_def_op_get_is_struct_constrain, llzkFunctionFuncDefOpIsStructConstrain);
+false_pred_test(llzk_func_def_op_name_is_compute, llzkFunctionFuncDefOpNameIsCompute);
+false_pred_test(llzk_func_def_op_name_is_constrain, llzkFunctionFuncDefOpNameIsConstrain);
+false_pred_test(llzk_func_def_op_is_in_struct, llzkFunctionFuncDefOpIsInStruct);
+false_pred_test(llzk_func_def_op_is_struct_compute, llzkFunctionFuncDefOpIsStructCompute);
+false_pred_test(llzk_func_def_op_is_struct_constrain, llzkFunctionFuncDefOpIsStructConstrain);
 
 struct CallOpBuildFuncHelper : public TestAnyBuildFuncHelper<FuncDialectTest> {
   bool callIsA(MlirOperation op) override { return llzkOperationIsAFunctionCallOp(op); }
@@ -295,14 +295,11 @@ TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
   }
 
 call_pred_test(test_llzk_operation_is_a_call_op_pass, llzkOperationIsAFunctionCallOp, true);
-call_pred_test(test_llzk_call_op_get_callee_is_compute, llzkFunctionCallOpCalleeIsCompute, false);
+call_pred_test(test_llzk_call_op_callee_is_compute, llzkFunctionCallOpCalleeIsCompute, false);
+call_pred_test(test_llzk_call_op_callee_is_constrain, llzkFunctionCallOpCalleeIsConstrain, false);
 call_pred_test(
-    test_llzk_call_op_get_callee_is_constrain, llzkFunctionCallOpCalleeIsConstrain, false
+    test_llzk_call_op_callee_is_struct_compute, llzkFunctionCallOpCalleeIsStructCompute, false
 );
 call_pred_test(
-    test_llzk_call_op_get_callee_is_struct_compute, llzkFunctionCallOpCalleeIsStructCompute, false
-);
-call_pred_test(
-    test_llzk_call_op_get_callee_is_struct_constrain, llzkFunctionCallOpCalleeIsStructConstrain,
-    false
+    test_llzk_call_op_callee_is_struct_constrain, llzkFunctionCallOpCalleeIsStructConstrain, false
 );

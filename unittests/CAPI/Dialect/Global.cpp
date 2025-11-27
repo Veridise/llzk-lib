@@ -57,14 +57,14 @@ TEST_F(CAPITest, llzk_operation_is_a_global_def_op_pass) {
   mlirOperationDestroy(op);
 }
 
-TEST_F(CAPITest, llzk_global_def_op_get_is_constant_1) {
+TEST_F(CAPITest, llzk_global_def_op_is_constant_1) {
   auto op = create_global_def_op(context, "G", false, createIndexType(), std::nullopt);
   EXPECT_NE(op.ptr, (void *)NULL);
   EXPECT_TRUE(!llzkGlobalGlobalDefOpIsConstant(op));
   mlirOperationDestroy(op);
 }
 
-TEST_F(CAPITest, llzk_global_def_op_get_is_constant_2) {
+TEST_F(CAPITest, llzk_global_def_op_is_constant_2) {
   auto op = create_global_def_op(context, "G", true, createIndexType(), createIndexAttribute(1));
   EXPECT_NE(op.ptr, (void *)NULL);
   EXPECT_TRUE(llzkGlobalGlobalDefOpIsConstant(op));

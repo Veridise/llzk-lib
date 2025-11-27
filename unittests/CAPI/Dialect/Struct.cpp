@@ -200,7 +200,7 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_num_field_defs) {
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_has_columns) {
+TEST_F(StructDefTest, llzk_struct_def_op_has_columns) {
   auto op = test_op();
   if (llzkOperationIsAStructStructDefOp(op.op)) {
     llzkStructStructDefOpHasColumns(op.op);
@@ -247,7 +247,7 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_fully_qualified_name) {
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_is_main_component) {
+TEST_F(StructDefTest, llzk_struct_def_op_is_main_component) {
   auto op = test_op();
   if (llzkOperationIsAStructStructDefOp(op.op)) {
     llzkStructStructDefOpIsMainComponent(op.op);
@@ -259,7 +259,7 @@ TEST_F(StructDefTest, llzk_operation_is_a_field_def_op_pass) {
   EXPECT_TRUE(llzkOperationIsAStructFieldDefOp(op));
 }
 
-TEST_F(StructDefTest, llzk_field_def_op_get_has_public_attr) {
+TEST_F(StructDefTest, llzk_field_def_op_has_public_attr) {
   auto op = test_op();
   if (llzkOperationIsAStructFieldDefOp(op.op)) {
     llzkStructFieldDefOpHasPublicAttr(op.op);
