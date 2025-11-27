@@ -206,7 +206,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   return wrap(
       create<FieldReadOp>(
           builder, location, unwrap(fieldType), unwrap(component), nameAttr,
-          unwrap(builder)->getI64IntegerAttr(distance)
+          unwrap(builder)->getIndexAttr(distance)
       )
   );
 }
