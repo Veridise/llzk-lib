@@ -84,7 +84,7 @@ TEST_F({1}OperationLinkTests, {0}{2}_Build) {{
     MlirLocation location = mlirLocationUnknownGet(context);
 {3}
     (void){0}{1}{2}Build(builder, location{4});
-    mlirOpBuilderDestroy(builder);
+    // No need to destroy builder or op since this code never runs.
   }
   
   mlirOperationDestroy(testOp);

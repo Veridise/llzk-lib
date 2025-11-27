@@ -179,11 +179,9 @@ struct AttrOrTypeImplementationGenerator : public ImplementationGenerator {
 #include "mlir/CAPI/IR.h"
 #include "mlir/CAPI/Support.h"
 #include "llvm/ADT/TypeSwitch.h"
-#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 
 using namespace mlir;
 using namespace llvm;
-
 )";
   }
 
