@@ -396,7 +396,7 @@ struct OpImplementationGenerator : public ImplementationGenerator, OpGeneratorDa
 MlirOperation {0}{1}{2}Build(MlirOpBuilder builder, MlirLocation location{3}) {{
   MlirOperationState state = mlirOperationStateGet(mlirStringRefCreateFromCString("{4}"), location);
 {5}
-  return mlirOperationCreate(&state);
+  return mlirOpBuilderInsert(builder, mlirOperationCreate(&state));
 }
 )";
     assert(!className.empty() && "className must be set");
