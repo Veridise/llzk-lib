@@ -471,6 +471,11 @@ private:
         }
         os << llvm::formatv("    auto {0}Attr = {1};\n", attr.name, rhs);
       }
+      void genRegion(llvm::raw_ostream &os, const mlir::tblgen::NamedRegion &region) override {
+        if (region.isVariadic()) {
+          os << llvm::formatv("    unsigned {0}Count = 0;\n", region.name);
+        }
+      }
     } paramsStringGenerator;
     return paramsStringGenerator.gen(op);
   }
@@ -498,6 +503,11 @@ private:
       }
       void genAttribute(llvm::raw_ostream &os, const NamedAttribute &attr) override {
         os << llvm::formatv(", {0}Attr", attr.name);
+      }
+      void genRegion(llvm::raw_ostream &os, const mlir::tblgen::NamedRegion &region) override {
+        if (region.isVariadic()) {
+          os << llvm::formatv(", {0}Count", region.name);
+        }
       }
     } paramsStringGenerator;
     return paramsStringGenerator.gen(op);

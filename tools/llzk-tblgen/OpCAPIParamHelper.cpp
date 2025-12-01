@@ -32,13 +32,25 @@ std::string GenStringFromOpPieces::gen(const mlir::tblgen::Operator &op) {
   for (const mlir::tblgen::NamedTypeConstraint &operand : op.getOperands()) {
     genOperand(oss, operand);
   }
-  auto attrs = op.getAttributes();
-  if (!attrs.empty()) {
-    genAttributesPrefix(oss, op);
-    for (const mlir::tblgen::NamedAttribute &namedAttr : attrs) {
-      genAttribute(oss, namedAttr);
+  {
+    auto attrs = op.getAttributes();
+    if (!attrs.empty()) {
+      genAttributesPrefix(oss, op);
+      for (const mlir::tblgen::NamedAttribute &namedAttr : attrs) {
+        genAttribute(oss, namedAttr);
+      }
+      genAttributesSuffix(oss, op);
     }
-    genAttributesSuffix(oss, op);
+  }
+  {
+    auto regions = op.getRegions();
+    if (!regions.empty()) {
+      genRegionsPrefix(oss, op);
+      for (const mlir::tblgen::NamedRegion &region : regions) {
+        genRegion(oss, region);
+      }
+      genRegionsSuffix(oss, op);
+    }
   }
   return params;
 }

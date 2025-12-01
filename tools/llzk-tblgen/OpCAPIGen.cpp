@@ -280,6 +280,11 @@ static std::string generateCAPIBuildParams(const Operator &op) {
       std::optional<std::string> attrType = tryCppTypeToCapiType(attr.attr.getStorageType());
       os << llvm::formatv(", {0} {1}", attrType.value_or("MlirAttribute"), attr.name);
     }
+    void genRegion(llvm::raw_ostream &os, const mlir::tblgen::NamedRegion &region) override {
+      if (region.isVariadic()) {
+        os << llvm::formatv(", unsigned {0}Count", region.name);
+      }
+    }
   } paramStringGenerator;
   return paramStringGenerator.gen(op);
 }
@@ -699,6 +704,22 @@ static std::string generateCAPIAssignments(const Operator &op) {
       os << llvm::formatv(
           "  mlirOperationStateAddAttributes(&state, {0}, attributes);\n", op.getNumAttributes()
       );
+    }
+    void genRegionsPrefix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
+      os << "  llvm::SmallVector<MlirRegion, 2> regions;\n";
+      auto numRegions = op.getNumRegions();
+      if (numRegions > 2) { // pre-size if more than the initial capacity above
+        os << "  regions.resize(" << numRegions << ");\n";
+      }
+    }
+    void genRegion(llvm::raw_ostream &os, const mlir::tblgen::NamedRegion &region) override {
+      if (region.isVariadic()) {
+        os << llvm::formatv("  for (unsigned i = 0; i < {0}Count; ++i)\n  ", region.name);
+      }
+      os << "  regions.push_back(mlirRegionCreate());\n";
+    }
+    void genRegionsSuffix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
+      os << "  mlirOperationStateAddOwnedRegions(&state, regions.size(), regions.data());\n";
     }
   } paramStringGenerator;
   return paramStringGenerator.gen(op);

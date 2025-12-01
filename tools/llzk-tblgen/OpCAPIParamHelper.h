@@ -38,7 +38,7 @@ protected:
   /// Generate code to `os` when result type is inferred. Default does nothing.
   virtual void genResultInferred(llvm::raw_ostream &os) {}
 
-  /// Generate code for `operand to `os`.
+  /// Generate code for `operand` to `os`.
   virtual void
   genOperand(llvm::raw_ostream &os, const mlir::tblgen::NamedTypeConstraint &operand) = 0;
 
@@ -50,4 +50,13 @@ protected:
 
   /// Generate attribute section suffix code to `os`. Default does nothing.
   virtual void genAttributesSuffix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) {}
+
+  /// Generate region section prefix code to `os`. Default does nothing.
+  virtual void genRegionsPrefix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) {}
+
+  /// Generate code for `region` to `os`.
+  virtual void genRegion(llvm::raw_ostream &os, const mlir::tblgen::NamedRegion &region) = 0;
+
+  /// Generate region section suffix code to `os`. Default does nothing.
+  virtual void genRegionsSuffix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) {}
 };
