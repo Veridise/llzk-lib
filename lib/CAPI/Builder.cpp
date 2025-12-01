@@ -87,6 +87,10 @@ MlirBlock mlirOpBuilderGetInsertionBlock(MlirOpBuilder builder) {
   return wrap(unwrap(builder)->getInsertionBlock());
 }
 
+MlirOperation mlirOpBuilderInsert(MlirOpBuilder builder, MlirOperation op) {
+  return wrap(unwrap(builder)->insert(unwrap(op)));
+}
+
 //===----------------------------------------------------------------------===//
 // MlirOpBuilderListener
 //===----------------------------------------------------------------------===//
