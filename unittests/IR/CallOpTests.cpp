@@ -26,9 +26,9 @@ using namespace llzk::function;
 TEST_F(OpTests, testCallNoAffine_GoodNoArgs) {
   ModuleBuilder llzkBldr = newBasicFunctionsExample(0);
 
-  auto funcA = llzkBldr.getGlobalFunc(funcNameA);
+  auto funcA = llzkBldr.getFreeFunc(funcNameA);
   ASSERT_TRUE(succeeded(funcA));
-  auto funcB = llzkBldr.getGlobalFunc(funcNameB);
+  auto funcB = llzkBldr.getFreeFunc(funcNameB);
   ASSERT_TRUE(succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
@@ -47,9 +47,9 @@ TEST_F(OpTests, testCallNoAffine_GoodNoArgs) {
 TEST_F(OpTests, testCallNoAffine_GoodWithArgs) {
   ModuleBuilder llzkBldr = newBasicFunctionsExample(2);
 
-  auto funcA = llzkBldr.getGlobalFunc(funcNameA);
+  auto funcA = llzkBldr.getFreeFunc(funcNameA);
   ASSERT_TRUE(succeeded(funcA));
-  auto funcB = llzkBldr.getGlobalFunc(funcNameB);
+  auto funcB = llzkBldr.getFreeFunc(funcNameB);
   ASSERT_TRUE(succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
@@ -74,9 +74,9 @@ TEST_F(OpTests, testCallNoAffine_GoodWithArgs) {
 TEST_F(OpTests, testCallNoAffine_TooFewValues) {
   ModuleBuilder llzkBldr = newBasicFunctionsExample(2);
 
-  auto funcA = llzkBldr.getGlobalFunc(funcNameA);
+  auto funcA = llzkBldr.getFreeFunc(funcNameA);
   ASSERT_TRUE(succeeded(funcA));
-  auto funcB = llzkBldr.getGlobalFunc(funcNameB);
+  auto funcB = llzkBldr.getFreeFunc(funcNameB);
   ASSERT_TRUE(succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
@@ -104,9 +104,9 @@ TEST_F(OpTests, testCallNoAffine_TooFewValues) {
 TEST_F(OpTests, testCallNoAffine_WrongRetTy) {
   ModuleBuilder llzkBldr = newBasicFunctionsExample(1);
 
-  auto funcA = llzkBldr.getGlobalFunc(funcNameA);
+  auto funcA = llzkBldr.getFreeFunc(funcNameA);
   ASSERT_TRUE(succeeded(funcA));
-  auto funcB = llzkBldr.getGlobalFunc(funcNameB);
+  auto funcB = llzkBldr.getFreeFunc(funcNameB);
   ASSERT_TRUE(succeeded(funcB));
 
   OpBuilder bldr(funcA->getBody());
@@ -135,7 +135,7 @@ TEST_F(OpTests, testCallNoAffine_WrongRetTy) {
 TEST_F(OpTests, testCallNoAffine_InvalidCalleeName) {
   ModuleBuilder llzkBldr = newBasicFunctionsExample(0);
 
-  auto funcA = llzkBldr.getGlobalFunc(funcNameA);
+  auto funcA = llzkBldr.getFreeFunc(funcNameA);
   ASSERT_TRUE(succeeded(funcA));
 
   OpBuilder bldr(funcA->getBody());
@@ -617,9 +617,9 @@ TEST_F(OpTests, test_calleeIs_withStructConstrain) {
 
 TEST_F(OpTests, test_calleeIs_withGlobalCompute) {
   ModuleBuilder llzkBldr = newBasicFunctionsExample(0, {"compute", "entry"});
-  auto funcEntry = llzkBldr.getGlobalFunc("entry");
+  auto funcEntry = llzkBldr.getFreeFunc("entry");
   ASSERT_TRUE(succeeded(funcEntry));
-  llzkBldr.insertGlobalCall(*funcEntry, "compute");
+  llzkBldr.insertFreeCall(*funcEntry, "compute");
   // module attributes {veridise.lang = "llzk"} {
   //   function.def @entry() -> index {
   //     %0 = call @compute() : () -> index
@@ -642,9 +642,9 @@ TEST_F(OpTests, test_calleeIs_withGlobalCompute) {
 
 TEST_F(OpTests, test_calleeIs_withGlobalConstrain) {
   ModuleBuilder llzkBldr = newBasicFunctionsExample(0, {"constrain", "entry"});
-  auto funcEntry = llzkBldr.getGlobalFunc("entry");
+  auto funcEntry = llzkBldr.getFreeFunc("entry");
   ASSERT_TRUE(succeeded(funcEntry));
-  llzkBldr.insertGlobalCall(*funcEntry, "constrain");
+  llzkBldr.insertFreeCall(*funcEntry, "constrain");
   // module attributes {veridise.lang = "llzk"} {
   //   function.def @entry() -> index {
   //     %0 = call @constrain() : () -> index
