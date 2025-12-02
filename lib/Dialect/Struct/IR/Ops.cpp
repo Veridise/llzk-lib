@@ -65,18 +65,21 @@ bool isInStructFunctionNamed(Operation *op, char const *funcName) {
 // Again, only valid/implemented for StructDefOp
 template <> LogicalResult SetFuncAllowAttrs<StructDefOp>::verifyTrait(Operation *structOp) {
   assert(llvm::isa<StructDefOp>(structOp));
-  llvm::cast<StructDefOp>(structOp).getBody()->walk([](FuncDefOp funcDef) {
-    if (funcDef.nameIsConstrain()) {
-      funcDef.setAllowConstraintAttr();
-      funcDef.setAllowWitnessAttr(false);
-    } else if (funcDef.nameIsCompute()) {
-      funcDef.setAllowConstraintAttr(false);
-      funcDef.setAllowWitnessAttr();
-    } else if (funcDef.nameIsProduct()) {
-      funcDef.setAllowConstraintAttr();
-      funcDef.setAllowWitnessAttr();
-    }
-  });
+  Region &bodyRegion = llvm::cast<StructDefOp>(structOp).getBodyRegion();
+  if (!bodyRegion.empty()) {
+    bodyRegion.front().walk([](FuncDefOp funcDef) {
+      if (funcDef.nameIsConstrain()) {
+        funcDef.setAllowConstraintAttr();
+        funcDef.setAllowWitnessAttr(false);
+      } else if (funcDef.nameIsCompute()) {
+        funcDef.setAllowConstraintAttr(false);
+        funcDef.setAllowWitnessAttr();
+      } else if (funcDef.nameIsProduct()) {
+        funcDef.setAllowConstraintAttr();
+        funcDef.setAllowWitnessAttr();
+      }
+    });
+  }
   return success();
 }
 
