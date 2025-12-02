@@ -683,27 +683,28 @@ static std::string generateCAPIAssignments(const Operator &op) {
     }
     void genAttributesPrefix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
       os << "  MlirContext ctx = mlirOpBuilderGetContext(builder);\n";
-      os << "  MlirNamedAttribute attributes[] = {\n";
+      os << "  llvm::SmallVector<MlirNamedAttribute, " << op.getNumAttributes()
+         << "> attributes;\n";
     }
     void genAttribute(llvm::raw_ostream &os, const NamedAttribute &attr) override {
-      os << "    mlirNamedAttributeGet(mlirIdentifierGet(ctx, mlirStringRefCreateFromCString(\""
-         << attr.name << "\")), ";
       // The second parameter to `mlirNamedAttributeGet()` must be an "MlirAttribute". However, if
       // it ends up as "MlirIdentifier", a reinterpret cast is needed. These C structs have the same
       // layout and the C++ mlir::StringAttr is a subclass of mlir::Attribute so the cast is safe.
       std::optional<std::string> attrType = tryCppTypeToCapiType(attr.attr.getStorageType());
+      std::string attrValue;
       if (attrType.has_value() && attrType.value() == "MlirIdentifier") {
-        os << "reinterpret_cast<MlirAttribute&>(" << attr.name << ")";
+        attrValue = "reinterpret_cast<MlirAttribute&>(" + attr.name.str() + ")";
       } else {
-        os << attr.name;
+        attrValue = attr.name.str();
       }
-      os << " ),\n";
+
+      os << "  if (!mlirAttributeIsNull(" << attrValue << ")) {\n";
+      os << "    attributes.push_back(mlirNamedAttributeGet(mlirIdentifierGet(ctx, "
+         << "mlirStringRefCreateFromCString(\"" << attr.name << "\")), " << attrValue << "));\n";
+      os << "  }\n";
     }
     void genAttributesSuffix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
-      os << "  };\n";
-      os << llvm::formatv(
-          "  mlirOperationStateAddAttributes(&state, {0}, attributes);\n", op.getNumAttributes()
-      );
+      os << "  mlirOperationStateAddAttributes(&state, attributes.size(), attributes.data());\n";
     }
     void genRegionsPrefix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
       os << "  llvm::SmallVector<MlirRegion, 2> regions;\n";
