@@ -1,0 +1,3 @@
+added:
+  - ModuleBuilder support for product function
+  - ModuleBuilder build* functions separate from insert* functions
