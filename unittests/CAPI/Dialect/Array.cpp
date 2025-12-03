@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Ops.h"
+
 #include "llzk-c/Dialect/Array.h"
 
 #include <mlir-c/BuiltinAttributes.h>
@@ -161,4 +163,153 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
     }
   } helper;
   helper.run(*this);
+}
+
+// Implementation for `ArrayLengthOp_build_pass` test
+std::unique_ptr<ArrayLengthOpBuildFuncHelper> ArrayLengthOpBuildFuncHelper::get() {
+  struct Impl : public ArrayLengthOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Value array;
+      mlir::Value dim;
+      {
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        auto idxType = bldr->getIndexType();
+        auto intAttr1 = bldr->getIntegerAttr(idxType, 1);
+        array = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1})
+        );
+        dim = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr1);
+      }
+      return llzkArrayArrayLengthOpBuild(builder, location, wrap(array), wrap(dim));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `ReadArrayOp_build_pass` test
+std::unique_ptr<ReadArrayOpBuildFuncHelper> ReadArrayOpBuildFuncHelper::get() {
+  struct Impl : public ReadArrayOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Type elemType;
+      mlir::Value array;
+      llvm::SmallVector<MlirValue> indices;
+      {
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        auto idxType = bldr->getIndexType();
+        auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
+        elemType = idxType;
+        array = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr0})
+        );
+        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        indices.push_back(wrap(idx));
+      }
+      return llzkArrayReadArrayOpBuild(
+          builder, location, wrap(elemType), wrap(array), indices.size(), indices.data()
+      );
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `WriteArrayOp_build_pass` test
+std::unique_ptr<WriteArrayOpBuildFuncHelper> WriteArrayOpBuildFuncHelper::get() {
+  struct Impl : public WriteArrayOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Value array;
+      mlir::Value value;
+      llvm::SmallVector<MlirValue> indices;
+      {
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        auto idxType = bldr->getIndexType();
+        auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
+        array = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr0})
+        );
+        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        indices.push_back(wrap(idx));
+        value = idx;
+      }
+      return llzkArrayWriteArrayOpBuild(
+          builder, location, wrap(array), indices.size(), indices.data(), wrap(value)
+      );
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `InsertArrayOp_build_pass` test
+std::unique_ptr<InsertArrayOpBuildFuncHelper> InsertArrayOpBuildFuncHelper::get() {
+  struct Impl : public InsertArrayOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Value array_big;
+      mlir::Value array_small;
+      llvm::SmallVector<MlirValue> indices;
+      {
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        auto idxType = bldr->getIndexType();
+        auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
+        auto intAttr1 = bldr->getIntegerAttr(idxType, 1);
+        array_big = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(
+                        idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1, intAttr1}
+                    )
+        );
+        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        indices.push_back(wrap(idx));
+        array_small = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1})
+        );
+      }
+      return llzkArrayInsertArrayOpBuild(
+          builder, location, wrap(array_big), indices.size(), indices.data(), wrap(array_small)
+      );
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `ExtractArrayOp_build_pass` test
+std::unique_ptr<ExtractArrayOpBuildFuncHelper> ExtractArrayOpBuildFuncHelper::get() {
+  struct Impl : public ExtractArrayOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Value array_big;
+      mlir::Type small_type;
+      llvm::SmallVector<MlirValue> indices;
+      {
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        auto idxType = bldr->getIndexType();
+        auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
+        auto intAttr1 = bldr->getIntegerAttr(idxType, 1);
+        array_big = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(
+                        idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1, intAttr1}
+                    )
+        );
+        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        indices.push_back(wrap(idx));
+        small_type =
+            llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1});
+      }
+      return llzkArrayExtractArrayOpBuild(
+          builder, location, wrap(small_type), wrap(array_big), indices.size(), indices.data()
+      );
+    }
+  };
+  return std::make_unique<Impl>();
 }

@@ -9,8 +9,6 @@
 
 #include "llzk-c/Dialect/Poly.h"
 
-#include <mlir-c/BuiltinAttributes.h>
-
 #include <llvm/ADT/SmallVector.h>
 
 #include "../CAPITestBase.h"
@@ -196,4 +194,33 @@ TEST_F(CAPITest, llzk_apply_map_op_get_symbol_operands) {
     }
   } helper;
   helper.run(*this);
+}
+
+// Implementation for `ConstReadOp_build_pass` test
+std::unique_ptr<ConstReadOpBuildFuncHelper> ConstReadOpBuildFuncHelper::get() {
+  struct Impl : public ConstReadOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      MlirAttribute attr =
+          mlirFlatSymbolRefAttrGet(testClass.context, mlirStringRefCreateFromCString("const_name"));
+      return llzkPolyConstReadOpBuild(builder, location, testClass.createIndexType(), attr);
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `UnifiableCastOp_build_pass` test
+std::unique_ptr<UnifiableCastOpBuildFuncHelper> UnifiableCastOpBuildFuncHelper::get() {
+  struct Impl : public UnifiableCastOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::Operation *> forceCleanup;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      MlirOperation op = testClass.createIndexOperation();
+      this->forceCleanup = unwrap(op);
+      return llzkPolyUnifiableCastOpBuild(
+          builder, location, testClass.createIndexType(), mlirOperationGetResult(op, 0)
+      );
+    }
+  };
+  return std::make_unique<Impl>();
 }

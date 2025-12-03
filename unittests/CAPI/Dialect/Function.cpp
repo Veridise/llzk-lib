@@ -9,13 +9,6 @@
 
 #include "llzk-c/Dialect/Function.h"
 
-#include "llzk-c/Support.h"
-
-#include <mlir-c/BuiltinAttributes.h>
-#include <mlir-c/BuiltinTypes.h>
-#include <mlir-c/IR.h>
-#include <mlir-c/Support.h>
-
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
@@ -303,3 +296,65 @@ call_pred_test(
 call_pred_test(
     test_llzk_call_op_callee_is_struct_constrain, llzkFunctionCallOpCalleeIsStructConstrain, false
 );
+
+// Implementation for `ReturnOp_build_pass` test
+std::unique_ptr<ReturnOpBuildFuncHelper> ReturnOpBuildFuncHelper::get() {
+  struct Impl : public ReturnOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      {
+        this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
+        llzk::ModuleBuilder cppBldr(this->parentModule.get());
+        auto name = "func_name";
+        cppBldr.insertFreeFunc(
+            name,
+            mlir::FunctionType::get(
+                unwrap(testClass.context), mlir::TypeRange {}, mlir::TypeRange {}
+            ),
+            unwrap(location)
+        );
+        llzk::function::FuncDefOp fDef = cppBldr.getFreeFunc(name).value();
+        mlirOpBuilderSetInsertionPointToStart(builder, wrap(&fDef.getBody().emplaceBlock()));
+      }
+      llvm::SmallVector<MlirValue> vals {};
+      return llzkFunctionReturnOpBuild(builder, location, vals.size(), vals.data());
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `FuncDefOp_build_pass` test
+std::unique_ptr<FuncDefOpBuildFuncHelper> FuncDefOpBuildFuncHelper::get() {
+  struct Impl : public FuncDefOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      MlirContext ctx = testClass.context;
+      mlir::FunctionType fTy;
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      {
+        // Use ModuleOp as parent to avoid the following:
+        // error: 'function.def' op expects parent op to be one of 'builtin.module, struct.def'
+        this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
+        // setup function type
+        fTy = mlir::FunctionType::get(unwrap(ctx), mlir::TypeRange {}, mlir::TypeRange {});
+      }
+      auto result = llzkFunctionFuncDefOpBuild(
+          builder, location, mlirIdentifierGet(ctx, mlirStringRefCreateFromCString("funcName")),
+          mlirTypeAttrGet(wrap(fTy)), mlirArrayAttrGet(ctx, 0, NULL), mlirArrayAttrGet(ctx, 0, NULL)
+      );
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      {
+        // Add 'private' visibility to avoid the following (since function has no body):
+        // error: 'function.def' op symbol declaration cannot have public visibility
+        mlir::unwrap_cast<llzk::function::FuncDefOp>(result).setVisibility(
+            mlir::SymbolTable::Visibility::Private
+        );
+      }
+      return result;
+    }
+  };
+  return std::make_unique<Impl>();
+}

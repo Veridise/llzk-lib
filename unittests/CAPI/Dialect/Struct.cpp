@@ -351,3 +351,97 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_literal_distance) {
   } helper;
   helper.run(*this);
 }
+
+// Implementation for `CreateStructOp_build_pass` test
+std::unique_ptr<CreateStructOpBuildFuncHelper> CreateStructOpBuildFuncHelper::get() {
+  struct Impl : public CreateStructOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Type structType;
+      {
+        // Use "@compute" function as parent to avoid the following:
+        // error: 'struct.new' op only valid within a 'function.def' with 'function.allow_witness'
+        this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+            builder, location, llzk::function::FunctionKind::StructCompute
+        );
+        structType = llzk::component::StructType::get(
+            mlir::FlatSymbolRefAttr::get(unwrap(testClass.context), "StructName")
+        );
+      }
+      return llzkStructCreateStructOpBuild(builder, location, wrap(structType));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `StructDefOp_build_pass` test
+std::unique_ptr<StructDefOpBuildFuncHelper> StructDefOpBuildFuncHelper::get() {
+  struct Impl : public StructDefOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use ModuleOp as parent to avoid the following:
+      // error: 'struct.def' op expects parent op 'builtin.module'
+      auto name = "TestStruct";
+      this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
+      auto result = llzkStructStructDefOpBuild(
+          builder, location,
+          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString(name)),
+          MlirAttribute {}
+      );
+      // Populate the struct to avoid the errors mentioned below.
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      {
+        mlir::Location cppLoc = unwrap(location);
+        auto structDefOp = mlir::unwrap_cast<llzk::component::StructDefOp>(result);
+        // error: 'struct.def' op region #0 ('bodyRegion') failed to verify constraint:
+        //        region with 1 blocks
+        (void)structDefOp.getBodyRegion().emplaceBlock();
+        // error: 'struct.def' op must define either only a "@product" function, or both "@compute"
+        //        and "@constrain" functions; could not find "@product", "@compute", or "@constrain"
+        auto fn = llzk::ModuleBuilder::buildProductFn(structDefOp, cppLoc);
+        // error: empty block: expect at least a terminator
+        mlir::OpBuilder bldr(fn.getBody());
+        auto v = bldr.create<llzk::component::CreateStructOp>(cppLoc, structDefOp.getType());
+        bldr.create<llzk::function::ReturnOp>(cppLoc, mlir::ValueRange {v});
+      }
+      return result;
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `FieldWriteOp_build_pass` test
+std::unique_ptr<FieldWriteOpBuildFuncHelper> FieldWriteOpBuildFuncHelper::get() {
+  struct Impl : public FieldWriteOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Value component;
+      mlir::Attribute fieldNameAttr;
+      {
+        // Use "@compute" function as parent to avoid the following:
+        // error: 'struct.new' op only valid within a 'function.def' with 'function.allow_witness'
+        this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+            builder, location, llzk::function::FunctionKind::StructCompute
+        );
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        component = bldr->create<llzk::component::CreateStructOp>(
+            cppLoc, bldr->getInsertionBlock()
+                        ->getParentOp()
+                        ->getParentOfType<llzk::component::StructDefOp>()
+                        .getType()
+        );
+        fieldNameAttr = mlir::FlatSymbolRefAttr::get(unwrap(testClass.context), "FieldName");
+      }
+      return llzkStructFieldWriteOpBuild(
+          builder, location, wrap(component), wrap(component), wrap(fieldNameAttr)
+      );
+    }
+  };
+  return std::make_unique<Impl>();
+}

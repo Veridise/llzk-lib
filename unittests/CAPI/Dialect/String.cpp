@@ -27,3 +27,18 @@ TEST_F(CAPITest, llzk_type_is_a_string_type_pass) {
   auto type = llzkStringStringTypeGet(context);
   EXPECT_TRUE(llzkTypeIsAStringStringType(type));
 }
+
+// Implementation for `LitStringOp_build_pass` test
+std::unique_ptr<LitStringOpBuildFuncHelper> LitStringOpBuildFuncHelper::get() {
+  struct Impl : public LitStringOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      MlirIdentifier strVal =
+          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("test"));
+      return llzkStringLitStringOpBuild(
+          builder, location, llzkStringStringTypeGet(testClass.context), strVal
+      );
+    }
+  };
+  return std::make_unique<Impl>();
+}

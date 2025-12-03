@@ -28,3 +28,14 @@ TEST_F(CAPITest, llzk_operation_is_a_undef_op_pass) {
   auto op = mlirOperationCreate(&state);
   EXPECT_TRUE(llzkOperationIsAUndefUndefOp(op));
 }
+
+// Implementation for `UndefOp_build_pass` test
+std::unique_ptr<UndefOpBuildFuncHelper> UndefOpBuildFuncHelper::get() {
+  struct Impl : public UndefOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      return llzkUndefUndefOpBuild(builder, location, llzkFeltFeltTypeGet(testClass.context));
+    }
+  };
+  return std::make_unique<Impl>();
+}

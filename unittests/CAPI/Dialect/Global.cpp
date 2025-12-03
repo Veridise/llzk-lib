@@ -70,3 +70,53 @@ TEST_F(CAPITest, llzk_global_def_op_is_constant_2) {
   EXPECT_TRUE(llzkGlobalGlobalDefOpIsConstant(op));
   mlirOperationDestroy(op);
 }
+
+// Implementation for `GlobalDefOp_build_pass` test
+std::unique_ptr<GlobalDefOpBuildFuncHelper> GlobalDefOpBuildFuncHelper::get() {
+  struct Impl : public GlobalDefOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use ModuleOp as parent to avoid the following:
+      // error: 'global.def' op expects parent op 'builtin.module'
+      this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
+      return llzkGlobalGlobalDefOpBuild(
+          builder, location,
+          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("my_global")),
+          MlirAttribute {}, mlirTypeAttrGet(testClass.createIndexType()), MlirAttribute {}
+      );
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `GlobalReadOp_build_pass` test
+std::unique_ptr<GlobalReadOpBuildFuncHelper> GlobalReadOpBuildFuncHelper::get() {
+  struct Impl : public GlobalReadOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto name = wrap(mlir::FlatSymbolRefAttr::get(unwrap(builder)->getStringAttr("my_global")));
+      return llzkGlobalGlobalReadOpBuild(builder, location, testClass.createIndexType(), name);
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `GlobalWriteOp_build_pass` test
+std::unique_ptr<GlobalWriteOpBuildFuncHelper> GlobalWriteOpBuildFuncHelper::get() {
+  struct Impl : public GlobalWriteOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use "@compute" function as parent to avoid the following:
+      // error: 'global.write' op only valid within a 'function.def' with 'function.allow_witness'
+      this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+          builder, location, llzk::function::FunctionKind::StructCompute
+      );
+      auto value = wrap(testClass.cppGenFeltConstant(builder, location));
+      auto name = wrap(mlir::FlatSymbolRefAttr::get(unwrap(builder)->getStringAttr("my_global")));
+      return llzkGlobalGlobalWriteOpBuild(builder, location, value, name);
+    }
+  };
+  return std::make_unique<Impl>();
+}

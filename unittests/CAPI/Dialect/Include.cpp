@@ -24,3 +24,21 @@ TEST_F(CAPITest, llzk_include_op_create) {
   EXPECT_NE(op.ptr, (void *)NULL);
   mlirOperationDestroy(op);
 }
+
+// Implementation for `IncludeOp_build_pass` test
+std::unique_ptr<IncludeOpBuildFuncHelper> IncludeOpBuildFuncHelper::get() {
+  struct Impl : public IncludeOpBuildFuncHelper {
+    MlirModule parentModule;
+    ~Impl() override { mlirModuleDestroy(this->parentModule); }
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Need to create a parent module because `include.from` requires it for verification
+      this->parentModule = mlirModuleCreateEmpty(location);
+      mlirOpBuilderSetInsertionPointToStart(builder, mlirModuleGetBody(this->parentModule));
+      MlirIdentifier strVal =
+          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("test"));
+      return llzkIncludeIncludeOpBuild(builder, location, strVal, strVal);
+    }
+  };
+  return std::make_unique<Impl>();
+}
