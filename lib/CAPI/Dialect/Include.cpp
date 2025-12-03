@@ -19,16 +19,14 @@
 
 #include <mlir-c/Pass.h>
 
-static void registerLLZKIncludeTransformationPasses() {
-  llzk::include::registerTransformationPasses();
-}
-
 using namespace llzk::include;
+
+static void registerLLZKIncludeTransformationPasses() { registerTransformationPasses(); }
 
 // Include impl for transformation passes
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.cpp.inc"
 
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Include, llzk__include, llzk::include::IncludeDialect)
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Include, llzk__include, IncludeDialect)
 
 MlirOperation llzkIncludeOpCreate(MlirLocation location, MlirStringRef name, MlirStringRef path) {
   return wrap(IncludeOp::create(unwrap(location), unwrap(name), unwrap(path)));

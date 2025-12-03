@@ -54,14 +54,16 @@ def LLZK_GlobalDefOp
   let hasVerifier = 1;
 
   let extraClassDeclaration = [{
+    inline bool isConstant() { return getConstant(); }
+
+  private:
     static ::mlir::ParseResult parseGlobalInitialValue(::mlir::OpAsmParser &parser,
         ::mlir::Attribute &initialValue, ::mlir::TypeAttr typeAttr
     );
+
     static void printGlobalInitialValue(::mlir::OpAsmPrinter &printer, GlobalDefOp op,
         ::mlir::Attribute initialValue, ::mlir::TypeAttr typeAttr
     );
-
-    inline bool isConstant() { return getConstant(); }
   }];
 }
 

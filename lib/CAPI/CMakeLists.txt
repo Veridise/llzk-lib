@@ -34,7 +34,6 @@ target_link_libraries(
   LLZK::LLZKValidators
   LLZK::LLZKAnalysis 
 )
-add_dependencies(LLZKCAPI LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKCAPI)
 
 install(TARGETS LLZKCAPI EXPORT LLZKTargets)

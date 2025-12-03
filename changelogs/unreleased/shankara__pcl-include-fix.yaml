@@ -1,0 +1,2 @@
+fixed:
+  - Used the wrong PCL guard variable in CMakeLists.txt.

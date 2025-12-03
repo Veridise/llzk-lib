@@ -36,15 +36,15 @@ void addLangAttrForLLZKDialect(mlir::ModuleOp mod) {
 
 /* ModuleBuilder */
 
-void ModuleBuilder::ensureNoSuchGlobalFunc(std::string_view funcName) {
-  if (globalFuncMap.find(funcName) != globalFuncMap.end()) {
+void ModuleBuilder::ensureNoSuchFreeFunc(std::string_view funcName) {
+  if (freeFuncMap.find(funcName) != freeFuncMap.end()) {
     auto error_message = "global function " + Twine(funcName) + " already exists!";
     llvm::report_fatal_error(error_message);
   }
 }
 
-void ModuleBuilder::ensureGlobalFnExists(std::string_view funcName) {
-  if (globalFuncMap.find(funcName) == globalFuncMap.end()) {
+void ModuleBuilder::ensureFreeFnExists(std::string_view funcName) {
+  if (freeFuncMap.find(funcName) == freeFuncMap.end()) {
     auto error_message = "global function " + Twine(funcName) + " does not exist!";
     llvm::report_fatal_error(error_message);
   }
@@ -112,11 +112,11 @@ ModuleBuilder &ModuleBuilder::insertComputeFn(StructDefOp op, Location loc) {
   ensureNoSuchComputeFn(op.getName());
 
   OpBuilder opBuilder(op.getBodyRegion());
-
   auto fnOp = opBuilder.create<FuncDefOp>(
       loc, StringAttr::get(context, FUNC_NAME_COMPUTE),
       FunctionType::get(context, {}, {op.getType()})
   );
+  fnOp.setAllowWitnessAttr();
   fnOp.addEntryBlock();
   computeFnMap[op.getName()] = fnOp;
   return *this;
@@ -126,11 +126,11 @@ ModuleBuilder &ModuleBuilder::insertConstrainFn(StructDefOp op, Location loc) {
   ensureNoSuchConstrainFn(op.getName());
 
   OpBuilder opBuilder(op.getBodyRegion());
-
   auto fnOp = opBuilder.create<FuncDefOp>(
       loc, StringAttr::get(context, FUNC_NAME_CONSTRAIN),
       FunctionType::get(context, {op.getType()}, {})
   );
+  fnOp.setAllowConstraintAttr();
   fnOp.addEntryBlock();
   constrainFnMap[op.getName()] = fnOp;
   return *this;
@@ -185,21 +185,21 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
 }
 
 ModuleBuilder &
-ModuleBuilder::insertGlobalFunc(std::string_view funcName, FunctionType type, Location loc) {
-  ensureNoSuchGlobalFunc(funcName);
+ModuleBuilder::insertFreeFunc(std::string_view funcName, FunctionType type, Location loc) {
+  ensureNoSuchFreeFunc(funcName);
 
   OpBuilder opBuilder(rootModule.getBody(), rootModule.getBody()->begin());
   auto funcDef = opBuilder.create<FuncDefOp>(loc, funcName, type);
   (void)funcDef.addEntryBlock();
-  globalFuncMap[funcName] = funcDef;
+  freeFuncMap[funcName] = funcDef;
 
   return *this;
 }
 
 ModuleBuilder &
-ModuleBuilder::insertGlobalCall(FuncDefOp caller, std::string_view callee, Location callLoc) {
-  ensureGlobalFnExists(callee);
-  FuncDefOp calleeFn = globalFuncMap.at(callee);
+ModuleBuilder::insertFreeCall(FuncDefOp caller, std::string_view callee, Location callLoc) {
+  ensureFreeFnExists(callee);
+  FuncDefOp calleeFn = freeFuncMap.at(callee);
 
   OpBuilder builder(caller.getBody());
   builder.create<CallOp>(callLoc, calleeFn);

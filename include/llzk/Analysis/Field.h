@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "llzk/Util/DynamicAPIntHelper.h"
+
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/Support/SMTAPI.h>
@@ -50,6 +52,11 @@ public:
 
   /// @brief Returns p - 1, which is the max value possible in a prime field described by p.
   inline llvm::DynamicAPInt maxVal() const { return prime() - one(); }
+
+  /// @brief Returns the multiplicative inverse of `i` in prime field `p`.
+  llvm::DynamicAPInt inv(const llvm::DynamicAPInt &i) const;
+
+  llvm::DynamicAPInt inv(const llvm::APInt &i) const;
 
   /// @brief Returns i mod p and reduces the result into the appropriate bitwidth.
   /// Field elements are returned as signed integers so that negation functions

@@ -27,8 +27,8 @@
 
 #include <llvm/ADT/STLExtras.h>
 
-using namespace llzk;
 using namespace mlir;
+using namespace llzk;
 using namespace llzk::component;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component, StructDialect)
@@ -206,7 +206,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   return wrap(
       create<FieldReadOp>(
           builder, location, unwrap(fieldType), unwrap(component), nameAttr,
-          unwrap(builder)->getI64IntegerAttr(distance)
+          unwrap(builder)->getIndexAttr(distance)
       )
   );
 }

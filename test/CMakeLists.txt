@@ -17,6 +17,13 @@ endif()
 
 set(LIT_ARGS "--xunit-xml-output report.xml")
 
+# creating this guard and setting to 0-1 
+# because python doesn't like the ON/OFF stuff
+set(LLZK_WITH_PCL_GUARD 0)
+if(LLZK_WITH_PCL_BOOL)
+  set(LLZK_WITH_PCL_GUARD 1)
+endif()
+
 configure_lit_site_cfg(
   ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg.py MAIN_CONFIG

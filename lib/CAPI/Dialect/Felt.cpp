@@ -17,16 +17,18 @@
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
 
+using namespace mlir;
+using namespace llzk;
 using namespace llzk::felt;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt, FeltDialect)
 
 MlirAttribute llzkFeltConstAttrGet(MlirContext ctx, int64_t value) {
-  return wrap(FeltConstAttr::get(unwrap(ctx), llzk::toAPInt(value)));
+  return wrap(FeltConstAttr::get(unwrap(ctx), toAPInt(value)));
 }
 
 MlirAttribute llzkFeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value) {
-  return wrap(FeltConstAttr::get(unwrap(ctx), llvm::APInt(numBits, value)));
+  return wrap(FeltConstAttr::get(unwrap(ctx), APInt(numBits, value)));
 }
 
 MlirAttribute llzkFeltConstAttrGetFromString(MlirContext ctx, unsigned numBits, MlirStringRef str) {
@@ -36,7 +38,7 @@ MlirAttribute llzkFeltConstAttrGetFromString(MlirContext ctx, unsigned numBits, 
 MlirAttribute llzkFeltConstAttrGetFromParts(
     MlirContext context, unsigned numBits, const uint64_t *parts, intptr_t nParts
 ) {
-  return wrap(FeltConstAttr::get(unwrap(context), numBits, llvm::ArrayRef(parts, nParts)));
+  return wrap(FeltConstAttr::get(unwrap(context), numBits, ArrayRef(parts, nParts)));
 }
 
 bool llzkAttributeIsAFeltConstAttr(MlirAttribute attr) {

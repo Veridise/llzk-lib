@@ -15,6 +15,7 @@
 #include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Analysis/Field.h"
 #include "llzk/Analysis/Intervals.h"
+#include "llzk/Analysis/SparseAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
@@ -47,7 +48,9 @@ public:
   /* Must be default initializable to be a ScalarLatticeValue. */
   ExpressionValue() : i(), expr(nullptr) {}
 
-  explicit ExpressionValue(const Field &f, llvm::SMTExprRef exprRef)
+  explicit ExpressionValue(const Field &f) : i(Interval::Entire(f)), expr(nullptr) {}
+
+  ExpressionValue(const Field &f, llvm::SMTExprRef exprRef)
       : i(Interval::Entire(f)), expr(exprRef) {}
 
   ExpressionValue(const Field &f, llvm::SMTExprRef exprRef, const llvm::DynamicAPInt &singleVal)
@@ -199,9 +202,7 @@ public:
 
 class IntervalDataFlowAnalysis;
 
-/// @brief Maps mlir::Values to LatticeValues.
-///
-class IntervalAnalysisLattice : public dataflow::AbstractDenseLattice {
+class IntervalAnalysisLattice : public dataflow::AbstractSparseLattice {
 public:
   using LatticeValue = IntervalAnalysisLatticeValue;
   // Map mlir::Values to LatticeValues
@@ -214,23 +215,18 @@ public:
   // Tracks all constraints and assignments in insertion order
   using ConstraintSet = llvm::SetVector<ExpressionValue>;
 
-  using AbstractDenseLattice::AbstractDenseLattice;
+  using AbstractSparseLattice::AbstractSparseLattice;
 
-  mlir::ChangeResult join(const AbstractDenseLattice &other) override;
+  mlir::ChangeResult join(const AbstractSparseLattice &other) override;
 
-  mlir::ChangeResult meet(const AbstractDenseLattice & /*rhs*/) override {
-    llvm::report_fatal_error("IntervalDataFlowAnalysis::meet : unsupported");
-    return mlir::ChangeResult::NoChange;
-  }
+  mlir::ChangeResult meet(const AbstractSparseLattice &other) override;
 
   void print(mlir::raw_ostream &os) const override;
 
-  mlir::FailureOr<LatticeValue> getValue(mlir::Value v) const;
-  mlir::FailureOr<LatticeValue> getValue(mlir::Value v, mlir::StringAttr f) const;
+  const LatticeValue &getValue() const { return val; }
 
-  mlir::ChangeResult setValue(mlir::Value v, const LatticeValue &val);
-  mlir::ChangeResult setValue(mlir::Value v, ExpressionValue e);
-  mlir::ChangeResult setValue(mlir::Value v, mlir::StringAttr f, ExpressionValue e);
+  mlir::ChangeResult setValue(const LatticeValue &val);
+  mlir::ChangeResult setValue(ExpressionValue e);
 
   mlir::ChangeResult addSolverConstraint(ExpressionValue e);
 
@@ -244,27 +240,16 @@ public:
   mlir::FailureOr<Interval> findInterval(llvm::SMTExprRef expr) const;
   mlir::ChangeResult setInterval(llvm::SMTExprRef expr, const Interval &i);
 
-  size_t size() const { return valMap.size(); }
-
-  const ValueMap &getMap() const { return valMap; }
-
-  ValueMap::iterator begin() { return valMap.begin(); }
-  ValueMap::iterator end() { return valMap.end(); }
-  ValueMap::const_iterator begin() const { return valMap.begin(); }
-  ValueMap::const_iterator end() const { return valMap.end(); }
-
 private:
-  ValueMap valMap;
-  FieldMap fieldMap;
+  LatticeValue val;
   ConstraintSet constraints;
-  ExpressionIntervals intervals;
 };
 
 /* IntervalDataFlowAnalysis */
 
 class IntervalDataFlowAnalysis
-    : public dataflow::DenseForwardDataFlowAnalysis<IntervalAnalysisLattice> {
-  using Base = dataflow::DenseForwardDataFlowAnalysis<IntervalAnalysisLattice>;
+    : public dataflow::SparseForwardDataFlowAnalysis<IntervalAnalysisLattice> {
+  using Base = dataflow::SparseForwardDataFlowAnalysis<IntervalAnalysisLattice>;
   using Lattice = IntervalAnalysisLattice;
   using LatticeValue = IntervalAnalysisLattice::LatticeValue;
 
@@ -276,22 +261,27 @@ public:
       mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f,
       bool propInputConstraints
   )
-      : Base::DenseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
+      : Base::SparseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
         smtSolver(smt), field(f), propagateInputConstraints(propInputConstraints) {}
 
-  void visitCallControlFlowTransfer(
-      mlir::CallOpInterface call, dataflow::CallControlFlowAction action, const Lattice &before,
-      Lattice *after
+  mlir::LogicalResult visitOperation(
+      mlir::Operation *op, mlir::ArrayRef<const Lattice *> operands,
+      mlir::ArrayRef<Lattice *> results
   ) override;
-
-  mlir::LogicalResult
-  visitOperation(mlir::Operation *op, const Lattice &before, Lattice *after) override;
 
   /// @brief Either return the existing SMT expression that corresponds to the SourceRef,
   /// or create one.
   /// @param r
   /// @return
   llvm::SMTExprRef getOrCreateSymbol(const SourceRef &r);
+
+  const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getFieldReadResults() const {
+    return fieldReadResults;
+  }
+
+  const llvm::DenseMap<SourceRef, ExpressionValue> &getFieldWriteResults() const {
+    return fieldWriteResults;
+  }
 
 private:
   mlir::DataFlowSolver &_dataflowSolver;
@@ -301,8 +291,14 @@ private:
   bool propagateInputConstraints;
   mlir::SymbolTableCollection tables;
 
+  // Track field reads so that propagations to fields can be all updated efficiently.
+  llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> fieldReadResults;
+  // Track field writes values. For now, we'll overapproximate this.
+  llvm::DenseMap<SourceRef, ExpressionValue> fieldWriteResults;
+
   void setToEntryState(Lattice *lattice) override {
-    // initial state should be empty, so do nothing here
+    // Initialize the value with an interval in our specified field.
+    (void)lattice->setValue(ExpressionValue(field.get()));
   }
 
   llvm::SMTExprRef createFeltSymbol(const SourceRef &r) const;
@@ -349,56 +345,21 @@ private:
   /// @param after The current lattice state. Assumes that this has already been joined with the
   /// `before` lattice in `visitOperation`, so lookups and updates can be performed on the `after`
   /// lattice alone.
-  mlir::ChangeResult applyInterval(
-      mlir::Operation *originalOp, Lattice *originalLattice, Lattice *after, mlir::Value val,
-      Interval newInterval
-  );
+  void applyInterval(mlir::Operation *originalOp, mlir::Value val, Interval newInterval);
 
   /// @brief Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
   mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>>
   getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 
-  bool isBoolOp(mlir::Operation *op) const {
-    return llvm::isa<boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(
-        op
-    );
-  }
-
-  bool isConversionOp(mlir::Operation *op) const {
-    return llvm::isa<cast::IntToFeltOp, cast::FeltToIndexOp>(op);
-  }
-
-  bool isApplyMapOp(mlir::Operation *op) const { return llvm::isa<polymorphic::ApplyMapOp>(op); }
-
-  bool isAssertOp(mlir::Operation *op) const { return llvm::isa<boolean::AssertOp>(op); }
-
   bool isReadOp(mlir::Operation *op) const {
     return llvm::isa<component::FieldReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);
   }
-
-  bool isWriteOp(mlir::Operation *op) const {
-    return llvm::isa<component::FieldWriteOp, array::WriteArrayOp, array::InsertArrayOp>(op);
-  }
-
-  bool isArrayLengthOp(mlir::Operation *op) const { return llvm::isa<array::ArrayLengthOp>(op); }
-
-  bool isEmitOp(mlir::Operation *op) const {
-    return llvm::isa<constrain::EmitEqualityOp, constrain::EmitContainmentOp>(op);
-  }
-
-  bool isCreateOp(mlir::Operation *op) const {
-    return llvm::isa<component::CreateStructOp, array::CreateArrayOp>(op);
-  }
-
-  bool isExtractArrayOp(mlir::Operation *op) const { return llvm::isa<array::ExtractArrayOp>(op); }
 
   bool isDefinitionOp(mlir::Operation *op) const {
     return llvm::isa<
         component::StructDefOp, function::FuncDefOp, component::FieldDefOp, global::GlobalDefOp,
         mlir::ModuleOp>(op);
   }
-
-  bool isCallOp(mlir::Operation *op) const { return llvm::isa<function::CallOp>(op); }
 
   bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
 

@@ -57,7 +57,7 @@ TEST_F(ArrayDialectTests, array_type_get) {
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
 }
 
-TEST_F(ArrayDialectTests, type_isa_array_type_pass) {
+TEST_F(ArrayDialectTests, type_is_a_array_type_pass) {
   auto size = mlirIntegerAttrGet(indexType(), 1);
   MlirAttribute dims[1] = {size};
   auto arr_type = llzkArrayTypeGet(indexType(), 1, dims);
@@ -65,7 +65,7 @@ TEST_F(ArrayDialectTests, type_isa_array_type_pass) {
   EXPECT_TRUE(llzkTypeIsAArrayType(arr_type));
 }
 
-TEST_F(ArrayDialectTests, type_isa_array_type_fail) {
+TEST_F(ArrayDialectTests, type_is_a_array_type_fail) {
   EXPECT_TRUE(!llzkTypeIsAArrayType(indexType()));
 }
 
