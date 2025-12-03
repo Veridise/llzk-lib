@@ -65,18 +65,21 @@ bool isInStructFunctionNamed(Operation *op, char const *funcName) {
 // Again, only valid/implemented for StructDefOp
 template <> LogicalResult SetFuncAllowAttrs<StructDefOp>::verifyTrait(Operation *structOp) {
   assert(llvm::isa<StructDefOp>(structOp));
-  llvm::cast<StructDefOp>(structOp).getBody()->walk([](FuncDefOp funcDef) {
-    if (funcDef.nameIsConstrain()) {
-      funcDef.setAllowConstraintAttr();
-      funcDef.setAllowWitnessAttr(false);
-    } else if (funcDef.nameIsCompute()) {
-      funcDef.setAllowConstraintAttr(false);
-      funcDef.setAllowWitnessAttr();
-    } else if (funcDef.nameIsProduct()) {
-      funcDef.setAllowConstraintAttr();
-      funcDef.setAllowWitnessAttr();
-    }
-  });
+  Region &bodyRegion = llvm::cast<StructDefOp>(structOp).getBodyRegion();
+  if (!bodyRegion.empty()) {
+    bodyRegion.front().walk([](FuncDefOp funcDef) {
+      if (funcDef.nameIsConstrain()) {
+        funcDef.setAllowConstraintAttr();
+        funcDef.setAllowWitnessAttr(false);
+      } else if (funcDef.nameIsCompute()) {
+        funcDef.setAllowConstraintAttr(false);
+        funcDef.setAllowWitnessAttr();
+      } else if (funcDef.nameIsProduct()) {
+        funcDef.setAllowConstraintAttr();
+        funcDef.setAllowWitnessAttr();
+      }
+    });
+  }
   return success();
 }
 
@@ -321,58 +324,61 @@ LogicalResult StructDefOp::verifyRegions() {
     // 2. The only functions defined in the struct are `@compute()` and `@constrain()`, or
     // `@product()`
     OwningEmitErrorFn emitError = getEmitOpErrFn(this);
-    for (Operation &op : *getBody()) {
-      if (!llvm::isa<FieldDefOp>(op)) {
-        if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
-          if (funcDef.nameIsCompute()) {
-            if (foundProduct) {
+    Region &bodyRegion = getBodyRegion();
+    if (!bodyRegion.empty()) {
+      for (Operation &op : bodyRegion.front()) {
+        if (!llvm::isa<FieldDefOp>(op)) {
+          if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
+            if (funcDef.nameIsCompute()) {
+              if (foundProduct) {
+                return structFuncDefError(funcDef.getOperation())
+                       << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
+                       << "\" functions";
+              }
+              if (foundCompute) {
+                return structFuncDefError(funcDef.getOperation())
+                       << "found multiple \"@" << FUNC_NAME_COMPUTE << "\" functions";
+              }
+              foundCompute = std::make_optional(funcDef);
+            } else if (funcDef.nameIsConstrain()) {
+              if (foundProduct) {
+                return structFuncDefError(funcDef.getOperation())
+                       << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@"
+                       << FUNC_NAME_PRODUCT << "\" functions";
+              }
+              if (foundConstrain) {
+                return structFuncDefError(funcDef.getOperation())
+                       << "found multiple \"@" << FUNC_NAME_CONSTRAIN << "\" functions";
+              }
+              foundConstrain = std::make_optional(funcDef);
+            } else if (funcDef.nameIsProduct()) {
+              if (foundCompute) {
+                return structFuncDefError(funcDef.getOperation())
+                       << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
+                       << "\" functions";
+              }
+              if (foundConstrain) {
+                return structFuncDefError(funcDef.getOperation())
+                       << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@"
+                       << FUNC_NAME_PRODUCT << "\" functions";
+              }
+              if (foundProduct) {
+                return structFuncDefError(funcDef.getOperation())
+                       << "found multiple \"@" << FUNC_NAME_PRODUCT << "\" functions";
+              }
+              foundProduct = std::make_optional(funcDef);
+            } else {
+              // Must do a little more than a simple call to '?.emitOpError()' to
+              // tag the error with correct location and correct op name.
               return structFuncDefError(funcDef.getOperation())
-                     << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
-                     << "\" functions";
+                     << "found \"@" << funcDef.getSymName() << '"';
             }
-            if (foundCompute) {
-              return structFuncDefError(funcDef.getOperation())
-                     << "found multiple \"@" << FUNC_NAME_COMPUTE << "\" functions";
-            }
-            foundCompute = std::make_optional(funcDef);
-          } else if (funcDef.nameIsConstrain()) {
-            if (foundProduct) {
-              return structFuncDefError(funcDef.getOperation())
-                     << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@" << FUNC_NAME_PRODUCT
-                     << "\" functions";
-            }
-            if (foundConstrain) {
-              return structFuncDefError(funcDef.getOperation())
-                     << "found multiple \"@" << FUNC_NAME_CONSTRAIN << "\" functions";
-            }
-            foundConstrain = std::make_optional(funcDef);
-          } else if (funcDef.nameIsProduct()) {
-            if (foundCompute) {
-              return structFuncDefError(funcDef.getOperation())
-                     << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
-                     << "\" functions";
-            }
-            if (foundConstrain) {
-              return structFuncDefError(funcDef.getOperation())
-                     << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@" << FUNC_NAME_PRODUCT
-                     << "\" functions";
-            }
-            if (foundProduct) {
-              return structFuncDefError(funcDef.getOperation())
-                     << "found multiple \"@" << FUNC_NAME_PRODUCT << "\" functions";
-            }
-            foundProduct = std::make_optional(funcDef);
           } else {
-            // Must do a little more than a simple call to '?.emitOpError()' to
-            // tag the error with correct location and correct op name.
-            return structFuncDefError(funcDef.getOperation())
-                   << "found \"@" << funcDef.getSymName() << '"';
+            return op.emitOpError()
+                   << "invalid operation in '" << StructDefOp::getOperationName() << "'; only '"
+                   << FieldDefOp::getOperationName() << '\'' << " and '"
+                   << FuncDefOp::getOperationName() << "' operations are permitted";
           }
-        } else {
-          return op.emitOpError() << "invalid operation in '" << StructDefOp::getOperationName()
-                                  << "'; only '" << FieldDefOp::getOperationName() << '\''
-                                  << " and '" << FuncDefOp::getOperationName()
-                                  << "' operations are permitted";
         }
       }
     }
