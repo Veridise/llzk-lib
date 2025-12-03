@@ -85,6 +85,20 @@ void ModuleBuilder::ensureConstrainFnExists(std::string_view structName) {
   }
 }
 
+void ModuleBuilder::ensureNoSuchProductFn(std::string_view structName) {
+  if (productFnMap.find(structName) != productFnMap.end()) {
+    auto error_message = "struct " + Twine(structName) + " already has a product function!";
+    llvm::report_fatal_error(error_message);
+  }
+}
+
+void ModuleBuilder::ensureProductFnExists(std::string_view structName) {
+  if (productFnMap.find(structName) == productFnMap.end()) {
+    auto error_message = "struct " + Twine(structName) + " has no product function!";
+    llvm::report_fatal_error(error_message);
+  }
+}
+
 ModuleBuilder &
 ModuleBuilder::insertEmptyStruct(std::string_view structName, Location loc, int numStructParams) {
   ensureNoSuchStruct(structName);
@@ -133,6 +147,22 @@ ModuleBuilder &ModuleBuilder::insertConstrainFn(StructDefOp op, Location loc) {
   fnOp.setAllowConstraintAttr();
   fnOp.addEntryBlock();
   constrainFnMap[op.getName()] = fnOp;
+  return *this;
+}
+
+ModuleBuilder &ModuleBuilder::insertProductFn(StructDefOp op, Location loc) {
+  ensureNoSuchProductFn(op.getName());
+
+  OpBuilder opBuilder(op.getBodyRegion());
+  auto fnOp = opBuilder.create<FuncDefOp>(
+      loc, StringAttr::get(context, FUNC_NAME_PRODUCT),
+      FunctionType::get(context, {}, {op.getType()})
+  );
+  fnOp.setAllowWitnessAttr();
+  fnOp.setAllowConstraintAttr();
+  fnOp.addEntryBlock();
+
+  productFnMap[op.getName()] = fnOp;
   return *this;
 }
 

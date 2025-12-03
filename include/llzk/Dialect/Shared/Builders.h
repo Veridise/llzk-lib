@@ -94,15 +94,28 @@ public:
     return insertFullStruct(structName, unk, unk, unk, numStructParams);
   }
 
+  ModuleBuilder &insertProductStruct(
+      std::string_view structName, mlir::Location structLoc, mlir::Location productLoc
+  ) {
+    insertEmptyStruct(structName, structLoc);
+    insertProductFn(structName, productLoc);
+    return *this;
+  }
+
+  ModuleBuilder &insertProductStruct(std::string_view structName) {
+    auto unk = getUnknownLoc();
+    return insertProductStruct(structName, unk, unk);
+  }
+
   /**
    * compute returns the type of the struct that defines it.
    * Since this is for testing, we accept no arguments.
    */
   ModuleBuilder &insertComputeFn(component::StructDefOp op, mlir::Location loc);
-  ModuleBuilder &insertComputeFn(std::string_view structName, mlir::Location loc) {
+  inline ModuleBuilder &insertComputeFn(std::string_view structName, mlir::Location loc) {
     return insertComputeFn(*getStruct(structName), loc);
   }
-  ModuleBuilder &insertComputeFn(std::string_view structName) {
+  inline ModuleBuilder &insertComputeFn(std::string_view structName) {
     return insertComputeFn(structName, getUnknownLoc());
   }
 
@@ -110,11 +123,23 @@ public:
    * constrain accepts the struct type as the first argument.
    */
   ModuleBuilder &insertConstrainFn(component::StructDefOp op, mlir::Location loc);
-  ModuleBuilder &insertConstrainFn(std::string_view structName, mlir::Location loc) {
+  inline ModuleBuilder &insertConstrainFn(std::string_view structName, mlir::Location loc) {
     return insertConstrainFn(*getStruct(structName), getUnknownLoc());
   }
-  ModuleBuilder &insertConstrainFn(std::string_view structName) {
+  inline ModuleBuilder &insertConstrainFn(std::string_view structName) {
     return insertConstrainFn(structName, getUnknownLoc());
+  }
+
+  /**
+   * product returns the type of the struct that defines it.
+   * Since this is for testing, we accept no arguments.
+   */
+  ModuleBuilder &insertProductFn(component::StructDefOp op, mlir::Location loc);
+  inline ModuleBuilder &insertProductFn(std::string_view structName, mlir::Location loc) {
+    return insertProductFn(*getStruct(structName), loc);
+  }
+  inline ModuleBuilder &insertProductFn(std::string_view structName) {
+    return insertProductFn(structName, getUnknownLoc());
   }
 
   /**
@@ -197,6 +222,16 @@ public:
     return getConstrainFn(op.getName());
   }
 
+  mlir::FailureOr<function::FuncDefOp> getProductFn(std::string_view structName) const {
+    if (productFnMap.find(structName) != productFnMap.end()) {
+      return productFnMap.at(structName);
+    }
+    return mlir::failure();
+  }
+  inline mlir::FailureOr<function::FuncDefOp> getProductFn(component::StructDefOp op) const {
+    return getProductFn(op.getName());
+  }
+
   mlir::FailureOr<function::FuncDefOp> getFreeFunc(std::string_view funcName) const {
     if (freeFuncMap.find(funcName) != freeFuncMap.end()) {
       return freeFuncMap.at(funcName);
@@ -211,11 +246,12 @@ public:
       return getComputeFn(name);
     case function::FunctionKind::StructConstrain:
       return getConstrainFn(name);
+    case function::FunctionKind::StructProduct:
+      return getProductFn(name);
     case function::FunctionKind::Free:
       return getFreeFunc(name);
-    default:
-      return mlir::failure();
     }
+    return mlir::failure();
   }
 
   /* Helper functions */
@@ -257,6 +293,7 @@ private:
   std::unordered_map<std::string_view, component::StructDefOp> structMap;
   std::unordered_map<std::string_view, function::FuncDefOp> computeFnMap;
   std::unordered_map<std::string_view, function::FuncDefOp> constrainFnMap;
+  std::unordered_map<std::string_view, function::FuncDefOp> productFnMap;
 
   /// @brief Ensure that a global function with the given funcName has not been added,
   /// reporting a fatal error otherwise.
@@ -292,6 +329,16 @@ private:
   /// reporting a fatal error otherwise.
   /// @param structName
   void ensureConstrainFnExists(std::string_view structName);
+
+  /// @brief Ensure that the given struct does not have a product function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureNoSuchProductFn(std::string_view structName);
+
+  /// @brief Ensure that the given struct has a product function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureProductFnExists(std::string_view structName);
 
   void updateComputeReachability(component::StructDefOp caller, component::StructDefOp callee) {
     updateReachability(computeNodes, caller, callee);
