@@ -111,6 +111,7 @@ public:
    * compute returns the type of the struct that defines it.
    * Since this is for testing, we accept no arguments.
    */
+  static function::FuncDefOp buildComputeFn(component::StructDefOp op, mlir::Location loc);
   ModuleBuilder &insertComputeFn(component::StructDefOp op, mlir::Location loc);
   inline ModuleBuilder &insertComputeFn(std::string_view structName, mlir::Location loc) {
     return insertComputeFn(*getStruct(structName), loc);
@@ -122,6 +123,7 @@ public:
   /**
    * constrain accepts the struct type as the first argument.
    */
+  static function::FuncDefOp buildConstrainFn(component::StructDefOp op, mlir::Location loc);
   ModuleBuilder &insertConstrainFn(component::StructDefOp op, mlir::Location loc);
   inline ModuleBuilder &insertConstrainFn(std::string_view structName, mlir::Location loc) {
     return insertConstrainFn(*getStruct(structName), getUnknownLoc());
@@ -134,6 +136,7 @@ public:
    * product returns the type of the struct that defines it.
    * Since this is for testing, we accept no arguments.
    */
+  static function::FuncDefOp buildProductFn(component::StructDefOp op, mlir::Location loc);
   ModuleBuilder &insertProductFn(component::StructDefOp op, mlir::Location loc);
   inline ModuleBuilder &insertProductFn(std::string_view structName, mlir::Location loc) {
     return insertProductFn(*getStruct(structName), loc);

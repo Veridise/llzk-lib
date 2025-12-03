@@ -122,9 +122,8 @@ ModuleBuilder::insertEmptyStruct(std::string_view structName, Location loc, int 
   return *this;
 }
 
-ModuleBuilder &ModuleBuilder::insertComputeFn(StructDefOp op, Location loc) {
-  ensureNoSuchComputeFn(op.getName());
-
+FuncDefOp ModuleBuilder::buildComputeFn(StructDefOp op, Location loc) {
+  MLIRContext *context = op.getContext();
   OpBuilder opBuilder(op.getBodyRegion());
   auto fnOp = opBuilder.create<FuncDefOp>(
       loc, StringAttr::get(context, FUNC_NAME_COMPUTE),
@@ -132,13 +131,17 @@ ModuleBuilder &ModuleBuilder::insertComputeFn(StructDefOp op, Location loc) {
   );
   fnOp.setAllowWitnessAttr();
   fnOp.addEntryBlock();
-  computeFnMap[op.getName()] = fnOp;
+  return fnOp;
+}
+
+ModuleBuilder &ModuleBuilder::insertComputeFn(StructDefOp op, Location loc) {
+  ensureNoSuchComputeFn(op.getName());
+  computeFnMap[op.getName()] = buildComputeFn(op, loc);
   return *this;
 }
 
-ModuleBuilder &ModuleBuilder::insertConstrainFn(StructDefOp op, Location loc) {
-  ensureNoSuchConstrainFn(op.getName());
-
+FuncDefOp ModuleBuilder::buildConstrainFn(StructDefOp op, Location loc) {
+  MLIRContext *context = op.getContext();
   OpBuilder opBuilder(op.getBodyRegion());
   auto fnOp = opBuilder.create<FuncDefOp>(
       loc, StringAttr::get(context, FUNC_NAME_CONSTRAIN),
@@ -146,7 +149,31 @@ ModuleBuilder &ModuleBuilder::insertConstrainFn(StructDefOp op, Location loc) {
   );
   fnOp.setAllowConstraintAttr();
   fnOp.addEntryBlock();
-  constrainFnMap[op.getName()] = fnOp;
+  return fnOp;
+}
+
+ModuleBuilder &ModuleBuilder::insertConstrainFn(StructDefOp op, Location loc) {
+  ensureNoSuchConstrainFn(op.getName());
+  constrainFnMap[op.getName()] = buildConstrainFn(op, loc);
+  return *this;
+}
+
+FuncDefOp ModuleBuilder::buildProductFn(StructDefOp op, Location loc) {
+  MLIRContext *context = op.getContext();
+  OpBuilder opBuilder(op.getBodyRegion());
+  auto fnOp = opBuilder.create<FuncDefOp>(
+      loc, StringAttr::get(context, FUNC_NAME_PRODUCT),
+      FunctionType::get(context, {}, {op.getType()})
+  );
+  fnOp.setAllowWitnessAttr();
+  fnOp.setAllowConstraintAttr();
+  fnOp.addEntryBlock();
+  return fnOp;
+}
+
+ModuleBuilder &ModuleBuilder::insertProductFn(StructDefOp op, Location loc) {
+  ensureNoSuchProductFn(op.getName());
+  productFnMap[op.getName()] = buildProductFn(op, loc);
   return *this;
 }
 
