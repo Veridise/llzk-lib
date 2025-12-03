@@ -12,16 +12,16 @@ llzk_tablegen(Types.capi.h.inc -gen-type-capi-header -prefix=llzk -dialect=array
 llzk_tablegen(Types.capi.cpp.inc -gen-type-capi-impl -prefix=llzk -dialect=array)
 llzk_tablegen(Types.capi.test.cpp.inc -gen-type-capi-tests -prefix=llzk -dialect=array)
 
+set(LLVM_TARGET_DEFINITIONS "OpInterfaces.td")
+mlir_tablegen(OpInterfaces.h.inc --gen-op-interface-decls)
+mlir_tablegen(OpInterfaces.cpp.inc --gen-op-interface-defs)
+
 set(LLVM_TARGET_DEFINITIONS "Ops.td")
 mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=array)
 mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=array)
 llzk_tablegen(Ops.capi.h.inc -gen-op-capi-header -prefix=llzk -dialect=array)
 llzk_tablegen(Ops.capi.cpp.inc -gen-op-capi-impl -prefix=llzk -dialect=array)
 llzk_tablegen(Ops.capi.test.cpp.inc -gen-op-capi-tests -prefix=llzk -dialect=array)
-
-set(LLVM_TARGET_DEFINITIONS "OpInterfaces.td")
-mlir_tablegen(OpInterfaces.h.inc --gen-op-interface-decls)
-mlir_tablegen(OpInterfaces.cpp.inc --gen-op-interface-defs)
 
 llzk_add_mlir_doc(ArrayOpsDocGen dialect/ArrayDialect.md -gen-dialect-doc -dialect=array)
 

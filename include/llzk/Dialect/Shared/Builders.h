@@ -155,15 +155,15 @@ public:
   }
 
   ModuleBuilder &
-  insertGlobalFunc(std::string_view funcName, ::mlir::FunctionType type, mlir::Location loc);
-  inline ModuleBuilder &insertGlobalFunc(std::string_view funcName, ::mlir::FunctionType type) {
-    return insertGlobalFunc(funcName, type, getUnknownLoc());
+  insertFreeFunc(std::string_view funcName, ::mlir::FunctionType type, mlir::Location loc);
+  inline ModuleBuilder &insertFreeFunc(std::string_view funcName, ::mlir::FunctionType type) {
+    return insertFreeFunc(funcName, type, getUnknownLoc());
   }
 
   ModuleBuilder &
-  insertGlobalCall(function::FuncDefOp caller, std::string_view callee, mlir::Location callLoc);
-  ModuleBuilder &insertGlobalCall(function::FuncDefOp caller, std::string_view callee) {
-    return insertGlobalCall(caller, callee, getUnknownLoc());
+  insertFreeCall(function::FuncDefOp caller, std::string_view callee, mlir::Location callLoc);
+  ModuleBuilder &insertFreeCall(function::FuncDefOp caller, std::string_view callee) {
+    return insertFreeCall(caller, callee, getUnknownLoc());
   }
 
   /* Getter methods */
@@ -188,21 +188,36 @@ public:
     return getComputeFn(op.getName());
   }
 
-  mlir::FailureOr<function::FuncDefOp> getConstrainFn(std::string_view structName) {
+  mlir::FailureOr<function::FuncDefOp> getConstrainFn(std::string_view structName) const {
     if (constrainFnMap.find(structName) != constrainFnMap.end()) {
       return constrainFnMap.at(structName);
     }
     return mlir::failure();
   }
-  inline mlir::FailureOr<function::FuncDefOp> getConstrainFn(llzk::component::StructDefOp op) {
+  inline mlir::FailureOr<function::FuncDefOp>
+  getConstrainFn(llzk::component::StructDefOp op) const {
     return getConstrainFn(op.getName());
   }
 
-  mlir::FailureOr<function::FuncDefOp> getGlobalFunc(std::string_view funcName) const {
-    if (globalFuncMap.find(funcName) != globalFuncMap.end()) {
-      return globalFuncMap.at(funcName);
+  mlir::FailureOr<function::FuncDefOp> getFreeFunc(std::string_view funcName) const {
+    if (freeFuncMap.find(funcName) != freeFuncMap.end()) {
+      return freeFuncMap.at(funcName);
     }
     return mlir::failure();
+  }
+
+  inline mlir::FailureOr<function::FuncDefOp>
+  getFunc(llzk::function::FunctionKind kind, std::string_view name) const {
+    switch (kind) {
+    case llzk::function::FunctionKind::StructCompute:
+      return getComputeFn(name);
+    case llzk::function::FunctionKind::StructConstrain:
+      return getConstrainFn(name);
+    case llzk::function::FunctionKind::Free:
+      return getFreeFunc(name);
+    default:
+      return mlir::failure();
+    }
   }
 
   /* Helper functions */
@@ -241,7 +256,7 @@ private:
 
   Def2NodeMap computeNodes, constrainNodes;
 
-  std::unordered_map<std::string_view, function::FuncDefOp> globalFuncMap;
+  std::unordered_map<std::string_view, function::FuncDefOp> freeFuncMap;
   std::unordered_map<std::string_view, llzk::component::StructDefOp> structMap;
   std::unordered_map<std::string_view, function::FuncDefOp> computeFnMap;
   std::unordered_map<std::string_view, function::FuncDefOp> constrainFnMap;
@@ -249,12 +264,12 @@ private:
   /// @brief Ensure that a global function with the given funcName has not been added,
   /// reporting a fatal error otherwise.
   /// @param funcName
-  void ensureNoSuchGlobalFunc(std::string_view funcName);
+  void ensureNoSuchFreeFunc(std::string_view funcName);
 
   /// @brief Ensure that a global function with the given funcName has been added,
   /// reporting a fatal error otherwise.
   /// @param funcName
-  void ensureGlobalFnExists(std::string_view funcName);
+  void ensureFreeFnExists(std::string_view funcName);
 
   /// @brief Ensure that a struct with the given structName has not been added,
   /// reporting a fatal error otherwise.

@@ -7,7 +7,6 @@ target_sources(LLZKPolymorphicDialect PRIVATE ${LLZKPolymorphicDialect_SOURCES})
 target_link_libraries(
   LLZKPolymorphicDialect PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
                      MLIRParser LLVMHeaders MLIRHeaders)
-add_dependencies(LLZKPolymorphicDialect LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKPolymorphicDialect)
 
 install(TARGETS LLZKPolymorphicDialect EXPORT LLZKTargets)

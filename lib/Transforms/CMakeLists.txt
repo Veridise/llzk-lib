@@ -21,9 +21,9 @@ target_link_libraries(
   PRIVATE
     LLZKDialect
     R1CSDialect
+    LLZKAnalysis
 )
 
-add_dependencies(LLZKTransforms LLZKDialect LLZKDialectHeaders)
 llzk_target_add_mlir_link_settings(LLZKTransforms)
 install(TARGETS LLZKTransforms EXPORT LLZKTargets)
 
