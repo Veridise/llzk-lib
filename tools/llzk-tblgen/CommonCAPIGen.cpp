@@ -242,12 +242,8 @@ static inline std::string getDocumentation(
 
 /// Parse method declarations from extraClassDeclaration using Clang's Lexer
 ///
-/// This function parses C++ method declarations to extract method signatures.
-/// It identifies methods by looking for the pattern: <return_type> <identifier> '(' [params] ')'
-/// [const] ';'
-///
-/// Note: Currently, only methods without parameters are fully supported. Methods with
-/// parameters are detected but skipped during code generation.
+/// This function parses C++ method declarations to extract method signatures. It identifies methods
+/// by looking for the pattern: <return_type> <identifier> '(' [params] ')' [const] ';'
 SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
   if (extraDecl.empty()) {
     return {};
