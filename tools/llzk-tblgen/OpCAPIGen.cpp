@@ -707,11 +707,7 @@ static std::string generateCAPIAssignments(const Operator &op) {
       os << "  mlirOperationStateAddAttributes(&state, attributes.size(), attributes.data());\n";
     }
     void genRegionsPrefix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
-      os << "  llvm::SmallVector<MlirRegion, 2> regions;\n";
-      auto numRegions = op.getNumRegions();
-      if (numRegions > 2) { // pre-size if more than the initial capacity above
-        os << "  regions.resize(" << numRegions << ");\n";
-      }
+      os << "  llvm::SmallVector<MlirRegion, " << op.getNumRegions() << "> regions;\n";
     }
     void genRegion(llvm::raw_ostream &os, const mlir::tblgen::NamedRegion &region) override {
       if (region.isVariadic()) {
