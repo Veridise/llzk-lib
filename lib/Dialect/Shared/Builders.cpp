@@ -177,22 +177,6 @@ ModuleBuilder &ModuleBuilder::insertProductFn(StructDefOp op, Location loc) {
   return *this;
 }
 
-ModuleBuilder &ModuleBuilder::insertProductFn(StructDefOp op, Location loc) {
-  ensureNoSuchProductFn(op.getName());
-
-  OpBuilder opBuilder(op.getBodyRegion());
-  auto fnOp = opBuilder.create<FuncDefOp>(
-      loc, StringAttr::get(context, FUNC_NAME_PRODUCT),
-      FunctionType::get(context, {}, {op.getType()})
-  );
-  fnOp.setAllowWitnessAttr();
-  fnOp.setAllowConstraintAttr();
-  fnOp.addEntryBlock();
-
-  productFnMap[op.getName()] = fnOp;
-  return *this;
-}
-
 ModuleBuilder &
 ModuleBuilder::insertComputeCall(StructDefOp caller, StructDefOp callee, Location callLoc) {
   ensureComputeFnExists(caller.getName());
