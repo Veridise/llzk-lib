@@ -375,8 +375,6 @@ LogicalResult StructDefOp::verifyRegions() {
                                   << " and '" << FuncDefOp::getOperationName()
                                   << "' operations are permitted";
         }
-      } else if (isMainComponent()) {
-        // Verify that all
       }
     }
 
