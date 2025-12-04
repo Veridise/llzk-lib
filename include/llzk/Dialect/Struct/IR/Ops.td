@@ -71,6 +71,30 @@ def LLZK_StructDefOp
         }
       }
       ```
+
+      A special component named `Main` can be defined to represent the main entry point
+      of the circuit. This component has additional restrictions:
+      1. It cannot have struct parameters.
+      2. The parameter types of its functions (besides the required "self" parameter) can
+         only be `!struct.type<!felt.type>` or `!array.type<.. x !felt.type>`.
+      3. The fields marked as public (i.e., with the `{llzk.pub}` attribute) that
+         are not columns (i.e., with `{column=0}`) represent
+         the public outputs of the overall circuit.
+
+      Example of a `Main` component:
+
+      ```llzk
+      struct.def @Main {
+        field @out : !felt.type {llzk.pub} {column=0} // public output
+        field @intermediate : !felt.type
+        function.def @compute(%p: !felt.type) -> !struct.type<@Main> {
+          // ...
+        }
+        function.def @constrain(%self: !struct.type<@Main>, %p: !felt.type) {
+          // ...
+        }
+      }
+      ```
   }];
 
   // Note: `$const_params` contains symbol definitions that do not use the

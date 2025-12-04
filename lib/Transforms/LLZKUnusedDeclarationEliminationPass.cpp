@@ -92,10 +92,10 @@ class UnusedDeclarationEliminationPass
     DenseMap<SymbolRefAttr, FieldDefOp> fields;
     for (auto &[structDef, structSym] : ctx.structToSymbol) {
       structDef.walk([&](FieldDefOp field) {
-        // We don't consider public fields in the Main component for removal,
+        // We don't consider public fields with column=0 in the Main component for removal,
         // as these are output values and removing them would result in modifying
         // the overall circuit interface.
-        if (!structDef.isMainComponent() || !field.hasPublicAttr()) {
+        if (!structDef.isMainComponent() || (!field.hasPublicAttr() && !field.getColumn())) {
           SymbolRefAttr fieldSym =
               appendLeaf(structSym, FlatSymbolRefAttr::get(field.getSymNameAttr()));
           fields[fieldSym] = field;
