@@ -80,6 +80,7 @@ void BuildShortTypeString::appendSymRef(SymbolRefAttr sa) {
 
 BuildShortTypeString &BuildShortTypeString::append(Type type) {
   size_t position = ret.size();
+  (void)position; // tell compiler it's intentionally unused in builds without assertions
 
   struct Impl : LLZKTypeSwitch<Impl, void> {
     BuildShortTypeString &outer;
@@ -129,6 +130,8 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
   }
 
   size_t position = ret.size();
+  (void)position; // tell compiler it's intentionally unused in builds without assertions
+
   // Adapted from AsmPrinter::Impl::printAttributeImpl()
   if (auto ia = llvm::dyn_cast<IntegerAttr>(a)) {
     Type ty = ia.getType();
