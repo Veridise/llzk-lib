@@ -4,7 +4,7 @@ module attributes {veridise.lang = "llzk"} {
   global.def @g : !struct.type<@HasUse>
 
   struct.def @HasUse {
-    struct.field @f1 : i1
+    struct.member @f1 : i1
     function.def @compute() -> !struct.type<@HasUse> {
       %self = struct.new : !struct.type<@HasUse>
       function.return %self : !struct.type<@HasUse>
@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @NoUse<[@T]> {
-    struct.field @f2 : !poly.tvar<@T>
+    struct.member @f2 : !poly.tvar<@T>
     function.def @compute() -> !struct.type<@NoUse<[@T]>> {
       %self = struct.new : !struct.type<@NoUse<[@T]>>
       function.return %self : !struct.type<@NoUse<[@T]>>
@@ -84,7 +84,7 @@ module attributes {veridise.lang = "llzk"} {
 
   module @StructsWithinNestedModule {
     struct.def @HasUse<[@T]> {
-      struct.field @f1 : !poly.tvar<@T>
+      struct.member @f1 : !poly.tvar<@T>
       function.def @compute() -> !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>> {
         %self = struct.new : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
         function.return %self : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
@@ -95,8 +95,8 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     struct.def @NoUse {
-      struct.field @f2 : i1
-      struct.field @f3 : !felt.type
+      struct.member @f2 : i1
+      struct.member @f3 : !felt.type
       function.def @compute() -> !struct.type<@StructsWithinNestedModule::@NoUse> {
         %self = struct.new : !struct.type<@StructsWithinNestedModule::@NoUse>
         function.return %self : !struct.type<@StructsWithinNestedModule::@NoUse>
@@ -440,7 +440,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Main {
-    struct.field @f : !struct.type<@DirectUseFromMain>
+    struct.member @f : !struct.type<@DirectUseFromMain>
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -451,7 +451,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @DirectUseFromMain {
-    struct.field @f : !struct.type<@TransitiveUseFromMain>
+    struct.member @f : !struct.type<@TransitiveUseFromMain>
     function.def @compute() -> !struct.type<@DirectUseFromMain> {
       %self = struct.new : !struct.type<@DirectUseFromMain>
       function.return %self : !struct.type<@DirectUseFromMain>
@@ -566,7 +566,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Main {
-    struct.field @f : !struct.type<@M1::@S>
+    struct.member @f : !struct.type<@M1::@S>
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %0 = function.call @M1::@S::@compute() : () -> !struct.type<@M1::@S>
@@ -581,7 +581,7 @@ module attributes {veridise.lang = "llzk"} {
 
   module @M1 {
     struct.def @S {
-      struct.field @f : !struct.type<@M1::@T>
+      struct.member @f : !struct.type<@M1::@T>
       function.def @compute() -> !struct.type<@M1::@S> {
         %self = struct.new : !struct.type<@M1::@S>
         %0 = function.call @M1::@T::@compute() : () -> !struct.type<@M1::@T>
@@ -614,7 +614,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     struct.def @X {
-      struct.field @f : index
+      struct.member @f : index
       function.def @compute(%a: index) -> !struct.type<@M1::@X> {
         %self = struct.new : !struct.type<@M1::@X>
         struct.writef %self[@f] = %a : !struct.type<@M1::@X>, index
@@ -629,7 +629,7 @@ module attributes {veridise.lang = "llzk"} {
   // Different module with the same inner names. To ensure full path names are used.
   module @M2 {
     struct.def @S {
-      struct.field @f : !struct.type<@M2::@T>
+      struct.member @f : !struct.type<@M2::@T>
       function.def @compute() -> !struct.type<@M2::@S> {
         %self = struct.new : !struct.type<@M2::@S>
         %0 = function.call @M2::@T::@compute() : () -> !struct.type<@M2::@T>
@@ -816,7 +816,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Component1A<[@S]> {
-    struct.field @f : !struct.type<@Component1B<[@S]>>
+    struct.member @f : !struct.type<@Component1B<[@S]>>
     function.def @compute() -> !struct.type<@Component1A<[@S]>> {
       %self = struct.new : !struct.type<@Component1A<[@S]>>
       %0 = function.call @Component1B::@compute() : () -> !struct.type<@Component1B<[@S]>>

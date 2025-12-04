@@ -43,8 +43,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             constrain.eq %[[VAL_11]], %[[VAL_13]] : !felt.type, !felt.type
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @__llzk_poly_lowering_pass_aux_field_0 : !felt.type
-// CHECK:           struct.field @__llzk_poly_lowering_pass_aux_field_1 : !felt.type
+// CHECK:           struct.member @__llzk_poly_lowering_pass_aux_field_0 : !felt.type
+// CHECK:           struct.member @__llzk_poly_lowering_pass_aux_field_1 : !felt.type
 // CHECK:         }
 // -----
 

@@ -107,7 +107,7 @@ private:
 
   /// The translation only works now on LLZK structs where all the fields are felts.
   LogicalResult validateStruct(StructDefOp structDef) {
-    for (auto field : structDef.getFieldDefs()) {
+    for (auto field : structDef.getMemberDefs()) {
       auto fieldType = field.getType();
       if (!llvm::isa<FeltType>(fieldType)) {
         return field.emitError() << "Field must be felt type. Found " << fieldType
@@ -213,7 +213,7 @@ private:
     for (auto [src, dst] : llvm::zip(srcArgs, dstArgs)) {
       llzkToPcl.try_emplace(src, dst);
     }
-    for (auto fieldDef : structDef.getFieldDefs()) {
+    for (auto fieldDef : structDef.getMemberDefs()) {
       // Create a PCL var for each struct field. Public fields are outputs in PCL
       auto pclVar =
           b.create<pcl::VarOp>(fieldDef.getLoc(), fieldDef.getName(), fieldDef.hasPublicAttr());
@@ -345,7 +345,7 @@ private:
       }
       pclInputTypes.push_back(pcl::FeltType::get(ctx));
     }
-    for (auto field : structDef.getFieldDefs()) {
+    for (auto field : structDef.getMemberDefs()) {
       auto fieldType = field.getType();
       if (!llvm::isa<FeltType>(fieldType)) {
         return structDef.emitError() << "Field must be felt type. Found " << fieldType

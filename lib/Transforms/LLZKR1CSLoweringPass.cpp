@@ -337,7 +337,7 @@ private:
         if (degLhs == 2 && degRhs == 2) {
           builder.setInsertionPoint(op);
           std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxCounter++);
-          FieldDefOp auxField = addAuxField(structDef, auxName);
+          MemberDefOp auxField = addAuxField(structDef, auxName);
           Value aux = builder.create<FieldReadOp>(
               val.getLoc(), val.getType(), constrainFunc.getSelfValueFromConstrain(),
               auxField.getNameAttr()
@@ -543,7 +543,7 @@ private:
 
     // Validate struct fields are felt and prepare signal types for circuit result types
     bool hasPublicSignals = false;
-    for (auto field : structDef.getFieldDefs()) {
+    for (auto field : structDef.getMemberDefs()) {
       if (!llvm::isa<FeltType>(field.getType())) {
         field.emitError("Only felt fields are supported as output signals").report();
         signalPassFailure();
@@ -589,7 +589,7 @@ private:
     // outputs
     DenseMap<StringRef, Value> fieldSignalMap;
     uint32_t signalDefCntr = 0;
-    for (auto field : structDef.getFieldDefs()) {
+    for (auto field : structDef.getMemberDefs()) {
       r1cs::PublicAttr pubAttr;
       if (field.hasPublicAttr()) {
         pubAttr = bodyBuilder.getAttr<r1cs::PublicAttr>();
@@ -654,7 +654,7 @@ private:
         if (degLhs == 2 && degRhs == 2) {
           builder.setInsertionPoint(eqOp);
           std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxCounter++);
-          FieldDefOp auxField = addAuxField(structDef, auxName);
+          MemberDefOp auxField = addAuxField(structDef, auxName);
           Value aux = builder.create<FieldReadOp>(
               eqOp.getLoc(), lhs.getType(), constrainFunc.getSelfValueFromConstrain(),
               auxField.getNameAttr()

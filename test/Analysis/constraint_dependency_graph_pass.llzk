@@ -26,7 +26,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Adder {
-    struct.field @sum : !felt.type {llzk.pub}
+    struct.member @sum : !felt.type {llzk.pub}
 
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@Adder> {
       %self = struct.new : !struct.type<@Adder>
@@ -60,7 +60,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Adder2 {
-    struct.field @sum : !felt.type {llzk.pub}
+    struct.member @sum : !felt.type {llzk.pub}
 
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@Adder2> {
       %self = struct.new : !struct.type<@Adder2>
@@ -160,7 +160,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
 
   struct.def @Passthrough {
-    struct.field @out : !felt.type {llzk.pub}
+    struct.member @out : !felt.type {llzk.pub}
 
     function.def @compute(%in: !felt.type) -> !struct.type<@Passthrough> {
       %self = struct.new : !struct.type<@Passthrough>
@@ -176,7 +176,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @EnsureIsZero {
-    struct.field @p : !struct.type<@Passthrough>
+    struct.member @p : !struct.type<@Passthrough>
 
     function.def @compute(%in: !felt.type) -> !struct.type<@EnsureIsZero> {
       %self = struct.new : !struct.type<@EnsureIsZero>
@@ -314,8 +314,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @MatrixConstrain {
-    struct.field @check0 : !struct.type<@ArrayConstrain<[7, 11]>>
-    struct.field @check1 : !struct.type<@ArrayConstrain<[13, 17]>>
+    struct.member @check0 : !struct.type<@ArrayConstrain<[7, 11]>>
+    struct.member @check1 : !struct.type<@ArrayConstrain<[13, 17]>>
 
     function.def @compute(%mat: !array.type<2,3 x !felt.type>) -> !struct.type<@MatrixConstrain> {
       %self = struct.new : !struct.type<@MatrixConstrain>
@@ -375,14 +375,14 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @MatrixConstrain {
-    struct.field @check : !struct.type<@ArrayConstrain>
+    struct.member @check : !struct.type<@ArrayConstrain>
 
-    struct.field @a : !felt.type
-    struct.field @b : !felt.type
-    struct.field @c : !felt.type
-    struct.field @d : !felt.type
-    struct.field @e : !felt.type
-    struct.field @f : !felt.type
+    struct.member @a : !felt.type
+    struct.member @b : !felt.type
+    struct.member @c : !felt.type
+    struct.member @d : !felt.type
+    struct.member @e : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute() -> !struct.type<@MatrixConstrain> {
       %self = struct.new : !struct.type<@MatrixConstrain>
@@ -463,7 +463,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @UnknownMatrixConstrain<[@M, @N]> {
-    struct.field @check : !struct.type<@UnknownArrayConstrain<[@N]>>
+    struct.member @check : !struct.type<@UnknownArrayConstrain<[@N]>>
 
     function.def @compute(%mat: !array.type<@M,@N x !felt.type>) -> !struct.type<@UnknownMatrixConstrain<[@M, @N]>> {
       %self = struct.new : !struct.type<@UnknownMatrixConstrain<[@M, @N]>>
@@ -701,7 +701,7 @@ module attributes {veridise.lang = "llzk"} {
   function.def private @extern_add(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {extern}
 
   struct.def @ExternAdder {
-    struct.field @sum : !felt.type {llzk.pub}
+    struct.member @sum : !felt.type {llzk.pub}
 
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ExternAdder> {
       %self = struct.new : !struct.type<@ExternAdder>
@@ -733,7 +733,7 @@ module attributes {veridise.lang = "llzk"} {
   function.def private @irrelevant() attributes {extern}
 
   struct.def @Adder2 {
-    struct.field @sum : !felt.type {llzk.pub}
+    struct.member @sum : !felt.type {llzk.pub}
 
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@Adder2> {
       %self = struct.new : !struct.type<@Adder2>
@@ -764,7 +764,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @Signal {
-    struct.field @reg : !felt.type {llzk.pub}
+    struct.member @reg : !felt.type {llzk.pub}
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
@@ -778,7 +778,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component00 {
-    struct.field @f : !Signal
+    struct.member @f : !Signal
 
     function.def @compute(%0: !Signal) -> !struct.type<@Component00> {
       %self = struct.new : !struct.type<@Component00>
@@ -794,7 +794,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component01 {
-    struct.field @f : !array.type<2 x !Signal>
+    struct.member @f : !array.type<2 x !Signal>
 
     function.def @compute(%0: !array.type<2 x !Signal>) -> !struct.type<@Component01> {
       %self = struct.new : !struct.type<@Component01>
@@ -823,10 +823,10 @@ module attributes {veridise.lang = "llzk"} {
 #map = affine_map<()[s0] -> (s0)>
 module attributes {veridise.lang = "llzk"} {
   struct.def @Foo<[@N]> {
-    struct.field @"$temp_0" : !array.type<#map x !felt.type> {column}
-    struct.field @outp : !array.type<#map x !felt.type> {column}
-    struct.field @"$temp" : !array.type<#map x !felt.type> {column}
-    struct.field @internal : !array.type<#map x !felt.type> {column}
+    struct.member @"$temp_0" : !array.type<#map x !felt.type> {column}
+    struct.member @outp : !array.type<#map x !felt.type> {column}
+    struct.member @"$temp" : !array.type<#map x !felt.type> {column}
+    struct.member @internal : !array.type<#map x !felt.type> {column}
     function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@Foo<[@N]>> attributes {function.allow_witness} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index

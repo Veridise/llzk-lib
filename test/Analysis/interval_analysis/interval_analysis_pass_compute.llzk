@@ -2,15 +2,15 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @BoolAnd {
-    struct.field @case0 : i1
-    struct.field @case1 : i1
-    struct.field @case2 : i1
-    struct.field @case3 : i1
-    struct.field @case4 : i1
-    struct.field @case5 : i1
-    struct.field @case6 : i1
-    struct.field @case7 : i1
-    struct.field @case8 : i1
+    struct.member @case0 : i1
+    struct.member @case1 : i1
+    struct.member @case2 : i1
+    struct.member @case3 : i1
+    struct.member @case4 : i1
+    struct.member @case5 : i1
+    struct.member @case6 : i1
+    struct.member @case7 : i1
+    struct.member @case8 : i1
 
     function.def @compute(%a: !felt.type) -> !struct.type<@BoolAnd> {
       %self = struct.new : !struct.type<@BoolAnd>
@@ -69,15 +69,15 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @BoolOr {
-    struct.field @case0 : i1
-    struct.field @case1 : i1
-    struct.field @case2 : i1
-    struct.field @case3 : i1
-    struct.field @case4 : i1
-    struct.field @case5 : i1
-    struct.field @case6 : i1
-    struct.field @case7 : i1
-    struct.field @case8 : i1
+    struct.member @case0 : i1
+    struct.member @case1 : i1
+    struct.member @case2 : i1
+    struct.member @case3 : i1
+    struct.member @case4 : i1
+    struct.member @case5 : i1
+    struct.member @case6 : i1
+    struct.member @case7 : i1
+    struct.member @case8 : i1
 
     function.def @compute(%a: !felt.type) -> !struct.type<@BoolOr> {
       %self = struct.new : !struct.type<@BoolOr>
@@ -136,15 +136,15 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @BoolXor {
-    struct.field @case0 : i1
-    struct.field @case1 : i1
-    struct.field @case2 : i1
-    struct.field @case3 : i1
-    struct.field @case4 : i1
-    struct.field @case5 : i1
-    struct.field @case6 : i1
-    struct.field @case7 : i1
-    struct.field @case8 : i1
+    struct.member @case0 : i1
+    struct.member @case1 : i1
+    struct.member @case2 : i1
+    struct.member @case3 : i1
+    struct.member @case4 : i1
+    struct.member @case5 : i1
+    struct.member @case6 : i1
+    struct.member @case7 : i1
+    struct.member @case8 : i1
 
     function.def @compute(%a: !felt.type) -> !struct.type<@BoolXor> {
       %self = struct.new : !struct.type<@BoolXor>
@@ -203,9 +203,9 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @BoolNot {
-    struct.field @case0 : i1
-    struct.field @case1 : i1
-    struct.field @case2 : i1
+    struct.member @case0 : i1
+    struct.member @case1 : i1
+    struct.member @case2 : i1
 
     function.def @compute(%a: !felt.type) -> !struct.type<@BoolNot> {
       %self = struct.new : !struct.type<@BoolNot>
@@ -246,10 +246,10 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @BitAnd {
-    struct.field @case0 : !felt.type
-    struct.field @case1 : !felt.type
-    struct.field @case2 : !felt.type
-    struct.field @case3 : !felt.type
+    struct.member @case0 : !felt.type
+    struct.member @case1 : !felt.type
+    struct.member @case2 : !felt.type
+    struct.member @case3 : !felt.type
 
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@BitAnd> {
       %self = struct.new : !struct.type<@BitAnd>
@@ -290,11 +290,11 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ShiftLeft {
-    struct.field @case0 : !felt.type
-    struct.field @case1 : !felt.type
-    struct.field @case2 : !felt.type
-    struct.field @case3 : !felt.type
-    struct.field @case4 : !felt.type
+    struct.member @case0 : !felt.type
+    struct.member @case1 : !felt.type
+    struct.member @case2 : !felt.type
+    struct.member @case3 : !felt.type
+    struct.member @case4 : !felt.type
 
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ShiftLeft> {
       %self = struct.new : !struct.type<@ShiftLeft>
@@ -338,11 +338,11 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ShiftRight {
-    struct.field @case0 : !felt.type
-    struct.field @case1 : !felt.type
-    struct.field @case2 : !felt.type
-    struct.field @case3 : !felt.type
-    struct.field @case4 : !felt.type
+    struct.member @case0 : !felt.type
+    struct.member @case1 : !felt.type
+    struct.member @case2 : !felt.type
+    struct.member @case3 : !felt.type
+    struct.member @case4 : !felt.type
 
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ShiftRight> {
       %self = struct.new : !struct.type<@ShiftRight>
@@ -387,8 +387,8 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // yield-less if that modifies intervals internally
   struct.def @NoYieldIf {
-    struct.field @data : !felt.type
-    struct.field @const : !felt.type
+    struct.member @data : !felt.type
+    struct.member @const : !felt.type
 
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@NoYieldIf> {
       %self = struct.new : !struct.type<@NoYieldIf>
@@ -423,7 +423,7 @@ module attributes {veridise.lang = "llzk"} {
   // Only constraints that the stored value is a boolean.
   // A real circuit would have more stuff
   struct.def @IsZero {
-    struct.field @bit : !felt.type
+    struct.member @bit : !felt.type
 
     function.def @compute(%a: !felt.type) -> !struct.type<@IsZero> {
       %self = struct.new : !struct.type<@IsZero>
@@ -466,9 +466,9 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @MultiYield {
-    struct.field @a : !felt.type
-    struct.field @b : !felt.type
-    struct.field @c : !felt.type
+    struct.member @a : !felt.type
+    struct.member @b : !felt.type
+    struct.member @c : !felt.type
 
     function.def @compute(%in : !felt.type) -> !struct.type<@MultiYield> {
       %self = struct.new : !struct.type<@MultiYield>
@@ -507,7 +507,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @NoYieldFor {
-    struct.field @a: !felt.type
+    struct.member @a: !felt.type
 
     function.def @compute(%x: index) -> !struct.type<@NoYieldFor> {
       %self = struct.new : !struct.type<@NoYieldFor>
@@ -535,7 +535,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @YieldForConst {
-    struct.field @a: !felt.type
+    struct.member @a: !felt.type
 
     function.def @compute(%x: index) -> !struct.type<@YieldForConst> {
       %self = struct.new : !struct.type<@YieldForConst>
@@ -567,7 +567,7 @@ module attributes {veridise.lang = "llzk"} {
 // No guesses will be made about the computed value over the loop
 module attributes {veridise.lang = "llzk"} {
   struct.def @YieldForSum {
-    struct.field @a: !felt.type
+    struct.member @a: !felt.type
 
     function.def @compute(%x: index) -> !struct.type<@YieldForSum> {
       %self = struct.new : !struct.type<@YieldForSum>

@@ -1,0 +1,2 @@
+changed:
+  - Rename `struct.field` -> `struct.member` to avoid confusion with finite field terminology

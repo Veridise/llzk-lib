@@ -37,8 +37,8 @@ class SourceRefIndex {
   using IndexRange = std::pair<llvm::DynamicAPInt, llvm::DynamicAPInt>;
 
 public:
-  explicit SourceRefIndex(component::FieldDefOp f) : index(f) {}
-  explicit SourceRefIndex(SymbolLookupResult<component::FieldDefOp> f) : index(f) {}
+  explicit SourceRefIndex(component::MemberDefOp f) : index(f) {}
+  explicit SourceRefIndex(SymbolLookupResult<component::MemberDefOp> f) : index(f) {}
   explicit SourceRefIndex(const llvm::DynamicAPInt &i) : index(i) {}
   explicit SourceRefIndex(const llvm::APInt &i) : index(toDynamicAPInt(i)) {}
   explicit SourceRefIndex(int64_t i) : index(llvm::DynamicAPInt(i)) {}
@@ -47,15 +47,15 @@ public:
   explicit SourceRefIndex(IndexRange r) : index(r) {}
 
   bool isField() const {
-    return std::holds_alternative<SymbolLookupResult<component::FieldDefOp>>(index) ||
-           std::holds_alternative<component::FieldDefOp>(index);
+    return std::holds_alternative<SymbolLookupResult<component::MemberDefOp>>(index) ||
+           std::holds_alternative<component::MemberDefOp>(index);
   }
-  component::FieldDefOp getField() const {
+  component::MemberDefOp getField() const {
     ensure(isField(), "SourceRefIndex: field requested but not contained");
-    if (std::holds_alternative<component::FieldDefOp>(index)) {
-      return std::get<component::FieldDefOp>(index);
+    if (std::holds_alternative<component::MemberDefOp>(index)) {
+      return std::get<component::MemberDefOp>(index);
     }
-    return std::get<SymbolLookupResult<component::FieldDefOp>>(index).get();
+    return std::get<SymbolLookupResult<component::MemberDefOp>>(index).get();
   }
 
   bool isIndex() const { return std::holds_alternative<llvm::DynamicAPInt>(index); }
@@ -103,7 +103,7 @@ private:
   /// 3. A half-open range of indices into an array, for when we're unsure about a specific index
   /// Likely, this will be from [0, size) at this point.
   std::variant<
-      component::FieldDefOp, SymbolLookupResult<component::FieldDefOp>, llvm::DynamicAPInt,
+      component::MemberDefOp, SymbolLookupResult<component::MemberDefOp>, llvm::DynamicAPInt,
       IndexRange>
       index;
 };
@@ -138,7 +138,7 @@ public:
   /// Produce all possible SourceRefs from a specific field in a struct.
   /// May produce multiple if the given field is of an aggregate type.
   static std::vector<SourceRef>
-  getAllSourceRefs(component::StructDefOp structDef, component::FieldDefOp fieldDef);
+  getAllSourceRefs(component::StructDefOp structDef, component::MemberDefOp fieldDef);
 
   explicit SourceRef(mlir::BlockArgument b) : root(b), fieldRefs(), constantVal(std::nullopt) {}
   SourceRef(mlir::BlockArgument b, std::vector<SourceRefIndex> f)

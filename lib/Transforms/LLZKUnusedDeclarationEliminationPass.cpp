@@ -89,9 +89,9 @@ class UnusedDeclarationEliminationPass
     ModuleOp modOp = getOperation();
 
     // Map fully-qualified field symbols -> field ops
-    DenseMap<SymbolRefAttr, FieldDefOp> fields;
+    DenseMap<SymbolRefAttr, MemberDefOp> fields;
     for (auto &[structDef, structSym] : ctx.structToSymbol) {
-      structDef.walk([&](FieldDefOp field) {
+      structDef.walk([&](MemberDefOp field) {
         // We don't consider public fields in the Main component for removal,
         // as these are output values and removing them would result in modifying
         // the overall circuit interface.

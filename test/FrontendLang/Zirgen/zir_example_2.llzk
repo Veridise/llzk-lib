@@ -24,12 +24,12 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @NondetBitReg {
-    struct.field @ab: !struct.type<@AssertBit>
-    struct.field @reg: !felt.type
+    struct.member @ab: !struct.type<@AssertBit>
+    struct.member @reg: !felt.type
     // The `synthetic_return` is added here for clarity and a more strictly one-to-one
     // translation but it would also be valid to just put the `pub` modifier on `addr`.
     // ZIR frontend should mark function.return value with `pub`
-    struct.field @synthetic_return: !felt.type {llzk.pub}
+    struct.member @synthetic_return: !felt.type {llzk.pub}
 
     function.def @compute(%val: !felt.type) -> !struct.type<@NondetBitReg> {
       %self = struct.new : !struct.type<@NondetBitReg>
@@ -53,8 +53,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ArgU16 {
-    struct.field @count: !felt.type
-    struct.field @val: !felt.type
+    struct.member @count: !felt.type
+    struct.member @val: !felt.type
 
     function.def @compute(%count: !felt.type, %val: !felt.type) -> !struct.type<@ArgU16> {
       %self = struct.new : !struct.type<@ArgU16>
@@ -71,9 +71,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @NondetU16Reg {
-    struct.field @arg: !struct.type<@ArgU16>
+    struct.member @arg: !struct.type<@ArgU16>
     // ZIR frontend should mark function.return value with `pub`
-    struct.field @synthetic_return : !felt.type {llzk.pub}
+    struct.member @synthetic_return : !felt.type {llzk.pub}
 
     function.def @compute(%val: !felt.type) -> !struct.type<@NondetU16Reg> {
       %self = struct.new : !struct.type<@NondetU16Reg>
@@ -101,9 +101,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @U16Reg {
-    struct.field @ret: !struct.type<@NondetU16Reg>
+    struct.member @ret: !struct.type<@NondetU16Reg>
     // ZIR frontend should mark function.return value with `pub`
-    struct.field @synthetic_return : !felt.type {llzk.pub}
+    struct.member @synthetic_return : !felt.type {llzk.pub}
 
     function.def @compute(%val: !felt.type) -> !struct.type<@U16Reg> {
       %self = struct.new : !struct.type<@U16Reg>
@@ -127,16 +127,16 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @AddrDecomposeBits {
-    struct.field @low0: !struct.type<@NondetBitReg>
-    struct.field @low1: !struct.type<@NondetBitReg>
-    struct.field @low2: !felt.type
-    struct.field @upperDiff: !struct.type<@U16Reg>
-    struct.field @med14: !struct.type<@NondetU16Reg>
-    struct.field @addr: !felt.type
+    struct.member @low0: !struct.type<@NondetBitReg>
+    struct.member @low1: !struct.type<@NondetBitReg>
+    struct.member @low2: !felt.type
+    struct.member @upperDiff: !struct.type<@U16Reg>
+    struct.member @med14: !struct.type<@NondetU16Reg>
+    struct.member @addr: !felt.type
     // The `synthetic_return` is added here for clarity and a more strictly one-to-one
     // translation but it would also be valid to just put the `pub` modifier on `addr`.
     // ZIR frontend should mark function.return value with `pub`
-    struct.field @synthetic_return: !felt.type {llzk.pub}
+    struct.member @synthetic_return: !felt.type {llzk.pub}
 
     function.def @compute(%x: !struct.type<@std::@risc0::@ValU32>, %mode: !felt.type) -> !struct.type<@AddrDecomposeBits> {
       %self = struct.new : !struct.type<@AddrDecomposeBits>
@@ -271,9 +271,9 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   struct.def @NondetBitReg {
-//CHECK-NEXT:      struct.field @ab : !struct.type<@AssertBit>
-//CHECK-NEXT:      struct.field @reg : !felt.type
-//CHECK-NEXT:      struct.field @synthetic_return : !felt.type {llzk.pub}
+//CHECK-NEXT:      struct.member @ab : !struct.type<@AssertBit>
+//CHECK-NEXT:      struct.member @reg : !felt.type
+//CHECK-NEXT:      struct.member @synthetic_return : !felt.type {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@NondetBitReg> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@NondetBitReg>
 //CHECK-NEXT:        struct.writef %[[SELF]][@reg] = %[[A0]] : <@NondetBitReg>, !felt.type
@@ -292,8 +292,8 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   struct.def @ArgU16 {
-//CHECK-NEXT:      struct.field @count : !felt.type
-//CHECK-NEXT:      struct.field @val : !felt.type
+//CHECK-NEXT:      struct.member @count : !felt.type
+//CHECK-NEXT:      struct.member @val : !felt.type
 //CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@ArgU16> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ArgU16>
 //CHECK-NEXT:        struct.writef %[[SELF]][@count] = %[[A0]] : <@ArgU16>, !felt.type
@@ -308,8 +308,8 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   struct.def @NondetU16Reg {
-//CHECK-NEXT:      struct.field @arg : !struct.type<@ArgU16>
-//CHECK-NEXT:      struct.field @synthetic_return : !felt.type {llzk.pub}
+//CHECK-NEXT:      struct.member @arg : !struct.type<@ArgU16>
+//CHECK-NEXT:      struct.member @synthetic_return : !felt.type {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@NondetU16Reg> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@NondetU16Reg>
 //CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = felt.const 1
@@ -332,8 +332,8 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   struct.def @U16Reg {
-//CHECK-NEXT:      struct.field @ret : !struct.type<@NondetU16Reg>
-//CHECK-NEXT:      struct.field @synthetic_return : !felt.type {llzk.pub}
+//CHECK-NEXT:      struct.member @ret : !struct.type<@NondetU16Reg>
+//CHECK-NEXT:      struct.member @synthetic_return : !felt.type {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@U16Reg> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@U16Reg>
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = function.call @NondetU16Reg::@compute(%[[A0:[0-9a-zA-Z_\.]+]]) : (!felt.type) -> !struct.type<@NondetU16Reg>
@@ -352,13 +352,13 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   struct.def @AddrDecomposeBits {
-//CHECK-NEXT:      struct.field @low0 : !struct.type<@NondetBitReg>
-//CHECK-NEXT:      struct.field @low1 : !struct.type<@NondetBitReg>
-//CHECK-NEXT:      struct.field @low2 : !felt.type
-//CHECK-NEXT:      struct.field @upperDiff : !struct.type<@U16Reg>
-//CHECK-NEXT:      struct.field @med14 : !struct.type<@NondetU16Reg>
-//CHECK-NEXT:      struct.field @addr : !felt.type
-//CHECK-NEXT:      struct.field @synthetic_return : !felt.type {llzk.pub}
+//CHECK-NEXT:      struct.member @low0 : !struct.type<@NondetBitReg>
+//CHECK-NEXT:      struct.member @low1 : !struct.type<@NondetBitReg>
+//CHECK-NEXT:      struct.member @low2 : !felt.type
+//CHECK-NEXT:      struct.member @upperDiff : !struct.type<@U16Reg>
+//CHECK-NEXT:      struct.member @med14 : !struct.type<@NondetU16Reg>
+//CHECK-NEXT:      struct.member @addr : !felt.type
+//CHECK-NEXT:      struct.member @synthetic_return : !felt.type {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@std::@risc0::@ValU32>,
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@AddrDecomposeBits>  attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@AddrDecomposeBits>

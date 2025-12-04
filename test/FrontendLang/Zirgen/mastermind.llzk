@@ -14,8 +14,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetReg<[]> {
-    struct.field @"$super" : !felt.type
-    struct.field @reg : !felt.type {column}
+    struct.member @"$super" : !felt.type
+    struct.member @reg : !felt.type {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@NondetReg<[]>>
       struct.writef %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.type
@@ -27,8 +27,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetExtReg<[]> {
-    struct.field @"$super" : !array.type<4 x !felt.type>
-    struct.field @reg : !array.type<4 x !felt.type> {column}
+    struct.member @"$super" : !array.type<4 x !felt.type>
+    struct.member @reg : !array.type<4 x !felt.type> {column}
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@NondetExtReg<[]>>
       struct.writef %self[@reg] = %arg0 : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
@@ -40,7 +40,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @EqzExt<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>> attributes {function.allow_witness} {
       %felt_const_0 = felt.const 0
       %c3 = arith.constant 3 : index
@@ -69,8 +69,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Reg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>>
-    struct.field @reg : !struct.type<@NondetReg<[]>> {column}
+    struct.member @"$super" : !struct.type<@NondetReg<[]>>
+    struct.member @reg : !struct.type<@NondetReg<[]>> {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@Reg<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@Reg<[]>>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>>
@@ -89,9 +89,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @ExtReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetExtReg<[]>>
-    struct.field @"$temp" : !struct.type<@EqzExt<[]>>
-    struct.field @reg : !struct.type<@NondetExtReg<[]>> {column}
+    struct.member @"$super" : !struct.type<@NondetExtReg<[]>>
+    struct.member @"$temp" : !struct.type<@EqzExt<[]>>
+    struct.member @reg : !struct.type<@NondetExtReg<[]>> {column}
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@ExtReg<[]>> attributes {function.allow_witness} {
       %c3 = arith.constant 3 : index
       %c2 = arith.constant 2 : index
@@ -148,8 +148,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Div<[]> {
-    struct.field @"$super" : !felt.type
-    struct.field @reciprocal : !felt.type
+    struct.member @"$super" : !felt.type
+    struct.member @reciprocal : !felt.type
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@Div<[]>>
       %0 = felt.inv %arg1 : !felt.type
@@ -168,7 +168,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Log<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
     function.def @compute(%arg0: !string.type, %arg1: !array.type<? x !felt.type>) -> !struct.type<@Log<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@Log<[]>>
       %0 = function.call @Log$$extern(%arg0, %arg1) : (!string.type, !array.type<? x !felt.type>) -> !struct.type<@Component<[]>>
@@ -182,7 +182,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   function.def private @Log$$extern(!string.type, !array.type<? x !felt.type>) -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @Abort<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
     function.def @compute() -> !struct.type<@Abort<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@Abort<[]>>
       %0 = function.call @Abort$$extern() : () -> !struct.type<@Component<[]>>
@@ -196,7 +196,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   function.def private @Abort$$extern() -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @Assert<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
     function.def @compute(%arg0: !felt.type, %arg1: !string.type) -> !struct.type<@Assert<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@Assert<[]>>
       %0 = function.call @Assert$$extern(%arg0, %arg1) : (!felt.type, !string.type) -> !struct.type<@Component<[]>>
@@ -210,8 +210,8 @@ module attributes {veridise.lang = "llzk"} {
   }
   function.def private @Assert$$extern(!felt.type, !string.type) -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @AssertBit<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
-    struct.field @"$temp" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$temp" : !struct.type<@Component<[]>>
     function.def @compute(%arg0: !felt.type) -> !struct.type<@AssertBit<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@AssertBit<[]>>
       %0 = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
@@ -232,9 +232,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetBitReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>>
-    struct.field @"$temp" : !struct.type<@AssertBit<[]>>
-    struct.field @reg : !struct.type<@NondetReg<[]>> {column}
+    struct.member @"$super" : !struct.type<@NondetReg<[]>>
+    struct.member @"$temp" : !struct.type<@AssertBit<[]>>
+    struct.member @reg : !struct.type<@NondetReg<[]>> {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetBitReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@NondetBitReg<[]>>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>>
@@ -257,7 +257,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @BitAnd<[]> {
-    struct.field @"$super" : !felt.type
+    struct.member @"$super" : !felt.type
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@BitAnd<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@BitAnd<[]>>
       %0 = felt.mul %arg0, %arg1 : !felt.type, !felt.type
@@ -269,12 +269,12 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @OneHot<[@N]> {
-    struct.field @"$super" : !array.type<#map x !struct.type<@NondetBitReg<[]>>>
-    struct.field @"$temp_1" : !array.type<#map x !felt.type>
-    struct.field @"$array" : !array.type<#map x !felt.type>
-    struct.field @"$temp_0" : !array.type<#map x !felt.type>
-    struct.field @"$temp" : !array.type<#map x !struct.type<@NondetBitReg<[]>>> {column}
-    struct.field @bits : !array.type<#map x !struct.type<@NondetBitReg<[]>>> {column}
+    struct.member @"$super" : !array.type<#map x !struct.type<@NondetBitReg<[]>>>
+    struct.member @"$temp_1" : !array.type<#map x !felt.type>
+    struct.member @"$array" : !array.type<#map x !felt.type>
+    struct.member @"$temp_0" : !array.type<#map x !felt.type>
+    struct.member @"$temp" : !array.type<#map x !struct.type<@NondetBitReg<[]>>> {column}
+    struct.member @bits : !array.type<#map x !struct.type<@NondetBitReg<[]>>> {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@OneHot<[@N]>> attributes {function.allow_witness} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -424,8 +424,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Switch<[@N, @idx]> {
-    struct.field @"$super" : !array.type<#map x !felt.type>
-    struct.field @"$array" : !array.type<#map x !felt.type>
+    struct.member @"$super" : !array.type<#map x !felt.type>
+    struct.member @"$array" : !array.type<#map x !felt.type>
     function.def @compute() -> !struct.type<@Switch<[@N, @idx]>> attributes {function.allow_witness} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -483,7 +483,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @M_INT_DIAG_HZN<[]> {
-    struct.field @"$super" : !array.type<24 x !felt.type>
+    struct.member @"$super" : !array.type<24 x !felt.type>
     function.def @compute() -> !struct.type<@M_INT_DIAG_HZN<[]>> attributes {function.allow_witness} {
       %felt_const_918610824 = felt.const 918610824
       %felt_const_13683276 = felt.const 13683276
@@ -519,10 +519,10 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @MultiplyByMInt<[]> {
-    struct.field @"$super" : !array.type<24 x !felt.type>
-    struct.field @"$temp_0" : !array.type<24 x !struct.type<@M_INT_DIAG_HZN<[]>>>
-    struct.field @"$array" : !array.type<24 x !felt.type>
-    struct.field @"$temp" : !array.type<24 x !felt.type>
+    struct.member @"$super" : !array.type<24 x !felt.type>
+    struct.member @"$temp_0" : !array.type<24 x !struct.type<@M_INT_DIAG_HZN<[]>>>
+    struct.member @"$array" : !array.type<24 x !felt.type>
+    struct.member @"$temp" : !array.type<24 x !felt.type>
     function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@MultiplyByMInt<[]>> attributes {function.allow_witness} {
       %felt_const_23 = felt.const 23
       %felt_const_22 = felt.const 22
@@ -643,7 +643,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @INT_ROUND_CONSTANTS<[]> {
-    struct.field @"$super" : !array.type<21 x !felt.type>
+    struct.member @"$super" : !array.type<21 x !felt.type>
     function.def @compute() -> !struct.type<@INT_ROUND_CONSTANTS<[]>> attributes {function.allow_witness} {
       %felt_const_1810596765 = felt.const 1810596765
       %felt_const_1210751726 = felt.const 1210751726
@@ -676,9 +676,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @SBox<[]> {
-    struct.field @"$super" : !struct.type<@Reg<[]>>
-    struct.field @out : !struct.type<@Reg<[]>> {column}
-    struct.field @cubed : !struct.type<@Reg<[]>> {column}
+    struct.member @"$super" : !struct.type<@Reg<[]>>
+    struct.member @out : !struct.type<@Reg<[]>> {column}
+    struct.member @cubed : !struct.type<@Reg<[]>> {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@SBox<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@SBox<[]>>
       %0 = felt.mul %arg0, %arg0 : !felt.type, !felt.type
@@ -715,11 +715,11 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @DoIntRound<[]> {
-    struct.field @"$super" : !struct.type<@MultiplyByMInt<[]>>
-    struct.field @"$temp" : !struct.type<@MultiplyByMInt<[]>>
-    struct.field @mat_in : !array.type<24 x !felt.type>
-    struct.field @sbox : !struct.type<@SBox<[]>> {column}
-    struct.field @x : !felt.type
+    struct.member @"$super" : !struct.type<@MultiplyByMInt<[]>>
+    struct.member @"$temp" : !struct.type<@MultiplyByMInt<[]>>
+    struct.member @mat_in : !array.type<24 x !felt.type>
+    struct.member @sbox : !struct.type<@SBox<[]>> {column}
+    struct.member @x : !felt.type
     function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !felt.type) -> !struct.type<@DoIntRound<[]>> attributes {function.allow_witness} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
@@ -844,10 +844,10 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @DoIntRounds<[]> {
-    struct.field @"$super" : !array.type<24 x !felt.type>
-    struct.field @"$temp_0" : !array.type<21 x !struct.type<@DoIntRound<[]>>>
-    struct.field @"$array" : !array.type<21 x !felt.type>
-    struct.field @"$temp" : !struct.type<@INT_ROUND_CONSTANTS<[]>>
+    struct.member @"$super" : !array.type<24 x !felt.type>
+    struct.member @"$temp_0" : !array.type<21 x !struct.type<@DoIntRound<[]>>>
+    struct.member @"$array" : !array.type<21 x !felt.type>
+    struct.member @"$temp" : !struct.type<@INT_ROUND_CONSTANTS<[]>>
     function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@DoIntRounds<[]>> attributes {function.allow_witness} {
       %c21 = arith.constant 21 : index
       %c0 = arith.constant 0 : index
@@ -908,15 +908,15 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @MultiplyByCirculant<[]> {
-    struct.field @"$super" : !array.type<4 x !felt.type>
-    struct.field @t7 : !felt.type
-    struct.field @t6 : !felt.type
-    struct.field @t5 : !felt.type
-    struct.field @t4 : !felt.type
-    struct.field @t3 : !felt.type
-    struct.field @t2 : !felt.type
-    struct.field @t1 : !felt.type
-    struct.field @t0 : !felt.type
+    struct.member @"$super" : !array.type<4 x !felt.type>
+    struct.member @t7 : !felt.type
+    struct.member @t6 : !felt.type
+    struct.member @t5 : !felt.type
+    struct.member @t4 : !felt.type
+    struct.member @t3 : !felt.type
+    struct.member @t2 : !felt.type
+    struct.member @t1 : !felt.type
+    struct.member @t0 : !felt.type
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@MultiplyByCirculant<[]>> attributes {function.allow_witness} {
       %felt_const_4 = felt.const 4
       %felt_const_3 = felt.const 3
@@ -981,8 +981,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @ReduceVec4<[]> {
-    struct.field @"$super" : !array.type<4 x !felt.type>
-    struct.field @"$array" : !array.type<4 x !felt.type>
+    struct.member @"$super" : !array.type<4 x !felt.type>
+    struct.member @"$array" : !array.type<4 x !felt.type>
     function.def @compute(%arg0: !array.type<4 x !felt.type>, %arg1: !array.type<4 x !felt.type>) -> !struct.type<@ReduceVec4<[]>> attributes {function.allow_witness} {
       %c4 = arith.constant 4 : index
       %c0 = arith.constant 0 : index
@@ -1032,16 +1032,16 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @MultiplyByMExt<[]> {
-    struct.field @"$super" : !array.type<24 x !struct.type<@block$<[]>>>
-    struct.field @"$temp_2" : !array.type<24 x !struct.type<@block$<[]>>>
-    struct.field @g : !array.type<24 x !felt.type>
-    struct.field @j : !array.type<24 x !struct.type<@BitAnd<[]>>>
-    struct.field @"$array" : !array.type<24 x !struct.type<@block$<[]>>>
-    struct.field @"$temp_1" : !array.type<6 x !struct.type<@ReduceVec4<[]>>>
-    struct.field @"$temp_0" : !array.type<6 x !struct.type<@block$_2<[]>>>
-    struct.field @"$temp" : !array.type<6 x !struct.type<@MultiplyByCirculant<[]>>>
-    struct.field @chunk : !array.type<6,4 x !felt.type>
-    struct.field @grouped : !array.type<6 x !struct.type<@block$_2<[]>>>
+    struct.member @"$super" : !array.type<24 x !struct.type<@block$<[]>>>
+    struct.member @"$temp_2" : !array.type<24 x !struct.type<@block$<[]>>>
+    struct.member @g : !array.type<24 x !felt.type>
+    struct.member @j : !array.type<24 x !struct.type<@BitAnd<[]>>>
+    struct.member @"$array" : !array.type<24 x !struct.type<@block$<[]>>>
+    struct.member @"$temp_1" : !array.type<6 x !struct.type<@ReduceVec4<[]>>>
+    struct.member @"$temp_0" : !array.type<6 x !struct.type<@block$_2<[]>>>
+    struct.member @"$temp" : !array.type<6 x !struct.type<@MultiplyByCirculant<[]>>>
+    struct.member @chunk : !array.type<6,4 x !felt.type>
+    struct.member @grouped : !array.type<6 x !struct.type<@block$_2<[]>>>
     function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@MultiplyByMExt<[]>> attributes {function.allow_witness} {
       %felt_const_1509949441 = felt.const 1509949441
       %c24 = arith.constant 24 : index
@@ -1284,7 +1284,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @ExtRoundConstants<[]> {
-    struct.field @"$super" : !array.type<8,24 x !felt.type>
+    struct.member @"$super" : !array.type<8,24 x !felt.type>
     function.def @compute() -> !struct.type<@ExtRoundConstants<[]>> attributes {function.allow_witness} {
       %c7 = arith.constant 7 : index
       %c6 = arith.constant 6 : index
@@ -1512,10 +1512,10 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @DoExtRound<[]> {
-    struct.field @"$super" : !struct.type<@MultiplyByMExt<[]>>
-    struct.field @"$temp_0" : !struct.type<@MultiplyByMExt<[]>>
-    struct.field @"$temp" : !array.type<24 x !struct.type<@SBox<[]>>> {column}
-    struct.field @"$array" : !array.type<24 x !struct.type<@SBox<[]>>> {column}
+    struct.member @"$super" : !struct.type<@MultiplyByMExt<[]>>
+    struct.member @"$temp_0" : !struct.type<@MultiplyByMExt<[]>>
+    struct.member @"$temp" : !array.type<24 x !struct.type<@SBox<[]>>> {column}
+    struct.member @"$array" : !array.type<24 x !struct.type<@SBox<[]>>> {column}
     function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !array.type<24 x !felt.type>) -> !struct.type<@DoExtRound<[]>> attributes {function.allow_witness} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
@@ -1638,8 +1638,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @AddConsts<[]> {
-    struct.field @"$super" : !array.type<24 x !felt.type>
-    struct.field @"$array" : !array.type<24 x !felt.type>
+    struct.member @"$super" : !array.type<24 x !felt.type>
+    struct.member @"$array" : !array.type<24 x !felt.type>
     function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !array.type<24 x !felt.type>) -> !struct.type<@AddConsts<[]>> attributes {function.allow_witness} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
@@ -1729,8 +1729,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @MultBy<[]> {
-    struct.field @"$super" : !array.type<24 x !felt.type>
-    struct.field @"$array" : !array.type<24 x !felt.type>
+    struct.member @"$super" : !array.type<24 x !felt.type>
+    struct.member @"$array" : !array.type<24 x !felt.type>
     function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !felt.type) -> !struct.type<@MultBy<[]>> attributes {function.allow_witness} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
@@ -1762,14 +1762,14 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @DoExtRoundByIdx<[]> {
-    struct.field @"$super" : !struct.type<@DoExtRound<[]>>
-    struct.field @"$temp_2" : !struct.type<@DoExtRound<[]>>
-    struct.field @"$temp_1" : !array.type<8 x !struct.type<@AddConsts<[]>>>
-    struct.field @"$temp_0" : !array.type<8 x !struct.type<@MultBy<[]>>>
-    struct.field @"$temp" : !array.type<8 x !struct.type<@ExtRoundConstants<[]>>>
-    struct.field @"$array" : !array.type<8 x !struct.type<@MultBy<[]>>>
-    struct.field @zeroConsts : !array.type<24 x !felt.type>
-    struct.field @idxHot : !struct.type<@OneHot<[8]>> {column}
+    struct.member @"$super" : !struct.type<@DoExtRound<[]>>
+    struct.member @"$temp_2" : !struct.type<@DoExtRound<[]>>
+    struct.member @"$temp_1" : !array.type<8 x !struct.type<@AddConsts<[]>>>
+    struct.member @"$temp_0" : !array.type<8 x !struct.type<@MultBy<[]>>>
+    struct.member @"$temp" : !array.type<8 x !struct.type<@ExtRoundConstants<[]>>>
+    struct.member @"$array" : !array.type<8 x !struct.type<@MultBy<[]>>>
+    struct.member @zeroConsts : !array.type<24 x !felt.type>
+    struct.member @idxHot : !struct.type<@OneHot<[8]>> {column}
     function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !felt.type) -> !struct.type<@DoExtRoundByIdx<[]>> attributes {function.allow_witness} {
       %c8 = arith.constant 8 : index
       %c24 = arith.constant 24 : index
@@ -1938,9 +1938,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Pegs<[@N]> {
-    struct.field @"$super" : !array.type<@N x !struct.type<@Reg<[]>>>
-    struct.field @"$temp" : !array.type<@N x !struct.type<@Reg<[]>>> {column}
-    struct.field @"$array" : !array.type<@N x !struct.type<@Reg<[]>>> {column}
+    struct.member @"$super" : !array.type<@N x !struct.type<@Reg<[]>>>
+    struct.member @"$temp" : !array.type<@N x !struct.type<@Reg<[]>>> {column}
+    struct.member @"$array" : !array.type<@N x !struct.type<@Reg<[]>>> {column}
     function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@Pegs<[@N]>> attributes {function.allow_witness} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -1980,8 +1980,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Nonce<[]> {
-    struct.field @"$super" : !struct.type<@Reg<[]>>
-    struct.field @"$temp" : !struct.type<@Reg<[]>> {column}
+    struct.member @"$super" : !struct.type<@Reg<[]>>
+    struct.member @"$temp" : !struct.type<@Reg<[]>> {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@Nonce<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@Nonce<[]>>
       %0 = function.call @Reg::@compute(%arg0) : (!felt.type) -> !struct.type<@Reg<[]>>
@@ -1997,11 +1997,11 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @IsZero<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>>
-    struct.field @"$temp_0" : !struct.type<@AssertBit<[]>>
-    struct.field @inv : !struct.type<@NondetReg<[]>> {column}
-    struct.field @"$temp" : !felt.type
-    struct.field @isZero : !struct.type<@NondetReg<[]>> {column}
+    struct.member @"$super" : !struct.type<@NondetReg<[]>>
+    struct.member @"$temp_0" : !struct.type<@AssertBit<[]>>
+    struct.member @inv : !struct.type<@NondetReg<[]>> {column}
+    struct.member @"$temp" : !felt.type
+    struct.member @isZero : !struct.type<@NondetReg<[]>> {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@IsZero<[]>> attributes {function.allow_witness} {
       %felt_const_0 = felt.const 0
       %self = struct.new : !struct.type<@IsZero<[]>>
@@ -2057,8 +2057,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Eq<[]> {
-    struct.field @"$super" : !struct.type<@IsZero<[]>>
-    struct.field @"$temp" : !struct.type<@IsZero<[]>> {column}
+    struct.member @"$super" : !struct.type<@IsZero<[]>>
+    struct.member @"$temp" : !struct.type<@IsZero<[]>> {column}
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Eq<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@Eq<[]>>
       %0 = felt.sub %arg0, %arg1 : !felt.type, !felt.type
@@ -2076,9 +2076,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @EnsureEq<[@T]> {
-    struct.field @"$super" : !struct.type<@Eq<[]>>
-    struct.field @"$temp" : !struct.type<@Assert<[]>>
-    struct.field @r : !struct.type<@Eq<[]>> {column}
+    struct.member @"$super" : !struct.type<@Eq<[]>>
+    struct.member @"$temp" : !struct.type<@Assert<[]>>
+    struct.member @r : !struct.type<@Eq<[]>> {column}
     function.def @compute(%arg0: !poly.tvar<@T>, %arg1: !poly.tvar<@T>) -> !struct.type<@EnsureEq<[@T]>> attributes {function.allow_witness} {
       %0 = string.new "Provided values are not equal"
       %felt_const_0 = felt.const 0
@@ -2118,8 +2118,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @MulReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>>
-    struct.field @"$temp" : !struct.type<@NondetReg<[]>> {column}
+    struct.member @"$super" : !struct.type<@NondetReg<[]>>
+    struct.member @"$temp" : !struct.type<@NondetReg<[]>> {column}
     function.def @compute(%arg0: !struct.type<@NondetReg<[]>>, %arg1: !struct.type<@NondetReg<[]>>) -> !struct.type<@MulReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@MulReg<[]>>
       %0 = struct.readf %arg0[@"$super"] : <@NondetReg<[]>>, !felt.type
@@ -2141,16 +2141,16 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @CheckBounds<[@COLORS, @PEGS]> {
-    struct.field @"$super" : !array.type<@PEGS x !struct.type<@block$_1<[]>>>
-    struct.field @"$temp_4" : !array.type<@PEGS x !struct.type<@block$_1<[]>>> {column}
-    struct.field @"$temp_3" : !array.type<@PEGS x !struct.type<@Component<[]>>>
-    struct.field @"$temp_2" : !array.type<@PEGS x !struct.type<@Assert<[]>>>
-    struct.field @check : !array.type<@PEGS x !struct.type<@Reg<[]>>> {column}
-    struct.field @"$temp_1" : !array.type<@PEGS,#map x !struct.type<@MulReg<[]>>>
-    struct.field @"$temp_0" : !array.type<@PEGS x !struct.type<@NondetReg<[]>>> {column}
-    struct.field @"$temp" : !array.type<@PEGS,#map x !struct.type<@NondetReg<[]>>> {column}
-    struct.field @"$array_0" : !array.type<@PEGS,#map x !struct.type<@NondetReg<[]>>> {column}
-    struct.field @"$array" : !array.type<@PEGS x !struct.type<@block$_1<[]>>>
+    struct.member @"$super" : !array.type<@PEGS x !struct.type<@block$_1<[]>>>
+    struct.member @"$temp_4" : !array.type<@PEGS x !struct.type<@block$_1<[]>>> {column}
+    struct.member @"$temp_3" : !array.type<@PEGS x !struct.type<@Component<[]>>>
+    struct.member @"$temp_2" : !array.type<@PEGS x !struct.type<@Assert<[]>>>
+    struct.member @check : !array.type<@PEGS x !struct.type<@Reg<[]>>> {column}
+    struct.member @"$temp_1" : !array.type<@PEGS,#map x !struct.type<@MulReg<[]>>>
+    struct.member @"$temp_0" : !array.type<@PEGS x !struct.type<@NondetReg<[]>>> {column}
+    struct.member @"$temp" : !array.type<@PEGS,#map x !struct.type<@NondetReg<[]>>> {column}
+    struct.member @"$array_0" : !array.type<@PEGS,#map x !struct.type<@NondetReg<[]>>> {column}
+    struct.member @"$array" : !array.type<@PEGS x !struct.type<@block$_1<[]>>>
     function.def @compute(%arg0: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@CheckBounds<[@COLORS, @PEGS]>> attributes {function.allow_witness} {
       %0 = string.new "Not a valid color"
       %felt_const_1 = felt.const 1
@@ -2328,7 +2328,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @CodeHash<[]> {
-    struct.field @"$super" : !array.type<24 x !felt.type>
+    struct.member @"$super" : !array.type<24 x !felt.type>
     function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@CodeHash<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@CodeHash<[]>>
       struct.writef %self[@"$super"] = %arg0 : <@CodeHash<[]>>, !array.type<24 x !felt.type>
@@ -2339,13 +2339,13 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @GenerateCodeHash<[@N]> {
-    struct.field @"$super" : !struct.type<@CodeHash<[]>>
-    struct.field @"$temp_1" : !struct.type<@CodeHash<[]>>
-    struct.field @"$temp_0" : !array.type<4 x !struct.type<@DoExtRoundByIdx<[]>>>
-    struct.field @stage2 : !struct.type<@DoIntRounds<[]>>
-    struct.field @"$temp" : !array.type<4 x !struct.type<@DoExtRoundByIdx<[]>>>
-    struct.field @stage0 : !struct.type<@MultiplyByMExt<[]>>
-    struct.field @in : !array.type<24 x !felt.type>
+    struct.member @"$super" : !struct.type<@CodeHash<[]>>
+    struct.member @"$temp_1" : !struct.type<@CodeHash<[]>>
+    struct.member @"$temp_0" : !array.type<4 x !struct.type<@DoExtRoundByIdx<[]>>>
+    struct.member @stage2 : !struct.type<@DoIntRounds<[]>>
+    struct.member @"$temp" : !array.type<4 x !struct.type<@DoExtRoundByIdx<[]>>>
+    struct.member @stage0 : !struct.type<@MultiplyByMExt<[]>>
+    struct.member @in : !array.type<24 x !felt.type>
     function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@N]>>) -> !struct.type<@GenerateCodeHash<[@N]>> attributes {function.allow_witness} {
       %c4 = arith.constant 4 : index
       %felt_const_0 = felt.const 0
@@ -2628,9 +2628,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @SetCode<[@COLORS, @PEGS]> {
-    struct.field @"$super" : !struct.type<@GenerateCodeHash<[@PEGS]>>
-    struct.field @"$temp_0" : !struct.type<@GenerateCodeHash<[@PEGS]>>
-    struct.field @"$temp" : !struct.type<@CheckBounds<[@COLORS, @PEGS]>>
+    struct.member @"$super" : !struct.type<@GenerateCodeHash<[@PEGS]>>
+    struct.member @"$temp_0" : !struct.type<@GenerateCodeHash<[@PEGS]>>
+    struct.member @"$temp" : !struct.type<@CheckBounds<[@COLORS, @PEGS]>>
     function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@SetCode<[@COLORS, @PEGS]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@SetCode<[@COLORS, @PEGS]>>
       %0 = function.call @CheckBounds::@compute(%arg1) : (!struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@CheckBounds<[@COLORS, @PEGS]>>
@@ -2651,9 +2651,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Minimum<[]> {
-    struct.field @"$super" : !felt.type
-    struct.field @"$temp_0" : !struct.type<@NondetReg<[]>> {column}
-    struct.field @"$temp" : !struct.type<@NondetReg<[]>> {column}
+    struct.member @"$super" : !felt.type
+    struct.member @"$temp_0" : !struct.type<@NondetReg<[]>> {column}
+    struct.member @"$temp" : !struct.type<@NondetReg<[]>> {column}
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Minimum<[]>> attributes {function.allow_witness} {
       %felt_const_0 = felt.const 0
       %felt_const_1 = felt.const 1
@@ -2719,10 +2719,10 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @CountColors<[@N]> {
-    struct.field @"$super" : !felt.type
-    struct.field @"$temp_0" : !array.type<@N x !felt.type>
-    struct.field @"$temp" : !array.type<@N x !struct.type<@IsZero<[]>>> {column}
-    struct.field @"$array" : !array.type<@N x !struct.type<@IsZero<[]>>> {column}
+    struct.member @"$super" : !felt.type
+    struct.member @"$temp_0" : !array.type<@N x !felt.type>
+    struct.member @"$temp" : !array.type<@N x !struct.type<@IsZero<[]>>> {column}
+    struct.member @"$array" : !array.type<@N x !struct.type<@IsZero<[]>>> {column}
     function.def @compute(%arg0: !struct.type<@Pegs<[@N]>>, %arg1: !felt.type) -> !struct.type<@CountColors<[@N]>> attributes {function.allow_witness} {
       %felt_const_0 = felt.const 0
       %c0 = arith.constant 0 : index
@@ -2793,10 +2793,10 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Guess<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
-    struct.field @"$temp" : !struct.type<@Component<[]>>
-    struct.field @partial : !struct.type<@Reg<[]>> {column}
-    struct.field @correct : !struct.type<@Reg<[]>> {column}
+    struct.member @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$temp" : !struct.type<@Component<[]>>
+    struct.member @partial : !struct.type<@Reg<[]>> {column}
+    struct.member @correct : !struct.type<@Reg<[]>> {column}
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Guess<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@Guess<[]>>
       %0 = function.call @Reg::@compute(%arg0) : (!felt.type) -> !struct.type<@Reg<[]>>
@@ -2822,10 +2822,10 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Pair<[@Fst, @Snd]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
-    struct.field @"$temp" : !struct.type<@Component<[]>>
-    struct.field @snd : !poly.tvar<@Snd>
-    struct.field @fst : !poly.tvar<@Fst>
+    struct.member @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$temp" : !struct.type<@Component<[]>>
+    struct.member @snd : !poly.tvar<@Snd>
+    struct.member @fst : !poly.tvar<@Fst>
     function.def @compute(%arg0: !poly.tvar<@Fst>, %arg1: !poly.tvar<@Snd>) -> !struct.type<@Pair<[@Fst, @Snd]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@Pair<[@Fst, @Snd]>>
       struct.writef %self[@fst] = %arg0 : <@Pair<[@Fst, @Snd]>>, !poly.tvar<@Fst>
@@ -2843,8 +2843,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Zip<[@Lhs, @Rhs, @N]> {
-    struct.field @"$super" : !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
-    struct.field @"$array" : !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
+    struct.member @"$super" : !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
+    struct.member @"$array" : !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
     function.def @compute(%arg0: !array.type<@N x !poly.tvar<@Lhs>>, %arg1: !array.type<@N x !poly.tvar<@Rhs>>) -> !struct.type<@Zip<[@Lhs, @Rhs, @N]>> attributes {function.allow_witness} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -2904,11 +2904,11 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @AssertArrsEq<[@T, @N]> {
-    struct.field @"$super" : !array.type<#map x !struct.type<@Component<[]>>>
-    struct.field @"$temp_1" : !array.type<#map x !struct.type<@Component<[]>>>
-    struct.field @"$temp_0" : !array.type<#map x !struct.type<@EnsureEq<[!poly.tvar<@T>]>>> {column}
-    struct.field @"$array" : !array.type<#map x !struct.type<@Component<[]>>>
-    struct.field @"$temp" : !struct.type<@Zip<[!poly.tvar<@T>, !poly.tvar<@T>, @N]>>
+    struct.member @"$super" : !array.type<#map x !struct.type<@Component<[]>>>
+    struct.member @"$temp_1" : !array.type<#map x !struct.type<@Component<[]>>>
+    struct.member @"$temp_0" : !array.type<#map x !struct.type<@EnsureEq<[!poly.tvar<@T>]>>> {column}
+    struct.member @"$array" : !array.type<#map x !struct.type<@Component<[]>>>
+    struct.member @"$temp" : !struct.type<@Zip<[!poly.tvar<@T>, !poly.tvar<@T>, @N]>>
     function.def @compute(%arg0: !array.type<@N x !poly.tvar<@T>>, %arg1: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@AssertArrsEq<[@T, @N]>> attributes {function.allow_witness} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -2975,24 +2975,24 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @MakeGuess<[@COLORS, @PEGS]> {
-    struct.field @"$super" : !struct.type<@Guess<[]>>
-    struct.field @"$temp_9" : !struct.type<@Guess<[]>> {column}
-    struct.field @"$temp_8" : !struct.type<@Log<[]>>
-    struct.field @partialGuesses : !felt.type
-    struct.field @"$temp_7" : !array.type<#map x !felt.type>
-    struct.field @"$temp_6" : !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
-    struct.field @"$temp_5" : !array.type<#map x !struct.type<@Minimum<[]>>>
-    struct.field @pegsCount : !array.type<#map x !struct.type<@CountColors<[@PEGS]>>>
-    struct.field @guessCount : !array.type<#map x !struct.type<@CountColors<[@PEGS]>>>
-    struct.field @"$array_0" : !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
-    struct.field @"$temp_4" : !struct.type<@Log<[]>>
-    struct.field @"$temp_3" : !array.type<#map x !felt.type>
-    struct.field @"$temp_2" : !array.type<#map x !struct.type<@IsZero<[]>>> {column}
-    struct.field @"$array" : !array.type<#map x !struct.type<@IsZero<[]>>> {column}
-    struct.field @"$temp_1" : !struct.type<@Zip<[!felt.type, !felt.type, @PEGS]>>
-    struct.field @"$temp_0" : !struct.type<@AssertArrsEq<[!felt.type, 24]>>
-    struct.field @code : !struct.type<@SetCode<[@COLORS, @PEGS]>>
-    struct.field @"$temp" : !struct.type<@CheckBounds<[@COLORS, @PEGS]>>
+    struct.member @"$super" : !struct.type<@Guess<[]>>
+    struct.member @"$temp_9" : !struct.type<@Guess<[]>> {column}
+    struct.member @"$temp_8" : !struct.type<@Log<[]>>
+    struct.member @partialGuesses : !felt.type
+    struct.member @"$temp_7" : !array.type<#map x !felt.type>
+    struct.member @"$temp_6" : !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
+    struct.member @"$temp_5" : !array.type<#map x !struct.type<@Minimum<[]>>>
+    struct.member @pegsCount : !array.type<#map x !struct.type<@CountColors<[@PEGS]>>>
+    struct.member @guessCount : !array.type<#map x !struct.type<@CountColors<[@PEGS]>>>
+    struct.member @"$array_0" : !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
+    struct.member @"$temp_4" : !struct.type<@Log<[]>>
+    struct.member @"$temp_3" : !array.type<#map x !felt.type>
+    struct.member @"$temp_2" : !array.type<#map x !struct.type<@IsZero<[]>>> {column}
+    struct.member @"$array" : !array.type<#map x !struct.type<@IsZero<[]>>> {column}
+    struct.member @"$temp_1" : !struct.type<@Zip<[!felt.type, !felt.type, @PEGS]>>
+    struct.member @"$temp_0" : !struct.type<@AssertArrsEq<[!felt.type, 24]>>
+    struct.member @code : !struct.type<@SetCode<[@COLORS, @PEGS]>>
+    struct.member @"$temp" : !struct.type<@CheckBounds<[@COLORS, @PEGS]>>
     function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@PEGS]>>, %arg2: !struct.type<@CodeHash<[]>>, %arg3: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@MakeGuess<[@COLORS, @PEGS]>> attributes {function.allow_witness} {
       %0 = string.new "Partial guesses: %u"
       %1 = string.new "Correct guesses: %u"
@@ -3269,9 +3269,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @MakeGuessWithChecks<[@COLORS, @PEGS]> {
-    struct.field @"$super" : !struct.type<@MakeGuess<[@COLORS, @PEGS]>>
-    struct.field @"$temp" : !struct.type<@Assert<[]>>
-    struct.field @guess : !struct.type<@MakeGuess<[@COLORS, @PEGS]>> {column}
+    struct.member @"$super" : !struct.type<@MakeGuess<[@COLORS, @PEGS]>>
+    struct.member @"$temp" : !struct.type<@Assert<[]>>
+    struct.member @guess : !struct.type<@MakeGuess<[@COLORS, @PEGS]>> {column}
     function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@PEGS]>>, %arg2: !struct.type<@CodeHash<[]>>, %arg3: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@MakeGuessWithChecks<[@COLORS, @PEGS]>> attributes {function.allow_witness} {
       %0 = string.new "Guess check post condition failed"
       %felt_const_1 = felt.const 1
@@ -3334,9 +3334,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @block$<[]> {
-    struct.field @"$super" : !felt.type
-    struct.field @g : !felt.type
-    struct.field @j : !struct.type<@BitAnd<[]>>
+    struct.member @"$super" : !felt.type
+    struct.member @g : !felt.type
+    struct.member @j : !struct.type<@BitAnd<[]>>
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type, %arg2: !struct.type<@BitAnd<[]>>) -> !struct.type<@block$<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@block$<[]>>
       struct.writef %self[@"$super"] = %arg0 : <@block$<[]>>, !felt.type
@@ -3349,9 +3349,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @block$_0<[@PEGS]> {
-    struct.field @"$super" : !struct.type<@Minimum<[]>>
-    struct.field @guessCount : !struct.type<@CountColors<[@PEGS]>>
-    struct.field @pegsCount : !struct.type<@CountColors<[@PEGS]>>
+    struct.member @"$super" : !struct.type<@Minimum<[]>>
+    struct.member @guessCount : !struct.type<@CountColors<[@PEGS]>>
+    struct.member @pegsCount : !struct.type<@CountColors<[@PEGS]>>
     function.def @compute(%arg0: !struct.type<@Minimum<[]>>, %arg1: !struct.type<@CountColors<[@PEGS]>>, %arg2: !struct.type<@CountColors<[@PEGS]>>) -> !struct.type<@block$_0<[@PEGS]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@block$_0<[@PEGS]>>
       struct.writef %self[@"$super"] = %arg0 : <@block$_0<[@PEGS]>>, !struct.type<@Minimum<[]>>
@@ -3364,8 +3364,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @block$_1<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
-    struct.field @check : !struct.type<@Reg<[]>> {column}
+    struct.member @"$super" : !struct.type<@Component<[]>>
+    struct.member @check : !struct.type<@Reg<[]>> {column}
     function.def @compute(%arg0: !struct.type<@Component<[]>>, %arg1: !struct.type<@Reg<[]>>) -> !struct.type<@block$_1<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@block$_1<[]>>
       struct.writef %self[@"$super"] = %arg0 : <@block$_1<[]>>, !struct.type<@Component<[]>>
@@ -3377,8 +3377,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @block$_2<[]> {
-    struct.field @"$super" : !struct.type<@MultiplyByCirculant<[]>>
-    struct.field @chunk : !array.type<4 x !felt.type>
+    struct.member @"$super" : !struct.type<@MultiplyByCirculant<[]>>
+    struct.member @chunk : !array.type<4 x !felt.type>
     function.def @compute(%arg0: !struct.type<@MultiplyByCirculant<[]>>, %arg1: !array.type<4 x !felt.type>) -> !struct.type<@block$_2<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@block$_2<[]>>
       struct.writef %self[@"$super"] = %arg0 : <@block$_2<[]>>, !struct.type<@MultiplyByCirculant<[]>>

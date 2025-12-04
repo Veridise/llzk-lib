@@ -128,7 +128,7 @@ module attributes {veridise.lang = "llzk"} {
   include.from "FrontendLang/Zirgen/zir_example_0.llzk" as @std
 
   struct.def @C1 {
-    struct.field @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
+    struct.member @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
 
     function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@C1> {
       %self = struct.new : !struct.type<@C1>
@@ -150,8 +150,8 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    module @std attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      module @risc0 {
 //CHECK-NEXT:        struct.def @ValU32 {
-//CHECK-NEXT:          struct.field @low : !felt.type
-//CHECK-NEXT:          struct.field @high : !felt.type
+//CHECK-NEXT:          struct.member @low : !felt.type
+//CHECK-NEXT:          struct.member @high : !felt.type
 //CHECK-NEXT:          function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@risc0::@ValU32> attributes {function.allow_witness} {
 //CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@ValU32>
 //CHECK-NEXT:            struct.writef %[[SELF]][@low] = %arg0 : <@risc0::@ValU32>, !felt.type
@@ -163,7 +163,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:          }
 //CHECK-NEXT:        }
 //CHECK-NEXT:        struct.def @Reg {
-//CHECK-NEXT:          struct.field @reg : !felt.type {llzk.pub}
+//CHECK-NEXT:          struct.member @reg : !felt.type {llzk.pub}
 //CHECK-NEXT:          function.def @compute(%arg0: !felt.type) -> !struct.type<@risc0::@Reg> attributes {function.allow_witness} {
 //CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@Reg>
 //CHECK-NEXT:            struct.writef %[[SELF]][@reg] = %arg0 : <@risc0::@Reg>, !felt.type
@@ -176,8 +176,8 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:          }
 //CHECK-NEXT:        }
 //CHECK-NEXT:        struct.def @Div {
-//CHECK-NEXT:          struct.field @reciprocal : !felt.type
-//CHECK-NEXT:          struct.field @synthetic_return : !felt.type {llzk.pub}
+//CHECK-NEXT:          struct.member @reciprocal : !felt.type
+//CHECK-NEXT:          struct.member @synthetic_return : !felt.type {llzk.pub}
 //CHECK-NEXT:          function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@risc0::@Div> attributes {function.allow_witness} {
 //CHECK-NEXT:            %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@Div>
 //CHECK-NEXT:            %[[T0:[0-9a-zA-Z_\.]+]] = felt.inv %arg1
@@ -200,7 +200,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:    struct.def @C1 {
-//CHECK-NEXT:      struct.field @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
+//CHECK-NEXT:      struct.member @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@C1> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@C1>
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = felt.add %arg0, %arg1
@@ -222,7 +222,7 @@ module attributes {veridise.lang = "llzk"} {
   include.from "Inputs/header_9.llzk" as @libA
 
   struct.def @D {
-    struct.field @z : !struct.type<@libA::@libB::@libC::@StructC> {llzk.pub}
+    struct.member @z : !struct.type<@libA::@libB::@libC::@StructC> {llzk.pub}
 
     function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@D> {
       %self = struct.new : !struct.type<@D>
@@ -255,7 +255,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:    struct.def @D {
-//CHECK-NEXT:      struct.field @z : !struct.type<@libA::@libB::@libC::@StructC> {llzk.pub}
+//CHECK-NEXT:      struct.member @z : !struct.type<@libA::@libB::@libC::@StructC> {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@D> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@D>
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = function.call @libA::@libB::@libC::@StructC::@compute() : () -> !struct.type<@libA::@libB::@libC::@StructC>
@@ -275,8 +275,8 @@ module attributes {veridise.lang = "llzk"} {
   include.from "Inputs/header_10.llzk" as @libA
 
   struct.def @StructD {
-    struct.field @z : !struct.type<@libA::@libB::@libC::@StructC> {llzk.pub}
-    struct.field @y : !struct.type<@libA::@StructB> {llzk.pub}
+    struct.member @z : !struct.type<@libA::@libB::@libC::@StructC> {llzk.pub}
+    struct.member @y : !struct.type<@libA::@StructB> {llzk.pub}
 
     function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@StructD> {
       %self = struct.new : !struct.type<@StructD>
@@ -317,7 +317,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        }
 //CHECK-NEXT:      }
 //CHECK-NEXT:      struct.def @StructB {
-//CHECK-NEXT:        struct.field @x : !struct.type<@libB::@libC::@StructC>
+//CHECK-NEXT:        struct.member @x : !struct.type<@libB::@libC::@StructC>
 //CHECK-NEXT:        function.def @compute() -> !struct.type<@StructB> attributes {function.allow_witness} {
 //CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@StructB>
 //CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = function.call @libB::@libC::@StructC::@compute() : () -> !struct.type<@libB::@libC::@StructC>
@@ -330,8 +330,8 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:    struct.def @StructD {
-//CHECK-NEXT:      struct.field @z : !struct.type<@libA::@libB::@libC::@StructC> {llzk.pub}
-//CHECK-NEXT:      struct.field @y : !struct.type<@libA::@StructB> {llzk.pub}
+//CHECK-NEXT:      struct.member @z : !struct.type<@libA::@libB::@libC::@StructC> {llzk.pub}
+//CHECK-NEXT:      struct.member @y : !struct.type<@libA::@StructB> {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@StructD> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@StructD>
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = function.call @libA::@libB::@libC::@StructC::@compute() : () -> !struct.type<@libA::@libB::@libC::@StructC>

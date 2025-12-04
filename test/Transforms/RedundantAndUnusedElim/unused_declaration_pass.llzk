@@ -3,7 +3,7 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component {
-    struct.field @matrix : !array.type<7,3 x !felt.type>
+    struct.member @matrix : !array.type<7,3 x !felt.type>
 
     function.def @compute(%inputArr : !array.type<3 x !felt.type>) -> !struct.type<@Component> {
       %self = struct.new : !struct.type<@Component>
@@ -42,7 +42,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @B {
-    struct.field @a : !struct.type<@A>
+    struct.member @a : !struct.type<@A>
     function.def @compute() -> !struct.type<@B> {
       %self = struct.new : !struct.type<@B>
       function.return %self : !struct.type<@B>
@@ -55,7 +55,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @C {
-    struct.field @b : !struct.type<@B>
+    struct.member @b : !struct.type<@B>
     function.def @compute() -> !struct.type<@C> {
       %self = struct.new : !struct.type<@C>
       function.return %self : !struct.type<@C>
@@ -68,7 +68,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @c : !struct.type<@C> {llzk.pub}
+    struct.member @c : !struct.type<@C> {llzk.pub}
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -92,7 +92,7 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT:  }
 
 // STRICT-LABEL: struct.def @Main {
-// STRICT-NEXT:    struct.field @c : !struct.type<@C> {llzk.pub}
+// STRICT-NEXT:    struct.member @c : !struct.type<@C> {llzk.pub}
 // STRICT-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // STRICT-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
 // STRICT-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
@@ -133,7 +133,7 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: struct.def @Main {
-// RELAX-NEXT:    struct.field @c : !struct.type<@C> {llzk.pub}
+// RELAX-NEXT:    struct.member @c : !struct.type<@C> {llzk.pub}
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
@@ -147,7 +147,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @VarArray<[@N, @T]> {
-    struct.field @val: !array.type<@N x !poly.tvar<@T>>
+    struct.member @val: !array.type<@N x !poly.tvar<@T>>
 
     function.def @compute(%inp: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> {
       %self = struct.new : !struct.type<@VarArray<[@N, @T]>>
@@ -161,9 +161,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @a : !struct.type<@VarArray<[2, !felt.type]>> // unused, should be removed
-    struct.field @b : !struct.type<@VarArray<[7, index]>> // unused, should be removed
-    struct.field @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub} // unused, shouldn't be removed since it's an output
+    struct.member @a : !struct.type<@VarArray<[2, !felt.type]>> // unused, should be removed
+    struct.member @b : !struct.type<@VarArray<[7, index]>> // unused, should be removed
+    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub} // unused, shouldn't be removed since it's an output
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -185,7 +185,7 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT:  }
 
 // STRICT-LABEL: struct.def @Main {
-// STRICT-NEXT:    struct.field @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
+// STRICT-NEXT:    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
 // STRICT-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // STRICT-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
 // STRICT-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
@@ -206,7 +206,7 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: struct.def @Main {
-// RELAX-NEXT:    struct.field @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
+// RELAX-NEXT:    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
@@ -222,7 +222,7 @@ module attributes {veridise.lang = "llzk"} {
 
   module @std {
     struct.def @Wrapper<[@T]> {
-      struct.field @val: !poly.tvar<@T>
+      struct.member @val: !poly.tvar<@T>
 
       function.def @compute(%inp: !poly.tvar<@T>) -> !struct.type<@std::@Wrapper<[@T]> > {
         %self = struct.new : !struct.type<@std::@Wrapper<[@T]> >
@@ -239,8 +239,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @VarArray<[@N, @T]> {
-    struct.field @valUnused: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
-    struct.field @valUsed: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
+    struct.member @valUnused: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
+    struct.member @valUsed: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
 
     function.def @compute(%inp: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>, %first : !poly.tvar<@T>) -> !struct.type<@VarArray<[@N, @T]>> {
       %self = struct.new : !struct.type<@VarArray<[@N, @T]>>
@@ -260,9 +260,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @a : !struct.type<@VarArray<[2, !felt.type]>> // unused, should be removed
-    struct.field @b : !struct.type<@VarArray<[7, index]>> // unused, should be removed
-    struct.field @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub} // unused, shouldn't be removed since it's an output
+    struct.member @a : !struct.type<@VarArray<[2, !felt.type]>> // unused, should be removed
+    struct.member @b : !struct.type<@VarArray<[7, index]>> // unused, should be removed
+    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub} // unused, shouldn't be removed since it's an output
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -275,7 +275,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // STRICT-LABEL: module @std {
 // STRICT-NEXT:    struct.def @Wrapper<[@T]> {
-// STRICT-NEXT:      struct.field @val : !poly.tvar<@T>
+// STRICT-NEXT:      struct.member @val : !poly.tvar<@T>
 // STRICT-NEXT:      function.def @compute(%[[VAL_0:.*]]: !poly.tvar<@T>) -> !struct.type<@std::@Wrapper<[@T]>> attributes {function.allow_witness} {
 // STRICT-NEXT:        %[[VAL_1:.*]] = struct.new : <@std::@Wrapper<[@T]>>
 // STRICT-NEXT:        struct.writef %[[VAL_1]][@val] = %[[VAL_0]] : <@std::@Wrapper<[@T]>>, !poly.tvar<@T>
@@ -290,7 +290,7 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT:  }
 
 // STRICT-LABEL: struct.def @VarArray<[@N, @T]> {
-// STRICT-NEXT:    struct.field @valUsed : !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
+// STRICT-NEXT:    struct.member @valUsed : !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
 // STRICT-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !poly.tvar<@T>) -> !struct.type<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
 // STRICT-NEXT:      %[[VAL_2:.*]] = struct.new : <@VarArray<[@N, @T]>>
 // STRICT-NEXT:      struct.writef %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
@@ -307,7 +307,7 @@ module attributes {veridise.lang = "llzk"} {
 // STRICT-NEXT:  }
 
 // STRICT-LABEL: struct.def @Main {
-// STRICT-NEXT:    struct.field @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
+// STRICT-NEXT:    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
 // STRICT-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // STRICT-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
 // STRICT-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
@@ -319,7 +319,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // RELAX-LABEL: module @std {
 // RELAX-NEXT:    struct.def @Wrapper<[@T]> {
-// RELAX-NEXT:      struct.field @val : !poly.tvar<@T>
+// RELAX-NEXT:      struct.member @val : !poly.tvar<@T>
 // RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !poly.tvar<@T>) -> !struct.type<@std::@Wrapper<[@T]>> attributes {function.allow_witness} {
 // RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@std::@Wrapper<[@T]>>
 // RELAX-NEXT:        struct.writef %[[VAL_1]][@val] = %[[VAL_0]] : <@std::@Wrapper<[@T]>>, !poly.tvar<@T>
@@ -334,7 +334,7 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: struct.def @VarArray<[@N, @T]> {
-// RELAX-NEXT:    struct.field @valUsed : !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
+// RELAX-NEXT:    struct.member @valUsed : !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
 // RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !poly.tvar<@T>) -> !struct.type<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
 // RELAX-NEXT:      %[[VAL_2:.*]] = struct.new : <@VarArray<[@N, @T]>>
 // RELAX-NEXT:      struct.writef %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
@@ -351,7 +351,7 @@ module attributes {veridise.lang = "llzk"} {
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: struct.def @Main {
-// RELAX-NEXT:    struct.field @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
+// RELAX-NEXT:    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
@@ -369,7 +369,7 @@ module attributes {veridise.lang = "llzk"} {
     // @val is read-only in this module, but not read-only in all modules,
     // so this test will examine if our symbol lookup works across modules
     struct.def @Wrapper {
-      struct.field @val : !felt.type {llzk.pub}
+      struct.member @val : !felt.type {llzk.pub}
       function.def @compute(%inp : !felt.type) -> !struct.type<@nested::@Wrapper> {
         %self = struct.new : !struct.type<@nested::@Wrapper>
         struct.writef %self[@val] = %inp : !struct.type<@nested::@Wrapper>, !felt.type
@@ -383,7 +383,7 @@ module attributes {veridise.lang = "llzk"} {
 
   module @user {
     struct.def @Unwrapper {
-      struct.field @comp : !struct.type<@nested::@Wrapper>
+      struct.member @comp : !struct.type<@nested::@Wrapper>
       function.def @compute(%inp : !felt.type) -> !struct.type<@user::@Unwrapper> {
         %self = struct.new : !struct.type<@user::@Unwrapper>
         %wrapped = function.call @nested::@Wrapper::@compute(%inp) : (!felt.type) -> !struct.type<@nested::@Wrapper>
@@ -401,7 +401,7 @@ module attributes {veridise.lang = "llzk"} {
 
   struct.def @Main {
     // Since this is private, this is eliminated in remove-structs.
-    struct.field @unwrapper : !struct.type<@user::@Unwrapper>
+    struct.member @unwrapper : !struct.type<@user::@Unwrapper>
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -430,7 +430,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // RELAX-LABEL: module @nested {
 // RELAX-NEXT:    struct.def @Wrapper {
-// RELAX-NEXT:      struct.field @val : !felt.type {llzk.pub}
+// RELAX-NEXT:      struct.member @val : !felt.type {llzk.pub}
 // RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@nested::@Wrapper> attributes {function.allow_witness} {
 // RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@nested::@Wrapper>
 // RELAX-NEXT:        struct.writef %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !felt.type
@@ -444,7 +444,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // RELAX-LABEL: module @user {
 // RELAX-NEXT:    struct.def @Unwrapper {
-// RELAX-NEXT:      struct.field @comp : !struct.type<@nested::@Wrapper>
+// RELAX-NEXT:      struct.member @comp : !struct.type<@nested::@Wrapper>
 // RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@user::@Unwrapper> attributes {function.allow_witness} {
 // RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@user::@Unwrapper>
 // RELAX-NEXT:        %[[VAL_2:.*]] = function.call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!felt.type) -> !struct.type<@nested::@Wrapper>
@@ -478,7 +478,7 @@ module attributes {veridise.lang = "llzk"} {
     // @val is read-only in this module, but not read-only in all modules,
     // so this test will examine if our symbol lookup works across modules
     struct.def @Wrapper {
-      struct.field @val : !felt.type {llzk.pub}
+      struct.member @val : !felt.type {llzk.pub}
       function.def @compute(%inp : !felt.type) -> !struct.type<@nested::@Wrapper> {
         %self = struct.new : !struct.type<@nested::@Wrapper>
         struct.writef %self[@val] = %inp : !struct.type<@nested::@Wrapper>, !felt.type
@@ -492,7 +492,7 @@ module attributes {veridise.lang = "llzk"} {
 
   module @user {
     struct.def @Unwrapper {
-      struct.field @val : !struct.type<@nested::@Wrapper>
+      struct.member @val : !struct.type<@nested::@Wrapper>
       function.def @compute(%inp : !felt.type) -> !struct.type<@user::@Unwrapper> {
         %self = struct.new : !struct.type<@user::@Unwrapper>
         %wrapped = function.call @nested::@Wrapper::@compute(%inp) : (!felt.type) -> !struct.type<@nested::@Wrapper>
@@ -509,7 +509,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @val : !struct.type<@user::@Unwrapper>
+    struct.member @val : !struct.type<@user::@Unwrapper>
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -538,7 +538,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // RELAX-LABEL: module @nested {
 // RELAX-NEXT:    struct.def @Wrapper {
-// RELAX-NEXT:      struct.field @val : !felt.type {llzk.pub}
+// RELAX-NEXT:      struct.member @val : !felt.type {llzk.pub}
 // RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@nested::@Wrapper> attributes {function.allow_witness} {
 // RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@nested::@Wrapper>
 // RELAX-NEXT:        struct.writef %[[VAL_1]][@val] = %[[VAL_0]] : <@nested::@Wrapper>, !felt.type
@@ -552,7 +552,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // RELAX-LABEL: module @user {
 // RELAX-NEXT:    struct.def @Unwrapper {
-// RELAX-NEXT:      struct.field @val : !struct.type<@nested::@Wrapper>
+// RELAX-NEXT:      struct.member @val : !struct.type<@nested::@Wrapper>
 // RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@user::@Unwrapper> attributes {function.allow_witness} {
 // RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@user::@Unwrapper>
 // RELAX-NEXT:        %[[VAL_2:.*]] = function.call @nested::@Wrapper::@compute(%[[VAL_0]]) : (!felt.type) -> !struct.type<@nested::@Wrapper>

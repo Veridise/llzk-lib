@@ -51,7 +51,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @b : !struct.type<@Component2A<[]>>
+    struct.member @b : !struct.type<@Component2A<[]>>
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %b = function.call @Component2A::@compute() : () -> !struct.type<@Component2A<[]>>
@@ -75,7 +75,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.field @b : !struct.type<@Component2A>
+// CHECK-NEXT:    struct.member @b : !struct.type<@Component2A>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component2A::@compute() : () -> !struct.type<@Component2A>

@@ -148,8 +148,8 @@ mlir::LogicalResult SourceRefAnalysis::visitOperation(
 
   // We will now join the the operand refs based on the type of operand.
   if (auto fieldRefOp = llvm::dyn_cast<FieldRefOpInterface>(op)) {
-    // The operand is indexed into by the FieldDefOp.
-    auto fieldOpRes = fieldRefOp.getFieldDefOp(tables);
+    // The operand is indexed into by the MemberDefOp.
+    auto fieldOpRes = fieldRefOp.getMemberDefOp(tables);
     ensure(mlir::succeeded(fieldOpRes), "could not find field read");
 
     SourceRefLattice::ValueTy fieldRefRes;

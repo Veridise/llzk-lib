@@ -522,7 +522,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     // We also need to update the interval on the assigned symbol
     SourceRefLatticeValue refSet = getSourceRefLattice(op, cmp)->getOrDefault(cmp);
     if (refSet.isSingleValue()) {
-      auto fieldDefRes = writef.getFieldDefOp(tables);
+      auto fieldDefRes = writef.getMemberDefOp(tables);
       if (succeeded(fieldDefRes)) {
         SourceRefIndex idx(fieldDefRes.value());
         SourceRef fieldRef = refSet.getSingleValue().createChild(idx);

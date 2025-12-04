@@ -17,17 +17,17 @@
 
 module attributes {veridise.lang = "llzk"} {
   include.from "FrontendLang/Zirgen/mastermind.llzk" as @Mastermind
- 
+
   struct.def @Main<[]> {
-    struct.field @"$super" : !struct.type<@Mastermind::@Component<[]>>
-    struct.field @"$temp" : !struct.type<@Mastermind::@Component<[]>>
-    struct.field @result2 : !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>> {column}
-    struct.field @guess2 : !struct.type<@Mastermind::@Pegs<[4]>> {column}
-    struct.field @result1 : !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>> {column}
-    struct.field @guess1 : !struct.type<@Mastermind::@Pegs<[4]>> {column}
-    struct.field @codeHash : !struct.type<@Mastermind::@SetCode<[6, 4]>>
-    struct.field @codemakerCode : !struct.type<@Mastermind::@Pegs<[4]>> {column}
-    struct.field @codemakerNonce : !struct.type<@Mastermind::@Nonce<[]>> {column}
+    struct.member @"$super" : !struct.type<@Mastermind::@Component<[]>>
+    struct.member @"$temp" : !struct.type<@Mastermind::@Component<[]>>
+    struct.member @result2 : !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>> {column}
+    struct.member @guess2 : !struct.type<@Mastermind::@Pegs<[4]>> {column}
+    struct.member @result1 : !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>> {column}
+    struct.member @guess1 : !struct.type<@Mastermind::@Pegs<[4]>> {column}
+    struct.member @codeHash : !struct.type<@Mastermind::@SetCode<[6, 4]>>
+    struct.member @codemakerCode : !struct.type<@Mastermind::@Pegs<[4]>> {column}
+    struct.member @codemakerNonce : !struct.type<@Mastermind::@Nonce<[]>> {column}
     function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_witness} {
       %felt_const_3 = felt.const 3
       %felt_const_4 = felt.const 4

@@ -40,8 +40,8 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component02<[@A,@B]> {
-    // expected-error@+1 {{Cannot update type of 'struct.field' because there are multiple 'struct.writef' with different value types}}
-    struct.field @f : !array.type<@A x !felt.type> {llzk.pub}
+    // expected-error@+1 {{Cannot update type of 'struct.member' because there are multiple 'struct.writef' with different value types}}
+    struct.member @f : !array.type<@A x !felt.type> {llzk.pub}
 
     function.def @compute() -> !struct.type<@Component02<[@A,@B]>> {
       %self = struct.new : !struct.type<@Component02<[@A,@B]>>

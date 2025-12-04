@@ -701,18 +701,18 @@ public:
   }
 };
 
-// This one ensures FieldDefOp types are converted even if there are no reads/writes to them.
-class FieldDefOpPattern : public OpConversionPattern<FieldDefOp> {
+// This one ensures MemberDefOp types are converted even if there are no reads/writes to them.
+class MemberDefOpPattern : public OpConversionPattern<MemberDefOp> {
 public:
-  FieldDefOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &)
+  MemberDefOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &)
       // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
-      // instead of the GeneralTypeReplacePattern<FieldDefOp> from newGeneralRewritePatternSet().
-      : OpConversionPattern<FieldDefOp>(converter, ctx, /*benefit=*/2) {}
+      // instead of the GeneralTypeReplacePattern<MemberDefOp> from newGeneralRewritePatternSet().
+      : OpConversionPattern<MemberDefOp>(converter, ctx, /*benefit=*/2) {}
 
   LogicalResult matchAndRewrite(
-      FieldDefOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
+      MemberDefOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
   ) const override {
-    LLVM_DEBUG(llvm::dbgs() << "[FieldDefOpPattern] FieldDefOp: " << op << '\n');
+    LLVM_DEBUG(llvm::dbgs() << "[MemberDefOpPattern] MemberDefOp: " << op << '\n');
 
     Type oldFieldType = op.getType();
     Type newFieldType = getTypeConverter()->convertType(oldFieldType);
@@ -730,7 +730,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
   ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
-  patterns.add<CallStructFuncPattern, FieldDefOpPattern>(tyConv, ctx, tracker);
+  patterns.add<CallStructFuncPattern, MemberDefOpPattern>(tyConv, ctx, tracker);
   return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
@@ -1219,21 +1219,21 @@ public:
   }
 };
 
-/// Update the type of FieldDefOp instances by checking the updated types from FieldWriteOp.
-class UpdateFieldDefTypeFromWrite final : public OpRewritePattern<FieldDefOp> {
+/// Update the type of MemberDefOp instances by checking the updated types from FieldWriteOp.
+class UpdateFieldDefTypeFromWrite final : public OpRewritePattern<MemberDefOp> {
   ConversionTracker &tracker_;
 
 public:
   UpdateFieldDefTypeFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
-  LogicalResult matchAndRewrite(FieldDefOp op, PatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(MemberDefOp op, PatternRewriter &rewriter) const override {
     // Find all uses of the field symbol name within its parent struct.
     FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(op);
-    assert(succeeded(parentRes) && "FieldDefOp parent is always StructDefOp"); // per ODS def
+    assert(succeeded(parentRes) && "MemberDefOp parent is always StructDefOp"); // per ODS def
 
     // If the symbol is used by a FieldWriteOp with a different result type then change
-    // the type of the FieldDefOp to match the FieldWriteOp result type.
+    // the type of the MemberDefOp to match the FieldWriteOp result type.
     Type newType = nullptr;
     if (auto fieldUsers = llzk::getSymbolUses(op, parentRes.value())) {
       std::optional<Location> newTypeLoc = std::nullopt;
@@ -1260,7 +1260,7 @@ public:
                 // Give an error if the types are incompatible.
                 return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
                   diag.append(
-                      "Cannot update type of '", FieldDefOp::getOperationName(),
+                      "Cannot update type of '", MemberDefOp::getOperationName(),
                       "' because there are multiple '", FieldWriteOp::getOperationName(),
                       "' with different value types"
                   );
@@ -1430,7 +1430,7 @@ LogicalResult updateFieldRefValFromFieldDef(
     FieldRefOpInterface op, ConversionTracker &tracker, PatternRewriter &rewriter
 ) {
   SymbolTableCollection tables;
-  auto def = op.getFieldDefOp(tables);
+  auto def = op.getMemberDefOp(tables);
   if (failed(def)) {
     return failure();
   }
@@ -1449,7 +1449,7 @@ LogicalResult updateFieldRefValFromFieldDef(
 
 } // namespace
 
-/// Update the type of FieldReadOp result based on updated types from FieldDefOp.
+/// Update the type of FieldReadOp result based on updated types from MemberDefOp.
 class UpdateFieldReadValFromDef final : public OpRewritePattern<FieldReadOp> {
   ConversionTracker &tracker_;
 
@@ -1462,7 +1462,7 @@ public:
   }
 };
 
-/// Update the type of FieldWriteOp value based on updated types from FieldDefOp.
+/// Update the type of FieldWriteOp value based on updated types from MemberDefOp.
 class UpdateFieldWriteValFromDef final : public OpRewritePattern<FieldWriteOp> {
   ConversionTracker &tracker_;
 
@@ -1489,7 +1489,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       UpdateNewArrayElemFromWrite, // CreateArrayOp
       UpdateArrayElemFromArrRead,  // ReadArrayOp
       UpdateArrayElemFromArrWrite, // WriteArrayOp
-      UpdateFieldDefTypeFromWrite, // FieldDefOp
+      UpdateFieldDefTypeFromWrite, // MemberDefOp
       UpdateFieldReadValFromDef,   // FieldReadOp
       UpdateFieldWriteValFromDef   // FieldWriteOp
       >(ctx, tracker);

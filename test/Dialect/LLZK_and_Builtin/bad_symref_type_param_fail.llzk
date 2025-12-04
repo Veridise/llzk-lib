@@ -271,26 +271,26 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  struct.def @FieldDefOpWithUnknownScalarArray {
-    // expected-error@+1 {{'struct.field' op references unknown symbol "@Unknown"}}
-    struct.field @ret: !array.type<@Unknown x !felt.type>
-    function.def @compute() -> !struct.type<@FieldDefOpWithUnknownScalarArray> {
-      %self = struct.new : !struct.type<@FieldDefOpWithUnknownScalarArray>
-      function.return %self : !struct.type<@FieldDefOpWithUnknownScalarArray>
+  struct.def @MemberDefOpWithUnknownScalarArray {
+    // expected-error@+1 {{'struct.member' op references unknown symbol "@Unknown"}}
+    struct.member @ret: !array.type<@Unknown x !felt.type>
+    function.def @compute() -> !struct.type<@MemberDefOpWithUnknownScalarArray> {
+      %self = struct.new : !struct.type<@MemberDefOpWithUnknownScalarArray>
+      function.return %self : !struct.type<@MemberDefOpWithUnknownScalarArray>
     }
-    function.def @constrain(%self: !struct.type<@FieldDefOpWithUnknownScalarArray>) { function.return }
+    function.def @constrain(%self: !struct.type<@MemberDefOpWithUnknownScalarArray>) { function.return }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  struct.def @FieldDefOpWithUnknownTypeVar {
-    // expected-error@+1 {{'struct.field' op references unknown symbol "@Unknown"}}
-    struct.field @ret: !poly.tvar<@Unknown>
-    function.def @compute() -> !struct.type<@FieldDefOpWithUnknownTypeVar> {
-      %self = struct.new : !struct.type<@FieldDefOpWithUnknownTypeVar>
-      function.return %self : !struct.type<@FieldDefOpWithUnknownTypeVar>
+  struct.def @MemberDefOpWithUnknownTypeVar {
+    // expected-error@+1 {{'struct.member' op references unknown symbol "@Unknown"}}
+    struct.member @ret: !poly.tvar<@Unknown>
+    function.def @compute() -> !struct.type<@MemberDefOpWithUnknownTypeVar> {
+      %self = struct.new : !struct.type<@MemberDefOpWithUnknownTypeVar>
+      function.return %self : !struct.type<@MemberDefOpWithUnknownTypeVar>
     }
-    function.def @constrain(%self: !struct.type<@FieldDefOpWithUnknownTypeVar>) { function.return }
+    function.def @constrain(%self: !struct.type<@MemberDefOpWithUnknownTypeVar>) { function.return }
   }
 }
 // -----
@@ -310,7 +310,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @FieldReadWithUnknownInBase<[@A]> {
-    struct.field @f: !felt.type
+    struct.member @f: !felt.type
     function.def @compute() -> !struct.type<@FieldReadWithUnknownInBase<[@A]>> {
       %self = struct.new : !struct.type<@FieldReadWithUnknownInBase<[@A]>>
       function.return %self : !struct.type<@FieldReadWithUnknownInBase<[@A]>>
@@ -326,7 +326,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @FieldReadWithUnknownInResultTypeVar {
-    struct.field @f: index
+    struct.member @f: index
     function.def @compute() -> !struct.type<@FieldReadWithUnknownInResultTypeVar> {
       %self = struct.new : !struct.type<@FieldReadWithUnknownInResultTypeVar>
       function.return %self : !struct.type<@FieldReadWithUnknownInResultTypeVar>
@@ -341,7 +341,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @FieldReadWithUnknownInResultArr<[@A]> {
-    struct.field @f: !array.type<@A x i1>
+    struct.member @f: !array.type<@A x i1>
     function.def @compute() -> !struct.type<@FieldReadWithUnknownInResultArr<[@A]>> {
       %self = struct.new : !struct.type<@FieldReadWithUnknownInResultArr<[@A]>>
       function.return %self : !struct.type<@FieldReadWithUnknownInResultArr<[@A]>>
@@ -356,7 +356,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @FieldWriteWithUnknownInBase<[@A]> {
-    struct.field @f: !felt.type
+    struct.member @f: !felt.type
     function.def @compute(%0: i1) -> !struct.type<@FieldWriteWithUnknownInBase<[@A]>> {
       %self = struct.new : !struct.type<@FieldWriteWithUnknownInBase<[@A]>>
       function.return %self : !struct.type<@FieldWriteWithUnknownInBase<[@A]>>
@@ -372,7 +372,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @FieldWriteWithUnknownInRHSTypeVar<[@A]> {
-    struct.field @f: !poly.tvar<@A>
+    struct.member @f: !poly.tvar<@A>
     function.def @compute(
       %0: !poly.tvar<@A> // expected-note {{prior use here}}
     ) -> !struct.type<@FieldWriteWithUnknownInRHSTypeVar<[@A]>> {
@@ -390,7 +390,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @FieldWriteWithUnknownInRHSArr<[@A]> {
-    struct.field @f: !array.type<@A x i1>
+    struct.member @f: !array.type<@A x i1>
     function.def @compute(
       %0: !array.type<@A x i1> // expected-note {{prior use here}}
     ) -> !struct.type<@FieldWriteWithUnknownInRHSArr<[@A]>> {

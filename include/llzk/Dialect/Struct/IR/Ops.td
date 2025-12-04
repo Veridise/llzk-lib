@@ -93,16 +93,16 @@ def LLZK_StructDefOp
       return const_cast<StructDefOp*>(this)->getType(constParams);
     }
 
-    /// Gets the FieldDefOp that defines the field in this
+    /// Gets the MemberDefOp that defines the field in this
     /// structure with the given name, if present.
-    FieldDefOp getFieldDef(::mlir::StringAttr fieldName);
+    MemberDefOp getMemberDef(::mlir::StringAttr fieldName);
 
-    /// Get all FieldDefOp in this structure.
-    ::std::vector<FieldDefOp> getFieldDefs();
+    /// Get all MemberDefOp in this structure.
+    ::std::vector<MemberDefOp> getMemberDefs();
 
     /// Returns wether the struct defines fields marked as columns.
     ::mlir::LogicalResult hasColumns() {
-      return ::mlir::success(::llvm::any_of(getFieldDefs(), [](FieldDefOp fdOp) {
+      return ::mlir::success(::llvm::any_of(getMemberDefs(), [](MemberDefOp fdOp) {
         return fdOp.getColumn();
       }));
     }
@@ -149,19 +149,20 @@ def LLZK_StructDefOp
   let hasRegionVerifier = 1;
 }
 
-def LLZK_FieldDefOp
+def LLZK_MemberDefOp
     : StructDialectOp<
-          "field", [HasParent<"::llzk::component::StructDefOp">,
-                    DeclareOpInterfaceMethods<SymbolUserOpInterface>, Symbol]> {
-  let summary = "struct field definition";
+          "member", [HasParent<"::llzk::component::StructDefOp">,
+                     DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                     Symbol]> {
+  let summary = "struct member definition";
   let description = [{
-    This operation describes a field in a struct/component.
+    This operation describes a member in a struct/component.
 
     Example:
 
     ```llzk
-    struct.field @f1 : !felt.type
-    struct.field @f2 : !felt.type {llzk.pub}
+    struct.member @f1 : !felt.type
+    struct.member @f2 : !felt.type {llzk.pub}
     ```
   }];
 
@@ -201,8 +202,8 @@ class FieldRefOpBase<string mnemonic, list<Trait> traits = []>
   bit isRead = ?; // read(1) vs write(0) ops
   let extraClassDeclaration = [{
     /// Gets the definition for the `field` referenced in this op.
-    inline ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &tables) {
-      return ::llvm::cast<FieldRefOpInterface>(getOperation()).getFieldDefOp(tables);
+    inline ::mlir::FailureOr<SymbolLookupResult<MemberDefOp>> getMemberDefOp(::mlir::SymbolTableCollection &tables) {
+      return ::llvm::cast<FieldRefOpInterface>(getOperation()).getMemberDefOp(tables);
     }
   }];
   let extraClassDefinition = [{

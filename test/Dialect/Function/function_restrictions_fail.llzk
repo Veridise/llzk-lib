@@ -662,7 +662,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @Signal {
-    struct.field @reg : !felt.type {llzk.pub}
+    struct.member @reg : !felt.type {llzk.pub}
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
@@ -676,7 +676,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @BadSignalIndex {
-    struct.field @idx : index
+    struct.member @idx : index
 
     function.def @compute(%s: !Signal) -> !struct.type<@BadSignalIndex> {
       %self = struct.new : !struct.type<@BadSignalIndex>
@@ -706,7 +706,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @Signal {
-    struct.field @reg : !felt.type {llzk.pub}
+    struct.member @reg : !felt.type {llzk.pub}
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
@@ -754,7 +754,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @Signal {
-    struct.field @reg : !felt.type {llzk.pub}
+    struct.member @reg : !felt.type {llzk.pub}
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>

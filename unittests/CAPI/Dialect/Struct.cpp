@@ -110,7 +110,7 @@ protected:
   }
 
   MlirOperation make_field_def_op() const {
-    auto name = mlirStringRefCreateFromCString("struct.field");
+    auto name = mlirStringRefCreateFromCString("struct.member");
     auto location = mlirLocationUnknownGet(context);
     llvm::SmallVector<MlirNamedAttribute> attrs(
         {mlirNamedAttributeGet(
@@ -261,25 +261,25 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_is_main_component) {
 
 TEST_F(StructDefTest, llzk_operation_is_a_field_def_op_pass) {
   auto op = make_field_def_op();
-  EXPECT_TRUE(llzkOperationIsAFieldDefOp(op));
+  EXPECT_TRUE(llzkOperationIsAMemberDefOp(op));
 }
 
 TEST_F(StructDefTest, llzk_operation_is_a_field_def_op_fail) {
   auto op = test_op();
-  EXPECT_TRUE(!llzkOperationIsAFieldDefOp(op.op));
+  EXPECT_TRUE(!llzkOperationIsAMemberDefOp(op.op));
 }
 
 TEST_F(StructDefTest, llzk_field_def_op_get_has_public_attr) {
   auto op = test_op();
-  if (llzkOperationIsAFieldDefOp(op.op)) {
-    llzkFieldDefOpGetHasPublicAttr(op.op);
+  if (llzkOperationIsAMemberDefOp(op.op)) {
+    llzkMemberDefOpGetHasPublicAttr(op.op);
   }
 }
 
 TEST_F(StructDefTest, llzk_field_def_op_set_public_attr) {
   auto op = test_op();
-  if (llzkOperationIsAFieldDefOp(op.op)) {
-    llzkFieldDefOpSetPublicAttr(op.op, true);
+  if (llzkOperationIsAMemberDefOp(op.op)) {
+    llzkMemberDefOpSetPublicAttr(op.op, true);
   }
 }
 

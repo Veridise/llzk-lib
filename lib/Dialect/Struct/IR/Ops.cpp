@@ -327,7 +327,7 @@ LogicalResult StructDefOp::verifyRegions() {
     Region &bodyRegion = getBodyRegion();
     if (!bodyRegion.empty()) {
       for (Operation &op : bodyRegion.front()) {
-        if (!llvm::isa<FieldDefOp>(op)) {
+        if (!llvm::isa<MemberDefOp>(op)) {
           if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
             if (funcDef.nameIsCompute()) {
               if (foundProduct) {
@@ -376,7 +376,7 @@ LogicalResult StructDefOp::verifyRegions() {
           } else {
             return op.emitOpError()
                    << "invalid operation in '" << StructDefOp::getOperationName() << "'; only '"
-                   << FieldDefOp::getOperationName() << '\'' << " and '"
+                   << MemberDefOp::getOperationName() << '\'' << " and '"
                    << FuncDefOp::getOperationName() << "' operations are permitted";
           }
         }
@@ -405,9 +405,9 @@ LogicalResult StructDefOp::verifyRegions() {
   return verifyStructProduct(*this, *foundProduct);
 }
 
-FieldDefOp StructDefOp::getFieldDef(StringAttr fieldName) {
+MemberDefOp StructDefOp::getMemberDef(StringAttr fieldName) {
   for (Operation &op : *getBody()) {
-    if (FieldDefOp fieldDef = llvm::dyn_cast_if_present<FieldDefOp>(op)) {
+    if (MemberDefOp fieldDef = llvm::dyn_cast_if_present<MemberDefOp>(op)) {
       if (fieldName.compare(fieldDef.getSymNameAttr()) == 0) {
         return fieldDef;
       }
@@ -416,10 +416,10 @@ FieldDefOp StructDefOp::getFieldDef(StringAttr fieldName) {
   return nullptr;
 }
 
-std::vector<FieldDefOp> StructDefOp::getFieldDefs() {
-  std::vector<FieldDefOp> res;
+std::vector<MemberDefOp> StructDefOp::getMemberDefs() {
+  std::vector<MemberDefOp> res;
   for (Operation &op : *getBody()) {
-    if (FieldDefOp fieldDef = llvm::dyn_cast_if_present<FieldDefOp>(op)) {
+    if (MemberDefOp fieldDef = llvm::dyn_cast_if_present<MemberDefOp>(op)) {
       res.push_back(fieldDef);
     }
   }
@@ -451,10 +451,10 @@ FuncDefOp StructDefOp::getConstrainOrProductFuncOp() {
 bool StructDefOp::isMainComponent() { return COMPONENT_NAME_MAIN == this->getSymName(); }
 
 //===------------------------------------------------------------------===//
-// FieldDefOp
+// MemberDefOp
 //===------------------------------------------------------------------===//
 
-void FieldDefOp::build(
+void MemberDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, StringAttr sym_name, TypeAttr type,
     bool isColumn
 ) {
@@ -466,13 +466,13 @@ void FieldDefOp::build(
   }
 }
 
-void FieldDefOp::build(
+void MemberDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, StringRef sym_name, Type type, bool isColumn
 ) {
   build(odsBuilder, odsState, odsBuilder.getStringAttr(sym_name), TypeAttr::get(type), isColumn);
 }
 
-void FieldDefOp::build(
+void MemberDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, TypeRange resultTypes, ValueRange operands,
     ArrayRef<NamedAttribute> attributes, bool isColumn
 ) {
@@ -486,7 +486,7 @@ void FieldDefOp::build(
   }
 }
 
-void FieldDefOp::setPublicAttr(bool newValue) {
+void MemberDefOp::setPublicAttr(bool newValue) {
   if (newValue) {
     getOperation()->setAttr(PublicAttr::name, UnitAttr::get(getContext()));
   } else {
@@ -504,7 +504,7 @@ verifyFieldDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation 
       return failure(); // above already emits a sufficient error message
     }
     FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(origin);
-    assert(succeeded(parentRes) && "FieldDefOp parent is always StructDefOp"); // per ODS def
+    assert(succeeded(parentRes) && "MemberDefOp parent is always StructDefOp"); // per ODS def
     if (fieldTypeRes.value() == parentRes.value()) {
       return origin->emitOpError()
           .append("type is circular")
@@ -517,7 +517,7 @@ verifyFieldDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation 
   }
 }
 
-LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   Type fieldType = this->getType();
   if (failed(verifyFieldDefTypeImpl(fieldType, tables, *this))) {
     return failure();
@@ -529,7 +529,7 @@ LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   // If the field is marked as a column only a small subset of types are allowed.
   if (!isValidColumnType(getType(), tables, *this)) {
     return emitOpError() << "marked as column can only contain felts, arrays of column types, or "
-                            "structs with columns, but field has type "
+                            "structs with columns, but member has type "
                          << getType();
   }
   return success();
@@ -540,26 +540,26 @@ LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 //===------------------------------------------------------------------===//
 namespace {
 
-FailureOr<SymbolLookupResult<FieldDefOp>>
-getFieldDefOpImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructType tyStruct) {
+FailureOr<SymbolLookupResult<MemberDefOp>>
+getMemberDefOpImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructType tyStruct) {
   Operation *op = refOp.getOperation();
   auto structDefRes = tyStruct.getDefinition(tables, op);
   if (failed(structDefRes)) {
     return failure(); // getDefinition() already emits a sufficient error message
   }
-  auto res = llzk::lookupSymbolIn<FieldDefOp>(
+  auto res = llzk::lookupSymbolIn<MemberDefOp>(
       tables, SymbolRefAttr::get(refOp->getContext(), refOp.getFieldName()),
       std::move(*structDefRes), op
   );
   if (failed(res)) {
-    return refOp->emitError() << "could not find '" << FieldDefOp::getOperationName()
+    return refOp->emitError() << "could not find '" << MemberDefOp::getOperationName()
                               << "' named \"@" << refOp.getFieldName() << "\" in \""
                               << tyStruct.getNameRef() << '"';
   }
   return std::move(res.value());
 }
 
-static FailureOr<SymbolLookupResult<FieldDefOp>>
+static FailureOr<SymbolLookupResult<MemberDefOp>>
 findField(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
   // Ensure the base component/struct type reference can be resolved.
   StructType tyStruct = refOp.getStructType();
@@ -567,11 +567,11 @@ findField(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
     return failure();
   }
   // Ensure the field name can be resolved in that struct.
-  return getFieldDefOpImpl(refOp, tables, tyStruct);
+  return getMemberDefOpImpl(refOp, tables, tyStruct);
 }
 
 static LogicalResult verifySymbolUsesImpl(
-    FieldRefOpInterface refOp, SymbolTableCollection &tables, SymbolLookupResult<FieldDefOp> &field
+    FieldRefOpInterface refOp, SymbolTableCollection &tables, SymbolLookupResult<MemberDefOp> &field
 ) {
   // Ensure the type of the referenced field declaration matches the type used in this op.
   Type actualType = refOp.getVal().getType();
@@ -588,16 +588,16 @@ LogicalResult verifySymbolUsesImpl(FieldRefOpInterface refOp, SymbolTableCollect
   // Ensure the field name can be resolved in that struct.
   auto field = findField(refOp, tables);
   if (failed(field)) {
-    return field; // getFieldDefOp() already emits a sufficient error message
+    return field; // getMemberDefOp() already emits a sufficient error message
   }
   return verifySymbolUsesImpl(refOp, tables, *field);
 }
 
 } // namespace
 
-FailureOr<SymbolLookupResult<FieldDefOp>>
-FieldRefOpInterface::getFieldDefOp(SymbolTableCollection &tables) {
-  return getFieldDefOpImpl(*this, tables, getStructType());
+FailureOr<SymbolLookupResult<MemberDefOp>>
+FieldRefOpInterface::getMemberDefOp(SymbolTableCollection &tables) {
+  return getMemberDefOpImpl(*this, tables, getStructType());
 }
 
 LogicalResult FieldReadOp::verifySymbolUses(SymbolTableCollection &tables) {

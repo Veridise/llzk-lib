@@ -4,7 +4,7 @@
 module attributes {veridise.lang = "llzk"} {
   // Struct with type parameter
   struct.def @A<[@Ty]> {
-    struct.field @x : !poly.tvar<@Ty>
+    struct.member @x : !poly.tvar<@Ty>
 
     function.def @compute(%0: !poly.tvar<@Ty>) -> !struct.type<@A<[@Ty]>> {
       %self = struct.new : !struct.type<@A<[@Ty]>>
@@ -23,7 +23,7 @@ module attributes {veridise.lang = "llzk"} {
 
   // Specialization of the parameterized struct for Felt type
   struct.def @FeltA {
-    struct.field @a : !struct.type<@A<[!felt.type]>>
+    struct.member @a : !struct.type<@A<[!felt.type]>>
 
     function.def @compute() -> !struct.type<@FeltA> {
       %self = struct.new : !struct.type<@FeltA>
@@ -43,7 +43,7 @@ module attributes {veridise.lang = "llzk"} {
 
   // Specialization of the parameterized struct for Felt type
   struct.def @IndexA {
-    struct.field @a : !struct.type<@A<[index]>>
+    struct.member @a : !struct.type<@A<[index]>>
 
     function.def @compute() -> !struct.type<@IndexA> {
       %self = struct.new : !struct.type<@IndexA>
@@ -62,7 +62,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @A<[@Ty]> {
-//CHECK-NEXT:    struct.field @x : !poly.tvar<@Ty>
+//CHECK-NEXT:    struct.member @x : !poly.tvar<@Ty>
 //CHECK-NEXT:    function.def @compute(%arg0: !poly.tvar<@Ty>) -> !struct.type<@A<[@Ty]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@A<[@Ty]>>
 //CHECK-NEXT:      struct.writef %[[SELF]][@x] = %arg0 : <@A<[@Ty]>>, !poly.tvar<@Ty>
@@ -75,7 +75,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: struct.def @FeltA {
-//CHECK-NEXT:    struct.field @a : !struct.type<@A<[!felt.type]>>
+//CHECK-NEXT:    struct.member @a : !struct.type<@A<[!felt.type]>>
 //CHECK-NEXT:    function.def @compute() -> !struct.type<@FeltA> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@FeltA>
 //CHECK-NEXT:      %[[C1:[0-9a-zA-Z_\.]+]] = felt.const 57
@@ -91,7 +91,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: struct.def @IndexA {
-//CHECK-NEXT:    struct.field @a : !struct.type<@A<[index]>>
+//CHECK-NEXT:    struct.member @a : !struct.type<@A<[index]>>
 //CHECK-NEXT:    function.def @compute() -> !struct.type<@IndexA> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@IndexA>
 //CHECK-NEXT:      %[[C1:[0-9a-zA-Z_\.]+]] = arith.constant 57 : index
@@ -111,7 +111,7 @@ module attributes {veridise.lang = "llzk"} {
 // B2 and B3 are equivalent, latter uses the redundant !poly.tvar<@X> instead of just @X
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB1<[@T]> {
-    struct.field @f : !poly.tvar<@T>
+    struct.member @f : !poly.tvar<@T>
 
     function.def @compute(%0: !poly.tvar<@T>) -> !struct.type<@ComponentB1<[@T]>> {
       %self = struct.new : !struct.type<@ComponentB1<[@T]>>
@@ -123,7 +123,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentB2<[@X]> {
-    struct.field @f : !struct.type<@ComponentB1<[@X]>>
+    struct.member @f : !struct.type<@ComponentB1<[@X]>>
 
     function.def @compute(%c0: !struct.type<@ComponentB1<[@X]>>) -> !struct.type<@ComponentB2<[@X]>> {
       %self = struct.new : !struct.type<@ComponentB2<[@X]>>
@@ -141,7 +141,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentB3<[@X]> {
-    struct.field @f : !struct.type<@ComponentB1<[!poly.tvar<@X>]>>
+    struct.member @f : !struct.type<@ComponentB1<[!poly.tvar<@X>]>>
 
     function.def @compute(%c0: !struct.type<@ComponentB1<[!poly.tvar<@X>]>>) -> !struct.type<@ComponentB3<[@X]>> {
       %self = struct.new : !struct.type<@ComponentB3<[@X]>>
@@ -159,7 +159,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentB1<[@T]> {
-//CHECK-NEXT:    struct.field @f : !poly.tvar<@T>
+//CHECK-NEXT:    struct.member @f : !poly.tvar<@T>
 //CHECK-NEXT:    function.def @compute(%arg0: !poly.tvar<@T>) -> !struct.type<@ComponentB1<[@T]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB1<[@T]>>
 //CHECK-NEXT:      struct.writef %[[SELF]][@f] = %arg0 : <@ComponentB1<[@T]>>, !poly.tvar<@T>
@@ -170,7 +170,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: struct.def @ComponentB2<[@X]> {
-//CHECK-NEXT:    struct.field @f : !struct.type<@ComponentB1<[@X]>>
+//CHECK-NEXT:    struct.member @f : !struct.type<@ComponentB1<[@X]>>
 //CHECK-NEXT:    function.def @compute(%arg0: !struct.type<@ComponentB1<[@X]>>) -> !struct.type<@ComponentB2<[@X]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB2<[@X]>>
 //CHECK-NEXT:      struct.writef %[[SELF]][@f] = %arg0 : <@ComponentB2<[@X]>>, !struct.type<@ComponentB1<[@X]>>
@@ -185,7 +185,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: struct.def @ComponentB3<[@X]> {
-//CHECK-NEXT:    struct.field @f : !struct.type<@ComponentB1<[!poly.tvar<@X>]>>
+//CHECK-NEXT:    struct.member @f : !struct.type<@ComponentB1<[!poly.tvar<@X>]>>
 //CHECK-NEXT:    function.def @compute(%arg0: !struct.type<@ComponentB1<[!poly.tvar<@X>]>>) -> !struct.type<@ComponentB3<[@X]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB3<[@X]>>
 //CHECK-NEXT:      struct.writef %[[SELF]][@f] = %arg0 : <@ComponentB3<[@X]>>, !struct.type<@ComponentB1<[!poly.tvar<@X>]>>
@@ -205,7 +205,7 @@ module attributes {veridise.lang = "llzk"} {
 // In non-instantiated structs, these must be very permissive and fully checked only when instantiated.
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB4<[@T]> {
-    struct.field @f : !poly.tvar<@T>
+    struct.member @f : !poly.tvar<@T>
 
     function.def @compute(%0: !poly.tvar<@T>) -> !struct.type<@ComponentB4<[@T]>> {
       %self = struct.new : !struct.type<@ComponentB4<[@T]>>
@@ -217,7 +217,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentB5<[@A, @B, @C, @D, @E, @F, @G]> {
-    struct.field @f : !struct.type<@ComponentB4<[@A]>>
+    struct.member @f : !struct.type<@ComponentB4<[@A]>>
 
     function.def @compute(%c0: !struct.type<@ComponentB4<[@B]>>) -> !struct.type<@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>> {
       %self = struct.new : !struct.type<@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>>
@@ -236,7 +236,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentB6<[@A, @B, @C, @D, @E, @F, @G]> {
-    struct.field @f : !struct.type<@ComponentB4<[!poly.tvar<@A>]>>
+    struct.member @f : !struct.type<@ComponentB4<[!poly.tvar<@A>]>>
 
     function.def @compute(%c0: !struct.type<@ComponentB4<[!poly.tvar<@B>]>>) -> !struct.type<@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>> {
       %self = struct.new : !struct.type<@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>>
@@ -254,7 +254,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentB4<[@T]> {
-//CHECK-NEXT:    struct.field @f : !poly.tvar<@T>
+//CHECK-NEXT:    struct.member @f : !poly.tvar<@T>
 //CHECK-NEXT:    function.def @compute(%arg0: !poly.tvar<@T>) -> !struct.type<@ComponentB4<[@T]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB4<[@T]>>
 //CHECK-NEXT:      struct.writef %[[SELF]][@f] = %arg0 : <@ComponentB4<[@T]>>, !poly.tvar<@T>
@@ -265,7 +265,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: struct.def @ComponentB5<[@A, @B, @C, @D, @E, @F, @G]> {
-//CHECK-NEXT:    struct.field @f : !struct.type<@ComponentB4<[@A]>>
+//CHECK-NEXT:    struct.member @f : !struct.type<@ComponentB4<[@A]>>
 //CHECK-NEXT:    function.def @compute(%arg0: !struct.type<@ComponentB4<[@B]>>) -> !struct.type<@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>>
 //CHECK-NEXT:      struct.writef %[[SELF]][@f] = %arg0 : <@ComponentB5<[@A, @B, @C, @D, @E, @F, @G]>>, !struct.type<@ComponentB4<[@B]>>
@@ -280,7 +280,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: struct.def @ComponentB6<[@A, @B, @C, @D, @E, @F, @G]> {
-//CHECK-NEXT:    struct.field @f : !struct.type<@ComponentB4<[!poly.tvar<@A>]>>
+//CHECK-NEXT:    struct.member @f : !struct.type<@ComponentB4<[!poly.tvar<@A>]>>
 //CHECK-NEXT:    function.def @compute(%arg0: !struct.type<@ComponentB4<[!poly.tvar<@B>]>>) -> !struct.type<@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>>
 //CHECK-NEXT:      struct.writef %[[SELF]][@f] = %arg0 : <@ComponentB6<[@A, @B, @C, @D, @E, @F, @G]>>, !struct.type<@ComponentB4<[!poly.tvar<@B>]>>
@@ -299,7 +299,7 @@ module attributes {veridise.lang = "llzk"} {
 // TypeVarType in CreateArrayOp (`array.new`), exact match
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentC<[@T]> {
-    struct.field @f : !array.type<2 x !poly.tvar<@T>>
+    struct.member @f : !array.type<2 x !poly.tvar<@T>>
 
     function.def @compute(%a1: !poly.tvar<@T>, %a2: !poly.tvar<@T>) -> !struct.type<@ComponentC<[@T]>> {
       %self = struct.new : !struct.type<@ComponentC<[@T]>>
@@ -312,7 +312,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentC<[@T]> {
-//CHECK-NEXT:    struct.field @f : !array.type<2 x !poly.tvar<@T>>
+//CHECK-NEXT:    struct.member @f : !array.type<2 x !poly.tvar<@T>>
 //CHECK-NEXT:    function.def @compute(%arg0: !poly.tvar<@T>, %arg1: !poly.tvar<@T>) -> !struct.type<@ComponentC<[@T]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentC<[@T]>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = array.new %arg0, %arg1 : <2 x !poly.tvar<@T>>
@@ -328,7 +328,7 @@ module attributes {veridise.lang = "llzk"} {
 // TypeVarType in WriteArrayOp and ReadArrayOp, exact match
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentD<[@T]> {
-    struct.field @f : !array.type<2 x !poly.tvar<@T>>
+    struct.member @f : !array.type<2 x !poly.tvar<@T>>
 
     function.def @compute(%a1: !poly.tvar<@T>, %a2: !poly.tvar<@T>) -> !struct.type<@ComponentD<[@T]>> {
       %self = struct.new : !struct.type<@ComponentD<[@T]>>
@@ -354,7 +354,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentD<[@T]> {
-//CHECK-NEXT:    struct.field @f : !array.type<2 x !poly.tvar<@T>>
+//CHECK-NEXT:    struct.member @f : !array.type<2 x !poly.tvar<@T>>
 //CHECK-NEXT:    function.def @compute(%arg0: !poly.tvar<@T>, %arg1: !poly.tvar<@T>) -> !struct.type<@ComponentD<[@T]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentD<[@T]>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !poly.tvar<@T>>
@@ -381,7 +381,7 @@ module attributes {veridise.lang = "llzk"} {
 // TypeVarType in WriteArrayOp and ReadArrayOp, non-exact match via unification of `tvar`
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentE<[@T, @X, @Y]> {
-    struct.field @f : !array.type<2 x !poly.tvar<@T>>
+    struct.member @f : !array.type<2 x !poly.tvar<@T>>
 
     function.def @compute(%a1: !poly.tvar<@X>, %a2: !poly.tvar<@Y>) -> !struct.type<@ComponentE<[@T, @X, @Y]>> {
       %self = struct.new : !struct.type<@ComponentE<[@T, @X, @Y]>>
@@ -407,7 +407,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentE<[@T, @X, @Y]> {
-//CHECK-NEXT:    struct.field @f : !array.type<2 x !poly.tvar<@T>>
+//CHECK-NEXT:    struct.member @f : !array.type<2 x !poly.tvar<@T>>
 //CHECK-NEXT:    function.def @compute(%arg0: !poly.tvar<@X>, %arg1: !poly.tvar<@Y>) -> !struct.type<@ComponentE<[@T, @X, @Y]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentE<[@T, @X, @Y]>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !poly.tvar<@T>>
@@ -558,7 +558,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentG<[@S, @T]> {
-    struct.field @f : !array.type<@S x !poly.tvar<@T>>
+    struct.member @f : !array.type<@S x !poly.tvar<@T>>
 
     function.def @compute() -> !struct.type<@ComponentG<[@S, @T]>> {
       %self = struct.new : !struct.type<@ComponentG<[@S, @T]>>
@@ -589,7 +589,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentG<[@S, @T]> {
-//CHECK-NEXT:    struct.field @f : !array.type<@S x !poly.tvar<@T>>
+//CHECK-NEXT:    struct.member @f : !array.type<@S x !poly.tvar<@T>>
 //CHECK-NEXT:    function.def @compute() -> !struct.type<@ComponentG<[@S, @T]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentG<[@S, @T]>>
 //CHECK-NEXT:      %[[T5:[0-9a-zA-Z_\.]+]] = array.new  : <@S x !poly.tvar<@T>>
@@ -619,7 +619,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   module @risc0 {
     struct.def @Reg {
-      struct.field @reg : !felt.type {llzk.pub}
+      struct.member @reg : !felt.type {llzk.pub}
 
       function.def @compute(%v: !felt.type) -> !struct.type<@risc0::@Reg> {
         %self = struct.new : !struct.type<@risc0::@Reg>
@@ -636,7 +636,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Other {
-    struct.field @reg : !felt.type {llzk.pub}
+    struct.member @reg : !felt.type {llzk.pub}
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Other> {
       %self = struct.new : !struct.type<@Other>
@@ -652,7 +652,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Bar<[@T]> {
-    struct.field @t : !poly.tvar<@T>
+    struct.member @t : !poly.tvar<@T>
 
     function.def @compute(%x: !felt.type) -> !struct.type<@Bar<[@T]>> {
       %self = struct.new : !struct.type<@Bar<[@T]>>
@@ -669,7 +669,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Top {
-    struct.field @b : !struct.type<@Bar<[!struct.type<@risc0::@Reg>]>>
+    struct.member @b : !struct.type<@Bar<[!struct.type<@risc0::@Reg>]>>
 
     function.def @compute() -> !struct.type<@Top> {
       %self = struct.new : !struct.type<@Top>
@@ -690,7 +690,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    module @risc0 {
 //CHECK-NEXT:      struct.def @Reg {
-//CHECK-NEXT:        struct.field @reg : !felt.type {llzk.pub}
+//CHECK-NEXT:        struct.member @reg : !felt.type {llzk.pub}
 //CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@risc0::@Reg> attributes {function.allow_witness} {
 //CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@Reg>
 //CHECK-NEXT:          struct.writef %[[SELF]][@reg] = %[[A0]] : <@risc0::@Reg>, !felt.type
@@ -704,7 +704,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:    struct.def @Other {
-//CHECK-NEXT:      struct.field @reg : !felt.type {llzk.pub}
+//CHECK-NEXT:      struct.member @reg : !felt.type {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Other> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Other>
 //CHECK-NEXT:        struct.writef %[[SELF]][@reg] = %[[A0]] : <@Other>, !felt.type
@@ -717,7 +717,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:    struct.def @Bar<[@T]> {
-//CHECK-NEXT:      struct.field @t : !poly.tvar<@T>
+//CHECK-NEXT:      struct.member @t : !poly.tvar<@T>
 //CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Bar<[@T]>> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Bar<[@T]>>
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = function.call @T::@compute(%[[A0]]) : (!felt.type) -> !poly.tvar<@T>
@@ -731,7 +731,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-NEXT:    struct.def @Top {
-//CHECK-NEXT:      struct.field @b : !struct.type<@Bar<[!struct.type<@risc0::@Reg>]>>
+//CHECK-NEXT:      struct.member @b : !struct.type<@Bar<[!struct.type<@risc0::@Reg>]>>
 //CHECK-NEXT:      function.def @compute() -> !struct.type<@Top> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Top>
 //CHECK-NEXT:        %[[C2:[0-9a-zA-Z_\.]+]] = felt.const 2

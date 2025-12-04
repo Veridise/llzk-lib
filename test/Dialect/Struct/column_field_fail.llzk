@@ -3,7 +3,7 @@
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1 {
     // expected-note@+1 {{field defined here}}
-    struct.field @f1 : !felt.type
+    struct.member @f1 : !felt.type
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {
@@ -30,8 +30,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
-    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!string.type'}}
-    struct.field @f1 : !string.type {column}
+    // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but member has type '!string.type'}}
+    struct.member @f1 : !string.type {column}
     function.def @compute() -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
       function.return %self : !struct.type<@ComponentA2>
@@ -47,8 +47,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
-    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type 'index'}}
-    struct.field @f1 : index {column}
+    // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but member has type 'index'}}
+    struct.member @f1 : index {column}
     function.def @compute() -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
       function.return %self : !struct.type<@ComponentA2>
@@ -64,8 +64,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
-    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type 'i1'}}
-    struct.field @f1 : i1 {column}
+    // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but member has type 'i1'}}
+    struct.member @f1 : i1 {column}
     function.def @compute() -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
       function.return %self : !struct.type<@ComponentA2>
@@ -81,8 +81,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
-    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!array.type<2 x !string.type>'}}
-    struct.field @f1 : !array.type<2 x !string.type> {column}
+    // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but member has type '!array.type<2 x !string.type>'}}
+    struct.member @f1 : !array.type<2 x !string.type> {column}
     function.def @compute() -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
       function.return %self : !struct.type<@ComponentA2>
@@ -98,8 +98,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
-    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!array.type<2 x index>'}}
-    struct.field @f1 : !array.type<2 x index> {column}
+    // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but member has type '!array.type<2 x index>'}}
+    struct.member @f1 : !array.type<2 x index> {column}
     function.def @compute() -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
       function.return %self : !struct.type<@ComponentA2>
@@ -116,7 +116,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1 {
     // Even if the struct's field is of felt type, it is not marked as a column.
-    struct.field @f1 : !felt.type
+    struct.member @f1 : !felt.type
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {
@@ -126,8 +126,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentA2 {
-    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type '!struct.type<@ComponentA1>'}}
-    struct.field @c1 : !struct.type<@ComponentA1> {column}
+    // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but member has type '!struct.type<@ComponentA1>'}}
+    struct.member @c1 : !struct.type<@ComponentA1> {column}
     function.def @compute() -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
       function.return %self : !struct.type<@ComponentA2>

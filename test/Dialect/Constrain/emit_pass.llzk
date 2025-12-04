@@ -139,7 +139,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @Signal {
-    struct.field @reg : !felt.type {llzk.pub}
+    struct.member @reg : !felt.type {llzk.pub}
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
@@ -153,7 +153,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component00 {
-    struct.field @f : !Signal
+    struct.member @f : !Signal
 
     function.def @compute(%0: !Signal) -> !struct.type<@Component00> {
       %self = struct.new : !struct.type<@Component00>
@@ -169,7 +169,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component01 {
-    struct.field @f : !array.type<2 x !Signal>
+    struct.member @f : !array.type<2 x !Signal>
 
     function.def @compute(%0: !array.type<2 x !Signal>) -> !struct.type<@Component01> {
       %self = struct.new : !struct.type<@Component01>
@@ -186,7 +186,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // CHECK-LABEL:   struct.def @Signal {
-// CHECK-NEXT:      struct.field @reg : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @reg : !felt.type {llzk.pub}
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@Signal> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_1:.*]] = struct.new : <@Signal>
 // CHECK-NEXT:        struct.writef %[[VAL_1]][@reg] = %[[VAL_0]] : <@Signal>, !felt.type
@@ -198,7 +198,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 
 // CHECK-LABEL:   struct.def @Component00 {
-// CHECK-NEXT:      struct.field @f : !struct.type<@Signal>
+// CHECK-NEXT:      struct.member @f : !struct.type<@Signal>
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:.*]]: !struct.type<@Signal>) -> !struct.type<@Component00> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_1:.*]] = struct.new : <@Component00>
 // CHECK-NEXT:        struct.writef %[[VAL_1]][@f] = %[[VAL_0]] : <@Component00>, !struct.type<@Signal>
@@ -212,7 +212,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 
 // CHECK-LABEL:   struct.def @Component01 {
-// CHECK-NEXT:      struct.field @f : !array.type<2 x !struct.type<@Signal>>
+// CHECK-NEXT:      struct.member @f : !array.type<2 x !struct.type<@Signal>>
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:.*]]: !array.type<2 x !struct.type<@Signal>>) -> !struct.type<@Component01> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_1:.*]] = struct.new : <@Component01>
 // CHECK-NEXT:        struct.writef %[[VAL_1]][@f] = %[[VAL_0]] : <@Component01>, !array.type<2 x !struct.type<@Signal>>

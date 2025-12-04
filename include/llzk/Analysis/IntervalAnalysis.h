@@ -357,7 +357,7 @@ private:
 
   bool isDefinitionOp(mlir::Operation *op) const {
     return llvm::isa<
-        component::StructDefOp, function::FuncDefOp, component::FieldDefOp, global::GlobalDefOp,
+        component::StructDefOp, function::FuncDefOp, component::MemberDefOp, global::GlobalDefOp,
         mlir::ModuleOp>(op);
   }
 

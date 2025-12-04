@@ -11,10 +11,10 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Pair<[@Fst, @Snd]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
-    struct.field @"$temp" : !struct.type<@Component<[]>>
-    struct.field @snd : !poly.tvar<@Snd>
-    struct.field @fst : !poly.tvar<@Fst>
+    struct.member @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$temp" : !struct.type<@Component<[]>>
+    struct.member @snd : !poly.tvar<@Snd>
+    struct.member @fst : !poly.tvar<@Fst>
     function.def @compute(%arg0: !poly.tvar<@Fst>, %arg1: !poly.tvar<@Snd>) -> !struct.type<@Pair<[@Fst, @Snd]>> {
       %self = struct.new : !struct.type<@Pair<[@Fst, @Snd]>>
       struct.writef %self[@fst] = %arg0 : <@Pair<[@Fst, @Snd]>>, !poly.tvar<@Fst>
@@ -43,10 +43,10 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Pair<[@Fst, @Snd]> {
-// CHECK-NEXT:    struct.field @"$super" : !struct.type<@Component>
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Component>
-// CHECK-NEXT:    struct.field @snd : !poly.tvar<@Snd>
-// CHECK-NEXT:    struct.field @fst : !poly.tvar<@Fst>
+// CHECK-NEXT:    struct.member @"$super" : !struct.type<@Component>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Component>
+// CHECK-NEXT:    struct.member @snd : !poly.tvar<@Snd>
+// CHECK-NEXT:    struct.member @fst : !poly.tvar<@Fst>
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Fst>, %[[V1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Snd>) -> !struct.type<@Pair<[@Fst, @Snd]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@Pair<[@Fst, @Snd]>>
 // CHECK-NEXT:      struct.writef %[[V2]][@fst] = %[[V0]] : <@Pair<[@Fst, @Snd]>>, !poly.tvar<@Fst>

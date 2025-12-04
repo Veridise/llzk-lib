@@ -12,7 +12,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentX<[@C]> {
-    struct.field @f2 : !struct.type<@ComponentY<[5, @C]>>
+    struct.member @f2 : !struct.type<@ComponentY<[5, @C]>>
 
     function.def @compute() -> !struct.type<@ComponentX<[@C]>> {
       %self = struct.new : !struct.type<@ComponentX<[@C]>>
@@ -29,7 +29,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @f3 : !struct.type<@ComponentX<[43]>>
+    struct.member @f3 : !struct.type<@ComponentX<[43]>>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -69,7 +69,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @MakeGuess<[@PEGS]> {
-    struct.field @dat : !array.type<4 x !struct.type<@Pair<[!felt.type, @PEGS]>>>
+    struct.member @dat : !array.type<4 x !struct.type<@Pair<[!felt.type, @PEGS]>>>
 
     function.def @compute() -> !struct.type<@MakeGuess<[@PEGS]>> {
       %self = struct.new : !struct.type<@MakeGuess<[@PEGS]>>
@@ -101,7 +101,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main<[]> {
-    struct.field @sub : !struct.type<@MakeGuess<[77]>>
+    struct.member @sub : !struct.type<@MakeGuess<[77]>>
 
     function.def @compute() -> !struct.type<@Main<[]>> {
       %self = struct.new : !struct.type<@Main<[]>>
@@ -128,7 +128,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.field @"sub:!s<@MakeGuess_77>+dat" : !array.type<4 x !struct.type<@Pair_f_77>>
+// CHECK-NEXT:    struct.member @"sub:!s<@MakeGuess_77>+dat" : !array.type<4 x !struct.type<@Pair_f_77>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index

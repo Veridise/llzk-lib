@@ -539,21 +539,21 @@ using LocalFieldReplacementMap = DenseMap<ArrayAttr, FieldInfo>;
 /// struct -> array-type field name -> LocalFieldReplacementMap
 using FieldReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalFieldReplacementMap>>;
 
-class SplitArrayInFieldDefOp : public OpConversionPattern<FieldDefOp> {
+class SplitArrayInMemberDefOp : public OpConversionPattern<MemberDefOp> {
   SymbolTableCollection &tables;
   FieldReplacementMap &repMapRef;
 
 public:
-  SplitArrayInFieldDefOp(
+  SplitArrayInMemberDefOp(
       MLIRContext *ctx, SymbolTableCollection &symTables, FieldReplacementMap &fieldRepMap
   )
-      : OpConversionPattern<FieldDefOp>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
+      : OpConversionPattern<MemberDefOp>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
 
-  inline static bool legal(FieldDefOp op) { return !containsSplittableArrayType(op.getType()); }
+  inline static bool legal(MemberDefOp op) { return !containsSplittableArrayType(op.getType()); }
 
-  LogicalResult match(FieldDefOp op) const override { return failure(legal(op)); }
+  LogicalResult match(MemberDefOp op) const override { return failure(legal(op)); }
 
-  void rewrite(FieldDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  void rewrite(MemberDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     StructDefOp inStruct = op->getParentOfType<StructDefOp>();
     assert(inStruct);
     LocalFieldReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
@@ -567,8 +567,8 @@ public:
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
     for (ArrayAttr idx : subIdxs.value()) {
       // Create scalar version of the field
-      FieldDefOp newField =
-          rewriter.create<FieldDefOp>(op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn());
+      MemberDefOp newField =
+          rewriter.create<MemberDefOp>(op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn());
       newField.setPublicAttr(op.hasPublicAttr());
       // Use SymbolTable to give it a unique name and store to the replacement map
       localRepMapRef[idx] = std::make_pair(structSymbolTable.insert(newField), elemTy);
@@ -701,7 +701,7 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fie
 
   RewritePatternSet patterns(ctx);
 
-  patterns.add<SplitArrayInFieldDefOp>(ctx, symTables, fieldRepMap);
+  patterns.add<SplitArrayInMemberDefOp>(ctx, symTables, fieldRepMap);
 
   ConversionTarget target(*ctx);
   target.addLegalDialect<
@@ -710,7 +710,7 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fie
       component::StructDialect, constrain::ConstrainDialect, arith::ArithDialect,
       scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
-  target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
+  target.addDynamicallyLegalOp<MemberDefOp>(SplitArrayInMemberDefOp::legal);
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split array fields\n";);
   return applyFullConversion(modOp, target, std::move(patterns));

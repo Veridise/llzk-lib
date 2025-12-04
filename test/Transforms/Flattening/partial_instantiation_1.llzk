@@ -12,7 +12,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Zip<[@Lhs, @Rhs, @N]> {
-    struct.field @"$super" : !array.type<9 x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
+    struct.member @"$super" : !array.type<9 x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
     function.def @compute() -> !struct.type<@Zip<[@Lhs, @Rhs, @N]>> {
       %self = struct.new : !struct.type<@Zip<[@Lhs, @Rhs, @N]>>
       function.return %self : !struct.type<@Zip<[@Lhs, @Rhs, @N]>>
@@ -23,7 +23,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @MakeGuess<[@PEGS]> {
-    struct.field @"$temp" : !struct.type<@Zip<[!felt.type, !felt.type, @PEGS]>>
+    struct.member @"$temp" : !struct.type<@Zip<[!felt.type, !felt.type, @PEGS]>>
 
     function.def @compute() -> !struct.type<@MakeGuess<[@PEGS]>> {
       %self = struct.new : !struct.type<@MakeGuess<[@PEGS]>>
@@ -66,7 +66,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_f_f_4 {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_f_f_4> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_f_f_4>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_f_f_4>
@@ -77,7 +77,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_4 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_f_f_4>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_f_f_4>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_4> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_4>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_4>

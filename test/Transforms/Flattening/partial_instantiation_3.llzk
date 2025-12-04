@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Zip<[@A, @N, @Lhs, @Rhs]> {
-    struct.field @"$super" : !array.type<9 x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
+    struct.member @"$super" : !array.type<9 x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
     function.def @compute() -> !struct.type<@Zip<[@A, @N, @Lhs, @Rhs]>> {
       %self = struct.new : !struct.type<@Zip<[@A, @N, @Lhs, @Rhs]>>
       function.return %self : !struct.type<@Zip<[@A, @N, @Lhs, @Rhs]>>
@@ -26,7 +26,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @MakeGuess<[@A, @PEGS]> {
-    struct.field @"$temp" : !struct.type<@Zip<[@A, @PEGS, !felt.type, !felt.type]>>
+    struct.member @"$temp" : !struct.type<@Zip<[@A, @PEGS, !felt.type, !felt.type]>>
 
     function.def @compute() -> !struct.type<@MakeGuess<[@A, @PEGS]>> {
       %self = struct.new : !struct.type<@MakeGuess<[@A, @PEGS]>>
@@ -89,7 +89,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_0_0_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_0_0_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_0_0_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_0_0_f_f>
@@ -100,7 +100,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_0_1_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_0_1_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_0_1_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_0_1_f_f>
@@ -111,7 +111,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_0_2_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_0_2_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_0_2_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_0_2_f_f>
@@ -122,7 +122,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_0_3_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_0_3_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_0_3_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_0_3_f_f>
@@ -133,7 +133,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_1_0_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_1_0_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_1_0_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_1_0_f_f>
@@ -144,7 +144,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_1_1_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_1_1_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_1_1_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_1_1_f_f>
@@ -155,7 +155,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_1_2_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_1_2_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_1_2_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_1_2_f_f>
@@ -166,7 +166,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_1_3_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_1_3_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_1_3_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_1_3_f_f>
@@ -177,7 +177,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_2_0_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_2_0_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_2_0_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_2_0_f_f>
@@ -188,7 +188,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_2_1_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_2_1_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_2_1_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_2_1_f_f>
@@ -199,7 +199,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_2_2_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_2_2_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_2_2_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_2_2_f_f>
@@ -210,7 +210,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Zip_2_3_f_f {
-// CHECK-NEXT:    struct.field @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_2_3_f_f> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_2_3_f_f>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Zip_2_3_f_f>
@@ -221,7 +221,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_0_0 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_0_0_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_0_0_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_0_0> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_0_0>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_0_0>
@@ -240,7 +240,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_0_1 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_0_1_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_0_1_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_0_1> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_0_1>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_0_1>
@@ -259,7 +259,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_0_2 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_0_2_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_0_2_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_0_2> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_0_2>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_0_2>
@@ -278,7 +278,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_0_3 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_0_3_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_0_3_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_0_3> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_0_3>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_0_3>
@@ -297,7 +297,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_1_0 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_1_0_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_1_0_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_1_0> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_1_0>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_1_0>
@@ -316,7 +316,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_1_1 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_1_1_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_1_1_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_1_1> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_1_1>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_1_1>
@@ -335,7 +335,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_1_2 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_1_2_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_1_2_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_1_2> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_1_2>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_1_2>
@@ -354,7 +354,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_1_3 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_1_3_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_1_3_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_1_3> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_1_3>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_1_3>
@@ -373,7 +373,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_2_0 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_2_0_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_2_0_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_2_0> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_2_0>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_2_0>
@@ -392,7 +392,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_2_1 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_2_1_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_2_1_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_2_1> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_2_1>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_2_1>
@@ -411,7 +411,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_2_2 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_2_2_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_2_2_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_2_2> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_2_2>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_2_2>
@@ -430,7 +430,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @MakeGuess_2_3 {
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Zip_2_3_f_f>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_2_3_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_2_3> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_2_3>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@MakeGuess_2_3>

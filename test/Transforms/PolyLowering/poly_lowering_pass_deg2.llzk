@@ -37,7 +37,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @__llzk_poly_lowering_pass_aux_field_0 : !felt.type
+// CHECK:           struct.member @__llzk_poly_lowering_pass_aux_field_0 : !felt.type
 // CHECK:         }
 // -----
 
@@ -61,7 +61,7 @@ module attributes {veridise.lang = "llzk"} {
 
   // tests that polynomials are lowered to degree 1 before being passed into constraint calls
   struct.def @Mod1 {
-    struct.field @mod2: !struct.type<@Mod2>
+    struct.member @mod2: !struct.type<@Mod2>
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@Mod1> {
       %self = struct.new : !struct.type<@Mod1>
       function.return %self : !struct.type<@Mod1>
@@ -95,11 +95,11 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @__llzk_poly_lowering_pass_aux_field_0 : !felt.type
+// CHECK:           struct.member @__llzk_poly_lowering_pass_aux_field_0 : !felt.type
 // CHECK:         }
 
 // CHECK-LABEL:   struct.def @Mod1 {
-// CHECK:           struct.field @mod2 : !struct.type<@Mod2>
+// CHECK:           struct.member @mod2 : !struct.type<@Mod2>
 // CHECK:           function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@Mod1> attributes {function.allow_witness} {
 // CHECK:             %[[VAL_2:.*]] = struct.new : <@Mod1>
 // CHECK:             %[[VAL_3:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
@@ -116,13 +116,13 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             function.call @Mod2::@constrain(%[[VAL_11]], %[[VAL_9]], %[[VAL_10]]) : (!struct.type<@Mod2>, !felt.type, !felt.type) -> ()
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @__llzk_poly_lowering_pass_aux_field_1 : !felt.type
+// CHECK:           struct.member @__llzk_poly_lowering_pass_aux_field_1 : !felt.type
 // CHECK:         }
 // -----
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Mod2 {
-    struct.field @val: !felt.type
+    struct.member @val: !felt.type
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@Mod2> {
       %self = struct.new : !struct.type<@Mod2>
       struct.writef %self[@val] = %a : !struct.type<@Mod2>, !felt.type
@@ -142,8 +142,8 @@ module attributes {veridise.lang = "llzk"} {
 
   // tests that polynomials are lowered to degree 1 before being passed into constraint calls
   struct.def @Mod1 {
-    struct.field @mod2: !struct.type<@Mod2>
-    struct.field @val: !felt.type
+    struct.member @mod2: !struct.type<@Mod2>
+    struct.member @val: !felt.type
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@Mod1> {
       %self = struct.new : !struct.type<@Mod1>
       function.return %self : !struct.type<@Mod1>
@@ -167,7 +167,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // CHECK-LABEL:   struct.def @Mod2 {
-// CHECK:           struct.field @val : !felt.type
+// CHECK:           struct.member @val : !felt.type
 // CHECK:           function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@Mod2> attributes {function.allow_witness} {
 // CHECK:             %[[VAL_2:.*]] = struct.new : <@Mod2>
 // CHECK:             struct.writef %[[VAL_2]][@val] = %[[VAL_0]] : <@Mod2>, !felt.type
@@ -185,12 +185,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @__llzk_poly_lowering_pass_aux_field_0 : !felt.type
+// CHECK:           struct.member @__llzk_poly_lowering_pass_aux_field_0 : !felt.type
 // CHECK:         }
 
 // CHECK-LABEL:   struct.def @Mod1 {
-// CHECK:           struct.field @mod2 : !struct.type<@Mod2>
-// CHECK:           struct.field @val : !felt.type
+// CHECK:           struct.member @mod2 : !struct.type<@Mod2>
+// CHECK:           struct.member @val : !felt.type
 // CHECK:           function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@Mod1> attributes {function.allow_witness} {
 // CHECK:             %[[VAL_2:.*]] = struct.new : <@Mod1>
 // CHECK:             %[[VAL_3:.*]] = struct.readf %[[VAL_2]][@val] : <@Mod1>, !felt.type
@@ -217,6 +217,6 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:             constrain.eq %[[VAL_18]], %[[VAL_17]] : !felt.type, !felt.type
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @__llzk_poly_lowering_pass_aux_field_1 : !felt.type
-// CHECK:           struct.field @__llzk_poly_lowering_pass_aux_field_2 : !felt.type
+// CHECK:           struct.member @__llzk_poly_lowering_pass_aux_field_1 : !felt.type
+// CHECK:           struct.member @__llzk_poly_lowering_pass_aux_field_2 : !felt.type
 // CHECK:         }

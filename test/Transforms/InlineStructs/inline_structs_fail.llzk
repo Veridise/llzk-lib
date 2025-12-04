@@ -2,7 +2,7 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ResultOfComputeUnused {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute() -> !struct.type<@ResultOfComputeUnused> {
       %self = struct.new : !struct.type<@ResultOfComputeUnused>
@@ -20,7 +20,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @fa : !struct.type<@ResultOfComputeUnused>
+    struct.member @fa : !struct.type<@ResultOfComputeUnused>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -40,7 +40,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ResultOfComputeDoubleUse {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute() -> !struct.type<@ResultOfComputeDoubleUse> {
       %self = struct.new : !struct.type<@ResultOfComputeDoubleUse>
@@ -58,8 +58,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @fa : !struct.type<@ResultOfComputeDoubleUse>
-    struct.field @fb : !struct.type<@ResultOfComputeDoubleUse>
+    struct.member @fa : !struct.type<@ResultOfComputeDoubleUse>
+    struct.member @fb : !struct.type<@ResultOfComputeDoubleUse>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -85,8 +85,8 @@ module attributes {veridise.lang = "llzk"} {
   function.def private @temp(%0: !struct.type<@StructAsParamToFreeFunc>)
 
   struct.def @StructAsParamToFreeFunc {
-    struct.field @f1 : !felt.type
-    struct.field @f2 : !felt.type
+    struct.member @f1 : !felt.type
+    struct.member @f2 : !felt.type
 
     function.def @compute(%z: !felt.type) -> !struct.type<@StructAsParamToFreeFunc> {
       // expected-error@+1 {{'struct.new' op as argument to a no-body free function is not supported by this pass.}}
@@ -106,7 +106,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @f2 : !struct.type<@StructAsParamToFreeFunc>
+    struct.member @f2 : !struct.type<@StructAsParamToFreeFunc>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -139,7 +139,7 @@ module attributes {veridise.lang = "llzk"} {
 
   // expected-error@+1 {{Cannot inline structs with parameters.}}
   struct.def @ComponentX<[@C]> {
-    struct.field @f2 : !struct.type<@ComponentY<[5, @C]>>
+    struct.member @f2 : !struct.type<@ComponentY<[5, @C]>>
 
     function.def @compute() -> !struct.type<@ComponentX<[@C]>> {
       %self = struct.new : !struct.type<@ComponentX<[@C]>>

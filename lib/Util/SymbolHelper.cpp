@@ -143,7 +143,7 @@ public:
     return buildPathFromRootToStruct(to, std::move(path));
   }
 
-  FailureOr<SymbolRefAttr> getPathFromRootToField(FieldDefOp to) {
+  FailureOr<SymbolRefAttr> getPathFromRootToField(MemberDefOp to) {
     std::vector<FlatSymbolRefAttr> path;
     // Add the name of the field (its name is not optional)
     path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
@@ -174,7 +174,7 @@ public:
     return TypeSwitch<Operation *, FailureOr<SymbolRefAttr>>(to.getOperation())
         // This more general function must check for the specific cases first.
         .Case<FuncDefOp>([this](FuncDefOp toOp) { return getPathFromRootToFunc(toOp); })
-        .Case<FieldDefOp>([this](FieldDefOp toOp) { return getPathFromRootToField(toOp); })
+        .Case<MemberDefOp>([this](MemberDefOp toOp) { return getPathFromRootToField(toOp); })
         .Case<StructDefOp>([this](StructDefOp toOp) { return getPathFromRootToStruct(toOp); })
 
         // If it's a module, immediately delegate to `buildPathFromRootToAnyOp()` since
@@ -276,7 +276,7 @@ FailureOr<SymbolRefAttr> getPathFromRoot(StructDefOp &to, ModuleOp *foundRoot) {
   return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToStruct(to);
 }
 
-FailureOr<SymbolRefAttr> getPathFromRoot(FieldDefOp &to, ModuleOp *foundRoot) {
+FailureOr<SymbolRefAttr> getPathFromRoot(MemberDefOp &to, ModuleOp *foundRoot) {
   return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToField(to);
 }
 
@@ -297,7 +297,7 @@ FailureOr<SymbolRefAttr> getPathFromTopRoot(StructDefOp &to, ModuleOp *foundRoot
   return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToStruct(to);
 }
 
-FailureOr<SymbolRefAttr> getPathFromTopRoot(FieldDefOp &to, ModuleOp *foundRoot) {
+FailureOr<SymbolRefAttr> getPathFromTopRoot(MemberDefOp &to, ModuleOp *foundRoot) {
   return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToField(to);
 }
 

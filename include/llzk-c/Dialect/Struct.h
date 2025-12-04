@@ -84,12 +84,12 @@ llzkStructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute params);
 /// Returns the operation that defines the field with the given name, if present.
 MLIR_CAPI_EXPORTED MlirOperation llzkStructDefOpGetFieldDef(MlirOperation op, MlirStringRef name);
 
-/// Fills the given array with the FieldDefOp operations inside this struct. The pointer to the
+/// Fills the given array with the MemberDefOp operations inside this struct. The pointer to the
 /// operations must have been preallocated. See `llzkStructDefOpGetNumFieldDefs` for obtaining the
 /// required size of the array.
 MLIR_CAPI_EXPORTED void llzkStructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst);
 
-/// Returns the number of FieldDefOp operations defined in this struct.
+/// Returns the number of MemberDefOp operations defined in this struct.
 MLIR_CAPI_EXPORTED intptr_t llzkStructDefOpGetNumFieldDefs(MlirOperation op);
 
 /// Returns true if the struct has fields marked as columns.
@@ -116,17 +116,17 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkStructDefOpGetFullyQualifiedName(MlirOperat
 LLZK_DECLARE_OP_PREDICATE(StructDefOp, IsMainComponent);
 
 //===----------------------------------------------------------------------===//
-// FieldDefOp
+// MemberDefOp
 //===----------------------------------------------------------------------===//
 
-/// Returns true if the op is a FieldDefOp
-LLZK_DECLARE_OP_ISA(FieldDefOp);
+/// Returns true if the op is a MemberDefOp
+LLZK_DECLARE_OP_ISA(MemberDefOp);
 
 /// Returns true if the field has been marked public with a PublicAttr
-LLZK_DECLARE_OP_PREDICATE(FieldDefOp, HasPublicAttr);
+LLZK_DECLARE_OP_PREDICATE(MemberDefOp, HasPublicAttr);
 
 /// Sets the public attribute in the given field.
-MLIR_CAPI_EXPORTED void llzkFieldDefOpSetPublicAttr(MlirOperation op, bool value);
+MLIR_CAPI_EXPORTED void llzkMemberDefOpSetPublicAttr(MlirOperation op, bool value);
 
 //===----------------------------------------------------------------------===//
 // FieldReadOp

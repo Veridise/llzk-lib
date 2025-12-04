@@ -41,8 +41,8 @@ module attributes {veridise.lang = "llzk"} {
     // }
     //////////////////////////////////////////////////////////////////////////////////
     struct.def @IsZero {
-      struct.field @out: !felt.type {llzk.pub}
-      struct.field @inv: !felt.type
+      struct.member @out: !felt.type {llzk.pub}
+      struct.member @inv: !felt.type
 
       function.def @compute(%in: !felt.type) -> !struct.type<@IsZero> {
         %self = struct.new : !struct.type<@IsZero>
@@ -71,8 +71,8 @@ module attributes {veridise.lang = "llzk"} {
       }
     }
     // CHECK-LABEL: struct.def @IsZero {
-    // CHECK-NEXT:    struct.field @out : !felt.type {llzk.pub}
-    // CHECK-NEXT:    struct.field @inv : !felt.type
+    // CHECK-NEXT:    struct.member @out : !felt.type {llzk.pub}
+    // CHECK-NEXT:    struct.member @inv : !felt.type
     // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@IsZero> attributes {function.allow_witness} {
     // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@IsZero>
     // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = felt.const  1
@@ -98,22 +98,22 @@ module attributes {veridise.lang = "llzk"} {
     // CHECK-NEXT:      function.return
     // CHECK-NEXT:    }
     // CHECK-NEXT:  }
-    
+
     //////////////////////////////////////////////////////////////////////////////////
     // Circom source
     //////////////////////////////////////////////////////////////////////////////////
     // template IsEqual() {
     //     signal input in[2];
     //     signal output out;
-    // 
+    //
     //     component isz = IsZero();
     //     in[1] - in[0] ==> isz.in;
     //     isz.out ==> out;
     // }
     //////////////////////////////////////////////////////////////////////////////////
     struct.def @IsEqual {
-      struct.field @out: !felt.type {llzk.pub}
-      struct.field @isz: !struct.type<@IsZero>
+      struct.member @out: !felt.type {llzk.pub}
+      struct.member @isz: !struct.type<@IsZero>
 
       function.def @compute(%in: !array.type<2 x !felt.type>) -> !struct.type<@IsEqual> {
         %self = struct.new : !struct.type<@IsEqual>
@@ -146,8 +146,8 @@ module attributes {veridise.lang = "llzk"} {
       }
     }
     // CHECK-LABEL: struct.def @IsEqual {
-    // CHECK-NEXT:    struct.field @out : !felt.type {llzk.pub}
-    // CHECK-NEXT:    struct.field @isz : !struct.type<@IsZero>
+    // CHECK-NEXT:    struct.member @out : !felt.type {llzk.pub}
+    // CHECK-NEXT:    struct.member @isz : !struct.type<@IsZero>
     // CHECK-NEXT:    function.def @compute(%[[V17:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> !struct.type<@IsEqual> attributes {function.allow_witness} {
     // CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = struct.new : <@IsEqual>
     // CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index

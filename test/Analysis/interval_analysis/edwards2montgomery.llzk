@@ -15,8 +15,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetReg<[]> {
-    struct.field @"$super" : !felt.type
-    struct.field @reg : !felt.type {column}
+    struct.member @"$super" : !felt.type
+    struct.member @reg : !felt.type {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@NondetReg<[]>>
       struct.writef %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.type
@@ -28,8 +28,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetExtReg<[]> {
-    struct.field @"$super" : !array.type<4 x !felt.type>
-    struct.field @reg : !array.type<4 x !felt.type> {column}
+    struct.member @"$super" : !array.type<4 x !felt.type>
+    struct.member @reg : !array.type<4 x !felt.type> {column}
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@NondetExtReg<[]>>
       struct.writef %self[@reg] = %arg0 : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
@@ -41,7 +41,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @EqzExt<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>> attributes {function.allow_witness} {
       %felt_const_0 = felt.const  0
       %c3 = arith.constant 3 : index
@@ -70,8 +70,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Reg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>>
-    struct.field @reg : !struct.type<@NondetReg<[]>> {column}
+    struct.member @"$super" : !struct.type<@NondetReg<[]>>
+    struct.member @reg : !struct.type<@NondetReg<[]>> {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@Reg<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@Reg<[]>>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>>
@@ -90,9 +90,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @ExtReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetExtReg<[]>>
-    struct.field @"$temp" : !struct.type<@EqzExt<[]>>
-    struct.field @reg : !struct.type<@NondetExtReg<[]>> {column}
+    struct.member @"$super" : !struct.type<@NondetExtReg<[]>>
+    struct.member @"$temp" : !struct.type<@EqzExt<[]>>
+    struct.member @reg : !struct.type<@NondetExtReg<[]>> {column}
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@ExtReg<[]>> attributes {function.allow_witness} {
       %c3 = arith.constant 3 : index
       %c2 = arith.constant 2 : index
@@ -149,8 +149,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Div<[]> {
-    struct.field @"$super" : !felt.type
-    struct.field @reciprocal : !felt.type
+    struct.member @"$super" : !felt.type
+    struct.member @reciprocal : !felt.type
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@Div<[]>>
       %0 = felt.inv %arg1 : !felt.type
@@ -169,7 +169,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Log<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
     function.def @compute(%arg0: !string.type, %arg1: !array.type<? x !felt.type>) -> !struct.type<@Log<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@Log<[]>>
       %0 = function.call @Log$$extern(%arg0, %arg1) : (!string.type, !array.type<? x !felt.type>) -> !struct.type<@Component<[]>>
@@ -183,7 +183,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   function.def private @Log$$extern(!string.type, !array.type<? x !felt.type>) -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @Abort<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
     function.def @compute() -> !struct.type<@Abort<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@Abort<[]>>
       %0 = function.call @Abort$$extern() : () -> !struct.type<@Component<[]>>
@@ -197,7 +197,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   function.def private @Abort$$extern() -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @Assert<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
     function.def @compute(%arg0: !felt.type, %arg1: !string.type) -> !struct.type<@Assert<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@Assert<[]>>
       %0 = function.call @Assert$$extern(%arg0, %arg1) : (!felt.type, !string.type) -> !struct.type<@Component<[]>>
@@ -211,12 +211,12 @@ module attributes {veridise.lang = "llzk"} {
   }
   function.def private @Assert$$extern(!felt.type, !string.type) -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @Edwards2Montgomery<[]> {
-    struct.field @"$super" : !array.type<2 x !struct.type<@NondetReg<[]>>>
-    struct.field @out : !array.type<2 x !struct.type<@NondetReg<[]>>> {column}
-    struct.field @"$temp_1" : !struct.type<@NondetReg<[]>> {column}
-    struct.field @"$temp_0" : !struct.type<@Div<[]>>
-    struct.field @"$temp" : !struct.type<@NondetReg<[]>> {column}
-    struct.field @v : !struct.type<@Div<[]>>
+    struct.member @"$super" : !array.type<2 x !struct.type<@NondetReg<[]>>>
+    struct.member @out : !array.type<2 x !struct.type<@NondetReg<[]>>> {column}
+    struct.member @"$temp_1" : !struct.type<@NondetReg<[]>> {column}
+    struct.member @"$temp_0" : !struct.type<@Div<[]>>
+    struct.member @"$temp" : !struct.type<@NondetReg<[]>> {column}
+    struct.member @v : !struct.type<@Div<[]>>
     function.def @compute(%arg0: !array.type<2 x !felt.type>) -> !struct.type<@Edwards2Montgomery<[]>> attributes {function.allow_witness} {
       %felt_const_0 = felt.const  0
       %felt_const_1 = felt.const  1

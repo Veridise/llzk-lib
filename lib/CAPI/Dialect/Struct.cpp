@@ -93,17 +93,20 @@ MlirType llzkStructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute attr) 
 
 MlirOperation llzkStructDefOpGetFieldDef(MlirOperation op, MlirStringRef name) {
   Builder builder(unwrap(op)->getContext());
-  return wrap(llvm::cast<StructDefOp>(unwrap(op)).getFieldDef(builder.getStringAttr(unwrap(name))));
+  return wrap(
+      llvm::cast<StructDefOp>(unwrap(op)).getMemberDef(builder.getStringAttr(unwrap(name)))
+  );
 }
 
 void llzkStructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst) {
-  for (auto [offset, field] : llvm::enumerate(llvm::cast<StructDefOp>(unwrap(op)).getFieldDefs())) {
+  for (auto [offset, field] :
+       llvm::enumerate(llvm::cast<StructDefOp>(unwrap(op)).getMemberDefs())) {
     dst[offset] = wrap(field);
   }
 }
 
 intptr_t llzkStructDefOpGetNumFieldDefs(MlirOperation op) {
-  return static_cast<intptr_t>(llvm::cast<StructDefOp>(unwrap(op)).getFieldDefs().size());
+  return static_cast<intptr_t>(llvm::cast<StructDefOp>(unwrap(op)).getMemberDefs().size());
 }
 
 MlirLogicalResult llzkStructDefOpGetHasColumns(MlirOperation op) {
@@ -142,17 +145,17 @@ bool llzkStructDefOpGetIsMainComponent(MlirOperation op) {
 }
 
 //===----------------------------------------------------------------------===//
-// FieldDefOp
+// MemberDefOp
 //===----------------------------------------------------------------------===//
 
-bool llzkOperationIsAFieldDefOp(MlirOperation op) { return llvm::isa<FieldDefOp>(unwrap(op)); }
+bool llzkOperationIsAMemberDefOp(MlirOperation op) { return llvm::isa<MemberDefOp>(unwrap(op)); }
 
-bool llzkFieldDefOpGetHasPublicAttr(MlirOperation op) {
-  return llvm::cast<FieldDefOp>(unwrap(op)).hasPublicAttr();
+bool llzkMemberDefOpGetHasPublicAttr(MlirOperation op) {
+  return llvm::cast<MemberDefOp>(unwrap(op)).hasPublicAttr();
 }
 
-void llzkFieldDefOpSetPublicAttr(MlirOperation op, bool value) {
-  llvm::cast<FieldDefOp>(unwrap(op)).setPublicAttr(value);
+void llzkMemberDefOpSetPublicAttr(MlirOperation op, bool value) {
+  llvm::cast<MemberDefOp>(unwrap(op)).setPublicAttr(value);
 }
 
 //===----------------------------------------------------------------------===//

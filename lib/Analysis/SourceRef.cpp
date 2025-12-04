@@ -48,7 +48,7 @@ void SourceRefIndex::print(raw_ostream &os) const {
 
 bool SourceRefIndex::operator<(const SourceRefIndex &rhs) const {
   if (isField() && rhs.isField()) {
-    return NamedOpLocationLess<FieldDefOp> {}(getField(), rhs.getField());
+    return NamedOpLocationLess<MemberDefOp> {}(getField(), rhs.getField());
   }
   if (isIndex() && rhs.isIndex()) {
     return getIndex() < rhs.getIndex();
@@ -83,7 +83,7 @@ size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
     auto r = c.getIndexRange();
     return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
   } else {
-    return OpHash<component::FieldDefOp> {}(c.getField());
+    return OpHash<component::MemberDefOp> {}(c.getField());
   }
 }
 
@@ -146,7 +146,7 @@ std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, FuncDe
   return res;
 }
 
-std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, FieldDefOp fieldDef) {
+std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, MemberDefOp fieldDef) {
   std::vector<SourceRef> res;
   FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
   ensure(
@@ -254,18 +254,18 @@ std::vector<SourceRef> getAllChildren(
 ) {
   std::vector<SourceRef> res;
   // Recurse into struct types by iterating over all their field definitions
-  for (auto f : structDefRes.get().getOps<FieldDefOp>()) {
-    // We want to store the FieldDefOp, but without the possibility of accidentally dropping the
+  for (auto f : structDefRes.get().getOps<MemberDefOp>()) {
+    // We want to store the MemberDefOp, but without the possibility of accidentally dropping the
     // reference, so we need to re-lookup the symbol to create a SymbolLookupResult, which will
     // manage the external module containing the field defs, if needed.
     // TODO: It would be nice if we could manage module op references differently
     // so we don't have to do this.
     auto structDefCopy = structDefRes;
-    auto fieldLookup = lookupSymbolIn<FieldDefOp>(
+    auto fieldLookup = lookupSymbolIn<MemberDefOp>(
         tables, SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()), std::move(structDefCopy),
         mod.getOperation()
     );
-    ensure(succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp");
+    ensure(succeeded(fieldLookup), "could not get SymbolLookupResult of existing MemberDefOp");
     SourceRef childRef = root.createChild(SourceRefIndex(fieldLookup.value()));
     // Make a reference to the current field, regardless of if it is a composite
     // type or not.

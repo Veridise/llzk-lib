@@ -3,8 +3,8 @@
 // TESTS: a basic scenario of inling 2 levels deep
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component1A {
-    struct.field @f1 : !felt.type
-    struct.field @f2 : !felt.type
+    struct.member @f1 : !felt.type
+    struct.member @f2 : !felt.type
 
     function.def @compute(%z: !felt.type) -> !struct.type<@Component1A> {
       %self = struct.new : !struct.type<@Component1A>
@@ -23,7 +23,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component1B {
-    struct.field @f2 : !struct.type<@Component1A>
+    struct.member @f2 : !struct.type<@Component1A>
 
     function.def @compute(%z: !felt.type) -> !struct.type<@Component1B> {
       %self = struct.new : !struct.type<@Component1B>
@@ -40,7 +40,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @f : !struct.type<@Component1B>
+    struct.member @f : !struct.type<@Component1B>
 
     function.def @compute() -> !struct.type<@Main> {
       %z = felt.const 42
@@ -59,8 +59,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL:   struct.def @Main {
-// CHECK-NEXT:      struct.field @"f:!s<@Component1B>+f2:!s<@Component1A>+f1" : !felt.type
-// CHECK-NEXT:      struct.field @"f:!s<@Component1B>+f2:!s<@Component1A>+f2" : !felt.type
+// CHECK-NEXT:      struct.member @"f:!s<@Component1B>+f2:!s<@Component1A>+f1" : !felt.type
+// CHECK-NEXT:      struct.member @"f:!s<@Component1B>+f2:!s<@Component1A>+f2" : !felt.type
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 42
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
@@ -82,8 +82,8 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS: multiple callees inlined into the same caller
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component2A {
-    struct.field @f1 : index
-    struct.field @f2 : i1
+    struct.member @f1 : index
+    struct.member @f2 : i1
 
     function.def @compute(%a: index, %b: i1) -> !struct.type<@Component2A> {
       %self = struct.new : !struct.type<@Component2A>
@@ -102,7 +102,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component2B {
-    struct.field @f1 : !string.type
+    struct.member @f1 : !string.type
 
     function.def @compute(%z: !string.type) -> !struct.type<@Component2B> {
       %self = struct.new : !struct.type<@Component2B>
@@ -117,8 +117,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @f1 : !struct.type<@Component2B>
-    struct.field @f2 : !struct.type<@Component2A>
+    struct.member @f1 : !struct.type<@Component2B>
+    struct.member @f2 : !struct.type<@Component2A>
 
     function.def @compute() -> !struct.type<@Main> {
       %42 = arith.constant 42 : index
@@ -147,9 +147,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL:   struct.def @Main {
-// CHECK-NEXT:      struct.field @"f1:!s<@Component2B>+f1" : !string.type
-// CHECK-NEXT:      struct.field @"f2:!s<@Component2A>+f1" : index
-// CHECK-NEXT:      struct.field @"f2:!s<@Component2A>+f2" : i1
+// CHECK-NEXT:      struct.member @"f1:!s<@Component2B>+f1" : !string.type
+// CHECK-NEXT:      struct.member @"f2:!s<@Component2A>+f1" : index
+// CHECK-NEXT:      struct.member @"f2:!s<@Component2A>+f2" : i1
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant true
@@ -179,8 +179,8 @@ module attributes {veridise.lang = "llzk"} {
 //  - a struct that has multiple fields of the same StructType
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component3A {
-    struct.field @f1 : index
-    struct.field @f2 : i1
+    struct.member @f1 : index
+    struct.member @f2 : i1
 
     function.def @compute(%a: index, %b: i1) -> !struct.type<@Component3A> {
       %self = struct.new : !struct.type<@Component3A>
@@ -199,9 +199,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @f1 : !struct.type<@Component3A>
-    struct.field @f2 : !struct.type<@Component3A>
-    struct.field @f3 : !struct.type<@Component3A>
+    struct.member @f1 : !struct.type<@Component3A>
+    struct.member @f2 : !struct.type<@Component3A>
+    struct.member @f3 : !struct.type<@Component3A>
 
     function.def @compute() -> !struct.type<@Main> {
       %24 = arith.constant 24 : index
@@ -238,12 +238,12 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL:   struct.def @Main {
-// CHECK-NEXT:      struct.field @"f1:!s<@Component3A>+f1" : index
-// CHECK-NEXT:      struct.field @"f1:!s<@Component3A>+f2" : i1
-// CHECK-NEXT:      struct.field @"f2:!s<@Component3A>+f1" : index
-// CHECK-NEXT:      struct.field @"f2:!s<@Component3A>+f2" : i1
-// CHECK-NEXT:      struct.field @"f3:!s<@Component3A>+f1" : index
-// CHECK-NEXT:      struct.field @"f3:!s<@Component3A>+f2" : i1
+// CHECK-NEXT:      struct.member @"f1:!s<@Component3A>+f1" : index
+// CHECK-NEXT:      struct.member @"f1:!s<@Component3A>+f2" : i1
+// CHECK-NEXT:      struct.member @"f2:!s<@Component3A>+f1" : index
+// CHECK-NEXT:      struct.member @"f2:!s<@Component3A>+f2" : i1
+// CHECK-NEXT:      struct.member @"f3:!s<@Component3A>+f1" : index
+// CHECK-NEXT:      struct.member @"f3:!s<@Component3A>+f2" : i1
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 24 : index
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 76 : index
@@ -285,7 +285,7 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS: same callee inlined into different callers
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component4A {
-    struct.field @f : !array.type<4 x !felt.type>
+    struct.member @f : !array.type<4 x !felt.type>
 
     function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type, %d: !felt.type) -> !struct.type<@Component4A> {
       %self = struct.new : !struct.type<@Component4A>
@@ -303,7 +303,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component4B {
-    struct.field @f : !struct.type<@Component4A>
+    struct.member @f : !struct.type<@Component4A>
 
     function.def @compute() -> !struct.type<@Component4B> {
       %a = felt.const 3
@@ -328,7 +328,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component4C {
-    struct.field @f : !struct.type<@Component4A>
+    struct.member @f : !struct.type<@Component4A>
 
     function.def @compute(%f: !felt.type) -> !struct.type<@Component4C> {
       %self = struct.new : !struct.type<@Component4C>
@@ -345,8 +345,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @f1 : !struct.type<@Component4B>
-    struct.field @f2 : !struct.type<@Component4C>
+    struct.member @f1 : !struct.type<@Component4B>
+    struct.member @f2 : !struct.type<@Component4C>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -369,8 +369,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL:   struct.def @Main {
-// CHECK-NEXT:      struct.field @"f1:!s<@Component4B>+f:!s<@Component4A>+f" : !array.type<4 x !felt.type>
-// CHECK-NEXT:      struct.field @"f2:!s<@Component4C>+f:!s<@Component4A>+f" : !array.type<4 x !felt.type>
+// CHECK-NEXT:      struct.member @"f1:!s<@Component4B>+f:!s<@Component4A>+f" : !array.type<4 x !felt.type>
+// CHECK-NEXT:      struct.member @"f2:!s<@Component4C>+f:!s<@Component4A>+f" : !array.type<4 x !felt.type>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 2
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
@@ -404,8 +404,8 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS: no main struct
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component5A {
-    struct.field @f1 : !felt.type
-    struct.field @f2 : !felt.type
+    struct.member @f1 : !felt.type
+    struct.member @f2 : !felt.type
 
     function.def @compute(%z: !felt.type) -> !struct.type<@Component5A> {
       %self = struct.new : !struct.type<@Component5A>
@@ -424,7 +424,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component5B {
-    struct.field @f2 : !struct.type<@Component5A>
+    struct.member @f2 : !struct.type<@Component5A>
 
     function.def @compute(%z: !felt.type) -> !struct.type<@Component5B> {
       %self = struct.new : !struct.type<@Component5B>
@@ -441,8 +441,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL:   struct.def @Component5B {
-// CHECK-NEXT:      struct.field @"f2:!s<@Component5A>+f1" : !felt.type
-// CHECK-NEXT:      struct.field @"f2:!s<@Component5A>+f2" : !felt.type
+// CHECK-NEXT:      struct.member @"f2:!s<@Component5A>+f1" : !felt.type
+// CHECK-NEXT:      struct.member @"f2:!s<@Component5A>+f2" : !felt.type
 // CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Component5B> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component5B>
 // CHECK-NEXT:        struct.writef %[[V1]][@"f2:!s<@Component5A>+f1"] = %[[V0]] : <@Component5B>, !felt.type
@@ -462,8 +462,8 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS: Call to "constrain" but not "compute"
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component6A {
-    struct.field @f1 : !felt.type
-    struct.field @f2 : !felt.type
+    struct.member @f1 : !felt.type
+    struct.member @f2 : !felt.type
 
     function.def @compute(%z: !felt.type) -> !struct.type<@Component6A> {
       %self = struct.new : !struct.type<@Component6A>
@@ -482,7 +482,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @f2 : !struct.type<@Component6A>
+    struct.member @f2 : !struct.type<@Component6A>
 
     function.def @compute() -> !struct.type<@Main> {
       %2 = felt.const 2
@@ -499,8 +499,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL:   struct.def @Main {
-// CHECK-NEXT:      struct.field @"f2:!s<@Component6A>+f1" : !felt.type
-// CHECK-NEXT:      struct.field @"f2:!s<@Component6A>+f2" : !felt.type
+// CHECK-NEXT:      struct.member @"f2:!s<@Component6A>+f1" : !felt.type
+// CHECK-NEXT:      struct.member @"f2:!s<@Component6A>+f2" : !felt.type
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[V0]] : !struct.type<@Main>
@@ -520,8 +520,8 @@ module attributes {veridise.lang = "llzk"} {
 // Inlining does not occur since it's based on "constrain" calls.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component7A {
-    struct.field @f1 : !felt.type
-    struct.field @f2 : !felt.type
+    struct.member @f1 : !felt.type
+    struct.member @f2 : !felt.type
 
     function.def @compute(%z: !felt.type) -> !struct.type<@Component7A> {
       %self = struct.new : !struct.type<@Component7A>
@@ -540,7 +540,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @f2 : !struct.type<@Component7A>
+    struct.member @f2 : !struct.type<@Component7A>
 
     function.def @compute() -> !struct.type<@Main> {
       %2 = felt.const 2
@@ -557,8 +557,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL:   struct.def @Component7A {
-// CHECK-NEXT:      struct.field @f1 : !felt.type
-// CHECK-NEXT:      struct.field @f2 : !felt.type
+// CHECK-NEXT:      struct.member @f1 : !felt.type
+// CHECK-NEXT:      struct.member @f2 : !felt.type
 // CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Component7A> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component7A>
 // CHECK-NEXT:        struct.writef %[[V1]][@f1] = %[[V0]] : <@Component7A>, !felt.type
@@ -575,7 +575,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 //
 // CHECK-LABEL:   struct.def @Main {
-// CHECK-NEXT:      struct.field @f2 : !struct.type<@Component7A>
+// CHECK-NEXT:      struct.member @f2 : !struct.type<@Component7A>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 2
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
@@ -594,8 +594,8 @@ module attributes {veridise.lang = "llzk"} {
 // Inlining does not occur since it's based on "constrain" calls.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component8A {
-    struct.field @f1 : !felt.type
-    struct.field @f2 : !felt.type
+    struct.member @f1 : !felt.type
+    struct.member @f2 : !felt.type
 
     function.def @compute(%z: !felt.type) -> !struct.type<@Component8A> {
       %self = struct.new : !struct.type<@Component8A>
@@ -614,7 +614,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @f2 : !struct.type<@Component8A>
+    struct.member @f2 : !struct.type<@Component8A>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -628,8 +628,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL:   struct.def @Component8A {
-// CHECK-NEXT:      struct.field @f1 : !felt.type
-// CHECK-NEXT:      struct.field @f2 : !felt.type
+// CHECK-NEXT:      struct.member @f1 : !felt.type
+// CHECK-NEXT:      struct.member @f2 : !felt.type
 // CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Component8A> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component8A>
 // CHECK-NEXT:        struct.writef %[[V1]][@f1] = %[[V0]] : <@Component8A>, !felt.type
@@ -646,7 +646,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 //
 // CHECK-LABEL:   struct.def @Main {
-// CHECK-NEXT:      struct.field @f2 : !struct.type<@Component8A>
+// CHECK-NEXT:      struct.member @f2 : !struct.type<@Component8A>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[V0]] : !struct.type<@Main>
@@ -661,7 +661,7 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS: Result of a field read has use(s) other than parameter to constrain function.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component9A {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute() -> !struct.type<@Component9A> {
       %self = struct.new : !struct.type<@Component9A>
@@ -676,7 +676,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @fa : !struct.type<@Component9A>
+    struct.member @fa : !struct.type<@Component9A>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -696,7 +696,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL:   struct.def @Main {
-// CHECK-NEXT:      struct.field @"fa:!s<@Component9A>+f" : !felt.type
+// CHECK-NEXT:      struct.member @"fa:!s<@Component9A>+f" : !felt.type
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  12
@@ -715,7 +715,7 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS: Passing struct as function parameter
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component10A {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute() -> !struct.type<@Component10A> {
       %self = struct.new : !struct.type<@Component10A>
@@ -733,7 +733,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component10B {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute(%a: !struct.type<@Component10A>) -> !struct.type<@Component10B> {
       %self = struct.new : !struct.type<@Component10B>
@@ -753,8 +753,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @fa : !struct.type<@Component10A>
-    struct.field @fb : !struct.type<@Component10B>
+    struct.member @fa : !struct.type<@Component10A>
+    struct.member @fb : !struct.type<@Component10B>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -775,8 +775,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.field @"fa:!s<@Component10A>+f" : !felt.type
-// CHECK-NEXT:    struct.field @"fb:!s<@Component10B>+f" : !felt.type
+// CHECK-NEXT:    struct.member @"fa:!s<@Component10A>+f" : !felt.type
+// CHECK-NEXT:    struct.member @"fb:!s<@Component10B>+f" : !felt.type
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  12
@@ -805,7 +805,7 @@ module attributes {veridise.lang = "llzk"} {
 //  - Attributes on fields are propagated correctly.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component11A {
-    struct.field @f : !felt.type {llzk.pub}
+    struct.member @f : !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@Component11A> {
       %self = struct.new : !struct.type<@Component11A>
@@ -823,7 +823,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component11B {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute(%a: !struct.type<@Component11A>) -> !struct.type<@Component11B> {
       %self = struct.new : !struct.type<@Component11B>
@@ -843,7 +843,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component11C {
-    struct.field @fb : !struct.type<@Component11B>
+    struct.member @fb : !struct.type<@Component11B>
 
     function.def @compute(%a: !struct.type<@Component11A>) -> !struct.type<@Component11C> {
       %self = struct.new : !struct.type<@Component11C>
@@ -860,8 +860,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @fa : !struct.type<@Component11A>
-    struct.field @fc : !struct.type<@Component11C>
+    struct.member @fa : !struct.type<@Component11A>
+    struct.member @fc : !struct.type<@Component11C>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -882,8 +882,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.field @"fa:!s<@Component11A>+f" : !felt.type {llzk.pub}
-// CHECK-NEXT:    struct.field @"fc:!s<@Component11C>+fb:!s<@Component11B>+f" : !felt.type
+// CHECK-NEXT:    struct.member @"fa:!s<@Component11A>+f" : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.member @"fc:!s<@Component11C>+fb:!s<@Component11B>+f" : !felt.type
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  12
@@ -912,7 +912,7 @@ module attributes {veridise.lang = "llzk"} {
   global.def @g : !struct.type<@Component12A>
 
   struct.def @Component12A {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute() -> !struct.type<@Component12A> {
       %self = struct.new : !struct.type<@Component12A>
@@ -946,7 +946,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @fb : !struct.type<@Component12B>
+    struct.member @fb : !struct.type<@Component12B>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -965,7 +965,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL: global.def @g : !struct.type<@Component12A>
 //
 // CHECK-LABEL: struct.def @Component12A {
-// CHECK-NEXT:    struct.field @f : !felt.type
+// CHECK-NEXT:    struct.member @f : !felt.type
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component12A> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const  12
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component12A>
@@ -999,7 +999,7 @@ module attributes {veridise.lang = "llzk"} {
 //        This prevents A->B inlining via `canInline()` check.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component13A {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute() -> !struct.type<@Component13A> {
       %self = struct.new : !struct.type<@Component13A>
@@ -1017,7 +1017,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component13B {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute(%a: !struct.type<@Component13A>) -> !struct.type<@Component13B> {
       %self = struct.new : !struct.type<@Component13B>
@@ -1035,8 +1035,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @fa : !struct.type<@Component13A>
-    struct.field @fb : !struct.type<@Component13B>
+    struct.member @fa : !struct.type<@Component13A>
+    struct.member @fb : !struct.type<@Component13B>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -1056,7 +1056,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-LABEL: struct.def @Component13A {
-// CHECK-NEXT:    struct.field @f : !felt.type
+// CHECK-NEXT:    struct.member @f : !felt.type
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component13A> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const  12
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component13A>
@@ -1072,8 +1072,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.field @fa : !struct.type<@Component13A>
-// CHECK-NEXT:    struct.field @"fb:!s<@Component13B>+f" : !felt.type
+// CHECK-NEXT:    struct.member @fa : !struct.type<@Component13A>
+// CHECK-NEXT:    struct.member @"fb:!s<@Component13B>+f" : !felt.type
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component13A::@compute() : () -> !struct.type<@Component13A>

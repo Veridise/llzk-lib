@@ -18,7 +18,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentA1 {
-    struct.field @f1 : !array.type<4,3 x !F>
+    struct.member @f1 : !array.type<4,3 x !F>
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {
@@ -35,7 +35,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1 {
     // expected-error@+1 {{Field must be felt type. Found '!array.type<4,3 x !felt.type>' for field: f1}}
-    struct.field @f1 : !array.type<4,3 x !F>
+    struct.member @f1 : !array.type<4,3 x !F>
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {

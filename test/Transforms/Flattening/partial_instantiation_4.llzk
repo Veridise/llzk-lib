@@ -4,7 +4,7 @@
 #id = affine_map<(i)->(i)>
 module attributes {veridise.lang = "llzk"} {
   struct.def @Zip<[@Lhs, @Rhs, @N]> {
-    struct.field @"$array" : !array.type<#id x !felt.type>
+    struct.member @"$array" : !array.type<#id x !felt.type>
 
     function.def @compute() -> !struct.type<@Zip<[@Lhs, @Rhs, @N]>> {
       %self = struct.new : !struct.type<@Zip<[@Lhs, @Rhs, @N]>>
@@ -36,7 +36,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK: #[[$M0:.+]] = affine_map<(d0) -> (d0)>
 //
 // CHECK-LABEL: struct.def @"Zip_f_f_\1A"<[@N]> {
-// CHECK-NEXT:    struct.field @"$array" : !array.type<#[[$M0]] x !felt.type>
+// CHECK-NEXT:    struct.member @"$array" : !array.type<#[[$M0]] x !felt.type>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@"Zip_f_f_\1A"<[@N]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@"Zip_f_f_\1A"<[@N]>>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index

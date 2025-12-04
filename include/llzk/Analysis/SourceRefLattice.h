@@ -67,7 +67,7 @@ public:
   /// @return The new value and a change result indicating if the value is different than the
   /// original value.
   std::pair<SourceRefLatticeValue, mlir::ChangeResult>
-  referenceField(SymbolLookupResult<component::FieldDefOp> fieldRef) const;
+  referenceField(SymbolLookupResult<component::MemberDefOp> fieldRef) const;
 
   /// @brief Perform an array.extract or array.read operation, depending on how many indices
   /// are provided.

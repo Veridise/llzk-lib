@@ -61,13 +61,13 @@ using namespace llzk::function;
 
 namespace {
 
-using DestFieldWithSrcStructType = FieldDefOp;
-using DestCloneOfSrcStructField = FieldDefOp;
+using DestFieldWithSrcStructType = MemberDefOp;
+using DestCloneOfSrcStructField = MemberDefOp;
 /// Mapping of the name of each field in the inlining source struct to the new cloned version of the
 /// source field in the destination struct. Uses `std::map` for consistent ordering between multiple
 /// compilations of the same LLZK IR input.
 using SrcStructFieldToCloneInDest = std::map<StringRef, DestCloneOfSrcStructField>;
-/// Mapping of `FieldDefOp` in the inlining destination struct to each `FieldDefOp` from the
+/// Mapping of `MemberDefOp` in the inlining destination struct to each `MemberDefOp` from the
 /// inlining source struct to the new cloned version of the source field in the destination struct.
 using DestToSrcToClonedSrcInDest =
     DenseMap<DestFieldWithSrcStructType, SrcStructFieldToCloneInDest>;
@@ -84,10 +84,10 @@ static inline Value getSelfValue(FuncDefOp f) {
   }
 }
 
-/// Get the `FieldDefOp` that defines the field referenced by the given `FieldRefOpInterface` with
+/// Get the `MemberDefOp` that defines the field referenced by the given `FieldRefOpInterface` with
 /// an assertion failure if it is not found.
-static inline FieldDefOp getDef(SymbolTableCollection &tables, FieldRefOpInterface fRef) {
-  auto r = fRef.getFieldDefOp(tables);
+static inline MemberDefOp getDef(SymbolTableCollection &tables, FieldRefOpInterface fRef) {
+  auto r = fRef.getMemberDefOp(tables);
   assert(succeeded(r));
   return r->get();
 }
@@ -237,7 +237,7 @@ class StructInliner {
   /// The struct whose body will be augmented with the inlined content.
   StructDefOp destStruct;
 
-  inline FieldDefOp getDef(FieldRefOpInterface fRef) const { return ::getDef(tables, fRef); }
+  inline MemberDefOp getDef(FieldRefOpInterface fRef) const { return ::getDef(tables, fRef); }
 
   // Update field read/write ops that target the "self" value of the FuncDefOp plus some key in
   // `oldToNewFieldDef` to instead target the new base Value provided to the constructor plus the
@@ -457,7 +457,7 @@ class StructInliner {
 
     SymbolTable &destStructSymTable = tables.getSymbolTable(destStruct);
     StructType srcStructType = srcStruct.getType();
-    for (FieldDefOp destField : destStruct.getFieldDefs()) {
+    for (MemberDefOp destField : destStruct.getMemberDefs()) {
       if (StructType destFieldType = llvm::dyn_cast<StructType>(destField.getType())) {
         UnificationMap unifications;
         if (!structTypesUnify(srcStructType, destFieldType, {}, &unifications)) {
@@ -469,15 +469,15 @@ class StructInliner {
         // Clone each field from 'srcStruct' into 'destStruct'. Add an entry to `destToSrcToClone`
         // even if there are no fields in `srcStruct` so its presence can be used as a marker.
         SrcStructFieldToCloneInDest &srcToClone = destToSrcToClone[destField];
-        std::vector<FieldDefOp> srcFields = srcStruct.getFieldDefs();
+        std::vector<MemberDefOp> srcFields = srcStruct.getMemberDefs();
         if (srcFields.empty()) {
           continue;
         }
         OpBuilder builder(destField);
         std::string newNameBase =
             destField.getName().str() + ':' + BuildShortTypeString::from(destFieldType);
-        for (FieldDefOp srcField : srcFields) {
-          DestCloneOfSrcStructField newF = llvm::cast<FieldDefOp>(builder.clone(*srcField));
+        for (MemberDefOp srcField : srcFields) {
+          DestCloneOfSrcStructField newF = llvm::cast<MemberDefOp>(builder.clone(*srcField));
           newF.setName(builder.getStringAttr(newNameBase + '+' + newF.getName()));
           srcToClone[srcField.getSymNameAttr()] = newF;
           // Also update the cached SymbolTable
@@ -829,7 +829,7 @@ static LogicalResult finalizeStruct(
     }
   }
   // Next, to avoid "still has uses" errors, must erase FieldWriteOp first, then FieldReadOp, before
-  // erasing the CreateStructOp or FieldDefOp.
+  // erasing the CreateStructOp or MemberDefOp.
   for (Operation *op : toDelete.fieldWriteOps) {
     if (failed(useHandler.handle(op))) {
       return failure(); // error already printed within handle()
@@ -845,7 +845,7 @@ static LogicalResult finalizeStruct(
   for (CreateStructOp op : toDelete.newStructOps) {
     op.erase();
   }
-  // Finally, erase FieldDefOp via SymbolTable so table itself is updated too.
+  // Finally, erase MemberDefOp via SymbolTable so table itself is updated too.
   SymbolTable &callerSymTab = tables.getSymbolTable(caller);
   for (DestFieldWithSrcStructType op : toDelete.fieldDefs) {
     assert(op.getParentOp() == caller); // using correct SymbolTable

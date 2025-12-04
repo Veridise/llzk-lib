@@ -207,7 +207,7 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
   // Insert the field declaration op
   {
     OpBuilder builder(caller.getBodyRegion());
-    builder.create<FieldDefOp>(fieldDefLoc, fieldName, calleeTy);
+    builder.create<MemberDefOp>(fieldDefLoc, fieldName, calleeTy);
   }
 
   // Insert the constrain function ops

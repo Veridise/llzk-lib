@@ -56,7 +56,7 @@ function.def @trival() -> !array.type<0 x index> {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component01 {
-    struct.field @f : !array.type<2 x !felt.type>
+    struct.member @f : !array.type<2 x !felt.type>
 
     function.def @compute(%0: !array.type<2 x !felt.type>) -> !struct.type<@Component01> {
       %self = struct.new : !struct.type<@Component01>
@@ -71,7 +71,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component02<[@N]> {
-    struct.field @g : !array.type<@N x !struct.type<@Component01>>
+    struct.member @g : !array.type<@N x !struct.type<@Component01>>
 
     function.def @compute(%in: !array.type<@N,2 x !felt.type>) -> !struct.type<@Component02<[@N]>> {
       %self = struct.new : !struct.type<@Component02<[@N]>>
@@ -106,7 +106,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @Component01 {
-//CHECK-NEXT:    struct.field @f : !array.type<2 x !felt.type>
+//CHECK-NEXT:    struct.member @f : !array.type<2 x !felt.type>
 //CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> !struct.type<@Component01> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component01>
 //CHECK-NEXT:      struct.writef %[[SELF]][@f] = %[[A0]] : <@Component01>, !array.type<2 x !felt.type>
@@ -119,7 +119,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: struct.def @Component02<[@N]> {
-//CHECK-NEXT:    struct.field @g : !array.type<@N x !struct.type<@Component01>>
+//CHECK-NEXT:    struct.member @g : !array.type<@N x !struct.type<@Component01>>
 //CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<@N,2 x !felt.type>) -> !struct.type<@Component02<[@N]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02<[@N]>>
 //CHECK-NEXT:      %array = array.new  : <@N x !struct.type<@Component01>>

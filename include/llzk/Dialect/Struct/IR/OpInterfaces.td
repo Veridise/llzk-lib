@@ -55,7 +55,7 @@ def FieldRefOpInterface : OpInterface<"FieldRefOpInterface"> {
 
   let extraClassDeclaration = [{
     /// Gets the definition for the `field` referenced in this op.
-    ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &tables);
+    ::mlir::FailureOr<SymbolLookupResult<MemberDefOp>> getMemberDefOp(::mlir::SymbolTableCollection &tables);
   }];
 }
 

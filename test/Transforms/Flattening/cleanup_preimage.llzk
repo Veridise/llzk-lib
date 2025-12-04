@@ -29,7 +29,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     struct.def @Zip<[@Lhs, @Rhs, @N]> {
-      struct.field @"$super" : !array.type<9 x !struct.type<@Helper::@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
+      struct.member @"$super" : !array.type<9 x !struct.type<@Helper::@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
       function.def @compute() -> !struct.type<@Helper::@Zip<[@Lhs, @Rhs, @N]>> {
         %self = struct.new : !struct.type<@Helper::@Zip<[@Lhs, @Rhs, @N]>>
         function.return %self : !struct.type<@Helper::@Zip<[@Lhs, @Rhs, @N]>>
@@ -42,7 +42,7 @@ module attributes {veridise.lang = "llzk"} {
 
   module @Impl {
     struct.def @MakeGuess<[@PEGS]> {
-      struct.field @"$temp" : !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>
+      struct.member @"$temp" : !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>
 
       function.def @compute() -> !struct.type<@Impl::@MakeGuess<[@PEGS]>> {
         %self = struct.new : !struct.type<@Impl::@MakeGuess<[@PEGS]>>

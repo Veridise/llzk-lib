@@ -6,7 +6,7 @@ module attributes {veridise.lang = "llzk"} {
   include.from "FrontendLang/Zirgen/zir_example_0.llzk" as @std
 
   struct.def @C1 {
-    struct.field @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
+    struct.member @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
 
     function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@C1> {
       %self = struct.new : !struct.type<@C1>
@@ -25,7 +25,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @C2 {
-    struct.field @fc1 : !struct.type<@C1>
+    struct.member @fc1 : !struct.type<@C1>
 
     function.def @compute(%x: !struct.type<@std::@risc0::@ValU32>) -> !struct.type<@C2> {
       %self = struct.new : !struct.type<@C2>
@@ -55,7 +55,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 //CHECK-LABEL:   struct.def @C1 {
-//CHECK-NEXT:      struct.field @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
+//CHECK-NEXT:      struct.member @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@C1> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@C1>
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = felt.add %arg0, %arg1
@@ -71,7 +71,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   struct.def @C2 {
-//CHECK-NEXT:      struct.field @fc1 : !struct.type<@C1>
+//CHECK-NEXT:      struct.member @fc1 : !struct.type<@C1>
 //CHECK-NEXT:      function.def @compute(%arg0: !struct.type<@std::@risc0::@ValU32>) -> !struct.type<@C2> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@C2>
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@low] : <@std::@risc0::@ValU32>, !felt.type

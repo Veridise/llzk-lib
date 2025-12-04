@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
 
   struct.def @Reg {
     // ZIR frontend should mark function.return value with `pub`
-    struct.field @reg : !felt.type {llzk.pub}
+    struct.member @reg : !felt.type {llzk.pub}
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Reg> {
       %self = struct.new : !struct.type<@Reg>
@@ -31,9 +31,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Div<[]> {
-    struct.field @reciprocal : !felt.type
+    struct.member @reciprocal : !felt.type
     // ZIR frontend should mark function.return value with `pub`
-    struct.field @synthetic_return : !felt.type {llzk.pub}
+    struct.member @synthetic_return : !felt.type {llzk.pub}
 
     function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@Div<[]>> {
       %self = struct.new : !struct.type<@Div<[]>>
@@ -63,9 +63,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Foo<[@N, @P, @Aff$0]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
-    struct.field @"$temp_0" : !struct.type<@Component<[]>>
-    struct.field @"$temp" : !struct.type<@Div<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$temp_0" : !struct.type<@Component<[]>>
+    struct.member @"$temp" : !struct.type<@Div<[]>>
     function.def @compute(%arg0: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Foo<[@N, @P, @Aff$0]>> {
       %self = struct.new : !struct.type<@Foo<[@N, @P, @Aff$0]>>
       %0 = poly.read_const @N : !felt.type
@@ -91,10 +91,10 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Bar<[@N, @P, @Aff$0]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
-    struct.field @"$temp_1" : !struct.type<@Component<[]>>
-    struct.field @"$temp_0" : !struct.type<@Foo<[@N, @P, #map]>>
-    struct.field @"$temp" : !struct.type<@Div<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$temp_1" : !struct.type<@Component<[]>>
+    struct.member @"$temp_0" : !struct.type<@Foo<[@N, @P, #map]>>
+    struct.member @"$temp" : !struct.type<@Div<[]>>
     function.def @compute(%arg0: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Bar<[@N, @P, @Aff$0]>> {
       %self = struct.new : !struct.type<@Bar<[@N, @P, @Aff$0]>>
       %0 = poly.read_const @N : !felt.type
@@ -142,7 +142,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Reg {
-// CHECK-NEXT:    struct.field @reg : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.member @reg : !felt.type {llzk.pub}
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Reg> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Reg>
 // CHECK-NEXT:      struct.writef %[[V1]][@reg] = %[[V0]] : <@Reg>, !felt.type
@@ -156,8 +156,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Div<[]> {
-// CHECK-NEXT:    struct.field @reciprocal : !felt.type
-// CHECK-NEXT:    struct.field @synthetic_return : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.member @reciprocal : !felt.type
+// CHECK-NEXT:    struct.member @synthetic_return : !felt.type {llzk.pub}
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@Div<[]>>
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.inv %[[V1]] : !felt.type
@@ -179,9 +179,9 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Foo<[@N, @P, @Aff$0]> {
-// CHECK-NEXT:    struct.field @"$super" : !struct.type<@Component<[]>>
-// CHECK-NEXT:    struct.field @"$temp_0" : !struct.type<@Component<[]>>
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Div<[]>>
+// CHECK-NEXT:    struct.member @"$super" : !struct.type<@Component<[]>>
+// CHECK-NEXT:    struct.member @"$temp_0" : !struct.type<@Component<[]>>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Div<[]>>
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Foo<[@N, @P, @Aff$0]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Foo<[@N, @P, @Aff$0]>>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
@@ -207,10 +207,10 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Bar<[@N, @P, @Aff$0]> {
-// CHECK-NEXT:    struct.field @"$super" : !struct.type<@Component<[]>>
-// CHECK-NEXT:    struct.field @"$temp_1" : !struct.type<@Component<[]>>
-// CHECK-NEXT:    struct.field @"$temp_0" : !struct.type<@Foo<[@N, @P, #[[$M0]]]>>
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Div<[]>>
+// CHECK-NEXT:    struct.member @"$super" : !struct.type<@Component<[]>>
+// CHECK-NEXT:    struct.member @"$temp_1" : !struct.type<@Component<[]>>
+// CHECK-NEXT:    struct.member @"$temp_0" : !struct.type<@Foo<[@N, @P, #[[$M0]]]>>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Div<[]>>
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Bar<[@N, @P, @Aff$0]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Bar<[@N, @P, @Aff$0]>>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type

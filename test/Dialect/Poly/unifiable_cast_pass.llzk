@@ -13,7 +13,7 @@ module attributes { veridise.lang = "llzk" } {
     }
   }
   struct.def @B<[@X, @Y, @N]> {
-    struct.field @a : !struct.type<@A<[@X, @Y, #map]>>
+    struct.member @a : !struct.type<@A<[@X, @Y, #map]>>
     function.def @compute(%a0: !array.type<@N x !felt.type>) -> !struct.type<@B<[@X, @Y, @N]>> {
       %self = struct.new : <@B<[@X, @Y, @N]>>
       %0 = poly.read_const @X : index
@@ -45,7 +45,7 @@ module attributes { veridise.lang = "llzk" } {
 //  CHECK-NEXT:     }
 //  CHECK-NEXT:   }
 // CHECK-LABEL:   struct.def @B<[@X, @Y, @N]> {
-//  CHECK-NEXT:     struct.field @a : !struct.type<@A<[@X, @Y, #map]>>
+//  CHECK-NEXT:     struct.member @a : !struct.type<@A<[@X, @Y, #map]>>
 // CHECK-LABEL:     function.def @compute
 //  CHECK-SAME:                  (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@B<[@X, @Y, @N]>> attributes {function.allow_witness} {
 //  CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@B<[@X, @Y, @N]>>

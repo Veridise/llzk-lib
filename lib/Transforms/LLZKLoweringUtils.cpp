@@ -85,7 +85,7 @@ Value rebuildExprInCompute(
 LogicalResult checkForAuxFieldConflicts(StructDefOp structDef, StringRef prefix) {
   bool conflictFound = false;
 
-  structDef.walk([&conflictFound, &prefix](FieldDefOp fieldDefOp) {
+  structDef.walk([&conflictFound, &prefix](MemberDefOp fieldDefOp) {
     if (fieldDefOp.getName().starts_with(prefix)) {
       (fieldDefOp.emitError() << "Field name '" << fieldDefOp.getName()
                               << "' conflicts with reserved prefix '" << prefix << '\'')
@@ -116,10 +116,10 @@ void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp) {
   }
 }
 
-FieldDefOp addAuxField(StructDefOp structDef, StringRef name) {
+MemberDefOp addAuxField(StructDefOp structDef, StringRef name) {
   OpBuilder builder(structDef);
   builder.setInsertionPointToEnd(structDef.getBody());
-  return builder.create<FieldDefOp>(
+  return builder.create<MemberDefOp>(
       structDef.getLoc(), builder.getStringAttr(name), builder.getType<FeltType>()
   );
 }

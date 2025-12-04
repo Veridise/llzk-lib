@@ -18,7 +18,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component08B<[@C]> {
-    struct.field @f2 : !struct.type<@Component08A<[5, @C]>>
+    struct.member @f2 : !struct.type<@Component08A<[5, @C]>>
 
     function.def @compute() -> !struct.type<@Component08B<[@C]>> {
       %self = struct.new : !struct.type<@Component08B<[@C]>>
@@ -35,10 +35,10 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component08C {
-    struct.field @f3 : !struct.type<@Component08B<[7]>>
-    struct.field @f4 : !struct.type<@Component08B<[!felt.type]>>
-    struct.field @f5 : !struct.type<@Component08B<[7]>>
-    struct.field @f6 : !struct.type<@Component08B<[5]>>
+    struct.member @f3 : !struct.type<@Component08B<[7]>>
+    struct.member @f4 : !struct.type<@Component08B<[!felt.type]>>
+    struct.member @f5 : !struct.type<@Component08B<[7]>>
+    struct.member @f6 : !struct.type<@Component08B<[5]>>
 
     function.def @compute() -> !struct.type<@Component08C> {
       %self = struct.new : !struct.type<@Component08C>
@@ -106,7 +106,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK3-NEXT:  }
 //
 // CHECK1-LABEL: struct.def @Component08B_5 {
-// CHECK1-NEXT:    struct.field @f2 : !struct.type<@Component08A_5_5>
+// CHECK1-NEXT:    struct.member @f2 : !struct.type<@Component08A_5_5>
 // CHECK1-NEXT:    function.def @compute() -> !struct.type<@Component08B_5> attributes {function.allow_witness} {
 // CHECK1-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component08B_5>
 // CHECK1-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component08A_5_5::@compute() : () -> !struct.type<@Component08A_5_5>
@@ -121,7 +121,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK1-NEXT:  }
 //
 // CHECK2-LABEL: struct.def @Component08B_7 {
-// CHECK2-NEXT:    struct.field @f2 : !struct.type<@Component08A_5_7>
+// CHECK2-NEXT:    struct.member @f2 : !struct.type<@Component08A_5_7>
 // CHECK2-NEXT:    function.def @compute() -> !struct.type<@Component08B_7> attributes {function.allow_witness} {
 // CHECK2-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component08B_7>
 // CHECK2-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component08A_5_7::@compute() : () -> !struct.type<@Component08A_5_7>
@@ -136,7 +136,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK2-NEXT:  }
 //
 // CHECK3-LABEL: struct.def @Component08B_f {
-// CHECK3-NEXT:    struct.field @f2 : !struct.type<@Component08A_5_f>
+// CHECK3-NEXT:    struct.member @f2 : !struct.type<@Component08A_5_f>
 // CHECK3-NEXT:    function.def @compute() -> !struct.type<@Component08B_f> attributes {function.allow_witness} {
 // CHECK3-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component08B_f>
 // CHECK3-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component08A_5_f::@compute() : () -> !struct.type<@Component08A_5_f>
@@ -151,10 +151,10 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK3-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Component08C {
-// CHECK-NEXT:    struct.field @f3 : !struct.type<@Component08B_7>
-// CHECK-NEXT:    struct.field @f4 : !struct.type<@Component08B_f>
-// CHECK-NEXT:    struct.field @f5 : !struct.type<@Component08B_7>
-// CHECK-NEXT:    struct.field @f6 : !struct.type<@Component08B_5>
+// CHECK-NEXT:    struct.member @f3 : !struct.type<@Component08B_7>
+// CHECK-NEXT:    struct.member @f4 : !struct.type<@Component08B_f>
+// CHECK-NEXT:    struct.member @f5 : !struct.type<@Component08B_7>
+// CHECK-NEXT:    struct.member @f6 : !struct.type<@Component08B_5>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component08C> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component08C>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component08B_7::@compute() : () -> !struct.type<@Component08B_7>

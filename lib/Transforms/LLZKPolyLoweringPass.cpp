@@ -138,7 +138,7 @@ private:
       // Optimization: If lhs == rhs, factor it only once
       if (lhs == rhs && eraseMul) {
         std::string auxName = AUXILIARY_FIELD_PREFIX + std::to_string(this->auxCounter++);
-        FieldDefOp auxField = addAuxField(structDef, auxName);
+        MemberDefOp auxField = addAuxField(structDef, auxName);
 
         auto auxVal = builder.create<FieldReadOp>(
             lhs.getLoc(), lhs.getType(), selfVal, auxField.getNameAttr()
@@ -166,7 +166,7 @@ private:
 
         // Create auxiliary field for toFactor
         std::string auxName = AUXILIARY_FIELD_PREFIX + std::to_string(this->auxCounter++);
-        FieldDefOp auxField = addAuxField(structDef, auxName);
+        MemberDefOp auxField = addAuxField(structDef, auxName);
 
         // Read back as FieldReadOp (new SSA value)
         auto auxVal = builder.create<FieldReadOp>(

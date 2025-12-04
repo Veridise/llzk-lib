@@ -52,8 +52,8 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @FieldRangeConstraint {
 
-    struct.field @foo : !felt.type
-    struct.field @bar : !felt.type
+    struct.member @foo : !felt.type
+    struct.member @bar : !felt.type
 
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@FieldRangeConstraint> {
       %self = struct.new : !struct.type<@FieldRangeConstraint>
@@ -132,7 +132,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   struct.def @ArrayConstraint {
 
-    struct.field @arr : !array.type<3 x !felt.type>
+    struct.member @arr : !array.type<3 x !felt.type>
 
     function.def @compute() -> !struct.type<@ArrayConstraint> {
       %self = struct.new : !struct.type<@ArrayConstraint>
@@ -176,8 +176,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Div<[]> {
-    struct.field @"$super" : !felt.type
-    struct.field @reciprocal : !felt.type
+    struct.member @"$super" : !felt.type
+    struct.member @reciprocal : !felt.type
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> {
       %self = struct.new : <@Div<[]>>
       %0 = felt.inv %arg1 : !felt.type
@@ -214,8 +214,8 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // A correctly constrained byte decomposition checker for a 16 bit val.
   struct.def @ByteDecompCorrect {
-    struct.field @b1 : !felt.type
-    struct.field @b0 : !felt.type
+    struct.member @b1 : !felt.type
+    struct.member @b0 : !felt.type
 
     function.def @compute(%u16 : !felt.type) -> !struct.type<@ByteDecompCorrect> {
       %self = struct.new : !struct.type<@ByteDecompCorrect>
@@ -239,8 +239,8 @@ module attributes {veridise.lang = "llzk"} {
 
   // An incorrectly constrained byte decomposition checker for a 16 bit val.
   struct.def @ByteDecompIncorrect {
-    struct.field @b1 : !felt.type
-    struct.field @b0 : !felt.type
+    struct.member @b1 : !felt.type
+    struct.member @b0 : !felt.type
 
     function.def @compute(%u16 : !felt.type) -> !struct.type<@ByteDecompIncorrect> {
       %self = struct.new : !struct.type<@ByteDecompIncorrect>
@@ -261,8 +261,8 @@ module attributes {veridise.lang = "llzk"} {
 
   // Another improperly constrained byte decomposition checker for a 16 bit val.
   struct.def @ByteDecompPartial {
-    struct.field @b1 : !felt.type
-    struct.field @b0 : !felt.type
+    struct.member @b1 : !felt.type
+    struct.member @b0 : !felt.type
 
     function.def @compute(%u16 : !felt.type) -> !struct.type<@ByteDecompPartial> {
       %self = struct.new : !struct.type<@ByteDecompPartial>
@@ -310,7 +310,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @Signal {
-    struct.field @reg : !felt.type {llzk.pub}
+    struct.member @reg : !felt.type {llzk.pub}
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
@@ -324,7 +324,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component00 {
-    struct.field @f : !Signal
+    struct.member @f : !Signal
 
     function.def @compute(%0: !Signal) -> !struct.type<@Component00> {
       %self = struct.new : !struct.type<@Component00>
@@ -352,7 +352,7 @@ module attributes {veridise.lang = "llzk"} {
 // Bit pattern s * (s - 1) = 0
 module attributes {veridise.lang = "llzk"} {
   struct.def @BitConstraint {
-    struct.field @bit : !felt.type
+    struct.member @bit : !felt.type
 
     function.def @compute() -> !struct.type<@BitConstraint> {
       %self = struct.new : !struct.type<@BitConstraint>
@@ -379,7 +379,7 @@ module attributes {veridise.lang = "llzk"} {
 // Twit pattern s * (s - 1) * (s - 2) * (s - 3) = 0
 module attributes {veridise.lang = "llzk"} {
   struct.def @BitConstraint {
-    struct.field @bit : !felt.type
+    struct.member @bit : !felt.type
 
     function.def @compute() -> !struct.type<@BitConstraint> {
       %self = struct.new : !struct.type<@BitConstraint>
@@ -412,7 +412,7 @@ module attributes {veridise.lang = "llzk"} {
 // Sparse pattern s * (s - 3) = 0
 module attributes {veridise.lang = "llzk"} {
   struct.def @BitConstraint {
-    struct.field @bit : !felt.type
+    struct.member @bit : !felt.type
 
     function.def @compute() -> !struct.type<@BitConstraint> {
       %self = struct.new : !struct.type<@BitConstraint>
@@ -483,8 +483,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @IntTest<[]> {
-    struct.field @x : !felt.type {llzk.pub}
-    struct.field @y : !felt.type {llzk.pub}
+    struct.member @x : !felt.type {llzk.pub}
+    struct.member @y : !felt.type {llzk.pub}
     function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@IntTest<[]>>
       function.return %self : !struct.type<@IntTest<[]>>
@@ -517,9 +517,9 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @IntTest<[]> {
-    struct.field @x : !felt.type {llzk.pub}
-    struct.field @y : !felt.type {llzk.pub}
-    struct.field @z : !felt.type {llzk.pub}
+    struct.member @x : !felt.type {llzk.pub}
+    struct.member @y : !felt.type {llzk.pub}
+    struct.member @z : !felt.type {llzk.pub}
     function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@IntTest<[]>>
       function.return %self : !struct.type<@IntTest<[]>>
@@ -564,8 +564,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @IntTest<[]> {
-    struct.field @x: !felt.type {llzk.pub}
-    struct.field @y : !felt.type {llzk.pub}
+    struct.member @x: !felt.type {llzk.pub}
+    struct.member @y : !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@IntTest<[]>>
@@ -605,8 +605,8 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @IntTest<[]> {
-    struct.field @x: !felt.type {llzk.pub}
-    struct.field @y : !felt.type {llzk.pub}
+    struct.member @x: !felt.type {llzk.pub}
+    struct.member @y : !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@IntTest<[]>>
@@ -646,9 +646,9 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @SubTest<[]> {
-    struct.field @x : !felt.type {llzk.pub}
-    struct.field @y : !felt.type {llzk.pub}
-    struct.field @z : !felt.type {llzk.pub}
+    struct.member @x : !felt.type {llzk.pub}
+    struct.member @y : !felt.type {llzk.pub}
+    struct.member @z : !felt.type {llzk.pub}
     function.def @compute() -> !struct.type<@SubTest<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@SubTest<[]>>
       function.return %self : !struct.type<@SubTest<[]>>
@@ -683,9 +683,9 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @SubTest<[]> {
-    struct.field @x : !felt.type {llzk.pub}
-    struct.field @y : !felt.type {llzk.pub}
-    struct.field @z : !felt.type {llzk.pub}
+    struct.member @x : !felt.type {llzk.pub}
+    struct.member @y : !felt.type {llzk.pub}
+    struct.member @z : !felt.type {llzk.pub}
     function.def @compute() -> !struct.type<@SubTest<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@SubTest<[]>>
       function.return %self : !struct.type<@SubTest<[]>>

@@ -55,7 +55,7 @@ static struct OpClassesWithStructTypes {
       llzk::array::ExtractArrayOp,
       llzk::constrain::EmitEqualityOp,
       llzk::constrain::EmitContainmentOp,
-      llzk::component::FieldDefOp,
+      llzk::component::MemberDefOp,
       llzk::component::FieldReadOp,
       llzk::component::FieldWriteOp,
       llzk::component::CreateStructOp,

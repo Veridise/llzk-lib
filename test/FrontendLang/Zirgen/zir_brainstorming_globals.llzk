@@ -4,8 +4,8 @@
 // code to track if globals have been initialized and requires LLZK to have zero-initialization semantics.
 module attributes {veridise.lang = "llzk"} {
   struct.def @NondetReg<[]> {
-    struct.field @"$super" : !felt.type
-    struct.field @reg : !felt.type
+    struct.member @"$super" : !felt.type
+    struct.member @reg : !felt.type
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> {
       %self = struct.new : <@NondetReg<[]>>
       struct.writef %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.type
@@ -19,8 +19,8 @@ module attributes {veridise.lang = "llzk"} {
 
   // BEGIN: BOILERPLATE
   struct.def @Global<[@Type]> {
-    struct.field @val : !poly.tvar<@Type>
-    struct.field @init : i1
+    struct.member @val : !poly.tvar<@Type>
+    struct.member @init : i1
 
     function.def @compute(%v: !poly.tvar<@Type>) -> !struct.type<@Global<[@Type]>> {
       %self = struct.new : !struct.type<@Global<[@Type]>>
@@ -71,8 +71,8 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // CHECK-LABEL: struct.def @NondetReg<[]> {
-// CHECK-NEXT:    struct.field @"$super" : !felt.type
-// CHECK-NEXT:    struct.field @reg : !felt.type
+// CHECK-NEXT:    struct.member @"$super" : !felt.type
+// CHECK-NEXT:    struct.member @reg : !felt.type
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@NondetReg<[]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@NondetReg<[]>>
 // CHECK-NEXT:      struct.writef %[[V1]][@reg] = %[[V0]] : <@NondetReg<[]>>, !felt.type
@@ -85,8 +85,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Global<[@Type]> {
-// CHECK-NEXT:    struct.field @val : !poly.tvar<@Type>
-// CHECK-NEXT:    struct.field @init : i1
+// CHECK-NEXT:    struct.member @val : !poly.tvar<@Type>
+// CHECK-NEXT:    struct.member @init : i1
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Type>) -> !struct.type<@Global<[@Type]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Global<[@Type]>>
 // CHECK-NEXT:      struct.writef %[[V1]][@val] = %[[V0]] : <@Global<[@Type]>>, !poly.tvar<@Type>

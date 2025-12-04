@@ -39,7 +39,7 @@
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @Signal {
-    struct.field @reg : !felt.type {llzk.pub}
+    struct.member @reg : !felt.type {llzk.pub}
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
@@ -53,8 +53,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @GetSum<[@A]> { // instantiations of A are {1, 6, 11, ... 5*P+1}
-    struct.field @out: !Signal {llzk.pub}
-    struct.field @sum: !felt.type
+    struct.member @out: !Signal {llzk.pub}
+    struct.member @sum: !felt.type
 
     function.def @compute(%inp: !array.type<@A x !Signal>) -> !struct.type<@GetSum<[@A]>> {
       %self = struct.new : !struct.type<@GetSum<[@A]>>
@@ -90,7 +90,7 @@ module attributes {veridise.lang = "llzk"} {
   // and can't be created via `array.new` outside the loop where the loop induction
   // variable does not yet exist.
   struct.def @VarArray<[@N, @T]> {
-    struct.field @val: !array.type<@N x !poly.tvar<@T>>
+    struct.member @val: !array.type<@N x !poly.tvar<@T>>
 
     function.def @compute(%inp: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> {
       %self = struct.new : !struct.type<@VarArray<[@N, @T]>>
@@ -104,9 +104,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComputeValue<[@P]> {
-    struct.field @ret: !array.type<@P x !Signal> {llzk.pub}
-    struct.field @ws: !array.type<@P x !struct.type<@GetSum<[#IdxToLen]>>>
-    struct.field @arrs: !array.type<@P x !IdxToLenSigArray>
+    struct.member @ret: !array.type<@P x !Signal> {llzk.pub}
+    struct.member @ws: !array.type<@P x !struct.type<@GetSum<[#IdxToLen]>>>
+    struct.member @arrs: !array.type<@P x !IdxToLenSigArray>
 
     function.def @compute(%inp: !array.type<@P x !Signal>) -> !struct.type<@ComputeValue<[@P]>> {
       %self = struct.new : !struct.type<@ComputeValue<[@P]>>
@@ -192,7 +192,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Main {
-    struct.field @sub: !struct.type<@ComputeValue<[3]>>
+    struct.member @sub: !struct.type<@ComputeValue<[3]>>
 
     function.def @compute(%input: !array.type<3 x !Signal> {llzk.pub}) -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
@@ -212,7 +212,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 * 5 + 1)>
 //
 // CHECK-LABEL: struct.def @Signal {
-// CHECK-NEXT:    struct.field @reg : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.member @reg : !felt.type {llzk.pub}
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Signal> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Signal>
 // CHECK-NEXT:      struct.writef %[[V_1]][@reg] = %[[V_0]] : <@Signal>, !felt.type
@@ -224,8 +224,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @GetSum<[@A]> {
-// CHECK-NEXT:    struct.field @out : !struct.type<@Signal> {llzk.pub}
-// CHECK-NEXT:    struct.field @sum : !felt.type
+// CHECK-NEXT:    struct.member @out : !struct.type<@Signal> {llzk.pub}
+// CHECK-NEXT:    struct.member @sum : !felt.type
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<@A x !struct.type<@Signal>>) -> !struct.type<@GetSum<[@A]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@GetSum<[@A]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = felt.const 0
@@ -253,7 +253,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @VarArray<[@N, @T]> {
-// CHECK-NEXT:    struct.field @val : !array.type<@N x !poly.tvar<@T>>
+// CHECK-NEXT:    struct.member @val : !array.type<@N x !poly.tvar<@T>>
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@VarArray<[@N, @T]>>
 // CHECK-NEXT:      struct.writef %[[V_1]][@val] = %[[V_0]] : <@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
@@ -265,9 +265,9 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @ComputeValue<[@P]> {
-// CHECK-NEXT:    struct.field @ret : !array.type<@P x !struct.type<@Signal>> {llzk.pub}
-// CHECK-NEXT:    struct.field @ws : !array.type<@P x !struct.type<@GetSum<[#[[$M0]]]>>>
-// CHECK-NEXT:    struct.field @arrs : !array.type<@P x !struct.type<@VarArray<[#[[$M0]], !struct.type<@Signal>]>>>
+// CHECK-NEXT:    struct.member @ret : !array.type<@P x !struct.type<@Signal>> {llzk.pub}
+// CHECK-NEXT:    struct.member @ws : !array.type<@P x !struct.type<@GetSum<[#[[$M0]]]>>>
+// CHECK-NEXT:    struct.member @arrs : !array.type<@P x !struct.type<@VarArray<[#[[$M0]], !struct.type<@Signal>]>>>
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<@P x !struct.type<@Signal>>) -> !struct.type<@ComputeValue<[@P]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComputeValue<[@P]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
@@ -329,7 +329,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.field @sub : !struct.type<@ComputeValue<[3]>>
+// CHECK-NEXT:    struct.member @sub : !struct.type<@ComputeValue<[3]>>
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<3 x !struct.type<@Signal>> {llzk.pub}) -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = function.call @ComputeValue::@compute(%[[V_0]]) : (!array.type<3 x !struct.type<@Signal>>) -> !struct.type<@ComputeValue<[3]>>

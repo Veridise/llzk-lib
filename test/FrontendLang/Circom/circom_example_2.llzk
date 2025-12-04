@@ -30,7 +30,7 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @GetWeight<[@A]> { // instantiations of A are {0, 5, 10, ... 5*P}
-    struct.field @out: !felt.type {llzk.pub}
+    struct.member @out: !felt.type {llzk.pub}
 
     function.def @compute(%inp: !felt.type) -> !struct.type<@GetWeight<[@A]>> {
       %self = struct.new : !struct.type<@GetWeight<[@A]>>
@@ -50,8 +50,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComputeValue<[@P]> {
-    struct.field @ws: !array.type<@P x !GetWeightStride5>
-    struct.field @ret: !array.type<@P x !felt.type> {llzk.pub}
+    struct.member @ws: !array.type<@P x !GetWeightStride5>
+    struct.member @ret: !array.type<@P x !felt.type> {llzk.pub}
 
     function.def @compute(%inp: !array.type<@P x !felt.type>) -> !struct.type<@ComputeValue<[@P]>> {
       %self = struct.new : !struct.type<@ComputeValue<[@P]>>
@@ -115,7 +115,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 * 5)>
 //
 // CHECK-LABEL: struct.def @GetWeight<[@A]> {
-// CHECK-NEXT:    struct.field @out : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.member @out : !felt.type {llzk.pub}
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@GetWeight<[@A]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@GetWeight<[@A]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.type
@@ -133,8 +133,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @ComputeValue<[@P]> {
-// CHECK-NEXT:    struct.field @ws : !array.type<@P x !struct.type<@GetWeight<[#[[$ATTR_0]]]>>>
-// CHECK-NEXT:    struct.field @ret : !array.type<@P x !felt.type> {llzk.pub}
+// CHECK-NEXT:    struct.member @ws : !array.type<@P x !struct.type<@GetWeight<[#[[$ATTR_0]]]>>>
+// CHECK-NEXT:    struct.member @ret : !array.type<@P x !felt.type> {llzk.pub}
 // CHECK-NEXT:    function.def @compute(%[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<@P x !felt.type>) -> !struct.type<@ComputeValue<[@P]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComputeValue<[@P]>>
 // CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
