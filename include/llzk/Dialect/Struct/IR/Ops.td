@@ -76,7 +76,7 @@ def LLZK_StructDefOp
       of the circuit. This component has additional restrictions:
       1. It cannot have struct parameters.
       2. The parameter types of its functions (besides the required "self" parameter) can
-         only be `!struct.type<!felt.type>` or `!array.type<.. x !felt.type>`.
+         only be `!felt.type` or `!array.type<.. x !felt.type>`.
       3. The fields marked as public (i.e., with the `{llzk.pub}` attribute) that
          are not columns (i.e., with `{column=0}`) represent
          the public outputs of the overall circuit.
