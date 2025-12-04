@@ -1,0 +1,2 @@
+fixed:
+  - avoid errors in release builds due to variables used only by assertions or debug macros
