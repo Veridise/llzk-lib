@@ -133,7 +133,6 @@ MLIR_CAPI_EXPORTED void {0}{1}{2}Set{3}(MlirOperation op, intptr_t count, MlirVa
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-
         fmt,
         FunctionPrefix,            // {0}
         dialectNameCapitalized,    // {1}
