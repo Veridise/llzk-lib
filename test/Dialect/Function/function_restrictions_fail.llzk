@@ -657,7 +657,6 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // -----
-
 builtin.module attributes {veridise.lang = "llzk"} {
   function.def @free_func() {
     // expected-error@+1 {{'builtin.module' op cannot be nested within 'function.def' operations}}
