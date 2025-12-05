@@ -411,7 +411,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
 
     // Else, look up the stored value by `SourceRef`.
     // We only care about scalar type values, so we ignore composite types, which
-    // are currently limited to non-Signal structs and arrays.
+    // are currently limited to structs and arrays.
     Type valTy = val.getType();
     if (llvm::isa<ArrayType, StructType>(valTy)) {
       ExpressionValue anyVal(field.get(), createFeltSymbol(val));
