@@ -48,7 +48,7 @@ protected:
         mlir::FunctionType::get(&ctx, mlir::TypeRange(paramTypes), mlir::TypeRange {idxTy});
     llzk::ModuleBuilder llzkBldr(mod.get());
     for (std::string_view n : names) {
-      llzkBldr.insertGlobalFunc(n, fTy);
+      llzkBldr.insertFreeFunc(n, fTy);
     }
     return llzkBldr;
   }

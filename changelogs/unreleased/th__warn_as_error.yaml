@@ -1,0 +1,2 @@
+changed:
+  - treat all build warnings as errors

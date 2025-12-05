@@ -37,6 +37,18 @@ using namespace llzk::polymorphic;
 
 namespace llzk::function {
 
+FunctionKind fnNameToKind(mlir::StringRef name) {
+  if (FUNC_NAME_COMPUTE == name) {
+    return FunctionKind::StructCompute;
+  } else if (FUNC_NAME_CONSTRAIN == name) {
+    return FunctionKind::StructConstrain;
+  } else if (FUNC_NAME_PRODUCT == name) {
+    return FunctionKind::StructProduct;
+  } else {
+    return FunctionKind::Free;
+  }
+}
+
 namespace {
 /// Ensure that all symbols used within the FunctionType can be resolved.
 inline LogicalResult
@@ -413,22 +425,9 @@ void CallOp::build(
 }
 
 namespace {
-enum class CalleeKind : std::uint8_t { Compute, Constrain, Product, Other };
-
-CalleeKind calleeNameToKind(StringRef tgtName) {
-  if (FUNC_NAME_COMPUTE == tgtName) {
-    return CalleeKind::Compute;
-  } else if (FUNC_NAME_CONSTRAIN == tgtName) {
-    return CalleeKind::Constrain;
-  } else if (FUNC_NAME_PRODUCT == tgtName) {
-    return CalleeKind::Product;
-  } else {
-    return CalleeKind::Other;
-  }
-}
 
 struct CallOpVerifier {
-  CallOpVerifier(CallOp *c, StringRef tgtName) : callOp(c), tgtKind(calleeNameToKind(tgtName)) {}
+  CallOpVerifier(CallOp *c, StringRef tgtName) : callOp(c), tgtKind(fnNameToKind(tgtName)) {}
   virtual ~CallOpVerifier() = default;
 
   LogicalResult verify() {
@@ -452,7 +451,7 @@ struct CallOpVerifier {
 
 protected:
   CallOp *callOp;
-  CalleeKind tgtKind;
+  FunctionKind tgtKind;
 
   virtual LogicalResult verifyTargetAttributes() = 0;
   virtual LogicalResult verifyInputs() = 0;
@@ -513,7 +512,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
   }
 
   LogicalResult verifyAffineMapParams() override {
-    if ((CalleeKind::Compute == tgtKind || CalleeKind::Product == tgtKind) &&
+    if ((FunctionKind::StructCompute == tgtKind || FunctionKind::StructProduct == tgtKind) &&
         isInStruct(tgt.getOperation())) {
       // Return type should be a single StructType. If that is not the case here, just bail without
       // producing an error. The combination of this KnownTargetVerifier resolving the callee to a
@@ -613,17 +612,17 @@ struct UnknownTargetVerifier : public CallOpVerifier {
       };
 
       switch (tgtKind) {
-      case CalleeKind::Constrain:
+      case FunctionKind::StructConstrain:
         if (!caller.hasAllowConstraintAttr()) {
           emitAttrErr(AllowConstraintAttr::name);
         }
         break;
-      case CalleeKind::Compute:
+      case FunctionKind::StructCompute:
         if (!caller.hasAllowWitnessAttr()) {
           emitAttrErr(AllowWitnessAttr::name);
         }
         break;
-      case CalleeKind::Product:
+      case FunctionKind::StructProduct:
         if (!caller.hasAllowWitnessAttr()) {
           emitAttrErr(AllowWitnessAttr::name);
         }
@@ -639,9 +638,9 @@ struct UnknownTargetVerifier : public CallOpVerifier {
   }
 
   LogicalResult verifyInputs() override {
-    if (CalleeKind::Compute == tgtKind || CalleeKind::Product == tgtKind) {
+    if (FunctionKind::StructCompute == tgtKind || FunctionKind::StructProduct == tgtKind) {
       // Without known target, no additional checks can be done.
-    } else if (CalleeKind::Constrain == tgtKind) {
+    } else if (FunctionKind::StructConstrain == tgtKind) {
       // Without known target, this can only check that the first input is VarType using the same
       // struct parameter as the base of the callee (later replaced with the target struct's type).
       Operation::operand_type_range inputTypes = callOp->getArgOperands().getTypes();
@@ -658,7 +657,7 @@ struct UnknownTargetVerifier : public CallOpVerifier {
   }
 
   LogicalResult verifyOutputs() override {
-    if (CalleeKind::Compute == tgtKind || CalleeKind::Product == tgtKind) {
+    if (FunctionKind::StructCompute == tgtKind || FunctionKind::StructProduct == tgtKind) {
       // Without known target, this can only check that the function returns VarType using the same
       // struct parameter as the base of the callee (later replaced with the target struct's type).
       Operation::result_type_range resTypes = callOp->getResultTypes();
@@ -671,7 +670,7 @@ struct UnknownTargetVerifier : public CallOpVerifier {
       return checkSelfTypeUnknownTarget(
           calleeAttr.getRootReference(), resTypes.front(), callOp, "return"
       );
-    } else if (CalleeKind::Constrain == tgtKind) {
+    } else if (FunctionKind::StructConstrain == tgtKind) {
       // Without known target, this can only check that the function has no return
       if (callOp->getNumResults() != 0) {
         // Tested in function_restrictions_fail.llzk
@@ -683,9 +682,9 @@ struct UnknownTargetVerifier : public CallOpVerifier {
   }
 
   LogicalResult verifyAffineMapParams() override {
-    if (CalleeKind::Compute == tgtKind || CalleeKind::Product == tgtKind) {
+    if (FunctionKind::StructCompute == tgtKind || FunctionKind::StructProduct == tgtKind) {
       // Without known target, no additional checks can be done.
-    } else if (CalleeKind::Constrain == tgtKind) {
+    } else if (FunctionKind::StructConstrain == tgtKind) {
       // Without known target, this can only check that there are no affine map instantiations.
       return verifyNoAffineMapInstantiations();
     }

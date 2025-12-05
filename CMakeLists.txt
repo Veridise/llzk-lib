@@ -43,6 +43,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FeatureTests.cmake)
 
 find_package(LLVM 20.1.8 REQUIRED CONFIG)
 find_package(MLIR 20.1.8 REQUIRED CONFIG)
+find_package(Clang 20.1.8 REQUIRED CONFIG)
 
 # Optional PCL dialect
 set(LLZK_WITH_PCL "AUTO" CACHE STRING "Enable PCL integration (AUTO, ON, OFF)")
@@ -93,8 +94,7 @@ include(HandleLLVMOptions)
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 add_compile_options(
-  -Werror=switch
-  -Werror=return-type
+  -Werror
   -Wall
   -Wextra
   -Wno-unused-parameter
@@ -200,6 +200,11 @@ set(LLZK_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(R1CS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/r1cs/include")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LLZKMacros.cmake)
+
+# Build `llzk-tblgen` first since it generates files used by the `include` directory below
+add_subdirectory(tools/llzk-tblgen)
+set(LLZK_TABLEGEN_EXE llzk-tblgen)
+set(LLZK_TABLEGEN_TARGET llzk-tblgen)
 
 # Create an empty list for the dialect libraries, to be populated in the lib
 # subdirectory.

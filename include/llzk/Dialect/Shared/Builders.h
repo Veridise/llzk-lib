@@ -94,27 +94,55 @@ public:
     return insertFullStruct(structName, unk, unk, unk, numStructParams);
   }
 
+  ModuleBuilder &insertProductStruct(
+      std::string_view structName, mlir::Location structLoc, mlir::Location productLoc
+  ) {
+    insertEmptyStruct(structName, structLoc);
+    insertProductFn(structName, productLoc);
+    return *this;
+  }
+
+  ModuleBuilder &insertProductStruct(std::string_view structName) {
+    auto unk = getUnknownLoc();
+    return insertProductStruct(structName, unk, unk);
+  }
+
   /**
    * compute returns the type of the struct that defines it.
    * Since this is for testing, we accept no arguments.
    */
-  ModuleBuilder &insertComputeFn(llzk::component::StructDefOp op, mlir::Location loc);
-  ModuleBuilder &insertComputeFn(std::string_view structName, mlir::Location loc) {
+  static function::FuncDefOp buildComputeFn(component::StructDefOp op, mlir::Location loc);
+  ModuleBuilder &insertComputeFn(component::StructDefOp op, mlir::Location loc);
+  inline ModuleBuilder &insertComputeFn(std::string_view structName, mlir::Location loc) {
     return insertComputeFn(*getStruct(structName), loc);
   }
-  ModuleBuilder &insertComputeFn(std::string_view structName) {
+  inline ModuleBuilder &insertComputeFn(std::string_view structName) {
     return insertComputeFn(structName, getUnknownLoc());
   }
 
   /**
    * constrain accepts the struct type as the first argument.
    */
-  ModuleBuilder &insertConstrainFn(llzk::component::StructDefOp op, mlir::Location loc);
-  ModuleBuilder &insertConstrainFn(std::string_view structName, mlir::Location loc) {
+  static function::FuncDefOp buildConstrainFn(component::StructDefOp op, mlir::Location loc);
+  ModuleBuilder &insertConstrainFn(component::StructDefOp op, mlir::Location loc);
+  inline ModuleBuilder &insertConstrainFn(std::string_view structName, mlir::Location loc) {
     return insertConstrainFn(*getStruct(structName), getUnknownLoc());
   }
-  ModuleBuilder &insertConstrainFn(std::string_view structName) {
+  inline ModuleBuilder &insertConstrainFn(std::string_view structName) {
     return insertConstrainFn(structName, getUnknownLoc());
+  }
+
+  /**
+   * product returns the type of the struct that defines it.
+   * Since this is for testing, we accept no arguments.
+   */
+  static function::FuncDefOp buildProductFn(component::StructDefOp op, mlir::Location loc);
+  ModuleBuilder &insertProductFn(component::StructDefOp op, mlir::Location loc);
+  inline ModuleBuilder &insertProductFn(std::string_view structName, mlir::Location loc) {
+    return insertProductFn(*getStruct(structName), loc);
+  }
+  inline ModuleBuilder &insertProductFn(std::string_view structName) {
+    return insertProductFn(structName, getUnknownLoc());
   }
 
   /**
@@ -123,8 +151,7 @@ public:
    * ops for the sake of testing.
    */
   ModuleBuilder &insertComputeCall(
-      llzk::component::StructDefOp caller, llzk::component::StructDefOp callee,
-      mlir::Location callLoc
+      component::StructDefOp caller, component::StructDefOp callee, mlir::Location callLoc
   );
   ModuleBuilder &
   insertComputeCall(std::string_view caller, std::string_view callee, mlir::Location callLoc) {
@@ -141,8 +168,8 @@ public:
    * 3. Call the callee's constraint function.
    */
   ModuleBuilder &insertConstrainCall(
-      llzk::component::StructDefOp caller, llzk::component::StructDefOp callee,
-      mlir::Location callLoc, mlir::Location fieldDefLoc
+      component::StructDefOp caller, component::StructDefOp callee, mlir::Location callLoc,
+      mlir::Location fieldDefLoc
   );
   ModuleBuilder &insertConstrainCall(
       std::string_view caller, std::string_view callee, mlir::Location callLoc,
@@ -155,15 +182,15 @@ public:
   }
 
   ModuleBuilder &
-  insertGlobalFunc(std::string_view funcName, ::mlir::FunctionType type, mlir::Location loc);
-  inline ModuleBuilder &insertGlobalFunc(std::string_view funcName, ::mlir::FunctionType type) {
-    return insertGlobalFunc(funcName, type, getUnknownLoc());
+  insertFreeFunc(std::string_view funcName, ::mlir::FunctionType type, mlir::Location loc);
+  inline ModuleBuilder &insertFreeFunc(std::string_view funcName, ::mlir::FunctionType type) {
+    return insertFreeFunc(funcName, type, getUnknownLoc());
   }
 
   ModuleBuilder &
-  insertGlobalCall(function::FuncDefOp caller, std::string_view callee, mlir::Location callLoc);
-  ModuleBuilder &insertGlobalCall(function::FuncDefOp caller, std::string_view callee) {
-    return insertGlobalCall(caller, callee, getUnknownLoc());
+  insertFreeCall(function::FuncDefOp caller, std::string_view callee, mlir::Location callLoc);
+  ModuleBuilder &insertFreeCall(function::FuncDefOp caller, std::string_view callee) {
+    return insertFreeCall(caller, callee, getUnknownLoc());
   }
 
   /* Getter methods */
@@ -171,7 +198,7 @@ public:
   /// Get the top-level LLZK module.
   mlir::ModuleOp &getRootModule() { return rootModule; }
 
-  mlir::FailureOr<llzk::component::StructDefOp> getStruct(std::string_view structName) const {
+  mlir::FailureOr<component::StructDefOp> getStruct(std::string_view structName) const {
     if (structMap.find(structName) != structMap.end()) {
       return structMap.at(structName);
     }
@@ -184,23 +211,48 @@ public:
     }
     return mlir::failure();
   }
-  inline mlir::FailureOr<function::FuncDefOp> getComputeFn(llzk::component::StructDefOp op) const {
+  inline mlir::FailureOr<function::FuncDefOp> getComputeFn(component::StructDefOp op) const {
     return getComputeFn(op.getName());
   }
 
-  mlir::FailureOr<function::FuncDefOp> getConstrainFn(std::string_view structName) {
+  mlir::FailureOr<function::FuncDefOp> getConstrainFn(std::string_view structName) const {
     if (constrainFnMap.find(structName) != constrainFnMap.end()) {
       return constrainFnMap.at(structName);
     }
     return mlir::failure();
   }
-  inline mlir::FailureOr<function::FuncDefOp> getConstrainFn(llzk::component::StructDefOp op) {
+  inline mlir::FailureOr<function::FuncDefOp> getConstrainFn(component::StructDefOp op) const {
     return getConstrainFn(op.getName());
   }
 
-  mlir::FailureOr<function::FuncDefOp> getGlobalFunc(std::string_view funcName) const {
-    if (globalFuncMap.find(funcName) != globalFuncMap.end()) {
-      return globalFuncMap.at(funcName);
+  mlir::FailureOr<function::FuncDefOp> getProductFn(std::string_view structName) const {
+    if (productFnMap.find(structName) != productFnMap.end()) {
+      return productFnMap.at(structName);
+    }
+    return mlir::failure();
+  }
+  inline mlir::FailureOr<function::FuncDefOp> getProductFn(component::StructDefOp op) const {
+    return getProductFn(op.getName());
+  }
+
+  mlir::FailureOr<function::FuncDefOp> getFreeFunc(std::string_view funcName) const {
+    if (freeFuncMap.find(funcName) != freeFuncMap.end()) {
+      return freeFuncMap.at(funcName);
+    }
+    return mlir::failure();
+  }
+
+  inline mlir::FailureOr<function::FuncDefOp>
+  getFunc(function::FunctionKind kind, std::string_view name) const {
+    switch (kind) {
+    case function::FunctionKind::StructCompute:
+      return getComputeFn(name);
+    case function::FunctionKind::StructConstrain:
+      return getConstrainFn(name);
+    case function::FunctionKind::StructProduct:
+      return getProductFn(name);
+    case function::FunctionKind::Free:
+      return getFreeFunc(name);
     }
     return mlir::failure();
   }
@@ -210,7 +262,7 @@ public:
   /**
    * Returns if the callee compute function is reachable by the caller by construction.
    */
-  bool computeReachable(llzk::component::StructDefOp caller, llzk::component::StructDefOp callee) {
+  bool computeReachable(component::StructDefOp caller, component::StructDefOp callee) {
     return isReachable(computeNodes, caller, callee);
   }
   bool computeReachable(std::string_view caller, std::string_view callee) {
@@ -220,8 +272,7 @@ public:
   /**
    * Returns if the callee compute function is reachable by the caller by construction.
    */
-  bool
-  constrainReachable(llzk::component::StructDefOp caller, llzk::component::StructDefOp callee) {
+  bool constrainReachable(component::StructDefOp caller, component::StructDefOp callee) {
     return isReachable(constrainNodes, caller, callee);
   }
   bool constrainReachable(std::string_view caller, std::string_view callee) {
@@ -233,28 +284,29 @@ private:
   mlir::ModuleOp rootModule;
 
   struct CallNode {
-    mlir::DenseMap<llzk::component::StructDefOp, CallNode *> callees;
+    mlir::DenseMap<component::StructDefOp, CallNode *> callees;
   };
 
-  using Def2NodeMap = mlir::DenseMap<llzk::component::StructDefOp, CallNode>;
-  using StructDefSet = mlir::DenseSet<llzk::component::StructDefOp>;
+  using Def2NodeMap = mlir::DenseMap<component::StructDefOp, CallNode>;
+  using StructDefSet = mlir::DenseSet<component::StructDefOp>;
 
   Def2NodeMap computeNodes, constrainNodes;
 
-  std::unordered_map<std::string_view, function::FuncDefOp> globalFuncMap;
-  std::unordered_map<std::string_view, llzk::component::StructDefOp> structMap;
+  std::unordered_map<std::string_view, function::FuncDefOp> freeFuncMap;
+  std::unordered_map<std::string_view, component::StructDefOp> structMap;
   std::unordered_map<std::string_view, function::FuncDefOp> computeFnMap;
   std::unordered_map<std::string_view, function::FuncDefOp> constrainFnMap;
+  std::unordered_map<std::string_view, function::FuncDefOp> productFnMap;
 
   /// @brief Ensure that a global function with the given funcName has not been added,
   /// reporting a fatal error otherwise.
   /// @param funcName
-  void ensureNoSuchGlobalFunc(std::string_view funcName);
+  void ensureNoSuchFreeFunc(std::string_view funcName);
 
   /// @brief Ensure that a global function with the given funcName has been added,
   /// reporting a fatal error otherwise.
   /// @param funcName
-  void ensureGlobalFnExists(std::string_view funcName);
+  void ensureFreeFnExists(std::string_view funcName);
 
   /// @brief Ensure that a struct with the given structName has not been added,
   /// reporting a fatal error otherwise.
@@ -281,31 +333,34 @@ private:
   /// @param structName
   void ensureConstrainFnExists(std::string_view structName);
 
-  void updateComputeReachability(
-      llzk::component::StructDefOp caller, llzk::component::StructDefOp callee
-  ) {
+  /// @brief Ensure that the given struct does not have a product function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureNoSuchProductFn(std::string_view structName);
+
+  /// @brief Ensure that the given struct has a product function,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureProductFnExists(std::string_view structName);
+
+  void updateComputeReachability(component::StructDefOp caller, component::StructDefOp callee) {
     updateReachability(computeNodes, caller, callee);
   }
 
-  void updateConstrainReachability(
-      llzk::component::StructDefOp caller, llzk::component::StructDefOp callee
-  ) {
+  void updateConstrainReachability(component::StructDefOp caller, component::StructDefOp callee) {
     updateReachability(constrainNodes, caller, callee);
   }
 
-  void updateReachability(
-      Def2NodeMap &m, llzk::component::StructDefOp caller, llzk::component::StructDefOp callee
-  ) {
+  void
+  updateReachability(Def2NodeMap &m, component::StructDefOp caller, component::StructDefOp callee) {
     auto &callerNode = m[caller];
     auto &calleeNode = m[callee];
     callerNode.callees[callee] = &calleeNode;
   }
 
-  bool isReachable(
-      Def2NodeMap &m, llzk::component::StructDefOp caller, llzk::component::StructDefOp callee
-  ) {
+  bool isReachable(Def2NodeMap &m, component::StructDefOp caller, component::StructDefOp callee) {
     StructDefSet visited;
-    std::deque<llzk::component::StructDefOp> frontier;
+    std::deque<component::StructDefOp> frontier;
     frontier.push_back(caller);
 
     while (!frontier.empty()) {
