@@ -239,10 +239,314 @@ static inline std::string getDocumentation(
 // Method Parsing Implementation
 //===----------------------------------------------------------------------===//
 
+/// Access level tracking for C++ class declarations
+enum class AccessLevel { Public, Private, Protected };
+
+/// Track the current access level (public, private, protected) in a C++ class declaration.
+/// Updates the access level when encountering access specifiers like "public:", "private:", etc.
+///
+/// \param i Current token index (will be incremented if access specifier found)
+/// \param tokens Vector of all tokens in the token stream
+/// \param currentAccess Current access level (updated if access specifier found)
+/// \return true if an access specifier was found and processed, false otherwise
+static bool
+updateAccessLevel(size_t &i, const std::vector<Token> &tokens, AccessLevel &currentAccess) {
+  if (i + 1 < tokens.size() && tokens[i + 1].is(tok::colon)) {
+    if (tokens[i].is(tok::raw_identifier)) {
+      StringRef name = tokens[i].getRawIdentifier();
+      if (name == "private") {
+        currentAccess = AccessLevel::Private;
+        i++; // extra skip for the colon
+        return true;
+      } else if (name == "public") {
+        currentAccess = AccessLevel::Public;
+        i++; // extra skip for the colon
+        return true;
+      } else if (name == "protected") {
+        currentAccess = AccessLevel::Protected;
+        i++; // extra skip for the colon
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/// Extract and parse the return type of a method declaration.
+/// Scans backwards from the method name to find the start of the return type,
+/// handling access specifiers, comments, and C++ modifiers.
+///
+/// \param i Index of the method name token
+/// \param tokens Vector of all tokens in the token stream
+/// \param sourceMgr Source manager for accessing token text
+/// \param returnTypeStart Output parameter for the index where return type starts
+/// \return The parsed return type string, or empty string if method should be skipped (e.g.,
+/// static)
+static std::string extractReturnType(
+    size_t i, const std::vector<Token> &tokens, const SourceManager &sourceMgr,
+    size_t &returnTypeStart
+) {
+  std::string returnType;
+  returnTypeStart = 0;
+  bool isStaticMethod = false;
+
+  // Look backwards for return type start, stopping at declaration boundaries
+  for (size_t j = i; j > 0; --j) {
+    Token curr = tokens[j - 1];
+    // Semicolon or right brace indicates lookback has reached the end of a prior declaration.
+    if (curr.isOneOf(tok::semi, tok::r_brace)) {
+      returnTypeStart = j;
+      break;
+    }
+    // Check for "static" or access modifiers in the return type lookback (both appear as
+    // `raw_identifier` in raw token stream).
+    if (curr.is(tok::raw_identifier)) {
+      StringRef text = curr.getRawIdentifier();
+      if (text == "static") {
+        isStaticMethod = true;
+        break;
+      }
+      if (tokens[j].is(tok::colon) && isAccessModifier(text)) {
+        // In this case, `returnTypeStart` must be after the colon.
+        returnTypeStart = j + 1;
+        assert(returnTypeStart < tokens.size());
+        break;
+      }
+    }
+  }
+
+  // Skip static methods (for now)
+  if (isStaticMethod) {
+    return "";
+  }
+
+  // Adjust `returnTypeStart` for potential comment tokens. Skip as many
+  // sequential comments as needed.
+  while (tokens[returnTypeStart].is(tok::comment)) {
+    returnTypeStart++;
+    assert(returnTypeStart <= i);
+  }
+
+  // Build return type from tokens, skipping modifiers and comments.
+  returnType.reserve(32); // Reasonable default for most type names
+  llvm::raw_string_ostream returnTypeStream(returnType);
+
+  for (size_t j = returnTypeStart; j < i; ++j) {
+    // Skip comments - they should be extracted as documentation, not part of the return type
+    if (tokens[j].is(tok::comment)) {
+      continue;
+    }
+
+    StringRef tokenText(sourceMgr.getCharacterData(tokens[j].getLocation()), tokens[j].getLength());
+
+    // Skip access specifiers (e.g., "private", "public", "protected").
+    if (tokens[j].is(tok::raw_identifier) && isAccessModifier(tokenText)) {
+      // If followed by a colon, skip that too
+      if (j + 1 < i && tokens[j + 1].is(tok::colon)) {
+        j++; // Skip the colon too
+      }
+      continue;
+    }
+
+    // Skip common implementation keywords that indicate we're in code, not a declaration.
+    if (tokens[j].is(tok::raw_identifier) && tokenText == "return") {
+      // This indicates we've hit implementation code, stop parsing
+      returnType.clear();
+      break;
+    }
+
+    // Skip modifiers and language keywords that shouldn't be in the return type
+    if (tokens[j].is(tok::raw_identifier) && isCppModifierKeyword(tokenText)) {
+      continue;
+    }
+
+    // Skip standalone colons (from lookback to access specifiers)
+    if (tokens[j].is(tok::colon)) {
+      // Only skip if it's not part of ::
+      if (j == 0 || j + 1 >= i || !tokens[j - 1].is(tok::colon)) {
+        continue;
+      }
+    }
+
+    // Add spacing between tokens (but not around ::)
+    if (!returnType.empty() && !returnType.ends_with("::") && tokenText != "::" &&
+        !tokenText.starts_with("::")) {
+      returnTypeStream << ' ';
+    }
+    returnTypeStream << tokenText;
+  }
+
+  // Trim possible whitespace
+  return StringRef(returnType).trim().str();
+}
+
+/// Parse method parameters from the token stream between parentheses.
+/// Extracts parameter types and names, handling default values and complex type syntax.
+///
+/// \param i Index of the method name token
+/// \param tokens Vector of all tokens in the token stream
+/// \param sourceMgr Source manager for accessing token text
+/// \param closeParenIdx Output parameter for the index of the closing parenthesis
+/// \param hasParameters Output parameter indicating if method has parameters
+/// \param parameters Output parameter containing parsed parameters
+/// \return true if parsing succeeded, false if closing parenthesis not found
+static bool parseMethodParameters(
+    size_t i, const std::vector<Token> &tokens, const SourceManager &sourceMgr,
+    size_t &closeParenIdx, bool &hasParameters, std::vector<MethodParameter> &parameters
+) {
+  const size_t tokenCount = tokens.size();
+  closeParenIdx = tokenCount;
+  hasParameters = false;
+  parameters.clear();
+
+  // Initialize parenDepth to 1 to account for the opening '(' at tokens[i+1]
+  // Start scanning from i+2 (the first token after the opening paren)
+  size_t parenDepth = 1;
+  for (size_t j = i + 2; j < tokenCount; ++j) {
+    if (tokens[j].is(tok::l_paren)) {
+      parenDepth++;
+    } else if (tokens[j].is(tok::r_paren)) {
+      parenDepth--;
+      if (parenDepth == 0) {
+        closeParenIdx = j;
+
+        // Parse parameters between '(' and ')'
+        // Parameters follow the pattern: type name [, type name ...]
+        std::vector<Token> paramTokens;
+        for (size_t k = i + 2; k < j; ++k) {
+          if (k >= tokenCount) {
+            break;
+          }
+          if (!tokens[k].is(tok::comment)) {
+            paramTokens.push_back(tokens[k]);
+          }
+        }
+        const size_t paramTokenCount = paramTokens.size();
+
+        // Check if we have actual parameters (excluding just "void")
+        if (paramTokenCount == 1) {
+          StringRef paramToken(
+              sourceMgr.getCharacterData(paramTokens[0].getLocation()), paramTokens[0].getLength()
+          );
+          if (paramToken != "void") {
+            hasParameters = true;
+          }
+        } else if (paramTokenCount > 1) {
+          hasParameters = true;
+        }
+
+        // Parse individual parameters
+        if (hasParameters) {
+          std::string currentParamType;
+          std::string currentParamName;
+          bool inDefaultValue = false;
+
+          for (size_t k = 0; k < paramTokenCount; ++k) {
+            // Check for end of current parameter
+            if (paramTokens[k].is(tok::comma)) {
+              // Add the current parameter if valid
+              if (!currentParamType.empty() && !currentParamName.empty()) {
+                parameters.push_back(MethodParameter(currentParamType, currentParamName));
+              }
+              currentParamType.clear();
+              currentParamName.clear();
+              inDefaultValue = false;
+              continue;
+            }
+            // Skip tokens that are part of the default value
+            if (inDefaultValue) {
+              continue;
+            }
+            // Check for '=' which indicates start of default value
+            if (paramTokens[k].is(tok::equal)) {
+              inDefaultValue = true;
+              continue;
+            }
+
+            StringRef tokenText(
+                sourceMgr.getCharacterData(paramTokens[k].getLocation()), paramTokens[k].getLength()
+            );
+
+            // Identifier token could be part of the type or the parameter name.
+            // Simple heuristic: last identifier before comma, equal, or end is the name
+            if (paramTokens[k].is(tok::raw_identifier)) {
+              if (k + 1 == paramTokenCount ||
+                  (k + 1 < paramTokenCount && paramTokens[k + 1].isOneOf(tok::comma, tok::equal))) {
+                currentParamName = tokenText.str();
+                continue;
+              }
+            }
+
+            // Other identifiers and other tokens (keywords, ::, *, &, etc.) are part of type.
+            llvm::raw_string_ostream paramTypeStream(currentParamType);
+            if (!currentParamType.empty() && tokenText != "*" && tokenText != "&" &&
+                tokenText != "::" && !tokenText.starts_with("::") &&
+                !StringRef(currentParamType).ends_with("::")) {
+              paramTypeStream << " ";
+            }
+            paramTypeStream << tokenText;
+            currentParamType = paramTypeStream.str();
+          }
+
+          // Add the last parameter if valid
+          if (!currentParamType.empty() && !currentParamName.empty()) {
+            parameters.push_back(MethodParameter(currentParamType, currentParamName));
+          }
+        }
+
+        return true;
+      }
+    }
+  }
+
+  // Couldn't find closing paren
+  return false;
+}
+
+/// Check if a method is marked as const and find the end of the method declaration.
+/// Scans tokens after the closing parenthesis looking for 'const' keyword and declaration end.
+///
+/// \param closeParenIdx Index of the closing parenthesis
+/// \param tokens Vector of all tokens in the token stream
+/// \param endIdx Output parameter for the index of the declaration end (';' or '{')
+/// \return true if the method is marked const, false otherwise
+static bool
+checkConstAndFindEnd(size_t closeParenIdx, const std::vector<Token> &tokens, size_t &endIdx) {
+  bool isConst = false;
+  endIdx = closeParenIdx + 1;
+
+  while (endIdx < tokens.size()) {
+    Token curr = tokens[endIdx];
+    if (curr.isOneOf(tok::semi, tok::l_brace)) {
+      break;
+    }
+    if (curr.is(tok::raw_identifier) && curr.getRawIdentifier() == "const") {
+      isConst = true;
+    }
+    endIdx++;
+  }
+
+  return isConst;
+}
+
 /// Parse method declarations from extraClassDeclaration using Clang's Lexer
 ///
-/// This function parses C++ method declarations to extract method signatures. It identifies methods
-/// by looking for the pattern: <return_type> <identifier> '(' [params] ')' [const] ';'
+/// This function parses C++ method declarations to extract method signatures.
+/// It identifies methods by looking for the pattern: <return_type> <identifier> '(' [params] ')'
+/// [const] ';'
+///
+/// The parsing process:
+/// 1. Tokenizes the input using Clang's lexer
+/// 2. Tracks access level (public/private/protected) to filter methods
+/// 3. For each potential method declaration:
+///    - Extracts the return type
+///    - Parses parameters (if any)
+///    - Checks for const qualifier
+///    - Extracts documentation comments
+/// 4. Returns a list of successfully parsed methods, excluding:
+///    - Static methods
+///    - Private/protected methods
+///    - Overloaded methods (duplicate names)
 SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
   if (extraDecl.empty()) {
     return {};
@@ -265,7 +569,6 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
 
   // Track current access level to avoid generating C API wrappers for private functions. Code
   // generated by `mlir-tblgen` puts the extra declarations in the public section by default.
-  enum class AccessLevel { Public, Private, Protected };
   AccessLevel currentAccess = AccessLevel::Public;
 
   for (size_t i = 0; i < tokenCount; ++i) {
@@ -275,24 +578,8 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
     }
 
     // Check for access specifier changes (e.g., "private:", "public:", "protected:").
-    // In raw token stream, these appear as a `raw_identifier` rather than `kw_*`.
-    if (i + 1 < tokenCount && tokens[i + 1].is(tok::colon)) {
-      if (tokens[i].is(tok::raw_identifier)) {
-        StringRef name = tokens[i].getRawIdentifier();
-        if (name == "private") {
-          currentAccess = AccessLevel::Private;
-          i++; // extra skip for the colon
-          continue;
-        } else if (name == "public") {
-          currentAccess = AccessLevel::Public;
-          i++; // extra skip for the colon
-          continue;
-        } else if (name == "protected") {
-          currentAccess = AccessLevel::Protected;
-          i++; // extra skip for the colon
-          continue;
-        }
-      }
+    if (updateAccessLevel(i, tokens, currentAccess)) {
+      continue;
     }
 
     // Skip private and protected methods - no need to generate C API wrappers
@@ -301,7 +588,6 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
     }
 
     // Look for pattern: [modifiers] <return_type> <identifier> '(' [params] ')' [const] ';'
-    //
     // Look for an identifier followed by '('
     if (i + 1 < tokenCount && tokens[i + 1].is(tok::l_paren) && tokens[i].is(tok::raw_identifier)) {
       StringRef methodName = tokens[i].getRawIdentifier();
@@ -312,237 +598,26 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
       }
 
       // Extract return type (everything before method name)
-      std::string returnType;
       size_t returnTypeStart = 0;
-      {
-        bool isStaticMethod = false;
-        // Look backwards for return type start, stopping at declaration boundaries
-        for (size_t j = i; j > 0; --j) {
-          Token curr = tokens[j - 1];
-          // Semicolon or right brace indicates lookback has reached the end of a prior declaration.
-          if (curr.isOneOf(tok::semi, tok::r_brace)) {
-            returnTypeStart = j;
-            break;
-          }
-          // Check for "static" or access modifiers in the return type lookback (both appear as
-          // `raw_identifier` in raw token stream).
-          if (curr.is(tok::raw_identifier)) {
-            StringRef text = curr.getRawIdentifier();
-            if (text == "static") {
-              isStaticMethod = true;
-              break;
-            }
-            if (tokens[j].is(tok::colon) && isAccessModifier(text)) {
-              // In this case, `returnTypeStart` must be after the colon.
-              returnTypeStart = j + 1;
-              // ASSERT: Safe because `j<=i` is a invariant in the wrapping loop and
-              // there is an if-condition outside the loop for `i + 1 < tokenCount`.
-              assert(returnTypeStart < tokenCount);
-              break;
-            }
-          }
-        }
-        // Skip static methods (for now)
-        if (isStaticMethod) {
-          continue;
-        }
+      std::string returnType = extractReturnType(i, tokens, sourceMgr, returnTypeStart);
 
-        // Adjust `returnTypeStart` for potential comment tokens. The check here is needed instead
-        // of having a comment case in the loop above since that could get stuck on inline comments
-        // appearing within the sequence of tokens that make up the return type. Skip as many
-        // sequential comments as needed.
-        while (tokens[returnTypeStart].is(tok::comment)) {
-          returnTypeStart++;
-          // ASSERT: This loop cannot run past `i` because the outer if-condition
-          // checks `tokens[i].is(tok::raw_identifier)`.
-          assert(returnTypeStart <= i);
-        }
-
-        // Build return type from tokens, skipping modifiers and comments.
-        // Use raw_string_ostream for efficient string building.
-        returnType.reserve(32); // Reasonable default for most type names
-        llvm::raw_string_ostream returnTypeStream(returnType);
-
-        for (size_t j = returnTypeStart; j < i; ++j) {
-          // Skip comments - they should be extracted as documentation, not part of the return type
-          if (tokens[j].is(tok::comment)) {
-            continue;
-          }
-
-          StringRef tokenText(
-              sourceMgr.getCharacterData(tokens[j].getLocation()), tokens[j].getLength()
-          );
-
-          // Skip access specifiers (e.g., "private", "public", "protected").
-          // These can appear with or without colons in the token stream.
-          // In raw token stream, these appear as a `raw_identifier` rather than `kw_*`.
-          if (tokens[j].is(tok::raw_identifier) && isAccessModifier(tokenText)) {
-            // If followed by a colon, skip that too
-            if (j + 1 < i && tokens[j + 1].is(tok::colon)) {
-              j++; // Skip the colon too
-            }
-            continue;
-          }
-
-          // Skip common implementation keywords that indicate we're in code, not a declaration.
-          // In raw token stream, this appears as a `raw_identifier` rather than `kw_return`.
-          if (tokens[j].is(tok::raw_identifier) && tokenText == "return") {
-            // This indicates we've hit implementation code, stop parsing
-            returnType.clear();
-            break;
-          }
-
-          // Skip modifiers and language keywords that shouldn't be in the return type
-          if (tokens[j].is(tok::raw_identifier) && isCppModifierKeyword(tokenText)) {
-            continue;
-          }
-
-          // Skip standalone colons (from lookback to access specifiers)
-          if (tokens[j].is(tok::colon)) {
-            // Only skip if it's not part of ::
-            if (j == 0 || j + 1 >= i || !tokens[j - 1].is(tok::colon)) {
-              continue;
-            }
-          }
-
-          // Add spacing between tokens (but not around ::)
-          if (!returnType.empty() && !returnType.ends_with("::") && tokenText != "::" &&
-              !tokenText.starts_with("::")) {
-            returnTypeStream << ' ';
-          }
-          returnTypeStream << tokenText;
-        }
-        // Trim possible whitespace
-        returnType = StringRef(returnType).trim().str();
-      }
-
-      // Find matching ')' and check for parameters
-      size_t closeParenIdx = tokenCount;
-      bool hasParameters = false;
-      std::vector<MethodParameter> parameters;
-      {
-        // Initialize parenDepth to 1 to account for the opening '(' at tokens[i+1]
-        // Start scanning from i+2 (the first token after the opening paren)
-        size_t parenDepth = 1;
-        for (size_t j = i + 2; j < tokenCount; ++j) {
-          if (tokens[j].is(tok::l_paren)) {
-            parenDepth++;
-          } else if (tokens[j].is(tok::r_paren)) {
-            parenDepth--;
-            if (parenDepth == 0) {
-              closeParenIdx = j;
-
-              // Parse parameters between '(' and ')'
-              // Parameters follow the pattern: type name [, type name ...]
-              std::vector<Token> paramTokens;
-              for (size_t k = i + 2; k < j; ++k) {
-                if (k >= tokenCount) {
-                  break;
-                }
-                if (!tokens[k].is(tok::comment)) {
-                  paramTokens.push_back(tokens[k]);
-                }
-              }
-              const size_t paramTokenCount = paramTokens.size();
-
-              // Check if we have actual parameters (excluding just "void")
-              if (paramTokenCount == 1) {
-                StringRef paramToken(
-                    sourceMgr.getCharacterData(paramTokens[0].getLocation()),
-                    paramTokens[0].getLength()
-                );
-                if (paramToken != "void") {
-                  hasParameters = true;
-                }
-              } else if (paramTokenCount > 1) {
-                hasParameters = true;
-              }
-
-              // Parse individual parameters
-              if (hasParameters) {
-                std::string currentParamType;
-                std::string currentParamName;
-                bool inDefaultValue = false;
-
-                for (size_t k = 0; k < paramTokenCount; ++k) {
-                  // Check for end of current parameter
-                  if (paramTokens[k].is(tok::comma)) {
-                    // Add the current parameter if valid
-                    if (!currentParamType.empty() && !currentParamName.empty()) {
-                      parameters.push_back(MethodParameter(currentParamType, currentParamName));
-                    }
-                    currentParamType.clear();
-                    currentParamName.clear();
-                    inDefaultValue = false;
-                    continue;
-                  }
-                  // Skip tokens that are part of the default value
-                  if (inDefaultValue) {
-                    continue;
-                  }
-                  // Check for '=' which indicates start of default value
-                  if (paramTokens[k].is(tok::equal)) {
-                    inDefaultValue = true;
-                    continue;
-                  }
-
-                  StringRef tokenText(
-                      sourceMgr.getCharacterData(paramTokens[k].getLocation()),
-                      paramTokens[k].getLength()
-                  );
-
-                  // Identifier token could be part of the type or the parameter name.
-                  // Simple heuristic: last identifier before comma, equal, or end is the name
-                  if (paramTokens[k].is(tok::raw_identifier)) {
-                    if (k + 1 == paramTokenCount ||
-                        (k + 1 < paramTokenCount &&
-                         paramTokens[k + 1].isOneOf(tok::comma, tok::equal))) {
-                      currentParamName = tokenText.str();
-                      continue;
-                    }
-                  }
-
-                  // Other identifiers and other tokens (keywords, ::, *, &, etc.) are part of type.
-                  // Use raw_string_ostream for efficient string building
-                  llvm::raw_string_ostream paramTypeStream(currentParamType);
-                  if (!currentParamType.empty() && tokenText != "*" && tokenText != "&" &&
-                      tokenText != "::" && !tokenText.starts_with("::") &&
-                      !StringRef(currentParamType).ends_with("::")) {
-                    paramTypeStream << ' ';
-                  }
-                  paramTypeStream << tokenText;
-                  currentParamType = paramTypeStream.str();
-                }
-
-                // Add the last parameter if valid
-                if (!currentParamType.empty() && !currentParamName.empty()) {
-                  parameters.push_back(MethodParameter(currentParamType, currentParamName));
-                }
-              }
-
-              break;
-            }
-          }
-        }
-      }
-      if (closeParenIdx >= tokenCount) {
-        // Couldn't find closing paren, skip this
+      // Skip static methods (return type is empty if static)
+      if (returnType.empty()) {
         continue;
       }
 
-      // Check for 'const' after parameters but before end of declaration (';' or '{').
-      bool isConst = false;
-      size_t endIdx = closeParenIdx + 1;
-      while (endIdx < tokenCount) {
-        Token curr = tokens[endIdx];
-        if (curr.isOneOf(tok::semi, tok::l_brace)) {
-          break;
-        }
-        if (curr.is(tok::raw_identifier) && curr.getRawIdentifier() == "const") {
-          isConst = true;
-        }
-        endIdx++;
+      // Parse method parameters
+      size_t closeParenIdx = tokenCount;
+      bool hasParameters = false;
+      std::vector<MethodParameter> parameters;
+      if (!parseMethodParameters(i, tokens, sourceMgr, closeParenIdx, hasParameters, parameters)) {
+        // Couldn't find closing paren, skip this method
+        continue;
       }
+
+      // Check for 'const' and find declaration end
+      size_t endIdx;
+      bool isConst = checkConstAndFindEnd(closeParenIdx, tokens, endIdx);
 
       // Create method struct
       if (!returnType.empty() && !methodName.empty()) {
