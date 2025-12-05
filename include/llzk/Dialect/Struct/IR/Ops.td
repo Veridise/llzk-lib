@@ -215,19 +215,19 @@ def LLZK_FieldDefOp
   let skipDefaultBuilders = 1;
   let builders =
       [OpBuilder<(ins "::mlir::StringAttr":$sym_name, "::mlir::TypeAttr":$type,
-           CArg<"bool", "false">:$isColumn, CArg<"bool", "false">:$isSignal)>,
+           CArg<"bool", "false">:$isSignal, CArg<"bool", "false">:$isColumn)>,
        OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::Type":$type,
-           CArg<"bool", "false">:$isColumn, CArg<"bool", "false">:$isSignal)>,
+           CArg<"bool", "false">:$isSignal, CArg<"bool", "false">:$isColumn)>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::ValueRange":$operands,
            "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes,
-           CArg<"bool", "false">:$isColumn, CArg<"bool", "false">:$isSignal)>,
+           CArg<"bool", "false">:$isSignal, CArg<"bool", "false">:$isColumn)>,
        // Simpler version since 'resultTypes' and 'operands' must be empty
        OpBuilder<
            (ins "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes,
-               CArg<"bool", "false">:$isColumn,
-               CArg<"bool", "false">:$isSignal),
-           [{ build($_builder, $_state, {}, {}, attributes, isColumn, isSignal); }]>];
+               CArg<"bool", "false">:$isSignal,
+               CArg<"bool", "false">:$isColumn),
+           [{ build($_builder, $_state, {}, {}, attributes, isSignal, isColumn); }]>];
 
   let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 
