@@ -35,11 +35,11 @@ struct OpGeneratorData {
   void setAttributeName(mlir::StringRef name) { this->attrNameCapitalized = toPascalCase(name); }
   void setResultName(mlir::StringRef name, int resultIndex) {
     this->resultNameCapitalized =
-        name.empty() ? llvm::formatv("Result{0}", resultIndex).str() : toPascalCase(name.str());
+        name.empty() ? llvm::formatv("Result{0}", resultIndex).str() : toPascalCase(name);
   }
   void setRegionName(mlir::StringRef name, unsigned regionIndex) {
     this->regionNameCapitalized =
-        name.empty() ? llvm::formatv("Region{0}", regionIndex).str() : toPascalCase(name.str());
+        name.empty() ? llvm::formatv("Region{0}", regionIndex).str() : toPascalCase(name);
   }
 
 protected:
@@ -54,7 +54,7 @@ struct OpHeaderGenerator : public HeaderGenerator, OpGeneratorData {
   using HeaderGenerator::HeaderGenerator;
   virtual ~OpHeaderGenerator() = default;
 
-  void genOpBuildDecl(std::string const &params) const {
+  void genOpBuildDecl(const std::string &params) const {
     static constexpr char fmt[] = R"(
 /* Build a {4}::{2} Operation. */
 MLIR_CAPI_EXPORTED MlirOperation {0}{1}{2}Build(MlirOpBuilder builder, MlirLocation location{3});
@@ -395,7 +395,7 @@ struct OpImplementationGenerator : public ImplementationGenerator, OpGeneratorDa
   /// @param params The parameter list for the "Build" function
   /// @param assignments The code to populate the operation state with operands, attributes, etc.
   void genOpBuildImpl(
-      std::string const &operationName, std::string const &params, std::string const &assignments
+      const std::string &operationName, const std::string &params, const std::string &assignments
   ) const {
     static constexpr char fmt[] = R"(
 MlirOperation {0}{1}{2}Build(MlirOpBuilder builder, MlirLocation location{3}) {{

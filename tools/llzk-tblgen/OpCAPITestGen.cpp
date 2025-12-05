@@ -303,9 +303,8 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
 
     for (int i = 0, e = op.getNumResults(); i < e; ++i) {
       const auto &result = op.getResult(i);
-      std::string resultName =
-          result.name.empty() ? llvm::formatv("Result{0}", i).str() : result.name.str();
-      std::string capName = toPascalCase(resultName);
+      llvm::StringRef name = result.name;
+      std::string capName = name.empty() ? llvm::formatv("Result{0}", i).str() : toPascalCase(name);
 
       if (result.isVariadic()) {
         os << llvm::formatv(
@@ -367,9 +366,8 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
 
     for (int i = 0, e = op.getNumRegions(); i < e; ++i) {
       const auto &region = op.getRegion(i);
-      std::string regionName =
-          region.name.empty() ? llvm::formatv("Region{0}", i).str() : region.name.str();
-      std::string capName = toPascalCase(regionName);
+      llvm::StringRef name = region.name;
+      std::string capName = name.empty() ? llvm::formatv("Region{0}", i).str() : toPascalCase(name);
 
       if (region.isVariadic()) {
         os << llvm::formatv(

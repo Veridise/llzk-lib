@@ -29,7 +29,7 @@ std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &def, bool i
   for (const auto &param : def.getParameters()) {
     // Cache the string conversions to avoid repeated calls
     const StringRef cppType = param.getCppType();
-    const std::string pName = param.getName().str();
+    const StringRef pName = param.getName();
 
     if (isArrayRefType(cppType)) {
       paramsStream << llvm::formatv("    intptr_t {0}Count = 0;\n", pName);
@@ -76,7 +76,7 @@ std::string generateParamListForAttrOrTypeGet(const AttrOrTypeDef &def) {
 
   for (const auto &param : def.getParameters()) {
     // Cache the string conversion to avoid repeated calls
-    const std::string pName = param.getName().str();
+    const StringRef pName = param.getName();
     if (isArrayRefType(param.getCppType())) {
       paramsStream << llvm::formatv(", {0}Count, {0}", pName);
     } else {
