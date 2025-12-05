@@ -17,8 +17,7 @@
 /// 2. Run a dialect conversion that does the following:
 ///
 ///    - Replace `MemberReadOp` and `MemberWriteOp` targeting the members that were split in step 1
-///    so
-///      they instead perform scalar reads and writes from the new members. The transformation is
+///      so they instead perform scalar reads and writes from the new members. The transformation is
 ///      local to the current op. Therefore, when replacing the `MemberReadOp` a new array is
 ///      created locally and all uses of the `MemberReadOp` are replaced with the new array Value,
 ///      then each scalar member read is followed by scalar write into the new array. Similarly,
