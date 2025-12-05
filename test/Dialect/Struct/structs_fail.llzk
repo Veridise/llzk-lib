@@ -314,7 +314,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @Main {
-    // expected-error@+1 {{"@Main" component "@compute" function parameters must be one of: {!struct.type<@Signal>, !array.type<.. x !struct.type<@Signal>>}}}
+    // expected-error@+1 {{"@Main" component "@compute" function parameters must be one of: {!felt.type, !array.type<.. x !felt.type>}}}
     function.def @compute(%0: i1) -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -331,7 +331,7 @@ module attributes {veridise.lang = "llzk"} {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
     }
-    // expected-error@+1 {{"@Main" component "@constrain" function parameters must be one of: {!struct.type<@Main>, !struct.type<@Signal>, !array.type<.. x !struct.type<@Signal>>}}}
+    // expected-error@+1 {{"@Main" component "@constrain" function parameters must be one of: {!struct.type<@Main>, !felt.type, !array.type<.. x !felt.type>}}}
     function.def @constrain(%self: !struct.type<@Main>, %0: i1)  {
       function.return
     }
@@ -352,52 +352,26 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  struct.def @Signal {
-    struct.member @reg : !felt.type {llzk.pub}
-
-    function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
-      %self = struct.new : !struct.type<@Signal>
-      struct.writem %self[@reg] = %v : !struct.type<@Signal>, !felt.type
-      function.return %self : !struct.type<@Signal>
-    }
-
-    function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.type) {
-      function.return
-    }
-  }
   struct.def @Main {
-    function.def @compute(%0: !struct.type<@Signal>) -> !struct.type<@Main> { // expected-note {{"@compute" function defined here}}
+    function.def @compute(%0: !felt.type) -> !struct.type<@Main> { // expected-note {{"@compute" function defined here}}
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
     }
     // expected-error@+1 {{expected "@constrain" function argument types (sans the first one) to match "@compute" function argument types}}
-    function.def @constrain(%self: !struct.type<@Main>, %0: !struct.type<@Signal>, %1: !struct.type<@Signal>)  {
+    function.def @constrain(%self: !struct.type<@Main>, %0: !felt.type, %1: !felt.type)  {
       function.return
     }
   }
 }
 // -----
 module attributes {veridise.lang = "llzk"} {
-  struct.def @Signal {
-    struct.member @reg : !felt.type {llzk.pub}
-
-    function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
-      %self = struct.new : !struct.type<@Signal>
-      struct.writem %self[@reg] = %v : !struct.type<@Signal>, !felt.type
-      function.return %self : !struct.type<@Signal>
-    }
-
-    function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.type) {
-      function.return
-    }
-  }
   struct.def @Main {
-    function.def @compute(%0: !struct.type<@Signal>) -> !struct.type<@Main> { // expected-note {{"@compute" function defined here}}
+    function.def @compute(%0: !felt.type) -> !struct.type<@Main> { // expected-note {{"@compute" function defined here}}
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
     }
     // expected-error@+1 {{expected "@constrain" function argument types (sans the first one) to match "@compute" function argument types}}
-    function.def @constrain(%self: !struct.type<@Main>, %0: !array.type<4 x !struct.type<@Signal>>)  {
+    function.def @constrain(%self: !struct.type<@Main>, %0: !array.type<4 x !felt.type>)  {
       function.return
     }
   }

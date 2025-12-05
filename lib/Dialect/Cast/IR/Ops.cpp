@@ -41,14 +41,6 @@ LogicalResult FeltToIndexOp::verify() {
       visited.insert(v);
 
       if (Operation *op = v.getDefiningOp()) {
-        if (MemberReadOp readm = llvm::dyn_cast<MemberReadOp>(op);
-            readm && isSignalType(readm.getComponent().getType())) {
-          return (emitOpError() << "input is derived from a Signal struct, which is "
-                                << "only valid within a '" << FuncDefOp::getOperationName()
-                                << "' with '" << AllowConstraintAttr::name << "' attribute")
-              .attachNote(readm.getLoc())
-              .append("Signal struct value is read here");
-        }
         frontier.insert(frontier.end(), op->operand_begin(), op->operand_end());
       }
     }

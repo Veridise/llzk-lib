@@ -568,11 +568,12 @@ public:
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
     for (ArrayAttr idx : subIdxs.value()) {
       // Create scalar version of the field
-      MemberDefOp newField =
-          rewriter.create<MemberDefOp>(op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn());
-      newField.setPublicAttr(op.hasPublicAttr());
+      MemberDefOp newMember = rewriter.create<MemberdDefOp>(
+          op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn(), op.getSignal()
+      );
+      newMember.setPublicAttr(op.hasPublicAttr());
       // Use SymbolTable to give it a unique name and store to the replacement map
-      localRepMapRef[idx] = std::make_pair(structSymbolTable.insert(newField), elemTy);
+      localRepMapRef[idx] = std::make_pair(structSymbolTable.insert(newMember), elemTy);
     }
     rewriter.eraseOp(op);
   }
@@ -641,8 +642,8 @@ public:
     const LocalFieldReplacementMap &idxToName =
         repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
     // Split the array field write into a series of read array + write scalar field
-    for (auto [idx, newField] : idxToName) {
-      ImplClass::forIndex(op.getLoc(), prefixResult, idx, newField, adaptor, rewriter);
+    for (auto [idx, newMember] : idxToName) {
+      ImplClass::forIndex(op.getLoc(), prefixResult, idx, newMember, adaptor, rewriter);
     }
     rewriter.eraseOp(op);
   }
@@ -661,12 +662,12 @@ public:
   static void *genHeader(MemberWriteOp, ConversionPatternRewriter &) { return nullptr; }
 
   static void forIndex(
-      Location loc, void *, ArrayAttr idx, FieldInfo newField, OpAdaptor adaptor,
+      Location loc, void *, ArrayAttr idx, FieldInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
     ReadArrayOp scalarRead = genRead(loc, adaptor.getVal(), idx, rewriter);
     rewriter.create<MemberWriteOp>(
-        loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newField.first), scalarRead
+        loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
     );
   }
 };
@@ -689,11 +690,12 @@ public:
   }
 
   static void forIndex(
-      Location loc, CreateArrayOp newArray, ArrayAttr idx, FieldInfo newField, OpAdaptor adaptor,
+      Location loc, CreateArrayOp newArray, ArrayAttr idx, FieldInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
-    MemberReadOp scalarRead =
-        rewriter.create<MemberReadOp>(loc, newField.second, adaptor.getComponent(), newField.first);
+    MemberReadOp scalarRead = rewriter.create<MemberReadOp>(
+        loc, newMember.second, adaptor.getComponent(), newMember.first
+    );
     genWrite(loc, newArray, idx, scalarRead, rewriter);
   }
 };

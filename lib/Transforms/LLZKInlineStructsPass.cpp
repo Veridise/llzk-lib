@@ -712,8 +712,8 @@ private:
       SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
         SmallVector<Type> newTypes(origTypes);
         auto it = newTypes.erase(newTypes.begin() + inputIdx);
-        for (auto [_, newField] : newFields) {
-          newTypes.insert(it, newField.getType());
+        for (auto [_, newMember] : newFields) {
+          newTypes.insert(it, newMember.getType());
           ++it;
         }
         return newTypes;
@@ -742,9 +742,9 @@ private:
         llvm::StringMap<BlockArgument> fieldNameToNewArg;
         Location loc = oldStructRef.getLoc();
         unsigned idx = inputIdx;
-        for (auto [fieldName, newField] : newFields) {
+        for (auto [fieldName, newMember] : newFields) {
           // note: pre-increment so the original to be erased is still at `inputIdx`
-          BlockArgument newArg = entryBlock.insertArgument(++idx, newField.getType(), loc);
+          BlockArgument newArg = entryBlock.insertArgument(++idx, newMember.getType(), loc);
           fieldNameToNewArg[fieldName] = newArg;
         }
 

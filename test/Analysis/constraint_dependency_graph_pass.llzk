@@ -759,67 +759,6 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-// Test that allowing Signals to constrain.eq doesn't break the constraint analysis
-!Signal = !struct.type<@Signal>
-module attributes {veridise.lang = "llzk"} {
-  // pre-defined
-  struct.def @Signal {
-    struct.member @reg : !felt.type {llzk.pub}
-
-    function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
-      %self = struct.new : !struct.type<@Signal>
-      struct.writem %self[@reg] = %v : !struct.type<@Signal>, !felt.type
-      function.return %self : !struct.type<@Signal>
-    }
-
-    function.def @constrain(%self: !struct.type<@Signal>, %v: !felt.type) {
-      function.return
-    }
-  }
-
-  struct.def @Component00 {
-    struct.member @f : !Signal
-
-    function.def @compute(%0: !Signal) -> !struct.type<@Component00> {
-      %self = struct.new : !struct.type<@Component00>
-      struct.writem %self[@f] = %0 : !struct.type<@Component00>, !Signal
-      function.return %self : !struct.type<@Component00>
-    }
-    function.def @constrain(%self: !struct.type<@Component00>, %0: !Signal) {
-      %b = struct.readm %self[@f] : !struct.type<@Component00>, !Signal
-      // Signal is the only struct allowed for emit equal
-      constrain.eq %b, %0 : !Signal
-      function.return
-    }
-  }
-
-  struct.def @Component01 {
-    struct.member @f : !array.type<2 x !Signal>
-
-    function.def @compute(%0: !array.type<2 x !Signal>) -> !struct.type<@Component01> {
-      %self = struct.new : !struct.type<@Component01>
-      struct.writem %self[@f] = %0 : !struct.type<@Component01>, !array.type<2 x !Signal>
-      function.return %self : !struct.type<@Component01>
-    }
-    function.def @constrain(%self: !struct.type<@Component01>, %0: !array.type<2 x !Signal>) {
-      %b = struct.readm %self[@f] : !struct.type<@Component01>, !array.type<2 x !Signal>
-      // Signal is the only struct allowed for emit equal
-      constrain.eq %b, %0 : !array.type<2 x !Signal>
-      function.return
-    }
-  }
-}
-
-// CHECK-LABEL: @Signal ConstraintDependencyGraph { }
-// CHECK-NEXT:  @Component00 ConstraintDependencyGraph {
-// CHECK-NEXT:      { %arg0[@f], %arg1 }
-// CHECK-NEXT:  }
-// CHECK-NEXT:  @Component01 ConstraintDependencyGraph {
-// CHECK-NEXT:      { %arg0[@f], %arg1 }
-// CHECK-NEXT:  }
-
-// -----
-
 #map = affine_map<()[s0] -> (s0)>
 module attributes {veridise.lang = "llzk"} {
   struct.def @Foo<[@N]> {

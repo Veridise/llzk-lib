@@ -411,9 +411,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
 
     // Else, look up the stored value by `SourceRef`.
     // We only care about scalar type values, so we ignore composite types, which
-    // are currently limited to non-Signal structs and arrays.
+    // are currently limited to structs and arrays.
     Type valTy = val.getType();
-    if (llvm::isa<ArrayType, StructType>(valTy) && !isSignalType(valTy)) {
+    if (llvm::isa<ArrayType, StructType>(valTy)) {
       ExpressionValue anyVal(field.get(), createFeltSymbol(val));
       operandVals.emplace_back(anyVal);
       continue;
@@ -508,13 +508,6 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     auto assertExpr = operandVals[0].getScalarValue();
     // No need to propagate the constraint
     (void)getLatticeElement(cond)->addSolverConstraint(assertExpr);
-  } else if (auto readm = llvm::dyn_cast<MemberReadOp>(op)) {
-    Value cmp = readm.getComponent();
-    if (isSignalType(cmp.getType())) {
-      // The reg value read from the signal type is equal to the value of the Signal
-      // struct overall.
-      propagateIfChanged(results[0], results[0]->setValue(operandVals[0]));
-    }
   } else if (auto writem = llvm::dyn_cast<MemberWriteOp>(op)) {
     // Update values stored in a field
     ExpressionValue writeVal = operandVals[1].getScalarValue();
@@ -937,14 +930,6 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
         }
       }
     }
-
-    // We have a special case for the Signal struct: if this value is created
-    // from reading a Signal struct's reg field, we also apply the interval to
-    // the struct itself.
-    Value comp = readmOp.getComponent();
-    if (isSignalType(comp.getType())) {
-      applyInterval(readmOp, comp, newInterval);
-    }
   };
 
   auto readArrCase = [&](ReadArrayOp _) {
@@ -1076,20 +1061,7 @@ LogicalResult StructIntervals::computeIntervals(
     mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx
 ) {
 
-  auto validSourceRefType = [](const SourceRef &ref) {
-    // We only want to compute intervals for field elements and not composite types,
-    // with the exception of the Signal struct.
-    if (!ref.isScalar() && !ref.isSignal()) {
-      return false;
-    }
-    // We also don't want to show the interval for a Signal and its internal reg.
-    if (auto parentOr = ref.getParentPrefix(); succeeded(parentOr) && parentOr->isSignal()) {
-      return false;
-    }
-    return true;
-  };
-
-  auto computeIntervalsImpl = [&solver, &ctx, &validSourceRefType, this](
+  auto computeIntervalsImpl = [&solver, &ctx, this](
                                   FuncDefOp fn, llvm::MapVector<SourceRef, Interval> &fieldRanges,
                                   llvm::SetVector<ExpressionValue> &solverConstraints
                               ) {
@@ -1100,11 +1072,11 @@ LogicalResult StructIntervals::computeIntervals(
 
     SourceRefSet searchSet;
     for (const auto &ref : SourceRef::getAllSourceRefs(structDef, fn)) {
-      // We only want to compute intervals for field elements and not composite types,
-      // with the exception of the Signal struct.
-      if (validSourceRefType(ref)) {
-        searchSet.insert(ref);
+      // We only want to compute intervals for field elements and not composite types.
+      if (!ref.isScalar()) {
+        continue;
       }
+      searchSet.insert(ref);
     }
 
     // Iterate over arguments
