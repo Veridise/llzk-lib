@@ -88,7 +88,7 @@ pushd llvm-project
 mkdir build
 pushd build
 cmake ../llvm -GNinja -DCMAKE_BUILD_TYPE=Release \
-  -DLLVM_ENABLE_PROJECTS=mlir \
+  -DLLVM_ENABLE_PROJECTS="mlir;clang" \
   -DLLVM_INCLUDE_BENCHMARKS=off \
   -DLLVM_INCLUDE_EXAMPLES=off \
   -DLLVM_BUILD_TESTS=off \
@@ -125,6 +125,7 @@ cmake .. -GNinja \
   -DLLVM_ROOT="$INSTALL_ROOT" \
   -DLLVM_DIR="$INSTALL_ROOT"/lib/cmake/llvm \
   -DMLIR_DIR="$INSTALL_ROOT"/lib/cmake/mlir \
+  -DClang_DIR="$INSTALL_ROOT"/lib/cmake/clang \
   -DLLVM_EXTERNAL_LIT="$LIT_PATH" \
   -DGTEST_ROOT="$INSTALL_ROOT" \
   -DLLZK_BUILD_DEVTOOLS=ON
