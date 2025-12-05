@@ -540,7 +540,7 @@ LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   // If the member is marked as a column only a small subset of types are allowed.
   if (!isValidColumnType(getType(), tables, *this)) {
     return emitOpError() << "marked as column can only contain felts, arrays of column types, or "
-                            "structs with columns, but member has type "
+                            "structs with columns, but has type "
                          << getType();
   }
   return success();
