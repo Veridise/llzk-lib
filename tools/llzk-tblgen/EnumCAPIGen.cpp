@@ -1,4 +1,4 @@
-//===- EnumCAPIGen.cpp - C API generator for enum attributes -------------===//
+//===- EnumCAPIGen.cpp - C API generator for enum attributes --------------===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.

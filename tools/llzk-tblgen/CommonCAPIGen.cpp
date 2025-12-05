@@ -1,4 +1,4 @@
-//===- CommonCAPIGen.cpp - Common utilities for C API generation ---------===//
+//===- CommonCAPIGen.cpp - Common utilities for C API generation ----------===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -482,7 +482,7 @@ static bool parseMethodParameters(
             if (!currentParamType.empty() && tokenText != "*" && tokenText != "&" &&
                 tokenText != "::" && !tokenText.starts_with("::") &&
                 !StringRef(currentParamType).ends_with("::")) {
-              paramTypeStream << " ";
+              paramTypeStream << ' ';
             }
             paramTypeStream << tokenText;
             currentParamType = paramTypeStream.str();

@@ -133,7 +133,6 @@ MLIR_CAPI_EXPORTED void {0}{1}{2}Set{3}(MlirOperation op, intptr_t count, MlirVa
     assert(!className.empty() && "className must be set");
     assert(!operandNameCapitalized.empty() && "operandName must be set");
     os << llvm::formatv(
-
         fmt,
         FunctionPrefix,            // {0}
         dialectNameCapitalized,    // {1}
@@ -707,11 +706,7 @@ static std::string generateCAPIAssignments(const Operator &op) {
       os << "  mlirOperationStateAddAttributes(&state, attributes.size(), attributes.data());\n";
     }
     void genRegionsPrefix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
-      os << "  llvm::SmallVector<MlirRegion, 2> regions;\n";
-      auto numRegions = op.getNumRegions();
-      if (numRegions > 2) { // pre-size if more than the initial capacity above
-        os << "  regions.resize(" << numRegions << ");\n";
-      }
+      os << "  llvm::SmallVector<MlirRegion, " << op.getNumRegions() << "> regions;\n";
     }
     void genRegion(llvm::raw_ostream &os, const mlir::tblgen::NamedRegion &region) override {
       if (region.isVariadic()) {

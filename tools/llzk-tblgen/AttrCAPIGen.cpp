@@ -1,4 +1,4 @@
-//===- AttrCAPIGen.cpp - C API generator for attributes ------------------===//
+//===- AttrCAPIGen.cpp - C API generator for attributes -------------------===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.

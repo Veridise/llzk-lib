@@ -1,4 +1,4 @@
-//===- TypeCAPITestGen.cpp - C API test generator for types --------------===//
+//===- TypeCAPITestGen.cpp - C API test generator for types ---------------===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.

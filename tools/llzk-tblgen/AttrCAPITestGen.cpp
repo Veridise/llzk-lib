@@ -1,4 +1,4 @@
-//===- AttrCAPITestGen.cpp - C API test generator for attributes ---------===//
+//===- AttrCAPITestGen.cpp - C API test generator for attributes ----------===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.

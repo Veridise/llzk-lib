@@ -1,4 +1,4 @@
-//===- DialectCAPITestGen.cpp - C API test generator for dialects --------===//
+//===- DialectCAPITestGen.cpp - C API test generator for dialects ---------===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.

@@ -695,6 +695,7 @@ public:
         rewriter, op, newResultTypes, calleeAttr, adapter.getMapOperands(),
         op.getNumDimsPerMapAttr(), adapter.getArgOperands()
     );
+    (void)newOp; // tell compiler it's intentionally unused in release builds
     LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
     return success();
   }
@@ -1016,6 +1017,7 @@ public:
         rewriter, op, TypeRange {newRetTy}, op.getCallee(),
         AffineMapFolder::getConvertedMapOpGroups(out), out.dimsPerGroup, op.getArgOperands()
     );
+    (void)newOp; // tell compiler it's intentionally unused in release builds
     LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
     return success();
   }
@@ -1050,6 +1052,7 @@ private:
 
     UnificationMap unifications;
     bool unifies = typeListsUnify(targetFunc.getArgumentTypes(), callArgTypes, {}, &unifications);
+    (void)unifies; // tell compiler it's intentionally unused in builds without assertions
     assert(unifies && "should have been checked by verifiers");
 
     LLVM_DEBUG({
@@ -1415,6 +1418,7 @@ public:
 
     LLVM_DEBUG(llvm::dbgs() << "[UpdateGlobalCallOpTypes] replaced " << op);
     CallOp newOp = replaceOpWithNewOp<CallOp>(rewriter, op, targetFunc, op.getArgOperands());
+    (void)newOp; // tell compiler it's intentionally unused in release builds
     LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
     return success();
   }
@@ -1571,6 +1575,7 @@ struct FromKeepSet : public CleanupBase {
               }
               if (StructDefOp asStruct = llvm::dyn_cast<StructDefOp>(lookupRes->get())) {
                 bool insertRes = roots.insert(asStruct);
+                (void)insertRes; // tell compiler it's intentionally unused in release builds
                 LLVM_DEBUG({
                   if (insertRes) {
                     llvm::dbgs() << "[EraseUnreachable]  found another root: " << asStruct << '\n';

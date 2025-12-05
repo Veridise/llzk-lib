@@ -1,4 +1,4 @@
-//===- CommonCAPIGen.h - Common utilities for C API generation -----------===//
+//===- CommonCAPIGen.h - Common utilities for C API generation ------------===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -94,6 +94,39 @@ inline std::string toPascalCase(mlir::StringRef str) {
   return result;
 }
 
+/// @brief Check if a C++ type is a known integer type
+/// @param type The type string to check
+/// @return true if the type is an integer type (size_t, unsigned, int*, uint*, etc.)
+inline bool isIntegerType(mlir::StringRef type) {
+  // Consume optional root namespace token
+  type.consume_front("::");
+  // Handle special names first
+  if (type == "signed" || type == "unsigned" || type == "size_t" || type == "char32_t" ||
+      type == "char16_t" || type == "char8_t" || type == "wchar_t") {
+    return true;
+  }
+  // Handle standard integer types with optional signed/unsigned prefix
+  type.consume_front("signed ") || type.consume_front("unsigned ");
+  if (type == "char" || type == "int" || type == "short" || type == "short int" || type == "long" ||
+      type == "long int" || type == "long long" || type == "long long int") {
+    return true;
+  }
+  // Handle fixed-width integer types (https://cppreference.com/w/cpp/types/integer.html)
+  type.consume_front("std::"); // optional
+  if (type.consume_back("_t") && (type.consume_front("int") || type.consume_front("uint"))) {
+    // intmax_t, intptr_t, uintmax_t, uintptr_t
+    if (type == "max" || type == "ptr") {
+      return true;
+    }
+    // Optional "_fast" or "_least" and finally bit width to cover the rest
+    type.consume_back("_fast") || type.consume_back("_least");
+    if (type == "8" || type == "16" || type == "32" || type == "64") {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// @brief Check if a C++ type is a known primitive type
 /// @param cppType The C++ type string to check
 /// @return true if the type is a primitive (bool, void, int, etc.)
@@ -102,18 +135,8 @@ inline std::string toPascalCase(mlir::StringRef str) {
 /// things like APInt become primitive which can lead to missing wrap/unwrap functions.
 inline bool isPrimitiveType(mlir::StringRef cppType) {
   cppType.consume_front("::");
-  return llvm::StringSwitch<bool>(cppType)
-      .Case("bool", true)
-      .Case("void", true)
-      .Case("int", true)
-      .Case("unsigned", true)
-      .Case("size_t", true)
-      .Case("intptr_t", true)
-      .Case("int32_t", true)
-      .Case("int64_t", true)
-      .Case("uint32_t", true)
-      .Case("uint64_t", true)
-      .Default(false);
+  return cppType == "void" || cppType == "bool" || cppType == "float" || cppType == "double" ||
+         cppType == "long double" || isIntegerType(cppType);
 }
 
 /// @brief Check if a token text represents a C++ modifier/specifier keyword
@@ -150,15 +173,6 @@ inline bool isCppLanguageConstruct(mlir::StringRef methodName) {
       .Case("static_assert", true)
       .Case("noexcept", true)
       .Default(false);
-}
-
-/// @brief Check if a C++ type is a known integer type
-/// @param type The type string to check
-/// @return true if the type is an integer type (size_t, unsigned, int*, uint*, etc.)
-inline bool isIntegerType(mlir::StringRef type) {
-  type.consume_front("::");
-  return type == "size_t" || type == "unsigned" || type.starts_with("int") ||
-         type.starts_with("uint");
 }
 
 /// @brief Check if a C++ type is APInt
@@ -351,7 +365,7 @@ struct HeaderGenerator : public Generator {
   virtual void genPrologue() const {
     os << R"(
 #include "llzk-c/Builder.h"
-#include "mlir-c/IR.h"
+#include <mlir-c/IR.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -405,7 +419,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{3}(Mlir{1});
         return;
       }
       std::string capiParamType = capiParamTypeOpt.value();
-      paramListStream << ", " << capiParamType << " " << param.name;
+      paramListStream << ", " << capiParamType << ' ' << param.name;
     }
 
     // Generate declaration
@@ -486,7 +500,7 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
         return;
       }
       std::string capiParamType = capiParamTypeOpt.value();
-      paramListStream << ", " << capiParamType << " " << param.name;
+      paramListStream << ", " << capiParamType << ' ' << param.name;
     }
 
     // Build argument list for C++ method call
@@ -505,13 +519,13 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
         argListStream << param.name;
       } else if (isAPIntType(cppParamType)) {
         // APInt needs unwrapping
-        argListStream << "unwrap(" << param.name << ")";
+        argListStream << "unwrap(" << param.name << ')';
       } else {
         // Convert C++ type to C API type for parameter, skip if it can't be converted
         std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(cppParamType);
         if (capiParamTypeOpt.has_value() && capiParamTypeOpt->starts_with("Mlir")) {
           // MLIR C API types need unwrapping
-          argListStream << "unwrap(" << param.name << ")";
+          argListStream << "unwrap(" << param.name << ')';
         } else {
           warnSkippedNoConversion(method.methodName, cppParamType.str());
           return;
@@ -614,10 +628,10 @@ TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
       } else if (capiParamType == "MlirStringRef") {
         dummyParamsStream << "    auto " << name << " = mlirStringRefCreateFromCString(\"\");\n";
       } else if (isIntegerType(capiParamType)) {
-        dummyParamsStream << "    " << capiParamType << " " << name << " = 0;\n";
+        dummyParamsStream << "    " << capiParamType << ' ' << name << " = 0;\n";
       } else {
         // For unknown types, create a default-initialized variable
-        dummyParamsStream << "    " << capiParamType << " " << name << " = {};\n";
+        dummyParamsStream << "    " << capiParamType << ' ' << name << " = {};\n";
       }
 
       paramListStream << ", " << name;

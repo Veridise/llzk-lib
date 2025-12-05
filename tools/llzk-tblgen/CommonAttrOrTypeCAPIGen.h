@@ -97,7 +97,7 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{2}{3}Get(MlirContext ctx{4});
         paramListStream << ", intptr_t " << param.getName() << "Count, "
                         << mapCppTypeToCapiType(cppElemType) << " *" << param.getName();
       } else {
-        paramListStream << ", " << mapCppTypeToCapiType(cppType) << " " << param.getName();
+        paramListStream << ", " << mapCppTypeToCapiType(cppType) << ' ' << param.getName();
       }
     }
 
@@ -176,9 +176,9 @@ struct AttrOrTypeImplementationGenerator : public ImplementationGenerator {
 
   virtual void genPrologue() const {
     os << R"(
-#include "mlir/CAPI/IR.h"
-#include "mlir/CAPI/Support.h"
-#include "llvm/ADT/TypeSwitch.h"
+#include <mlir/CAPI/IR.h>
+#include <mlir/CAPI/Support.h>
+#include <llvm/ADT/TypeSwitch.h>
 
 using namespace mlir;
 using namespace llvm;
@@ -264,7 +264,7 @@ Mlir{1} {0}{2}{3}Get(MlirContext ctx{4}) {{
         }
       } else {
         std::string capiType = mapCppTypeToCapiType(cppType);
-        paramListStream << ", " << capiType << " " << pName;
+        paramListStream << ", " << capiType << ' ' << pName;
 
         // Add unwrapping if needed
         argListStream << ", ";
