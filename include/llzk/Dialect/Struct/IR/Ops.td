@@ -47,7 +47,7 @@ def LLZK_StructDefOp
   let summary = "circuit component definition";
   let description = [{
       This operation describes a component in a circuit. It can contain any number
-      of fields that hold inputs, outputs, intermediate values, and subcomponents
+      of members that hold inputs, outputs, intermediate values, and subcomponents
       of the defined component. It also contains a `compute()` function that holds
       the witness generation code for the component and a `constrain()` function
       that holds that constraint generation code for the component.
@@ -56,12 +56,12 @@ def LLZK_StructDefOp
 
       ```llzk
       struct.def @ComponentA {
-        field @f1 : !array.type<5 x index>
-        field @f2 : !felt.type {llzk.pub}
+        member @f1 : !array.type<5 x index>
+        member @f2 : !felt.type {llzk.pub}
 
         function.def @compute(%p: !felt.type) -> !struct.type<@ComponentA> {
           %self = struct.new : !struct.type<@ComponentA>
-          // initialize all fields of `%self` here
+          // initialize all members of `%self` here
           return %self : !struct.type<@ComponentA>
         }
 
@@ -93,14 +93,14 @@ def LLZK_StructDefOp
       return const_cast<StructDefOp*>(this)->getType(constParams);
     }
 
-    /// Gets the MemberDefOp that defines the field in this
+    /// Gets the MemberDefOp that defines the member in this
     /// structure with the given name, if present.
-    MemberDefOp getMemberDef(::mlir::StringAttr fieldName);
+    MemberDefOp getMemberDef(::mlir::StringAttr memberName);
 
     /// Get all MemberDefOp in this structure.
     ::std::vector<MemberDefOp> getMemberDefs();
 
-    /// Returns wether the struct defines fields marked as columns.
+    /// Returns wether the struct defines members marked as columns.
     ::mlir::LogicalResult hasColumns() {
       return ::mlir::success(::llvm::any_of(getMemberDefs(), [](MemberDefOp fdOp) {
         return fdOp.getColumn();
@@ -195,15 +195,15 @@ def LLZK_MemberDefOp
   }];
 }
 
-class FieldRefOpBase<string mnemonic, list<Trait> traits = []>
+class MemberRefOpBase<string mnemonic, list<Trait> traits = []>
     : StructDialectOp<
-          mnemonic, traits#[DeclareOpInterfaceMethods<FieldRefOpInterface>,
+          mnemonic, traits#[DeclareOpInterfaceMethods<MemberRefOpInterface>,
                             DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   bit isRead = ?; // read(1) vs write(0) ops
   let extraClassDeclaration = [{
-    /// Gets the definition for the `field` referenced in this op.
+    /// Gets the definition for the `member` referenced in this op.
     inline ::mlir::FailureOr<SymbolLookupResult<MemberDefOp>> getMemberDefOp(::mlir::SymbolTableCollection &tables) {
-      return ::llvm::cast<FieldRefOpInterface>(getOperation()).getMemberDefOp(tables);
+      return ::llvm::cast<MemberRefOpInterface>(getOperation()).getMemberDefOp(tables);
     }
   }];
   let extraClassDefinition = [{
@@ -214,22 +214,22 @@ class FieldRefOpBase<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-def LLZK_FieldReadOp
-    : FieldRefOpBase<"readf", [VerifySizesForMultiAffineOps<1>]> {
-  let summary = "read value of a struct field";
+def LLZK_MemberReadOp
+    : MemberRefOpBase<"readm", [VerifySizesForMultiAffineOps<1>]> {
+  let summary = "read value of a struct member";
   let description = [{
-    This operation reads the value of a named field in a struct/component.
+    This operation reads the value of a named member in a struct/component.
 
     The value can be read from the signals table, in which case it can be
     offset by a constant value. A negative value represents reading a value
     backwards and a positive value represents reading a value forward.
-    Only fields marked as columns can be read in this manner.
+    Only members marked as columns can be read in this manner.
   }];
   let isRead = 1;
 
   // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.
   let arguments = (ins LLZK_StructType:$component,
-      FlatSymbolRefAttr:$field_name,
+      FlatSymbolRefAttr:$member_name,
       OptionalAttr<AnyAttrOf<[SymbolRefAttr, IndexAttr,
                               AffineMapAttr]>>:$tableOffset,
       // List of AffineMap operand groups where each group provides the
@@ -249,28 +249,28 @@ def LLZK_FieldReadOp
   let skipDefaultBuilders = 1;
   let builders =
       [OpBuilder<(ins "::mlir::Type":$resultType, "::mlir::Value":$component,
-           "::mlir::StringAttr":$field)>,
+           "::mlir::StringAttr":$member)>,
        OpBuilder<(ins "::mlir::Type":$resultType, "::mlir::Value":$component,
-           "::mlir::StringAttr":$field, "::mlir::Attribute":$dist,
+           "::mlir::StringAttr":$member, "::mlir::Attribute":$dist,
            "::mlir::ValueRange":$mapOperands,
            "std::optional<int32_t>":$numDims)>,
        OpBuilder<(ins "::mlir::Type":$resultType, "::mlir::Value":$component,
-                     "::mlir::StringAttr":$field,
+                     "::mlir::StringAttr":$member,
                      "::mlir::SymbolRefAttr":$dist),
                  [{
-              build($_builder, $_state, resultType, component, field, dist, ::mlir::ValueRange(), std::nullopt);
+              build($_builder, $_state, resultType, component, member, dist, ::mlir::ValueRange(), std::nullopt);
            }]>,
        OpBuilder<(ins "::mlir::Type":$resultType, "::mlir::Value":$component,
-                     "::mlir::StringAttr":$field, "::mlir::IntegerAttr":$dist),
+                     "::mlir::StringAttr":$member, "::mlir::IntegerAttr":$dist),
                  [{
-              build($_builder, $_state, resultType, component, field, dist, ::mlir::ValueRange(), std::nullopt);
+              build($_builder, $_state, resultType, component, member, dist, ::mlir::ValueRange(), std::nullopt);
            }]>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::ValueRange":$operands,
            "::mlir::ArrayRef<::mlir::NamedAttribute>":$attrs)>];
 
   let assemblyFormat = [{
-    $component `[` $field_name `]`
+    $component `[` $member_name `]`
     ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` )?
     `:` type($component) `,` type($val)
     attr-dict
@@ -279,18 +279,18 @@ def LLZK_FieldReadOp
   let hasVerifier = 1;
 }
 
-def LLZK_FieldWriteOp : FieldRefOpBase<"writef", [WitnessGen]> {
-  let summary = "write value to a struct field";
+def LLZK_MemberWriteOp : MemberRefOpBase<"writem", [WitnessGen]> {
+  let summary = "write value to a struct member";
   let description = [{
-    This operation writes a value to a named field in a struct/component.
+    This operation writes a value to a named member in a struct/component.
   }];
   let isRead = 0;
 
   let arguments = (ins LLZK_StructType:$component,
-      FlatSymbolRefAttr:$field_name, AnyLLZKType:$val);
+      FlatSymbolRefAttr:$member_name, AnyLLZKType:$val);
 
   let assemblyFormat = [{
-    $component `[` $field_name `]` `=` $val `:` type($component) `,` type($val) attr-dict
+    $component `[` $member_name `]` `=` $val `:` type($component) `,` type($val) attr-dict
   }];
 }
 

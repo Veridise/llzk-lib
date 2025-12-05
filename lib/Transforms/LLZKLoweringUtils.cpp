@@ -37,10 +37,10 @@ Value rebuildExprInCompute(
     return memo[val] = mapped;
   }
 
-  if (auto readOp = val.getDefiningOp<FieldReadOp>()) {
+  if (auto readOp = val.getDefiningOp<MemberReadOp>()) {
     Value self = computeFunc.getSelfValueFromCompute();
-    Value rebuilt = builder.create<FieldReadOp>(
-        readOp.getLoc(), readOp.getType(), self, readOp.getFieldNameAttr().getAttr()
+    Value rebuilt = builder.create<MemberReadOp>(
+        readOp.getLoc(), readOp.getType(), self, readOp.getMemberNameAttr().getAttr()
     );
     return memo[val] = rebuilt;
   }
@@ -132,7 +132,7 @@ unsigned getFeltDegree(Value val, DenseMap<Value, unsigned> &memo) {
   if (isa<FeltConstantOp>(val.getDefiningOp())) {
     return memo[val] = 0;
   }
-  if (isa<FeltNonDetOp, FieldReadOp>(val.getDefiningOp()) || isa<BlockArgument>(val)) {
+  if (isa<FeltNonDetOp, MemberReadOp>(val.getDefiningOp()) || isa<BlockArgument>(val)) {
     return memo[val] = 1;
   }
 

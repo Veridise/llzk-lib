@@ -495,7 +495,7 @@ void MemberDefOp::setPublicAttr(bool newValue) {
 }
 
 static LogicalResult
-verifyFieldDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation *origin) {
+verifyMemberDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation *origin) {
   if (StructType fieldStructType = llvm::dyn_cast<StructType>(fieldType)) {
     // Special case for StructType verifies that the field type can resolve and that it is NOT the
     // parent struct (i.e., struct fields cannot create circular references).
@@ -519,7 +519,7 @@ verifyFieldDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation 
 
 LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   Type fieldType = this->getType();
-  if (failed(verifyFieldDefTypeImpl(fieldType, tables, *this))) {
+  if (failed(verifyMemberDefTypeImpl(fieldType, tables, *this))) {
     return failure();
   }
 
@@ -536,31 +536,31 @@ LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 //===------------------------------------------------------------------===//
-// FieldRefOp implementations
+// MemberRefOp implementations
 //===------------------------------------------------------------------===//
 namespace {
 
 FailureOr<SymbolLookupResult<MemberDefOp>>
-getMemberDefOpImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructType tyStruct) {
+getMemberDefOpImpl(MemberRefOpInterface refOp, SymbolTableCollection &tables, StructType tyStruct) {
   Operation *op = refOp.getOperation();
   auto structDefRes = tyStruct.getDefinition(tables, op);
   if (failed(structDefRes)) {
     return failure(); // getDefinition() already emits a sufficient error message
   }
   auto res = llzk::lookupSymbolIn<MemberDefOp>(
-      tables, SymbolRefAttr::get(refOp->getContext(), refOp.getFieldName()),
+      tables, SymbolRefAttr::get(refOp->getContext(), refOp.getMemberName()),
       std::move(*structDefRes), op
   );
   if (failed(res)) {
     return refOp->emitError() << "could not find '" << MemberDefOp::getOperationName()
-                              << "' named \"@" << refOp.getFieldName() << "\" in \""
+                              << "' named \"@" << refOp.getMemberName() << "\" in \""
                               << tyStruct.getNameRef() << '"';
   }
   return std::move(res.value());
 }
 
 static FailureOr<SymbolLookupResult<MemberDefOp>>
-findField(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
+findField(MemberRefOpInterface refOp, SymbolTableCollection &tables) {
   // Ensure the base component/struct type reference can be resolved.
   StructType tyStruct = refOp.getStructType();
   if (failed(tyStruct.verifySymbolRef(tables, refOp.getOperation()))) {
@@ -571,7 +571,8 @@ findField(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
 }
 
 static LogicalResult verifySymbolUsesImpl(
-    FieldRefOpInterface refOp, SymbolTableCollection &tables, SymbolLookupResult<MemberDefOp> &field
+    MemberRefOpInterface refOp, SymbolTableCollection &tables,
+    SymbolLookupResult<MemberDefOp> &field
 ) {
   // Ensure the type of the referenced field declaration matches the type used in this op.
   Type actualType = refOp.getVal().getType();
@@ -584,7 +585,7 @@ static LogicalResult verifySymbolUsesImpl(
   return verifyTypeResolution(tables, refOp.getOperation(), actualType);
 }
 
-LogicalResult verifySymbolUsesImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
+LogicalResult verifySymbolUsesImpl(MemberRefOpInterface refOp, SymbolTableCollection &tables) {
   // Ensure the field name can be resolved in that struct.
   auto field = findField(refOp, tables);
   if (failed(field)) {
@@ -596,11 +597,11 @@ LogicalResult verifySymbolUsesImpl(FieldRefOpInterface refOp, SymbolTableCollect
 } // namespace
 
 FailureOr<SymbolLookupResult<MemberDefOp>>
-FieldRefOpInterface::getMemberDefOp(SymbolTableCollection &tables) {
+MemberRefOpInterface::getMemberDefOp(SymbolTableCollection &tables) {
   return getMemberDefOpImpl(*this, tables, getStructType());
 }
 
-LogicalResult FieldReadOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult MemberReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   auto field = findField(*this, tables);
   if (failed(field)) {
     return failure();
@@ -618,7 +619,7 @@ LogicalResult FieldReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   return success();
 }
 
-LogicalResult FieldWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult MemberWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure the write op only targets fields in the current struct.
   FailureOr<StructDefOp> getParentRes = verifyInStruct(*this);
   if (failed(getParentRes)) {
@@ -632,20 +633,20 @@ LogicalResult FieldWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 //===------------------------------------------------------------------===//
-// FieldReadOp
+// MemberReadOp
 //===------------------------------------------------------------------===//
 
-void FieldReadOp::build(
+void MemberReadOp::build(
     OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr field
 ) {
   Properties &props = state.getOrAddProperties<Properties>();
-  props.setFieldName(FlatSymbolRefAttr::get(field));
+  props.setMemberName(FlatSymbolRefAttr::get(field));
   state.addTypes(resultType);
   state.addOperands(component);
-  affineMapHelpers::buildInstantiationAttrsEmptyNoSegments<FieldReadOp>(builder, state);
+  affineMapHelpers::buildInstantiationAttrsEmptyNoSegments<MemberReadOp>(builder, state);
 }
 
-void FieldReadOp::build(
+void MemberReadOp::build(
     OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr field,
     Attribute dist, ValueRange mapOperands, std::optional<int32_t> numDims
 ) {
@@ -654,18 +655,18 @@ void FieldReadOp::build(
   state.addOperands(component);
   state.addTypes(resultType);
   if (numDims.has_value()) {
-    affineMapHelpers::buildInstantiationAttrsNoSegments<FieldReadOp>(
+    affineMapHelpers::buildInstantiationAttrsNoSegments<MemberReadOp>(
         builder, state, ArrayRef({mapOperands}), builder.getDenseI32ArrayAttr({*numDims})
     );
   } else {
-    affineMapHelpers::buildInstantiationAttrsEmptyNoSegments<FieldReadOp>(builder, state);
+    affineMapHelpers::buildInstantiationAttrsEmptyNoSegments<MemberReadOp>(builder, state);
   }
   Properties &props = state.getOrAddProperties<Properties>();
-  props.setFieldName(FlatSymbolRefAttr::get(field));
+  props.setMemberName(FlatSymbolRefAttr::get(field));
   props.setTableOffset(dist);
 }
 
-void FieldReadOp::build(
+void MemberReadOp::build(
     OpBuilder & /*odsBuilder*/, OperationState &odsState, TypeRange resultTypes,
     ValueRange operands, ArrayRef<NamedAttribute> attrs
 ) {
@@ -674,7 +675,7 @@ void FieldReadOp::build(
   odsState.addAttributes(attrs);
 }
 
-LogicalResult FieldReadOp::verify() {
+LogicalResult MemberReadOp::verify() {
   SmallVector<AffineMapAttr, 1> mapAttrs;
   if (AffineMapAttr map =
           llvm::dyn_cast_if_present<AffineMapAttr>(getTableOffset().value_or(nullptr))) {

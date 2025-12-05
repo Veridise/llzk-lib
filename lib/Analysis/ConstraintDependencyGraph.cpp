@@ -147,7 +147,7 @@ mlir::LogicalResult SourceRefAnalysis::visitOperation(
   ChangeResult res = after->setValues(operandVals);
 
   // We will now join the the operand refs based on the type of operand.
-  if (auto fieldRefOp = llvm::dyn_cast<FieldRefOpInterface>(op)) {
+  if (auto fieldRefOp = llvm::dyn_cast<MemberRefOpInterface>(op)) {
     // The operand is indexed into by the MemberDefOp.
     auto fieldOpRes = fieldRefOp.getMemberDefOp(tables);
     ensure(mlir::succeeded(fieldOpRes), "could not find field read");

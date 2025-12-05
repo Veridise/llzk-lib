@@ -83,7 +83,7 @@ private:
     if (val.getDefiningOp<FeltNonDetOp>()) {
       return memo[val] = 1;
     }
-    if (val.getDefiningOp<FieldReadOp>()) {
+    if (val.getDefiningOp<MemberReadOp>()) {
       return memo[val] = 1;
     }
     if (auto addOp = val.getDefiningOp<AddFeltOp>()) {
@@ -140,7 +140,7 @@ private:
         std::string auxName = AUXILIARY_FIELD_PREFIX + std::to_string(this->auxCounter++);
         MemberDefOp auxField = addAuxField(structDef, auxName);
 
-        auto auxVal = builder.create<FieldReadOp>(
+        auto auxVal = builder.create<MemberReadOp>(
             lhs.getLoc(), lhs.getType(), selfVal, auxField.getNameAttr()
         );
         auxAssignments.push_back({auxName, lhs});
@@ -168,8 +168,8 @@ private:
         std::string auxName = AUXILIARY_FIELD_PREFIX + std::to_string(this->auxCounter++);
         MemberDefOp auxField = addAuxField(structDef, auxName);
 
-        // Read back as FieldReadOp (new SSA value)
-        auto auxVal = builder.create<FieldReadOp>(
+        // Read back as MemberReadOp (new SSA value)
+        auto auxVal = builder.create<MemberReadOp>(
             toFactor.getLoc(), toFactor.getType(), selfVal, auxField.getNameAttr()
         );
 
@@ -322,7 +322,7 @@ private:
       for (const auto &assign : auxAssignments) {
         Value rebuiltExpr =
             rebuildExprInCompute(assign.computedValue, computeFunc, builder, rebuildMemo);
-        builder.create<FieldWriteOp>(
+        builder.create<MemberWriteOp>(
             assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxFieldName),
             rebuiltExpr
         );

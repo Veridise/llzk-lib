@@ -91,21 +91,21 @@ MlirType llzkStructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute attr) 
   return wrap(llvm::cast<StructDefOp>(unwrap(op)).getType(llvm::cast<ArrayAttr>(unwrap(attr))));
 }
 
-MlirOperation llzkStructDefOpGetFieldDef(MlirOperation op, MlirStringRef name) {
+MlirOperation llzkStructDefOpGetMemberDef(MlirOperation op, MlirStringRef name) {
   Builder builder(unwrap(op)->getContext());
   return wrap(
       llvm::cast<StructDefOp>(unwrap(op)).getMemberDef(builder.getStringAttr(unwrap(name)))
   );
 }
 
-void llzkStructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst) {
+void llzkStructDefOpGetMemberDefs(MlirOperation op, MlirOperation *dst) {
   for (auto [offset, field] :
        llvm::enumerate(llvm::cast<StructDefOp>(unwrap(op)).getMemberDefs())) {
     dst[offset] = wrap(field);
   }
 }
 
-intptr_t llzkStructDefOpGetNumFieldDefs(MlirOperation op) {
+intptr_t llzkStructDefOpGetNumMemberDefs(MlirOperation op) {
   return static_cast<intptr_t>(llvm::cast<StructDefOp>(unwrap(op)).getMemberDefs().size());
 }
 
@@ -159,14 +159,14 @@ void llzkMemberDefOpSetPublicAttr(MlirOperation op, bool value) {
 }
 
 //===----------------------------------------------------------------------===//
-// FieldReadOp
+// MemberReadOp
 //===----------------------------------------------------------------------===//
 
 LLZK_DEFINE_OP_BUILD_METHOD(
-    FieldReadOp, MlirType fieldType, MlirValue component, MlirStringRef name
+    MemberReadOp, MlirType fieldType, MlirValue component, MlirStringRef name
 ) {
   return wrap(
-      create<FieldReadOp>(
+      create<MemberReadOp>(
           builder, location, unwrap(fieldType), unwrap(component),
           unwrap(builder)->getStringAttr(unwrap(name))
       )
@@ -174,14 +174,14 @@ LLZK_DEFINE_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    FieldReadOp, WithAffineMapDistance, MlirType fieldType, MlirValue component, MlirStringRef name,
-    MlirAffineMap map, MlirValueRange mapOperands, int32_t numDimsPerMap
+    MemberReadOp, WithAffineMapDistance, MlirType fieldType, MlirValue component,
+    MlirStringRef name, MlirAffineMap map, MlirValueRange mapOperands, int32_t numDimsPerMap
 ) {
   SmallVector<Value> mapOperandsSto;
   auto nameAttr = unwrap(builder)->getStringAttr(unwrap(name));
   auto mapAttr = AffineMapAttr::get(unwrap(map));
   return wrap(
-      create<FieldReadOp>(
+      create<MemberReadOp>(
           builder, location, unwrap(fieldType), unwrap(component), nameAttr, mapAttr,
           unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto), numDimsPerMap
       )
@@ -189,12 +189,12 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    FieldReadOp, WithConstParamDistance, MlirType fieldType, MlirValue component,
+    MemberReadOp, WithConstParamDistance, MlirType fieldType, MlirValue component,
     MlirStringRef name, MlirStringRef symbol
 ) {
   auto nameAttr = unwrap(builder)->getStringAttr(unwrap(name));
   return wrap(
-      create<FieldReadOp>(
+      create<MemberReadOp>(
           builder, location, unwrap(fieldType), unwrap(component), nameAttr,
           FlatSymbolRefAttr::get(unwrap(builder)->getStringAttr(unwrap(symbol)))
       )
@@ -202,12 +202,12 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    FieldReadOp, WithLiteralDistance, MlirType fieldType, MlirValue component, MlirStringRef name,
+    MemberReadOp, WithLiteralDistance, MlirType fieldType, MlirValue component, MlirStringRef name,
     int64_t distance
 ) {
   auto nameAttr = unwrap(builder)->getStringAttr(unwrap(name));
   return wrap(
-      create<FieldReadOp>(
+      create<MemberReadOp>(
           builder, location, unwrap(fieldType), unwrap(component), nameAttr,
           unwrap(builder)->getIndexAttr(distance)
       )

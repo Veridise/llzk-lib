@@ -275,11 +275,11 @@ public:
   /// @return
   llvm::SMTExprRef getOrCreateSymbol(const SourceRef &r);
 
-  const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getFieldReadResults() const {
+  const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getMemberReadResults() const {
     return fieldReadResults;
   }
 
-  const llvm::DenseMap<SourceRef, ExpressionValue> &getFieldWriteResults() const {
+  const llvm::DenseMap<SourceRef, ExpressionValue> &getMemberWriteResults() const {
     return fieldWriteResults;
   }
 
@@ -352,7 +352,7 @@ private:
   getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 
   bool isReadOp(mlir::Operation *op) const {
-    return llvm::isa<component::FieldReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);
+    return llvm::isa<component::MemberReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);
   }
 
   bool isDefinitionOp(mlir::Operation *op) const {

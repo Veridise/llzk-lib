@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
     function.def @compute(%p: !struct.type<@ComponentA1<[index]>>) -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
-      %r = struct.readf %p[@f1] : !struct.type<@ComponentA1<[index]>>, index {tableOffset = -1 : index}
+      %r = struct.readm %p[@f1] : !struct.type<@ComponentA1<[index]>>, index {tableOffset = -1 : index}
       function.return %self : !struct.type<@ComponentA2>
     }
 

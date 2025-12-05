@@ -40,8 +40,8 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !struct.type<@ComponentB2>) {
-      // expected-error@+1 {{'struct.readf' op has wrong type; expected '!struct.type<@ComponentB1<[5, 5]>>', got '!struct.type<@ComponentB1<[5, 6]>>'}}
-      %b = struct.readf %self[@f3] : !struct.type<@ComponentB2>, !struct.type<@ComponentB1<[5,6]>>
+      // expected-error@+1 {{'struct.readm' op has wrong type; expected '!struct.type<@ComponentB1<[5, 5]>>', got '!struct.type<@ComponentB1<[5, 6]>>'}}
+      %b = struct.readm %self[@f3] : !struct.type<@ComponentB2>, !struct.type<@ComponentB1<[5,6]>>
       function.return
     }
   }
@@ -65,8 +65,8 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !struct.type<@ComponentC2>) {
-      // expected-error@+1 {{'struct.readf' op has wrong type; expected '!struct.type<@ComponentC1<[5, 5]>>', got '!struct.type<@ComponentC1<[5, 6, 4]>>'}}
-      %b = struct.readf %self[@f3] : !struct.type<@ComponentC2>, !struct.type<@ComponentC1<[5,6,4]>>
+      // expected-error@+1 {{'struct.readm' op has wrong type; expected '!struct.type<@ComponentC1<[5, 5]>>', got '!struct.type<@ComponentC1<[5, 6, 4]>>'}}
+      %b = struct.readm %self[@f3] : !struct.type<@ComponentC2>, !struct.type<@ComponentC1<[5,6,4]>>
       function.return
     }
   }
@@ -90,8 +90,8 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !struct.type<@ComponentD2>) {
-      // expected-error@+1 {{'struct.readf' op has wrong type; expected '!struct.type<@ComponentD1<[5, 5]>>', got '!struct.type<@ComponentD1<[5]>>'}}
-      %b = struct.readf %self[@f3] : !struct.type<@ComponentD2>, !struct.type<@ComponentD1<[5]>>
+      // expected-error@+1 {{'struct.readm' op has wrong type; expected '!struct.type<@ComponentD1<[5, 5]>>', got '!struct.type<@ComponentD1<[5]>>'}}
+      %b = struct.readm %self[@f3] : !struct.type<@ComponentD2>, !struct.type<@ComponentD1<[5]>>
       function.return
     }
   }
@@ -116,7 +116,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.type<@ComponentE2<[@C]>>) {
       // expected-note@+1 {{prior use here}}
-      %b = struct.readf %self[@f3] : !struct.type<@ComponentE2<[@C]>>, !struct.type<@ComponentE1<[5, @C]>>
+      %b = struct.readm %self[@f3] : !struct.type<@ComponentE2<[@C]>>, !struct.type<@ComponentE1<[5, @C]>>
       // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!struct.type<@ComponentE1<[5, @C, 4]>>' vs '!struct.type<@ComponentE1<[5, @C]>>'}}
       function.call @ComponentE1::@constrain(%b) : (!struct.type<@ComponentE1<[5,@C,4]>>) -> ()
       function.return

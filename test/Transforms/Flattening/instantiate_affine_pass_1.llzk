@@ -11,7 +11,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @compute(%inp: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> {
       %self = struct.new : !struct.type<@VarArray<[@N, @T]>>
-      struct.writef %self[@val] = %inp : !struct.type<@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
+      struct.writem %self[@val] = %inp : !struct.type<@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
       function.return %self : !struct.type<@VarArray<[@N, @T]>>
     }
 
@@ -26,7 +26,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @compute() -> !struct.type<@ToFelt<[@A]>> {
       %self = struct.new : !struct.type<@ToFelt<[@A]>>
       %constA = poly.read_const @A : !felt.type
-      struct.writef %self[@out] = %constA : !struct.type<@ToFelt<[@A]>>, !felt.type
+      struct.writem %self[@out] = %constA : !struct.type<@ToFelt<[@A]>>, !felt.type
       function.return %self: !struct.type<@ToFelt<[@A]>>
     }
 
@@ -61,7 +61,7 @@ module attributes {veridise.lang = "llzk"} {
       }
       //
       %self = struct.new : !struct.type<@TestLoopWithAffineArrayStruct<[@N]>>
-      struct.writef %self[@arrs] = %arrs_temp
+      struct.writem %self[@arrs] = %arrs_temp
             : !struct.type<@TestLoopWithAffineArrayStruct<[@N]>>, !array.type<@N x !HeterArr>
       function.return %self : !struct.type<@TestLoopWithAffineArrayStruct<[@N]>>
     }
@@ -88,7 +88,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    struct.member @val : !array.type<2 x !struct.type<@ToFelt_1>>
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !struct.type<@ToFelt_1>>) -> !struct.type<@"VarArray_2_!s<@ToFelt_1>"> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@"VarArray_2_!s<@ToFelt_1>">
-// CHECK-NEXT:      struct.writef %[[V1]][@val] = %[[V0]] : <@"VarArray_2_!s<@ToFelt_1>">, !array.type<2 x !struct.type<@ToFelt_1>>
+// CHECK-NEXT:      struct.writem %[[V1]][@val] = %[[V0]] : <@"VarArray_2_!s<@ToFelt_1>">, !array.type<2 x !struct.type<@ToFelt_1>>
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@"VarArray_2_!s<@ToFelt_1>">
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@"VarArray_2_!s<@ToFelt_1>">, %[[V3:[0-9a-zA-Z_\.]+]]: !array.type<2 x !struct.type<@ToFelt_1>>) attributes {function.allow_constraint} {
@@ -101,7 +101,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@ToFelt_1> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 1
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@ToFelt_1>
-// CHECK-NEXT:      struct.writef %[[V1]][@out] = %[[V0]] : <@ToFelt_1>, !felt.type
+// CHECK-NEXT:      struct.writem %[[V1]][@out] = %[[V0]] : <@ToFelt_1>, !felt.type
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@ToFelt_1>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt_1>) attributes {function.allow_constraint} {
@@ -121,7 +121,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = function.call @"VarArray_2_!s<@ToFelt_1>"::@compute(%[[V3]]) : (!array.type<2 x !struct.type<@ToFelt_1>>) -> !struct.type<@"VarArray_2_!s<@ToFelt_1>">
 // CHECK-NEXT:      array.write %[[V2]]{{\[}}%[[V0]]] = %[[V5]] : <2 x !struct.type<@"VarArray_2_!s<@ToFelt_1>">>, !struct.type<@"VarArray_2_!s<@ToFelt_1>">
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.new : <@TestLoopWithAffineArrayStruct_2>
-// CHECK-NEXT:      struct.writef %[[V6]][@arrs] = %[[V2]] : <@TestLoopWithAffineArrayStruct_2>, !array.type<2 x !struct.type<@"VarArray_2_!s<@ToFelt_1>">>
+// CHECK-NEXT:      struct.writem %[[V6]][@arrs] = %[[V2]] : <@TestLoopWithAffineArrayStruct_2>, !array.type<2 x !struct.type<@"VarArray_2_!s<@ToFelt_1>">>
 // CHECK-NEXT:      function.return %[[V6]] : !struct.type<@TestLoopWithAffineArrayStruct_2>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@TestLoopWithAffineArrayStruct_2>) attributes {function.allow_constraint} {

@@ -307,11 +307,11 @@ private:
           return;
         }
       })
-          .Case<FieldReadOp>([&field2pclvar, &llzkToPcl, &srcFunc](auto read) {
+          .Case<MemberReadOp>([&field2pclvar, &llzkToPcl, &srcFunc](auto read) {
         // At this point every field in the struct should have a var associated with it
         // so we should simply retrieve the var associated with the field.
         assert(read.getComponent() == srcFunc.getArguments()[0]);
-        if (auto it = field2pclvar.find(read.getFieldName()); it != field2pclvar.end()) {
+        if (auto it = field2pclvar.find(read.getMemberName()); it != field2pclvar.end()) {
           rememberResult(read.getResult(), it->getSecond(), llzkToPcl);
         } else {
           llvm_unreachable("Every field should have been mapped to a pcl var");

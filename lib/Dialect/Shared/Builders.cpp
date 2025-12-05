@@ -214,7 +214,7 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
   {
     OpBuilder builder(callerFn.getBody());
 
-    auto field = builder.create<FieldReadOp>(
+    auto field = builder.create<MemberReadOp>(
         callLoc, calleeTy, callerFn.getSelfValueFromConstrain(), fieldName
     );
     builder.create<CallOp>(

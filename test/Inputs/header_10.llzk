@@ -8,7 +8,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @compute() -> !struct.type<@StructB> {
       %self = struct.new : !struct.type<@StructB>
       %0 = function.call @libB::@libC::@StructC::@compute() : () -> (!struct.type<@libB::@libC::@StructC>)
-      struct.writef %self[@x] = %0 : !struct.type<@StructB>, !struct.type<@libB::@libC::@StructC>
+      struct.writem %self[@x] = %0 : !struct.type<@StructB>, !struct.type<@libB::@libC::@StructC>
       function.return %self : !struct.type<@StructB>
     }
     function.def @constrain(%self: !struct.type<@StructB>) {

@@ -55,7 +55,8 @@ struct RefValueCapture {
   RefValueCapture(mlir::Value *capture) : what(capture) {}
 
   bool match(mlir::Value v) {
-    if (isa<mlir::BlockArgument>(v) || isa_and_present<component::FieldReadOp>(v.getDefiningOp())) {
+    if (isa<mlir::BlockArgument>(v) ||
+        isa_and_present<component::MemberReadOp>(v.getDefiningOp())) {
       if (what) {
         *what = v;
       }

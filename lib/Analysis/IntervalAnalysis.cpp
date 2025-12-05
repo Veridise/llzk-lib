@@ -508,21 +508,21 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     auto assertExpr = operandVals[0].getScalarValue();
     // No need to propagate the constraint
     (void)getLatticeElement(cond)->addSolverConstraint(assertExpr);
-  } else if (auto readf = llvm::dyn_cast<FieldReadOp>(op)) {
-    Value cmp = readf.getComponent();
+  } else if (auto readm = llvm::dyn_cast<MemberReadOp>(op)) {
+    Value cmp = readm.getComponent();
     if (isSignalType(cmp.getType())) {
       // The reg value read from the signal type is equal to the value of the Signal
       // struct overall.
       propagateIfChanged(results[0], results[0]->setValue(operandVals[0]));
     }
-  } else if (auto writef = llvm::dyn_cast<FieldWriteOp>(op)) {
+  } else if (auto writem = llvm::dyn_cast<MemberWriteOp>(op)) {
     // Update values stored in a field
     ExpressionValue writeVal = operandVals[1].getScalarValue();
-    auto cmp = writef.getComponent();
+    auto cmp = writem.getComponent();
     // We also need to update the interval on the assigned symbol
     SourceRefLatticeValue refSet = getSourceRefLattice(op, cmp)->getOrDefault(cmp);
     if (refSet.isSingleValue()) {
-      auto fieldDefRes = writef.getMemberDefOp(tables);
+      auto fieldDefRes = writem.getMemberDefOp(tables);
       if (succeeded(fieldDefRes)) {
         SourceRefIndex idx(fieldDefRes.value());
         SourceRef fieldRef = refSet.getSingleValue().createChild(idx);
@@ -922,7 +922,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     applyInterval(subOp, rhs, finalRhsInt);
   };
 
-  auto readfCase = [&](FieldReadOp readfOp) {
+  auto readmCase = [&](MemberReadOp readmOp) {
     const SourceRefLattice *sourceRefLattice = getSourceRefLattice(valUser, val);
     SourceRefLatticeValue sourceRefVal = sourceRefLattice->getOrDefault(val);
 
@@ -941,9 +941,9 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     // We have a special case for the Signal struct: if this value is created
     // from reading a Signal struct's reg field, we also apply the interval to
     // the struct itself.
-    Value comp = readfOp.getComponent();
+    Value comp = readmOp.getComponent();
     if (isSignalType(comp.getType())) {
-      applyInterval(readfOp, comp, newInterval);
+      applyInterval(readmOp, comp, newInterval);
     }
   };
 
@@ -976,7 +976,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
             .Case<AddFeltOp>([&](auto op) { return addCase(op); })
             .Case<SubFeltOp>([&](auto op) { return subCase(op); })
             .Case<MulFeltOp>([&](auto op) { mulCase(op); })
-            .Case<FieldReadOp>([&](auto op){ readfCase(op); })
+            .Case<MemberReadOp>([&](auto op){ readmCase(op); })
             .Case<ReadArrayOp>([&](auto op){ readArrCase(op); })
             .Case<IntToFeltOp, FeltToIndexOp>([&](auto op) { castCase(op); })
             .Default([&](Operation *) { });
@@ -1123,7 +1123,7 @@ LogicalResult StructIntervals::computeIntervals(
     }
 
     // Iterate over fields that were touched by the analysis
-    for (const auto &[ref, lattices] : ctx.intervalDFA->getFieldReadResults()) {
+    for (const auto &[ref, lattices] : ctx.intervalDFA->getMemberReadResults()) {
       // All lattices should have the same value, so we can get the front.
       if (!lattices.empty() && searchSet.erase(ref)) {
         const IntervalAnalysisLattice *lattice = *lattices.begin();
@@ -1132,7 +1132,7 @@ LogicalResult StructIntervals::computeIntervals(
       }
     }
 
-    for (const auto &[ref, val] : ctx.intervalDFA->getFieldWriteResults()) {
+    for (const auto &[ref, val] : ctx.intervalDFA->getMemberWriteResults()) {
       if (searchSet.erase(ref)) {
         fieldRanges[ref] = val.getInterval();
         assert(fieldRanges[ref].getField() == ctx.getField() && "bad interval defaults");

@@ -51,7 +51,7 @@ using namespace llzk::constrain;
 
 namespace {
 
-/// A LinearCombination is a map from a Value (like a variable or FieldRead) to a felt constant.
+/// A LinearCombination is a map from a Value (like a variable or MemberRead) to a felt constant.
 struct LinearCombination {
   DenseMap<Value, DynamicAPInt> terms; // variable -> coeff
   DynamicAPInt constant;
@@ -311,7 +311,7 @@ private:
       }
 
       // Case 2: Field read op. The degree is 1 and no rewrite needed.
-      if (auto fr = llvm::dyn_cast<FieldReadOp>(op)) {
+      if (auto fr = llvm::dyn_cast<MemberReadOp>(op)) {
         degreeMemo[val] = 1;
         rewrites[val] = val;
         continue;
@@ -338,7 +338,7 @@ private:
           builder.setInsertionPoint(op);
           std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxCounter++);
           MemberDefOp auxField = addAuxField(structDef, auxName);
-          Value aux = builder.create<FieldReadOp>(
+          Value aux = builder.create<MemberReadOp>(
               val.getLoc(), val.getType(), constrainFunc.getSelfValueFromConstrain(),
               auxField.getNameAttr()
           );
@@ -420,7 +420,7 @@ private:
     // Bottom-up construction of R1CSConstraints
     for (Value v : postorder) {
       Operation *op = v.getDefiningOp();
-      if (!op || llvm::isa<FieldReadOp>(op)) {
+      if (!op || llvm::isa<MemberReadOp>(op)) {
         // Leaf (input variable or field read)
         R1CSConstraint eq;
         eq.c.addTerm(v, 1);
@@ -474,8 +474,8 @@ private:
     auto getMapping = [&valueMap, &fieldMap, this](const Value &v) {
       if (!valueMap.contains(v)) {
         Operation *op = v.getDefiningOp();
-        if (auto read = dyn_cast<FieldReadOp>(op)) {
-          auto fieldVal = fieldMap.find(read.getFieldName());
+        if (auto read = dyn_cast<MemberReadOp>(op)) {
+          auto fieldVal = fieldMap.find(read.getMemberName());
           assert(fieldVal != fieldMap.end() && "Field read not associated with a value");
           return fieldVal->second;
         }
@@ -655,7 +655,7 @@ private:
           builder.setInsertionPoint(eqOp);
           std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxCounter++);
           MemberDefOp auxField = addAuxField(structDef, auxName);
-          Value aux = builder.create<FieldReadOp>(
+          Value aux = builder.create<MemberReadOp>(
               eqOp.getLoc(), lhs.getType(), constrainFunc.getSelfValueFromConstrain(),
               auxField.getNameAttr()
           );
@@ -677,7 +677,7 @@ private:
 
       for (const auto &assign : auxAssignments) {
         Value expr = rebuildExprInCompute(assign.computedValue, computeFunc, builder, rebuildMemo);
-        builder.create<FieldWriteOp>(
+        builder.create<MemberWriteOp>(
             assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxFieldName), expr
         );
       }

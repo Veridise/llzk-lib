@@ -52,8 +52,8 @@ module attributes {veridise.lang = "llzk"} {
       function.def @constrain(%arg0: !struct.type<@Impl::@MakeGuess<[@PEGS]>>) {
         %c1 = arith.constant 1 : index
         %c0 = arith.constant 0 : index
-        %14 = struct.readf %arg0[@"$temp"] : !struct.type<@Impl::@MakeGuess<[@PEGS]>>, !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>
-        %15 = struct.readf %14[@"$super"] : !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>, !array.type<9 x !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>>
+        %14 = struct.readm %arg0[@"$temp"] : !struct.type<@Impl::@MakeGuess<[@PEGS]>>, !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>
+        %15 = struct.readm %14[@"$super"] : !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>, !array.type<9 x !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>>
         %17 = array.len %15, %c0 : !array.type<9 x !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>>
         scf.for %arg5 = %c0 to %17 step %c1 {
           %34 = array.read %15[%arg5] : !array.type<9 x !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>>, !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>

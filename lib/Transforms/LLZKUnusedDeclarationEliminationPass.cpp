@@ -39,9 +39,9 @@ using namespace llzk::component;
 namespace {
 
 /// @brief Get the fully-qualified field symbol.
-SymbolRefAttr getFullFieldSymbol(FieldRefOpInterface op) {
+SymbolRefAttr getFullFieldSymbol(MemberRefOpInterface op) {
   SymbolRefAttr structSym = op.getStructType().getNameRef(); // this is fully qualified
-  return appendLeaf(structSym, op.getFieldNameAttr());
+  return appendLeaf(structSym, op.getMemberNameAttr());
 }
 
 class UnusedDeclarationEliminationPass
@@ -104,22 +104,22 @@ class UnusedDeclarationEliminationPass
     }
 
     // Remove all fields that are read.
-    modOp.walk([&](FieldReadOp readf) {
-      SymbolRefAttr readFieldSym = getFullFieldSymbol(readf);
+    modOp.walk([&](MemberReadOp readm) {
+      SymbolRefAttr readFieldSym = getFullFieldSymbol(readm);
       fields.erase(readFieldSym);
     });
 
     // Remove all writes that reference the remaining fields, as these writes
     // are now known to only update write-only fields.
-    modOp.walk([&](FieldWriteOp writef) {
-      SymbolRefAttr writtenField = getFullFieldSymbol(writef);
+    modOp.walk([&](MemberWriteOp writem) {
+      SymbolRefAttr writtenField = getFullFieldSymbol(writem);
       if (fields.contains(writtenField)) {
-        // We need not check the users of a writef, since it produces no results.
+        // We need not check the users of a writem, since it produces no results.
         LLVM_DEBUG(
-            llvm::dbgs() << "Removing write " << writef << " to write-only field " << writtenField
+            llvm::dbgs() << "Removing write " << writem << " to write-only field " << writtenField
                          << '\n'
         );
-        writef.erase();
+        writem.erase();
       }
     });
 

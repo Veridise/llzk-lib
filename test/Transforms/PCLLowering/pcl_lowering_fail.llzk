@@ -7,7 +7,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
     function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
-      %r = struct.readf %p[@f1] : !struct.type<@ComponentA1>, !array.type<4,3 x !F>
+      %r = struct.readm %p[@f1] : !struct.type<@ComponentA1>, !array.type<4,3 x !F>
       function.return %self : !struct.type<@ComponentA2>
     }
 

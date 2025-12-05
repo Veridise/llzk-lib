@@ -118,7 +118,7 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceR
 /// The object may be a reference to an individual felt, felt.const, or a composite type,
 /// like an array or an entire struct.
 /// - SourceRefs are allowed to reference composite types so that references can be generated
-/// for intermediate operations (e.g., readf to read a nested struct).
+/// for intermediate operations (e.g., readm to read a nested struct).
 ///
 /// These references are relative to a particular function call, so they are either (1) constants,
 /// or (2) rooted at a block argument (which is either "self" in @constrain

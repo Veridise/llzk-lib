@@ -382,11 +382,11 @@ module attributes {veridise.lang = "llzk"} {
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %0 = function.call @M1::@S::@compute() : () -> !struct.type<@M1::@S>
-      struct.writef %self[@f] = %0 : !struct.type<@Main>, !struct.type<@M1::@S>
+      struct.writem %self[@f] = %0 : !struct.type<@Main>, !struct.type<@M1::@S>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
-       %0 = struct.readf %self[@f] : !struct.type<@Main>, !struct.type<@M1::@S>
+       %0 = struct.readm %self[@f] : !struct.type<@Main>, !struct.type<@M1::@S>
       function.return
     }
   }
@@ -398,11 +398,11 @@ module attributes {veridise.lang = "llzk"} {
       function.def @compute() -> !struct.type<@M1::@S> {
         %self = struct.new : !struct.type<@M1::@S>
         %0 = function.call @M1::@T::@compute() : () -> !struct.type<@M1::@T>
-        struct.writef %self[@f] = %0 : !struct.type<@M1::@S>, !struct.type<@M1::@T>
+        struct.writem %self[@f] = %0 : !struct.type<@M1::@S>, !struct.type<@M1::@T>
         function.return %self : !struct.type<@M1::@S>
       }
       function.def @constrain(%self: !struct.type<@M1::@S>) {
-        %0 = struct.readf %self[@f] : !struct.type<@M1::@S>, !struct.type<@M1::@T>
+        %0 = struct.readm %self[@f] : !struct.type<@M1::@S>, !struct.type<@M1::@T>
         function.return
       }
     }
@@ -425,7 +425,7 @@ module attributes {veridise.lang = "llzk"} {
     // always preserved
     function.def @free() -> index {
       %0 = global.read @M1::@gvar : !struct.type<@M1::@X>
-      %1 = struct.readf %0[@f] : !struct.type<@M1::@X>, index
+      %1 = struct.readm %0[@f] : !struct.type<@M1::@X>, index
       function.return %1: index
     }
 
@@ -434,7 +434,7 @@ module attributes {veridise.lang = "llzk"} {
       struct.member @f : index
       function.def @compute(%a: index) -> !struct.type<@M1::@X> {
         %self = struct.new : !struct.type<@M1::@X>
-        struct.writef %self[@f] = %a : !struct.type<@M1::@X>, index
+        struct.writem %self[@f] = %a : !struct.type<@M1::@X>, index
         function.return %self : !struct.type<@M1::@X>
       }
       function.def @constrain(%arg0: !struct.type<@M1::@X>, %a: index) {
@@ -451,11 +451,11 @@ module attributes {veridise.lang = "llzk"} {
       function.def @compute() -> !struct.type<@M2::@S> {
         %self = struct.new : !struct.type<@M2::@S>
         %0 = function.call @M2::@T::@compute() : () -> !struct.type<@M2::@T>
-        struct.writef %self[@f] = %0 : !struct.type<@M2::@S>, !struct.type<@M2::@T>
+        struct.writem %self[@f] = %0 : !struct.type<@M2::@S>, !struct.type<@M2::@T>
         function.return %self : !struct.type<@M2::@S>
       }
       function.def @constrain(%self: !struct.type<@M2::@S>) {
-        %0 = struct.readf %self[@f] : !struct.type<@M2::@S>, !struct.type<@M2::@T>
+        %0 = struct.readm %self[@f] : !struct.type<@M2::@S>, !struct.type<@M2::@T>
         function.return
       }
     }

@@ -666,7 +666,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
-      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.type
+      struct.writem %self[@reg] = %v : !struct.type<@Signal>, !felt.type
       function.return %self : !struct.type<@Signal>
     }
 
@@ -681,19 +681,19 @@ module attributes {veridise.lang = "llzk"} {
     function.def @compute(%s: !Signal) -> !struct.type<@BadSignalIndex> {
       %self = struct.new : !struct.type<@BadSignalIndex>
       // In the compute function, this is fine
-      %reg = struct.readf %s[@reg] : !Signal, !felt.type
+      %reg = struct.readm %s[@reg] : !Signal, !felt.type
       %idx = cast.toindex %reg
-      struct.writef %self[@idx] = %idx : !struct.type<@BadSignalIndex>, index
+      struct.writem %self[@idx] = %idx : !struct.type<@BadSignalIndex>, index
       function.return %self : !struct.type<@BadSignalIndex>
     }
 
     function.def @constrain(%self: !struct.type<@BadSignalIndex>, %s: !Signal) {
       // expected-note@+1 {{Signal struct value is read here}}
-      %reg = struct.readf %s[@reg] : !Signal, !felt.type
+      %reg = struct.readm %s[@reg] : !Signal, !felt.type
       // Illegal signal to index conversion in constrain
       // expected-error@+1 {{'cast.toindex' op input is derived from a Signal struct, which is only valid within a 'function.def' with 'function.allow_constraint' attribute}}
       %idx = cast.toindex %reg
-      %f = struct.readf %self[@idx] : !struct.type<@BadSignalIndex>, index
+      %f = struct.readm %self[@idx] : !struct.type<@BadSignalIndex>, index
       constrain.eq %f, %idx : index
       function.return
     }
@@ -710,7 +710,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
-      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.type
+      struct.writem %self[@reg] = %v : !struct.type<@Signal>, !felt.type
       function.return %self : !struct.type<@Signal>
     }
 
@@ -727,7 +727,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.type<@BadSignalIndex>, %s: !Signal) {
       // expected-note@+1 {{Signal struct value is read here}}
-      %reg = struct.readf %s[@reg] : !Signal, !felt.type
+      %reg = struct.readm %s[@reg] : !Signal, !felt.type
       %res = scf.while (%arg1 = %reg) : (!felt.type) -> !felt.type {
         %condition = arith.constant true
         scf.condition(%condition) %arg1 : !felt.type
@@ -758,7 +758,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
-      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.type
+      struct.writem %self[@reg] = %v : !struct.type<@Signal>, !felt.type
       function.return %self : !struct.type<@Signal>
     }
 
@@ -775,7 +775,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.type<@SignalAsIndexImplicit>, %s: !Signal) {
       // expected-note@+1 {{Signal struct value is read here}}
-      %reg = struct.readf %s[@reg] : !Signal, !felt.type
+      %reg = struct.readm %s[@reg] : !Signal, !felt.type
       %f0 = felt.const 0
       %b = bool.cmp eq(%reg, %f0)
       %t = scf.if %b -> !felt.type {

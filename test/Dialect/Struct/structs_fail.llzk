@@ -357,7 +357,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
-      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.type
+      struct.writem %self[@reg] = %v : !struct.type<@Signal>, !felt.type
       function.return %self : !struct.type<@Signal>
     }
 
@@ -383,7 +383,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Signal> {
       %self = struct.new : !struct.type<@Signal>
-      struct.writef %self[@reg] = %v : !struct.type<@Signal>, !felt.type
+      struct.writem %self[@reg] = %v : !struct.type<@Signal>, !felt.type
       function.return %self : !struct.type<@Signal>
     }
 

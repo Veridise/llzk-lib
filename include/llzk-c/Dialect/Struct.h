@@ -82,15 +82,15 @@ MLIR_CAPI_EXPORTED MlirType
 llzkStructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute params);
 
 /// Returns the operation that defines the field with the given name, if present.
-MLIR_CAPI_EXPORTED MlirOperation llzkStructDefOpGetFieldDef(MlirOperation op, MlirStringRef name);
+MLIR_CAPI_EXPORTED MlirOperation llzkStructDefOpGetMemberDef(MlirOperation op, MlirStringRef name);
 
 /// Fills the given array with the MemberDefOp operations inside this struct. The pointer to the
-/// operations must have been preallocated. See `llzkStructDefOpGetNumFieldDefs` for obtaining the
+/// operations must have been preallocated. See `llzkStructDefOpGetNumMemberDefs` for obtaining the
 /// required size of the array.
-MLIR_CAPI_EXPORTED void llzkStructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst);
+MLIR_CAPI_EXPORTED void llzkStructDefOpGetMemberDefs(MlirOperation op, MlirOperation *dst);
 
 /// Returns the number of MemberDefOp operations defined in this struct.
-MLIR_CAPI_EXPORTED intptr_t llzkStructDefOpGetNumFieldDefs(MlirOperation op);
+MLIR_CAPI_EXPORTED intptr_t llzkStructDefOpGetNumMemberDefs(MlirOperation op);
 
 /// Returns true if the struct has fields marked as columns.
 MlirLogicalResult llzkStructDefOpGetHasColumns(MlirOperation op);
@@ -129,32 +129,33 @@ LLZK_DECLARE_OP_PREDICATE(MemberDefOp, HasPublicAttr);
 MLIR_CAPI_EXPORTED void llzkMemberDefOpSetPublicAttr(MlirOperation op, bool value);
 
 //===----------------------------------------------------------------------===//
-// FieldReadOp
+// MemberReadOp
 //===----------------------------------------------------------------------===//
 
-/// Creates a FieldReadOp.
+/// Creates a MemberReadOp.
 LLZK_DECLARE_OP_BUILD_METHOD(
-    FieldReadOp, MlirType type, MlirValue component, MlirStringRef fieldName
+    MemberReadOp, MlirType type, MlirValue component, MlirStringRef fieldName
 );
 
-/// Creates a FieldReadOp to a column offset by the given distance affine map. The values in the
+/// Creates a MemberReadOp to a column offset by the given distance affine map. The values in the
 /// ValueRange are operands representing the arguments to the affine map. The integer value is the
 /// number of arguments in the map that are dimensions.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    FieldReadOp, WithAffineMapDistance, MlirType type, MlirValue component, MlirStringRef fieldName,
-    MlirAffineMap affineMap, MlirValueRange mapOperands, int32_t nDimensions
+    MemberReadOp, WithAffineMapDistance, MlirType type, MlirValue component,
+    MlirStringRef fieldName, MlirAffineMap affineMap, MlirValueRange mapOperands,
+    int32_t nDimensions
 );
 
-/// Creates a FieldReadOp to a column offset by the given distance defined by a name to a constant
+/// Creates a MemberReadOp to a column offset by the given distance defined by a name to a constant
 /// parameter in the struct.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    FieldReadOp, WithConstParamDistance, MlirType type, MlirValue component,
+    MemberReadOp, WithConstParamDistance, MlirType type, MlirValue component,
     MlirStringRef fieldName, MlirStringRef paramName
 );
 
-/// Creates a FieldReadOp to a column offset by the given distance defined by an integer value.
+/// Creates a MemberReadOp to a column offset by the given distance defined by an integer value.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    FieldReadOp, WithLiteralDistance, MlirType type, MlirValue component, MlirStringRef fieldName,
+    MemberReadOp, WithLiteralDistance, MlirType type, MlirValue component, MlirStringRef fieldName,
     int64_t distance
 );
 

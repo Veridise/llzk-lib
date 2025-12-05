@@ -100,7 +100,7 @@ module attributes {veridise.lang = "llzk"} {
       %a2 = function.call @ComponentC1::@compute() : () -> !struct.type<@ComponentC1<[7]>>
       // expected-error@+1 {{use of value '%a1' expects different type than prior uses: '!poly.tvar<@T>' vs '!struct.type<@ComponentC1<[5]>>'}}
       %arr = array.new %a1, %a2 : !array.type<2 x !poly.tvar<@T>>
-      struct.writef %self[@f] = %arr : !struct.type<@ComponentC2<[@T]>>, !array.type<2 x !poly.tvar<@T>>
+      struct.writem %self[@f] = %arr : !struct.type<@ComponentC2<[@T]>>, !array.type<2 x !poly.tvar<@T>>
       function.return %self : !struct.type<@ComponentC2<[@T]>>
     }
 
