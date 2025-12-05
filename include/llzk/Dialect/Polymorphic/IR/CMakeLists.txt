@@ -9,7 +9,7 @@ set(LLVM_TARGET_DEFINITIONS "Types.td")
 mlir_tablegen(Types.h.inc -gen-typedef-decls -typedefs-dialect=poly)
 mlir_tablegen(Types.cpp.inc -gen-typedef-defs -typedefs-dialect=poly)
 # Skip generating attribute getters for types because TypeVarType can be created from either a StringAttr
-# or a FlatSymbolRefAttr which are both MlirAttribute in C API so they must be hanlded together manually.
+# or a FlatSymbolRefAttr, which are both MlirAttribute in the C API, so they must be handled together manually.
 llzk_tablegen(Types.capi.h.inc -gen-type-capi-header -prefix=llzk -dialect=poly -gen-type-attr-get=false)
 llzk_tablegen(Types.capi.cpp.inc -gen-type-capi-impl -prefix=llzk -dialect=poly -gen-type-attr-get=false)
 llzk_tablegen(Types.capi.test.cpp.inc -gen-type-capi-tests -prefix=llzk -dialect=poly -gen-type-attr-get=false)
