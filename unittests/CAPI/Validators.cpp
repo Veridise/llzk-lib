@@ -21,7 +21,7 @@ TEST_F(CAPITest, register_validation_passes_and_create) {
   mlirPassManagerDestroy(manager);
 }
 
-TEST_F(CAPITest, register_validation_field_write_validator_pass_and_create) {
+TEST_F(CAPITest, register_validation_member_write_validator_pass_and_create) {
   mlirRegisterLLZKValidationMemberWriteValidatorPass();
   auto manager = mlirPassManagerCreate(context);
 

@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
     //     in*out === 0;
     // }
     //////////////////////////////////////////////////////////////////////////////////
-    // Simplified LLZK-like syntax using return/args instead of fields.
+    // Simplified LLZK-like syntax using return/args instead of members.
     //////////////////////////////////////////////////////////////////////////////////
     // struct.def @IsZero {
     //   function.def @compute(%in: !felt.type) -> (!felt.type, !felt.type) {

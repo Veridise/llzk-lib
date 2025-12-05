@@ -50,33 +50,33 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  struct.def @FieldRangeConstraint {
+  struct.def @MemberRangeConstraint {
 
     struct.member @foo : !felt.type
     struct.member @bar : !felt.type
 
-    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@FieldRangeConstraint> {
-      %self = struct.new : !struct.type<@FieldRangeConstraint>
-      function.return %self : !struct.type<@FieldRangeConstraint>
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@MemberRangeConstraint> {
+      %self = struct.new : !struct.type<@MemberRangeConstraint>
+      function.return %self : !struct.type<@MemberRangeConstraint>
     }
 
-    function.def @constrain(%self: !struct.type<@FieldRangeConstraint>, %a: !felt.type, %b: !felt.type) {
+    function.def @constrain(%self: !struct.type<@MemberRangeConstraint>, %a: !felt.type, %b: !felt.type) {
       %x = felt.const 1
       %y = felt.const 2
       %cmpA = bool.cmp gt(%a, %x)
       bool.assert %cmpA
       %cmpB = bool.cmp le(%b, %y)
       bool.assert %cmpB
-      %foo = struct.readm %self[@foo] : !struct.type<@FieldRangeConstraint>, !felt.type
+      %foo = struct.readm %self[@foo] : !struct.type<@MemberRangeConstraint>, !felt.type
       constrain.eq %foo, %x : !felt.type
-      %bar = struct.readm %self[@bar] : !struct.type<@FieldRangeConstraint>, !felt.type
+      %bar = struct.readm %self[@bar] : !struct.type<@MemberRangeConstraint>, !felt.type
       constrain.eq %bar, %b : !felt.type
       function.return
     }
   }
 }
 
-// CHECK-LABEL: @FieldRangeConstraint StructIntervals {
+// CHECK-LABEL: @MemberRangeConstraint StructIntervals {
 // CHECK-NEXT:     %arg0[@foo] in Degenerate(1)
 // CHECK-NEXT:     %arg0[@bar] in TypeA:[ 0, 2 ]
 // CHECK-NEXT:     %arg1 in TypeC:[ 2, 21888242871839275222246405745257275088696311157297823662689037894645226208582 ]

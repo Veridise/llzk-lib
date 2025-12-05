@@ -588,7 +588,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: 'max-merge-complexity' prevents inlining C to Main (although B->C and A->Main are inlined) resulting in a
-// remaining parameter of type A in the calls to C. Since A was inlined, the param must be split into fields.
+// remaining parameter of type A in the calls to C. Since A was inlined, the param must be split into members.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component7A {
     struct.member @x : !felt.type
@@ -878,7 +878,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-// TESTS: parameter attributes are replicated when splitting a struct param to fields.
+// TESTS: parameter attributes are replicated when splitting a struct param to members.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component9A {
     struct.member @x : !felt.type

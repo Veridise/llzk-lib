@@ -2,7 +2,7 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1 {
-    // expected-note@+1 {{field defined here}}
+    // expected-note@+1 {{member defined here}}
     struct.member @f1 : !felt.type
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
     function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
-      // expected-error@+1 {{'struct.readm' op cannot read with table offset from a field that is not a column}}
+      // expected-error@+1 {{'struct.readm' op cannot read with table offset from a member that is not a column}}
       %r = struct.readm %p[@f1] : !struct.type<@ComponentA1>, !felt.type {tableOffset = -1 : index}
       function.return %self : !struct.type<@ComponentA2>
     }
@@ -115,7 +115,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1 {
-    // Even if the struct's field is of felt type, it is not marked as a column.
+    // Even if the struct's member is of felt type, it is not marked as a column.
     struct.member @f1 : !felt.type
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }

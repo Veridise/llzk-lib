@@ -109,7 +109,7 @@ protected:
     return mlirOperationCreate(&op_state);
   }
 
-  MlirOperation make_field_def_op() const {
+  MlirOperation make_member_def_op() const {
     auto name = mlirStringRefCreateFromCString("struct.member");
     auto location = mlirLocationUnknownGet(context);
     llvm::SmallVector<MlirNamedAttribute> attrs(
@@ -183,7 +183,7 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_type_with_params) {
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_field_def) {
+TEST_F(StructDefTest, llzk_struct_def_op_get_member_def) {
   auto op = test_op();
   if (llzkOperationIsAStructDefOp(op.op)) {
     auto name = mlirStringRefCreateFromCString("p");
@@ -191,14 +191,14 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_field_def) {
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_field_defs) {
+TEST_F(StructDefTest, llzk_struct_def_op_get_member_defs) {
   auto op = test_op();
   if (llzkOperationIsAStructDefOp(op.op)) {
     llzkStructDefOpGetMemberDefs(op.op, (MlirOperation *)NULL);
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_num_field_defs) {
+TEST_F(StructDefTest, llzk_struct_def_op_get_num_member_defs) {
   auto op = test_op();
   if (llzkOperationIsAStructDefOp(op.op)) {
     llzkStructDefOpGetNumMemberDefs(op.op);
@@ -259,31 +259,31 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_is_main_component) {
   }
 }
 
-TEST_F(StructDefTest, llzk_operation_is_a_field_def_op_pass) {
-  auto op = make_field_def_op();
+TEST_F(StructDefTest, llzk_operation_is_a_member_def_op_pass) {
+  auto op = make_member_def_op();
   EXPECT_TRUE(llzkOperationIsAMemberDefOp(op));
 }
 
-TEST_F(StructDefTest, llzk_operation_is_a_field_def_op_fail) {
+TEST_F(StructDefTest, llzk_operation_is_a_member_def_op_fail) {
   auto op = test_op();
   EXPECT_TRUE(!llzkOperationIsAMemberDefOp(op.op));
 }
 
-TEST_F(StructDefTest, llzk_field_def_op_get_has_public_attr) {
+TEST_F(StructDefTest, llzk_member_def_op_get_has_public_attr) {
   auto op = test_op();
   if (llzkOperationIsAMemberDefOp(op.op)) {
     llzkMemberDefOpGetHasPublicAttr(op.op);
   }
 }
 
-TEST_F(StructDefTest, llzk_field_def_op_set_public_attr) {
+TEST_F(StructDefTest, llzk_member_def_op_set_public_attr) {
   auto op = test_op();
   if (llzkOperationIsAMemberDefOp(op.op)) {
     llzkMemberDefOpSetPublicAttr(op.op, true);
   }
 }
 
-TEST_F(StructDefTest, llzk_field_read_op_build) {
+TEST_F(StructDefTest, llzk_member_read_op_build) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
   auto index_type = mlirIndexTypeGet(context);
@@ -299,7 +299,7 @@ TEST_F(StructDefTest, llzk_field_read_op_build) {
   mlirOpBuilderDestroy(builder);
 }
 
-TEST_F(StructDefTest, llzk_field_read_op_build_with_affine_map_distance) {
+TEST_F(StructDefTest, llzk_member_read_op_build_with_affine_map_distance) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
   auto index_type = mlirIndexTypeGet(context);
@@ -322,7 +322,7 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_affine_map_distance) {
   mlirOpBuilderDestroy(builder);
 }
 
-TEST_F(StructDefTest, llzk_field_read_op_builder_with_const_param_distance) {
+TEST_F(StructDefTest, llzk_member_read_op_builder_with_const_param_distance) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
   auto index_type = mlirIndexTypeGet(context);
@@ -339,7 +339,7 @@ TEST_F(StructDefTest, llzk_field_read_op_builder_with_const_param_distance) {
   mlirOpBuilderDestroy(builder);
 }
 
-TEST_F(StructDefTest, llzk_field_read_op_build_with_literal_distance) {
+TEST_F(StructDefTest, llzk_member_read_op_build_with_literal_distance) {
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
   auto index_type = mlirIndexTypeGet(context);

@@ -57,7 +57,7 @@ module attributes {veridise.lang = "llzk"} {
       %8 = bool.and %4, %5 : i1, i1
       %9 = bool.and %8, %6 : i1, i1
       %10 = bool.and %9, %7 : i1, i1
-      bool.assert %10, "failed assertion: extended field element is not equal to zero"
+      bool.assert %10, "failed assertion: extended member element is not equal to zero"
       %11 = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
       struct.writem %self[@"$super"] = %11 : <@EqzExt<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@EqzExt<[]>>

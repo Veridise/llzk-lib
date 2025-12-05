@@ -176,7 +176,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // TESTS:
 //  - same callee inlined multiple times into one caller
-//  - a struct that has multiple fields of the same StructType
+//  - a struct that has multiple members of the same StructType
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component3A {
     struct.member @f1 : index
@@ -658,7 +658,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // -----
 
-// TESTS: Result of a field read has use(s) other than parameter to constrain function.
+// TESTS: Result of a member read has use(s) other than parameter to constrain function.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component9A {
     struct.member @f : !felt.type
@@ -802,7 +802,7 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS:
 //  - Passing struct as `constrain` parameter, multiple levels. Specifically,
 //    "@Component11C::@constrain()" where the '%a' parameter is passed through.
-//  - Attributes on fields are propagated correctly.
+//  - Attributes on members are propagated correctly.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component11A {
     struct.member @f : !felt.type {llzk.pub}
@@ -906,7 +906,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-// TESTS: "self" parameter of "@constrain" call comes from a global read rather than field read.
+// TESTS: "self" parameter of "@constrain" call comes from a global read rather than member read.
 //        This prevents A->B inlining via `canInline()` check.
 module attributes {veridise.lang = "llzk"} {
   global.def @g : !struct.type<@Component12A>
@@ -995,7 +995,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-// TESTS: "self" parameter of "@constrain" call comes from a function parameter rather than field read.
+// TESTS: "self" parameter of "@constrain" call comes from a function parameter rather than member read.
 //        This prevents A->B inlining via `canInline()` check.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component13A {

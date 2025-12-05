@@ -24,7 +24,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
-      // expected-error@+1 {{'function.call' op "@compute" result should be written to a field.}}
+      // expected-error@+1 {{'function.call' op "@compute" result should be written to a member.}}
       %a = function.call @ResultOfComputeUnused::@compute() : () -> !struct.type<@ResultOfComputeUnused>
       function.return %self : !struct.type<@Main>
     }
@@ -63,7 +63,7 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
-      // expected-error@+1 {{'function.call' op "@compute" result should not be written to more than one field.}}
+      // expected-error@+1 {{'function.call' op "@compute" result should not be written to more than one member.}}
       %a = function.call @ResultOfComputeDoubleUse::@compute() : () -> !struct.type<@ResultOfComputeDoubleUse>
       // expected-note@+1 {{written here}}
       struct.writem %self[@fa] = %a : !struct.type<@Main>, !struct.type<@ResultOfComputeDoubleUse>

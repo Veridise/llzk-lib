@@ -99,9 +99,9 @@ MlirOperation llzkStructDefOpGetMemberDef(MlirOperation op, MlirStringRef name) 
 }
 
 void llzkStructDefOpGetMemberDefs(MlirOperation op, MlirOperation *dst) {
-  for (auto [offset, field] :
+  for (auto [offset, member] :
        llvm::enumerate(llvm::cast<StructDefOp>(unwrap(op)).getMemberDefs())) {
-    dst[offset] = wrap(field);
+    dst[offset] = wrap(member);
   }
 }
 
@@ -163,18 +163,18 @@ void llzkMemberDefOpSetPublicAttr(MlirOperation op, bool value) {
 //===----------------------------------------------------------------------===//
 
 LLZK_DEFINE_OP_BUILD_METHOD(
-    MemberReadOp, MlirType fieldType, MlirValue component, MlirStringRef name
+    MemberReadOp, MlirType memberType, MlirValue component, MlirStringRef name
 ) {
   return wrap(
       create<MemberReadOp>(
-          builder, location, unwrap(fieldType), unwrap(component),
+          builder, location, unwrap(memberType), unwrap(component),
           unwrap(builder)->getStringAttr(unwrap(name))
       )
   );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    MemberReadOp, WithAffineMapDistance, MlirType fieldType, MlirValue component,
+    MemberReadOp, WithAffineMapDistance, MlirType memberType, MlirValue component,
     MlirStringRef name, MlirAffineMap map, MlirValueRange mapOperands, int32_t numDimsPerMap
 ) {
   SmallVector<Value> mapOperandsSto;
@@ -182,33 +182,33 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   auto mapAttr = AffineMapAttr::get(unwrap(map));
   return wrap(
       create<MemberReadOp>(
-          builder, location, unwrap(fieldType), unwrap(component), nameAttr, mapAttr,
+          builder, location, unwrap(memberType), unwrap(component), nameAttr, mapAttr,
           unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto), numDimsPerMap
       )
   );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    MemberReadOp, WithConstParamDistance, MlirType fieldType, MlirValue component,
+    MemberReadOp, WithConstParamDistance, MlirType memberType, MlirValue component,
     MlirStringRef name, MlirStringRef symbol
 ) {
   auto nameAttr = unwrap(builder)->getStringAttr(unwrap(name));
   return wrap(
       create<MemberReadOp>(
-          builder, location, unwrap(fieldType), unwrap(component), nameAttr,
+          builder, location, unwrap(memberType), unwrap(component), nameAttr,
           FlatSymbolRefAttr::get(unwrap(builder)->getStringAttr(unwrap(symbol)))
       )
   );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    MemberReadOp, WithLiteralDistance, MlirType fieldType, MlirValue component, MlirStringRef name,
+    MemberReadOp, WithLiteralDistance, MlirType memberType, MlirValue component, MlirStringRef name,
     int64_t distance
 ) {
   auto nameAttr = unwrap(builder)->getStringAttr(unwrap(name));
   return wrap(
       create<MemberReadOp>(
-          builder, location, unwrap(fieldType), unwrap(component), nameAttr,
+          builder, location, unwrap(memberType), unwrap(component), nameAttr,
           unwrap(builder)->getIndexAttr(distance)
       )
   );

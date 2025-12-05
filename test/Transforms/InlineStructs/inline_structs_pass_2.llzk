@@ -56,7 +56,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-// TESTS: The relevant field is an array of subcomponents
+// TESTS: The relevant member is an array of subcomponents
 module attributes {veridise.lang = "llzk"} {
   struct.def @Pair<[@Fst, @Snd]> {
     function.def @compute() -> !struct.type<@Pair<[@Fst, @Snd]>> {

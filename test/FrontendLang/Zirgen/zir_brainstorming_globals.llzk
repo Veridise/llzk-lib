@@ -47,7 +47,7 @@ module attributes {veridise.lang = "llzk"} {
       // BEGIN: BOILERPLATE - Ensure it was NOT previously written
       %g = global.read @globals::@A : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>
       %i = struct.readm %g[@init] : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>, i1
-      %f = arith.constant false // default, 0-initialized value of 'i1' field
+      %f = arith.constant false // default, 0-initialized value of 'i1' member
       %x = arith.cmpi eq, %i, %f : i1
       bool.assert %x, "Invalid set of \"global\"" // mirror zirgen message
       %1 = function.call @Global::@compute(%0) : (!struct.type<@NondetReg<[]>>) -> !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>
@@ -59,7 +59,7 @@ module attributes {veridise.lang = "llzk"} {
       %g = global.read @globals::@A : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>
       // BEGIN: BOILERPLATE - Ensure it was previously written
       %i = struct.readm %g[@init] : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>, i1
-      %f = arith.constant false // default, 0-initialized value of 'i1' field
+      %f = arith.constant false // default, 0-initialized value of 'i1' member
       %x = arith.cmpi ne, %i, %f : i1
       bool.assert %x, "Read before write \"global\"" // mirror zirgen message
       %0 = struct.readm %g[@val] : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>, !struct.type<@NondetReg<[]>>

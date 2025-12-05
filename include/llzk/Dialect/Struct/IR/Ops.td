@@ -125,15 +125,15 @@ def LLZK_StructDefOp
 
     /// Returns whether the struct defines members marked as columns.
     ::mlir::LogicalResult hasColumns() {
-      return ::mlir::success(::llvm::any_of(getMemberDefs(), [](MemberDefOp fdOp) {
-        return fdOp.getColumn();
+      return ::mlir::success(::llvm::any_of(getMemberDefs(), [](MemberDefOp memberOp) {
+        return memberOp.getColumn();
       }));
     }
 
     /// Returns whether the struct defines members marked as signals.
     ::mlir::LogicalResult hasSignals() {
-      return ::mlir::success(::llvm::any_of(getFieldDefs(), [](FieldDefOp fdOp) {
-        return fdOp.getSignal();
+      return ::mlir::success(::llvm::any_of(getMemberDefs(), [](MemberDefOp memberOp) {
+        return memberOp.getSignal();
       }));
     }
 
@@ -200,11 +200,11 @@ def LLZK_MemberDefOp
     struct.member @pubcol : !felt.type {llzk.pub, column}
     ```
 
-    - Fields marked with the `{llzk.pub}` attribute are considered public
+    - Members marked with the `{llzk.pub}` attribute are considered public
       and represent outputs of their defining struct/component.
-    - Fields marked with the `{column}` attribute can be read/written with
+    - Members marked with the `{column}` attribute can be read/written with
       table offsets using the `readf` and `writef` operations.
-    - Fields marked with the `{signal}` attribute are constraint variables that
+    - Members marked with the `{signal}` attribute are constraint variables that
       are stored in the witness; non-signal values are intermediate expressions.
   }];
 

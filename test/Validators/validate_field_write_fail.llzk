@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-validate-field-writes -verify-diagnostics %s
+// RUN: llzk-opt -split-input-file -llzk-validate-member-writes -verify-diagnostics %s
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @MultipleWrites {

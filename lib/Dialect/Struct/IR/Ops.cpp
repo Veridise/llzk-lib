@@ -321,7 +321,7 @@ LogicalResult StructDefOp::verifyRegions() {
   std::optional<FuncDefOp> foundProduct = std::nullopt;
   {
     // Verify the following:
-    // 1. The only ops within the body are field and function definitions
+    // 1. The only ops within the body are member and function definitions
     // 2. The only functions defined in the struct are `@compute()` and `@constrain()`, or
     // `@product()`
     OwningEmitErrorFn emitError = getEmitOpErrFn(this);
@@ -406,11 +406,11 @@ LogicalResult StructDefOp::verifyRegions() {
   return verifyStructProduct(*this, *foundProduct);
 }
 
-MemberDefOp StructDefOp::getMemberDef(StringAttr fieldName) {
+MemberDefOp StructDefOp::getMemberDef(StringAttr memberName) {
   for (Operation &op : *getBody()) {
-    if (MemberDefOp fieldDef = llvm::dyn_cast_if_present<MemberDefOp>(op)) {
-      if (fieldName.compare(fieldDef.getSymNameAttr()) == 0) {
-        return fieldDef;
+    if (MemberDefOp memberDef = llvm::dyn_cast_if_present<MemberDefOp>(op)) {
+      if (memberName.compare(memberDef.getSymNameAttr()) == 0) {
+        return memberDef;
       }
     }
   }
@@ -420,8 +420,8 @@ MemberDefOp StructDefOp::getMemberDef(StringAttr fieldName) {
 std::vector<MemberDefOp> StructDefOp::getMemberDefs() {
   std::vector<MemberDefOp> res;
   for (Operation &op : *getBody()) {
-    if (MemberDefOp fieldDef = llvm::dyn_cast_if_present<MemberDefOp>(op)) {
-      res.push_back(fieldDef);
+    if (MemberDefOp memberDef = llvm::dyn_cast_if_present<MemberDefOp>(op)) {
+      res.push_back(memberDef);
     }
   }
   return res;
@@ -506,17 +506,17 @@ void MemberDefOp::setPublicAttr(bool newValue) {
 }
 
 static LogicalResult
-verifyMemberDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation *origin) {
-  if (StructType fieldStructType = llvm::dyn_cast<StructType>(fieldType)) {
-    // Special case for StructType verifies that the field type can resolve and that it is NOT the
-    // parent struct (i.e., struct fields cannot create circular references).
-    auto fieldTypeRes = verifyStructTypeResolution(tables, fieldStructType, origin);
-    if (failed(fieldTypeRes)) {
+verifyMemberDefTypeImpl(Type memberType, SymbolTableCollection &tables, Operation *origin) {
+  if (StructType memberStructType = llvm::dyn_cast<StructType>(memberType)) {
+    // Special case for StructType verifies that the member type can resolve and that it is NOT the
+    // parent struct (i.e., struct members cannot create circular references).
+    auto memberTypeRes = verifyStructTypeResolution(tables, memberStructType, origin);
+    if (failed(memberTypeRes)) {
       return failure(); // above already emits a sufficient error message
     }
     FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(origin);
     assert(succeeded(parentRes) && "MemberDefOp parent is always StructDefOp"); // per ODS def
-    if (fieldTypeRes.value() == parentRes.value()) {
+    if (memberTypeRes.value() == parentRes.value()) {
       return origin->emitOpError()
           .append("type is circular")
           .attachNote(parentRes.value().getLoc())
@@ -524,20 +524,20 @@ verifyMemberDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation
     }
     return success();
   } else {
-    return verifyTypeResolution(tables, origin, fieldType);
+    return verifyTypeResolution(tables, origin, memberType);
   }
 }
 
 LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
-  Type fieldType = this->getType();
-  if (failed(verifyMemberDefTypeImpl(fieldType, tables, *this))) {
+  Type memberType = this->getType();
+  if (failed(verifyMemberDefTypeImpl(memberType, tables, *this))) {
     return failure();
   }
 
   if (!getColumn()) {
     return success();
   }
-  // If the field is marked as a column only a small subset of types are allowed.
+  // If the member is marked as a column only a small subset of types are allowed.
   if (!isValidColumnType(getType(), tables, *this)) {
     return emitOpError() << "marked as column can only contain felts, arrays of column types, or "
                             "structs with columns, but member has type "
@@ -571,25 +571,25 @@ getMemberDefOpImpl(MemberRefOpInterface refOp, SymbolTableCollection &tables, St
 }
 
 static FailureOr<SymbolLookupResult<MemberDefOp>>
-findField(MemberRefOpInterface refOp, SymbolTableCollection &tables) {
+findMember(MemberRefOpInterface refOp, SymbolTableCollection &tables) {
   // Ensure the base component/struct type reference can be resolved.
   StructType tyStruct = refOp.getStructType();
   if (failed(tyStruct.verifySymbolRef(tables, refOp.getOperation()))) {
     return failure();
   }
-  // Ensure the field name can be resolved in that struct.
+  // Ensure the member name can be resolved in that struct.
   return getMemberDefOpImpl(refOp, tables, tyStruct);
 }
 
 static LogicalResult verifySymbolUsesImpl(
     MemberRefOpInterface refOp, SymbolTableCollection &tables,
-    SymbolLookupResult<MemberDefOp> &field
+    SymbolLookupResult<MemberDefOp> &member
 ) {
-  // Ensure the type of the referenced field declaration matches the type used in this op.
+  // Ensure the type of the referenced member declaration matches the type used in this op.
   Type actualType = refOp.getVal().getType();
-  Type fieldType = field.get().getType();
-  if (!typesUnify(actualType, fieldType, field.getIncludeSymNames())) {
-    return refOp->emitOpError() << "has wrong type; expected " << fieldType << ", got "
+  Type memberType = member.get().getType();
+  if (!typesUnify(actualType, memberType, member.getIncludeSymNames())) {
+    return refOp->emitOpError() << "has wrong type; expected " << memberType << ", got "
                                 << actualType;
   }
   // Ensure any SymbolRef used in the type are valid
@@ -597,12 +597,12 @@ static LogicalResult verifySymbolUsesImpl(
 }
 
 LogicalResult verifySymbolUsesImpl(MemberRefOpInterface refOp, SymbolTableCollection &tables) {
-  // Ensure the field name can be resolved in that struct.
-  auto field = findField(refOp, tables);
-  if (failed(field)) {
-    return field; // getMemberDefOp() already emits a sufficient error message
+  // Ensure the member name can be resolved in that struct.
+  auto member = findMember(refOp, tables);
+  if (failed(member)) {
+    return member; // getMemberDefOp() already emits a sufficient error message
   }
-  return verifySymbolUsesImpl(refOp, tables, *field);
+  return verifySymbolUsesImpl(refOp, tables, *member);
 }
 
 } // namespace
@@ -613,25 +613,25 @@ MemberRefOpInterface::getMemberDefOp(SymbolTableCollection &tables) {
 }
 
 LogicalResult MemberReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  auto field = findField(*this, tables);
-  if (failed(field)) {
+  auto member = findMember(*this, tables);
+  if (failed(member)) {
     return failure();
   }
-  if (failed(verifySymbolUsesImpl(*this, tables, *field))) {
+  if (failed(verifySymbolUsesImpl(*this, tables, *member))) {
     return failure();
   }
-  // If the field is not a column and an offset was specified then fail to validate
-  if (!field->get().getColumn() && getTableOffset().has_value()) {
-    return emitOpError("cannot read with table offset from a field that is not a column")
-        .attachNote(field->get().getLoc())
-        .append("field defined here");
+  // If the member is not a column and an offset was specified then fail to validate
+  if (!member->get().getColumn() && getTableOffset().has_value()) {
+    return emitOpError("cannot read with table offset from a member that is not a column")
+        .attachNote(member->get().getLoc())
+        .append("member defined here");
   }
 
   return success();
 }
 
 LogicalResult MemberWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
-  // Ensure the write op only targets fields in the current struct.
+  // Ensure the write op only targets members in the current struct.
   FailureOr<StructDefOp> getParentRes = verifyInStruct(*this);
   if (failed(getParentRes)) {
     return failure(); // verifyInStruct() already emits a sufficient error message
@@ -639,7 +639,7 @@ LogicalResult MemberWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (failed(checkSelfType(tables, *getParentRes, getComponent().getType(), *this, "base value"))) {
     return failure(); // checkSelfType() already emits a sufficient error message
   }
-  // Perform the standard field ref checks.
+  // Perform the standard member ref checks.
   return verifySymbolUsesImpl(*this, tables);
 }
 
@@ -648,17 +648,17 @@ LogicalResult MemberWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
 //===------------------------------------------------------------------===//
 
 void MemberReadOp::build(
-    OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr field
+    OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr member
 ) {
   Properties &props = state.getOrAddProperties<Properties>();
-  props.setMemberName(FlatSymbolRefAttr::get(field));
+  props.setMemberName(FlatSymbolRefAttr::get(member));
   state.addTypes(resultType);
   state.addOperands(component);
   affineMapHelpers::buildInstantiationAttrsEmptyNoSegments<MemberReadOp>(builder, state);
 }
 
 void MemberReadOp::build(
-    OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr field,
+    OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr member,
     Attribute dist, ValueRange mapOperands, std::optional<int32_t> numDims
 ) {
   // '!mapOperands.empty()' implies 'numDims.has_value()'
@@ -673,7 +673,7 @@ void MemberReadOp::build(
     affineMapHelpers::buildInstantiationAttrsEmptyNoSegments<MemberReadOp>(builder, state);
   }
   Properties &props = state.getOrAddProperties<Properties>();
-  props.setMemberName(FlatSymbolRefAttr::get(field));
+  props.setMemberName(FlatSymbolRefAttr::get(member));
   props.setTableOffset(dist);
 }
 

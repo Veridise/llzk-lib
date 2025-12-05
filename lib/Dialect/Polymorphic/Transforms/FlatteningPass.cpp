@@ -715,13 +715,13 @@ public:
   ) const override {
     LLVM_DEBUG(llvm::dbgs() << "[MemberDefOpPattern] MemberDefOp: " << op << '\n');
 
-    Type oldFieldType = op.getType();
-    Type newFieldType = getTypeConverter()->convertType(oldFieldType);
-    if (oldFieldType == newFieldType) {
+    Type oldMemberType = op.getType();
+    Type newMemberType = getTypeConverter()->convertType(oldMemberType);
+    if (oldMemberType == newMemberType) {
       // nothing changed
       return failure();
     }
-    rewriter.modifyOpInPlace(op, [&op, &newFieldType]() { op.setType(newFieldType); });
+    rewriter.modifyOpInPlace(op, [&op, &newMemberType]() { op.setType(newMemberType); });
     return success();
   }
 };
@@ -1229,16 +1229,16 @@ public:
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(MemberDefOp op, PatternRewriter &rewriter) const override {
-    // Find all uses of the field symbol name within its parent struct.
+    // Find all uses of the member symbol name within its parent struct.
     FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(op);
     assert(succeeded(parentRes) && "MemberDefOp parent is always StructDefOp"); // per ODS def
 
     // If the symbol is used by a MemberWriteOp with a different result type then change
     // the type of the MemberDefOp to match the MemberWriteOp result type.
     Type newType = nullptr;
-    if (auto fieldUsers = llzk::getSymbolUses(op, parentRes.value())) {
+    if (auto memberUsers = llzk::getSymbolUses(op, parentRes.value())) {
       std::optional<Location> newTypeLoc = std::nullopt;
-      for (SymbolTable::SymbolUse symUse : fieldUsers.value()) {
+      for (SymbolTable::SymbolUse symUse : memberUsers.value()) {
         if (MemberWriteOp writeOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser())) {
           Type writeToType = writeOp.getVal().getType();
           LLVM_DEBUG(llvm::dbgs() << "[UpdateMemberDefTypeFromWrite] checking " << writeOp << '\n');
@@ -1247,8 +1247,8 @@ public:
             newType = writeToType;
             newTypeLoc = writeOp.getLoc();
           } else if (writeToType != newType) {
-            // Typically, there will only be one write for each field of a struct but do not rely on
-            // that assumption. If multiple writes with a different types A and B are found where
+            // Typically, there will only be one write for each member of a struct but do not rely
+            // on that assumption. If multiple writes with a different types A and B are found where
             // A->B is a legal conversion (i.e., more concrete unification), then it is safe to use
             // type B with the assumption that the write with type A will be updated by another
             // pattern to also use type B.

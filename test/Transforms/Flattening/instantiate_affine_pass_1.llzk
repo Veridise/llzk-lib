@@ -37,7 +37,7 @@ module attributes {veridise.lang = "llzk"} {
 
   struct.def @TestLoopWithAffineArrayStruct<[@N]> {
     // The `pub` here is intended to test that attributes are copied by
-    //  UpdateFieldTypeFromWrite when creating a new MemberDefOp.
+    //  UpdateMemberTypeFromWrite when creating a new MemberDefOp.
     struct.member @arrs: !array.type<@N x !HeterArr> {llzk.pub}
 
     function.def @compute() -> !struct.type<@TestLoopWithAffineArrayStruct<[@N]>> {

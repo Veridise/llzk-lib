@@ -82,13 +82,13 @@ Value rebuildExprInCompute(
   llvm_unreachable("Unsupported op kind");
 }
 
-LogicalResult checkForAuxFieldConflicts(StructDefOp structDef, StringRef prefix) {
+LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix) {
   bool conflictFound = false;
 
-  structDef.walk([&conflictFound, &prefix](MemberDefOp fieldDefOp) {
-    if (fieldDefOp.getName().starts_with(prefix)) {
-      (fieldDefOp.emitError() << "Field name '" << fieldDefOp.getName()
-                              << "' conflicts with reserved prefix '" << prefix << '\'')
+  structDef.walk([&conflictFound, &prefix](MemberDefOp memberDefOp) {
+    if (memberDefOp.getName().starts_with(prefix)) {
+      (memberDefOp.emitError() << "Member name '" << memberDefOp.getName()
+                               << "' conflicts with reserved prefix '" << prefix << '\'')
           .report();
       conflictFound = true;
     }
@@ -116,7 +116,7 @@ void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp) {
   }
 }
 
-MemberDefOp addAuxField(StructDefOp structDef, StringRef name) {
+MemberDefOp addAuxMember(StructDefOp structDef, StringRef name) {
   OpBuilder builder(structDef);
   builder.setInsertionPointToEnd(structDef.getBody());
   return builder.create<MemberDefOp>(

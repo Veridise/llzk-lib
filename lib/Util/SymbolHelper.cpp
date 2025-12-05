@@ -143,9 +143,9 @@ public:
     return buildPathFromRootToStruct(to, std::move(path));
   }
 
-  FailureOr<SymbolRefAttr> getPathFromRootToField(MemberDefOp to) {
+  FailureOr<SymbolRefAttr> getPathFromRootToMember(MemberDefOp to) {
     std::vector<FlatSymbolRefAttr> path;
-    // Add the name of the field (its name is not optional)
+    // Add the name of the member (its name is not optional)
     path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
     // Delegate to the parent handler (must be StructDefOp per ODS)
     return buildPathFromRootToStruct(to.getParentOp<StructDefOp>(), std::move(path));
@@ -174,7 +174,7 @@ public:
     return TypeSwitch<Operation *, FailureOr<SymbolRefAttr>>(to.getOperation())
         // This more general function must check for the specific cases first.
         .Case<FuncDefOp>([this](FuncDefOp toOp) { return getPathFromRootToFunc(toOp); })
-        .Case<MemberDefOp>([this](MemberDefOp toOp) { return getPathFromRootToField(toOp); })
+        .Case<MemberDefOp>([this](MemberDefOp toOp) { return getPathFromRootToMember(toOp); })
         .Case<StructDefOp>([this](StructDefOp toOp) { return getPathFromRootToStruct(toOp); })
 
         // If it's a module, immediately delegate to `buildPathFromRootToAnyOp()` since
@@ -277,7 +277,7 @@ FailureOr<SymbolRefAttr> getPathFromRoot(StructDefOp &to, ModuleOp *foundRoot) {
 }
 
 FailureOr<SymbolRefAttr> getPathFromRoot(MemberDefOp &to, ModuleOp *foundRoot) {
-  return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToField(to);
+  return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToMember(to);
 }
 
 FailureOr<SymbolRefAttr> getPathFromRoot(FuncDefOp &to, ModuleOp *foundRoot) {
@@ -298,7 +298,7 @@ FailureOr<SymbolRefAttr> getPathFromTopRoot(StructDefOp &to, ModuleOp *foundRoot
 }
 
 FailureOr<SymbolRefAttr> getPathFromTopRoot(MemberDefOp &to, ModuleOp *foundRoot) {
-  return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToField(to);
+  return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToMember(to);
 }
 
 FailureOr<SymbolRefAttr> getPathFromTopRoot(FuncDefOp &to, ModuleOp *foundRoot) {
