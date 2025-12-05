@@ -482,7 +482,7 @@ static bool parseMethodParameters(
             if (!currentParamType.empty() && tokenText != "*" && tokenText != "&" &&
                 tokenText != "::" && !tokenText.starts_with("::") &&
                 !StringRef(currentParamType).ends_with("::")) {
-              paramTypeStream << " ";
+              paramTypeStream << ' ';
             }
             paramTypeStream << tokenText;
             currentParamType = paramTypeStream.str();
