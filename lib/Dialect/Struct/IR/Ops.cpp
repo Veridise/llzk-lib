@@ -451,7 +451,7 @@ bool StructDefOp::isMainComponent() { return COMPONENT_NAME_MAIN == this->getSym
 
 void FieldDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, StringAttr sym_name, TypeAttr type,
-    bool isColumn
+    bool isColumn, bool isSignal
 ) {
   Properties &props = odsState.getOrAddProperties<Properties>();
   props.setSymName(sym_name);
@@ -459,17 +459,24 @@ void FieldDefOp::build(
   if (isColumn) {
     props.column = odsBuilder.getUnitAttr();
   }
+  if (isSignal) {
+    props.signal = odsBuilder.getUnitAttr();
+  }
 }
 
 void FieldDefOp::build(
-    OpBuilder &odsBuilder, OperationState &odsState, StringRef sym_name, Type type, bool isColumn
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef sym_name, Type type, bool isColumn,
+    bool isSignal
 ) {
-  build(odsBuilder, odsState, odsBuilder.getStringAttr(sym_name), TypeAttr::get(type), isColumn);
+  build(
+      odsBuilder, odsState, odsBuilder.getStringAttr(sym_name), TypeAttr::get(type), isColumn,
+      isSignal
+  );
 }
 
 void FieldDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, TypeRange resultTypes, ValueRange operands,
-    ArrayRef<NamedAttribute> attributes, bool isColumn
+    ArrayRef<NamedAttribute> attributes, bool isColumn, bool isSignal
 ) {
   assert(operands.size() == 0u && "mismatched number of parameters");
   odsState.addOperands(operands);
@@ -478,6 +485,9 @@ void FieldDefOp::build(
   odsState.addTypes(resultTypes);
   if (isColumn) {
     odsState.getOrAddProperties<Properties>().column = odsBuilder.getUnitAttr();
+  }
+  if (isSignal) {
+    odsState.getOrAddProperties<Properties>().signal = odsBuilder.getUnitAttr();
   }
 }
 
