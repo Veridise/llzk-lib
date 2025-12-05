@@ -203,21 +203,20 @@ static inline std::string getDocumentation(
   for (size_t j = returnTypeStart; j > 0; --j) {
     Token curr = tokens[j - 1];
     if (curr.is(tok::comment)) {
-      std::string comment(sourceMgr.getCharacterData(curr.getLocation()), curr.getLength());
-      StringRef cleanComment(comment);
-      cleanComment.consume_front("///");
-      cleanComment.consume_front("//");
-      if (cleanComment.consume_front("/*")) {
-        cleanComment.consume_back("*/");
+      StringRef comment(sourceMgr.getCharacterData(curr.getLocation()), curr.getLength());
+      comment.consume_front("///");
+      comment.consume_front("//");
+      if (comment.consume_front("/*")) {
+        comment.consume_back("*/");
       }
-      cleanComment = cleanComment.trim();
+      comment = comment.trim();
 
       // Trim whitespace
-      if (!cleanComment.empty()) {
+      if (!comment.empty()) {
         if (!documentation.empty()) {
-          documentation = cleanComment.str() + " " + documentation;
+          documentation = comment.str() + " " + documentation;
         } else {
-          documentation = cleanComment.str();
+          documentation = comment.str();
         }
       }
     } else if (!curr.is(tok::unknown)) {
@@ -374,7 +373,7 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
             continue;
           }
 
-          std::string tokenText(
+          StringRef tokenText(
               sourceMgr.getCharacterData(tokens[j].getLocation()), tokens[j].getLength()
           );
 
@@ -452,7 +451,7 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
 
               // Check if we have actual parameters (excluding just "void")
               if (paramTokenCount == 1) {
-                std::string paramToken(
+                StringRef paramToken(
                     sourceMgr.getCharacterData(paramTokens[0].getLocation()),
                     paramTokens[0].getLength()
                 );
@@ -491,7 +490,7 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
                     continue;
                   }
 
-                  std::string tokenText(
+                  StringRef tokenText(
                       sourceMgr.getCharacterData(paramTokens[k].getLocation()),
                       paramTokens[k].getLength()
                   );
@@ -502,7 +501,7 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
                     if (k + 1 == paramTokenCount ||
                         (k + 1 < paramTokenCount &&
                          paramTokens[k + 1].isOneOf(tok::comma, tok::equal))) {
-                      currentParamName = tokenText;
+                      currentParamName = tokenText.str();
                       continue;
                     }
                   }

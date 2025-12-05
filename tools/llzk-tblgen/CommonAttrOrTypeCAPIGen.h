@@ -246,7 +246,7 @@ Mlir{1} {0}{2}{3}Get(MlirContext ctx{4}) {{
     llvm::raw_string_ostream argListStream(argListBuffer);
 
     for (const auto &param : def.getParameters()) {
-      std::string pName = param.getName().str();
+      mlir::StringRef pName = param.getName();
       mlir::StringRef cppType = param.getCppType();
       if (isArrayRefType(cppType)) {
         // For ArrayRef parameters, convert from pointer + count to ArrayRef

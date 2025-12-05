@@ -101,9 +101,8 @@ TEST_F({0}EnumLinkTests, Enum_{1}_WrapUnwrap) {{
     }
 
     // Get enum name
-    std::string enumClassName = enumInfo.getEnumClassName().str();
-    std::string cEnumName =
-        toPascalCase(FunctionPrefix) + toPascalCase(DialectName) + toPascalCase(enumClassName);
+    std::string cEnumName = toPascalCase(FunctionPrefix) + toPascalCase(DialectName) +
+                            toPascalCase(enumInfo.getEnumClassName());
 
     // Get first enum case for testing
     std::string firstCase = enumCases[0].getSymbol().upper();
