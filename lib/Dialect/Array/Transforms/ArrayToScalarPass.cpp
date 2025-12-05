@@ -567,8 +567,9 @@ public:
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
     for (ArrayAttr idx : subIdxs.value()) {
       // Create scalar version of the field
-      FieldDefOp newField =
-          rewriter.create<FieldDefOp>(op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn());
+      FieldDefOp newField = rewriter.create<FieldDefOp>(
+          op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn(), op.getSignal()
+      );
       newField.setPublicAttr(op.hasPublicAttr());
       // Use SymbolTable to give it a unique name and store to the replacement map
       localRepMapRef[idx] = std::make_pair(structSymbolTable.insert(newField), elemTy);

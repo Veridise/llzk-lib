@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -34,6 +35,7 @@
 
 using namespace mlir;
 using namespace llzk::array;
+using namespace llzk::felt;
 using namespace llzk::function;
 
 namespace llzk::component {
@@ -219,10 +221,10 @@ LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 namespace {
 
 inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool appendSelf) {
-  if (isSignalType(pType)) {
+  if (llvm::isa<FeltType>(pType)) {
     return success();
   } else if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
-    if (isSignalType(arrayParamTy.getElementType())) {
+    if (llvm::isa<FeltType>(arrayParamTy.getElementType())) {
       return success();
     }
   }
@@ -233,9 +235,8 @@ inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool a
     if (appendSelf) {
       ss << "!" << StructType::name << "<@" << COMPONENT_NAME_MAIN << ">, ";
     }
-    ss << "!" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL << ">, ";
-    ss << "!" << ArrayType::name << "<.. x !" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL
-       << ">>}";
+    ss << "!" << FeltType::name << ", ";
+    ss << "!" << ArrayType::name << "<.. x !" << FeltType::name << ">}";
   });
   return inFunc.emitError(message);
 }
@@ -456,7 +457,7 @@ bool StructDefOp::isMainComponent() { return COMPONENT_NAME_MAIN == this->getSym
 
 void FieldDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, StringAttr sym_name, TypeAttr type,
-    bool isColumn
+    bool isSignal, bool isColumn
 ) {
   Properties &props = odsState.getOrAddProperties<Properties>();
   props.setSymName(sym_name);
@@ -464,17 +465,24 @@ void FieldDefOp::build(
   if (isColumn) {
     props.column = odsBuilder.getUnitAttr();
   }
+  if (isSignal) {
+    props.signal = odsBuilder.getUnitAttr();
+  }
 }
 
 void FieldDefOp::build(
-    OpBuilder &odsBuilder, OperationState &odsState, StringRef sym_name, Type type, bool isColumn
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef sym_name, Type type, bool isSignal,
+    bool isColumn
 ) {
-  build(odsBuilder, odsState, odsBuilder.getStringAttr(sym_name), TypeAttr::get(type), isColumn);
+  build(
+      odsBuilder, odsState, odsBuilder.getStringAttr(sym_name), TypeAttr::get(type), isSignal,
+      isColumn
+  );
 }
 
 void FieldDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, TypeRange resultTypes, ValueRange operands,
-    ArrayRef<NamedAttribute> attributes, bool isColumn
+    ArrayRef<NamedAttribute> attributes, bool isSignal, bool isColumn
 ) {
   assert(operands.size() == 0u && "mismatched number of parameters");
   odsState.addOperands(operands);
@@ -483,6 +491,9 @@ void FieldDefOp::build(
   odsState.addTypes(resultTypes);
   if (isColumn) {
     odsState.getOrAddProperties<Properties>().column = odsBuilder.getUnitAttr();
+  }
+  if (isSignal) {
+    odsState.getOrAddProperties<Properties>().signal = odsBuilder.getUnitAttr();
   }
 }
 

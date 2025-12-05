@@ -71,6 +71,29 @@ def LLZK_StructDefOp
         }
       }
       ```
+
+      A special component named `Main` can be defined to represent the main entry point
+      of the circuit. This component has additional restrictions:
+      1. It cannot have struct parameters.
+      2. The parameter types of its functions (besides the required "self" parameter) can
+         only be `!felt.type` or `!array.type<.. x !felt.type>`.
+      3. The fields marked as public (i.e., with the `{llzk.pub}` attribute) represent
+         the public outputs of the overall circuit.
+
+      Example of a `Main` component:
+
+      ```llzk
+      struct.def @Main {
+        field @out : !felt.type {llzk.pub} // public output
+        field @intermediate : !felt.type
+        function.def @compute(%p: !felt.type) -> !struct.type<@Main> {
+          // ...
+        }
+        function.def @constrain(%self: !struct.type<@Main>, %p: !felt.type) {
+          // ...
+        }
+      }
+      ```
   }];
 
   // Note: `$const_params` contains symbol definitions that do not use the
@@ -100,12 +123,20 @@ def LLZK_StructDefOp
     /// Get all FieldDefOp in this structure.
     ::std::vector<FieldDefOp> getFieldDefs();
 
-    /// Returns wether the struct defines fields marked as columns.
+    /// Returns whether the struct defines fields marked as columns.
     ::mlir::LogicalResult hasColumns() {
       return ::mlir::success(::llvm::any_of(getFieldDefs(), [](FieldDefOp fdOp) {
         return fdOp.getColumn();
       }));
     }
+
+    /// Returns whether the struct defines fields marked as signals.
+    ::mlir::LogicalResult hasSignals() {
+      return ::mlir::success(::llvm::any_of(getFieldDefs(), [](FieldDefOp fdOp) {
+        return fdOp.getSignal();
+      }));
+    }
+
 
     /// Gets the FuncDefOp that defines the compute function in this structure, if present, or `nullptr` otherwise.
     ::llzk::function::FuncDefOp getComputeFuncOp();
@@ -162,29 +193,41 @@ def LLZK_FieldDefOp
     ```llzk
     struct.field @f1 : !felt.type
     struct.field @f2 : !felt.type {llzk.pub}
+    struct.field @col1 : !felt.type {column}
+    struct.field @sig1 : !felt.type {signal}
+    struct.field @colsig1 : !felt.type {column, signal}
+    struct.field @pubcol : !felt.type {llzk.pub, column}
     ```
+
+    - Fields marked with the `{llzk.pub}` attribute are considered public
+      and represent outputs of their defining struct/component.
+    - Fields marked with the `{column}` attribute can be read/written with
+      table offsets using the `readf` and `writef` operations.
+    - Fields marked with the `{signal}` attribute are constraint variables that
+      are stored in the witness; non-signal values are intermediate expressions.
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<AnyLLZKType>:$type,
-      UnitAttr:$column);
+      UnitAttr:$column, UnitAttr:$signal);
 
   // Define builders manually to avoid the default ones that have extra
   // TypeRange parameters that must always be empty.
   let skipDefaultBuilders = 1;
   let builders =
       [OpBuilder<(ins "::mlir::StringAttr":$sym_name, "::mlir::TypeAttr":$type,
-           CArg<"bool", "false">:$isColumn)>,
+           CArg<"bool", "false">:$isSignal, CArg<"bool", "false">:$isColumn)>,
        OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::Type":$type,
-           CArg<"bool", "false">:$isColumn)>,
+           CArg<"bool", "false">:$isSignal, CArg<"bool", "false">:$isColumn)>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::ValueRange":$operands,
            "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes,
-           CArg<"bool", "false">:$isColumn)>,
+           CArg<"bool", "false">:$isSignal, CArg<"bool", "false">:$isColumn)>,
        // Simpler version since 'resultTypes' and 'operands' must be empty
        OpBuilder<
            (ins "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes,
+               CArg<"bool", "false">:$isSignal,
                CArg<"bool", "false">:$isColumn),
-           [{ build($_builder, $_state, {}, {}, attributes, isColumn); }]>];
+           [{ build($_builder, $_state, {}, {}, attributes, isSignal, isColumn); }]>];
 
   let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 
