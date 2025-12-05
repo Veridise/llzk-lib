@@ -514,13 +514,13 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
         argListStream << param.name;
       } else if (isAPIntType(cppParamType)) {
         // APInt needs unwrapping
-        argListStream << "unwrap(" << param.name << ")";
+        argListStream << "unwrap(" << param.name << ')';
       } else {
         // Convert C++ type to C API type for parameter, skip if it can't be converted
         std::optional<std::string> capiParamTypeOpt = tryCppTypeToCapiType(cppParamType);
         if (capiParamTypeOpt.has_value() && capiParamTypeOpt->starts_with("Mlir")) {
           // MLIR C API types need unwrapping
-          argListStream << "unwrap(" << param.name << ")";
+          argListStream << "unwrap(" << param.name << ')';
         } else {
           warnSkippedNoConversion(method.methodName, cppParamType.str());
           return;
