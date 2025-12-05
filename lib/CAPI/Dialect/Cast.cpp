@@ -7,10 +7,17 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 
 #include "llzk-c/Dialect/Cast.h"
 
 #include <mlir/CAPI/Registration.h>
 
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Cast, llzk__cast, llzk::cast::CastDialect)
+using namespace llzk::cast;
+
+// Include the generated CAPI
+#include "llzk/Dialect/Cast/IR/Ops.capi.cpp.inc"
+
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Cast, llzk__cast, CastDialect)
