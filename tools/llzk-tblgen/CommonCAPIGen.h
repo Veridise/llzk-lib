@@ -288,11 +288,16 @@ struct ExtraMethod {
 /// @endcode
 ///
 /// Example output:
-/// - ExtraMethod { returnType="unsigned", methodName="getWidth", isConst=true, hasParameters=false
-/// }
-/// - ExtraMethod { returnType="bool", methodName="isSignless", isConst=true, hasParameters=false }
-///
-/// Note: Methods with parameters are detected but currently skipped during code generation.
+/// - ExtraMethod {
+///     returnType="unsigned", methodName="getWidth",
+///     documentation="Get the width of this type",
+///     isConst=true, hasParameters=false, parameters={}
+///   }
+/// - ExtraMethod {
+///     returnType="bool", methodName="isSignless",
+///     documentation="",
+///     isConst=true, hasParameters=false, parameters={}
+///   }
 llvm::SmallVector<ExtraMethod> parseExtraMethods(mlir::StringRef extraDecl);
 
 /// @brief Check if a C++ type matches an MLIR type pattern

@@ -435,34 +435,28 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
 
               // Parse parameters between '(' and ')'
               // Parameters follow the pattern: type name [, type name ...]
-              const std::vector<Token> paramTokens = [&tokens, i, j, tokenCount]() {
-                std::vector<Token> temp;
-                for (size_t k = i + 2; k < j; ++k) {
-                  if (k >= tokenCount) {
-                    break;
-                  }
-                  if (!tokens[k].is(tok::comment)) {
-                    temp.push_back(tokens[k]);
-                  }
+              std::vector<Token> paramTokens;
+              for (size_t k = i + 2; k < j; ++k) {
+                if (k >= tokenCount) {
+                  break;
                 }
-                return temp;
-              }();
+                if (!tokens[k].is(tok::comment)) {
+                  paramTokens.push_back(tokens[k]);
+                }
+              }
               const size_t paramTokenCount = paramTokens.size();
 
-              // Check if we have actual parameters
-              if (paramTokenCount > 0) {
-                // Check if it's just "void"
-                if (paramTokenCount == 1) {
-                  std::string paramToken(
-                      sourceMgr.getCharacterData(paramTokens[0].getLocation()),
-                      paramTokens[0].getLength()
-                  );
-                  if (paramToken != "void") {
-                    hasParameters = true;
-                  }
-                } else {
+              // Check if we have actual parameters (excluding just "void")
+              if (paramTokenCount == 1) {
+                std::string paramToken(
+                    sourceMgr.getCharacterData(paramTokens[0].getLocation()),
+                    paramTokens[0].getLength()
+                );
+                if (paramToken != "void") {
                   hasParameters = true;
                 }
+              } else if (paramTokenCount > 1) {
+                hasParameters = true;
               }
 
               // Parse individual parameters
