@@ -2,7 +2,7 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1<[@T]> {
-    struct.member @f1 : !poly.tvar<@T> {column}
+    struct.member @f1 : !poly.tvar<@T> {column, llzk.pub}
 
     function.def @constrain(%self: !struct.type<@ComponentA1<[@T]>>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1<[@T]>> {
@@ -24,7 +24,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentA1_f {
-//CHECK-NEXT:    struct.member @f1 : !felt.type {column}
+//CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1_f>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
@@ -48,7 +48,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1 {
-    struct.member @f1 : !felt.type {column}
+    struct.member @f1 : !felt.type {column, llzk.pub}
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {
@@ -82,7 +82,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentA1 {
-//CHECK-NEXT:    struct.member @f1 : !felt.type {column}
+//CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
@@ -116,7 +116,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1 {
-    struct.member @f1 : !felt.type {column}
+    struct.member @f1 : !felt.type {column, llzk.pub}
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {
@@ -151,7 +151,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentA1 {
-//CHECK-NEXT:    struct.member @f1 : !felt.type {column}
+//CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
@@ -185,7 +185,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1<[@T]> {
-    struct.member @f1 : !poly.tvar<@T> {column}
+    struct.member @f1 : !poly.tvar<@T> {column, llzk.pub}
 
     function.def @constrain(%self: !struct.type<@ComponentA1<[@T]>>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1<[@T]>> {
@@ -219,7 +219,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentA1_f {
-//CHECK-NEXT:    struct.member @f1 : !felt.type {column}
+//CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1_f>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }

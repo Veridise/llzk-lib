@@ -614,7 +614,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     struct.def @X {
-      struct.member @f : index
+      struct.member @f : index {llzk.pub}
       function.def @compute(%a: index) -> !struct.type<@M1::@X> {
         %self = struct.new : !struct.type<@M1::@X>
         struct.writem %self[@f] = %a : !struct.type<@M1::@X>, index

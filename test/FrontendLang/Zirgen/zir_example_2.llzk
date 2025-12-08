@@ -53,8 +53,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ArgU16 {
-    struct.member @count: !felt.type
-    struct.member @val: !felt.type
+    struct.member @count: !felt.type {llzk.pub}
+    struct.member @val: !felt.type {llzk.pub}
 
     function.def @compute(%count: !felt.type, %val: !felt.type) -> !struct.type<@ArgU16> {
       %self = struct.new : !struct.type<@ArgU16>

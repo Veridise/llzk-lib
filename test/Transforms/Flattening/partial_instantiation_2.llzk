@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Zip<[@N, @Lhs, @Rhs]> {
-    struct.member @"$super" : !array.type<9 x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
+    struct.member @"$super" : !array.type<9 x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>> {llzk.pub}
     function.def @compute() -> !struct.type<@Zip<[@N, @Lhs, @Rhs]>> {
       %self = struct.new : !struct.type<@Zip<[@N, @Lhs, @Rhs]>>
       function.return %self : !struct.type<@Zip<[@N, @Lhs, @Rhs]>>

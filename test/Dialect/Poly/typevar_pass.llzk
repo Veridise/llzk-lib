@@ -111,7 +111,7 @@ module attributes {veridise.lang = "llzk"} {
 // B2 and B3 are equivalent, latter uses the redundant !poly.tvar<@X> instead of just @X
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB1<[@T]> {
-    struct.member @f : !poly.tvar<@T>
+    struct.member @f : !poly.tvar<@T> {llzk.pub}
 
     function.def @compute(%0: !poly.tvar<@T>) -> !struct.type<@ComponentB1<[@T]>> {
       %self = struct.new : !struct.type<@ComponentB1<[@T]>>
@@ -205,7 +205,7 @@ module attributes {veridise.lang = "llzk"} {
 // In non-instantiated structs, these must be very permissive and fully checked only when instantiated.
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB4<[@T]> {
-    struct.member @f : !poly.tvar<@T>
+    struct.member @f : !poly.tvar<@T> {llzk.pub}
 
     function.def @compute(%0: !poly.tvar<@T>) -> !struct.type<@ComponentB4<[@T]>> {
       %self = struct.new : !struct.type<@ComponentB4<[@T]>>
