@@ -29,7 +29,7 @@ using namespace llzk::component;
 
 namespace llzk {
 
-LightweightSignalEquivalenceAnalysis::LightweightSignalEquivalenceAnalysis(mlir::Operation *) {}
+LightweightSignalEquivalenceAnalysis::LightweightSignalEquivalenceAnalysis(Operation *) {}
 
 Value replaceReadWithWrite(Value v) {
   if (!v.getDefiningOp()) {
@@ -47,7 +47,7 @@ Value replaceReadWithWrite(Value v) {
   return v;
 }
 
-bool LightweightSignalEquivalenceAnalysis::areSignalsEquivalent(mlir::Value v1, mlir::Value v2) {
+bool LightweightSignalEquivalenceAnalysis::areSignalsEquivalent(Value v1, Value v2) {
   v1 = replaceReadWithWrite(v1);
   v2 = replaceReadWithWrite(v2);
   LLVM_DEBUG(llvm::outs() << "Asking for equivalence between " << v1 << " and " << v2 << "\n");

@@ -52,8 +52,8 @@ bool isValidRoot(StructDefOp root) {
     return false;
   }
 
-  // TODO: If root::@compute and root::@constrain are called anywhere else, this is not a valid root
-  // TODO: to start aligning from
+  /// TODO: If root::@compute and root::@constrain are called anywhere else, this is not a valid
+  /// root to start aligning from (issue #241)
 
   return true;
 }
