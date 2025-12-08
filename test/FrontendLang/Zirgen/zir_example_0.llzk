@@ -4,13 +4,8 @@
 module attributes {veridise.lang = "llzk"} {
   module @risc0 {
     struct.def @ValU32 {
-<<<<<<< HEAD
       struct.member @low : !felt.type {llzk.pub}
       struct.member @high : !felt.type {llzk.pub}
-=======
-      struct.member @low : !felt.type
-      struct.member @high : !felt.type
->>>>>>> origin/feature/renaming
 
       function.def @compute(%low: !felt.type, %high: !felt.type) -> !struct.type<@risc0::@ValU32> {
         %self = struct.new : !struct.type<@risc0::@ValU32>
