@@ -359,12 +359,17 @@ def CallOp : FunctionDialectOp<
   let extraClassDeclaration = [{
     ::mlir::FunctionType getCalleeType();
 
-    /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` or 
-    /// `FUNC_NAME_PRODUCT` (this does not check if the callee function is located 
-    /// within a StructDefOp).
+    /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` (this 
+    /// does not check if the callee function is located within a StructDefOp).
     inline bool calleeIsCompute() {
+      return FUNC_NAME_COMPUTE == getCallee().getLeafReference();
+    }
+
+    /// Return `true` iff the callee function can contain witness generation code 
+    /// (this does not check if the callee function is located within a StructDefOp)
+    inline bool calleeContainsWitnessGen() {
       return FUNC_NAME_COMPUTE == getCallee().getLeafReference() ||
-            FUNC_NAME_PRODUCT == getCallee().getLeafReference();
+             FUNC_NAME_PRODUCT == getCallee().getLeafReference();
     }
 
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` (this
@@ -391,6 +396,9 @@ def CallOp : FunctionDialectOp<
 
     /// Assuming the callee is `FUNC_NAME_COMPUTE`, return the single StructType result.
     ::llzk::component::StructType getSingleResultTypeOfCompute();
+
+    /// Assuming the callee contains witness generation code, return the single StructType result.
+    ::llzk::component::StructType getSingleResultTypeOfWitnessGen();
 
     /// Allocate consecutive storage of the ValueRange instances in the parameter
     /// so it can be passed to the builders as an `ArrayRef<ValueRange>`.
