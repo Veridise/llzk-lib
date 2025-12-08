@@ -17,15 +17,16 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Constants.h"
+#include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/Builders.h>
 #include <mlir/Transforms/InliningUtils.h>
 
 #include <llvm/Support/Debug.h>
 
-#include <iterator>
 #include <memory>
 #include <ranges>
+
 namespace llzk {
 #define GEN_PASS_DECL_COMPUTECONSTRAINTOPRODUCTPASS
 #define GEN_PASS_DEF_COMPUTECONSTRAINTOPRODUCTPASS
@@ -61,6 +62,7 @@ class ComputeConstrainToProductPass
     : public llzk::impl::ComputeConstrainToProductPassBase<ComputeConstrainToProductPass> {
 
   std::vector<StructDefOp> alignedStructs;
+
   // Given a @product function body, try to match up calls to @A::@compute and @A::@constrain for
   // every sub-struct @A and replace them with a call to @A::@product
   LogicalResult alignCalls(
@@ -101,6 +103,7 @@ public:
             root, root.getComputeFuncOp(), root.getConstrainFuncOp(), tables, equivalence
         )) {
       signalPassFailure();
+      return;
     }
 
     for (auto s : alignedStructs) {
@@ -118,22 +121,20 @@ FuncDefOp ComputeConstrainToProductPass::alignFuncs(
 
   // Create an empty @product func...
   FuncDefOp productFunc = funcBuilder.create<FuncDefOp>(
-      funcBuilder.getUnknownLoc(), FUNC_NAME_PRODUCT, compute.getFunctionType()
+      funcBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}), FUNC_NAME_PRODUCT,
+      compute.getFunctionType()
   );
   Block *entryBlock = productFunc.addEntryBlock();
-  OpBuilder bodyBuilder(entryBlock, entryBlock->begin());
+  funcBuilder.setInsertionPointToStart(entryBlock);
 
   // ...with the right arguments
-  std::vector<Value> args;
-  std::copy(
-      productFunc.getArguments().begin(), productFunc.getArguments().end(), std::back_inserter(args)
-  );
+  llvm::SmallVector<Value> args {productFunc.getArguments()};
 
   // Add calls to @compute and @constrain...
-  CallOp computeCall = bodyBuilder.create<CallOp>(bodyBuilder.getUnknownLoc(), compute, args);
+  CallOp computeCall = funcBuilder.create<CallOp>(funcBuilder.getUnknownLoc(), compute, args);
   args.insert(args.begin(), computeCall->getResult(0));
-  CallOp constrainCall = bodyBuilder.create<CallOp>(bodyBuilder.getUnknownLoc(), constrain, args);
-  bodyBuilder.create<ReturnOp>(bodyBuilder.getUnknownLoc(), computeCall->getResult(0));
+  CallOp constrainCall = funcBuilder.create<CallOp>(funcBuilder.getUnknownLoc(), constrain, args);
+  funcBuilder.create<ReturnOp>(funcBuilder.getUnknownLoc(), computeCall->getResult(0));
 
   // ..and inline them
   InlinerInterface inliner(productFunc.getContext());
@@ -165,9 +166,9 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
   // Gather up all the remaining calls to @compute and @constrain
   llvm::SetVector<CallOp> computeCalls, constrainCalls;
   product.walk([&](CallOp callOp) {
-    if (callOp.getCallee().getLeafReference() == FUNC_NAME_COMPUTE) {
+    if (callOp.calleeIsStructCompute()) {
       computeCalls.insert(callOp);
-    } else if (callOp.getCallee().getLeafReference() == FUNC_NAME_CONSTRAIN) {
+    } else if (callOp.calleeIsStructConstrain()) {
       constrainCalls.insert(callOp);
     }
   });
@@ -184,13 +185,12 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
       llvm::outs() << "In block:\n\n" << *compute->getBlock() << "\n";
     });
 
-    auto computeStruct = compute.getCallee().getNestedReferences().drop_back(1);
-    auto constrainStruct = constrain.getCallee().getNestedReferences().drop_back(1);
+    auto computeStruct = getPrefixAsSymbolRefAttr(compute.getCallee());
+    auto constrainStruct = getPrefixAsSymbolRefAttr(constrain.getCallee());
     if (computeStruct != constrainStruct) {
       return false;
     }
-
-    for (unsigned i = 0; i < compute->getNumOperands(); i++) {
+    for (unsigned i = 0, e = compute->getNumOperands() - 1; i < e; i++) {
       if (!equivalence.areSignalsEquivalent(compute->getOperand(i), constrain->getOperand(i + 1))) {
         return false;
       }
@@ -232,8 +232,10 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
 
     // ...and replace the two calls with a single call to @A::@product
     OpBuilder callBuilder(compute);
-    CallOp newCall =
-        callBuilder.create<CallOp>(callBuilder.getUnknownLoc(), newProduct, compute.getOperands());
+    CallOp newCall = callBuilder.create<CallOp>(
+        callBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}), newProduct,
+        compute.getOperands()
+    );
     compute->replaceAllUsesWith(newCall.getResults());
     compute->erase();
     constrain->erase();
