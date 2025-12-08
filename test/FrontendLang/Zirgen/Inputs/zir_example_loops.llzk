@@ -11,7 +11,11 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetReg<[]> {
+<<<<<<< HEAD
     struct.member @"$super" : !felt.type {llzk.pub}
+=======
+    struct.member @"$super" : !felt.type
+>>>>>>> origin/feature/renaming
     struct.member @reg : !felt.type {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@NondetReg<[]>>
@@ -24,7 +28,11 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetExtReg<[]> {
+<<<<<<< HEAD
     struct.member @"$super" : !array.type<4 x !felt.type> {llzk.pub}
+=======
+    struct.member @"$super" : !array.type<4 x !felt.type>
+>>>>>>> origin/feature/renaming
     struct.member @reg : !array.type<4 x !felt.type> {column}
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@NondetExtReg<[]>>
@@ -145,7 +153,11 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Div<[]> {
+<<<<<<< HEAD
     struct.member @"$super" : !felt.type {llzk.pub}
+=======
+    struct.member @"$super" : !felt.type
+>>>>>>> origin/feature/renaming
     struct.member @reciprocal : !felt.type
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@Div<[]>>
@@ -224,8 +236,13 @@ module attributes {veridise.lang = "llzk"} {
     struct.member @"$super" : !struct.type<@Component<[]>>
     struct.member @"$temp_0" : !struct.type<@Component<[]>>
     struct.member @"$temp" : !struct.type<@LookupDelta<[]>>
+<<<<<<< HEAD
     struct.member @val : !struct.type<@NondetReg<[]>> {column, llzk.pub}
     struct.member @count : !struct.type<@NondetReg<[]>> {column, llzk.pub}
+=======
+    struct.member @val : !struct.type<@NondetReg<[]>> {column}
+    struct.member @count : !struct.type<@NondetReg<[]>> {column}
+>>>>>>> origin/feature/renaming
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@ArgU8<[]>> attributes {function.allow_witness} {
       %felt_const_8 = felt.const  8
       %self = struct.new : <@ArgU8<[]>>
@@ -264,7 +281,11 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @NondetU8Reg<[]> {
     struct.member @"$super" : !struct.type<@Component<[]>>
     struct.member @"$temp" : !struct.type<@Component<[]>>
+<<<<<<< HEAD
     struct.member @arg : !struct.type<@ArgU8<[]>> {column, llzk.pub}
+=======
+    struct.member @arg : !struct.type<@ArgU8<[]>> {column}
+>>>>>>> origin/feature/renaming
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetU8Reg<[]>> attributes {function.allow_witness} {
       %felt_const_1 = felt.const  1
       %self = struct.new : <@NondetU8Reg<[]>>

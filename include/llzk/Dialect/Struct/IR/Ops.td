@@ -331,9 +331,12 @@ def LLZK_MemberWriteOp : MemberRefOpBase<"writem", [WitnessGen]> {
   let summary = "write value to a struct member";
   let description = [{
     This operation writes a value to a named member in a struct/component.
+<<<<<<< HEAD
 
     A struct can write its own members. However, writing members of other components
     is not allowed.
+=======
+>>>>>>> origin/feature/renaming
   }];
   let isRead = 0;
 
