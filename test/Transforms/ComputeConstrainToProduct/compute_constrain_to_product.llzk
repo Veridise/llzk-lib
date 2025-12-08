@@ -26,5 +26,4 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        function.return %[[V1]] : !struct.type<@S1>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// -----
 
