@@ -12,13 +12,13 @@ set(LLVM_TARGET_DEFINITIONS "Types.td")
 mlir_tablegen(Types.h.inc -gen-typedef-decls -typedefs-dialect=felt)
 mlir_tablegen(Types.cpp.inc -gen-typedef-defs -typedefs-dialect=felt)
 
-set(LLVM_TARGET_DEFINITIONS "Ops.td")
-mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=felt)
-mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=felt)
-
 set(LLVM_TARGET_DEFINITIONS "OpInterfaces.td")
 mlir_tablegen(OpInterfaces.h.inc --gen-op-interface-decls)
 mlir_tablegen(OpInterfaces.cpp.inc --gen-op-interface-defs)
+
+set(LLVM_TARGET_DEFINITIONS "Ops.td")
+mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=felt)
+mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=felt)
 
 llzk_add_mlir_doc(FeltOpsDocGen dialect/FeltDialect.md -gen-dialect-doc -dialect=felt)
 
