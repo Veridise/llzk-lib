@@ -376,7 +376,7 @@ def CallOp : FunctionDialectOp<
     /// does not check if the callee function is located within a StructDefOp).
     inline bool calleeIsConstrain() { return FUNC_NAME_CONSTRAIN == getCallee().getLeafReference(); }
 
-    /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` or `FUNC_NAME_PRODUCT` within a StructDefOp.
+    /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` within a StructDefOp.
     bool calleeIsStructCompute();
 
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` within a StructDefOp.
