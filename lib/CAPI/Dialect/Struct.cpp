@@ -71,8 +71,9 @@ MlirAttribute llzkStructTypeGetParams(MlirType type) {
   return wrap(llvm::cast<StructType>(unwrap(type)).getParams());
 }
 
-MlirLogicalResult
-llzkStructTypeGetDefinition(MlirType type, MlirOperation root, LlzkSymbolLookupResult *result) {
+MlirLogicalResult llzkStructStructTypeGetDefinition(
+    MlirType type, MlirOperation root, LlzkSymbolLookupResult *result
+) {
   auto structType = mlir::unwrap_cast<StructType>(type);
   auto *rootOp = unwrap(root);
   SymbolTableCollection stc;
@@ -86,10 +87,10 @@ llzkStructTypeGetDefinition(MlirType type, MlirOperation root, LlzkSymbolLookupR
   return wrap(lookup);
 }
 
-MlirLogicalResult llzkStructTypeGetDefinitionFromModule(
+MlirLogicalResult llzkStructStructTypeGetDefinitionFromModule(
     MlirType type, MlirModule root, LlzkSymbolLookupResult *result
 ) {
-  return llzkStructTypeGetDefinition(type, mlirModuleGetOperation(root), result);
+  return llzkStructStructTypeGetDefinition(type, mlirModuleGetOperation(root), result);
 }
 
 //===----------------------------------------------------------------------===//

@@ -65,7 +65,6 @@ public:
       this->managedResources = std::move(other.managedResources);
       this->includeSymNameStack = std::move(other.includeSymNameStack);
     }
-
     return *this;
   }
   template <typename T> SymbolLookupResultUntyped &operator=(SymbolLookupResult<T> &&other);
