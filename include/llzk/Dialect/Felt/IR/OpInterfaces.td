@@ -31,4 +31,4 @@ def FeltBinaryOpInterface : OpInterface<"FeltBinaryOpInterface"> {
                       (ins)>];
 }
 
-#endif // LLZK_ARRAY_OP_INTERFACES
+#endif // LLZK_FELT_OP_INTERFACES
