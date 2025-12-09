@@ -68,8 +68,9 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetParams(MlirType type);
 /// is undefined behavior.
 ///
 /// Requires that the given Operation implements the SymbolTable op interface.
-MLIR_CAPI_EXPORTED MlirLogicalResult
-llzkStructStructTypeGetDefinition(MlirType type, MlirOperation root, LlzkSymbolLookupResult *result);
+MLIR_CAPI_EXPORTED MlirLogicalResult llzkStructStructTypeGetDefinition(
+    MlirType type, MlirOperation root, LlzkSymbolLookupResult *result
+);
 
 /// Lookups the definition Operation of the given StructType using the given
 /// Module as root for the lookup. The definition Operation is wrapped
