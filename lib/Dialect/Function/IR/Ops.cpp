@@ -20,6 +20,7 @@
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/OpImplementation.h>
@@ -518,7 +519,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
       // producing an error. The combination of this KnownTargetVerifier resolving the callee to a
       // specific FuncDefOp and verifyFuncTypeCompute() ensuring all FUNC_NAME_COMPUTE FuncOps have
       // a single StructType return value will produce a more relevant error message in that case.
-      if (StructType retTy = callOp->getSingleResultTypeOfCompute()) {
+      if (StructType retTy = callOp->getSingleResultTypeOfWitnessGen()) {
         if (ArrayAttr params = retTy.getParams()) {
           // Collect the struct parameters that are defined via AffineMapAttr
           SmallVector<AffineMapAttr> mapAttrs;
@@ -782,6 +783,11 @@ FailureOr<SymbolLookupResult<FuncDefOp>> CallOp::getCalleeTarget(SymbolTableColl
 
 StructType CallOp::getSingleResultTypeOfCompute() {
   assert(calleeIsCompute() && "violated implementation pre-condition");
+  return getIfSingleton<StructType>(getResultTypes());
+}
+
+StructType CallOp::getSingleResultTypeOfWitnessGen() {
+  assert(calleeContainsWitnessGen() && "violated implementation pre-condition");
   return getIfSingleton<StructType>(getResultTypes());
 }
 
