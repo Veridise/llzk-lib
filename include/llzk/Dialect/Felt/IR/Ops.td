@@ -74,7 +74,7 @@ def LLZK_FeltNonDetOp
     Example:
 
     ```llzk
-    %0 = llzk.nondet
+    %0 = felt.nondet
     ```
   }];
 
@@ -99,6 +99,19 @@ def LLZK_SubFeltOp : FeltDialectBinaryOp<"sub", LLZK_FeltType> {
 def LLZK_MulFeltOp : FeltDialectBinaryOp<"mul", LLZK_FeltType, [Commutative]> {
   let summary = "multiplication operator for field elements";
   let description = [{}];
+}
+
+def LLZK_PowFeltOp : FeltDialectBinaryOp<"pow", LLZK_FeltType, [WitnessGen]> {
+  let summary = "exponentiation operator for field elements";
+  let description = [{
+
+  Raises a field element to the power of an exponent.
+
+  ```llzk
+  %result = felt.pow %base, %exponent
+  ```
+
+  }];
 }
 
 def LLZK_DivFeltOp : FeltDialectBinaryOp<"div", LLZK_FeltType> {
