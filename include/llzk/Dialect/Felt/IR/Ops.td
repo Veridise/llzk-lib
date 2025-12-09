@@ -15,6 +15,7 @@ include "llzk/Dialect/Felt/IR/Types.td"
 include "llzk/Dialect/Felt/IR/Attrs.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
 include "llzk/Dialect/Shared/OpsBase.td"
+include "llzk/Dialect/Felt/IR/OpInterfaces.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
@@ -30,7 +31,8 @@ class FeltDialectOp<string mnemonic, list<Trait> traits = []>
 
 class FeltDialectBinaryOp<string mnemonic, Type resultType,
                           list<Trait> traits = []>
-    : BinaryOpBase<FeltDialect, mnemonic, resultType, traits>;
+    : BinaryOpBase<FeltDialect, mnemonic, resultType,
+                   traits#[DeclareOpInterfaceMethods<FeltBinaryOpInterface>]>;
 
 class FeltDialectUnaryOp<string mnemonic, Type resultType,
                          list<Trait> traits = []>
