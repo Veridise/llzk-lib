@@ -45,6 +45,17 @@ function.def @f_mul(%a: !felt.type, %b: !felt.type) -> !felt.type {
 //CHECK-NEXT:   }
 // -----
 
+function.def @f_pow(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_witness} {
+  %c = felt.pow %a, %b
+  function.return %c: !felt.type
+}
+//CHECK-LABEL:  function.def @f_pow
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.pow %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type
+//CHECK-NEXT:   }
+// -----
+
 function.def @f_div(%a: !felt.type, %b: !felt.type) -> !felt.type {
   %c = felt.div %a, %b
   function.return %c: !felt.type
