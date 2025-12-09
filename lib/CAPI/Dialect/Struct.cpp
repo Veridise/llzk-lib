@@ -73,7 +73,7 @@ MlirAttribute llzkStructTypeGetParams(MlirType type) {
 
 MlirLogicalResult
 llzkStructTypeGetDefinition(MlirType type, MlirOperation root, LlzkSymbolLookupResult *result) {
-  auto structType = mlir::cast<StructType>(unwrap(type));
+  auto structType = mlir::unwrap_cast<StructType>(type);
   auto *rootOp = unwrap(root);
   SymbolTableCollection stc;
   mlir::FailureOr<llzk::SymbolLookupResult<StructDefOp>> lookup =
