@@ -171,3 +171,25 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.type<@ComponentN>, %0: !struct.type<@WrongComponent>, %1: !felt.type)  { function.return }
   }
 }
+
+// -----
+module attributes {veridise.lang = "llzk"} {
+  struct.def @PrivateComponent {
+    struct.field @f : !felt.type // expected-note {{member defined here}}
+    function.def @compute() -> !struct.type<@PrivateComponent> {
+      %self = struct.new : !struct.type<@PrivateComponent>
+      function.return %self : !struct.type<@PrivateComponent>
+    }
+    function.def @constrain(%self: !struct.type<@PrivateComponent>)  { function.return }
+  }
+
+  struct.def @ComponentN {
+    function.def @compute(%0: !struct.type<@PrivateComponent>, %1: !felt.type) -> !struct.type<@ComponentN> {
+      %self = struct.new : !struct.type<@ComponentN>
+      // expected-error@+1 {{'struct.readf' op cannot read from private member of struct "@PrivateComponent"}}
+      %res = struct.readf %0[@f] : !struct.type<@PrivateComponent>, !felt.type
+      function.return %self : !struct.type<@ComponentN>
+    }
+    function.def @constrain(%self: !struct.type<@ComponentN>, %0: !struct.type<@PrivateComponent>, %1: !felt.type)  { function.return }
+  }
+}

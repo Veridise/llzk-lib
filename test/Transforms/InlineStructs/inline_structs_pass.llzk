@@ -661,7 +661,7 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS: Result of a field read has use(s) other than parameter to constrain function.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component9A {
-    struct.field @f : !felt.type
+    struct.field @f : !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@Component9A> {
       %self = struct.new : !struct.type<@Component9A>
@@ -715,7 +715,7 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS: Passing struct as function parameter
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component10A {
-    struct.field @f : !felt.type
+    struct.field @f : !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@Component10A> {
       %self = struct.new : !struct.type<@Component10A>
@@ -999,7 +999,7 @@ module attributes {veridise.lang = "llzk"} {
 //        This prevents A->B inlining via `canInline()` check.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component13A {
-    struct.field @f : !felt.type
+    struct.field @f : !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@Component13A> {
       %self = struct.new : !struct.type<@Component13A>

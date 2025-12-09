@@ -19,7 +19,7 @@
 // }
 module attributes {veridise.lang = "llzk"} {
   struct.def @Head<[@T, @N]> {
-    struct.field @"$super" : !poly.tvar<@T>
+    struct.field @"$super" : !poly.tvar<@T> {llzk.pub}
 
     function.def @compute(%arr: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@Head<[@T, @N]>> {
       %self = struct.new : !struct.type<@Head<[@T, @N]>>
@@ -39,7 +39,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @A<[@N]> {
-    struct.field @"$super" : !struct.type<@Head<[!felt.type, 3]>>
+    struct.field @"$super" : !struct.type<@Head<[!felt.type, 3]>> {llzk.pub}
 
     function.def @compute() -> !struct.type<@A<[@N]>> {
       %self = struct.new : !struct.type<@A<[@N]>>
@@ -68,7 +68,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @B {
-    struct.field @"$super" : !struct.type<@Head<[!struct.type<@A<[1]>>, 2]>>
+    struct.field @"$super" : !struct.type<@Head<[!struct.type<@A<[1]>>, 2]>> {llzk.pub}
 
     function.def @compute() -> !struct.type<@B> {
       %self = struct.new : !struct.type<@B>

@@ -529,7 +529,7 @@ LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   // If the field is marked as a column only a small subset of types are allowed.
   if (!isValidColumnType(getType(), tables, *this)) {
     return emitOpError() << "marked as column can only contain felts, arrays of column types, or "
-                            "structs with columns, but field has type "
+                            "structs with columns, but has type "
                          << getType();
   }
   return success();
@@ -613,6 +613,25 @@ LogicalResult FieldReadOp::verifySymbolUses(SymbolTableCollection &tables) {
     return emitOpError("cannot read with table offset from a field that is not a column")
         .attachNote(field->get().getLoc())
         .append("field defined here");
+  }
+  // If the member is private and this read is outside the struct, then fail to validate.
+  // The current op may be inside a struct or a free function, but the
+  // member op (the member definition) is always inside a struct.
+  FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(*this);
+  FailureOr<StructDefOp> memberParentRes = verifyInStruct(field->get());
+  if (failed(memberParentRes)) {
+    return failure(); // verifyInStruct() already emits a sufficient error message
+  }
+  StructDefOp memberParentStruct = memberParentRes.value();
+  if (!field->get().hasPublicAttr() &&
+      (failed(parentRes) || parentRes.value() != memberParentStruct)) {
+    return emitOpError()
+        .append(
+            "cannot read from private member of struct \"", memberParentStruct.getHeaderString(),
+            "\""
+        )
+        .attachNote(field->get().getLoc())
+        .append("member defined here");
   }
 
   return success();
