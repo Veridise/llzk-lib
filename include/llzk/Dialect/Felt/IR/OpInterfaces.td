@@ -25,11 +25,9 @@ def FeltBinaryOpInterface : OpInterface<"FeltBinaryOpInterface"> {
 
   let methods = [
       // Requires implementors to have '$lhs' and '$rhs' arguments.
-      InterfaceMethod<[{Gets the left operand.}],
-                      "::mlir::TypedValue<::llzk::felt::FeltType>", "getLhs",
+      InterfaceMethod<[{Gets the left operand.}], "::mlir::Value", "getLhs",
                       (ins)>,
-      InterfaceMethod<[{Gets the right operand.}],
-                      "::mlir::TypedValue<::llzk::felt::FeltType>", "getRhs",
+      InterfaceMethod<[{Gets the right operand.}], "mlir::Value", "getRhs",
                       (ins)>];
 }
 
