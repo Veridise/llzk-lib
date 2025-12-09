@@ -25,7 +25,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @C2 {
-    struct.member @fc1 : !struct.type<@C1>
+    struct.member @fc1 : !struct.type<@C1> {llzk.pub}
 
     function.def @compute(%x: !struct.type<@std::@risc0::@ValU32>) -> !struct.type<@C2> {
       %self = struct.new : !struct.type<@C2>

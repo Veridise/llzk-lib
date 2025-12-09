@@ -5,7 +5,7 @@
 module attributes {veridise.lang = "llzk"} {
   struct.def @NondetReg<[]> {
     struct.member @"$super" : !felt.type
-    struct.member @reg : !felt.type
+    struct.member @reg : !felt.type {llzk.pub}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> {
       %self = struct.new : <@NondetReg<[]>>
       struct.writem %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.type
@@ -19,8 +19,8 @@ module attributes {veridise.lang = "llzk"} {
 
   // BEGIN: BOILERPLATE
   struct.def @Global<[@Type]> {
-    struct.member @val : !poly.tvar<@Type>
-    struct.member @init : i1
+    struct.member @val : !poly.tvar<@Type> {llzk.pub}
+    struct.member @init : i1 {llzk.pub}
 
     function.def @compute(%v: !poly.tvar<@Type>) -> !struct.type<@Global<[@Type]>> {
       %self = struct.new : !struct.type<@Global<[@Type]>>

@@ -2,7 +2,7 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1 {
-    struct.member @f1 : !felt.type
+    struct.member @f1 : !felt.type {llzk.pub}
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {
@@ -47,7 +47,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentB1 {
-    struct.member @f1 : !felt.type
+    struct.member @f1 : !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@ComponentB1> {
       %self = struct.new : !struct.type<@ComponentB1>

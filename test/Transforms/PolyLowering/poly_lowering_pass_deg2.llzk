@@ -122,7 +122,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @Mod2 {
-    struct.member @val: !felt.type
+    struct.member @val: !felt.type {llzk.pub}
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@Mod2> {
       %self = struct.new : !struct.type<@Mod2>
       struct.writem %self[@val] = %a : !struct.type<@Mod2>, !felt.type
