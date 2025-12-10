@@ -898,6 +898,7 @@ struct AffineMapFolder {
 
 /// At CreateArrayOp, instantiate ArrayType parameterized with affine_map dimension size(s)
 class InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp> {
+  [[maybe_unused]]
   ConversionTracker &tracker_;
 
 public:

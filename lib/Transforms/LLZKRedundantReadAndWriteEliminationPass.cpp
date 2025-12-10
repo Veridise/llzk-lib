@@ -255,6 +255,7 @@ public:
     }
   }
 
+  [[maybe_unused]]
   friend raw_ostream &operator<<(raw_ostream &os, const ReferenceNode &r) {
     r.print(os);
     return os;

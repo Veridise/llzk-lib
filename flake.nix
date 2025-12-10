@@ -165,6 +165,8 @@
 
                   # clang-tidy and clang-format
                   llzk-llvmPackages.clang-tools
+                  # same version of clang
+                  final.llzk-llvmPackages.clang
 
                   # git-clang-format
                   libclang.python
@@ -244,6 +246,10 @@
           default = (pkgs.devShellBaseWithDefault pkgs).shell.overrideAttrs (_: {
             # Use Debug by default so assertions are enabled by default.
             cmakeBuildType = "Debug";
+          });
+          # Shell in release mode to test issues that may only appear in optimized builds
+          release = (pkgs.devShellBase pkgs pkgs.llzk).shell.overrideAttrs (_: {
+            cmakeBuildType = "Release";
           });
           debugClang = (pkgs.devShellBase pkgs pkgs.llzkDebWithSansClang).shell;
           debugGCC = (pkgs.devShellBase pkgs pkgs.llzkDebWithSansGCC).shell;
