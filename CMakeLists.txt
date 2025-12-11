@@ -98,7 +98,6 @@ add_compile_options(
   -Wall
   -Wextra
   -Wno-unused-parameter
-  -Wunused-private-field
   -Wshadow
   -Wnon-virtual-dtor
   -pedantic
