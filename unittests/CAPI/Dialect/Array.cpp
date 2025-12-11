@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Ops.h"
+
 #include "llzk-c/Dialect/Array.h"
 
 #include <mlir-c/BuiltinAttributes.h>
@@ -18,21 +20,22 @@
 
 #include "../CAPITestBase.h"
 
-class ArrayDialectTests : public CAPITest {
-protected:
-  MlirType indexType() { return mlirIndexTypeGet(context); }
+// Include the auto-generated tests
+#include "llzk/Dialect/Array/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Array/IR/Ops.capi.test.cpp.inc"
+#include "llzk/Dialect/Array/IR/Types.capi.test.cpp.inc"
 
-  MlirType test_array(MlirType elt, llvm::ArrayRef<int64_t> dims) {
-    return llzkArrayTypeGetWithNumericDims(elt, dims.size(), dims.data());
+struct ArrayDialectTests : public CAPITest {
+  MlirType test_array(MlirType elt, llvm::ArrayRef<int64_t> dims) const {
+    return llzkArrayArrayTypeGetWithShape(elt, dims.size(), dims.data());
   }
 
-  llvm::SmallVector<MlirOperation> create_n_ops(int64_t n_ops, MlirType elt_type) {
+  llvm::SmallVector<MlirOperation> create_n_ops(int64_t n_ops, MlirType elt_type) const {
     auto name = mlirStringRefCreateFromCString("arith.constant");
     auto attr_name = mlirIdentifierGet(context, mlirStringRefCreateFromCString("value"));
     auto location = mlirLocationUnknownGet(context);
     llvm::SmallVector<MlirOperation> result;
     for (int64_t n = 0; n < n_ops; n++) {
-
       auto attr = mlirNamedAttributeGet(attr_name, mlirIntegerAttrGet(elt_type, n));
       auto op_state = mlirOperationStateGet(name, location);
       mlirOperationStateAddResults(&op_state, 1, &elt_type);
@@ -46,116 +49,267 @@ protected:
   }
 };
 
-TEST_F(ArrayDialectTests, get_dialect_handle_llzk_array) {
-  (void)mlirGetDialectHandle__llzk__array__();
-}
-
 TEST_F(ArrayDialectTests, array_type_get) {
-  auto size = mlirIntegerAttrGet(indexType(), 1);
+  auto size = createIndexAttribute(1);
   MlirAttribute dims[1] = {size};
-  auto arr_type = llzkArrayTypeGet(indexType(), 1, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithDims(createIndexType(), 1, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
 }
 
 TEST_F(ArrayDialectTests, type_is_a_array_type_pass) {
-  auto size = mlirIntegerAttrGet(indexType(), 1);
+  auto size = createIndexAttribute(1);
   MlirAttribute dims[1] = {size};
-  auto arr_type = llzkArrayTypeGet(indexType(), 1, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithDims(createIndexType(), 1, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  EXPECT_TRUE(llzkTypeIsAArrayType(arr_type));
-}
-
-TEST_F(ArrayDialectTests, type_is_a_array_type_fail) {
-  EXPECT_TRUE(!llzkTypeIsAArrayType(indexType()));
+  EXPECT_TRUE(llzkTypeIsAArrayArrayType(arr_type));
 }
 
 TEST_F(ArrayDialectTests, array_type_get_with_numeric_dims) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayTypeGetWithNumericDims(indexType(), 2, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
 }
 
 TEST_F(ArrayDialectTests, array_type_get_element_type) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayTypeGetWithNumericDims(indexType(), 2, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  auto elt_type = llzkArrayTypeGetElementType(arr_type);
-  EXPECT_TRUE(mlirTypeEqual(indexType(), elt_type));
+  auto elt_type = llzkArrayArrayTypeGetElementType(arr_type);
+  EXPECT_TRUE(mlirTypeEqual(createIndexType(), elt_type));
 }
 
 TEST_F(ArrayDialectTests, array_type_get_num_dims) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayTypeGetWithNumericDims(indexType(), 2, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  auto n_dims = llzkArrayTypeGetNumDims(arr_type);
+  auto n_dims = llzkArrayArrayTypeGetDimensionSizesCount(arr_type);
   EXPECT_EQ(n_dims, 2);
 }
 
 TEST_F(ArrayDialectTests, array_type_get_dim) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayTypeGetWithNumericDims(indexType(), 2, dims);
+  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  auto out_dim = llzkArrayTypeGetDim(arr_type, 0);
-  auto dim_as_attr = mlirIntegerAttrGet(indexType(), dims[0]);
+  auto out_dim = llzkArrayArrayTypeGetDimensionSizesAt(arr_type, 0);
+  auto dim_as_attr = createIndexAttribute(dims[0]);
   EXPECT_TRUE(mlirAttributeEqual(out_dim, dim_as_attr));
 }
 
+struct CreateArrayOpBuildFuncHelper : public TestAnyBuildFuncHelper<ArrayDialectTests> {
+  bool callIsA(MlirOperation op) override { return llzkOperationIsAArrayCreateArrayOp(op); }
+};
+
 TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
-  int64_t dims[1] = {1};
-  auto elt_type = mlirIndexTypeGet(context);
-  auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
-  auto n_elements = 1;
-  auto ops = create_n_ops(n_elements, elt_type);
-  llvm::SmallVector<MlirValue> values;
-  for (auto op : ops) {
-    values.push_back(mlirOperationGetResult(op, 0));
-  }
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-  auto create_array_op =
-      llzkCreateArrayOpBuildWithValues(builder, location, test_type, values.size(), values.data());
-  for (auto op : ops) {
-    EXPECT_TRUE(mlirOperationVerify(op));
-  }
+  struct LocalHelper : CreateArrayOpBuildFuncHelper {
+    llvm::SmallVector<MlirOperation> otherOps;
 
-  EXPECT_TRUE(mlirOperationVerify(create_array_op));
-
-  mlirOperationDestroy(create_array_op);
-  for (auto op : ops) {
-    mlirOperationDestroy(op);
-  }
-  mlirOpBuilderDestroy(builder);
+    MlirOperation callBuild(
+        const ArrayDialectTests &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      int64_t dims[1] = {1};
+      auto elt_type = testClass.createIndexType();
+      auto test_type = testClass.test_array(elt_type, llvm::ArrayRef(dims, 1));
+      this->otherOps = testClass.create_n_ops(1, elt_type);
+      llvm::SmallVector<MlirValue> values;
+      for (auto op : this->otherOps) {
+        values.push_back(mlirOperationGetResult(op, 0));
+      }
+      return llzkArrayCreateArrayOpBuildWithValues(
+          builder, location, test_type, values.size(), values.data()
+      );
+    }
+    void doOtherChecks(MlirOperation) override {
+      for (auto op : this->otherOps) {
+        EXPECT_TRUE(mlirOperationVerify(op));
+      }
+    }
+    ~LocalHelper() override {
+      for (auto op : this->otherOps) {
+        mlirOperationDestroy(op);
+      }
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
-  int64_t dims[1] = {1};
-  auto elt_type = mlirIndexTypeGet(context);
-  auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
-
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-  auto dims_per_map = mlirDenseI32ArrayGet(context, 0, NULL);
-
-  auto op =
-      llzkCreateArrayOpBuildWithMapOperands(builder, location, test_type, 0, NULL, dims_per_map);
-
-  EXPECT_TRUE(mlirOperationVerify(op));
-  mlirOperationDestroy(op);
-  mlirOpBuilderDestroy(builder);
+  struct : CreateArrayOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const ArrayDialectTests &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      int64_t dims[1] = {1};
+      auto elt_type = testClass.createIndexType();
+      auto test_type = testClass.test_array(elt_type, llvm::ArrayRef(dims, 1));
+      auto dims_per_map = mlirDenseI32ArrayGet(testClass.context, 0, NULL);
+      return llzkArrayCreateArrayOpBuildWithMapOperands(
+          builder, location, test_type, 0, NULL, dims_per_map
+      );
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
-  int64_t dims[1] = {1};
-  auto elt_type = mlirIndexTypeGet(context);
-  auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
+  struct : CreateArrayOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const ArrayDialectTests &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      int64_t dims[1] = {1};
+      auto elt_type = testClass.createIndexType();
+      auto test_type = testClass.test_array(elt_type, llvm::ArrayRef(dims, 1));
+      return llzkArrayCreateArrayOpBuildWithMapOperandsAndDims(
+          builder, location, test_type, 0, NULL, 0, NULL
+      );
+    }
+  } helper;
+  helper.run(*this);
+}
 
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
+// Implementation for `ArrayLengthOp_build_pass` test
+std::unique_ptr<ArrayLengthOpBuildFuncHelper> ArrayLengthOpBuildFuncHelper::get() {
+  struct Impl : public ArrayLengthOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Value array;
+      mlir::Value dim;
+      {
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        auto idxType = bldr->getIndexType();
+        auto intAttr1 = bldr->getIntegerAttr(idxType, 1);
+        array = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1})
+        );
+        dim = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr1);
+      }
+      return llzkArrayArrayLengthOpBuild(builder, location, wrap(array), wrap(dim));
+    }
+  };
+  return std::make_unique<Impl>();
+}
 
-  auto op =
-      llzkCreateArrayOpBuildWithMapOperandsAndDims(builder, location, test_type, 0, NULL, 0, NULL);
+// Implementation for `ReadArrayOp_build_pass` test
+std::unique_ptr<ReadArrayOpBuildFuncHelper> ReadArrayOpBuildFuncHelper::get() {
+  struct Impl : public ReadArrayOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Type elemType;
+      mlir::Value array;
+      llvm::SmallVector<MlirValue> indices;
+      {
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        auto idxType = bldr->getIndexType();
+        auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
+        elemType = idxType;
+        array = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr0})
+        );
+        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        indices.push_back(wrap(idx));
+      }
+      return llzkArrayReadArrayOpBuild(
+          builder, location, wrap(elemType), wrap(array), indices.size(), indices.data()
+      );
+    }
+  };
+  return std::make_unique<Impl>();
+}
 
-  EXPECT_TRUE(mlirOperationVerify(op));
-  mlirOperationDestroy(op);
-  mlirOpBuilderDestroy(builder);
+// Implementation for `WriteArrayOp_build_pass` test
+std::unique_ptr<WriteArrayOpBuildFuncHelper> WriteArrayOpBuildFuncHelper::get() {
+  struct Impl : public WriteArrayOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Value array;
+      mlir::Value value;
+      llvm::SmallVector<MlirValue> indices;
+      {
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        auto idxType = bldr->getIndexType();
+        auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
+        array = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr0})
+        );
+        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        indices.push_back(wrap(idx));
+        value = idx;
+      }
+      return llzkArrayWriteArrayOpBuild(
+          builder, location, wrap(array), indices.size(), indices.data(), wrap(value)
+      );
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `InsertArrayOp_build_pass` test
+std::unique_ptr<InsertArrayOpBuildFuncHelper> InsertArrayOpBuildFuncHelper::get() {
+  struct Impl : public InsertArrayOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Value array_big;
+      mlir::Value array_small;
+      llvm::SmallVector<MlirValue> indices;
+      {
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        auto idxType = bldr->getIndexType();
+        auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
+        auto intAttr1 = bldr->getIntegerAttr(idxType, 1);
+        array_big = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(
+                        idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1, intAttr1}
+                    )
+        );
+        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        indices.push_back(wrap(idx));
+        array_small = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1})
+        );
+      }
+      return llzkArrayInsertArrayOpBuild(
+          builder, location, wrap(array_big), indices.size(), indices.data(), wrap(array_small)
+      );
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `ExtractArrayOp_build_pass` test
+std::unique_ptr<ExtractArrayOpBuildFuncHelper> ExtractArrayOpBuildFuncHelper::get() {
+  struct Impl : public ExtractArrayOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Value array_big;
+      mlir::Type small_type;
+      llvm::SmallVector<MlirValue> indices;
+      {
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        auto idxType = bldr->getIndexType();
+        auto intAttr0 = bldr->getIntegerAttr(idxType, 0);
+        auto intAttr1 = bldr->getIntegerAttr(idxType, 1);
+        array_big = bldr->create<llzk::array::CreateArrayOp>(
+            cppLoc, llzk::array::ArrayType::get(
+                        idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1, intAttr1}
+                    )
+        );
+        mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
+        indices.push_back(wrap(idx));
+        small_type =
+            llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1});
+      }
+      return llzkArrayExtractArrayOpBuild(
+          builder, location, wrap(small_type), wrap(array_big), indices.size(), indices.data()
+      );
+    }
+  };
+  return std::make_unique<Impl>();
 }
