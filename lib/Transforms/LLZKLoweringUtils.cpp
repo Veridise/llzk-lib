@@ -37,10 +37,10 @@ Value rebuildExprInCompute(
     return memo[val] = mapped;
   }
 
-  if (auto readOp = val.getDefiningOp<FieldReadOp>()) {
+  if (auto readOp = val.getDefiningOp<MemberReadOp>()) {
     Value self = computeFunc.getSelfValueFromCompute();
-    Value rebuilt = builder.create<FieldReadOp>(
-        readOp.getLoc(), readOp.getType(), self, readOp.getFieldNameAttr().getAttr()
+    Value rebuilt = builder.create<MemberReadOp>(
+        readOp.getLoc(), readOp.getType(), self, readOp.getMemberNameAttr().getAttr()
     );
     return memo[val] = rebuilt;
   }
@@ -82,13 +82,13 @@ Value rebuildExprInCompute(
   llvm_unreachable("Unsupported op kind");
 }
 
-LogicalResult checkForAuxFieldConflicts(StructDefOp structDef, StringRef prefix) {
+LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix) {
   bool conflictFound = false;
 
-  structDef.walk([&conflictFound, &prefix](FieldDefOp fieldDefOp) {
-    if (fieldDefOp.getName().starts_with(prefix)) {
-      (fieldDefOp.emitError() << "Field name '" << fieldDefOp.getName()
-                              << "' conflicts with reserved prefix '" << prefix << '\'')
+  structDef.walk([&conflictFound, &prefix](MemberDefOp memberDefOp) {
+    if (memberDefOp.getName().starts_with(prefix)) {
+      (memberDefOp.emitError() << "Member name '" << memberDefOp.getName()
+                               << "' conflicts with reserved prefix '" << prefix << '\'')
           .report();
       conflictFound = true;
     }
@@ -116,10 +116,10 @@ void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp) {
   }
 }
 
-FieldDefOp addAuxField(StructDefOp structDef, StringRef name) {
+MemberDefOp addAuxMember(StructDefOp structDef, StringRef name) {
   OpBuilder builder(structDef);
   builder.setInsertionPointToEnd(structDef.getBody());
-  return builder.create<FieldDefOp>(
+  return builder.create<MemberDefOp>(
       structDef.getLoc(), builder.getStringAttr(name), builder.getType<FeltType>()
   );
 }
@@ -132,7 +132,7 @@ unsigned getFeltDegree(Value val, DenseMap<Value, unsigned> &memo) {
   if (isa<FeltConstantOp>(val.getDefiningOp())) {
     return memo[val] = 0;
   }
-  if (isa<FeltNonDetOp, FieldReadOp>(val.getDefiningOp()) || isa<BlockArgument>(val)) {
+  if (isa<FeltNonDetOp, MemberReadOp>(val.getDefiningOp()) || isa<BlockArgument>(val)) {
     return memo[val] = 1;
   }
 

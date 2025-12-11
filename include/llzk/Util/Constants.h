@@ -11,15 +11,11 @@
 
 namespace llzk {
 
-/// Symbol name for the struct/component representing a signal. A "signal" has direct correspondence
-/// to a circom signal or AIR/PLONK column, opposed to intermediate values or other expressions.
-constexpr char COMPONENT_NAME_SIGNAL[] = "Signal";
-
 /// Symbol name for the main entry point struct/component (if any). There are additional
 /// restrictions on the struct with this name:
 /// 1. It cannot have struct parameters.
 /// 2. The parameter types of its functions (besides the required "self" parameter) can
-///     only be `struct<Signal>` or `array<.. x struct<Signal>>`.
+///     only be `felt` or `array<.. x felt>`.
 constexpr char COMPONENT_NAME_MAIN[] = "Main";
 
 /// Symbol name for the witness generation (and resp. constraint generation) functions within a
