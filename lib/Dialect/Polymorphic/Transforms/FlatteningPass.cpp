@@ -848,31 +848,29 @@ struct AffineMapFolder {
           });
           LogicalResult foldResult = m.getAffineMap().constantFold(constAttrs, result, &hasPoison);
           if (hasPoison) {
-            LLVM_DEBUG(op->emitRemark()
-                           .append(
-                               "Cannot fold affine_map for ", aspect, " ",
-                               out.paramsOfStructTy.size(),
-                               " due to divide by 0 or modulus with negative divisor"
-                           )
-                           .report());
+            op->emitRemark()
+                .append(
+                    "Cannot fold affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
+                    " due to divide by 0 or modulus with negative divisor"
+                )
+                .report();
             return failure();
           }
           if (failed(foldResult)) {
-            LLVM_DEBUG(op->emitRemark()
-                           .append(
-                               "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
-                               " failed"
-                           )
-                           .report());
+            op->emitRemark()
+                .append(
+                    "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(), " failed"
+                )
+                .report();
             return failure();
           }
           if (result.size() != 1) {
-            LLVM_DEBUG(op->emitRemark()
-                           .append(
-                               "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
-                               " produced ", result.size(), " results but expected 1"
-                           )
-                           .report());
+            op->emitRemark()
+                .append(
+                    "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
+                    " produced ", result.size(), " results but expected 1"
+                )
+                .report();
             return failure();
           }
           assert(!llvm::isa<AffineMapAttr>(result[0]) && "not converted");
