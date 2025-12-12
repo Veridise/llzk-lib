@@ -63,6 +63,8 @@
             });
         in
         {
+          clang-unwrapped = final.llzk-llvmPackages.clang-unwrapped;
+          clang-unwrapped-debug = final.llzk-llvmPackages-debug.clang-unwrapped;
           llzk = final.callPackage ./nix/llzk.nix {
             clang = final.llzk-llvmPackages.clang-unwrapped;
             mlir_pkg = final.mlir;
@@ -219,6 +221,9 @@
           # Prevent use of libllvm and llvm from nixpkgs, which will have
           # different versions than mlir/llvm built here.
           inherit (pkgs.llzk-llvmPackages) libllvm llvm;
+
+          # Additional packages
+          inherit (pkgs) clang-unwrapped clang-unwrapped-debug;
 
           default = pkgs.llzk;
           debugClang = pkgs.llzkDebWithSansClang;
