@@ -70,7 +70,7 @@
           };
           llzk-debug =
             (final.callPackage ./nix/llzk.nix {
-              clang = final.llzk-llvmPackages.clang-unwrapped;
+              clang = final.llzk-llvmPackages-debug.clang-unwrapped;
               mlir_pkg = final.mlir-debug;
               pcl_pkg = final.pcl-mlir-debug;
               cmakeBuildType = "Debug";
