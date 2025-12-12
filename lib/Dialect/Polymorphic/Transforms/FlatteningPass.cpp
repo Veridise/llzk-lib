@@ -848,6 +848,7 @@ struct AffineMapFolder {
           });
           LogicalResult foldResult = m.getAffineMap().constantFold(constAttrs, result, &hasPoison);
           if (hasPoison) {
+            // Diagnostic remark: could be removed for release builds if too noisy
             op->emitRemark()
                 .append(
                     "Cannot fold affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
@@ -857,6 +858,7 @@ struct AffineMapFolder {
             return failure();
           }
           if (failed(foldResult)) {
+            // Diagnostic remark: could be removed for release builds if too noisy
             op->emitRemark()
                 .append(
                     "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(), " failed"
@@ -865,6 +867,7 @@ struct AffineMapFolder {
             return failure();
           }
           if (result.size() != 1) {
+            // Diagnostic remark: could be removed for release builds if too noisy
             op->emitRemark()
                 .append(
                     "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(),

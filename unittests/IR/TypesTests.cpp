@@ -47,6 +47,8 @@ TEST_F(TypeTests, testArrayTypeCloneSuccessNewShape) {
 }
 
 // The verification that throws the error is only active in debug builds.
+// See:
+// https://github.com/llvm/llvm-project/blob/87f0227cb60147a26a1eeb4fb06e3b505e9c7261/mlir/include/mlir/IR/StorageUniquerSupport.h#L179
 #ifndef NDEBUG
 TEST_F(TypeTests, testArrayTypeCloneWithEmptyShapeError) {
   EXPECT_DEATH(
