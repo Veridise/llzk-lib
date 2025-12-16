@@ -16,8 +16,10 @@
 #include <llvm/ADT/SmallString.h>
 
 // TableGen'd implementation files
-#define GET_OP_CLASSES
 #include "llzk/Dialect/Felt/IR/OpInterfaces.cpp.inc"
+
+// TableGen'd implementation files
+#define GET_OP_CLASSES
 #include "llzk/Dialect/Felt/IR/Ops.cpp.inc"
 
 using namespace mlir;
