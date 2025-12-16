@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
+#include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include "llzk-c/Dialect/Struct.h"
@@ -22,6 +23,7 @@
 #include <mlir/CAPI/Support.h>
 #include <mlir/CAPI/Wrap.h>
 #include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/SymbolTable.h>
 
 #include <mlir-c/Support.h>
 
@@ -67,6 +69,28 @@ MlirAttribute llzkStructTypeGetName(MlirType type) {
 
 MlirAttribute llzkStructTypeGetParams(MlirType type) {
   return wrap(llvm::cast<StructType>(unwrap(type)).getParams());
+}
+
+MlirLogicalResult llzkStructStructTypeGetDefinition(
+    MlirType type, MlirOperation root, LlzkSymbolLookupResult *result
+) {
+  auto structType = mlir::unwrap_cast<StructType>(type);
+  auto *rootOp = unwrap(root);
+  SymbolTableCollection stc;
+  mlir::FailureOr<llzk::SymbolLookupResult<StructDefOp>> lookup =
+      structType.getDefinition(stc, rootOp);
+
+  if (succeeded(lookup)) {
+    // Allocate the result in the heap and store the pointer in the out var.
+    result->ptr = new llzk::SymbolLookupResultUntyped(std::move(*lookup));
+  }
+  return wrap(lookup);
+}
+
+MlirLogicalResult llzkStructStructTypeGetDefinitionFromModule(
+    MlirType type, MlirModule root, LlzkSymbolLookupResult *result
+) {
+  return llzkStructStructTypeGetDefinition(type, mlirModuleGetOperation(root), result);
 }
 
 //===----------------------------------------------------------------------===//
