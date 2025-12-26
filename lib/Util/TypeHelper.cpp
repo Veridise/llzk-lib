@@ -87,8 +87,14 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     Impl(BuildShortTypeString &outerRef) : outer(outerRef) {}
 
     void caseInvalid(Type) { outer.ss << "!INVALID"; }
-    void caseInt(IntegerType) { outer.ss << 'd'; }
-    void caseIndex(IndexType) { outer.ss << 'i'; }
+    void caseInt(IntegerType t) {
+      if (t.getWidth() == 1) {
+        outer.ss << 'b';
+      } else {
+        outer.ss << 'i' << t.getWidth();
+      }
+    }
+    void caseIndex(IndexType) { outer.ss << 'k'; }
     void caseFelt(FeltType) { outer.ss << 'f'; }
     void caseString(StringType) { outer.ss << 's'; }
     void caseTypeVar(TypeVarType t) {
