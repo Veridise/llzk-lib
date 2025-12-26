@@ -84,10 +84,28 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-function.def @check_type_restriction_on_pram(
+function.def @check_type_restriction_on_param(
     %a: i1 // expected-note {{prior use here}}
   ) -> !felt.type {
   // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs 'i1'}}
   %b = cast.tofelt %a : index
   function.return %b: !felt.type
+}
+// -----
+
+function.def @check_type_restriction_on_toint_operand(
+    %a: index // expected-note {{prior use here}}
+  ) -> i7 {
+  // expected-error@+1 {{use of value '%a' expects different type than prior uses: '!felt.type' vs 'index'}}
+  %b = cast.toint %a : i7
+  function.return %b: i7
+}
+// -----
+
+function.def @check_type_restriction_on_toint_result(
+    %a: !felt.type
+  ) -> index {
+  // expected-error@+1 {{custom op 'cast.toint' invalid kind of type specified}}
+  %b = cast.toint %a : index
+  function.return %b: index
 }

@@ -57,4 +57,21 @@ def LLZK_FeltToIndexOp : Op<CastDialect, "toindex", [Pure]> {
   let hasVerifier = 1;
 }
 
+def LLZK_FeltToIntOp : Op<CastDialect, "toint", [Pure]> {
+  let summary = "convert a field element into an integer";
+  let description = [{
+    This operation converts a field element value into an integer type value.
+
+    Example:
+
+    ```llzk
+    %0 = cast.toint %a : i32
+    ```
+  }];
+
+  let arguments = (ins LLZK_FeltType:$value);
+  let results = (outs AnySignlessInteger:$result);
+  let assemblyFormat = [{ $value `:` type($result) attr-dict }];
+}
+
 #endif // LLZK_CAST_OPS
