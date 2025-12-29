@@ -30,6 +30,10 @@ function.def private @d(%x: !array.type<index x i256>)
 function.def private @e(%x: !array.type<index,"string",[] x !felt.type>)
 // -----
 
+// expected-error@+1 {{expected a valid LLZK type but found 'f32'}}
+function.def private @f(%x: !array.type<5 x f32>)
+// -----
+
 // expected-error@+2 {{'array.type' element type cannot be 'array.type'}}
 // expected-error@+1 {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
 function.def private @f(%x: !array.type<2 x !array.type<3 x !array.type<2 x i1>>>)
