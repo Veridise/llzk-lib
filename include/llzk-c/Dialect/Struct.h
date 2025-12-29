@@ -59,6 +59,30 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetName(MlirType type);
 /// Returns the parameter of a llzk::component::StructType as an ArrayAttr.
 MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetParams(MlirType type);
 
+/// Lookups the definition Operation of the given StructType using the given
+/// Operation as root for the lookup. The definition Operation is wrapped
+/// in a LlzkSymbolLookupResult that the caller is responsible for cleaning up.
+///
+/// If the function returns 'success' the lookup result will be stored in the
+/// given pointer. Accessing the lookup result if the function returns 'failure'
+/// is undefined behavior.
+///
+/// Requires that the given Operation implements the SymbolTable op interface.
+MLIR_CAPI_EXPORTED MlirLogicalResult llzkStructStructTypeGetDefinition(
+    MlirType type, MlirOperation root, LlzkSymbolLookupResult *result
+);
+
+/// Lookups the definition Operation of the given StructType using the given
+/// Module as root for the lookup. The definition Operation is wrapped
+/// in a LlzkSymbolLookupResult that the caller is responsible for cleaning up.
+///
+/// If the function returns 'success' the lookup result will be stored in the
+/// given pointer. Accessing the lookup result if the function returns 'failure'
+/// is undefined behavior.
+MLIR_CAPI_EXPORTED MlirLogicalResult llzkStructStructTypeGetDefinitionFromModule(
+    MlirType type, MlirModule root, LlzkSymbolLookupResult *result
+);
+
 //===----------------------------------------------------------------------===//
 // StructDefOp
 //===----------------------------------------------------------------------===//

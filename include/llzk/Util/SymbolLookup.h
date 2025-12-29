@@ -28,6 +28,8 @@
 
 namespace llzk {
 
+template <typename T> class SymbolLookupResult;
+
 using ManagedResources =
     std::shared_ptr<std::pair<mlir::OwningOpRef<mlir::ModuleOp>, mlir::SymbolTableCollection>>;
 
@@ -35,6 +37,37 @@ class SymbolLookupResultUntyped {
 public:
   SymbolLookupResultUntyped() : op(nullptr) {}
   SymbolLookupResultUntyped(mlir::Operation *opPtr) : op(opPtr) {}
+
+  SymbolLookupResultUntyped(const SymbolLookupResultUntyped &other)
+      : op(other.op), managedResources(other.managedResources),
+        includeSymNameStack(other.includeSymNameStack) {}
+  template <typename T> SymbolLookupResultUntyped(const SymbolLookupResult<T> &other);
+
+  SymbolLookupResultUntyped &operator=(const SymbolLookupResultUntyped &other) {
+    this->op = other.op;
+    this->managedResources = other.managedResources;
+    this->includeSymNameStack = other.includeSymNameStack;
+    return *this;
+  }
+  template <typename T> SymbolLookupResultUntyped &operator=(const SymbolLookupResult<T> &other);
+
+  SymbolLookupResultUntyped(SymbolLookupResultUntyped &&other)
+      : op(other.op), managedResources(std::move(other.managedResources)),
+        includeSymNameStack(std::move(other.includeSymNameStack)) {
+    other.op = nullptr;
+  }
+  template <typename T> SymbolLookupResultUntyped(SymbolLookupResult<T> &&other);
+
+  SymbolLookupResultUntyped &operator=(SymbolLookupResultUntyped &&other) {
+    if (this != &other) {
+      this->op = other.op;
+      other.op = nullptr;
+      this->managedResources = std::move(other.managedResources);
+      this->includeSymNameStack = std::move(other.includeSymNameStack);
+    }
+    return *this;
+  }
+  template <typename T> SymbolLookupResultUntyped &operator=(SymbolLookupResult<T> &&other);
 
   /// Access the internal operation.
   mlir::Operation *operator->();
@@ -105,7 +138,31 @@ private:
   SymbolLookupResultUntyped inner;
 
   friend class Within;
+  friend class SymbolLookupResultUntyped;
 };
+
+// These methods' definitions need to be here, after the declaration of SymbolLookupResult<T>
+
+template <typename T>
+SymbolLookupResultUntyped::SymbolLookupResultUntyped(const SymbolLookupResult<T> &other)
+    : SymbolLookupResultUntyped(other.inner) {}
+
+template <typename T>
+SymbolLookupResultUntyped &
+SymbolLookupResultUntyped::operator=(const SymbolLookupResult<T> &other) {
+  *this = other.inner;
+  return *this;
+}
+
+template <typename T>
+SymbolLookupResultUntyped::SymbolLookupResultUntyped(SymbolLookupResult<T> &&other)
+    : SymbolLookupResultUntyped(std::move(other.inner)) {}
+
+template <typename T>
+SymbolLookupResultUntyped &SymbolLookupResultUntyped::operator=(SymbolLookupResult<T> &&other) {
+  *this = std::move(other.inner);
+  return *this;
+}
 
 class Within {
 public:
