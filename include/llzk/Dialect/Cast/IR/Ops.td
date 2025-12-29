@@ -31,7 +31,7 @@ def LLZK_IntToFeltOp : Op<CastDialect, "tofelt", [Pure]> {
     ```
   }];
 
-  let arguments = (ins AnyLLZKIntType:$value);
+  let arguments = (ins AnySignlessIntegerOrIndex:$value);
   let results = (outs LLZK_FeltType:$result);
   let assemblyFormat = [{ $value `:` type($value) attr-dict }];
 }
