@@ -4,6 +4,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 
 #include <mlir/IR/Block.h>
@@ -132,10 +133,9 @@ unsigned getFeltDegree(Value val, DenseMap<Value, unsigned> &memo) {
   if (isa<FeltConstantOp>(val.getDefiningOp())) {
     return memo[val] = 0;
   }
-  if (isa<FeltNonDetOp, MemberReadOp>(val.getDefiningOp()) || isa<BlockArgument>(val)) {
+  if (isa<NonDetOp, MemberReadOp>(val.getDefiningOp()) || isa<BlockArgument>(val)) {
     return memo[val] = 1;
   }
-
   if (auto add = val.getDefiningOp<AddFeltOp>()) {
     return memo[val] =
                std::max(getFeltDegree(add.getLhs(), memo), getFeltDegree(add.getRhs(), memo));

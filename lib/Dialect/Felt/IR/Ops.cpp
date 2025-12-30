@@ -37,12 +37,4 @@ void FeltConstantOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
 
 OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValueAttr(); }
 
-//===------------------------------------------------------------------===//
-// FeltNonDetOp
-//===------------------------------------------------------------------===//
-
-void FeltNonDetOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
-  setNameFn(getResult(), "felt_nondet");
-}
-
 } // namespace llzk::felt

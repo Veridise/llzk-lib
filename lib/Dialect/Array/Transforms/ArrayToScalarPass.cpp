@@ -47,7 +47,7 @@
 /// be necessary before/during this pass so that multiple writes to the same index can be handled
 /// properly while they still exist.
 ///
-/// Note: This transformation will introduce an undef op when there exists a read from an array
+/// Note: This transformation will introduce a `nondet` op when there exists a read from an array
 /// index that was not earlier written to.
 ///
 //===----------------------------------------------------------------------===//
@@ -748,8 +748,7 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, boolean::BoolDialect, component::StructDialect,
       constrain::ConstrainDialect, felt::FeltDialect, function::FunctionDialect,
-      global::GlobalDialect, include::IncludeDialect, undef::UndefDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+      global::GlobalDialect, include::IncludeDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<CreateArrayOp>(SplitInitFromCreateArrayOp::legal);
   target.addDynamicallyLegalOp<InsertArrayOp>(SplitInsertArrayOp::legal);

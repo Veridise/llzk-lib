@@ -255,7 +255,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !struct.type<@ComponentG2>) {
-      %b = felt.nondet
+      %b = llzk.nondet : !felt.type
       function.return
     }
   }
@@ -276,7 +276,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentG2>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentG2>) attributes {function.allow_constraint} {
-//CHECK-NEXT:       %felt_nondet = felt.nondet
+//CHECK-NEXT:       %nondet = llzk.nondet : !felt.type
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }

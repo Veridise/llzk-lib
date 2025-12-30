@@ -194,11 +194,11 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.type<@AddrDecomposeBits>, %x: !struct.type<@std::@risc0::@ValU32>, %mode: !felt.type) {
       // low0.constrain(nondetFelt());
-      %t01 = felt.nondet
+      %t01 = llzk.nondet : !felt.type
       %low0 = struct.readm %self[@low0] : !struct.type<@AddrDecomposeBits>, !struct.type<@NondetBitReg>
       function.call @NondetBitReg::@constrain(%low0, %t01) : (!struct.type<@NondetBitReg>, !felt.type) -> ()
       // low1.constrain(nondetFelt());
-      %t03 = felt.nondet
+      %t03 = llzk.nondet : !felt.type
       %low1 = struct.readm %self[@low1] : !struct.type<@AddrDecomposeBits>, !struct.type<@NondetBitReg>
       function.call @NondetBitReg::@constrain(%low1, %t03) : (!struct.type<@NondetBitReg>, !felt.type) -> ()
       // emit low2 = low1.synthetic_return * 2 + low0.synthetic_return;
@@ -407,10 +407,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      }
 //CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@AddrDecomposeBits>,
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !struct.type<@std::@risc0::@ValU32>, %[[A2:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[TN0:[0-9a-zA-Z_\.]+]] = felt.nondet
+//CHECK-NEXT:        %[[TN0:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@low0] : <@AddrDecomposeBits>, !struct.type<@NondetBitReg>
 //CHECK-NEXT:        function.call @NondetBitReg::@constrain(%[[T00]], %[[TN0]]) : (!struct.type<@NondetBitReg>, !felt.type) -> ()
-//CHECK-NEXT:        %[[TN1:[0-9a-zA-Z_\.]+]] = felt.nondet
+//CHECK-NEXT:        %[[TN1:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type
 //CHECK-NEXT:        %[[T01:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@low1] : <@AddrDecomposeBits>, !struct.type<@NondetBitReg>
 //CHECK-NEXT:        function.call @NondetBitReg::@constrain(%[[T01]], %[[TN1]]) : (!struct.type<@NondetBitReg>, !felt.type) -> ()
 //CHECK-NEXT:        %[[T02:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@low2] : <@AddrDecomposeBits>, !felt.type
