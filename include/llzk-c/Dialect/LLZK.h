@@ -34,6 +34,9 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkPublicAttrGet(MlirContext context);
 /// Returns true if the attribute is a PublicAttr.
 LLZK_DECLARE_ATTR_ISA(PublicAttr);
 
+/// Returns true if the op is a NonDetOp
+LLZK_DECLARE_OP_ISA(NonDetOp);
+
 #ifdef __cplusplus
 }
 #endif

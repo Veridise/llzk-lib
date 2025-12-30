@@ -14,8 +14,8 @@
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
-#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
@@ -80,7 +80,7 @@ private:
     if (val.getDefiningOp<FeltConstantOp>()) {
       return memo[val] = 0;
     }
-    if (val.getDefiningOp<FeltNonDetOp>()) {
+    if (val.getDefiningOp<NonDetOp>()) {
       return memo[val] = 1;
     }
     if (val.getDefiningOp<MemberReadOp>()) {
