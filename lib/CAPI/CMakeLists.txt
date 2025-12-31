@@ -7,6 +7,7 @@ target_sources(LLZKCAPI PRIVATE
   InitDialects.cpp 
   Typing.cpp
   Builder.cpp 
+  Support.cpp
   Constants.cpp
   Dialect/Array.cpp 
   Dialect/Bool.cpp 

@@ -58,6 +58,11 @@ struct MlirValueRange {
 };
 typedef struct MlirValueRange MlirValueRange;
 
+/// Replace uses of 'of' value with the 'with' value inside the 'op' operation.
+/// Note: Duplicated from upstream LLVM. Available in 21.1.8 and later.
+MLIR_CAPI_EXPORTED void
+mlirOperationReplaceUsesOfWith(MlirOperation op, MlirValue of, MlirValue with);
+
 #ifdef __cplusplus
 }
 #endif
