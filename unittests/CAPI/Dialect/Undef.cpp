@@ -15,16 +15,27 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_undef) {
-  (void)mlirGetDialectHandle__llzk__undef__();
-}
+// Include the auto-generated tests
+#include "llzk/Dialect/Undef/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Undef/IR/Ops.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_operation_is_a_undef_op_pass) {
   auto op_name = mlirStringRefCreateFromCString("undef.undef");
   auto state = mlirOperationStateGet(op_name, mlirLocationUnknownGet(context));
-  auto t = llzkFeltTypeGet(context);
+  auto t = llzkFeltFeltTypeGet(context);
   mlirOperationStateAddResults(&state, 1, &t);
 
   auto op = mlirOperationCreate(&state);
-  EXPECT_TRUE(llzkOperationIsAUndefOp(op));
+  EXPECT_TRUE(llzkOperationIsAUndefUndefOp(op));
+}
+
+// Implementation for `UndefOp_build_pass` test
+std::unique_ptr<UndefOpBuildFuncHelper> UndefOpBuildFuncHelper::get() {
+  struct Impl : public UndefOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      return llzkUndefUndefOpBuild(builder, location, llzkFeltFeltTypeGet(testClass.context));
+    }
+  };
+  return std::make_unique<Impl>();
 }

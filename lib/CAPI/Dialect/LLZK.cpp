@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 
@@ -16,8 +17,7 @@
 
 using namespace llzk;
 
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(LLZK, llzk, LLZKDialect)
+// Include the generated CAPI
+#include "llzk/Dialect/LLZK/IR/Attrs.capi.cpp.inc"
 
-MlirAttribute llzkPublicAttrGet(MlirContext ctx) { return wrap(PublicAttr::get(unwrap(ctx))); }
-
-bool llzkAttributeIsAPublicAttr(MlirAttribute attr) { return llvm::isa<PublicAttr>(unwrap(attr)); }
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(LLZK, llzk, llzk::LLZKDialect)
