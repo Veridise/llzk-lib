@@ -17,6 +17,7 @@
 #include "llzk-c/Builder.h" // IWYU pragma: keep
 
 #include <mlir-c/IR.h> // IWYU pragma: keep
+#include <mlir-c/Support.h>
 
 #include <stdint.h>
 
@@ -57,6 +58,31 @@ struct MlirValueRange {
   intptr_t size;
 };
 typedef struct MlirValueRange MlirValueRange;
+
+//===----------------------------------------------------------------------===//
+// Symbol lookup result.
+//===----------------------------------------------------------------------===//
+
+typedef struct LlzkSymbolLookupResult {
+  void *ptr;
+} LlzkSymbolLookupResult;
+
+/// Destroys the lookup result, releasing its resources.
+MLIR_CAPI_EXPORTED void llzkSymbolLookupResultDestroy(LlzkSymbolLookupResult result);
+
+/// Returns the looked up Operation.
+///
+/// The lifetime of the Operation is tied to the lifetime of the lookup result.
+MLIR_CAPI_EXPORTED MlirOperation LlzkSymbolLookupResultGetOperation(LlzkSymbolLookupResult result);
+
+//===----------------------------------------------------------------------===//
+// MLIR ports.
+//===----------------------------------------------------------------------===//
+
+/// Replace uses of 'of' value with the 'with' value inside the 'op' operation.
+/// Note: Duplicated from upstream LLVM. Available in 21.1.8 and later.
+MLIR_CAPI_EXPORTED void
+mlirOperationReplaceUsesOfWith(MlirOperation op, MlirValue of, MlirValue with);
 
 #ifdef __cplusplus
 }

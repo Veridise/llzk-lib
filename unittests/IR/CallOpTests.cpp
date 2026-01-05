@@ -94,8 +94,8 @@ TEST_F(OpTests, testCallNoAffine_TooFewValues) {
   // }
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op incorrect number of operands for callee, expected 2"
   );
@@ -124,8 +124,8 @@ TEST_F(OpTests, testCallNoAffine_WrongRetTy) {
   // }
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op result type mismatch: expected type 'index', but found 'i1' for "
       "result number 0"
@@ -149,8 +149,8 @@ TEST_F(OpTests, testCallNoAffine_InvalidCalleeName) {
   // }
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op references unknown symbol \"@invalidName\""
   );
@@ -213,8 +213,8 @@ TEST_F(OpTests, testCallWithAffine_WrongStructNameInResultType) {
   );
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op result type mismatch: expected type "
       "'!struct.type<@StructB<\\[@T0, @T1\\]>>', but found "
@@ -248,8 +248,8 @@ TEST_F(OpTests, testCallWithAffine_TooFewMapsInResultType) {
   );
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'struct.type' type has 1 parameters but \"StructB\" expects 2"
   );
@@ -280,8 +280,8 @@ TEST_F(OpTests, testCallWithAffine_TooManyMapsInResultType) {
   );
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'struct.type' type has 3 parameters but \"StructB\" expects 2"
   );
@@ -311,8 +311,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountLessThanDimSizeCount) {
   );
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
       "length of 'mapOpGroupSizes' attribute \\(1\\)"
@@ -343,8 +343,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountMoreThanDimSizeCount) {
   );
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
       "length of 'mapOpGroupSizes' attribute \\(3\\)"
@@ -374,8 +374,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0) {
   );
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op length of 'numDimsPerMap' attribute \\(2\\) does not match with "
       "length of 'mapOpGroupSizes' attribute \\(0\\)"
@@ -406,8 +406,8 @@ TEST_F(OpTests, testCallWithAffine_DimSizeCount0) {
   );
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op length of 'numDimsPerMap' attribute \\(0\\) does not match with "
       "length of 'mapOpGroupSizes' attribute \\(2\\)"
@@ -437,8 +437,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0DimSizeCount0) {
   );
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op map instantiation group count \\(0\\) does not match the number "
       "of affine map instantiations \\(2\\) required by the type"
@@ -469,8 +469,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeLessThanDimSize) {
   );
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op map instantiation group 1 dimension count \\(1\\) exceeds group 1 "
       "size in 'mapOpGroupSizes' attribute \\(0\\)"
@@ -502,8 +502,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeMoreThanDimSize) {
   );
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op instantiation of map 1 expected 0 but found 1 symbol values in "
       "\\[\\]"
@@ -535,8 +535,8 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountAndDimSizeCountMoreThanType) {
   );
   EXPECT_DEATH(
       {
-        assert(verify(mod.get()));
-        assert(verify(op, true));
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
       },
       "error: 'function.call' op map instantiation group count \\(3\\) does not match the number "
       "of affine map instantiations \\(2\\) required by the type"

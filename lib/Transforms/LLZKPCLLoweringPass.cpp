@@ -310,6 +310,7 @@ private:
           .Case<MemberReadOp>([&member2pclvar, &llzkToPcl, &srcFunc](auto read) {
         // At this point every member in the struct should have a var associated with it
         // so we should simply retrieve the var associated with the member.
+        (void)srcFunc; // to silence unused variable warning if asserts are disabled
         assert(read.getComponent() == srcFunc.getArguments()[0]);
         if (auto it = member2pclvar.find(read.getMemberName()); it != member2pclvar.end()) {
           rememberResult(read.getResult(), it->getSecond(), llzkToPcl);

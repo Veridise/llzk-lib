@@ -108,6 +108,17 @@ def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
   let constructor = "llzk::createR1CSLoweringPass()";
 }
 
+def ComputeConstrainToProductPass
+    : LLZKPass<"llzk-compute-constrain-to-product"> {
+  let summary = "Replaces separate @compute and @constrain functions in a "
+                "struct with a single @product function";
+  let description = summary;
+  let constructor = "llzk::createComputeConstrainToProductPass()";
+  let options = [Option<"rootStruct", "root-struct", "std::string",
+                        /* default */ "\"@Main\"",
+                        "Root struct at which to start alignment "
+                        "(default to `@Main`)">];
+}
 #ifdef WITH_PCL
 def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
   let summary = "Rewrites constraints to be compatible with PCL constraints "

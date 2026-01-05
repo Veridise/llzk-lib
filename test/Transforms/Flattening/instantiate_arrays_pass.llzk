@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-flatten -debug-only=llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 // Tests:
 //  - CreateArrayOp using only constant values and no loops

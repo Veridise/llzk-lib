@@ -76,6 +76,9 @@ MLIR_CAPI_EXPORTED MlirOperation mlirOpBuilderGetInsertionPoint(MlirOpBuilder bu
 /// Returns the current insertion block in the builder.
 MLIR_CAPI_EXPORTED MlirBlock mlirOpBuilderGetInsertionBlock(MlirOpBuilder builder);
 
+/// Insert the given operation at the current insertion point and return it.
+MLIR_CAPI_EXPORTED MlirOperation mlirOpBuilderInsert(MlirOpBuilder builder, MlirOperation op);
+
 //===----------------------------------------------------------------------===//
 // MlirOpBuilderListener
 //===----------------------------------------------------------------------===//

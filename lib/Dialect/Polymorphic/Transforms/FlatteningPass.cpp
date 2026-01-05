@@ -849,31 +849,32 @@ struct AffineMapFolder {
           });
           LogicalResult foldResult = m.getAffineMap().constantFold(constAttrs, result, &hasPoison);
           if (hasPoison) {
-            LLVM_DEBUG(op->emitRemark()
-                           .append(
-                               "Cannot fold affine_map for ", aspect, " ",
-                               out.paramsOfStructTy.size(),
-                               " due to divide by 0 or modulus with negative divisor"
-                           )
-                           .report());
+            // Diagnostic remark: could be removed for release builds if too noisy
+            op->emitRemark()
+                .append(
+                    "Cannot fold affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
+                    " due to divide by 0 or modulus with negative divisor"
+                )
+                .report();
             return failure();
           }
           if (failed(foldResult)) {
-            LLVM_DEBUG(op->emitRemark()
-                           .append(
-                               "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
-                               " failed"
-                           )
-                           .report());
+            // Diagnostic remark: could be removed for release builds if too noisy
+            op->emitRemark()
+                .append(
+                    "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(), " failed"
+                )
+                .report();
             return failure();
           }
           if (result.size() != 1) {
-            LLVM_DEBUG(op->emitRemark()
-                           .append(
-                               "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
-                               " produced ", result.size(), " results but expected 1"
-                           )
-                           .report());
+            // Diagnostic remark: could be removed for release builds if too noisy
+            op->emitRemark()
+                .append(
+                    "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
+                    " produced ", result.size(), " results but expected 1"
+                )
+                .report();
             return failure();
           }
           assert(!llvm::isa<AffineMapAttr>(result[0]) && "not converted");
@@ -899,6 +900,7 @@ struct AffineMapFolder {
 
 /// At CreateArrayOp, instantiate ArrayType parameterized with affine_map dimension size(s)
 class InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp> {
+  [[maybe_unused]]
   ConversionTracker &tracker_;
 
 public:
