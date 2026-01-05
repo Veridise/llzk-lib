@@ -75,6 +75,15 @@ MLIR_CAPI_EXPORTED void llzkSymbolLookupResultDestroy(LlzkSymbolLookupResult res
 /// The lifetime of the Operation is tied to the lifetime of the lookup result.
 MLIR_CAPI_EXPORTED MlirOperation LlzkSymbolLookupResultGetOperation(LlzkSymbolLookupResult result);
 
+//===----------------------------------------------------------------------===//
+// MLIR ports.
+//===----------------------------------------------------------------------===//  
+  
+/// Replace uses of 'of' value with the 'with' value inside the 'op' operation.
+/// Note: Duplicated from upstream LLVM. Available in 21.1.8 and later.
+MLIR_CAPI_EXPORTED void
+mlirOperationReplaceUsesOfWith(MlirOperation op, MlirValue of, MlirValue with);
+
 #ifdef __cplusplus
 }
 #endif

@@ -15,6 +15,7 @@ include "llzk/Dialect/Felt/IR/Types.td"
 include "llzk/Dialect/Felt/IR/Attrs.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
 include "llzk/Dialect/Shared/OpsBase.td"
+include "llzk/Dialect/Felt/IR/OpInterfaces.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
@@ -30,7 +31,8 @@ class FeltDialectOp<string mnemonic, list<Trait> traits = []>
 
 class FeltDialectBinaryOp<string mnemonic, Type resultType,
                           list<Trait> traits = []>
-    : BinaryOpBase<FeltDialect, mnemonic, resultType, traits>;
+    : BinaryOpBase<FeltDialect, mnemonic, resultType,
+                   traits#[DeclareOpInterfaceMethods<FeltBinaryOpInterface>]>;
 
 class FeltDialectUnaryOp<string mnemonic, Type resultType,
                          list<Trait> traits = []>
@@ -74,7 +76,7 @@ def LLZK_FeltNonDetOp
     Example:
 
     ```llzk
-    %0 = llzk.nondet
+    %0 = felt.nondet
     ```
   }];
 
@@ -99,6 +101,19 @@ def LLZK_SubFeltOp : FeltDialectBinaryOp<"sub", LLZK_FeltType> {
 def LLZK_MulFeltOp : FeltDialectBinaryOp<"mul", LLZK_FeltType, [Commutative]> {
   let summary = "multiplication operator for field elements";
   let description = [{}];
+}
+
+def LLZK_PowFeltOp : FeltDialectBinaryOp<"pow", LLZK_FeltType, [WitnessGen]> {
+  let summary = "exponentiation operator for field elements";
+  let description = [{
+
+  Raises a field element to the power of an exponent.
+
+  ```llzk
+  %result = felt.pow %base, %exponent
+  ```
+
+  }];
 }
 
 def LLZK_DivFeltOp : FeltDialectBinaryOp<"div", LLZK_FeltType> {

@@ -1,4 +1,4 @@
-//===-- Support.cpp - C impl support functions ------------------*- C++ -*-===//
+//===-- Support.cpp - C API general utilities ---------------------*- C -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Util/SymbolLookup.h"
+#include "llzk/CAPI/Support.h"
 
 #include "llzk-c/Support.h"
 
@@ -29,4 +30,8 @@ void llzkSymbolLookupResultDestroy(LlzkSymbolLookupResult result) {
 MlirOperation LlzkSymbolLookupResultGetOperation(LlzkSymbolLookupResult wrapped) {
   SymbolLookupResultUntyped *result = reinterpret_cast<SymbolLookupResultUntyped *>(wrapped.ptr);
   return wrap(result->get());
+
+/// Note: Duplicated from upstream LLVM. Available in 21.1.8 and later.
+void mlirOperationReplaceUsesOfWith(MlirOperation op, MlirValue oldValue, MlirValue newValue) {
+  unwrap(op)->replaceUsesOfWith(unwrap(oldValue), unwrap(newValue));
 }
