@@ -90,7 +90,7 @@ module attributes {veridise.lang = "llzk"} {
   // and can't be created via `array.new` outside the loop where the loop induction
   // variable does not yet exist.
   struct.def @VarArray<[@N, @T]> {
-    struct.field @val: !array.type<@N x !poly.tvar<@T>>
+    struct.field @val: !array.type<@N x !poly.tvar<@T>> {llzk.pub}
 
     function.def @compute(%inp: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> {
       %self = struct.new : !struct.type<@VarArray<[@N, @T]>>

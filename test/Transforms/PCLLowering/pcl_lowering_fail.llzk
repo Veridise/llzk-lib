@@ -18,7 +18,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentA1 {
-    struct.field @f1 : !array.type<4,3 x !F>
+    struct.field @f1 : !array.type<4,3 x !F> {llzk.pub}
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {

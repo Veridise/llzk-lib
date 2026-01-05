@@ -455,9 +455,9 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS: 'max-merge-complexity' prevents inlining A to Main but the others are inlined.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component6A {
-    struct.field @x : !felt.type
-    struct.field @y : !felt.type
-    struct.field @z : !felt.type
+    struct.field @x : !felt.type {llzk.pub}
+    struct.field @y : !felt.type {llzk.pub}
+    struct.field @z : !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@Component6A> {
       %self = struct.new : !struct.type<@Component6A>
@@ -591,9 +591,9 @@ module attributes {veridise.lang = "llzk"} {
 // remaining parameter of type A in the calls to C. Since A was inlined, the param must be split into fields.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component7A {
-    struct.field @x : !felt.type
-    struct.field @y : !felt.type
-    struct.field @z : !felt.type
+    struct.field @x : !felt.type {llzk.pub}
+    struct.field @y : !felt.type {llzk.pub}
+    struct.field @z : !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@Component7A> {
       %self = struct.new : !struct.type<@Component7A>
@@ -723,9 +723,9 @@ module attributes {veridise.lang = "llzk"} {
 // conditions in the algorithm that converts a struct parameter to multiple parameters.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component8A {
-    struct.field @x : !felt.type
-    struct.field @y : !felt.type
-    struct.field @z : !felt.type
+    struct.field @x : !felt.type {llzk.pub}
+    struct.field @y : !felt.type {llzk.pub}
+    struct.field @z : !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@Component8A> {
       %self = struct.new : !struct.type<@Component8A>
@@ -881,9 +881,9 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS: parameter attributes are replicated when splitting a struct param to fields.
 module attributes {veridise.lang = "llzk"} {
   struct.def @Component9A {
-    struct.field @x : !felt.type
-    struct.field @y : !felt.type
-    struct.field @z : !felt.type
+    struct.field @x : !felt.type {llzk.pub}
+    struct.field @y : !felt.type {llzk.pub}
+    struct.field @z : !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@Component9A> {
       %self = struct.new : !struct.type<@Component9A>

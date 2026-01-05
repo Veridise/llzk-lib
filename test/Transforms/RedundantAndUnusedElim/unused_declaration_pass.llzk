@@ -222,7 +222,7 @@ module attributes {veridise.lang = "llzk"} {
 
   module @std {
     struct.def @Wrapper<[@T]> {
-      struct.field @val: !poly.tvar<@T>
+      struct.field @val: !poly.tvar<@T> {llzk.pub}
 
       function.def @compute(%inp: !poly.tvar<@T>) -> !struct.type<@std::@Wrapper<[@T]> > {
         %self = struct.new : !struct.type<@std::@Wrapper<[@T]> >

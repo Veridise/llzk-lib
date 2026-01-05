@@ -11,7 +11,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetReg<[]> {
-    struct.field @"$super" : !felt.type
+    struct.field @"$super" : !felt.type {llzk.pub}
     struct.field @reg : !felt.type {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@NondetReg<[]>>
@@ -24,7 +24,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetExtReg<[]> {
-    struct.field @"$super" : !array.type<4 x !felt.type>
+    struct.field @"$super" : !array.type<4 x !felt.type> {llzk.pub}
     struct.field @reg : !array.type<4 x !felt.type> {column}
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@NondetExtReg<[]>>
@@ -145,7 +145,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Div<[]> {
-    struct.field @"$super" : !felt.type
+    struct.field @"$super" : !felt.type {llzk.pub}
     struct.field @reciprocal : !felt.type
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@Div<[]>>
@@ -224,8 +224,8 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @"$super" : !struct.type<@Component<[]>>
     struct.field @"$temp_0" : !struct.type<@Component<[]>>
     struct.field @"$temp" : !struct.type<@LookupDelta<[]>>
-    struct.field @val : !struct.type<@NondetReg<[]>> {column}
-    struct.field @count : !struct.type<@NondetReg<[]>> {column}
+    struct.field @val : !struct.type<@NondetReg<[]>> {column, llzk.pub}
+    struct.field @count : !struct.type<@NondetReg<[]>> {column, llzk.pub}
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@ArgU8<[]>> attributes {function.allow_witness} {
       %felt_const_8 = felt.const  8
       %self = struct.new : <@ArgU8<[]>>
@@ -264,7 +264,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @NondetU8Reg<[]> {
     struct.field @"$super" : !struct.type<@Component<[]>>
     struct.field @"$temp" : !struct.type<@Component<[]>>
-    struct.field @arg : !struct.type<@ArgU8<[]>> {column}
+    struct.field @arg : !struct.type<@ArgU8<[]>> {column, llzk.pub}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetU8Reg<[]>> attributes {function.allow_witness} {
       %felt_const_1 = felt.const  1
       %self = struct.new : <@NondetU8Reg<[]>>
@@ -314,10 +314,10 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetBitReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>>
+    struct.field @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
     struct.field @"$temp_0" : !struct.type<@AssertBit<[]>>
     struct.field @"$temp" : !struct.type<@AssertBit<[]>>
-    struct.field @reg : !struct.type<@NondetReg<[]>> {column}
+    struct.field @reg : !struct.type<@NondetReg<[]>> {column, llzk.pub}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetBitReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@NondetBitReg<[]>>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>> 
@@ -347,8 +347,8 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ValU32<[]> {
     struct.field @"$super" : !struct.type<@Component<[]>>
     struct.field @"$temp" : !struct.type<@Component<[]>>
-    struct.field @high : !felt.type
-    struct.field @low : !felt.type
+    struct.field @high : !felt.type {llzk.pub}
+    struct.field @low : !felt.type {llzk.pub}
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@ValU32<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@ValU32<[]>>
       struct.writef %self[@low] = %arg0 : <@ValU32<[]>>, !felt.type
@@ -604,7 +604,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetTwitReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>>
+    struct.field @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
     struct.field @"$temp" : !struct.type<@AssertTwit<[]>>
     struct.field @reg : !struct.type<@NondetReg<[]>> {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetTwitReg<[]>> attributes {function.allow_witness} {

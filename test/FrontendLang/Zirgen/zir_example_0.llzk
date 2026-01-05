@@ -4,8 +4,8 @@
 module attributes {veridise.lang = "llzk"} {
   module @risc0 {
     struct.def @ValU32 {
-      struct.field @low : !felt.type
-      struct.field @high : !felt.type
+      struct.field @low : !felt.type {llzk.pub}
+      struct.field @high : !felt.type {llzk.pub}
 
       function.def @compute(%low: !felt.type, %high: !felt.type) -> !struct.type<@risc0::@ValU32> {
         %self = struct.new : !struct.type<@risc0::@ValU32>
