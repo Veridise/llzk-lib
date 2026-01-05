@@ -645,26 +645,6 @@ LogicalResult MemberReadOp::verifySymbolUses(SymbolTableCollection &tables) {
         .attachNote(member->get().getLoc())
         .append("member defined here");
   }
-  // If the member is private and this read is outside the struct, then fail to validate.
-  // The current op may be inside a struct or a free function, but the
-  // member op (the member definition) is always inside a struct.
-  FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(*this);
-  FailureOr<StructDefOp> memberParentRes = verifyInStruct(field->get());
-  if (failed(memberParentRes)) {
-    return failure(); // verifyInStruct() already emits a sufficient error message
-  }
-  StructDefOp memberParentStruct = memberParentRes.value();
-  if (!field->get().hasPublicAttr() &&
-      (failed(parentRes) || parentRes.value() != memberParentStruct)) {
-    return emitOpError()
-        .append(
-            "cannot read from private member of struct \"", memberParentStruct.getHeaderString(),
-            "\""
-        )
-        .attachNote(field->get().getLoc())
-        .append("member defined here");
-  }
-
   return success();
 }
 
