@@ -9,6 +9,7 @@ target_sources(LLZKCAPI PRIVATE
   Builder.cpp 
   Support.cpp
   Constants.cpp
+  Support.cpp
   Dialect/Array.cpp 
   Dialect/Bool.cpp 
   Dialect/Cast.cpp 
