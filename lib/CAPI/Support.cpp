@@ -30,8 +30,9 @@ void llzkSymbolLookupResultDestroy(LlzkSymbolLookupResult result) {
 MlirOperation LlzkSymbolLookupResultGetOperation(LlzkSymbolLookupResult wrapped) {
   SymbolLookupResultUntyped *result = reinterpret_cast<SymbolLookupResultUntyped *>(wrapped.ptr);
   return wrap(result->get());
+}
 
-  /// Note: Duplicated from upstream LLVM. Available in 21.1.8 and later.
-  void mlirOperationReplaceUsesOfWith(MlirOperation op, MlirValue oldValue, MlirValue newValue) {
-    unwrap(op)->replaceUsesOfWith(unwrap(oldValue), unwrap(newValue));
-  }
+/// Note: Duplicated from upstream LLVM. Available in 21.1.8 and later.
+void mlirOperationReplaceUsesOfWith(MlirOperation op, MlirValue oldValue, MlirValue newValue) {
+  unwrap(op)->replaceUsesOfWith(unwrap(oldValue), unwrap(newValue));
+}
