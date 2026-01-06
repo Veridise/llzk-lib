@@ -2,8 +2,8 @@
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1<[@T]> {
-    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type 'index'}}
-    struct.field @f1 : !poly.tvar<@T> {column}
+    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but has type 'index'}}
+    struct.field @f1 : !poly.tvar<@T> {column, llzk.pub}
 
     function.def @constrain(%self: !struct.type<@ComponentA1<[@T]>>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1<[@T]>> {
@@ -24,5 +24,3 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-
-

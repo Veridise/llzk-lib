@@ -9,8 +9,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetReg<[]> {
-    struct.field @"$super" : !felt.type
-    struct.field @reg : !felt.type
+    struct.field @"$super" : !felt.type {llzk.pub}
+    struct.field @reg : !felt.type {llzk.pub}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> {
       %self = struct.new : <@NondetReg<[]>>
       struct.writef %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.type
@@ -22,8 +22,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetExtReg<[]> {
-    struct.field @"$super" : !array.type<4 x !felt.type>
-    struct.field @reg : !array.type<4 x !felt.type>
+    struct.field @"$super" : !array.type<4 x !felt.type> {llzk.pub}
+    struct.field @reg : !array.type<4 x !felt.type> {llzk.pub}
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>> {
       %self = struct.new : <@NondetExtReg<[]>>
       struct.writef %self[@reg] = %arg0 : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
@@ -35,7 +35,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @EqzExt<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.field @"$super" : !struct.type<@Component<[]>> {llzk.pub}
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>> {
       %self = struct.new : <@EqzExt<[]>>
       %c0 = arith.constant 0 : index
@@ -67,7 +67,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Reg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>>
+    struct.field @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
     struct.field @reg : !struct.type<@NondetReg<[]>>
     function.def @compute(%arg0: !felt.type) -> !struct.type<@Reg<[]>> {
       %self = struct.new : <@Reg<[]>>
@@ -154,7 +154,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Div<[]> {
-    struct.field @"$super" : !felt.type
+    struct.field @"$super" : !felt.type {llzk.pub}
     struct.field @reciprocal : !felt.type
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> {
       %self = struct.new : <@Div<[]>>
@@ -245,9 +245,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetBitReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>>
+    struct.field @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
     struct.field @"$temp" : !struct.type<@AssertBit<[]>>
-    struct.field @reg : !struct.type<@NondetReg<[]>>
+    struct.field @reg : !struct.type<@NondetReg<[]>> {llzk.pub}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetBitReg<[]>> {
       %self = struct.new : <@NondetBitReg<[]>>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>>
@@ -330,7 +330,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @BitAnd<[]> {
-    struct.field @"$super" : !struct.type<@Reg<[]>>
+    struct.field @"$super" : !struct.type<@Reg<[]>> {llzk.pub}
     struct.field @"$temp" : !struct.type<@Reg<[]>>
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@BitAnd<[]>> {
       %self = struct.new : <@BitAnd<[]>>
@@ -380,7 +380,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetTwitReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>>
+    struct.field @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
     struct.field @"$temp" : !struct.type<@AssertTwit<[]>>
     struct.field @reg : !struct.type<@NondetReg<[]>>
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetTwitReg<[]>> {
@@ -405,7 +405,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetFakeTwitReg<[]> {
-    struct.field @"$super" : !felt.type
+    struct.field @"$super" : !felt.type {llzk.pub}
     struct.field @reg1 : !struct.type<@NondetBitReg<[]>>
     struct.field @"$temp_1" : !struct.type<@Div<[]>>
     struct.field @"$temp_0" : !struct.type<@BitAnd<[]>>

@@ -219,6 +219,11 @@ def LLZK_FieldReadOp
   let description = [{
     This operation reads the value of a named field in a struct/component.
 
+    A struct can read its own members regardless of whether they are marked as
+    public (i.e., with the `llzk.pub` attribute) or private (members without the
+    `llzk.pub` attribute). However, when reading members of other components, only
+    public members can be accessed. Free functions may also only read public members.
+
     The value can be read from the signals table, in which case it can be
     offset by a constant value. A negative value represents reading a value
     backwards and a positive value represents reading a value forward.
@@ -282,6 +287,9 @@ def LLZK_FieldWriteOp : FieldRefOpBase<"writef", [WitnessGen]> {
   let summary = "write value to a struct field";
   let description = [{
     This operation writes a value to a named field in a struct/component.
+
+    A struct can write its own members. However, writing members of other components
+    is not allowed.
   }];
   let isRead = 0;
 

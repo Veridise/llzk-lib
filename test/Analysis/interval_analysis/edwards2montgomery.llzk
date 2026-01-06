@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetReg<[]> {
-    struct.field @"$super" : !felt.type
+    struct.field @"$super" : !felt.type {llzk.pub}
     struct.field @reg : !felt.type {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@NondetReg<[]>>
@@ -28,7 +28,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetExtReg<[]> {
-    struct.field @"$super" : !array.type<4 x !felt.type>
+    struct.field @"$super" : !array.type<4 x !felt.type> {llzk.pub}
     struct.field @reg : !array.type<4 x !felt.type> {column}
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@NondetExtReg<[]>>
@@ -149,7 +149,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Div<[]> {
-    struct.field @"$super" : !felt.type
+    struct.field @"$super" : !felt.type {llzk.pub}
     struct.field @reciprocal : !felt.type
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_witness} {
       %self = struct.new : <@Div<[]>>
