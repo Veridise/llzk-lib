@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include "llzk-c/Dialect/LLZK.h"
 
@@ -21,3 +22,5 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(LLZK, llzk, LLZKDialect)
 MlirAttribute llzkPublicAttrGet(MlirContext ctx) { return wrap(PublicAttr::get(unwrap(ctx))); }
 
 bool llzkAttributeIsAPublicAttr(MlirAttribute attr) { return llvm::isa<PublicAttr>(unwrap(attr)); }
+
+bool llzkOperationIsANonDetOp(MlirOperation op) { return llvm::isa<NonDetOp>(unwrap(op)); }
