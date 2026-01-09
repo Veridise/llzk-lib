@@ -34,6 +34,13 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkPublicAttrGet(MlirContext context);
 /// Returns true if the attribute is a PublicAttr.
 LLZK_DECLARE_ATTR_ISA(PublicAttr);
 
+/// Creates a llzk::LoopBoundsAttr.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkLoopBoundsAttrGet(MlirContext context, int64_t lower, int64_t upper, int64_t step);
+
+/// Returns true if the attribute is a LoopBoundsAttr.
+LLZK_DECLARE_ATTR_ISA(LoopBoundsAttr);
+
 #ifdef __cplusplus
 }
 #endif

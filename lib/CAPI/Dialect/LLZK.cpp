@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 
@@ -21,3 +22,11 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(LLZK, llzk, LLZKDialect)
 MlirAttribute llzkPublicAttrGet(MlirContext ctx) { return wrap(PublicAttr::get(unwrap(ctx))); }
 
 bool llzkAttributeIsAPublicAttr(MlirAttribute attr) { return llvm::isa<PublicAttr>(unwrap(attr)); }
+
+MlirAttribute llzkLoopBoundsAttrGet(MlirContext ctx, int64_t lower, int64_t upper, int64_t step) {
+  return wrap(LoopBoundsAttr::get(unwrap(ctx), toAPInt(lower), toAPInt(upper), toAPInt(step)));
+}
+
+bool llzkAttributeIsALoopBoundsAttr(MlirAttribute attr) {
+  return llvm::isa<LoopBoundsAttr>(unwrap(attr));
+}
