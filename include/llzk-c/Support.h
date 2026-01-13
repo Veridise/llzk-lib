@@ -84,6 +84,18 @@ MLIR_CAPI_EXPORTED MlirOperation LlzkSymbolLookupResultGetOperation(LlzkSymbolLo
 MLIR_CAPI_EXPORTED void
 mlirOperationReplaceUsesOfWith(MlirOperation op, MlirValue of, MlirValue with);
 
+//===----------------------------------------------------------------------===//
+// CAPI support of additional MLIR functionality.
+//===----------------------------------------------------------------------===//
+
+/// Walks operation `op` in `walkOrder`, with operations at the same nesting level traversed in
+/// reverse order, and calls `callback` on that operation. `*userData` is passed to the callback as
+/// well and can be used to tunnel some context or other data into the callback.
+MLIR_CAPI_EXPORTED
+void mlirOperationWalkReverse(
+    MlirOperation op, MlirOperationWalkCallback callback, void *userData, MlirWalkOrder walkOrder
+);
+
 #ifdef __cplusplus
 }
 #endif
