@@ -120,11 +120,11 @@ FuncDefOp ComputeConstrainToProductPass::alignFuncs(
   OpBuilder funcBuilder(compute);
 
   // Add compute/constrain attributes
-  compute.walk([&funcBuilder](mlir::Operation *op) {
+  compute.walk([&funcBuilder](Operation *op) {
     op->setAttr("product_source", funcBuilder.getStringAttr(FUNC_NAME_COMPUTE));
   });
 
-  constrain.walk([&funcBuilder](mlir::Operation *op) {
+  constrain.walk([&funcBuilder](Operation *op) {
     op->setAttr("product_source", funcBuilder.getStringAttr(FUNC_NAME_CONSTRAIN));
   });
 
