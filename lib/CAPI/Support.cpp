@@ -15,6 +15,7 @@
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
 #include <mlir/CAPI/Wrap.h>
+#include <mlir/IR/Iterators.h>
 
 using namespace llzk;
 using namespace mlir;
@@ -35,4 +36,35 @@ MlirOperation LlzkSymbolLookupResultGetOperation(LlzkSymbolLookupResult wrapped)
 /// Note: Duplicated from upstream LLVM. Available in 21.1.8 and later.
 void mlirOperationReplaceUsesOfWith(MlirOperation op, MlirValue oldValue, MlirValue newValue) {
   unwrap(op)->replaceUsesOfWith(unwrap(oldValue), unwrap(newValue));
+}
+
+/// Note: Duplicated from upstream LLVM.
+static mlir::WalkResult unwrap(MlirWalkResult result) {
+  switch (result) {
+  case MlirWalkResultAdvance:
+    return mlir::WalkResult::advance();
+
+  case MlirWalkResultInterrupt:
+    return mlir::WalkResult::interrupt();
+
+  case MlirWalkResultSkip:
+    return mlir::WalkResult::skip();
+  }
+  llvm_unreachable("unknown result in WalkResult::unwrap");
+}
+
+void mlirOperationWalkReverse(
+    MlirOperation from, MlirOperationWalkCallback callback, void *userData, MlirWalkOrder walkOrder
+) {
+  switch (walkOrder) {
+  case MlirWalkPreOrder:
+    unwrap(from)->walk<WalkOrder::PreOrder, ReverseIterator>([callback, userData](Operation *op) {
+      return unwrap(callback(wrap(op), userData));
+    });
+    break;
+  case MlirWalkPostOrder:
+    unwrap(from)->walk<WalkOrder::PostOrder, ReverseIterator>([callback, userData](Operation *op) {
+      return unwrap(callback(wrap(op), userData));
+    });
+  }
 }
