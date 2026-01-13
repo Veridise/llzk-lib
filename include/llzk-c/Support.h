@@ -93,7 +93,7 @@ mlirOperationReplaceUsesOfWith(MlirOperation op, MlirValue of, MlirValue with);
 /// well and can be used to tunnel some context or other data into the callback.
 MLIR_CAPI_EXPORTED
 void mlirOperationWalkReverse(
-    MlirOperation op, MlirOperationWalkCallback callback, void *userData, MlirWalkOrder walkOrder
+    MlirOperation from, MlirOperationWalkCallback callback, void *userData, MlirWalkOrder walkOrder
 );
 
 #ifdef __cplusplus

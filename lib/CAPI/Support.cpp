@@ -54,16 +54,16 @@ static mlir::WalkResult unwrap(MlirWalkResult result) {
 }
 
 void mlirOperationWalkReverse(
-    MlirOperation op, MlirOperationWalkCallback callback, void *userData, MlirWalkOrder walkOrder
+    MlirOperation from, MlirOperationWalkCallback callback, void *userData, MlirWalkOrder walkOrder
 ) {
   switch (walkOrder) {
   case MlirWalkPreOrder:
-    unwrap(op)->walk<WalkOrder::PreOrder, ReverseIterator>([callback, userData](Operation *op) {
+    unwrap(from)->walk<WalkOrder::PreOrder, ReverseIterator>([callback, userData](Operation *op) {
       return unwrap(callback(wrap(op), userData));
     });
     break;
   case MlirWalkPostOrder:
-    unwrap(op)->walk<WalkOrder::PostOrder, ReverseIterator>([callback, userData](Operation *op) {
+    unwrap(from)->walk<WalkOrder::PostOrder, ReverseIterator>([callback, userData](Operation *op) {
       return unwrap(callback(wrap(op), userData));
     });
   }
