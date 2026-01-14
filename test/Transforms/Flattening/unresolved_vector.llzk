@@ -1,0 +1,45 @@
+// RUN: llzk-opt -split-input-file %s -llzk-flatten 2>&1 | FileCheck --enable-var-scope %s
+// XFAIL: *
+// COM: Flattening with affine_map call parameters generates the error below.
+
+#sum = affine_map<()[s0, s1] -> (s0 + s1)>
+#id = affine_map<()[i] -> (i)>
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Vector<[@N]> {
+    struct.field @arr : !array.type<@N x !felt.type> {llzk.pub}
+    function.def @compute(%a : !felt.type) -> !struct.type<@Vector<[@N]>> {
+      %self = struct.new : <@Vector<[@N]>>
+      function.return %self : !struct.type<@Vector<[@N]>>
+    }
+    function.def @constrain(%self : !struct.type<@Vector<[@N]>>, %a : !felt.type) {
+      function.return
+    }
+  }
+  struct.def @Tester<[@A, @B]> {
+    function.def @compute(%6: !struct.type<@Vector<[#sum]>>) -> !struct.type<@Tester<[@A, @B]>> {
+      %self = struct.new : <@Tester<[@A, @B]>>
+      function.return %self : !struct.type<@Tester<[@A, @B]>>
+    }
+    function.def @constrain(%self: !struct.type<@Tester<[@A, @B]>>, %6: !struct.type<@Vector<[#sum]>>) {
+      function.return
+    }
+  }
+  struct.def @Main {
+    struct.field @Vector : !struct.type<@Vector<[#sum]>>
+    struct.field @tester : !struct.type<@Tester<[3, 4]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %s0 = arith.constant 3 : index
+      %s1 = arith.constant 4 : index
+      %a = felt.const 7
+      %t2 = function.call @Vector::@compute(%a){()[%s0, %s1]} : (!felt.type) -> !struct.type<@Vector<[#sum]>>
+      // error: 'function.call' op operand type mismatch: expected type '!struct.type<@Vector<[affine_map<()[s0, s1] -> (s0 + s1)>]>>', but found '!struct.type<@Vector_7>' for operand number 0
+      %tester = function.call @Tester::@compute(%t2): (!struct.type<@Vector<[#sum]>>) -> !struct.type<@Tester<[3,4]>>
+      %tester2 = function.call @Tester::@compute(%t2){()[%s0], ()[%s1]} : (!struct.type<@Vector<[#sum]>>) -> !struct.type<@Tester<[#id,#id]>>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
