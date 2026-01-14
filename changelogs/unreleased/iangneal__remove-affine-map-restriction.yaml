@@ -1,0 +1,2 @@
+changed:
+  - Allow compute functions to accept affine_map operands
