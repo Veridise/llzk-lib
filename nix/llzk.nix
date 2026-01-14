@@ -42,7 +42,7 @@ stdenv.mkDerivation {
   ];
 
   propagatedBuildInputs = [ pcl_pkg ];
-
+  dontStrip = (cmakeBuildType == "Debug") || (cmakeBuildType == "DebWithSans");
   cmakeFlags = [
     "-DCMAKE_BUILD_TYPE=${cmakeBuildType}"
     "-DLLZK_BUILD_DEVTOOLS=ON"
