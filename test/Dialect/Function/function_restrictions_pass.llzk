@@ -292,3 +292,180 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 //CHECK-NEXT: }
+
+
+// -----
+
+#map1 = affine_map<()[s0, s1] -> (s0 + s1)>
+module attributes {veridise.lang = "llzk"} {
+  struct.def @T2<[@N]> {
+    function.def @compute() -> !struct.type<@T2<[@N]>> {
+      %self = struct.new : <@T2<[@N]>>
+      function.return %self : !struct.type<@T2<[@N]>>
+    }
+    function.def @constrain(%self : !struct.type<@T2<[@N]>>) {
+      function.return
+    }
+  }
+  struct.def @Tester<[@S0, @S1]> {
+    function.def @compute(%6: !struct.type<@T2<[#map1]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
+      %self = struct.new : <@Tester<[@S0, @S1]>>
+      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
+    }
+    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %6: !struct.type<@T2<[#map1]>>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: #[[$A0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
+// CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+// CHECK-NEXT:    struct.def @T2<[@N]> {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@T2<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@T2<[@N]>>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@T2<[@N]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@T2<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Tester<[@S0, @S1]> {
+// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@T2<[#[[$A0]]]>>) -> !struct.type<@Tester<[@S0, @S1]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Tester<[@S0, @S1]>>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@Tester<[@S0, @S1]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Tester<[@S0, @S1]>>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@T2<[#[[$A0]]]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+#map1 = affine_map<()[s0, s1] -> (s0 + s1)>
+module attributes {veridise.lang = "llzk"} {
+  struct.def @T2<[@N]> {
+    function.def @compute() -> !struct.type<@T2<[@N]>> {
+      %self = struct.new : <@T2<[@N]>>
+      function.return %self : !struct.type<@T2<[@N]>>
+    }
+    function.def @constrain(%self : !struct.type<@T2<[@N]>>) {
+      function.return
+    }
+  }
+  struct.def @Tester<[@S0, @S1]> {
+    function.def @compute(%6: !struct.type<@T2<[#map1]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
+      %self = struct.new : <@Tester<[@S0, @S1]>>
+      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
+    }
+    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %6: !struct.type<@T2<[#map1]>>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
+// CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+// CHECK-NEXT:    struct.def @T2<[@N]> {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@T2<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@T2<[@N]>>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@T2<[@N]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@T2<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Tester<[@S0, @S1]> {
+// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@T2<[#[[$ATTR_0]]]>>) -> !struct.type<@Tester<[@S0, @S1]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Tester<[@S0, @S1]>>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@Tester<[@S0, @S1]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Tester<[@S0, @S1]>>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@T2<[#[[$ATTR_0]]]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+#sum = affine_map<()[s0, s1] -> (s0 + s1)>
+#id = affine_map<()[i] -> (i)>
+module attributes {veridise.lang = "llzk"} {
+  struct.def @Vector<[@N]> {
+    struct.field @arr : !array.type<@N x !felt.type> {llzk.pub}
+    function.def @compute(%a : !felt.type) -> !struct.type<@Vector<[@N]>> {
+      %self = struct.new : <@Vector<[@N]>>
+      function.return %self : !struct.type<@Vector<[@N]>>
+    }
+    function.def @constrain(%self : !struct.type<@Vector<[@N]>>, %a : !felt.type) {
+      function.return
+    }
+  }
+  struct.def @Tester<[@A, @B]> {
+    function.def @compute(%6: !struct.type<@Vector<[#sum]>>) -> !struct.type<@Tester<[@A, @B]>> {
+      %self = struct.new : <@Tester<[@A, @B]>>
+      function.return %self : !struct.type<@Tester<[@A, @B]>>
+    }
+    function.def @constrain(%self: !struct.type<@Tester<[@A, @B]>>, %6: !struct.type<@Vector<[#sum]>>) {
+      function.return
+    }
+  }
+  struct.def @Main {
+    struct.field @Vector : !struct.type<@Vector<[#sum]>>
+    struct.field @tester : !struct.type<@Tester<[3, 4]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %s0 = arith.constant 3 : index
+      %s1 = arith.constant 4 : index
+      %a = felt.const 7
+      %t2 = function.call @Vector::@compute(%a){()[%s0, %s1]} : (!felt.type) -> !struct.type<@Vector<[#sum]>>
+      %tester = function.call @Tester::@compute(%t2) : (!struct.type<@Vector<[#sum]>>) -> !struct.type<@Tester<[3,4]>>
+      %tester2 = function.call @Tester::@compute(%t2){()[%s0], ()[%s1]} : (!struct.type<@Vector<[#sum]>>) -> !struct.type<@Tester<[#id,#id]>>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
+// CHECK: #[[$ATTR_1:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+// CHECK-NEXT:    struct.def @Vector<[@N]> {
+// CHECK-NEXT:      struct.field @arr : !array.type<@N x !felt.type> {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Vector<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Vector<[@N]>>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Vector<[@N]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Vector<[@N]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Tester<[@A, @B]> {
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Vector<[#[[$ATTR_0]]]>>) -> !struct.type<@Tester<[@A, @B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Tester<[@A, @B]>>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Tester<[@A, @B]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@Tester<[@A, @B]>>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Vector<[#[[$ATTR_0]]]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.field @Vector : !struct.type<@Vector<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:      struct.field @tester : !struct.type<@Tester<[3, 4]>>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.const  7
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @Vector::@compute(%[[VAL_11]]) {(){{\[}}%[[VAL_9]], %[[VAL_10]]]} : (!felt.type) -> !struct.type<@Vector<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @Tester::@compute(%[[VAL_12]]) : (!struct.type<@Vector<[#[[$ATTR_0]]]>>) -> !struct.type<@Tester<[3, 4]>>
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = function.call @Tester::@compute(%[[VAL_12]]) {(){{\[}}%[[VAL_9]]], (){{\[}}%[[VAL_10]]]} : (!struct.type<@Vector<[#[[$ATTR_0]]]>>) -> !struct.type<@Tester<[#[[$ATTR_1]], #[[$ATTR_1]]]>>
+// CHECK-NEXT:        function.return %[[VAL_8]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

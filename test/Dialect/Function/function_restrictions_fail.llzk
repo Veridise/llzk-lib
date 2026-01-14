@@ -608,56 +608,6 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-#map1 = affine_map<()[s0, s1] -> (s0 + s1)>
-module attributes {veridise.lang = "llzk"} {
-  struct.def @T2<[@N]> {
-    function.def @compute() -> !struct.type<@T2<[@N]>> {
-      %self = struct.new : <@T2<[@N]>>
-      function.return %self : !struct.type<@T2<[@N]>>
-    }
-    function.def @constrain(%self : !struct.type<@T2<[@N]>>) {
-      function.return
-    }
-  }
-  struct.def @Tester<[@S0, @S1]> {
-    // expected-error@+1 {{'function.def' op "@compute" parameters cannot contain affine map attributes but found '!struct.type<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>}}
-    function.def @compute(%6: !struct.type<@T2<[#map1]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
-    }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %6: !struct.type<@T2<[#map1]>>) {
-      function.return
-    }
-  }
-}
-
-// -----
-
-#map1 = affine_map<()[s0, s1] -> (s0 + s1)>
-module attributes {veridise.lang = "llzk"} {
-  struct.def @T2<[@N]> {
-    function.def @compute() -> !struct.type<@T2<[@N]>> {
-      %self = struct.new : <@T2<[@N]>>
-      function.return %self : !struct.type<@T2<[@N]>>
-    }
-    function.def @constrain(%self : !struct.type<@T2<[@N]>>) {
-      function.return
-    }
-  }
-  struct.def @Tester<[@S0, @S1]> {
-     // expected-error@+1 {{'function.def' op "@constrain" parameters cannot contain affine map attributes but found '!struct.type<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>}}
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %6: !struct.type<@T2<[#map1]>>) {
-      function.return
-    }
-    function.def @compute(%6: !struct.type<@T2<[#map1]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
-    }
-  }
-}
-
-// -----
-
 !Signal = !struct.type<@Signal>
 module attributes {veridise.lang = "llzk"} {
   // pre-defined

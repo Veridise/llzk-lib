@@ -302,7 +302,7 @@ def CallOp : FunctionDialectOp<
       Variadic<AnyLLZKType>:$argOperands,
       // List of AffineMap operand groups where each group provides the
       // arguments to instantiate the next (left-to-right) AffineMap used as a
-      // struct parameter in the result StructType.
+      // struct parameter in the input or result StructType(s).
       VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands,
       // Within each group in '$mapOperands', denotes the number of values that
       // are AffineMap "dimensional" arguments with the remaining values being
@@ -359,13 +359,13 @@ def CallOp : FunctionDialectOp<
   let extraClassDeclaration = [{
     ::mlir::FunctionType getCalleeType();
 
-    /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` (this 
+    /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` (this
     /// does not check if the callee function is located within a StructDefOp).
     inline bool calleeIsCompute() {
       return FUNC_NAME_COMPUTE == getCallee().getLeafReference();
     }
 
-    /// Return `true` iff the callee function can contain witness generation code 
+    /// Return `true` iff the callee function can contain witness generation code
     /// (this does not check if the callee function is located within a StructDefOp)
     inline bool calleeContainsWitnessGen() {
       return FUNC_NAME_COMPUTE == getCallee().getLeafReference() ||

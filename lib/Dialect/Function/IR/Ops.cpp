@@ -225,19 +225,11 @@ bool FuncDefOp::hasArgPublicAttr(unsigned index) {
 
 LogicalResult FuncDefOp::verify() {
   OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
-  // Ensure that only valid LLZK types are used for arguments and return. Additionally, the struct
-  // functions may not use AffineMapAttrs in their parameter types. If such a scenario seems to make
-  // sense when generating LLZK IR, it's likely better to introduce a struct parameter to use
-  // instead and instantiate the struct with that AffineMapAttr.
+  // Ensure that only valid LLZK types are used for arguments and return.
   FunctionType type = getFunctionType();
   for (Type t : type.getInputs()) {
     if (llzk::checkValidType(emitErrorFunc, t).failed()) {
       return failure();
-    }
-    if (isInStruct() && hasAffineMapAttr(t)) {
-      return emitErrorFunc().append(
-          "\"@", getName(), "\" parameters cannot contain affine map attributes but found ", t
-      );
     }
   }
   for (Type t : type.getResults()) {
@@ -522,6 +514,9 @@ struct KnownTargetVerifier : public CallOpVerifier {
       if (StructType retTy = callOp->getSingleResultTypeOfWitnessGen()) {
         if (ArrayAttr params = retTy.getParams()) {
           // Collect the struct parameters that are defined via AffineMapAttr
+          // Even though arguments to compute might also have AffineMapAttr, we
+          // do not need to verify them here, as the params will have to be passed
+          // to those affine maps elsewhere in order to create the SSA value.
           SmallVector<AffineMapAttr> mapAttrs;
           for (Attribute a : params) {
             if (AffineMapAttr m = dyn_cast<AffineMapAttr>(a)) {
