@@ -13,6 +13,19 @@
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/OpImplementation.h>
+#include <mlir/IR/Value.h>
+
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
 #include "llzk/Dialect/POD/IR/Ops.h.inc"
+
+namespace llzk::pod {
+
+// mlir::ParseResult parseRecordInitializations(mlir::OpAsmParser &parser, mlir::SmallVector <)
+
+mlir::ParseResult parseRecordName(mlir::AsmParser &parser, mlir::StringAttr &name);
+void printRecordName(mlir::AsmPrinter &printer, mlir::Operation *, mlir::StringAttr name);
+
+} // namespace llzk::pod

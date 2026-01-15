@@ -23,11 +23,16 @@ class PODDialectAttr<string name, string attrMnemonic, list<Trait> traits = []>
 
 def LLZK_RecordAttr : PODDialectAttr<"Record", "record"> {
   let summary = "A named entry in a plain-old-data struct";
-  let parameters = (ins AttrParameter<"::mlir::FlatSymbolRefAttr",
+  let parameters = (ins AttrParameter<"::mlir::StringAttr",
                                       "Name of the record entry.">:$name,
-      AttrParameter<"::mlir::TypeAttr", "Type of the record entry.">:$type);
+      AttrParameter<"::mlir::Type", "Type of the record entry.">:$type);
 
-  let assemblyFormat = " $name `:` $type ";
+  let assemblyFormat = "`` custom<Record>($name, $type)";
+
+  let extraClassDeclaration = [{
+    /// Returns the record name as a symbol.
+    ::mlir::FlatSymbolRefAttr getNameSym() const;
+  }];
 }
 
 #endif // POD_ATTRS

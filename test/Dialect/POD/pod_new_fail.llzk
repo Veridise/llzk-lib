@@ -1,0 +1,10 @@
+// R UN: llzk-opt %s -split-input-file -verify-diagnostics
+
+function.def @constant_scalar_mismatch() {
+  %a = felt.const 6744573456376
+  %b = arith.constant 2 : index // expected-note {{prior use here}}
+  // expected-error@+1 {{use of value '%b' expects different type than prior uses: '!felt.type' vs 'index'}}
+  %r = array.new %a, %b : !array.type<2 x !felt.type>
+}
+
+// -----

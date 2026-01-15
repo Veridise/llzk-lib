@@ -19,6 +19,7 @@ def PODDialect : Dialect {
   let cppNamespace = "::llzk::pod";
 
   let useDefaultAttributePrinterParser = true;
+  let useDefaultTypePrinterParser = true;
 }
 
 #endif // LLZK_DIALECT

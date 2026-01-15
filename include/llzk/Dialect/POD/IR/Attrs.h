@@ -10,7 +10,15 @@
 #pragma once
 
 #include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinAttributes.h>
 
 // Include TableGen'd declarations
 #define GET_ATTRDEF_CLASSES
 #include "llzk/Dialect/POD/IR/Attrs.h.inc"
+
+namespace llzk::pod {
+
+mlir::ParseResult parseRecord(mlir::AsmParser &parser, mlir::StringAttr &name, mlir::Type &type);
+void printRecord(mlir::AsmPrinter &printer, mlir::StringAttr name, mlir::Type type);
+
+} // namespace llzk::pod
