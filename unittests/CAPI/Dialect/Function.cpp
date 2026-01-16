@@ -218,28 +218,14 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands) {
   auto builder = mlirOpBuilderCreate(ctx);
   auto location = mlirLocationUnknownGet(ctx);
   auto callee_name = mlirFlatSymbolRefAttrGet(ctx, f.nameRef());
-  auto dims_per_map = mlirDenseI32ArrayGet(ctx, 0, (const int *)NULL);
+  auto mapOperands = llzkAffineMapOperandsBuilderCreate();
   auto call = llzkCallOpBuildWithMapOperands(
-      builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
-      (const MlirValueRange *)NULL, dims_per_map, 0, (const MlirValue *)NULL
+      builder, location, f.out_types.size(), f.out_types.data(), callee_name, mapOperands, 0,
+      (const MlirValue *)NULL
   );
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
-  mlirOpBuilderDestroy(builder);
-}
-
-TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands_and_dims) {
-  auto f = test_function0();
-  auto ctx = mlirOperationGetContext(f.op);
-  auto builder = mlirOpBuilderCreate(ctx);
-  auto location = mlirLocationUnknownGet(ctx);
-  auto callee_name = mlirFlatSymbolRefAttrGet(ctx, f.nameRef());
-  auto call = llzkCallOpBuildWithMapOperandsAndDims(
-      builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
-      (const MlirValueRange *)NULL, 0, (const int *)NULL, 0, (const MlirValue *)NULL
-  );
-  EXPECT_TRUE(mlirOperationVerify(call));
-  mlirOperationDestroy(call);
+  llzkAffineMapOperandsBuilderDestroy(mapOperands);
   mlirOpBuilderDestroy(builder);
 }
 
@@ -248,26 +234,13 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
   auto ctx = mlirOperationGetContext(f.op);
   auto builder = mlirOpBuilderCreate(ctx);
   auto location = mlirLocationUnknownGet(ctx);
-  auto dims_per_map = mlirDenseI32ArrayGet(ctx, 0, (const int *)NULL);
+  auto mapOperands = llzkAffineMapOperandsBuilderCreate();
   auto call = llzkCallOpBuildToCalleeWithMapOperands(
-      builder, location, f.op, 0, (const MlirValueRange *)NULL, dims_per_map, 0,
-      (const MlirValue *)NULL
+      builder, location, f.op, mapOperands, 0, (const MlirValue *)NULL
   );
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
-  mlirOpBuilderDestroy(builder);
-}
-
-TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims) {
-  auto f = test_function0();
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-  auto call = llzkCallOpBuildToCalleeWithMapOperandsAndDims(
-      builder, location, f.op, 0, (const MlirValueRange *)NULL, 0, (const int *)NULL, 0,
-      (const MlirValue *)NULL
-  );
-  EXPECT_TRUE(mlirOperationVerify(call));
-  mlirOperationDestroy(call);
+  llzkAffineMapOperandsBuilderDestroy(mapOperands);
   mlirOpBuilderDestroy(builder);
 }
 
