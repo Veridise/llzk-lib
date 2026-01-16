@@ -119,7 +119,7 @@ typedef struct LlzkAffineMapOperandsBuilder {
   } dimsPerMap;
 } LlzkAffineMapOperandsBuilder;
 
-/// Creates a new struct. The owner is responsible of cleaning the struct.
+/// Creates a new struct. The owner is responsible for cleaning the struct.
 MLIR_CAPI_EXPORTED LlzkAffineMapOperandsBuilder llzkAffineMapOperandsBuilderCreate();
 
 /// Destroys the struct releasing its resources.

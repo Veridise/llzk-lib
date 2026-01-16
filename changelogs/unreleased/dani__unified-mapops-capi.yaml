@@ -3,7 +3,7 @@
 
 added:
   - CAPI:
-      - Adds a builder for simplify working with affine map operands.
+      - Adds a builder to simplify working with affine map operands.
 changed:
   - CAPI:
       - Refactor constructors that accept affine map operands to use the new API.
