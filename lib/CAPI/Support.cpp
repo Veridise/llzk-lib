@@ -123,6 +123,10 @@ void llzkAffineMapOperandsBuilderAppendOperandsWithDimCount(
     LlzkAffineMapOperandsBuilder *builder, intptr_t n, MlirValueRange const *mapOperands,
     int32_t const *dimsPerMap
 ) {
+  intptr_t nDimsPerMap = builder->nDimsPerMap < 0
+                             ? unwrap_cast<DenseI32ArrayAttr>(builder->dimsPerMap.attr).size()
+                             : builder->nDimsPerMap;
+  assert(builder->nMapOperands == nDimsPerMap);
   llzkAffineMapOperandsBuilderAppendOperands(builder, n, mapOperands);
   llzkAffineMapOperandsBuilderAppendDimCount(builder, n, dimsPerMap);
 }
