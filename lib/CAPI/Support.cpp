@@ -80,11 +80,11 @@ void mlirOperationWalkReverse(
 //===----------------------------------------------------------------------===//
 
 namespace {
-template <typename T> void appendElems(T const *src, intptr_t srcSize, T *dst, intptr_t *dstSize) {
-  dst = static_cast<T *>(std::realloc(dst, (srcSize + *dstSize) * sizeof(T)));
+template <typename T> void appendElems(T const *src, intptr_t srcSize, T *&dst, intptr_t &dstSize) {
+  dst = static_cast<T *>(std::realloc(dst, (srcSize + dstSize) * sizeof(T)));
   assert(dst && "Failed to increase the size of buffer");
-  std::memcpy(dst + *dstSize, src, srcSize * sizeof(T));
-  *dstSize += srcSize;
+  std::memcpy(dst + dstSize, src, srcSize * sizeof(T));
+  dstSize += srcSize;
 }
 
 void maybeDeallocArray(LlzkAffineMapOperandsBuilder *builder) {
@@ -116,7 +116,7 @@ void llzkAffineMapOperandsBuilderDestroy(LlzkAffineMapOperandsBuilder builder) {
 void llzkAffineMapOperandsBuilderAppendOperands(
     LlzkAffineMapOperandsBuilder *builder, intptr_t n, MlirValueRange const *mapOperands
 ) {
-  appendElems(mapOperands, n, builder->mapOperands, &builder->nMapOperands);
+  appendElems(mapOperands, n, builder->mapOperands, builder->nMapOperands);
 }
 
 void llzkAffineMapOperandsBuilderAppendOperandsWithDimCount(
@@ -136,7 +136,7 @@ void llzkAffineMapOperandsBuilderAppendDimCount(
     LlzkAffineMapOperandsBuilder *builder, intptr_t n, int32_t const *dimsPerMap
 ) {
   llzkAffineMapOperandsBuilderConvertDimsPerMapToArray(builder);
-  appendElems(dimsPerMap, n, builder->dimsPerMap.array, &builder->nDimsPerMap);
+  appendElems(dimsPerMap, n, builder->dimsPerMap.array, builder->nDimsPerMap);
 }
 
 void llzkAffineMapOperandsBuilderSetDimsPerMapFromAttr(
