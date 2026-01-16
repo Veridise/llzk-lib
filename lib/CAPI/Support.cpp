@@ -89,11 +89,23 @@ template <typename T> void appendElems(T const *src, intptr_t srcSize, T *&dst, 
   dstSize += srcSize;
 }
 
-void maybeDeallocArray(LlzkAffineMapOperandsBuilder *builder) {
+static void maybeDeallocArray(LlzkAffineMapOperandsBuilder *builder) {
   if (builder->nDimsPerMap >= 0 && builder->dimsPerMap.array) {
     std::free(builder->dimsPerMap.array);
     builder->dimsPerMap.array = nullptr;
   }
+}
+
+/// Asserts that the length of both arrays is the same.
+///
+/// If the builder is in Attr mode uses the length of the attribute's
+/// internal buffer instead of the length property.
+static void assertArraysAreInSync(LlzkAffineMapOperandsBuilder *builder) {
+  intptr_t nDimsPerMap = builder->nDimsPerMap < 0
+                             ? unwrap_cast<DenseI32ArrayAttr>(builder->dimsPerMap.attr).size()
+                             : builder->nDimsPerMap;
+  (void)nDimsPerMap; // To silence unused variable warning if the assert below is compiled out.
+  assert(builder->nMapOperands == nDimsPerMap);
 }
 
 } // namespace
@@ -125,13 +137,10 @@ void llzkAffineMapOperandsBuilderAppendOperandsWithDimCount(
     LlzkAffineMapOperandsBuilder *builder, intptr_t n, MlirValueRange const *mapOperands,
     int32_t const *dimsPerMap
 ) {
-  intptr_t nDimsPerMap = builder->nDimsPerMap < 0
-                             ? unwrap_cast<DenseI32ArrayAttr>(builder->dimsPerMap.attr).size()
-                             : builder->nDimsPerMap;
-  (void)nDimsPerMap; // To silence unused variable warning if the assert below is compiled out.
-  assert(builder->nMapOperands == nDimsPerMap);
+  assertArraysAreInSync(builder);
   llzkAffineMapOperandsBuilderAppendOperands(builder, n, mapOperands);
   llzkAffineMapOperandsBuilderAppendDimCount(builder, n, dimsPerMap);
+  assertArraysAreInSync(builder);
 }
 
 void llzkAffineMapOperandsBuilderAppendDimCount(
