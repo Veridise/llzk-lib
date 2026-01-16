@@ -126,6 +126,7 @@ void llzkAffineMapOperandsBuilderAppendOperandsWithDimCount(
   intptr_t nDimsPerMap = builder->nDimsPerMap < 0
                              ? unwrap_cast<DenseI32ArrayAttr>(builder->dimsPerMap.attr).size()
                              : builder->nDimsPerMap;
+  (void)nDimsPerMap; // To silence unsused variable warning if the assert below is compiled out.
   assert(builder->nMapOperands == nDimsPerMap);
   llzkAffineMapOperandsBuilderAppendOperands(builder, n, mapOperands);
   llzkAffineMapOperandsBuilderAppendDimCount(builder, n, dimsPerMap);
