@@ -19,6 +19,7 @@
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <cstdint>
@@ -681,6 +682,19 @@ struct UnifierImpl {
     return typeParamsUnify(lhs.getParams(), rhs.getParams(), /*unifyDynamicSize=*/false);
   }
 
+  bool podTypesUnify(PodType lhs, PodType rhs) {
+    // Same number of records, with the same names in the same order and record types unify.
+    auto lhsRecords = lhs.getRecords();
+    auto rhsRecords = rhs.getRecords();
+
+    return lhsRecords.size() == rhsRecords.size() &&
+           llvm::all_of(llvm::zip_equal(lhsRecords, rhsRecords), [this](auto records) {
+      auto [lhsRecord, rhsRecord] = records;
+      return lhsRecord.getName() == rhsRecord.getName() &&
+             typesUnify(lhsRecord.getType(), rhsRecord.getType());
+    });
+  }
+
   bool typesUnify(Type lhs, Type rhs) {
     if (lhs == rhs) {
       return true;
@@ -702,6 +716,9 @@ struct UnifierImpl {
     }
     if (llvm::isa<ArrayType>(lhs) && llvm::isa<ArrayType>(rhs)) {
       return arrayTypesUnify(llvm::cast<ArrayType>(lhs), llvm::cast<ArrayType>(rhs));
+    }
+    if (llvm::isa<PodType>(lhs) && llvm::isa<PodType>(rhs)) {
+      return podTypesUnify(llvm::cast<PodType>(lhs), llvm::cast<PodType>(rhs));
     }
     return false;
   }
