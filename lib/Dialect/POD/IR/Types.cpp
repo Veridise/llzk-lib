@@ -34,6 +34,7 @@ PodType::verify(llvm::function_ref<InFlightDiagnostic()> emitError, ArrayRef<Rec
       emitError() << "found duplicated record name '" << recordName << "'";
       failed = true;
     }
+    seenNames.insert(recordName);
   }
   return mlir::failure(failed);
 }
