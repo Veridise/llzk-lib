@@ -123,7 +123,7 @@ typedef struct LlzkAffineMapOperandsBuilder {
 MLIR_CAPI_EXPORTED LlzkAffineMapOperandsBuilder llzkAffineMapOperandsBuilderCreate();
 
 /// Destroys the struct releasing its resources.
-MLIR_CAPI_EXPORTED void llzkAffineMapOperandsBuilderDestroy(LlzkAffineMapOperandsBuilder builder);
+MLIR_CAPI_EXPORTED void llzkAffineMapOperandsBuilderDestroy(LlzkAffineMapOperandsBuilder *builder);
 
 /// Appends the value ranges to the list of map operands.
 MLIR_CAPI_EXPORTED void llzkAffineMapOperandsBuilderAppendOperands(

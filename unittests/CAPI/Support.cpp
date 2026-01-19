@@ -128,7 +128,7 @@ protected:
   }
 
   ~LlzkAffineMapOperandsBuilderTests() override {
-    llzkAffineMapOperandsBuilderDestroy(builder);
+    llzkAffineMapOperandsBuilderDestroy(&builder);
     mlirContextDestroy(context);
     for (auto i = 0; i < 3; i++) {
       delete[] maps[i].values;

@@ -120,11 +120,16 @@ LlzkAffineMapOperandsBuilder llzkAffineMapOperandsBuilderCreate() {
   return builder;
 }
 
-void llzkAffineMapOperandsBuilderDestroy(LlzkAffineMapOperandsBuilder builder) {
-  if (builder.mapOperands) {
-    std::free(builder.mapOperands);
+void llzkAffineMapOperandsBuilderDestroy(LlzkAffineMapOperandsBuilder *builder) {
+  if (!builder) {
+    return;
   }
-  maybeDeallocArray(&builder);
+  if (builder->mapOperands) {
+    std::free(builder->mapOperands);
+  }
+  maybeDeallocArray(builder);
+  // Reset values to 0/NULL.
+  *builder = llzkAffineMapOperandsBuilderCreate();
 }
 
 void llzkAffineMapOperandsBuilderAppendOperands(

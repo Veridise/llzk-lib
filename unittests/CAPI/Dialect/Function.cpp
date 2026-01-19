@@ -225,7 +225,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands) {
   );
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
-  llzkAffineMapOperandsBuilderDestroy(mapOperands);
+  llzkAffineMapOperandsBuilderDestroy(&mapOperands);
   mlirOpBuilderDestroy(builder);
 }
 
@@ -240,7 +240,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
   );
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
-  llzkAffineMapOperandsBuilderDestroy(mapOperands);
+  llzkAffineMapOperandsBuilderDestroy(&mapOperands);
   mlirOpBuilderDestroy(builder);
 }
 

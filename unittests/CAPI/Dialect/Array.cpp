@@ -142,6 +142,6 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
 
   EXPECT_TRUE(mlirOperationVerify(op));
   mlirOperationDestroy(op);
-  llzkAffineMapOperandsBuilderDestroy(mapOperands);
+  llzkAffineMapOperandsBuilderDestroy(&mapOperands);
   mlirOpBuilderDestroy(builder);
 }
