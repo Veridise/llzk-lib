@@ -134,29 +134,12 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 /// Creates a CallOp with affine map operands.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
     CallOp, WithMapOperands, intptr_t numResults, MlirType const *results, MlirAttribute name,
-    intptr_t numMapOperands, MlirValueRange const *mapOperands, MlirAttribute numDimsPerMap,
-    intptr_t numArgOperands, MlirValue const *argOperands
-);
-
-/// Creates a CallOp with affine map operands.
-LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, WithMapOperandsAndDims, intptr_t numResults, MlirType const *results,
-    MlirAttribute name, intptr_t numMapOperands, MlirValueRange const *mapOperands,
-    intptr_t numDimsPermMapLength, int32_t const *numDimsPerMap, intptr_t numArgOperands,
-    MlirValue const *argOperands
+    LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands, MlirValue const *argOperands
 );
 
 /// Creates a CallOp with affine map operands to the given FuncDefOp.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, ToCalleeWithMapOperands, MlirOperation callee, intptr_t numMapOperands,
-    MlirValueRange const *mapOperands, MlirAttribute numDimsPerMap, intptr_t numArgOperands,
-    MlirValue const *argOperands
-);
-
-/// Creates a CallOp with affine map operands to the given FuncDefOp.
-LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, ToCalleeWithMapOperandsAndDims, MlirOperation callee, intptr_t numMapOperands,
-    MlirValueRange const *mapOperands, intptr_t numDimsPermMapLength, int32_t const *numDimsPerMap,
+    CallOp, ToCalleeWithMapOperands, MlirOperation callee, LlzkAffineMapOperandsBuilder mapOperands,
     intptr_t numArgOperands, MlirValue const *argOperands
 );
 
