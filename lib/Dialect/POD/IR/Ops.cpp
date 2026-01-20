@@ -102,8 +102,8 @@ static void collectMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
     for (auto param : t.getParams()) {
       TypeSwitch<Attribute, void>(param)
           .Case([&mapAttrs](AffineMapAttr m) { mapAttrs.push_back(m); })
-          .Case([&mapAttrs](TypeAttr t) {
-        collectMapAttrs(t.getValue(), mapAttrs);
+          .Case([&mapAttrs](TypeAttr ta) {
+        collectMapAttrs(ta.getValue(), mapAttrs);
       }).Default([](auto) {});
     }
   }).Default([](Type) {});
