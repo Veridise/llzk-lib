@@ -1,0 +1,8 @@
+# This is a template that lists the available options when creating a changelog entry file
+# Edit according to your changes, before marking a PR as ready for review.
+
+added:
+  - "`pod` dialect":
+    - "Dialect for working with **plain-old-data** structs."
+  - CAPI:
+    - "C bindings for the new `pod` dialect."
