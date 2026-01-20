@@ -48,7 +48,7 @@ static void buildCommon(
   SmallVector<Value, 4> values;
   SmallVector<StringRef, 4> names;
 
-  for (auto &record : initialValues) {
+  for (const auto &record : initialValues) {
     names.push_back(record.name);
     values.push_back(record.value);
   }
@@ -82,8 +82,8 @@ void NewPodOp::getAsmResultNames(llvm::function_ref<void(Value, StringRef)> setN
 }
 
 namespace {
-static void collectMapAttrs(Type t, SmallVector<AffineMapAttr> &mapAttrs) {
-  llvm::TypeSwitch<Type, void>(t)
+static void collectMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
+  llvm::TypeSwitch<Type, void>(type)
       .Case([&mapAttrs](PodType t) {
     for (auto record : t.getRecords()) {
       collectMapAttrs(record.getType(), mapAttrs);
