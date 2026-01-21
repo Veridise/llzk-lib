@@ -37,8 +37,8 @@ using namespace llzk::function;
 constexpr int INDEX_WIDTH = 64;
 
 class FuseProductLoopsPass : public impl::FuseProductLoopsPassBase<FuseProductLoopsPass> {
-  /// Identify pairs of top-level scf.for loops that can be fused, fuse them, and then try to fuse
-  /// any loops nested inside
+  /// Identify pairs of scf.for loops that can be fused, fuse them, and then recurse to fuse nested
+  /// loops
   void fuseMatchingLoopPairs(mlir::Region &body);
   bool canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp b);
 
@@ -113,7 +113,7 @@ bool FuseProductLoopsPass::canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp 
     return true;
   }
 
-  // If the trip counts not "constant up to a struct param", we definitely can't tell if they're
+  // If the trip counts are not "constant up to a struct param", we definitely can't tell if they're
   // equal
   if (!isConstOrStructParam(a.getLowerBound()) || !isConstOrStructParam(a.getUpperBound()) ||
       !isConstOrStructParam(a.getStep()) || !isConstOrStructParam(b.getLowerBound()) ||
@@ -121,19 +121,22 @@ bool FuseProductLoopsPass::canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp 
     return false;
   }
 
-  // If the trip counts are only "constant up to a struct param" but not actually constant, we need
-  // a solver to tell if the equations are the same
+  // If the trip counts are only "constant up to a struct param" but not actually constant, we can
+  // ask a solver if the equations are guaranteed to be the same
   llvm::SMTSolverRef solver = llvm::CreateZ3Solver();
-  // TODO: This assumes "symbols" are existentially quantified
   solver->addConstraint(
-      solver->mkNot(solver->mkEqual(tripCount(a, solver.get()), tripCount(b, solver.get())))
+      /* (actually ask if they "can't be different") */ solver->mkNot(
+          solver->mkEqual(tripCount(a, solver.get()), tripCount(b, solver.get()))
+      )
   );
 
-  // If its possible for the trip count exprs to be different, we can't prove anything
+  // The loops are fusable if its impossible for the trip count expressions to be different
   return !*solver->check();
 }
 
 void FuseProductLoopsPass::fuseMatchingLoopPairs(mlir::Region &body) {
+
+  // Start by collecting all possible loops
   llvm::SmallVector<mlir::scf::ForOp> witnessLoops, constraintLoops;
   body.walk<mlir::WalkOrder::PreOrder>([&witnessLoops, &constraintLoops](mlir::scf::ForOp forOp) {
     if (!forOp->hasAttrOfType<mlir::StringAttr>("product_source")) {
@@ -148,18 +151,24 @@ void FuseProductLoopsPass::fuseMatchingLoopPairs(mlir::Region &body) {
     return mlir::WalkResult::skip();
   });
 
+  // A pair of loops will be fused iff (1) they can be fused according to the rules above, and (2)
+  // neither can be fused with anything else (so there's no ambiguity)
   auto fusionCandidates = alignmentHelpers::getMatchingPairs<mlir::scf::ForOp>(
       witnessLoops, constraintLoops, std::bind_front(&FuseProductLoopsPass::canLoopsBeFused, this)
   );
 
-  // Shouldn't happen, since we allow partial matches
+  // This shouldn't happen, since we allow partial matches
   if (mlir::failed(fusionCandidates)) {
     signalPassFailure();
   }
 
+  // Finally, fuse all the marked loops...
   mlir::IRRewriter rewriter {&getContext()};
   for (auto [w, c] : *fusionCandidates) {
-    mlir::fuseIndependentSiblingForLoops(c, w, rewriter);
+    auto fusedLoop = mlir::fuseIndependentSiblingForLoops(c, w, rewriter);
+    fusedLoop->setAttr("product_source", rewriter.getAttr<mlir::StringAttr>("fused"));
+    // ...and recurse to fuse nested loops
+    fuseMatchingLoopPairs(fusedLoop.getBodyRegion());
   }
 }
 
