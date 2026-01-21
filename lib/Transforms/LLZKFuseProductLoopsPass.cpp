@@ -69,6 +69,7 @@ llvm::SMTExprRef mkExpr(mlir::Value value, llvm::SMTSolver *solver) {
     );
   }
   assert(false && "unsupported: checking non-constant trip counts");
+  return nullptr; // Unreachable
 }
 
 llvm::SMTExprRef tripCount(mlir::scf::ForOp op, llvm::SMTSolver *solver) {
