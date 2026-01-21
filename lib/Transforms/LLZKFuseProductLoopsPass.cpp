@@ -19,7 +19,7 @@
 #include "llzk/Util/AlignmentHelper.h"
 #include "llzk/Util/Constants.h"
 
-#include <mlir/Dialect/scf/Utils/Utils.h>
+#include <mlir/Dialect/SCF/Utils/Utils.h>
 
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/SMTAPI.h>
