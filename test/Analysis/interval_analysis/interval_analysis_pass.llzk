@@ -109,7 +109,7 @@ module attributes {veridise.lang = "llzk"} {
       %mul = felt.mul %a, %5
       %sub = felt.sub %mul, %5
       %1 = felt.div %11, %11
-      %mod = felt.mod %sub, %b
+      %mod = felt.umod %sub, %b
       %neg = felt.neg %mod
       %final = felt.add %mul, %neg
 

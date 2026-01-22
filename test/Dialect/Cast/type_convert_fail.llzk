@@ -84,7 +84,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-function.def @check_type_restriction_on_pram(
+function.def @check_type_restriction_on_param(
     %a: i1 // expected-note {{prior use here}}
   ) -> !felt.type {
   // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs 'i1'}}

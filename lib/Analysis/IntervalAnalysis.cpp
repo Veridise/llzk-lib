@@ -653,7 +653,7 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
                  .Case<SubFeltOp>([&](auto _) { return sub(smtSolver, lhs, rhs); })
                  .Case<MulFeltOp>([&](auto _) { return mul(smtSolver, lhs, rhs); })
                  .Case<DivFeltOp>([&](auto divOp) { return div(smtSolver, divOp, lhs, rhs); })
-                 .Case<ModFeltOp>([&](auto _) { return mod(smtSolver, lhs, rhs); })
+                 .Case<UnsignedModFeltOp>([&](auto _) { return mod(smtSolver, lhs, rhs); })
                  .Case<AndFeltOp>([&](auto _) { return bitAnd(smtSolver, lhs, rhs); })
                  .Case<ShlFeltOp>([&](auto _) { return shiftLeft(smtSolver, lhs, rhs); })
                  .Case<ShrFeltOp>([&](auto _) { return shiftRight(smtSolver, lhs, rhs); })
