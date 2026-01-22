@@ -497,7 +497,7 @@ public:
 bool AllowedTypes::isValidTypeImpl(Type type) {
   assert(
       !(no_int && no_felt && no_string && no_var && no_non_signal_struct && no_signal_struct &&
-        no_array) &&
+        no_array && no_pod) &&
       "All types have been deactivated"
   );
   struct Impl : LLZKTypeSwitch<Impl, bool> {
