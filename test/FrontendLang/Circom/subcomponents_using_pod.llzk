@@ -46,7 +46,9 @@
 
 // Type used to represent the inputs of the Sum template
 // We alias it here since we are going to repeat it a lot in the IR
-!sums_inputs = !pod.type<[@vec: !Vec, @c: !felt.type, @N: index]>
+!sums_inputs = !pod.type<[@vec: !Vec, @c: !felt.type]>
+// Parameters of the Sum template.
+!sums_params = !pod.type<[@N: index]>
 
 module attributes { veridise.lang = "llzk" } {
 
@@ -96,13 +98,16 @@ module attributes { veridise.lang = "llzk" } {
       %out = array.new : !array.type<2 x !felt.type>
       %sums = array.new : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
       %sums_inputs = array.new : !array.type<2 x !sums_inputs>
+      %sums_params = array.new : !array.type<2 x !sums_params>
       %const_0 = arith.constant 0 : index
       %const_1 = arith.constant 1 : index
       %const_4 = arith.constant 4 : index
       %const_3 = arith.constant 3 : index
 
       // sums[0] = Sum(4);
-      %0 = pod.new { @N = %const_4 } (%const_4) : !sums_inputs
+      %params0 = pod.new { @N = %const_4 }  : !sums_params
+      %0 = pod.new  (%const_4) : !sums_inputs
+      array.write %sums_params[%const_0] = %params0 : !array.type<2 x !sums_params>, !sums_params
       array.write %sums_inputs[%const_0] = %0 : !array.type<2 x !sums_inputs>, !sums_inputs
 
       // sums[0].c <== 0;
@@ -124,7 +129,9 @@ module attributes { veridise.lang = "llzk" } {
       }
 
       // sums[1] = Sum(3);
-      %2 = pod.new { @N = %const_3 } (%const_3) : !sums_inputs
+      %params2 = pod.new { @N = %const_3 }  : !sums_params
+      %2 = pod.new  (%const_3) : !sums_inputs
+      array.write %sums_params[%const_1] = %params2 : !array.type<2 x !sums_params>, !sums_params
       array.write %sums_inputs[%const_1] = %2 : !array.type<2 x !sums_inputs>, !sums_inputs
 
       // sums[1].c <== 1;
@@ -149,9 +156,10 @@ module attributes { veridise.lang = "llzk" } {
       // Constructors
       scf.for %i = %const_0 to %const_1 step %const_1 {
         %17 = array.read %sums_inputs[%i] : !array.type<2 x !sums_inputs>, !sums_inputs
+        %params17 = array.read %sums_params[%i] : !array.type<2 x !sums_params>, !sums_params
         %18 = pod.read %17[@vec] : !sums_inputs, !Vec
         %19 = pod.read %17[@c] : !sums_inputs, !felt.type
-        %20 = pod.read %17[@N] : !sums_inputs, index
+        %20 = pod.read %params17[@N] : !sums_params, index
     	  %21 = function.call @Sum::@compute(%18, %19){(%20)} : (!Vec, !felt.type) -> !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>
         array.write %sums[%i] = %21 : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>, !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>
       }
@@ -245,10 +253,9 @@ module attributes { veridise.lang = "llzk" } {
         %30 = array.read %29[%i] : !array.type<2 x !sums_inputs>, !sums_inputs
         %31 = pod.read %30[@vec] : !sums_inputs, !Vec
         %32 = pod.read %30[@c] : !sums_inputs, !felt.type
-        %33 = pod.read %30[@N] : !sums_inputs, index
         %34 = struct.readf %self[@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
         %35 = array.read %34[%i] : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>, !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>
-        function.call @Sum::@constrain(%35, %31, %32){(%33)} : (!struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !Vec, !felt.type) -> ()
+        function.call @Sum::@constrain(%35, %31, %32) : (!struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !Vec, !felt.type) -> ()
       }
       function.return
     }
