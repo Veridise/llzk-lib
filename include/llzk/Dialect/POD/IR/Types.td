@@ -27,12 +27,12 @@ class PODDialectType<string name, string typeMnemonic, list<Trait> traits = []>
 def LLZK_PODType : PODDialectType<"Pod", "type"> {
   let summary = "plain-old-data struct";
   let description = [{
-    Contains a list of `RecordAttr` defining the fields of the struct. 
-    It is possible to have a struct with no fields and the field order matters.
-    Additionally, record names cannot be repeated in the same struct.
+    Contains a list of `RecordAttr` defining structure of a pod. 
+    The order of records in the pod matters and each record must have a unique name.
+    It is possible to have a pod with no records.
 
-    Two `PODType` types unify if they have the same field names, defined in the 
-    same order, and if the types of each field unify.
+    Two `PODType` types unify if they have the same record names, defined in the 
+    same order, and if the types of corresponding records unify.
 
     This type can be used in the `struct.field` op, and it can be declared as a 
     column, transferring that annotations to the inner types that can also be columns.
@@ -48,7 +48,7 @@ def LLZK_PODType : PODDialectType<"Pod", "type"> {
 
   let parameters =
       (ins ArrayRefParameter<"::llzk::pod::RecordAttr",
-                             "List of records in the struct">:$records);
+                             "List of records in the pod">:$records);
 
   let genVerifyDecl = 1;
   let assemblyFormat = "`<` custom<PodType>($records) `>`";
