@@ -173,7 +173,83 @@ module attributes { veridise.lang = "llzk" } {
       function.return %self : !struct.type<@SumUser>
     }
     function.def @constrain(%self: !struct.type<@SumUser>, %x: !array.type<7 x !felt.type>) {
-      // TODO, gimme a few minutes
+      // Prologue
+      %const_0 = arith.constant 0 : index
+      %const_1 = arith.constant 1 : index
+      %const_4 = arith.constant 4 : index
+      %const_3 = arith.constant 3 : index
+
+      // sums[0] = Sum(4);
+      // do nothing
+
+      // sums[0].c <== 0;
+      %0 = struct.readf %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
+      %1 = array.read %0[%const_0] : !array.type<2 x !sums_inputs>, !sums_inputs
+      %2 = pod.read %1[@c] : !sums_inputs, !felt.type
+      %const_felt_0 = felt.const  0 
+      constrain.eq %2, %const_felt_0 : !felt.type
+
+      scf.for %i = %const_0 to %const_4 step %const_1 {
+        // sums[0].vec.p[i] <== x[i];
+        %16 = struct.readf %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
+        %17 = array.read %16[%const_0] : !array.type<2 x !sums_inputs>, !sums_inputs
+        %18 = pod.read %17[@vec] : !sums_inputs, !Vec
+        %19 = pod.read %18[@p] : !Vec, !array.type<affine_map<(d0) -> (d0)> x !felt.type>
+        %20 = array.read %19[%i] : !array.type<affine_map<(d0) -> (d0)> x !felt.type>, !felt.type
+        %21 = array.read %x[%i] : !array.type<7 x !felt.type>, !felt.type
+        constrain.eq %20, %21 : !felt.type
+      }
+
+      // sums[1] = Sum(3);
+      // do nothing
+
+      // sums[1].c <== 1;
+      %3 = struct.readf %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
+      %4 = array.read %3[%const_0] : !array.type<2 x !sums_inputs>, !sums_inputs
+      %5 = pod.read %4[@c] : !sums_inputs, !felt.type
+      %const_felt_1 = felt.const  1
+      constrain.eq %5, %const_felt_1 : !felt.type
+
+      scf.for %i = %const_0 to %const_3 step %const_1 {
+        // sums[1].vec.p[i] <== x[i+4];
+        %22 = struct.readf %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
+        %23 = array.read %22[%const_1] : !array.type<2 x !sums_inputs>, !sums_inputs
+        %24 = pod.read %23[@vec] : !sums_inputs, !Vec
+        %25 = pod.read %24[@p] : !Vec, !array.type<affine_map<(d0) -> (d0)> x !felt.type>
+        %26 = array.read %25[%i] : !array.type<affine_map<(d0) -> (d0)> x !felt.type>, !felt.type
+        %27 = arith.addi %i, %const_4 : index
+        %28 = array.read %x[%27] : !array.type<7 x !felt.type>, !felt.type
+        constrain.eq %26, %28 : !felt.type
+      }
+
+      // out[0] <== sums[0].sum;
+      %6 = struct.readf %self[@out] : <@SumUser>, !array.type<2 x !felt.type>
+      %7 = array.read %6[%const_0] : !array.type<2 x !felt.type>, !felt.type
+      %8 = struct.readf %self[@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
+      %9 = array.read %8[%const_0] : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>, !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>
+      %10 = struct.readf %9[@sum] : !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !felt.type
+      constrain.eq %7, %10 : !felt.type
+
+      // out[1] <== sums[1].sum;
+      %11 = struct.readf %self[@out] : <@SumUser>, !array.type<2 x !felt.type>
+      %12 = array.read %11[%const_1] : !array.type<2 x !felt.type>, !felt.type
+      %13 = struct.readf %self[@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
+      %14 = array.read %13[%const_1] : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>, !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>
+      %15 = struct.readf %14[@sum] : !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !felt.type
+      constrain.eq %12, %15 : !felt.type
+
+      // Epilogue
+      // Call constraint on the subcomponents
+      scf.for %i = %const_0 to %const_1 step %const_1 {
+        %29 = struct.readf %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
+        %30 = array.read %29[%i] : !array.type<2 x !sums_inputs>, !sums_inputs
+        %31 = pod.read %30[@vec] : !sums_inputs, !Vec
+        %32 = pod.read %30[@c] : !sums_inputs, !felt.type
+        %33 = pod.read %30[@N] : !sums_inputs, index
+        %34 = struct.readf %self[@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
+        %35 = array.read %34[%i] : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>, !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>
+        function.call @Sum::@constrain(%35, %31, %32){(%33)} : (!struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !Vec, !felt.type) -> ()
+      }
       function.return
     }
   }
