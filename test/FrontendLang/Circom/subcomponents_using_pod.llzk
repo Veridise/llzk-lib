@@ -239,7 +239,7 @@ module attributes { veridise.lang = "llzk" } {
       constrain.eq %12, %15 : !felt.type
 
       // Epilogue
-      // Call constraint on the subcomponents
+      // Call constrain on the subcomponents
       scf.for %i = %const_0 to %const_1 step %const_1 {
         %29 = struct.readf %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
         %30 = array.read %29[%i] : !array.type<2 x !sums_inputs>, !sums_inputs
