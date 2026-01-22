@@ -83,6 +83,7 @@ void NewPodOp::getAsmResultNames(llvm::function_ref<void(Value, StringRef)> setN
 }
 
 namespace {
+
 static void collectMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
   llvm::TypeSwitch<Type, void>(type)
       .Case([&mapAttrs](PodType t) {
@@ -96,16 +97,12 @@ static void collectMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
         mapAttrs.push_back(m);
       }
     }
-
-    collectMapAttrs(t.getElementType(), mapAttrs);
   })
       .Case([&mapAttrs](component::StructType t) {
     for (auto param : t.getParams()) {
-      TypeSwitch<Attribute, void>(param)
-          .Case([&mapAttrs](AffineMapAttr m) { mapAttrs.push_back(m); })
-          .Case([&mapAttrs](TypeAttr ta) {
-        collectMapAttrs(ta.getValue(), mapAttrs);
-      }).Default([](auto) {});
+      if (auto m = mlir::dyn_cast<AffineMapAttr>(param)) {
+        mapAttrs.push_back(m);
+      }
     }
   }).Default([](Type) {});
 }
