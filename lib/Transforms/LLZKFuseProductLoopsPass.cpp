@@ -166,7 +166,7 @@ void FuseProductLoopsPass::fuseMatchingLoopPairs(mlir::Region &body) {
   // Finally, fuse all the marked loops...
   mlir::IRRewriter rewriter {&getContext()};
   for (auto [w, c] : *fusionCandidates) {
-    auto fusedLoop = mlir::fuseIndependentSiblingForLoops(c, w, rewriter);
+    auto fusedLoop = mlir::fuseIndependentSiblingForLoops(w, c, rewriter);
     fusedLoop->setAttr("product_source", rewriter.getAttr<mlir::StringAttr>("fused"));
     // ...and recurse to fuse nested loops
     fuseMatchingLoopPairs(fusedLoop.getBodyRegion());
