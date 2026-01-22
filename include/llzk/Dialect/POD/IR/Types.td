@@ -2,7 +2,7 @@
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -60,12 +60,15 @@ def LLZK_PODType : PODDialectType<"Pod", "type"> {
     static PodType fromInitialValues(::mlir::MLIRContext *ctx, InitializedRecords init);
 
     /// Searches a record by name.
+    ///
+    /// If you plan to make several queries to this type, it's better to generate the map 
+    /// once via `getRecordMap()` and query it instead of repeatedly calling `getRecord()`.
     ::llvm::FailureOr<::mlir::Type> getRecord(::llvm::StringRef name, ::llvm::function_ref<::mlir::InFlightDiagnostic()>) const;
 
     /// Returns the records in map form.
     /// 
-    /// If you plan to make several queries to this type is better to generate the map 
-    /// once and query it instead than repeatedly calling `getRecord`.
+    /// If you plan to make several queries to this type, it's better to generate the map 
+    /// once via `getRecordMap()` and query it instead of repeatedly calling `getRecord()`.
     ::llvm::StringMap<::mlir::Type> getRecordMap() const;
   }];
 }

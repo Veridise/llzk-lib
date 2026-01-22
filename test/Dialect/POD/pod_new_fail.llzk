@@ -17,7 +17,7 @@ function.def @new_init_pod(%0: index, %1: index) -> !pod.type<[@x: index, @y: !f
 // -----
 
 function.def @new_init_pod(%0: index, %1: index) -> !pod.type<[@x: index, @y: !felt.type]> {
-  // expected-error@+1 {{custom op 'pod.new' record 'z' was not found in plain-old-data struct}}
+  // expected-error@+1 {{custom op 'pod.new' record 'z' was not found in plain-old-data type}}
   %r = pod.new { @x = %0, @z = %1 } : <[@x: index, @y: !felt.type]>
   function.return %r: !pod.type<[@x: index, @y: !felt.type]>
 }

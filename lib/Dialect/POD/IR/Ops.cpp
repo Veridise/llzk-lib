@@ -280,6 +280,8 @@ ParseResult NewPodOp::parse(OpAsmParser &parser, OperationState &result) {
       return failure();
     }
   }
+  assert(std::cmp_less_equal(initializedRecords.size(), std::numeric_limits<int32_t>::max()));
+  assert(std::cmp_less_equal(allMapOperands.size(), std::numeric_limits<int32_t>::max()));
   props.operandSegmentSizes = {
       static_cast<int32_t>(initializedRecords.size()), static_cast<int32_t>(allMapOperands.size())
   };

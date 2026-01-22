@@ -1,7 +1,7 @@
 // RUN: llzk-opt %s -split-input-file -verify-diagnostics
 
 function.def @read_pod(%pod: !pod.type<[@n: index]>) ->  index {
-  // expected-error@+1 {{record 'y' was not found in plain-old-data struct}}
+  // expected-error@+1 {{record 'y' was not found in plain-old-data type}}
   %r = pod.read %pod[@y] : !pod.type<[@n: index]>, index
   function.return %r: index
 }

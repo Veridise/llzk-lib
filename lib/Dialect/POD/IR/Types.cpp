@@ -53,7 +53,7 @@ PodType::getRecord(StringRef recordName, function_ref<InFlightDiagnostic()> emit
       return record.getType();
     }
   }
-  return emitError() << "record '" << recordName << "' was not found in plain-old-data struct";
+  return emitError() << "record '" << recordName << "' was not found in plain-old-data type";
 }
 
 llvm::StringMap<Type> PodType::getRecordMap() const {
@@ -82,7 +82,6 @@ void printPodType(AsmPrinter &printer, ArrayRef<RecordAttr> records) {
   os << '[';
   printer.printStrippedAttrOrType(records);
   os << ']';
-  // llvm::interleaveComma(records, printer.getStream());
 }
 
 } // namespace llzk::pod
