@@ -66,7 +66,8 @@ void registerTransformationPassPipelines() {
   );
 
   PassPipelineRegistration<>(
-      "llzk-full-r1cs-lowering", "Lower all polynomial constraints to r1cs", [](OpPassManager &pm) {
+      "llzk-full-r1cs-lowering", "Lower all polynomial constraints to r1cs",
+      [](OpPassManager &pm) {
     // 1. Degree lowering
     pm.addPass(llzk::createPolyLoweringPass(2));
 
@@ -84,7 +85,10 @@ void registerTransformationPassPipelines() {
   PassPipelineRegistration<>(
       "llzk-product-program",
       "Convert @compute/@constrain functions to @product function and perform alignment",
-      [](OpPassManager &pm) { pm.addPass(llzk::createComputeConstrainToProductPass()); }
+      [](OpPassManager &pm) {
+    pm.addPass(llzk::createComputeConstrainToProductPass());
+    pm.addPass(llzk::createFuseProductLoopsPass());
+  }
   );
 }
 

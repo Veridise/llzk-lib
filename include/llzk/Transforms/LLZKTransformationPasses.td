@@ -121,8 +121,8 @@ def ComputeConstrainToProductPass
 }
 
 def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
-  let summary = "Identifies matching witness/constraint loops in a @product "
-                "function and fuses them when possible";
+  let summary =
+      "Fuses matching witness/constraint loops in a @product function";
   let description = summary;
   let constructor = "llzk::createFuseProductLoopsPass()";
   let options = [];
