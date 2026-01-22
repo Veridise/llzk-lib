@@ -35,7 +35,6 @@
 
 class PODDialectTests : public CAPITest {
 protected:
-  MlirType indexType() { return mlirIndexTypeGet(context); }
   mlir::Type unwrappedIndexType() { return mlir::IndexType::get(unwrap(context)); }
 
   llzk::pod::RecordAttr recordAttr(llvm::StringRef name, mlir::Type type) {
@@ -74,7 +73,7 @@ protected:
 
 TEST_F(PODDialectTests, llzkRecordAttrGet) {
   auto name = mlirStringRefCreateFromCString("a record name");
-  auto type = indexType();
+  auto type = createIndexType();
   auto attr = llzkRecordAttrGet(name, type);
 
   auto unwrapped = mlir::unwrap_cast<llzk::pod::RecordAttr>(attr);
@@ -104,7 +103,7 @@ TEST_F(PODDialectTests, llzkRecordAttrGetType) {
 }
 
 TEST_F(PODDialectTests, llzkPodTypeGet) {
-  auto record = llzkRecordAttrGet(mlirStringRefCreateFromCString("record name"), indexType());
+  auto record = llzkRecordAttrGet(mlirStringRefCreateFromCString("record name"), createIndexType());
   auto type = llzkPodTypeGet(context, 1, &record);
   mlir::Type expected =
       llzk::pod::PodType::get(unwrap(context), {recordAttr("record name", unwrappedIndexType())});
@@ -112,7 +111,7 @@ TEST_F(PODDialectTests, llzkPodTypeGet) {
 }
 
 TEST_F(PODDialectTests, llzkPodTypeGetFromInitialValues) {
-  auto ops = createNOps(2, indexType());
+  auto ops = createNOps(2, createIndexType());
 
   LlzkRecordValue initialValues[] = {
       LlzkRecordValue {
