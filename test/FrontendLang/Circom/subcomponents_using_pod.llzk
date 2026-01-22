@@ -173,6 +173,7 @@ module attributes { veridise.lang = "llzk" } {
       function.return %self : !struct.type<@SumUser>
     }
     function.def @constrain(%self: !struct.type<@SumUser>, %x: !array.type<7 x !felt.type>) {
+      // TODO, gimme a few minutes
       function.return
     }
   }
