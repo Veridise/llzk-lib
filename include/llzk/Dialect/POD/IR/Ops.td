@@ -44,7 +44,7 @@ def LLZK_NewPodOp
 
     Examples:
     ```llzk 
-    // Empty pod instance (there's likely no practical use for this).
+    // Empty pod instance
     %0 = pod.new : !pod.type<[]>
 
     // Uninitialized/nondeterministic pod instance
