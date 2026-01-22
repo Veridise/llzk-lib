@@ -10,6 +10,7 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/POD/IR/Attrs.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
@@ -20,9 +21,11 @@
 #include "llzk/Util/TypeHelper.h"
 
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <cstdint>
+#include <numeric>
 
 using namespace mlir;
 
@@ -587,7 +590,7 @@ uint64_t computeEmitEqCardinality(Type type) {
     uint64_t caseArray(ArrayType t) {
       int64_t n = t.getNumElements();
       assert(n >= 0);
-      return static_cast<uint64_t>(n);
+      return static_cast<uint64_t>(n) * computeEmitEqCardinality(t.getElementType());
     }
     uint64_t caseStruct(StructType t) {
       if (isSignalType(t)) {
@@ -595,7 +598,14 @@ uint64_t computeEmitEqCardinality(Type type) {
       }
       llvm_unreachable("not a valid EmitEq type");
     }
-    uint64_t casePod(PodType) { llvm_unreachable("not a valid EmitEq type"); }
+    uint64_t casePod(PodType t) {
+      return std::accumulate(
+          t.getRecords().begin(), t.getRecords().end(), 0,
+          [](const uint64_t &acc, const RecordAttr &record) {
+        return computeEmitEqCardinality(record.getType()) + acc;
+      }
+      );
+    }
     uint64_t caseString(StringType) { llvm_unreachable("not a valid EmitEq type"); }
     uint64_t caseTypeVar(TypeVarType) { llvm_unreachable("tvar has unknown cardinality"); }
     uint64_t caseInvalid(Type) { llvm_unreachable("not a valid LLZK type"); }
