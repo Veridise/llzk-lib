@@ -688,8 +688,8 @@ struct UnifierImpl {
     auto rhsRecords = rhs.getRecords();
 
     return lhsRecords.size() == rhsRecords.size() &&
-           llvm::all_of(llvm::zip_equal(lhsRecords, rhsRecords), [this](auto records) {
-      auto [lhsRecord, rhsRecord] = records;
+           llvm::all_of(llvm::zip_equal(lhsRecords, rhsRecords), [this](auto &&records) {
+      auto &&[lhsRecord, rhsRecord] = records;
       return lhsRecord.getName() == rhsRecord.getName() &&
              typesUnify(lhsRecord.getType(), rhsRecord.getType());
     });
