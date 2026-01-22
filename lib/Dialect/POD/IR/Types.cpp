@@ -2,7 +2,7 @@
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -48,7 +48,7 @@ PodType PodType::fromInitialValues(MLIRContext *ctx, InitializedRecords init) {
 
 FailureOr<Type>
 PodType::getRecord(StringRef recordName, function_ref<InFlightDiagnostic()> emitError) const {
-  for (auto record : getRecords()) {
+  for (RecordAttr record : getRecords()) {
     if (record.getName() == recordName) {
       return record.getType();
     }
@@ -58,8 +58,7 @@ PodType::getRecord(StringRef recordName, function_ref<InFlightDiagnostic()> emit
 
 llvm::StringMap<Type> PodType::getRecordMap() const {
   llvm::StringMap<Type> map;
-
-  for (auto record : getRecords()) {
+  for (RecordAttr record : getRecords()) {
     map.insert({record.getName(), record.getType()});
   }
   return map;
