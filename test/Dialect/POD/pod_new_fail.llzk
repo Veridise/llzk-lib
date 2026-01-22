@@ -30,4 +30,3 @@ function.def @new_init_pod(%0: index, %1: index) -> !pod.type<[@x: index, @y: !f
   %r = pod.new { @x = %0, @y = %1 } : <[@x: index, @y: !felt.type]>
   function.return %r: !pod.type<[@x: index, @y: !felt.type]>
 }
-

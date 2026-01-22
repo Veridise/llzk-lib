@@ -23,4 +23,3 @@ function.def @write_pod2(%pod: !pod.type<[@n: index, @y: index]>, %value: index)
 //CHECK-NEXT:      pod.write %[[POD]][@n] = %[[VAL]] : <[@n: index, @y: index]>, index
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:   }
-

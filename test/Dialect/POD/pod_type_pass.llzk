@@ -81,23 +81,23 @@ function.def @unify_cast_pod(
 // -----
 
 module attributes { veridise.lang = "llzk"} {
-struct.def @ConstraintPod {
-function.def @compute(
-    %0: !pod.type<[@n: !felt.type]>,
-    %1: !pod.type<[@n: !felt.type]>
-) -> !struct.type<@ConstraintPod> {
-  %self = struct.new : !struct.type<@ConstraintPod>
-  function.return %self : !struct.type<@ConstraintPod>
-}
-function.def @constrain(
-    %self: !struct.type<@ConstraintPod>,
-    %0: !pod.type<[@n: !felt.type]>,
-    %1: !pod.type<[@n: !felt.type]>
-)  {
-  constrain.eq %0, %1 : !pod.type<[@n: !felt.type]>
-  function.return
-}
-}
+  struct.def @ConstraintPod {
+    function.def @compute(
+        %0: !pod.type<[@n: !felt.type]>,
+        %1: !pod.type<[@n: !felt.type]>
+    ) -> !struct.type<@ConstraintPod> {
+      %self = struct.new : !struct.type<@ConstraintPod>
+      function.return %self : !struct.type<@ConstraintPod>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ConstraintPod>,
+        %0: !pod.type<[@n: !felt.type]>,
+        %1: !pod.type<[@n: !felt.type]>
+    )  {
+      constrain.eq %0, %1 : !pod.type<[@n: !felt.type]>
+      function.return
+    }
+  }
 }
 //CHECK-LABEL:  function.def @constrain(
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type]>,
@@ -111,23 +111,23 @@ function.def @constrain(
 // -----
 
 module attributes { veridise.lang = "llzk"} {
-struct.def @ConstraintPod {
-function.def @compute(
-    %0: !pod.type<[@n: !felt.type, @m: !felt.type]>,
-    %1: !pod.type<[@n: !felt.type, @m: !felt.type]>
-) -> !struct.type<@ConstraintPod> {
-  %self = struct.new : !struct.type<@ConstraintPod>
-  function.return %self : !struct.type<@ConstraintPod>
-}
-function.def @constrain(
-    %self: !struct.type<@ConstraintPod>,
-    %0: !pod.type<[@n: !felt.type, @m: !felt.type]>,
-    %1: !pod.type<[@n: !felt.type, @m: !felt.type]>
-)  {
-  constrain.eq %0, %1 : !pod.type<[@n: !felt.type, @m: !felt.type]>
-  function.return
-}
-}
+  struct.def @ConstraintPod {
+    function.def @compute(
+        %0: !pod.type<[@n: !felt.type, @m: !felt.type]>,
+        %1: !pod.type<[@n: !felt.type, @m: !felt.type]>
+    ) -> !struct.type<@ConstraintPod> {
+      %self = struct.new : !struct.type<@ConstraintPod>
+      function.return %self : !struct.type<@ConstraintPod>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ConstraintPod>,
+        %0: !pod.type<[@n: !felt.type, @m: !felt.type]>,
+        %1: !pod.type<[@n: !felt.type, @m: !felt.type]>
+    )  {
+      constrain.eq %0, %1 : !pod.type<[@n: !felt.type, @m: !felt.type]>
+      function.return
+    }
+  }
 }
 //CHECK-LABEL:  function.def @constrain(
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type, @m: !felt.type]>,
@@ -141,23 +141,23 @@ function.def @constrain(
 // -----
 
 module attributes { veridise.lang = "llzk"} {
-struct.def @ConstraintPod {
-function.def @compute(
-    %0: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>,
-    %1: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>
-) -> !struct.type<@ConstraintPod> {
-  %self = struct.new : !struct.type<@ConstraintPod>
-  function.return %self : !struct.type<@ConstraintPod>
-}
-function.def @constrain(
-    %self: !struct.type<@ConstraintPod>,
-    %0: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>,
-    %1: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>
-)  {
-  constrain.eq %0, %1 : !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>
-  function.return
-}
-}
+  struct.def @ConstraintPod {
+    function.def @compute(
+        %0: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>,
+        %1: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>
+    ) -> !struct.type<@ConstraintPod> {
+      %self = struct.new : !struct.type<@ConstraintPod>
+      function.return %self : !struct.type<@ConstraintPod>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ConstraintPod>,
+        %0: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>,
+        %1: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>
+    )  {
+      constrain.eq %0, %1 : !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>
+      function.return
+    }
+  }
 }
 //CHECK-LABEL:  function.def @constrain(
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>,
@@ -171,23 +171,23 @@ function.def @constrain(
 // -----
 
 module attributes { veridise.lang = "llzk"} {
-struct.def @ConstraintPod {
-function.def @compute(
-    %0: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>,
-    %1: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>
-) -> !struct.type<@ConstraintPod> {
-  %self = struct.new : !struct.type<@ConstraintPod>
-  function.return %self : !struct.type<@ConstraintPod>
-}
-function.def @constrain(
-    %self: !struct.type<@ConstraintPod>,
-    %0: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>,
-    %1: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>
-)  {
-  constrain.eq %0, %1 : !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>
-  function.return
-}
-}
+  struct.def @ConstraintPod {
+    function.def @compute(
+        %0: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>,
+        %1: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>
+    ) -> !struct.type<@ConstraintPod> {
+      %self = struct.new : !struct.type<@ConstraintPod>
+      function.return %self : !struct.type<@ConstraintPod>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ConstraintPod>,
+        %0: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>,
+        %1: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>
+    )  {
+      constrain.eq %0, %1 : !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>
+      function.return
+    }
+  }
 }
 //CHECK-LABEL:  function.def @constrain(
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>,
@@ -205,4 +205,3 @@ function.def @constrain(
 //CHECK: module {
 //CHECK:      %[[A1:[0-9a-zA-Z_\.]+]] = pod.new : <[@x: !pod.type<[@y: index]>]>
 //CHECK: }
-

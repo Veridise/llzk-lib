@@ -86,5 +86,3 @@ function.def @new_init_pod(%arr: !at) -> !pod.type<[@n: !at]> {
 //CHECK-SAME:       <[@n: !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>]>
 //CHECK-NEXT:     function.return %[[T1]] : !pod.type<[@n: !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>]>
 //CHECK-NEXT:   }
-
-
