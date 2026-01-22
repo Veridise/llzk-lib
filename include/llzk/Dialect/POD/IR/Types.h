@@ -21,6 +21,7 @@ struct RecordValue {
 
 // Type alias for a list of pairs of (symbol, value) in the context of building `pod.new` ops.
 using InitializedRecords = mlir::ArrayRef<RecordValue>;
+
 } // namespace llzk::pod
 
 // Include TableGen'd declarations

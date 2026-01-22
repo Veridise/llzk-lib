@@ -72,6 +72,7 @@ void NewPodOp::build(
     OpBuilder &builder, OperationState &state, PodType result, InitializedRecords initialValues
 ) {
   buildCommon(builder, state, result, initialValues);
+  assert(std::cmp_less_equal(initialValues.size(), std::numeric_limits<int32_t>::max()));
   affineMapHelpers::buildInstantiationAttrsEmpty<NewPodOp>(
       builder, state, static_cast<int32_t>(initialValues.size())
   );
@@ -132,7 +133,7 @@ static LogicalResult verifyInitialValues(
   for (auto [nameAttr, value] : llvm::zip_equal(names, values)) {
     auto name = mlir::cast<StringAttr>(nameAttr).getValue(); // Per the ODS spec.
     if (seenNames.contains(name)) {
-      emitError() << "found duplicated record name '" << name << "'";
+      emitError() << "found duplicated record name '" << name << '\'';
       failed = true;
     }
     seenNames.insert(name);
@@ -251,6 +252,7 @@ ParseResult NewPodOp::parse(OpAsmParser &parser, OperationState &result) {
     mapOperandsGroupSizes.reserve(mapOperands.size());
     for (const auto &subRange : mapOperands) {
       allMapOperands.append(subRange.begin(), subRange.end());
+      assert(std::cmp_less_equal(subRange.size(), std::numeric_limits<int32_t>::max()));
       mapOperandsGroupSizes.push_back(static_cast<int32_t>(subRange.size()));
     }
   }
@@ -266,7 +268,7 @@ ParseResult NewPodOp::parse(OpAsmParser &parser, OperationState &result) {
   // Now that we have the struct type we can resolve the operands
   // using the types of the struct.
   for (auto attr : initializedRecords) {
-    auto name = mlir::cast<StringAttr>(attr);
+    auto name = mlir::cast<StringAttr>(attr); // Per ODS spec of RecordAttr
     auto lookup = resultType.getRecord(name.getValue(), [&parser, initialValuesLoc] {
       return parser.emitError(initialValuesLoc);
     });
@@ -294,7 +296,7 @@ ParseResult NewPodOp::parse(OpAsmParser &parser, OperationState &result) {
       return failure();
     }
     if (failed(verifyInherentAttrs(result.name, result.attributes, [&]() {
-      return parser.emitError(loc) << "'" << result.name.getStringRef() << "' op ";
+      return parser.emitError(loc) << '\'' << result.name.getStringRef() << "' op ";
     }))) {
       return ::mlir::failure();
     }
@@ -321,10 +323,8 @@ void NewPodOp::print(OpAsmPrinter &printer) {
 
   auto type = getResult().getType();
   if (auto validType = mlir::dyn_cast<PodType>(type)) {
-
     printer.printStrippedAttrOrType(validType);
   } else {
-
     printer.printType(type);
   }
 

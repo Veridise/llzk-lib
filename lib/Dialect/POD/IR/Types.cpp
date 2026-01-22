@@ -31,7 +31,7 @@ PodType::verify(llvm::function_ref<InFlightDiagnostic()> emitError, ArrayRef<Rec
   for (auto record : records) {
     auto recordName = record.getName();
     if (seenNames.contains(recordName)) {
-      emitError() << "found duplicated record name '" << recordName.getValue() << "'";
+      emitError() << "found duplicated record name '" << recordName.getValue() << '\'';
       failed = true;
     }
     seenNames.insert(recordName);
