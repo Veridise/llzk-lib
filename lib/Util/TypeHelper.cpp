@@ -62,8 +62,8 @@ template <typename Derived, typename ResultType> struct LLZKTypeSwitch {
         .template Case<StructType>([this](auto t) {
       return static_cast<Derived *>(this)->caseStruct(t);
     }).Default([this](Type t) {
-      if (t.isSignlessInteger()) {
-        return static_cast<Derived *>(this)->caseInt(cast<IntegerType>(t));
+      if (t.isSignlessInteger(1)) {
+        return static_cast<Derived *>(this)->caseBool(cast<IntegerType>(t));
       } else {
         return static_cast<Derived *>(this)->caseInvalid(t);
       }
@@ -96,14 +96,8 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     Impl(BuildShortTypeString &outerRef) : outer(outerRef) {}
 
     void caseInvalid(Type) { outer.ss << "!INVALID"; }
-    void caseInt(IntegerType t) {
-      if (t.getWidth() == 1) {
-        outer.ss << 'b';
-      } else {
-        outer.ss << 'i' << t.getWidth();
-      }
-    }
-    void caseIndex(IndexType) { outer.ss << 'k'; }
+    void caseBool(IntegerType) { outer.ss << 'b'; }
+    void caseIndex(IndexType) { outer.ss << 'i'; }
     void caseFelt(FeltType) { outer.ss << 'f'; }
     void caseString(StringType) { outer.ss << 's'; }
     void caseTypeVar(TypeVarType t) {
@@ -157,7 +151,7 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
   // Adapted from AsmPrinter::Impl::printAttributeImpl()
   if (auto ia = llvm::dyn_cast<IntegerAttr>(a)) {
     Type ty = ia.getType();
-    bool isUnsigned = ty.isUnsignedInteger() || ty.isSignlessInteger();
+    bool isUnsigned = ty.isUnsignedInteger() || ty.isSignlessInteger(1);
     ia.getValue().print(ss, !isUnsigned);
   } else if (auto sra = llvm::dyn_cast<SymbolRefAttr>(a)) {
     appendSymRef(sra);
@@ -507,7 +501,7 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
     AllowedTypes &outer;
     Impl(AllowedTypes &outerRef) : outer(outerRef) {}
 
-    bool caseInt(IntegerType t) { return !outer.no_int && t.isSignlessInteger(); }
+    bool caseBool(IntegerType t) { return !outer.no_int && t.isSignlessInteger(1); }
     bool caseIndex(IndexType) { return !outer.no_int; }
     bool caseFelt(FeltType) { return !outer.no_felt; }
     bool caseString(StringType) { return !outer.no_string; }
@@ -584,7 +578,7 @@ bool isDynamic(IntegerAttr intAttr) { return ShapedType::isDynamic(fromAPInt(int
 
 uint64_t computeEmitEqCardinality(Type type) {
   struct Impl : LLZKTypeSwitch<Impl, uint64_t> {
-    uint64_t caseInt(IntegerType) { return 1; }
+    uint64_t caseBool(IntegerType) { return 1; }
     uint64_t caseIndex(IndexType) { return 1; }
     uint64_t caseFelt(FeltType) { return 1; }
     uint64_t caseArray(ArrayType t) {
