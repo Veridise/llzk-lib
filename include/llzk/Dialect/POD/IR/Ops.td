@@ -39,9 +39,6 @@ def LLZK_NewPodOp
     This operation returns one value of type `PODType` and, if present, the records passed for initialization
     must form a subset of the records in the type.
 
-    The operation can infer its return type, making the assumption that the passed initializations represent 
-    all the fields in the struct.
-
     Examples:
     ```llzk 
     // Empty pod instance
