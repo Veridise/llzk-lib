@@ -10,6 +10,8 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/POD/IR/Attrs.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
@@ -18,7 +20,12 @@
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/TypeSwitch.h>
+
+#include <cstdint>
+#include <numeric>
 
 using namespace mlir;
 
@@ -29,6 +36,7 @@ using namespace component;
 using namespace felt;
 using namespace polymorphic;
 using namespace string;
+using namespace pod;
 
 /// Template pattern for performing some operation by cases based on a given LLZK type. This
 /// pattern allows any missing cases in a new implementation to be reported by the compiler.
@@ -50,6 +58,7 @@ template <typename Derived, typename ResultType> struct LLZKTypeSwitch {
         .template Case<ArrayType>([this](auto t) {
       return static_cast<Derived *>(this)->caseArray(t);
     })
+        .template Case<PodType>([this](auto t) { return static_cast<Derived *>(this)->casePod(t); })
         .template Case<StructType>([this](auto t) {
       return static_cast<Derived *>(this)->caseStruct(t);
     }).Default([this](Type t) {
@@ -107,6 +116,13 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
       outer.append(t.getElementType());
       outer.ss << ':';
       outer.append(t.getDimensionSizes());
+      outer.ss << '>';
+    }
+    void casePod(PodType t) {
+      outer.ss << "!r<";
+      for (auto record : t.getRecords()) {
+        outer.appendSymRef(record.getNameSym());
+      }
       outer.ss << '>';
     }
     void caseStruct(StructType t) {
@@ -294,6 +310,7 @@ class AllowedTypes {
   bool no_non_signal_struct : 1 = false;
   bool no_signal_struct : 1 = false;
   bool no_array : 1 = false;
+  bool no_pod : 1 = false;
   bool no_var : 1 = false;
   bool no_int : 1 = false;
   bool no_struct_params : 1 = false;
@@ -341,6 +358,11 @@ public:
     return *this;
   }
 
+  constexpr AllowedTypes &noPod() {
+    no_pod = true;
+    return *this;
+  }
+
   constexpr AllowedTypes &noVar() {
     no_var = true;
     return *this;
@@ -358,7 +380,7 @@ public:
 
   constexpr AllowedTypes &onlyInt() {
     no_int = false;
-    return noFelt().noString().noStruct().noArray().noVar();
+    return noFelt().noString().noStruct().noArray().noPod().noVar();
   }
 
   constexpr AllowedTypes &mustBeColumn(SymbolTableCollection &symbolTable, Operation *op) {
@@ -469,12 +491,16 @@ public:
 
     return success;
   }
+
+  bool areValidPodRecords(ArrayRef<RecordAttr> records) {
+    return llvm::all_of(records, [this](auto record) { return isValidTypeImpl(record.getType()); });
+  }
 };
 
 bool AllowedTypes::isValidTypeImpl(Type type) {
   assert(
       !(no_int && no_felt && no_string && no_var && no_non_signal_struct && no_signal_struct &&
-        no_array) &&
+        no_array && no_pod) &&
       "All types have been deactivated"
   );
   struct Impl : LLZKTypeSwitch<Impl, bool> {
@@ -490,6 +516,7 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
       return !outer.no_array &&
              outer.isValidArrayTypeImpl(t.getElementType(), t.getDimensionSizes());
     }
+    bool casePod(PodType t) { return !outer.no_pod && outer.areValidPodRecords(t.getRecords()); }
     bool caseStruct(StructType t) {
       // Note: The `no*` flags here refer to Types nested within a TypeAttr parameter.
       if ((outer.no_signal_struct && outer.no_non_signal_struct) || !outer.validColumns(t)) {
@@ -563,13 +590,21 @@ uint64_t computeEmitEqCardinality(Type type) {
     uint64_t caseArray(ArrayType t) {
       int64_t n = t.getNumElements();
       assert(n >= 0);
-      return static_cast<uint64_t>(n);
+      return static_cast<uint64_t>(n) * computeEmitEqCardinality(t.getElementType());
     }
     uint64_t caseStruct(StructType t) {
       if (isSignalType(t)) {
         return 1;
       }
       llvm_unreachable("not a valid EmitEq type");
+    }
+    uint64_t casePod(PodType t) {
+      return std::accumulate(
+          t.getRecords().begin(), t.getRecords().end(), 0,
+          [](const uint64_t &acc, const RecordAttr &record) {
+        return computeEmitEqCardinality(record.getType()) + acc;
+      }
+      );
     }
     uint64_t caseString(StringType) { llvm_unreachable("not a valid EmitEq type"); }
     uint64_t caseTypeVar(TypeVarType) { llvm_unreachable("tvar has unknown cardinality"); }
@@ -657,6 +692,19 @@ struct UnifierImpl {
     return typeParamsUnify(lhs.getParams(), rhs.getParams(), /*unifyDynamicSize=*/false);
   }
 
+  bool podTypesUnify(PodType lhs, PodType rhs) {
+    // Same number of records, with the same names in the same order and record types unify.
+    auto lhsRecords = lhs.getRecords();
+    auto rhsRecords = rhs.getRecords();
+
+    return lhsRecords.size() == rhsRecords.size() &&
+           llvm::all_of(llvm::zip_equal(lhsRecords, rhsRecords), [this](auto &&records) {
+      auto &&[lhsRecord, rhsRecord] = records;
+      return lhsRecord.getName() == rhsRecord.getName() &&
+             typesUnify(lhsRecord.getType(), rhsRecord.getType());
+    });
+  }
+
   bool typesUnify(Type lhs, Type rhs) {
     if (lhs == rhs) {
       return true;
@@ -678,6 +726,9 @@ struct UnifierImpl {
     }
     if (llvm::isa<ArrayType>(lhs) && llvm::isa<ArrayType>(rhs)) {
       return arrayTypesUnify(llvm::cast<ArrayType>(lhs), llvm::cast<ArrayType>(rhs));
+    }
+    if (llvm::isa<PodType>(lhs) && llvm::isa<PodType>(rhs)) {
+      return podTypesUnify(llvm::cast<PodType>(lhs), llvm::cast<PodType>(rhs));
     }
     return false;
   }
