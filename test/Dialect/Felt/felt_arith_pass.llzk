@@ -78,13 +78,13 @@ function.def @f_uintdiv(%a: !felt.type, %b: !felt.type) -> !felt.type {
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_intdiv(%a: !felt.type, %b: !felt.type) -> !felt.type {
-  %c = felt.intdiv %a, %b
+function.def @f_sintdiv(%a: !felt.type, %b: !felt.type) -> !felt.type {
+  %c = felt.sintdiv %a, %b
   function.return %c: !felt.type
 }
-//CHECK-LABEL:  function.def @f_intdiv
+//CHECK-LABEL:  function.def @f_sintdiv
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.intdiv %[[A0]], %[[A1]]
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.sintdiv %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
 //CHECK-NEXT:   }
 // -----
