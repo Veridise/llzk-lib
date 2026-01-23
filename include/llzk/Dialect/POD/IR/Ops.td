@@ -116,7 +116,7 @@ def LLZK_NewPodOp
   }];
 }
 
-def LLZK_ReadPodOp : PODDialectOp<"read", [MemoryEffects<[MemRead]>]> {
+def LLZK_ReadPodOp : PODDialectOp<"read"> {
   let summary = "reads the contents of a plain-old-data struct record";
   let description = [{
     Reads the current value of a named record from a pod instance. 
@@ -132,7 +132,7 @@ def LLZK_ReadPodOp : PODDialectOp<"read", [MemoryEffects<[MemRead]>]> {
   }];
 
   let arguments =
-      (ins Arg<LLZK_PODType, "the pod to read from", [MemRead]>:$pod_ref,
+      (ins Arg<LLZK_PODType, "the pod to read from">:$pod_ref,
           StrAttr:$record_name);
   let results = (outs AnyLLZKType:$result);
   let assemblyFormat = [{
@@ -141,7 +141,7 @@ def LLZK_ReadPodOp : PODDialectOp<"read", [MemoryEffects<[MemRead]>]> {
   let hasVerifier = 1;
 }
 
-def LLZK_WritePodOp : PODDialectOp<"write", [MemoryEffects<[MemWrite]>]> {
+def LLZK_WritePodOp : PODDialectOp<"write"> {
   let summary = "writes content into a plain-old-data struct record";
   let description = [{
     Writes a value into a named record of a pod instance. This operation has no result values.
@@ -158,7 +158,7 @@ def LLZK_WritePodOp : PODDialectOp<"write", [MemoryEffects<[MemWrite]>]> {
   }];
 
   let arguments =
-      (ins Arg<LLZK_PODType, "the pod to write into", [MemWrite]>:$pod_ref,
+      (ins Arg<LLZK_PODType, "the pod to write into">:$pod_ref,
           StrAttr:$record_name, AnyLLZKType:$value);
 
   let assemblyFormat = [{
