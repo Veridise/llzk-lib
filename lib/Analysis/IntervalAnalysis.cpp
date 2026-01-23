@@ -625,27 +625,23 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const char *name) co
 llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   ensure(isConstOp(op), "op is not a const op");
 
-  // NOTE: I think clang-format makes these hard to read by default
-  // clang-format off
-  llvm::DynamicAPInt fieldConst = TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
-      .Case<FeltConstantOp>([&](FeltConstantOp feltConst) {
-        llvm::APSInt constOpVal(feltConst.getValue());
-        return field.get().reduce(constOpVal);
-      })
-      .Case<arith::ConstantIndexOp>([&](arith::ConstantIndexOp indexConst) {
-        return DynamicAPInt(indexConst.value());
-      })
-      .Case<arith::ConstantIntOp>([&](arith::ConstantIntOp intConst) {
-        auto valAttr = dyn_cast<IntegerAttr>(intConst.getValue());
-        ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
-        return toDynamicAPInt(valAttr.getValue());
-      }).Default([](Operation *illegalOp) {
-        std::string err;
-        debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
-        llvm::report_fatal_error(Twine(err));
-        return llvm::DynamicAPInt();
-      });
-  // clang-format on
+  llvm::DynamicAPInt fieldConst =
+      TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
+          .Case<FeltConstantOp>([&](FeltConstantOp feltConst) {
+    llvm::APSInt constOpVal(feltConst.getValue());
+    return field.get().reduce(constOpVal);
+  })
+          .Case<arith::ConstantIndexOp>([&](arith::ConstantIndexOp indexConst) {
+    return DynamicAPInt(indexConst.value());
+  })
+          .Case<arith::ConstantIntOp>([&](arith::ConstantIntOp intConst) {
+    return DynamicAPInt(intConst.value());
+  }).Default([](Operation *illegalOp) {
+    std::string err;
+    debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
+    llvm::report_fatal_error(Twine(err));
+    return llvm::DynamicAPInt();
+  });
   return fieldConst;
 }
 
