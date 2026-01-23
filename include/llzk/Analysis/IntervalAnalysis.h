@@ -307,9 +307,18 @@ private:
 
   llvm::SMTExprRef createFeltSymbol(const char *name) const;
 
-  bool isConstOp(mlir::Operation *op) const {
+  inline bool isConstOp(mlir::Operation *op) const {
     return llvm::isa<
         felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
+  }
+
+  inline bool isBoolConstOp(mlir::Operation *op) const {
+    if (auto constIntOp = llvm::dyn_cast<mlir::arith::ConstantIntOp>(op)) {
+      auto valAttr = dyn_cast<mlir::IntegerAttr>(constIntOp.getValue());
+      ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
+      return valAttr.getValue().getBitWidth() == 1;
+    }
+    return false;
   }
 
   llvm::DynamicAPInt getConst(mlir::Operation *op) const;
@@ -322,9 +331,7 @@ private:
     return smtSolver->mkBitvector(v, field.get().bitWidth());
   }
 
-  llvm::SMTExprRef createConstBoolExpr(bool v) const {
-    return smtSolver->mkBitvector(mlir::APSInt((int)v), field.get().bitWidth());
-  }
+  llvm::SMTExprRef createConstBoolExpr(bool v) const { return smtSolver->mkBoolean(v); }
 
   bool isArithmeticOp(mlir::Operation *op) const {
     return llvm::isa<
