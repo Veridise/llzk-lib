@@ -67,45 +67,45 @@ function.def @f_div(%a: !felt.type, %b: !felt.type) -> !felt.type {
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_uintdiv(%a: !felt.type, %b: !felt.type) -> !felt.type {
+function.def @f_uintdiv(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_witness} {
   %c = felt.uintdiv %a, %b
   function.return %c: !felt.type
 }
 //CHECK-LABEL:  function.def @f_uintdiv
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.uintdiv %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_sintdiv(%a: !felt.type, %b: !felt.type) -> !felt.type {
+function.def @f_sintdiv(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_witness} {
   %c = felt.sintdiv %a, %b
   function.return %c: !felt.type
 }
 //CHECK-LABEL:  function.def @f_sintdiv
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.sintdiv %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_umod(%a: !felt.type, %b: !felt.type) -> !felt.type {
+function.def @f_umod(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_witness} {
   %c = felt.umod %a, %b
   function.return %c: !felt.type
 }
 //CHECK-LABEL:  function.def @f_umod
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.umod %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_smod(%a: !felt.type, %b: !felt.type) -> !felt.type {
+function.def @f_smod(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_witness} {
   %c = felt.smod %a, %b
   function.return %c: !felt.type
 }
 //CHECK-LABEL:  function.def @f_smod
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.smod %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
 //CHECK-NEXT:   }

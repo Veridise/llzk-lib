@@ -601,3 +601,49 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   include.from "FrontendLang/Zirgen/Inputs/zir_example_loops.llzk" as @zir_loops
 }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @ArithConstraint {
+
+    function.def @constrain(%self: !struct.type<@ArithConstraint>, %a: !felt.type, %b: !felt.type) {
+      function.return
+    }
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ArithConstraint> {
+      %self = struct.new : !struct.type<@ArithConstraint>
+
+      %5 = felt.const 5
+      %7 = felt.const 7
+      %11 = felt.const 11
+      %cmp1 = bool.cmp ge(%a, %5)
+      bool.assert %cmp1
+      %cmp2 = bool.cmp le(%a, %7)
+      bool.assert %cmp2
+      %cmp3 = bool.cmp gt(%b, %7)
+      bool.assert %cmp3
+      %cmp4 = bool.cmp le(%b, %11)
+      bool.assert %cmp4
+
+      %mul = felt.mul %a, %5
+      %sub = felt.sub %mul, %5
+      %1 = felt.div %11, %11
+      %mod = felt.umod %sub, %b
+      %neg = felt.neg %mod
+      %final = felt.add %mul, %neg
+
+      %0 = felt.const 0
+      %notzero = bool.cmp ne(%final, %0)
+      bool.assert %notzero
+
+      function.return %self : !struct.type<@ArithConstraint>
+    }
+  }
+}
+
+// CHECK-LABEL: @ArithConstraint StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 5, 7 ]
+// CHECK-NEXT:     %arg1 in TypeA:[ 8, 11 ]
+// CHECK-NEXT: }

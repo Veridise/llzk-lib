@@ -121,7 +121,7 @@ def LLZK_DivFeltOp : FeltDialectBinaryOp<"div", LLZK_FeltType> {
   let description = [{}];
 }
 
-def LLZK_UnsignedIntDivFeltOp : FeltDialectBinaryOp<"uintdiv", LLZK_FeltType> {
+def LLZK_UnsignedIntDivFeltOp : FeltDialectBinaryOp<"uintdiv", LLZK_FeltType, [WitnessGen]> {
   let summary = "unsigned integer division operator for field elements";
   let description = [{
     Treats the operands as if they were unsigned integers with bitwidth
@@ -129,7 +129,7 @@ def LLZK_UnsignedIntDivFeltOp : FeltDialectBinaryOp<"uintdiv", LLZK_FeltType> {
   }];
 }
 
-def LLZK_SignedIntDivFeltOp : FeltDialectBinaryOp<"sintdiv", LLZK_FeltType> {
+def LLZK_SignedIntDivFeltOp : FeltDialectBinaryOp<"sintdiv", LLZK_FeltType, [WitnessGen]> {
   let summary = "signed integer division operator for field elements";
   let description = [{
     Treats the operands as if they were signed integers with bitwidth
@@ -145,7 +145,7 @@ def LLZK_SignedIntDivFeltOp : FeltDialectBinaryOp<"sintdiv", LLZK_FeltType> {
   }];
 }
 
-def LLZK_UnsignedModFeltOp : FeltDialectBinaryOp<"umod", LLZK_FeltType> {
+def LLZK_UnsignedModFeltOp : FeltDialectBinaryOp<"umod", LLZK_FeltType, [WitnessGen]> {
   let summary =
       "unsigned integer modulus/remainder operator for field elements";
   let description = [{
@@ -154,7 +154,7 @@ def LLZK_UnsignedModFeltOp : FeltDialectBinaryOp<"umod", LLZK_FeltType> {
   }];
 }
 
-def LLZK_SignedModFeltOp : FeltDialectBinaryOp<"smod", LLZK_FeltType> {
+def LLZK_SignedModFeltOp : FeltDialectBinaryOp<"smod", LLZK_FeltType, [WitnessGen]> {
   let summary = "signed integer modulus/remainder operator for field elements";
   let description = [{
     Computes the remainder that would result from the division operation performed
