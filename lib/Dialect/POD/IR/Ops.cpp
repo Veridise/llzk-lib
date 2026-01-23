@@ -147,10 +147,9 @@ static LogicalResult verifyInitialValues(
       auto err = emitError();
       err << "record '" << name << "' expected type " << recordTy << " but got " << valueTy;
       if (typesUnify(valueTy, recordTy)) {
-        err.attachNote(
-        ) << "types "
-          << valueTy << " and " << recordTy
-          << " can be unified. Perhaps you can add a 'poly.unifiable_cast' operation?";
+        err.attachNote()
+            << "types " << valueTy << " and " << recordTy
+            << " can be unified. Perhaps you can add a 'poly.unifiable_cast' operation?";
       }
       failed = true;
     }
@@ -179,10 +178,11 @@ LogicalResult NewPodOp::verify() {
   assert(retTy); // per ODS spec of NewPodOp
 
   bool failed = false;
-  check(verifyInitialValues(
-      getInitialValues(), getInitializedRecords().getValue(), retTy,
-      [this]() { return this->emitError(); }
-  ));
+  check(
+      verifyInitialValues(getInitialValues(), getInitializedRecords().getValue(), retTy, [this]() {
+    return this->emitError();
+  })
+  );
   check(verifyAffineMapOperands(this, retTy));
 
   return mlir::failure(failed);
@@ -335,8 +335,7 @@ void NewPodOp::print(OpAsmPrinter &printer) {
 
 SmallVector<RecordValue> NewPodOp::getInitializedRecordValues() {
   return llvm::map_to_vector(
-      llvm::zip_equal(getInitialValues(), getInitializedRecords()),
-      [](auto pair) {
+      llvm::zip_equal(getInitialValues(), getInitializedRecords()), [](auto pair) {
     auto [value, name] = pair;
     return RecordValue {.name = mlir::cast<StringAttr>(name).getValue(), .value = value};
   }
