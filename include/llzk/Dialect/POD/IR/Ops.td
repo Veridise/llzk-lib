@@ -128,9 +128,8 @@ def LLZK_ReadPodOp : PODDialectOp<"read"> {
     ```
   }];
 
-  let arguments =
-      (ins Arg<LLZK_PODType, "the pod to read from">:$pod_ref,
-          StrAttr:$record_name);
+  let arguments = (ins Arg<LLZK_PODType, "the pod to read from">:$pod_ref,
+      StrAttr:$record_name);
   let results = (outs AnyLLZKType:$result);
   let assemblyFormat = [{
     $pod_ref `[` custom<RecordName>($record_name) `]` `:` type($pod_ref) `,` type($result) attr-dict
@@ -154,9 +153,8 @@ def LLZK_WritePodOp : PODDialectOp<"write"> {
     ```
   }];
 
-  let arguments =
-      (ins Arg<LLZK_PODType, "the pod to write into">:$pod_ref,
-          StrAttr:$record_name, AnyLLZKType:$value);
+  let arguments = (ins Arg<LLZK_PODType, "the pod to write into">:$pod_ref,
+      StrAttr:$record_name, AnyLLZKType:$value);
 
   let assemblyFormat = [{
     $pod_ref `[` custom<RecordName>($record_name) `]` `=` $value `:` type($pod_ref) `,` type($value) attr-dict
