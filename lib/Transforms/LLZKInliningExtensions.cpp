@@ -102,6 +102,7 @@ void registerInliningExtensions(DialectRegistry &registry) {
   registry.addExtension(FullyLegalForInlining<global::GlobalDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<boolean::BoolDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<array::ArrayDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<cast::CastDialect>::registrationHook);
 }
 
 } // namespace llzk
