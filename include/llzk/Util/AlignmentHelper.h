@@ -1,8 +1,8 @@
-//===-- AlignmentHelper.h ------------------------------------------*- C++ -*-===//
+//===-- AlignmentHelper.h --------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -32,8 +32,8 @@ llvm::FailureOr<llvm::SetVector<std::pair<ValueT, ValueT>>> getMatchingPairs(
   llvm::SetVector<ValueT> setA {as.begin(), as.end()}, setB {bs.begin(), bs.end()};
   llvm::DenseMap<size_t, llvm::SmallVector<size_t>> possibleMatchesA, possibleMatchesB;
 
-  for (size_t i = 0; i < as.size(); i++) {
-    for (size_t j = 0; j < bs.size(); j++) {
+  for (size_t i = 0, ea = as.size(), eb = bs.size(); i < ea; i++) {
+    for (size_t j = 0; j < eb; j++) {
       if (doesMatch(as[i], bs[j])) {
         possibleMatchesA[i].push_back(j);
         possibleMatchesB[j].push_back(i);

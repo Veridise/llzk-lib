@@ -1,8 +1,8 @@
-//===-- LLZKComputeConstrainToProductPass.cpp -------------------*- C++ -*-===//
+//===-- LLZKFuseProductLoopsPass.cpp -----------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -26,7 +26,9 @@
 
 #include <functional>
 #include <memory>
+
 namespace llzk {
+
 #define GEN_PASS_DECL_FUSEPRODUCTLOOPSPASS
 #define GEN_PASS_DEF_FUSEPRODUCTLOOPSPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
@@ -84,7 +86,7 @@ llvm::SMTExprRef tripCount(mlir::scf::ForOp op, llvm::SMTSolver *solver) {
 }
 
 bool FuseProductLoopsPass::canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp b) {
-  // A priori, loops two loops can be fused if:
+  // A priori, two loops can be fused if:
   // 1. They live in the same parent region,
   // 2. One comes from witgen and the other comes from constraint gen, and
   // 3. They have the same trip count
