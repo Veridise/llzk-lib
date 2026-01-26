@@ -133,17 +133,6 @@ function.def @f_inv(%a: !felt.type) -> !felt.type attributes {function.allow_wit
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bitnot(%a: !felt.type) -> !felt.type attributes {function.allow_witness} {
-  %c = felt.bitnot %a
-  function.return %c: !felt.type
-}
-//CHECK-LABEL:  function.def @f_bitnot
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bitnot %[[A0]]
-//CHECK-NEXT:     function.return %[[T1]] : !felt.type
-//CHECK-NEXT:   }
-// -----
-
 function.def @f_bit_and(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_witness} {
   %c = felt.bit_and %a, %b
   function.return %c: !felt.type

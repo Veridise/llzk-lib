@@ -176,16 +176,6 @@ def LLZK_InvFeltOp : FeltDialectUnaryOp<"inv", LLZK_FeltType, [WitnessGen]> {
   let description = [{}];
 }
 
-def LLZK_ComplementFeltOp
-    : FeltDialectUnaryOp<"bitnot", LLZK_FeltType, [WitnessGen]> {
-  let summary = "integer complement (bitwise-not) operator for field elements";
-  let description = [{
-    Treats the operand as an integer with a bitwidth equal to the bitwidth
-    of the prime field's modulus and compute the one's complement of the integer.
-    The result is converted back to a field element by applying the prime modulus.
-  }];
-}
-
 def LLZK_AndFeltOp
     : FeltDialectBinaryOp<"bit_and", LLZK_FeltType, [WitnessGen, Commutative]> {
   let summary = "bitwise AND operator for field elements";
@@ -206,8 +196,12 @@ def LLZK_XorFeltOp
 
 def LLZK_NotFeltOp
     : FeltDialectUnaryOp<"bit_not", LLZK_FeltType, [WitnessGen]> {
-  let summary = "bit flip operator for field elements";
-  let description = [{}];
+  let summary = "integer complement (bitwise-not) operator for field elements";
+  let description = [{
+    Treats the operand as an integer with a bitwidth equal to the bitwidth
+    of the prime field's modulus and compute the one's complement of the integer.
+    The result is converted back to a field element by applying the prime modulus.
+  }];
 }
 
 def LLZK_ShlFeltOp : FeltDialectBinaryOp<"shl", LLZK_FeltType, [WitnessGen]> {
