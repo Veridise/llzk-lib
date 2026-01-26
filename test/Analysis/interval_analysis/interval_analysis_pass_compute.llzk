@@ -605,6 +605,30 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
+  struct.def @ConstBools {
+    struct.field @out : i1
+    function.def @compute() -> !struct.type<@ConstBools> attributes {function.allow_witness} {
+      %self = struct.new : !struct.type<@ConstBools>
+      %true = arith.constant true
+      %false = arith.constant false
+      %res = bool.and %true, %false
+      struct.writef %self[@out] = %res : !struct.type<@ConstBools>, i1
+      function.return %self : !struct.type<@ConstBools>
+    }
+    function.def @constrain(%arg0: !struct.type<@ConstBools>) attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ConstBools StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %self[@out] in Degenerate(0)
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
   struct.def @ArithConstraint {
 
     function.def @constrain(%self: !struct.type<@ArithConstraint>, %a: !felt.type, %b: !felt.type) {
