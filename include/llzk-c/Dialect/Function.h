@@ -84,6 +84,12 @@ LLZK_DECLARE_OP_PREDICATE(FuncDefOp, HasAllowWitnessAttr);
 /// Sets the allow_witness attribute in the FuncDefOp operation.
 MLIR_CAPI_EXPORTED void llzkFuncDefOpSetAllowWitnessAttr(MlirOperation op, bool value);
 
+/// Returns true if the FuncDefOp has the allow_non_native_field_ops attribute.
+LLZK_DECLARE_OP_PREDICATE(FuncDefOp, HasAllowNonNativeFieldOpsAttr);
+
+/// Sets the allow_non_native_field_ops attribute in the FuncDefOp operation.
+MLIR_CAPI_EXPORTED void llzkFuncDefOpSetAllowNonNativeFieldOpsAttr(MlirOperation op, bool value);
+
 /// Returns true if the `idx`-th argument has the Pub attribute.
 LLZK_DECLARE_NARY_OP_PREDICATE(FuncDefOp, HasArgIsPub, unsigned arg);
 
