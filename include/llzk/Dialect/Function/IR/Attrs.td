@@ -26,7 +26,7 @@ def LLZK_AllowConstraintAttr
       "Marks functions to allow `ConstraintGen` ops within their body";
   let description = [{
     A unit attribute that can be attached to a `FuncDefOp` to indicate that ops
-    marked with `ConstraintGen` (ex: emit ops) are allowed within its body.
+    marked with `ConstraintGen` (e.g., emit ops) are allowed within its body.
   }];
 }
 
@@ -35,7 +35,7 @@ def LLZK_AllowWitnessAttr
   let summary = "Marks functions to allow `WitnessGen` ops within their body";
   let description = [{
     A unit attribute that can be attached to a `FuncDefOp` to indicate that ops marked
-    with `WitnessGen` (i.e., construct and write ops) are allowed within its body.
+    with `WitnessGen` (e.g., construct and write ops) are allowed within its body.
   }];
 }
 
@@ -46,7 +46,7 @@ def LLZK_AllowNonNativeFieldOpsAttr
       "Marks functions to allow `NotFieldNative` ops within their body";
   let description = [{
     A unit attribute that can be attached to a `FuncDefOp` to indicate that ops marked
-    with `NotFieldNative` (i.e., boolean and bitwise ops) are allowed within its body.
+    with `NotFieldNative` (e.g., boolean and bitwise ops) are allowed within its body.
   }];
 }
 
