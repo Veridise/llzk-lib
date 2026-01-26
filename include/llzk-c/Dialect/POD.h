@@ -24,7 +24,6 @@
 #include <mlir-c/IR.h>
 #include <mlir-c/Support.h>
 
-#include <cstdint>
 #include <stdint.h>
 
 #ifdef __cplusplus
