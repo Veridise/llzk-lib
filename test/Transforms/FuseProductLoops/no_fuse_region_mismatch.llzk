@@ -91,3 +91,4 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      constrain.eq %[[VAL_12]], %[[VAL_14:[0-9a-zA-Z_\.]+]] : !felt.type, !felt.type {product_source = "constrain"}
 // CHECK-NEXT:    } {product_source = "constrain"}
 // CHECK-NEXT:  } {product_source = "constrain"}
+// CHECK-NOT: scf.for

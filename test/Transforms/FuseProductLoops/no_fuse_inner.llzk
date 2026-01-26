@@ -71,3 +71,4 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      constrain.eq %[[VAL_16]], %[[VAL_18]] : !felt.type, !felt.type {product_source = "constrain"}
 // CHECK-NEXT:    } {product_source = "constrain"}
 // CHECK-NEXT:  } {product_source = "constrain"}
+// CHECK-NOT: scf.for

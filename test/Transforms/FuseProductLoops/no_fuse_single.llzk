@@ -54,3 +54,4 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
 // CHECK-NEXT:    constrain.eq %[[VAL_6:[0-9a-zA-Z_\.]+]], %[[VAL_4]] : !felt.type, !felt.type {product_source = "constrain"}
 // CHECK-NEXT:  } {product_source = "constrain"}
+// CHECK-NOT: scf.for
