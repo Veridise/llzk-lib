@@ -337,9 +337,9 @@ private:
     return llvm::isa<
         felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::UnsignedModFeltOp,
         felt::SignedModFeltOp, felt::SignedIntDivFeltOp, felt::UnsignedIntDivFeltOp,
-        felt::NegFeltOp, felt::InvFeltOp, felt::ComplementFeltOp, felt::AndFeltOp, felt::OrFeltOp,
-        felt::XorFeltOp, felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp,
-        boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(op);
+        felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp, felt::XorFeltOp,
+        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp, boolean::AndBoolOp,
+        boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(op);
   }
 
   ExpressionValue
