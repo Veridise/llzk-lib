@@ -97,35 +97,34 @@ bool FuseProductLoopsPass::canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp 
   }
 
   // Check 2.
-  if (!a->hasAttrOfType<mlir::StringAttr>("product_source") ||
-      !b->hasAttrOfType<mlir::StringAttr>("product_source")) {
+  if (!a->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE) ||
+      !b->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
     // Ideally this should never happen, since the pass only runs on fused @product functions, but
     // check anyway just to be safe
     return false;
   }
-  if (a->getAttrOfType<mlir::StringAttr>("product_source") ==
-      b->getAttrOfType<mlir::StringAttr>("product_source")) {
+  if (a->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE) ==
+      b->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
     return false;
   }
 
   // Check 3.
-  // Easy case: both have a constant trip-count
+  // Easy case: both have a constant trip-count. If the trip counts are not "constant up to a struct
+  // param", we definitely can't tell if they're equal. If the trip counts are only "constant up to
+  // a struct param" but not actually constant, we can ask a solver if the equations are guaranteed
+  // to be the same
   auto tripCountA = mlir::constantTripCount(a.getLowerBound(), a.getUpperBound(), a.getStep());
   auto tripCountB = mlir::constantTripCount(b.getLowerBound(), b.getUpperBound(), b.getStep());
   if (tripCountA.has_value() && tripCountB.has_value() && *tripCountA == *tripCountB) {
     return true;
   }
 
-  // If the trip counts are not "constant up to a struct param", we definitely can't tell if they're
-  // equal
   if (!isConstOrStructParam(a.getLowerBound()) || !isConstOrStructParam(a.getUpperBound()) ||
       !isConstOrStructParam(a.getStep()) || !isConstOrStructParam(b.getLowerBound()) ||
       !isConstOrStructParam(b.getUpperBound()) || !isConstOrStructParam(b.getStep())) {
     return false;
   }
 
-  // If the trip counts are only "constant up to a struct param" but not actually constant, we can
-  // ask a solver if the equations are guaranteed to be the same
   llvm::SMTSolverRef solver = llvm::CreateZ3Solver();
   solver->addConstraint(
       /* (actually ask if they "can't be different") */ solver->mkNot(
@@ -133,21 +132,20 @@ bool FuseProductLoopsPass::canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp 
       )
   );
 
-  // The loops are fusable if its impossible for the trip count expressions to be different
   return !*solver->check();
 }
 
 void FuseProductLoopsPass::fuseMatchingLoopPairs(mlir::Region &body) {
-
   // Start by collecting all possible loops
   llvm::SmallVector<mlir::scf::ForOp> witnessLoops, constraintLoops;
   body.walk<mlir::WalkOrder::PreOrder>([&witnessLoops, &constraintLoops](mlir::scf::ForOp forOp) {
-    if (!forOp->hasAttrOfType<mlir::StringAttr>("product_source")) {
+    if (!forOp->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
       return mlir::WalkResult::skip();
     }
-    if (forOp->getAttrOfType<mlir::StringAttr>("product_source") == FUNC_NAME_COMPUTE) {
+    auto productSource = forOp->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE);
+    if (productSource == FUNC_NAME_COMPUTE) {
       witnessLoops.push_back(forOp);
-    } else if (forOp->getAttrOfType<mlir::StringAttr>("product_source") == FUNC_NAME_CONSTRAIN) {
+    } else if (productSource == FUNC_NAME_CONSTRAIN) {
       constraintLoops.push_back(forOp);
     }
     // Skipping here, because any nested loops can't possibly be fused at this stage
@@ -169,7 +167,7 @@ void FuseProductLoopsPass::fuseMatchingLoopPairs(mlir::Region &body) {
   mlir::IRRewriter rewriter {&getContext()};
   for (auto [w, c] : *fusionCandidates) {
     auto fusedLoop = mlir::fuseIndependentSiblingForLoops(w, c, rewriter);
-    fusedLoop->setAttr("product_source", rewriter.getAttr<mlir::StringAttr>("fused"));
+    fusedLoop->setAttr(PRODUCT_SOURCE, rewriter.getAttr<mlir::StringAttr>("fused"));
     // ...and recurse to fuse nested loops
     fuseMatchingLoopPairs(fusedLoop.getBodyRegion());
   }
