@@ -23,7 +23,7 @@
 
 namespace llzk::pod {
 
-mlir::ParseResult parseRecordName(mlir::AsmParser &parser, mlir::StringAttr &name);
-void printRecordName(mlir::AsmPrinter &printer, mlir::Operation *, mlir::StringAttr name);
+mlir::ParseResult parseRecordName(mlir::AsmParser &parser, mlir::FlatSymbolRefAttr &name);
+void printRecordName(mlir::AsmPrinter &printer, mlir::Operation *, mlir::FlatSymbolRefAttr name);
 
 } // namespace llzk::pod

@@ -394,11 +394,11 @@ LogicalResult WritePodOp::verify() {
 // Parsing/Printing helpers
 //===----------------------------------------------------------------------===//
 
-ParseResult parseRecordName(AsmParser &parser, StringAttr &name) {
-  return parser.parseSymbolName(name);
+ParseResult parseRecordName(AsmParser &parser, FlatSymbolRefAttr &name) {
+  return parser.parseCustomAttributeWithFallback(name);
 }
 
-void printRecordName(AsmPrinter &printer, mlir::Operation *, StringAttr name) {
+void printRecordName(AsmPrinter &printer, Operation *, FlatSymbolRefAttr name) {
   printer.printSymbolName(name.getValue());
 }
 
