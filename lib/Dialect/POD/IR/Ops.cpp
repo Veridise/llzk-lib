@@ -93,14 +93,14 @@ static void collectMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
   })
       .Case([&mapAttrs](array::ArrayType t) {
     for (auto a : t.getDimensionSizes()) {
-      if (auto m = mlir::dyn_cast<AffineMapAttr>(a)) {
+      if (auto m = llvm::dyn_cast<AffineMapAttr>(a)) {
         mapAttrs.push_back(m);
       }
     }
   })
       .Case([&mapAttrs](component::StructType t) {
     for (auto param : t.getParams()) {
-      if (auto m = mlir::dyn_cast<AffineMapAttr>(param)) {
+      if (auto m = llvm::dyn_cast<AffineMapAttr>(param)) {
         mapAttrs.push_back(m);
       }
     }
@@ -128,7 +128,7 @@ static LogicalResult verifyInitialValues(
   llvm::StringMap<Type> records = retTy.getRecordMap();
   llvm::StringSet<> seenNames;
   for (auto [nameAttr, value] : llvm::zip_equal(names, values)) {
-    auto name = mlir::cast<StringAttr>(nameAttr).getValue(); // Per the ODS spec.
+    auto name = llvm::cast<StringAttr>(nameAttr).getValue(); // Per the ODS spec.
     if (seenNames.contains(name)) {
       emitError() << "found duplicated record name '" << name << '\'';
       failed = true;
@@ -155,7 +155,7 @@ static LogicalResult verifyInitialValues(
     }
   }
 
-  return mlir::failure(failed);
+  return failure(failed);
 }
 
 static LogicalResult verifyAffineMapOperands(NewPodOp *op, Type retTy) {
@@ -174,7 +174,7 @@ static LogicalResult verifyAffineMapOperands(NewPodOp *op, Type retTy) {
   }
 
 LogicalResult NewPodOp::verify() {
-  auto retTy = mlir::dyn_cast<PodType>(getResult().getType());
+  auto retTy = llvm::dyn_cast<PodType>(getResult().getType());
   assert(retTy); // per ODS spec of NewPodOp
 
   bool failed = false;
@@ -185,7 +185,7 @@ LogicalResult NewPodOp::verify() {
   );
   check(verifyAffineMapOperands(this, retTy));
 
-  return mlir::failure(failed);
+  return failure(failed);
 }
 
 #undef check
@@ -265,7 +265,7 @@ ParseResult NewPodOp::parse(OpAsmParser &parser, OperationState &result) {
   // Now that we have the struct type we can resolve the operands
   // using the types of the struct.
   for (auto attr : initializedRecords) {
-    auto name = mlir::cast<StringAttr>(attr); // Per ODS spec of RecordAttr
+    auto name = llvm::cast<StringAttr>(attr); // Per ODS spec of RecordAttr
     auto lookup = resultType.getRecord(name.getValue(), [&parser, initialValuesLoc] {
       return parser.emitError(initialValuesLoc);
     });
@@ -297,7 +297,7 @@ ParseResult NewPodOp::parse(OpAsmParser &parser, OperationState &result) {
     if (failed(verifyInherentAttrs(result.name, result.attributes, [&]() {
       return parser.emitError(loc) << '\'' << result.name.getStringRef() << "' op ";
     }))) {
-      return ::mlir::failure();
+      return failure();
     }
   }
 
@@ -321,7 +321,7 @@ void NewPodOp::print(OpAsmPrinter &printer) {
   os << " : ";
 
   auto type = getResult().getType();
-  if (auto validType = mlir::dyn_cast<PodType>(type)) {
+  if (auto validType = llvm::dyn_cast<PodType>(type)) {
     printer.printStrippedAttrOrType(validType);
   } else {
     printer.printType(type);
@@ -337,7 +337,7 @@ SmallVector<RecordValue> NewPodOp::getInitializedRecordValues() {
   return llvm::map_to_vector(
       llvm::zip_equal(getInitialValues(), getInitializedRecords()), [](auto pair) {
     auto [value, name] = pair;
-    return RecordValue {.name = mlir::cast<StringAttr>(name).getValue(), .value = value};
+    return RecordValue {.name = llvm::cast<StringAttr>(name).getValue(), .value = value};
   }
   );
 }
@@ -347,14 +347,14 @@ SmallVector<RecordValue> NewPodOp::getInitializedRecordValues() {
 //===----------------------------------------------------------------------===//
 
 LogicalResult ReadPodOp::verify() {
-  auto podTy = mlir::dyn_cast<PodType>(getPodRef().getType());
+  auto podTy = llvm::dyn_cast<PodType>(getPodRef().getType());
   if (!podTy) {
     return emitError() << "reference operand expected a plain-old-data struct but got "
                        << getPodRef().getType();
   }
 
   auto lookup = podTy.getRecord(getRecordName(), [this]() { return this->emitError(); });
-  if (mlir::failed(lookup)) {
+  if (failed(lookup)) {
     return lookup;
   }
 
@@ -363,7 +363,7 @@ LogicalResult ReadPodOp::verify() {
                        << getResult().getType() << " != " << *lookup << ")";
   }
 
-  return mlir::success();
+  return success();
 }
 
 //===----------------------------------------------------------------------===//
@@ -371,14 +371,14 @@ LogicalResult ReadPodOp::verify() {
 //===----------------------------------------------------------------------===//
 
 LogicalResult WritePodOp::verify() {
-  auto podTy = mlir::dyn_cast<PodType>(getPodRef().getType());
+  auto podTy = llvm::dyn_cast<PodType>(getPodRef().getType());
   if (!podTy) {
     return emitError() << "reference operand expected a plain-old-data struct but got "
                        << getPodRef().getType();
   }
 
   auto lookup = podTy.getRecord(getRecordName(), [this]() { return this->emitError(); });
-  if (mlir::failed(lookup)) {
+  if (failed(lookup)) {
     return lookup;
   }
 
@@ -387,18 +387,18 @@ LogicalResult WritePodOp::verify() {
                        << getValue().getType() << " != " << *lookup << ")";
   }
 
-  return mlir::success();
+  return success();
 }
 
 //===----------------------------------------------------------------------===//
 // Parsing/Printing helpers
 //===----------------------------------------------------------------------===//
 
-ParseResult parseRecordName(AsmParser &parser, StringAttr &name) {
-  return parser.parseSymbolName(name);
+ParseResult parseRecordName(AsmParser &parser, FlatSymbolRefAttr &name) {
+  return parser.parseCustomAttributeWithFallback(name);
 }
 
-void printRecordName(AsmPrinter &printer, mlir::Operation *, StringAttr name) {
+void printRecordName(AsmPrinter &printer, Operation *, FlatSymbolRefAttr name) {
   printer.printSymbolName(name.getValue());
 }
 
