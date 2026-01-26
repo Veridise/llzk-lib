@@ -639,7 +639,8 @@ llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
         auto valAttr = dyn_cast<IntegerAttr>(intConst.getValue());
         ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
         return toDynamicAPInt(valAttr.getValue());
-      }).Default([](Operation *illegalOp) {
+      })
+      .Default([](Operation *illegalOp) {
         std::string err;
         debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
         llvm::report_fatal_error(Twine(err));
