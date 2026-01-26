@@ -39,7 +39,8 @@ class BoolUnaryOpBase<string mnemonic, Type resultType, list<Trait> traits = []>
 // Boolean operators
 //===------------------------------------------------------------------===//
 
-def LLZK_AndBoolOp : BoolBinaryOpBase<"and", I1, [Commutative]> {
+def LLZK_AndBoolOp
+    : BoolBinaryOpBase<"and", I1, [NotFieldNative, Commutative]> {
   let summary = "logical AND operator";
   let description = [{
     This operation computes the logical AND (i.e., conjunction) of two `i1` (i.e., boolean)
@@ -49,7 +50,7 @@ def LLZK_AndBoolOp : BoolBinaryOpBase<"and", I1, [Commutative]> {
   }];
 }
 
-def LLZK_OrBoolOp : BoolBinaryOpBase<"or", I1, [Commutative]> {
+def LLZK_OrBoolOp : BoolBinaryOpBase<"or", I1, [NotFieldNative, Commutative]> {
   let summary = "logical OR operator";
   let description = [{
     This operation computes the logical OR (i.e., disjunction) of two `i1` (i.e., boolean)
@@ -59,7 +60,8 @@ def LLZK_OrBoolOp : BoolBinaryOpBase<"or", I1, [Commutative]> {
   }];
 }
 
-def LLZK_XorBoolOp : BoolBinaryOpBase<"xor", I1, [Commutative]> {
+def LLZK_XorBoolOp
+    : BoolBinaryOpBase<"xor", I1, [NotFieldNative, Commutative]> {
   let summary = "logical XOR operator";
   let description = [{
     This operation computes the logical XOR (i.e., exclusive disjunction) of two `i1` (i.e., boolean)
@@ -69,7 +71,7 @@ def LLZK_XorBoolOp : BoolBinaryOpBase<"xor", I1, [Commutative]> {
   }];
 }
 
-def LLZK_NotBoolOp : BoolUnaryOpBase<"not", I1, []> {
+def LLZK_NotBoolOp : BoolUnaryOpBase<"not", I1, [NotFieldNative]> {
   let summary = "logical NOT operator";
   let description = [{
     This operation computes the logical NOT (i.e., negation) of an `i1` (i.e., boolean)

@@ -79,6 +79,14 @@ void llzkFuncDefOpSetAllowWitnessAttr(MlirOperation op, bool value) {
   unwrap_cast<FuncDefOp>(op).setAllowWitnessAttr(value);
 }
 
+bool llzkFuncDefOpGetHasAllowNonNativeFieldOpsAttr(MlirOperation op) {
+  return unwrap_cast<FuncDefOp>(op).hasAllowNonNativeFieldOpsAttr();
+}
+
+void llzkFuncDefOpSetAllowNonNativeFieldOpsAttr(MlirOperation op, bool value) {
+  unwrap_cast<FuncDefOp>(op).setAllowNonNativeFieldOpsAttr(value);
+}
+
 bool llzkFuncDefOpGetHasArgIsPub(MlirOperation op, unsigned argNo) {
   return unwrap_cast<FuncDefOp>(op).hasArgPublicAttr(argNo);
 }

@@ -134,7 +134,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Div<[]> {
     struct.field @"$super" : !felt.type
     struct.field @reciprocal : !felt.type
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@Div<[]>>
       %0 = felt.inv %arg1 : !felt.type
       struct.writef %self[@reciprocal] = %0 : <@Div<[]>>, !felt.type

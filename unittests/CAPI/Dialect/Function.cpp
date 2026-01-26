@@ -138,6 +138,20 @@ TEST_F(FuncDialectTest, llzk_func_def_op_set_allow_witness_attr) {
   EXPECT_TRUE(!llzkFuncDefOpGetHasAllowWitnessAttr(f.op));
 }
 
+TEST_F(FuncDialectTest, llzk_func_def_op_get_has_allow_non_native_field_ops_attr) {
+  auto f = test_function();
+  EXPECT_TRUE(!llzkFuncDefOpGetHasAllowNonNativeFieldOpsAttr(f.op));
+}
+
+TEST_F(FuncDialectTest, llzk_func_def_op_set_allow_non_native_field_ops_attr) {
+  auto f = test_function();
+  EXPECT_TRUE(!llzkFuncDefOpGetHasAllowNonNativeFieldOpsAttr(f.op));
+  llzkFuncDefOpSetAllowNonNativeFieldOpsAttr(f.op, true);
+  EXPECT_TRUE(llzkFuncDefOpGetHasAllowNonNativeFieldOpsAttr(f.op));
+  llzkFuncDefOpSetAllowNonNativeFieldOpsAttr(f.op, false);
+  EXPECT_TRUE(!llzkFuncDefOpGetHasAllowNonNativeFieldOpsAttr(f.op));
+}
+
 TEST_F(FuncDialectTest, llzk_func_def_op_get_has_arg_is_pub) {
   auto f = test_function();
   EXPECT_TRUE(!llzkFuncDefOpGetHasArgIsPub(f.op, 0));
