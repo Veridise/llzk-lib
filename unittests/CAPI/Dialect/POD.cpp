@@ -132,3 +132,12 @@ TEST_F(PODDialectTests, llzkPodTypeGetFromInitialValues) {
     mlirOperationDestroy(op);
   }
 }
+
+TEST_F(PODDialectTests, llzkPodTypeGetRecords) {
+  auto record = llzkRecordAttrGet(mlirStringRefCreateFromCString("record_name"), createIndexType());
+  auto type = llzkPodTypeGet(context, 1, &record);
+  MlirAttribute output[1];
+  llzkPodTypeGetRecords(type, output);
+  ASSERT_NE(output[0].ptr, nullptr);
+  ASSERT_EQ(output[0].ptr, record.ptr);
+}
