@@ -41,7 +41,7 @@ namespace {
 static SmallVector<RecordValue>
 fromRawRecordValues(intptr_t nValues, LlzkRecordValue const *values) {
   return llvm::map_to_vector(ArrayRef(values, nValues), [](const auto &record) {
-    return RecordValue {.name = unwrap(*record.name), .value = unwrap(*record.value)};
+    return RecordValue {.name = unwrap(record.name), .value = unwrap(record.value)};
   });
 }
 
