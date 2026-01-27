@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/LLZKFuseProductLoopsPass.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/AlignmentHelper.h"
 #include "llzk/Util/Constants.h"
@@ -24,7 +25,6 @@
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/SMTAPI.h>
 
-#include <functional>
 #include <memory>
 
 namespace llzk {
@@ -39,23 +39,21 @@ using namespace llzk::function;
 constexpr int INDEX_WIDTH = 64;
 
 class FuseProductLoopsPass : public impl::FuseProductLoopsPassBase<FuseProductLoopsPass> {
-  /// Identify pairs of scf.for loops that can be fused, fuse them, and then recurse to fuse nested
-  /// loops
-  void fuseMatchingLoopPairs(mlir::Region &body);
-  bool canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp b);
 
 public:
   void runOnOperation() override {
     mlir::ModuleOp mod = getOperation();
     mod.walk([this](FuncDefOp funcDef) {
       if (funcDef.isStructProduct()) {
-        fuseMatchingLoopPairs(funcDef.getFunctionBody());
+        if (mlir::failed(fuseMatchingLoopPairs(funcDef.getFunctionBody(), &getContext()))) {
+          signalPassFailure();
+        }
       }
     });
   }
 };
 
-bool isConstOrStructParam(mlir::Value val) {
+static inline bool isConstOrStructParam(mlir::Value val) {
   // TODO: doing arithmetic over constants should also be fine?
   return val.getDefiningOp<mlir::arith::ConstantIndexOp>() ||
          val.getDefiningOp<llzk::polymorphic::ConstReadOp>();
@@ -85,7 +83,7 @@ llvm::SMTExprRef tripCount(mlir::scf::ForOp op, llvm::SMTSolver *solver) {
   );
 }
 
-bool FuseProductLoopsPass::canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp b) {
+static inline bool canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp b) {
   // A priori, two loops can be fused if:
   // 1. They live in the same parent region,
   // 2. One comes from witgen and the other comes from constraint gen, and
@@ -126,16 +124,14 @@ bool FuseProductLoopsPass::canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp 
   }
 
   llvm::SMTSolverRef solver = llvm::CreateZ3Solver();
-  solver->addConstraint(
-      /* (actually ask if they "can't be different") */ solver->mkNot(
-          solver->mkEqual(tripCount(a, solver.get()), tripCount(b, solver.get()))
-      )
-  );
+  solver->addConstraint(/* (actually ask if they "can't be different") */ solver->mkNot(
+      solver->mkEqual(tripCount(a, solver.get()), tripCount(b, solver.get()))
+  ));
 
   return !*solver->check();
 }
 
-void FuseProductLoopsPass::fuseMatchingLoopPairs(mlir::Region &body) {
+mlir::LogicalResult fuseMatchingLoopPairs(mlir::Region &body, mlir::MLIRContext *context) {
   // Start by collecting all possible loops
   llvm::SmallVector<mlir::scf::ForOp> witnessLoops, constraintLoops;
   body.walk<mlir::WalkOrder::PreOrder>([&witnessLoops, &constraintLoops](mlir::scf::ForOp forOp) {
@@ -155,22 +151,25 @@ void FuseProductLoopsPass::fuseMatchingLoopPairs(mlir::Region &body) {
   // A pair of loops will be fused iff (1) they can be fused according to the rules above, and (2)
   // neither can be fused with anything else (so there's no ambiguity)
   auto fusionCandidates = alignmentHelpers::getMatchingPairs<mlir::scf::ForOp>(
-      witnessLoops, constraintLoops, std::bind_front(&FuseProductLoopsPass::canLoopsBeFused, this)
+      witnessLoops, constraintLoops, canLoopsBeFused
   );
 
   // This shouldn't happen, since we allow partial matches
   if (mlir::failed(fusionCandidates)) {
-    signalPassFailure();
+    return mlir::failure();
   }
 
   // Finally, fuse all the marked loops...
-  mlir::IRRewriter rewriter {&getContext()};
+  mlir::IRRewriter rewriter {context};
   for (auto [w, c] : *fusionCandidates) {
     auto fusedLoop = mlir::fuseIndependentSiblingForLoops(w, c, rewriter);
     fusedLoop->setAttr(PRODUCT_SOURCE, rewriter.getAttr<mlir::StringAttr>("fused"));
     // ...and recurse to fuse nested loops
-    fuseMatchingLoopPairs(fusedLoop.getBodyRegion());
+    if (mlir::failed(fuseMatchingLoopPairs(fusedLoop.getBodyRegion(), context))) {
+      return mlir::failure();
+    }
   }
+  return mlir::success();
 }
 
 std::unique_ptr<mlir::Pass> createFuseProductLoopsPass() {
