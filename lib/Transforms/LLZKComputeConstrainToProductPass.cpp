@@ -59,17 +59,17 @@ bool isValidRoot(StructDefOp root) {
   return true;
 }
 
-mlir::LogicalResult alignStartingAt(
-    component::StructDefOp root, mlir::SymbolTableCollection &tables,
+LogicalResult alignStartingAt(
+    component::StructDefOp root, SymbolTableCollection &tables,
     LightweightSignalEquivalenceAnalysis &equivalence
 ) {
   if (!isValidRoot(root)) {
-    return mlir::failure();
+    return failure();
   }
 
   ProductAligner aligner {tables, equivalence};
   if (!aligner.alignFuncs(root, root.getComputeFuncOp(), root.getConstrainFuncOp())) {
-    return mlir::failure();
+    return failure();
   }
 
   for (auto s : aligner.alignedStructs) {
@@ -77,7 +77,7 @@ mlir::LogicalResult alignStartingAt(
     s.getConstrainFuncOp()->erase();
   }
 
-  return mlir::success();
+  return success();
 }
 
 class ComputeConstrainToProductPass
@@ -100,7 +100,7 @@ public:
       }
     });
 
-    if (mlir::failed(alignStartingAt(root, tables, equivalence))) {
+    if (failed(alignStartingAt(root, tables, equivalence))) {
       signalPassFailure();
     }
   }
@@ -239,7 +239,7 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
   return success();
 }
 
-std::unique_ptr<mlir::Pass> createComputeConstrainToProductPass() {
+std::unique_ptr<Pass> createComputeConstrainToProductPass() {
   return make_unique<ComputeConstrainToProductPass>();
 }
 
