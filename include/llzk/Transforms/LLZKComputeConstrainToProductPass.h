@@ -17,9 +17,9 @@ class ProductAligner {
 public:
   std::vector<component::StructDefOp> alignedStructs;
   ProductAligner(
-      mlir::SymbolTableCollection &tables, LightweightSignalEquivalenceAnalysis &equivalence
+      mlir::SymbolTableCollection &_tables, LightweightSignalEquivalenceAnalysis &_equivalence
   )
-      : tables {tables}, equivalence {equivalence} {}
+      : tables {_tables}, equivalence {_equivalence} {}
 
   // Given a @product function body, try to match up calls to @A::@compute and @A::@constrain for
   // every sub-struct @A and replace them with a call to @A::@product
