@@ -1,8 +1,8 @@
 #pragma once
 
 #include "llzk/Analysis/LightweightSignalEquivalenceAnalysis.h"
-#include <llzk/Dialect/Function/IR/Ops.h>
-#include <llzk/Dialect/Struct/IR/Ops.h>
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 
 #include <mlir/Support/LogicalResult.h>
 
