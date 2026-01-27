@@ -37,8 +37,8 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(POD, llzk__pod);
 //===----------------------------------------------------------------------===//
 
 typedef struct LlzkRecordValue {
-  MlirStringRef name;
-  MlirValue value;
+  MlirStringRef *name;
+  MlirValue *value;
 } LlzkRecordValue;
 
 //===----------------------------------------------------------------------===//

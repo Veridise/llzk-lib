@@ -112,14 +112,14 @@ TEST_F(PODDialectTests, llzkPodTypeGet) {
 
 TEST_F(PODDialectTests, llzkPodTypeGetFromInitialValues) {
   auto ops = createNOps(2, createIndexType());
+  auto name1 = mlirStringRefCreateFromCString("x");
+  auto name2 = mlirStringRefCreateFromCString("y");
+  auto value1 = mlirOperationGetResult(ops[0], 0);
+  auto value2 = mlirOperationGetResult(ops[1], 0);
 
   LlzkRecordValue initialValues[] = {
-      LlzkRecordValue {
-          .name = mlirStringRefCreateFromCString("x"), .value = mlirOperationGetResult(ops[0], 0)
-      },
-      LlzkRecordValue {
-          .name = mlirStringRefCreateFromCString("y"), .value = mlirOperationGetResult(ops[1], 0)
-      },
+      LlzkRecordValue {.name = &name1, .value = &value1},
+      LlzkRecordValue {.name = &name2, .value = &value2},
   };
   auto type = llzkPodTypeGetFromInitialValues(context, 2, initialValues);
   mlir::Type expected = llzk::pod::PodType::get(
