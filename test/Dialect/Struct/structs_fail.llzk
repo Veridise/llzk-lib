@@ -314,7 +314,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Main {
-    // expected-error@+1 {{main entry component "@compute" function parameters must be one of: {!struct.type<@Signal>, !array.type<.. x !struct.type<@Signal>>}}}
+    // expected-error@+1 {{main entry component "@compute" function parameters must be one of: {!felt.type, !array.type<.. x !felt.type>}}}
     function.def @compute(%0: i1) -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -325,14 +325,14 @@ module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
-  struct.def @Main {
-    function.def @compute() -> !struct.type<@Main> {
-      %self = struct.new : !struct.type<@Main>
-      function.return %self : !struct.type<@Main>
+module attributes {llzk.main = !struct.type<@MyMain>, veridise.lang = "llzk"} {
+  struct.def @MyMain {
+    function.def @compute() -> !struct.type<@MyMain> {
+      %self = struct.new : !struct.type<@MyMain>
+      function.return %self : !struct.type<@MyMain>
     }
-    // expected-error@+1 {{main entry component "@constrain" function parameters must be one of: {!struct.type<@Main>, !struct.type<@Signal>, !array.type<.. x !struct.type<@Signal>>}}}
-    function.def @constrain(%self: !struct.type<@Main>, %0: i1)  {
+    // expected-error@+1 {{main entry component "@constrain" function parameters must be one of: {!struct.type<@MyMain>, !felt.type, !array.type<.. x !felt.type>}}}
+    function.def @constrain(%self: !struct.type<@MyMain>, %0: i1)  {
       function.return
     }
   }

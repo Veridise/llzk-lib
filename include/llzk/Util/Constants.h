@@ -13,6 +13,8 @@ namespace llzk {
 
 /// Symbol name for the struct/component representing a signal. A "signal" has direct correspondence
 /// to a circom signal or AIR/PLONK column, opposed to intermediate values or other expressions.
+///
+/// DEPRECATED: to be removed in favor of plain `llzk::felt::FeltType`.
 constexpr char COMPONENT_NAME_SIGNAL[] = "Signal";
 
 /// Symbol name for the witness generation (and resp. constraint generation) functions within a
