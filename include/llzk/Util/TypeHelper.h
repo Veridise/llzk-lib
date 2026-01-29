@@ -101,7 +101,11 @@ bool isValidArrayElemType(mlir::Type type);
 /// Checks if the type is a LLZK Array and it also contains a valid LLZK type.
 bool isValidArrayType(mlir::Type type);
 
-/// Return `false` iff the type contains any `TypeVarType`
+/// Return `false` if the type contains any of the following:
+/// - `TypeVarType`
+/// - `SymbolRefAttr`
+/// - `AffineMapAttr`
+/// - `StructType` with parameters if `allowStructParams==false`
 bool isConcreteType(mlir::Type type, bool allowStructParams = true);
 
 inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type) {
