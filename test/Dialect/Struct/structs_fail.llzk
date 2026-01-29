@@ -403,6 +403,19 @@ module attributes {llzk.main = !struct.type<@NotVar<[!poly.tvar<@X>]>>, veridise
   }
 }
 // -----
+// expected-error@+1 {{duplicate key 'llzk.main' in dictionary attribute}}
+module attributes {llzk.main = !struct.type<@Multiple<[2]>>, llzk.main = !struct.type<@Multiple<[3]>>, veridise.lang = "llzk"} {
+  struct.def @Multiple<[@N]> {
+    function.def @compute() -> !struct.type<@Multiple<[@N]>> {
+      %self = struct.new : !struct.type<@Multiple<[@N]>>
+      function.return %self : !struct.type<@Multiple<[@N]>>
+    }
+    function.def @constrain(%self: !struct.type<@Multiple<[@N]>>)  {
+      function.return
+    }
+  }
+}
+// -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @Signal {
     struct.field @reg : !felt.type {llzk.pub}
