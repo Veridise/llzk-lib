@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -33,6 +34,7 @@
 #include "llzk/Dialect/Struct/IR/Ops.cpp.inc"
 
 using namespace mlir;
+using namespace llzk::felt;
 using namespace llzk::array;
 using namespace llzk::function;
 
@@ -218,24 +220,24 @@ LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 namespace {
 
-inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool appendSelf) {
-  if (isSignalType(pType)) {
+inline LogicalResult
+checkMainFuncParamType(Type pType, FuncDefOp inFunc, std::optional<StructType> appendSelfType) {
+  if (llvm::isa<FeltType>(pType)) {
     return success();
   } else if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
-    if (isSignalType(arrayParamTy.getElementType())) {
+    if (llvm::isa<FeltType>(arrayParamTy.getElementType())) {
       return success();
     }
   }
 
-  std::string message = buildStringViaCallback([&inFunc, appendSelf](llvm::raw_ostream &ss) {
-    ss << "\"@" << COMPONENT_NAME_MAIN << "\" component \"@" << inFunc.getSymName()
+  std::string message = buildStringViaCallback([&inFunc, appendSelfType](llvm::raw_ostream &ss) {
+    ss << "main entry component \"@" << inFunc.getSymName()
        << "\" function parameters must be one of: {";
-    if (appendSelf) {
-      ss << "!" << StructType::name << "<@" << COMPONENT_NAME_MAIN << ">, ";
+    if (appendSelfType.has_value()) {
+      ss << appendSelfType.value() << ", ";
     }
-    ss << "!" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL << ">, ";
-    ss << "!" << ArrayType::name << "<.. x !" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL
-       << ">>}";
+    ss << '!' << FeltType::name << ", ";
+    ss << '!' << ArrayType::name << "<.. x !" << FeltType::name << ">}";
   });
   return inFunc.emitError(message);
 }
@@ -254,22 +256,17 @@ inline LogicalResult verifyStructComputeConstrain(
   ArrayRef<Type> computeParams = computeFunc.getFunctionType().getInputs();
   ArrayRef<Type> constrainParams = constrainFunc.getFunctionType().getInputs().drop_front();
   if (structDef.isMainComponent()) {
-    // Verify that the Struct has no parameters.
-    if (!isNullOrEmpty(structDef.getConstParamsAttr())) {
-      return structDef.emitError().append(
-          "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
-      );
-    }
     // Verify the input parameter types are legal. The error message is explicit about what types
     // are allowed so there is no benefit to report multiple errors if more than one parameter in
     // the referenced function has an illegal type.
     for (Type t : computeParams) {
-      if (failed(checkMainFuncParamType(t, computeFunc, false))) {
+      if (failed(checkMainFuncParamType(t, computeFunc, std::nullopt))) {
         return failure(); // checkMainFuncParamType() already emits a sufficient error message
       }
     }
+    auto appendSelf = std::make_optional(structDef.getType());
     for (Type t : constrainParams) {
-      if (failed(checkMainFuncParamType(t, constrainFunc, true))) {
+      if (failed(checkMainFuncParamType(t, constrainFunc, appendSelf))) {
         return failure(); // checkMainFuncParamType() already emits a sufficient error message
       }
     }
@@ -295,16 +292,14 @@ inline LogicalResult verifyStructProduct(StructDefOp structDef, FuncDefOp produc
   assert(productFunc.hasAllowWitnessAttr());
 
   // Verify parameter types are valid
-  ArrayRef<Type> productParams = productFunc.getFunctionType().getInputs();
   if (structDef.isMainComponent()) {
-    if (!isNullOrEmpty(structDef.getConstParamsAttr())) {
-      return structDef.emitError().append(
-          "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
-      );
-    }
+    ArrayRef<Type> productParams = productFunc.getFunctionType().getInputs();
+    // Verify the input parameter types are legal. The error message is explicit about what types
+    // are allowed so there is no benefit to report multiple errors if more than one parameter in
+    // the referenced function has an illegal type.
     for (Type t : productParams) {
-      if (failed(checkMainFuncParamType(t, productFunc, false))) {
-        return failure();
+      if (failed(checkMainFuncParamType(t, productFunc, std::nullopt))) {
+        return failure(); // checkMainFuncParamType() already emits a sufficient error message
       }
     }
   }
@@ -448,7 +443,15 @@ FuncDefOp StructDefOp::getConstrainOrProductFuncOp() {
   return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_PRODUCT));
 }
 
-bool StructDefOp::isMainComponent() { return COMPONENT_NAME_MAIN == this->getSymName(); }
+bool StructDefOp::isMainComponent() {
+  FailureOr<StructType> mainTypeOpt = getMainInstanceType(this->getOperation());
+  if (succeeded(mainTypeOpt)) {
+    if (StructType mainType = mainTypeOpt.value()) {
+      return structTypesUnify(mainType, this->getType());
+    }
+  }
+  return false;
+}
 
 //===------------------------------------------------------------------===//
 // FieldDefOp
